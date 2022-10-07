@@ -155,6 +155,7 @@ void *gNB_app_task(void *args_p)
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
   RCconfig_NR_L1();
+  RCconfig_nr_prs();
 
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 

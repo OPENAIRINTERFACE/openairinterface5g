@@ -975,29 +975,24 @@ class RANManagement():
 				if result is not None:
 					mbmsRequestMsg += 1
 			#FR1 NSA test : add new markers to make sure gNB is used
-			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI 0x[0-9a-fA-F]+ received correctly, adding UE MAC Context UE_id [0-9]+\/RNTI 0x[0-9a-fA-F]+', str(line))
+			result = re.search('\[gNB [0-9]+\]\[RAPROC\] PUSCH with TC_RNTI 0x[0-9a-fA-F]+ received correctly, adding UE MAC Context RNTI 0x[0-9a-fA-F]+', str(line))
 			if result is not None:
 				NSA_RAPROC_PUSCH_check = 1
-			#dlsch and ulsch statistics
-			#keys below are the markers we are loooking for, loop over this keys list
-			#everytime these markers are found in the log file, the previous ones are overwritten in the dict
-			#eventually we record and print only the last occurence 
-			keys = {'UE ID','dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
+
+			# Collect information on UE DLSCH and ULSCH statistics
+			keys = {'dlsch_rounds','dlsch_total_bytes','ulsch_rounds','ulsch_total_bytes_scheduled'}
 			for k in keys:
 				result = re.search(k, line)
-				if result is not None:
-					ue_prefix = 'ue0'
-					ue_res = re.search('UE ID 1|UE 1:', line)
-					if ue_res is not None:
-						ue_prefix = 'ue1'
-					ue_res = re.search('UE ID 2|UE 2:', line)
-					if ue_res is not None:
-						ue_prefix = 'ue2'
-					ue_res = re.search('UE ID 3|UE 3:', line)
-					if ue_res is not None:
-						ue_prefix = 'ue3'
-					#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
-					dlsch_ulsch_stats[ue_prefix+k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
+				if result is None:
+					continue
+				result = re.search('UE (?:RNTI )?([0-9a-f]{4})', line)
+				if result is None:
+					logging.error(f'did not find RNTI while matching key {k}')
+					continue
+				rnti = result.group(1)
+
+				#remove 1- all useless char before relevant info (ulsch or dlsch) 2- trailing char
+				dlsch_ulsch_stats[rnti+k]=re.sub(r'^.*\]\s+', r'' , line.rstrip())
 
 			result = re.search('Received NR_RRCReconfigurationComplete from UE', str(line))
 			if result is not None:
@@ -1155,12 +1150,10 @@ class RANManagement():
 			#checker
 			if (len(dlsch_ulsch_stats)!=0) and (len(checkers)!=0):
 				if 'd_retx_th' in checkers:
-					checkers['d_retx_th'] = [float(x) for x in checkers['d_retx_th'].split(',')]
 					dlsch_checker_status = list(0 for i in checkers['d_retx_th'])#status 0 / -1
 					d_perc_retx = list(0 for i in checkers['d_retx_th'])#results in %
 
 				if 'u_retx_th' in checkers:
-					checkers['u_retx_th'] = [float(x) for x in checkers['u_retx_th'].split(',')]
 					ulsch_checker_status = list(0 for i in checkers['u_retx_th'])
 					u_perc_retx = list(0 for i in checkers['u_retx_th'])
 

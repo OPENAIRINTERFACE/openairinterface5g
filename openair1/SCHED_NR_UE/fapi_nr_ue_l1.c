@@ -352,14 +352,13 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
   if(scheduled_response != NULL){
 
     module_id_t module_id = scheduled_response->module_id;
-    uint8_t cc_id = scheduled_response->CC_id, thread_id;
+    uint8_t cc_id = scheduled_response->CC_id;
     int slot = scheduled_response->slot;
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
-    thread_id = scheduled_response->thread_id;
     NR_UE_DLSCH_t *dlsch0 = NULL;
-    NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[thread_id][0];
-    NR_UE_PUCCH *pucch_vars = PHY_vars_UE_g[module_id][cc_id]->pucch_vars[thread_id][0];
+    NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
+    NR_UE_PUCCH *pucch_vars = &((nr_phy_data_t *)scheduled_response->phy_data)->pucch_vars;
     NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
     NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
     NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
@@ -418,7 +417,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             break;
           case FAPI_NR_DL_CONFIG_TYPE_DLSCH:
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
-            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[thread_id][0][0];
+            dlsch0 = PHY_vars_UE_g[module_id][cc_id]->dlsch[0][0];
             configure_dlsch(dlsch0, dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
             break;

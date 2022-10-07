@@ -181,6 +181,17 @@ where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` s
 
 Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
 
+### Run OAI with SDAP & Custom DRBs
+
+To run OAI gNB with SDAP, simply include `--gNBs.[0].enable_sdap 1` to the binary's arguments.
+
+The DRB creation is dependent on the 5QI. 
+If the 5QI corresponds to a GBR Flow it assigns a dedicated data radio bearer.
+The Non-GBR flows use a shared data radio bearer.
+
+To hardcode the DRBs for testing purposes, simply add `--gNBs.[0].drbs x` to the binary's arguements, where `x` is the number of DRBs, along with SDAP.
+The hardcoded DRBs will be treated like GBR Flows. Due to code limitations at this point the max. number of DRBs is 4. 
+
 ## IF setup with OAI
 
 OAI is also compatible with Intermediate Frequency (IF) equipment. This allows to use RF front-end that with arbitrary frequencies bands that do not comply with the standardised 3GPP NR bands. 

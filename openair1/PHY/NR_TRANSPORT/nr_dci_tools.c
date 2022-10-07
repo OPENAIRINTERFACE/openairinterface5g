@@ -37,12 +37,13 @@
 
 #include "nr_dlsch.h"
 
+int compfunc(const void *a, const void *b)
+{
+  return (*(int *)a - *(int *)b);
+}
 
-void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL], nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15) {
-
-  nr_cce_t* cce;
-  nr_reg_t* reg;
-
+void nr_fill_reg_list(int reg_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL * NR_NB_REG_PER_CCE], nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15)
+{
   int bsize = pdcch_pdu_rel15->RegBundleSize;
   int R = pdcch_pdu_rel15->InterleaverSize;
   int n_shift = pdcch_pdu_rel15->ShiftIndex;
@@ -74,25 +75,25 @@ void nr_fill_cce_list(nr_cce_t cce_list[MAX_DCI_CORESET][NR_MAX_PDCCH_AGG_LEVEL]
     if (pdcch_pdu_rel15->dci_pdu[d].RNTI != 0xFFFF)
       LOG_D(PHY, "CCE list generation for candidate %d: bundle size %d ilv size %d CceIndex %d\n", d, bsize, R, pdcch_pdu_rel15->dci_pdu[d].CceIndex);
 
+    int list_idx = 0;
     for (uint8_t cce_idx=0; cce_idx<L; cce_idx++) {
-      cce = &cce_list[d][cce_idx];
-      cce->cce_idx = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
-      LOG_D(PHY, "cce_idx %d\n", cce->cce_idx);
-
-      uint8_t j = cce->cce_idx;
+      int cce = pdcch_pdu_rel15->dci_pdu[d].CceIndex + cce_idx;
+      LOG_D(PHY, "cce_idx %d\n", cce);
       for (uint8_t bundle_idx=0; bundle_idx<NR_NB_REG_PER_CCE/bsize; bundle_idx++) {
-        uint8_t k = 6*j/bsize + bundle_idx;
+        uint8_t k = 6 * cce / bsize + bundle_idx;
         int f = cce_to_reg_interleaving(R, k, n_shift, C, bsize, N_regs);
-
-	for (uint8_t reg_idx=0; reg_idx<bsize; reg_idx++) {
-	  reg = &cce->reg_list[bundle_idx*bsize+reg_idx];
-	  reg->reg_idx = bsize*f + reg_idx;
-	  reg->start_sc_idx = (reg->reg_idx/dur) * NR_NB_SC_PER_RB;
-	  reg->symb_idx = reg->reg_idx%dur;
-	  LOG_D(PHY, "reg %d symbol %d start subcarrier %d\n", reg->reg_idx, reg->symb_idx, reg->start_sc_idx);
-	}
+        LOG_D(PHY, "Bundle index %d: f(%d) = %d\n", bundle_idx, k, f);
+        // reg_list contains the regs to be allocated per symbol
+        // the same rbs are allocated in each symbol
+        for (uint8_t reg_idx = 0; reg_idx < bsize / dur; reg_idx++) {
+          reg_list[d][list_idx] = f * bsize / dur + reg_idx;
+          LOG_D(PHY, "rb %d nb of symbols per rb %d start subcarrier %d\n", reg_list[d][list_idx], dur, reg_list[d][list_idx] * NR_NB_SC_PER_RB);
+          list_idx++;
+        }
       }
     }
+    // sorting the elements of the list (smaller goes first)
+    qsort(reg_list[d], L * NR_NB_REG_PER_CCE / dur, sizeof(int), compfunc);
   }
 }
 

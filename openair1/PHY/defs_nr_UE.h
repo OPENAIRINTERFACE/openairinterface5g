@@ -61,11 +61,7 @@
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
 #ifndef malloc16
-  #ifdef __AVX2__
     #define malloc16(x) memalign(32,x)
-  #else
-    #define malloc16(x) memalign(16,x)
-  #endif
 #endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
@@ -215,18 +211,9 @@ typedef struct {
 } PHY_NR_MEASUREMENTS;
 
 typedef struct {
-
-  /// \brief Holds the received data in the frequency domain.
-  /// - first index: rx antenna [0..nb_antennas_rx[
-  /// - second index: symbol [0..28*ofdm_symbol_size[
-  int32_t **rxdataF;
-
-} NR_UE_COMMON_PER_THREAD;
-
-typedef struct {
   bool active[2];
   fapi_nr_ul_config_pucch_pdu pucch_pdu[2];
-  } NR_UE_PUCCH;
+} NR_UE_PUCCH;
 
 typedef struct {
   /// \brief Holds the transmit data in time domain.
@@ -246,7 +233,10 @@ typedef struct {
   /// - second index: sample [0..2*FRAME_LENGTH_COMPLEX_SAMPLES+2048[
   int32_t **rxdata;
 
-  NR_UE_COMMON_PER_THREAD common_vars_rx_data_per_thread[RX_NB_TH_MAX];
+  /// \brief Holds the received data in the frequency domain.
+  /// - first index: rx antenna [0..nb_antennas_rx[
+  /// - second index: symbol [0..28*ofdm_symbol_size[
+  int32_t **rxdataF;
 
   /// holds output of the sync correlator
   int32_t *sync_corr;
@@ -346,6 +336,18 @@ typedef struct {
   /// - second index: ? [0...14] smybol per slot
   int32_t **ptrs_re_per_slot;
 } NR_UE_PDSCH;
+
+#define NR_PRS_IDFT_OVERSAMP_FACTOR 1  // IDFT oversampling factor for NR PRS channel estimates in time domain, ALLOWED value 16x, and 1x is default(ie. IDFT size is frame_params->ofdm_symbol_size)
+typedef struct {
+  prs_config_t prs_cfg;
+  int32_t reserved;
+  prs_meas_t **prs_meas;
+} NR_PRS_RESOURCE_t;
+
+typedef struct {
+  uint8_t NumPRSResources;
+  NR_PRS_RESOURCE_t prs_resource[NR_MAX_PRS_RESOURCES_PER_SET];
+} NR_UE_PRS;
 
 #define NR_PDCCH_DEFS_NR_UE
 #define NR_NBR_CORESET_ACT_BWP      3  // The number of CoreSets per BWP is limited to 3 (including initial CORESET: ControlResourceId 0)
@@ -587,8 +589,6 @@ typedef struct {
 
 typedef struct {
   int16_t amp;
-  int16_t *prachF;
-  int16_t *prach;
   fapi_nr_ul_config_prach_pdu prach_pdu;
 } NR_UE_PRACH;
 
@@ -709,21 +709,21 @@ typedef struct {
 
   fapi_nr_config_request_t nrUE_config;
 
-  NR_UE_PDSCH     *pdsch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX+1]; // two RxTx Threads
+  NR_UE_PDSCH     *pdsch_vars[NUMBER_OF_CONNECTED_gNB_MAX+1];
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_PDCCH     *pdcch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_PUCCH     *pucch_vars[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_DLSCH_t   *dlsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1]; // two RxTx Threads
-  NR_UE_ULSCH_t   *ulsch[RX_NB_TH_MAX][NUMBER_OF_CONNECTED_gNB_MAX];
+  NR_UE_DLSCH_t   *dlsch[NUMBER_OF_CONNECTED_gNB_MAX][NR_MAX_NB_LAYERS>4 ? 2:1];
+  NR_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_SI[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_ra[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_p[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_DLSCH_t   *dlsch_MCH[NUMBER_OF_CONNECTED_gNB_MAX];
-
+  NR_UE_PRS       *prs_vars[NR_MAX_PRS_COMB_SIZE];
+  uint8_t          prs_active_gNBs;
+  
   //Paging parameters
   uint32_t              IMSImod1024;
   uint32_t              PF;
@@ -767,6 +767,9 @@ typedef struct {
   /// PUSCH DMRS sequence
   uint32_t ****nr_gold_pusch_dmrs;
 
+  // PRS sequence per gNB, per resource
+  uint32_t *****nr_gold_prs;
+  
   uint32_t X_u[64][839];
 
   // flag to activate PRB based averaging of channel estimates
@@ -909,9 +912,9 @@ typedef struct {
   /// Transmission mode per gNB
   uint8_t transmission_mode[NUMBER_OF_CONNECTED_gNB_MAX];
 
-  time_stats_t phy_proc[RX_NB_TH];
+  time_stats_t phy_proc;
   time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx[RX_NB_TH];
+  time_stats_t phy_proc_rx;
 
   time_stats_t ue_ul_indication_stats;
 
@@ -927,13 +930,13 @@ typedef struct {
   time_stats_t ulsch_multiplexing_stats;
 
   time_stats_t generic_stat;
-  time_stats_t generic_stat_bis[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
-  time_stats_t ue_front_end_stat[RX_NB_TH];
-  time_stats_t ue_front_end_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
-  time_stats_t pdcch_procedures_stat[RX_NB_TH];
-  time_stats_t pdsch_procedures_stat[RX_NB_TH];
-  time_stats_t pdsch_procedures_per_slot_stat[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
-  time_stats_t dlsch_procedures_stat[RX_NB_TH];
+  time_stats_t generic_stat_bis[LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t ue_front_end_stat;
+  time_stats_t ue_front_end_per_slot_stat[LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t pdcch_procedures_stat;
+  time_stats_t pdsch_procedures_stat;
+  time_stats_t pdsch_procedures_per_slot_stat[LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t dlsch_procedures_stat;
 
   time_stats_t rx_pdsch_stats;
   time_stats_t ofdm_demod_stats;
@@ -941,13 +944,13 @@ typedef struct {
   time_stats_t rx_dft_stats;
   time_stats_t dlsch_channel_estimation_stats;
   time_stats_t dlsch_freq_offset_estimation_stats;
-  time_stats_t dlsch_decoding_stats[2];
+  time_stats_t dlsch_decoding_stats;
   time_stats_t dlsch_demodulation_stats;
   time_stats_t dlsch_rate_unmatching_stats;
   time_stats_t dlsch_ldpc_decoding_stats;
   time_stats_t dlsch_deinterleaving_stats;
   time_stats_t dlsch_llr_stats;
-  time_stats_t dlsch_llr_stats_parallelization[RX_NB_TH][LTE_SLOTS_PER_SUBFRAME];
+  time_stats_t dlsch_llr_stats_parallelization[LTE_SLOTS_PER_SUBFRAME];
   time_stats_t dlsch_unscrambling_stats;
   time_stats_t dlsch_rate_matching_stats;
   time_stats_t dlsch_ldpc_encoding_stats;
@@ -979,6 +982,9 @@ typedef struct {
   void* scopeData;
 } PHY_VARS_NR_UE;
 
+typedef struct nr_phy_data_s {
+  NR_UE_PUCCH pucch_vars;
+} nr_phy_data_t;
 /* this structure is used to pass both UE phy vars and
  * proc to the function UE_thread_rxn_txnp4
  */

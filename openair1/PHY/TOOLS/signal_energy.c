@@ -29,7 +29,7 @@
 
 #define shift 4
 //#define shift_DC 0
-#define SHRT_MIN -32768
+//#define SHRT_MIN -32768
 
 #if defined(__x86_64__) || defined(__i386__)
 #ifdef LOCALIZATION
@@ -174,7 +174,7 @@ int32_t signal_energy_nodc(int32_t *input,uint32_t length)
   return temp;
 }
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 int32_t signal_energy(int32_t *input,uint32_t length)
 {
@@ -318,7 +318,6 @@ main(int argc,char **argv)
 }
 #endif
 
-#define SHRT_MIN -32768
 int32_t signal_power(int32_t *input, uint32_t length)
 {
 

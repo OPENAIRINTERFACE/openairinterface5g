@@ -88,7 +88,7 @@ static int iqplayer_loadfile(openair0_device *device, openair0_config_t *openair
     size_t hs = read(s->fd,&fh,sizeof(fh));
 
     if (hs == sizeof(fh)) {
-      parse_iqfile_header(device, &fh);
+        parse_iqfile_header(device, &fh);
         fstat(s->fd, &sb);
         s->mapsize=sb.st_size;
         LOG_I(HW, "Loading %u subframes from %s,size=%lu bytes ...\n",s->nbSamplesBlocks, c->u_sf_filename,(uint64_t)sb.st_size);
@@ -181,10 +181,12 @@ static int trx_iqplayer_write(openair0_device *device, openair0_timestamp timest
 */
 static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
   recplay_state_t *s = device->recplay_state;
-
-  if (s->curSamplesBlock==0 && s->wrap_count==0 ) 
-    s->currentTs=s->ms_sample->ts;
   
+  if (s->curSamplesBlock==0 && s->wrap_count==0) { 
+    s->currentTs=s->ms_sample->ts;
+    LOG_I(HW, "First timestamp=%lu s->nbSamplesBlocks=%u\n", s->currentTs, s->nbSamplesBlocks);
+  }
+
   if (s->curSamplesBlock == s->nbSamplesBlocks) {
     LOG_I(HW, "wrapping on iq file (%ld)\n", s->wrap_count);
     s->curSamplesBlock = 0;
@@ -202,8 +204,6 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
     if (!(device->openair0_cfg->recplay_conf->use_mmap) ) {
       close(device->recplay_state->fd);
       iqplayer_loadfile(device, device->openair0_cfg);
- //       LOG_E(HW, "Problem seeking at the beginning of IQ file %s\n",strerror(errno));
-      
     }
   }
 
@@ -223,10 +223,6 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
   iqrec_t *curHeader=(iqrec_t *)s->currentPtr;
   AssertFatal(curHeader->header==BELL_LABS_IQ_HEADER,"" );
   // the current timestamp is the stored timestamp until we wrap on input
-  // USRP shifts 1 sample time to time
-  if (s->wrap_count !=0 && device->openair0_cfg->recplay_conf->use_mmap)
-    AssertFatal( abs(curHeader->ts-s->currentTs) < 5 ,
-              "wrap_count=%li, ts %lu %lu",s->wrap_count,curHeader->ts,s->currentTs);
   AssertFatal(nsamps*4==curHeader->nbBytes,"");
   *ptimestamp = s->currentTs;
   memcpy(buff[0], curHeader+1, nsamps*4);
@@ -237,6 +233,7 @@ static int trx_iqplayer_read(openair0_device *device, openair0_timestamp *ptimes
   if (device->openair0_cfg->recplay_conf->use_mmap)
     s->currentPtr+=sizeof(iqrec_t)+s->ms_sample->nbBytes;
 
+  // BMC TODO: support 1 second or more subframe read delay
   struct timespec req;
   req.tv_sec = 0;
   req.tv_nsec = (device->openair0_cfg[0].recplay_conf->u_sf_read_delay) * 1000;

@@ -23,6 +23,7 @@
 #define _NR_RLC_ENTITY_H_
 
 #include <stdint.h>
+#include "openair2/RRC/NR/rrc_gNB_radio_bearers.h"
 
 #include "common/utils/time_stat.h"
 

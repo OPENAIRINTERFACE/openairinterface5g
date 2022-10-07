@@ -98,8 +98,8 @@
 /* from openair1/PHY/defs_nr_UE.h */
 #define CPU_PHYNRUE_MEASURE \
 { \
-    {"phy_proc",          &(UE->phy_proc[0]),0,RX_NB_TH},\
-    {"phy_proc_rx",       &(UE-> phy_proc_rx[0]),0,RX_NB_TH},\
+    {"phy_proc",          &(UE->phy_proc),0,1},\
+    {"phy_proc_rx",       &(UE-> phy_proc_rx),0,1},\
     {"phy_proc_tx",       &(UE->phy_proc_tx),0,1},\
     {"ue_ul_indication_stats",       &(UE->ue_ul_indication_stats),0,1},\
     {"ofdm_mod_stats",       &(UE->ofdm_mod_stats),0,1},\
@@ -111,7 +111,7 @@
     {"ulsch_interleaving_stats",       &(UE->ulsch_interleaving_stats),0,1},\
     {"ulsch_multiplexing_stats",       &(UE->ulsch_multiplexing_stats),0,1},\
     {"generic_stat",       &(UE->generic_stat),0,1},\
-    {"generic_stat_bis",       &(UE->generic_stat_bis[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
+    {"generic_stat_bis",       &(UE->generic_stat_bis[0]),0,LTE_SLOTS_PER_SUBFRAME},\
     {"ofdm_demod_stats",       &(UE->ofdm_demod_stats),0,1},\
     {"dlsch_rx_pdcch_stats",       &(UE->dlsch_rx_pdcch_stats),0,1},\
     {"rx_dft_stats",       &(UE->rx_dft_stats),0,1},\
@@ -139,14 +139,14 @@
     {"dlsch_modulation_SIC_stats",       &(UE->dlsch_modulation_SIC_stats),0,1},\
     {"dlsch...ping_unit_SIC_stats",       &(UE->dlsch_llr_stripping_unit_SIC_stats),0,1},\
     {"dlsch_unscrambling_SIC_stats",       &(UE->dlsch_unscrambling_SIC_stats),0,1},\
-    {"ue_front_end_stat",       &(UE->ue_front_end_stat[0]),0,RX_NB_TH},\
-    {"ue_front_end_per_slot_stat",      &(UE->ue_front_end_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
-    {"pdcch_procedures_stat",       &(UE->pdcch_procedures_stat[0]),0,RX_NB_TH},\
+    {"ue_front_end_stat",       &(UE->ue_front_end_stat),0,1},\
+    {"ue_front_end_per_slot_stat",      &(UE->ue_front_end_per_slot_stat[0]),0,LTE_SLOTS_PER_SUBFRAME},\
+    {"pdcch_procedures_stat",       &(UE->pdcch_procedures_stat),0,1},\
     {"rx_pdsch_stats",              &(UE->rx_pdsch_stats), 0, 1}, \
-    {"pdsch_procedures_stat",       &(UE->pdsch_procedures_stat[0]),0,RX_NB_TH},\
-    {"pdsch_procedures_per_slot_stat",  &(UE->pdsch_procedures_per_slot_stat[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
-    {"dlsch_procedures_stat",       &(UE->dlsch_procedures_stat[0]),0,RX_NB_TH},\
-    {"dlsch_decoding_stats",       &(UE->dlsch_decoding_stats[0]),0,RX_NB_TH},\
-    {"dlsch_llr_stats_para", &(UE->dlsch_llr_stats_parallelization[0][0]),0,RX_NB_TH,LTE_SLOTS_PER_SUBFRAME},\
+    {"pdsch_procedures_stat",       &(UE->pdsch_procedures_stat),0,1},\
+    {"pdsch_procedures_per_slot_stat",  &(UE->pdsch_procedures_per_slot_stat[0]),0,LTE_SLOTS_PER_SUBFRAME},\
+    {"dlsch_procedures_stat",       &(UE->dlsch_procedures_stat),0,1},\
+    {"dlsch_decoding_stats",       &(UE->dlsch_decoding_stats),0,1},\
+    {"dlsch_llr_stats_para", &(UE->dlsch_llr_stats_parallelization[0]),0,LTE_SLOTS_PER_SUBFRAME},\
 }
 #endif

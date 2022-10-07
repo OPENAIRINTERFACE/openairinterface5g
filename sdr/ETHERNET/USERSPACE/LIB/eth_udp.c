@@ -50,6 +50,7 @@
 
 #include "common_lib.h"
 #include "ethernet_lib.h"
+#include "openair1/PHY/sse_intrin.h"
 #include "common/utils/threadPool/thread-pool.h"
 
 //#define DEBUG 1
@@ -317,15 +318,9 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   if (TS_advance < (nsamps/2)) LOG_W(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
   void *buff2;
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
   int nsamps2 = 256>>3;
   __m256i buff_tx[nsamps2+1];
   buff2=(void*)&buff_tx[1] - APP_HEADER_SIZE_BYTES;
-#else
-  int nsamps2 = 256>>2;
-  __m128i buff_tx[nsamps2+2];
-  buff2=(void*)&buff_tx[2] - APP_HEADER_SIZE_BYTES;
-#endif
 #elif defined(__arm__) || defined(__aarch64__)
   int nsamps2 = 256>>2;
   int16x8_t buff_tx[nsamps2+2];
@@ -362,7 +357,6 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
       *(uint16_t *)(buff2 + 4) = aid;
       // bring TX data into 12 MSBs 
 #if defined(__x86_64__) || defined(__i386__)
-#ifdef __AVX2__
       __m256i *buff256 = (__m256i *)&(((int32_t*)buff[aid])[offset]);
       for (int j=0; j<32; j+=8) {
         buff_tx[1+j] = _mm256_slli_epi16(buff256[j],4);
@@ -374,10 +368,6 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
         buff_tx[7+j] = _mm256_slli_epi16(buff256[j+6],4);
         buff_tx[8+j] = _mm256_slli_epi16(buff256[j+7],4);
       }
-#else
-      __m128i *buff128 = (__m128i *)&buff[aid][offset];
-      for (int j=0; j<64; j++) buff_tx[2+j] = _mm_slli_epi16(buff128[j],4);
-#endif
 #elif defined(__arm__)
       int16x8_t *buff128 = (__int16x8_t*)&buff[aid][offset];
       for (int j=0; j<64; j++) buff_tx[2+j] = vshlq_n_s16(((int16x8_t *)buff128)[j],4);

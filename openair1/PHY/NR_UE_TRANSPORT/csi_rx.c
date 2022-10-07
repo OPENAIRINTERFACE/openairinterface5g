@@ -192,7 +192,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          uint32_t *rsrp,
                          int *rsrp_dBm) {
 
-  int32_t **rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int32_t **rxdataF  =  ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint16_t meas_count = 0;
   uint32_t rsrp_sum = 0;
@@ -731,7 +731,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
                                const fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu,
                                uint32_t *interference_plus_noise_power) {
 
-  int32_t **rxdataF = ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+  int32_t **rxdataF = ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   const uint16_t end_rb = csiim_config_pdu->start_rb + csiim_config_pdu->nr_of_rbs > csiim_config_pdu->bwp_size ?

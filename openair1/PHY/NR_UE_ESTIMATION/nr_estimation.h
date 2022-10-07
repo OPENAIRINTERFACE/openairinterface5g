@@ -32,6 +32,17 @@
 /*!\brief Timing drift hysterisis in samples*/
 #define SYNCH_HYST 2
 
+/* A function to perform the channel estimation of DL PRS signal */
+int nr_prs_channel_estimation(uint8_t gNB_id,
+                              uint8_t rsc_id,
+                              uint8_t rep_num,
+                              PHY_VARS_NR_UE *ue,
+                              UE_nr_rxtx_proc_t *proc,
+                              NR_DL_FRAME_PARMS *frame_params);
+
+/* Generic function to find the peak of channel estimation buffer */
+void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val);
+
 /*!
 \brief This function performs channel estimation including frequency and temporal interpolation
 \param ue Pointer to UE PHY variables

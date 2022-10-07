@@ -141,7 +141,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int cc_id,
                              frame_t frame,
                              int slot,
-                             int thread_id,
                              void *phy_data);
 
 /*! \fn int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slotP);
@@ -353,11 +352,10 @@ and fills the PRACH PDU per each FD occasion.
 @param module_idP Index of UE instance
 @param frameP Frame index
 @param slotP Slot index
-@param thread_id RX/TX Thread ID
 @returns void
 */
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id);
-void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id);
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, void *phy_data);
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
 void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
 

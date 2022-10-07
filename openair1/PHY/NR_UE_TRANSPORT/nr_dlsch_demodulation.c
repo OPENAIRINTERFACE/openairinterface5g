@@ -177,22 +177,22 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   switch (type) {
   case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars[proc->thread_id];
+    pdsch_vars = ue->pdsch_vars;
     dlsch = &ue->dlsch_SI[gNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     break;
 
   case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars[proc->thread_id];
+    pdsch_vars = ue->pdsch_vars;
     dlsch = &ue->dlsch_ra[gNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
 
     break;
 
   case PDSCH:
-    pdsch_vars = ue->pdsch_vars[proc->thread_id];
-    dlsch = ue->dlsch[proc->thread_id][gNB_id];
+    pdsch_vars = ue->pdsch_vars;
+    dlsch = ue->dlsch[gNB_id];
     dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
     if (NR_MAX_NB_LAYERS>4)
       dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
@@ -306,8 +306,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
-  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
-  nr_dlsch_extract_rbs(common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF,
+  start_meas(&ue->generic_stat_bis[slot]);
+  nr_dlsch_extract_rbs(common_vars->rxdataF,
                        pdsch_vars[gNB_id]->dl_ch_estimates,
                        pdsch_vars[gNB_id]->rxdataF_ext,
                        pdsch_vars[gNB_id]->dl_ch_estimates_ext,
@@ -321,10 +321,10 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                        frame_parms,
                        dlsch0_harq->dlDmrsSymbPos,
                        ue->chest_time);
-  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  stop_meas(&ue->generic_stat_bis[slot]);
   if (cpumeas(CPUMEAS_GETSTATE))
     LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
-	  frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+	  frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[slot].p_time/(cpuf*1000.0));
 
   int nl = dlsch0_harq->Nl;
   int n_rx = frame_parms->nb_antennas_rx;
@@ -332,7 +332,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //----------------------------------------------------------
   //--------------------- Channel Scaling --------------------
   //----------------------------------------------------------
-  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  start_meas(&ue->generic_stat_bis[slot]);
   nr_dlsch_scale_channel(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
                          frame_parms,
                          nl,
@@ -342,16 +342,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                          pilots,
                          nb_re_pdsch,
                          nb_rb_pdsch);
-  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  stop_meas(&ue->generic_stat_bis[slot]);
 
   if (cpumeas(CPUMEAS_GETSTATE))
     LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",
-          frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+          frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[slot].p_time/(cpuf*1000.0));
 
   //----------------------------------------------------------
   //--------------------- Channel Level Calc. ----------------
   //----------------------------------------------------------
-  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  start_meas(&ue->generic_stat_bis[slot]);
   if (first_symbol_flag==1) {
     nr_dlsch_channel_level(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
                            frame_parms,
@@ -392,7 +392,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
           avg[0],
           avgs);
   }
-  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  stop_meas(&ue->generic_stat_bis[slot]);
 
 #if T_TRACER
   if (type == PDSCH)
@@ -403,13 +403,15 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
 
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",frame,nr_slot_rx,slot,symbol,first_symbol_flag,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY,
+          "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",
+          frame, nr_slot_rx, slot, symbol, first_symbol_flag, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
 
   //----------------------------------------------------------
   //--------------------- channel compensation ---------------
   //----------------------------------------------------------
   // Disable correlation measurement for optimizing UE
-  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  start_meas(&ue->generic_stat_bis[slot]);
   nr_dlsch_channel_compensation(pdsch_vars[gNB_id]->rxdataF_ext,
                                 pdsch_vars[gNB_id]->dl_ch_estimates_ext,
                                 pdsch_vars[gNB_id]->dl_ch_mag0,
@@ -426,11 +428,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 nb_rb_pdsch,
                                 pdsch_vars[gNB_id]->log2_maxh,
                                 measurements); // log2_maxh+I0_shift
-    stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+    stop_meas(&ue->generic_stat_bis[slot]);
     if (cpumeas(CPUMEAS_GETSTATE))
-      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
+      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n", frame, nr_slot_rx, slot, symbol, pdsch_vars[gNB_id]->log2_maxh, proc->channel_level, ue->generic_stat_bis[slot].p_time/(cpuf*1000.0));
 
-    start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+    start_meas(&ue->generic_stat_bis[slot]);
 
   if (n_rx > 1) {
     nr_dlsch_detection_mrc(pdsch_vars[gNB_id]->rxdataF_comp0,
@@ -457,16 +459,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                  symbol,
                                  nb_re_pdsch);
   }
-  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  stop_meas(&ue->generic_stat_bis[slot]);
 
   //printf("start compute LLR\n");
   rxdataF_comp_ptr = pdsch_vars[gNB_id_i]->rxdataF_comp0;
   dl_ch_mag_ptr = pdsch_vars[gNB_id_i]->dl_ch_mag0;
-  
-  if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
 
-  start_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  if (cpumeas(CPUMEAS_GETSTATE))
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+
+  start_meas(&ue->generic_stat_bis[slot]);
   /* Store the valid DL RE's */
   pdsch_vars[gNB_id]->dl_valid_re[symbol-1] = nb_re_pdsch;
 
@@ -542,17 +544,17 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              pdsch_vars[gNB_id]->layer_llr);    
   }
   
-  stop_meas(&ue->generic_stat_bis[proc->thread_id][slot]);
+  stop_meas(&ue->generic_stat_bis[slot]);
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[proc->thread_id][slot].p_time/(cpuf*1000.0));
-  
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+
   // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
   char filename[50];
   uint8_t aa = 0;
   
   snprintf(filename, 50, "rxdataF0_symb_%d_nr_slot_rx_%d.m", symbol, nr_slot_rx);
-  write_output(filename, "rxdataF0", &common_vars->common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
+  write_output(filename, "rxdataF0", &common_vars->rxdataF[0][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
 
   snprintf(filename, 50, "dl_ch_estimates0%d_symb_%d_nr_slot_rx_%d.m", aa, symbol, nr_slot_rx);
   write_output(filename, "dl_ch_estimates", &pdsch_vars[gNB_id]->dl_ch_estimates[aa][0], NR_SYMBOLS_PER_SLOT*frame_parms->ofdm_symbol_size, 1, 1);
@@ -635,21 +637,21 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
 //==============================================================================================
 
 void nr_dlsch_channel_compensation(int **rxdataF_ext,
-                                int **dl_ch_estimates_ext,
-                                int **dl_ch_mag,
-                                int **dl_ch_magb,
-                                int **dl_ch_magr,
-                                int **rxdataF_comp,
-                                int ***rho,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                uint8_t nb_aatx,
-                                unsigned char symbol,
-                                int length,
-                                uint8_t first_symbol_flag,
-                                unsigned char mod_order,
-                                unsigned short nb_rb,
-                                unsigned char output_shift,
-                                PHY_NR_MEASUREMENTS *measurements)
+                                   int **dl_ch_estimates_ext,
+                                   int **dl_ch_mag,
+                                   int **dl_ch_magb,
+                                   int **dl_ch_magr,
+                                   int **rxdataF_comp,
+                                   int ***rho,
+                                   NR_DL_FRAME_PARMS *frame_parms,
+                                   uint8_t nb_aatx,
+                                   unsigned char symbol,
+                                   int length,
+                                   uint8_t first_symbol_flag,
+                                   unsigned char mod_order,
+                                   unsigned short nb_rb,
+                                   unsigned char output_shift,
+                                   PHY_NR_MEASUREMENTS *measurements)
 {
 
 #if defined(__i386) || defined(__x86_64)
@@ -951,7 +953,7 @@ void nr_dlsch_channel_compensation(int **rxdataF_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   unsigned short rb;
   unsigned char aatx,aarx,symbol_mod;
@@ -1388,7 +1390,7 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
     }
   }
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
 #endif
 }
@@ -1443,7 +1445,7 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
@@ -1553,7 +1555,7 @@ void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
   _mm_empty();
   _m_empty();
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
   short rb;
   unsigned char aatx,aarx,nre=12,symbol_mod;
@@ -1647,7 +1649,6 @@ void nr_dlsch_extract_rbs(int **rxdataF,
           } else {
             int neg_length = frame_parms->ofdm_symbol_size - start_re;
             int pos_length = nb_rb_pdsch * NR_NB_SC_PER_RB - neg_length;
-
             memcpy(rxF_ext, &rxF[start_re], neg_length * sizeof(int32_t));
             memcpy(&rxF_ext[neg_length], rxF, pos_length * sizeof(int32_t));
           }

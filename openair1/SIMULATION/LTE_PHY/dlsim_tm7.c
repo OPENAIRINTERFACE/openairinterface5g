@@ -194,7 +194,7 @@ int main(int argc, char **argv) {
   int CCE_table[800];
   int threequarter_fs=0;
   opp_enabled=1; // to enable the time meas
-#if defined(__arm__)
+#if defined(__arm__) || defined(__aarch64__)
   FILE    *proc_fd = NULL;
   char buf[64];
   proc_fd = fopen("/sys/devices/system/cpu/cpu4/cpufreq/cpuinfo_cur_freq", "r");

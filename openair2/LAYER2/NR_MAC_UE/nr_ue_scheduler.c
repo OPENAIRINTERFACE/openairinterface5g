@@ -94,7 +94,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
                              int cc_id,
                              frame_t frame,
                              int slot,
-                             int thread_id,
                              void *phy_data){
 
   scheduled_response->dl_config  = dl_config;
@@ -104,7 +103,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
   scheduled_response->CC_id      = cc_id;
   scheduled_response->frame      = frame;
   scheduled_response->slot       = slot;
-  scheduled_response->thread_id  = thread_id;
   scheduled_response->phy_data   = phy_data;
 
 }
@@ -1126,7 +1124,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
       dcireq.dl_config_req = mac->dl_config_request;
 
-      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
+      fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL) {
         LOG_D(NR_MAC,"1# scheduled_response transmitted, %d, %d\n", rx_frame, rx_slot);
         mac->if_module->scheduled_response(&scheduled_response);
@@ -1144,7 +1142,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         fill_dci_search_candidates(mac->ra.ss, rel15, -1 , -1);
         dl_config->number_pdus = 1;
         LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
-        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->thread_id, dl_info->phy_data);
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
           mac->if_module->scheduled_response(&scheduled_response);
       }
@@ -1253,7 +1251,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
         pthread_mutex_unlock(&ul_config->mutex_ul_config); // avoid double lock
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->thread_id, NULL);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, NULL);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           LOG_D(NR_MAC,"3# scheduled_response transmitted,%d, %d\n", frame_tx, slot_tx);
           mac->if_module->scheduled_response(&scheduled_response);
@@ -2318,7 +2316,7 @@ void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac) {
 }
 
 
-void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, int thread_id) {
+void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, void *phy_data) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   int O_SR = 0;
@@ -2410,7 +2408,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, in
                           O_SR, O_ACK, O_CSI);
     LOG_D(NR_MAC, "Configuring pucch, is_common = %d\n", pucch.is_common);
     nr_scheduled_response_t scheduled_response;
-    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, NULL);
+    fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, phy_data);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
       mac->if_module->scheduled_response(&scheduled_response);
   }
@@ -2642,7 +2640,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, int thread_id) {
+void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
   uint16_t format, format0, format1, ncs;
   int is_nr_prach_slot;
@@ -2781,7 +2779,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         }
       } // if format1
 
-      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, thread_id, NULL);
+      fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, NULL);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
     } // is_nr_prach_slot
@@ -2845,7 +2843,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
     slot_s = mac->type0_PDCCH_CSS_config.n_c;
   }
   LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
-  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, 0, phy_data); // TODO fix thread_id, for now assumed 0
+  fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, phy_data);
 
   if (dl_config->number_pdus) {
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)

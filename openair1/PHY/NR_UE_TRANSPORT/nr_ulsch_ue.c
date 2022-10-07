@@ -110,7 +110,6 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                             unsigned char harq_pid,
                             uint32_t frame,
                             uint8_t slot,
-                            uint8_t thread_id,
                             int gNB_id) {
 
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
@@ -127,7 +126,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[thread_id][gNB_id];
+  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[gNB_id];
   NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
   nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
 
@@ -573,7 +572,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   }// port loop
 
   NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
-  harq_process_ulsch = UE->ulsch[thread_id][gNB_id]->harq_processes[harq_pid];
+  harq_process_ulsch = UE->ulsch[gNB_id]->harq_processes[harq_pid];
   harq_process_ulsch->status = SCH_IDLE;
 
   for (int nl = 0; nl < Nl; nl++) {

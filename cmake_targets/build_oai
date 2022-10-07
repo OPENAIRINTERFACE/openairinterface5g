@@ -55,7 +55,8 @@ BUILD_COVERITY_SCAN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-NOAVX512="False"
+AVX512="True"
+AVX2="True"
 BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
@@ -127,11 +128,9 @@ Options:
 -x | --xforms
    Will compile with software oscilloscope features
 --verbose-ci
-  Compile with verbose instructions in CI Docker env
+   Compile with verbose instructions in CI Docker env
 --verbose-compile
    Shows detailed compilation instructions in makefile
---cflags_processor
-   Manually Add CFLAGS of processor if they are not detected correctly by script. Only add these flags if you know your processor supports them. Example flags: -msse3 -msse4.1 -msse4.2 -mavx2
 --build-doxygen
    Builds doxygen based documentation.
 --build-coverity-scan
@@ -159,10 +158,10 @@ Options:
    Build eclipse project files.
 --build-lib <libraries>
    Build optional shared library, <libraries> can be one or several of $OPTIONAL_LIBRARIES or \"all\"
---usrp-recplay
-   Build for I/Q record-playback modes
 --noavx512
-   Build without AVX512 if it is present on CPU
+   Disable AVX512 intrinsics whatever processor capability is
+--noavx2
+   Disable AVX2 intrinsics if processor supports it or use SIMDE emulation
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 --ninja
@@ -349,10 +348,6 @@ function main() {
             VERBOSE_COMPILE=1
             echo_info "Will compile with verbose instructions"
             shift;;
-       --cflags_processor)
-            CMAKE_CMD="$CMAKE_CMD -DCFLAGS_PROCESSOR_USER=\"$2\""
-            echo_info "Setting CPU FLAGS from USER to: $2"
-            shift 2;;
        --build-doxygen)
 	        BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
@@ -430,8 +425,12 @@ function main() {
             fi
             shift 2;;		
         --noavx512)
-            NOAVX512="True"
-            echo_info "Disabling AVX512"
+            AVX512="False"
+            echo_info "Disabling AVX512 instructions"
+            shift 1;;
+        --noavx2)
+            AVX2="False"
+            echo_info "Disabling AVX2 instructions"
             shift 1;;
         -k | --skip-shared-libraries)
             SKIP_SHARED_LIB_FLAG="True"
@@ -614,9 +613,24 @@ function main() {
   cd  $DIR/$BUILD_DIR/build
   if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
   if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
+
+  # if --noavx512 is not specified the AVX512 equals "True" by default
+  # override AVX512 to "False" if processor does not have avx512
+  # this avoids having to specify --noavx512 systematically
+  if [ -f /proc/cpuinfo ]; then
+      if grep -q avx512 /proc/cpuinfo
+      then
+        echo_info "Processor has avx512 intrinsics"
+      else
+        echo_info "Processor does not have avx512 intrinsics"
+        echo_info "Forcing AVX512 to False"
+	AVX512="False"
+      fi
+  fi
+
   # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
   # e.g., cmake_targets/ran_build/build, hence the ../../..
-  CMAKE_CMD="$CMAKE_CMD -DNOAVX512=\"${NOAVX512[*]}\" ../../.."
+  CMAKE_CMD="$CMAKE_CMD -DAVX512=\"${AVX512[*]}\" -DAVX2=\"${AVX2[*]}\" ../../.."
   echo_info "running $CMAKE_CMD"
   eval $CMAKE_CMD
   

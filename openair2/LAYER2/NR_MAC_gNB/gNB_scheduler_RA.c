@@ -636,7 +636,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
 
     ra->RA_rnti = ra_rnti;
     ra->preamble_index = preamble_index;
-    ra->beam_id = beam_index;
+    ra->beam_id = cc->ssb_index[beam_index];
 
     LOG_I(NR_MAC,
           "[gNB %d][RAPROC] CC_id %d Frame %d Activating Msg2 generation in frame %d, slot %d using RA rnti %x SSB, new rnti %04x "
@@ -647,7 +647,7 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           ra->Msg2_frame,
           ra->Msg2_slot,
           ra->RA_rnti,
-    ra->rnti,
+          ra->rnti,
           cc->ssb_index[beam_index],
           i);
 
@@ -830,6 +830,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  scc,
                  pusch_pdu,
                  &uldci_payload,
+                 NULL,
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
                  &ra->UL_BWP);
@@ -885,7 +886,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   int StartSymbolIndex = 0;
   int NrOfSymbols = 0;
   int startSymbolAndLength = 0;
-  int temp_slot = 0;
+  int abs_slot = 0;
   ra->Msg3_tda_id = 16; // initialization to a value above limit
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp->tdaList;
@@ -894,8 +895,11 @@ void nr_get_Msg3alloc(module_id_t module_id,
   const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
   if (frame_type == TDD) {
-    int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
-    int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
+    int msg3_slot = tdd->nrofDownlinkSlots; // first uplink slot
+    if (tdd->nrofUplinkSymbols > 0 && tdd->nrofUplinkSymbols < 3)
+      msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
+    const int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+    const int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
@@ -903,19 +907,16 @@ void nr_get_Msg3alloc(module_id_t module_id,
       int start_symbol_index,nr_of_symbols;
       SLIV2SL(pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
       LOG_D(NR_MAC,"Checking Msg3 TDA %d : k2 %d, sliv %d,S %d L %d\n",i,(int)k2,(int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength,start_symbol_index,nr_of_symbols);
-      // we want to transmit in the uplink symbols of mixed slot AND assuming Msg2 was in the mixed slot
-      if ((k2 + DELTA[mu])%nb_slots_per_period == 0) {
-        temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-        ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
-
-        if (is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[ra->Msg3_slot / 64], ra->Msg3_slot) &&
-            nr_of_symbols<=scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols&&
-            start_symbol_index>=(14-scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols)) {
-          ra->Msg3_tda_id = i;
-          ra->msg3_startsymb = StartSymbolIndex;
-          ra->msg3_nrsymb = NrOfSymbols;
-          break;
-        }
+      // we want to transmit in the uplink symbols of mixed slot or the first uplink slot
+      abs_slot = (current_slot + k2 + DELTA[mu]);
+      int temp_slot = abs_slot % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
+      if ((temp_slot % nb_slots_per_period) == msg3_slot &&
+          is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot)) {
+        ra->Msg3_tda_id = i;
+        ra->msg3_startsymb = StartSymbolIndex;
+        ra->msg3_nrsymb = NrOfSymbols;
+        ra->Msg3_slot = temp_slot;
+        break;
       }
     }
     AssertFatal(ra->Msg3_tda_id < 16, "Couldn't find an appropriate TD allocation for Msg3\n");
@@ -923,16 +924,16 @@ void nr_get_Msg3alloc(module_id_t module_id,
   else {
     ra->Msg3_tda_id = 0;
     k2 = *pusch_TimeDomainAllocationList->list.array[0]->k2;
-    temp_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
-    ra->Msg3_slot = temp_slot%nr_slots_per_frame[mu];
+    abs_slot = current_slot + k2 + DELTA[mu]; // msg3 slot according to 8.3 in 38.213
+    ra->Msg3_slot = abs_slot % nr_slots_per_frame[mu];
   }
 
   AssertFatal(ra->Msg3_tda_id<16,"Unable to find Msg3 time domain allocation in list\n");
 
-  if (n_slots_frame > temp_slot)
+  if (n_slots_frame > abs_slot)
     ra->Msg3_frame = current_frame;
   else
-    ra->Msg3_frame = (current_frame + (temp_slot / n_slots_frame)) % 1024;
+    ra->Msg3_frame = (current_frame + (abs_slot / n_slots_frame)) % 1024;
 
   // beam association for FR2
   if (*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] >= 257) {
@@ -1040,10 +1041,10 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
     num_dmrs_symb += (pusch_pdu->ul_dmrs_symb_pos >> i) & 1;
-
   int TBS = 0;
   while(TBS<7) {  // TBS for msg3 is 7 bytes (except for RRCResumeRequest1 currently not implemented)
     mcsindex++;
+    AssertFatal(mcsindex<28,"Exceeding MCS limit for Msg3\n");
     int R = nr_get_code_rate_ul(mcsindex,pusch_pdu->mcs_table);
     pusch_pdu->target_code_rate = R;
     pusch_pdu->qam_mod_order = nr_get_Qm_ul(mcsindex,pusch_pdu->mcs_table);
@@ -1059,7 +1060,6 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
     pusch_pdu->mcs_index = mcsindex;
     pusch_pdu->pusch_data.tb_size = TBS;
     pusch_pdu->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS<<3,R);
-
   }
 }
 
@@ -1403,10 +1403,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_UE_DL_BWP_t *dl_bwp = &ra->DL_BWP;
 
-  if (ra->Msg4_frame == frameP && ra->Msg4_slot == slotP ) {
-
-    uint8_t time_domain_assignment = 0;
-    uint8_t mcsIndex = 0;
+  // if it is a DL slot, if the RA is in MSG4 state
+  if (is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slotP / 64], slotP) &&
+      ra->state == Msg4) {
 
     NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
     NR_SearchSpace_t *ss = ra->ra_ss;
@@ -1422,11 +1421,12 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
     if (!UE) {
-        LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
-        return;
+      LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
+      return;
     }
 
-    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
+    if(UE->enc_rval.encoded <= 0) return; // need to wait until RRCSetup is encoded
+
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
     long BWPStart = 0;
@@ -1439,26 +1439,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
       BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
-    }
-
-    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
-    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
-    // HARQ management
-    if (current_harq_pid < 0) {
-      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
-                  "UE context not initialized: no HARQ processes found\n");
-      current_harq_pid = sched_ctrl->available_dl_harq.head;
-      remove_front_nr_list(&sched_ctrl->available_dl_harq);
-    }
-    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
-    DevAssert(!harq->is_waiting);
-    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
-    harq->is_waiting = true;
-    ra->harq_pid = current_harq_pid;
-
-    // Remove UE associated to TC-RNTI
-    if(harq->round==0 && ra->msg3_dcch_dtch) {
-      mac_remove_nr_ue(nr_mac, tc_rnti);
     }
 
     // get CCEindex, needed also for PUCCH and then later for PDCCH
@@ -1490,7 +1470,33 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
 
     int alloc = nr_acknack_scheduling(module_idP, UE, frameP, slotP, r_pucch, 1);
-    AssertFatal(alloc>=0,"Couldn't find a pucch allocation for ack nack (msg4)\n");
+    if (alloc<0) {
+      LOG_D(NR_MAC,"Couldn't find a pucch allocation for ack nack (msg4) in frame %d slot %d\n",frameP,slotP);
+      return;
+    }
+
+    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
+
+    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
+    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
+    // HARQ management
+    if (current_harq_pid < 0) {
+      AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
+                  "UE context not initialized: no HARQ processes found\n");
+      current_harq_pid = sched_ctrl->available_dl_harq.head;
+      remove_front_nr_list(&sched_ctrl->available_dl_harq);
+    }
+    NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+    DevAssert(!harq->is_waiting);
+    add_tail_nr_list(&sched_ctrl->feedback_dl_harq, current_harq_pid);
+    harq->is_waiting = true;
+    ra->harq_pid = current_harq_pid;
+
+    // Remove UE associated to TC-RNTI
+    if(harq->round==0 && ra->msg3_dcch_dtch) {
+      mac_remove_nr_ue(nr_mac, tc_rnti);
+    }
+
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
     harq->feedback_slot = pucch->ul_slot;
     harq->feedback_frame = pucch->frame;
@@ -1527,15 +1533,15 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       }
     }
 
+    uint8_t time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
     NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment);
-
     NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
                                                    dl_bwp,
                                                    &msg4_tda,
                                                    1);
 
     uint8_t mcsTableIdx = dl_bwp->mcsTableIdx;
-
+    uint8_t mcsIndex = 0;
     int rbStart = 0;
     int rbSize = 0;
     uint8_t tb_scaling = 0;
@@ -1831,8 +1837,6 @@ void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_fram
       }
     } else {
       LOG_I(NR_MAC, "(UE %04x) Received Nack of RA-Msg4. Preparing retransmission!\n", ra->rnti);
-      ra->Msg4_frame = (frame + 1) % 1024;
-      ra->Msg4_slot = 1;
       ra->state = Msg4;
     }
   }

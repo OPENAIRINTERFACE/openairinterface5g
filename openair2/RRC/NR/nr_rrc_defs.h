@@ -91,6 +91,12 @@
 #define NR_RRC_RECONFIGURATION_DELAY_MS 10
 #define NR_RRC_BWP_SWITCHING_DELAY_MS   6
 
+// 3GPP TS 38.133 - Section 8 - Table 8.2.1.2.7-2: Parameters which cause interruption other than SCS
+// This table was recently added to 3GPP. It shows that changing the parameters locationAndBandwidth, nrofSRS-Ports or
+// maxMIMO-Layers-r16 causes an interruption. This parameter is not yet being used in code, but has been placed here
+// for future reference.
+#define NR_OF_SRS_PORTS_SWITCHING_DELAY_MS 30
+
 #define NR_UE_MODULE_INVALID ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!!
 #define NR_UE_INDEX_INVALID  ((module_id_t) ~0) // FIXME attention! depends on type uint8_t!!! used to be -1
 
@@ -277,7 +283,7 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToAddModList_t             *DRB_configList;
   NR_DRB_ToAddModList_t             *DRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint8_t                            DRB_active[8];
+  uint8_t                            DRB_active[NGAP_MAX_DRBS_PER_UE];
 
   NR_SRB_INFO                       SI;
   NR_SRB_INFO                       Srb0;
@@ -353,7 +359,7 @@ typedef struct gNB_RRC_UE_s {
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   nr_e_rab_param_t                   e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  pdu_session_param_t                pduSession[NR_NB_RB_MAX];//[NGAP_MAX_PDU_SESSION];
+  pdu_session_param_t                pduSession[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];

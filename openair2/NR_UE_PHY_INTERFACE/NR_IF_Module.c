@@ -762,7 +762,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
-    ul_info.ue_sched_mode = SCHED_ALL;
+    ul_info.ue_sched_mode = SCHED_PUSCH;
     if (mac->scc || mac->scc_SIB)
     {
         if (is_nr_UL_slot(mac->scc ?
@@ -772,7 +772,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED)
         {
             nr_ue_scheduler(NULL, &ul_info);
-            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx, ul_info.thread_id);
+            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx);
         }
     }
 }
@@ -1129,24 +1129,24 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  if (ul_info->ue_sched_mode == ONLY_PUSCH) {
-    ret = nr_ue_scheduler(NULL, ul_info);
-    return 0;
-  }
-  if (ul_info->ue_sched_mode == SCHED_ALL) {
-    ret = nr_ue_scheduler(NULL, ul_info);
-  }
-  else
-    LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
-        __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
-
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
 
-  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
-    nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+  switch (ul_info->ue_sched_mode) {
+    case SCHED_PUSCH:
+      ret = nr_ue_scheduler(NULL, ul_info);
+      if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
+        nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
+      LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
+            __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
+      break;
 
-  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
-    nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->thread_id);
+    case SCHED_PUCCH:
+      if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
+        nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->phy_data);
+      LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
+            __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
+      break;
+  }
 
   switch(ret){
   case UE_CONNECTION_OK:
@@ -1204,7 +1204,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->thread_id, dl_info->phy_data);
+          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));

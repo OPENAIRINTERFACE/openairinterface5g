@@ -356,8 +356,9 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 const int curr_bwp,
                 const int uid,
                 const int res_id,
-                const int do_srs) {
-
+                const long maxMIMO_Layers,
+                const int do_srs)
+{
   setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
 
   NR_SRS_Config_t *srs_Config;
@@ -419,26 +420,45 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   NR_SRS_Resource_t *srs_res0=calloc(1,sizeof(*srs_res0));
   srs_res0->srs_ResourceId = res_id;
   srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
-  //  if (uecap &&
-  //      uecap->featureSets &&
-  //      uecap->featureSets->featureSetsUplink &&
-  //      uecap->featureSets->featureSetsUplink->list.count > 0) {
-  //    NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[0];
-  //    switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
-  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
-  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
-  //        break;
-  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
-  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
-  //        break;
-  //      case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
-  //        srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
-  //        break;
-  //      default:
-  //        LOG_E(NR_RRC, "Max Number of SRS Ports Per Resource %ld is invalid!\n",
-  //              ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
-  //    }
-  //  }
+  if (do_srs) {
+    long nrofSRS_Ports = 1;
+    if (uecap &&
+        uecap->featureSets &&
+        uecap->featureSets->featureSetsUplink &&
+        uecap->featureSets->featureSetsUplink->list.count > 0) {
+      NR_FeatureSetUplink_t *ul_feature_setup = uecap->featureSets->featureSetsUplink->list.array[0];
+      switch (ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource) {
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n1:
+          nrofSRS_Ports = 1;
+          break;
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n2:
+          nrofSRS_Ports = 2;
+          break;
+        case NR_SRS_Resources__maxNumberSRS_Ports_PerResource_n4:
+          nrofSRS_Ports = 4;
+          break;
+        default:
+          LOG_E(NR_RRC, "Max Number of SRS Ports Per Resource %ld is invalid!\n",
+                ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+      }
+      nrofSRS_Ports = min(nrofSRS_Ports, maxMIMO_Layers);
+      switch (nrofSRS_Ports) {
+        case 1:
+          srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_port1;
+          break;
+        case 2:
+          srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports2;
+          break;
+        case 4:
+          srs_res0->nrofSRS_Ports = NR_SRS_Resource__nrofSRS_Ports_ports4;
+          break;
+        default:
+          LOG_E(NR_RRC, "Number of SRS Ports Per Resource %ld is invalid!\n",
+                ul_feature_setup->supportedSRS_Resources->maxNumberSRS_Ports_PerResource);
+      }
+    }
+    LOG_I(NR_RRC, "SRS configured with %d ports\n", 1<<srs_res0->nrofSRS_Ports);
+  }
   srs_res0->ptrs_PortIndex = NULL;
   srs_res0->transmissionComb.present = NR_SRS_Resource__transmissionComb_PR_n2;
   srs_res0->transmissionComb.choice.n2 = calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
@@ -584,21 +604,24 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
         pusch_timedomainresourceallocation->mappingType = NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
         pusch_timedomainresourceallocation->startSymbolAndLength = get_SLIV(14-ul_symb,ul_symb-1); // starting in fist ul symbol til the last but one
         ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation);
-
-        // UL TDA index 2 for msg3 in the mixed slot (TDD)
-        int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
-        int nb_slots_per_period = ((1<<mu) * 10)/nb_periods_per_frame;
-        struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation_msg3 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
-        pusch_timedomainresourceallocation_msg3->k2  = CALLOC(1,sizeof(long));
-        *pusch_timedomainresourceallocation_msg3->k2 = nb_slots_per_period - DELTA[mu];
-        if(*pusch_timedomainresourceallocation_msg3->k2 < min_fb_delay)
-          *pusch_timedomainresourceallocation_msg3->k2 += nb_slots_per_period;
-        AssertFatal(*pusch_timedomainresourceallocation_msg3->k2<33,"Computed k2 for msg3 %ld is larger than the range allowed by RRC (0..32)\n",
-                    *pusch_timedomainresourceallocation_msg3->k2);
-        pusch_timedomainresourceallocation_msg3->mappingType = NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
-        pusch_timedomainresourceallocation_msg3->startSymbolAndLength = get_SLIV(14-ul_symb,ul_symb-1); // starting in fist ul symbol til the last but one
-        ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation_msg3);
       }
+      // UL TDA index 2 for msg3 in the mixed slot (TDD)
+      int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
+      int nb_slots_per_period = ((1<<mu) * 10)/nb_periods_per_frame;
+      struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation_msg3 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
+      pusch_timedomainresourceallocation_msg3->k2  = CALLOC(1,sizeof(long));
+      int no_mix_slot = ul_symb < 3 ? 1 : 0; // we need at least 2 symbols for scheduling Msg3
+      *pusch_timedomainresourceallocation_msg3->k2 = nb_slots_per_period - DELTA[mu] + no_mix_slot;
+      if(*pusch_timedomainresourceallocation_msg3->k2 < min_fb_delay)
+        *pusch_timedomainresourceallocation_msg3->k2 += nb_slots_per_period;
+      AssertFatal(*pusch_timedomainresourceallocation_msg3->k2<33,"Computed k2 for msg3 %ld is larger than the range allowed by RRC (0..32)\n",
+                  *pusch_timedomainresourceallocation_msg3->k2);
+      pusch_timedomainresourceallocation_msg3->mappingType = NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
+      if(no_mix_slot)
+        pusch_timedomainresourceallocation_msg3->startSymbolAndLength = get_SLIV(0,13); // full allocation if there is no mixed slot
+      else
+        pusch_timedomainresourceallocation_msg3->startSymbolAndLength = get_SLIV(14-ul_symb,ul_symb-1); // starting in fist ul symbol til the last but one
+      ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation_msg3);
     }
   }
 }
@@ -1136,12 +1159,20 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   pusch_Config->uci_OnPUSCH=NULL;
   pusch_Config->tp_pi2BPSK=NULL;
 
+  long maxMIMO_Layers = servingcellconfigdedicated &&
+                                servingcellconfigdedicated->uplinkConfig
+                                && servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig
+                                && servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1
+                                && servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
+                            *servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
+
   ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
   config_srs(ubwp->bwp_Dedicated->srs_Config,
              NULL,
              curr_bwp,
              uid,
              bwp_loop+1,
+             maxMIMO_Layers,
              configuration->do_SRS);
 
   ubwp->bwp_Dedicated->configuredGrantConfig = NULL;

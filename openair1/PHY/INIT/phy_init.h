@@ -416,6 +416,9 @@ void fill_subframe_mask(PHY_VARS_eNB *eNB);
 void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg);
 void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg);
 
+void RCconfig_nrUE_prs(void *cfg);
+void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue);
+
 /** @} */
 #endif
 

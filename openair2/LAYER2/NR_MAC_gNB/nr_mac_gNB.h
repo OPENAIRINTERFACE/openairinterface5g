@@ -171,10 +171,6 @@ typedef struct {
   frame_t Msg3_frame;
   /// Msg3 time domain allocation index
   uint8_t Msg3_tda_id;
-  /// Subframe where Msg4 is to be sent
-  sub_frame_t Msg4_slot;
-  /// Frame where Msg4 is to be sent
-  frame_t Msg4_frame;
   /// harq_pid used for Msg4 transmission
   uint8_t harq_pid;
   /// UE RNTI allocated during RAR
@@ -634,7 +630,7 @@ typedef struct {
   NR_list_t feedback_ul_harq;
   /// UL HARQ processes that await retransmission
   NR_list_t retrans_ul_harq;
-  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl;// MAC CE related information
+  NR_UE_mac_ce_ctrl_t UE_mac_ce_ctrl; // MAC CE related information
   /// number of active DL LCs
   uint8_t dl_lc_num;
   /// order in which DLSCH scheduler should allocate LCs
@@ -642,6 +638,9 @@ typedef struct {
 
   /// Timer for RRC processing procedures
   uint32_t rrc_processing_timer;
+
+  /// sri, ul_ri and tpmi based on SRS
+  nr_srs_feedback_t srs_feedback;
 } NR_UE_sched_ctrl_t;
 
 typedef struct {
@@ -668,7 +667,7 @@ typedef struct NR_mac_stats {
   uint32_t pucch0_DTX;
   int cumul_rsrp;
   uint8_t num_rsrp_meas;
-  int8_t srs_wide_band_snr;
+  char srs_stats[50]; // Statistics may differ depending on SRS usage
 } NR_mac_stats_t;
 
 typedef struct NR_bler_options {

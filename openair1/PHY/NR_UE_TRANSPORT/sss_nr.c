@@ -332,7 +332,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
     pss_symbol = 0;
     sss_symbol = SSS_SYMBOL_NB-PSS_SYMBOL_NB;
 
-    rxdataF  =  ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF;
+    rxdataF  =  ue->common_vars.rxdataF;
 
     unsigned int ofdm_symbol_size = frame_parms->ofdm_symbol_size;
 
@@ -444,8 +444,8 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
 #ifdef DEBUG_PLOT_SSS
 
   write_output("rxsig0.m","rxs0",&ue->common_vars.rxdata[0][0],ue->frame_parms.samples_per_subframe,1,1);
-  write_output("rxdataF0_pss.m","rxF0_pss",&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][0],frame_parms->ofdm_symbol_size,1,1);
-  write_output("rxdataF0_sss.m","rxF0_sss",&ue->common_vars.common_vars_rx_data_per_thread[proc->thread_id].rxdataF[0][(SSS_SYMBOL_NB-PSS_SYMBOL_NB)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
+  write_output("rxdataF0_pss.m","rxF0_pss",&ue->common_vars.rxdataF[0][0],frame_parms->ofdm_symbol_size,1,1);
+  write_output("rxdataF0_sss.m","rxF0_sss",&ue->common_vars.rxdataF[0][(SSS_SYMBOL_NB-PSS_SYMBOL_NB)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
   write_output("pss_ext.m","pss_ext",pss_ext,LENGTH_PSS_NR,1,1);
 
 #endif

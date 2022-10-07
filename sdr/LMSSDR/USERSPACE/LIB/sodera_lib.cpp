@@ -46,13 +46,7 @@
 #include "Si5351C.h"
 #include "LMS_StreamBoard.h"
 
-#ifdef __SSE4_1__
-#  include <smmintrin.h>
-#endif
- 
-#ifdef __AVX2__
-#  include <immintrin.h>
-#endif
+#include "openair1/PHY/sse_intrin.h"
 
 using namespace std;
 

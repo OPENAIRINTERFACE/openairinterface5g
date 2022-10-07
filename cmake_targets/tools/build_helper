@@ -122,6 +122,7 @@ check_supported_distribution() {
         "rhel8.6")     return 0 ;;
         "rhel8.7")     return 0 ;;
         "centos7")     return 0 ;;
+        "centos8")     return 0 ;;
     esac
     return 1
 }
@@ -897,6 +898,7 @@ check_install_oai_software() {
   fi
 
     install_asn1c_from_source $1
+    install_simde_from_source $1
 }
 
 install_asn1c_from_source(){
@@ -921,6 +923,37 @@ install_asn1c_from_source(){
         $SUDO rm -rf /tmp/asn1c
     fi
     ) > $asn1_install_log 2>&1
+}
+
+install_simde_from_source(){
+    echo_info "\nInstalling SIMDE from source without test cases (header files only)"
+    cd /tmp
+    $SUDO rm -rf /tmp/simde
+    git clone https://github.com/simd-everywhere/simde-no-tests.git /tmp/simde
+    cd /tmp/simde
+    # brute force copy into /usr/include
+    $SUDO \cp -rv ../simde /usr/include
+    $SUDO patch /usr/include/simde/x86/avx.h << FIN
+--- /usr/include/simde/x86/avx.h.old	2022-10-03 19:17:39.828223432 +0200
++++ /usr/include/simde/x86/avx.h	2022-10-05 16:19:55.086019445 +0200
+@@ -3636,12 +3636,16 @@
+ SIMDE_FUNCTION_ATTRIBUTES
+ simde__m256i simde_mm256_insertf128_si256(simde__m256i a, simde__m128i b, int imm8)
+     SIMDE_REQUIRE_CONSTANT_RANGE(imm8, 0, 1) {
++#if defined(SIMDE_X86_AVX_NATIVE) 
++   return _mm256_insertf128_si256(a, b, imm8);
++#else
+   simde__m256i_private a_ = simde__m256i_to_private(a);
+   simde__m128i_private b_ = simde__m128i_to_private(b);
+ 
+   a_.m128i_private[imm8] = b_;
+ 
+   return simde__m256i_from_private(a_);
++#endif
+ }
+ #if defined(SIMDE_X86_AVX_ENABLE_NATIVE_ALIASES)
+   #undef _mm256_insertf128_si256
+FIN
 }
 
 #################################################

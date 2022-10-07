@@ -4060,4 +4060,42 @@ int nfapi_p7_update_checksum(uint8_t* buffer, uint32_t len);
  */
 int nfapi_p7_update_transmit_timestamp(uint8_t* buffer, uint32_t timestamp);
 
+/*! \brief Encodes a nfapi_nr_srs_normalized_channel_iq_matrix_t to a buffer
+ *
+ *  \param pMessageBuf A pointer to a nfapi_nr_srs_normalized_channel_iq_matrix_t structure
+ *  \param pPackedBuf A pointer to the buffer that the nfapi_nr_srs_normalized_channel_iq_matrix_t will be packed into
+ *  \param packedBufLen The size of the buffer
+ *  \return number of bytes written to the buffer
+ */
+int pack_nr_srs_normalized_channel_iq_matrix(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen);
+
+/*! \brief Decodes a nfapi_nr_srs_normalized_channel_iq_matrix_t from a buffer
+ *
+ *  \param pMessageBuf A pointer to an encoded nfapi_nr_srs_normalized_channel_iq_matrix_t
+ *  \param messageBufLen The size of the encoded nfapi_nr_srs_normalized_channel_iq_matrix_t
+ *  \param pUnpackedBuf A pointer to the nfapi_nr_srs_normalized_channel_iq_matrix_t
+ *  \param unpackedBufLen The size of nfapi_nr_srs_normalized_channel_iq_matrix_t structure.
+ *  \return 0 means success, -1 means failure.
+ */
+int unpack_nr_srs_normalized_channel_iq_matrix(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen);
+
+/*! \brief Encodes a nfapi_nr_srs_beamforming_report_t to a buffer
+ *
+ *  \param pMessageBuf A pointer to a nfapi_nr_srs_beamforming_report_t structure
+ *  \param pPackedBuf A pointer to the buffer that the nfapi_nr_srs_beamforming_report_t will be packed into
+ *  \param packedBufLen The size of the buffer
+ *  \return number of bytes written to the buffer
+ */
+int pack_nr_srs_beamforming_report(void *pMessageBuf, void *pPackedBuf, uint32_t packedBufLen);
+
+/*! \brief Decodes a nfapi_nr_srs_beamforming_report_t from a buffer
+ *
+ *  \param pMessageBuf A pointer to an encoded nfapi_nr_srs_beamforming_report_t
+ *  \param messageBufLen The size of the encoded nfapi_nr_srs_beamforming_report_t
+ *  \param pUnpackedBuf A pointer to the nfapi_nr_srs_beamforming_report_t
+ *  \param unpackedBufLen The size of nfapi_nr_srs_beamforming_report_t structure.
+ *  \return 0 means success, -1 means failure.
+ */
+int unpack_nr_srs_beamforming_report(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen);
+
 #endif /* _NFAPI_INTERFACE_H_ */

@@ -768,12 +768,8 @@ void tx_rf(RU_t *ru,
     }
 
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
     sf_extension = (sf_extension)&0xfffffff8;
-#else
-    sf_extension = (sf_extension)&0xfffffffc;
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     sf_extension = (sf_extension)&0xfffffffc;
 #endif
 

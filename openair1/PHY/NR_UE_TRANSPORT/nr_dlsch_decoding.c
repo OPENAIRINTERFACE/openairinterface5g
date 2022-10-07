@@ -251,6 +251,12 @@ void nr_processDLSegment(void* arg) {
   short* dlsch_llr = rdata->dlsch_llr;
   rdata->decodeIterations = dlsch->max_ldpc_iterations + 1;
   int8_t llrProcBuf[OAI_UL_LDPC_MAX_NUM_LLR] __attribute__ ((aligned(32)));
+  p_decoderParms->R = nr_get_R_ldpc_decoder(rdata->rv_index,
+                                            E,
+                                            p_decoderParms->BG,
+                                            p_decoderParms->Z,
+                                            &harq_process->llrLen,
+                                            harq_process->DLround);
 
   int16_t  z [68*384 + 16] __attribute__ ((aligned(16)));
   int8_t   l [68*384 + 16] __attribute__ ((aligned(16)));
@@ -476,25 +482,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   if ((A <=292) || ((A <= NR_MAX_PDSCH_TBS) && (Coderate <= 0.6667)) || Coderate <= 0.25) {
     p_decParams->BG = 2;
     kc = 52;
-
-    if (Coderate < 0.3333) {
-      p_decParams->R = 15;
-    } else if (Coderate <0.6667) {
-      p_decParams->R = 13;
-    } else {
-      p_decParams->R = 23;
-    }
   } else {
     p_decParams->BG = 1;
     kc = 68;
-
-    if (Coderate < 0.6667) {
-      p_decParams->R = 13;
-    } else if (Coderate <0.8889) {
-      p_decParams->R = 23;
-    } else {
-      p_decParams->R = 89;
-    }
   }
 
   if (harq_process->first_rx == 1) {

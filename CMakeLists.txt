@@ -178,7 +178,6 @@ if (CUDA_FOUND)
     # Disable warnings for CUDA
     SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
     SET(CUDA_VERBOSE_BUILD ON)
-    SET(CUDA_HOST_COMPILER "/usr/bin/g++")
 
     SET(CUDA_SEPARABLE_COMPILATION ON)
 
@@ -198,43 +197,35 @@ message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
 
 Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
-if (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
-  set(C_FLAGS_PROCESSOR "-gdwarf-2 -mfloat-abi=hard -mfpu=neon -lgcc -lrt")
-else (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
-  if(EXISTS  "/proc/cpuinfo")
-    file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
-    message("NOAVX512 is ${NOAVX512}")
-    if (CPUINFO MATCHES "avx512bw" AND "${NOAVX512}" STREQUAL "False")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512 " )
-      set(COMPILATION_AVX2 "True")
-    else()
-      if (CPUINFO MATCHES "avx2")
-        set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx2")
-        set(COMPILATION_AVX2 "True")
-      else()
-        set(COMPILATION_AVX2 "False")
-      endif()
-      if (CPUINFO MATCHES "sse4_1")
-        set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -msse4.1 -mpclmul")
-      endif()
-      if (CPUINFO MATCHES "ssse3")
-        set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mssse3")
-      endif()
-    endif()
-  else()
-    Message("/proc/cpuinfo does not exit. We will use manual CPU flags")
-  endif()
+# in case /proc/cpuinfo exists we want to inspect available Intrinsics
+# -so not to go always through SIMDE emulation
+# -so to avoid AVX512 instructions generation by gcc   
+if(EXISTS  "/proc/cpuinfo")
+   file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
+   message("AVX512 is ${AVX512}")
+   message("AVX2 is ${AVX2}")
+   if ("${AVX512}" STREQUAL "False")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mno-avx512f -march=native -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_AVX512BW_NATIVE -DSIMDE_X86_AVX512F_NATIVE -DSIMDE_X86_AVX512VL_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_F16C_NATIVE -DSIMDE_X86_FMA_NATIVE -DSIMDE_X86_GFNI_NATIVE -DSIMDE_X86_MMX_NATIVE -DSIMDE_X86_PCLMUL_NATIVE -DSIMDE_X86_SSE2_NATIVE -DSIMDE_X86_SSE3_NATIVE -DSIMDE_X86_SSE4_1_NATIVE -DSIMDE_X86_SSE4_2_NATIVE -DSIMDE_X86_SSE_NATIVE -DSIMDE_X86_SSSE3_NATIVE -DSIMDE_X86_VPCLMULQDQ_NATIVE -DSIMDE_X86_XOP_HAVE_COM_ -DSIMDE_X86_XOP_NATIVE")
+   else()
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512")   
+   endif()
+   if (CPUINFO MATCHES "avx2" AND "${AVX2}" STREQUAL "True")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_VPCLMULQDQ_NATIVE")
+   endif()
+   if (CPUINFO MATCHES "sse4_1")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_1_NATIVE")
+   endif()
+   if (CPUINFO MATCHES "sse4_2")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_2_NATIVE")
+   endif()
+   if (CPUINFO MATCHES "ssse3")
+      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSSE3_NATIVE")
+   endif()
 endif()
 
-set(C_FLAGS_PROCESSOR " ${C_FLAGS_PROCESSOR} ${CFLAGS_PROCESSOR_USER}")
+set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -fno-var-tracking-assignments -march=native")
 
 Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
-
-#if (CMAKE_SYSTEM_PROCESSOR MATCHES "x86")
-#  if ( (NOT( C_FLAGS_PROCESSOR MATCHES "ssse3")) OR (NOT( C_FLAGS_PROCESSOR MATCHES "msse4.1")) )
-#    Message(FATAL_ERROR "For x86 Architecture, you must have following flags: -mssse3 -msse4.1. The current detected flags are: ${C_FLAGS_PROCESSOR}. You can pass the flags manually in build script, for example: ./build_oai --cflags_processor \"-mssse3 -msse4.1 -mavx2\" ")
-#  endif()
-#endif()
 
 #
 # add autotools definitions that were maybe used!
@@ -244,7 +235,7 @@ add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAV
 set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu99 -funroll-loops")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} ${commonOpts} -std=gnu11 -funroll-loops")
 set(CMAKE_CXX_FLAGS
   "${CMAKE_CXX_FLAGS} ${C_FLAGS_PROCESSOR}  ${commonOpts} -std=c++11")
 
@@ -713,6 +704,32 @@ file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
 add_library(F1AP ${F1AP_C_FILES} )
 
 
+# LPP
+##############
+set(LPP_DIR ${OPENAIR3_DIR}/LPP)
+set(LPP_ASN_DIR ${LPP_DIR}/MESSAGES)
+set(LPP_ASN_FILES
+  ${LPP_ASN_DIR}/37355-g60.asn
+  )
+
+set(LPP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/LPP)
+
+set(lpp_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LPP_" "-findirect-choice -fno-include-deps" "${LPP_ASN_GENERATED_C_DIR}")
+
+compile_asn1("${LPP_ASN_FILES}" "${lpp_cmd}" lpp_flag)
+
+file(GLOB LPP_ASN_GENERATED_C_FILES ${LPP_ASN_GENERATED_C_DIR}/*.c)
+add_library(LPP_LIB
+  ${LPP_ASN_GENERATED_C_FILES}
+  )
+add_dependencies (LPP_LIB  lpp_flag)
+  
+include_directories ("${LPP_ASN_GENERATED_C_DIR}")
+include_directories ("${LPP_DIR}")
+  
+#file(GLOB LPP_C_FILES ${LPP_DIR}/*.c)
+#add_library(LPP ${LPP_C_FILES} )
+
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
@@ -854,9 +871,6 @@ endif ()
 ##########################################################
 
 include_directories ("${OPENAIR_DIR}/sdr/COMMON")
-
-Message("DEADLINE_SCHEDULER flag  is ${DEADLINE_SCHEDULER}")
-Message("CPU_Affinity flag is ${CPU_AFFINITY}")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -1610,6 +1624,7 @@ set(PHY_SRC_UE
   ${OPENAIR1_DIR}/PHY/INIT/nr_init.c
   ${OPENAIR1_DIR}/PHY/INIT/nr_parms.c
   ${OPENAIR1_DIR}/PHY/MODULATION/nr_modulation.c
+  ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_prs.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_sss.c
   ${OPENAIR1_DIR}/PHY/NR_TRANSPORT/nr_pbch.c
@@ -1711,14 +1726,8 @@ if (${SMBV})
   set(PHY_SRC "${PHY_SRC} ${OPENAIR1_DIR}/PHY/TOOLS/smbv.c")
 endif  (${SMBV})
 
-if (${COMPILATION_AVX2} STREQUAL "True")
-  #set(PHY_SRC ${PHY_SRC} ${OPENAIR1_DIR}/PHY/LTE_TRANSPORT/dlsch_llr_computation_avx2.c)
-  set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
-endif ()
-
-if (${COMPILATION_AVX2} STREQUAL "True")
-  set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
-endif ()
+set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
+set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
 add_dependencies(PHY_COMMON rrc_flag)
@@ -1906,6 +1915,7 @@ set(L2_NR_SRC
   ${NR_RRC_DIR}/rrc_gNB_reconfig.c
   ${NR_RRC_DIR}/rrc_gNB_UE_context.c
   ${NR_RRC_DIR}/rrc_gNB_NGAP.c
+  ${NR_RRC_DIR}/rrc_gNB_radio_bearers.c
   )
 
 set(L2_SRC_UE
@@ -2829,16 +2839,14 @@ add_executable(nr-uesoftmodem
 
 target_link_libraries (nr-uesoftmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB NGAP_LIB NGAP_GNB SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB
-  PHY_COMMON PHY_NR_COMMON PHY_UE PHY_NR_UE PHY_RU NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
-  NFAPI_USER_LIB MISC_NFAPI_NR_LIB S1AP_LIB S1AP_ENB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ATLAS_LIBRARIES}
-  NFAPI_USER_LIB S1AP_LIB S1AP_ENB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB}
+  NR_RRC_LIB SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
+  PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
+  NFAPI_USER_LIB MISC_NFAPI_NR_LIB
+  ${RAL_LIB} ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB}
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (nr-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
@@ -3126,7 +3134,7 @@ function(make_driver name dir)
   endforeach()
   CONFIGURE_FILE(${OPENAIR_CMAKE}/tools/Kbuild.cmake ${OPENAIR_BIN_DIR}/${name}/Kbuild)
   add_custom_command(OUTPUT ${name}.ko
-    COMMAND make -j2 -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
+    COMMAND make -C ${module_build_path} M=${OPENAIR_BIN_DIR}/${name}
     WORKING_DIRECTORY ${OPENAIR_BIN_DIR}/${name}
     COMMENT "building ${module}.ko"
     VERBATIM

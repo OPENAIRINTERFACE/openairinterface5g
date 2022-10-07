@@ -40,6 +40,7 @@
 #include "assertions.h"
 #include "common/ran_context.h"
 #include "asn1_conversions.h"
+#include "rrc_gNB_radio_bearers.h"
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/RLC/rlc.h"
@@ -765,12 +766,9 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   gNB_RRC_INST                  *rrc = RC.nrrrc[ctxt_pP->module_id];
-  NR_DRB_ToAddMod_t             *DRB_config           = NULL;
-  NR_SRB_ToAddMod_t             *SRB2_config          = NULL;
-  NR_SDAP_Config_t              *sdap_config          = NULL;
+  gNB_RRC_UE_t                  *ue_p = &ue_context_pP->ue_context;
   NR_DRB_ToAddModList_t        **DRB_configList  = NULL;
   NR_DRB_ToAddModList_t        **DRB_configList2 = NULL;
-  NR_SRB_ToAddModList_t        **SRB_configList2 = NULL;
   NR_SRB_ToAddModList_t        *SRB_configList  = ue_context_pP->ue_context.SRB_configList;
   struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
                                 *dedicatedNAS_MessageList = NULL;
@@ -781,22 +779,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
   int                            pdu_sessions_done = 0;
   int i;
   uint8_t drb_id_to_setup_start = 1;
-  uint8_t nb_drb_to_setup = 0;
-  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
+  uint8_t nb_drb_to_setup = rrc->configuration.drbs;
+  long drb_priority[NGAP_MAX_DRBS_PER_UE];
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
-  /* Configure SRB2 */
-  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[xid];
-  if (*SRB_configList2 == NULL) {
-    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
-    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
-    SRB2_config = CALLOC(1, sizeof(*SRB2_config));
-    SRB2_config->srb_Identity = 2;
-    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
-    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
-  }
+  NR_SRB_ToAddModList_t **SRB_configList2 = generateSRB2_confList(ue_p, SRB_configList, xid);
 
   DRB_configList = &ue_context_pP->ue_context.DRB_configList;
   if (*DRB_configList) {
@@ -823,97 +812,96 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
       continue;
     }
 
-    DRB_config = CALLOC(1, sizeof(*DRB_config));
-    DRB_config->drb_Identity = i+1;
-    if (drb_id_to_setup_start == 1) drb_id_to_setup_start = DRB_config->drb_Identity;
-    nb_drb_to_setup++;
-    DRB_config->cnAssociation = CALLOC(1, sizeof(*DRB_config->cnAssociation));
-    DRB_config->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
-    // sdap_Config
-    sdap_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
-    memset(sdap_config, 0, sizeof(NR_SDAP_Config_t));
-    sdap_config->pdu_Session = ue_context_pP->ue_context.pduSession[i].param.pdusession_id;
-    if (rrc->configuration.enable_sdap) {
-      sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
-      sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
-    } else {
-      sdap_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
-      sdap_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
-    }
-    sdap_config->defaultDRB = true;
-    sdap_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
-    memset(sdap_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
+    for(long drb_id_add = 1; drb_id_add <= nb_drb_to_setup; drb_id_add++){
+      uint8_t drb_id;
 
-    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
-      NR_QFI_t *qfi = calloc(1, sizeof(NR_QFI_t));
-      *qfi = ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].qfi;
-      ASN_SEQUENCE_ADD(&sdap_config->mappedQoS_FlowsToAdd->list, qfi);
-    }
-    sdap_config->mappedQoS_FlowsToRelease = NULL;
-    DRB_config->cnAssociation->choice.sdap_Config = sdap_config;
+      // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
+      for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
+        switch (ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI) {
+          case 1 ... 4:  /* GBR */
+            drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, GBR_FLOW);
+            break;
+          case 5 ... 9:  /* Non-GBR */
+            if(rrc->configuration.drbs > 1) /* Force the creation from gNB Conf file - Should be used only in noS1 mode and rfsim for testing purposes. */
+              drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, GBR_FLOW);
+            else
+              drb_id = next_available_drb(ue_p, ue_context_pP->ue_context.pduSession[i].param.pdusession_id, NONGBR_FLOW);
+            break;
 
-    // pdcp_Config
-    DRB_config->reestablishPDCP = NULL;
-    DRB_config->recoverPDCP = NULL;
-    DRB_config->pdcp_Config = calloc(1, sizeof(*DRB_config->pdcp_Config));
-    DRB_config->pdcp_Config->drb = calloc(1,sizeof(*DRB_config->pdcp_Config->drb));
-    DRB_config->pdcp_Config->drb->discardTimer = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->discardTimer));
-    *DRB_config->pdcp_Config->drb->discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
-    DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL));
-    *DRB_config->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-    DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL));
-    *DRB_config->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-    DRB_config->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-    DRB_config->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+          default:
+            LOG_E(NR_RRC,"not supported 5qi %lu\n", ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI);
+            ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_FAILED;
+            ue_context_pP->ue_context.pduSession[i].xid = xid;
+            pdu_sessions_done++;
+            continue;
+        }
 
-    DRB_config->pdcp_Config->drb->integrityProtection = NULL;
-    DRB_config->pdcp_Config->drb->statusReportRequired = NULL;
-    DRB_config->pdcp_Config->drb->outOfOrderDelivery = calloc(1,sizeof(*DRB_config->pdcp_Config->drb->outOfOrderDelivery));
-    *DRB_config->pdcp_Config->drb->outOfOrderDelivery = NR_PDCP_Config__drb__outOfOrderDelivery_true;
-    DRB_config->pdcp_Config->moreThanOneRLC = NULL;
+        switch(ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].allocation_retention_priority.priority_level) {
+          case NGAP_PRIORITY_LEVEL_HIGHEST:
+            drb_priority[drb_id-1] = 1;
+            break;
+          case NGAP_PRIORITY_LEVEL_2:
+            drb_priority[drb_id-1] = 2;
+            break;
+          case NGAP_PRIORITY_LEVEL_3:
+            drb_priority[drb_id-1] = 3;
+            break;
+          case NGAP_PRIORITY_LEVEL_4:
+            drb_priority[drb_id-1] = 4;
+            break;
+          case NGAP_PRIORITY_LEVEL_5:
+            drb_priority[drb_id-1] = 5;
+            break;
+          case NGAP_PRIORITY_LEVEL_6:
+            drb_priority[drb_id-1] = 6;
+            break;
+          case NGAP_PRIORITY_LEVEL_7:
+            drb_priority[drb_id-1] = 7;
+            break;
+          case NGAP_PRIORITY_LEVEL_8:
+            drb_priority[drb_id-1] = 8;
+            break;
+          case NGAP_PRIORITY_LEVEL_9:
+            drb_priority[drb_id-1] = 9;
+            break;
+          case NGAP_PRIORITY_LEVEL_10:
+            drb_priority[drb_id-1] = 10;
+            break;
+          case NGAP_PRIORITY_LEVEL_11:
+            drb_priority[drb_id-1] = 11;
+            break;
+          case NGAP_PRIORITY_LEVEL_12:
+            drb_priority[drb_id-1] = 12;
+            break;
+          case NGAP_PRIORITY_LEVEL_13:
+            drb_priority[drb_id-1] = 13;
+            break;
+          case NGAP_PRIORITY_LEVEL_LOWEST:
+            drb_priority[drb_id-1] = 14;
+            break;
+          case NGAP_PRIORITY_LEVEL_NO_PRIORITY:
+            drb_priority[drb_id-1] = 15;
+            break;
 
-    DRB_config->pdcp_Config->t_Reordering = calloc(1, sizeof(*DRB_config->pdcp_Config->t_Reordering));
-    *DRB_config->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms20;
-    DRB_config->pdcp_Config->ext1 = NULL;
+          default:
+            LOG_E(NR_RRC,"Not supported priority level\n");
+            break;
+        }
 
-    if (rrc->security.do_drb_integrity) {
-      DRB_config->pdcp_Config->drb->integrityProtection = calloc(1, sizeof(*DRB_config->pdcp_Config->drb->integrityProtection));
-      *DRB_config->pdcp_Config->drb->integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
-    }
-
-    if (!rrc->security.do_drb_ciphering) {
-      DRB_config->pdcp_Config->ext1 = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1));
-      DRB_config->pdcp_Config->ext1->cipheringDisabled = calloc(1, sizeof(*DRB_config->pdcp_Config->ext1->cipheringDisabled));
-      *DRB_config->pdcp_Config->ext1->cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
-    }
-
-    // Reference TS23501 Table 5.7.4-1: Standardized 5QI to QoS characteristics mapping
-    for (qos_flow_index = 0; qos_flow_index < ue_context_pP->ue_context.pduSession[i].param.nb_qos; qos_flow_index++) {
-      switch (ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI) {
-        case 1: //100ms
-        case 2: //150ms
-        case 3: //50ms
-        case 4: //300ms
-        case 5: //100ms
-        case 6: //300ms
-        case 7: //100ms
-        case 8: //300ms
-        case 9: //300ms Video (Buffered Streaming)TCP-based (e.g., www, e-mail, chat, ftp, p2p file sharing, progressive video, etc.)
-          // TODO
-          break;
-
-        default:
-          LOG_E(NR_RRC,"not supported 5qi %lu\n", ue_context_pP->ue_context.pduSession[i].param.qos[qos_flow_index].fiveQI);
-          ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_FAILED;
-          ue_context_pP->ue_context.pduSession[i].xid = xid;
-          pdu_sessions_done++;
-          free(DRB_config);
-          continue;
+        if(drb_is_active(ue_p, drb_id)){ /* Non-GBR flow using the same DRB or a GBR flow with no available DRBs*/
+          nb_drb_to_setup--;
+        } else {
+          NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p,
+                                                    drb_id,
+                                                    &ue_context_pP->ue_context.pduSession[i],
+                                                    rrc->configuration.enable_sdap,
+                                                    rrc->security.do_drb_integrity,
+                                                    rrc->security.do_drb_ciphering);
+          ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
+          ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
+        }
       }
     }
-
-    ASN_SEQUENCE_ADD(&(*DRB_configList)->list, DRB_config);
-    ASN_SEQUENCE_ADD(&(*DRB_configList2)->list, DRB_config);
 
     ue_context_pP->ue_context.pduSession[i].status = PDU_SESSION_STATUS_DONE;
     ue_context_pP->ue_context.pduSession[i].xid = xid;

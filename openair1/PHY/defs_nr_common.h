@@ -63,13 +63,19 @@
 #define NR_PSS_LENGTH 127
 #define NR_SSS_LENGTH 127
 
+#define NR_MAX_PRS_LENGTH 3264 //272*6(max allocation per RB)*2(QPSK)
+#define NR_MAX_PRS_INIT_LENGTH_DWORD 102 // ceil(NR_MAX_CSI_RS_LENGTH/32)
+#define NR_MAX_NUM_PRS_SYMB 12
+#define NR_MAX_PRS_COMB_SIZE 12
+#define NR_MAX_PRS_RESOURCES_PER_SET 64
+#define NR_MAX_PRS_MUTING_PATTERN_LENGTH 32
+
 #define NR_PBCH_DMRS_LENGTH 144 // in mod symbols
 #define NR_PBCH_DMRS_LENGTH_DWORD 10 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
 
 /*used for the resource mapping*/
 #define NR_MAX_PDCCH_DMRS_LENGTH 576 // 16(L)*2(QPSK)*3(3 DMRS symbs per REG)*6(REG per CCE)
-#define  NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
-
+#define NR_MAX_PDCCH_SIZE 8192 // It seems it is the max polar coded block size
 #define NR_MAX_DCI_PAYLOAD_SIZE 64
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
 #define NR_MAX_DCI_SIZE_DWORD 54 // ceil(NR_MAX_DCI_SIZE/32)
@@ -196,17 +202,6 @@ typedef struct NR_BWP_PARMS {
   /// PRG params
   nr_prg_parms_t prg_parms;
 } NR_BWP_PARMS;
-
-typedef struct {
-  uint8_t reg_idx;
-  uint16_t start_sc_idx;
-  uint8_t symb_idx;
-} nr_reg_t;
-
-typedef struct {
-  uint8_t cce_idx;
-  nr_reg_t reg_list[NR_NB_REG_PER_CCE];
-} nr_cce_t;
 
 typedef struct {
   /// PRACH format retrieved from prach_ConfigIndex
@@ -383,7 +378,42 @@ struct NR_DL_FRAME_PARMS {
   uint32_t ofdm_offset_divisor;
 };
 
+// PRS config structures
+typedef struct {
+    uint16_t PRSResourceSetPeriod[2];   // [slot period, slot offset] of a PRS resource set
+    uint16_t PRSResourceOffset;         // Slot offset of each PRS resource defined relative to the slot offset of the PRS resource set (0...511)
+    uint8_t  PRSResourceRepetition;     // Repetition factor for all PRS resources in resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)
+    uint8_t  PRSResourceTimeGap;        // Slot offset between two consecutive repetition indices of all PRS resources in a PRS resource set (1 /*default*/, 2, 4, 6, 8, 16, 32)
+    uint16_t NumRB;                     // Number of PRBs allocated to all PRS resources in a PRS resource set (<= 272 and multiples of 4)
+    uint8_t  NumPRSSymbols;             // Number of OFDM symbols in a slot allocated to each PRS resource in a PRS resource set
+    uint8_t  SymbolStart;               // Starting OFDM symbol of each PRS resource in a PRS resource set
+    uint16_t RBOffset;                  // Starting PRB index of all PRS resources in a PRS resource set
+    uint8_t  CombSize;                  // RE density of all PRS resources in a PRS resource set (2, 4, 6, 12)
+    uint8_t  REOffset;                  // Starting RE offset in the first OFDM symbol of each PRS resource in a PRS resource set
+    uint32_t MutingPattern1[32];        // Muting bit pattern option-1, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32
+    uint32_t MutingPattern2[32];        // Muting bit pattern option-2, specified as [] or a binary-valued vector of length 2, 4, 6, 8, 16, or 32
+    uint8_t  MutingBitRepetition;       // Muting bit repetition factor, specified as 1, 2, 4, or 8
+    uint16_t NPRSID;                    // Sequence identity of each PRS resource in a PRS resource set, specified in the range [0, 4095]
+} prs_config_t;
 
+typedef struct {
+    int8_t  gNB_id;
+    int32_t sfn;
+    int8_t  slot;
+    int8_t  rxAnt_idx;
+    int32_t dl_toa;
+    int32_t dl_aoa;
+    int32_t snr;
+    int32_t reserved;
+} prs_meas_t;
+
+// rel16 prs k_prime table as per ts138.211 sec.7.4.1.7.2
+#define K_PRIME_TABLE_ROW_SIZE 4
+#define K_PRIME_TABLE_COL_SIZE 12
+#define PRS_K_PRIME_TABLE { {0,1,0,1,0,1,0,1,0,1,0,1}, \
+                            {0,2,1,3,0,2,1,3,0,2,1,3}, \
+                            {0,3,1,4,2,5,0,3,1,4,2,5}, \
+                            {0,6,3,9,1,7,4,10,2,8,5,11} };
 
 #define KHz (1000UL)
 #define MHz (1000*KHz)

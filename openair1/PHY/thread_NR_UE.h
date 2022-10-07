@@ -4,17 +4,18 @@
 #include <sdr/COMMON/common_lib.h>
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
-  /// index of the current UE RX/TX thread
-  int                  thread_id;
   /// Component Carrier index
   uint8_t              CC_id;
   /// timestamp transmitted to HW
   openair0_timestamp timestamp_tx;
   //#ifdef UE_NR_PHY_DEMO
+  int gNB_id;
   /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_tx;
+  int rx_slot_type;
   /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
   int nr_slot_rx;
+  int tx_slot_type;
   //#endif
   /// frame to act upon for transmission
   int frame_tx;
