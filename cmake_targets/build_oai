@@ -665,7 +665,7 @@ function main() {
     compilations nas_sim_tools conf2uedata
 
     # generate USIM data
-    if [ -f $dbin/conf2uedata ]; then
+    if [ -f conf2uedata ]; then
       install_nas_tools $conf_nvram_path $DIR/$BUILD_DIR/build "$DIR/$BUILD_DIR/build/conf2uedata.txt"
     else
       echo_warning "not generated UE NAS files: binaries not found"

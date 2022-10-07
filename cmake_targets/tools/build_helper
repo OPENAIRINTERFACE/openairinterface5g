@@ -230,8 +230,10 @@ compilations() {
      cat $dlog/$2.txt
      echo_info "====== End of log for $2.txt ======"
   fi
-  if [[ $ret -ne 0 ]]; then
-     check_warnings "$dlog/$2.txt"
+  check_warnings "$dlog/$2.txt"
+  if [[ $ret -eq 0 ]]; then
+     echo_success "$2 compiled"
+  else
      check_errors "$dlog/$2.txt"
      echo_error "$2 compilation failed"
      exit 1
