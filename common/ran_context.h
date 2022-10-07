@@ -39,9 +39,6 @@
 #include "PHY/types.h"
 #include "PHY/impl_defs_top.h"
 
-//#include "ENB_APP/enb_config.h"
-#include "flexran_agent_defs.h"
-
 #include "PHY/defs_L1_NB_IoT.h"
 #include "RRC/LTE/defs_NB_IoT.h"
 #include "RRC/LTE/rrc_defs.h"
@@ -82,8 +79,6 @@ typedef struct {
   int *nb_L1_CC;
   /// Number of RU instances in this node
   int nb_RU;
-  /// FlexRAN context variables
-  flexran_agent_info_t **flexran;
   /// eNB context variables
   struct PHY_VARS_eNB_s ***eNB;
   /// gNB context variables

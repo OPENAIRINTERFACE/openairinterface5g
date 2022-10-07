@@ -138,7 +138,6 @@ extern int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 
-// will be called when 4G F1 implementation will use GTP-U instead of protobuf
 bool cu_f1u_data_req(
   protocol_ctxt_t  *ctxt_pP,
   const srb_flag_t srb_flagP,

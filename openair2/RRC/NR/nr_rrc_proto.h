@@ -32,7 +32,6 @@
  */
 
 #include "RRC/NR/nr_rrc_defs.h"
-#include "flexran_agent_extern.h"
 #include "NR_RRCReconfiguration.h"
 #include "NR_UE-NR-Capability.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"

@@ -48,16 +48,6 @@
 		<idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
 	</testCase>
 
-	<testCase id="050102">
-		<class>Initialize_FlexranCtrl</class>
-		<desc>Starting Flexran Controller</desc>
-	</testCase>
-
-	<testCase id="050202">
-		<class>Terminate_FlexranCtrl</class>
-		<desc>Stopping Flexran Controller</desc>
-	</testCase>
-
 	<testCase id="030101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize Master eNB (FDD/Band7/5MHz)</desc>
@@ -175,18 +165,6 @@
 		<iperf_args>-u -b 5M -t 30 -i 1 -R</iperf_args>
 		<iperf_packetloss_threshold>50</iperf_packetloss_threshold>
 		<iperf_profile>single-ue</iperf_profile>
-	</testCase>
-
-	<testCase id="050401">
-		<class>Perform_X2_Handover</class>
-		<desc>Doing a Flexran-Controlled X2 Handover</desc>
-		<x2_ho_options>network</x2_ho_options>
-	</testCase>
-
-	<testCase id="050402">
-		<class>Perform_X2_Handover</class>
-		<desc>Doing a Flexran-Controlled X2 Handover</desc>
-		<x2_ho_options>network</x2_ho_options>
 	</testCase>
 
 </testCaseList>

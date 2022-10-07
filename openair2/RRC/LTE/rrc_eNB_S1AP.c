@@ -56,7 +56,6 @@
 
 #include "TLVDecoder.h"
 #include "S1AP_NAS-PDU.h"
-#include "flexran_agent_common_internal.h"
 #include "executables/softmodem-common.h"
 extern RAN_CONTEXT_t RC;
 

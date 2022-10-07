@@ -188,8 +188,6 @@ class Containerize():
 
 		self.testCase_id = ''
 
-		self.flexranCtrlDeployed = False
-		self.flexranCtrlIpAddress = ''
 		self.cli = ''
 		self.cliBuildOptions = ''
 		self.dockerfileprefix = ''

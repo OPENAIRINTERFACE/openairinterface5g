@@ -43,6 +43,7 @@
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 
 #include "RRC/LTE/rrc_extern.h"
+#include "RRC/LTE/rrc_eNB_UE_context.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 #include "assertions.h"
@@ -50,11 +51,6 @@
 
 #include "intertask_interface.h"
 
-#include "ENB_APP/flexran_agent_defs.h"
-#include "flexran_agent_ran_api.h"
-#include "header.pb-c.h"
-#include "flexran.pb-c.h"
-#include "flexran_agent_mac.h"
 #include <dlfcn.h>
 #include <openair2/LAYER2/MAC/mac.h>
 #include "common/utils/lte/prach_utils.h"

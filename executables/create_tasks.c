@@ -85,7 +85,6 @@ int create_tasks(uint32_t enb_nb) {
   if (NODE_IS_DU(type)) {
     rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
-    // DU is now GTP-U instead of protobuf
     rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   }

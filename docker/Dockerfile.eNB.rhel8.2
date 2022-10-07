@@ -48,8 +48,7 @@ RUN yum update -y && \
         python3-pip \
         net-tools \
         iputils \
-        iproute \
-        libyaml && \
+        iproute && \
     pip3 install six && \
     pip3 install requests && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
@@ -97,7 +96,6 @@ COPY --from=enb-base \
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=enb-base /usr/lib64/libprotobuf-c.so.1 /usr/local/lib
 COPY --from=enb-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
 COPY --from=enb-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
 

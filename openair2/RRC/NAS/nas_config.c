@@ -46,6 +46,7 @@
 #include "common/utils/LOG/log.h"
 #include "targets/RT/USER/lte-softmodem.h"
 #include "common/config/config_userapi.h"
+#include "pdcp.h"
 
 //default values according to the examples,
 

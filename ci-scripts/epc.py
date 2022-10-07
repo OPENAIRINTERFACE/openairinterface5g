@@ -638,10 +638,6 @@ class EPCManagement():
 		# Checking for additional services
 		mySSH.command('docker-compose config', '\$', 5)
 		configResponse = mySSH.getBefore()
-		if configResponse.count('flexran_rtc') == 1:
-			mySSH.command('docker-compose up -d flexran_rtc', '\$', 60)
-			listOfContainers += ' prod-flexran-rtc'
-			expectedHealthyContainers += 1
 		if configResponse.count('trf_gen') == 1:
 			mySSH.command('docker-compose up -d trf_gen', '\$', 60)
 			listOfContainers += ' prod-trf-gen'
@@ -760,9 +756,6 @@ class EPCManagement():
 		# Checking for additional services
 		mySSH.command('docker-compose config', '\$', 5)
 		configResponse = mySSH.getBefore()
-		if configResponse.count('flexran_rtc') == 1:
-			listOfContainers += ' prod-flexran-rtc'
-			nbContainers += 1
 		if configResponse.count('trf_gen') == 1:
 			listOfContainers += ' prod-trf-gen'
 			nbContainers += 1

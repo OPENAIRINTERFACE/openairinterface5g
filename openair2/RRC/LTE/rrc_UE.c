@@ -32,6 +32,8 @@
 #define RRC_UE_C
 #define _GNU_SOURCE
 
+#include <arpa/inet.h>
+
 #include "assertions.h"
 #include "hashtable.h"
 #include "asn1_conversions.h"

@@ -37,6 +37,7 @@
 #include "T.h"
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 #include "assertions.h"
 
