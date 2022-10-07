@@ -40,6 +40,10 @@
       env: "@MNC@"
     - key: mnc_length
       env: "@MNC_LENGTH@"
+    - key: sst
+      env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
     - key: tracking_area_code
       env: "@TAC@"
     - key: enable_x2
