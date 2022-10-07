@@ -58,7 +58,7 @@ pipeline {
     disableConcurrentBuilds()
     timestamps()
     ansiColor('xterm')
-    lock(lockResources)
+    lock(extra: lockResources)
   }
 
   stages {
