@@ -143,6 +143,8 @@ function check_on_vm_build {
     else
         LOG_FILES=`ls $ARCHIVES_LOC/*.txt`
     fi
+    echo "LOG_FILES=$LOG_FILES"
+    echo "expecting NB_PATTERN_FILES=$NB_PATTERN_FILES"
     STATUS=0
     NB_FOUND_FILES=0
 
@@ -151,7 +153,7 @@ function check_on_vm_build {
         if [[ $FULLFILE == *"$LOG_PATTERN"* ]]
         then
             filename=$(basename -- "$FULLFILE")
-            if [ "$LOG_PATTERN" == ".Rel15.txt" ]
+            if [ "$LOG_PATTERN" == ".txt" ]
             then
                 PASS_PATTERN=`echo $filename | sed -e "s#$LOG_PATTERN##"`
             fi
@@ -162,8 +164,11 @@ function check_on_vm_build {
             else
                 LOCAL_STAT=`egrep -c "Built target $PASS_PATTERN" $FULLFILE`
             fi
-            if [ $LOCAL_STAT -eq 0 ]; then STATUS=-1; fi
-            NB_FOUND_FILES=$((NB_FOUND_FILES + 1))
+            if [ $LOCAL_STAT -eq 0 ]; then
+                echo "WARNING: file $filename does not contain pass pattern"
+            else
+                NB_FOUND_FILES=$((NB_FOUND_FILES + 1))
+            fi
         fi
     done
 

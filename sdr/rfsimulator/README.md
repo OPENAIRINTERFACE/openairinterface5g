@@ -30,7 +30,7 @@ Flags for Deadline scheduler: False
 ......................
 ......................
 Compiling rfsimulator
-Log file for compilation has been written to: /usr/local/oai/rfsimu_config/openairinterface5g/cmake_targets/log/rfsimulator.Rel15.txt
+Log file for compilation has been written to: /usr/local/oai/rfsimu_config/openairinterface5g/cmake_targets/log/rfsimulator.txt
 rfsimulator compiled
 ......................
 ......................
@@ -101,7 +101,7 @@ Except this, the UE and the eNB can be used as if the RF is real. noS1 mode can 
 
 If you reach 'RA not active' on UE, be careful to generate a valid SIM.
 ```bash
-$OPENAIR_DIR/targets/bin/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .
+$OPENAIR_DIR/cmake_targets/ran_build/build/conf2uedata -c $OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf -o .
 ```
 
 ## 5G case

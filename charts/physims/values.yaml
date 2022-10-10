@@ -4,14 +4,23 @@
 
 global:
   serviceAccountName: oai-physim-sa
-  namespace: "OAICICD_PROJECT"
+  namespace: "oaicicd-ran"
   image:
-    repository: image-registry.openshift-image-registry.svc:5000/OAICICD_PROJECT/oai-physim
-    version: TAG
+    registry: local
+    repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran/oai-physim
+    version: ci-physim-cleanup
+    # pullPolicy: IfNotPresent or Never or Always
+    pullPolicy: Always
 
 ## Declaring values specific to coressponding physim to overwrite
 
-dlsim:
+dlsim.basic:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+dlsim.100rb+tm2:
   replicaCount: 1
   service:
     type: ClusterIP
@@ -35,13 +44,43 @@ polartest:
     type: ClusterIP
     port: 80
 
-nr-pbchsim:
+nr-pbchsim.106rb:
   replicaCount: 1
   service:
     type: ClusterIP
     port: 80
 
-nr-dlsim:
+nr-pbchsim.217rb:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-pbchsim.273rb:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlsim.basic:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlsim.dmrs+ptrs:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlsim.mcs+mimo:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-dlsim.offset:
   replicaCount: 1
   service:
     type: ClusterIP
@@ -71,7 +110,25 @@ nr-pucchsim:
     type: ClusterIP
     port: 80
 
-nr-ulsim:
+nr-ulsim.3gpp:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-ulsim.mimo:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-ulsim.misc:
+  replicaCount: 1
+  service:
+    type: ClusterIP
+    port: 80
+
+nr-ulsim.sc-fdma:
   replicaCount: 1
   service:
     type: ClusterIP

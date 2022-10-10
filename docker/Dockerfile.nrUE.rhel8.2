@@ -59,7 +59,7 @@ RUN yum update -y && \
 
 WORKDIR /opt/oai-nr-ue/bin
 COPY --from=nr-ue-build \
-    /oai-ran/targets/bin/nr-uesoftmodem.Rel15 \
+    /oai-ran/cmake_targets/ran_build/build/nr-uesoftmodem \
     /oai-ran/docker/scripts/entrypoint.sh \
     ./
 
@@ -123,5 +123,5 @@ WORKDIR /opt/oai-nr-ue/etc
 COPY --from=nr-ue-build /oai-ran/ci-scripts/conf_files/ue.* .
 
 WORKDIR /opt/oai-nr-ue
-CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem.Rel15", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
+CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
 ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]

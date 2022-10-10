@@ -526,7 +526,7 @@ class OaiCiTest():
 				else:
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
-				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../../targets/bin/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
+				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../nas_sim_tools/build/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
 		else:
 			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
 			SSH.command('if [ -e reconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm reconfig.raw; fi', '\$', 5)

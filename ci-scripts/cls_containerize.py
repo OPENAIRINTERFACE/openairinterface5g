@@ -356,9 +356,6 @@ class Containerize():
 			if image != 'ran-build':
 				mySSH.command(f'sed -i -e "s#ran-build:latest#ran-build:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}', '\$', 5)
 			mySSH.command(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {image}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} . > cmake_targets/log/{image}.log 2>&1', '\$', 1200)
-			# Flatten Image
-			if image != 'ran-build':
-				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
@@ -711,7 +708,9 @@ class Containerize():
 		else:
 			# containers are unhealthy, so we won't start. However, logs are stored at the end
 			# in UndeployObject so we here store the logs of the unhealthy container to report it
-			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
+			logfilename = f'{lSourcePath}/cmake_targets/{self.eNB_logFile[self.eNB_instance]}'
+			mySSH.command('docker logs {containerName} > {logfilename}', '\$', 30)
+			mySSH.copyin(lIpAddr, lUserName, lPassWord, logfilename, '.')
 		mySSH.close()
 
 		if status:
@@ -875,7 +874,7 @@ class Containerize():
 			cmd = 'docker inspect -f "{{.Config.Image}}" ' + newCont
 			imageName = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			imageName = str(imageName).strip()
-			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}}\t{{.Created}}" ' + imageName
+			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}} bytes\t{{.Created}}\t{{.Id}}" ' + imageName
 			imagesInfo += subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		html_queue = SimpleQueue()

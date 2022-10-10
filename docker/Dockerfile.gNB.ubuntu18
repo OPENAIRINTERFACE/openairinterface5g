@@ -63,7 +63,7 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-gnb/bin
 COPY --from=gnb-build \
-    /oai-ran/targets/bin/nr-softmodem.Rel15 \
+    /oai-ran/cmake_targets/ran_build/build/nr-softmodem \
     /oai-ran/docker/scripts/entrypoint.sh \
     ./
 
@@ -114,4 +114,4 @@ WORKDIR /opt/oai-gnb
 #EXPOSE 50001/udp # IF5 / ECPRI (data)
 
 ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
-CMD ["/opt/oai-gnb/bin/nr-softmodem.Rel15", "-O", "/opt/oai-gnb/etc/gnb.conf"]
+CMD ["/opt/oai-gnb/bin/nr-softmodem", "-O", "/opt/oai-gnb/etc/gnb.conf"]

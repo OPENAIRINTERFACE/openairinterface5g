@@ -27,12 +27,9 @@ Validate that there are no errors
 OAI build/execute
  - export NFAPI_DIR=XXX (place where NFAPI was installed)
  - cd cmake_targets
- - ./build_oai --UE
+ - ./build_oai --UE --ninja
  (if necessary, use ./build_oai -I --UE to install required packages)
  - cd ran_build/build/
- - cp ../../../targets/bin/.ue* .
- - cp ../../../targets/bin/.usim* .
- - sudo insmod ../../../targets/bin/ue_ip.ko
 
 UE1: 
  - sudo ifconfig oip0 10.0.0.1
