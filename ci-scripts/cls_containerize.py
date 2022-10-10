@@ -60,9 +60,10 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 	sshSession.command(f'rm -rf {sourcePath}', '\$', 10)
 	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
 	sshSession.command('cd ' + sourcePath, '\$', 5)
-	sshSession.command(f'git clone --filter=blob:none -n -b develop {full_ran_repo_name} .', '\$', 60)
-	if sshSession.getBefore().count('done.') == 0:
-		logging.warning('did not find \'done.\' in git output while cloning/fetching, was not successful?')
+	# Recent version of git (>2.20?) should handle missing .git extension # without problems
+	sshSession.command(f'git clone --filter=blob:none -n -b develop {ranRepository} .', '\$', 60)
+	if sshSession.getBefore().count('error') > 0 or sshSession.getBefore().count('error') > 0:
+		sys.exit('error during clone')
 	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 	sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
 
