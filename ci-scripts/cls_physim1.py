@@ -167,6 +167,7 @@ class PhySim:
 				isRunning = True
 				podNames = re.findall('oai-[\S\d\w]+', mySSH.getBefore())
 			count +=1
+		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc describe pod $pod >> cmake_targets/log/physim_pods_summary.txt; done', '\$', 10)
 		if isRunning == False:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
