@@ -33,9 +33,8 @@ def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
 // Location of the executor node
 def nodeExecutor = params.nodeExecutor
 
-def lockResources = []
-if (params.LockResources != null && params.LockResources.trim().length() > 0)
-  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
+// VM Lockable resources
+def vmResource = params.vmLockableResource
 
 // Tags to shorten pipeline duration
 def doMandatoryTests = false
@@ -139,7 +138,7 @@ pipeline {
 
         stage ("Start VM -- gnb-usrp") {
             steps {
-              lock (extra: lockResources) {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant gnb-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
@@ -149,7 +148,7 @@ pipeline {
 
         stage ("Start VM -- nr-ue-usrp") {
             steps {
-              lock (extra: lockResources) {
+              lock (vmResource) {
                 timeout (time: 5, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant nr-ue-usrp --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
@@ -159,7 +158,7 @@ pipeline {
 
         stage ("Start VM -- enb-ethernet") {
             steps {
-              lock (extra: lockResources) {
+              lock (vmResource) {
                 timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant enb-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
@@ -169,7 +168,7 @@ pipeline {
 
         stage ("Start VM -- ue-ethernet") {
             steps {
-              lock (extra: lockResources) {
+              lock (vmResource) {
                 timeout (time: 7, unit: 'MINUTES') {
                     sh "./ci-scripts/oai-ci-vm-tool build --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --daemon"
                 }
@@ -209,7 +208,7 @@ pipeline {
                 stage ("Build UE-ethernet") {
                     steps {
                       // This is typically the last one to finish.
-                      lock (extra: lockResources) {
+                      lock (vmResource) {
                         gitlabCommitStatus(name: "Build UE-ethernet") {
                             timeout (time: 45, unit: 'MINUTES') {
                                 sh "./ci-scripts/oai-ci-vm-tool wait --workspace $WORKSPACE --variant ue-ethernet --job-name ${JOB_NAME} --build-id ${BUILD_ID} --keep-vm-alive"
@@ -270,7 +269,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
-                              lock (extra: lockResources) {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 30, unit: 'MINUTES') {
                                         try {
@@ -290,7 +289,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
-                              lock (extra: lockResources) {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 40, unit: 'MINUTES') {
                                         try {
@@ -310,7 +309,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
-                              lock (extra: lockResources) {
+                              lock (vmResource) {
                                 script {
                                     timeout (time: 40, unit: 'MINUTES') {
                                         try {
@@ -330,7 +329,7 @@ pipeline {
                                 expression {doMandatoryTests}
                             }
                             steps {
-                              lock (extra: lockResources) {
+                              lock (vmResource) {
                                 sh "./ci-scripts/oai-ci-vm-tool destroy --job-name ${JOB_NAME} --build-id ${BUILD_ID}"
                               }
                             }
