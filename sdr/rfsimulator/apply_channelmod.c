@@ -68,13 +68,11 @@ void rxAddInput( const c16_t *input_sig,
   // Energy in one sample to calibrate input noise
   // the normalized OAI value seems to be 256 as average amplitude (numerical amplification = 1)
   const double noise_per_sample = pow(10,channelDesc->noise_power_dB/10.0) * 256;
-  // Fixme: we don't fill the offset length samples at begining ?
-  // anyway, in today code, channel_offset=0
   const int dd = abs(channelDesc->channel_offset);
   const int nbTx=channelDesc->nb_tx;
 
-  for (int i=0; i<((int)nbSamples-dd); i++) {
-    c16_t *out_ptr=after_channel_sig+dd+i;
+  for (int i=0; i<nbSamples; i++) {
+    struct complex16 *out_ptr=after_channel_sig+i;
     struct complexd rx_tmp= {0};
 
     for (int txAnt=0; txAnt < nbTx; txAnt++) {
@@ -88,7 +86,9 @@ void rxAddInput( const c16_t *input_sig,
         // but it is not very usefull
         // it would be better to split out each antenna in a separate flow
         // that will allow to mix ru antennas freely
-        c16_t tx16=input_sig[((TS+i-l)*nbTx+txAnt)%CirSize];
+        // (X + cirSize) % cirSize to ensure that index is positive
+        const int idx = ((TS + i - l - dd) * nbTx + txAnt + CirSize) % CirSize;
+        const struct complex16 tx16 = input_sig[idx];
         rx_tmp.r += tx16.r * channelModel[l].r - tx16.i * channelModel[l].i;
         rx_tmp.i += tx16.i * channelModel[l].r + tx16.r * channelModel[l].i;
       } //l

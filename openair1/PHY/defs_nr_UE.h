@@ -642,6 +642,7 @@ typedef struct NR_UL_TIME_ALIGNMENT {
   char             ta_slot;
   /// TA command and TAGID received from the gNB
   uint16_t         ta_command;
+  uint32_t         ta_total;
   uint8_t          tag_id;
 } NR_UL_TIME_ALIGNMENT_t;
 

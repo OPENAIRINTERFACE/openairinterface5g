@@ -193,8 +193,8 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
   fp->first_carrier_offset = fp->ofdm_symbol_size - (N_RB_DL * 12 / 2);
   fp->nb_prefix_samples    = fp->ofdm_symbol_size / 128 * 9;
   fp->nb_prefix_samples0   = fp->ofdm_symbol_size / 128 * (9 + (1 << mu));
-  LOG_I(PHY,"Init: N_RB_DL %d, first_carrier_offset %d, nb_prefix_samples %d,nb_prefix_samples0 %d\n",
-        N_RB_DL,fp->first_carrier_offset,fp->nb_prefix_samples,fp->nb_prefix_samples0);
+  LOG_W(PHY,"Init: N_RB_DL %d, first_carrier_offset %d, nb_prefix_samples %d,nb_prefix_samples0 %d, ofdm_symbol_size %d\n",
+        N_RB_DL,fp->first_carrier_offset,fp->nb_prefix_samples,fp->nb_prefix_samples0, fp->ofdm_symbol_size);
 }
 
 uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
@@ -416,6 +416,8 @@ void nr_init_frame_parms_ue_sa(NR_DL_FRAME_PARMS *frame_parms, uint64_t downlink
   frame_parms->get_samples_per_slot = &get_samples_per_slot;
   frame_parms->get_samples_slot_timestamp = &get_samples_slot_timestamp;
   frame_parms->samples_per_frame = 10 * frame_parms->samples_per_subframe;
+
+  LOG_W(PHY, "samples_per_subframe %d/per second %d, wCP %d\n", frame_parms->samples_per_subframe, 1000*frame_parms->samples_per_subframe, frame_parms->samples_per_subframe_wCP);
 
 }
 
