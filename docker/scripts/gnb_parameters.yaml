@@ -28,6 +28,8 @@
   - filePrefix: gnb.band78.tm1.fr1.106PRB.usrpb210.conf
     outputfilename: "gnb.nsa.tdd.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -72,6 +74,8 @@
   - filePrefix: gnb.band78.sa.fr1.106PRB.usrpn310.conf
     outputfilename: "gnb.sa.tdd.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -88,6 +92,8 @@
       env: "@NSSAI_SST@"
     - key: sd
       env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -98,12 +104,16 @@
       env: "@GNB_NGU_IF_NAME@"
     - key: GNB_IPV4_ADDRESS_FOR_NGU
       env: "@GNB_NGU_IP_ADDRESS@"
+    - key: sdr_addrs
+      env: "@SDR_ADDRS@"
     - key: parallel_config
       env: "@THREAD_PARALLEL_CONFIG@"
 
   - filePrefix: gnb.sa.band78.fr1.106PRB.usrpb210.conf
     outputfilename: "gnb.sa.tdd.b2xx.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -118,6 +128,10 @@
       env: "@TAC@"
     - key: sst
       env: "@NSSAI_SST@"
+    - key: sd
+      env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -134,6 +148,8 @@
   - filePrefix: gnb.sa.band66.fr1.106PRB.usrpn300.conf
     outputfilename: "gnb.sa.fdd.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -150,6 +166,8 @@
       env: "@NSSAI_SST@"
     - key: sd
       env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -166,6 +184,8 @@
   - filePrefix: gNB_SA_CU.conf
     outputfilename: "gnb.sa.cu.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -182,6 +202,8 @@
       env: "@NSSAI_SST@"
     - key: sd
       env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -206,6 +228,8 @@
   - filePrefix: gNB_SA_DU.conf
     outputfilename: "gnb.sa.du.tdd.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -222,6 +246,8 @@
       env: "@NSSAI_SST@"
     - key: sd
       env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
@@ -248,6 +274,8 @@
   - filePrefix: proxy_gnb.band78.sa.fr1.106PRB.usrpn310.conf
     outputfilename: "gnb.sa.nfapi.vnf.conf"
     config:
+    - key: gNB_ID
+      env: "@GNB_ID@" 
     - key: Active_gNBs
       env: "@GNB_NAME@"
     - key: gNB_name
@@ -264,6 +292,8 @@
       env: "@NSSAI_SST@"
     - key: sd
       env: "@NSSAI_SD@"
+    - key: tracking_area_code
+      env: "@TAC@"
     - key: ipv4
       env: "@AMF_IP_ADDRESS@"
     - key: GNB_INTERFACE_NAME_FOR_NG_AMF
