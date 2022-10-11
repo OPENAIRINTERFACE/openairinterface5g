@@ -167,9 +167,9 @@ void initFloatingCoresTpool(int nbThreads,tpool_t *pool, bool performanceMeas, c
   if (nbThreads) {
     strcpy(threads,"-1");
     for (int i=1; i < nbThreads; i++)
-      strncat(threads,",-1", sizeof(threads-1));
+      strncat(threads,",-1", sizeof(threads)-1);
   }
-  threads[sizeof(threads-1)]=0;
+  threads[sizeof(threads)-1]=0;
   initNamedTpool(threads, pool, performanceMeas, name);
 }
 
