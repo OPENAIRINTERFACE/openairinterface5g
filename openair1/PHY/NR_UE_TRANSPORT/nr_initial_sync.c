@@ -251,52 +251,51 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     /* process pss search on received buffer */
     sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
+    if (sync_pos < fp->nb_prefix_samples)
+      continue;
 
-    if (sync_pos >= fp->nb_prefix_samples)
-      ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
-    else
-      ue->ssb_offset = sync_pos + fp->samples_per_frame - fp->nb_prefix_samples;
+    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY,"[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos,ue->common_vars.eNb_id);
     LOG_I(PHY,"sync_pos %d ssb_offset %d \n",sync_pos,ue->ssb_offset);
 #endif
 
-    // digital compensation of FFO for SSB symbols
-    if (ue->UE_fo_compensation){
-      double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
-      double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
+    /* check that SSS/PBCH block is continuous inside the received buffer */
+    if (ue->ssb_offset + NR_N_SYMBOLS_SSB * (fp->ofdm_symbol_size + fp->nb_prefix_samples) < fp->samples_per_frame) {
 
-      // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
-      // and we do not know yet in which slot it goes.
+      // digital compensation of FFO for SSB symbols
+      if (ue->UE_fo_compensation){
+        double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
+        double off_angle = -2*M_PI*s_time*(ue->common_vars.freq_offset);  // offset rotation angle compensation per sample
 
-      // start for offset correction
-      int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
+        // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
+        // and we do not know yet in which slot it goes.
 
-      // loop over samples
-      int end = sa ? n_frames*fp->samples_per_frame : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        // start for offset correction
+        int start = is*fp->samples_per_frame;
 
-      for(int n=start; n<end; n++){
-        for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-          re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-          im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-          ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
-          ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+        // loop over samples
+        int end = start + fp->samples_per_frame;
+
+        for(int n=start; n<end; n++){
+          for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
+            re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
+            im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
+            ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
+            ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+          }
         }
       }
-    }
 
-    /* check that SSS/PBCH block is continuous inside the received buffer */
-    if (is*fp->samples_per_frame + ue->ssb_offset + NR_N_SYMBOLS_SSB * (fp->ofdm_symbol_size + fp->nb_prefix_samples) < n_frames*fp->samples_per_frame) {
-
-    /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
-    /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
-    /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
-    /* symbol number are from beginning of SS/PBCH blocks as below:  */
-    /*    Signal            PSS  PBCH  SSS  PBCH                     */
-    /*    symbol number      0     1    2    3                       */
-    /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
-    /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
+      /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
+      /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
+      /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
+      /* symbol number are from beginning of SS/PBCH blocks as below:  */
+      /*    Signal            PSS  PBCH  SSS  PBCH                     */
+      /*    symbol number      0     1    2    3                       */
+      /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
+      /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
       for(int i=0; i<4;i++)
         nr_slot_fep_init_sync(ue,
@@ -322,10 +321,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         // and we do not know yet in which slot it goes.
 
         // start for offset correction
-        int start = sa ? is*fp->samples_per_frame : is*fp->samples_per_frame + ue->ssb_offset;
+        int start = is*fp->samples_per_frame;
 
         // loop over samples
-        int end = sa ? n_frames*fp->samples_per_frame-1 : start + NR_N_SYMBOLS_SSB*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
+        int end = start + fp->samples_per_frame;
 
         for(int n=start; n<end; n++){
           for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
