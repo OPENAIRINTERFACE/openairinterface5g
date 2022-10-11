@@ -636,6 +636,7 @@ int main(int argc, char **argv)
       printf("-o ldpc offload flag\n");
       printf("-p Use extended prefix mode\n");
       printf("-q MCS table\n");
+      printf("-r Number of allocated resource blocks for PUSCH\n");
       printf("-u Set the numerology\n");
       printf("-w Start PRB for PUSCH\n");
       //printf("-x Transmission mode (1,2,6 for the moment)\n");
@@ -651,7 +652,7 @@ int main(int argc, char **argv)
       printf("-M Use limited buffer rate-matching\n");
       printf("-N Nid_cell\n");
       printf("-O oversampling factor (1,2,4,8,16)\n");
-      printf("-R N_RB_DL\n");
+      printf("-R Maximum number of available resorce blocks (N_RB_DL)\n");
       printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       printf("-P Print ULSCH performances\n");
