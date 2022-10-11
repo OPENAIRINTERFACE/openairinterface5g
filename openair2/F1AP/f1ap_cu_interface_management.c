@@ -346,9 +346,9 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
       /* - gNB-CU System Information */
       if (1) {
         /* 3.1.2 gNB-CUSystem Information */
-        F1AP_ProtocolExtensionContainer_154P112_t *p_154P112=calloc(1, sizeof(* p_154P112));
-        cells_to_be_activated_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)p_154P112;
-        asn1cSequenceAdd(p_154P112->list, F1AP_Cells_to_be_Activated_List_ItemExtIEs_t, cells_to_be_activated_itemExtIEs);
+        F1AP_ProtocolExtensionContainer_10696P112_t *p = calloc(1, sizeof(* p));
+        cells_to_be_activated_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *) p;
+        asn1cSequenceAdd(p->list, F1AP_Cells_to_be_Activated_List_ItemExtIEs_t, cells_to_be_activated_itemExtIEs);
         cells_to_be_activated_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
         cells_to_be_activated_itemExtIEs->criticality            = F1AP_Criticality_reject;
         cells_to_be_activated_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;
@@ -523,10 +523,10 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
       *tmp = f1ap_gnb_cu_configuration_update->cells_to_activate[i].nrpci;  // int 0..1007
       // optional
       // 3.1.2 gNB-CUSystem Information
-      F1AP_ProtocolExtensionContainer_154P112_t *p_154P112=(F1AP_ProtocolExtensionContainer_154P112_t *) calloc(1,sizeof(*p_154P112));
-      cells_to_be_activated_list_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *)p_154P112;
+      F1AP_ProtocolExtensionContainer_10696P112_t *p = calloc(1,sizeof(*p));
+      cells_to_be_activated_list_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *) p;
       //F1AP_ProtocolExtensionContainer_154P112_t
-      asn1cSequenceAdd(p_154P112->list,F1AP_Cells_to_be_Activated_List_ItemExtIEs_t,  cells_to_be_activated_itemExtIEs);
+      asn1cSequenceAdd(p->list, F1AP_Cells_to_be_Activated_List_ItemExtIEs_t,  cells_to_be_activated_itemExtIEs);
       cells_to_be_activated_itemExtIEs->id                     = F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation;
       cells_to_be_activated_itemExtIEs->criticality            = F1AP_Criticality_reject;
       cells_to_be_activated_itemExtIEs->extensionValue.present = F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation;

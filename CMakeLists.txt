@@ -671,42 +671,29 @@ add_dependencies(X2AP_ENB X2AP_LIB rrc_flag x2_flag)
 
 # F1AP
 ##############
-set (F1AP_RELEASE R16)
-add_list1_option(F1AP_RELEASE R16 "F1AP ASN.1 grammar version" R16)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
-if (${F1AP_RELEASE} STREQUAL "R16")
-  make_version(F1AP_VERSION 16 3 1)
-  set (ASN1RELDIR R16.3.1)
-endif(${F1AP_RELEASE} STREQUAL "R16")
-add_definitions(-DF1AP_VERSION=${F1AP_VERSION})
-set(F1AP_ASN_DIR ${F1AP_DIR}/MESSAGES/ASN1/${ASN1RELDIR})
-set(F1AP_ASN_FILES
-  ${F1AP_ASN_DIR}/F1AP-CommonDataTypes.asn
-  ${F1AP_ASN_DIR}/F1AP-Constants.asn
-  ${F1AP_ASN_DIR}/F1AP-PDU-Descriptions.asn
-  ${F1AP_ASN_DIR}/F1AP-PDU-Contents.asn
-  ${F1AP_ASN_DIR}/F1AP-IEs.asn
-  ${F1AP_ASN_DIR}/F1AP-Containers.asn
-  )
-
-
-set(F1AP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/F1AP_${ASN1RELDIR})
-
-set(f1_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "F1AP_" "-findirect-choice -fno-include-deps" "${F1AP_ASN_GENERATED_C_DIR}")
-
-compile_asn1("${F1AP_ASN_FILES}" "${f1_cmd}" f1_flag)
-
-file(GLOB F1AP_ASN_GENERATED_C_FILES ${F1AP_ASN_GENERATED_C_DIR}/*.c)
-add_library(F1AP_LIB
-  ${F1AP_ASN_GENERATED_C_FILES}
-  )
-add_dependencies (F1AP_LIB  f1_flag)
-
-include_directories ("${F1AP_ASN_GENERATED_C_DIR}")
-include_directories ("${F1AP_DIR}")
-
-file(GLOB F1AP_C_FILES ${F1AP_DIR}/*.c)
-add_library(F1AP ${F1AP_C_FILES} )
+add_library(f1ap
+            ${F1AP_DIR}/f1ap_common.c
+            ${F1AP_DIR}/f1ap_cu_interface_management.c
+            ${F1AP_DIR}/f1ap_cu_paging.c
+            ${F1AP_DIR}/f1ap_cu_rrc_message_transfer.c
+            ${F1AP_DIR}/f1ap_cu_system_information.c
+            ${F1AP_DIR}/f1ap_cu_task.c
+            ${F1AP_DIR}/f1ap_cu_ue_context_management.c
+            ${F1AP_DIR}/f1ap_cu_warning_message_transmission.c
+            ${F1AP_DIR}/f1ap_decoder.c
+            ${F1AP_DIR}/f1ap_du_interface_management.c
+            ${F1AP_DIR}/f1ap_du_paging.c
+            ${F1AP_DIR}/f1ap_du_rrc_message_transfer.c
+            ${F1AP_DIR}/f1ap_du_system_information.c
+            ${F1AP_DIR}/f1ap_du_task.c
+            ${F1AP_DIR}/f1ap_du_ue_context_management.c
+            ${F1AP_DIR}/f1ap_du_warning_message_transmission.c
+            ${F1AP_DIR}/f1ap_encoder.c
+            ${F1AP_DIR}/f1ap_handlers.c
+            ${F1AP_DIR}/f1ap_itti_messaging.c)
+target_include_directories(f1ap PUBLIC F1AP_DIR)
+target_link_libraries(f1ap PUBLIC asn1_f1ap)
 
 
 # LPP
@@ -1883,6 +1870,7 @@ add_library(L2
   ${MCE_APP_SRC}
   )
 add_dependencies(L2 rrc_flag s1ap_flag x2_flag m2_flag m3_flag)
+target_link_libraries(L2 PRIVATE f1ap)
 
 add_library(MAC_NR
   ${MAC_NR_SRC}
@@ -1902,6 +1890,9 @@ add_library(L2_NR
   ${GNB_APP_SRC}
   )
 
+add_dependencies(L2_NR rrc_flag nr_rrc_flag s1ap_flag x2_flag)
+target_link_libraries(L2_NR PRIVATE f1ap)
+
 add_library(L2_LTE_NR
   ${L2_RRC_SRC}
   ${MAC_SRC}
@@ -1909,7 +1900,7 @@ add_library(L2_LTE_NR
   ${MCE_APP_SRC}
 )
 
-add_dependencies(L2_NR rrc_flag nr_rrc_flag s1ap_flag x2_flag)
+target_link_libraries(L2_LTE_NR PRIVATE f1ap)
 
 add_library(L2_UE
   ${L2_SRC_UE}
@@ -1928,6 +1919,7 @@ endif()
 add_dependencies(L2_UE rrc_flag s1ap_flag x2_flag)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
+target_link_libraries(NR_L2_UE PRIVATE f1ap)
 
 add_library( MAC_NR_COMMON ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_compute_tbs_common.c)
 
@@ -2478,7 +2470,7 @@ add_dependencies(lte-softmodem rrc_flag s1ap_flag x2_flag oai_iqplayer)
 
 target_link_libraries (lte-softmodem
   -Wl,--start-group
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U F1AP_LIB F1AP SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U f1ap SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
@@ -2518,7 +2510,7 @@ add_dependencies(ocp-enb rrc_flag s1ap_flag x2_flag oai_iqplayer coding params_l
 target_link_libraries (ocp-enb
   -Wl,--start-group
 
-  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
+  RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB f1ap M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU_COMMON
   ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
@@ -2618,7 +2610,7 @@ target_link_libraries (nr-softmodem
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
   ITTI ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
+  X2AP_LIB X2AP_ENB f1ap M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
@@ -2902,7 +2894,7 @@ if (${T_TRACER})
         syncsim nr_ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
-        ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP
+        ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB f1ap
         params_libconfig oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass coding HASHTABLE UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
