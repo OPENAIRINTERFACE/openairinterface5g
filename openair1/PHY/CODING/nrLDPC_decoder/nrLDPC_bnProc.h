@@ -30,7 +30,7 @@
 
 #ifndef __NR_LDPC_BNPROC__H__
 #define __NR_LDPC_BNPROC__H__
-#include <immintrin.h>
+#include "PHY/sse_intrin.h"
 /**
    \brief Performs first part of BN processing on the BN processing buffer and stores the results in the LLR results buffer.
           At every BN, the sum of the returned LLRs from the connected CNs and the LLR of the receiver input is computed.
@@ -81,22 +81,22 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         p_bnProcBufRes[i] = p_llrProcBuf256[i];
 
         // First 16 LLRs of first CN
-        ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf [j]);
-        ymm1 = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+        ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf [j]);
+        ymm1 = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
 
-        ymmRes0 = _mm256_adds_epi16(ymm0, ymm1);
+        ymmRes0 = simde_mm256_adds_epi16(ymm0, ymm1);
 
         // Second 16 LLRs of first CN
-        ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf [j+1]);
-        ymm1 = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+        ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf [j+1]);
+        ymm1 = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
 
-        ymmRes1 = _mm256_adds_epi16(ymm0, ymm1);
+        ymmRes1 = simde_mm256_adds_epi16(ymm0, ymm1);
 
         // Pack results back to epi8
-        ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+        ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
         // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
         // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-        *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+        *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
         // Next result
         p_llrRes++;
@@ -125,31 +125,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<2; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -179,31 +179,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<3; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -233,31 +233,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<4; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -287,31 +287,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<5; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -341,31 +341,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<6; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -395,31 +395,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<7; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -449,31 +449,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<8; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -503,31 +503,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<9; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -557,31 +557,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<10; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -611,31 +611,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<11; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -665,31 +665,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<12; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -719,31 +719,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<13; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -773,31 +773,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<14; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -827,31 +827,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<15; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -881,31 +881,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<16; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -935,31 +935,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<17; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -989,31 +989,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<18; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1043,31 +1043,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<19; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1097,31 +1097,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<20; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1151,31 +1151,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<21; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1205,31 +1205,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<22; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1259,31 +1259,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<23; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1313,31 +1313,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<24; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1367,31 +1367,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<25; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1421,31 +1421,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<26; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1475,31 +1475,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<27; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1529,31 +1529,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<28; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1583,31 +1583,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<29; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1637,31 +1637,31 @@ static inline void nrLDPC_bnProcPc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_
         for (i=0,j=0; i<M; i++,j+=2)
         {
             // First 16 LLRs of first CN
-            ymmRes0 = _mm256_cvtepi8_epi16(p_bnProcBuf[j]);
-            ymmRes1 = _mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
+            ymmRes0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j]);
+            ymmRes1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[j+1]);
 
             // Loop over CNs
             for (k=1; k<30; k++)
             {
-                ymm0 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
-                ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+                ymm0 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j]);
+                ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-                ymm1 = _mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
-                ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+                ymm1 = simde_mm256_cvtepi8_epi16(p_bnProcBuf[k*cnOffsetInGroup + j+1]);
+                ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
             }
 
             // Add LLR from receiver input
-            ymm0    = _mm256_cvtepi8_epi16(p_llrProcBuf[j]);
-            ymmRes0 = _mm256_adds_epi16(ymmRes0, ymm0);
+            ymm0    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j]);
+            ymmRes0 = simde_mm256_adds_epi16(ymmRes0, ymm0);
 
-            ymm1    = _mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
-            ymmRes1 = _mm256_adds_epi16(ymmRes1, ymm1);
+            ymm1    = simde_mm256_cvtepi8_epi16(p_llrProcBuf[j+1]);
+            ymmRes1 = simde_mm256_adds_epi16(ymmRes1, ymm1);
 
             // Pack results back to epi8
-            ymm0 = _mm256_packs_epi16(ymmRes0, ymmRes1);
+            ymm0 = simde_mm256_packs_epi16(ymmRes0, ymmRes1);
             // ymm0     = [ymmRes1[255:128] ymmRes0[255:128] ymmRes1[127:0] ymmRes0[127:0]]
             // p_llrRes = [ymmRes1[255:128] ymmRes1[127:0] ymmRes0[255:128] ymmRes0[127:0]]
-            *p_llrRes = _mm256_permute4x64_epi64(ymm0, 0xD8);
+            *p_llrRes = simde_mm256_permute4x64_epi64(ymm0, 0xD8);
 
             // Next result
             p_llrRes++;
@@ -1730,7 +1730,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1765,7 +1765,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1800,7 +1800,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1835,7 +1835,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1870,7 +1870,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1905,7 +1905,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1940,7 +1940,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -1975,7 +1975,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2010,7 +2010,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2045,7 +2045,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2080,7 +2080,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
         // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2115,7 +2115,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2150,7 +2150,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2185,7 +2185,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2220,7 +2220,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2255,7 +2255,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2290,7 +2290,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2325,7 +2325,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2360,7 +2360,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2395,7 +2395,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2430,7 +2430,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2465,7 +2465,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2500,7 +2500,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2535,7 +2535,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2570,7 +2570,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2605,7 +2605,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2640,7 +2640,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2675,7 +2675,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2710,7 +2710,7 @@ static inline void nrLDPC_bnProc(t_nrLDPC_lut* p_lut, int8_t* bnProcBuf, int8_t*
             // Loop over BNs
             for (i=0; i<M; i++)
             {
-                *p_res = _mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
+                *p_res = simde_mm256_subs_epi8(*p_llrRes, p_bnProcBuf[k*cnOffsetInGroup + i]);
 
                 p_res++;
                 p_llrRes++;
@@ -2741,7 +2741,7 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 
     for (i=0; i<M; i++)
     {
-        *p_out++ = _mm256_and_si256(*p_ones, _mm256_cmpgt_epi8(*p_zeros, *p_llrOut));
+        *p_out++ = simde_mm256_and_si256(*p_ones, simde_mm256_cmpgt_epi8(*p_zeros, *p_llrOut));
         p_llrOut++;
     }
 
@@ -2792,9 +2792,9 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
     for (i=0; i<M; i++)
     {
         // Move LSB to MSB on 8 bits
-        inPerm = _mm256_shuffle_epi8(*p_llrOut,*p_shuffle);
+        inPerm = simde_mm256_shuffle_epi8(*p_llrOut,*p_shuffle);
         // Hard decision
-        *p_bits++ = _mm256_movemask_epi8(inPerm);
+        *p_bits++ = simde_mm256_movemask_epi8(inPerm);
         p_llrOut++;
     }
 

@@ -265,7 +265,7 @@ static void do_pdcp_data_ind(
     else
       rb = ue->srb[rb_id - 1];
   } else {
-    if (rb_id < 1 || rb_id > 5)
+    if (rb_id < 1 || rb_id > MAX_DRBS_PER_UE)
       rb = NULL;
     else
       rb = ue->drb[rb_id - 1];
@@ -631,7 +631,7 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
                   size);
   }
   else{
-    for (i = 0; i < 5; i++) {
+    for (i = 0; i < MAX_DRBS_PER_UE; i++) {
         if (entity == ue->drb[i]) {
           rb_id = i+1;
           goto rb_found;
@@ -666,7 +666,7 @@ static void deliver_pdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   int i;
   mem_block_t *memblock;
 
-  for (i = 0; i < 5; i++) {
+  for (i = 0; i < MAX_DRBS_PER_UE; i++) {
     if (entity == ue->drb[i]) {
       rb_id = i+1;
       goto rb_found;
@@ -711,7 +711,7 @@ rb_found:
     
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
-    LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
+    LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
     //printf("\n");
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
@@ -999,14 +999,14 @@ static void add_drb_am(int is_gnb, int rnti, struct NR_DRB_ToAddMod *s,
 
     LOG_D(PDCP, "%s:%d:%s: added drb %d to ue rnti %x\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rnti);
 
-    new_nr_sdap_entity(has_sdap,
+    new_nr_sdap_entity(is_gnb,
+                       has_sdap,
                        rnti,
                        pdusession_id,
                        is_sdap_DefaultDRB,
                        drb_id,
                        mappedQFIs2Add,
                        mappedQFIs2AddCount);
-    LOG_D(SDAP, "Added SDAP entity to ue rnti %x with pdusession_id %d\n", rnti, pdusession_id);
   }
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
@@ -1347,7 +1347,7 @@ static bool pdcp_data_req_drb(protocol_ctxt_t  *ctxt_pP,
 
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rnti);
 
-  if (rb_id < 1 || rb_id > 5)
+  if (rb_id < 1 || rb_id > MAX_DRBS_PER_UE)
     rb = NULL;
   else
     rb = ue->drb[rb_id - 1];

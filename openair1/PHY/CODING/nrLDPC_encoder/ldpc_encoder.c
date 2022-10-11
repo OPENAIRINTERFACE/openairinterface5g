@@ -140,7 +140,7 @@ int ldpc_encoder_orig(unsigned char *test_input,unsigned char *channel_input,int
       shift=5; // AVX2 - 256-bit SIMD
       mask=31;
       strcpy(data_type,"__m256i");
-      strcpy(xor_command,"_mm256_xor_si256");
+      strcpy(xor_command,"simde_mm256_xor_si256");
     }
     else if ((Zc&15)==0) {
       shift=4; // SSE4 - 128-bit SIMD

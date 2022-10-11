@@ -1,6 +1,6 @@
 #include <stdint.h>
 #include <openair1/PHY/impl_defs_top.h>
-#include <targets/ARCH/COMMON/common_lib.h>
+#include <sdr/COMMON/common_lib.h>
 #include <executables/softmodem-common.h>
 #include <openair1/PHY/TOOLS/calibration_scope.h>
 

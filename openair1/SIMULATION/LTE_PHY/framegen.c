@@ -36,7 +36,6 @@
 
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 
 #include "LAYER2/MAC/defs.h"
 #include "PHY_INTERFACE/defs.h"

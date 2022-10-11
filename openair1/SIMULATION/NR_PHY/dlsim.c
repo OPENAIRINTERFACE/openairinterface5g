@@ -314,15 +314,6 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   AssertFatal(CCEIndex>=0, "%4d.%2d could not find CCE for DL DCI UE %d/RNTI %04x\n", frame, slot, 0, UE_info->rnti);
   sched_ctrl->cce_index = CCEIndex;
 
-  NR_pdsch_semi_static_t *ps = &sched_ctrl->pdsch_semi_static;
-
-  nr_set_pdsch_semi_static(current_BWP,
-                           scc,
-                           /* tda = */ 0,
-                           g_nrOfLayers,
-                           sched_ctrl,
-                           ps);
-
   NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
   sched_pdsch->rbStart = g_rbStart;
   sched_pdsch->rbSize = g_rbSize;
@@ -331,17 +322,26 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
+  sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
+  AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
+
+  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+
+  sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
+                                               current_BWP,
+                                               &sched_pdsch->tda_info,
+                                               sched_pdsch->nrOfLayers);
 
   sched_pdsch->Qm = nr_get_Qm_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->R = nr_get_code_rate_dl(sched_pdsch->mcs, current_BWP->mcsTableIdx);
   sched_pdsch->tb_size = nr_compute_tbs(sched_pdsch->Qm,
                                         sched_pdsch->R,
                                         sched_pdsch->rbSize,
-                                        ps->nrOfSymbols,
-                                        ps->N_PRB_DMRS * ps->N_DMRS_SLOT,
+                                        sched_pdsch->tda_info.nrOfSymbols,
+                                        sched_pdsch->dmrs_parms.N_PRB_DMRS * sched_pdsch->dmrs_parms.N_DMRS_SLOT,
                                         0 /* N_PRB_oh, 0 for initialBWP */,
                                         0 /* tb_scaling */,
-                                        ps->nrOfLayers) >> 3;
+                                        sched_pdsch->nrOfLayers) >> 3;
 
   /* the simulator assumes the HARQ PID is equal to the slot number */
   sched_pdsch->dl_harq_pid = slot;
@@ -1028,7 +1028,6 @@ int main(int argc, char **argv)
   scheduled_response.CC_id     = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
-  scheduled_response.thread_id = 0;
   scheduled_response.phy_data = &phy_pdcch_config;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
@@ -1077,14 +1076,13 @@ int main(int argc, char **argv)
       //multipath_channel(gNB2UE,s_re,s_im,r_re,r_im,frame_length_complex_samples,0);
 
       UE->rx_offset=0;
-      UE_proc.thread_id  = 0;
       UE_proc.frame_rx   = frame;
       UE_proc.nr_slot_rx = slot;
       
       dcireq.frame     = frame;
       dcireq.slot      = slot;
 
-      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[UE_proc.thread_id][0][0];
+      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[0][0];
 
       int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
@@ -1269,11 +1267,11 @@ int main(int argc, char **argv)
         //---------------------- count errors ----------------------
         //----------------------------------------------------------
 
-        if (UE->dlsch[UE_proc.thread_id][0][0]->last_iteration_cnt >=
-          UE->dlsch[UE_proc.thread_id][0][0]->max_ldpc_iterations+1)
+        if (UE->dlsch[0][0]->last_iteration_cnt >=
+          UE->dlsch[0][0]->max_ldpc_iterations+1)
           n_errors[round][snrRun]++;
 
-        NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars[UE_proc.thread_id];
+        NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars;
         int16_t *UE_llr = pdsch_vars[0]->llr[0];
 
         TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
@@ -1407,9 +1405,9 @@ int main(int argc, char **argv)
       printStatIndent(&UE->dlsch_unscrambling_stats,"DLSCH unscrambling time");
       printStatIndent(&UE->dlsch_rate_unmatching_stats,"DLSCH Rate Unmatching");
       printf("|__ DLSCH Turbo Decoding(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
-	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Cminus ?
-	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Kminus :
-	     UE->dlsch[UE_proc.thread_id][0][0]->harq_processes[0]->Kplus,
+	     UE->dlsch[0][0]->harq_processes[0]->Cminus ?
+	     UE->dlsch[0][0]->harq_processes[0]->Kminus :
+	     UE->dlsch[0][0]->harq_processes[0]->Kplus,
 	     UE->dlsch_tc_intl1_stats.trials/(double)UE->dlsch_tc_init_stats.trials,
 	     (double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials*timeBase,
 	     (int)((double)UE->dlsch_turbo_decoding_stats.diff/UE->dlsch_turbo_decoding_stats.trials),
@@ -1429,11 +1427,11 @@ int main(int argc, char **argv)
       LOG_M("rxsig0.m","rxs0", UE->common_vars.rxdata[0], frame_length_complex_samples, 1, 1);
       if (UE->frame_parms.nb_antennas_rx>1)
 	LOG_M("rxsig1.m","rxs1", UE->common_vars.rxdata[1], frame_length_complex_samples, 1, 1);
-      LOG_M("rxF0.m","rxF0", UE->common_vars.common_vars_rx_data_per_thread[UE_proc.thread_id].rxdataF[0], frame_parms->samples_per_slot_wCP, 1, 1);
-      LOG_M("rxF_ext.m","rxFe",&UE->pdsch_vars[0][0]->rxdataF_ext[0][0],g_rbSize*12*14,1,1);
-      LOG_M("chestF0.m","chF0",&UE->pdsch_vars[0][0]->dl_ch_estimates_ext[0][0],g_rbSize*12*14,1,1);
-      write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0][0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
-      LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[UE_proc.thread_id][0]->llr[0],available_bits,1,0);
+      LOG_M("rxF0.m","rxF0", UE->common_vars.rxdataF[0], frame_parms->samples_per_slot_wCP, 1, 1);
+      LOG_M("rxF_ext.m","rxFe",&UE->pdsch_vars[0]->rxdataF_ext[0][0],g_rbSize*12*14,1,1);
+      LOG_M("chestF0.m","chF0",&UE->pdsch_vars[0]->dl_ch_estimates_ext[0][0],g_rbSize*12*14,1,1);
+      write_output("rxF_comp.m","rxFc",&UE->pdsch_vars[0]->rxdataF_comp0[0][0],N_RB_DL*12*14,1,1);
+      LOG_M("rxF_llr.m","rxFllr",UE->pdsch_vars[0]->llr[0],available_bits,1,0);
       break;
     }
 

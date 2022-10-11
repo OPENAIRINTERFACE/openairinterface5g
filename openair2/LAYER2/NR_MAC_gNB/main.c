@@ -93,14 +93,14 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
 
     output += snprintf(output,
                        end - output,
-                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas), UL-SNR %d dB\n",
+                       "UE RNTI %04x (%d) PH %d dB PCMAX %d dBm, average RSRP %d (%d meas)\n",
                        UE->rnti,
                        num++,
                        sched_ctrl->ph,
                        sched_ctrl->pcmax,
                        avg_rsrp,
-                       stats->num_rsrp_meas,
-                       stats->srs_wide_band_snr);
+                       stats->num_rsrp_meas);
+
     output += snprintf(output,
                        end - output,
                        "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
@@ -109,6 +109,10 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
                        sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
                        sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
                        sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
+
+    if (stats->srs_stats[0] != '\0') {
+      output += snprintf(output, end - output, "UE %04x: %s\n", UE->rnti, stats->srs_stats);
+    }
 
     output += snprintf(output,
                        end - output,

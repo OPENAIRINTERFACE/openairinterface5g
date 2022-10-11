@@ -44,7 +44,7 @@
 #define mulhi_s1_int16(a,b) _mm_slli_epi16(_mm_mulhi_epi16(a,b),2)
 #define adds_int16(a,b) _mm_adds_epi16(a,b)
 #define mullo_int16(a,b) _mm_mullo_epi16(a,b)
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
 #define shiftright_int16(a,shift) vshrq_n_s16(a,shift)
@@ -53,7 +53,7 @@
 #define mulhi_s1_int16(a,b) vshlq_n_s16(vqdmulhq_s16(a,b),1)
 #define adds_int16(a,b) vqaddq_s16(a,b)
 #define mullo_int16(a,b) vmulq_s16(a,b)
-#define _mm_empty() 
+#define _mm_empty()
 #define _m_empty()
 #endif
 
@@ -73,6 +73,11 @@ extern "C" {
     float r;
     float i;
   } cf_t;
+
+  typedef struct complex8 {
+    int8_t r;
+    int8_t i;
+  } c8_t;
 
   typedef struct complex16 {
     int16_t r;
@@ -98,14 +103,14 @@ extern "C" {
       .i = (int16_t)((a.r * b.i + a.i * b.r) >> Shift)
     };
   }
-  
+
   __attribute__((always_inline)) inline c16_t c16divShift(const c16_t a, const c16_t b, const int Shift) {
     return (c16_t) {
       .r = (int16_t)((a.r * b.r + a.i * b.i) >> Shift),
       .i = (int16_t)((a.r * b.i - a.i * b.r) >> Shift)
     };
   }
-  
+
   __attribute__((always_inline)) inline c16_t c16maddShift(const c16_t a, const c16_t b, c16_t c, const int Shift) {
     return (c16_t) {
       .r = (int16_t)(((a.r * b.r - a.i * b.i ) >> Shift) + c.r),
@@ -136,14 +141,15 @@ extern "C" {
 
 
   // On N complex numbers
-  //   y.r += (x * alpha.r) >> 14 
-  //   y.i += (x * alpha.i) >> 14 
+  //   y.r += (x * alpha.r) >> 14
+  //   y.i += (x * alpha.i) >> 14
   // See regular C implementation at the end
-  __attribute__((always_inline)) inline void c16multaddVectRealComplex(const int16_t *x,
+  static __attribute__((always_inline)) inline void c16multaddVectRealComplex(const int16_t *x,
                                                                        const c16_t *alpha,
                                                                        c16_t *y,
                                                                        const int N) {
-#ifdef __AVX2__
+#if defined(__x86_64__) || defined(__i386__)
+    // Default implementation for x86
     const int8_t makePairs[32] __attribute__((aligned(32)))={
       0,1,0+16,1+16,
       2,3,2+16,3+16,
@@ -154,26 +160,27 @@ extern "C" {
       12,13,12+16,13+16,
       14,15,14+16,15+16};
     
-    __m256i alpha256= _mm256_set1_epi32(*(int32_t *)alpha);
+    __m256i alpha256= simde_mm256_set1_epi32(*(int32_t *)alpha);
     __m128i *x128=(__m128i *)x;
     __m128i *y128=(__m128i *)y;
     AssertFatal(N%8==0,"Not implemented\n");
     for (int i=0; i<N/8; i++) {
-      const __m256i xduplicate=_mm256_broadcastsi128_si256(*x128);
-      const __m256i x_duplicate_ordered=_mm256_shuffle_epi8(xduplicate,*(__m256i*)makePairs);
-      const __m256i x_mul_alpha_shift15 =_mm256_mulhrs_epi16(alpha256, x_duplicate_ordered);
+      const __m256i xduplicate=simde_mm256_broadcastsi128_si256(*x128);
+      const __m256i x_duplicate_ordered=simde_mm256_shuffle_epi8(xduplicate,*(__m256i*)makePairs);
+      const __m256i x_mul_alpha_shift15 =simde_mm256_mulhrs_epi16(alpha256, x_duplicate_ordered);
       // Existing multiplication normalization is weird, constant table in alpha need to be doubled
-      const __m256i x_mul_alpha_x2= _mm256_adds_epi16(x_mul_alpha_shift15,x_mul_alpha_shift15);
-      *y128= _mm_adds_epi16(_mm256_extracti128_si256(x_mul_alpha_x2,0),*y128);
+      const __m256i x_mul_alpha_x2= simde_mm256_adds_epi16(x_mul_alpha_shift15,x_mul_alpha_shift15);
+      *y128= _mm_adds_epi16(simde_mm256_extracti128_si256(x_mul_alpha_x2,0),*y128);
       y128++;
-      *y128= _mm_adds_epi16(_mm256_extracti128_si256(x_mul_alpha_x2,1),*y128);
+      *y128= _mm_adds_epi16(simde_mm256_extracti128_si256(x_mul_alpha_x2,1),*y128);
       y128++;
       x128++;
     } 
     
-#elif defined(__x86_64__) || defined(__i386__) ||  defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
+    // Default implementation for ARM
     uint32_t i;
-    
+
     // do 8 multiplications at a time
     simd_q15_t alpha_r_128,alpha_i_128,yr,yi,*x_128=(simd_q15_t*)x,*y_128=(simd_q15_t*)y;
     int j;
@@ -188,23 +195,16 @@ extern "C" {
 
       yr     = mulhi_s1_int16(alpha_r_128,x_128[i]);
       yi     = mulhi_s1_int16(alpha_i_128,x_128[i]);
-#if defined(__x86_64__) || defined(__i386__)
-      y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpacklo_epi16(yr,yi));
-      j++;
-      y_128[j]   = _mm_adds_epi16(y_128[j],_mm_unpackhi_epi16(yr,yi));
-      j++;
-#elif defined(__arm__)
       int16x8x2_t yint;
       yint = vzipq_s16(yr,yi);
       y_128[j]   = adds_int16(y_128[j],yint.val[0]);
       j++;
       y_128[j]   = adds_int16(y_128[j],yint.val[1]);
- 
-      j++;
-#endif
-    }
 
+      j++;
+    }
 #else
+    // Almost dead code (BMC)
     for (int i=0; i<N; i++) {
       int tmpr=y[i].r+((x[i]*alpha->r)>>14);
       if (tmpr>INT16_MAX)
@@ -219,7 +219,6 @@ extern "C" {
       y[i].r=(int16_t)tmpr;
       y[i].i=(int16_t)tmpi;
     }
-
 #endif
   }
 //cmult_sv.h
@@ -260,7 +259,7 @@ __attribute__((always_inline)) inline void multadd_real_four_symbols_vector_comp
   _mm_storeu_si128((simd_q15_t*)y, y_128);
 
 }
-  
+
 /*!\fn void multadd_complex_vector_real_scalar(int16_t *x,int16_t alpha,int16_t *y,uint8_t zero_flag,uint32_t N)
 This function performs componentwise multiplication and accumulation of a real scalar and a complex vector.
 @param x Vector input (Q1.15) in the format |Re0 Im0|Re1 Im 1| ...
@@ -431,6 +430,7 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(128) \
   SZ_DEF(256) \
   SZ_DEF(512) \
+  SZ_DEF(768) \
   SZ_DEF(1024) \
   SZ_DEF(1536) \
   SZ_DEF(2048) \
@@ -440,10 +440,13 @@ This function performs optimized fixed-point radix-2 FFT/IFFT.
   SZ_DEF(8192) \
   SZ_DEF(9216) \
   SZ_DEF(12288) \
+  SZ_DEF(16384) \
   SZ_DEF(18432) \
   SZ_DEF(24576) \
+  SZ_DEF(32768) \
   SZ_DEF(36864) \
   SZ_DEF(49152) \
+  SZ_DEF(65536) \
   SZ_DEF(73728) \
   SZ_DEF(98304)
 
@@ -502,6 +505,8 @@ dft_size_idx_t get_dft(int ofdm_symbol_size)
       return DFT_256;
     case 512:
       return DFT_512;
+    case 768:
+      return DFT_768;
     case 1024:
       return DFT_1024;
     case 1536:
@@ -586,6 +591,8 @@ idft_size_idx_t get_idft(int ofdm_symbol_size)
       return IDFT_256;
     case 512:
       return IDFT_512;
+    case 768:
+      return IDFT_768;
     case 1024:
       return IDFT_1024;
     case 1536:

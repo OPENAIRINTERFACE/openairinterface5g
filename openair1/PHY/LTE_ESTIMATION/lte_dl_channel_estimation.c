@@ -701,7 +701,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
       }
   }
 
-  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id),
+  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(0),
     T_INT(ue->proc.proc_rxtx[ue->current_thread_id[Ns>>1]].frame_rx%1024), T_INT(ue->proc.proc_rxtx[ue->current_thread_id[Ns>>1]].subframe_rx),
     T_INT(0), T_BUFFER(&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
   return(0);

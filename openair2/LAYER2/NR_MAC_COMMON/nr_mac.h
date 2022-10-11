@@ -540,5 +540,29 @@ typedef struct nr_csi_report {
   int N2;
 } nr_csi_report_t;
 
+typedef enum {
+  NR_SRS_SRI_0 = 0,
+  NR_SRS_SRI_1,
+  NR_SRS_SRI_2,
+  NR_SRS_SRI_3,
+  NR_SRS_SRI_0_1,
+  NR_SRS_SRI_0_2,
+  NR_SRS_SRI_0_3,
+  NR_SRS_SRI_1_2,
+  NR_SRS_SRI_1_3,
+  NR_SRS_SRI_2_3,
+  NR_SRS_SRI_0_1_2,
+  NR_SRS_SRI_0_1_3,
+  NR_SRS_SRI_0_2_3,
+  NR_SRS_SRI_1_2_3,
+  NR_SRS_SRI_0_1_2_3
+} nr_srs_sri_t;
+
+typedef struct nr_srs_feedback {
+  uint8_t sri;
+  uint8_t ul_ri;
+  uint8_t tpmi;
+} nr_srs_feedback_t;
+
 #endif /*__LAYER2_MAC_H__ */
 

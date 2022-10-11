@@ -58,8 +58,8 @@
 #include "SCHED/sched_common.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "targets/ARCH/COMMON/common_lib.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "sdr/COMMON/common_lib.h"
+#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 
 /* these variables have to be defined before including ENB_APP/enb_paramdef.h */
 static int DEFBANDS[] = {7};
@@ -768,12 +768,8 @@ void tx_rf(RU_t *ru,
     }
 
 #if defined(__x86_64) || defined(__i386__)
-#ifdef __AVX2__
     sf_extension = (sf_extension)&0xfffffff8;
-#else
-    sf_extension = (sf_extension)&0xfffffffc;
-#endif
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     sf_extension = (sf_extension)&0xfffffffc;
 #endif
 

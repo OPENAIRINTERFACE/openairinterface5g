@@ -298,7 +298,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               proc,
                               i,
                               0,
-                              is*fp->samples_per_frame+ue->ssb_offset);
+                              is*fp->samples_per_frame+ue->ssb_offset,
+                              false);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -339,6 +340,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       }
 
       if (ret == 0) {
+
         // sync at symbol ue->symbol_offset
         // computing the offset wrt the beginning of the frame
         int mu = fp->numerology_index;
@@ -529,36 +531,33 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   if (sa==1 && ret==0) {
     bool dec = false;
     int gnb_id = 0; //FIXME
-    int coreset_nb_rb=0;
-    int coreset_start_rb=0;
 
     // Hold the channel estimates in frequency domain.
     int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
     __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
-
     for(int n_ss = 0; n_ss<phy_pdcch_config.nb_search_space; n_ss++) {
+      proc->nr_slot_rx = phy_pdcch_config.slot; // setting PDCCH slot to proc
       uint8_t nb_symb_pdcch = phy_pdcch_config.pdcch_config[n_ss].coreset.duration;
       int start_symb = phy_pdcch_config.pdcch_config[n_ss].coreset.StartSymbolIndex;
-      get_coreset_rballoc(phy_pdcch_config.pdcch_config[n_ss].coreset.frequency_domain_resource,&coreset_nb_rb,&coreset_start_rb);
       for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
                               phy_pdcch_config.slot,
-                              is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset);
+                              is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                              true);
 
-        if (coreset_nb_rb > 0)
-          nr_pdcch_channel_estimation(ue,
-                                      proc,
-                                      0,
-                                      phy_pdcch_config.slot,
-                                      l,
-                                      fp->Nid_cell,
-                                      fp->first_carrier_offset+(phy_pdcch_config.pdcch_config[n_ss].BWPStart + coreset_start_rb)*12,
-                                      coreset_nb_rb,
-                                      pdcch_est_size,
-                                      pdcch_dl_ch_estimates);
+        nr_pdcch_channel_estimation(ue,
+                                    proc,
+                                    0,
+                                    phy_pdcch_config.slot,
+                                    l,
+                                    &phy_pdcch_config.pdcch_config[n_ss].coreset,
+                                    fp->first_carrier_offset,
+                                    phy_pdcch_config.pdcch_config[n_ss].BWPStart,
+                                    pdcch_est_size,
+                                    pdcch_dl_ch_estimates);
 
       }
       int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_pdcch_config, n_ss);
@@ -575,7 +574,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                   proc,
                                   m,
                                   phy_pdcch_config.slot,  // same slot and offset as pdcch
-                                  is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset);
+                                  is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                                  true);
           }
 
           int ret = nr_ue_pdsch_procedures(ue,

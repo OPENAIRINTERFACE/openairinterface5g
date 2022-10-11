@@ -34,7 +34,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
   uint32_t *kHz7_5ptr;
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxptr128,*rxptr128_7_5kHz,*kHz7_5ptr128,kHz7_5_2,mmtmp_re,mmtmp_im,mmtmp_re2,mmtmp_im2;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxptr128,*kHz7_5ptr128,*rxptr128_7_5kHz;
   int32x4_t mmtmp_re,mmtmp_im;
   int32x4_t mmtmp0,mmtmp1;
@@ -88,7 +88,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
     rxptr128        = (__m128i *)&rxdata[aa][slot_offset];
     rxptr128_7_5kHz = (__m128i *)&rxdata_7_5kHz[aa][slot_offset2];
     kHz7_5ptr128    = (__m128i *)kHz7_5ptr;
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
     rxptr128        = (int16x8_t *)&rxdata[aa][slot_offset];
     rxptr128_7_5kHz = (int16x8_t *)&rxdata_7_5kHz[aa][slot_offset2];
     kHz7_5ptr128    = (int16x8_t *)kHz7_5ptr;
@@ -116,7 +116,7 @@ void remove_7_5_kHz(RU_t *ru,uint8_t slot)
       rxptr128_7_5kHz++;
       kHz7_5ptr128++;
 
-#elif defined(__arm__)
+#elif defined(__arm__) || defined(__aarch64__)
 
       kHz7_5ptr128[0] = vmulq_s16(kHz7_5ptr128[0],((int16x8_t*)conjugate75_2)[0]);
       mmtmp0 = vmull_s16(((int16x4_t*)rxptr128)[0],((int16x4_t*)kHz7_5ptr128)[0]);

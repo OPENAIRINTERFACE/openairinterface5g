@@ -81,7 +81,7 @@ pipeline {
                             message += "Not performing CI due to lack of labels"
                             addGitLabMRComment comment: message
                             error('Not performing CI due to lack of labels')
-                        } else if (LABEL_CHECK == 'FULL') {
+                        } else if (LABEL_CHECK == 'FULL' || LABEL_CHECK == 'SHORTEN-4G') {
                             doMandatoryTests = true
                             doFullTestsuite = true
                         } else if (LABEL_CHECK == 'SHORTEN-5G') {

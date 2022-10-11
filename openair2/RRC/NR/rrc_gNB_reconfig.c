@@ -424,7 +424,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   pusch_Config->pusch_PowerControl->pathlossReferenceRSToAddModList = NULL;
   pusch_Config->pusch_PowerControl->pathlossReferenceRSToReleaseList = NULL;
   pusch_Config->pusch_PowerControl->twoPUSCH_PC_AdjustmentStates = NULL;
-  pusch_Config->pusch_PowerControl->deltaMCS = NULL;
+  pusch_Config->pusch_PowerControl->deltaMCS = calloc(1, sizeof(*pusch_Config->pusch_PowerControl->deltaMCS));
+  *pusch_Config->pusch_PowerControl->deltaMCS = NR_PUSCH_PowerControl__deltaMCS_enabled;
   pusch_Config->pusch_PowerControl->sri_PUSCH_MappingToAddModList = NULL;
   pusch_Config->pusch_PowerControl->sri_PUSCH_MappingToReleaseList = NULL;
   pusch_Config->frequencyHopping=NULL;
@@ -478,9 +479,15 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
     LOG_I(RRC,"TRANSFORM PRECODING ENABLED......\n");
   }
 
+  long maxMIMO_Layers = servingcellconfigdedicated->uplinkConfig &&
+                                servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig &&
+                                servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1 &&
+                                servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
+                            *servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
+
   int curr_bwp = NRRIV2BW(servingcellconfigcommon->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, configuration->do_SRS);
+  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, configuration->do_SRS);
 
   // Downlink BWPs
   int n_dl_bwp = 1;

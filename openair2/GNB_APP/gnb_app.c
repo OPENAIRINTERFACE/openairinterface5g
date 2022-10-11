@@ -88,7 +88,7 @@ static uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, 
 
   for (gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
     {
-      if(NGAP_CONF_MODE){
+      if(get_softmodem_params()->sa){
         ngap_register_gnb_req_t *ngap_register_gNB; //Type Temporarily reuse
           
         // note:  there is an implicit relationship between the data structure and the message name
@@ -155,6 +155,7 @@ void *gNB_app_task(void *args_p)
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
   RCconfig_NR_L1();
+  RCconfig_nr_prs();
 
   if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
 
@@ -187,7 +188,7 @@ void *gNB_app_task(void *args_p)
 
   /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
      * can originate from the DU. Add check on whether x2ap is enabled to account for ENDC NSA scenario.*/
-  if ((AMF_MODE_ENABLED || is_x2ap_enabled()) && !NODE_IS_DU(RC.nrrrc[0]->node_type) ) { //&& !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if ((get_softmodem_params()->sa || is_x2ap_enabled()) && !NODE_IS_DU(RC.nrrrc[0]->node_type) ) { //&& !NODE_IS_CU(RC.nrrrc[0]->node_type)) {
     /* Try to register each gNB */
     //registered_gnb = 0;
     __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);

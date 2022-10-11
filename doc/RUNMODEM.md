@@ -23,7 +23,7 @@ It is planned to enhance this simulator with the following functionalities:
 - Support for multiple UE connections,each UE being a `lte-uesoftmodem` or `nr_uesoftmodem` instance.
 - Support for multiple eNodeB's or gNodeB's for hand-over tests
 
-   This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../targets/ARCH/rfsimulator/README.md ) contains the detailed documentation.
+   This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../sdr/rfsimulator/README.md ) contains the detailed documentation.
 
 # L2 nFAPI Simulator
 
@@ -102,7 +102,7 @@ Some other useful paramters of the UE are
 
 Instead of randomly generated payload, in the phy-test mode we can also inject/receive user-plane traffic over a TUN interface. This is the so-called noS1 mode. 
 
-This setup is described in the [rfsimulator page](../targets/ARCH/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
+This setup is described in the [rfsimulator page](../sdr/rfsimulator/README.md#5g-case). In theory this should also work with the real hardware target although this has yet to be tested.
 
 ## do-ra setup with OAI
 
@@ -180,6 +180,17 @@ With the RF simulator (on the same machine):
 where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `--ssb` sets the SSB start subcarrier.
 
 Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap.xml`
+
+### Run OAI with SDAP & Custom DRBs
+
+To run OAI gNB with SDAP, simply include `--gNBs.[0].enable_sdap 1` to the binary's arguments.
+
+The DRB creation is dependent on the 5QI. 
+If the 5QI corresponds to a GBR Flow it assigns a dedicated data radio bearer.
+The Non-GBR flows use a shared data radio bearer.
+
+To hardcode the DRBs for testing purposes, simply add `--gNBs.[0].drbs x` to the binary's arguements, where `x` is the number of DRBs, along with SDAP.
+The hardcoded DRBs will be treated like GBR Flows. Due to code limitations at this point the max. number of DRBs is 4. 
 
 ## IF setup with OAI
 

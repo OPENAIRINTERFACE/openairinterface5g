@@ -85,31 +85,22 @@ nrUE_params_t *get_nrUE_params(void) {
 int main(int argc, char **argv)
 {
   char c;
-  int i; //,j,l,aa;
+  int i;
   double SNR, SNR_lin, snr0 = -2.0, snr1 = 2.0;
   double snr_step = 0.1;
   uint8_t snr1set = 0;
   int **txdata;
   double **s_re, **s_im, **r_re, **r_im;
-  //  int sync_pos, sync_pos_slot;
-  //  FILE *rx_frame_file;
   FILE *output_fd = NULL;
   //uint8_t write_output_file = 0;
-  //  int subframe_offset;
-  //  char fname[40], vname[40];
   int trial, n_trials = 1, n_errors = 0, n_false_positive = 0;
   uint8_t n_tx = 1, n_rx = 1;
-  //uint8_t transmission_mode = 1;
   uint16_t Nid_cell = 0;
   channel_desc_t *gNB2UE;
   uint8_t extended_prefix_flag = 0;
-  //int8_t interf1 = -21, interf2 = -21;
   FILE *input_fd = NULL, *pbch_file_fd = NULL;
-  //char input_val_str[50],input_val_str2[50];
-  //uint16_t NB_RB=25;
   SCM_t channel_model = AWGN;  //Rayleigh1_anticorr;
   uint16_t N_RB_DL = 106, mu = 1;
-  //unsigned char frame_type = 0;
   unsigned char pbch_phase = 0;
   int frame = 0, slot = 0;
   int frame_length_complex_samples;
@@ -120,7 +111,6 @@ int main(int argc, char **argv)
   double sigma;
   unsigned char qbits = 8;
   int ret;
-  //int run_initial_sync=0;
   int loglvl = OAILOG_WARNING;
   uint8_t dlsch_threads = 0;
   float target_error_rate = 0.01;
@@ -194,14 +184,6 @@ int main(int argc, char **argv)
 			}
 
 			break;
-
-		/*case 'i':
-			interf1 = atoi(optarg);
-			break;
-
-		case 'j':
-			interf2 = atoi(optarg);
-			break;*/
 
 		case 'n':
 			n_trials = atoi(optarg);
@@ -312,13 +294,10 @@ int main(int argc, char **argv)
 		  gNBthreads[sizeof(gNBthreads)-1]=0;
 		  break;
 
-		/*case 'x':
-			transmission_mode = atoi(optarg);
-			break;*/
 
 		default:
 		case 'h':
-			printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
+			printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -t Delayspread -s snr0 -S snr1  -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n", argv[0]);
 			printf("-h This message\n");
 			printf("-p Use extended prefix mode\n");
 			printf("-V Enable VCD dumb functions\n");
@@ -333,7 +312,7 @@ int main(int argc, char **argv)
 			printf("-z Number of RX antennas used in UE\n");
 			//printf("-i Relative strength of first intefering eNB (in dB) - cell_id mod 3 = 1\n");
 			//printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-  		    printf("-M Multiple SSB positions in burst\n");
+                        printf("-M Multiple SSB positions in burst\n");
 			printf("-N Nid_cell\n");
 			printf("-R N_RB_DL\n");
 			printf("-O oversampling factor (1,2,4,8,16)\n");
@@ -421,17 +400,15 @@ int main(int argc, char **argv)
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
         int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
-	for (int sf = 0; sf < 2; sf++) {
-		for (i = 0; i < num_codeword; i++) {
-			UE->dlsch[sf][0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
-			if (!UE->dlsch[sf][0][i]) {
-				printf("Can't get ue dlsch structures\n");
-				exit(-1);
-			}
+  for (i = 0; i < num_codeword; i++) {
+    UE->dlsch[0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
+    if (!UE->dlsch[0][i]) {
+      printf("Can't get ue dlsch structures\n");
+      exit(-1);
+    }
 
-			UE->dlsch[sf][0][i]->rnti = n_rnti;
-		}
-	}
+    UE->dlsch[0][i]->rnti = n_rnti;
+  }
 
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
         processingData_L1tx_t msgDataTx;
@@ -476,7 +453,7 @@ int main(int argc, char **argv)
 	unsigned char test_input_bit[16 * 68 * 384];
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned char estimated_output_bit[16 * 68 * 384];
-	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0][0];
+	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0];
 	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
 	harq_process->mcs = Imcs;
 	harq_process->mcs_table = mcs_table;
@@ -638,9 +615,8 @@ int main(int argc, char **argv)
   free(RC.gNB);
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int sf = 0; sf < 2; sf++)
-    for (int i = 0; i < num_cw; i++)
-      free_nr_ue_dlsch(&UE->dlsch[sf][0][i], N_RB_DL);
+  for (int i = 0; i < num_cw; i++)
+    free_nr_ue_dlsch(&UE->dlsch[0][i], N_RB_DL);
   term_nr_ue_signal(UE, 1);
   free(UE);
 

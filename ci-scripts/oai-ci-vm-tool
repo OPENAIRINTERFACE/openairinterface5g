@@ -177,7 +177,7 @@ function variant__v1__enb_usrp {
 
 function variant__v2__basic_sim {
     NB_PATTERN_FILES=11
-    BUILD_OPTIONS="--eNB --UE"
+    BUILD_OPTIONS="--eNB --UE --noavx512"
     VM_MEMORY=8192
     RUN_OPTIONS="complex"
 }
@@ -201,28 +201,28 @@ function variant__v5__gnb_usrp {
     VM_MEMORY=10240
     VM_CPU=8
     NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--gNB -w USRP"
+    BUILD_OPTIONS="--gNB -w USRP --noavx512"
 }
 
 function variant__v6__nr_ue_usrp {
     VM_MEMORY=4096
     VM_CPU=4
     NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--nrUE -w USRP"
+    BUILD_OPTIONS="--nrUE -w USRP --noavx512"
 }
 
 function variant__v7__enb_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=enb_eth
     NB_PATTERN_FILES=6
-    BUILD_OPTIONS="--eNB -w USRP"
+    BUILD_OPTIONS="--eNB -w USRP --noavx512"
 }
 
 function variant__v8__ue_ethernet {
     VM_MEMORY=4096
     ARCHIVES_LOC=ue_eth
     NB_PATTERN_FILES=10
-    BUILD_OPTIONS="--UE -w USRP"
+    BUILD_OPTIONS="--UE -w USRP --noavx512"
 }
 
 function variant__v10__flexran_rtc {
