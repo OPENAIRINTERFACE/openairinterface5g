@@ -75,14 +75,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   // filter position to reduce jitter
   if (clear == 1)
-    ue->max_pos_fil = max_pos;
+    ue->max_pos_fil = max_pos << 15;
   else
-    ue->max_pos_fil = ((ue->max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
+    ue->max_pos_fil = ((ue->max_pos_fil * coef) >> 15) + (max_pos * ncoef);
 
   // do not filter to have proactive timing adjustment
-  //ue->max_pos_fil = max_pos;
+  //ue->max_pos_fil = max_pos << 15;
 
-  int diff = ue->max_pos_fil - sync_pos;
+  int diff = (ue->max_pos_fil >> 15) - sync_pos;
 
   if (frame_parms->freq_range==nr_FR2) 
     sync_offset = 2;
