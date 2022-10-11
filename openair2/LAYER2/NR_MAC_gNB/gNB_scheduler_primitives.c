@@ -2376,18 +2376,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   else
     UL_BWP->pucch_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup;
 
-  UL_BWP->max_fb_time = 0;
-  if(DL_BWP->dci_format != NR_DL_DCI_FORMAT_1_0 &&
-     UL_BWP->pucch_Config) {
-    for (int i=0; i<UL_BWP->pucch_Config->dl_DataToUL_ACK->list.count; i++) {
-      if(*UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i] > UL_BWP->max_fb_time)
-        UL_BWP->max_fb_time = *UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i];
-    }
-  }
-  else
-     UL_BWP->max_fb_time = 8; // default value
-
-
   if(UE) {
     // setting PDCCH related structures for sched_ctrl
     sched_ctrl->search_space = get_searchspace(scc,
@@ -2422,8 +2410,18 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     if (UL_BWP->csi_MeasConfig)
       compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE->csi_report_template);
 
-    set_sched_pucch_list(sched_ctrl, UL_BWP, scc);
+    UL_BWP->max_fb_time = 0;
+    if(DL_BWP->dci_format != NR_DL_DCI_FORMAT_1_0 &&
+       UL_BWP->pucch_Config) {
+      for (int i=0; i<UL_BWP->pucch_Config->dl_DataToUL_ACK->list.count; i++) {
+        if(*UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i] > UL_BWP->max_fb_time)
+          UL_BWP->max_fb_time = *UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i];
+      }
+    }
+    else
+      UL_BWP->max_fb_time = 8; // default value
 
+    set_sched_pucch_list(sched_ctrl, UL_BWP, scc);
   }
 
   if(ra) {
@@ -2576,7 +2574,6 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
   const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
-
   const int list_size = n_ul_slots_period << (ul_bwp->max_fb_time/nr_slots_period);
   if(!sched_ctrl->sched_pucch) {
     sched_ctrl->sched_pucch = malloc(list_size * sizeof(*sched_ctrl->sched_pucch));

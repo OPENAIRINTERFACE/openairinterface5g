@@ -70,7 +70,7 @@ static void nr_fill_nfapi_pucch(gNB_MAC_INST *nrmac,
 
   LOG_D(NR_MAC,
         "%s %4d.%2d Scheduling pucch reception in %4d.%2d: bits SR %d, DAI %d, CSI %d on res %d\n",
-        pucch->dai_c>0 ? "pucch_acknak" : "",
+        pucch->dai_c>0 ? "pucch_acknack" : "",
         frame,
         slot,
         pucch->frame,
@@ -204,17 +204,15 @@ void nr_csi_meas_reporting(int Mod_idP,
       AssertFatal(res_index < n,
                   "CSI pucch resource %ld not found among PUCCH resources\n", pucchcsires->pucch_Resource);
 
-      // find free PUCCH that is in order with possibly existing PUCCH
-      // schedulings (other CSI, SR)
-      NR_sched_pucch_t *curr_pucch = NULL;
-      for (int i=0; i<sched_ctrl->sched_pucch_size; i++) {
-        curr_pucch = &sched_ctrl->sched_pucch[i];
-        if (!curr_pucch->active)
-          break; // found an available pucch structure
-      }
-      AssertFatal(curr_pucch,
-                  "PUCCH structure not found for UE %04x\n",
-                  UE->rnti);
+      const NR_ServingCellConfigCommon_t *scc = RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon;
+      const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+      AssertFatal(tdd || RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD, "Dynamic TDD not handled yet\n");
+      const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
+      const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+      const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
+      const int pucch_index = ((sched_slot % nr_slots_period) - first_ul_slot_period + (sched_slot / nr_slots_period) * n_ul_slots_period) % sched_ctrl->sched_pucch_size;
+      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[pucch_index];
+      AssertFatal(curr_pucch->active == false, "CSI structure is scheduled in advance. It should be free!\n");
       curr_pucch->r_pucch = -1;
       curr_pucch->frame = sched_frame;
       curr_pucch->ul_slot = sched_slot;
@@ -1062,6 +1060,7 @@ int nr_acknack_scheduling(int mod_id,
   AssertFatal(tdd || RC.nrmac[mod_id]->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+  const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
 
   /* for the moment, we consider:
    * * only pucch_sched[0] holds HARQ (and SR)
@@ -1090,42 +1089,40 @@ int nr_acknack_scheduling(int mod_id,
     // check if the slot is UL
     if(pucch_slot%nr_slots_period < first_ul_slot_period)
       continue;
-    const int pucch_frame = frame + ((slot + pdsch_to_harq_feedback[f]) / n_slots_frame);
-    int inactive_pucch = -1;
-    NR_sched_pucch_t *curr_pucch = NULL;
-    for (int i=0; i<sched_ctrl->sched_pucch_size; i++) {
-      curr_pucch = &sched_ctrl->sched_pucch[i];
-      // if there is already an active pucch for this frame and slot
-      if (curr_pucch->active &&
-          curr_pucch->frame == pucch_frame &&
-          curr_pucch->ul_slot == pucch_slot) {
-        LOG_D(NR_MAC, "pucch_acknak DL %4d.%2d, UL_ACK %4d.%2d Bits already in current PUCCH: DAI_C %d CSI %d\n",
-              frame, slot, pucch_frame, pucch_slot, curr_pucch->dai_c, curr_pucch->csi_bits);
-        // we can't schedule if short pucch is already full
-        if (curr_pucch->csi_bits == 0 &&
-            curr_pucch->dai_c == 2)
-          continue;
-        // if there is CSI but simultaneous HARQ+CSI is disable we can't schedule
-        if(!curr_pucch->simultaneous_harqcsi &&
-           curr_pucch->csi_bits>0)
-          continue;
-        // TODO we can't schedule more than 11 bits in PUCCH2 for now
-        if (curr_pucch->csi_bits + curr_pucch->dai_c >= 10)
-          continue;
+    const int pucch_frame = (frame + ((slot + pdsch_to_harq_feedback[f]) / n_slots_frame)) & 1023;
+    const int pucch_index = ((pucch_slot % nr_slots_period) - first_ul_slot_period + (pucch_slot / nr_slots_period) * n_ul_slots_period) % sched_ctrl->sched_pucch_size;
+    NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[pucch_index];
+    if (curr_pucch->active &&
+        curr_pucch->frame == pucch_frame &&
+        curr_pucch->ul_slot == pucch_slot) { // if there is already a PUCCH in given frame and slot
+      LOG_D(NR_MAC, "pucch_acknack DL %4d.%2d, UL_ACK %4d.%2d Bits already in current PUCCH: DAI_C %d CSI %d\n",
+            frame, slot, pucch_frame, pucch_slot, curr_pucch->dai_c, curr_pucch->csi_bits);
+      // we can't schedule if short pucch is already full
+      if (curr_pucch->csi_bits == 0 &&
+          curr_pucch->dai_c == 2)
+        continue;
+      // if there is CSI but simultaneous HARQ+CSI is disable we can't schedule
+      if(!curr_pucch->simultaneous_harqcsi &&
+         curr_pucch->csi_bits>0)
+        continue;
+      // TODO we can't schedule more than 11 bits in PUCCH2 for now
+      if (curr_pucch->csi_bits + curr_pucch->dai_c >= 10)
+        continue;
 
-        // otherwise we can schedule in this active PUCCH
-        // no need to check VRB occupation because already done when PUCCH has been activated
-        curr_pucch->timing_indicator = f;
-        curr_pucch->dai_c++;
-        LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d CSI %d\n",
-              frame,slot,curr_pucch->frame,curr_pucch->ul_slot,i,f,curr_pucch->dai_c,curr_pucch->csi_bits);
-        return i; // index of current PUCCH structure
-      }
-      else if (!curr_pucch->active)
-        inactive_pucch = i;
+      // otherwise we can schedule in this active PUCCH
+      // no need to check VRB occupation because already done when PUCCH has been activated
+      curr_pucch->timing_indicator = f;
+      curr_pucch->dai_c++;
+      LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d CSI %d\n",
+            frame,slot,curr_pucch->frame,curr_pucch->ul_slot,pucch_index,f,curr_pucch->dai_c,curr_pucch->csi_bits);
+      return pucch_index; // index of current PUCCH structure
     }
-    if (inactive_pucch>0) {
-      curr_pucch = &sched_ctrl->sched_pucch[inactive_pucch];
+    else if (curr_pucch->active) {
+      LOG_E(NR_MAC, "This shouldn't happen! curr_pucch frame.slot %d.%d not matching with computed frame.slot %d.%d\n",
+            curr_pucch->frame, curr_pucch->ul_slot, pucch_frame, pucch_slot);
+      continue;
+    }
+    else { // unoccupied occasion
       // checking if in ul_slot the resources potentially to be assigned to this PUCCH are available
       uint16_t *vrb_map_UL = &RC.nrmac[mod_id]->common_channels[CC_id].vrb_map_UL[pucch_slot * MAX_BWP_SIZE];
       bool ret = test_pucch0_vrb_occupation(sched_ctrl,
@@ -1151,7 +1148,7 @@ int nr_acknack_scheduling(int mod_id,
       curr_pucch->r_pucch=r_pucch;
 
       LOG_D(NR_MAC, "DL %4d.%2d, UL_ACK %4d.%2d Scheduling ACK/NACK in PUCCH %d with timing indicator %d DAI %d\n",
-            frame,slot,curr_pucch->frame,curr_pucch->ul_slot,inactive_pucch,f,curr_pucch->dai_c);
+            frame,slot,curr_pucch->frame,curr_pucch->ul_slot,pucch_index,f,curr_pucch->dai_c);
 
       // blocking resources for current PUCCH in VRB map
       for (int l=0; l<curr_pucch->nr_of_symb; l++) {
@@ -1162,7 +1159,7 @@ int nr_acknack_scheduling(int mod_id,
         vrb_map_UL[bwp_start+prb] |= symb;
       }
 
-      return inactive_pucch; // index of current PUCCH structure
+      return pucch_index; // index of current PUCCH structure
     }
   }
   LOG_D(NR_MAC, "DL %4d.%2d, Couldn't find scheduling occasion for this HARQ process\n", frame, slot);
@@ -1175,7 +1172,6 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
   if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
     return;
   int CC_id = 0;
-  const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   UE_iterator(nrmac->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
@@ -1211,30 +1207,31 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
       }
       AssertFatal(idx>-1,"SR resource not found among PUCCH resources");
 
-      NR_sched_pucch_t *curr_pucch = NULL;
-      bool found = false;
-      int free_pucch = -1;
-      for (int i=0; i<sched_ctrl->sched_pucch_size; i++) {
-        curr_pucch = &sched_ctrl->sched_pucch[i];
-        if (curr_pucch->active &&
-            curr_pucch->frame == SFN &&
-            curr_pucch->ul_slot == slot &&
-            curr_pucch->resource_indicator == idx) {
-          curr_pucch->sr_flag = true;
-          found = true;
-          break;
-        }
-        else if (!curr_pucch->active)
-          free_pucch = i; // found an available pucch structure
+      const NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
+      const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+      AssertFatal(tdd || nrmac->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
+      const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
+      const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+      const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
+      const int pucch_index = ((slot % nr_slots_period) - first_ul_slot_period + (slot / nr_slots_period) * n_ul_slots_period) % sched_ctrl->sched_pucch_size;
+      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[pucch_index];
+
+      if (curr_pucch->active &&
+          curr_pucch->frame == SFN &&
+          curr_pucch->ul_slot == slot &&
+          curr_pucch->resource_indicator == idx)
+        curr_pucch->sr_flag = true;
+      else if (curr_pucch->active) {
+        LOG_E(NR_MAC, "This shouldn't happen! curr_pucch frame.slot %d.%d not matching with SR function frame.slot %d.%d\n",
+              curr_pucch->frame, curr_pucch->ul_slot, SFN, slot);
+        continue;
       }
-      AssertFatal(found || free_pucch>-1, "Coulnd't find an available PUCCH resource to schedule SR\n");
-      if (!found) {
+      else {
         uint16_t *vrb_map_UL = &nrmac->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
         int bwp_start = ul_bwp->BWPStart;
         int bwp_size = ul_bwp->BWPSize;
-        NR_sched_pucch_t *sched_sr = &sched_ctrl->sched_pucch[free_pucch];
         bool ret = test_pucch0_vrb_occupation(sched_ctrl,
-                                              sched_sr,
+                                              curr_pucch,
                                               vrb_map_UL,
                                               scc,
                                               pucch_Config,
@@ -1245,19 +1242,19 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
           LOG_E(NR_MAC,"Cannot schedule SR. PRBs not available\n");
           continue;
         }
-        sched_sr->frame = SFN;
-        sched_sr->ul_slot = slot;
-        sched_sr->sr_flag = true;
-        sched_sr->resource_indicator = idx;
-        sched_sr->r_pucch = -1;
-        sched_sr->active = true;
-        for (int l=0; l<sched_sr->nr_of_symb; l++) {
-          uint16_t symb = SL_to_bitmap(sched_sr->start_symb+l, 1);
+        curr_pucch->frame = SFN;
+        curr_pucch->ul_slot = slot;
+        curr_pucch->sr_flag = true;
+        curr_pucch->resource_indicator = idx;
+        curr_pucch->r_pucch = -1;
+        curr_pucch->active = true;
+        for (int l=0; l<curr_pucch->nr_of_symb; l++) {
+          uint16_t symb = SL_to_bitmap(curr_pucch->start_symb+l, 1);
           int prb;
-          if (l==1 && sched_sr->second_hop_prb != 0)
-            prb = sched_sr->second_hop_prb;
+          if (l==1 && curr_pucch->second_hop_prb != 0)
+            prb = curr_pucch->second_hop_prb;
           else
-            prb = sched_sr->prb_start;
+            prb = curr_pucch->prb_start;
           vrb_map_UL[bwp_start+prb] |= symb;
         }
       }
