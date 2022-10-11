@@ -990,7 +990,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   if (dmrss == 2)
-    UEscopeCopy(ue, pbchDlChEstimateTime, (void*)dl_ch_estimates_time, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, idftsizeidx);
+    UEscopeCopy(ue, pbchDlChEstimateTime, (void*)dl_ch_estimates_time, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, ue->frame_parms.ofdm_symbol_size);
 
   return(0);
 }
