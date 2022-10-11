@@ -248,6 +248,7 @@ services:
             GNB_NGA_IP_ADDRESS: 192.168.71.140
             GNB_NGU_IF_NAME: eth0
             GNB_NGU_IP_ADDRESS: 192.168.71.140
+            SDR_ADDRS: serial=XXXXXXX
             USE_ADDITIONAL_OPTIONS: --sa -E --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-ext-dn
