@@ -14,13 +14,9 @@
 
 This page is valid for the develop branch
 
-# Table of Contents: #
+**Table of Contents**
 
-* [How to build the eNB and the UE](#build)
-* [How to run an eNB built with the noS1 option](#run-noS1-eNB)
-* [How to run a UE built with the noS1 option](#run-noS1-UE)
-* [Continuous Integration notes](#CInote)
-* [How to ping an eNB from a UE and vice versa (with the noS1 option)](#noS1-pinging)
+[[_TOC_]]
 
 The old oaisim is dead! Long live oaisim! :)
 

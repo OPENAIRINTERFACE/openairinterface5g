@@ -1,9 +1,6 @@
-## Table of Contents ##
+**Table of Contents**
 
-1.   [Machines](#machines)
-2.   [Networked devices](#networked-devices)
-3.   [Testbenches](#testbenches)
-4.   [Pipelines](#pipelines)
+[[_TOC_]]
 
 ## Machines
 

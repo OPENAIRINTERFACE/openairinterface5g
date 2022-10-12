@@ -12,12 +12,9 @@
   </tr>
 </table>
 
-## Table of Contents ##
+**Table of Contents**
 
-1.  [Introduction](#1-introduction)
-2.  [Prerequisites](#2-prerequisites)
-    1.  [uvtool installation](#21-uvtool-installation)
-    2.  [apt-cacher-server installation](#22-apt-cacher-server-installation)
+[[_TOC_]]
 
 # 1. Introduction #
 

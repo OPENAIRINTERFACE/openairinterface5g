@@ -14,20 +14,9 @@
 
 This page is only valid for an `Ubuntu18` host.
 
-**TABLE OF CONTENTS**
+**Table of Contents**
 
-1. [Retrieving the images on Docker-Hub](#1-retrieving-the-images-on-docker-hub)
-2. [Deploy containers](#2-deploy-containers)
-   1. [Deploy and Configure Cassandra Database](#21-deploy-and-configure-cassandra-database)
-   2. [Deploy OAI CN4G containers](#22-deploy-oai-cn4g-containers)
-   3. [Deploy OAI eNB in RF simulator mode](#23-deploy-oai-enb-in-rf-simulator-mode)
-   4. [Deploy OAI LTE UE in RF simulator mode](#24-deploy-oai-lte-ue-in-rf-simulator-mode)
-3. [Check traffic](#3-check-traffic)
-4. [Un-deployment](#4-un-deployment)
-5. [Explanation on the configuration](#5-explanation-on-the-configuration)
-   1. [UE IMSI and Keys](#51-ue-imsi-and-keys)
-   2. [PLMN and TAI](#52-plmn-and-tai)
-   3. [Access to Internet](#53-access-to-internet)
+[[_TOC_]]
 
 # 1. Retrieving the images on Docker-Hub #
 

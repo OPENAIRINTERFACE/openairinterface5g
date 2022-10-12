@@ -12,14 +12,9 @@
   </tr>
 </table>
 
-## Table of Contents ##
+**Table of Contents**
 
-1.  [Introduction](#1-introduction)
-2.  [Detailed Description](#2-detailed-description)
-3.  [Typical Usage](#3-typical-usage)
-    1.  [Testing the physical simulators](#31-testing-the-physicals-simulators)
-    2.  [Testing the RF simulator](#33-testing-the-rf-simulator)
-    3.  [Testing the L2-nFAPI simulator](#33-testing-the-l2-nfapi-simulator)
+[[_TOC_]]
 
 # 1. Introduction #
 

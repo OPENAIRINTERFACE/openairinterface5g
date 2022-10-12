@@ -12,29 +12,9 @@
   </tr>
 </table>
 
-**TABLE OF CONTENTS**
+**Table of Contents**
 
-1. [Scenario](#1-scenario)
-2. [OAI CN5G](#2-oai-cn5g)
-    1. [OAI CN5G pre-requisites](#21-oai-cn5g-pre-requisites)
-    2. [OAI CN5G Setup](#22-oai-cn5g-setup)
-    3. [OAI CN5G Configuration files](#23-oai-cn5g-configuration-files)
-    4. [SIM Card](#24-sim-card)
-3. [OAI gNB](#3-oai-gnb)
-    1. [OAI gNB pre-requisites](#31-oai-gnb-pre-requisites)
-    2. [Build OAI gNB](#32-build-oai-gnb)
-    3. [N300 Ethernet Tuning](#33-n300-ethernet-tuning)
-4. [Run OAI CN5G and OAI gNB](#4-run-oai-cn5g-and-oai-gnb)
-    1. [Run OAI CN5G](#41-run-oai-cn5g)
-    2. [Run OAI gNB](#42-run-oai-gnb)
-       1. [USRP B210](#usrp-b210)
-       2. [USRP N300](#usrp-n300)
-       3. [USRP X300](#usrp-x300)
-5. [Testing with QUECTEL RM500Q](#5-testing-with-quectel-rm500q)
-    1. [Setup QUECTEL](#51-setup-quectel)
-    2. [Ping test](#52-ping-test)
-    3. [Downlink iPerf test](#53-downlink-iperf-test)
-
+[[_TOC_]]
 
 #  1. Scenario
 In this tutorial we describe how to configure and run a 5G end-to-end setup with OAI CN5G, OAI gNB and COTS UE.

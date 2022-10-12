@@ -12,10 +12,9 @@
   </tr>
 </table>
 
-## Table of Contents ##
+**Table of Contents**
 
-1.  [Introduction](#1-introduction)
-2.  [Detailed Description](#2-detailed-description)
+[[_TOC_]]
 
 # 1. Introduction #
 
