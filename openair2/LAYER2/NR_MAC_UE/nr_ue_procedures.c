@@ -3699,9 +3699,12 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         /*uint8_t ta_command = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
           uint8_t tag_id = ((NR_MAC_CE_TA *)pduP)[1].TAGID;*/
 
+        const int ta = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
+        const int tag = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
         ul_time_alignment->apply_ta = 1;
-        ul_time_alignment->ta_command = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
-        ul_time_alignment->tag_id = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
+        ul_time_alignment->ta_command = ta; //here
+        ul_time_alignment->ta_total += ta - 31;
+        ul_time_alignment->tag_id = tag;
 
         /*
         #ifdef DEBUG_HEADER_PARSING
@@ -3709,7 +3712,10 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         #endif
         */
 
-        LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d\n", frameP, slot, ul_time_alignment->ta_command, ul_time_alignment->tag_id, CC_id);
+        if (ta == 31)
+          LOG_D(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
+        else
+          LOG_I(NR_MAC, "[%d.%d] Received TA_COMMAND %u TAGID %u CC_id %d TA total %d\n", frameP, slot, ta, tag, CC_id, ul_time_alignment->ta_total);
 
         break;
       case DL_SCH_LCID_CON_RES_ID:
@@ -4082,7 +4088,10 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
     // TA command
     ul_time_alignment->apply_ta = 1;
-    ul_time_alignment->ta_command = 31 + rar->TA2 + (rar->TA1 << 5);
+    const int ta = rar->TA2 + (rar->TA1 << 5);
+    ul_time_alignment->ta_command = 31 + ta;
+    ul_time_alignment->ta_total = ta;
+    LOG_W(MAC, "received TA command %d\n", ul_time_alignment->ta_command);
 
 #ifdef DEBUG_RAR
     // CSI

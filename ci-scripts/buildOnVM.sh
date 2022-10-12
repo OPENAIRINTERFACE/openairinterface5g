@@ -196,7 +196,7 @@ function build_on_vm {
         echo "echo \"cd build\"" >> $VM_CMDS
         echo "cd build" >> $VM_CMDS
         echo "echo \"$BUILD_OPTIONS \"" >> $VM_CMDS
-        echo "$BUILD_OPTIONS > ../cmake_targets/log/rt_controller.Rel15.txt 2>&1" >> $VM_CMDS
+        echo "$BUILD_OPTIONS > ../cmake_targets/log/rt_controller.txt 2>&1" >> $VM_CMDS
     fi
     if [[ "$VM_NAME" != *"-cppcheck"* ]] && [[ "$VM_NAME" != *"-flexran-rtc"* ]]
     then

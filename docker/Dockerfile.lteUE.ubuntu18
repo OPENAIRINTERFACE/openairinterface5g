@@ -64,11 +64,11 @@ RUN apt-get update && \
 
 WORKDIR /opt/oai-lte-ue/bin
 COPY --from=lte-ue-build \
-    /oai-ran/targets/bin/lte-uesoftmodem.Rel15 \
+    /oai-ran/cmake_targets/ran_build/build/lte-uesoftmodem \
     /oai-ran/docker/scripts/entrypoint.sh \
-    /oai-ran/targets/bin/conf2uedata \
-    /oai-ran/targets/bin/nvram \
-    /oai-ran/targets/bin/usim \
+    /oai-ran/cmake_targets/nas_sim_tools/build/conf2uedata \
+    /oai-ran/cmake_targets/nas_sim_tools/build/nvram \
+    /oai-ran/cmake_targets/nas_sim_tools/build/usim \
     ./
 
 COPY --from=lte-ue-build \
@@ -108,5 +108,5 @@ WORKDIR /opt/oai-lte-ue/etc
 COPY --from=lte-ue-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-lte-ue
-CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem.Rel15"]
+CMD ["/opt/oai-lte-ue/bin/lte-uesoftmodem"]
 ENTRYPOINT ["/opt/oai-lte-ue/bin/entrypoint.sh"]

@@ -30,18 +30,14 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         ports:
         - containerPort: 80
-          name: oai-polartest
-        # volumeMounts:
-        # - mountPath: /opt/oai-polartest/certs
-        #   name: certs
+        env:
+        - name: OPENAIR_DIR
+          value: /opt/oai-physim
         command: ["/bin/sh", "-c"]
         args:
         - >  
-          export OPENAIR_DIR=/opt/oai-physim &&
-          cd cmake_targets/autotests &&
-          ./run_exec_autotests.bash -g "015103" -q -np -b &&
-          echo "FINISHED" &&
-          sleep infinity
+          cmake_targets/autotests/run_exec_autotests.bash -g "polartest" -d bin/ &&
+          echo "FINISHED" && sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

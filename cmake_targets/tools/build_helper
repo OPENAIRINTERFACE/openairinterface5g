@@ -121,6 +121,7 @@ check_supported_distribution() {
         "rhel8.5")     return 0 ;;
         "rhel8.6")     return 0 ;;
         "rhel8.7")     return 0 ;;
+        "rhel9.0")     return 0 ;;
         "centos7")     return 0 ;;
         "centos8")     return 0 ;;
     esac
@@ -167,7 +168,6 @@ clean_kernel() {
 clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
- rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
  rm -rf $dir/ran_build $dir/ran_build_noLOG
  rm -rf $dir/lte-simulators/build 
  rm -rf $dir/nas_sim_tools/build 
@@ -207,7 +207,7 @@ check_errors() {
 
 compilations() {
   cd $OPENAIR_DIR/cmake_targets/$1/build
-  echo_info "Log file for compilation is being written to: $dlog/$2.$REL.txt"
+  echo_info "Log file for compilation is being written to: $dlog/$2.txt"
   set +e
   {
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
@@ -225,27 +225,18 @@ compilations() {
     fi
     fi
     ret=$?
-  } > $dlog/$2.$REL.txt 2>&1
+  } > $dlog/$2.txt 2>&1
   set -e
   if [ "$VERBOSE_CI" == "1" ]; then
-     echo_info "====== Start of log for $2.$REL.txt ======"
-     cat $dlog/$2.$REL.txt
-     echo_info "====== End of log for $2.$REL.txt ======"
+     echo_info "====== Start of log for $2.txt ======"
+     cat $dlog/$2.txt
+     echo_info "====== End of log for $2.txt ======"
   fi
-  if [[ $ret -ne 0 ]]; then
-     check_warnings "$dlog/$2.$REL.txt"
-     check_errors "$dlog/$2.$REL.txt"
-     echo_error "$2 compilation failed"
-     exit 1
-  fi
-  if [ -s "$3" ] ; then
-     rm -f "$4"
-     ln -s "$PWD/$3" "$4"
+  check_warnings "$dlog/$2.txt"
+  if [[ $ret -eq 0 ]]; then
      echo_success "$2 compiled"
-     check_warnings "$dlog/$2.$REL.txt"
   else
-     check_warnings "$dlog/$2.$REL.txt"
-     check_errors "$dlog/$2.$REL.txt"
+     check_errors "$dlog/$2.txt"
      echo_error "$2 compilation failed"
      exit 1
   fi

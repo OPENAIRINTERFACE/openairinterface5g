@@ -79,7 +79,7 @@ run:
 source oaienv
 sudo -E /usr/local/etc/syriq/cpu-irq.sh
 
-sudo -E cset shield -e ./targets/bin/nr-uesoftmodem.Rel15 -- --numerology 1 -r 106 -C 3510000000 --loop-memory --rf-config-file /usr/local/etc/syriq/ue.band22.tm1.PRB100.NR40.dat
+sudo -E cset shield -e ./cmake_targets/ran_build/nr-uesoftmodem -- --numerology 1 -r 106 -C 3510000000 --loop-memory --rf-config-file /usr/local/etc/syriq/ue.band22.tm1.PRB100.NR40.dat
 
 
 
@@ -133,4 +133,4 @@ run:
 source oaienv
 sudo -E /usr/local/etc/syriq/cpu-irq.sh
 
-sudo -E cset shield -e ./targets/bin/nr-softmodem.Rel15 -- -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band22.tm1.106PRB.adrv9371zc706.conf --rf-config-file /usr/local/etc/syriq/gnb.band22.tm1.PRB100.NR40_hwgain15.dat
+sudo -E cset shield -e ./cmake_targets/ran_build/build/nr-softmodem -- -O $OPENAIR_DIR/targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band22.tm1.106PRB.adrv9371zc706.conf --rf-config-file /usr/local/etc/syriq/gnb.band22.tm1.PRB100.NR40_hwgain15.dat

@@ -34,14 +34,13 @@ source "$THIS_SCRIPT_PATH"/tools/build_helper
 set_openair_env
 
 # Variables for UE data generation
-gen_nvram_path=$OPENAIR_DIR/targets/bin
+gen_nvram_path=$OPENAIR_DIR/cmake_targets/ran_build/build
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
 PRINT_STATS="False"
 DEADLINE_SCHEDULER_FLAG_USER=""
-REL="Rel15"
 HW="None"
 TP="Ethernet"
 EPC=0
@@ -536,9 +535,8 @@ function main() {
     echo_info "Erased all previously producted files"
   fi
 
-  dbin=$OPENAIR_DIR/targets/bin
   dlog=$OPENAIR_DIR/cmake_targets/log
-  mkdir -p $dbin $dlog
+  mkdir -p $dlog
 
   if [ "$INSTALL_EXTERNAL" = "1" ] ; then
     echo_info "Installing packages"
@@ -636,9 +634,7 @@ function main() {
   
   for f in $execlist ; do
       echo_info "Compiling $f..."
-      compilations \
-          $BUILD_DIR $f \
-          $f $dbin/$f.$REL
+      compilations $BUILD_DIR $f
   done
   
   
@@ -650,13 +646,9 @@ function main() {
       # configuration module libraries, one currently available, using libconfig
       config_libconfig_shlib=params_libconfig
       
-      compilations \
-          $BUILD_DIR $config_libconfig_shlib \
-          lib$config_libconfig_shlib.so $dbin/lib$config_libconfig_shlib.so
+      compilations $BUILD_DIR $config_libconfig_shlib
       
-      compilations \
-          $BUILD_DIR coding \
-          libcoding.so $dbin/libcoding.so
+      compilations $BUILD_DIR coding
       
   fi
   
@@ -667,9 +659,7 @@ function main() {
     if [ $IS_CONTAINER -eq 0 ]
     then
       echo_info "Building ue_ip module"
-      compilations \
-        $BUILD_DIR ue_ip \
-        CMakeFiles/ue_ip/ue_ip.ko $dbin/ue_ip.ko
+      compilations $BUILD_DIR ue_ip
     else
       echo_info "Bypassing ue_ip build"
     fi #IS_CONTAINER
@@ -677,32 +667,20 @@ function main() {
 #    mkdir -p $DIR/at_commands/build
 #    cd $DIR/at_commands/build
 #    eval $CMAKE_CMD
-#    compilations \
-#      at_commands at_nas_ue \
-#      at_nas_ue $dbin/at_nas_ue
+#    compilations at_commands at_nas_ue
 
     [ "$CLEAN" = "1" ] && rm -rf $DIR/nas_sim_tools/build
     mkdir -p $DIR/nas_sim_tools/build
     cd $DIR/nas_sim_tools/build
 
     eval $CMAKE_CMD ..
-    compilations \
-      nas_sim_tools usim \
-      usim $dbin/usim
-    compilations \
-      nas_sim_tools nvram \
-      nvram $dbin/nvram
-    compilations \
-      nas_sim_tools conf2uedata \
-      conf2uedata $dbin/conf2uedata
+    compilations nas_sim_tools usim
+    compilations nas_sim_tools nvram
+    compilations nas_sim_tools conf2uedata
 
     # generate USIM data
-    if [ -f $dbin/conf2uedata ]; then
-      install_nas_tools $conf_nvram_path $gen_nvram_path "$dlog/conf2uedata.txt"
-      echo_info "Copying UE specific part to $DIR/$BUILD_DIR/build"
-      cp -Rvf $dbin/.ue_emm.nvram0 $DIR/$BUILD_DIR/build
-      cp -Rvf $dbin/.ue.nvram0 $DIR/$BUILD_DIR/build
-      cp -Rvf $dbin/.usim.nvram0 $DIR/$BUILD_DIR/build
+    if [ -f conf2uedata ]; then
+      install_nas_tools $conf_nvram_path $DIR/$BUILD_DIR/build "$DIR/$BUILD_DIR/build/conf2uedata.txt"
     else
       echo_warning "not generated UE NAS files: binaries not found"
     fi
@@ -719,13 +697,9 @@ function main() {
     simlist="dlsim ulsim ldpctest polartest smallblocktest nr_pbchsim nr_dlschsim nr_ulschsim nr_dlsim nr_ulsim nr_pucchsim nr_prachsim"
 	# simlist="ldpctest"
     for f in $simlist ; do
-      compilations \
-        $BUILD_DIR $f \
-	    $f $dbin/$f.$REL
+      compilations $BUILD_DIR $f
     done
-    compilations \
-      $BUILD_DIR coding \
-      libcoding.so $dbin/libcoding.so
+    compilations $BUILD_DIR coding
   fi
 
   ###################
@@ -735,9 +709,7 @@ function main() {
     echo_info "Compiling security unitary tests simulators"
     simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
     for f in $simlist ; do
-      compilations \
-	    $BUILD_DIR test_$f \
-	    test_$f $dbin/test_$f.$REL
+      compilations $BUILD_DIR test_$f
     done
   fi
 
@@ -746,21 +718,15 @@ function main() {
   ####################################
   if [ "$HW" = "EXMIMO" ] ; then
     echo_info "Compiling Express MIMO 2 board drivers"
-    compilations \
-      $BUILD_DIR openair_rf \
-      CMakeFiles/openair_rf/openair_rf.ko $dbin/openair_rf.ko
-    compilations \
-	  $BUILD_DIR updatefw \
-	  updatefw $dbin/updatefw
+    compilations $BUILD_DIR openair_rf
+    compilations $BUILD_DIR updatefw
     echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
     make -C $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build oarf > $dlog/oarf.txt 2>&1
-    cp $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build/*.oct $dbin
-    if [ -s $dbin/oarf_config_exmimo.oct ] ; then
+    if [ -s $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build/oarf_config_exmimo.oct ] ; then
 	  echo_success "oarf tools compiled"
     else
 	  echo_error "oarf tools compilation failed"
     fi
-    cp $OPENAIR_DIR/cmake_targets/tools/init_exmimo2 $dbin
   fi
   
   ######################
@@ -768,9 +734,7 @@ function main() {
   ######################
   if [ ! -z "$BUILD_OPTLIB" ] ; then 
      for oklib in $BUILD_OPTLIB ; do
-         compilations \
-             $BUILD_DIR $oklib \
-             lib${oklib}.so $dbin/lib${oklib}.so
+         compilations $BUILD_DIR $oklib
      done
   fi
   
@@ -782,52 +746,36 @@ function main() {
       # build RF device libraries
       if [ "$HW" != "None" ] ; then
           rm -f liboai_device.so
-          rm -f $dbin/liboai_device.so
 
           # link liboai_device.so with the selected RF device library
           if [ "$HW" == "EXMIMO" ] ; then
-              compilations \
-                  $BUILD_DIR oai_exmimodevif \
-                  liboai_exmimodevif.so $dbin/liboai_exmimodevif.so.$REL
+              compilations $BUILD_DIR oai_exmimodevif
 
               ln -sf liboai_exmimodevif.so liboai_device.so
-              ln -sf $dbin/liboai_exmimodevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to EXMIMO device library"
           elif [ "$HW" == "OAI_USRP" ] ; then
-              compilations \
-                  $BUILD_DIR oai_usrpdevif \
-                  liboai_usrpdevif.so $dbin/liboai_usrpdevif.so.$REL
+              compilations $BUILD_DIR oai_usrpdevif
 
               ln -sf liboai_usrpdevif.so liboai_device.so
-              ln -sf $dbin/liboai_usrpdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to USRP device library"        
           elif [ "$HW" == "OAI_BLADERF" ] ; then
               if [ -f "/usr/include/libbladeRF.h" ] ; then
-                  compilations \
-                      $BUILD_DIR oai_bladerfdevif \
-                      liboai_bladerfdevif.so $dbin/liboai_bladerfdevif.so.$REL
+                  compilations $BUILD_DIR oai_bladerfdevif
               fi
 
               ln -sf liboai_bladerfdevif.so liboai_device.so
-              ln -sf $dbin/liboai_bladerfdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to BLADERF device library"	 
           elif [ "$HW" == "OAI_LMSSDR" ] ; then
 #              if [ -f "/usr/include/libbladeRF.h" ] ; then
-                  compilations \
-                      $BUILD_DIR oai_lmssdrdevif \
-                      liboai_lmssdrdevif.so $dbin/liboai_lmssdrdevif.so.$REL
+                  compilations $BUILD_DIR oai_lmssdrdevif
 #              fi
 
               ln -sf liboai_lmssdrdevif.so liboai_device.so
-              ln -sf $dbin/liboai_lmssdrdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to LMSSDR device library"	 
           elif [ "$HW" == "OAI_IRIS" ] ; then
-              compilations \
-                  $BUILD_DIR oai_irisdevif \
-                  liboai_irisdevif.so $dbin/liboai_irisdevif.so.$REL
+              compilations $BUILD_DIR oai_irisdevif
 
               ln -s liboai_irisdevif.so liboai_device.so
-              ln -s $dbin/liboai_irisdevif.so.$REL $dbin/liboai_device.so
               echo_info "liboai_device.so is linked to IRIS device library"
           elif [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
               SYRIQ_KVER=$(uname -r)
@@ -842,12 +790,9 @@ function main() {
               fi
               echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
           elif [ "$HW" == "OAI_AW2SORI" ] ; then
-	      compilations \
-		  $BUILD_DIR aw2sori_transpro \
-                  libaw2sori_transpro.so $dbin/libaw2sori_transpro.so.$REL 
+              compilations $BUILD_DIR aw2sori_transpro
 
               ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
-              ln -sf $dbin/libaw2sori_transpro.so.$REL $dbin/libaw2sori_transpro.so
               echo_info "build libthirdparty_transpro.so for AW2SORI fronthaul"
           else
               echo_info "liboai_device.so is not linked to any device library"
@@ -857,38 +802,26 @@ function main() {
       #build simulators devices
       if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
           echo_info "Compiling rfsimulator"
-          compilations \
-              $BUILD_DIR rfsimulator \
-              librfsimulator.so $dbin/librfsimulator.so.$REL
+          compilations $BUILD_DIR rfsimulator
       fi
 
       #build transport protocol libraries (currently only ETHERNET is available)
       if [ "$SKIP_SHARED_LIB_FLAG" = "False" ]; then
           echo_info "Building transport protocol libraries"
           rm -f liboai_transpro.so
-          rm -f $dbin/liboai_transpro.so
 	  if [ "$TP" == "Ethernet" ]; then
-              compilations \
-		  $BUILD_DIR oai_eth_transpro \
-		  liboai_eth_transpro.so $dbin/liboai_eth_transpro.so.$REL
+              compilations $BUILD_DIR oai_eth_transpro
               ln -sf liboai_eth_transpro.so liboai_transpro.so
-              ln -sf $dbin/liboai_eth_transpro.so.$REL $dbin/liboai_transpro.so
               echo_info "liboai_transpro.so is linked to ETHERNET transport"
 	  fi
 	  if [ "$TP" == "benetel4g" ]; then
-              compilations \
-		  $BUILD_DIR benetel_4g \
-		  libbenetel_4g.so $dbin/libbenetel_4g.$REL
+              compilations $BUILD_DIR benetel_4g
               ln -sf libbenetel_4g.so liboai_transpro.so
-              ln -sf $dbin/libbenetel_4g.so.$REL $dbin/liboai_transpro.so
               echo_info "liboai_transpro.so is linked to BENETEL4G transport"
 	  fi
 	  if [ "$TP" == "benetel5g" ]; then
-              compilations \
-		  $BUILD_DIR benetel_5g \
-		  libbenetel_5g.so $dbin/libbenetel_5g.$REL
+              compilations $BUILD_DIR benetel_5g
               ln -sf libbenetel_5g.so liboai_transpro.so
-              ln -sf $dbin/libbenetel_5g.so.$REL $dbin/liboai_transpro.so
               echo_info "liboai_transpro.so is linked to BENETEL4G transport"
 	  fi
       fi

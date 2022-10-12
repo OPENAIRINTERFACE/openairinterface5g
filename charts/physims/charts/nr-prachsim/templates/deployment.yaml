@@ -30,18 +30,14 @@ spec:
           {{- toYaml .Values.securityContext | nindent 12 }}
         ports:
         - containerPort: 80
-          name: oai-nr-prachsim
-        # volumeMounts:
-        # - mountPath: /opt/oai-nr-prachsim/certs
-        #   name: certs
+        env:
+        - name: OPENAIR_DIR
+          value: /opt/oai-physim
         command: ["/bin/sh", "-c"]
         args:
         - >  
-          export OPENAIR_DIR=/opt/oai-physim &&
-          cd cmake_targets/autotests &&
-          ./run_exec_autotests.bash -g "015112" -q -np -b &&
-          echo "FINISHED" &&
-          sleep infinity
+          cmake_targets/autotests/run_exec_autotests.bash -g "nr_prachsim" -d bin/ &&
+          echo "FINISHED" && sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Always
       schedulerName: default-scheduler

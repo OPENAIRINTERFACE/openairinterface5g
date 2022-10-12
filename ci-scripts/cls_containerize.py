@@ -53,33 +53,35 @@ import constants as CONST
 # (e.g., cls_cluster.py)
 #-----------------------------------------------------------
 def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTargetBranch, ranAllowMerge):
-	# on RedHat/CentOS .git extension is mandatory
-	result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', ranRepository)
-	if result is not None:
-		full_ran_repo_name = ranRepository.replace('git/', 'git')
-	else:
-		full_ran_repo_name = ranRepository + '.git'
+	if ranCommitID == '':
+		logging.error('need ranCommitID in CreateWorkspace()')
+		sys.exit('Insufficient Parameter in CreateWorkspace()')
+
+	sshSession.command(f'rm -rf {sourcePath}', '\$', 10)
 	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
 	sshSession.command('cd ' + sourcePath, '\$', 5)
-	sshSession.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-	if sshSession.getBefore().count('done.') == 0:
-		logging.warning('did not find \'done.\' in git output while cloning/fetching, was not successful?')
+	# Recent version of git (>2.20?) should handle missing .git extension # without problems
+	sshSession.command(f'git clone --filter=blob:none -n -b develop {ranRepository} .', '\$', 60)
+	if sshSession.getBefore().count('error') > 0 or sshSession.getBefore().count('error') > 0:
+		sys.exit('error during clone')
 	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 	sshSession.command('git config user.name "OAI Jenkins"', '\$', 5)
 
-	sshSession.command('git clean -x -d -ff', '\$', 30)
 	sshSession.command('mkdir -p cmake_targets/log', '\$', 5)
 	# if the commit ID is provided use it to point to it
-	if ranCommitID != '':
-		sshSession.command('git checkout -f ' + ranCommitID, '\$', 30)
+	sshSession.command(f'git checkout -f {ranCommitID}', '\$', 30)
+	if sshSession.getBefore().count(f'HEAD is now at {ranCommitID[:6]}') != 1:
+		sshSession.command('git log --oneline | head -n5', '\$', 5)
+		logging.warning(f'problems during checkout, is at: {sshSession.getBefore()}')
+	else:
+		logging.debug('successful checkout')
 	# if the branch is not develop, then it is a merge request and we need to do
 	# the potential merge. Note that merge conflicts should already been checked earlier
 	if ranAllowMerge:
 		if ranTargetBranch == '':
-			sshSession.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
-		else:
-			logging.debug('Merging with the target branch: ' + ranTargetBranch)
-			sshSession.command('git merge --ff origin/' + ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+			ranTargetBranch = 'develop'
+		logging.debug(f'Merging with the target branch: {ranTargetBranch}')
+		sshSession.command(f'git merge --ff origin/{ranTargetBranch} -m "Temporary merge for CI"', '\$', 5)
 
 def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
 	sshSession.command(f'cd {sourcePath}/cmake_targets', '\$', 5)
@@ -356,9 +358,6 @@ class Containerize():
 			if image != 'ran-build':
 				mySSH.command(f'sed -i -e "s#ran-build:latest#ran-build:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}', '\$', 5)
 			mySSH.command(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {image}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} . > cmake_targets/log/{image}.log 2>&1', '\$', 1200)
-			# Flatten Image
-			if image != 'ran-build':
-				mySSH.command('python3 ./ci-scripts/flatten_image.py --tag ' + image + ':' + imageTag, '\$', 300)
 			# split the log
 			mySSH.command('mkdir -p cmake_targets/log/' + image, '\$', 5)
 			mySSH.command('python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/' + image + '.log', '\$', 5)
@@ -711,7 +710,9 @@ class Containerize():
 		else:
 			# containers are unhealthy, so we won't start. However, logs are stored at the end
 			# in UndeployObject so we here store the logs of the unhealthy container to report it
-			mySSH.command('docker logs ' + containerName + ' > ' + lSourcePath + '/cmake_targets/' + self.eNB_logFile[self.eNB_instance], '\$', 30)
+			logfilename = f'{lSourcePath}/cmake_targets/{self.eNB_logFile[self.eNB_instance]}'
+			mySSH.command('docker logs {containerName} > {logfilename}', '\$', 30)
+			mySSH.copyin(lIpAddr, lUserName, lPassWord, logfilename, '.')
 		mySSH.close()
 
 		if status:
@@ -875,7 +876,7 @@ class Containerize():
 			cmd = 'docker inspect -f "{{.Config.Image}}" ' + newCont
 			imageName = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			imageName = str(imageName).strip()
-			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}}\t{{.Created}}" ' + imageName
+			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}} bytes\t{{.Created}}\t{{.Id}}" ' + imageName
 			imagesInfo += subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		html_queue = SimpleQueue()

@@ -134,7 +134,7 @@ class Cluster:
 		while timeout_sec > 0:
 			# check status
 			for j in jobs:
-				sshSession.command(f'oc get pods | grep {j}', '\$', 10, silent = True)
+				sshSession.command(f'oc get pods | grep {j}', '\$', 30, silent = True)
 				if sshSession.getBefore().count('Completed') > 0: jobs.remove(j)
 				if sshSession.getBefore().count('Error') > 0:
 					logging.error(f'error for job {j}: ' + sshSession.getBefore())
@@ -307,6 +307,21 @@ class Cluster:
 			gnb_job = self._start_build(mySSH, 'oai-gnb')
 			attemptedImages += ['oai-gnb']
 
+			self._recreate_is_tag(mySSH, 'oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-is.yaml')
+			self._recreate_bc(mySSH, 'oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-bc.yaml')
+			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
+			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
+			gnb_aw2s_job = self._start_build(mySSH, 'oai-gnb-aw2s')
+			attemptedImages += ['oai-gnb-aw2s']
+
+			wait = enb_job is not None and gnb_job is not None and gnb_aw2s_job is not None and self._wait_build_end(mySSH, [enb_job, gnb_job, gnb_aw2s_job], 600)
+			if not wait: logging.error('error during build of eNB/gNB')
+			status = status and wait
+			# recover logs
+			mySSH.command(f'oc logs {enb_job} > cmake_targets/log/oai-enb.log', '\$', 10)
+			mySSH.command(f'oc logs {gnb_job} > cmake_targets/log/oai-gnb.log', '\$', 10)
+			mySSH.command(f'oc logs {gnb_aw2s_job} > cmake_targets/log/oai-gnb-aw2s.log', '\$', 10)
+
 			self._recreate_is_tag(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
 			self._recreate_bc(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
 			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel8.2')
@@ -321,12 +336,10 @@ class Cluster:
 			nrue_job = self._start_build(mySSH, 'oai-nr-ue')
 			attemptedImages += ['oai-nr-ue']
 
-			wait = enb_job is not None and gnb_job is not None and lteue_job is not None and nrue_job is not None and self._wait_build_end(mySSH, [enb_job, gnb_job, lteue_job, nrue_job], 600)
-			if not wait: logging.error('error during build of eNB/gNB/lteUE/nrUE')
+			wait = lteue_job is not None and nrue_job is not None and self._wait_build_end(mySSH, [lteue_job, nrue_job], 600)
+			if not wait: logging.error('error during build of lteUE/nrUE')
 			status = status and wait
 			# recover logs
-			mySSH.command(f'oc logs {enb_job} > cmake_targets/log/oai-enb.log', '\$', 10)
-			mySSH.command(f'oc logs {gnb_job} > cmake_targets/log/oai-gnb.log', '\$', 10)
 			mySSH.command(f'oc logs {lteue_job} > cmake_targets/log/oai-lte-ue.log', '\$', 10)
 			mySSH.command(f'oc logs {nrue_job} > cmake_targets/log/oai-nr-ue.log', '\$', 10)
 

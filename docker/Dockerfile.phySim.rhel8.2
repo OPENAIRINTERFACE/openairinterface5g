@@ -60,24 +60,24 @@ RUN yum update -y && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
-WORKDIR /opt/oai-physim/targets/bin
+WORKDIR /opt/oai-physim/bin
 COPY --from=phy-sim-build \
-    /oai-ran/targets/bin/dlsim.Rel15 \
-    /oai-ran/targets/bin/nr_dlsim.Rel15 \
-    /oai-ran/targets/bin/nr_prachsim.Rel15 \
-    /oai-ran/targets/bin/nr_ulschsim.Rel15 \
-    /oai-ran/targets/bin/polartest.Rel15 \
-    /oai-ran/targets/bin/ulsim.Rel15 \
-    /oai-ran/targets/bin/ldpctest.Rel15 \
-    /oai-ran/targets/bin/nr_dlschsim.Rel15 \
-    /oai-ran/targets/bin/nr_pbchsim.Rel15 \
-    /oai-ran/targets/bin/nr_pucchsim.Rel15 \
-    /oai-ran/targets/bin/nr_ulsim.Rel15 \
-    /oai-ran/targets/bin/smallblocktest.Rel15 \
+    /oai-ran/cmake_targets/ran_build/build/dlsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_dlsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_prachsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_ulschsim \
+    /oai-ran/cmake_targets/ran_build/build/polartest \
+    /oai-ran/cmake_targets/ran_build/build/ulsim \
+    /oai-ran/cmake_targets/ran_build/build/ldpctest \
+    /oai-ran/cmake_targets/ran_build/build/nr_dlschsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_pbchsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_pucchsim \
+    /oai-ran/cmake_targets/ran_build/build/nr_ulsim \
+    /oai-ran/cmake_targets/ran_build/build/smallblocktest \
     ./
 
 COPY --from=phy-sim-build \
-    /oai-ran/targets/bin/libcoding.so \
+    /oai-ran/cmake_targets/ran_build/build/libcoding.so \
     /lib64/liblapacke.so.3 \
     /lib64/libX11.so.6 \
     /lib64/libXpm.so.4 \
@@ -114,7 +114,6 @@ COPY --from=phy-sim-build \
     /oai-ran/cmake_targets/autotests/test_case_list.xml \
     /opt/oai-physim/cmake_targets/autotests/
 COPY --from=phy-sim-build \
-    /oai-ran/cmake_targets/autotests/tools/free_mem.bash \
     /oai-ran/cmake_targets/tools/build_helper \
     /oai-ran/cmake_targets/tools/test_helper \
     /opt/oai-physim/cmake_targets/tools/

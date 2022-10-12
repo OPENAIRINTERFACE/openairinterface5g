@@ -46,7 +46,6 @@ set(OPENAIR3_DIR          ${OPENAIR_DIR}/openair3)
 set(OPENAIR3_DIR         ${OPENAIR_DIR}/openair3)
 set(OPENAIR_TARGETS       ${OPENAIR_DIR}/targets)
 set(OPENAIR_CMAKE_SCRIPTS ${OPENAIR_DIR}/cmake_targets/tools)
-set(OPENAIR_BIN_DIR       ${OPENAIR_DIR}/targets/bin)
 set(OPENAIR_NAS_DIR       ${OPENAIR_DIR}/openair3/NAS)
 
 

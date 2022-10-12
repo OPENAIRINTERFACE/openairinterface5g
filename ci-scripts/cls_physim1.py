@@ -57,7 +57,6 @@ class PhySim:
 		self.ranAllowMerge= False
 		self.ranTargetBranch= ""
 		self.testResult = {}
-		self.testCount = [0,0,0]
 		self.testSummary = {}
 		self.testStatus = False
 
@@ -152,7 +151,7 @@ class PhySim:
 					isFinished1 = True
 			mySSH.command('oc logout', '\$', 30)
 			mySSH.close()
-			self.AnalyzeLogFile_phySim(HTML)
+			self.AnalyzeLogFile_phySim()
 			RAN.prematureExit = True
 			return
 		else:
@@ -162,16 +161,17 @@ class PhySim:
 		while(count < 2 and isRunning == False):
 			time.sleep(60)
 			mySSH.command('oc get pods -o wide -l app.kubernetes.io/instance=physim | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 30, resync=True)
-			if mySSH.getBefore().count('Running') == 12:
+			if mySSH.getBefore().count('Running') == 21:
 				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
 				isRunning = True
 				podNames = re.findall('oai-[\S\d\w]+', mySSH.getBefore())
 			count +=1
+		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc describe pod $pod >> cmake_targets/log/physim_pods_summary.txt; done', '\$', 10)
 		if isRunning == False:
 			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
 			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
 			mySSH.command('helm uninstall physim 2>&1 >> cmake_targets/log/physim_helm_summary.txt', '\$', 6)
-			self.AnalyzeLogFile_phySim(HTML)
+			self.AnalyzeLogFile_phySim()
 			isFinished1 = False
 			while(isFinished1 == False):
 				time.sleep(20)
@@ -188,7 +188,7 @@ class PhySim:
 		isFinished = False
 		# doing a deep copy!
 		tmpPodNames = podNames.copy()
-		while(count < 50 and isFinished == False):
+		while(count < 15 and isFinished == False):
 			time.sleep(60)
 			for podName in tmpPodNames:
 				mySSH.command2(f'oc logs --tail=1 {podName} 2>&1', 6, silent=True)
@@ -206,20 +206,19 @@ class PhySim:
 		# Getting the logs of each executables running in individual pods
 		for podName in podNames:
 			mySSH.command(f'oc logs {podName} >> cmake_targets/log/physim_test.txt 2>&1', '\$', 15, resync=True)
-		time.sleep(30)
 		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/log/physim_test.txt', '.')
 		try:
 			listLogFiles =  subprocess.check_output('egrep --colour=never "Execution Log file|Linux oai-" physim_test.txt', shell=True, universal_newlines=True)
 			for line in listLogFiles.split('\n'):
 				res1 = re.search('Linux (?P<pod>oai-[a-zA-Z0-9\-]+) ', str(line))
-				res2 = re.search('Execution Log file = (?P<name>[a-zA-Z0-9\-\/\.\_]+)', str(line))
+				res2 = re.search('Execution Log file = (?P<name>[a-zA-Z0-9\-\/\.\_\+]+)', str(line))
 				if res1 is not None:
 					podName = res1.group('pod')
 				if res2 is not None:
 					logFileInPod = res2.group('name')
-					folderName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/', '', logFileInPod)
+					folderName = logFileInPod.replace('/opt/oai-physim/cmake_targets/autotests/log/', '')
 					folderName = re.sub('/test.*', '', folderName)
-					fileName = re.sub('/opt/oai-physim/cmake_targets/autotests/log/' + folderName + '/', '', logFileInPod)
+					fileName = logFileInPod.replace('/opt/oai-physim/cmake_targets/autotests/log/' + folderName + '/', '')
 					mySSH.command('mkdir -p cmake_targets/log/' + folderName, '\$', 5, silent=True)
 					mySSH.command('oc cp ' + podName + ':' + logFileInPod + ' cmake_targets/log/' + folderName + '/' + fileName, '\$', 20, silent=True)
 		except Exception as e:
@@ -237,7 +236,7 @@ class PhySim:
 			logging.debug('\u001B[1m UnDeployed PhySim Successfully on OC Cluster\u001B[0m')
 		mySSH.command('oc logout', '\$', 6)
 		mySSH.close()
-		self.AnalyzeLogFile_phySim(HTML)
+		self.AnalyzeLogFile_phySim()
 		if self.testStatus and isFinished:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
@@ -251,50 +250,37 @@ class PhySim:
 			HTML.CreateHtmlTestRowPhySimTestResult(self.testSummary,self.testResult)
 			logging.error('\u001B[1m Physical Simulator Fail\u001B[0m')
 
-	def AnalyzeLogFile_phySim(self, HTML):
-		lIpAddr = self.eNBIPAddress
-		lUserName = self.eNBUserName
-		lPassWord = self.eNBPassword
-		lSourcePath = self.eNBSourceCodePath
+	def AnalyzeLogFile_phySim(self):
 		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('cp log/physim_* ' + 'physim_test_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('tar cvf physim_test_log_' + self.testCase_id + '/physim_log.tar log/015*', '\$', 180)
-		if not os.path.exists(f'./physim_test_logs_{self.testCase_id}'):
-			os.mkdir(f'./physim_test_logs_{self.testCase_id}')
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/physim_test_log_' + self.testCase_id + '/*', './physim_test_logs_' + self.testCase_id)
-		mySSH.command('rm -rf ./physim_test_log_'+ self.testCase_id, '\$', 5)
+		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
+		dirToCopy = f'{self.eNBSourceCodePath}/cmake_targets/log/'
+		mySSH.copyin(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, dirToCopy, f'./physim_test_logs_{self.testCase_id}/')
+		mySSH.command(f'rm -rf {dirToCopy}', '\$', 5)
 		mySSH.close()
 		# physim test log analysis
 		nextt = 0
+		nbTests = 0
+		nbFailed = 0
 		if (os.path.isfile(f'./physim_test_logs_{self.testCase_id}/physim_test.txt')):
 			with open(f'./physim_test_logs_{self.testCase_id}/physim_test.txt', 'r') as logfile:
 				for line in logfile:
-					if re.search('execution 015', str(line)) or re.search('Bypassing compilation', str(line)):
-						nextt = 1
-					elif nextt == 1:
-						if not re.search('Test Results', str(line)):
-							nextt = 0
-							ret2 = re.search('T[^\n]*', str(line))
-							if ret2 is not None:
-								ret3 = ret2.group()
-								ret3 = ret3.replace("[00m", "")
-					if re.search('execution 015', str(line)):
-						self.testCount[0] += 1
-						testName = line.split()
-						ret1 = re.search('Result = PASS', str(line))
-						if ret1 is not None:
-							self.testResult[testName[1]] = [ret3, 'PASS']
-							self.testCount[1] += 1
-						else:
-							self.testResult[testName[1]] = [ret3, 'FAIL']
-							self.testCount[2] += 1
-		self.testSummary['Nbtests'] = self.testCount[0]
-		self.testSummary['Nbpass'] =  self.testCount[1]
-		self.testSummary['Nbfail'] =  self.testCount[2]
+					# the following regex would match the following line:
+					# execution nr_pbchsim.106rb.test1 {Test1: PBCH-only, 106 PRB} Run_Result = " Run_1 =PASS Run_2 =PASS Run_3 =PASS"  Result = PASS
+					#           ^testname               ^testdescription                                 ^test1      ^test2      ^test3          ^status
+					ret = re.search('execution +(?P<name>[a-zA-Z0-9\._\-\+]+) +{(?P<desc>[A-Za-z0-9\.\_\-\+:,;\/\%\=\(\) ]+)} *Run_Result *= *\" *Run_1 *= *(?P<run1>[A-Za-z]+) *Run_2 *= *(?P<run2>[A-Za-z]+) *Run_3 *= *(?P<run3>[A-Za-z]+) *\" + Result *= *(?P<status>[A-Za-z]+)', line)
+					if ret is None:
+						continue
+					nbTests += 1
+					r = [ret.group('run1'), ret.group('run2'), ret.group('run3')]
+					nbPass = sum([x == 'PASS' for x in r])
+					resultstr = 'PASS'
+					if nbPass < 3 or ret.group('status') != 'PASS':
+						resultstr = f'FAIL ({3-nbPass}/3)'
+						nbFailed += 1
+					self.testResult[ret.group('name')] = [ret.group('desc'), resultstr]
+		self.testSummary['Nbtests'] = nbTests
+		self.testSummary['Nbpass'] =  nbTests - nbFailed
+		self.testSummary['Nbfail'] =  nbFailed
 		if self.testSummary['Nbfail'] == 0:
 			self.testStatus = True
 		return 0

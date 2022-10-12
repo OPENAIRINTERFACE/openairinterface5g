@@ -865,12 +865,13 @@ void fill_rf_config(RU_t *ru, char *rf_config_file) {
     cfg->tx_gain[i] = ru->att_tx;
     cfg->rx_gain[i] = ru->max_rxgain-ru->att_rx;
     cfg->configFilename = rf_config_file;
-    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f Hz\n",
+    LOG_I(PHY, "Channel %d: setting tx_gain offset %.0f, rx_gain offset %.0f, tx_freq %.0f Hz, rx_freq %.0f Hz, tune_offset %.0f Hz, sample_rate %.0f Hz\n",
           i, cfg->tx_gain[i],
           cfg->rx_gain[i],
           cfg->tx_freq[i],
           cfg->rx_freq[i],
-          cfg->tune_offset);
+          cfg->tune_offset,
+          cfg->sample_rate);
   }
 }
 

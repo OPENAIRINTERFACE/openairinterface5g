@@ -46,8 +46,8 @@ For all platforms, the strategy for building docker/podman images is the same:
    -  lte-UE
    -  nr-UE
 *  These target images will only contain:
-   -  the generated executable (for example `lte-softmodem.Rel15`)
-   -  the generated shared libraries (for example `liboai_usrpdevif.so.Rel15`)
+   -  the generated executable (for example `lte-softmodem`)
+   -  the generated shared libraries (for example `liboai_usrpdevif.so`)
    -  the needed libraries and packages to run these generated binaries
    -  Some configuration file templates
    -  Some tools (such as `ping`, `ifconfig`)

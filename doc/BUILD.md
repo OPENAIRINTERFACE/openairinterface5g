@@ -60,9 +60,7 @@ cd cmake_targets/
 ./build_oai -I --phy_simulators
 ```
 
-After completing the build, the binaries are available in the cmake_targets/ran_build/build directory.  
-A copy is also available in the target/bin directory, with all binaries suffixed by the 3GPP release number, today **.Rel15**.  
-
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
@@ -86,7 +84,7 @@ cd cmake_targets/
 
 You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
 
-After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel15.
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 ## Installing UHD from source
 
@@ -144,40 +142,7 @@ Using the help option of the build script you can get the list of available opti
 
 # `build_oai` options
 
-| Option                                                      | Status                                      | Description                                                  |
-| ----------------------------------------------------------- | ------------------------------------------- | :----------------------------------------------------------- |
-| -h                                                          | maintained                                  | get help                                                     |
-| -c                                                          | maintained                                  | erase all previously built files for this target before starting the new build. |
-| -C                                                          | maintained, needs improvement               | erase all previously built files for any target before starting the new build. |
-| --verbose-compile                                           | maintained                                  | get compilation messages, as when running `make` or `gcc` directly. |
-| --cflags_processor                                          | maintained                                  | used to pass options to the compiler.                        |
-| --clean-kernel                                              | unknown                                     | no code in the script corresponding to this option           |
-| --install-system-files                                      | maintained                                  | install oai built binaries in linux system files repositories |
-| -w                                                          | maintained and tested in CI for USRP device | build corresponding oai device and create the soft link to enforce this device usage at run-time |
-| --phy_simulators                                            | maintained, tested in CI                    | build all PHY simulators, a set of executables allowing unitary tests of LTE and 5G channel implementation within oai. |
-| --core_simulators                                           |                                             |                                                              |
-| -s                                                          |                                             |                                                              |
-| --run-group                                                 |                                             |                                                              |
-| -I                                                          | maintained, tested in CI                    | install external dependencies before starting the build      |
-| --install-optional-packages                                 | maintained                                  | install optional packages, useful for developing and testing. look at the check_install_additional_tools function in cmake_targets/tools/build_helper script to get the list |
-| -g                                                          | maintained                                  | Specifies the level of debugging options used to build the binaries. Available levels are `Release`, `RelWithDebInfo`, `MinSizeRe` and `Debug`. If -g is not specified, `Release` is used, if -g is used without any level, `Debug` is used. |
-| -G                                                          | maintained                                  | Display Cmake debugging messages                             |
-| --eNB                                                       | maintained and tested in CI                 | build `lte-softmodem` the LTE eNodeB                         |
-| --UE                                                        | maintained and tested in CI                 | build `lte-uesoftmodem` the LTE UE                           |
-| --gNB                                                       | maintained and tested in CI                 | build `nr-softmodem` the 5G gNodeB                           |
-| --nrUE                                                      | maintained and tested in CI                 | build `nr-uesoftmodem` the 5G UE                             |
-| --arch-native                                               | maintained                                  | build with native architecture optimization                  |
-| --usrp-recplay                                              | deprecated                                  | use the USRP configuration parameters to use the record player. |
-| --build-lib                                                 | maintained                                  | build  optional shared library(ies), which can then be loaded at run time via command line option. Use the --help option to get the list of supported optional libraries. `all` can be used to build all available optional libraries. |
-| --UE-conf-nvram                                             | maintained                                  | Specifies the path to the input file used by the conf2uedata utility. defaults to [openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf](../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf) |
-| --UE-gen-nvram                                              | maintained                                  | Specifies the path where the output file created by the conf2uedata utility will be placed. Defaults to `target/bin` |
-| -V                                                          | deprecated                                  | Used to build with support for synchronization diagram utility. This is now available via the T-Tracer and is included if T-Tracer is not disabled. |
-| --build-doxygen                                             | unknown                                     | build doxygen documentation, many oai source files do not include doxygen comments |
-| --disable-deadline --enable-deadline --disable-cpu-affinity | deprecated                                  | These options were used to activate or de-activate specific code depending on the choice of a specific linux scheduling  mode. This has not been tested for a while and should be implemented as configuration options |
-| --disable-T-Tracer                                          | maintained, to be tested                    | Remove T_Tracer and console LOG messages except error messages. |
-| --ue-autotest-trace --ue-timing --ue-trace                  | deprecated                                  | Were used to enable conditional code implementing debugging messages or debugging statistics. These functionalities are now either available from run-time options or not maintained. |
-| --build-eclipse                                             | unknown                                     |                                                              |
-|                                                             |                                             |                                                              |
+Please run `./build_oai -h` to get a list of available options.
 
 [oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
 
