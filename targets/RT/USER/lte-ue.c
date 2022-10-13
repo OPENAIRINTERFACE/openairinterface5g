@@ -151,8 +151,6 @@ static const eutra_band_t eutra_bands[] = {
 };
 
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
-
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
@@ -469,9 +467,6 @@ static void *UE_thread_synch(void *arg) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
-  if ( threads.sync != -1 )
-    CPU_SET(threads.sync, &cpuset);
-
   // this thread priority must be lower that the main acquisition thread
   sprintf(threadname, "sync UE %d\n", UE->Mod_id);
   init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
@@ -773,15 +768,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
   sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
-    CPU_SET(threads.one, &cpuset);
-
-  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
-    CPU_SET(threads.two, &cpuset);
-
-  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
-    CPU_SET(threads.three, &cpuset);
 
   //CPU_SET(threads.three, &cpuset);
   init_thread(900000,1000000, FIFO_PRIORITY-1, &cpuset,
@@ -1935,9 +1921,6 @@ void *UE_thread(void *arg) {
   int ret;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-
-  if ( threads.main != -1 )
-    CPU_SET(threads.main, &cpuset);
 
   init_thread(100000, 500000, FIFO_PRIORITY, &cpuset, "UHD Threads");
   /*

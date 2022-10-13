@@ -19,7 +19,6 @@
 #include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "threads_t.h"
 #include "sdr/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
