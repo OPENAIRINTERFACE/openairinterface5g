@@ -4,11 +4,11 @@
 
 global:
   serviceAccountName: oai-physim-sa
-  namespace: "oaicicd-ran"
+  namespace: "OAICICD_PROJECT"
   image:
     registry: local
     repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran/oai-physim
-    version: ci-physim-cleanup
+    version: TAG
     # pullPolicy: IfNotPresent or Never or Always
     pullPolicy: Always
 
