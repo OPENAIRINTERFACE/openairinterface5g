@@ -187,6 +187,9 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
+		cmd_prefix = test.findtext('cmd_prefix')
+		if cmd_prefix is not None: RAN.cmd_prefix = cmd_prefix
+
 	elif action == 'Terminate_eNB':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
