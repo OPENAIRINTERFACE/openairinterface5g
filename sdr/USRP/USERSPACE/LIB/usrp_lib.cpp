@@ -794,22 +794,15 @@ void *freq_thread(void *arg) {
  * \param dummy dummy variable not used
  * \returns 0 in success
  */
-int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, int dont_block) {
+int trx_usrp_set_freq(openair0_device *device, openair0_config_t *openair0_cfg)
+{
   usrp_state_t *s = (usrp_state_t *)device->priv;
-  pthread_t f_thread;
-  printf("Setting USRP TX Freq %f, RX Freq %f, tune_offset: %f, dont_block: %d\n",
-         openair0_cfg[0].tx_freq[0],openair0_cfg[0].rx_freq[0],
-         openair0_cfg[0].tune_offset, dont_block);
+  printf("Setting USRP TX Freq %f, RX Freq %f, tune_offset: %f\n", openair0_cfg[0].tx_freq[0], openair0_cfg[0].rx_freq[0], openair0_cfg[0].tune_offset);
 
-  // spawn a thread to handle the frequency change to not block the calling thread
-  if (dont_block == 1)
-    pthread_create(&f_thread,NULL,freq_thread,(void *)device);
-  else {
-    uhd::tune_request_t tx_tune_req(openair0_cfg[0].tx_freq[0], openair0_cfg[0].tune_offset);
-    uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0], openair0_cfg[0].tune_offset);
-    s->usrp->set_tx_freq(tx_tune_req);
-    s->usrp->set_rx_freq(rx_tune_req);
-  }
+  uhd::tune_request_t tx_tune_req(openair0_cfg[0].tx_freq[0], openair0_cfg[0].tune_offset);
+  uhd::tune_request_t rx_tune_req(openair0_cfg[0].rx_freq[0], openair0_cfg[0].tune_offset);
+  s->usrp->set_tx_freq(tx_tune_req);
+  s->usrp->set_rx_freq(rx_tune_req);
 
   return(0);
 }

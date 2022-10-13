@@ -481,18 +481,6 @@ int32_t generate_prach( PHY_VARS_UE *ue, uint8_t eNB_id, uint8_t subframe, uint1
     ((int16_t *)ue->common_vars.txdata[0])[2*i+1] = prach[2*j+1];
   }
 
-#if defined(EXMIMO)
-
-  // handle switch before 1st TX subframe, guarantee that the slot prior to transmission is switch on
-  for (k=prach_start - (ue->frame_parms.samples_per_tti>>1) ; k<prach_start ; k++) {
-    if (k<0)
-      ue->common_vars.txdata[0][k+ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-    else if (k>(ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME))
-      ue->common_vars.txdata[0][k-ue->frame_parms.samples_per_tti*LTE_NUMBER_OF_SUBFRAMES_PER_FRAME] &= 0xFFFEFFFE;
-    else
-      ue->common_vars.txdata[0][k] &= 0xFFFEFFFE;
-  }
-#endif
 
 #if defined(PRACH_WRITE_OUTPUT_DEBUG)
   LOG_M("prach_txF0.m","prachtxF0",prachF,prach_len-Ncp,1,1);

@@ -29,10 +29,6 @@
  * \email: raymond.knopp@eurecom.fr, navid.nikaein@eurecom.fr javier.morgade@ieee.org
  */
 
-#ifdef EXMIMO
-  #include <pthread.h>
-#endif
-
 #include "mac_extern.h"
 #include "mac.h"
 #include "mac_proto.h"
@@ -2973,11 +2969,6 @@ ue_scheduler(const module_id_t module_idP,
       }
     } while (msg_p != NULL);
   }
-
-  //Mac_rlc_xface->frameP=frameP;
-  //Rrc_xface->Frame_index=Mac_rlc_xface->frameP;
-  //if (subframe%5 == 0)
-  //LG#ifdef EXMIMO
 
   // data to/from NETLINK is treated in pdcp_run.
   // one socket is used in multiple UE's L2 FAPI simulator and

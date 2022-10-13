@@ -916,7 +916,7 @@ static void rfsimulator_end(openair0_device *device) {
 static int rfsimulator_stop(openair0_device *device) {
   return 0;
 }
-static int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
+static int rfsimulator_set_freq(openair0_device *device, openair0_config_t *openair0_cfg) {
   return 0;
 }
 static int rfsimulator_set_gains(openair0_device *device, openair0_config_t *openair0_cfg) {

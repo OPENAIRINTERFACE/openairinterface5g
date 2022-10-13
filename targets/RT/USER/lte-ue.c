@@ -637,7 +637,7 @@ static void *UE_thread_synch(void *arg) {
               break;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
           //UE->rfdevice.trx_stop_func(&UE->rfdevice);
           sleep(1);
@@ -721,7 +721,7 @@ static void *UE_thread_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
         }// initial_sync=0
 
         break;
@@ -857,10 +857,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
         (UE->frame_parms.frame_type == FDD) )
       phy_procedures_UE_TX(UE,proc,0,0,UE->mode);
-
-    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
-        (UE->frame_parms.frame_type == TDD))
-      phy_procedures_UE_S_TX(UE,0,0);
 
     proc->instance_cnt_rxtx--;
 

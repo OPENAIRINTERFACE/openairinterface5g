@@ -361,30 +361,26 @@ void *set_freq_thread(void *arg) {
  * \param dummy dummy variable not used
  * \returns 0 in success
  */
-int trx_iris_set_freq(openair0_device *device, openair0_config_t *openair0_cfg, int dont_block) {
-    iris_state_t *s = (iris_state_t *) device->priv;
-    pthread_t f_thread;
-    if (dont_block)
-        pthread_create(&f_thread, NULL, set_freq_thread, (void *) device);
-    else {
-        int r, i;
-        for (r = 0; r < s->device_num; r++) {
-            printf("Setting Iris TX Freq %f, RX Freq %f\n", openair0_cfg[0].tx_freq[0], openair0_cfg[0].rx_freq[0]);
-            for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
-                if (i < s->rx_num_channels) {
-                    s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", openair0_cfg[0].rx_freq[i]);
-                }
-            }
-            for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
-                if (i < s->tx_num_channels) {
-                    s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", openair0_cfg[0].tx_freq[i]);
-                }
-            }
-        }
+int trx_iris_set_freq(openair0_device *device, openair0_config_t *openair0_cfg)
+{
+  iris_state_t *s = (iris_state_t *)device->priv;
+  pthread_t f_thread;
+  int r, i;
+  for (r = 0; r < s->device_num; r++) {
+    printf("Setting Iris TX Freq %f, RX Freq %f\n", openair0_cfg[0].tx_freq[0], openair0_cfg[0].rx_freq[0]);
+    for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_RX); i++) {
+      if (i < s->rx_num_channels) {
+        s->iris[r]->setFrequency(SOAPY_SDR_RX, i, "RF", openair0_cfg[0].rx_freq[i]);
+      }
     }
-    return (0);
+    for (i = 0; i < s->iris[r]->getNumChannels(SOAPY_SDR_TX); i++) {
+      if (i < s->tx_num_channels) {
+        s->iris[r]->setFrequency(SOAPY_SDR_TX, i, "RF", openair0_cfg[0].tx_freq[i]);
+      }
+    }
+  }
+  return (0);
 }
-
 
 /*! \brief Set Gains (TX/RX)
  * \param device the hardware to use

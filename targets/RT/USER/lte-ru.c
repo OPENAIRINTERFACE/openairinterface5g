@@ -1082,7 +1082,7 @@ static void do_ru_synch(RU_t *ru) {
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
   }
 
-  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
+  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg);
 
   while ((ru->in_synch ==0)&&(!oai_exit)) {
     // read in frame

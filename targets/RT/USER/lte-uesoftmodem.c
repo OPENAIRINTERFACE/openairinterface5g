@@ -703,9 +703,6 @@ int main( int argc, char **argv ) {
       printf("error reading from file\n");
   }
 
-  //p_exmimo_config->framing.tdd_config = TXRXSWITCH_TESTRX;
-
-
   if(IS_SOFTMODEM_DOSCOPE)
     load_softscope("ue",NULL);
 

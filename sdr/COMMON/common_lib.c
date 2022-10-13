@@ -45,7 +45,6 @@
 
 const char* devtype_names[MAX_RF_DEV_TYPE] = {
   "",
-  "EXMIMO",
   "USRP B200",
   "USRP X300",
   "USRP N300",

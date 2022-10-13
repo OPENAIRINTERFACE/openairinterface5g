@@ -83,8 +83,6 @@ typedef enum {
  */
 typedef enum {
   MIN_RF_DEV_TYPE = 0,
-  /*!\brief device is ExpressMIMO */
-  EXMIMO_DEV,
   /*!\brief device is USRP B200/B210*/
   USRP_B200_DEV,
   /*!\brief device is USRP X300/X310*/
@@ -226,7 +224,6 @@ typedef struct {
   //! timing_source
   clock_source_t time_source;
   //! Manual SDR IP address
-  //#if defined(EXMIMO) || defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR)
   char *sdr_addrs;
   //! Auto calibration flag
   int autocal[4];
@@ -500,10 +497,9 @@ struct openair0_device_t {
   /*! \brief Set RX feaquencies
    * \param device the hardware to use
    * \param openair0_cfg RF frontend parameters set by application
-   * \param exmimo_dump_config  dump EXMIMO configuration
    * \returns 0 in success
    */
-  int (*trx_set_freq_func)(openair0_device *device, openair0_config_t *openair0_cfg,int exmimo_dump_config);
+  int (*trx_set_freq_func)(openair0_device *device, openair0_config_t *openair0_cfg);
 
   /*! \brief Set gains
    * \param device the hardware to use

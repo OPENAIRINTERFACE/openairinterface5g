@@ -85,11 +85,7 @@ int dump_eNB_l2_stats(char *buffer, int length) {
     unsigned int  stat_timer_reordering_timed_out;
     unsigned int  stat_timer_poll_retransmit_timed_out;
     unsigned int  stat_timer_status_prohibit_timed_out;
-#ifdef EXMIMO
-    number_of_cards=1;
-#else
     number_of_cards=NB_eNB_INST;
-#endif
     eNB_MAC_INST *eNB;
     UE_info_t *UE_info;
 
