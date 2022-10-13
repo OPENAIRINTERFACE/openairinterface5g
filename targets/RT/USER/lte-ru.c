@@ -2277,15 +2277,6 @@ void init_RU_proc(RU_t *ru) {
   pthread_mutex_init( &proc->mutex_rf_tx, NULL);
   pthread_cond_init( &proc->cond_rf_tx, NULL);
 #endif
-#ifndef DEADLINE_SCHEDULER
-  attr_FH        = &proc->attr_FH;
-  attr_FH1       = &proc->attr_FH1;
-  attr_prach     = &proc->attr_prach;
-  attr_synch     = &proc->attr_synch;
-  attr_asynch    = &proc->attr_asynch_rxtx;
-  attr_emulateRF = &proc->attr_emulateRF;
-  attr_prach_br  = &proc->attr_prach_br;
-#endif
 
   if (ru->has_ctrl_prt == 1) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );
   else {

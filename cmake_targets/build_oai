@@ -40,7 +40,6 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
 PRINT_STATS="False"
-DEADLINE_SCHEDULER_FLAG_USER=""
 HW="None"
 TP="Ethernet"
 EPC=0
@@ -346,26 +345,6 @@ function main() {
             BUILD_COVERITY_SCAN=1
             echo_info "Will build Coverity-Scan objects for upload"
             shift;;
-       --disable-deadline)
-            DEADLINE_SCHEDULER_FLAG_USER="False"
-            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=False"
-            echo_info "Disabling the usage of deadline scheduler"
-            shift 1;;
-       --enable-deadline)
-            DEADLINE_SCHEDULER_FLAG_USER="True"
-            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=True"
-            echo_info "Enabling the usage of deadline scheduler"
-            shift 1;;
-       --enable-cpu-affinity)
-            CPU_AFFINITY_FLAG_USER="True"
-            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=True"
-            echo_info "Enabling CPU Affinity (only valid when not using deadline scheduler)"
-            shift 1;;
-       --disable-cpu-affinity)
-            CPU_AFFINITY_FLAG_USER="False"
-            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
-            echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
-            shift 1;;
        --disable-T-Tracer)
             CMAKE_CMD="$CMAKE_CMD -DT_TRACER=False"
             echo_info "Disabling the T tracer"
@@ -482,15 +461,6 @@ function main() {
 
   echo_info "RF HW set to $HW" 
   # If the user doesn't specify the Linux scheduler to use, we set a value
-
-  #Disable CPU Affinity for deadline scheduler
-  if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
-     CPU_AFFINITY_FLAG_USER="False"
-     CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
-  fi
-
-  echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
-  echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
   #######################################################
   # Setting and printing OAI envs, we should check here #

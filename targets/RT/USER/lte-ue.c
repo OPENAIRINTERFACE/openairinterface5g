@@ -203,22 +203,6 @@ void init_thread(int sched_runtime,
                  int sched_fifo,
                  cpu_set_t *cpuset,
                  char *name) {
-#ifdef DEADLINE_SCHEDULER
-
-  if (sched_runtime!=0) {
-    struct sched_attr attr= {0};
-    attr.size = sizeof(attr);
-    attr.sched_policy = SCHED_DEADLINE;
-    attr.sched_runtime  = sched_runtime;
-    attr.sched_deadline = sched_deadline;
-    attr.sched_period   = 0;
-    AssertFatal(sched_setattr(0, &attr, 0) == 0,
-                "[SCHED] %s thread: sched_setattr failed %s \n", name, strerror(errno));
-    LOG_I(HW,"[SCHED][eNB] %s deadline thread %lu started on CPU %d\n",
-          name, (unsigned long)gettid(), sched_getcpu());
-  }
-
-#else
   int settingPriority = 1;
 
   if (checkIfFedoraDistribution())
@@ -250,7 +234,6 @@ void init_thread(int sched_runtime,
   }
 
   CPU_FREE(cset);
-#endif
 }
 
 void init_UE(int nb_inst,

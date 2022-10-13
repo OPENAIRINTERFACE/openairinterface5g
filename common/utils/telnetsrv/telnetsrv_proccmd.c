@@ -121,11 +121,6 @@ char toksep[2];
               case SCHED_RR:
                    lptr+=sprintf(lptr,"%s ","rt: rr");
               break;
-#ifdef SCHED_DEADLINE
-              case SCHED_DEADLINE:
-                   lptr+=sprintf(lptr,"%s ","rt: deadline");
-              break;
-#endif
               default:
                    lptr+=sprintf(lptr,"%s ","????");
               break;

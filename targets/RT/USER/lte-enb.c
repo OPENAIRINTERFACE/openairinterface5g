@@ -917,14 +917,6 @@ void init_eNB_proc(int inst) {
     pthread_mutex_init( &proc->mutex_RU_PRACH_br,NULL);
     pthread_cond_init( &proc->cond_prach_br, NULL);
     pthread_attr_init( &proc->attr_prach_br);
-#ifndef DEADLINE_SCHEDULER
-    attr0       = &L1_proc->attr;
-    attr1       = &L1_proc_tx->attr;
-    attr_prach  = &proc->attr_prach;
-    attr_prach_br  = &proc->attr_prach_br;
-    //    attr_td     = &proc->attr_td;
-    //    attr_te     = &proc->attr_te;
-#endif
 
     if(get_thread_worker_conf() == WORKER_ENABLE) {
       init_te_thread(eNB);

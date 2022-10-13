@@ -343,7 +343,6 @@ Initializing RU threads
 [0m[0m[PHY]   Starting RU 0 (eNodeB_3GPP,synch_to_ext_device),
 [0mwaiting for sync (ru_thread,-1/0xff4968,0x17af520,0x16952a0)
 channel 0, Setting tx_gain offset 0.000000, rx_gain offset 118.000000, tx_freq 2680000000.000000, rx_freq 2560000000.000000
-[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
 [0m[0m[PHY]   Initializing frame parms for N_RB_DL 25, Ncp 0, osf 1
 [0m[0m[PHY]   lte_parms.c: Setting N_RB_DL to 25, ofdm_symbol_size 512
 [0m[0m[PHY]   Initializing RU signal buffers (if_south local RF) nb_tx 1
@@ -624,10 +623,8 @@ cnx_id 1 assoc_id 904
 [0m[0m[PHY]   init_eNB_proc(inst:0) RC.nb_CC[inst]:1 
 [0m[0m[PHY]   Initializing eNB processes instance:0 CC_id 0 
 [0m[0m[PHY]   eNB->single_thread_flag:0
-[0m[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
 [0m[0m[HW]   [SCHED][eNB] eNB_thread_prach started on CPU 0, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
 [0m[0m[ENB_APP]   ALL RUs ready - ALL eNBs ready
-[0m[0m[93m[HW]   thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.
 [0m[0m[HW]   [SCHED][eNB] eNB_thread_prach_br started on CPU 0, sched_policy = SCHED_FIFO , priority = 99, CPU Affinity= CPU_0 CPU_1 CPU_2 CPU_3 
 [0m[0m[ENB_APP]   Sending sync to all threads
 [0m[0m[MME_APP]   Creating MME_APP eNB Task
