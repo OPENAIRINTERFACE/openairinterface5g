@@ -99,8 +99,6 @@ typedef enum {
   IRIS_DEV,
   /*!\brief device is NONE*/
   NONE_DEV,
-  /*!\brief device is ADRV9371_ZC706 */
-  ADRV9371_ZC706_DEV,
   /*!\brief device is UEDv2 */
   UEDv2_DEV,
   RFSIMULATOR,

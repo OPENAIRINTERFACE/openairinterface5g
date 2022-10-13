@@ -53,7 +53,6 @@ const char* devtype_names[MAX_RF_DEV_TYPE] = {
   "LMSSDR",
   "IRIS",
   "No HW",
-  "ADRV9371_ZC706",
   "UEDv2",
   "RFSIMULATOR"
 };
