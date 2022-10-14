@@ -1015,14 +1015,14 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
-		logging.error('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.error('\u001B[1;37;41mScenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)\u001B[0m')
 		HTML.CreateHtmlTabFooter(False)
 		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
-			logging.warning('Scenario has reached minimal stability point -- Not a Failure')
+			logging.warning('\u001B[1;30;43mScenario has reached minimal stability point -- Not a Failure\u001B[0m')
 		else:
 			sys.exit('Failed Scenario')
 	else:
-		logging.info('Scenario passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.info('\u001B[1;37;42mScenario passed after ' + str(CiTestObj.FailReportCnt) + ' time(s)\u001B[0m')
 		HTML.CreateHtmlTabFooter(True)
 elif re.match('^LoadParams$', mode, re.IGNORECASE):
 	pass

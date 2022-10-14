@@ -652,6 +652,8 @@ class Containerize():
 		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Login Succeeded', mySSH.getBefore()) is None:
 			logging.error('Could not log into local registry')
+			mySSH.close()
+			HTML.CreateHtmlTestRow('Could not log into local registry', 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		orgTag = 'develop'
@@ -665,15 +667,20 @@ class Containerize():
 			if re.search(': digest:', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
 				logging.error(f'Could not push {image} to local registry : {tagToUse}')
+				mySSH.close()
+				HTML.CreateHtmlTestRow(f'Could not push {image} to local registry : {tagToUse}', 'KO', CONST.ALL_PROCESSES_OK)
 				return False
 			mySSH.command(f'docker rmi {tagToUse}', '\$', 5)
 
 		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Removing login credentials', mySSH.getBefore()) is None:
 			logging.error('Could not log off from local registry')
+			mySSH.close()
+			HTML.CreateHtmlTestRow('Could not log off from local registry', 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		mySSH.close()
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
 
 	def Pull_Image_from_Local_Registry(self, HTML):
@@ -702,6 +709,8 @@ class Containerize():
 		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Login Succeeded', mySSH.getBefore()) is None:
 			logging.error('Could not log into local registry')
+			mySSH.close()
+			HTML.CreateHtmlTestRow('Could not log into local registry', 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		orgTag = 'develop'
@@ -714,14 +723,19 @@ class Containerize():
 			if re.search('Status: Downloaded newer image for |Status: Image is up to date for', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
 				logging.error(f'Could not pull {image} from local registry : {tagToUse}')
+				mySSH.close()
+				HTML.CreateHtmlTestRow(f'Could not pull {image} from local registry : {tagToUse}', 'KO', CONST.ALL_PROCESSES_OK)
 				return False
 
 		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Removing login credentials', mySSH.getBefore()) is None:
 			logging.error('Could not log off from local registry')
+			mySSH.close()
+			HTML.CreateHtmlTestRow('Could not log off from local registry', 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		mySSH.close()
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
 
 	def Clean_Test_Server_Images(self, HTML):
@@ -757,6 +771,7 @@ class Containerize():
 			mySSH.command(f'docker rmi {tagToUse} || true', '\$', 5)
 
 		mySSH.close()
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
 
 	def DeployObject(self, HTML, EPC):
