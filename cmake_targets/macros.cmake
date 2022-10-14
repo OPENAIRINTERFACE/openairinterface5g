@@ -96,3 +96,11 @@ macro(compile_asn1 asn1Source asn1cCmd ResultFlag)
      DEPENDS ${asn1Source}
    )
 endmacro(compile_asn1)
+
+macro(eval_boolean VARIABLE)
+  if(${ARGN})
+    set(${VARIABLE} ON)
+  else()
+    set(${VARIABLE} OFF)
+  endif()
+endmacro()
