@@ -155,13 +155,6 @@ pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
 
-
-void get_uethreads_params(void) {
-  paramdef_t cmdline_threadsparams[] =CMDLINE_UETHREADSPARAMS_DESC;
-  config_process_cmdline( cmdline_threadsparams,sizeof(cmdline_threadsparams)/sizeof(paramdef_t),NULL);
-}
-
-
 void phy_init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
 PHY_VARS_UE *init_ue_vars(LTE_DL_FRAME_PARMS *frame_parms,

@@ -116,15 +116,6 @@
 /*-----------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters specific to UE threads                                   */
 /*   optname                   helpstr     paramflags     XXXptr                       defXXXval        type          numelt   */
-/*-----------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_UETHREADSPARAMS_DESC {  \
-    {"threadOneSubframe",       NULL,      0,     iptr:&(threads.one),                defintval:1,     TYPE_INT,       0},   \
-    {"threadTwoSubframe",       NULL,      0,     iptr:&(threads.two),                defintval:1,     TYPE_INT,       0},   \
-    {"threadThreeSubframe",     NULL,      0,     iptr:&(threads.three),              defintval:1,     TYPE_INT,       0},   \
-    {"threadSlot1ProcOne",      NULL,      0,     iptr:&(threads.slot1_proc_one),     defintval:1,     TYPE_INT,       0},   \
-    {"threadSlot1ProcTwo",      NULL,      0,     iptr:&(threads.slot1_proc_two),     defintval:1,     TYPE_INT,       0},   \
-  }
-//    {"threadIQ",                NULL,      0,     iptr:&(threads.iq),                 defintval:1,     TYPE_INT,       0},
 
 #define DEFAULT_DLF 2680000000
 
