@@ -44,10 +44,6 @@ import datetime
 import signal
 import statistics as stat
 from multiprocessing import Process, Lock, SimpleQueue
-logging.basicConfig(
-	level=logging.DEBUG,
-	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
-)
 
 #import our libs
 import helpreadme as HELP
@@ -3937,7 +3933,7 @@ class OaiCiTest():
 		sys.exit(1)
 
 	def ShowTestID(self):
-		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-		logging.debug('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
-		logging.debug('\u001B[1m' + self.desc + '\u001B[0m')
-		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
+		logging.info('\u001B[1m' + self.desc + '\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')

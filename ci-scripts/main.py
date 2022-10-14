@@ -70,7 +70,7 @@ import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
-	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
+	format="[%(asctime)s] %(levelname)8s: %(message)s"
 )
 
 
@@ -84,7 +84,7 @@ logging.basicConfig(
 
 def CheckClassValidity(xml_class_list,action,id):
 	if action not in xml_class_list:
-		logging.debug('ERROR: test-case ' + id + ' has unlisted class ' + action + ' ##CHECK xml_class_list.yml')
+		logging.error('test-case ' + id + ' has unlisted class ' + action + ' ##CHECK xml_class_list.yml')
 		resp=False
 	else:
 		resp=True
@@ -328,14 +328,14 @@ def GetParametersFromXML(action):
 			CiTestObj.iperf_profile = 'balanced'
 		else:
 			if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
-				logging.debug('ERROR: test-case has wrong profile ' + CiTestObj.iperf_profile)
+				logging.error('test-case has wrong profile ' + CiTestObj.iperf_profile)
 				CiTestObj.iperf_profile = 'balanced'
 		CiTestObj.iperf_options = test.findtext('iperf_options')
 		if (CiTestObj.iperf_options is None):
 			CiTestObj.iperf_options = 'check'
 		else:
 			if CiTestObj.iperf_options != 'check' and CiTestObj.iperf_options != 'sink':
-				logging.debug('ERROR: test-case has wrong option ' + CiTestObj.iperf_options)
+				logging.error('test-case has wrong option ' + CiTestObj.iperf_options)
 				CiTestObj.iperf_options = 'check'
 
 	elif action == 'IdleSleep':
@@ -464,8 +464,27 @@ def GetParametersFromXML(action):
 	elif action == 'Cppcheck_Analysis':
 		pass
 
+	elif action == 'Push_Local_Registry':
+		string_field = test.findtext('registry_svr_id')
+		if (string_field is not None):
+			CONTAINERS.registrySvrId = string_field
+
+	elif action == 'Pull_Local_Registry':
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CONTAINERS.testSvrId = string_field
+		for image in test.findall('image_to_pull'):
+			string_field = image.findtext('image_name')
+			if (string_field is not None):
+				CONTAINERS.imageToPull.append(string_field)
+
+	elif action == 'Clean_Test_Server_Images':
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CONTAINERS.testSvrId = string_field
+
 	else:
-		logging.error(f"unknown action {action}")
+		logging.warning(f"unknown action {action} from option-parsing point-of-view")
 
 
 #check if given test is in list
@@ -617,7 +636,7 @@ elif re.match('^LogCollecteNB$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	if RAN.eNBIPAddress == 'none':
 		cmd = 'zip -r enb.log.' + RAN.BuildId + '.zip cmake_targets/log'
-		logging.debug(cmd)
+		logging.info(cmd)
 		zipStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=60)
 		sys.exit(0)
 	RAN.LogCollecteNB()
@@ -683,17 +702,17 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		HTML.htmlNb_CATM_Modules=len(CiTestObj.CatMDevices)
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1m  Creating HTML footer \u001B[0m')
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+	logging.info('\u001B[1m----------------------------------------\u001B[0m')
+	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
+	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
 	CiTestObj.RetrieveSystemVersion('eNB',HTML,RAN)
 	CiTestObj.RetrieveSystemVersion('UE',HTML,RAN)
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-	logging.debug('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
-	logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+	logging.info('\u001B[1m----------------------------------------\u001B[0m')
+	logging.info('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
+	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
 		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -736,7 +755,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			HTML.testUnstable = True
 			CiTestObj.testMinStableId = xmlRoot.findtext('TestMinId',default='999999')
 			HTML.testMinStableId = CiTestObj.testMinStableId
-			logging.debug('Test is tagged as Unstable -- starting from TestID ' + str(CiTestObj.testMinStableId))
+			logging.warning('Test is tagged as Unstable -- starting from TestID ' + str(CiTestObj.testMinStableId))
 	all_tests=xmlRoot.findall('testCase')
 
 	exclusion_tests=exclusion_tests.split()
@@ -747,10 +766,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	for test in exclusion_tests:
 		if     (not re.match('^[0-9]{6}$', test) and
 				not re.match('^[0-9]{1,5}\+$', test)):
-			logging.debug('ERROR: exclusion test is invalidly formatted: ' + test)
+			logging.error('exclusion test is invalidly formatted: ' + test)
 			sys.exit(1)
 		else:
-			logging.debug(test)
+			logging.info(test)
 
 	#check that requested tests are well formatted
 	#(6 digits or less than 6 digits followed by +)
@@ -758,9 +777,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	for test in requested_tests:
 		if     (re.match('^[0-9]{6}$', test) or
 				re.match('^[0-9]{1,5}\+$', test)):
-			logging.debug('INFO: test group/case requested: ' + test)
+			logging.info('test group/case requested: ' + test)
 		else:
-			logging.debug('ERROR: requested test is invalidly formatted: ' + test)
+			logging.error('requested test is invalidly formatted: ' + test)
 			sys.exit(1)
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
 		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
@@ -771,9 +790,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	todo_tests=[]
 	for test in requested_tests:
 		if    (test_in_list(test, exclusion_tests)):
-			logging.debug('INFO: test will be skipped: ' + test)
+			logging.info('test will be skipped: ' + test)
 		else:
-			#logging.debug('INFO: test will be run: ' + test)
+			#logging.info('test will be run: ' + test)
 			todo_tests.append(test)
 
 	signal.signal(signal.SIGUSR1, receive_signal)
@@ -941,6 +960,18 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					success = CONTAINERS.Copy_Image_to_Test_Server(HTML)
 					if not success:
 						RAN.prematureExit = True
+				elif action == 'Push_Local_Registry':
+					success = CONTAINERS.Push_Image_to_Local_Registry(HTML)
+					if not success:
+						RAN.prematureExit = True
+				elif action == 'Pull_Local_Registry':
+					success = CONTAINERS.Pull_Image_from_Local_Registry(HTML)
+					if not success:
+						RAN.prematureExit = True
+				elif action == 'Clean_Test_Server_Images':
+					success = CONTAINERS.Clean_Test_Server_Images(HTML)
+					if not success:
+						RAN.prematureExit = True
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 					if CONTAINERS.exitStatus==1:
@@ -973,19 +1004,21 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'StatsFromGenObject':
 					CONTAINERS.StatsFromGenObject(HTML)
+				elif action == 'Push_Images_To_Test_Servers':
+					logging.debug('To be implemented')
 				else:
 					sys.exit('Invalid class (action) from xml')
 				if RAN.prematureExit:
 					if CiTestObj.testCase_id == CiTestObj.testMinStableId:
-						logging.debug('Scenario has reached minimal stability point')
+						logging.warning('Scenario has reached minimal stability point')
 						CiTestObj.testStabilityPointReached = True
 						HTML.testStabilityPointReached = True
 		CiTestObj.FailReportCnt += 1
 	if CiTestObj.FailReportCnt == CiTestObj.repeatCounts[0] and RAN.prematureExit:
-		logging.debug('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
+		logging.error('Scenario failed ' + str(CiTestObj.FailReportCnt) + ' time(s)')
 		HTML.CreateHtmlTabFooter(False)
 		if CiTestObj.testUnstable and (CiTestObj.testStabilityPointReached or CiTestObj.testMinStableId == '999999'):
-			logging.debug('Scenario has reached minimal stability point -- Not a Failure')
+			logging.warning('Scenario has reached minimal stability point -- Not a Failure')
 		else:
 			sys.exit('Failed Scenario')
 	else:

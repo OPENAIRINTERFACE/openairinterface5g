@@ -208,6 +208,7 @@ class Containerize():
 		self.imageToCopy = ''
 		self.registrySvrId = ''
 		self.testSvrId = ''
+		self.imageToPull = []
 
 		#checkers from xml
 		self.ran_checkers={}
@@ -614,6 +615,148 @@ class Containerize():
 			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
 
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		return True
+
+	def ImageTagToUse(self, imageName):
+		shortCommit = self.ranCommitID[0:8]
+		if self.ranAllowMerge:
+			tagToUse = f'{self.ranBranch}-{shortCommit}'
+		else:
+			tagToUse = f'develop-{shortCommit}'
+		fullTag = f'porcepix.sboai.cs.eurecom.fr/{imageName}:{tagToUse}'
+		return fullTag
+
+	def Push_Image_to_Local_Registry(self, HTML):
+		if self.registrySvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.registrySvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.registrySvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Pushing images from server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		if re.search('Login Succeeded', mySSH.getBefore()) is None:
+			logging.error('Could not log into local registry')
+			return False
+
+		orgTag = 'develop'
+		if self.ranAllowMerge:
+			orgTag = 'ci-temp'
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		for image in imageNames:
+			tagToUse = self.ImageTagToUse(image)
+			mySSH.command(f'docker image tag {image}:{orgTag} {tagToUse}', '\$', 5)
+			mySSH.command(f'docker push {tagToUse}', '\$', 120)
+			if re.search(': digest:', mySSH.getBefore()) is None:
+				logging.debug(mySSH.getBefore())
+				logging.error(f'Could not push {image} to local registry : {tagToUse}')
+				return False
+			mySSH.command(f'docker rmi {tagToUse}', '\$', 5)
+
+		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		if re.search('Removing login credentials', mySSH.getBefore()) is None:
+			logging.error('Could not log off from local registry')
+			return False
+
+		mySSH.close()
+		return True
+
+	def Pull_Image_from_Local_Registry(self, HTML):
+		if self.testSvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.testSvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.testSvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Pulling images onto server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		if re.search('Login Succeeded', mySSH.getBefore()) is None:
+			logging.error('Could not log into local registry')
+			return False
+
+		orgTag = 'develop'
+		if self.ranAllowMerge:
+			orgTag = 'ci-temp'
+
+		for image in self.imageToPull:
+			tagToUse = self.ImageTagToUse(image)
+			mySSH.command(f'docker pull {tagToUse}', '\$', 120)
+			if re.search('Status: Downloaded newer image for |Status: Image is up to date for', mySSH.getBefore()) is None:
+				logging.debug(mySSH.getBefore())
+				logging.error(f'Could not pull {image} from local registry : {tagToUse}')
+				return False
+
+		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		if re.search('Removing login credentials', mySSH.getBefore()) is None:
+			logging.error('Could not log off from local registry')
+			return False
+
+		mySSH.close()
+		return True
+
+	def Clean_Test_Server_Images(self, HTML):
+		if self.testSvrId == '0':
+			lIpAddr = self.eNBIPAddress
+			lUserName = self.eNBUserName
+			lPassWord = self.eNBPassword
+			lSourcePath = self.eNBSourceCodePath
+		elif self.testSvrId == '1':
+			lIpAddr = self.eNB1IPAddress
+			lUserName = self.eNB1UserName
+			lPassWord = self.eNB1Password
+			lSourcePath = self.eNB1SourceCodePath
+		elif self.testSvrId == '2':
+			lIpAddr = self.eNB2IPAddress
+			lUserName = self.eNB2UserName
+			lPassWord = self.eNB2Password
+			lSourcePath = self.eNB2SourceCodePath
+		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
+			HELP.GenericHelp(CONST.Version)
+			sys.exit('Insufficient Parameter')
+		logging.debug('Removing test images from server: ' + lIpAddr)
+		mySSH = SSH.SSHConnection()
+		mySSH.open(lIpAddr, lUserName, lPassWord)
+
+		orgTag = 'develop'
+		if self.ranAllowMerge:
+			orgTag = 'ci-temp'
+		tagToUse = self.ImageTagToUse(self.imageToPull)
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		for image in imageNames:
+			tagToUse = self.ImageTagToUse(image)
+			mySSH.command(f'docker rmi {tagToUse} || true', '\$', 5)
+
+		mySSH.close()
 		return True
 
 	def DeployObject(self, HTML, EPC):

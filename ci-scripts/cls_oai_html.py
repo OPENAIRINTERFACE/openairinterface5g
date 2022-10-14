@@ -102,9 +102,9 @@ class HTMLManagement():
 
 	def CreateHtmlHeader(self, ADBIPAddress):
 		if (not self.htmlHeaderCreated):
-			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-			logging.debug('\u001B[1m  Creating HTML header \u001B[0m')
-			logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+			logging.info('\u001B[1m----------------------------------------\u001B[0m')
+			logging.info('\u001B[1m  Creating HTML header \u001B[0m')
+			logging.info('\u001B[1m----------------------------------------\u001B[0m')
 			self.htmlFile = open('test_results.html', 'w')
 			self.htmlFile.write('<!DOCTYPE html>\n')
 			self.htmlFile.write('<html class="no-js" lang="en-US">\n')

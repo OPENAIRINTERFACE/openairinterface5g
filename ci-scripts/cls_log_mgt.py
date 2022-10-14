@@ -35,11 +35,6 @@ import re
 import subprocess
 import sshconnection
 
-logging.basicConfig(
-	level=logging.DEBUG,
-	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
-)
-
 class Log_Mgt:
 
 	def __init__(self,Username, IPAddress,Password,Path):
