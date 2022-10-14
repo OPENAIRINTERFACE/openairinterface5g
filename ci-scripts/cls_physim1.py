@@ -267,7 +267,7 @@ class PhySim:
 					# the following regex would match the following line:
 					# execution nr_pbchsim.106rb.test1 {Test1: PBCH-only, 106 PRB} Run_Result = " Run_1 =PASS Run_2 =PASS Run_3 =PASS"  Result = PASS
 					#           ^testname               ^testdescription                                 ^test1      ^test2      ^test3          ^status
-					ret = re.search('execution +(?P<name>[a-zA-Z0-9\._\-\+]+) +{(?P<desc>[A-Za-z0-9\.\_\-\+:,;\/\%\=\(\) ]+)} *Run_Result *= *\" *Run_1 *= *(?P<run1>[A-Za-z]+) *Run_2 *= *(?P<run2>[A-Za-z]+) *Run_3 *= *(?P<run3>[A-Za-z]+) *\" + Result *= *(?P<status>[A-Za-z]+)', line)
+					ret = re.search('execution\s+(?P<name>[a-zA-Z0-9\._\-\+]+)\s+{(?P<desc>[A-Za-z0-9\.\_\-\+:,;\/\%\=\(\)\s]+)}\s+Run_Result\s*=\s*\"\s*Run_1\s*=\s*(?P<run1>[A-Za-z]+)\s*Run_2\s*=\s*(?P<run2>[A-Za-z]+)\s*Run_3\s*=\s*(?P<run3>[A-Za-z]+)\s*\"\s+Result\s*=\s*(?P<status>[A-Za-z]+)', line)
 					if ret is None:
 						continue
 					nbTests += 1
