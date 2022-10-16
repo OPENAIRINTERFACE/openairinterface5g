@@ -34,7 +34,6 @@
 #define __LAYER2_MAC_UE_PROTO_H__
 
 #include "mac_defs.h"
-#include "PHY/defs_nr_UE.h"
 #include "RRC/NR_UE/rrc_defs.h"
 
 #define NR_DL_MAX_DAI                            (4)                      /* TS 38.213 table 9.1.3-1 Value of counter DAI for DCI format 1_0 and 1_1 */
@@ -176,13 +175,6 @@ uint8_t nr_locate_BsrIndexByBufferSize(const uint32_t *table, int size,
 \return the number of subframe
 */
 int nr_get_sf_periodicBSRTimer(uint8_t bucketSize);
-
-/*! \fn  int nr_get_ms_bucketsizeduration(uint8_t bucketSize)
-   \brief get the time in ms form the bucket size duration configured by the higher layer
-\param[in]  bucketSize the bucket size duration
-\return the time in ms
-*/
-int nr_get_ms_bucketsizeduration(uint8_t bucketsizeduration);
 
 /*! \fn  int nr_get_sf_retxBSRTimer(uint8_t retxBSR_Timer)
    \brief get the number of subframe form the bucket size duration configured by the higher layer
@@ -393,8 +385,6 @@ random-access procedure
 @returns timing advance or 0xffff if preamble doesn't match
 */
 int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
-
-void nr_process_rar(nr_downlink_indication_t *dl_info);
 
 void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources);
 

@@ -52,7 +52,6 @@
 #include "common/utils/nr/nr_common.h"
 
 /* PHY */
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
 
 /* utils */
