@@ -129,6 +129,7 @@ extern "C" {
 #define FLAG_FILE_LINE   0x0040
 #define FLAG_TIME        0x0100
 #define FLAG_THREAD_ID   0x0200
+#define FLAG_REAL_TIME   0x0400
 #define FLAG_INITIALIZED 0x8000
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
