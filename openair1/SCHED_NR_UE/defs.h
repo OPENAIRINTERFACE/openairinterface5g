@@ -143,16 +143,6 @@ void processSlotTX(void *arg);
   @param abstraction_flag Indicator of PHY abstraction
   @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
 */
-//void phy_procedures_UE_S_TX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag,relaying_type_t r_type);
-
-/*! \brief Scheduling for UE RX procedures in TDD S-subframes.
-  @param phy_vars_ue Pointer to UE variables on which to act
-  @param eNB_id Local id of eNB on which to act
-  @param abstraction_flag Indicator of PHY abstraction
-  @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-*/
-//void phy_procedures_UE_S_RX(PHY_VARS_NR_UE *ue,uint8_t eNB_id,uint8_t abstraction_flag, relaying_type_t r_type);
-
 
 /*! \brief Function to compute subframe type as a function of Frame type and TDD Configuration (implements Table 4.2.2 from 36.211, p.11 from version 8.6) and subframe index.
   @param frame_parms Pointer to DL frame parameter descriptor

@@ -48,13 +48,6 @@
 #define MAX_CONFIG_FRAMES 4
 
 unsigned short slen; // sequence length in frames, max is 4
-/*
-#ifdef EXMIMO
-const unsigned short config_frames[MAX_CONFIG_FRAMES];
-#else
-extern const unsigned short config_frames[MAX_CONFIG_FRAMES];
-#endif
-*/
 
 // function sends the config file "fname" to SMBV through socket sockfd
 int smbv_configure_from_file(int sockfd, const char* fname);

@@ -203,22 +203,6 @@ void init_thread(int sched_runtime,
                  int sched_fifo,
                  cpu_set_t *cpuset,
                  char *name) {
-#ifdef DEADLINE_SCHEDULER
-
-  if (sched_runtime!=0) {
-    struct sched_attr attr= {0};
-    attr.size = sizeof(attr);
-    attr.sched_policy = SCHED_DEADLINE;
-    attr.sched_runtime  = sched_runtime;
-    attr.sched_deadline = sched_deadline;
-    attr.sched_period   = 0;
-    AssertFatal(sched_setattr(0, &attr, 0) == 0,
-                "[SCHED] %s thread: sched_setattr failed %s \n", name, strerror(errno));
-    LOG_I(HW,"[SCHED][eNB] %s deadline thread %lu started on CPU %d\n",
-          name, (unsigned long)gettid(), sched_getcpu());
-  }
-
-#else
   int settingPriority = 1;
 
   if (checkIfFedoraDistribution())
@@ -250,7 +234,6 @@ void init_thread(int sched_runtime,
   }
 
   CPU_FREE(cset);
-#endif
 }
 
 void init_UE(int nb_inst,
@@ -637,7 +620,7 @@ static void *UE_thread_synch(void *arg) {
               break;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
           //UE->rfdevice.trx_stop_func(&UE->rfdevice);
           sleep(1);
@@ -721,7 +704,7 @@ static void *UE_thread_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
         }// initial_sync=0
 
         break;
@@ -857,10 +840,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
         (UE->frame_parms.frame_type == FDD) )
       phy_procedures_UE_TX(UE,proc,0,0,UE->mode);
-
-    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
-        (UE->frame_parms.frame_type == TDD))
-      phy_procedures_UE_S_TX(UE,0,0);
 
     proc->instance_cnt_rxtx--;
 

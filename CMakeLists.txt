@@ -50,7 +50,7 @@ include_directories(${CRYPTO_INCLUDE_DIRS})
 #uhd 4.0 and iris installs by default in /usr/local
 include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
-add_list2_option(RF_BOARD "None" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU" "EXMIMO")
+add_list2_option(RF_BOARD "None" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
 if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
 
@@ -877,8 +877,6 @@ include_directories ("${OPENAIR_DIR}/sdr/COMMON")
 ##############################################################
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????")
-add_boolean_option(DEADLINE_SCHEDULER False "Use the Linux scheduler SCHED_DEADLINE: kernel >= 3.14")
-add_boolean_option(CPU_AFFINITY False "Enable CPU Affinity of threads (only valid without deadline scheduler). It is enabled only with >2 CPUs")
 add_boolean_option(NAS_NETLINK False "useless ??? Must be True to compile nasmesh driver without rtai ????")
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????")
 
@@ -904,8 +902,6 @@ add_boolean_option(LINUX_LIST              False "used only in lists.c: either u
 ##########################
 # PHY options
 ##########################
-add_boolean_option(DRIVER2013              True "only relevant for EXMIMO")
-add_boolean_option(EXMIMO_IOT              True "????")
 add_boolean_option(LOCALIZATION            False "???")
 add_integer_option(MAX_NUM_CCs             1     "????")
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator")
@@ -3085,7 +3081,7 @@ if (${T_TRACER})
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP
-        params_libconfig oai_exmimodevif oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
+        params_libconfig oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass coding FLPT_MSG FLEXRAN_AGENT HASHTABLE UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
@@ -3181,24 +3177,6 @@ if(OAI_NW_DRIVER_USE_NETLINK)
   list(APPEND ue_ip_src netlink.c)
 endif()
 make_driver(ue_ip ${OPENAIR2_DIR}/NETWORK_DRIVER/UE_IP ${ue_ip_src})
-
-
-foreach(file IN ITEMS ${OCT_FILES})
-  string(REGEX REPLACE "oct *$" "cc" src ${file})
-  add_custom_command(
-    OUTPUT ${file}
-    DEPENDS ${OCT_DIR}/${src} OPENAIR0_LIB
-    COMMAND mkoctfile
-    ARGS ${OCT_FLAGS} ${OCT_INCL} ${OCT_LIBS}
-    ARGS -o ${file} ${OCT_DIR}/${src}
-    COMMENT "Generating ${file}"
-    VERBATIM
-  )
-endforeach(file)
-
-ADD_CUSTOM_TARGET(oarf
-   DEPENDS ${OCT_FILES}
-)
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
 include(${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/CMakeLists.txt)

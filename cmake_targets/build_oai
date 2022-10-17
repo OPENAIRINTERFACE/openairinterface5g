@@ -40,7 +40,6 @@ conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 XFORMS="True"
 SKIP_SHARED_LIB_FLAG="False"
 PRINT_STATS="False"
-DEADLINE_SCHEDULER_FLAG_USER=""
 HW="None"
 TP="Ethernet"
 EPC=0
@@ -110,7 +109,7 @@ Options:
 --UE-gen-nvram [output path]
    Specify gen_nvram_path (default \"$gen_nvram_path\")
 -w | --hardware
-   EXMIMO, USRP, BLADERF, LMSSDR, IRIS, ADRV9371_ZC706, SIMU, AW2SORI, None (Default)
+   USRP, BLADERF, LMSSDR, IRIS, SIMU, AW2SORI, None (Default)
    Adds this RF board support (in external packages installation and in compilation)
 -t | --transport
    Selects the transport protocol type, options: None, Ethernet, benetel4g, benetel5g
@@ -172,13 +171,7 @@ Options:
 --sanitize-undefined | -fsanitize=undefined
   Enable the undefined behavior sanitizer on all targets
 -h | --help
-   Print this help
-
-Usage (first build):
- NI/ETTUS B201  + COTS UE : ./build_oai -I -i --eNB -w USRP
-Usage (regular):
- Eurecom EXMIMO + OAI ENB : ./build_oai --eNB  
- NI/ETTUS B201  + OAI ENB : ./build_oai --eNB -w USRP"
+   Print this help"
 }
 
 
@@ -293,10 +286,7 @@ function main() {
        -w | --hardware)
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
             case "$2" in
-                "EXMIMO")
-                    HW="EXMIMO"
-                    ;;
-                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "ADRV9371_ZC706" | "SIMU" | "AW2SORI")
+                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU" | "AW2SORI")
                     HW="OAI_"$2
                     ;;
                 "None")
@@ -355,26 +345,6 @@ function main() {
             BUILD_COVERITY_SCAN=1
             echo_info "Will build Coverity-Scan objects for upload"
             shift;;
-       --disable-deadline)
-            DEADLINE_SCHEDULER_FLAG_USER="False"
-            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=False"
-            echo_info "Disabling the usage of deadline scheduler"
-            shift 1;;
-       --enable-deadline)
-            DEADLINE_SCHEDULER_FLAG_USER="True"
-            CMAKE_CMD="$CMAKE_CMD -DDEADLINE_SCHEDULER=True"
-            echo_info "Enabling the usage of deadline scheduler"
-            shift 1;;
-       --enable-cpu-affinity)
-            CPU_AFFINITY_FLAG_USER="True"
-            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=True"
-            echo_info "Enabling CPU Affinity (only valid when not using deadline scheduler)"
-            shift 1;;
-       --disable-cpu-affinity)
-            CPU_AFFINITY_FLAG_USER="False"
-            CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
-            echo_info "Disabling CPU Affinity (only valid when not using deadline scheduler)"
-            shift 1;;
        --disable-T-Tracer)
             CMAKE_CMD="$CMAKE_CMD -DT_TRACER=False"
             echo_info "Disabling the T tracer"
@@ -491,25 +461,6 @@ function main() {
 
   echo_info "RF HW set to $HW" 
   # If the user doesn't specify the Linux scheduler to use, we set a value
-  if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "" ]; then
-      case "$HW" in
-          "EXMIMO")
-		      DEADLINE_SCHEDULER_FLAG_USER="True"
-		      ;;
-          *)
-		      DEADLINE_SCHEDULER_FLAG_USER="False"
-		      ;;
-      esac
-  fi
-
-  #Disable CPU Affinity for deadline scheduler
-  if [ "$DEADLINE_SCHEDULER_FLAG_USER" = "True" ] ; then 
-     CPU_AFFINITY_FLAG_USER="False"
-     CMAKE_CMD="$CMAKE_CMD -DCPU_AFFINITY=False"
-  fi
-
-  echo_info "Flags for Deadline scheduler: $DEADLINE_SCHEDULER_FLAG_USER"
-  echo_info "Flags for CPU Affinity: $CPU_AFFINITY_FLAG_USER"
 
   #######################################################
   # Setting and printing OAI envs, we should check here #
@@ -548,10 +499,6 @@ function main() {
         install_usrp_uhd_driver $UHD_IMAGES_DIR
       fi
     fi 
-#    if [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
-#      echo_info "\nInstalling packages for ADRV9371_ZC706 support"
-#      check_install_libiio_driver
-#    fi 
     if [ "$HW" == "OAI_BLADERF" ] ; then
       echo_info "installing packages for BLADERF support"
       check_install_bladerf_driver
@@ -712,22 +659,6 @@ function main() {
       compilations $BUILD_DIR test_$f
     done
   fi
-
-  ####################################
-  # EXMIMO drivers & firmware loader #
-  ####################################
-  if [ "$HW" = "EXMIMO" ] ; then
-    echo_info "Compiling Express MIMO 2 board drivers"
-    compilations $BUILD_DIR openair_rf
-    compilations $BUILD_DIR updatefw
-    echo_info "Compiling oarf tools. The logfile for compilation is here: $dlog/oarf.txt"
-    make -C $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build oarf > $dlog/oarf.txt 2>&1
-    if [ -s $OPENAIR_DIR/cmake_targets/$BUILD_DIR/build/oarf_config_exmimo.oct ] ; then
-	  echo_success "oarf tools compiled"
-    else
-	  echo_error "oarf tools compilation failed"
-    fi
-  fi
   
   ######################
   # Optional libraries #
@@ -747,13 +678,7 @@ function main() {
       if [ "$HW" != "None" ] ; then
           rm -f liboai_device.so
 
-          # link liboai_device.so with the selected RF device library
-          if [ "$HW" == "EXMIMO" ] ; then
-              compilations $BUILD_DIR oai_exmimodevif
-
-              ln -sf liboai_exmimodevif.so liboai_device.so
-              echo_info "liboai_device.so is linked to EXMIMO device library"
-          elif [ "$HW" == "OAI_USRP" ] ; then
+          if [ "$HW" == "OAI_USRP" ] ; then
               compilations $BUILD_DIR oai_usrpdevif
 
               ln -sf liboai_usrpdevif.so liboai_device.so
@@ -777,18 +702,6 @@ function main() {
 
               ln -s liboai_irisdevif.so liboai_device.so
               echo_info "liboai_device.so is linked to IRIS device library"
-          elif [ "$HW" == "OAI_ADRV9371_ZC706" ] ; then
-              SYRIQ_KVER=$(uname -r)
-              SYRIQ_KMAJ=$(echo $SYRIQ_KVER | sed -e 's/^\([0-9][0-9]*\)\.[0-9][0-9]*\.[0-9][0-9]*.*/\1/')
-              SYRIQ_KMIN=$(echo $SYRIQ_KVER | sed -e 's/^[0-9][0-9]*\.\([0-9][0-9]*\)\.[0-9][0-9]*.*/\1/')
-#              echo $SYRIQ_KMAJ$SYRIQ_KMIN
-              if [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "319" ] || [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "410" ] || [ "$SYRIQ_KMAJ$SYRIQ_KMIN" == "415" ] ; then
-#                  echo "Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN detected"
-                  ln -sf /usr/local/lib/syriq/libadrv9371zc706.so liboai_device.so
-              else
-                  echo_error "== FAILED == Unexpected Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
-              fi
-              echo_info "liboai_device.so is linked to ADRV9371_ZC706 device library for Kernel $SYRIQ_KMAJ.$SYRIQ_KMIN"
           elif [ "$HW" == "OAI_AW2SORI" ] ; then
               compilations $BUILD_DIR aw2sori_transpro
 
