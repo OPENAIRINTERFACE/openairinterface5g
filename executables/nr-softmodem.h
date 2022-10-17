@@ -34,8 +34,6 @@
     {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
   }
 
-#include "threads_t.h"
-extern threads_t threads;
 extern uint32_t target_dl_mcs;
 extern uint32_t target_dl_Nl;
 extern uint32_t target_ul_Nl;
