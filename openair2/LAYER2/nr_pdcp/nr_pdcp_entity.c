@@ -111,13 +111,12 @@ static void nr_pdcp_entity_recv_pdu(nr_pdcp_entity_t *entity,
                    entity->rb_id, rcvd_count, entity->is_gnb ? 0 : 1);
 
   if (entity->has_integrity) {
-    unsigned char integrity[4];
+    unsigned char integrity[4] = {0};
     entity->integrity(entity->integrity_context, integrity,
                       buffer, size - integrity_size,
                       entity->rb_id, rcvd_count, entity->is_gnb ? 0 : 1);
     if (memcmp(integrity, buffer + size - integrity_size, 4) != 0) {
       LOG_E(PDCP, "discard NR PDU, integrity failed\n");
-//      return;
       entity->stats.rxpdu_dd_pkts++;
       entity->stats.rxpdu_dd_bytes += size;
 
@@ -220,20 +219,27 @@ static void nr_pdcp_entity_recv_sdu(nr_pdcp_entity_t *entity,
 
   memcpy(buf + header_size, buffer, size);
 
-  if (entity->has_integrity)
+  if (entity->has_integrity){
+    uint8_t integrity[4] = {0};
     entity->integrity(entity->integrity_context,
-                      (unsigned char *)buf + header_size + size,
+                      integrity,
                       (unsigned char *)buf, header_size + size,
                       entity->rb_id, count, entity->is_gnb ? 1 : 0);
+
+    memcpy((unsigned char *)buf + header_size + size, integrity, 4);
+  }
 
   // set MAC-I to 0 for SRBs with integrity not active
   else if (integrity_size == 4)
     memset(buf + header_size + size, 0, 4);
 
-  if (entity->has_ciphering)
+  if (entity->has_ciphering && (entity->is_gnb || entity->security_mode_completed)){
     entity->cipher(entity->security_context,
                    (unsigned char *)buf + header_size, size + integrity_size,
                    entity->rb_id, count, entity->is_gnb ? 1 : 0);
+  } else {
+    entity->security_mode_completed = true;
+  }
 
   entity->tx_next++;
 
