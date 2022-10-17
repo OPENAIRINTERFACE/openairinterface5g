@@ -12,11 +12,9 @@
   </tr>
 </table>
 
-## Table of Contents ##
+**Table of Contents**
 
-1.  [Introduction](#1-introduction)
-2.  [Sub BASH scripts](#2-sub-bash-scripts)
-3.  [Main script features](#3-main-script-features)
+[[_TOC_]]
 
 # 1. Introduction #
 

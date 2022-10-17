@@ -12,16 +12,9 @@
   </tr>
 </table>
 
-**TABLE OF CONTENTS**
+**Table of Contents**
 
-1. [SA setup with COTS UE](#1--sa-setup-with-cots-ue)
-   1.  [gNB build and configuration](#11--gnb-build-and-configuration)
-   2.  [OAI 5G Core Network installation and configuration](#12--oai-5g-core-network-installation-and-configuration)
-   3.  [Execution of SA scenario](#13--execution-of-sa-scenario)
-2. [SA Setup with OAI NR UE Softmodem](#2-sa-setup-with-oai-nr-ue-softmodem)
-   1.  [Build and configuration](#21-build-and-configuration)
-   2.  [OAI 5G Core Network installation and configuration](#22--oai-5g-core-network-installation-and-configuration)
-   3.  [Execution of SA scenario](#23-execution-of-sa-scenario)
+[[_TOC_]]
 
 In the following tutorial we describe how to deploy configure and test the two SA OAI setups:
 

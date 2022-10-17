@@ -16,19 +16,9 @@
 
 **2022/03/08: CAUTION, THE LAST VALID TAG on `develop` branch is `2021.w51_c`.**
 
-## Table of Contents ##
+**Table of Contents**
 
-1.   [Environment](#1-environment)
-2.   [Retrieve the OAI eNB-UE source code](#2-retrieve-the-oai-enb-ue-source-code)
-3.   [Setup of the USIM information in UE folder](#3-setup-of-the-usim-information-in-ue-folder)
-4.   [Setup of the Configuration files](#4-setup-of-the-configuration-files)
-     1.   [The eNB Configuration file](#41-the-enb-configuration-file)
-     2.   [The UE Configuration file](#42-the-ue-configuration-file)
-5.   [Build OAI UE and eNodeB](#5-build-oai-ue-and-enodeb)
-6.   [Start the eNB](#6-start-the-enb)
-7.   [Start the UE](#7-start-the-ue)
-8.   [Test with ping](#8-test-with-ping)
-9.   [Limitations](#9-limitations)
+[[_TOC_]]
 
 # 1. Environment #
 

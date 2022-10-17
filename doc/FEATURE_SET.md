@@ -1,30 +1,6 @@
 **Table of Contents**
 
-1. [Functional Split Architecture](#functional-split-architecture)
-2. [OpenAirInterface Block Diagram](#openairinterface-block-diagram)
-2. [OpenAirInterface 4G-LTE eNB Feature Set](#openairinterface-4g-lte-enb-feature-set)
-   1. [eNB PHY Layer](#enb-phy-layer)
-   2. [eNB MAC Layer](#enb-mac-layer)
-   3. [eNB RLC Layer](#enb-rlc-layer)
-   4. [eNB PDCP Layer](#enb-pdcp-layer)
-   5. [eNB RRC Layer](#enb-rrc-layer)
-   6. [eNB X2AP](#enb-x2ap)
-   7. [eNB/MCE M2AP](#enbmce-m2ap)
-   8. [MCE/MME M3AP](#mcemme-m3ap)
-3. [OpenAirInterface 4G-LTE UE Feature Set](#openairinterface-4g-lte-ue-feature-set)
-   1.  [LTE UE PHY Layer](#lte-ue-phy-layer)
-   2.  [LTE UE MAC Layer](#lte-ue-mac-layer)
-   3.  [LTE UE RLC Layer](#lte-ue-rlc-layer)
-   4.  [LTE UE PDCP Layer](#lte-ue-pdcp-layer)
-   5.  [LTE UE RRC Layer](#lte-ue-rrc-layer)
-4. [OpenAirInterface 5G-NR gNB Feature Set](#openairinterface-5g-nr-feature-set)
-   1. [General Parameters](#general-parameters)
-   2. [gNB Physical Layer](#gnb-phy-layer)
-   3. [gNB Higher Layers](#gnb-higher-layers)
-5. [OpenAirInterface 5G-NR UE Feature Set](#openairinterface-5g-nr-ue-feature-set)
-   1. [UE Physical Layer](#ue-phy-layer)
-   2. [UE Higher Layers](#ue-higher-layers)
-
+[[_TOC_]]
 
 # Functional Split Architecture #
 

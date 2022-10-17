@@ -12,11 +12,9 @@
   </tr>
 </table>
 
-## Table of Contents ##
+**Table of Contents**
 
-1.  [Introduction](#1-introduction)
-2.  [Centralized Workspace](#2-centralized-workspace)
-3.  [Create the ZIP file](#3-create-the-zip-file)
+[[_TOC_]]
 
 # 1. Introduction #
 
