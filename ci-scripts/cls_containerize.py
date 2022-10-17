@@ -548,75 +548,6 @@ class Containerize():
 		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
 		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 
-	def Copy_Image_to_Test_Server(self, HTML):
-		imageTag = 'develop'
-		if (self.ranAllowMerge):
-			imageTag = 'ci-temp'
-
-		lSsh = SSH.SSHConnection()
-		# Going to the Docker Registry server
-		if self.registrySvrId == '0':
-			lIpAddr = self.eNBIPAddress
-			lUserName = self.eNBUserName
-			lPassWord = self.eNBPassword
-		elif self.registrySvrId == '1':
-			lIpAddr = self.eNB1IPAddress
-			lUserName = self.eNB1UserName
-			lPassWord = self.eNB1Password
-		elif self.registrySvrId == '2':
-			lIpAddr = self.eNB2IPAddress
-			lUserName = self.eNB2UserName
-			lPassWord = self.eNB2Password
-		lSsh.open(lIpAddr, lUserName, lPassWord)
-		lSsh.command('docker save ' + self.imageToCopy + ':' + imageTag + ' | gzip --fast > ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		ret = lSsh.copyin(lIpAddr, lUserName, lPassWord, '~/' + self.imageToCopy + '-' + imageTag + '.tar.gz', '.')
-		if ret != 0:
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-			self.exitStatus = 1
-			return False
-		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		if lSsh.getBefore().count('cannot remove'):
-			HTML.CreateHtmlTestRow('file not created by docker save', 'KO', CONST.ALL_PROCESSES_OK)
-			self.exitStatus = 1
-			return False
-		lSsh.close()
-
-		# Going to the Test Server
-		if self.testSvrId == '0':
-			lIpAddr = self.eNBIPAddress
-			lUserName = self.eNBUserName
-			lPassWord = self.eNBPassword
-		elif self.testSvrId == '1':
-			lIpAddr = self.eNB1IPAddress
-			lUserName = self.eNB1UserName
-			lPassWord = self.eNB1Password
-		elif self.testSvrId == '2':
-			lIpAddr = self.eNB2IPAddress
-			lUserName = self.eNB2UserName
-			lPassWord = self.eNB2Password
-		lSsh.open(lIpAddr, lUserName, lPassWord)
-		lSsh.copyout(lIpAddr, lUserName, lPassWord, './' + self.imageToCopy + '-' + imageTag + '.tar.gz', '~')
-		# copyout has no return code and will quit if something fails
-		lSsh.command('docker rmi ' + self.imageToCopy + ':' + imageTag, '\$', 10)
-		lSsh.command('docker load < ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		if lSsh.getBefore().count('o such file') or lSsh.getBefore().count('invalid tar header'):
-			logging.debug(lSsh.getBefore())
-			HTML.CreateHtmlTestRow('problem during docker load', 'KO', CONST.ALL_PROCESSES_OK)
-			self.exitStatus = 1
-			return False
-		lSsh.command('rm ' + self.imageToCopy + '-' + imageTag + '.tar.gz', '\$', 60)
-		if lSsh.getBefore().count('cannot remove'):
-			HTML.CreateHtmlTestRow('file not copied during scp?', 'KO', CONST.ALL_PROCESSES_OK)
-			self.exitStatus = 1
-			return False
-		lSsh.close()
-
-		if os.path.isfile('./' + self.imageToCopy + '-' + imageTag + '.tar.gz'):
-			os.remove('./' + self.imageToCopy + '-' + imageTag + '.tar.gz')
-
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		return True
-
 	def ImageTagToUse(self, imageName):
 		shortCommit = self.ranCommitID[0:8]
 		if self.ranAllowMerge:
@@ -838,11 +769,10 @@ class Containerize():
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-		imageTag = 'develop'
-		if (self.ranAllowMerge):
-			imageTag = 'ci-temp'
-		mySSH.command('sed -i -e "s/image: oai-enb:latest/image: oai-enb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
-		mySSH.command('sed -i -e "s/image: oai-gnb:latest/image: oai-gnb:' + imageTag + '/" ci-docker-compose.yml', '\$', 2)
+		imagesList = ['oai-enb', 'oai-gnb']
+		for image in imagesList:
+			imageToUse = self.ImageTagToUse(image)
+			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
 		localMmeIpAddr = EPC.MmeIPAddress
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 #		if self.flexranCtrlDeployed:

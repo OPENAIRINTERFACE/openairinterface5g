@@ -26,8 +26,8 @@
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
+    111111
     010002
-    030000
     030101
     000001
     010000
@@ -47,6 +47,15 @@
     -->
   <TestCaseExclusionList></TestCaseExclusionList>
 
+  <testCase id="111111">
+    <class>Pull_Local_Registry</class>
+    <desc>Pull Images from Local Registry</desc>
+    <test_svr_id>0</test_svr_id>
+    <image_to_pull>
+      <image_name>oai-gnb</image_name>
+    </image_to_pull>
+  </testCase>
+
   <testCase id="010000">
     <class>Initialize_UE</class>
     <desc>Initialize Quectel</desc>
@@ -58,14 +67,6 @@
     <class>Terminate_UE</class>
     <desc>Terminate Quectel</desc>
     <id>idefix</id>
-  </testCase>
-
-  <testCase id="030000">
-    <class>Copy_Image_to_Test</class>
-    <desc>Copy gNB image to test server</desc>
-    <image_name>oai-gnb</image_name>
-    <registry_svr_id>1</registry_svr_id>
-    <test_svr_id>0</test_svr_id>
   </testCase>
 
   <testCase id="030101">

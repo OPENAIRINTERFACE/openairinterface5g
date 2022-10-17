@@ -444,17 +444,6 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.cliOptions = string_field
 
-	elif action == 'Copy_Image_to_Test':
-		string_field = test.findtext('image_name')
-		if (string_field is not None):
-			CONTAINERS.imageToCopy = string_field
-		string_field = test.findtext('registry_svr_id')
-		if (string_field is not None):
-			CONTAINERS.registrySvrId = string_field
-		string_field = test.findtext('test_svr_id')
-		if (string_field is not None):
-			CONTAINERS.testSvrId = string_field
-
 	elif action == 'Run_LDPCTest' or action == 'Run_NRulsimTest':
 		ldpc.runargs = test.findtext('physim_run_args')
 
@@ -473,6 +462,7 @@ def GetParametersFromXML(action):
 		string_field = test.findtext('test_svr_id')
 		if (string_field is not None):
 			CONTAINERS.testSvrId = string_field
+		CONTAINERS.imageToPull.clear()
 		for image in test.findall('image_to_pull'):
 			string_field = image.findtext('image_name')
 			if (string_field is not None):
@@ -956,10 +946,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CONTAINERS.BuildImage(HTML)
 				elif action == 'Build_Proxy':
 					CONTAINERS.BuildProxy(HTML)
-				elif action == 'Copy_Image_to_Test':
-					success = CONTAINERS.Copy_Image_to_Test_Server(HTML)
-					if not success:
-						RAN.prematureExit = True
 				elif action == 'Push_Local_Registry':
 					success = CONTAINERS.Push_Image_to_Local_Registry(HTML)
 					if not success:
