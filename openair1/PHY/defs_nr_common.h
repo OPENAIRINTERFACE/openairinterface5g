@@ -230,10 +230,6 @@ typedef struct {
   int RA_PCMAX;
   /// Corresponding RA-RNTI for UL-grant
   uint16_t ra_RNTI;
-  /// Frame of last completed synch
-  uint16_t sync_frame;
-  /// Flag to indicate that prach is ready to start: it is enabled with an initial delay after the sync
-  uint8_t init_msg1;
 } NR_PRACH_RESOURCES_t;
 
 typedef struct {

@@ -395,8 +395,6 @@ static void nr_ue_pbch_procedures(uint8_t gNB_id,
     if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1){
       if (get_softmodem_params()->do_ra) {
         ue->UE_mode[gNB_id] = PRACH;
-        ue->prach_resources[gNB_id]->sync_frame = frame_rx;
-        ue->prach_resources[gNB_id]->init_msg1 = 0;
       } else {
         ue->UE_mode[gNB_id] = PUSCH;
       }
@@ -1458,19 +1456,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  if (ue->mac_enabled == 0){
-
-    prach_resources->ra_TDD_map_index = 0;
-    prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = 10;
-    prach_resources->ra_RNTI = 0x1234;
-    nr_prach = 1;
-    prach_resources->init_msg1 = 1;
-
-  } else {
-
-    nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
-    LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
-  }
+  nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+  LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
 
   if (nr_prach == GENERATE_PREAMBLE) {
 

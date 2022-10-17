@@ -110,8 +110,6 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       //mac_resynch();
       //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
       ue->UE_mode[0] = PRACH;
-      ue->prach_resources[gNB_id]->sync_frame = frame;
-      ue->prach_resources[gNB_id]->init_msg1 = 0;
     } else {
       ue->UE_mode[0] = PUSCH;
     }

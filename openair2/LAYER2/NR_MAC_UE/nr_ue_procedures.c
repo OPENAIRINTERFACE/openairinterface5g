@@ -374,7 +374,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     else
       ssb_sc_offset_norm = ssb_subcarrier_offset;
 
-    if (mac->common_configuration_complete == 0)
+    if (mac->first_sync_frame == -1)
       nr_ue_sib1_scheduler(module_id,
                            cc_id,
                            ssb_start_symbol,
@@ -394,6 +394,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   mac->dl_config_request.sfn = frame;
   mac->dl_config_request.slot = ssb_start_symbol/14;
+  if (mac->first_sync_frame == -1)
+    mac->first_sync_frame = frame;
 
   return 0;
 }

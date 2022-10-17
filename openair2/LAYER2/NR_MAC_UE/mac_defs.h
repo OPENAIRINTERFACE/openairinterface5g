@@ -355,7 +355,7 @@ typedef struct {
   NR_CSI_ReportConfig_t           *csirc;
   long                            physCellId;
   ////  MAC config
-  int                             common_configuration_complete;
+  int                             first_sync_frame;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;

@@ -677,26 +677,25 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
-  if (!prach_resources->init_msg1) {
-    if ((mac->common_configuration_complete > 0 || get_softmodem_params()->do_ra || get_softmodem_params()->nsa) &&
-       ((MAX_FRAME_NUMBER + frame - prach_resources->sync_frame) % MAX_FRAME_NUMBER) > 150) {
-      prach_resources->init_msg1 = 1;
+  if (ra->ra_state == RA_UE_IDLE) {
+    if ((mac->first_sync_frame > -1 || get_softmodem_params()->do_ra || get_softmodem_params()->nsa) &&
+       ((MAX_FRAME_NUMBER + frame - mac->first_sync_frame) % MAX_FRAME_NUMBER) > 150) {
+      ra->ra_state = GENERATE_PREAMBLE;
     } else {
-      LOG_D(NR_MAC,"PRACH Condition not met: frame %d, prach_resources->sync_frame %d\n",frame,prach_resources->sync_frame);
+      LOG_D(NR_MAC,"PRACH Condition not met: ra state %d, frame %d, prach_resources->sync_frame %d\n", ra->ra_state, frame, mac->first_sync_frame);
       return 0;
     }
   }
 
-  LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: init_msg1 %d, ra_state %d, RA_active %d\n",
+  LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: ra_state %d, RA_active %d\n",
     __FUNCTION__,
     mod_id,
     frame,
     nr_slot_tx,
-    prach_resources->init_msg1,
     ra->ra_state,
     ra->RA_active);
 
-  if (prach_resources->init_msg1 && ra->ra_state != RA_SUCCEEDED) {
+  if (ra->ra_state > RA_UE_IDLE && ra->ra_state < RA_SUCCEEDED) {
 
     if (ra->RA_active == 0) {
       /* RA not active - checking if RRC is ready to initiate the RA procedure */
