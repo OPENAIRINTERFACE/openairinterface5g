@@ -22,7 +22,7 @@
 #ifndef NAS_UE_TASK_H_
 #define NAS_UE_TASK_H_
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "user_defs.h"
 
 // XXX simple array container for multiple users

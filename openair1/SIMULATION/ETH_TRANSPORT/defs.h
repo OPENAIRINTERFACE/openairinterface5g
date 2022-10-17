@@ -32,7 +32,7 @@
 #    define __BYPASS_SESSION_LAYER_DEFS_H__
 //-----------------------------------------------------------------------------
 //#include "openair_defs.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "PHY/defs_common.h"
 #include "PHY/LTE_TRANSPORT/uci_common.h"
 

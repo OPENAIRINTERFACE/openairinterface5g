@@ -129,7 +129,7 @@ static inline void* malloc16_clear( size_t size )
 #include <pthread.h>
 
 #include "sdr/COMMON/common_lib.h"
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 
 #define NUM_DCI_MAX_NB_IoT 32
 

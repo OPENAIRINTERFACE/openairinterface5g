@@ -35,7 +35,7 @@
 
 
 #include "common_lib.h"
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "time_meas.h"
 #include "defs_common.h"
 #include "nfapi_nr_interface_scf.h"

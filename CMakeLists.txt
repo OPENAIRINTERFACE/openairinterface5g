@@ -2633,8 +2633,8 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
+  ${OPENAIR_DIR}/executables/create_tasks.c
+  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
   ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
   ${OPENAIR_DIR}/sdr/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2673,8 +2673,8 @@ add_executable(ocp-enb
   ${OPENAIR_DIR}/executables/transport_split.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
+  ${OPENAIR_DIR}/executables/create_tasks.c
+  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
   ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
   ${OPENAIR_DIR}/sdr/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
@@ -2729,7 +2729,7 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
+  ${OPENAIR_DIR}/executables/create_tasks_ue.c
   ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
   ${OPENAIR_DIR}/sdr/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
