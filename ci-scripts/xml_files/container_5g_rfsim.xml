@@ -26,6 +26,7 @@
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
+ 111111
  100001
  000000
  000001
@@ -41,6 +42,18 @@
  100001
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <image_to_pull>
+                        <image_name>oai-gnb</image_name>
+                </image_to_pull>
+                <image_to_pull>
+                        <image_name>oai-nr-ue</image_name>
+                </image_to_pull>
+        </testCase>
 
         <testCase id="000000">
                 <class>DeployGenObject</class>
@@ -93,7 +106,7 @@
         <testCase id="020002">
                 <class>PingFromContainer</class>
                 <desc>Ping NR-UE from ext-dn</desc>
-		<container_name>rfsim5g-oai-ext-dn</container_name>
+                <container_name>rfsim5g-oai-ext-dn</container_name>
                 <options>-c 20 12.1.1.2</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>
@@ -109,7 +122,7 @@
         <testCase id="020004">
                 <class>PingFromContainer</class>
                 <desc>Ping Second NR-UE from ext-dn</desc>
-		<container_name>rfsim5g-oai-ext-dn</container_name>
+                <container_name>rfsim5g-oai-ext-dn</container_name>
                 <options>-c 20 12.1.1.3</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>

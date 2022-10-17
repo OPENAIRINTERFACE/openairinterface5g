@@ -651,9 +651,10 @@ class Containerize():
 
 		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Login Succeeded', mySSH.getBefore()) is None:
-			logging.error('Could not log into local registry')
+			msg = 'Could not log into local registry'
+			logging.error(msg)
 			mySSH.close()
-			HTML.CreateHtmlTestRow('Could not log into local registry', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		orgTag = 'develop'
@@ -666,17 +667,21 @@ class Containerize():
 			mySSH.command(f'docker push {tagToUse}', '\$', 120)
 			if re.search(': digest:', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
-				logging.error(f'Could not push {image} to local registry : {tagToUse}')
+				msg = f'Could not push {image} to local registry : {tagToUse}'
+				logging.error(msg)
 				mySSH.close()
-				HTML.CreateHtmlTestRow(f'Could not push {image} to local registry : {tagToUse}', 'KO', CONST.ALL_PROCESSES_OK)
+				HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 				return False
+			# TODO: once we are done migrating all types of tests, rmi also {image}:{orgTag}
+			#       so when we pull on builder as a test server, it will really pull
 			mySSH.command(f'docker rmi {tagToUse}', '\$', 5)
 
 		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Removing login credentials', mySSH.getBefore()) is None:
-			logging.error('Could not log off from local registry')
+			msg = 'Could not log off from local registry'
+			logging.error(msg)
 			mySSH.close()
-			HTML.CreateHtmlTestRow('Could not log off from local registry', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
 		mySSH.close()
@@ -684,6 +689,8 @@ class Containerize():
 		return True
 
 	def Pull_Image_from_Local_Registry(self, HTML):
+		# This method can be called either onto a remote server (different from python executor)
+		# or directly on the python executor (ie lIpAddr == 'none')
 		if self.testSvrId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -702,43 +709,68 @@ class Containerize():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		logging.debug('Pulling images onto server: ' + lIpAddr)
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
+		if lIpAddr != 'none':
+			logging.debug('Pulling images onto server: ' + lIpAddr)
+			mySSH = SSH.SSHConnection()
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+		else:
+			logging.debug('Pulling images locally')
 
-		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
-		if re.search('Login Succeeded', mySSH.getBefore()) is None:
-			logging.error('Could not log into local registry')
-			mySSH.close()
-			HTML.CreateHtmlTestRow('Could not log into local registry', 'KO', CONST.ALL_PROCESSES_OK)
+		cmd = 'echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr'
+		if lIpAddr != 'none':
+			mySSH.command(cmd, '\$', 5)
+			response = mySSH.getBefore()
+		else:
+			logging.info(cmd)
+			response = subprocess.check_output(cmd, shell=True, universal_newlines=True, stderr=subprocess.STDOUT)
+		if re.search('Login Succeeded', response) is None:
+			msg = 'Could not log into local registry'
+			logging.error(msg)
+			if lIpAddr != 'none':
+				mySSH.close()
+			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
-
-		orgTag = 'develop'
-		if self.ranAllowMerge:
-			orgTag = 'ci-temp'
 
 		for image in self.imageToPull:
 			tagToUse = self.ImageTagToUse(image)
-			mySSH.command(f'docker pull {tagToUse}', '\$', 120)
-			if re.search('Status: Downloaded newer image for |Status: Image is up to date for', mySSH.getBefore()) is None:
-				logging.debug(mySSH.getBefore())
-				logging.error(f'Could not pull {image} from local registry : {tagToUse}')
-				mySSH.close()
-				HTML.CreateHtmlTestRow(f'Could not pull {image} from local registry : {tagToUse}', 'KO', CONST.ALL_PROCESSES_OK)
+			cmd = f'docker pull {tagToUse}'
+			if lIpAddr != 'none':
+				mySSH.command(cmd, '\$', 120)
+				response = mySSH.getBefore()
+			else:
+				logging.info(cmd)
+				response = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+			if re.search('Status: Downloaded newer image for |Status: Image is up to date for', response) is None:
+				logging.debug(response)
+				msg = f'Could not pull {image} from local registry : {tagToUse}'
+				logging.error(msg)
+				if lIpAddr != 'none':
+					mySSH.close()
+				HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
 				return False
 
-		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
-		if re.search('Removing login credentials', mySSH.getBefore()) is None:
-			logging.error('Could not log off from local registry')
+		cmd = 'docker logout porcepix.sboai.cs.eurecom.fr'
+		if lIpAddr != 'none':
+			mySSH.command(cmd, '\$', 5)
+			response = mySSH.getBefore()
+		else:
+			logging.info(cmd)
+			response = subprocess.check_output(cmd, shell=True, universal_newlines=True)
+		if re.search('Removing login credentials', response) is None:
+			msg = 'Could not log off from local registry'
+			logging.error(msg)
 			mySSH.close()
-			HTML.CreateHtmlTestRow('Could not log off from local registry', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
 
-		mySSH.close()
+		if lIpAddr != 'none':
+			mySSH.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
 
 	def Clean_Test_Server_Images(self, HTML):
+		# This method can be called either onto a remote server (different from python executor)
+		# or directly on the python executor (ie lIpAddr == 'none')
 		if self.testSvrId == '0':
 			lIpAddr = self.eNBIPAddress
 			lUserName = self.eNBUserName
@@ -757,20 +789,24 @@ class Containerize():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		logging.debug('Removing test images from server: ' + lIpAddr)
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
+		if lIpAddr != 'none':
+			logging.debug('Removing test images from server: ' + lIpAddr)
+			mySSH = SSH.SSHConnection()
+			mySSH.open(lIpAddr, lUserName, lPassWord)
+		else:
+			logging.debug('Removing test images locally')
 
-		orgTag = 'develop'
-		if self.ranAllowMerge:
-			orgTag = 'ci-temp'
-		tagToUse = self.ImageTagToUse(self.imageToPull)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
-			tagToUse = self.ImageTagToUse(image)
-			mySSH.command(f'docker rmi {tagToUse} || true', '\$', 5)
+			cmd = f'docker rmi {self.ImageTagToUse(image)} || true'
+			if lIpAddr != 'none':
+				mySSH.command(cmd, '\$', 5)
+			else:
+				logging.info(cmd)
+				subprocess.run(cmd, shell=True, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
 
-		mySSH.close()
+		if lIpAddr != 'none':
+			mySSH.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
 
@@ -958,33 +994,40 @@ class Containerize():
 
 	def DeployGenObject(self, HTML, RAN, UE):
 		self.exitStatus = 0
-		logging.info('\u001B[1m Checking Services to deploy\u001B[0m')
+		logging.debug('\u001B[1m Checking Services to deploy\u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose config --services'
-		logging.debug(cmd)
+		logging.info(cmd)
 		try:
 			listServices = subprocess.check_output(cmd, shell=True, universal_newlines=True)
 		except Exception as e:
 			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
 			return
+		displayUsedTag = False
 		for reqSvc in self.services[0].split(' '):
 			res = re.search(reqSvc, listServices)
 			if res is None:
 				logging.error(reqSvc + ' not found in specified docker-compose')
 				self.exitStatus = 1
+			res = re.search('oai-gnb|oai-nr-ue|oai-cu|oai-du|oai_enb|oai_ue', reqSvc)
+			if res is not None:
+				displayUsedTag = True
 		if (self.exitStatus == 1):
 			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
 			return
 
-		if (self.ranAllowMerge):
-			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
-		else:
-			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@develop@" docker-compose.y*ml > docker-compose-ci.yml'
-		logging.debug(cmd)
-		subprocess.run(cmd, shell=True)
+		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		for image in imageNames:
+			tagToUse = self.ImageTagToUse(image)
+			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			subprocess.run(cmd, shell=True)
+		if displayUsedTag:
+			tagToUse = self.ImageTagToUse('oai-xxx')
+			logging.info(f'\u001B[1m Using Image Tag: {tagToUse}\u001B[0m')
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
-		logging.debug(cmd)
+		logging.info(cmd)
 		try:
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 		except Exception as e:
@@ -993,7 +1036,7 @@ class Containerize():
 			HTML.CreateHtmlTestRow('Could not deploy', 'KO', CONST.ALL_PROCESSES_OK)
 			return
 
-		logging.info('\u001B[1m Checking if all deployed healthy\u001B[0m')
+		logging.debug('\u001B[1m Checking if all deployed healthy\u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps -a'
 		count = 0
 		healthy = 0
@@ -1088,7 +1131,7 @@ class Containerize():
 		cmd += ' -w /tmp/capture_'
 		ymlPath = self.yamlPath[0].split('/')
 		cmd += ymlPath[1] + '.pcap > /tmp/tshark.log 2>&1 &'
-		logging.debug(cmd)
+		logging.info(cmd)
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		self.tsharkStarted = True
 
@@ -1097,22 +1140,23 @@ class Containerize():
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 
-		if (self.ranAllowMerge):
-			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@ci-temp@" docker-compose.y*ml > docker-compose-ci.yml'
-		else:
-			cmd = 'cd ' + self.yamlPath[0] + ' && sed -e "s@develop@develop@" docker-compose.y*ml > docker-compose-ci.yml'
-		logging.debug(cmd)
+		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
 		subprocess.run(cmd, shell=True)
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		for image in imageNames:
+			tagToUse = self.ImageTagToUse(image)
+			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			subprocess.run(cmd, shell=True)
 
 		# check which containers are running for log recovery later
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
-		logging.debug(cmd)
+		logging.info(cmd)
 		deployStatusLogs = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		# Stop the containers to shut down objects
 		logging.debug('\u001B[1m Stopping containers \u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml stop'
-		logging.debug(cmd)
+		logging.info(cmd)
 		try:
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 		except Exception as e:
@@ -1134,16 +1178,16 @@ class Containerize():
 				anyLogs = True
 				cName = res.group('container_name')
 				cmd = 'cd ' + self.yamlPath[0] + ' && docker logs ' + cName + ' > ' + cName + '.log 2>&1'
-				logging.debug(cmd)
+				logging.info(cmd)
 				subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 				if re.search('magma-mme', cName) is not None:
 					cmd = 'cd ' + self.yamlPath[0] + ' && docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
-					logging.debug(cmd)
+					logging.info(cmd)
 					subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		fullStatus = True
 		if anyLogs:
 			cmd = 'mkdir -p '+ logPath + ' && cp ' + self.yamlPath[0] + '/*.log ' + logPath
-			logging.debug(cmd)
+			logging.info(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 
 			# Analyzing log file(s)!
@@ -1193,25 +1237,25 @@ class Containerize():
 						HTML.CreateHtmlTestRow('UE log Analysis', 'OK', CONST.ALL_PROCESSES_OK)
 
 			cmd = 'rm ' + self.yamlPath[0] + '/*.log'
-			logging.debug(cmd)
+			logging.info(cmd)
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 			if self.tsharkStarted:
 				self.tsharkStarted = True
 				ymlPath = self.yamlPath[0].split('/')
 				cmd = 'sudo chmod 666 /tmp/capture_' + ymlPath[1] + '.pcap'
-				logging.debug(cmd)
+				logging.info(cmd)
 				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 				cmd = 'cp /tmp/capture_' + ymlPath[1] + '.pcap ' + logPath
-				logging.debug(cmd)
+				logging.info(cmd)
 				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 				cmd = 'sudo rm /tmp/capture_' + ymlPath[1] + '.pcap'
-				logging.debug(cmd)
+				logging.info(cmd)
 				copyStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 				self.tsharkStarted = False
 
 		logging.debug('\u001B[1m Undeploying \u001B[0m')
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml down'
-		logging.debug(cmd)
+		logging.info(cmd)
 		try:
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 		except Exception as e:
@@ -1224,7 +1268,7 @@ class Containerize():
 		self.deployedContainers = []
 		# Cleaning any created tmp volume
 		cmd = 'docker volume prune --force || true'
-		logging.debug(cmd)
+		logging.info(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		if fullStatus:
@@ -1232,7 +1276,7 @@ class Containerize():
 			logging.info('\u001B[1m Undeploying OAI Object(s) PASS\u001B[0m')
 		else:
 			HTML.CreateHtmlTestRow('n/a', 'KO', CONST.ALL_PROCESSES_OK)
-			logging.info('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
+			logging.error('\u001B[1m Undeploying OAI Object(s) FAIL\u001B[0m')
 
 	def StatsFromGenObject(self, HTML):
 		self.exitStatus = 0
@@ -1241,7 +1285,7 @@ class Containerize():
 
 		# if the containers are running, recover the logs!
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'
-		logging.debug(cmd)
+		logging.info(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 		cmd = 'docker stats --no-stream --format "table {{.Container}}\t{{.CPUPerc}}\t{{.MemUsage}}\t{{.MemPerc}}" '
 		anyLogs = False
@@ -1257,7 +1301,7 @@ class Containerize():
 				cmd += res.group('container_name') + ' '
 		message = ''
 		if anyLogs:
-			logging.debug(cmd)
+			logging.info(cmd)
 			stats = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 			for statLine in stats.split('\n'):
 				logging.debug(statLine)
@@ -1277,7 +1321,7 @@ class Containerize():
 
 		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log || true'
 
-		logging.debug(cmd)
+		logging.info(cmd)
 		deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', deployStatus)
@@ -1334,9 +1378,9 @@ class Containerize():
 			logging.error('\u001B[1;37;41m ping test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', 1, html_queue)
 			# Automatic undeployment
-			logging.debug('----------------------------------------')
-			logging.debug('\u001B[1m Starting Automatic undeployment \u001B[0m')
-			logging.debug('----------------------------------------')
+			logging.warning('----------------------------------------')
+			logging.warning('\u001B[1m Starting Automatic undeployment \u001B[0m')
+			logging.warning('----------------------------------------')
 			HTML.testCase_id = 'AUTO-UNDEPLOY'
 			HTML.desc = 'Automatic Un-Deployment'
 			self.UndeployGenObject(HTML, RAN, UE)
@@ -1352,23 +1396,23 @@ class Containerize():
 
 		# Start the server process
 		cmd = 'docker exec -d ' + self.svrContName + ' /bin/bash -c "nohup iperf ' + self.svrOptions + ' > /tmp/iperf_server.log 2>&1" || true'
-		logging.debug(cmd)
+		logging.info(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 
 		# Start the client process
 
 		cmd = 'docker exec ' + self.cliContName + ' /bin/bash -c "iperf ' + self.cliOptions + '" 2>&1 | tee '+ logPath + '/iperf_client_' + HTML.testCase_id + '.log || true'
-		logging.debug(cmd)
+		logging.info(cmd)
 		clientStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
 
 		# Stop the server process
 		cmd = 'docker exec ' + self.svrContName + ' /bin/bash -c "pkill iperf" || true'
-		logging.debug(cmd)
+		logging.info(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
 		time.sleep(5)
 		cmd = 'docker cp ' + self.svrContName + ':/tmp/iperf_server.log '+ logPath + '/iperf_server_' + HTML.testCase_id + '.log'
-		logging.debug(cmd)
+		logging.info(cmd)
 		serverStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=30)
 
 		# Analyze client output
