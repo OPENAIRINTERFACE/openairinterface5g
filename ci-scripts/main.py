@@ -372,6 +372,11 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			EPC.mmeConfFile = string_field
 
+	elif action == 'Initialize_HSS' or action == 'Initialize_SPGW':
+		pass
+	elif action == 'Terminate_HSS' or action == 'Terminate_MME' or action == 'Terminate_SPGW':
+		pass
+
 	elif action == 'Deploy_EPC':
 		string_field = test.findtext('parameters')
 		if (string_field is not None):
