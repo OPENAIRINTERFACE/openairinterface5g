@@ -603,9 +603,7 @@ class Containerize():
 				mySSH.close()
 				HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 				return False
-			# TODO: once we are done migrating all types of tests, rmi also {image}:{orgTag}
-			#       so when we pull on builder as a test server, it will really pull
-			mySSH.command(f'docker rmi {tagToUse}', '\$', 5)
+			mySSH.command(f'docker rmi {tagToUse} {image}:{orgTag}', '\$', 30)
 
 		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Removing login credentials', mySSH.getBefore()) is None:
@@ -796,6 +794,8 @@ class Containerize():
 		healthyNb = 0
 		startingNb = 0
 		containerName = ''
+		usedImage = ''
+		imageInfo = ''
 		if result is not None:
 			containerName = result.group('container_name')
 			time.sleep(5)
@@ -810,6 +810,10 @@ class Containerize():
 				else:
 					time.sleep(10)
 					cnt += 1
+			mySSH.command(f'docker inspect -f "{{.Config.Image}}" {containerName}', '\$', 5)
+			usedImage = str(mySSH.getBefore()).strip()
+			mySSH.command(f'docker image inspect --format "* Size     = {{.Size}} bytes\n* Creation = {{.Created}}\n* Id       = {{.Id}}" {usedImage}', '\$', 5)
+			imageInfo = str(mySSH.getBefore())
 		logging.debug(' -- ' + str(healthyNb) + ' healthy container(s)')
 		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
@@ -839,11 +843,24 @@ class Containerize():
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, logfilename, '.')
 		mySSH.close()
 
+		html_queue = SimpleQueue()
+		html_cell = '<pre style="background-color:white">\n'
+		if usedImage != '':
+			html_cell += f'Used Image = {usedImage}:\n'
+			html_cell += imageInfo
+		else:
+			html_cell += 'Could not retrieve used image info!\n'
 		if status:
-			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+			html_cell += '\nHealthy deployment!\n'
+		else:
+			html_cell += '\nUnhealthy deployment! -- Check logs for reason!\n'
+		html_cell += '</pre>'
+		html_queue.put(html_cell)
+		if status:
+			HTML.CreateHtmlTestRowQueue('N/A', 'OK', CONST.ENB_PROCESS_OK, html_queue)
 		else:
 			self.exitStatus = 1
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', CONST.ENB_PROCESS_OK, html_queue)
 
 
 	def UndeployObject(self, HTML, RAN):
