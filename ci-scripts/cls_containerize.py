@@ -580,7 +580,7 @@ class Containerize():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
 
-		mySSH.command('echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		mySSH.command('docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
 		if re.search('Login Succeeded', mySSH.getBefore()) is None:
 			msg = 'Could not log into local registry'
 			logging.error(msg)
@@ -645,7 +645,7 @@ class Containerize():
 		else:
 			logging.debug('Pulling images locally')
 
-		cmd = 'echo oaicicd | docker login --password-stdin -u oaicicd porcepix.sboai.cs.eurecom.fr'
+		cmd = 'docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr'
 		if lIpAddr != 'none':
 			mySSH.command(cmd, '\$', 5)
 			response = mySSH.getBefore()
@@ -762,7 +762,7 @@ class Containerize():
 
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-		
+
 		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
@@ -810,10 +810,20 @@ class Containerize():
 				else:
 					time.sleep(10)
 					cnt += 1
-			mySSH.command(f'docker inspect -f "{{.Config.Image}}" {containerName}', '\$', 5)
-			usedImage = str(mySSH.getBefore()).strip()
-			mySSH.command(f'docker image inspect --format "* Size     = {{.Size}} bytes\n* Creation = {{.Created}}\n* Id       = {{.Id}}" {usedImage}', '\$', 5)
-			imageInfo = str(mySSH.getBefore())
+			mySSH.command('docker inspect --format="ImageUsed: {{.Config.Image}}" ' + containerName, '\$', 5)
+			for stdoutLine in mySSH.getBefore().split('\n'):
+				if stdoutLine.count('ImageUsed: porcepix'):
+					usedImage = stdoutLine.replace('ImageUsed: porcepix', 'porcepix').strip()
+					logging.debug('Used image is ' + usedImage)
+			if usedImage != '':
+				mySSH.command('docker image inspect --format "* Size     = {{.Size}} bytes\n* Creation = {{.Created}}\n* Id       = {{.Id}}" ' + usedImage, '\$', 5, silent=True)
+				for stdoutLine in mySSH.getBefore().split('\n'):
+					if re.search('Size     = [0-9]', stdoutLine) is not None:
+						imageInfo += stdoutLine.strip() + '\n'
+					if re.search('Creation = [0-9]', stdoutLine) is not None:
+						imageInfo += stdoutLine.strip() + '\n'
+					if re.search('Id       = sha256', stdoutLine) is not None:
+						imageInfo += stdoutLine.strip() + '\n'
 		logging.debug(' -- ' + str(healthyNb) + ' healthy container(s)')
 		logging.debug(' -- ' + str(unhealthyNb) + ' unhealthy container(s)')
 		logging.debug(' -- ' + str(startingNb) + ' still starting container(s)')
@@ -846,7 +856,7 @@ class Containerize():
 		html_queue = SimpleQueue()
 		html_cell = '<pre style="background-color:white">\n'
 		if usedImage != '':
-			html_cell += f'Used Image = {usedImage}:\n'
+			html_cell += f'Used Image = {usedImage} :\n'
 			html_cell += imageInfo
 		else:
 			html_cell += 'Could not retrieve used image info!\n'
