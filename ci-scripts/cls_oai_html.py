@@ -33,6 +33,7 @@
 #-----------------------------------------------------------
 import sys              # arg
 import re               # reg
+import fileinput
 import logging
 import os
 import time
@@ -195,7 +196,10 @@ class HTMLManagement():
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
 			while (count < self.nbTestXMLfiles):
-				pillMsg = '    <li><a data-toggle="pill" href="#'
+				if count == 0:
+					pillMsg = '    <li class="active"><a data-toggle="pill" href="#'
+				else:
+					pillMsg = '    <li><a data-toggle="pill" href="#'
 				pillMsg += self.htmlTabRefs[count]
 				pillMsg += '">'
 				pillMsg += '__STATE_' + self.htmlTabNames[count] + '__'
@@ -269,6 +273,15 @@ class HTMLManagement():
 
 	def CreateHtmlFooter(self, passStatus):
 		if (os.path.isfile('test_results.html')):
+			# Tagging the 1st tab as active so it is automatically opened.
+			firstTabFound = False
+			for line in fileinput.FileInput("test_results.html", inplace=1):
+				if re.search('tab-pane fade', line) and not firstTabFound:
+					firstTabFound = True
+					print(line.replace('tab-pane fade', 'tab-pane fade in active'), end ='')
+				else:
+					print(line, end ='')
+
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
