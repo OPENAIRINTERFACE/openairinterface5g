@@ -1254,7 +1254,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
     // first compute DMRS component
 
-    uint32_t x1, x2, s=0;
+    uint32_t x1 = 0, x2 = 0, s = 0;
     x2 = (((1<<17)*((14*slot) + (pucch_pdu->start_symbol_index+symb) + 1)*((2*pucch_pdu->dmrs_scrambling_id) + 1)) + (2*pucch_pdu->dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
 #ifdef DEBUG_NR_PUCCH_RX
     printf("slot %d, start_symbol_index %d, symbol %d, dmrs_scrambling_id %d\n",

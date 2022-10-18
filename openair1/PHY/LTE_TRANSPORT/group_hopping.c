@@ -39,7 +39,7 @@ void generate_grouphop(LTE_DL_FRAME_PARMS *frame_parms)
 
   uint8_t ns;
   uint8_t reset=1;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   // This is from Section 5.5.1.3
   uint32_t fss_pusch = frame_parms->Nid_cell + frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.groupAssignmentPUSCH;
 
@@ -113,7 +113,7 @@ void generate_nPRS(LTE_DL_FRAME_PARMS *frame_parms)
 
   uint16_t n=0;
   uint8_t reset=1;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   // This is from Section 5.5.1.3
   uint8_t Nsymb_UL = (frame_parms->Ncp_UL == NORMAL) ? 7 : 6;
   uint16_t next = 0;

@@ -306,7 +306,7 @@ void  log_getconfig(log_t *g_log)
 
   for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
     if(g_log->log_component[i].name == NULL) {
-      g_log->log_component[i].name = malloc(16);
+      g_log->log_component[i].name = malloc(17);
       sprintf((char *)g_log->log_component[i].name,"comp%i?",i);
       logparams_logfile[i].paramflags = PARAMFLAG_DONOTREAD;
       logparams_level[i].paramflags = PARAMFLAG_DONOTREAD;

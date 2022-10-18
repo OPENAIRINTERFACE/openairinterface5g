@@ -62,7 +62,7 @@ void nr_pusch_codeword_scrambling_uci(uint8_t *in,
                                       uint32_t* out)
 {
   uint8_t reset, b_idx;
-  uint32_t x1, x2, s=0, temp_out;
+  uint32_t x1 = 0, x2 = 0, s = 0, temp_out = 0;
 
   reset = 1;
   x2 = (n_RNTI<<15) + Nid;

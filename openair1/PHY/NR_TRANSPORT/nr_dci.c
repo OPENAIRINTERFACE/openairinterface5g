@@ -47,7 +47,7 @@ void nr_pdcch_scrambling(uint32_t *in,
                          uint32_t scrambling_RNTI,
                          uint32_t *out) {
   uint8_t reset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   reset = 1;
   x2 = (scrambling_RNTI<<16) + Nid;
   LOG_D(PHY,"PDCCH Scrambling x2 %x : scrambling_RNTI %x \n", x2, scrambling_RNTI);

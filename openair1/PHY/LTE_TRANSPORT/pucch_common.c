@@ -41,7 +41,7 @@ void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7])
 {
 
   uint8_t ns,l,reset=1,i,N_UL_symb;
-  uint32_t x1,x2,j=0,s=0;
+  uint32_t x1 = 0, x2 = 0, j = 0, s = 0;
 
   N_UL_symb = (frame_parms->Ncp==0) ? 7 : 6;
   x2 = frame_parms->Nid_cell;
