@@ -45,8 +45,8 @@
 #include "common/utils/load_module_shlib.h"
 
 
-#include "sdr/COMMON/common_lib.h"
-#include "sdr/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "radio/COMMON/common_lib.h"
+#include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 
 #include "PHY/phy_vars.h"

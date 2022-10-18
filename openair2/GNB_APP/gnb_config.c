@@ -50,7 +50,7 @@
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
 #include "PHY/INIT/phy_init.h"
-#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
