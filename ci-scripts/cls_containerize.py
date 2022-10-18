@@ -81,7 +81,7 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 		if ranTargetBranch == '':
 			ranTargetBranch = 'develop'
 		logging.debug(f'Merging with the target branch: {ranTargetBranch}')
-		sshSession.command(f'git merge --ff origin/{ranTargetBranch} -m "Temporary merge for CI"', '\$', 5)
+		sshSession.command(f'git merge --ff origin/{ranTargetBranch} -m "Temporary merge for CI"', '\$', 30)
 
 def CopyLogsToExecutor(sshSession, sourcePath, log_name, scpIp, scpUser, scpPw):
 	sshSession.command(f'cd {sourcePath}/cmake_targets', '\$', 5)
