@@ -959,14 +959,6 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
     {
       uint8_t send_security_mode_command = true;
-#ifndef EXMIMO_IOT
-
-      if ((ue_context_p->ue_context.ciphering_algorithm == SecurityAlgorithmConfig__cipheringAlgorithm_eea0)
-          && (ue_context_p->ue_context.integrity_algorithm == INTEGRITY_ALGORITHM_NONE)) {
-        send_security_mode_command = false;
-      }
-
-#endif
       rrc_pdcp_config_security(
         &ctxt,
         ue_context_p,

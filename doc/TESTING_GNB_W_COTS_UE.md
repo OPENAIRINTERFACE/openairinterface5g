@@ -1,20 +1,8 @@
 STATUS 2020/10/15 : added External Resources section and links  
 
+**Table of Contents**
 
-## Table of Contents ##
-
-1.   [External Resources](#external-resources) 
-2.   [Configuration Overview](#configuration-overview)
-3.   [SW Repository / Branch](#repository)
-4.   [Architecture Setup](#architecture-setup)
-5.   [Build / Install](#build-and-install)
-6.   [Run / Test](#run-and-test)
-7.   [Test case](#test-case)
-8.   [Log file monitoring](#log-file-monitoring)
-9.   [Required tools for debug](#required-tools-for-debug)
-10.   [Status of interoperability](#status-of-interoperability) 
-11.   [CI integration](#ci-integration)  
-
+[[_TOC_]]
 
 ## External Resources
 

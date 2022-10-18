@@ -19,7 +19,6 @@
 #include <sys/sysinfo.h>
 #include <sys/types.h>
 #include <unistd.h>
-#include "threads_t.h"
 #include "sdr/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
@@ -75,7 +74,7 @@
 #define CONFIG_HLP_PRB           "Set the PRB, valid values: 6, 25, 50, 100  \n"
 #define CONFIG_HLP_DLSHIFT       "dynamic shift for LLR compuation for TM3/4 (default 0)\n"
 #define CONFIG_HLP_USRP_ARGS     "set the arguments to identify USRP (same syntax as in UHD)\n"
-#define CONFIG_HLP_DMAMAP        "sets flag for improved EXMIMO UE performance\n"
+#define CONFIG_HLP_DMAMAP        "use DMA memory mapping\n"
 #define CONFIG_HLP_TDD           "Set hardware to TDD mode (default: FDD). Used only with -U (otherwise set in config file).\n"
 #define CONFIG_HLP_TADV          "Set timing_advance\n"
 
@@ -117,15 +116,6 @@
 /*-----------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters specific to UE threads                                   */
 /*   optname                   helpstr     paramflags     XXXptr                       defXXXval        type          numelt   */
-/*-----------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_UETHREADSPARAMS_DESC {  \
-    {"threadOneSubframe",       NULL,      0,     iptr:&(threads.one),                defintval:1,     TYPE_INT,       0},   \
-    {"threadTwoSubframe",       NULL,      0,     iptr:&(threads.two),                defintval:1,     TYPE_INT,       0},   \
-    {"threadThreeSubframe",     NULL,      0,     iptr:&(threads.three),              defintval:1,     TYPE_INT,       0},   \
-    {"threadSlot1ProcOne",      NULL,      0,     iptr:&(threads.slot1_proc_one),     defintval:1,     TYPE_INT,       0},   \
-    {"threadSlot1ProcTwo",      NULL,      0,     iptr:&(threads.slot1_proc_two),     defintval:1,     TYPE_INT,       0},   \
-  }
-//    {"threadIQ",                NULL,      0,     iptr:&(threads.iq),                 defintval:1,     TYPE_INT,       0},
 
 #define DEFAULT_DLF 2680000000
 

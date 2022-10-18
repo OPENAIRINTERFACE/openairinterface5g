@@ -70,14 +70,6 @@ int phy_procedures_slot_parallelization_UE_RX(PHY_VARS_UE *ue,UE_rxtx_proc_t *pr
 void *UE_thread_slot1_dl_processing(void *arg);
 #endif
 
-/*! \brief Scheduling for UE TX procedures in TDD S-subframes.
-  @param phy_vars_ue Pointer to UE variables on which to act
-  @param eNB_id Local id of eNB on which to act
-  @param abstraction_flag Indicator of PHY abstraction
-  @param r_type indicates the relaying operation: 0: no_relaying, 1: unicast relaying type 1, 2: unicast relaying type 2, 3: multicast relaying
-*/
-void phy_procedures_UE_S_TX(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t abstraction_flag);
-
 /*! \brief Scheduling for UE RX procedures in TDD S-subframes.
   @param phy_vars_ue Pointer to UE variables on which to act
   @param eNB_id Local id of eNB on which to act

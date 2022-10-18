@@ -151,18 +151,9 @@ static const eutra_band_t eutra_bands[] = {
 };
 
 
-threads_t threads= {-1,-1,-1,-1,-1,-1,-1,-1};
-
 pthread_t                       main_ue_thread;
 pthread_attr_t                  attr_UE_thread;
 struct sched_param              sched_param_UE_thread;
-
-
-void get_uethreads_params(void) {
-  paramdef_t cmdline_threadsparams[] =CMDLINE_UETHREADSPARAMS_DESC;
-  config_process_cmdline( cmdline_threadsparams,sizeof(cmdline_threadsparams)/sizeof(paramdef_t),NULL);
-}
-
 
 void phy_init_lte_ue_transport(PHY_VARS_UE *ue,int absraction_flag);
 
@@ -203,22 +194,6 @@ void init_thread(int sched_runtime,
                  int sched_fifo,
                  cpu_set_t *cpuset,
                  char *name) {
-#ifdef DEADLINE_SCHEDULER
-
-  if (sched_runtime!=0) {
-    struct sched_attr attr= {0};
-    attr.size = sizeof(attr);
-    attr.sched_policy = SCHED_DEADLINE;
-    attr.sched_runtime  = sched_runtime;
-    attr.sched_deadline = sched_deadline;
-    attr.sched_period   = 0;
-    AssertFatal(sched_setattr(0, &attr, 0) == 0,
-                "[SCHED] %s thread: sched_setattr failed %s \n", name, strerror(errno));
-    LOG_I(HW,"[SCHED][eNB] %s deadline thread %lu started on CPU %d\n",
-          name, (unsigned long)gettid(), sched_getcpu());
-  }
-
-#else
   int settingPriority = 1;
 
   if (checkIfFedoraDistribution())
@@ -250,7 +225,6 @@ void init_thread(int sched_runtime,
   }
 
   CPU_FREE(cset);
-#endif
 }
 
 void init_UE(int nb_inst,
@@ -469,9 +443,6 @@ static void *UE_thread_synch(void *arg) {
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
 
-  if ( threads.sync != -1 )
-    CPU_SET(threads.sync, &cpuset);
-
   // this thread priority must be lower that the main acquisition thread
   sprintf(threadname, "sync UE %d\n", UE->Mod_id);
   init_thread(100000, 500000, FIFO_PRIORITY-1, &cpuset, threadname);
@@ -637,7 +608,7 @@ static void *UE_thread_synch(void *arg) {
               break;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
           //UE->rfdevice.trx_set_gains_func(&openair0,&openair0_cfg[0]);
           //UE->rfdevice.trx_stop_func(&UE->rfdevice);
           sleep(1);
@@ -721,7 +692,7 @@ static void *UE_thread_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].autocal[UE->rf_map.chain+i] = 1;
           }
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
         }// initial_sync=0
 
         break;
@@ -773,15 +744,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
   sprintf(threadname,"UE_%d_proc_%d", UE->Mod_id, proc->sub_frame_start);
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-
-  if ( (proc->sub_frame_start+1)%RX_NB_TH == 0 && threads.one != -1 )
-    CPU_SET(threads.one, &cpuset);
-
-  if ( RX_NB_TH > 1 && (proc->sub_frame_start+1)%RX_NB_TH == 1 && threads.two != -1 )
-    CPU_SET(threads.two, &cpuset);
-
-  if ( RX_NB_TH > 2 && (proc->sub_frame_start+1)%RX_NB_TH == 2 && threads.three != -1 )
-    CPU_SET(threads.three, &cpuset);
 
   //CPU_SET(threads.three, &cpuset);
   init_thread(900000,1000000, FIFO_PRIORITY-1, &cpuset,
@@ -857,10 +819,6 @@ static void *UE_thread_rxn_txnp4(void *arg) {
     if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_UL) ||
         (UE->frame_parms.frame_type == FDD) )
       phy_procedures_UE_TX(UE,proc,0,0,UE->mode);
-
-    if ((subframe_select( &UE->frame_parms, proc->subframe_tx) == SF_S) &&
-        (UE->frame_parms.frame_type == TDD))
-      phy_procedures_UE_S_TX(UE,0,0);
 
     proc->instance_cnt_rxtx--;
 
@@ -1935,9 +1893,6 @@ void *UE_thread(void *arg) {
   int ret;
   cpu_set_t cpuset;
   CPU_ZERO(&cpuset);
-
-  if ( threads.main != -1 )
-    CPU_SET(threads.main, &cpuset);
 
   init_thread(100000, 500000, FIFO_PRIORITY, &cpuset, "UHD Threads");
   /*

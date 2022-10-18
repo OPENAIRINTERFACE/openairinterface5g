@@ -456,7 +456,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 	  phich_string[fp->phich_config_common.phich_resource],
 	  fp->nb_antenna_ports_gNB);*/
 
-#if defined(OAI_USRP) || defined(EXMIMO) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
+#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
     LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,
 	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,

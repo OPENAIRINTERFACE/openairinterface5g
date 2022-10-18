@@ -572,7 +572,7 @@ static void UE_synch(void *arg) {
               openair0_cfg[UE->rf_map.card].rx_freq[0],
               openair0_cfg[UE->rf_map.card].tx_freq[0]);
 
-        UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+        UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
         if (UE->UE_scan_carrier == 1) {
           UE->UE_scan_carrier = 0;
         } else {
@@ -591,7 +591,7 @@ static void UE_synch(void *arg) {
 
           LOG_I(PHY, "Initial sync failed: trying carrier off %d Hz\n", freq_offset);
 
-          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0],0);
+          UE->rfdevice.trx_set_freq_func(&UE->rfdevice,&openair0_cfg[0]);
         }
       }
       break;

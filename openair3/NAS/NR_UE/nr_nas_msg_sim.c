@@ -38,6 +38,7 @@
 #include "aka_functions.h"
 #include "secu_defs.h"
 #include "PduSessionEstablishRequest.h"
+#include "PduSessionEstablishmentAccept.h"
 #include "intertask_interface.h"
 #include "openair2/RRC/NAS/nas_config.h"
 #include <openair3/UICC/usim_interface.h>
@@ -908,42 +909,8 @@ void *nas_nrue_task(void *args_p)
             LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
           }
         } else if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
-            uint8_t offset = 0;
-            uint8_t *payload_container = NULL;
-            offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
-            uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
-            if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) && (payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX)) {
-              offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);
-            }
-
-            if (offset < NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length) {
-              payload_container = pdu_buffer + offset;
-            }
-            offset = 0;
-            uint8_t pdu_id = *(pdu_buffer+14);
-            while(offset < payload_container_length) {
-	      // Fixme: this is not good 'type' 0x29 searching in TLV like structure
-	      // AND fix dirsty code copy hereafter of the same!!!
-              if (*(payload_container + offset) == 0x29) { // PDU address IEI
-                if ((*(payload_container+offset+1) == 0x05) && (*(payload_container +offset+2) == 0x01)) { // IPV4
-                  nas_getparams();
-                  sprintf(baseNetAddress, "%d.%d", *(payload_container+offset+3), *(payload_container+offset+4));
-                  int third_octet = *(payload_container+offset+5);
-                  int fourth_octet = *(payload_container+offset+6);
-                  LOG_I(NAS, "Received PDU Session Establishment Accept, UE IP: %d.%d.%d.%d\n",
-                    *(payload_container+offset+3), *(payload_container+offset+4),
-                    *(payload_container+offset+5), *(payload_container+offset+6));
-                  nas_config(1,third_octet,fourth_octet,"oaitun_ue");
-                }
-              }
-              if (*(payload_container + offset) == 0x79) {
-                uint8_t qfi = *(payload_container+offset+3);
-                set_qfi_pduid(qfi, pdu_id);
-                break;
-              }
-              offset++;
-            }
-          }
+          capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+        }
 
         break;
       }

@@ -1082,7 +1082,7 @@ static void do_ru_synch(RU_t *ru) {
     ru->rfdevice.openair0_cfg->tx_freq[i] = temp_freq1;
   }
 
-  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg,0);
+  ru->rfdevice.trx_set_freq_func(&ru->rfdevice,ru->rfdevice.openair0_cfg);
 
   while ((ru->in_synch ==0)&&(!oai_exit)) {
     // read in frame
@@ -2276,15 +2276,6 @@ void init_RU_proc(RU_t *ru) {
   proc->instance_cnt_rf_tx = -1;
   pthread_mutex_init( &proc->mutex_rf_tx, NULL);
   pthread_cond_init( &proc->cond_rf_tx, NULL);
-#endif
-#ifndef DEADLINE_SCHEDULER
-  attr_FH        = &proc->attr_FH;
-  attr_FH1       = &proc->attr_FH1;
-  attr_prach     = &proc->attr_prach;
-  attr_synch     = &proc->attr_synch;
-  attr_asynch    = &proc->attr_asynch_rxtx;
-  attr_emulateRF = &proc->attr_emulateRF;
-  attr_prach_br  = &proc->attr_prach_br;
 #endif
 
   if (ru->has_ctrl_prt == 1) pthread_create( &proc->pthread_ctrl, attr_ctrl, ru_thread_control, (void*)ru );

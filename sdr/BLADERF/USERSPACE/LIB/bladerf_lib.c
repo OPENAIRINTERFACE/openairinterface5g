@@ -284,12 +284,9 @@ int trx_brf_stop(openair0_device* device)
 /*! \brief Set frequencies (TX/RX)
  * \param device the hardware to use
  * \param openair0_cfg1 openair0 Config structure (ignored. It is there to comply with RF common API)
- * \param exmimo_dump_config (ignored)
  * \returns 0 in success
  */
-int trx_brf_set_freq(openair0_device* device,
-                     openair0_config_t *openair0_cfg1,
-                     int exmimo_dump_config)
+int trx_brf_set_freq(openair0_device* device, openair0_config_t *openair0_cfg1)
 {
     int status;
     brf_state_t *brf = (brf_state_t *)device->priv;

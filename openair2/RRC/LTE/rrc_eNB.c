@@ -1908,9 +1908,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
                                          (LTE_DRB_ToReleaseList_t *)NULL, // DRB2_list,
                                          (struct LTE_SPS_Config *)NULL,   // maybe ue_context_pP->ue_context.sps_Config,
                                          (struct LTE_PhysicalConfigDedicated *)ue_context_pP->ue_context.physicalConfigDedicated,
-                                         //#ifdef EXMIMO_IOT
-                                         //                                         NULL, NULL, NULL,NULL,
-                                         //#else
                                          measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL, // MeasObj_list,
                                          measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL, // ReportConfig_list,
                                          measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL, //quantityConfig,
@@ -2889,7 +2886,7 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
   /* Avoid gcc warnings */
   (void)PDCP_rlc_AM;
   (void)PDCP_rlc_UM;
-#ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
+#ifdef RRC_DEFAULT_RAB_IS_AM
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
   DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
   PDCP_rlc_AM->statusReportRequired = false;
@@ -3652,7 +3649,7 @@ flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt
   /* Avoid gcc warnings */
   (void)PDCP_rlc_AM;
   (void)PDCP_rlc_UM;
-#ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
+#ifdef RRC_DEFAULT_RAB_IS_AM
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
   DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
   PDCP_rlc_AM->statusReportRequired = 0; // FALSE
@@ -5328,7 +5325,7 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   /* avoid gcc warnings */
   (void)PDCP_rlc_AM;
   (void)PDCP_rlc_UM;
-#ifdef RRC_DEFAULT_RAB_IS_AM // EXMIMO_IOT
+#ifdef RRC_DEFAULT_RAB_IS_AM
   PDCP_rlc_AM = CALLOC(1, sizeof(*PDCP_rlc_AM));
   DRB_pdcp_config->rlc_AM = PDCP_rlc_AM;
   PDCP_rlc_AM->statusReportRequired = 0; // FALSE
@@ -6084,9 +6081,6 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
              NULL,  // DRB2_list,
              (struct LTE_SPS_Config *)NULL,   // *sps_Config,
              (struct LTE_PhysicalConfigDedicated *)*physicalConfigDedicated,
-             //#ifdef EXMIMO_IOT
-             //                                         NULL, NULL, NULL,NULL,
-             //#else
              measurements_enabled ? (LTE_MeasObjectToAddModList_t *)MeasObj_list : NULL,
              measurements_enabled ? (LTE_ReportConfigToAddModList_t *)ReportConfig_list : NULL,
              measurements_enabled ? (LTE_QuantityConfig_t *)quantityConfig : NULL,

@@ -280,28 +280,6 @@ void thread_top_init(char *thread_name,
 		     uint64_t deadline,
 		     uint64_t period) {
   
-#ifdef DEADLINE_SCHEDULER
-  struct sched_attr attr;
-
-  unsigned int flags = 0;
-
-  attr.size = sizeof(attr);
-  attr.sched_flags = 0;
-  attr.sched_nice = 0;
-  attr.sched_priority = 0;
-
-  attr.sched_policy   = SCHED_DEADLINE;
-  attr.sched_runtime  = runtime;
-  attr.sched_deadline = deadline;
-  attr.sched_period   = period; 
-
-  if (sched_setattr(0, &attr, flags) < 0 ) {
-    perror("[SCHED] eNB tx thread: sched_setattr failed\n");
-    fprintf(stderr,"sched_setattr Error = %s",strerror(errno));
-    exit(1);
-  }
-
-#else //LOW_LATENCY
   int policy, s, j;
   struct sched_param sparam;
   char cpu_affinity[1024];
@@ -313,27 +291,6 @@ void thread_top_init(char *thread_name,
   /* CPU 1 is reserved for all RX_TX threads */
   /* Enable CPU Affinity only if number of CPUs > 2 */
   CPU_ZERO(&cpuset);
-
-#ifdef CPU_AFFINITY
-  if (affinity == 0) {
-    LOG_W(HW,"thread_top_init() called with affinity==0, but overruled by #ifdef CPU_AFFINITY\n");
-  }
-  else if (get_nprocs() > 2)
-  {
-    for (j = 2; j < get_nprocs(); j++)
-      CPU_SET(j, &cpuset);
-    s = pthread_setaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
-    if (s != 0)
-    {
-      perror( "pthread_setaffinity_np");
-      exit_fun("Error setting processor affinity");
-    }
-  }
-#else //CPU_AFFINITY
-  if (affinity) {
-    LOG_W(HW,"thread_top_init() called with affinity>0, but overruled by #ifndef CPU_AFFINITY.\n");
-  }
-#endif //CPU_AFFINITY
 
   /* Check the actual affinity mask assigned to the thread */
   s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
@@ -384,8 +341,6 @@ void thread_top_init(char *thread_name,
                      "???",
                      sparam.sched_priority, cpu_affinity );
   }
-
-#endif //LOW_LATENCY
 }
 
 

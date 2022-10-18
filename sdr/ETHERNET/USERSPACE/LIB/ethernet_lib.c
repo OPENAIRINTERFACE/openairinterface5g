@@ -252,9 +252,7 @@ int trx_eth_stop(openair0_device *device) {
 }
 
 
-int trx_eth_set_freq(openair0_device* device,
-                     openair0_config_t *openair0_cfg,
-                     int exmimo_dump_config)
+int trx_eth_set_freq(openair0_device* device, openair0_config_t *openair0_cfg)
 {
     return(0);
 }

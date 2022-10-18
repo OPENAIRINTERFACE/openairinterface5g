@@ -283,10 +283,9 @@ int trx_lms_stop(openair0_device *device) {
 /*! \brief Set frequencies (TX/RX)
  * \param device the hardware to use
  * \param openair0_cfg openair0 Config structure (ignored. It is there to comply with RF common API)
- * \param exmimo_dump_config (ignored)
  * \returns 0 in success
  */
-int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg,int exmimo_dump_config) {
+int trx_lms_set_freq(openair0_device* device, openair0_config_t *openair0_cfg) {
   //Control port must be connected
   LMS_SetLOFrequency(lms_device,LMS_CH_TX,0,openair0_cfg->tx_freq[0]);
   LMS_SetLOFrequency(lms_device,LMS_CH_RX,0,openair0_cfg->rx_freq[0]);

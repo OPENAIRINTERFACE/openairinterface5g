@@ -181,6 +181,8 @@ services:
             - UDM_PORT=80
             - UDM_API_VERSION=v2
             - UDM_FQDN=oai-udm
+            - INT_ALGO_LIST=["NIA1", "NIA2"]
+            - CIPH_ALGO_LIST=["NEA0", "NEA2"]
         depends_on:
             - mysql
             - oai-nrf
@@ -272,7 +274,7 @@ services:
             - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
             - NSSAI_SST_0=1
-            - NSSAI_SD_0=0xffffff
+            - NSSAI_SD_0=0x1
             - DNN_0=oai
         depends_on:
             - oai-nrf
@@ -294,6 +296,11 @@ services:
               "ip route add 12.1.1.0/24 via 192.168.70.134 dev eth0; sleep infinity"
         depends_on:
             - oai-spgwu
+        healthcheck:
+            test: /bin/bash -c "ip r | grep 12.1.1"
+            interval: 10s
+            timeout: 5s
+            retries: 5
         networks:
             public_net:
                 ipv4_address: 192.168.70.135
