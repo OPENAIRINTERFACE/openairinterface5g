@@ -3606,9 +3606,8 @@ unsigned int mask_flip(unsigned int x) {
   return((((x>>8) + (x<<8))&0xffff)>>6);
 }
 
-unsigned int get_dl_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
-
-
+static unsigned int get_dl_bw_mask(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability_t *cap)
+{
   int common_band = *rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
   int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
@@ -3657,9 +3656,8 @@ unsigned int get_dl_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(0);
 }
 
-unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
-
-
+static unsigned int get_ul_bw_mask(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability_t *cap)
+{
   int common_band = *rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
   for (int i=0;i<cap->rf_Parameters.supportedBandListNR.list.count;i++) {
@@ -3708,7 +3706,8 @@ unsigned int get_ul_bw_mask(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(0);
 }
 
-int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+static int get_ul_mimo_layersCB(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability_t *cap)
+{
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
   // check featureSet
@@ -3725,7 +3724,8 @@ int get_ul_mimo_layersCB(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(1);
 }
 
-int get_ul_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+static int get_ul_mimo_layers(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability_t *cap)
+{
   int common_scs  = rrc->carrier.servingcellconfigcommon->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
   // check featureSet
@@ -3741,7 +3741,8 @@ int get_ul_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   return(1);
 }
 
-int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
+static int get_dl_mimo_layers(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability_t *cap)
+{
   int common_scs  = rrc->carrier.servingcellconfigcommon->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
 
   // check featureSet
@@ -3756,36 +3757,15 @@ int get_dl_mimo_layers(gNB_RRC_INST *rrc,NR_UE_NR_Capability_t *cap) {
   }
   return(1);
 }
+
 void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
 
   MessageDef *msg;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
-  FILE *fd=NULL;//fopen("nrRRCstats.log","w");
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(RC.nrrrc[ctxt_pP->module_id]->rrc_ue_head)) {
     ctxt_pP->rnti = ue_context_p->ue_id_rnti;
     gNB_MAC_INST *nrmac=RC.nrmac[ctxt_pP->module_id]; //WHAT A BEAUTIFULL RACE CONDITION !!!
 
-    if (fd) {
-      if (ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.presence == true) {
-        fprintf(fd,"NR RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
-                ue_context_p->ue_id_rnti,
-                ue_context_p->ue_context.Initialue_identity_5g_s_TMSI.fiveg_tmsi,
-                ue_context_p->ue_context.ul_failure_timer);
-      } else {
-        fprintf(fd,"NR RRC UE rnti %x failure timer %d/8\n",
-                ue_context_p->ue_id_rnti,
-                ue_context_p->ue_context.ul_failure_timer);
-      }
-
-      if (ue_context_p->ue_context.UE_Capability_nr) {
-        fprintf(fd,"NR RRC UE cap: BW DL %x. BW UL %x, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
-                get_dl_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
-                get_ul_bw_mask(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
-                get_dl_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
-                get_ul_mimo_layersCB(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr),
-                get_ul_mimo_layers(RC.nrrrc[0],ue_context_p->ue_context.UE_Capability_nr));
-      }
-    }
     if (ue_context_p->ue_context.ul_failure_timer > 0) {
       ue_context_p->ue_context.ul_failure_timer++;
 
@@ -3856,13 +3836,47 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     }
   }
 
-  if (fd) fclose(fd);
-
   /* send a tick to x2ap */
   if (is_x2ap_enabled()){
     msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_SUBFRAME_PROCESS);
     itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
   }
+}
+
+static void write_rrc_stats(const gNB_RRC_INST *rrc)
+{
+  const char *filename = "nrRRC_stats.log";
+  FILE *f = fopen(filename, "w");
+  if (f == NULL) {
+    LOG_E(NR_RRC, "cannot open %s for writing\n", filename);
+    return;
+  }
+
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  /* cast is necessary to eliminate warning "discards ‘const’ qualifier" */
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &((gNB_RRC_INST *)rrc)->rrc_ue_head) {
+    const rnti_t rnti = ue_context_p->ue_id_rnti;
+    const gNB_RRC_UE_t *ue_ctxt = &ue_context_p->ue_context;
+
+    fprintf(f, "NR RRC UE rnti %04x:", rnti);
+
+    if (ue_ctxt->Initialue_identity_5g_s_TMSI.presence)
+      fprintf(f, " S-TMSI %x\n", ue_ctxt->Initialue_identity_5g_s_TMSI.fiveg_tmsi);
+
+    fprintf(f, " failure timer %d/8\n", ue_ctxt->ul_failure_timer);
+
+    if (ue_ctxt->UE_Capability_nr) {
+      fprintf(f,
+              "    UE cap: BW DL %x. BW UL %x, DL MIMO Layers %d UL MIMO Layers (CB) %d UL MIMO Layers (nonCB) %d\n",
+              get_dl_bw_mask(rrc, ue_ctxt->UE_Capability_nr),
+              get_ul_bw_mask(rrc, ue_ctxt->UE_Capability_nr),
+              get_dl_mimo_layers(rrc, ue_ctxt->UE_Capability_nr),
+              get_ul_mimo_layersCB(rrc, ue_ctxt->UE_Capability_nr),
+              get_ul_mimo_layers(rrc, ue_ctxt->UE_Capability_nr));
+    }
+  }
+
+  fclose(f);
 }
 
 ///---------------------------------------------------------------------------------------------------------------///
@@ -3883,6 +3897,11 @@ void *rrc_gnb_task(void *args_p) {
                         .eNB_index=0,
                         .brOption=false
                        };
+
+  /* timer to write stats to file */
+  long stats_timer_id = 1;
+  timer_setup(1, 0, TASK_RRC_GNB, 0, TIMER_PERIODIC, NULL, &stats_timer_id);
+
   itti_mark_task_ready(TASK_RRC_GNB);
   LOG_I(NR_RRC,"Entering main loop of NR_RRC message task\n");
 
@@ -3892,10 +3911,6 @@ void *rrc_gnb_task(void *args_p) {
     msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_DESTINATION_INSTANCE(msg_p);
 
-    /* RRC_SUBFRAME_PROCESS is sent every subframe, do not log it */
-    if (ITTI_MSG_ID(msg_p) != RRC_SUBFRAME_PROCESS)
-      LOG_I(NR_RRC,"Received message %s\n",msg_name_p);
-
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
         LOG_W(NR_RRC, " *** Exiting NR_RRC thread\n");
@@ -3904,6 +3919,12 @@ void *rrc_gnb_task(void *args_p) {
 
       case MESSAGE_TEST:
         LOG_I(NR_RRC, "[gNB %ld] Received %s\n", instance, msg_name_p);
+        break;
+
+      case TIMER_HAS_EXPIRED:
+        /* only this one handled for now */
+        DevAssert(TIMER_HAS_EXPIRED(msg_p).timer_id == stats_timer_id);
+        write_rrc_stats(RC.nrrrc[0]);
         break;
 
       case RRC_SUBFRAME_PROCESS:
