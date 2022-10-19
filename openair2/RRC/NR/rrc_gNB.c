@@ -2248,22 +2248,15 @@ static void rrc_gNB_process_MeasurementReport(rrc_gNB_ue_context_t *ue_context, 
   DevAssert(measurementReport->criticalExtensions.present == NR_MeasurementReport__criticalExtensions_PR_measurementReport
             && measurementReport->criticalExtensions.choice.measurementReport != NULL);
 
-  const NR_MeasResults_t *measresults = &measurementReport->criticalExtensions.choice.measurementReport->measResults;
+  gNB_RRC_UE_t *ue_ctxt = &ue_context->ue_context;
+  if (ue_ctxt->measResults != NULL) {
+    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_MeasResults, ue_ctxt->measResults);
+    ue_ctxt->measResults = NULL;
+  }
 
-  AssertFatal(measresults->measId == 1, "unexpected MeasResult for MeasurementId %ld received\n", measresults->measId);
-  DevAssert(measresults->measResultServingMOList.list.count >= 1);
-  if (measresults->measResultServingMOList.list.count > 1)
-    LOG_W(RRC, "Received %d MeasResultServMO, but handling only 1!\n", measresults->measResultServingMOList.list.count);
-
-  NR_MeasResultServMO_t *measresultservmo = measresults->measResultServingMOList.list.array[0];
-  NR_MeasResultNR_t *measresultnr = &measresultservmo->measResultServingCell;
-  NR_MeasQuantityResults_t *mqr = measresultnr->measResult.cellResults.resultsSSB_Cell;
-
-  LOG_I(RRC, "RNTI %04x servingCellId %ld MeasResultNR for phyCellId %ld:\n", ue_context->ue_context.rnti, measresultservmo->servCellId, *measresultnr->physCellId);
-  if (mqr != NULL)
-    LOG_I(RRC, "    resultSSB: RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", *mqr->rsrp - 156, (float) (*mqr->rsrq - 87) / 2.0f, (float) (*mqr->sinr - 46) / 2.0f);
-  else
-    LOG_I(RRC, "    resultSSB: NOT PROVIDED\n");
+  const NR_MeasId_t id = measurementReport->criticalExtensions.choice.measurementReport->measResults.measId;
+  AssertFatal(id, "unexpected MeasResult for MeasurementId %ld received\n", id);
+  asn1cCallocOne(ue_ctxt->measResults, measurementReport->criticalExtensions.choice.measurementReport->measResults);
 }
 
 //-----------------------------------------------------------------------------
@@ -3883,6 +3876,27 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   }
 }
 
+static void print_rrc_meas(FILE *f, const NR_MeasResults_t *measresults)
+{
+  DevAssert(measresults->measResultServingMOList.list.count >= 1);
+  if (measresults->measResultServingMOList.list.count > 1)
+    LOG_W(RRC, "Received %d MeasResultServMO, but handling only 1!\n", measresults->measResultServingMOList.list.count);
+
+  NR_MeasResultServMO_t *measresultservmo = measresults->measResultServingMOList.list.array[0];
+  NR_MeasResultNR_t *measresultnr = &measresultservmo->measResultServingCell;
+  NR_MeasQuantityResults_t *mqr = measresultnr->measResult.cellResults.resultsSSB_Cell;
+
+  fprintf(f, "    servingCellId %ld MeasResultNR for phyCellId %ld:\n      resultSSB:", measresultservmo->servCellId, *measresultnr->physCellId);
+  if (mqr != NULL) {
+    const long rrsrp = *mqr->rsrp - 156;
+    const float rrsrq = (float) (*mqr->rsrq - 87) / 2.0f;
+    const float rsinr = (float) (*mqr->sinr - 46) / 2.0f;
+    fprintf(f, "RSRP %ld dBm RSRQ %.1f dB SINR %.1f dB\n", rrsrp, rrsrq, rsinr);
+  } else {
+    fprintf(f, "NOT PROVIDED\n");
+  }
+}
+
 static void write_rrc_stats(const gNB_RRC_INST *rrc)
 {
   const char *filename = "nrRRC_stats.log";
@@ -3914,6 +3928,9 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
               get_ul_mimo_layersCB(rrc, ue_ctxt->UE_Capability_nr),
               get_ul_mimo_layers(rrc, ue_ctxt->UE_Capability_nr));
     }
+
+    if (ue_ctxt->measResults)
+      print_rrc_meas(f, ue_ctxt->measResults);
   }
 
   fclose(f);
