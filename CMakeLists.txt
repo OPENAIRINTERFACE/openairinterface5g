@@ -2112,12 +2112,6 @@ include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
 # CN libs
 ##########################
 
-add_library(CN_UTILS
-  ${OPENAIR3_DIR}/UTILS/conversions.c
-  ${OPENAIR3_DIR}/UTILS/enum_string.c
-  ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
-  )
-
 add_library (GTPV1U
   ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
   ${RRC_DIR}/rrc_eNB_GTPV1U.c
