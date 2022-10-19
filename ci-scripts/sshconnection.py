@@ -56,7 +56,7 @@ class SSHConnection():
 		self.picocom_closure = True
 
 	def open(self, ipaddress, username, password):
-		prompt = "#" if username == "root" else "\$"
+		prompt = "\$"
 		count = 0
 		connect_status = False
 		while count < 4:
