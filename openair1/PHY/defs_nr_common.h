@@ -204,35 +204,6 @@ typedef struct NR_BWP_PARMS {
 } NR_BWP_PARMS;
 
 typedef struct {
-  /// PRACH format retrieved from prach_ConfigIndex
-  uint16_t prach_format;
-  /// Preamble index for PRACH (0-63)
-  uint8_t ra_PreambleIndex;
-  /// Preamble Tx Counter
-  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
-  /// Preamble Power Ramping Counter
-  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
-  /// 2-step RA power offset
-  int POWER_OFFSET_2STEP_RA;
-  /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
-  int ra_PREAMBLE_RECEIVED_TARGET_POWER;
-  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
-  uint8_t ra_TDD_map_index;
-  /// RA Preamble Power Ramping Step in dB
-  uint32_t RA_PREAMBLE_POWER_RAMPING_STEP;
-  ///
-  uint8_t RA_PREAMBLE_BACKOFF;
-  ///
-  uint8_t RA_SCALING_FACTOR_BI;
-  /// Indicating whether it is 2-step or 4-step RA
-  nr_ra_type_e RA_TYPE;
-  /// UE configured maximum output power
-  int RA_PCMAX;
-  /// Corresponding RA-RNTI for UL-grant
-  uint16_t ra_RNTI;
-} NR_PRACH_RESOURCES_t;
-
-typedef struct {
   uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;

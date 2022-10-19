@@ -1450,33 +1450,29 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
   uint8_t mod_id = ue->Mod_id;
-  NR_PRACH_RESOURCES_t * prach_resources = ue->prach_resources[gNB_id];
-  AssertFatal(prach_resources != NULL, "ue->prach_resources[%u] == NULL\n", gNB_id);
   uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  nr_prach = nr_ue_get_rach(prach_resources, &ue->prach_vars[0]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
+  nr_prach = nr_ue_get_rach(&ue->prach_vars[gNB_id]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
   LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
 
   if (nr_prach == GENERATE_PREAMBLE) {
 
-    if (ue->mac_enabled == 1) {
-      int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-      int16_t ra_preamble_rx_power = (int16_t)(prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
-      ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
+    fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
+    int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
+    int16_t ra_preamble_rx_power = (int16_t)(prach_pdu->preamble_target_power - pathloss + 30);
+    ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
-      LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm, RA-RNTI %x)\n",
-        __FUNCTION__,
-        mod_id,
-        frame_tx,
-        nr_slot_tx,
-        prach_resources->ra_PreambleIndex,
-        pathloss,
-        ue->tx_power_dBm[nr_slot_tx],
-        prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER,
-        prach_resources->ra_RNTI);
-    }
+    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm)\n",
+          __FUNCTION__,
+          mod_id,
+          frame_tx,
+          nr_slot_tx,
+          prach_pdu->ra_PreambleIndex,
+          pathloss,
+          ue->tx_power_dBm[nr_slot_tx],
+          prach_pdu->preamble_target_power);
 
     ue->prach_vars[gNB_id]->amp = AMP;
 
@@ -1494,9 +1490,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
-
-    if (ue->mac_enabled == 1)
-      nr_Msg1_transmitted(mod_id, ue->CC_id, frame_tx, gNB_id);
 
   } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
     LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);

@@ -527,7 +527,6 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
       ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r((unsigned int *)seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
     }
   }
-  prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
 }
 
 // RA-RNTI computation (associated to PRACH occasion in which the RA Preamble is transmitted)
@@ -537,7 +536,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
 // - f_id: index of the PRACH occasion in the frequency domain
 // - s_id is starting symbol of the PRACH occasion [0...14]
 // - t_id is the first slot of the PRACH occasion in a system frame [0...80]
-uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu){
+void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu){
 
   RA_config_t *ra = &mac->ra;
   uint8_t ul_carrier_id = 0; // NUL
@@ -548,9 +547,6 @@ uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_p
   ra->ra_rnti = 1 + s_id + 14 * t_id + 1120 * f_id + 8960 * ul_carrier_id;
 
   LOG_D(MAC, "Computed ra_RNTI is %x \n", ra->ra_rnti);
-
-  return ra->ra_rnti;
-
 }
 
 // This routine implements Section 5.1.2 (UE Random Access Resource Selection)
@@ -563,12 +559,12 @@ uint16_t set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_p
 // -- else if CSI-RS is selected above
 // - switch initialisation cases
 // -- RA initiated by beam failure recovery operation (subclause 5.17 TS 38.321)
-// --- SSB selection, set prach_resources->ra_PreambleIndex
+// --- SSB selection, set ra_PreambleIndex
 // -- RA initiated by PDCCH: ra_preamble_index provided by PDCCH && ra_PreambleIndex != 0b000000
 // --- set PREAMBLE_INDEX to ra_preamble_index
 // --- select the SSB signalled by PDCCH
 // -- RA initiated for SI request:
-// --- SSB selection, set prach_resources->ra_PreambleIndex
+// --- SSB selection, set ra_PreambleIndex
 // - condition on notification of suspending power ramping counter from lower layer (5.1.3 TS 38.321)
 // - check if SSB or CSI-RS have not changed since the selection in the last RA Preamble tranmission
 // - Contention-based RA preamble selection:
@@ -578,7 +574,7 @@ void nr_get_prach_resources(module_id_t mod_id,
                             uint8_t gNB_id,
                             NR_PRACH_RESOURCES_t *prach_resources,
                             fapi_nr_ul_config_prach_pdu *prach_pdu,
-                            NR_RACH_ConfigDedicated_t * rach_ConfigDedicated){
+                            NR_RACH_ConfigDedicated_t *rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
@@ -593,8 +589,7 @@ void nr_get_prach_resources(module_id_t mod_id,
     if (rach_ConfigDedicated->cfra){
       uint8_t cfra_ssb_resource_idx = 0;
       ra->ra_PreambleIndex = rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[cfra_ssb_resource_idx]->ra_PreambleIndex;
-      prach_resources->ra_PreambleIndex = ra->ra_PreambleIndex;
-      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, prach_resources->ra_PreambleIndex, cfra_ssb_resource_idx);
+      LOG_D(MAC, "In %s: selected RA preamble index %d for contention-free random access procedure for SSB with Id %d\n", __FUNCTION__, ra->ra_PreambleIndex, cfra_ssb_resource_idx);
     }
   } else {
     /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
@@ -602,18 +597,18 @@ void nr_get_prach_resources(module_id_t mod_id,
     int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? get_nr_PL(mod_id, CC_id, gNB_id) : 0;
     ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon, prach_pdu);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
-    LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", prach_resources->ra_PreambleIndex);
+    LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", ra->ra_PreambleIndex);
   }
 
   if (prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER > 1)
     prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER++;
   prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);
-  prach_resources->ra_RNTI = set_ra_rnti(mac, prach_pdu);
 
 }
 
 // TbD: RA_attempt_number not used
-void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id){
+void nr_Msg1_transmitted(module_id_t mod_id){
+
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   ra->ra_state = WAIT_RAR;
@@ -659,8 +654,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
  * @gNB_id              gNB ID
  * @nr_slot_tx          current UL TX slot
  */
-uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                       fapi_nr_ul_config_prach_pdu *prach_pdu,
+uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
                        frame_t frame,
@@ -669,12 +663,8 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  NR_RACH_ConfigCommon_t *setup;
-  if (mac->scc) setup = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  else          setup = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
-  AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
-  NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
+  NR_PRACH_RESOURCES_t *prach_resources = &ra->prach_resources;
 
   // Delay init RA procedure to allow the convergence of the IIR filter on PRACH noise measurements at gNB side
   if (ra->ra_state == RA_UE_IDLE) {
@@ -682,7 +672,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
        ((MAX_FRAME_NUMBER + frame - mac->first_sync_frame) % MAX_FRAME_NUMBER) > 150) {
       ra->ra_state = GENERATE_PREAMBLE;
     } else {
-      LOG_D(NR_MAC,"PRACH Condition not met: ra state %d, frame %d, prach_resources->sync_frame %d\n", ra->ra_state, frame, mac->first_sync_frame);
+      LOG_D(NR_MAC,"PRACH Condition not met: ra state %d, frame %d, sync_frame %d\n", ra->ra_state, frame, mac->first_sync_frame);
       return 0;
     }
   }
@@ -774,16 +764,9 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
 
       }
 
-      if (size_sdu > 0 && (ra->generate_nr_prach == GENERATE_PREAMBLE || get_softmodem_params()->nsa)) {
+      if (size_sdu > 0 && (ra->ra_state == GENERATE_PREAMBLE || get_softmodem_params()->nsa)) {
 
         LOG_D(NR_MAC, "In %s: [UE %d][%d.%d]: starting initialisation Random Access Procedure...\n", __FUNCTION__, mod_id, frame, nr_slot_tx);
-
-        // Init RA procedure
-        init_RA(mod_id, prach_resources, setup, rach_ConfigGeneric, rach_ConfigDedicated);
-        nr_get_RA_window(mac);
-        // Fill in preamble and PRACH resources
-        if (ra->generate_nr_prach == GENERATE_PREAMBLE)
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
 
         // Padding: fill remainder with 0
         if (TBS_max - ra->Msg3_size > 0) {
@@ -867,12 +850,7 @@ uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
   }
 
   LOG_D(MAC,"ra->generate_nr_prach %d ra->ra_state %d (GENERATE_IDLE %d)\n",ra->generate_nr_prach,ra->ra_state,GENERATE_IDLE);
-  if(ra->generate_nr_prach != GENERATE_IDLE) {
-    return ra->generate_nr_prach;
-  } else {
-    return ra->ra_state;
-  }
-
+  return ra->generate_nr_prach;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){

@@ -598,7 +598,6 @@ typedef struct {
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
 
-  NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   /// \brief ?.
   /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
   uint32_t total_TBS[NUMBER_OF_CONNECTED_gNB_MAX];

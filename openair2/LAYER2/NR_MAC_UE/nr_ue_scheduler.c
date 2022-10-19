@@ -2704,6 +2704,9 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
       ra->generate_nr_prach = GENERATE_PREAMBLE;
 
+      init_RA(module_idP, &ra->prach_resources, setup, rach_ConfigGeneric, ra->rach_ConfigDedicated);
+      nr_get_RA_window(mac);
+
       format = prach_occasion_info_p->format;
       format0 = format & 0xff;        // single PRACH format
       format1 = (format >> 8) & 0xff; // dual PRACH format
@@ -2797,9 +2800,16 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         }
       } // if format1
 
+      nr_get_prach_resources(module_idP, 0, 0, &ra->prach_resources, prach_config_pdu, ra->rach_ConfigDedicated);
+      prach_config_pdu->ra_PreambleIndex = ra->ra_PreambleIndex;
+      prach_config_pdu->preamble_target_power = ra->prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER;
+      set_ra_rnti(mac, prach_config_pdu);
+
       fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, NULL);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
+
+      nr_Msg1_transmitted(module_idP);
     } // is_nr_prach_slot
   } // if is_nr_UL_slot
 }

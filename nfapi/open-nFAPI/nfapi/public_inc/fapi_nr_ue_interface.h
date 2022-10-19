@@ -191,7 +191,10 @@ typedef struct {
   uint16_t freq_msg1;
   // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
   uint8_t ssb_nb_in_ro;
-  // nfapi_nr_ul_beamforming_t beamforming;
+  /// Preamble index for PRACH (0-63)
+  uint8_t ra_PreambleIndex;
+  /// Target received power at gNB (TODO possibly modify to uint)
+  int preamble_target_power;
 } fapi_nr_ul_config_prach_pdu;
 
 typedef struct {

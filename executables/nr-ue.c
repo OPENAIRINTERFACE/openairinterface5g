@@ -162,10 +162,8 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   ue->dci_thres   = 0;
 
   // Setting UE mode to NOT_SYNCHED by default
-  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++){
+  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++)
     ue->UE_mode[gNB_id] = NOT_SYNCHED;
-    ue->prach_resources[gNB_id] = (NR_PRACH_RESOURCES_t *)malloc16_clear(sizeof(NR_PRACH_RESOURCES_t));
-  }
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB);
@@ -268,7 +266,7 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
       }
       free_and_zero(rach_ind->pdu_list);
       free_and_zero(rach_ind);
-      nr_Msg1_transmitted(0, 0, NFAPI_SFNSLOT2SFN(sfn_slot), 0);
+      nr_Msg1_transmitted(0);
   }
   if (dl_tti_request)
   {
@@ -300,7 +298,7 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
   }
 }
 
-static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info, NR_PRACH_RESOURCES_t *prach_resources)
+static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
 {
   fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
   if (!ul_config)
@@ -313,8 +311,7 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
     AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                 "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-    uint8_t nr_prach = nr_ue_get_rach(prach_resources,
-                                      prach_pdu,
+    uint8_t nr_prach = nr_ue_get_rach(prach_pdu,
                                       ul_info->module_id,
                                       ul_info->cc_id,
                                       ul_info->frame_tx,
@@ -349,8 +346,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_ul_dci_req_queue);
   reset_queue(&nr_ul_tti_req_queue);
 
-  NR_PRACH_RESOURCES_t prach_resources;
-  memset(&prach_resources, 0, sizeof(prach_resources));
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
   memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
@@ -462,7 +457,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       nr_ue_scheduler(NULL, &ul_info);
       nr_ue_prach_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx);
       nr_ue_pucch_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, NULL);
-      check_nr_prach(mac, &ul_info, &prach_resources);
+      check_nr_prach(mac, &ul_info);
     }
     if (!IS_SOFTMODEM_NOS1 && get_softmodem_params()->sa) {
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
