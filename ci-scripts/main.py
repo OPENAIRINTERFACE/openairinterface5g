@@ -468,10 +468,9 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.testSvrId = string_field
 		CONTAINERS.imageToPull.clear()
-		for image in test.findall('image_to_pull'):
-			string_field = image.findtext('image_name')
-			if (string_field is not None):
-				CONTAINERS.imageToPull.append(string_field)
+		string_field = test.findtext('images_to_pull')
+		if (string_field is not None):
+			CONTAINERS.imageToPull = string_field.split()
 
 	elif action == 'Clean_Test_Server_Images':
 		string_field = test.findtext('test_svr_id')

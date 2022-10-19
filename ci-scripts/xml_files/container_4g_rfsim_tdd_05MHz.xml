@@ -48,12 +48,7 @@
                 <class>Pull_Local_Registry</class>
                 <desc>Pull Images from Local Registry</desc>
                 <test_svr_id>0</test_svr_id>
-                <image_to_pull>
-                        <image_name>oai-enb</image_name>
-                </image_to_pull>
-                <image_to_pull>
-                        <image_name>oai-lte-ue</image_name>
-                </image_to_pull>
+                <images_to_pull>oai-enb oai-lte-ue</images_to_pull>
         </testCase>
 
         <testCase id="000011">
