@@ -7,9 +7,20 @@ All logging facility parameters are defined in the log_config section. Some para
 
 | name | type | default | description |
 |:---:|:---:|:---:|:----|
-| `global_log_level` | `pre-defined string of char` | `info` |  Allows printing of messages up to the specified  level. Available levels, from lower to higher are `error`,`warn`,`analysis`,`info`,`debug`,`trace` |
-| `global_log_online` | `boolean` | 1 (=true) | If false, all console messages are discarded, whatever their level |
-| `global_log_options` | `list of pre-defined string of char` |  |  5 options can be specified to trigger the information added in the header of the message:  `nocolor`, disable color usage in log messages, usefull when redirecting logs to a file, where escape sequences used for color selection can be annoying, `level`, add a one letter level id in the message header (T,D,I,A,W,E for trace, debug, info, analysis, warning, error),`thread`, add the thread name in the message header, `thread_id`, adds the thread ID in the message header, `function`, adds the function name, `line_num`, adds the line number, `time` adds the time since process starts|
+| `global_log_level` | `string` | `info` |  Allows printing of messages up to the specified level. Available levels, from lower to higher are `error`, `warn`, `analysis`, `info`, `debug`, `trace` |
+| `global_log_online` | `bool` | 1 (=`true`) | If `false`, all console messages are discarded, whatever their level |
+| `global_log_options` | `string` | _empty_ | _see following list_ |
+
+The following options can be specified to trigger the information added in the header of the message (`global_log_options`):
+
+- `nocolor`: disable color usage in log messages, useful when redirecting logs to a file, where escape sequences used for color selection can be annoying
+- `level`: add a one letter level ID in the message header (`T`,`D`,`I`,`A`,`W`,`E` for trace, debug, info, analysis, warning, error)
+- `thread`: add the thread name
+- `thread_id`: add the thread ID
+- `function`: add the function name
+- `line_num`: adds the (source code) line number
+- `time`: add the time since process started
+- `wall_clock`: add the system-wide clock time that measures real (i.e., wall-clock) time (`time` and `wall_clock` are mutually exclusive)
 
 ### Component specific parameters
 | name | type | default | description |
