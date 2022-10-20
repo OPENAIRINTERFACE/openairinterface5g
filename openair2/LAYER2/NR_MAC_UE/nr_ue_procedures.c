@@ -686,7 +686,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                                          NR_DL_DCI_FORMAT_1_0,
-                                                         (get_softmodem_params()->nsa) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
+                                                         mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          tda_info.mapping_type,
@@ -2421,6 +2421,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   switch(dci_format) {
 
   case NR_DL_DCI_FORMAT_1_0:
+
     switch(rnti_type) {
     case NR_RNTI_RA:
       // Freq domain assignment

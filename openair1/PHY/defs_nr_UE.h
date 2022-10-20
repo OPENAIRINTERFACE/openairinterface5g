@@ -400,6 +400,8 @@ typedef struct {
   int if_freq_off;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
+  /// \brief Target gNB Nid_cell when UE is resynchronizing
+  int target_Nid_cell;
   /// \brief Indicator that UE lost frame synchronization
   int lost_sync;
   /// Data structure for UE process scheduling
@@ -440,6 +442,7 @@ typedef struct {
   nr_ue_if_module_t *if_inst;
 
   fapi_nr_config_request_t nrUE_config;
+  nr_synch_request_t synch_request;
 
   NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];

@@ -495,7 +495,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
 #ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);
-    #endif
+#endif
 
     // MCS
     pusch_config_pdu->mcs_index = rar_grant->mcs;
@@ -1399,6 +1399,8 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t curren
       case 3:
         delta = 6;
         break;
+      default:
+        AssertFatal(1 == 0, "Invalid numerology %i\n", mu);
     }
 
     AssertFatal((k2 + delta) >= DURATION_RX_TO_TX,
