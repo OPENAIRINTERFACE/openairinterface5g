@@ -25,7 +25,7 @@
 #define FD_nr_scope_h_
 #include <simple_executable.h>
 #include <common/utils/system.h>
-#include <openairinterface5g_limits.h>
+#include <common/openairinterface5g_limits.h>
 #include "common/ran_context.h"
 #include <openair1/PHY/defs_gNB.h>
 #include "PHY/defs_gNB.h"

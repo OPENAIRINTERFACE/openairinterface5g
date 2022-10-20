@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #ifndef _UE_IP_CST
 #define _UE_IP_CST
 

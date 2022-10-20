@@ -65,7 +65,7 @@
 #include "PHY/LTE_TRANSPORT/transport_common.h"
 #include "PHY/LTE_TRANSPORT/transport_eNB.h"
 #include "openair2/PHY_INTERFACE/IF_Module.h"
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 
 
 #define PBCH_A 24

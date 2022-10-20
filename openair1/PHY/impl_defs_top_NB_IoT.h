@@ -34,7 +34,7 @@
 #define __PHY_IMPLEMENTATION_DEFS_NB_IOT_H__
 
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 /** @defgroup _ref_implementation_ OpenAirInterface LTE Implementation
  * @{
 
@@ -281,7 +281,7 @@ typedef enum {
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #define MAX_FRAME_NUMBER 0x400
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 
 #define NUMBER_OF_RN_MAX 3
 typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_relay} relaying_type_t;

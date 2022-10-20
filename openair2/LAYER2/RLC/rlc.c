@@ -34,7 +34,7 @@
 #include "common/utils/LOG/log.h"
 #include "UTIL/OCG/OCG_vars.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "assertions.h"
 #include <rlc.h>
 

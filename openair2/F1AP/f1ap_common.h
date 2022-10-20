@@ -32,7 +32,7 @@
 #ifndef F1AP_COMMON_H_
 #define F1AP_COMMON_H_
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3
