@@ -24,8 +24,9 @@
         <htmlTabRef>rfsim-4glte-tdd05mhz</htmlTabRef>
         <htmlTabName>Monolithic eNB - TDD 05MHz</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
-		<repeatCount>1</repeatCount>
+        <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
+ 111111
  100011
  000011
  000001
@@ -42,6 +43,13 @@
  100011
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-enb oai-lte-ue</images_to_pull>
+        </testCase>
 
         <testCase id="000011">
                 <class>DeployGenObject</class>
@@ -75,7 +83,7 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 4G eNB RF sim (TDD 05MHz)</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_tdd_05MHz</yaml_path>
-                <services>enb</services>
+                <services>oai_enb0</services>
                 <nb_healthy>7</nb_healthy>
         </testCase>
 
@@ -98,7 +106,7 @@
         <testCase id="020012">
                 <class>PingFromContainer</class>
                 <desc>Ping LTE-UE from Traffic-Gen</desc>
-		<container_name>rfsim4g-trf-gen</container_name>
+                <container_name>rfsim4g-trf-gen</container_name>
                 <options>-c 20 12.0.0.2</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>

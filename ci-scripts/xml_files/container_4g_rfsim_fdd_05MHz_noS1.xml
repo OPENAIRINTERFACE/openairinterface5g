@@ -25,6 +25,7 @@
         <htmlTabName>Monolithic eNB - FDD 05MHz - noS1</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <TestCaseRequestedList>
+ 111111
  100011
  000013
  000001
@@ -37,6 +38,13 @@
  100011
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-enb oai-lte-ue</images_to_pull>
+        </testCase>
 
         <testCase id="000001">
                 <class>IdleSleep</class>
@@ -54,7 +62,7 @@
                 <class>DeployGenObject</class>
                 <desc>Deploy OAI 4G eNB RF sim (FDD 05MHz)</desc>
                 <yaml_path>yaml_files/4g_rfsimulator_fdd_05MHz_noS1</yaml_path>
-                <services>enb</services>
+                <services>oai_enb0</services>
                 <nb_healthy>1</nb_healthy>
         </testCase>
 
@@ -77,7 +85,7 @@
         <testCase id="020012">
                 <class>PingFromContainer</class>
                 <desc>Ping LTE-UE from eNB</desc>
-				<container_name>rfsim4g-oai-enb</container_name>
+                <container_name>rfsim4g-oai-enb</container_name>
                 <options>-I oaitun_enb1 -c 20 10.0.1.2</options>
                 <loss_threshold>5</loss_threshold>
         </testCase>

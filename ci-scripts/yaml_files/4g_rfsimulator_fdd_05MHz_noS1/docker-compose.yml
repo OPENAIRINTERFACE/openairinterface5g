@@ -1,7 +1,7 @@
 version: '3.8'
 
 services:
-    enb:
+    oai_enb0:
         image: oai-enb:develop
         privileged: true
         container_name: rfsim4g-oai-enb

@@ -26,6 +26,7 @@
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>1</repeatCount>
         <TestCaseRequestedList>
+ 111111
  100001
  000000
  000001
@@ -41,6 +42,13 @@
  100001
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-enb oai-lte-ue</images_to_pull>
+        </testCase>
 
         <testCase id="000000">
                 <class>DeployGenObject</class>

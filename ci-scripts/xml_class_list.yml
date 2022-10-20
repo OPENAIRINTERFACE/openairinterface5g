@@ -40,7 +40,6 @@
   - IdleSleep
   - Perform_X2_Handover
   - Build_Image
-  - Copy_Image_to_Test
   - Deploy_Object
   - Undeploy_Object
   - Cppcheck_Analysis
@@ -51,3 +50,6 @@
   - IperfFromContainer
   - StatsFromGenObject
   - LicenceAndFormattingCheck
+  - Push_Local_Registry
+  - Pull_Local_Registry
+  - Clean_Test_Server_Images

@@ -44,10 +44,6 @@ import datetime
 import signal
 import statistics as stat
 from multiprocessing import Process, Lock, SimpleQueue
-logging.basicConfig(
-	level=logging.DEBUG,
-	format="[%(asctime)s] %(name)s:%(levelname)s: %(message)s"
-)
 
 #import our libs
 import helpreadme as HELP
@@ -263,10 +259,10 @@ class OaiCiTest():
 		if self.ranAllowMerge:
 			if self.ranTargetBranch == '':
 				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					SSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 5)
+					SSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 30)
 			else:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				SSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 5)
+				SSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 30)
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('mkdir -p log', '\$', 5)
@@ -3937,7 +3933,7 @@ class OaiCiTest():
 		sys.exit(1)
 
 	def ShowTestID(self):
-		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
-		logging.debug('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
-		logging.debug('\u001B[1m' + self.desc + '\u001B[0m')
-		logging.debug('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
+		logging.info('\u001B[1m' + self.desc + '\u001B[0m')
+		logging.info('\u001B[1m----------------------------------------\u001B[0m')
