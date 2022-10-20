@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -uo pipefail
 
 PREFIX=/opt/oai-gnb
 ENABLE_X2=${ENABLE_X2:-yes}
