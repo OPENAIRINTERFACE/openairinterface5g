@@ -32,7 +32,7 @@
 
 //#include "defs.h"
 #include "mac_proto.h"
-#include "sdr/COMMON/common_lib.h"
+#include "radio/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
 #include "PHY/types.h"

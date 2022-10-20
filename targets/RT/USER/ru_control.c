@@ -53,8 +53,8 @@
 #undef MALLOC //there are two conflicting definitions, so we better make sure we don't use it at all
 
 
-#include "sdr/COMMON/common_lib.h"
-#include "sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "radio/COMMON/common_lib.h"
+#include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
 

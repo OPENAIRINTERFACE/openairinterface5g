@@ -30,7 +30,7 @@
 #include "common/utils/system.h"
 #include "ori.h"
 
-#include "sdr/COMMON/common_lib.h"
+#include "radio/COMMON/common_lib.h"
 
 typedef struct eutra_bandentry_s {
   int16_t band;

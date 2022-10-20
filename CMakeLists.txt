@@ -55,17 +55,17 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
-    include_directories("${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/")
+    include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
 
     set(HW_SOURCE ${HW_SOURCE}
-            ${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/iris_lib.cpp)
+            ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp)
     LINK_DIRECTORIES("/usr/local/lib")
     set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
-    include_directories("${OPENAIR_DIR}/sdr/AW2SORI")
+    include_directories("${OPENAIR_DIR}/radio/AW2SORI")
     set(HW_SOURCE ${HW_SOURCE}
-	    ${OPENAIR_DIR}/sdr/AW2SORI/ARCH/AW2SORI/oaiori.c)
+	    ${OPENAIR_DIR}/radio/AW2SORI/ARCH/AW2SORI/oaiori.c)
     LINK_DIRECTORIES("/usr/local/lib")
     set(openair_HW_lib "-shared -fPIC -msse4 -g -ggdb -lori")
 
@@ -764,53 +764,53 @@ set (SHLIB_LOADER_SOURCES
 ######################################################################
 
 set(HWLIB_USRP_SOURCE
-  ${OPENAIR_DIR}/sdr/USRP/USERSPACE/LIB/usrp_lib.cpp
+  ${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/usrp_lib.cpp
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
 target_include_directories(oai_usrpdevif PRIVATE
-  "${OPENAIR_DIR}/sdr/USRP/USERSPACE/LIB/"
+  "${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/"
   ${Boost_INCLUDE_DIR}
 )
 target_link_libraries(oai_usrpdevif uhd)
 
-include_directories("${OPENAIR_DIR}/sdr/BLADERF/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/")
 set(HWLIB_BLADERF_SOURCE
-  ${OPENAIR_DIR}/sdr/BLADERF/USERSPACE/LIB/bladerf_lib.c
+  ${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/bladerf_lib.c
   )
 add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
 target_link_libraries(oai_bladerfdevif bladeRF)
 
-include_directories("${OPENAIR_DIR}/sdr/LMSSDR/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/")
 
 set(HWLIB_LMSSDR_SOURCE
-  ${OPENAIR_DIR}/sdr/LMSSDR/USERSPACE/LIB/lms_lib.cpp
+  ${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/lms_lib.cpp
   )
 add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
 target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
 target_link_libraries(oai_lmssdrdevif LimeSuite )
 
 
-include_directories("${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/eth_udp.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/eth_raw.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/ethernet_lib.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_udp.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_raw.c
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
 
-include_directories("${OPENAIR_DIR}/sdr/AW2SORI/")
+include_directories("${OPENAIR_DIR}/radio/AW2SORI/")
 link_directories("/usr/local/lib")
 set(HWLIB_AW2SORI_SOURCE
-  ${OPENAIR_DIR}/sdr/AW2SORI/oaiori.c
+  ${OPENAIR_DIR}/radio/AW2SORI/oaiori.c
   )
 add_library(aw2sori_transpro MODULE ${HWLIB_AW2SORI_SOURCE})
 target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
 target_link_libraries(aw2sori_transpro libori.so)
 
-include_directories("${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
 set(option_HWIRISLIB_lib "-l SoapySDR")
 set(HWLIB_IRIS_SOURCE
-  ${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/iris_lib.cpp
+  ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp
   )
 add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
 target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.7/)
@@ -823,11 +823,11 @@ target_link_libraries(oai_irisdevif SoapySDR)
 include_directories ("/usr/include/dpdk")
 
 set(HWLIB_BENETEL_4G_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/benetel.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/shared_buffers.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/low.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/low_dpdk.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/dpdk_driver.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/benetel.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/shared_buffers.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low_dpdk.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/dpdk_driver.c
   )
 add_library(benetel_4g MODULE ${HWLIB_BENETEL_4G_SOURCE} )
 
@@ -841,11 +841,11 @@ TARGET_LINK_LIBRARIES(benetel_4g pthread dl rt m numa)
 ######################################################################
 
 set(HWLIB_BENETEL_5G_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/benetel.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/shared_buffers.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/low.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/low_dpdk.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/dpdk_driver.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/benetel.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/shared_buffers.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low_dpdk.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/dpdk_driver.c
   )
 add_library(benetel_5g MODULE ${HWLIB_BENETEL_5G_SOURCE} )
 
@@ -882,7 +882,7 @@ endif ()
 
 ##########################################################
 
-include_directories ("${OPENAIR_DIR}/sdr/COMMON")
+include_directories ("${OPENAIR_DIR}/radio/COMMON")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -1047,7 +1047,7 @@ include_directories("${OPENAIR3_DIR}/ocp-gtpu")
 include_directories("${OPENAIR3_DIR}/M3AP")
 include_directories("${OPENAIR3_DIR}/MME_APP")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
-include_directories("${OPENAIR_DIR}/sdr/COMMON")
+include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
@@ -2545,15 +2545,15 @@ target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 
 
 add_library(rfsimulator MODULE
-  ${OPENAIR_DIR}/sdr/rfsimulator/simulator.c
-  ${OPENAIR_DIR}/sdr/rfsimulator/apply_channelmod.c
-  ${OPENAIR_DIR}/sdr/rfsimulator/new_channel_sim.c
+  ${OPENAIR_DIR}/radio/rfsimulator/simulator.c
+  ${OPENAIR_DIR}/radio/rfsimulator/apply_channelmod.c
+  ${OPENAIR_DIR}/radio/rfsimulator/new_channel_sim.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
 add_library(oai_iqplayer MODULE
-	${OPENAIR_DIR}/sdr/iqplayer/iqplayer_lib.c
+	${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c
 	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2614,7 +2614,7 @@ add_executable(nfapi_test
   )
 
 add_executable(replay_node
-  ${OPENAIR_DIR}/sdr/rfsimulator/stored_node.c
+  ${OPENAIR_DIR}/radio/rfsimulator/stored_node.c
   )
 target_link_libraries (replay_node minimal_lib)
 
@@ -2641,8 +2641,8 @@ add_executable(lte-softmodem
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_DIR}/executables/create_tasks.c
   ${OPENAIR_DIR}/executables/create_tasks_mbms.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR2_DIR}/F1AP/dummy_enb.c
@@ -2681,8 +2681,8 @@ add_executable(ocp-enb
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
   ${OPENAIR_DIR}/executables/create_tasks.c
   ${OPENAIR_DIR}/executables/create_tasks_mbms.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2710,8 +2710,8 @@ target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt cryp
 add_executable(oairu
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/openair1/SCHED/phy_procedures_lte_common.c
   ${OPENAIR_DIR}/executables/main_ru.c
@@ -2736,8 +2736,8 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/executables/create_tasks_ue.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2782,8 +2782,8 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/executables/nr-softmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2827,8 +2827,8 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
@@ -2881,7 +2881,7 @@ target_link_libraries (dlsim_tm4
 add_executable(rftest
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${SHLIB_LOADER_SOURCES}
 )

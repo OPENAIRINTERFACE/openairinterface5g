@@ -1,7 +1,7 @@
 #ifndef __thread_NR_UE__
 #define __thread_NR_UE__
 #include <pthread.h>
-#include <sdr/COMMON/common_lib.h>
+#include <radio/COMMON/common_lib.h>
 /// Context data structure for RX/TX portion of subframe processing
 typedef struct {
   /// Component Carrier index

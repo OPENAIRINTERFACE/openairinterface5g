@@ -36,7 +36,7 @@
 #include <openair1/SIMULATION/TOOLS/sim.h>
 #include <common/utils/telnetsrv/telnetsrv.h>
 #include <common/utils/load_module_shlib.h>
-#include <sdr/rfsimulator/rfsimulator.h>
+#include "rfsimulator.h"
 
 /*
   Legacy study:

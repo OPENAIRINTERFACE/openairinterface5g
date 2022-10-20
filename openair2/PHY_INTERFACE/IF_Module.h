@@ -38,7 +38,7 @@
 #include "nfapi_interface.h"
 #include "platform_types.h"
 #include <common/utils/threadPool/thread-pool.h>
-#include <sdr/COMMON/common_lib.h>
+#include <radio/COMMON/common_lib.h>
 
 
 #define MAX_NUM_DL_PDU 100
