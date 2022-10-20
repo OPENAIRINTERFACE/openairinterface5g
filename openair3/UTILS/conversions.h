@@ -560,8 +560,4 @@ do {                                                    \
 #define GTP_TEID_TO_ASN1 INT32_TO_OCTET_STRING
 #define OCTET_STRING_TO_TAC OCTET_STRING_TO_INT16
 
-void hexa_to_ascii(uint8_t *from, char *to, size_t length);
-
-int ascii_to_hex(uint8_t *dst, const char *h);
-
 #endif /* CONVERSIONS_H_ */
