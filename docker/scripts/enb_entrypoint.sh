@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -uo pipefail
 
 PREFIX=/opt/oai-enb
 RRC_INACTIVITY_THRESHOLD=${RRC_INACTIVITY_THRESHOLD:-0}
