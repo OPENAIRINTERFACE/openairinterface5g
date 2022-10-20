@@ -360,7 +360,7 @@ void pbch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                        uint8_t frame_mod4) {
   int i;
   uint8_t reset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = frame_parms->Nid_cell; //this is c_init in 36.211 Sec 6.6.1
@@ -564,7 +564,7 @@ void pbch_unscrambling_fembms(LTE_DL_FRAME_PARMS *frame_parms,
                               uint8_t frame_mod4) {
   int i;
   uint8_t reset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   x2 = frame_parms->Nid_cell+(1<<9); //this is c_init for FeMBMS in 36.211 Sec 6.6.1

@@ -23,7 +23,7 @@
 
 void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 {
-  unsigned int n, x1, x2;
+  unsigned int n = 0, x1 = 0, x2 = 0;
   unsigned int Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
   uint8_t reset;
@@ -55,7 +55,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
                    unsigned short nid)
 {
   unsigned char ns,l;
-  unsigned int n,x1,x2,x2tmp0;
+  unsigned int n = 0, x1 = 0, x2 = 0, x2tmp0 = 0;
   uint8_t reset;
   int pdcch_dmrs_init_length =  (((ue->frame_parms.N_RB_DL<<1)*3)>>5)+1;
 
@@ -78,8 +78,7 @@ void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
 void nr_gold_pdsch(PHY_VARS_NR_UE* ue,
                    int nscid,
                    uint32_t nid) {
-
-  unsigned int x1,x2,x2tmp0;
+  unsigned int x1 = 0, x2 = 0, x2tmp0 = 0;
   uint8_t reset;
   int pdsch_dmrs_init_length =  ((ue->frame_parms.N_RB_DL*12)>>5)+1;
 
@@ -104,7 +103,7 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
                         uint16_t N_n_scid,
                         uint8_t n_scid)
 {
-  uint32_t x1, x2, n;
+  uint32_t x1 = 0, x2 = 0, n = 0;
   uint8_t reset, slot, symb;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
@@ -127,7 +126,7 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
 
 void init_nr_gold_prs(PHY_VARS_NR_UE* ue)
 {
-  unsigned int x1, x2;
+  unsigned int x1 = 0, x2 = 0;
   uint16_t Nid;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;

@@ -210,7 +210,9 @@ int as_message_encode(char* buffer, as_message_t* msg, int length)
   as_nas_info_t nas_msg;
   Byte_t *dataptr=NULL;
   uint32_t len=0;
-  
+
+  memset(&nas_msg, 0, sizeof(as_nas_info_t));
+
   switch (msg->msgID) {
   case AS_BROADCAST_INFO_IND:
     /* Broadcast information */

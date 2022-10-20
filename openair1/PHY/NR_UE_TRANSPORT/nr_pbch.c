@@ -312,7 +312,7 @@ static void nr_pbch_unscrambling(NR_UE_PBCH *pbch,
                                  uint32_t pbch_a_prime,
                                  uint32_t *pbch_a_interleaved) {
   uint8_t reset, offset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   uint8_t k=0;
   reset = 1;
   // x1 is set in first call to lte_gold_generic
@@ -427,7 +427,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                &nr_ue_common_vars->rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
-  double log2_maxh;
+  double log2_maxh = 0;
 
   for (symbol=1; symbol<4; symbol++) {
     const uint16_t nb_re=symbol == 2 ? 72 : 180;

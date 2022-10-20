@@ -23,7 +23,7 @@
 
 void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 {
-  unsigned int x1, x2;
+  unsigned int x1 = 0, x2 = 0;
   uint16_t Nid, i_ssb, i_ssb2;
   unsigned char Lmax, l, n_hf, N_hf;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -55,8 +55,7 @@ void nr_init_pbch_dmrs(PHY_VARS_gNB* gNB)
 
 void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 {
-
-  uint32_t x1, x2;
+  uint32_t x1 = 0, x2 = 0;
   uint8_t reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ***pdcch_dmrs = gNB->nr_gold_pdcch_dmrs;
@@ -79,8 +78,7 @@ void nr_init_pdcch_dmrs(PHY_VARS_gNB* gNB, uint32_t Nid)
 
 
 void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint8_t nscid, uint32_t Nid) {
-  
-  uint32_t x1, x2;
+  uint32_t x1 = 0, x2 = 0;
   uint8_t reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   uint32_t ****pdsch_dmrs = gNB->nr_gold_pdsch_dmrs;
@@ -104,7 +102,7 @@ void nr_init_pdsch_dmrs(PHY_VARS_gNB* gNB, uint8_t nscid, uint32_t Nid) {
 void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid) {
 
   unsigned char ns;
-  unsigned int n,x1,x2;
+  unsigned int n = 0, x1 = 0, x2 = 0;
   int reset;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   unsigned short l;
@@ -127,7 +125,7 @@ void nr_gold_pusch(PHY_VARS_gNB* gNB, int nscid, uint32_t nid) {
 
 void nr_init_prs(PHY_VARS_gNB* gNB)
 {
-  unsigned int x1, x2;
+  unsigned int x1 = 0, x2 = 0;
   uint16_t Nid;
 
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;

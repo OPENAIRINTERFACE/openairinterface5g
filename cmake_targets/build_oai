@@ -53,8 +53,6 @@ BUILD_COVERITY_SCAN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-AVX512="True"
-AVX2="True"
 BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
@@ -159,7 +157,7 @@ Options:
 --noavx512
    Disable AVX512 intrinsics whatever processor capability is
 --noavx2
-   Disable AVX2 intrinsics if processor supports it or use SIMDE emulation
+   Disable AVX2 intrinsics whatever processor capability is
 -k | --skip-shared-libraries
    Skip build for shared libraries to reduce compilation time when building frequently for debugging purposes
 --ninja
@@ -394,11 +392,11 @@ function main() {
             fi
             shift 2;;		
         --noavx512)
-            AVX512="False"
+            CMAKE_CMD="$CMAKE_CMD -DAVX512=OFF"
             echo_info "Disabling AVX512 instructions"
             shift 1;;
         --noavx2)
-            AVX2="False"
+            CMAKE_CMD="$CMAKE_CMD -DAVX2=OFF"
             echo_info "Disabling AVX2 instructions"
             shift 1;;
         -k | --skip-shared-libraries)
@@ -559,23 +557,9 @@ function main() {
   if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
   if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
 
-  # if --noavx512 is not specified the AVX512 equals "True" by default
-  # override AVX512 to "False" if processor does not have avx512
-  # this avoids having to specify --noavx512 systematically
-  if [ -f /proc/cpuinfo ]; then
-      if grep -q avx512 /proc/cpuinfo
-      then
-        echo_info "Processor has avx512 intrinsics"
-      else
-        echo_info "Processor does not have avx512 intrinsics"
-        echo_info "Forcing AVX512 to False"
-	AVX512="False"
-      fi
-  fi
-
   # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
   # e.g., cmake_targets/ran_build/build, hence the ../../..
-  CMAKE_CMD="$CMAKE_CMD -DAVX512=\"${AVX512[*]}\" -DAVX2=\"${AVX2[*]}\" ../../.."
+  CMAKE_CMD="$CMAKE_CMD ../../.."
   echo_info "running $CMAKE_CMD"
   eval $CMAKE_CMD
   

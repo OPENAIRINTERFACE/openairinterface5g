@@ -359,14 +359,14 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
 #if defined(__x86_64__) || defined(__i386__)
       __m256i *buff256 = (__m256i *)&(((int32_t*)buff[aid])[offset]);
       for (int j=0; j<32; j+=8) {
-        buff_tx[1+j] = _mm256_slli_epi16(buff256[j],4);
-        buff_tx[2+j] = _mm256_slli_epi16(buff256[j+1],4);
-        buff_tx[3+j] = _mm256_slli_epi16(buff256[j+2],4);
-        buff_tx[4+j] = _mm256_slli_epi16(buff256[j+3],4);
-        buff_tx[5+j] = _mm256_slli_epi16(buff256[j+4],4);
-        buff_tx[6+j] = _mm256_slli_epi16(buff256[j+5],4);
-        buff_tx[7+j] = _mm256_slli_epi16(buff256[j+6],4);
-        buff_tx[8+j] = _mm256_slli_epi16(buff256[j+7],4);
+        buff_tx[1+j] = simde_mm256_slli_epi16(buff256[j],4);
+        buff_tx[2+j] = simde_mm256_slli_epi16(buff256[j+1],4);
+        buff_tx[3+j] = simde_mm256_slli_epi16(buff256[j+2],4);
+        buff_tx[4+j] = simde_mm256_slli_epi16(buff256[j+3],4);
+        buff_tx[5+j] = simde_mm256_slli_epi16(buff256[j+4],4);
+        buff_tx[6+j] = simde_mm256_slli_epi16(buff256[j+5],4);
+        buff_tx[7+j] = simde_mm256_slli_epi16(buff256[j+6],4);
+        buff_tx[8+j] = simde_mm256_slli_epi16(buff256[j+7],4);
       }
 #elif defined(__arm__)
       int16x8_t *buff128 = (__int16x8_t*)&buff[aid][offset];
