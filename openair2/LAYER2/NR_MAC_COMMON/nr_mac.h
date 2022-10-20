@@ -300,6 +300,9 @@ typedef struct {
   int num_srs;
   int num_harqs;
   int num_csi_reports;
+  uint8_t pmi;
+  uint8_t ri;
+  uint8_t cqi;
 } nr_emulated_l1_t;
 
 typedef struct {

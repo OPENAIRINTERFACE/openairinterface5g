@@ -36,7 +36,7 @@
                 <eNB_instance>1</eNB_instance>
                 <eNB_serverId>1</eNB_serverId>
                 <forced_workspace_cleanup>True</forced_workspace_cleanup>
-                <proxy_commit>56cfdc0</proxy_commit>
+                <proxy_commit>a6169d8</proxy_commit>
         </testCase>
 
 </testCaseList>

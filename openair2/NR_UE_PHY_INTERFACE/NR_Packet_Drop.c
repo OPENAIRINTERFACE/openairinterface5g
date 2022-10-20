@@ -181,3 +181,27 @@ bool should_drop_transport_block(int slot, uint16_t rnti)
   }
   return false;
 }
+
+int get_mcs_from_sinr(nr_bler_struct *nr_bler_data, float sinr)
+{
+  if (sinr < (nr_bler_data[0].bler_table[0][0])) {
+    LOG_I(NR_MAC, "The SINR found is smaller than first MCS table\n");
+    return 0;
+  }
+
+  if (sinr > (nr_bler_data[NR_NUM_MCS-1].bler_table[nr_bler_data[NR_NUM_MCS-1].length - 1][0])) {
+    LOG_I(NR_MAC, "The SINR found is larger than last MCS table\n");
+    return NR_NUM_MCS-1;
+  }
+
+  for (int n = NR_NUM_MCS-1; n >= 0; n--) {
+    float largest_sinr = (nr_bler_data[n].bler_table[nr_bler_data[n].length - 1][0]);
+    float smallest_sinr = (nr_bler_data[n].bler_table[0][0]);
+    if (sinr < largest_sinr && sinr > smallest_sinr) {
+      LOG_I(NR_MAC, "The SINR found in MCS %d table\n", n);
+      return n;
+    }
+  }
+  LOG_E(NR_MAC, "Unable to get an MCS value.\n");
+  abort();
+}
