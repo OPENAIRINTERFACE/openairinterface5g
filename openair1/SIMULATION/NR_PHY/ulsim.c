@@ -1093,7 +1093,6 @@ int main(int argc, char **argv)
       while (round < max_rounds && crc_status) {
         round_trials[round]++;
         ulsch_ue->harq_processes[harq_pid]->round = round;
-        gNB->ulsch[0]->harq_processes[harq_pid]->round = round;
         rv_index = nr_rv_round_map[round % 4];
 
         UE_proc.nr_slot_tx = slot;
