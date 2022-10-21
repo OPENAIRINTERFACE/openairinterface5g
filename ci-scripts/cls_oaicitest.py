@@ -1661,7 +1661,7 @@ class OaiCiTest():
 					logging.debug("Ping analysis from Amarisoft scenario")
 					path,ping_log_file = os.path.split(Module_UE.Ping)
 					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					SSH.command('cat ' + Module_UE.Ping, '\#', 5)
+					SSH.command('cat ' + Module_UE.Ping, '\$', 5)
 
 				else:
 					ping_status=-1
