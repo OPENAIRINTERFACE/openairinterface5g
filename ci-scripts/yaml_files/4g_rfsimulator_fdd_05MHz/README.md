@@ -146,7 +146,7 @@ rfsim4g-trf-gen          /bin/bash -c ip route add  ...   Up (healthy)
 ## 2.3. Deploy OAI eNB in RF simulator mode ##
 
 ```bash
-$ docker-compose up -d enb
+$ docker-compose up -d oai_enb0
 Creating rfsim4g-oai-enb ... done
 ```
 

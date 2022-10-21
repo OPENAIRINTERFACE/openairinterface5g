@@ -104,7 +104,7 @@
 
 #include "PHY/NR_UE_TRANSPORT/dci_nr.h"
 #include <pthread.h>
-#include "sdr/COMMON/common_lib.h"
+#include "radio/COMMON/common_lib.h"
 #include "NR_IF_Module.h"
 
 /// Context data structure for gNB subframe processing

@@ -25,7 +25,7 @@
 #define __E1AP_H_
 
 #include <common/utils/LOG/log.h>
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #include <E1AP_Cause.h>

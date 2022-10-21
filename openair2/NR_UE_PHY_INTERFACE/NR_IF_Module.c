@@ -45,8 +45,9 @@
 #include "openair2/RRC/NR_UE/rrc_vars.h"
 #include "openair2/GNB_APP/L1_nr_paramdef.h"
 #include "openair2/GNB_APP/gnb_paramdef.h"
-#include "sdr/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
 #include <stdio.h>
+#include "openair2/GNB_APP/MACRLC_nr_paramdef.h"
 
 #define MAX_IF_MODULES 100
 
@@ -712,7 +713,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         {
             frame = tx_data_request->SFN;
             slot = tx_data_request->Slot;
-            LOG_I(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
+            LOG_D(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
             copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
         }
         else
@@ -735,7 +736,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = ul_tti_request->Slot;
         LOG_T(NR_PHY, "[%d, %d] ul_tti_request\n", frame, slot);
         copy_ul_tti_data_req_to_dl_info(&mac->dl_info, ul_tti_request);
-        free_and_zero(ul_tti_request);
     }
     else
     {
@@ -1016,16 +1016,17 @@ void *nrue_standalone_pnf_task(void *context)
       nr_phy_channel_params_t *ch_info = CALLOC(1, sizeof(*ch_info));
       memcpy(ch_info, buffer, sizeof(*ch_info));
 
-      if (ch_info->nb_of_sinrs > 1)
-        LOG_W(NR_PHY, "Expecting at most one SINR.\n");
+      if (ch_info->nb_of_csi > 1)
+        LOG_W(NR_PHY, "Expecting only one CSI report.\n");
 
       // TODO: Update sinr field of slot_rnti_mcs to be array.
-      for (int i = 0; i < ch_info->nb_of_sinrs; ++i)
+      for (int i = 0; i < ch_info->nb_of_csi; ++i)
       {
-        slot_rnti_mcs[NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot)].sinr = ch_info->sinr[i];
+        slot_rnti_mcs[NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot)].sinr = ch_info->csi[i].sinr;
+        slot_rnti_mcs[NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot)].area_code = ch_info->csi[i].area_code;
 
-        LOG_T(NR_PHY, "Received_SINR[%d] = %f, sfn:slot %d:%d\n",
-              i, ch_info->sinr[i], NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
+        LOG_D(NR_PHY, "Received_SINR[%d] = %f, sfn:slot %d:%d\n",
+              i, ch_info->csi[i].sinr, NFAPI_SFNSLOT2SFN(ch_info->sfn_slot), NFAPI_SFNSLOT2SLOT(ch_info->sfn_slot));
       }
 
       if (!put_queue(&nr_chan_param_queue, ch_info))
@@ -1240,6 +1241,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
+            free((dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu);
             break;
           case FAPI_NR_RX_PDU_TYPE_DLSCH:
             ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
@@ -1260,13 +1262,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
       free(dl_info->rx_ind);
       dl_info->rx_ind = NULL;
     }
-
-    //clean up nr_downlink_indication_t *dl_info
-    free(dl_info->dci_ind);
-    dl_info->dci_ind = NULL;
-    free(dl_info->rx_ind);
-    dl_info->rx_ind  = NULL;
-
   }
   return 0;
 }
@@ -1314,29 +1309,29 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
   return 0;
 }
 
-void RCconfig_nr_ue_L1(void) {
+void RCconfig_nr_ue_macrlc(void) {
   int j;
-  paramdef_t L1_Params[] = L1PARAMS_DESC;
-  paramlist_def_t L1_ParamList = {CONFIG_STRING_L1_LIST, NULL, 0};
+  paramdef_t MACRLC_Params[] = MACRLCPARAMS_DESC;
+  paramlist_def_t MACRLC_ParamList = {CONFIG_STRING_MACRLC_LIST, NULL, 0};
 
-  config_getlist(&L1_ParamList, L1_Params, sizeof(L1_Params) / sizeof(paramdef_t), NULL);
-  if (L1_ParamList.numelt > 0) {
-    for (j = 0; j < L1_ParamList.numelt; j++) {
-      if (strcmp(*(L1_ParamList.paramarray[j][L1_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
+  config_getlist(&MACRLC_ParamList, MACRLC_Params, sizeof(MACRLC_Params) / sizeof(paramdef_t), NULL);
+  if (MACRLC_ParamList.numelt > 0) {
+    for (j = 0; j < MACRLC_ParamList.numelt; j++) {
+      if (strcmp(*(MACRLC_ParamList.paramarray[j][MACRLC_TRANSPORT_N_PREFERENCE_IDX].strptr), "nfapi") == 0) {
         stub_eth_params.local_if_name = strdup(
-            *(L1_ParamList.paramarray[j][L1_LOCAL_N_IF_NAME_IDX].strptr));
+            *(MACRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_IF_NAME_IDX].strptr));
         stub_eth_params.my_addr = strdup(
-            *(L1_ParamList.paramarray[j][L1_LOCAL_N_ADDRESS_IDX].strptr));
+            *(MACRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_ADDRESS_IDX].strptr));
         stub_eth_params.remote_addr = strdup(
-            *(L1_ParamList.paramarray[j][L1_REMOTE_N_ADDRESS_IDX].strptr));
+            *(MACRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_ADDRESS_IDX].strptr));
         stub_eth_params.my_portc =
-            *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTC_IDX].iptr);
+            *(MACRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTC_IDX].iptr);
         stub_eth_params.remote_portc =
-            *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTC_IDX].iptr);
+            *(MACRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTC_IDX].iptr);
         stub_eth_params.my_portd =
-            *(L1_ParamList.paramarray[j][L1_LOCAL_N_PORTD_IDX].iptr);
+            *(MACRLC_ParamList.paramarray[j][MACRLC_LOCAL_N_PORTD_IDX].iptr);
         stub_eth_params.remote_portd =
-            *(L1_ParamList.paramarray[j][L1_REMOTE_N_PORTD_IDX].iptr);
+            *(MACRLC_ParamList.paramarray[j][MACRLC_REMOTE_N_PORTD_IDX].iptr);
         stub_eth_params.transp_preference = ETH_UDP_MODE;
       }
     }

@@ -61,7 +61,7 @@ class AS_UE:
 	def KillASUE(self):
 		mySSH = sshconnection.SSHConnection()
 		mySSH.open(self.HostIPAddress, self.HostUsername, self.HostPassword)
-		mySSH.command('killall --signal SIGKILL lteue-avx2', '#', 5)
+		mySSH.command('killall --signal SIGKILL lteue-avx2', '\$', 5)
 		mySSH.close()
 
 	def RunScenario(self):
@@ -70,10 +70,10 @@ class AS_UE:
 
 		logging.debug("Deleting old artifacts :")
 		cmd='rm -rf ' + self.Ping + ' ' + self.UELog 
-		mySSH.command(cmd,'#',5)
+		mySSH.command(cmd, '\$',5)
 		logging.debug("Running scenario :")
 		cmd='echo $USER; nohup '+self.Cmd + ' ' + self.Config + ' &'
-		mySSH.command(cmd,'#',5)
+		mySSH.command(cmd, '\$',5)
 
 		mySSH.close()
 

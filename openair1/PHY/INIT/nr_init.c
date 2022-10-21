@@ -194,9 +194,9 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
         }
       }
 
-      int llc;
-      int mmc;
-      double complex phase_sign;
+      int llc = 0;
+      int mmc = 0;
+      double complex phase_sign = 0;
       //Table 5.2.2.2.1-6:
       //Codebook for 2-layer CSI reporting using antenna ports 3000 to 2999+PCSI-RS
       //Compute the code book size for generating 2 layers out of Tx antenna ports

@@ -305,7 +305,7 @@ typedef struct {
 #define NUMBER_OF_HARQ_PID_MAX 8
 
 #define MAX_FRAME_NUMBER 0x400
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "assertions.h"
 
 #endif //__PHY_IMPLEMENTATION_DEFS_H__ 

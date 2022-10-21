@@ -807,7 +807,7 @@ void nr_generate_pucch1_old(PHY_VARS_NR_UE *ue,
 
 static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) __attribute__((always_inline));
 static inline void nr_pucch2_3_4_scrambling(uint16_t M_bit,uint16_t rnti,uint16_t n_id,uint64_t *B64,uint8_t *btilde) {
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   int i;
   uint8_t c;
   // c_init=nRNTI*2^15+n_id according to TS 38.211 Subclause 6.3.2.6.1
@@ -1037,7 +1037,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
    */
   //int32_t *txptr;
   uint32_t re_offset=0;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   int i=0;
   int m=0;
   uint8_t  startingSymbolIndex = pucch_pdu->start_symbol_index;

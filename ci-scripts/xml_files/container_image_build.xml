@@ -26,6 +26,7 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<TestCaseRequestedList>
  000001
+ 000010
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -36,6 +37,12 @@
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
+	</testCase>
+
+	<testCase id="000010">
+		<class>Push_Local_Registry</class>
+		<desc>Push Images to Local Registry</desc>
+		<registry_svr_id>0</registry_svr_id>
 	</testCase>
 
 </testCaseList>

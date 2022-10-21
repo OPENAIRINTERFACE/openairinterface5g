@@ -49,7 +49,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ngran_types.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "targets/RT/USER/lte-softmodem.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"

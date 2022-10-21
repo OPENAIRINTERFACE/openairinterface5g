@@ -179,7 +179,7 @@ services:
             timeout: 5s
             retries: 5
 
-    enb:
+    oai_enb0:
         image: oai-enb:develop
         privileged: true
         container_name: rfsim4g-oai-enb

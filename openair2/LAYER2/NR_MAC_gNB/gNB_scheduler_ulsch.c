@@ -151,6 +151,11 @@ int nr_process_mac_pdu(instance_t module_idP,
         //38.321 section 6.1.3.1
         //fixed length
         mac_len =1;
+        if (pdu_len < sizeof(NR_BSR_SHORT)) {
+              LOG_E(NR_MAC, "pdu_len %d is invalid (prior to cast of size %ld)\n",
+                    pdu_len, sizeof(NR_BSR_SHORT));
+              return 0;
+        }
         /* Extract short BSR value */
         ce_ptr = &pduP[mac_subheader_len];
         NR_BSR_SHORT *bsr_s = (NR_BSR_SHORT *) ce_ptr;
@@ -174,8 +179,10 @@ int nr_process_mac_pdu(instance_t module_idP,
            to be a partial PDU at the end of this buffer, so here
            we gracefully ignore that by returning 0. See:
            https://gitlab.eurecom.fr/oai/openairinterface5g/-/issues/534 */
-	if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
+          LOG_E(NR_MAC, "pdu_len %d is invalid (shorter than MAC PDU header)\n", pdu_len);
           return 0;
+        }
         /* Extract long BSR value */
         ce_ptr = &pduP[mac_subheader_len];
         NR_BSR_LONG *bsr_l = (NR_BSR_LONG *) ce_ptr;
@@ -282,8 +289,10 @@ int nr_process_mac_pdu(instance_t module_idP,
 
       case UL_SCH_LCID_SRB1:
       case UL_SCH_LCID_SRB2:
-        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
+          LOG_E(NR_MAC, "pdu_len %d is invalid (shorter than MAC PDU header)\n", pdu_len);
           return 0;
+        }
 
         rnti_t crnti = UE->rnti;
         NR_UE_info_t* UE_idx = UE;
@@ -328,6 +337,11 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 8;
 
           // Check if it is a valid CCCH1 message, we get all 00's messages very often
+          if (pdu_len < mac_subheader_len + mac_len) {
+              LOG_E(NR_MAC, "pdu_len %d is invalid (prior to cast of size %d)\n",
+                    pdu_len, mac_subheader_len + mac_len);
+              return 0;
+        }
           int i = 0;
           for(i=0; i<(mac_subheader_len+mac_len); i++) {
             if(pduP[i] != 0) {
@@ -354,8 +368,10 @@ int nr_process_mac_pdu(instance_t module_idP,
 
       case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
         //  check if LCID is valid at current time.
-        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len)) {
+          LOG_E(NR_MAC, "pdu_len %d is invalid (shorter than MAC PDU header)\n", pdu_len);
           return 0;
+        }
 
         LOG_D(NR_MAC, "[UE %04x] %d.%d : ULSCH -> UL-%s %d (gNB %ld, %d bytes)\n",
               UE->rnti,

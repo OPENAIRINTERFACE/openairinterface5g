@@ -804,7 +804,7 @@ void nr_pdcch_unscrambling(int16_t *e_rx,
                            int16_t *z2) {
   int i;
   uint8_t reset;
-  uint32_t x1, x2, s = 0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   uint16_t n_id; //{0,1,...,65535}
   uint32_t rnti = (uint32_t) scrambling_RNTI;
   reset = 1;

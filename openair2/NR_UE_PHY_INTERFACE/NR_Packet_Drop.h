@@ -27,42 +27,57 @@
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
 #define NR_NUM_MCS 29
-#define NUM_SINR 100
+#define NR_NUM_SINR 372
 #define NUM_BLER_COL 13
 #define NUM_NFAPI_SLOT 20
 #define NR_NUM_LAYER 1
-#define MAX_CHAN_PARAMS 256
+#define MAX_NR_CHAN_PARAMS 256
 
-typedef struct nr_phy_channel_params_t
-{
-    uint16_t sfn_slot;
-    uint16_t message_id;
-    uint16_t nb_of_sinrs;
-    float sinr[NR_NUM_LAYER];
+typedef struct NR_UL_TIME_ALIGNMENT NR_UL_TIME_ALIGNMENT_t;
+
+typedef struct {
+  float sinr;
+  float rsrp;
+  float rsrq;
+  uint8_t source;
+  uint8_t pmi;
+  uint8_t ri;
+  uint8_t cqi;
+  uint8_t area_code;
+} nr_channel_status;
+
+typedef struct nr_phy_channel_params_t {
+  uint16_t sfn_slot;
+  uint16_t message_id;
+  uint16_t nb_of_csi;
+  nr_channel_status csi[NR_NUM_LAYER];
 } nr_phy_channel_params_t;
 
-typedef struct
-{
-    uint8_t slot;
-    uint16_t rnti[MAX_CHAN_PARAMS];
-    uint8_t mcs[MAX_CHAN_PARAMS];
-    uint8_t rvIndex[MAX_CHAN_PARAMS];
-    float sinr;
-    uint16_t num_pdus;
-    bool drop_flag[MAX_CHAN_PARAMS];
-    bool latest;
+typedef struct {
+  uint8_t slot;
+  uint16_t rnti[MAX_NR_CHAN_PARAMS];
+  uint8_t mcs[MAX_NR_CHAN_PARAMS];
+  uint8_t rvIndex[MAX_NR_CHAN_PARAMS];
+  float sinr;
+  uint16_t num_pdus;
+  bool drop_flag[MAX_NR_CHAN_PARAMS];
+  bool latest;
+  uint8_t area_code;
 } slot_rnti_mcs_s;
 
-typedef struct
-{
-    uint16_t length;
-    float bler_table[NUM_SINR][NUM_BLER_COL];
+typedef struct {
+  uint16_t length;
+  float bler_table[NR_NUM_SINR][NUM_BLER_COL];
 } nr_bler_struct;
+
+extern nr_bler_struct nr_bler_data[NR_NUM_MCS];
+extern nr_bler_struct nr_mimo_bler_data[NR_NUM_MCS];
 
 void read_channel_param(const nfapi_nr_dl_tti_pdsch_pdu_rel15_t * pdu, int sf, int index);
 void save_pdsch_pdu_for_crnti(nfapi_nr_dl_tti_request_t *dl_tti_request);
 float get_bler_val(uint8_t mcs, int sinr);
 bool should_drop_transport_block(int slot, uint16_t rnti);
 bool is_channel_modeling(void);
+int get_mcs_from_sinr(nr_bler_struct *nr_bler_data, float sinr);
 
 #endif

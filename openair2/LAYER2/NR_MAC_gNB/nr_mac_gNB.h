@@ -43,7 +43,7 @@
 #include <string.h>
 
 /* Commmon */
-#include "sdr/COMMON/common_lib.h"
+#include "radio/COMMON/common_lib.h"
 #include "COMMON/platform_constants.h"
 #include "common/ran_context.h"
 #include "collection/linear_alloc.h"

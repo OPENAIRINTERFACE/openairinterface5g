@@ -150,7 +150,7 @@ static void nr_pbch_scrambling(NR_gNB_PBCH *pbch,
                         uint8_t encoded,
                         uint32_t unscrambling_mask) {
   uint8_t reset, offset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   uint32_t *pbch_e = pbch->pbch_e;
   reset = 1;
   // x1 is set in lte_gold_generic

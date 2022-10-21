@@ -128,8 +128,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/LTE_TRANSPORT/defs_NB_IoT.h"
 #include <pthread.h>
 
-#include "sdr/COMMON/common_lib.h"
-#include "openairinterface5g_limits.h"
+#include "radio/COMMON/common_lib.h"
+#include "common/openairinterface5g_limits.h"
 
 #define NUM_DCI_MAX_NB_IoT 32
 

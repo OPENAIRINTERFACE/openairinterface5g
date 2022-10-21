@@ -56,7 +56,7 @@ void generate_edci_top(PHY_VARS_eNB *eNB, int frame, int subframe) {
 void mpdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms, mDCI_ALLOC_t *mdci, uint16_t i, uint8_t *e, uint32_t length) {
   int             n;
   uint8_t         reset;
-  uint32_t        x1, x2, s = 0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   uint8_t         Nacc = 4;
   uint16_t        j0, j, idelta;
   uint16_t        i0 = mdci->i0;
@@ -266,7 +266,7 @@ void generate_mdci_top(PHY_VARS_eNB *eNB, int frame, int subframe, int16_t amp, 
   int             i;
   int             gain_lin_QPSK;
   uint16_t       *mpdcchtab;
-  uint32_t        x1, x2, s = 0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   uint8_t         Nacc = 4;
   uint16_t        j0, j, idelta;
   uint16_t        i0;

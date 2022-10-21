@@ -66,7 +66,7 @@
 
 #include "TOOLS/tools_defs.h"
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #include "common/utils/LOG/log.h"
 
 #include "types.h"

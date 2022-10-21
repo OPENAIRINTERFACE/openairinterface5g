@@ -55,17 +55,17 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
-    include_directories("${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/")
+    include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
 
     set(HW_SOURCE ${HW_SOURCE}
-            ${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/iris_lib.cpp)
+            ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp)
     LINK_DIRECTORIES("/usr/local/lib")
     set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
-    include_directories("${OPENAIR_DIR}/sdr/AW2SORI")
+    include_directories("${OPENAIR_DIR}/radio/AW2SORI")
     set(HW_SOURCE ${HW_SOURCE}
-	    ${OPENAIR_DIR}/sdr/AW2SORI/ARCH/AW2SORI/oaiori.c)
+	    ${OPENAIR_DIR}/radio/AW2SORI/ARCH/AW2SORI/oaiori.c)
     LINK_DIRECTORIES("/usr/local/lib")
     set(openair_HW_lib "-shared -fPIC -msse4 -g -ggdb -lori")
 
@@ -193,43 +193,56 @@ endif ()
 if (CMAKE_BUILD_TYPE STREQUAL "")
    set(CMAKE_BUILD_TYPE "RelWithDebInfo")
 endif()
-message("CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
+message(STATUS "CMAKE_BUILD_TYPE is ${CMAKE_BUILD_TYPE}")
 add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of build, options are: None(CMAKE_CXX_FLAGS or CMAKE_C_FLAGS used) Debug Release RelWithDebInfo MinSizeRel." Debug Release RelWithDebInfo MinSizeRel)
 
-Message("Architecture is ${CMAKE_SYSTEM_PROCESSOR}")
 # in case /proc/cpuinfo exists we want to inspect available Intrinsics
 # -so not to go always through SIMDE emulation
 # -so to avoid AVX512 instructions generation by gcc   
-if(EXISTS  "/proc/cpuinfo")
-   file(STRINGS "/proc/cpuinfo" CPUINFO REGEX flags LIMIT_COUNT 1)
-   message("AVX512 is ${AVX512}")
-   message("AVX2 is ${AVX2}")
-   if ("${AVX512}" STREQUAL "False")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mno-avx512f -march=native -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_AVX512BW_NATIVE -DSIMDE_X86_AVX512F_NATIVE -DSIMDE_X86_AVX512VL_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_F16C_NATIVE -DSIMDE_X86_FMA_NATIVE -DSIMDE_X86_GFNI_NATIVE -DSIMDE_X86_MMX_NATIVE -DSIMDE_X86_PCLMUL_NATIVE -DSIMDE_X86_SSE2_NATIVE -DSIMDE_X86_SSE3_NATIVE -DSIMDE_X86_SSE4_1_NATIVE -DSIMDE_X86_SSE4_2_NATIVE -DSIMDE_X86_SSE_NATIVE -DSIMDE_X86_SSSE3_NATIVE -DSIMDE_X86_VPCLMULQDQ_NATIVE -DSIMDE_X86_XOP_HAVE_COM_ -DSIMDE_X86_XOP_NATIVE")
-   else()
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512")   
-   endif()
-   if (CPUINFO MATCHES "avx2" AND "${AVX2}" STREQUAL "True")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_VPCLMULQDQ_NATIVE")
-   endif()
-   if (CPUINFO MATCHES "sse4_1")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_1_NATIVE")
-   endif()
-   if (CPUINFO MATCHES "sse4_2")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_2_NATIVE")
-   endif()
-   if (CPUINFO MATCHES "ssse3")
-      set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSSE3_NATIVE")
-   endif()
+execute_process(COMMAND uname -m OUTPUT_VARIABLE CPUARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
+message(STATUS "CPUARCH ${CPUARCH}")
+if(EXISTS "/proc/cpuinfo")
+  file(STRINGS "/proc/cpuinfo" CPUFLAGS REGEX flags LIMIT_COUNT 1)
+else()
+  message(WARNING "did not find /proc/cpuinfo -- not setting any x86-specific compilation variables")
+endif()
+
+eval_boolean(AUTODETECT_AVX512 DEFINED CPUFLAGS AND CPUFLAGS MATCHES "avx512")
+add_boolean_option(AVX512 ${AUTODETECT_AVX512} "Whether AVX512 intrinsics is available on the host processor")
+
+eval_boolean(AUTODETECT_AVX2 DEFINED CPUFLAGS AND CPUFLAGS MATCHES "avx2")
+add_boolean_option(AVX2 ${AUTODETECT_AVX2} "Whether AVX2 intrinsics is available on the host processor")
+
+if(${CPUARCH} STREQUAL "x86_64" AND DEFINED CPUFLAGS)
+  # The following intrinsics are assumed to be available on any x86 system
+  # (avx, f16c, fma, gnfi, mmx, pclmul, sse, sse2, sse3, xop)
+  set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_F16C_NATIVE -DSIMDE_X86_FMA_NATIVE -DSIMDE_X86_GFNI_NATIVE -DSIMDE_X86_MMX_NATIVE -DSIMDE_X86_PCLMUL_NATIVE -DSIMDE_X86_SSE2_NATIVE -DSIMDE_X86_SSE3_NATIVE -DSIMDE_X86_SSE_NATIVE -DSIMDE_X86_XOP_HAVE_COM_ -DSIMDE_X86_XOP_NATIVE")
+  message(STATUS "AVX512 intrinsics are ${AVX512}")
+  if(${AVX512})
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX512BW_NATIVE -DSIMDE_X86_AVX512F_NATIVE -DSIMDE_X86_AVX512VL_NATIVE -mavx512bw -march=skylake-avx512 -mtune=skylake-avx512")
+  else()
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -mno-avx512f -march=native")
+  endif()
+  message(STATUS "AVX2 intrinsics are ${AVX2}")
+  if(${AVX2})
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX2_NATIVE -DSIMDE_X86_VPCLMULQDQ_NATIVE")
+  endif()
+  if (CPUINFO MATCHES "sse4_1")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_1_NATIVE")
+  endif()
+  if(CPUINFO MATCHES "sse4_2")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSE4_2_NATIVE")
+  endif()
+  if(CPUINFO MATCHES "ssse3")
+    set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSSE3_NATIVE")
+  endif()
+elseif(${CPUARCH} NOT STREQUAL "x86_64")
+  message(FATAL_ERROR "Cannot compile for CPU architecture ${CPUARCH}")
 endif()
 
 set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -fno-var-tracking-assignments -march=native")
 
-Message("C_FLAGS_PROCESSOR is ${C_FLAGS_PROCESSOR}")
-
-#
 # add autotools definitions that were maybe used!
-
 add_definitions("-DSTDC_HEADERS=1 -DHAVE_SYS_TYPES_H=1 -DHAVE_SYS_STAT_H=1 -DHAVE_STDLIB_H=1 -DHAVE_STRING_H=1 -DHAVE_MEMORY_H=1 -DHAVE_STRINGS_H=1 -DHAVE_INTTYPES_H=1 -DHAVE_STDINT_H=1 -DHAVE_UNISTD_H=1 -DHAVE_FCNTL_H=1 -DHAVE_ARPA_INET_H=1 -DHAVE_SYS_TIME_H=1 -DHAVE_SYS_SOCKET_H=1 -DHAVE_STRERROR=1 -DHAVE_SOCKET=1 -DHAVE_MEMSET=1 -DHAVE_GETTIMEOFDAY=1 -DHAVE_STDLIB_H=1 -DHAVE_MALLOC=1 -DHAVE_LIBSCTP")
 
 set(commonOpts "-pipe -Wno-packed-bitfield-compat -fPIC -Wall -fno-strict-aliasing -rdynamic")
@@ -276,7 +289,7 @@ set(CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} -ggdb2 -Wl,-rpath -Wl,${C
 # set a flag for changes in the source code
 # these changes are related to hardcoded path to include .h files
 set(debugOpt "-ggdb2 -DMALLOC_CHECK_=3 -fno-delete-null-pointer-checks")
-set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -O0")
+set(CMAKE_C_FLAGS_DEBUG "${debugOpt} -Og")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${debugOpt} -O2")
 set(CMAKE_C_FLAGS_RELEASE "-O3")
 
@@ -290,7 +303,6 @@ set(GIT_COMMIT_DATE   "UNKNOWN")
 
 find_package(Git)
 if(GIT_FOUND)
-  message("git found: ${GIT_EXECUTABLE}")
   # Get the current working branch
   execute_process(
     COMMAND git rev-parse --abbrev-ref HEAD
@@ -752,53 +764,53 @@ set (SHLIB_LOADER_SOURCES
 ######################################################################
 
 set(HWLIB_USRP_SOURCE
-  ${OPENAIR_DIR}/sdr/USRP/USERSPACE/LIB/usrp_lib.cpp
+  ${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/usrp_lib.cpp
   )
 add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
 target_include_directories(oai_usrpdevif PRIVATE
-  "${OPENAIR_DIR}/sdr/USRP/USERSPACE/LIB/"
+  "${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/"
   ${Boost_INCLUDE_DIR}
 )
 target_link_libraries(oai_usrpdevif uhd)
 
-include_directories("${OPENAIR_DIR}/sdr/BLADERF/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/")
 set(HWLIB_BLADERF_SOURCE
-  ${OPENAIR_DIR}/sdr/BLADERF/USERSPACE/LIB/bladerf_lib.c
+  ${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/bladerf_lib.c
   )
 add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
 target_link_libraries(oai_bladerfdevif bladeRF)
 
-include_directories("${OPENAIR_DIR}/sdr/LMSSDR/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/")
 
 set(HWLIB_LMSSDR_SOURCE
-  ${OPENAIR_DIR}/sdr/LMSSDR/USERSPACE/LIB/lms_lib.cpp
+  ${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/lms_lib.cpp
   )
 add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
 target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
 target_link_libraries(oai_lmssdrdevif LimeSuite )
 
 
-include_directories("${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/")
 set(TPLIB_ETHERNET_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/eth_udp.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/USERSPACE/LIB/eth_raw.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/ethernet_lib.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_udp.c
+  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_raw.c
   )
 add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
 
-include_directories("${OPENAIR_DIR}/sdr/AW2SORI/")
+include_directories("${OPENAIR_DIR}/radio/AW2SORI/")
 link_directories("/usr/local/lib")
 set(HWLIB_AW2SORI_SOURCE
-  ${OPENAIR_DIR}/sdr/AW2SORI/oaiori.c
+  ${OPENAIR_DIR}/radio/AW2SORI/oaiori.c
   )
 add_library(aw2sori_transpro MODULE ${HWLIB_AW2SORI_SOURCE})
 target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
 target_link_libraries(aw2sori_transpro libori.so)
 
-include_directories("${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/")
+include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
 set(option_HWIRISLIB_lib "-l SoapySDR")
 set(HWLIB_IRIS_SOURCE
-  ${OPENAIR_DIR}/sdr/IRIS/USERSPACE/LIB/iris_lib.cpp
+  ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp
   )
 add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
 target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.7/)
@@ -811,11 +823,11 @@ target_link_libraries(oai_irisdevif SoapySDR)
 include_directories ("/usr/include/dpdk")
 
 set(HWLIB_BENETEL_4G_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/benetel.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/shared_buffers.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/low.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/low_dpdk.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/4g/dpdk_driver.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/benetel.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/shared_buffers.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low_dpdk.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/dpdk_driver.c
   )
 add_library(benetel_4g MODULE ${HWLIB_BENETEL_4G_SOURCE} )
 
@@ -829,11 +841,11 @@ TARGET_LINK_LIBRARIES(benetel_4g pthread dl rt m numa)
 ######################################################################
 
 set(HWLIB_BENETEL_5G_SOURCE
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/benetel.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/shared_buffers.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/low.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/low_dpdk.c
-  ${OPENAIR_DIR}/sdr/ETHERNET/benetel/5g/dpdk_driver.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/benetel.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/shared_buffers.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low_dpdk.c
+  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/dpdk_driver.c
   )
 add_library(benetel_5g MODULE ${HWLIB_BENETEL_5G_SOURCE} )
 
@@ -870,7 +882,7 @@ endif ()
 
 ##########################################################
 
-include_directories ("${OPENAIR_DIR}/sdr/COMMON")
+include_directories ("${OPENAIR_DIR}/radio/COMMON")
 
 ##############################################################
 #    ???!!! TO BE DOCUMENTED OPTIONS !!!???
@@ -1035,7 +1047,7 @@ include_directories("${OPENAIR3_DIR}/ocp-gtpu")
 include_directories("${OPENAIR3_DIR}/M3AP")
 include_directories("${OPENAIR3_DIR}/MME_APP")
 include_directories("${OPENAIR_DIR}/targets/COMMON")
-include_directories("${OPENAIR_DIR}/sdr/COMMON")
+include_directories("${OPENAIR_DIR}/radio/COMMON")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC")
 include_directories("${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC")
@@ -2112,12 +2124,6 @@ include_directories("${OPENAIR1_DIR}/SCHED_NR_UE")
 # CN libs
 ##########################
 
-add_library(CN_UTILS
-  ${OPENAIR3_DIR}/UTILS/conversions.c
-  ${OPENAIR3_DIR}/UTILS/enum_string.c
-  ${OPENAIR3_DIR}/UTILS/mcc_mnc_itu.c
-  )
-
 add_library (GTPV1U
   ${NR_RRC_DIR}/rrc_gNB_GTPV1U.c
   ${RRC_DIR}/rrc_eNB_GTPV1U.c
@@ -2539,15 +2545,15 @@ target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 
 
 add_library(rfsimulator MODULE
-  ${OPENAIR_DIR}/sdr/rfsimulator/simulator.c
-  ${OPENAIR_DIR}/sdr/rfsimulator/apply_channelmod.c
-  ${OPENAIR_DIR}/sdr/rfsimulator/new_channel_sim.c
+  ${OPENAIR_DIR}/radio/rfsimulator/simulator.c
+  ${OPENAIR_DIR}/radio/rfsimulator/apply_channelmod.c
+  ${OPENAIR_DIR}/radio/rfsimulator/new_channel_sim.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})
 
 add_library(oai_iqplayer MODULE
-	${OPENAIR_DIR}/sdr/iqplayer/iqplayer_lib.c
+	${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c
 	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
@@ -2608,7 +2614,7 @@ add_executable(nfapi_test
   )
 
 add_executable(replay_node
-  ${OPENAIR_DIR}/sdr/rfsimulator/stored_node.c
+  ${OPENAIR_DIR}/radio/rfsimulator/stored_node.c
   )
 target_link_libraries (replay_node minimal_lib)
 
@@ -2633,10 +2639,10 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/executables/create_tasks.c
+  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR2_DIR}/F1AP/dummy_enb.c
@@ -2673,10 +2679,10 @@ add_executable(ocp-enb
   ${OPENAIR_DIR}/executables/transport_split.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_mbms.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/executables/create_tasks.c
+  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2704,8 +2710,8 @@ target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt cryp
 add_executable(oairu
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
   ${OPENAIR_TARGETS}/RT/USER/ru_control.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/openair1/SCHED/phy_procedures_lte_common.c
   ${OPENAIR_DIR}/executables/main_ru.c
@@ -2729,9 +2735,9 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
   ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${OPENAIR_TARGETS}/COMMON/create_tasks_ue.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/executables/create_tasks_ue.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2776,8 +2782,8 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/executables/nr-softmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
@@ -2821,8 +2827,8 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/executables/nr-ue.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
-  ${OPENAIR_DIR}/sdr/COMMON/record_player.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
@@ -2875,7 +2881,7 @@ target_link_libraries (dlsim_tm4
 add_executable(rftest
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_test.c
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
-  ${OPENAIR_DIR}/sdr/COMMON/common_lib.c
+  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${SHLIB_LOADER_SOURCES}
 )

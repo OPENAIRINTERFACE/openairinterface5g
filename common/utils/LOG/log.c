@@ -84,9 +84,9 @@ mapping log_options[] = {
   {"function", FLAG_FUNCT},
   {"time",     FLAG_TIME},
   {"thread_id", FLAG_THREAD_ID},
+  {"wall_clock", FLAG_REAL_TIME},
   {NULL,-1}
 };
-
 
 mapping log_maskmap[] = LOG_MASKMAP_INIT;
 
@@ -306,7 +306,7 @@ void  log_getconfig(log_t *g_log)
 
   for (int i=MIN_LOG_COMPONENTS; i < MAX_LOG_PREDEF_COMPONENTS; i++) {
     if(g_log->log_component[i].name == NULL) {
-      g_log->log_component[i].name = malloc(16);
+      g_log->log_component[i].name = malloc(17);
       sprintf((char *)g_log->log_component[i].name,"comp%i?",i);
       logparams_logfile[i].paramflags = PARAMFLAG_DONOTREAD;
       logparams_level[i].paramflags = PARAMFLAG_DONOTREAD;
@@ -512,6 +512,9 @@ int logInit (void)
     memset(&(g_log->log_component[i]),0,sizeof(log_component_t));
   }
 
+  AssertFatal(!((g_log->flag & FLAG_TIME) && (g_log->flag & FLAG_REAL_TIME)),
+		   "Invalid log options: time and wall_clock both set but are mutually exclusive\n");
+
   g_log->flag =  g_log->flag | FLAG_INITIALIZED;
   printf("log init done\n");
   return 0;
@@ -554,10 +557,12 @@ static inline int log_header(log_component_t *c,
   else
     l[0] = 0;
 
+  // output time information
   char timeString[32];
-  if ( flag & FLAG_TIME ) {
+  if ((flag & FLAG_TIME) || (flag & FLAG_REAL_TIME)) {
     struct timespec t;
-    if (clock_gettime(CLOCK_MONOTONIC, &t) == -1)
+    const clockid_t clock = flag & FLAG_TIME ? CLOCK_MONOTONIC : CLOCK_REALTIME;
+    if (clock_gettime(clock, &t) == -1)
         abort();
     snprintf(timeString, sizeof(timeString), "%lu.%06lu ",
              t.tv_sec,

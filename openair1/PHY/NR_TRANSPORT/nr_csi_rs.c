@@ -28,7 +28,7 @@
 
 
 void nr_init_csi_rs(const NR_DL_FRAME_PARMS *fp, uint32_t ***csi_rs, uint32_t Nid) {
-  uint32_t x1, x2;
+  uint32_t x1 = 0, x2 = 0;
   uint8_t reset;
   int csi_dmrs_init_length =  ((fp->N_RB_DL<<4)>>5)+1;
   for (uint8_t slot=0; slot<fp->slots_per_frame; slot++) {

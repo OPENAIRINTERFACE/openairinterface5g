@@ -35,8 +35,8 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 #include "common/utils/nr/nr_common.h"
 
-#include "sdr/COMMON/common_lib.h"
-#include "sdr/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "radio/COMMON/common_lib.h"
+#include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 #include "openair1/PHY/MODULATION/nr_modulation.h"
@@ -85,6 +85,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "nr_nas_msg_sim.h"
 #include <openair1/PHY/MODULATION/nr_modulation.h>
+#include "openair2/GNB_APP/gnb_paramdef.h"
 
 extern const char *duplex_mode[];
 THREAD_STRUCT thread_struct;
@@ -161,7 +162,7 @@ uint8_t abstraction_flag=0;
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
-static void init_bler_table(void);
+static void init_bler_table(char*);
 
 /*---------------------BMC: timespec helpers -----------------------------*/
 
@@ -391,6 +392,17 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
+static void get_channel_model_mode() {
+  paramdef_t GNBParams[]  = GNBPARAMS_DESC;
+  config_get(GNBParams, sizeof(GNBParams)/sizeof(paramdef_t), NULL);
+  int num_xp_antennas = *GNBParams[GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
+
+  if (num_xp_antennas == 2)
+    init_bler_table("NR_MIMO2x2_AWGN_RESULTS_DIR");
+  else
+    init_bler_table("NR_AWGN_RESULTS_DIR");
+}
+
 
 int main( int argc, char **argv ) {
   int set_exe_prio = 1;
@@ -468,8 +480,8 @@ int main( int argc, char **argv ) {
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   if (get_softmodem_params()->emulate_l1) {
-    RCconfig_nr_ue_L1();
-    init_bler_table();
+    RCconfig_nr_ue_macrlc();
+    get_channel_model_mode();
   }
 
   if (get_softmodem_params()->do_ra)
@@ -550,12 +562,12 @@ int main( int argc, char **argv ) {
 }
 
 // Read in each MCS file and build BLER-SINR-TB table
-static void init_bler_table(void) {
+static void init_bler_table(char *env_string) {
   memset(nr_bler_data, 0, sizeof(nr_bler_data));
 
-  const char *awgn_results_dir = getenv("AWGN_RESULTS_DIR");
+  const char *awgn_results_dir = getenv(env_string);
   if (!awgn_results_dir) {
-    LOG_W(NR_MAC, "No $AWGN_RESULTS_DIR\n");
+    LOG_W(NR_MAC, "No %s\n", env_string);
     return;
   }
 
@@ -577,7 +589,7 @@ static void init_bler_table(void) {
         continue;
       }
 
-      if (nlines > NUM_SINR) {
+      if (nlines > NR_NUM_SINR) {
         LOG_E(NR_MAC, "BLER FILE ERROR - num lines greater than expected - file: %s\n", fName);
         abort();
       }

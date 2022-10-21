@@ -56,7 +56,7 @@ class SSHConnection():
 		self.picocom_closure = True
 
 	def open(self, ipaddress, username, password):
-		prompt = "#" if username == "root" else "\$"
+		prompt = "\$"
 		count = 0
 		connect_status = False
 		while count < 4:
@@ -74,7 +74,7 @@ class SSHConnection():
 					count = 10
 					connect_status = True
 				else:
-					logging.debug('self.sshresponse = ' + str(self.sshresponse))
+					logging.warning('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 1:
 				self.ssh.sendline(password)
 				self.sshresponse = self.ssh.expect([prompt, 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -82,7 +82,7 @@ class SSHConnection():
 					count = 10
 					connect_status = True
 				else:
-					logging.debug('self.sshresponse = ' + str(self.sshresponse))
+					logging.warning('self.sshresponse = ' + str(self.sshresponse))
 			elif self.sshresponse == 2:
 				# We directly ended up on the remote server because of pubkey auth
 				count = 10
@@ -91,8 +91,8 @@ class SSHConnection():
 				self.sshresponse = self.ssh.expect([prompt])
 			else:
 				# debug output
-				logging.debug(str(self.ssh.before))
-				logging.debug('self.sshresponse = ' + str(self.sshresponse))
+				logging.warning(str(self.ssh.before))
+				logging.warning('self.sshresponse = ' + str(self.sshresponse))
 			# adding a tempo when failure
 			if not connect_status:
 				time.sleep(1)
@@ -108,7 +108,7 @@ class SSHConnection():
 
 
 	def cde_check_value(self, commandline, expected, timeout):
-		logging.debug(commandline)
+		logging.info(commandline)
 		self.ssh.timeout = timeout
 		self.ssh.sendline(commandline)
 		expected.append(pexpect.EOF)
@@ -118,7 +118,7 @@ class SSHConnection():
 
 	def command(self, commandline, expectedline, timeout, silent=False, resync=False):
 		if not silent:
-			logging.debug(commandline)
+			logging.info(commandline)
 		self.ssh.timeout = timeout
 		# Nasty patch when pexpect output is out of sync.
 		# Much pronounced when running back-to-back-back oc commands
@@ -133,27 +133,27 @@ class SSHConnection():
 		if self.sshresponse == 0:
 			return 0
 		elif self.sshresponse == 1:
-			logging.debug('\u001B[1;37;41m Unexpected EOF \u001B[0m')
-			logging.debug('Expected Line : ' + expectedline)
-			logging.debug(str(self.ssh.before))
+			logging.error('\u001B[1;37;41m Unexpected EOF \u001B[0m')
+			logging.error('Expected Line : ' + expectedline)
+			logging.error(str(self.ssh.before))
 			sys.exit(self.sshresponse)
 		elif self.sshresponse == 2:
-			logging.debug('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
-			logging.debug('Expected Line : ' + expectedline)
+			logging.error('\u001B[1;37;41m Unexpected TIMEOUT \u001B[0m')
+			logging.error('Expected Line : ' + expectedline)
 			result = re.search('ping |iperf |picocom', str(commandline))
 			if result is None:
-				logging.debug(str(self.ssh.before))
+				logging.warning(str(self.ssh.before))
 				sys.exit(self.sshresponse)
 			else:
 				return -1
 		else:
-			logging.debug('\u001B[1;37;41m Unexpected Others \u001B[0m')
-			logging.debug('Expected Line : ' + expectedline)
+			logging.error('\u001B[1;37;41m Unexpected Others \u001B[0m')
+			logging.error('Expected Line : ' + expectedline)
 			sys.exit(self.sshresponse)
 
 	def command2(self, commandline, timeout, silent=False):
 		if not silent:
-			logging.debug(commandline)
+			logging.info(commandline)
 		self.cmd2Results = ''
 		noHistoryCmd = 'unset HISTFILE; ' + commandline
 		myHost = self.username + '@' + self.ipaddress
@@ -165,7 +165,7 @@ class SSHConnection():
 
 	def command3(self, commandline, timeout, silent=False):
 		if not silent:
-			logging.debug(commandline)
+			logging.info(commandline)
 		self.cmd2Results = ''
 		noHistoryCmd = 'unset HISTFILE; ' + commandline
 		myHost = self.username + '@' + self.ipaddress
@@ -186,14 +186,14 @@ class SSHConnection():
 			pass
 		elif self.sshresponse == 1:
 			if not self.picocom_closure:
-				logging.debug('\u001B[1;37;41m Unexpected TIMEOUT during closing\u001B[0m')
+				logging.warning('\u001B[1;37;41m Unexpected TIMEOUT during closing\u001B[0m')
 		else:
-			logging.debug('\u001B[1;37;41m Unexpected Others during closing\u001B[0m')
+			logging.warning('\u001B[1;37;41m Unexpected Others during closing\u001B[0m')
 
 	def copyin(self, ipaddress, username, password, source, destination):
 		count = 0
 		copy_status = False
-		logging.debug('scp -r '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
+		logging.info('scp -r '+ username + '@' + ipaddress + ':' + source + ' ' + destination)
 		while count < 10:
 			scp_spawn = pexpect.spawn('scp -r '+ username + '@' + ipaddress + ':' + source + ' ' + destination, timeout = 100)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -206,7 +206,7 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				else:
-					logging.debug('1 - scp_response = ' + str(scp_response))
+					logging.warning('1 - scp_response = ' + str(scp_response))
 			elif scp_response == 1:
 				scp_spawn.sendline(password)
 				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -214,12 +214,12 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				else:
-					logging.debug('2 - scp_response = ' + str(scp_response))
+					logging.warning('2 - scp_response = ' + str(scp_response))
 			elif scp_response == 2:
 				count = 10
 				copy_status = True
 			else:
-				logging.debug('3 - scp_response = ' + str(scp_response))
+				logging.warning('3 - scp_response = ' + str(scp_response))
 			# adding a tempo when failure
 			if not copy_status:
 				time.sleep(1)
@@ -232,7 +232,7 @@ class SSHConnection():
 	def copyout(self, ipaddress, username, password, source, destination):
 		count = 0
 		copy_status = False
-		logging.debug('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
+		logging.info('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
 		while count < 4:
 			scp_spawn = pexpect.spawn('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 100)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -245,7 +245,7 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				else:
-					logging.debug('1 - scp_response = ' + str(scp_response))
+					logging.warning('1 - scp_response = ' + str(scp_response))
 			elif scp_response == 1:
 				scp_spawn.sendline(password)
 				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -253,12 +253,12 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				else:
-					logging.debug('2 - scp_response = ' + str(scp_response))
+					logging.warning('2 - scp_response = ' + str(scp_response))
 			elif scp_response == 2:
 				count = 10
 				copy_status = True
 			else:
-				logging.debug('3 - scp_response = ' + str(scp_response))
+				logging.warning('3 - scp_response = ' + str(scp_response))
 			# adding a tempo when failure
 			if not copy_status:
 				time.sleep(1)

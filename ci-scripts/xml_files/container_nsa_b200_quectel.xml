@@ -26,9 +26,10 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 111110
+ 111111
  000001
  010002
- 030000
  030101
  000001
  030102
@@ -49,6 +50,20 @@
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
+	<testCase id="111110">
+		<class>Pull_Local_Registry</class>
+		<desc>Pull Images from Local Registry</desc>
+		<test_svr_id>0</test_svr_id>
+		<images_to_pull>oai-enb</images_to_pull>
+	</testCase>
+
+	<testCase id="111111">
+		<class>Pull_Local_Registry</class>
+		<desc>Pull Images from Local Registry</desc>
+		<test_svr_id>1</test_svr_id>
+		<images_to_pull>oai-gnb</images_to_pull>
+	</testCase>
+
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
@@ -60,14 +75,6 @@
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
 		<id>idefix</id>
-	</testCase>
-
-	<testCase id="030000">
-		<class>Copy_Image_to_Test</class>
-		<desc>Copy gNB image to test server</desc>
-		<image_name>oai-gnb</image_name>
-		<registry_svr_id>0</registry_svr_id>
-		<test_svr_id>1</test_svr_id>
 	</testCase>
 
 	<testCase id="030101">
@@ -180,6 +187,8 @@
 		<yaml_path>ci-scripts/yaml_files/nsa_b200_gnb</yaml_path>
         <eNB_instance>1</eNB_instance>
         <eNB_serverId>1</eNB_serverId>
+        <d_retx_th>1,100,100,100</d_retx_th>
+        <u_retx_th>1,100,100,100</u_retx_th>
     </testCase>
 
 </testCaseList>

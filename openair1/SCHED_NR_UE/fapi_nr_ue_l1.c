@@ -53,6 +53,7 @@ queue_t nr_uci_ind_queue;
 static void fill_uci_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4,
                            fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
+  NR_UE_MAC_INST_t *mac = get_mac_inst(0);
   memset(pdu_2_3_4, 0, sizeof(*pdu_2_3_4));
   pdu_2_3_4->handle = 0;
   pdu_2_3_4->rnti = pucch_pdu->rnti;
@@ -62,7 +63,7 @@ static void fill_uci_2_3_4(nfapi_nr_uci_pucch_pdu_format_2_3_4_t *pdu_2_3_4,
   pdu_2_3_4->rssi = 0;
   // TODO: Eventually check 38.212:Sect.631 to know when to use csi_part2, for now only using csi_part1
   pdu_2_3_4->pduBitmap = 4;
-  pdu_2_3_4->csi_part1.csi_part1_bit_len = pucch_pdu->nr_of_symbols;
+  pdu_2_3_4->csi_part1.csi_part1_bit_len = mac->nr_ue_emul_l1.num_csi_reports;
   int csi_part1_byte_len = (int)((pdu_2_3_4->csi_part1.csi_part1_bit_len / 8) + 1);
   AssertFatal(!pdu_2_3_4->csi_part1.csi_part1_payload, "pdu_2_3_4->csi_part1.csi_part1_payload != NULL\n");
   pdu_2_3_4->csi_part1.csi_part1_payload = CALLOC(csi_part1_byte_len,

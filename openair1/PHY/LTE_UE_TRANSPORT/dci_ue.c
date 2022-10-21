@@ -1505,7 +1505,7 @@ void pdcch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
 
   int i;
   uint8_t reset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
 
   reset = 1;
   // x1 is set in first call to lte_gold_generic

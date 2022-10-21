@@ -1,6 +1,6 @@
 #!/bin/bash
 
-set -euo pipefail
+set -uo pipefail
 
 PREFIX=/opt/oai-gnb
 ENABLE_X2=${ENABLE_X2:-yes}
@@ -21,11 +21,9 @@ if [[ -v USE_VOLUMED_CONF ]]; then cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.c
 # Defualt Parameters
 GNB_ID=${GNB_ID:-e00}
 NSSAI_SD=${NSSAI_SD:-ffffff}
-USE_FQDN=${USE_FQDN:-false}
-AMF_FQDN=${AMF_FQDN:-oai-amf-svc}
-
-# Resolve AMF FQDN
-if ($USE_FQDN); then AMF_IP_ADDRESS=(`getent hosts $AMF_FQDN | awk '{print $1}'`); fi
+# AMF_IP_ADDRESS can be amf ip address of amf fqdn
+if [[ -v AMF_IP_ADDRESS ]] && [[ "${AMF_IP_ADDRESS}" =~ [a-zA-Z] ]] && [[ -z `getent hosts $AMF_IP_ADDRESS | awk '{print $1}'` ]]; then echo "not able to resolve AMF FQDN" && exit 1 ; fi
+[[ -v AMF_IP_ADDRESS ]] && [[ "${AMF_IP_ADDRESS}" =~ [a-zA-Z] ]] && AMF_IP_ADDRESS=$(getent hosts $AMF_IP_ADDRESS | awk '{print $1}')
 
 # Only this template will be manipulated
 CONFIG_FILES=`ls $PREFIX/etc/gnb.conf || true`

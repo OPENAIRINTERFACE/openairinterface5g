@@ -143,6 +143,8 @@
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
+		<d_retx_th>5,50,100,100</d_retx_th>
+		<u_retx_th>5,50,100,100</u_retx_th>
 	</testCase>
 
 </testCaseList>

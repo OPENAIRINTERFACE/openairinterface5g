@@ -317,8 +317,8 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
   int so_end;
   int range;
   int prev_nack_sn = -1;
-  int prev_so_start;
-  int prev_so_end;
+  int prev_so_start = 0;
+  int prev_so_end = 0;
   int tx_next_ack;
   nr_rlc_sdu_segment_t *cur_wait_list;
   nr_rlc_sdu_segment_t *prev_wait_list;

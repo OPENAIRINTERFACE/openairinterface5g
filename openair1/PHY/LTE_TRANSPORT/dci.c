@@ -205,7 +205,7 @@ void pdcch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
                       uint32_t length) {
   int i;
   uint8_t reset;
-  uint32_t x1, x2, s=0;
+  uint32_t x1 = 0, x2 = 0, s = 0;
   //LOG_D(PHY, "%s(fp, subframe:%d, e, length:%d)\n", __FUNCTION__, subframe, length);
   reset = 1;
   // x1 is set in lte_gold_generic
