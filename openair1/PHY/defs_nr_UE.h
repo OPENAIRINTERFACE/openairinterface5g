@@ -147,6 +147,8 @@ typedef struct {
   //! total estimated noise power (dBm)
   short n0_power_tot_dBm;
 
+  int16_t pathloss;
+
   // UE measurements
   //! estimated received spatial signal power (linear)
   int            rx_spatial_power[NUMBER_OF_CONNECTED_gNB_MAX][2][2];

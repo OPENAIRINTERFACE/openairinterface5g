@@ -52,34 +52,23 @@
 // - PRACH transmission from a UE is not in response to a detection of a PDCCH order by the UE
 // Measurement units:
 // - referenceSignalPower:   dBm/RE (average EPRE of the resources elements that carry secondary synchronization signals in dBm)
-int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index){
+void compute_nr_PL(PHY_VARS_NR_UE *ue, int ssb_index){
 
-  PHY_VARS_NR_UE *ue = PHY_vars_UE_g[Mod_id][CC_id];
-  int16_t pathloss;
+  //TODO improve PL measurements. Probably not correct as it is.
 
-  if (get_softmodem_params()->do_ra){
+  long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
+  int16_t pathloss = (int16_t)(referenceSignalPower - ue->measurements.ssb_rsrp_dBm[ssb_index]);
 
-    long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
+  LOG_D(PHY, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
+        __FUNCTION__,
+        pathloss,
+        ue->rx_total_gain_dB,
+        referenceSignalPower,
+        pow(10, referenceSignalPower/10),
+        ue->measurements.ssb_rsrp_dBm[ssb_index],
+        pow(10, ue->measurements.ssb_rsrp_dBm[ssb_index]/10));
 
-    pathloss = (int16_t)(referenceSignalPower - ue->measurements.rsrp_dBm[gNB_index]);
-
-    LOG_D(MAC, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
-      __FUNCTION__,
-      pathloss,
-      ue->rx_total_gain_dB,
-      referenceSignalPower,
-      pow(10, referenceSignalPower/10),
-      ue->measurements.rsrp_dBm[gNB_index],
-      pow(10, ue->measurements.rsrp_dBm[gNB_index]/10));
-
-  } else {
-
-    pathloss = ((int16_t)(((10*ue->rx_total_gain_dB) - dB_fixed_times10(ue->measurements.rsrp[gNB_index]))/10));
-
-  }
-
-  return pathloss;
-
+  ue->measurements.pathloss = pathloss;
 }
 
 uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)

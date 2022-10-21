@@ -431,6 +431,8 @@ void init_RA(module_id_t mod_id,
              NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated);
 
+int16_t get_prach_tx_power(module_id_t mod_id);
+
 void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu);
 
 void nr_Msg1_transmitted(module_id_t mod_id);

@@ -35,8 +35,6 @@
 #include "radio/COMMON/common_lib.h"
 //#undef MALLOC
 #include "assertions.h"
-#include "PHY/types.h"
-#include "PHY/defs_UE.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"

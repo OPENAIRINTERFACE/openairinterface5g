@@ -2637,7 +2637,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
         }
       }
       AssertFatal(*SSB_resource.list.array[ssb_rsrp[0][0]] == mac->mib_ssb, "Couldn't find corresponding SSB in csi_SSB_ResourceList\n");
-      ssb_rsrp[1][0] = mac->ssb_rsrp_dBm;
+      ssb_rsrp[1][0] = mac->phy_measurements.ssb_rsrp_dBm;
 
       uint8_t ssbi;
 

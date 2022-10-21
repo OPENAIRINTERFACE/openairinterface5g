@@ -215,7 +215,7 @@ void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue,
       /* Generate PUCCH signal according to its format and parameters */
       ue->generate_ul_signal[gNB_id] = 1;
 
-      int16_t PL = get_nr_PL(ue->Mod_id, ue->CC_id, gNB_id); /* LTE function because NR path loss not yet implemented FFS TODO NR */
+      int16_t PL = ue->measurements.pathloss; /* LTE function because NR path loss not yet implemented FFS TODO NR */
       int contributor = (10 * log10((double)(pow(2,(ue->frame_parms.numerology_index)) * nb_of_prbs)));
 
       int16_t pucch_tx_power = pucch_pdu->pucch_tx_power + contributor + PL;

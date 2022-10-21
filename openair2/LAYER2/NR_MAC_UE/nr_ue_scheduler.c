@@ -2802,7 +2802,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
       nr_get_prach_resources(module_idP, 0, 0, &ra->prach_resources, prach_config_pdu, ra->rach_ConfigDedicated);
       prach_config_pdu->ra_PreambleIndex = ra->ra_PreambleIndex;
-      prach_config_pdu->preamble_target_power = ra->prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER;
+      prach_config_pdu->prach_tx_power = get_prach_tx_power(module_idP);
       set_ra_rnti(mac, prach_config_pdu);
 
       fill_scheduled_response(&scheduled_response, NULL, ul_config, NULL, module_idP, 0 /*TBR fix*/, frameP, slotP, NULL);

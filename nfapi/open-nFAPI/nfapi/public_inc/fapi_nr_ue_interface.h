@@ -119,6 +119,7 @@ typedef struct {
   uint16_t cell_id;
   uint16_t ssb_start_subcarrier;
   short rsrp_dBm;
+  int16_t pathloss;
 } fapi_nr_ssb_pdu_t;
 
 typedef struct {
@@ -193,8 +194,8 @@ typedef struct {
   uint8_t ssb_nb_in_ro;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
-  /// Target received power at gNB (TODO possibly modify to uint)
-  int preamble_target_power;
+  /// PRACH TX power (TODO possibly modify to uint)
+  int16_t prach_tx_power;
 } fapi_nr_ul_config_prach_pdu;
 
 typedef struct {

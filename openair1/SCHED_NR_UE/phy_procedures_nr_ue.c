@@ -52,7 +52,6 @@
 #include "executables/softmodem-common.h"
 #include "executables/nr-uesoftmodem.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
-#include "LAYER2/NR_MAC_UE/nr_l1_helpers.h"
 
 //#define DEBUG_PHY_PROC
 #define NR_PDCCH_SCHED
@@ -174,6 +173,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.cell_id = frame_parms->Nid_cell;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
       rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pathloss = ue->measurements.pathloss;
     break;
     case FAPI_NR_CSIRS_IND:
       memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
@@ -1100,6 +1100,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
             LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
             nr_ue_pbch_procedures(gNB_id, ue, proc, estimateSz, dl_ch_estimates, phy_pdcch_config);
+            compute_nr_PL(ue, ssb_index);
 
             if (ue->no_timing_correction==0) {
              LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
@@ -1460,19 +1461,15 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   if (nr_prach == GENERATE_PREAMBLE) {
 
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
-    int16_t pathloss = get_nr_PL(mod_id, ue->CC_id, gNB_id);
-    int16_t ra_preamble_rx_power = (int16_t)(prach_pdu->preamble_target_power - pathloss + 30);
-    ue->tx_power_dBm[nr_slot_tx] = min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
+    ue->tx_power_dBm[nr_slot_tx] = prach_pdu->prach_tx_power;
 
-    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, PL %d dB, P0_PRACH %d, TARGET_RECEIVED_POWER %d dBm)\n",
+    LOG_D(PHY, "In %s: [UE %d][RAPROC][%d.%d]: Generating PRACH Msg1 (preamble %d, P0_PRACH %d)\n",
           __FUNCTION__,
           mod_id,
           frame_tx,
           nr_slot_tx,
           prach_pdu->ra_PreambleIndex,
-          pathloss,
-          ue->tx_power_dBm[nr_slot_tx],
-          prach_pdu->preamble_target_power);
+          ue->tx_power_dBm[nr_slot_tx]);
 
     ue->prach_vars[gNB_id]->amp = AMP;
 
