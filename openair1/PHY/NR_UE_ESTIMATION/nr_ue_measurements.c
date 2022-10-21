@@ -112,14 +112,13 @@ float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index)
 
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         UE_nr_rxtx_proc_t *proc,
-                        uint8_t slot)
+                        uint8_t slot,
+                        NR_UE_DLSCH_t *dlsch)
 {
   int aarx, aatx, gNB_id = 0;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int ch_offset = frame_parms->ofdm_symbol_size*2;
-  NR_UE_DLSCH_t *dlsch = ue->dlsch[gNB_id][0];
-  uint8_t harq_pid = dlsch->current_harq_pid;
-  int N_RB_DL = dlsch->harq_processes[harq_pid]->nb_rb;
+  int N_RB_DL = dlsch->dlsch_config.number_rbs;
 
   ue->measurements.nb_antennas_rx = frame_parms->nb_antennas_rx;
 

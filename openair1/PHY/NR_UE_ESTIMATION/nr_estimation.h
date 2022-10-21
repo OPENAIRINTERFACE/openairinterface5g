@@ -107,7 +107,8 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                       
 void nr_ue_measurements(PHY_VARS_NR_UE *ue,
                         UE_nr_rxtx_proc_t *proc,
-                        uint8_t slot);
+                        uint8_t slot,
+                        NR_UE_DLSCH_t *dlsch);
 
 void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
                                  uint8_t gNB_index,
@@ -134,7 +135,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               unsigned char symbol,
                               uint32_t nb_re_pdsch,
                               uint16_t rnti,
-                              RX_type_t rx_type);
+                              NR_UE_DLSCH_t dlsch[2]);
 
 float_t get_nr_RSRP(module_id_t Mod_id,uint8_t CC_id,uint8_t gNB_index);
 

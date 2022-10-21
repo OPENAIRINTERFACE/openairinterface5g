@@ -646,7 +646,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
   uint8_t gNB_id = 0;
-  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+  nr_phy_data_t phy_data = {0};
 
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
     /* send tick to RLC and PDCP every ms */
@@ -662,7 +662,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
-      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id, &phy_pdcch_config);
+      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id, &phy_data);
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
 
@@ -671,7 +671,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc_oai();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_pdcch_config, &rxtxD->txFifo);
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_data, &rxtxD->txFifo);
     LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 #endif
 
@@ -889,7 +889,7 @@ void *UE_thread(void *arg) {
       continue;
     }
 
-    if (start_rx_stream==0) {
+    if (start_rx_stream == 0) {
       start_rx_stream=1;
       syncInFrame(UE, &timestamp);
       UE->rx_offset=0;

@@ -1015,7 +1015,7 @@ int main(int argc, char **argv)
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
-  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+  nr_phy_data_t phy_data = {0};
 
   memset((void*)&dcireq,0,sizeof(dcireq));
   memset((void*)&scheduled_response,0,sizeof(scheduled_response));
@@ -1030,7 +1030,7 @@ int main(int argc, char **argv)
   scheduled_response.CC_id     = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
-  scheduled_response.phy_data = &phy_pdcch_config;
+  scheduled_response.phy_data = &phy_data;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
@@ -1084,10 +1084,10 @@ int main(int argc, char **argv)
       dcireq.frame     = frame;
       dcireq.slot      = slot;
 
-      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[0][0];
+      NR_UE_DLSCH_t *dlsch0 = &phy_data.dlsch[0];
 
       int harq_pid = slot;
-      NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
+      NR_DL_UE_HARQ_t *UE_harq_process = &UE->dl_harq_processes[0][harq_pid];
 
       NR_gNB_DLSCH_t *gNB_dlsch = msgDataTx->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
@@ -1262,24 +1262,24 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               &phy_pdcch_config,
+                               &phy_data,
                                NULL);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------
         //----------------------------------------------------------
 
-        if (UE->dlsch[0][0]->last_iteration_cnt >=
-          UE->dlsch[0][0]->max_ldpc_iterations+1)
+        if (dlsch0->last_iteration_cnt >=
+          dlsch0->max_ldpc_iterations+1)
           n_errors[round][snrRun]++;
 
         NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars;
         int16_t *UE_llr = pdsch_vars[0]->llr[0];
 
-        TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
+        TBS                  = dlsch0->dlsch_config.TBS;//rel15->TBSize[0];
         uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
         uint16_t nb_rb       = rel15->rbSize;
-        uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6*UE_harq_process->n_dmrs_cdm_groups : 4*UE_harq_process->n_dmrs_cdm_groups;
+        uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6*dlsch0->dlsch_config.n_dmrs_cdm_groups : 4*dlsch0->dlsch_config.n_dmrs_cdm_groups;
         uint8_t  mod_order   = rel15->qamModOrder[0];
         uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 

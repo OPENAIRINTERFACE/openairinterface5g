@@ -106,8 +106,6 @@ int main(int argc, char **argv)
   int frame_length_complex_samples;
   //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
-  uint8_t Kmimo = 0;
-  uint32_t Nsoft = 0;
   double sigma;
   unsigned char qbits = 8;
   int ret;
@@ -403,24 +401,19 @@ int main(int argc, char **argv)
 
 	//nr_init_frame_parms_ue(&UE->frame_parms);
 	//init_nr_ue_transport(UE, 0);
-        int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (i = 0; i < num_codeword; i++) {
-    UE->dlsch[0][i] = new_nr_ue_dlsch(Kmimo, 8, Nsoft, 5, N_RB_DL);
-    if (!UE->dlsch[0][i]) {
-      printf("Can't get ue dlsch structures\n");
-      exit(-1);
-    }
-
-    UE->dlsch[0][i]->rnti = n_rnti;
-  }
+  NR_UE_DLSCH_t dlsch_ue[NR_MAX_NB_LAYERS > 4? 2:1] = {0};
+  int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
+  nr_ue_dlsch_init(dlsch_ue, num_codeword, 5);
+  for (int i=0; i < num_codeword; i++)
+    dlsch_ue[0].rnti = n_rnti;
+  nr_init_harq_processes(UE->dl_harq_processes[0], 8, nb_rb);
 
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
-        processingData_L1tx_t msgDataTx;
-        init_DLSCH_struct(gNB, &msgDataTx);
+  processingData_L1tx_t msgDataTx;
+  init_DLSCH_struct(gNB, &msgDataTx);
 	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
 	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
-	uint8_t is_crnti = 0;
 	unsigned int TBS = 8424;
 	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
@@ -432,7 +425,7 @@ int main(int argc, char **argv)
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
 	//    dlsch->harq_processes[0]->nb_rb,dlsch->harq_processes[0]->mcs,dlsch->harq_processes[0]->Nl);
 	unsigned char mod_order = nr_get_Qm_dl(Imcs, mcs_table);
-        uint16_t rate = nr_get_code_rate_dl(Imcs, mcs_table);
+  uint16_t rate = nr_get_code_rate_dl(Imcs, mcs_table);
 	unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, 1);
 	TBS = nr_compute_tbs(mod_order,rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 	printf("available bits %u TBS %u mod_order %d\n", available_bits, TBS, mod_order);
@@ -442,14 +435,14 @@ int main(int argc, char **argv)
 	rel15->qamModOrder[0] = mod_order;
 	rel15->nrOfLayers     = Nl;
 	rel15->TBSize[0]      = TBS>>3;
-        rel15->targetCodeRate[0] = rate;
-        rel15->NrOfCodewords = 1;
-        rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
+  rel15->targetCodeRate[0] = rate;
+  rel15->NrOfCodewords = 1;
+  rel15->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 	rel15->dlDmrsSymbPos = 4;
 	rel15->mcsIndex[0] = Imcs;
-        rel15->numDmrsCdmGrpsNoData = 1;
-        rel15->maintenance_parms_v3.tbSizeLbrmBytes = Tbslbrm;
-        rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS, rate);
+  rel15->numDmrsCdmGrpsNoData = 1;
+  rel15->maintenance_parms_v3.tbSizeLbrmBytes = Tbslbrm;
+  rel15->maintenance_parms_v3.ldpcBaseGraph = get_BG(TBS, rate);
 	double modulated_input[16 * 68 * 384]; // [hna] 16 segments, 68*Zc
 	short channel_output_fixed[16 * 68 * 384];
 	//unsigned char *estimated_output;
@@ -457,21 +450,22 @@ int main(int argc, char **argv)
 	unsigned char test_input_bit[16 * 68 * 384];
 	//estimated_output = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
 	unsigned char estimated_output_bit[16 * 68 * 384];
-	NR_UE_DLSCH_t *dlsch0_ue = UE->dlsch[0][0];
-	NR_DL_UE_HARQ_t *harq_process = dlsch0_ue->harq_processes[harq_pid];
-	harq_process->mcs = Imcs;
-	harq_process->mcs_table = mcs_table;
-	harq_process->Nl = Nl;
-	harq_process->nb_rb = nb_rb;
-	harq_process->Qm = mod_order;
-	harq_process->rvidx = rvidx;
-	harq_process->R = rate;
-        harq_process->TBS = TBS;
-	harq_process->dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
-	harq_process->dlDmrsSymbPos = 4;
-	harq_process->n_dmrs_cdm_groups = 1;
-        harq_process->tbslbrm = Tbslbrm;
-	printf("harq process ue mcs = %d Qm = %d, symb %d\n", harq_process->mcs, harq_process->Qm, nb_symb_sch);
+	NR_UE_DLSCH_t *dlsch0_ue = &dlsch_ue[0];
+	NR_DL_UE_HARQ_t *harq_process = &UE->dl_harq_processes[0][harq_pid];
+  harq_process->first_rx = 1;
+	dlsch0_ue->dlsch_config.mcs = Imcs;
+	dlsch0_ue->dlsch_config.mcs_table = mcs_table;
+	dlsch0_ue->Nl = Nl;
+	dlsch0_ue->dlsch_config.number_rbs = nb_rb;
+	dlsch0_ue->dlsch_config.qamModOrder = mod_order;
+	dlsch0_ue->dlsch_config.rv = rvidx;
+	dlsch0_ue->dlsch_config.targetCodeRate = rate;
+  dlsch0_ue->dlsch_config.TBS = TBS;
+	dlsch0_ue->dlsch_config.dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
+	dlsch0_ue->dlsch_config.dlDmrsSymbPos = 4;
+	dlsch0_ue->dlsch_config.n_dmrs_cdm_groups = 1;
+  dlsch0_ue->dlsch_config.tbslbrm = Tbslbrm;
+	printf("harq process ue mcs = %d Qm = %d, symb %d\n", dlsch0_ue->dlsch_config.mcs, dlsch0_ue->dlsch_config.qamModOrder, nb_symb_sch);
 
 	unsigned char *test_input=dlsch->harq_process.pdu;
 	//unsigned char test_input[TBS / 8]  __attribute__ ((aligned(16)));
@@ -539,8 +533,8 @@ int main(int argc, char **argv)
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
 
 			ret = nr_dlsch_decoding(UE, &proc, 0, channel_output_fixed, &UE->frame_parms,
-					dlsch0_ue, dlsch0_ue->harq_processes[0], frame, nb_symb_sch,
-					slot,harq_pid, is_crnti);
+					dlsch0_ue, harq_process, frame, nb_symb_sch,
+					slot,harq_pid);
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_OUT);
 
@@ -551,7 +545,7 @@ int main(int argc, char **argv)
 			errors_bit = 0;
 
 			for (i = 0; i < TBS; i++) {
-				estimated_output_bit[i] = (dlsch0_ue->harq_processes[0]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+				estimated_output_bit[i] = (harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
 				test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
 				if (estimated_output_bit[i] != test_input_bit[i]) {
@@ -620,7 +614,7 @@ int main(int argc, char **argv)
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < num_cw; i++)
-    free_nr_ue_dlsch(&UE->dlsch[0][i], N_RB_DL);
+    free_nr_ue_dl_harq(UE->dl_harq_processes[i], 8, nb_rb);
   term_nr_ue_signal(UE, 1);
   free(UE);
 

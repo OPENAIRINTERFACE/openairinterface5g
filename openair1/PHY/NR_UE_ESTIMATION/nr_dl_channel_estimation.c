@@ -2206,7 +2206,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               unsigned char symbol,
                               uint32_t nb_re_pdsch,
                               uint16_t rnti,
-                              RX_type_t rx_type)
+                              NR_UE_DLSCH_t dlsch[2])
 {
   //#define DEBUG_DL_PTRS 1
   int32_t *ptrs_re_symbol = NULL;
@@ -2225,30 +2225,30 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint16_t *nb_rb           = NULL;
 
   if(dlsch0_harq->status == ACTIVE) {
-    symbInSlot      = dlsch0_harq->start_symbol + dlsch0_harq->nb_symbols;
-    startSymbIndex  = &dlsch0_harq->start_symbol;
-    nbSymb          = &dlsch0_harq->nb_symbols;
-    L_ptrs          = &dlsch0_harq->PTRSTimeDensity;
-    K_ptrs          = &dlsch0_harq->PTRSFreqDensity;
-    dmrsSymbPos     = &dlsch0_harq->dlDmrsSymbPos;
-    ptrsSymbPos     = &dlsch0_harq->ptrs_symbols;
-    ptrsSymbIdx     = &dlsch0_harq->ptrs_symbol_index;
-    ptrsReOffset    = &dlsch0_harq->PTRSReOffset;
-    dmrsConfigType  = &dlsch0_harq->dmrsConfigType;
-    nb_rb           = &dlsch0_harq->nb_rb;
+    symbInSlot      = dlsch[0].dlsch_config.start_symbol + dlsch[0].dlsch_config.number_symbols;
+    startSymbIndex  = &dlsch[0].dlsch_config.start_symbol;
+    nbSymb          = &dlsch[0].dlsch_config.number_symbols;
+    L_ptrs          = &dlsch[0].dlsch_config.PTRSTimeDensity;
+    K_ptrs          = &dlsch[0].dlsch_config.PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch[0].dlsch_config.dlDmrsSymbPos;
+    ptrsReOffset    = &dlsch[0].dlsch_config.PTRSReOffset;
+    dmrsConfigType  = &dlsch[0].dlsch_config.dmrsConfigType;
+    nb_rb           = &dlsch[0].dlsch_config.number_rbs;
+    ptrsSymbPos     = &dlsch[0].ptrs_symbols;
+    ptrsSymbIdx     = &dlsch[0].ptrs_symbol_index;
   }
   if(dlsch1_harq) {
-    symbInSlot      = dlsch1_harq->start_symbol + dlsch0_harq->nb_symbols;
-    startSymbIndex  = &dlsch1_harq->start_symbol;
-    nbSymb          = &dlsch1_harq->nb_symbols;
-    L_ptrs          = &dlsch1_harq->PTRSTimeDensity;
-    K_ptrs          = &dlsch1_harq->PTRSFreqDensity;
-    dmrsSymbPos     = &dlsch1_harq->dlDmrsSymbPos;
-    ptrsSymbPos     = &dlsch1_harq->ptrs_symbols;
-    ptrsSymbIdx     = &dlsch1_harq->ptrs_symbol_index;
-    ptrsReOffset    = &dlsch1_harq->PTRSReOffset;
-    dmrsConfigType  = &dlsch1_harq->dmrsConfigType;
-    nb_rb           = &dlsch1_harq->nb_rb;
+    symbInSlot      = dlsch[1].dlsch_config.start_symbol + dlsch[1].dlsch_config.number_symbols;
+    startSymbIndex  = &dlsch[1].dlsch_config.start_symbol;
+    nbSymb          = &dlsch[1].dlsch_config.number_symbols;
+    L_ptrs          = &dlsch[1].dlsch_config.PTRSTimeDensity;
+    K_ptrs          = &dlsch[1].dlsch_config.PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch[1].dlsch_config.dlDmrsSymbPos;
+    ptrsReOffset    = &dlsch[1].dlsch_config.PTRSReOffset;
+    dmrsConfigType  = &dlsch[1].dlsch_config.dmrsConfigType;
+    nb_rb           = &dlsch[1].dlsch_config.number_rbs;
+    ptrsSymbPos     = &dlsch[1].ptrs_symbols;
+    ptrsSymbIdx     = &dlsch[1].ptrs_symbol_index;
   }
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

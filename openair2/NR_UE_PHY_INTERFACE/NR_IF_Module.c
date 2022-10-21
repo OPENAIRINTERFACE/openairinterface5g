@@ -1131,21 +1131,19 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+  LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
+        __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
 
   switch (ul_info->ue_sched_mode) {
     case SCHED_PUSCH:
       ret = nr_ue_scheduler(NULL, ul_info);
       if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type) && !get_softmodem_params()->phy_test)
         nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
-      LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
-            __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
       break;
 
     case SCHED_PUCCH:
       if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
         nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->phy_data);
-      LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
-            __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
       break;
   }
 
@@ -1241,7 +1239,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
                                            (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
-            free((dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu);
             break;
           case FAPI_NR_RX_PDU_TYPE_DLSCH:
             ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;

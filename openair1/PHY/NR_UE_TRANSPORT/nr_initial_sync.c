@@ -101,7 +101,7 @@ void free_list(NR_UE_SSB *node) {
 }
 
 
-int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, NR_UE_PDCCH_CONFIG *phy_pdcch_config)
+int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, nr_phy_data_t *phy_data)
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
@@ -165,7 +165,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
                      0,
                      temp_ptr->i_ssb,
                      SISO,
-                     phy_pdcch_config,
+                     phy_data,
                      &result);
 
     temp_ptr=temp_ptr->next_ssb;
@@ -216,7 +216,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   int ret=-1;
   int rx_power=0; //aarx,
 
-  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+  nr_phy_data_t phy_data = {0};
+  NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data.phy_pdcch_config;
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_IN);
 
@@ -336,7 +337,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
       if (ret==0) { //we got sss channel
         nr_gold_pbch(ue);
-        ret = nr_pbch_detection(proc, ue, 1, &phy_pdcch_config);  // start pbch detection at first symbol after pss
+        ret = nr_pbch_detection(proc, ue, 1, &phy_data);  // start pbch detection at first symbol after pss
       }
 
       if (ret == 0) {
@@ -518,6 +519,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
   // if stand alone and sync on ssb do sib1 detection as part of initial sync
   if (sa==1 && ret==0) {
+    nr_ue_dlsch_init(phy_data.dlsch, 1, ue->max_ldpc_iterations);
     bool dec = false;
     int gnb_id = 0; //FIXME
 
@@ -525,65 +527,59 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
     __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
-    for(int n_ss = 0; n_ss<phy_pdcch_config.nb_search_space; n_ss++) {
-      proc->nr_slot_rx = phy_pdcch_config.slot; // setting PDCCH slot to proc
-      uint8_t nb_symb_pdcch = phy_pdcch_config.pdcch_config[n_ss].coreset.duration;
-      int start_symb = phy_pdcch_config.pdcch_config[n_ss].coreset.StartSymbolIndex;
+    for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {
+      proc->nr_slot_rx = phy_pdcch_config->slot; // setting PDCCH slot to proc
+      uint8_t nb_symb_pdcch = phy_pdcch_config->pdcch_config[n_ss].coreset.duration;
+      int start_symb = phy_pdcch_config->pdcch_config[n_ss].coreset.StartSymbolIndex;
       for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
-                              phy_pdcch_config.slot,
-                              is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                              phy_pdcch_config->slot,
+                              is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                               true);
 
         nr_pdcch_channel_estimation(ue,
                                     proc,
                                     0,
-                                    phy_pdcch_config.slot,
+                                    phy_pdcch_config->slot,
                                     l,
-                                    &phy_pdcch_config.pdcch_config[n_ss].coreset,
+                                    &phy_pdcch_config->pdcch_config[n_ss].coreset,
                                     fp->first_carrier_offset,
-                                    phy_pdcch_config.pdcch_config[n_ss].BWPStart,
+                                    phy_pdcch_config->pdcch_config[n_ss].BWPStart,
                                     pdcch_est_size,
                                     pdcch_dl_ch_estimates);
 
       }
-      int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_pdcch_config, n_ss);
+      int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_data, n_ss);
       if (dci_cnt>0){
-        NR_UE_DLSCH_t *dlsch = ue->dlsch_SI[gnb_id];
-        if (dlsch && (dlsch->active == 1)) {
-          uint8_t harq_pid = dlsch->current_harq_pid;
-          NR_DL_UE_HARQ_t *dlsch0_harq = dlsch->harq_processes[harq_pid];
-          uint16_t nb_symb_sch = dlsch0_harq->nb_symbols;
-          uint16_t start_symb_sch = dlsch0_harq->start_symbol;
+        NR_UE_DLSCH_t *dlsch = phy_data.dlsch;
+        if (dlsch[0].active == 1) {
+          uint16_t nb_symb_sch = dlsch->dlsch_config.number_symbols;
+          uint16_t start_symb_sch = dlsch->dlsch_config.start_symbol;
 
           for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
             nr_slot_fep_init_sync(ue,
                                   proc,
                                   m,
-                                  phy_pdcch_config.slot,  // same slot and offset as pdcch
-                                  is*fp->samples_per_frame+phy_pdcch_config.sfn*fp->samples_per_frame+ue->rx_offset,
+                                  phy_pdcch_config->slot,  // same slot and offset as pdcch
+                                  is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                                   true);
           }
 
           int ret = nr_ue_pdsch_procedures(ue,
                                            proc,
                                            gnb_id,
-                                           SI_PDSCH,
-                                           ue->dlsch_SI[gnb_id],
-                                           NULL);
+                                           dlsch);
           if (ret >= 0)
             dec = nr_ue_dlsch_procedures(ue,
                                          proc,
                                          gnb_id,
-                                         SI_PDSCH,
-                                         ue->dlsch_SI[gnb_id],
-                                         NULL,
-                                         &ue->dlsch_SI_errors[gnb_id]);
+                                         dlsch,
+                                         NULL);
 
           // deactivate dlsch once dlsch proc is done
-          ue->dlsch_SI[gnb_id]->active = 0;
+          dlsch->active = 0;
         }
       }
     }

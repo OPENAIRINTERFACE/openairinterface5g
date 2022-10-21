@@ -418,6 +418,8 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg);
 
 void RCconfig_nrUE_prs(void *cfg);
 void init_nr_prs_ue_vars(PHY_VARS_NR_UE *ue);
+void nr_init_harq_processes(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb);
+void free_nr_ue_dl_harq(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb);
 
 /** @} */
 #endif
