@@ -74,13 +74,12 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   harq->slot=slot;
   harq->handled = 0;
   harq->status= NR_ACTIVE;
-  harq->new_rx = harq->ndi != ulsch_pdu->pusch_data.new_data_indicator;
-  if (harq->new_rx) {
-    harq->ndi = ulsch_pdu->pusch_data.new_data_indicator;
+  harq->new_rx = ulsch_pdu->pusch_data.new_data_indicator;
+  LOG_D(PHY,"ULSCH ID %d RNTI %x HARQ PID %d new data indicator %d\n",ulsch_id, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
+  if (harq->new_rx)
     harq->round = 0;
-  } else {
+  else
     harq->round++;
-  }
 
   memcpy((void*)&ulsch->harq_processes[harq_pid]->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
 

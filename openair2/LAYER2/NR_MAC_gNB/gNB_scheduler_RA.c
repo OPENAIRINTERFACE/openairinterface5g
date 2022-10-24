@@ -833,6 +833,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  NULL,
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
+                 1, // Not toggling NDI in msg3 retransmissions
                  &ra->UL_BWP);
 
     fill_dci_pdu_rel15(scc,
@@ -1036,7 +1037,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = nr_rv_round_map[round%4];
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 1;
+  pusch_pdu->pusch_data.new_data_indicator = (round == 0) ? 1 : 0;;
   pusch_pdu->pusch_data.num_cb = 0;
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
