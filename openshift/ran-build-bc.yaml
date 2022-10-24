@@ -26,6 +26,8 @@ metadata:
   name: "ran-build"
 spec:
     runPolicy: "Serial"
+    nodeSelector:
+        kubernetes.io/hostname: acamas
     source:
         type: "Binary"
     strategy:
