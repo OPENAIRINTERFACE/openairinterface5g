@@ -185,3 +185,13 @@ rrc_data_req_nr_ue(
     return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 
 }
+
+int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index)
+{
+  if (NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_active == 1) {
+    LOG_W(NR_RRC, "T304 was stoped with value %i\n", NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_cnt);
+    NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_active = 0;
+    NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_cnt = 0;
+  }
+  return 0;
+}

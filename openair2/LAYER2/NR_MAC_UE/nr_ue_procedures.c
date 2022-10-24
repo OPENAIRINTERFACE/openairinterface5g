@@ -3257,7 +3257,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 	  }
 
           if ( (ra->RA_active == 1) && ra_success) {
-            nr_ra_succeeded(module_idP, frameP, slot);
+            nr_ra_succeeded(module_idP, gNB_index, frameP, slot);
           } else if (!ra_success){
             // TODO: Handle failure of RA procedure @ MAC layer
             //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure

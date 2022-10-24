@@ -156,6 +156,8 @@ rrc_data_req_nr_ue(
   const pdcp_transmission_mode_t modeP
 );
 
+int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index);
+
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
