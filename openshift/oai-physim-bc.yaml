@@ -27,7 +27,7 @@ metadata:
 spec:
     runPolicy: "Serial"
     nodeSelector:
-        kubernetes.io/hostname: dedale
+        kubernetes.io/hostname: theseus
     source:
         type: "Binary"
     strategy:
