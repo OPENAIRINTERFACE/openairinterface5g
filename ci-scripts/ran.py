@@ -1048,10 +1048,7 @@ class RANManagement():
 					gnb_markers[k].append(line_cnt)
 
 			# check whether e/gNB log finishes with "Bye." message
-			# Note that it is "=" not "|=" so not only is the regex
-			# asking for EOF (\Z) but we also only retain the last
-			# line's result
-			showedByeMsg = re.search(r'^Bye.\n\Z', str(line), re.MULTILINE) is not None
+			showedByeMsg |= re.search(r'^Bye.\n', str(line), re.MULTILINE) is not None
 
 		enb_log_file.close()
 
