@@ -97,7 +97,7 @@ fi
 if [ $IS_MR_4G -eq 1 ]
 then
     echo "SHORTEN-4G"
-    exit 1
+    exit 0
 fi
 
 # 5G is present: run only 5G
@@ -118,5 +118,5 @@ fi
 if [ $IS_MR_DOCUMENTATION -eq 1 ]
 then
     echo "documentation"
-    exit 1
+    exit 0
 fi
