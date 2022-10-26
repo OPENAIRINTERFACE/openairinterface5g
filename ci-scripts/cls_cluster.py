@@ -291,7 +291,7 @@ class Cluster:
 			status = status and wait
 			mySSH.command(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log', '\$', 10)
 			mySSH.command(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log', '\$', 10)
-			mySSH.command('oc get pods.metrics.k8s.io > cmake_targets/log/build-metrics.log', '\$', 10)
+			mySSH.command('oc get pods.metrics.k8s.io >> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		if status:
 			self._recreate_is_tag(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
