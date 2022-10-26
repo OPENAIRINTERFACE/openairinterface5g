@@ -735,6 +735,16 @@ class RANManagement():
 
 	def LogCollecteNB(self):
 		mySSH = SSH.SSHConnection()
+		# Copying back to xNB server any log from all the runs.
+		# Should also contains ping and iperf logs
+		absPath = os.path.abspath('.')
+		if absPath.count('ci-scripts') == 0:
+			os.chdir('./ci-scripts')
+
+		for x in os.listdir():
+			if x.endswith('.log') or x.endswith('.log.png'):
+				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, x, self.eNBSourceCodePath + '/cmake_targets/', silent=True)
+		# Back to normal
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)
 		mySSH.command('cd cmake_targets', '\$', 5)
