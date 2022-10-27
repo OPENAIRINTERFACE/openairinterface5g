@@ -58,6 +58,13 @@
 
 #define ASCII_ACK 0x06 /* Delimiter in the DNN IEI */
 
+/* DNN - APN 
+ * TS 23.003 9.1
+ * The APN is composed of two parts, the APN Network Identifier (9.1.1) & The APN Operator Identifier (9.1.2).
+ * The accumulated max length of APN is 100 bytes.
+ */
+#define APN_MAX_LEN 100
+
 /* Mandatory Presence IE - TS 24.501 Table 8.3.2.1.1 */
 
 typedef struct packet_filter_create_qos_rule_s {

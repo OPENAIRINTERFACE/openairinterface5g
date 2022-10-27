@@ -168,7 +168,7 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received DNN IE\n");
         psea_msg.dnn_ie.dnn_length = *(buffer + offset++);
         uint8_t i=0;
-        char apn[20];
+        char apn[APN_MAX_LEN];
 
         while (*(buffer + offset + i) != ASCII_ACK) {
           apn[i] = *(buffer + offset + i);
