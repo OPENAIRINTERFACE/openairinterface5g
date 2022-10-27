@@ -134,11 +134,6 @@
     {"dlsch_tc_intl1_stats",       &(UE->dlsch_tc_intl1_stats),0,1},\
     {"dlsch_tc_intl2_stats",       &(UE->dlsch_tc_intl2_stats),0,1},\
     {"tx_prach",       &(UE->tx_prach),0,1},\
-    {"dlsch_encoding_SIC_stats",       &(UE->dlsch_encoding_SIC_stats),0,1},\
-    {"dlsch_scrambling_SIC_stats",       &(UE->dlsch_scrambling_SIC_stats),0,1},\
-    {"dlsch_modulation_SIC_stats",       &(UE->dlsch_modulation_SIC_stats),0,1},\
-    {"dlsch...ping_unit_SIC_stats",       &(UE->dlsch_llr_stripping_unit_SIC_stats),0,1},\
-    {"dlsch_unscrambling_SIC_stats",       &(UE->dlsch_unscrambling_SIC_stats),0,1},\
     {"ue_front_end_stat",       &(UE->ue_front_end_stat),0,1},\
     {"ue_front_end_per_slot_stat",      &(UE->ue_front_end_per_slot_stat[0]),0,LTE_SLOTS_PER_SUBFRAME},\
     {"pdcch_procedures_stat",       &(UE->pdcch_procedures_stat),0,1},\

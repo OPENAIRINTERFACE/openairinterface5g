@@ -36,6 +36,7 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include <math.h>
 #include "nfapi_interface.h"
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 #define NR_PUSCH_x 2 // UCI placeholder bit TS 38.212 V15.4.0 subclause 5.3.3.1
 #define NR_PUSCH_y 3 // UCI placeholder bit
@@ -99,7 +100,7 @@ int32_t nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                             int32_t **rho_i,
                             int16_t *dlsch_llr,
                             uint8_t symbol,
-							uint32_t len,
+                            uint32_t len,
                             uint8_t first_symbol_flag,
                             uint16_t nb_rb,
                             uint16_t pbch_pss_sss_adj,
@@ -475,8 +476,8 @@ int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    int32_t *rxdataF_comp,
                    int16_t *dlsch_llr,
                    uint8_t symbol,
-				   uint32_t len,
-				   uint8_t first_symbol_flag,
+                   uint32_t len,
+                   uint8_t first_symbol_flag,
                    uint16_t nb_rb,
                    uint8_t beamforming_mode);
 
@@ -493,17 +494,6 @@ int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param llr128p pointer to pointer to symbol in dlsch_llr
    @param beamforming_mode beamforming mode
 */
-
-int32_t nr_dlsch_qpsk_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
-                           int **rxdataF_comp,
-                           int32_t **sic_buffer,
-                           int **rho_i,
-                           short *dlsch_llr,
-                           uint8_t num_pdcch_symbols,
-                           uint16_t nb_rb,
-                           uint8_t subframe,
-                           uint16_t mod_order_0,
-                           uint32_t rb_alloc);
 
 void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t *rxdataF_comp,
@@ -527,30 +517,6 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
    @param pbch_pss_sss_adjust PBCH/PSS/SSS RE adjustment (in REs)
    @param beamforming_mode beamforming mode
 */
-void nr_dlsch_16qam_llr_SIC (NR_DL_FRAME_PARMS *frame_parms,
-                          int32_t **rxdataF_comp,
-                          int32_t **sic_buffer,  //Q15
-                          int32_t **rho_i,
-                          int16_t *dlsch_llr,
-                          uint8_t num_pdcch_symbols,
-                          int32_t **dl_ch_mag,
-                          uint16_t nb_rb,
-                          uint8_t subframe,
-                          uint16_t mod_order_0,
-                          uint32_t rb_alloc);
-
-void dlsch_64qam_llr_SIC(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int32_t **sic_buffer,  //Q15
-                         int32_t **rho_i,
-                         int16_t *dlsch_llr,
-                         uint8_t num_pdcch_symbols,
-                         int32_t **dl_ch_mag,
-                         int32_t **dl_ch_magb,
-                         uint16_t nb_rb,
-                         uint8_t subframe,
-                         uint16_t mod_order_0,
-                         uint32_t rb_alloc);
 
 void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t *rxdataF_comp,
@@ -575,110 +541,6 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint16_t nb_rb,
                      uint8_t beamforming_mode);
 
-/** \fn dlsch_siso(NR_DL_FRAME_PARMS *frame_parms,
-    int32_t **rxdataF_comp,
-    int32_t **rxdataF_comp_i,
-    uint8_t l,
-    uint16_t nb_rb)
-    \brief This function does the first stage of llr computation for SISO, by just extracting the pilots, PBCH and primary/secondary synchronization sequences.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param l symbol in sub-frame
-    @param nb_rb Number of RBs in this allocation
-*/
-
-void dlsch_siso(NR_DL_FRAME_PARMS *frame_parms,
-                int32_t **rxdataF_comp,
-                int32_t **rxdataF_comp_i,
-                uint8_t l,
-                uint16_t nb_rb);
-
-/** \fn dlsch_alamouti(NR_DL_FRAME_PARMS *frame_parms,
-    int32_t **rxdataF_comp,
-    int32_t **dl_ch_mag,
-    int32_t **dl_ch_magb,
-    uint8_t symbol,
-    uint16_t nb_rb)
-    \brief This function does Alamouti combining on RX and prepares LLR inputs by skipping pilots, PBCH and primary/secondary synchronization signals.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param symbol Symbol in sub-frame
-    @param nb_rb Number of RBs in this allocation
-*/
-void dlsch_alamouti(NR_DL_FRAME_PARMS *frame_parms,
-                    int32_t **rxdataF_comp,
-                    int32_t **dl_ch_mag,
-                    int32_t **dl_ch_magb,
-                    uint8_t symbol,
-                    uint16_t nb_rb);
-
-/** \fn dlsch_antcyc(NR_DL_FRAME_PARMS *frame_parms,
-    int32_t **rxdataF_comp,
-    int32_t **dl_ch_mag,
-    int32_t **dl_ch_magb,
-    uint8_t symbol,
-    uint16_t nb_rb)
-    \brief This function does antenna selection (based on antenna cycling pattern) on RX and prepares LLR inputs by skipping pilots, PBCH and primary/secondary synchronization signals.  Note that this is not LTE, it is just included for comparison purposes.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param symbol Symbol in sub-frame
-    @param nb_rb Number of RBs in this allocation
-*/
-void dlsch_antcyc(NR_DL_FRAME_PARMS *frame_parms,
-                  int32_t **rxdataF_comp,
-                  int32_t **dl_ch_mag,
-                  int32_t **dl_ch_magb,
-                  uint8_t symbol,
-                  uint16_t nb_rb);
-
-/** \fn dlsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
-    int32_t **rxdataF_comp,
-    int32_t **rxdataF_comp_i,
-    int32_t **rho,
-    int32_t **rho_i,
-    int32_t **dl_ch_mag,
-    int32_t **dl_ch_magb,
-    uint8_t symbol,
-    uint16_t nb_rb,
-    uint8_t dual_stream_UE)
-
-    \brief This function does maximal-ratio combining for dual-antenna receivers.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param rho Cross correlation between spatial channels
-    @param rho_i Cross correlation between signal and inteference channels
-    @param dl_ch_mag First squared-magnitude of channel (16QAM and 64QAM) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param dl_ch_magb Second squared-magnitude of channel (64QAM only) for LLR computation.  Alamouti combining should be performed on this as well. Result is stored in first antenna position
-    @param symbol Symbol in sub-frame
-    @param nb_rb Number of RBs in this allocation
-    @param dual_stream_UE Flag to indicate dual-stream detection
-*/
-void dlsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int32_t **rxdataF_comp_i,
-                         int32_t **rho,
-                         int32_t **rho_i,
-                         int32_t **dl_ch_mag,
-                         int32_t **dl_ch_magb,
-                         int32_t **dl_ch_mag_i,
-                         int32_t **dl_ch_magb_i,
-                         uint8_t symbol,
-                         uint16_t nb_rb,
-                         uint8_t dual_stream_UE);
-
-void dlsch_detection_mrc_TM34(NR_DL_FRAME_PARMS *frame_parms,
-                              NR_UE_PDSCH *lte_ue_pdsch_vars,
-                              int harq_pid,
-                              int round,
-                              unsigned char symbol,
-                              unsigned short nb_rb,
-                              unsigned char dual_stream_UE);
 
 /** \fn dlsch_extract_rbs(int32_t **rxdataF,
     int32_t **dl_ch_estimates,
@@ -719,36 +581,6 @@ void nr_dlsch_extract_rbs(int **rxdataF,
                           uint16_t dlDmrsSymbPos,
                           int chest_time_type);
 
-/** \fn dlsch_extract_rbs_TM7(int32_t **rxdataF,
-    int32_t **dl_bf_ch_estimates,
-    int32_t **rxdataF_ext,
-    int32_t **dl_bf_ch_estimates_ext,
-    uint32_t *rb_alloc,
-    uint8_t symbol,
-    uint8_t subframe,
-    uint32_t high_speed_flag,
-    NR_DL_FRAME_PARMS *frame_parms)
-    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for single antenna eNB transmission.
-    @param rxdataF Raw FFT output of received signal
-    @param dl_bf_ch_estimates Beamforming channel estimates of current slot
-    @param rxdataF_ext FFT output for RBs in this allocation
-    @param dl_bf_ch_estimates_ext Beamforming channel estimates for RBs in this allocation
-    @param rb_alloc RB allocation vector
-    @param symbol Symbol to extract
-    @param subframe Subframe number
-    @param high_speed_flag
-    @param frame_parms Pointer to frame descriptor
-*/
-uint16_t dlsch_extract_rbs_TM7(int32_t **rxdataF,
-                               int32_t **dl_bf_ch_estimates,
-                               int32_t **rxdataF_ext,
-                               int32_t **dl_bf_ch_estimates_ext,
-                               uint32_t *rb_alloc,
-                               uint8_t symbol,
-                               uint8_t subframe,
-                               uint32_t high_speed_flag,
-                               NR_DL_FRAME_PARMS *frame_parms);
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
@@ -802,35 +634,6 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
                              uint16_t *llr_deint,
                              uint16_t nb_rb_pdsch);
 
-//This function is used to compute multiplications in Hhermitian * H matrix
-void conjch0_mult_ch1(int *ch0,
-                      int *ch1,
-                      int32_t *ch0conj_ch1,
-                      unsigned short nb_rb,
-                      unsigned char output_shift0);
-
-void construct_HhH_elements(int *ch0conj_ch0,
-                         int *ch1conj_ch1,
-                         int *ch2conj_ch2,
-                         int *ch3conj_ch3,
-                         int *ch0conj_ch1,
-                         int *ch1conj_ch0,
-                         int *ch2conj_ch3,
-                         int *ch3conj_ch2,
-                         int32_t *after_mf_00,
-                         int32_t *after_mf_01,
-                         int32_t *after_mf_10,
-                         int32_t *after_mf_11,
-                         unsigned short nb_rb);
-
-void dlsch_channel_level_TM34_meas(int *ch00,
-                                   int *ch01,
-                                   int *ch10,
-                                   int *ch11,
-                                   int *avg_0,
-                                   int *avg_1,
-                                   unsigned short nb_rb);
-
 void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
                                 int32_t *median,
                                 int n_tx,
@@ -859,42 +662,6 @@ void nr_a_sum_b(__m128i *input_x,
                 __m128i *input_y,
                 unsigned short nb_rb);
 
-uint8_t rank_estimation_tm3_tm4(int *dl_ch_estimates_00,
-                                int *dl_ch_estimates_01,
-                                int *dl_ch_estimates_10,
-                                int *dl_ch_estimates_11,
-                                unsigned short nb_rb);
-
-void dlsch_channel_compensation_TM56(int **rxdataF_ext,
-                                     int **dl_ch_estimates_ext,
-                                     int **dl_ch_mag,
-                                     int **dl_ch_magb,
-                                     int **rxdataF_comp,
-                                     unsigned char *pmi_ext,
-                                     NR_DL_FRAME_PARMS *frame_parms,
-                                     PHY_NR_MEASUREMENTS *phy_measurements,
-                                     int eNB_id,
-                                     unsigned char symbol,
-                                     unsigned char mod_order,
-                                     unsigned short nb_rb,
-                                     unsigned char output_shift,
-                                     unsigned char dl_power_off);
-
-
-void dlsch_channel_compensation_TM34(NR_DL_FRAME_PARMS *frame_parms,
-                                    NR_UE_PDSCH *lte_ue_pdsch_vars,
-                                    PHY_NR_MEASUREMENTS *phy_measurements,
-                                    int eNB_id,
-                                    unsigned char symbol,
-                                    unsigned char mod_order0,
-                                    unsigned char mod_order1,
-                                    int harq_pid,
-                                    int round,
-                                    MIMO_mode_t mimo_mode,
-                                    unsigned short nb_rb,
-                                    unsigned char output_shift0,
-                                    unsigned char output_shift1);
-
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param dl_ch_estimates_ext Channel estimates in allocated RBs
@@ -908,32 +675,9 @@ void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
                          uint8_t n_tx,
                          int32_t *avg,
                          uint8_t symbol,
-						 uint32_t len,
+                         uint32_t len,
                          unsigned short nb_rb);
 
-
-void dlsch_channel_level_TM34(int **dl_ch_estimates_ext,
-                              NR_DL_FRAME_PARMS *frame_parms,
-                              unsigned char *pmi_ext,
-                              int *avg_0,
-                              int *avg_1,
-                              uint8_t symbol,
-                              unsigned short nb_rb,
-                              MIMO_mode_t mimo_mode);
-
-
-void dlsch_channel_level_TM56(int32_t **dl_ch_estimates_ext,
-                              NR_DL_FRAME_PARMS *frame_parms,
-                              unsigned char *pmi_ext,
-                              int32_t *avg,
-                              uint8_t symbol_mod,
-                              uint16_t nb_rb);
-
-void dlsch_channel_level_TM7(int32_t **dl_bf_ch_estimates_ext,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t *avg,
-                         uint8_t pilots_flag,
-                         uint16_t nb_rb);
 
 void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
@@ -1020,21 +764,11 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       NR_DL_FRAME_PARMS *frame_parms,
                                       uint8_t Nl);
 
-void *nr_dlsch_decoding_2thread0(void *arg);
-
-void *nr_dlsch_decoding_2thread1(void *arg);
-
-
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
 			   uint8_t q,
 			   uint32_t Nid,
 			   uint32_t n_RNTI);
-
-uint32_t dlsch_decoding_emul(PHY_VARS_NR_UE *phy_vars_ue,
-                             uint8_t subframe,
-                             PDSCH_t dlsch_id,
-                             uint8_t eNB_id);
 
 int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     UE_nr_rxtx_proc_t *proc,
@@ -1043,35 +777,6 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     int16_t *pdcch_e_rx,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
-
-/*! \brief Extract PSS and SSS resource elements
-  @param phy_vars_ue Pointer to UE variables
-  @param[out] pss_ext contain the PSS signals after the extraction
-  @param[out] sss_ext contain the SSS signals after the extraction
-  @returns 0 on success
-*/
-int pss_sss_extract(PHY_VARS_NR_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72],
-                    int32_t sss_ext[4][72],
-                                        uint8_t subframe);
-
-/*! \brief Extract only PSS resource elements
-  @param phy_vars_ue Pointer to UE variables
-  @param[out] pss_ext contain the PSS signals after the extraction
-  @returns 0 on success
-*/
-int pss_only_extract(PHY_VARS_NR_UE *phy_vars_ue,
-                    int32_t pss_ext[4][72],
-                    uint8_t subframe);
-
-/*! \brief Extract only SSS resource elements
-  @param phy_vars_ue Pointer to UE variables
-  @param[out] sss_ext contain the SSS signals after the extraction
-  @returns 0 on success
-*/
-int sss_only_extract(PHY_VARS_NR_UE *phy_vars_ue,
-                    int32_t sss_ext[4][72],
-                    uint8_t subframe);
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
   @param phy_vars_ue Pointer to UE variables
@@ -1086,272 +791,29 @@ int rx_sss(PHY_VARS_NR_UE *phy_vars_ue,int32_t *tot_metric,uint8_t *flip_max,uin
 /*! \brief receiver for the PBCH
   \returns number of tx antennas or -1 if error
 */
-int nr_rx_pbch( PHY_VARS_NR_UE *ue,
-                UE_nr_rxtx_proc_t *proc,
-		const int estimateSz,
-		struct complex16 dl_ch_estimates[][estimateSz],
-                NR_UE_PBCH *nr_ue_pbch_vars,
-                NR_DL_FRAME_PARMS *frame_parms,
-                uint8_t eNB_id,
-                uint8_t i_ssb,
-                MIMO_mode_t mimo_mode,
-                NR_UE_PDCCH_CONFIG *phy_pdcch_config,
-                fapiPbch_t* result);
+int nr_rx_pbch(PHY_VARS_NR_UE *ue,
+               UE_nr_rxtx_proc_t *proc,
+               const int estimateSz,
+               struct complex16 dl_ch_estimates[][estimateSz],
+               NR_UE_PBCH *nr_ue_pbch_vars,
+               NR_DL_FRAME_PARMS *frame_parms,
+               uint8_t eNB_id,
+               uint8_t i_ssb,
+               MIMO_mode_t mimo_mode,
+               NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+               fapiPbch_t* result);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
-		              PHY_VARS_NR_UE *ue,
+                      PHY_VARS_NR_UE *ue,
                       int pbch_initial_symbol,
                       NR_UE_PDCCH_CONFIG *phy_pdcch_config);
-
-uint16_t rx_pbch_emul(PHY_VARS_NR_UE *phy_vars_ue,
-                      uint8_t eNB_id,
-                      uint8_t pbch_phase);
-
-
-/*! \brief PBCH unscrambling
-  This is similar to pbch_scrabling with the difference that inputs are signed s16s (llr values) and instead of flipping bits we change signs.
-  \param frame_parms Pointer to frame descriptor
-  \param llr Output of the demodulator
-  \param length Length of the sequence
-  \param frame_mod4 Frame number modulo 4*/
-void pbch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                       int8_t* llr,
-                       uint32_t length,
-                       uint8_t frame_mod4);
-
-
-void generate_64qam_table(void);
-void generate_16qam_table(void);
-void generate_qpsk_table(void);
-
-uint16_t extract_crc(uint8_t *dci,uint8_t DCI_LENGTH);
-
-/*! \brief LLR from two streams. This function takes two streams (qpsk modulated) and calculates the LLR, considering one stream as interference.
-  \param stream0_in pointer to first stream0
-  \param stream1_in pointer to first stream1
-  \param stream0_out pointer to output stream
-  \param rho01 pointer to correlation matrix
-  \param length*/
-void qpsk_qpsk_TM3456(short *stream0_in,
-                      short *stream1_in,
-                      short *stream0_out,
-                      short *rho01,
-                      int length
-                     );
-
-/** \brief Attempt decoding of a particular DCI with given length and format.
-    @param DCI_LENGTH length of DCI in bits
-    @param DCI_FMT Format of DCI
-    @param e e-sequence (soft bits)
-    @param decoded_output Output of Viterbi decoder
-*/
-void dci_decoding(uint8_t DCI_LENGTH,
-                  uint8_t DCI_FMT,
-                  int8_t *e,
-                  uint8_t *decoded_output);
-
-/** \brief Do 36.213 DCI decoding procedure by searching different RNTI options and aggregation levels.  Currently does
-    not employ the complexity reducing procedure based on RNTI.
-    @param phy_vars_ue UE variables
-    @param dci_alloc Pointer to DCI_ALLOC_t array to store results for DLSCH/ULSCH programming
-    @param do_common If 1 perform search in common search-space else ue-specific search-space
-    @param eNB_id eNB Index on which to act
-    @param subframe Index of subframe
-    @returns bitmap of occupied CCE positions (i.e. those detected)
-*/
-uint16_t dci_decoding_procedure(PHY_VARS_NR_UE *phy_vars_ue,
-                                DCI_ALLOC_t *dci_alloc,
-                                int do_common,
-                                int16_t eNB_id,
-                                uint8_t subframe);
-
-uint16_t dci_CRNTI_decoding_procedure(PHY_VARS_NR_UE *ue,
-                                DCI_ALLOC_t *dci_alloc,
-                                uint8_t DCIFormat,
-                                uint8_t agregationLevel,
-                                int16_t eNB_id,
-                                uint8_t subframe);
-
-uint16_t dci_decoding_procedure_emul(NR_UE_PDCCH **lte_ue_pdcch_vars,
-                                     uint8_t num_ue_spec_dci,
-                                     uint8_t num_common_dci,
-                                     DCI_ALLOC_t *dci_alloc_tx,
-                                     DCI_ALLOC_t *dci_alloc_rx,
-                                     int16_t eNB_id);
-
-/** \brief Compute I_TBS (transport-block size) based on I_MCS for PDSCH.  Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS */
-uint8_t get_I_TBS(uint8_t I_MCS);
-
-/** \brief Compute I_TBS (transport-block size) based on I_MCS for PUSCH.  Implements table 8.6.1-1 from 36.213.
-    @param I_MCS */
-unsigned char get_I_TBS_UL(unsigned char I_MCS);
-
-/** \brief Compute Q (modulation order) based on downlink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
-    @param nb_rb
-    @return Transport block size */
-uint32_t get_TBS_DL(uint8_t mcs, uint16_t nb_rb);
-
-/** \brief Compute Q (modulation order) based on uplink I_MCS. Implements table 7.1.7.1-1 from 36.213.
-    @param I_MCS
-    @param nb_rb
-    @return Transport block size */
-uint32_t get_TBS_UL(uint8_t mcs, uint16_t nb_rb);
-
-/* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
-   @param N_RB_DL number of PRB on DL
-   @param indicator for even/odd slot
-   @param vrb vrb index
-   @param Ngap Gap indicator
-*/
-uint32_t get_prb(int N_RB_DL,int odd_slot,int vrb,int Ngap);
-
-/* \brief Return prb for a given vrb index
-   @param vrb_type VRB type (0=localized,1=distributed)
-   @param rb_alloc_dci rballoc field from DCI
-*/
-uint32_t get_rballoc(vrb_t vrb_type,uint16_t rb_alloc_dci);
-
-
-/* \brief Return bit-map of resource allocation for a given DCI rballoc (RIV format) and vrb type
-   @returns Transmission mode (1-7)
-*/
-uint8_t get_transmission_mode(module_id_t Mod_id, uint8_t CC_id, rnti_t rnti);
-
-
-/* \brief
-   @param ra_header Header of resource allocation (0,1) (See sections 7.1.6.1/7.1.6.2 of 36.213 Rel8.6)
-   @param rb_alloc Bitmap allocation from DCI (format 1,2)
-   @returns number of physical resource blocks
-*/
-uint32_t conv_nprb(uint8_t ra_header,uint32_t rb_alloc,int N_RB_DL);
-
-//int adjust_G(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe);
-//int adjust_G2(NR_DL_FRAME_PARMS *frame_parms,uint32_t *rb_alloc,uint8_t mod_order,uint8_t subframe,uint8_t symbol);
 
 
 #ifndef modOrder
 #define modOrder(I_MCS,I_TBS) ((I_MCS-I_TBS)*2+2) // Find modulation order from I_TBS and I_MCS
 #endif
 
-/** \fn uint8_t I_TBS2I_MCS(uint8_t I_TBS);
-    \brief This function maps I_tbs to I_mcs according to Table 7.1.7.1-1 in 3GPP TS 36.213 V8.6.0. Where there is two supported modulation orders for the same I_TBS then either high or low modulation is chosen by changing the equality of the two first comparisons in the if-else statement.
-    \param I_TBS Index of Transport Block Size
-    \return I_MCS given I_TBS
-*/
-uint8_t I_TBS2I_MCS(uint8_t I_TBS);
-
-/** \fn uint8_t SE2I_TBS(float SE,
-    uint8_t N_PRB,
-    uint8_t symbPerRB);
-    \brief This function maps a requested throughput in number of bits to I_tbs. The throughput is calculated as a function of modulation order, RB allocation and number of symbols per RB. The mapping orginates in the "Transport block size table" (Table 7.1.7.2.1-1 in 3GPP TS 36.213 V8.6.0)
-    \param SE Spectral Efficiency (before casting to integer, multiply by 1024, remember to divide result by 1024!)
-    \param N_PRB Number of PhysicalResourceBlocks allocated \sa lte_frame_parms->N_RB_DL
-    \param symbPerRB Number of symbols per resource block allocated to this channel
-    \return I_TBS given an SE and an N_PRB
-*/
-uint8_t SE2I_TBS(float SE,
-                 uint8_t N_PRB,
-                 uint8_t symbPerRB);
-
-
-/*!
-  \brief This function is similar to generate_srs_tx but generates a conjugate sequence for channel estimation. If IFFT_FPGA is defined, the SRS is quantized to a QPSK sequence.
-  @param phy_vars_ue Pointer to PHY_VARS structure
-  @param eNB_id Index of destination eNB for this SRS
-  @param amp Linear amplitude of SRS
-  @param subframe Index of subframe on which to act
-  @returns 0 on success, -1 on error with message
-*/
-
-int32_t generate_srs_tx(PHY_VARS_NR_UE *phy_vars_ue,
-                        uint8_t eNB_id,
-                        int16_t amp,
-                        uint32_t subframe);
-
-/*!
-  \brief This function generates the downlink reference signal for the PUSCH according to 36.211 v8.6.0. The DRS occuies the RS defined by rb_alloc and the symbols 2 and 8 for extended CP and 3 and 10 for normal CP.
-*/
-
-int32_t generate_drs_pusch(PHY_VARS_NR_UE *phy_vars_ue,
-                           UE_nr_rxtx_proc_t *proc,
-                           uint8_t eNB_id,
-                           int16_t amp,
-                           uint32_t subframe,
-                           uint32_t first_rb,
-                           uint32_t nb_rb,
-                           uint8_t ant);
-
-/*!
-  \brief This function implements the initialization of paging parameters for UE (See Section 7, 36.304).It must be called after setting IMSImod1024 during UE startup and after receiving SIB2
-  @param ue Pointer to UE context
-  @param defaultPagingCycle T from 36.304 (0=32,1=64,2=128,3=256)
-  @param nB nB from 36.304 (0=4T,1=2T,2=T,3=T/2,4=T/4,5=T/8,6=T/16,7=T/32*/
-int init_ue_paging_info(PHY_VARS_NR_UE *ue, long defaultPagingCycle, long nB);
-
-int32_t compareints (const void * a, const void * b);
-
-
-void ulsch_modulation(int32_t **txdataF,
-                      int16_t amp,
-                      frame_t frame,
-                      uint32_t subframe,
-                      NR_DL_FRAME_PARMS *frame_parms,
-                      NR_UE_ULSCH_t *ulsch);
-
-
-uint8_t allowed_ulsch_re_in_dmrs_symbol(uint16_t k,
-                                        uint16_t start_sc,
-                                        uint8_t numDmrsCdmGrpsNoData,
-                                        uint8_t dmrs_type);
-
-
-int generate_ue_dlsch_params_from_dci(int frame,
-                                      uint8_t subframe,
-                                      void *dci_pdu,
-                                      rnti_t rnti,
-                                      DCI_format_t dci_format,
-                                      NR_UE_PDCCH *pdcch_vars,
-                                      NR_UE_PDSCH *pdsch_vars,
-                                      NR_UE_DLSCH_t **dlsch,
-                                      NR_DL_FRAME_PARMS *frame_parms,
-                                      PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-                                      uint16_t si_rnti,
-                                      uint16_t ra_rnti,
-                                      uint16_t p_rnti,
-                                      uint8_t beamforming_mode,
-                                      uint16_t tc_rnti);
-
-
-int generate_ue_ulsch_params_from_dci(void *dci_pdu,
-                                      rnti_t rnti,
-                                      uint8_t subframe,
-                                      DCI_format_t dci_format,
-                                      PHY_VARS_NR_UE *phy_vars_ue,
-                                      UE_nr_rxtx_proc_t *proc,
-                                      uint16_t si_rnti,
-                                      uint16_t ra_rnti,
-                                      uint16_t p_rnti,
-                                      uint16_t cba_rnti,
-                                      uint8_t eNB_id,
-                                      uint8_t use_srs);
-
-int32_t generate_ue_ulsch_params_from_rar(PHY_VARS_NR_UE *phy_vars_ue,
-                                          UE_nr_rxtx_proc_t *proc,
-                                          uint8_t eNB_id);
-double sinr_eff_cqi_calc(PHY_VARS_NR_UE *phy_vars_ue,
-                         uint8_t eNB_id,
-                                                 uint8_t subframe);
-
-uint8_t sinr2cqi(double sinr,uint8_t trans_mode);
-
-
 int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* buffer, int length, runmode_t mode, int input_level_dBm);
-
-void init_transport_channels(uint8_t);
-
-void generate_RIV_tables(void);
 
 /*!
   \brief This function performs the initial cell search procedure - PSS detection, SSS detection and PBCH detection.  At the
@@ -1393,207 +855,11 @@ void nr_rf_card_config_freq(openair0_config_t *openair0_cfg,
                             uint64_t dl_Carrier,
                             int freq_offset);
 
-
-void print_CQI(void *o,UCI_format_t uci_format,uint8_t eNB_id,int N_RB_DL);
-
-void fill_CQI(NR_UE_ULSCH_t *ulsch,PHY_NR_MEASUREMENTS *meas,uint8_t eNB_id, uint8_t harq_pid,int N_RB_DL, rnti_t rnti, uint8_t trans_mode,double sinr_eff);
-
-void reset_cba_uci(void *o);
-
-/** \brief  This routine computes the subband PMI bitmap based on measurements (0,1,2,3 for rank 0 and 0,1 for rank 1) in the format needed for UCI
-    @param meas pointer to measurements
-    @param eNB_id eNB_id
-    @param nb_subbands number of subbands
-    @returns subband PMI bitmap
-*/
-uint16_t quantize_subband_pmi(PHY_NR_MEASUREMENTS *meas,uint8_t eNB_id,int nb_subbands);
-
-int32_t pmi_convert_rank1_from_rank2(uint16_t pmi_alloc, int tpmi, int nb_rb);
-
-uint16_t quantize_subband_pmi2(PHY_NR_MEASUREMENTS *meas,uint8_t eNB_id,uint8_t a_id,int nb_subbands);
-
-
-
-uint64_t cqi2hex(uint32_t cqi);
-
-uint16_t computeRIV(uint16_t N_RB_DL,uint16_t RBstart,uint16_t Lcrbs);
-
-int get_nCCE_offset_l1(int *CCE_table,
-                       const unsigned char L,
-                       const int nCCE,
-                       const int common_dci,
-                       const unsigned short rnti,
-                       const unsigned char subframe);
-
-
-//uint8_t get_mi(NR_DL_FRAME_PARMS *frame,uint8_t subframe);
-
-uint16_t get_nCCE_mac(uint8_t Mod_id,uint8_t CC_id,int num_pdcch_symbols,int subframe);
-
 void nr_pdcch_unscrambling(int16_t *z,
                            uint16_t scrambling_RNTI,
                            uint32_t length,
                            uint16_t pdcch_DMRS_scrambling_id,
                            int16_t *z2);
-
-void dlsch_unscrambling(NR_DL_FRAME_PARMS *frame_parms,
-                        int mbsfn_flag,
-                        NR_UE_DLSCH_t *dlsch,
-                        int G,
-                        int16_t* llr,
-                        uint8_t q,
-                        uint8_t Ns);
-
-
-void generate_pucch1x(int32_t **txdataF,
-                      NR_DL_FRAME_PARMS *frame_parms,
-                      uint8_t ncs_cell[20][7],
-                      PUCCH_FMT_t fmt,
-                      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                      uint16_t n1_pucch,
-                      uint8_t shortened_format,
-                      uint8_t *payload,
-                      int16_t amp,
-                      uint8_t subframe);
-
-void generate_pucch2x(int32_t **txdataF,
-                      NR_DL_FRAME_PARMS *fp,
-                      uint8_t ncs_cell[20][7],
-                      PUCCH_FMT_t fmt,
-                      PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                      uint16_t n2_pucch,
-                      uint8_t *payload,
-                      int A,
-                      int B2,
-                      int16_t amp,
-                      uint8_t subframe,
-                      uint16_t rnti);
-
-void generate_pucch3x(int32_t **txdataF,
-                    NR_DL_FRAME_PARMS *frame_parms,
-                    uint8_t ncs_cell[20][7],
-                    PUCCH_FMT_t fmt,
-                    PUCCH_CONFIG_DEDICATED *pucch_config_dedicated,
-                    uint16_t n3_pucch,
-                    uint8_t shortened_format,
-                    uint8_t *payload,
-                    int16_t amp,
-                    uint8_t subframe,
-                    uint16_t rnti);
-
-
-void init_ulsch_power_LUT(void);
-
-/*!
-  \brief Check for PRACH TXop in subframe
-  @param frame_parms Pointer to NR_DL_FRAME_PARMS
-  @param frame frame index to check
-  @param subframe subframe index to check
-  @returns 0 on success
-*/
-//int is_prach_subframe(NR_DL_FRAME_PARMS *frame_parms,frame_t frame, uint8_t subframe);
-
-/*!
-  \brief Generate PRACH waveform
-  @param phy_vars_ue Pointer to ue top-level descriptor
-  @param eNB_id Index of destination eNB
-  @param subframe subframe index to operate on
-  @param index of preamble (0-63)
-  @param Nf System frame number
-  @returns 0 on success
-
-*/
-int32_t generate_prach(PHY_VARS_NR_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe,uint16_t Nf);
-
-
-/*!
-  \brief Helper for MAC, returns number of available PRACH in TDD for a particular configuration index
-  @param frame_parms Pointer to NR_DL_FRAME_PARMS structure
-  @returns 0-5 depending on number of available prach
-*/
-uint8_t get_num_prach_tdd(module_id_t Mod_id);
-
-/*!
-  \brief Return the PRACH format as a function of the Configuration Index and Frame type.
-  @param prach_ConfigIndex PRACH Configuration Index
-  @param frame_type 0-FDD, 1-TDD
-  @returns 0-1 accordingly
-*/
-uint8_t get_prach_fmt(uint8_t prach_ConfigIndex,frame_type_t frame_type);
-
-/*!
-  \brief Helper for MAC, returns frequency index of PRACH resource in TDD for a particular configuration index
-  @param frame_parms Pointer to NR_DL_FRAME_PARMS structure
-  @returns 0-5 depending on number of available prach
-*/
-uint8_t get_fid_prach_tdd(module_id_t Mod_id,uint8_t tdd_map_index);
-
-/*!
-  \brief Comp ute DFT of PRACH ZC sequences.  Used for generation of prach in UE and reception of PRACH in eNB.
-  @param rootSequenceIndex PRACH root sequence
-  #param prach_ConfigIndex PRACH Configuration Index
-  @param zeroCorrelationZoneConfig PRACH ncs_config
-  @param highSpeedFlat PRACH High-Speed Flag
-  @param frame_type TDD/FDD flag
-  @param Xu DFT output
-*/
-void compute_prach_seq(uint16_t rootSequenceIndex,
-		       uint8_t prach_ConfigIndex,
-		       uint8_t zeroCorrelationZoneConfig,
-		       uint8_t highSpeedFlag,
-		       frame_type_t frame_type,
-		       uint32_t X_u[64][839]);
-
-
-void init_prach_tables(int N_ZC);
-
-void init_unscrambling_lut(void);
-void init_scrambling_lut(void);
-
-/*!
-  \brief Return the status of MBSFN in this frame/subframe
-  @param frame Frame index
-  @param subframe Subframe index
-  @param frame_parms Pointer to frame parameters
-  @returns 1 if subframe is for MBSFN
-*/
-uint8_t is_not_pilot(uint8_t pilots, uint8_t re, uint8_t nushift, uint8_t use2ndpilots);
-
-uint8_t is_not_UEspecRS(int8_t lprime, uint8_t re, uint8_t nushift, uint8_t Ncp, uint8_t beamforming_mode);
-
-uint32_t dlsch_decoding_abstraction(double *dlsch_MIPB,
-                                    NR_DL_FRAME_PARMS *lte_frame_parms,
-                                    NR_UE_DLSCH_t *dlsch,
-                                    uint8_t subframe,
-                                    uint8_t num_pdcch_symbols);
-
-// DL power control functions
-double get_pa_dB(uint8_t pa);
-
-
-double computeRhoA_UE(PDSCH_CONFIG_DEDICATED *pdsch_config_dedicated,
-                      NR_UE_DLSCH_t *dlsch_ue,
-                      uint8_t dl_power_off,
-                      uint8_t n_antenna_port);
-
-double computeRhoB_UE(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
-                      PDSCH_CONFIG_COMMON *pdsch_config_common,
-                      uint8_t n_antenna_port,
-                      NR_UE_DLSCH_t *dlsch_ue,
-                      uint8_t dl_power_off);
-
-/*void compute_sqrt_RhoAoRhoB(PDSCH_CONFIG_DEDICATED  *pdsch_config_dedicated,
-  PDSCH_CONFIG_COMMON *pdsch_config_common,
-  uint8_t n_antenna_port,
-  NR_UE_DLSCH_t *dlsch_ue);
-*/
-
-uint8_t get_prach_prb_offset(NR_DL_FRAME_PARMS *frame_parms,
-			     uint8_t prach_ConfigIndex, 
-			     uint8_t n_ra_prboffset,
-			     uint8_t tdd_mapindex, uint16_t Nf);
-
-#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
@@ -1632,7 +898,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
              unsigned char first_symbol_flag,
              RX_type_t rx_type,
              unsigned char i_mod,
-		unsigned char harq_pid);
+             unsigned char harq_pid);
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t slot);
 

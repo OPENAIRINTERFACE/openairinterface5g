@@ -113,7 +113,6 @@ void compute_nr_prach_seq(uint8_t short_sequence,
   LOG_D(PHY,"compute_prach_seq: prach short sequence %x, num_sequences %d, rootSequenceIndex %d\n", short_sequence, num_sequences, rootSequenceIndex);
 
   N_ZC = (short_sequence) ? 139 : 839;
-  //init_prach_tables(N_ZC); //moved to phy_init_lte_ue/eNB, since it takes to long in real-time
   
   init_nr_prach_tables(N_ZC);
 

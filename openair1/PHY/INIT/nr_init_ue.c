@@ -498,14 +498,7 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   }
 
-  ue->sinr_CQI_dB = (double *) malloc16_clear( fp->N_RB_DL*12*sizeof(double) );
   ue->init_averaging = 1;
-
-  // default value until overwritten by RRCConnectionReconfiguration
-  if (fp->nb_antenna_ports_gNB==2)
-    ue->pdsch_config_dedicated->p_a = dBm3;
-  else
-    ue->pdsch_config_dedicated->p_a = dB0;
 
   // enable MIB/SIB decoding by default
   ue->decode_MIB = 1;
@@ -632,7 +625,6 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
     free_and_zero(ue->prs_vars[idx]);
   }
-  free_and_zero(ue->sinr_CQI_dB);
 }
 
 void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
@@ -668,7 +660,6 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
 
     ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
     ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
-    ue->transmission_mode[i] = ue->frame_parms.nb_antenna_ports_gNB==1 ? 1 : 2;
   }
 
   //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
@@ -726,15 +717,6 @@ void phy_init_nr_top(PHY_VARS_NR_UE *ue) {
   load_dftslib();
   init_context_synchro_nr(frame_parms);
   generate_ul_reference_signal_sequences(SHRT_MAX);
-  // Polar encoder init for PBCH
-  //lte_sync_time_init(frame_parms);
-  //generate_ul_ref_sigs();
-  //generate_ul_ref_sigs_rx();
-  //generate_64qam_table();
-  //generate_16qam_table();
-  //generate_RIV_tables();
-  //init_unscrambling_lut();
-  //set_taus_seed(1328);
 }
 
 void phy_term_nr_top(void)

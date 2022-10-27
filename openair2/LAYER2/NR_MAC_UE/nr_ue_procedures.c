@@ -53,7 +53,6 @@
 #include "openair2/NR_UE_PHY_INTERFACE/NR_Packet_Drop.h"
 
 /* PHY */
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
 
 /* utils */
