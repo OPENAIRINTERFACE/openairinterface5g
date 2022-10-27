@@ -289,7 +289,7 @@ pipeline {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'LTE-B200-FDD-Mono-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'RAN-LTE-FDD-LTEBOX-Container')
             }
           }
           post {
@@ -306,10 +306,10 @@ pipeline {
           }
         }
         stage ("LTE-B200-TDD-LTEBOX-Container") {
-          when { expression {do4Gtest || do5Gtest} }
+          when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'LTE-B200-TDD-Mono-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'RAN-LTE-TDD-LTEBOX-Container')
             }
           }
           post {

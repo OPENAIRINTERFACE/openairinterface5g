@@ -246,7 +246,7 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				elif scp_response == 1 and ignorePermDenied:
-					logging.warning('Copy was denied but ignored!')
+					logging.warning(f'copyout(): permission denied, not copying file ({source})')
 					count = 10
 					copy_status = True
 				else:
@@ -258,7 +258,7 @@ class SSHConnection():
 					count = 10
 					copy_status = True
 				elif scp_response == 1 and ignorePermDenied:
-					logging.warning('Copy was denied but ignored!')
+					logging.warning(f'copyout(): permission denied, not copying file ({source})')
 					count = 10
 					copy_status = True
 				else:
