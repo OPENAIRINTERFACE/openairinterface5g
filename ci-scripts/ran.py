@@ -743,7 +743,7 @@ class RANManagement():
 
 		for x in os.listdir():
 			if x.endswith('.log') or x.endswith('.log.png'):
-				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, x, self.eNBSourceCodePath + '/cmake_targets/', silent=True)
+				mySSH.copyout(self.eNBIPAddress, self.eNBUserName, self.eNBPassword, x, self.eNBSourceCodePath + '/cmake_targets/', silent=True, ignorePermDenied=True)
 		# Back to normal
 		mySSH.open(self.eNBIPAddress, self.eNBUserName, self.eNBPassword)
 		mySSH.command('cd ' + self.eNBSourceCodePath, '\$', 5)

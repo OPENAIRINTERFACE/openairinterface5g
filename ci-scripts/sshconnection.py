@@ -229,7 +229,7 @@ class SSHConnection():
 		else:
 			return -1
 
-	def copyout(self, ipaddress, username, password, source, destination, silent=False):
+	def copyout(self, ipaddress, username, password, source, destination, silent=False, ignorePermDenied=False):
 		count = 0
 		copy_status = False
 		if not silent:
@@ -245,12 +245,20 @@ class SSHConnection():
 				if scp_response == 0:
 					count = 10
 					copy_status = True
+				elif scp_response == 1 and ignorePermDenied:
+					logging.warning('Copy was denied but ignored!')
+					count = 10
+					copy_status = True
 				else:
 					logging.warning('1 - scp_response = ' + str(scp_response))
 			elif scp_response == 1:
 				scp_spawn.sendline(password)
 				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 				if scp_response == 0 or scp_response == 3:
+					count = 10
+					copy_status = True
+				elif scp_response == 1 and ignorePermDenied:
+					logging.warning('Copy was denied but ignored!')
 					count = 10
 					copy_status = True
 				else:
