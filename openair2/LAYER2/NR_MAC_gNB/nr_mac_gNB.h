@@ -563,8 +563,9 @@ typedef struct {
   int cce_index;
   uint8_t aggregation_level;
 
-  /// Array of PUCCH scheduling information.
+  /// Array of PUCCH scheduling information
   /// Its size depends on TDD configuration and max feedback time
+  /// There will be a structure for each UL slot in the active period determined by the size
   NR_sched_pucch_t *sched_pucch;
   int sched_pucch_size;
 

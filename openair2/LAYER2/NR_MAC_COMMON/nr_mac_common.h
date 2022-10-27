@@ -221,7 +221,7 @@ uint16_t compute_pucch_prb_size(uint8_t format,
 
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
-void find_period_offest_SR (NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
+void find_period_offset_SR(const NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
 
 void csi_period_offset(NR_CSI_ReportConfig_t *csirep,
                        struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,

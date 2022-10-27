@@ -2388,7 +2388,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
     NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
     int SR_period; int SR_offset;
 
-    find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+    find_period_offset_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
     int sfn_sf = frame * n_slots_frame + slot;
 
     if ((sfn_sf - SR_offset) % SR_period == 0) {

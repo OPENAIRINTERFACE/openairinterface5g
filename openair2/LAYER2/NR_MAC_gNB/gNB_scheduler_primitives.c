@@ -2210,6 +2210,20 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   }
 }
 
+
+void set_max_fb_time(NR_UE_UL_BWP_t *UL_BWP, const NR_UE_DL_BWP_t *DL_BWP)
+{
+  UL_BWP->max_fb_time = 8; // default value
+  // take the maximum in dl_DataToUL_ACK list
+  if (DL_BWP->dci_format != NR_DL_DCI_FORMAT_1_0 && UL_BWP->pucch_Config) {
+    const struct NR_PUCCH_Config__dl_DataToUL_ACK *fb_times = UL_BWP->pucch_Config->dl_DataToUL_ACK;
+    for (int i = 0; i < fb_times->list.count; i++) {
+      if(*fb_times->list.array[i] > UL_BWP->max_fb_time)
+        UL_BWP->max_fb_time = *fb_times->list.array[i];
+    }
+  }
+}
+
 // main function to configure parameters of current BWP
 void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_ServingCellConfigCommon_t *scc,
@@ -2410,17 +2424,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     if (UL_BWP->csi_MeasConfig)
       compute_csi_bitlen (UL_BWP->csi_MeasConfig, UE->csi_report_template);
 
-    UL_BWP->max_fb_time = 0;
-    if(DL_BWP->dci_format != NR_DL_DCI_FORMAT_1_0 &&
-       UL_BWP->pucch_Config) {
-      for (int i=0; i<UL_BWP->pucch_Config->dl_DataToUL_ACK->list.count; i++) {
-        if(*UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i] > UL_BWP->max_fb_time)
-          UL_BWP->max_fb_time = *UL_BWP->pucch_Config->dl_DataToUL_ACK->list.array[i];
-      }
-    }
-    else
-      UL_BWP->max_fb_time = 8; // default value
-
+    set_max_fb_time(UL_BWP, DL_BWP);
     set_sched_pucch_list(sched_ctrl, UL_BWP, scc);
   }
 
@@ -2567,21 +2571,19 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 }
 
 void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
-                          NR_UE_UL_BWP_t *ul_bwp,
-                          NR_ServingCellConfigCommon_t *scc) {
+                          const NR_UE_UL_BWP_t *ul_bwp,
+                          const NR_ServingCellConfigCommon_t *scc) {
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
+  // PUCCH list size is given by the number of UL slots in the PUCCH period
+  // the length PUCCH period is determined by max_fb_time since we may need to prepare PUCCH for ACK/NACK max_fb_time slots ahead
   const int list_size = n_ul_slots_period << (ul_bwp->max_fb_time/nr_slots_period);
   if(!sched_ctrl->sched_pucch) {
-    sched_ctrl->sched_pucch = malloc(list_size * sizeof(*sched_ctrl->sched_pucch));
+    sched_ctrl->sched_pucch = calloc(list_size, sizeof(*sched_ctrl->sched_pucch));
     sched_ctrl->sched_pucch_size = list_size;
-    for(int i=0; i<list_size; i++) {
-      NR_sched_pucch_t *curr_pucch = &sched_ctrl->sched_pucch[i];
-      memset(curr_pucch, 0, sizeof(*curr_pucch));
-    }
   }
   else if (list_size > sched_ctrl->sched_pucch_size) {
     sched_ctrl->sched_pucch = realloc(sched_ctrl->sched_pucch, list_size * sizeof(*sched_ctrl->sched_pucch));

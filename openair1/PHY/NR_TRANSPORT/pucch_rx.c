@@ -1536,12 +1536,6 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
               corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);
 
 #endif
-            LOG_D(PHY,"pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
-              corr32_re[symb][group][aa],corr32_im[symb][group][aa],
-              ((int16_t*)(&prod_re[aa]))[0],
-              ((int16_t*)(&prod_im[aa]))[0],
-              corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0],
-              corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);
 
             corr_re = ( corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0]);
             corr_im = ( corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]);

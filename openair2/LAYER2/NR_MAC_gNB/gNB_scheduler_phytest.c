@@ -277,7 +277,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
               UE->rnti);
 
   int r_pucch = nr_get_pucch_resource(sched_ctrl->coreset, UE->current_UL_BWP.pucch_Config, CCEIndex);
-  const int alloc = nr_acknack_scheduling(module_id, UE, frame, slot, r_pucch, 0);
+  const int alloc = nr_acknack_scheduling(RC.nrmac[module_id], UE, frame, slot, r_pucch, 0);
   if (alloc < 0) {
     LOG_D(MAC,
           "%s(): could not find PUCCH for UE %04x@%d.%d\n",
