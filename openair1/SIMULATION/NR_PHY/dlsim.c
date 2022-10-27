@@ -901,11 +901,13 @@ int main(int argc, char **argv)
                                 n_rx,
                                 channel_model,
                                 fs/1e6,//sampling frequency in MHz
-				txbw,
-				30e-9,
+                                txbw,
+                                30e-9,
+                                CORR_LEVEL_LOW,
                                 0,
                                 0,
-                                0, 0);
+                                0,
+                                0);
 
   if (gNB2UE==NULL) {
     printf("Problem generating channel model. Exiting.\n");

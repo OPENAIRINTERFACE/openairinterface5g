@@ -354,10 +354,10 @@
                                  (Test3: MCS 28 50 PRBs),
                                  (Test4: MCS 9 217 PRBs),
                                  (Test5: MCS 9 273 PRBs),
-                                 (Test6: DMRS Type A, 2 DMRS Symbols),
-                                 (Test7: DMRS Type A, 3 DMRS, 4 PTRS, 5 Interpolated Symbols),
-                                 (Test8: DMRS Type B, 3 DMRS, 2 PTRS, 7 Interpolated Symbols),
-                                 (Test9: DMRS Type B, 3 DMRS, 2 PTRS, 3 Interpolated Symbols),
+                                 (Test6: PUSCH Type A, 2 DMRS Symbols),
+                                 (Test7: PUSCH Type A, 3 DMRS, 4 PTRS, 5 Interpolated Symbols),
+                                 (Test8: PUSCH Type B, 3 DMRS, 2 PTRS, 7 Interpolated Symbols),
+                                 (Test9: PUSCH Type B, 3 DMRS, 2 PTRS, 3 Interpolated Symbols),
                                  (Test10: 25 PRBs, 15 kHz SCS),
                                  (Test11: MCS 0, low SNR performance)</desc>
       <main_exec>nr_ulsim</main_exec>
@@ -366,12 +366,12 @@
                       -n100 -m28 -s20
                       -n100 -m9 -R217 -r217 -s5
                       -n100 -m9 -R273 -r273 -s5
-                      -n100 -s5 -U 4 0 1 1 1
-                      -n100 -s5 -T 2 1 2 -U 4 0 2 1 1
-                      -n100 -s5 -T 2 2 2 -U 4 1 2 1 1
-                      -n100 -s5 -a4 -b8 -T 2 1 2 -U 4 1 3 1 1
-                      -n100 -u0 -m0 -R25 -r25 -i 2 1 0
-                      -n100 -m0 -S -0.6 -i 2 1 0</main_exec_args>
+                      -n100 -s5 -U 0,1,1,1
+                      -n100 -s5 -T 1,2 -U 0,2,1,1
+                      -n100 -s5 -T 2,2 -U 1,2,1,1
+                      -n100 -s5 -a4 -b8 -T 1,2 -U 1,3,1,1
+                      -n100 -u0 -m0 -R25 -r25 -i 1,0
+                      -n100 -m0 -S -0.6 -i 1,0</main_exec_args>
       <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -389,7 +389,7 @@
                       -n100 -s5 -Z -r75
                       -n50 -s5 -Z -r216 -R217
                       -n50 -s5 -Z -r270 -R273
-                      -n100 -s5 -Z -U 4 0 2 1 2</main_exec_args>
+                      -n100 -s5 -Z -U 0,2,1,2</main_exec_args>
       <tags>test1 test2 test3 test4 test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -402,8 +402,8 @@
                                  (Test3: MCS 9 106 PRBs MIMO 4 layers)</desc>
       <main_exec>nr_ulsim</main_exec>
       <main_exec_args>-n100 -m19 -s10 -S15 -z2
-                      -n100 -m9 -r106 -s10 -W2 -y2 -z2
-                      -n100 -m9 -r106 -s20 -W4 -y4 -z4</main_exec_args>
+                      -n100 -m9 -r106 -s8 -W2 -y2 -z2
+                      -n100 -m9 -r106 -s10 -W4 -y4 -z4</main_exec_args>
       <tags>test1 test2 test3</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -411,14 +411,56 @@
     </testCase>
 
     <testCase id="nr_ulsim.3gpp">
-      <desc>nr_ulsim Test cases. (Test1: 3GPP G-FR1-A4-13 2 RX Antennas Requirements Test),
-                                 (Test2: 3GPP G-FR1-A4-13 4 RX Antennas Requirements Test),
-                                 (Test3: 3GPP G-FR1-A4-13 8 RX Antennas Requirements Test)</desc>
+      <desc>nr_ulsim Test cases. (Test1: 3GPP G-FR1-A5-13, PUSCH Type A, 40 MHz BW, 30 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test2: 3GPP G-FR1-A5-13, PUSCH Type A, 40 MHz BW, 30 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test3: 3GPP G-FR1-A5-13, PUSCH Type A, 40 MHz BW, 30 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test4: 3GPP G-FR1-A5-8, PUSCH Type B, 5 MHz BW, 15 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test5: 3GPP G-FR1-A5-8, PUSCH Type B, 5 MHz BW, 15 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test6: 3GPP G-FR1-A5-8, PUSCH Type B, 5 MHz BW, 15 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test7: 3GPP G-FR1-A5-9, PUSCH Type B, 10 MHz BW, 15 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test8: 3GPP G-FR1-A5-9, PUSCH Type B, 10 MHz BW, 15 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test9: 3GPP G-FR1-A5-9, PUSCH Type B, 10 MHz BW, 15 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test10: 3GPP G-FR1-A5-10, PUSCH Type B, 20 MHz BW, 15 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test11: 3GPP G-FR1-A5-10, PUSCH Type B, 20 MHz BW, 15 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test12: 3GPP G-FR1-A5-10, PUSCH Type B, 20 MHz BW, 15 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test13: 3GPP G-FR1-A5-11, PUSCH Type B, 10 MHz BW, 30 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test14: 3GPP G-FR1-A5-11, PUSCH Type B, 10 MHz BW, 30 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test15: 3GPP G-FR1-A5-11, PUSCH Type B, 10 MHz BW, 30 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test16: 3GPP G-FR1-A5-12, PUSCH Type B, 20 MHz BW, 30 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test17: 3GPP G-FR1-A5-12, PUSCH Type B, 20 MHz BW, 30 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test18: 3GPP G-FR1-A5-12, PUSCH Type B, 20 MHz BW, 30 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test19: 3GPP G-FR1-A5-13, PUSCH Type B, 40 MHz BW, 30 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test20: 3GPP G-FR1-A5-13, PUSCH Type B, 40 MHz BW, 30 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test21: 3GPP G-FR1-A5-13, PUSCH Type B, 40 MHz BW, 30 kHz SCS, 8 RX Antennas Requirements Test),
+                                 (Test22: 3GPP G-FR1-A5-14, PUSCH Type B, 100 MHz BW, 30 kHz SCS, 2 RX Antennas Requirements Test),
+                                 (Test23: 3GPP G-FR1-A5-14, PUSCH Type B, 100 MHz BW, 30 kHz SCS, 4 RX Antennas Requirements Test),
+                                 (Test24: 3GPP G-FR1-A5-14, PUSCH Type B, 100 MHz BW, 30 kHz SCS, 8 RX Antennas Requirements Test)</desc>
       <main_exec>nr_ulsim</main_exec>
-      <main_exec_args>-m16 -r106 -s8.8 -S9.4 -z2 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0
-                      -m16 -r106 -s5.4 -S6 -z4 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0
-                      -m16 -r106 -s3.4 -S3.8 -z8 -n200 -U 4 1 1 1 2 -gI -b14 -t70 -I15 -i 2 1 0</main_exec_args>
-      <tags>test1 test2 test3</tags>
+      <main_exec_args>-n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 0,1,1,2 -z2 -s12.4 -S12.4
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 0,1,1,2 -z4 -s8.5 -S8.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 0,1,1,2 -z8 -s5.4 -S5.4
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R25 -r25 -U 1,1,1,2 -z2 -s12.5 -S12.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R25 -r25 -U 1,1,1,2 -z4 -s8.9 -S8.9
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R25 -r25 -U 1,1,1,2 -z8 -s5.7 -S5.7
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R52 -r52 -U 1,1,1,2 -z2 -s12.6 -S12.6
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R52 -r52 -U 1,1,1,2 -z4 -s8.9 -S8.9
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R52 -r52 -U 1,1,1,2 -z8 -s5.8 -S5.8
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R106 -r106 -U 1,1,1,2 -z2 -s12.3 -S12.3
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R106 -r106 -U 1,1,1,2 -z4 -s8.8 -S8.8
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 0 -m20 -R106 -r106 -U 1,1,1,2 -z8 -s5.7 -S5.7
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R24 -r24 -U 1,1,1,2 -z2 -s12.5 -S12.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R24 -r24 -U 1,1,1,2 -z4 -s8.6 -S8.6
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R24 -r24 -U 1,1,1,2 -z8 -s5.6 -S5.6
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R51 -r51 -U 1,1,1,2 -z2 -s12.5 -S12.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R51 -r51 -U 1,1,1,2 -z4 -s8.6 -S8.6
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R51 -r51 -U 1,1,1,2 -z8 -s5.6 -S5.6
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 1,1,1,2 -z2 -s12.5 -S12.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 1,1,1,2 -z4 -s8.7 -S8.7
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R106 -r106 -U 1,1,1,2 -z8 -s5.5 -S5.5
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R273 -r273 -U 1,1,1,2 -z2 -s13.1 -S13.1
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R273 -r273 -U 1,1,1,2 -z4 -s9.2 -S9.2
+                      -n100 -b14 -I15 -i 1,1 -g A,l -t70 -u 1 -m20 -R273 -r273 -U 1,1,1,2 -z8 -s5.9 -S5.9</main_exec_args>
+      <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11 test12 test13 test14 test15 test16 test17 test18 test19 test20 test21 test22 test23 test24</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

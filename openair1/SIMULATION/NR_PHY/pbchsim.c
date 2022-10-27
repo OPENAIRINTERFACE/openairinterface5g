@@ -534,12 +534,14 @@ int main(int argc, char **argv)
   gNB2UE = new_channel_desc_scm(n_tx,
                                 n_rx,
                                 channel_model,
- 				fs, 
-				bw, 
-				300e-9,
+                                fs,
+                                bw,
+                                300e-9,
+                                CORR_LEVEL_LOW,
                                 0,
                                 0,
-                                0, 0);
+                                0,
+                                0);
 
   if (gNB2UE==NULL) {
 	printf("Problem generating channel model. Exiting.\n");

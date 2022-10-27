@@ -336,11 +336,15 @@ int main(int argc, char **argv)
 	if (ouput_vcd)
         vcd_signal_dumper_init("/tmp/openair_dump_nr_dlschsim.vcd");
 
-	gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model, 
-				      61.44e6, //N_RB2sampling_rate(N_RB_DL),
-				      40e6, //N_RB2channel_bandwidth(N_RB_DL),
-                                      DS_TDL,
-				      0, 0, 0, 0);
+  gNB2UE = new_channel_desc_scm(n_tx, n_rx, channel_model,
+                                61.44e6, //N_RB2sampling_rate(N_RB_DL),
+                                40e6, //N_RB2channel_bandwidth(N_RB_DL),
+                                DS_TDL,
+                                CORR_LEVEL_LOW,
+                                0,
+                                0,
+                                0,
+                                0);
 
 	if (gNB2UE == NULL) {
 		printf("Problem generating channel model. Exiting.\n");

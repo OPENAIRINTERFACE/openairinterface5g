@@ -354,7 +354,7 @@ int main(int argc, char **argv)
       printf("-b number of HARQ bits (1-2)\n");
       printf("-B payload to be transmitted on PUCCH\n");
       printf("-m initial cyclic shift m0\n");
-      printf("-T to check nacktoack miss for format 1");
+      printf("-T to check nacktoack miss for format 1\n");
       exit (-1);
       break;
     }
@@ -415,7 +415,7 @@ int main(int argc, char **argv)
                         &txbw,
                         &rxbw);
 
-  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, txbw, DS_TDL,0, 0, 0, 0);
+  UE2gNB = new_channel_desc_scm(n_tx, n_rx, channel_model, fs, txbw, DS_TDL, CORR_LEVEL_LOW, 0, 0, 0, 0);
 
   if (UE2gNB==NULL) {
     printf("Problem generating channel model. Exiting.\n");
