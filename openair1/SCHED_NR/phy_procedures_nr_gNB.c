@@ -875,11 +875,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         int8_t snr_per_rb[srs_pdu->bwp_size];
         int8_t snr;
 
-        // At least currently, the configuration is constant, so it is enough to generate the sequence just once.
-        if (gNB->nr_srs_info[i]->srs_generated_signal_bits == 0) {
-          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
-        }
-
+        generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
         int srs_est = nr_get_srs_signal(gNB, frame_rx, slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
 
         if (srs_est >= 0) {
