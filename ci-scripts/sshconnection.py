@@ -229,10 +229,11 @@ class SSHConnection():
 		else:
 			return -1
 
-	def copyout(self, ipaddress, username, password, source, destination):
+	def copyout(self, ipaddress, username, password, source, destination, silent=False, ignorePermDenied=False):
 		count = 0
 		copy_status = False
-		logging.info('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
+		if not silent:
+			logging.info('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination)
 		while count < 4:
 			scp_spawn = pexpect.spawn('scp -r ' + source + ' ' + username + '@' + ipaddress + ':' + destination, timeout = 100)
 			scp_response = scp_spawn.expect(['Are you sure you want to continue connecting (yes/no)?', 'password:', pexpect.EOF, pexpect.TIMEOUT])
@@ -244,12 +245,20 @@ class SSHConnection():
 				if scp_response == 0:
 					count = 10
 					copy_status = True
+				elif scp_response == 1 and ignorePermDenied:
+					logging.warning(f'copyout(): permission denied, not copying file ({source})')
+					count = 10
+					copy_status = True
 				else:
 					logging.warning('1 - scp_response = ' + str(scp_response))
 			elif scp_response == 1:
 				scp_spawn.sendline(password)
 				scp_response = scp_spawn.expect(['\$', 'Permission denied', 'password:', pexpect.EOF, pexpect.TIMEOUT])
 				if scp_response == 0 or scp_response == 3:
+					count = 10
+					copy_status = True
+				elif scp_response == 1 and ignorePermDenied:
+					logging.warning(f'copyout(): permission denied, not copying file ({source})')
 					count = 10
 					copy_status = True
 				else:

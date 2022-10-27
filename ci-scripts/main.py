@@ -979,6 +979,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 					if CONTAINERS.exitStatus==1:
+						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
 						RAN.prematureExit = True
 				elif action == 'Undeploy_Object':
 					CONTAINERS.UndeployObject(HTML, RAN)
