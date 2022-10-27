@@ -262,7 +262,7 @@ class Cluster:
 			attemptedImages += ['ran-base']
 			status = ranbase_job is not None and self._wait_build_end(mySSH, [ranbase_job], 600)
 			if not status: logging.error('failure during build of ran-base')
-			mySSH.command(f'oc logs {ranbase_job} > cmake_targets/log/ran-base.log', '\$', 10)
+			mySSH.command(f'oc logs {ranbase_job} &> cmake_targets/log/ran-base.log', '\$', 10)
 			# recover logs by mounting image
 			self._retag_image_statement(mySSH, 'ran-base', 'ran-base', baseTag, 'openshift/ran-base-log-retrieval.yaml')
 			pod = self._deploy_pod(mySSH, 'openshift/ran-base-log-retrieval.yaml')
@@ -289,8 +289,9 @@ class Cluster:
 			wait = ranbuild_job is not None and physim_job is not None and self._wait_build_end(mySSH, [ranbuild_job, physim_job], 1200)
 			if not wait: logging.error('error during build of ranbuild_job or physim_job')
 			status = status and wait
-			mySSH.command(f'oc logs {ranbuild_job} > cmake_targets/log/ran-build.log', '\$', 10)
-			mySSH.command(f'oc logs {physim_job} > cmake_targets/log/oai-physim.log', '\$', 10)
+			mySSH.command(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log', '\$', 10)
+			mySSH.command(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log', '\$', 10)
+			mySSH.command('oc get pods.metrics.k8s.io >> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		if status:
 			self._recreate_is_tag(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
@@ -318,9 +319,9 @@ class Cluster:
 			if not wait: logging.error('error during build of eNB/gNB')
 			status = status and wait
 			# recover logs
-			mySSH.command(f'oc logs {enb_job} > cmake_targets/log/oai-enb.log', '\$', 10)
-			mySSH.command(f'oc logs {gnb_job} > cmake_targets/log/oai-gnb.log', '\$', 10)
-			mySSH.command(f'oc logs {gnb_aw2s_job} > cmake_targets/log/oai-gnb-aw2s.log', '\$', 10)
+			mySSH.command(f'oc logs {enb_job} &> cmake_targets/log/oai-enb.log', '\$', 10)
+			mySSH.command(f'oc logs {gnb_job} &> cmake_targets/log/oai-gnb.log', '\$', 10)
+			mySSH.command(f'oc logs {gnb_aw2s_job} &> cmake_targets/log/oai-gnb-aw2s.log', '\$', 10)
 
 			self._recreate_is_tag(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
 			self._recreate_bc(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
@@ -340,8 +341,9 @@ class Cluster:
 			if not wait: logging.error('error during build of lteUE/nrUE')
 			status = status and wait
 			# recover logs
-			mySSH.command(f'oc logs {lteue_job} > cmake_targets/log/oai-lte-ue.log', '\$', 10)
-			mySSH.command(f'oc logs {nrue_job} > cmake_targets/log/oai-nr-ue.log', '\$', 10)
+			mySSH.command(f'oc logs {lteue_job} &> cmake_targets/log/oai-lte-ue.log', '\$', 10)
+			mySSH.command(f'oc logs {nrue_job} &> cmake_targets/log/oai-nr-ue.log', '\$', 10)
+			mySSH.command('oc get pods.metrics.k8s.io >> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		# split and analyze logs
 		imageSize = {}
@@ -359,7 +361,8 @@ class Cluster:
 			logging.info(f'\u001B[1m{image} size is {imageSize[image]}\u001B[0m')
 
 		grep_exp = "\|".join(attemptedImages)
-		mySSH.command(f'oc get images | grep -e \'{grep_exp}\' > cmake_targets/log/image_registry.log', '\$', 10);
+		mySSH.command(f'oc get images | grep -e \'{grep_exp}\' &> cmake_targets/log/image_registry.log', '\$', 10);
+		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc get pod $pod -o json >> cmake_targets/log/build_pod_summary.log; done', '\$', 60)
 
 		build_log_name = f'build_log_{self.testCase_id}'
 		cls_containerize.CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, 'oaicicd', CONST.CI_NO_PASSWORD)
