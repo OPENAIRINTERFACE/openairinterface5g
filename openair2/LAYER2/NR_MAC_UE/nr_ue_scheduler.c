@@ -2512,8 +2512,25 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   uint16_t bwp_size = NRRIV2BW(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
   uint16_t bwp_start = NRRIV2PRBOFFSET(genericParameters->locationAndBandwidth, MAX_BWP_SIZE);
 
+  // looking for the correct CSI-RS resource in current BWP
+  NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;
+  for (int csi_list=0; csi_list<csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
+    NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
+    if(csires->bwp_Id == dl_bwp_id &&
+       csires->csi_RS_ResourceSetList.present == NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB &&
+       csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList) {
+      nzp = csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0];
+    }
+  }
+
+  if (nzp == NULL)
+    return; // no resource associated to current BWP
+
   for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
     nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+    // reception of CSI-RS only for current BWP
+    if (nzpcsi->nzp_CSI_RS_ResourceId != *nzp)
+      continue;
     csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
     if((frame*nr_slots_per_frame[mu]+slot-offset)%period != 0)
       continue;
