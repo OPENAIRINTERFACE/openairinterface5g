@@ -123,6 +123,7 @@ typedef struct NR_UE_UL_BWP {
   uint8_t transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
+  int max_fb_time;
 } NR_UE_UL_BWP_t;
 
 typedef enum {
@@ -354,6 +355,7 @@ typedef struct UE_info {
 } NR_UE_mac_ce_ctrl_t;
 
 typedef struct NR_sched_pucch {
+  bool active;
   int frame;
   int ul_slot;
   bool sr_flag;
@@ -560,9 +562,12 @@ typedef struct {
   /// corresponding to the sched_pusch/sched_pdsch structures below
   int cce_index;
   uint8_t aggregation_level;
-  /// PUCCH scheduling information. Array of two: HARQ+SR in the first field,
-  /// CSI in second.  This order is important for nr_acknack_scheduling()!
-  NR_sched_pucch_t sched_pucch[2];
+
+  /// Array of PUCCH scheduling information
+  /// Its size depends on TDD configuration and max feedback time
+  /// There will be a structure for each UL slot in the active period determined by the size
+  NR_sched_pucch_t *sched_pucch;
+  int sched_pucch_size;
 
   /// Sched PUSCH: scheduling decisions, copied into HARQ and cleared every TTI
   NR_sched_pusch_t sched_pusch;
