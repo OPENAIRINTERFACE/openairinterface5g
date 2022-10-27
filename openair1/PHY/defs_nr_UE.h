@@ -538,10 +538,10 @@ typedef struct {
   NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_SRS       *srs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
-  NR_UE_ULSCH_t   *ulsch[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRS       *prs_vars[NR_MAX_PRS_COMB_SIZE];
   uint8_t          prs_active_gNBs;
   NR_DL_UE_HARQ_t  dl_harq_processes[NR_MAX_NB_LAYERS>4 ? 2:1][NR_MAX_DLSCH_HARQ_PROCESSES];
+  NR_UL_UE_HARQ_t  ul_harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
   
   //Paging parameters
   uint32_t              IMSImod1024;
@@ -754,8 +754,12 @@ typedef struct {
   void* scopeData;
 } PHY_VARS_NR_UE;
 
-typedef struct nr_phy_data_s {
+typedef struct nr_phy_data_tx_s {
+  NR_UE_ULSCH_t ulsch;
   NR_UE_PUCCH pucch_vars;
+} nr_phy_data_tx_t;
+
+typedef struct nr_phy_data_s {
   NR_UE_PDCCH_CONFIG phy_pdcch_config;
   NR_UE_DLSCH_t dlsch[NR_MAX_NB_LAYERS>4 ? 2:1];
 } nr_phy_data_t;

@@ -57,8 +57,6 @@ typedef enum {
 } harq_result_t;
 
 typedef struct {
-  /// NDAPI struct for UE
-  nfapi_nr_ue_pusch_pdu_t pusch_pdu;
   /// Indicator of first transmission
   uint8_t first_tx;
   /// HARQ tx status
@@ -120,11 +118,10 @@ typedef struct {
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
+  /// NDAPI struct for UE
+  nfapi_nr_ue_pusch_pdu_t pusch_pdu;
   /// SRS active flag
   uint8_t srs_active; 
-  // Pointers to HARQ processes for the ULSCH
-  NR_UL_UE_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
-  int harq_process_id[NR_MAX_SLOTS_PER_FRAME];
   // UL number of harq processes
   uint8_t number_harq_processes_for_pusch;
   /// Minimum number of CQI bits for PUSCH (36-212 r8.6, Sec 5.2.4.1 p. 37)

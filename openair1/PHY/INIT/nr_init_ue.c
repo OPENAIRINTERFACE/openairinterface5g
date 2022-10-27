@@ -648,19 +648,42 @@ void free_nr_ue_dl_harq(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int
   }
 }
 
-void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
-{
-  const int N_RB_DL = ue->frame_parms.N_RB_DL;
-  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-    for (int j = 0; j < num_cw; j++) {
-      free_nr_ue_dl_harq(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, N_RB_DL);
-      free_nr_ue_ulsch(&ue->ulsch[i], N_RB_DL, &ue->frame_parms);
+void free_nr_ue_ul_harq(NR_UL_UE_HARQ_t *harq_list, int number_of_processes, int num_rb, int num_ant_tx) {
+
+  int max_layers = (num_ant_tx < NR_MAX_NB_LAYERS) ? num_ant_tx : NR_MAX_NB_LAYERS;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
+
+  if (num_rb != 273) {
+    a_segments = a_segments*num_rb;
+    a_segments = a_segments/273 +1;
+  }
+
+  for (int i = 0; i < number_of_processes; i++) {
+    free_and_zero(harq_list[i].a);
+    free_and_zero(harq_list[i].b);
+    for (int r = 0; r < a_segments; r++) {
+      free_and_zero(harq_list[i].c[r]);
+      free_and_zero(harq_list[i].d[r]);
     }
+    free_and_zero(harq_list[i].c);
+    free_and_zero(harq_list[i].d);
+    free_and_zero(harq_list[i].e);
+    free_and_zero(harq_list[i].f);
   }
 }
 
-void nr_init_harq_processes(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb) {
+void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
+{
+  const int N_RB_DL = ue->frame_parms.N_RB_DL;
+  const int N_RB_UL = ue->frame_parms.N_RB_UL;
+  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
+  for (int j = 0; j < num_cw; j++) {
+    free_nr_ue_dl_harq(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, N_RB_DL);
+  }
+  free_nr_ue_ul_harq(ue->ul_harq_processes, NR_MAX_ULSCH_HARQ_PROCESSES, N_RB_UL, ue->frame_parms.nb_antennas_tx);
+}
+
+void nr_init_dl_harq_processes(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb) {
 
   int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
   if (num_rb != 273) {
@@ -698,19 +721,63 @@ void nr_init_harq_processes(NR_DL_UE_HARQ_t* harq_list, int number_of_processes,
   }
 }
 
+void nr_init_ul_harq_processes(NR_UL_UE_HARQ_t *harq_list, int number_of_processes, int num_rb, int num_ant_tx) {
+
+  int max_layers = (num_ant_tx < NR_MAX_NB_LAYERS) ? num_ant_tx : NR_MAX_NB_LAYERS;
+  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
+
+  if (num_rb != 273) {
+    a_segments = a_segments*num_rb;
+    a_segments = a_segments/273 +1;
+  }
+
+  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
+
+  for (int i = 0; i < number_of_processes; i++) {
+
+    memset(harq_list + i, 0, sizeof(NR_UL_UE_HARQ_t));
+
+    harq_list[i].a = malloc16(ulsch_bytes);
+    DevAssert(harq_list[i].a);
+    bzero(harq_list[i].a, ulsch_bytes);
+
+    harq_list[i].b = malloc16(ulsch_bytes);
+    DevAssert(harq_list[i].b);
+    bzero(harq_list[i].b, ulsch_bytes);
+
+    harq_list[i].c = malloc16(a_segments*sizeof(uint8_t *));
+    harq_list[i].d = malloc16(a_segments*sizeof(uint16_t *));
+    for (int r = 0; r < a_segments; r++) {
+      harq_list[i].c[r] = malloc16(8448);
+      DevAssert(harq_list[i].c[r]);
+      bzero(harq_list[i].c[r],8448);
+
+      harq_list[i].d[r] = malloc16(68*384); //max size for coded output
+      DevAssert(harq_list[i].d[r]);
+      bzero(harq_list[i].d[r],(68*384));
+    }
+
+    harq_list[i].e = malloc16(14*num_rb*12*8);
+    DevAssert(harq_list[i].e);
+    bzero(harq_list[i].e,14*num_rb*12*8);
+
+    harq_list[i].f = malloc16(14*num_rb*12*8);
+    DevAssert(harq_list[i].f);
+    bzero(harq_list[i].f,14*num_rb*12*8);
+
+    harq_list[i].first_tx = 1;
+    harq_list[i].round = 0;
+  }
+}
+
 void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
 
   int num_codeword = NR_MAX_NB_LAYERS > 4? 2:1;
 
-  for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-    for (int j=0; j<num_codeword; j++) {
-      nr_init_harq_processes(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, ue->frame_parms.N_RB_DL);
-      if (j==0) {
-        AssertFatal((ue->ulsch[i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
-        LOG_D(PHY,"ulsch[%d] => %p\n",i,ue->ulsch[i]);
-      }
-    }
+  for (int j=0; j<num_codeword; j++) {
+    nr_init_dl_harq_processes(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, ue->frame_parms.N_RB_DL);
   }
+  nr_init_ul_harq_processes(ue->ul_harq_processes, NR_MAX_ULSCH_HARQ_PROCESSES, ue->frame_parms.N_RB_UL, ue->frame_parms.nb_antennas_tx);
 
   for(int i=0; i<5; i++)
     ue->dl_stats[i] = 0;

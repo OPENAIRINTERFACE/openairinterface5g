@@ -96,7 +96,7 @@ typedef struct {
   @param proc Pointer to RXn-TXnp4 proc information
   @param eNB_id Local id of eNB on which to act
 */
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, nr_phy_data_tx_t *phy_data);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
   @param ue                     Pointer to UE variables on which to act

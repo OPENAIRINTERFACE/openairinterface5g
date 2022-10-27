@@ -613,6 +613,7 @@ void processSlotTX(void *arg) {
   nr_rxtx_thread_data_t *rxtxD = (nr_rxtx_thread_data_t *) arg;
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
+  nr_phy_data_tx_t phy_data = {0};
 
   LOG_D(PHY,"%d.%d => slot type %d\n", proc->frame_tx, proc->nr_slot_tx, proc->tx_slot_type);
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
@@ -632,12 +633,13 @@ void processSlotTX(void *arg) {
       ul_indication.frame_tx  = proc->frame_tx;
       ul_indication.slot_tx   = proc->nr_slot_tx;
       ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
+      ul_indication.phy_data      = &phy_data;
 
       UE->if_inst->ul_indication(&ul_indication);
       stop_meas(&UE->ue_ul_indication_stats);
     }
 
-    phy_procedures_nrUE_TX(UE,proc,proc->gNB_id);
+    phy_procedures_nrUE_TX(UE, proc, proc->gNB_id, &phy_data);
   }
 }
 
@@ -691,7 +693,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
   }
 
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT) {
-    nr_phy_data_t phy_data = {0};
+    nr_phy_data_tx_t phy_data = {0};
     if (UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
       nr_uplink_indication_t ul_indication;
       memset((void*)&ul_indication, 0, sizeof(ul_indication));
