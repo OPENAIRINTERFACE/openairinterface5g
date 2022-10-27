@@ -21,7 +21,7 @@ In this tutorial we describe how to configure and run a 5G end-to-end setup with
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
-    - Operating System: [Ubuntu 20.04.4 LTS](https://releases.ubuntu.com/20.04.4/ubuntu-20.04.4-desktop-amd64.iso)
+    - Operating System: [Ubuntu 20.04.5 LTS](https://releases.ubuntu.com/20.04/ubuntu-20.04.5-desktop-amd64.iso)
     - CPU: 8 cores x86_64 @ 3.5 GHz
     - RAM: 32 GB
 - Laptop for UE
@@ -88,11 +88,12 @@ docker image tag oaisoftwarealliance/trf-gen-cn5g:latest trf-gen-cn5g:latest
 ## 2.3 OAI CN5G Configuration files
 Download and copy configuration files:
 - Copy [docker-compose-basic-nrf.yaml](tutorial_resources/docker-compose-basic-nrf.yaml) to `~/oai-cn5g-fed/docker-compose`
-- Copy [oai_db.sql](tutorial_resources/oai_db.sql) to `~/oai-cn5g-fed/docker-compose/database`
-
-Change permissions on oai_db.sql to prevent mysql permission denied error:
 ```bash
-chmod 644 ~/oai-cn5g-fed/docker-compose/database/oai_db.sql
+wget -O ~/oai-cn5g-fed/docker-compose/docker-compose-basic-nrf.yaml https://gitlab.eurecom.fr/oai/openairinterface5g/-/raw/develop/doc/tutorial_resources/docker-compose-basic-nrf.yaml?inline=false
+```
+- Copy [oai_db.sql](tutorial_resources/oai_db.sql) to `~/oai-cn5g-fed/docker-compose/database`
+```bash
+wget -O ~/oai-cn5g-fed/docker-compose/database/oai_db.sql https://gitlab.eurecom.fr/oai/openairinterface5g/-/raw/develop/doc/tutorial_resources/oai_db.sql?inline=false
 ```
 
 ## 2.4  SIM Card
@@ -118,7 +119,7 @@ cd host
 mkdir build
 cd build
 cmake ../
-make -j 4
+make -j $(nproc)
 make test # This step is optional
 sudo make install
 sudo ldconfig
