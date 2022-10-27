@@ -23,8 +23,8 @@ Replaces xml_files/enb_usrp210_band40_test_20mhz_tm1_default_scheduler.xml
 
 -->
 <testCaseList>
-    <htmlTabRef>test-tdd-20-tm1</htmlTabRef>
-    <htmlTabName>Test-TDD-20MHz-TM1</htmlTabName>
+    <htmlTabRef>test-tdd-20-tm1-def-sched</htmlTabRef>
+    <htmlTabName>Test-TDD-20MHz-TM1-Default-Scheduler</htmlTabName>
     <htmlTabIcon>tasks</htmlTabIcon>
     <TestCaseRequestedList>
 111110

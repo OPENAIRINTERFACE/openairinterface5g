@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>test-fdd-cleanup</htmlTabRef>
-        <htmlTabName>CleanUp 4G LTE FDD</htmlTabName>
+        <htmlTabRef>test-tdd-cleanup</htmlTabRef>
+        <htmlTabName>CleanUp 4G LTE TDD</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  222222
