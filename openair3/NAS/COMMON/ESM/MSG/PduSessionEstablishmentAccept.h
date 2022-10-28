@@ -57,9 +57,15 @@
 /* DNN - APN 
  * TS 23.003 9.1
  * The APN is composed of two parts, the APN Network Identifier (9.1.1) & The APN Operator Identifier (9.1.2).
- * The accumulated max length of APN is 100 bytes.
+ * 
+ * The DNN information element has a length in the range of 3 to 102 octets.
+ * The Header is consisted of two octets, the DNN IEI and the Length of the DNN contents fields, each is 1 octet. 
+ * The DNN value payload starts from the 3rd octet.
+ * The accumulated max length of APN payload is 100 octets.
+ * The min length of the APN payload is 1 octet.
  */
 #define APN_MAX_LEN 100
+#define APN_MIN_LEN 1
 
 /* Mandatory Presence IE - TS 24.501 Table 8.3.2.1.1 */
 
