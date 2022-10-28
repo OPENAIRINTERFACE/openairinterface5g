@@ -413,14 +413,13 @@ void rx_nr_prach_ru(RU_t *ru,
 }
 
 void rx_nr_prach(PHY_VARS_gNB *gNB,
-		 nfapi_nr_prach_pdu_t *prach_pdu,
-		 int prachOccasion,
-		 int frame,
-		 int subframe,
-		 uint16_t *max_preamble,
-		 uint16_t *max_preamble_energy,
-		 uint16_t *max_preamble_delay
-		 )
+                 nfapi_nr_prach_pdu_t *prach_pdu,
+                 int prachOccasion,
+                 int frame,
+                 int slot,
+                 uint16_t *max_preamble,
+                 uint16_t *max_preamble_energy,
+                 uint16_t *max_preamble_delay)
 {
   AssertFatal(gNB!=NULL,"Can only be called from gNB\n");
 
@@ -481,7 +480,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   prach_ifft        = gNB->prach_vars.prach_ifft;
   prachF            = gNB->prach_vars.prachF;
   if (LOG_DEBUGFLAG(PRACH)){
-    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for subframe %d, msg1_frequencystart %d, rootSequenceIndex %d\n", subframe,msg1_frequencystart,rootSequenceIndex);
+    if ((frame&1023) < 20) LOG_D(PHY,"PRACH (gNB) : running rx_prach for slot %d, msg1_frequencystart %d, rootSequenceIndex %d\n", slot, msg1_frequencystart, rootSequenceIndex);
   }
 
   start_meas(&gNB->rx_prach);
@@ -506,7 +505,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
     if (LOG_DEBUGFLAG(PRACH)){
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],(N_ZC==839) ? 840: 140));
-      if (en>60) LOG_D(PHY,"frame %d, subframe %d : Trying preamble %d \n",frame,subframe,preamble_index);
+      if (en>60) LOG_D(PHY,"frame %d, slot %d : Trying preamble %d \n",frame,slot,preamble_index);
     }
     if (restricted_set == 0) {
       // This is the relative offset in the root sequence table (5.7.2-4 from 36.211) for the given preamble index
@@ -585,8 +584,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
     // Compute DFT of RX signal (conjugate input, results in conjugate output) for each new rootSequenceIndex
     if (LOG_DEBUGFLAG(PRACH)) {
       int en = dB_fixed(signal_energy((int32_t*)&rxsigF[0][0],840));
-      if (en>60) LOG_I(PHY,"frame %d, subframe %d : preamble index %d, NCS %d, N_ZC/NCS %d: offset %d, preamble shift %d , en %d)\n",
-		       frame,subframe,preamble_index,NCS,N_ZC/NCS,preamble_offset,preamble_shift,en);
+      if (en>60) LOG_D(PHY,"frame %d, slot %d : preamble index %d, NCS %d, N_ZC/NCS %d: offset %d, preamble shift %d , en %d)\n",
+		       frame,slot,preamble_index,NCS,N_ZC/NCS,preamble_offset,preamble_shift,en);
     }
 
     LOG_D(PHY,"PRACH RX preamble_index %d, preamble_offset %d\n",preamble_index,preamble_offset);
@@ -605,8 +604,8 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
 
       memset(prachF, 0, sizeof(int16_t)*2*1024 );
       if (LOG_DUMPFLAG(PRACH)) {      
-	       LOG_M("prach_rxF0.m","prach_rxF0",rxsigF[0],N_ZC,1,1);
-	       LOG_M("prach_rxF1.m","prach_rxF1",rxsigF[1],6144,1,1);
+        LOG_M("prach_rxF0.m","prach_rxF0",rxsigF[0],N_ZC,1,1);
+        LOG_M("prach_rxF1.m","prach_rxF1",rxsigF[1],6144,1,1);
       }
    
       for (aa=0;aa<nb_rx; aa++) {
@@ -659,10 +658,10 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
       lev = (int32_t)prach_ifft[(preamble_shift2+i)];
       levdB = dB_fixed_times10(lev);
       if (levdB>*max_preamble_energy) {
-	      LOG_D(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
-	      *max_preamble_energy  = levdB;
-	      *max_preamble_delay   = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate 
-	      *max_preamble         = preamble_index;
+        LOG_D(PHY,"preamble_index %d, delay %d en %d dB > %d dB\n",preamble_index,i,levdB,*max_preamble_energy);
+        *max_preamble_energy  = levdB;
+        *max_preamble_delay   = i; // Note: This has to be normalized to the 30.72 Ms/s sampling rate
+        *max_preamble         = preamble_index;
       }
     }
   }// preamble_index

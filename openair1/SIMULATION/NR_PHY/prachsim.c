@@ -766,7 +766,7 @@ int main(int argc, char **argv){
                        ue_prach_config->num_prach_fd_occasions_list[fd_occasion].prach_root_sequence_index,
                        UE->X_u);
 
-  tx_lev = generate_nr_prach(UE, 0, frame, slot);
+  generate_nr_prach(UE, 0, frame, slot);
 
   /* tx_lev_dB not used later, no need to set */
   //tx_lev_dB = (unsigned int) dB_fixed(tx_lev);
@@ -832,31 +832,31 @@ int main(int argc, char **argv){
       for (trial=0; trial<n_frames; trial++) {
 
 	if (input_fd==NULL) {
-        sigma2_dB = 10*log10((double)tx_lev) - SNR - 10*log10(N_RB_UL*12/N_ZC);
+          sigma2_dB = 10*log10((double)tx_lev) - SNR - 10*log10(N_RB_UL*12/N_ZC);
 
-        if (n_frames==1)
-          printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
+          if (n_frames==1)
+            printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %f\n",sigma2_dB,SNR,10*log10((double)tx_lev));
 
-        //AWGN
-        sigma2 = pow(10,sigma2_dB/10);
-        //  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
+          //AWGN
+          sigma2 = pow(10,sigma2_dB/10);
+          //  printf("Sigma2 %f (sigma2_dB %f)\n",sigma2,sigma2_dB);
 
-        if (awgn_flag == 0) {
-          multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_frame, 0);
-        }
-
-        if (n_frames==1) {
-          printf("rx_level data symbol %f, tx_lev %f\n",
-                 10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0)),
-                 10*log10(tx_lev));
-        }
-
-        for (i = 0; i< frame_parms->samples_per_subframe; i++) {
-          for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
-            ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          if (awgn_flag == 0) {
+            multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, frame_parms->samples_per_frame, 0);
           }
-        }
+
+          if (n_frames==1) {
+            printf("rx_level data symbol %f, tx_lev %f\n",
+                   10*log10(signal_energy_fp(r_re,r_im,1,OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES,0)),
+                   10*log10(tx_lev));
+          }
+
+          for (i = 0; i< frame_parms->samples_per_subframe; i++) {
+            for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
+              ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i] = (short) (.167*(r_re[aa][i] +sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+              ((short*) &ru->common.rxdata[aa][rx_prach_start])[2*i+1] = (short) (.167*(r_im[aa][i] + (iqim*r_re[aa][i]) + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+            }
+          }
 	} else {
 	  n_bytes = fread(&ru->common.rxdata[0][rx_prach_start],sizeof(int32_t),frame_parms->samples_per_subframe,input_fd);
 	  printf("fread %d bytes from file %s\n",n_bytes,input_file);
