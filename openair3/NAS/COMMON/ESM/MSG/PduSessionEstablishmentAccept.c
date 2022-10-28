@@ -169,10 +169,14 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
         psea_msg.dnn_ie.dnn_length = *(buffer + offset++);
         char apn[APN_MAX_LEN];
 
-        for (int i = 0 ; i < psea_msg.dnn_ie.dnn_length ; ++i)
-          apn[i] = *(buffer + offset + i);
+        if(psea_msg.dnn_ie.dnn_length <= APN_MAX_LEN &&
+           psea_msg.dnn_ie.dnn_length >= APN_MIN_LEN) {
+          for (int i = 0 ; i < psea_msg.dnn_ie.dnn_length ; ++i)
+            apn[i] = *(buffer + offset + i);
+          LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - APN: %s\n", apn);
+        } else
+          LOG_E(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - DNN IE has invalid length\n");
 
-        LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - APN: %s\n", apn);
         offset += psea_msg.dnn_ie.dnn_length;
         psea_iei = *(buffer + offset++);
         break;
