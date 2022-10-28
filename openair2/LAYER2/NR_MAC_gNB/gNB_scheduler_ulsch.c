@@ -66,8 +66,8 @@ int compute_ph_factor(int mu,
   int delta_tf = 0;
   if(deltaMCS != NULL && n_layers == 1) {
     const int n_re = (NR_NB_SC_PER_RB * n_symbols - n_dmrs) * rb;
-    const int BPRE = tbs_bits/n_re;  //TODO change for PUSCH with CSI
-    const float f = pow(2, (float) BPRE * 1.25);
+    const float BPRE = (float) tbs_bits/n_re;  //TODO change for PUSCH with CSI
+    const float f = pow(2, BPRE * 1.25);
     const float beta = 1.0f; //TODO change for PUSCH with CSI
     delta_tf = (10 * log10((f - 1) * beta));
   }
