@@ -99,6 +99,7 @@ class RANManagement():
 		self.USRPIPAddress = ''
 		#checkers from xml
 		self.ran_checkers={}
+		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
 
 
 #-----------------------------------------------------------
@@ -472,11 +473,7 @@ class RANManagement():
 			gNB = False
 		else:
 			gNB = True
-		if ((self.USRPIPAddress!='') and (gNB==True)):
-			mySSH.command('echo ' + lPassWord + ' | echo "ulimit -c unlimited && sudo UHD_RFNOC_DIR=/usr/local/share/uhd/rfnoc ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
-		#otherwise the regular command is ok
-		else:
-			mySSH.command('echo "ulimit -c unlimited && catchsegv ./ran_build/build/' + self.air_interface[self.eNB_instance] + ' -O ' + lSourcePath + '/' + ci_full_config_file + extra_options + '" > ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
+		mySSH.command(f'echo "ulimit -c unlimited && {self.cmd_prefix} ./ran_build/build/{self.air_interface[self.eNB_instance]} -O {lSourcePath}/{ci_full_config_file} {extra_options}" > ./my-lte-softmodem-run{self.eNB_instance}.sh', '\$', 5)
 
 		mySSH.command('chmod 775 ./my-lte-softmodem-run' + str(self.eNB_instance) + '.sh', '\$', 5)
 		mySSH.command('echo ' + lPassWord + ' | sudo -S rm -Rf enb_' + self.testCase_id + '.log', '\$', 5)
@@ -567,7 +564,7 @@ class RANManagement():
 		mySSH.close()
 
 
-		HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' -O ' + config_file + extra_options, 'OK', CONST.ALL_PROCESSES_OK)
+		HTML.CreateHtmlTestRow(f'{self.cmd_prefix} {self.air_interface[self.eNB_instance]} -O {config_file} {extra_options}', 'OK', CONST.ALL_PROCESSES_OK)
 		logging.debug('\u001B[1m Initialize eNB/gNB/ocp-eNB Completed\u001B[0m')
 
 	def CheckeNBProcess(self, status_queue):

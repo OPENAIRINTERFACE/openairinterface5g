@@ -37,6 +37,7 @@
     <rt_stats_cfg>datalog_rt_stats.default.yaml</rt_stats_cfg>
 		<air_interface>NR</air_interface>
 		<USRP_IPAddress>192.168.20.2</USRP_IPAddress>
+		<cmd_prefix>numactl --cpunodebind=netdev:enp94s0f0 --membind=netdev:enp94s0f0</cmd_prefix>
 	</testCase>
 
 	<testCase id="000001">
