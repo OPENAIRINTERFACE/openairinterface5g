@@ -177,8 +177,7 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
         } else
           LOG_E(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - DNN IE has invalid length\n");
 
-        offset += psea_msg.dnn_ie.dnn_length;
-        psea_iei = *(buffer + offset++);
+        offset = msg_length;
         break;
 
       default:
