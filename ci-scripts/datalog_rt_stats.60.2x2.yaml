@@ -1,0 +1,34 @@
+#this is a configuration file
+#used to build real time processing statistics 
+#for 5G NR phy test (gNB terminate)
+Title : Processing Time (us)
+ColNames :
+  - Metric
+  - Average; Max; Count
+  - Average vs Reference Deviation (Reference Value; Acceptability Threshold)
+Ref : 
+  feprx : 84.0
+  feptx_prec : 11.0
+  feptx_ofdm : 35.0
+  feptx_total : 100.0
+  L1 Tx processing : 400.0
+  DLSCH encoding : 177.0
+  L1 Rx processing : 345.0
+  PUSCH inner-receiver : 184.0
+  PUSCH decoding : 276.0 
+  Schedule Response : 111.0
+  DL & UL scheduling timing : 37.0
+  UL Indication : 127.0
+Threshold :
+  feprx : 1.25
+  feptx_prec : 1.25
+  feptx_ofdm : 1.25
+  feptx_total : 1.25
+  L1 Tx processing : 1.25
+  DLSCH encoding : 1.25
+  L1 Rx processing : 1.25
+  PUSCH inner-receiver : 1.25
+  PUSCH decoding : 1.25
+  Schedule Response : 48.0
+  DL & UL scheduling timing : 1.25
+  UL Indication : 1.25
