@@ -36,6 +36,7 @@
 
 
 //#define DEBUG_CH
+//#define DEBUG_CH_POWER
 
 #include "assertions.h"
 
@@ -183,156 +184,17 @@ static double mbsfn_amps_dB[] = {0,-1.5,-1.4,-3.6,-0.6,-7.0,-10,-11.5,-11.4,-13.
 static double scm_c_delays[] = {0, 0.0125, 0.0250, 0.3625, 0.3750, 0.3875, 0.2500, 0.2625, 0.2750, 1.0375, 1.0500, 1.0625, 2.7250, 2.7375, 2.7500, 4.6000, 4.6125, 4.6250};
 static double scm_c_amps_dB[] = {0.00, -2.22, -3.98, -1.86, -4.08, -5.84, -1.08, -3.30, -5.06, -9.08, -11.30, -13.06, -15.14, -17.36, -19.12, -20.64, -22.85, -24.62};
 
-static double tdl_a_delays[] = {0.0000,
-                         0.3819,
-                         0.4025,
-                         0.5868,
-                         0.4610,
-                         0.5375,
-                         0.6708,
-                         0.5750,
-                         0.7618,
-                         1.5375,
-                         1.8978,
-                         2.2242,
-                         2.1718,
-                         2.4942,
-                         2.5119,
-                         3.0582,
-                         4.0810,
-                         4.4579,
-                         4.5695,
-                         4.7966,
-                         5.0066,
-                         5.3043,
-                         9.6586
-                        };
-static double tdl_a_amps_dB[] = {-13.4,
-                          0,
-                          -2.2,
-                          -4,
-                          -6,
-                          -8.2,
-                          -9.9,
-                          -10.5,
-                          -7.5,
-                          -15.9,
-                          -6.6,
-                          -16.7,
-                          -12.4,
-                          -15.2,
-                          -10.8,
-                          -11.3,
-                          -12.7,
-                          -16.2,
-                          -18.3,
-                          -18.9,
-                          -16.6,
-                          -19.9,
-                          -29.7
-                          };
+// TS 38.104 - Table G.2.1.1-2, delays normalized based on TR 38.901 - eq. 7.7-1
+static double tdl_a_delays[] = {0, 0.3333, 0.5000, 0.6667, 0.8333, 1.6667, 2.1667, 2.5000, 3.5000, 4.5000, 5.0000, 9.6667};
+static double tdl_a_amps_dB[] = {-15.5, 0.0, -5.1, -5.1, -9.6, -8.2, -13.1, -11.5, -11.0, -16.2, -16.6, -26.2};
 
-static double tdl_b_delays[] = {0.0000,
-                         0.1072,
-                         0.2155,
-                         0.2095,
-                         0.2870,
-                         0.2986,
-                         0.3752,
-                         0.5055,
-                         0.3681,
-                         0.3697,
-                         0.5700,
-                         0.5283,
-                         1.1021,
-                         1.2756,
-                         1.5474,
-                         1.7842,
-                         2.0169,
-                         2.8294,
-                         3.0219,
-                         3.6187,
-                         4.1067,
-                         4.2790,
-                         4.7834
-                        };
+// TS 38.104 - Table G.2.1.1-3, delays normalized based on TR 38.901 - eq. 7.7-1
+static double tdl_b_delays[] = {0.0000, 0.1000, 0.2000, 0.3000, 0.3500, 0.4500, 0.5500, 1.2000, 1.7000, 2.4500, 3.3000, 4.8000};
+static double tdl_b_amps_dB[] = {0.0, -2.2, -0.6, -0.6, -0.3, -1.2, -5.9, -2.2, -0.8, -6.3, -7.5, -7.1};
 
-static double tdl_b_amps_dB[] = {0,
-                          -2.2,
-                          -4,
-                          -3.2,
-                          -9.8,
-                          -1.2,
-                          -3.4,
-                          -5.2,
-                          -7.6,
-                          -3,
-                          -8.9,
-                          -9,
-                          -4.8,
-                          -5.7,
-                          -7.5,
-                          -1.9,
-                          -7.6,
-                          -12.2,
-                          -9.8,
-                          -11.4,
-                          -14.9,
-                          -9.2,
-                          -11.3
-                          };
-
-static double tdl_c_delays[] = {0,
-                         0.2099,
-                         0.2219,
-                         0.2329,
-                         0.2176,
-                         0.6366,
-                         0.6448,
-                         0.6560,
-                         0.6584,
-                         0.7935,
-                         0.8213,
-                         0.9336,
-                         1.2285,
-                         1.3083,
-                         2.1704,
-                         2.7105,
-                         4.2589,
-                         4.6003,
-                         5.4902,
-                         5.6077,
-                         6.3065,
-                         6.6374,
-                         7.0427,
-                         8.6523
-                        };
-
-static double tdl_c_amps_dB[] = {-4.4,
-                          -1.2,
-                          -3.5,
-                          -5.2,
-                          -2.5,
-                          0,
-                          -2.2,
-                          -3.9,
-                          -7.4,
-                          -7.1,
-                          -10.7,
-                          -11.1,
-                          -5.1,
-                          -6.8,
-                          -8.7,
-                          -13.2,
-                          -13.9,
-                          -13.9,
-                          -15.8,
-                          -17.1,
-                          -16,
-                          -15.7,
-                          -21.6,
-                          -22.8
-                          };
+// TS 38.104 - Table G.2.1.1-4, delays normalized based on TR 38.901 - eq. 7.7-1
+static double tdl_c_delays[] = {0.0000, 0.2167, 0.2333, 0.6333, 0.6500, 0.6667, 0.8000, 1.0833, 1.7333, 3.4833, 5.0333, 8.6500};
+static double tdl_c_amps_dB[] = {-6.9, 0.0, -7.7, -2.5, -2.4, -9.9, -8.0, -6.6, -7.1, -13.0, -14.2, -16.0};
 
 static double tdl_d_delays[] = {//0,
   0,
@@ -514,6 +376,7 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   chan_desc->ch             = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
   chan_desc->chF            = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
   chan_desc->a              = (struct complexd **) malloc(chan_desc->nb_taps*sizeof(struct complexd *));
+  chan_desc->ricean_factor  = 1.0;
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
     chan_desc->ch[i] = (struct complexd *) malloc(chan_desc->channel_length * sizeof(struct complexd));
@@ -524,29 +387,133 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   for (int i = 0; i<chan_desc->nb_taps; i++)
     chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
 
-  chan_desc->R_sqrt  = (struct complexd **) malloc(tdl_pathsby3*sizeof(struct complexd **));
-
-  if (nb_tx==2 && nb_rx==2) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R22_sqrt[i][0];
-  } else if (nb_tx==2 && nb_rx==1) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R21_sqrt[i][0];
-  } else if (nb_tx==1 && nb_rx==2) {
-    for (int i = 0; i<(tdl_pathsby3); i++)
-      chan_desc->R_sqrt[i] = (struct complexd *) &R12_sqrt[i][0];
-  } else {
-    for (int i = 0; i<(tdl_pathsby3); i++) {
-      chan_desc->R_sqrt[i]    = (struct complexd *) malloc(nb_tx*nb_rx*nb_tx*nb_rx * sizeof(struct complexd));
-
-      for (int j = 0; j<nb_tx*nb_rx*nb_tx*nb_rx; j+=(nb_tx*nb_rx+1)) {
-        chan_desc->R_sqrt[i][j].r = 1.0;
-        chan_desc->R_sqrt[i][j].i = 0.0;
+  int matrix_size = nb_tx*nb_rx;
+  double *correlation_matrix[matrix_size];
+  if (chan_desc->corr_level!=CORR_LEVEL_LOW) {
+    if (nb_rx==1 && nb_tx==2) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R12_medium_high[row];
       }
-
-      LOG_W(OCM,"correlation matrix not implemented for nb_tx==%d and nb_rx==%d, using identity\n", nb_tx, nb_rx);
+    } else if (nb_rx==1 && nb_tx==4) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R14_medium_high[row];
+      }
+    } else if (nb_rx==1 && nb_tx==8) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R18_medium_high[row];
+      }
+    } else if (nb_rx==2 && nb_tx==2 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R22_medium[row];
+      }
+    } else if (nb_rx==2 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R24_medium[row];
+      }
+    } else if (nb_rx==4 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_MEDIUM) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R44_medium[row];
+      }
+    } else if (nb_rx==2 && nb_tx==2 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R22_high[row];
+      }
+    } else if (nb_rx==2 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R24_high[row];
+      }
+    } else if (nb_rx==4 && nb_tx==4 && chan_desc->corr_level==CORR_LEVEL_HIGH) {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = R44_high[row];
+      }
+    } else {
+      for (int row = 0; row < matrix_size; row++) {
+        correlation_matrix[row] = NULL;
+      }
+    }
+  } else {
+    for (int row = 0; row < matrix_size; row++) {
+      correlation_matrix[row] = NULL;
     }
   }
+
+  chan_desc->R_sqrt = (struct complexd **) malloc(matrix_size*sizeof(struct complexd **));
+  for (int row = 0; row < matrix_size; row++) {
+    chan_desc->R_sqrt[row] = (struct complexd *) calloc(1, matrix_size*sizeof(struct complexd));
+    if (correlation_matrix[row] == NULL) {
+      // TS 38.104 - Table G.2.3.1.2-4: MIMO correlation matrices for low correlation
+      chan_desc->R_sqrt[row][row].r = 1.0;
+    } else {
+      for (int col = 0; col < matrix_size; col++) {
+        chan_desc->R_sqrt[row][col].r = correlation_matrix[row][col];
+      }
+    }
+  }
+}
+
+double get_normalization_ch_factor(channel_desc_t *desc)
+{
+  if (!(desc->channel_length > 1 && desc->modelid >= TDL_A && desc->modelid <= TDL_E)) {
+    return 1.0;
+  }
+
+  uint16_t N_average = 1000;
+  double accumulated_ch_power = 0;
+  struct complexd a[desc->nb_taps][desc->nb_tx * desc->nb_rx];
+  struct complexd anew[desc->nb_tx * desc->nb_rx];
+  struct complexd acorr[desc->nb_tx * desc->nb_rx];
+
+  for (int n = 1; n <= N_average; n++) {
+    for (int l = 0; l < (int)desc->nb_taps; l++) {
+      for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+        for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+          anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
+          anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
+          if ((l == 0) && (desc->ricean_factor != 1.0)) {
+            anew[aarx + (aatx * desc->nb_rx)].r += sqrt((1.0 - desc->ricean_factor) / 2);
+            anew[aarx + (aatx * desc->nb_rx)].i += sqrt((1.0 - desc->ricean_factor) / 2);
+          }
+        } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+      } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+
+      // Apply correlation matrix
+      bzero(acorr, desc->nb_tx * desc->nb_rx * sizeof(struct complexd));
+      for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+          cblas_zaxpy(desc->nb_tx * desc->nb_rx,
+                      (void *)&anew[aarx + (aatx * desc->nb_rx)],
+                      (void *)desc->R_sqrt[aarx + (aatx * desc->nb_rx)],
+                      1,
+                      (void *)acorr,
+                      1);
+        } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+      } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+      cblas_zcopy(desc->nb_tx * desc->nb_rx, (void *)acorr, 1, (void *)a[l], 1);
+    } // for (int l = 0; l < (int)desc->nb_taps; l++)
+
+    for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
+      for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (int k = 0; k < (int)desc->channel_length; k++) {
+          double ch_r = 0.0;
+          double ch_i = 0.0;
+          double s = 0.0;
+          for (int l = 0; l < desc->nb_taps; l++) {
+            if ((k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset) == 0) {
+              s = 1.0;
+            } else {
+              s = sin(M_PI * (k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset)) /
+                  (M_PI * (k - (desc->delays[l] * desc->sampling_rate) - desc->channel_offset));
+            }
+            ch_r += s * a[l][aarx + (aatx * desc->nb_rx)].r;
+            ch_i += s * a[l][aarx + (aatx * desc->nb_rx)].i;
+          } // for (int l = 0; l < desc->nb_taps; l++)
+          accumulated_ch_power += (ch_r * ch_r + ch_i * ch_i);
+        } // for (int k = 0; k < (int)desc->channel_length; k++)
+      } // for (int aatx = 0; aatx < desc->nb_tx; aatx++)
+    } // for (int aarx = 0; aarx < desc->nb_rx; aarx++)
+  }
+
+  return sqrt((N_average * desc->nb_tx * desc->nb_rx) / accumulated_ch_power);
 }
 
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
@@ -555,10 +522,11 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      double sampling_rate,
                                      double channel_bandwidth,
                                      double DS_TDL,
+                                     const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB,
-                                     float  noise_power_dB) {
+                                     float noise_power_dB) {
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
 
   for(int i=0; i<max_chan; i++) {
@@ -577,17 +545,19 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
   double aoa,ricean_factor,Td,maxDoppler;
   int channel_length,nb_taps;
   struct complexd *R_sqrt_ptr2;
-  chan_desc->modelid                   = channel_model;
+  chan_desc->modelid                    = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
   chan_desc->sampling_rate              = sampling_rate;
   chan_desc->channel_bandwidth          = channel_bandwidth;
+  chan_desc->corr_level                 = corr_level;
   chan_desc->forgetting_factor          = forgetting_factor;
   chan_desc->channel_offset             = channel_offset;
   chan_desc->path_loss_dB               = path_loss_dB;
   chan_desc->first_run                  = 1;
-  chan_desc->ip                                 = 0.0;
+  chan_desc->ip                         = 0.0;
   chan_desc->noise_power_dB             = noise_power_dB;
+  chan_desc->normalization_ch_factor    = 1.0;
   LOG_I(OCM,"Channel Model (inside of new_channel_desc_scm)=%d\n\n", channel_model);
   int tdl_paths=0;
   double *tdl_amps_dB;
@@ -1637,6 +1607,8 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
       return(NULL);
   }
 
+  chan_desc->normalization_ch_factor = get_normalization_ch_factor(chan_desc);
+
   LOG_D(OCM,"[CHANNEL] RF %f\n",chan_desc->ricean_factor);
 
   for (i=0; i<chan_desc->nb_taps; i++)
@@ -1705,6 +1677,11 @@ void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
   cdesc->model_name=strdup(modelname);
 }
 
+#ifdef DEBUG_CH_POWER
+double accumulated_ch_power = 0;
+int ch_power_count = 0;
+#endif
+
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   double s;
   int i,k,l,aarx,aatx;
@@ -1713,11 +1690,30 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
   struct complexd phase, alpha, beta;
   start_meas(&desc->random_channel);
 
+  // For AWGN channel, the received signal (Srx) is equal to transmitted signal (Stx) plus noise (N), i.e., Srx = Stx + N,
+  //  therefore, the channel matrix is the identity matrix.
+  if (desc->modelid == AWGN) {
+    for (aarx=0; aarx<desc->nb_rx; aarx++) {
+      for (aatx = 0; aatx < desc->nb_tx; aatx++) {
+        desc->ch[aarx+(aatx*desc->nb_rx)][0].r = aarx%desc->nb_tx == aatx ? 1.0 : 0.0;
+        desc->ch[aarx+(aatx*desc->nb_rx)][0].i = 0.0;
+        acorr[aarx+(aatx*desc->nb_rx)].r = desc->ch[aarx+(aatx*desc->nb_rx)][0].r;
+        acorr[aarx+(aatx*desc->nb_rx)].i = desc->ch[aarx+(aatx*desc->nb_rx)][0].i;
+      }
+    }
+    cblas_zcopy(desc->nb_tx*desc->nb_rx, (void *) acorr, 1, (void *) desc->a[0], 1);
+    stop_meas(&desc->random_channel);
+    desc->first_run = 0;
+    return 0;
+  }
+  bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
+
   for (i=0; i<(int)desc->nb_taps; i++) {
     for (aarx=0; aarx<desc->nb_rx; aarx++) {
       for (aatx=0; aatx<desc->nb_tx; aatx++) {
-        anew[aarx+(aatx*desc->nb_rx)].r = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
-        anew[aarx+(aatx*desc->nb_rx)].i = sqrt(desc->ricean_factor*desc->amps[i]/2) * gaussdouble(0.0,1.0);
+
+        anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
+        anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
 
         if ((i==0) && (desc->ricean_factor != 1.0)) {
           if (desc->random_aoa==1) {
@@ -1727,10 +1723,10 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
           // this assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing.
           // Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so
           // that we can safely assume plane wave propagation.
-          phase.r = cos(M_PI*((aarx-aatx)*sin(desc->aoa)));
-          phase.i = sin(M_PI*((aarx-aatx)*sin(desc->aoa)));
-          anew[aarx+(aatx*desc->nb_rx)].r += phase.r * sqrt(1.0-desc->ricean_factor);
-          anew[aarx+(aatx*desc->nb_rx)].i += phase.i * sqrt(1.0-desc->ricean_factor);
+          phase.r = cos(M_PI * ((aarx - aatx) * sin(desc->aoa)));
+          phase.i = sin(M_PI * ((aarx - aatx) * sin(desc->aoa)));
+          anew[aarx + (aatx * desc->nb_rx)].r += phase.r * sqrt(1.0 - desc->ricean_factor) * desc->normalization_ch_factor;
+          anew[aarx + (aatx * desc->nb_rx)].i += phase.i * sqrt(1.0 - desc->ricean_factor) * desc->normalization_ch_factor;
         }
 
 #ifdef DEBUG_CH
@@ -1751,8 +1747,21 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     */
     //apply correlation matrix
     //compute acorr = R_sqrt[i] * anew
-    bzero(acorr,desc->nb_tx*desc->nb_rx*sizeof(struct complexd));
-    cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+    bzero(acorr, desc->nb_tx * desc->nb_rx * sizeof(struct complexd));
+    if (desc->modelid >= TDL_A && desc->modelid <= TDL_E) {
+      for (aatx = 0; aatx < desc->nb_tx; aatx++) {
+        for (aarx=0; aarx<desc->nb_rx; aarx++) {
+          cblas_zaxpy(desc->nb_tx*desc->nb_rx,
+                      (void *) &anew[aarx+(aatx*desc->nb_rx)],
+                      (void *) desc->R_sqrt[aarx+(aatx*desc->nb_rx)],
+                      1,
+                      (void *) acorr,
+                      1);
+        }
+      }
+    } else {
+      cblas_zaxpy(desc->nb_tx*desc->nb_rx, (void *) desc->R_sqrt[i/3], (void *) anew, 1, (void *) acorr, 1);
+    }
 
     /*
     FIXME: Function cblas_zgemv has an undefined output (for the same input) after a second call in RHEL8 (acorr = nan)
@@ -1831,13 +1840,25 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
               //        printf("l %d : desc->ch.x %f, s %e, delay %f\n",l,desc->a[l][aarx+(aatx*desc->nb_rx)].x,s,desc->delays[l]);
             } //nb_taps
 
+#ifdef DEBUG_CH_POWER
+            accumulated_ch_power += (desc->ch[aarx + (aatx * desc->nb_rx)][k].r * desc->ch[aarx + (aatx * desc->nb_rx)][k].r +
+                                    desc->ch[aarx + (aatx * desc->nb_rx)][k].i * desc->ch[aarx + (aatx * desc->nb_rx)][k].i);
+#endif
+
 #ifdef DEBUG_CH
             printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
           } //channel_length
+#ifdef DEBUG_CH_POWER
+          ch_power_count++;
+#endif
         }
       } //aatx
     } //aarx
+
+#ifdef DEBUG_CH_POWER
+    printf("(%5i) Average channel power = %f\n", ch_power_count, accumulated_ch_power / ch_power_count);
+#endif
 
     stop_meas(&desc->interp_time);
   }
@@ -2090,10 +2111,17 @@ int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double 
       AssertFatal(0, "\n  Choose a valid model type\n");
     }
 
-    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,nb_rx,modid,sampling_rate,channel_bandwidth,
-                                    *(channel_list.paramarray[i][pindex_DT].dblptr), *(channel_list.paramarray[i][pindex_FF].dblptr),
-                                    *(channel_list.paramarray[i][pindex_CO].iptr), *(channel_list.paramarray[i][pindex_PL].dblptr),
-                                    *(channel_list.paramarray[i][pindex_NP].dblptr) );
+    channel_desc_t *channeldesc_p = new_channel_desc_scm(nb_tx,
+                                                         nb_rx,
+                                                         modid,
+                                                         sampling_rate,
+                                                         channel_bandwidth,
+                                                         *(channel_list.paramarray[i][pindex_DT].dblptr),
+                                                         CORR_LEVEL_LOW,
+                                                         *(channel_list.paramarray[i][pindex_FF].dblptr),
+                                                         *(channel_list.paramarray[i][pindex_CO].iptr),
+                                                         *(channel_list.paramarray[i][pindex_PL].dblptr),
+                                                         *(channel_list.paramarray[i][pindex_NP].dblptr));
     AssertFatal( (channeldesc_p!= NULL), "Could not allocate channel %s type %s \n",*(channel_list.paramarray[i][pindex_NAME].strptr), *(channel_list.paramarray[i][pindex_TYPE].strptr));
     channeldesc_p->model_name = strdup(*(channel_list.paramarray[i][pindex_NAME].strptr));
     LOG_I(OCM,"Model %s type %s allocated from config file, list %s\n",*(channel_list.paramarray[i][pindex_NAME].strptr),

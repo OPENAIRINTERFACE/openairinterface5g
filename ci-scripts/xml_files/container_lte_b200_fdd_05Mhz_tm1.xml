@@ -19,12 +19,12 @@
  For more information about the OpenAirInterface (OAI) Software Alliance:
       contact@openairinterface.org
 
-Replace xml_files/enb_usrp210_band7_test_05mhz_tm1.xml
+Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1.xml
 
 -->
 <testCaseList>
-    <htmlTabRef>test-05-tm1</htmlTabRef>
-    <htmlTabName>Test-05MHz-TM1</htmlTabName>
+    <htmlTabRef>test-fdd-05-tm1</htmlTabRef>
+    <htmlTabName>Test-FDD-05MHz-TM1</htmlTabName>
     <htmlTabIcon>tasks</htmlTabIcon>
     <TestCaseRequestedList>
 111110

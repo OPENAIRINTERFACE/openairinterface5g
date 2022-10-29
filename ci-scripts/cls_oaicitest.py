@@ -2383,6 +2383,8 @@ class OaiCiTest():
 				iperf_status = SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '"\' 2>&1 > iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 				SSH.command('fromdos -o iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
 				SSH.command('cat iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			# Copying locally iperf client for artifacting
+			SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath+ '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
 		# TIMEOUT Case
 		if iperf_status < 0:
 			SSH.close()
@@ -2421,6 +2423,10 @@ class OaiCiTest():
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 			filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
 			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options,filename,0)
+		else:
+			# Copying all the time the iperf server for artifacting
+			if launchFromEpc:
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 		# in case of OAI-UE 
 		if (device_id == 'OAI-UE'):
 			SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
@@ -2780,6 +2786,8 @@ class OaiCiTest():
 					os.remove('iperf_' + self.testCase_id + '_' + device_id + '.log')
 			if (useIperf3):
 				SSH.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+				# Copying the iperf client locally for artifacting
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
 
 				clientStatus = 0
 				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue,SSH)
@@ -2795,6 +2803,8 @@ class OaiCiTest():
 						iperf_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "' + prefix + 'iperf -c ' + UE_IPAddress + ' ' + modified_options + '" 2>&1 | tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 					else:
 						iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
+					# Copying the iperf client locally for artifacting
+					SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
 				else:
 					if self.ueIperfVersion == self.dummyIperfVersion:
 						prefix = ''
@@ -2862,6 +2872,13 @@ class OaiCiTest():
 					pass
 				filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
 				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options,filename,0)
+			else:
+				# Copying all the time the iperf server for artifacting
+				time.sleep(1)
+				if (device_id == 'OAI-UE'):
+					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				else:
+					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 
 			# in case of OAI UE: 
 			if (device_id == 'OAI-UE'):
@@ -3780,7 +3797,11 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self,RAN):
-		SSH = sshconnection.SSHConnection()
+		# Some pipelines are using "none" IP / Credentials
+		# In that case, just forget about it
+		if RAN.eNBIPAddress == 'none' or self.UEIPAddress == 'none':
+			sys.exit(0)
+
 		if (RAN.eNBIPAddress != '' and RAN.eNBUserName != '' and RAN.eNBPassword != ''):
 			IPAddress = RAN.eNBIPAddress
 			UserName = RAN.eNBUserName
@@ -3793,6 +3814,7 @@ class OaiCiTest():
 			SourceCodePath = self.UESourceCodePath
 		else:
 			sys.exit('Insufficient Parameter')
+		SSH = sshconnection.SSHConnection()
 		SSH.open(IPAddress, UserName, Password)
 		SSH.command('cd ' + SourceCodePath, '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
@@ -3801,6 +3823,10 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectPing(self,EPC):
+		# Some pipelines are using "none" IP / Credentials
+		# In that case, just forget about it
+		if self.IPAddress == 'none':
+			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
@@ -3811,6 +3837,10 @@ class OaiCiTest():
 		SSH.close()
 
 	def LogCollectIperf(self,EPC):
+		# Some pipelines are using "none" IP / Credentials
+		# In that case, just forget about it
+		if self.IPAddress == 'none':
+			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
@@ -3821,6 +3851,10 @@ class OaiCiTest():
 		SSH.close()
 	
 	def LogCollectOAIUE(self):
+		# Some pipelines are using "none" IP / Credentials
+		# In that case, just forget about it
+		if self.UEIPAddress == 'none':
+			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)

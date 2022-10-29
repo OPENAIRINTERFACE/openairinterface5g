@@ -285,6 +285,46 @@ pipeline {
             }
           }
         }
+        stage ("LTE-B200-FDD-LTEBOX-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'RAN-LTE-FDD-LTEBOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-FDD-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("LTE-B200-TDD-LTEBOX-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'RAN-LTE-TDD-LTEBOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-TDD-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
         stage ("NSA-B200-Module-LTEBOX-Container") {
           when { expression {do4Gtest || do5Gtest} }
           steps {

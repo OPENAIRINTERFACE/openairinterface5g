@@ -60,8 +60,6 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   struct LTE_LogicalChannelConfig__ul_SpecificParameters  ul_params;
   long                                                    lcg;
   struct LTE_RadioResourceConfigDedicated__mac_MainConfig mac;
-  struct LTE_MAC_MainConfig__ext4                         mac_ext4;
-  struct LTE_MAC_MainConfig__ext4__dualConnectivityPHR    dc_phr;
 
   memset(&rrcd, 0, sizeof(rrcd));
   memset(&drb_list, 0, sizeof(drb_list));
@@ -72,9 +70,6 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 #endif
   memset(&ul_params, 0, sizeof(ul_params));
   memset(&mac, 0, sizeof(mac));
-  memset(&mac_ext4, 0, sizeof(mac_ext4));
-  memset(&dc_phr, 0, sizeof(dc_phr));
-
   trans_id = rrc_eNB_get_next_transaction_identifier(ctxt->module_id);
 
   memset(&dl_dcch_msg,0,sizeof(LTE_DL_DCCH_Message_t));
@@ -128,12 +123,6 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 
   mac.present = LTE_RadioResourceConfigDedicated__mac_MainConfig_PR_explicitValue;
   mac.choice.explicitValue.timeAlignmentTimerDedicated = LTE_TimeAlignmentTimer_sf10240;
-  mac.choice.explicitValue.ext4 = &mac_ext4;
-
-  mac_ext4.dualConnectivityPHR = &dc_phr;
-
-  dc_phr.present = LTE_MAC_MainConfig__ext4__dualConnectivityPHR_PR_setup;
-  dc_phr.choice.setup.phr_ModeOtherCG_r12 = LTE_MAC_MainConfig__ext4__dualConnectivityPHR__setup__phr_ModeOtherCG_r12_virtual;
 
   /* NR config */
   struct LTE_RRCConnectionReconfiguration_v890_IEs cr_890;

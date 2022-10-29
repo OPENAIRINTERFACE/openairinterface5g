@@ -383,7 +383,11 @@ int main(int argc, char **argv)
                                 61.44e6, //N_RB2sampling_rate(N_RB_DL),
                                 40e6, //N_RB2channel_bandwidth(N_RB_DL),
                                 DS_TDL,
-                                0,0,0, 0);
+                                CORR_LEVEL_LOW,
+                                0,
+                                0,
+                                0,
+                                0);
 
   if (gNB2UE == NULL) {
     printf("Problem generating channel model. Exiting.\n");

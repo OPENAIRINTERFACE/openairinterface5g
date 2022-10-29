@@ -21,27 +21,18 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>epc-closure</htmlTabRef>
-	<htmlTabName>EPC-Closure</htmlTabName>
-	<htmlTabIcon>log-out</htmlTabIcon>
-	<TestCaseRequestedList>
- 050201 060201 070201
-	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+        <htmlTabRef>test-tdd-cleanup</htmlTabRef>
+        <htmlTabName>CleanUp 4G LTE TDD</htmlTabName>
+        <htmlTabIcon>trash</htmlTabIcon>
+        <TestCaseRequestedList>
+ 222222
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="050201">
-		<class>Terminate_HSS</class>
-		<desc>Terminate HSS</desc>
-	</testCase>
-
-	<testCase id="060201">
-		<class>Terminate_MME</class>
-		<desc>Terminate MME</desc>
-	</testCase>
-
-	<testCase id="070201">
-		<class>Terminate_SPGW</class>
-		<desc>Terminate SPGW</desc>
-	</testCase>
+        <testCase id="222222">
+                <class>Clean_Test_Server_Images</class>
+                <desc>Clean Test Images on Test Server</desc>
+                <test_svr_id>0</test_svr_id>
+        </testCase>
 
 </testCaseList>

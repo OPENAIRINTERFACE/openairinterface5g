@@ -352,31 +352,33 @@ void init_ocm(void) {
       for (CC_id=0; CC_id<MAX_NUM_CCs; CC_id++) {
         LOG_I(PHY,"Initializing channel descriptors (RU %d, UE %d) for N_RB_DL %d\n",ru_id,UE_id,
               RC.ru[ru_id]->frame_parms->N_RB_DL);
-        sim.RU2UE[ru_id][UE_id][CC_id] = 
-          new_channel_desc_scm(RC.ru[ru_id]->nb_tx,
-                               PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_rx,
-                               AWGN,
-                               N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_DL),
-                               N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_DL),
-                               DS_TDL,
-                               0.0,
-                               0,
-                               0,
-                               0);
+        sim.RU2UE[ru_id][UE_id][CC_id] =
+            new_channel_desc_scm(RC.ru[ru_id]->nb_tx,
+                                 PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_rx,
+                                 AWGN,
+                                 N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_DL),
+                                 N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_DL),
+                                 DS_TDL,
+                                 CORR_LEVEL_LOW,
+                                 0.0,
+                                 0,
+                                 0,
+                                 0);
         random_channel(sim.RU2UE[ru_id][UE_id][CC_id],0);
         LOG_D(OCM,"[SIM] Initializing channel (%s) from UE %d to ru %d\n", "AWGN", UE_id, ru_id);
 
         sim.UE2RU[UE_id][ru_id][CC_id] =
-          new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
-                               RC.ru[ru_id]->nb_rx,
-                               AWGN,
-                               N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_UL),
-                               N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
-                               DS_TDL,
-                               0.0,
-                               0,
-                               0,
-                               0);
+            new_channel_desc_scm(PHY_vars_UE_g[UE_id][CC_id]->frame_parms.nb_antennas_tx,
+                                 RC.ru[ru_id]->nb_rx,
+                                 AWGN,
+                                 N_RB2sampling_rate(RC.ru[ru_id]->frame_parms->N_RB_UL),
+                                 N_RB2channel_bandwidth(RC.ru[ru_id]->frame_parms->N_RB_UL),
+                                 DS_TDL,
+                                 CORR_LEVEL_LOW,
+                                 0.0,
+                                 0,
+                                 0,
+                                 0);
         random_channel(sim.UE2RU[UE_id][ru_id][CC_id],0);
         // to make channel reciprocal uncomment following line instead of previous. However this only works for SISO at the moment. For MIMO the channel would need to be transposed.
         //UE2RU[UE_id][ru_id] = RU2UE[ru_id][UE_id];

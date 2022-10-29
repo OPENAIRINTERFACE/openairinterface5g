@@ -230,7 +230,7 @@ void generate_ul_reference_signal_sequences(unsigned int scaling)
   if (already_called) return;
   already_called = true;
 
-	unsigned int u,v,Msc_RS;
+  unsigned int u,v,Msc_RS;
 
 #if 0
 

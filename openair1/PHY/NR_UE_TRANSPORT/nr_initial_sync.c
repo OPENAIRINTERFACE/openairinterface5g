@@ -445,17 +445,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     }
 
 
-/*    LOG_I(PHY, "[UE %d] Frame %d MIB Information => %s, %s, NidCell %d, N_RB_DL %d, PHICH DURATION %d, PHICH RESOURCE %s, TX_ANT %d\n",
-	  ue->Mod_id,
-	  ue->proc.proc_rxtx[0].frame_rx,
-	  duplex_string[fp->frame_type],
-	  prefix_string[fp->Ncp],
-	  fp->Nid_cell,
-	  fp->N_RB_DL,
-	  fp->phich_config_common.phich_duration,
-	  phich_string[fp->phich_config_common.phich_resource],
-	  fp->nb_antenna_ports_gNB);*/
-
 #if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
     LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
 	  ue->Mod_id,

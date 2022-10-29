@@ -21,27 +21,18 @@
 
 -->
 <testCaseList>
-	<htmlTabRef>epc-start-tab</htmlTabRef>
-	<htmlTabName>EPC-Start</htmlTabName>
-	<htmlTabIcon>log-in</htmlTabIcon>
-	<TestCaseRequestedList>
- 050101 060101 070101
-	</TestCaseRequestedList>
-	<TestCaseExclusionList></TestCaseExclusionList>
+        <htmlTabRef>test-fdd-cleanup</htmlTabRef>
+        <htmlTabName>CleanUp 4G LTE FDD</htmlTabName>
+        <htmlTabIcon>trash</htmlTabIcon>
+        <TestCaseRequestedList>
+ 222222
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="050101">
-		<class>Initialize_HSS</class>
-		<desc>Initialize HSS</desc>
-	</testCase>
-
-	<testCase id="060101">
-		<class>Initialize_MME</class>
-		<desc>Initialize MME</desc>
-	</testCase>
-
-	<testCase id="070101">
-		<class>Initialize_SPGW</class>
-		<desc>Initialize SPGW</desc>
-	</testCase>
+        <testCase id="222222">
+                <class>Clean_Test_Server_Images</class>
+                <desc>Clean Test Images on Test Server</desc>
+                <test_svr_id>0</test_svr_id>
+        </testCase>
 
 </testCaseList>

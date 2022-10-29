@@ -125,7 +125,4 @@ int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 /// lookup table for scrambling in TX
 uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 
-uint8_t max_ldpc_iterations=4;
-uint8_t max_turbo_iterations=4;
-
 #endif

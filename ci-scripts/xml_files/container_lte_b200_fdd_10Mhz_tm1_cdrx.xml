@@ -1,0 +1,105 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+Replaces xml_files/enb_usrp210_band7_test_10mhz_tm1.xml
+
+-->
+<testCaseList>
+    <htmlTabRef>test-fdd-10-cdrx-tm1</htmlTabRef>
+    <htmlTabName>Test-FDD-10MHz-CDRX-TM1</htmlTabName>
+    <htmlTabIcon>tasks</htmlTabIcon>
+    <TestCaseRequestedList>
+111110
+040101
+030112
+040301 040512 040612 040650 040401 040201
+030201
+    </TestCaseRequestedList>
+    <TestCaseExclusionList></TestCaseExclusionList>
+
+    <testCase id="111110">
+        <class>Pull_Local_Registry</class>
+        <desc>Pull Images from Local Registry</desc>
+        <test_svr_id>0</test_svr_id>
+        <images_to_pull>oai-enb</images_to_pull>
+    </testCase>
+
+    <testCase id="030112">
+        <class>Deploy_Object</class>
+        <desc>Deploy eNB (FDD/Band7/10MHz/B200) in a container</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_tm1_cdrx</yaml_path>
+        <eNB_instance>0</eNB_instance>
+        <eNB_serverId>0</eNB_serverId>
+    </testCase>
+
+    <testCase id="030201">
+        <class>Undeploy_Object</class>
+        <desc>Undeploy eNB</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_tm1_cdrx</yaml_path>
+        <eNB_instance>0</eNB_instance>
+        <eNB_serverId>0</eNB_serverId>
+    </testCase>
+
+    <testCase id="040101">
+        <class>Initialize_UE</class>
+        <desc>Initialize UE</desc>
+    </testCase>
+
+    <testCase id="040201">
+        <class>Terminate_UE</class>
+        <desc>Terminate UE</desc>
+    </testCase>
+
+    <testCase id="040301">
+        <class>Attach_UE</class>
+        <desc>Attach UE</desc>
+    </testCase>
+
+    <testCase id="040401">
+        <class>Detach_UE</class>
+        <desc>Detach UE</desc>
+    </testCase>
+
+    <testCase id="040512">
+        <class>Ping</class>
+        <desc>ping (10MHz - 20 sec)</desc>
+        <ping_args>-c 20</ping_args>
+        <ping_packetloss_threshold>5</ping_packetloss_threshold>
+    </testCase>
+
+    <testCase id="040612">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - DL/30Mbps/UDP)(30 sec)(balanced profile)</desc>
+        <iperf_args>-u -b 30M -t 30 -i 1</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>balanced</iperf_profile>
+    </testCase>
+
+    <testCase id="040650">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - UL/20Mbps/UDP)(30 sec)(balanced profile)</desc>
+        <iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>balanced</iperf_profile>
+    </testCase>
+
+</testCaseList>
+

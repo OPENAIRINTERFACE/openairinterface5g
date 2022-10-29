@@ -26,6 +26,8 @@ metadata:
   name: "oai-physim"
 spec:
     runPolicy: "Serial"
+    nodeSelector:
+        kubernetes.io/hostname: theseus
     source:
         type: "Binary"
     strategy:

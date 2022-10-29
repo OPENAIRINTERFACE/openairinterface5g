@@ -187,6 +187,9 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
+		cmd_prefix = test.findtext('cmd_prefix')
+		if cmd_prefix is not None: RAN.cmd_prefix = cmd_prefix
+
 	elif action == 'Terminate_eNB':
 		eNB_instance=test.findtext('eNB_instance')
 		if (eNB_instance is None):
@@ -979,6 +982,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Deploy_Object':
 					CONTAINERS.DeployObject(HTML, EPC)
 					if CONTAINERS.exitStatus==1:
+						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
 						RAN.prematureExit = True
 				elif action == 'Undeploy_Object':
 					CONTAINERS.UndeployObject(HTML, RAN)

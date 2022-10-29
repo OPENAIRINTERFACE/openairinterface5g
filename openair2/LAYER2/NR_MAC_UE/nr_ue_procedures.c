@@ -53,7 +53,6 @@
 #include "openair2/NR_UE_PHY_INTERFACE/NR_Packet_Drop.h"
 
 /* PHY */
-#include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "executables/softmodem-common.h"
 
 /* utils */
@@ -2389,7 +2388,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
     NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
     int SR_period; int SR_offset;
 
-    find_period_offest_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
+    find_period_offset_SR(SchedulingRequestResourceConfig,&SR_period,&SR_offset);
     int sfn_sf = frame * n_slots_frame + slot;
 
     if ((sfn_sf - SR_offset) % SR_period == 0) {
@@ -2485,6 +2484,11 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
       NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
       if(csirep->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic){
+
+        const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
+        if(pucchcsires->uplinkBandwidthPartId != bwp_id)
+          continue;
+
         int period, offset;
         csi_period_offset(csirep, NULL, &period, &offset);
 
@@ -2533,7 +2537,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
           }
           AssertFatal(found != -1,
                       "CSI resource not found among PUCCH resources\n");
-
+          LOG_D(NR_MAC, "CSI reporting in frame %d slot %d CSI report ID %ld\n", frame, slot, csirep->reportConfigId);
           pucch->resource_indicator = found;
           csi_bits += nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
         }
@@ -2684,9 +2688,9 @@ uint8_t get_csirs_RI_PMI_CQI_payload(NR_UE_MAC_INST_t *mac,
         if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_ResourceSetId ==
             *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
 
-          nr_csi_report_t *csi_report = &mac->csi_report_template[csi_reportconfig->reportConfigId];
+          nr_csi_report_t *csi_report = &mac->csi_report_template[csi_idx];
           compute_csi_bitlen(csi_MeasConfig, mac->csi_report_template);
-          n_bits = nr_get_csi_bitlen(mac->csi_report_template, csi_reportconfig->reportConfigId);
+          n_bits = nr_get_csi_bitlen(mac->csi_report_template, csi_idx);
 
           int cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           int ri_bitlen = csi_report->csi_meas_bitlen.ri_bitlen;
@@ -2752,9 +2756,9 @@ uint8_t get_csirs_RSRP_payload(NR_UE_MAC_INST_t *mac,
         if (csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList->list.array[csi_idx]->nzp_CSI_ResourceSetId ==
             *(csi_resourceconfig->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0])) {
 
-          nr_csi_report_t *csi_report = &mac->csi_report_template[csi_reportconfig->reportConfigId];
+          nr_csi_report_t *csi_report = &mac->csi_report_template[csi_idx];
           compute_csi_bitlen(csi_MeasConfig, mac->csi_report_template);
-          n_bits = nr_get_csi_bitlen(mac->csi_report_template, csi_reportconfig->reportConfigId);
+          n_bits = nr_get_csi_bitlen(mac->csi_report_template, csi_idx);
 
           int cri_ssbri_bitlen = csi_report->CSI_report_bitlen.cri_ssbri_bitlen;
           int rsrp_bitlen = csi_report->CSI_report_bitlen.rsrp_bitlen;

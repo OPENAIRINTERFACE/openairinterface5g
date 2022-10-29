@@ -215,9 +215,8 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   // Schedule CSI-RS transmission
   nr_csirs_scheduling(module_idP, frame, slot, nr_slots_per_frame[*scc->ssbSubcarrierSpacing]);
 
-  // Schedule CSI measurement reporting: check in slot 0 for the whole frame
-  if (slot == 0)
-    nr_csi_meas_reporting(module_idP, frame, slot);
+  // Schedule CSI measurement reporting
+  nr_csi_meas_reporting(module_idP, frame, slot);
 
   // Schedule SRS: check in slot 0 for the whole frame
   if (slot == 0)
@@ -237,10 +236,9 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   nr_schedule_ue_spec(module_idP, frame, slot); 
   stop_meas(&gNB->schedule_dlsch);
 
-  nr_schedule_pucch(RC.nrmac[module_idP], frame, slot);
-
-  // This schedule SR after PUCCH for multiplexing
   nr_sr_reporting(RC.nrmac[module_idP], frame, slot);
+
+  nr_schedule_pucch(RC.nrmac[module_idP], frame, slot);
 
   stop_meas(&RC.nrmac[module_idP]->eNB_scheduler);
   

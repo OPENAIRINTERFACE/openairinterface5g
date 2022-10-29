@@ -232,7 +232,11 @@ int nr_process_mac_pdu(instance_t module_idP,
         break;
 
       case UL_SCH_LCID_SINGLE_ENTRY_PHR:
-        AssertFatal(harq_pid>-1,"Invalid HARQ PID %d\n",harq_pid);
+        if (harq_pid < 0) {
+          LOG_E(NR_MAC, "Invalid HARQ PID %d\n", harq_pid);
+          done = 1;
+          break;
+        }
         NR_sched_pusch_t *sched_pusch = &sched_ctrl->ul_harq_processes[harq_pid].sched_pusch;;
         //38.321 section 6.1.3.8
         //fixed length
@@ -265,18 +269,20 @@ int nr_process_mac_pdu(instance_t module_idP,
         break;
 
       case UL_SCH_LCID_MULTI_ENTRY_PHR_1_OCT:
+        LOG_E(NR_MAC, "Multi entry PHR not supported\n");
+        done = 1;
         //38.321 section 6.1.3.9
-        //  varialbe length
-        AssertFatal(1==0,"Multi entry PHR not supported\n");
+        //  variable length
         if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
           return 0;
         /* Extract MULTI ENTRY PHR elements from single octet bitmap for PHR calculation */
         break;
 
       case UL_SCH_LCID_MULTI_ENTRY_PHR_4_OCT:
+        LOG_E(NR_MAC, "Multi entry PHR not supported\n");
+        done = 1;
         //38.321 section 6.1.3.9
-        //  varialbe length
-        AssertFatal(1==0,"Multi entry PHR not supported\n");
+        //  variable length
         if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
           return 0;
         /* Extract MULTI ENTRY PHR elements from four octets bitmap for PHR calculation */
