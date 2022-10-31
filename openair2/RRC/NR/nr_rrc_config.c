@@ -1412,8 +1412,9 @@ void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
       }
     }
   }
-  AssertFatal(resource_id>-1,"No resource for CSI measurements found\n");
-  AssertFatal(im_id>-1,"No resource for IM measurements found\n");
+  // if there are no associated resources, do not configure
+  if(resource_id < 0 || im_id < 0)
+    return;
   csirep->resourcesForChannelMeasurement=resource_id;
   csirep->csi_IM_ResourcesForInterference=calloc(1,sizeof(*csirep->csi_IM_ResourcesForInterference));
   *csirep->csi_IM_ResourcesForInterference=im_id;
@@ -1474,7 +1475,9 @@ void conig_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
       }
     }
   }
-  AssertFatal(resource_id>-1,"No resource for RSRP found\n");
+  // if there are no associated resources, do not configure
+  if(resource_id < 0)
+    return;
   csirep->resourcesForChannelMeasurement=resource_id;
   csirep->csi_IM_ResourcesForInterference=NULL;
   csirep->nzp_CSI_RS_ResourcesForInterference=NULL;
