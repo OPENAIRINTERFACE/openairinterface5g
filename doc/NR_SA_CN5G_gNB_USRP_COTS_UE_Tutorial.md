@@ -147,28 +147,6 @@ cd cmake_targets
 ./build_oai -w USRP --ninja --nrUE --gNB --build-lib all -c
 ```
 
-## 3.3 USRP N300 and X300 Ethernet Tuning
-
-Please also refer to the official [USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks) tuning guide.
-
-The following steps are recommended. Please change the network interface(s) as required. Also, you should have 10Gbps interface(s): if you use two cables, you should have the XG interface. Refer to the [N300 Getting Started Guide](https://kb.ettus.com/USRP_N300/N310/N320/N321_Getting_Started_Guide) for more information.
-
-* Use an MTU of 9000: how to change this depends on the network management tool. In the case of Network Manager, this can be done from the GUI.
-* Increase the kernel socket buffer (also done by the USRP driver in OAI)
-* Increase Ethernet Ring Buffers: `sudo ethtool -G <ifname> rx 4096 tx 4096`
-* Disable hyper-threading in the BIOS (This step is optional)
-* Optional: Disable KPTI Protections for Spectre/Meltdown for more performance. **This is a security risk.** Add `mitigations=off nosmt` in your grub config and update grub. (This step is optional)
-
-Example code to run:
-```
-for ((i=0;i<$(nproc);i++)); do sudo cpufreq-set -c $i -r -g performance; done
-sudo sysctl -w net.core.wmem_max=62500000
-sudo sysctl -w net.core.rmem_max=62500000
-sudo sysctl -w net.core.wmem_default=62500000
-sudo sysctl -w net.core.rmem_default=62500000
-sudo ethtool -G enp1s0f0 tx 4096 rx 4096
-```
-
 # 4. Run OAI CN5G and OAI gNB
 
 ## 4.1 Run OAI CN5G
@@ -248,6 +226,28 @@ docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 100M 
 
 # 6. Advanced configuration (optional)
 
+Please also refer to the official [USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks) tuning guide.
+
+The following steps are recommended. Please change the network interface(s) as required. Also, you should have 10Gbps interface(s): if you use two cables, you should have the XG interface. Refer to the [N300 Getting Started Guide](https://kb.ettus.com/USRP_N300/N310/N320/N321_Getting_Started_Guide) for more information.
+
+* Use an MTU of 9000: how to change this depends on the network management tool. In the case of Network Manager, this can be done from the GUI.
+* Increase the kernel socket buffer (also done by the USRP driver in OAI)
+* Increase Ethernet Ring Buffers: `sudo ethtool -G <ifname> rx 4096 tx 4096`
+* Disable hyper-threading in the BIOS (This step is optional)
+* Optional: Disable KPTI Protections for Spectre/Meltdown for more performance. **This is a security risk.** Add `mitigations=off nosmt` in your grub config and update grub. (This step is optional)
+
+Example code to run:
+```
+for ((i=0;i<$(nproc);i++)); do sudo cpufreq-set -c $i -r -g performance; done
+sudo sysctl -w net.core.wmem_max=62500000
+sudo sysctl -w net.core.rmem_max=62500000
+sudo sysctl -w net.core.wmem_default=62500000
+sudo sysctl -w net.core.rmem_default=62500000
+sudo ethtool -G enp1s0f0 tx 4096 rx 4096
+```
+
+## 6.2 Real-time performance workarounds
 - If you get real-time problems on heavy UL traffic, reduce the maximum UL MCS using an additional command-line switch: `--MACRLCs.[0].ul_max_mcs 14`.
 
+## 6.3 Uplink issues related with noise on the DC carriers
 - There is noise on the DC carriers on N300 and especially the X300 in UL. To avoid their use or shift them away from the center to use more UL spectrum, use the `--tune-offset <Hz>` command line switch, where `<Hz>` is ideally half the bandwidth, or possibly less.
