@@ -17,7 +17,7 @@
 [[_TOC_]]
 
 #  1. Scenario
-In this tutorial we describe how to configure and run a 5G end-to-end setup with OAI CN5G, OAI gNB and COTS UE.
+In this tutorial we describe how to configure and run a 5G end-to-end setup with OAI CN5G, OAI gNB, OAI UE and COTS UE.
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
@@ -181,9 +181,18 @@ cd cmake_targets/ran_build/build
 sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band77.fr1.273PRB.2x2.usrpn300.conf --sa --usrp-tx-thread-config 1 -E --continuous-tx
 ```
 
-# 5. Testing with Quectel RM500Q
+### RFsimulator
+```bash
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
+```
 
-## 5.1 Setup Quectel
+# 5. Run UE
+## 5.1 Testing with Quectel RM500Q
+
+### 5.1.1 Setup Quectel
 With [PuTTY](https://the.earth.li/~sgtatham/putty/latest/w64/putty.exe), send the following AT commands to the module using a serial interface (ex: COM2) at 115200 bps:
 ```bash
 # MUST be sent at least once everytime there is a firmware upgrade!
@@ -200,7 +209,7 @@ AT+CGPADDR=1
 AT+QPING=1,"openairinterface.org"
 ```
 
-## 5.2 Ping test
+### 5.1.2 Ping test
 - UE host
 ```bash
 ping 192.168.70.135 -t -S 12.1.1.2
@@ -210,7 +219,7 @@ ping 192.168.70.135 -t -S 12.1.1.2
 docker exec -it oai-ext-dn ping 12.1.1.2
 ```
 
-## 5.3 Downlink iPerf test
+### 5.1.3 Downlink iPerf test
 - UE host
     - Download iPerf for Microsoft Windows from [here](https://iperf.fr/download/windows/iperf-2.0.9-win64.zip).
     - Extract to Desktop and run with Command Prompt:
@@ -224,7 +233,42 @@ iperf -s -u -i 1 -B 12.1.1.2
 docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 100M -c 12.1.1.2
 ```
 
-# 6. Advanced configuration (optional)
+## 5.2 Testing with OAI UE
+### 5.2.1 Testing with OAI UE with USRP B210
+Important notes:
+- This should be run in a second Ubuntu 20.04 host, other than gNB
+- It only applies when running OAI gNB with USRP B210
+
+Run OAI UE
+```bash
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --ue-fo-compensation --sa -E --uicc0.nssai_sd 1
+```
+
+### 5.2.2 Testing with OAI UE with RFsimulator
+Important notes:
+- This should be run on the same host as the OAI gNB
+- It only applies when running OAI gNB with RFsimulator
+
+Run OAI UE with RFsimulator
+```bash
+cd ~/openairinterface5g
+source oaienv
+cd cmake_targets/ran_build/build
+sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --rfsim --sa --uicc0.nssai_sd 1
+```
+
+### 5.2.3 Ping test
+- UE host
+```bash
+ping 192.168.70.135 -I oaitun_ue1
+```
+
+# 6. Advanced configurations (optional)
+
+## 6.1 USRP N300 and X300 Ethernet Tuning
 
 Please also refer to the official [USRP Host Performance Tuning Tips and Tricks](https://kb.ettus.com/USRP_Host_Performance_Tuning_Tips_and_Tricks) tuning guide.
 
