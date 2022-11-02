@@ -154,16 +154,12 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t abstraction_flag)
 {
 
-  int nb_connected_gNB = 1, gNB_id;
+  int nb_connected_gNB = 1;
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
   ue->dci_thres   = 0;
-
-  // Setting UE mode to NOT_SYNCHED by default
-  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++)
-    ue->UE_mode[gNB_id] = NOT_SYNCHED;
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB);

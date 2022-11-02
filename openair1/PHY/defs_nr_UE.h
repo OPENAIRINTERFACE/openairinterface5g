@@ -421,6 +421,7 @@ typedef struct {
 
 typedef struct {
   int16_t amp;
+  bool active;
   fapi_nr_ul_config_prach_pdu prach_pdu;
 } NR_UE_PRACH;
 
@@ -547,10 +548,6 @@ typedef struct {
   uint32_t              IMSImod1024;
   uint32_t              PF;
   uint32_t              PO;
-
-  UE_MODE_t           UE_mode[NUMBER_OF_CONNECTED_gNB_MAX];
-  /// cell-specific reference symbols
-  //uint32_t lte_gold_table[7][20][2][14];
 
 #if defined(UPGRADE_RAT_NR)
 

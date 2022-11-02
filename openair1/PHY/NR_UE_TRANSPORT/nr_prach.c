@@ -515,6 +515,7 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
     LOG_M("Prach_txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][prach_start]), 2*(prach_start+prach_len), 1, 1)
   #endif
 
+  ue->prach_vars[gNB_id]->active = false;
   return signal_energy((int*)prach, 256);
 }
 

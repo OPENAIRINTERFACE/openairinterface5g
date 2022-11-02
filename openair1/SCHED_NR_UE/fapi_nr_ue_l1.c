@@ -481,6 +481,7 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // prach config pdu
           prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
           memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
+          PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->active = true;
           ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
           pdu_done++;
           LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
@@ -533,11 +534,9 @@ int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config){
 
   fapi_nr_config_request_t *nrUE_config = &PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->nrUE_config;
 
-  if(phy_config != NULL) {
-      memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
-      if (PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] == NOT_SYNCHED)
-	      PHY_vars_UE_g[phy_config->Mod_id][phy_config->CC_id]->UE_mode[0] = PRACH;
-  }
+  if(phy_config != NULL)
+    memcpy(nrUE_config,&phy_config->config_req,sizeof(fapi_nr_config_request_t));
+
   return 0;
 }
 
