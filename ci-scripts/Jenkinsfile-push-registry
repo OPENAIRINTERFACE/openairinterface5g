@@ -77,7 +77,8 @@ pipeline {
           withCredentials([
             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.DH_Credentials}", usernameVariable: 'DH_Username', passwordVariable: 'DH_Password']
           ]) {
-            def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue", "proxy"]
+            def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue"]
+            // Logging in on both registries
             sh "docker login -u ${DH_Username} -p ${DH_Password} > /dev/null 2>&1"
             sh "docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr > /dev/null 2>&1"
             listOfImages.eachWithIndex { item, iindex ->
@@ -88,6 +89,13 @@ pipeline {
               sh "docker push --quiet ${DH_Account}/${item}:develop"
               sh "docker rmi ${DH_Account}/${item}:${WEEK_TAG} ${DH_Account}/${item}:develop porcepix.sboai.cs.eurecom.fr/${item}:develop-${WEEK_SHA}"
             }
+            // Proxy is not following the same pattern.
+            sh "docker image tag proxy:develop ${DH_Account}/proxy:develop"
+            sh "docker image tag proxy:develop ${DH_Account}/proxy:${WEEK_TAG}"
+            sh "docker push --quiet ${DH_Account}/proxy:develop"
+            sh "docker push --quiet ${DH_Account}/proxy:${WEEK_TAG}"
+            sh "docker rmi ${DH_Account}/proxy:develop ${DH_Account}/proxy:${WEEK_TAG}"
+            // Logging out on both registries
             sh "docker logout porcepix.sboai.cs.eurecom.fr > /dev/null 2>&1"
             sh "docker logout > /dev/null 2>&1"
           }
