@@ -65,6 +65,12 @@ pipeline {
           WEEK_REF = WEEK_REF.trim()
           WEEK_TAG = sh returnStdout: true, script: 'python3 ./ci-scripts/provideUniqueImageTag.py --start_tag ' + WEEK_REF
           WEEK_TAG = WEEK_TAG.trim()
+          if ((params.forceTag != null) && (params.tagToUse != null)) {
+            if (params.forceTag) {
+              WEEK_TAG = params.tagToUse
+              echo "Forced Tag is ${WEEK_TAG}"
+            }
+          }
           WEEK_SHA = sh returnStdout: true, script: 'git log -n1 --pretty=format:"%h" origin/develop | cut -c 1-8'
           WEEK_SHA = WEEK_SHA.trim()
 
