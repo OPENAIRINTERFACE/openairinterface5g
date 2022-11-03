@@ -885,6 +885,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   nr_srs_feedback_t *srs_feedback,
                   int time_domain_assignment,
                   uint8_t tpc,
+                  uint8_t ndi,
                   NR_UE_UL_BWP_t *ul_bwp) {
 
   int bwp_id = ul_bwp->bwp_id;
@@ -895,7 +896,7 @@ void config_uldci(const NR_SIB1_t *sib1,
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
   dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
   dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
-  dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+  dci_pdu_rel15->ndi = ndi;
   dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
   dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
   dci_pdu_rel15->tpc = tpc;

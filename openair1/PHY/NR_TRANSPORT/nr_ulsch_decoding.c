@@ -104,7 +104,6 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
   ulsch->max_ldpc_iterations = max_ldpc_iterations;
 
   for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
-
     ulsch->harq_processes[i] = (NR_UL_gNB_HARQ_t *)malloc16_clear(sizeof(NR_UL_gNB_HARQ_t));
     ulsch->harq_processes[i]->b = (uint8_t*)malloc16_clear(ulsch_bytes);
     ulsch->harq_processes[i]->c = (uint8_t**)malloc16_clear(a_segments*sizeof(uint8_t *));
@@ -442,30 +441,16 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING,1);
   harq_process->TBS = pusch_pdu->pusch_data.tb_size;
-  harq_process->round = nr_rv_to_round(pusch_pdu->pusch_data.rv_index);
 
-  harq_process->new_rx = false; // flag to indicate if this is a new reception for this harq (initialized to false)
   dtx_det = 0;
-  if (harq_process->round == 0) {
-    harq_process->new_rx = true;
-    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-  }
-
-  // this happens if there was a DTX in round 0
-  if (harq_process->ndi != pusch_pdu->pusch_data.new_data_indicator) {
-    harq_process->new_rx = true;
-    harq_process->ndi = pusch_pdu->pusch_data.new_data_indicator;
-
-    LOG_D(PHY,"Missed ULSCH detection. NDI toggled but rv %d does not correspond to first reception\n",pusch_pdu->pusch_data.rv_index);
-  }
 
   A   = (harq_process->TBS)<<3;
 
   // target_code_rate is in 0.1 units
   float Coderate = (float) pusch_pdu->target_code_rate / 10240.0f;
 
-  LOG_D(PHY,"ULSCH Decoding, harq_pid %d TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d\n",
-        harq_pid, A, G, mcs, n_layers, nb_rb, Qm, Coderate, pusch_pdu->pusch_data.rv_index, harq_process->round);
+  LOG_D(PHY,"ULSCH Decoding, harq_pid %d rnti %x TBS %d G %d mcs %d Nl %d nb_rb %d, Qm %d, Coderate %f RV %d round %d new RX %d\n",
+        harq_pid, ulsch->rnti, A, G, mcs, n_layers, nb_rb, Qm, Coderate, pusch_pdu->pusch_data.rv_index, harq_process->round, harq_process->new_rx);
 
   p_decParams->BG = pusch_pdu->maintenance_parms_v3.ldpcBaseGraph;
   int kc;
@@ -701,7 +686,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n",
 	  phy_vars_gNB->Mod_id,harq_process->slot,harq_process->TBS);
     harq_process->status = SCH_IDLE;
-    harq_process->round  = 0;
+    harq_process->round = 0;
     ulsch->harq_mask &= ~(1 << harq_pid);
     
     LOG_D(PHY, "ULSCH received ok \n");
