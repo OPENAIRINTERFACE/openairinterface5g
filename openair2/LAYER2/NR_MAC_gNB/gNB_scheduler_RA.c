@@ -1787,8 +1787,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->round = 0;
       harq->ndi ^= 1;
 
-      sched_ctrl->rrc_processing_timer = 1; // No need to wait at this point in time, setting it to 1 just to enter in function nr_mac_update_timers
-      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, 1);
+      if(!UE->CellGroup)
+        // In the  specific scenario where UE correctly received MSG4 (assuming it decoded RRCsetup with CellGroup) and gNB didn't correctly received an ACK, 
+        // the UE would already have CG but the UE-dedicated gNB structure wouldn't (because RA didn't complete on gNB side).
+        uper_decode(NULL,
+                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    (void **)&UE->CellGroup,
+                    (uint8_t *)UE->cg_buf,
+                    (UE->enc_rval.encoded+7)/8, 0, 0);
+      process_CellGroup(UE->CellGroup, sched_ctrl);
+      configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
 
       // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
       UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;
