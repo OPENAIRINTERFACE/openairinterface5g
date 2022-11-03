@@ -1085,12 +1085,10 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 
 }
 
-void  handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm, int16_t pathloss) {
-
+void  handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm)
+{
   mac->phy_measurements.ssb_index = ssb_index;
   mac->phy_measurements.ssb_rsrp_dBm = rsrp_dbm;
-  mac->phy_measurements.pathloss = pathloss;
-
 }
 
 // L2 Abstraction Layer
@@ -1235,8 +1233,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           case FAPI_NR_RX_PDU_TYPE_SSB:
             handle_ssb_meas(mac,
                             (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
-                            (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm,
-                            (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pathloss);
+                            (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm);
             ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->phy_data,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
                                          (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,

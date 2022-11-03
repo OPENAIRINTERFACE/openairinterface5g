@@ -46,31 +46,6 @@
 //#define DEBUG_MEAS_UE
 //#define DEBUG_RANK_EST
 
-// Returns the pathloss in dB for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
-// computation according to clause 7.4 (Physical random access channel) of 3GPP TS 38.213 version 16.3.0 Release 16
-// Assumptions:
-// - PRACH transmission from a UE is not in response to a detection of a PDCCH order by the UE
-// Measurement units:
-// - referenceSignalPower:   dBm/RE (average EPRE of the resources elements that carry secondary synchronization signals in dBm)
-void compute_nr_PL(PHY_VARS_NR_UE *ue, int ssb_index){
-
-  //TODO improve PL measurements. Probably not correct as it is.
-
-  long referenceSignalPower = ue->nrUE_config.ssb_config.ss_pbch_power;
-  int16_t pathloss = (int16_t)(referenceSignalPower - ue->measurements.ssb_rsrp_dBm[ssb_index]);
-
-  LOG_D(PHY, "In %s: pathloss %d dB, UE RX total gain %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
-        __FUNCTION__,
-        pathloss,
-        ue->rx_total_gain_dB,
-        referenceSignalPower,
-        pow(10, referenceSignalPower/10),
-        ue->measurements.ssb_rsrp_dBm[ssb_index],
-        pow(10, ue->measurements.ssb_rsrp_dBm[ssb_index]/10));
-
-  ue->measurements.pathloss = pathloss;
-}
-
 uint32_t get_nr_rx_total_gain_dB (module_id_t Mod_id,uint8_t CC_id)
 {
 

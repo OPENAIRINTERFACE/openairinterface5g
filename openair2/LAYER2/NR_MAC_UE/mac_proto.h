@@ -309,6 +309,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch);
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
+                              int scs,
                               NR_PUCCH_Config_t *pucch_Config,
                               PUCCH_sched_t *pucch,
                               uint8_t format_type,
@@ -461,6 +462,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+
+int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 
 // PUSCH scheduler:
 // - Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,

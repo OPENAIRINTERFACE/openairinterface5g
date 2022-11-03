@@ -147,8 +147,6 @@ typedef struct {
   //! total estimated noise power (dBm)
   short n0_power_tot_dBm;
 
-  int16_t pathloss;
-
   // UE measurements
   //! estimated received spatial signal power (linear)
   int            rx_spatial_power[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
@@ -596,7 +594,6 @@ typedef struct {
   // when off, defaults to frequency domain interpolation
   int chest_freq;
   int chest_time;
-  int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
 

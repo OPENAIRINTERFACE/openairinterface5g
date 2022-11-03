@@ -119,7 +119,6 @@ typedef struct {
   uint16_t cell_id;
   uint16_t ssb_start_subcarrier;
   short rsrp_dBm;
-  int16_t pathloss;
 } fapi_nr_ssb_pdu_t;
 
 typedef struct {

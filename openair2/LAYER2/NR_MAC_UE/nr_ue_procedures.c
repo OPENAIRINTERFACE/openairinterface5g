@@ -1746,16 +1746,17 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     }
 
     pucch_pdu->pucch_tx_power = get_pucch_tx_power_ue(mac,
+                                                      scs,
                                                       pucch_Config,
                                                       pucch,
                                                       pucch_pdu->format_type,
                                                       pucch_pdu->prb_size,
                                                       pucch_pdu->freq_hop_flag,
                                                       pucch_pdu->add_dmrs_flag,
-                                                    pucch_pdu->nr_of_symbols,
-                                                    subframe_number,
-                                                    O_ACK, O_SR,
-                                                    O_CSI, O_CRC);
+                                                      pucch_pdu->nr_of_symbols,
+                                                      subframe_number,
+                                                      O_ACK, O_SR,
+                                                      O_CSI, O_CRC);
   }
   else AssertFatal(1==0,"problem with pucch configuration\n");
 
@@ -1795,6 +1796,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
+                              int scs,
                               NR_PUCCH_Config_t *pucch_Config,
                               PUCCH_sched_t *pucch,
                               uint8_t format_type,
@@ -1901,10 +1903,13 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
     return (PUCCH_POWER_DEFAULT);
   }
 
-  int16_t pucch_power = P_O_PUCCH + delta_F_PUCCH + DELTA_TF + G_b_f_c;
+  int16_t pathloss = compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm);
+  int M_pucch_component = (10 * log10((double)(pow(2,scs) * nb_of_prbs)));
+
+  int16_t pucch_power = P_O_PUCCH + M_pucch_component + pathloss + delta_F_PUCCH + DELTA_TF + G_b_f_c;
 
   NR_TST_PHY_PRINTF("PUCCH ( Tx power : %d dBm ) ( 10Log(...) : %d ) ( from Path Loss : %d ) ( delta_F_PUCCH : %d ) ( DELTA_TF : %d ) ( G_b_f_c : %d ) \n",
-                    pucch_power, contributor, PL, delta_F_PUCCH, DELTA_TF, G_b_f_c);
+                    pucch_power, M_pucch_component, pathloss, delta_F_PUCCH, DELTA_TF, G_b_f_c);
 
   return (pucch_power);
 }
@@ -4225,5 +4230,32 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
   }
 
   return ret;
+}
 
+// Returns the pathloss in dB for the active UL BWP on the selected carrier based on the DL RS associated with the PRACH transmission
+// computation according to clause 7.4 (Physical random access channel) of 3GPP TS 38.213 version 16.3.0 Release 16
+// Assumptions:
+// - PRACH transmission from a UE is not in response to a detection of a PDCCH order by the UE
+// Measurement units:
+// - referenceSignalPower:   dBm/RE (average EPRE of the resources elements that carry secondary synchronization signals in dBm)
+int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm)
+{
+
+  long referenceSignalPower;
+  //TODO improve PL measurements. Probably not correct as it is.
+  if (mac->scc)
+    referenceSignalPower = mac->scc->ss_PBCH_BlockPower;
+  else
+    referenceSignalPower = mac->scc_SIB->ss_PBCH_BlockPower;
+
+  int16_t pathloss = (int16_t)(referenceSignalPower - ssb_rsrp_dBm);
+
+  LOG_D(NR_MAC, "pathloss %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
+        pathloss,
+        referenceSignalPower,
+        pow(10, referenceSignalPower/10),
+        ssb_rsrp_dBm,
+        pow(10, ssb_rsrp_dBm/10));
+
+  return pathloss;
 }

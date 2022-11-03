@@ -370,8 +370,6 @@ typedef struct {
   uint32_t ssb_index;
   /// SSB RSRP in dBm
   short ssb_rsrp_dBm;
-  /// SSB pathloss
-  int16_t pathloss;
 
 } NR_PHY_meas_t;
 
