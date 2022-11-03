@@ -1561,9 +1561,9 @@ int main(int argc, char **argv)
     for (int r = 1; r < max_rounds; r++)
       printf(",%d/%d", n_errors[r], round_trials[r]);
     printf(") (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u",
-           n_false_positive, n_trials, errors_scrambling[0], available_bits * n_trials);
+           n_false_positive, n_trials, errors_scrambling[0], available_bits * round_trials[0]);
     for (int r = 1; r < max_rounds; r++)
-      printf(",%u/%u", errors_scrambling[r], available_bits * n_trials);
+      printf(",%u/%u", errors_scrambling[r], available_bits * round_trials[r]);
     printf(")\n");
     printf("\n");
 

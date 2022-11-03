@@ -27,7 +27,7 @@
 #include "executables/softmodem-common.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
-#define DEBUG_PHY
+//#define DEBUG_PHY
 
 // Adjust location synchronization point to account for drift
 // The adjustment is performed once per frame based on the
@@ -75,14 +75,14 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
 
   // filter position to reduce jitter
   if (clear == 1)
-    ue->max_pos_fil = max_pos;
+    ue->max_pos_fil = max_pos << 15;
   else
-    ue->max_pos_fil = ((ue->max_pos_fil * coef) + (max_pos * ncoef)) >> 15;
+    ue->max_pos_fil = ((ue->max_pos_fil * coef) >> 15) + (max_pos * ncoef);
 
   // do not filter to have proactive timing adjustment
-  //ue->max_pos_fil = max_pos;
+  //ue->max_pos_fil = max_pos << 15;
 
-  int diff = ue->max_pos_fil - sync_pos;
+  int diff = (ue->max_pos_fil >> 15) - sync_pos;
 
   if (frame_parms->freq_range==nr_FR2) 
     sync_offset = 2;
@@ -118,7 +118,7 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
   }
 
 #ifdef DEBUG_PHY
-  LOG_D(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
+  LOG_I(PHY,"AbsSubframe %d: diff = %i, rx_offset (final) = %i : clear = %d, max_pos = %d, max_pos_fil = %d, max_val = %d, sync_pos %d\n",
         subframe,
         diff,
         ue->rx_offset,
