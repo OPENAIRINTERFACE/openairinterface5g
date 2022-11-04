@@ -530,12 +530,9 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      float noise_power_dB) {
 
   // To create tables for normal distribution
-  uint64_t rand;
-  FILE *h = fopen("/dev/random", "r");
-  if (fread(&rand, sizeof(rand), 1, h) != 1) {
-    LOG_W(HW, "Simulator can't read /dev/random\n");
-  }
-  tableNor(rand);
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  tableNor((long)(t.tv_nsec%INT_MAX));
 
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
 

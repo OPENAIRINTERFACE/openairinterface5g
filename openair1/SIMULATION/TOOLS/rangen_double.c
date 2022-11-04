@@ -110,6 +110,7 @@ double __attribute__ ((no_sanitize_address)) gaussdouble(double mean, double var
 }
 
 // Ziggurat
+static bool tableNordDone=false;
 static double wn[128], fn[128];
 static uint32_t iz, jz, jsr = 123456789, kn[128];
 static int32_t hz;
@@ -171,12 +172,18 @@ void tableNor(unsigned long seed)
     fn[i] = (exp(-0.5 * dn * dn));
     wn[i] = (dn / m1);
   }
-
+  tableNordDone=true;
   return;
 }
 
 double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double variance)
 {
+  if (!tableNordDone) {
+    // let's make reasonnable constant tables
+    struct timespec t;
+    clock_gettime(CLOCK_MONOTONIC, &t);
+    tableNor((long)(t.tv_nsec%INT_MAX));
+  }
   hz = SHR3;
   iz = hz & 127;
   return abs(hz) < kn[iz] ? hz * wn[iz] : nfix();
