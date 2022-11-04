@@ -359,6 +359,7 @@ The following features are valid for the gNB and the 5G-NR UE.
   - Support for master cell group configuration 
   - Interface with NGAP for the interactions with the AMF
   - Interface with F1AP for CU/DU split deployment option
+  - Periodic RRC measurements of serving cell (no A/B events)
 
 **gNB X2AP**
 - Integration of X2AP messages and procedures for the exchanges with the eNB over X2 interface supporting the NSA setup according to 36.423 Rel. 15

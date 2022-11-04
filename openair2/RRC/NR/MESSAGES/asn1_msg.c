@@ -1993,19 +1993,6 @@ int16_t do_RRCReconfiguration(
         return -1;
     }
 
-    LOG_D(NR_RRC,"[gNB %d] RRCReconfiguration for UE %x Encoded %zd bits (%zd bytes)\n",
-            ctxt_pP->module_id,
-            ctxt_pP->rnti,
-            enc_rval.encoded,
-            (enc_rval.encoded+7)/8);
-
-    if (enc_rval.encoded == -1) {
-        LOG_E(NR_RRC,"[gNB %d] ASN1 : RRCReconfiguration encoding failed for UE %x\n",
-            ctxt_pP->module_id,
-            ctxt_pP->rnti);
-        return(-1);
-    }
-
     return((enc_rval.encoded+7)/8);
 }
 
@@ -2447,3 +2434,95 @@ do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_T
   return((enc_rval.encoded+7)/8);
 }
 
+NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
+{
+  const NR_FrequencyInfoDL_t *freqInfoDL = conf->scc->downlinkConfigCommon->frequencyInfoDL;
+  const NR_ARFCN_ValueNR_t absFreqSSB = *freqInfoDL->absoluteFrequencySSB;
+  DevAssert(freqInfoDL->scs_SpecificCarrierList.list.count == 1);
+  const NR_SubcarrierSpacing_t scs = freqInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  DevAssert(freqInfoDL->frequencyBandList.list.count == 1);
+  const NR_FreqBandIndicatorNR_t band = *freqInfoDL->frequencyBandList.list.array[0];
+
+  NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
+  mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
+  mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
+
+  // Measurement Objects: Specifies what is to be measured. For NR and inter-RAT E-UTRA measurements, this may include
+  // cell-specific offsets, blacklisted cells to be ignored and whitelisted cells to consider for measurements.
+  NR_MeasObjectToAddMod_t *mo1 = calloc(1, sizeof(*mo1));
+  mo1->measObjectId = 1;
+  mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
+  NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
+  asn1cCallocOne(monr1->ssbFrequency, absFreqSSB);
+  asn1cCallocOne(monr1->ssbSubcarrierSpacing, scs);
+  monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
+  monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;
+  monr1->absThreshSS_BlocksConsolidation = calloc(1, sizeof(*monr1->absThreshSS_BlocksConsolidation));
+  asn1cCallocOne(monr1->absThreshSS_BlocksConsolidation->thresholdRSRP, 36);
+  asn1cCallocOne(monr1->nrofSS_BlocksToAverage, 8);
+  monr1->smtc1 = calloc(1, sizeof(*monr1->smtc1));
+  monr1->smtc1->periodicityAndOffset.present = NR_SSB_MTC__periodicityAndOffset_PR_sf20;
+  monr1->smtc1->periodicityAndOffset.choice.sf20 = 2;
+  monr1->smtc1->duration = NR_SSB_MTC__duration_sf2;
+  monr1->quantityConfigIndex = 1;
+  monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
+  asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, band);
+  mo1->measObject.choice.measObjectNR = monr1;
+  int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo1);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  // Reporting Configuration: Specifies how reporting should be done. This could be periodic or event-triggered.
+  NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
+  rc->reportConfigId = 1;
+  rc->reportConfig.present = NR_ReportConfigToAddMod__reportConfig_PR_reportConfigNR;
+
+  NR_PeriodicalReportConfig_t *prc = calloc(1, sizeof(*prc));
+  prc->rsType = NR_NR_RS_Type_ssb;
+  prc->reportInterval = NR_ReportInterval_ms1024;
+  prc->reportAmount = NR_PeriodicalReportConfig__reportAmount_infinity;
+  prc->reportQuantityCell.rsrp = true;
+  prc->reportQuantityCell.rsrq = true;
+  prc->reportQuantityCell.sinr = true;
+  prc->reportQuantityRS_Indexes = calloc(1, sizeof(*prc->reportQuantityRS_Indexes));
+  prc->reportQuantityRS_Indexes->rsrp = true;
+  prc->reportQuantityRS_Indexes->rsrq = true;
+  prc->reportQuantityRS_Indexes->sinr = true;
+  asn1cCallocOne(prc->maxNrofRS_IndexesToReport, 4);
+  prc->maxReportCells = 4;
+  prc->includeBeamMeasurements = true;
+
+  NR_ReportConfigNR_t *rcnr = calloc(1, sizeof(*rcnr));
+  rcnr->reportType.present = NR_ReportConfigNR__reportType_PR_periodical;
+  rcnr->reportType.choice.periodical = prc;
+
+
+  rc->reportConfig.choice.reportConfigNR = rcnr;
+  ret = ASN_SEQUENCE_ADD(&mc->reportConfigToAddModList->list, rc);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+  //prc->reportQuantityRS_Indexes->rsrp = 1;
+
+  // Measurement ID: Identifies how to report measurements of a specific object. This is a many-to-many mapping: a
+  // measurement object could have multiple reporting configurations, a reporting configuration could apply to multiple
+  // objects. A unique ID is used for each object-to-report-config association. When UE sends a MeasurementReport
+  // message, a single ID and related measurements are included in the message.
+  mc->measIdToAddModList = calloc(1, sizeof(*mc->measIdToAddModList));
+  NR_MeasIdToAddMod_t *measid = calloc(1, sizeof(*measid));
+  measid->measId = 1;
+  measid->measObjectId = 1;
+  measid->reportConfigId = 1;
+  ret = ASN_SEQUENCE_ADD(&mc->measIdToAddModList->list, measid);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  // Quantity Configuration: Specifies parameters for layer 3 filtering of measurements. Only after filtering, reporting
+  // criteria are evaluated. The formula used is F_n = (1-a)F_(n-1) + a*M_n, where M is the latest measurement, F is the
+  // filtered measurement, and ais based on configured filter coefficient.
+  mc->quantityConfig = calloc(1, sizeof(*mc->quantityConfig));
+  mc->quantityConfig->quantityConfigNR_List = calloc(1, sizeof(*mc->quantityConfig->quantityConfigNR_List));
+  NR_QuantityConfigNR_t *qcnr3 = calloc(1, sizeof(*qcnr3));
+  asn1cCallocOne(qcnr3->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
+  asn1cCallocOne(qcnr3->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
+  ret = ASN_SEQUENCE_ADD(&mc->quantityConfig->quantityConfigNR_List->list, qcnr3);
+  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+
+  return mc;
+}
