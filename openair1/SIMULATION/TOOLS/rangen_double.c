@@ -86,7 +86,7 @@ double uniformrandom(void)
 
 /*!\brief Gaussian random number generator based on modified Box-Muller transformation.Returns a double-precision floating-point number. */
 
-double gaussdouble(double mean, double variance)
+double __attribute__ ((no_sanitize_address)) gaussdouble(double mean, double variance)
 {
   static int iset=0;
   static double gset;
@@ -175,7 +175,7 @@ void tableNor(unsigned long seed)
   return;
 }
 
-double gaussZiggurat(double mean, double variance)
+double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double variance)
 {
   hz = SHR3;
   iz = hz & 127;
