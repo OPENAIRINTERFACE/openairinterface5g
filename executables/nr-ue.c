@@ -32,7 +32,6 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "executables/softmodem-common.h"
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
-#include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 
@@ -668,7 +667,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc_oai();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_data, &rxtxD->txFifo);
+    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_data);
     LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 #endif
 
@@ -678,46 +677,6 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, UE->Mod_id, ENB_FLAG_NO, mac->crnti, proc->frame_rx, proc->nr_slot_rx, 0);
       pdcp_run(&ctxt);
     }
-
-    // Wait for PUSCH processing to finish
-    notifiedFIFO_elt_t *res;
-    res = pullTpool(&rxtxD->txFifo,&(get_nrUE_params()->Tpool));
-    if (res == NULL)
-      return; // Tpool has been stopped
-    delNotifiedFIFO_elt(res);
-  }
-
-  if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT) {
-    nr_phy_data_tx_t phy_data = {0};
-    if (UE->if_inst != NULL && UE->if_inst->ul_indication != NULL) {
-      nr_uplink_indication_t ul_indication;
-      memset((void*)&ul_indication, 0, sizeof(ul_indication));
-      ul_indication.module_id     = UE->Mod_id;
-      ul_indication.gNB_index     = gNB_id;
-      ul_indication.cc_id         = UE->CC_id;
-      ul_indication.frame_rx      = proc->frame_rx;
-      ul_indication.slot_rx       = proc->nr_slot_rx;
-      ul_indication.frame_tx      = proc->frame_tx;
-      ul_indication.slot_tx       = proc->nr_slot_tx;
-      ul_indication.ue_sched_mode = SCHED_PUCCH;
-      ul_indication.phy_data      = &phy_data;
-      UE->if_inst->ul_indication(&ul_indication);
-    }
-    if (UE->UE_mode[gNB_id] <= PUSCH) {
-      pucch_procedures_ue_nr(UE,
-                             gNB_id,
-                             proc,
-                             &phy_data);
-    }
-
-    LOG_D(PHY, "Sending Uplink data \n");
-    nr_ue_pusch_common_procedures(UE,
-                                  proc->nr_slot_tx,
-                                  &UE->frame_parms,
-                                  UE->frame_parms.nb_antennas_tx);
-
-    if (UE->UE_mode[gNB_id] > NOT_SYNCHED && UE->UE_mode[gNB_id] < PUSCH)
-      nr_ue_prach_procedures(UE, proc, proc->gNB_id);
   }
 
   ue_ta_procedures(UE, proc->nr_slot_tx, proc->frame_tx);
@@ -911,6 +870,7 @@ void *UE_thread(void *arg) {
 
     int slot_nr = absolute_slot % nb_slot_frame;
     nr_rxtx_thread_data_t curMsg = {0};
+    initNotifiedFIFO(&curMsg.txFifo);
     curMsg.UE=UE;
     // update thread index for received subframe
     curMsg.proc.CC_id       = UE->CC_id;
@@ -980,7 +940,23 @@ void *UE_thread(void *arg) {
       UE->frame_parms.get_samples_slot_timestamp(slot_nr,&UE->frame_parms,DURATION_RX_TO_TX) 
       - firstSymSamp;
 
+    // Start TX slot processing here. It runs in parallel with RX slot processing
+    notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), curMsg.proc.nr_slot_tx, &curMsg.txFifo, processSlotTX);
+    nr_rxtx_thread_data_t *curMsgTx = (nr_rxtx_thread_data_t *) NotifiedFifoData(newElt);
+    curMsgTx->proc = curMsg.proc;
+    curMsgTx->UE = UE;
+    pushTpool(&(get_nrUE_params()->Tpool), newElt);
+
+    // RX slot processing
     UE_processing(&curMsg);
+
+    // Wait for PUSCH processing to finish
+    notifiedFIFO_elt_t *res;
+    res = pullTpool(&curMsg.txFifo, &(get_nrUE_params()->Tpool));
+    if (res == NULL)
+      LOG_E(PHY, "Tpool has been aborted\n");
+    else
+      delNotifiedFIFO_elt(res);
 
     if (curMsg.proc.decoded_frame_rx != -1)
       decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | curMsg.proc.decoded_frame_rx);
