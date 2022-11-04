@@ -110,7 +110,6 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         int32_t **dl_ch_mag_ptr,
                         NR_DL_UE_HARQ_t *dlsch0_harq,
                         NR_DL_UE_HARQ_t *dlsch1_harq,
-                        RX_type_t rx_type,
                         unsigned char harq_pid,
                         unsigned char gNB_id,
                         unsigned char gNB_id_i,
@@ -121,21 +120,19 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         int32_t codeword_TB1,
                         uint32_t len,
                         uint8_t nr_slot_rx,
-                        uint8_t beamforming_mode);
+                        NR_UE_DLSCH_t *dlsch);
 
 
 /* Main Function */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
-                PDSCH_t type,
+                NR_UE_DLSCH_t *dlsch,
                 unsigned char gNB_id,
                 unsigned char gNB_id_i,
                 uint32_t frame,
                 uint8_t nr_slot_rx,
                 unsigned char symbol,
                 unsigned char first_symbol_flag,
-                RX_type_t rx_type,
-                unsigned char i_mod,
                 unsigned char harq_pid)
 {
 
@@ -143,7 +140,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_UE_PDSCH **pdsch_vars;
   NR_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
   PHY_NR_MEASUREMENTS *measurements = &ue->measurements;
-  NR_UE_DLSCH_t   **dlsch;
 
   int avg[16];
 //  int avg_0[2];
@@ -155,8 +151,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   int avgs = 0;// rb;
   NR_DL_UE_HARQ_t *dlsch0_harq, *dlsch1_harq = NULL;
-
-  uint8_t beamforming_mode = 0;
 
   int32_t **rxdataF_comp_ptr;
   int32_t **dl_ch_mag_ptr;
@@ -175,44 +169,20 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   uint16_t nbSymb=0;
   uint16_t pduBitmap=0x0;
 
-  switch (type) {
-  case SI_PDSCH:
-    pdsch_vars = ue->pdsch_vars;
-    dlsch = &ue->dlsch_SI[gNB_id];
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
-    break;
-
-  case RA_PDSCH:
-    pdsch_vars = ue->pdsch_vars;
-    dlsch = &ue->dlsch_ra[gNB_id];
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-
-    break;
-
-  case PDSCH:
-    pdsch_vars = ue->pdsch_vars;
-    dlsch = ue->dlsch[gNB_id];
-    dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
-    if (NR_MAX_NB_LAYERS>4)
-      dlsch1_harq = dlsch[1]->harq_processes[harq_pid];
-    break;
-
-  default:
-    LOG_E(PHY, "[UE][FATAL] nr_slot_rx %d: Unknown PDSCH format %d\n", nr_slot_rx, type);
-    return -1;
-    break;
-  }
+  pdsch_vars = ue->pdsch_vars;
+  dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
+  if (NR_MAX_NB_LAYERS>4)
+    dlsch1_harq = &ue->dl_harq_processes[1][harq_pid];
 
   if (dlsch0_harq && dlsch1_harq){
 
     LOG_D(PHY,"AbsSubframe %d.%d / Sym %d harq_pid %d, harq status %d.%d \n", frame, nr_slot_rx, symbol, harq_pid, dlsch0_harq->status, dlsch1_harq->status);
 
     if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status == ACTIVE)){
-      codeword_TB0 = dlsch0_harq->codeword;
+      codeword_TB0 = dlsch0_harq->codeword; // SV: where is this set? revisit for DL MIMO.
       codeword_TB1 = dlsch1_harq->codeword;
-      dlsch0_harq = dlsch[codeword_TB0]->harq_processes[harq_pid];
-      dlsch1_harq = dlsch[codeword_TB1]->harq_processes[harq_pid];
+      dlsch0_harq = &ue->dl_harq_processes[codeword_TB0][harq_pid];
+      dlsch1_harq = &ue->dl_harq_processes[codeword_TB1][harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming both TBs are active, in cw0 %d and cw1 %d \n", codeword_TB0, codeword_TB1);
@@ -220,7 +190,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
     } else if ((dlsch0_harq->status == ACTIVE) && (dlsch1_harq->status != ACTIVE) ) {
       codeword_TB0 = dlsch0_harq->codeword;
-      dlsch0_harq = dlsch[codeword_TB0]->harq_processes[harq_pid];
+      dlsch0_harq = &ue->dl_harq_processes[codeword_TB0][harq_pid];
       dlsch1_harq = NULL;
 
       #ifdef DEBUG_HARQ
@@ -230,7 +200,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     } else if ((dlsch0_harq->status != ACTIVE) && (dlsch1_harq->status == ACTIVE)){
       codeword_TB1 = dlsch1_harq->codeword;
       dlsch0_harq  = NULL;
-      dlsch1_harq  = dlsch[codeword_TB1]->harq_processes[harq_pid];
+      dlsch1_harq  = &ue->dl_harq_processes[codeword_TB1][harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming only TB1 is active, it is in cw %d\n", codeword_TB1);
@@ -246,7 +216,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   } else if (dlsch0_harq) {
     if (dlsch0_harq->status == ACTIVE) {
       codeword_TB0 = dlsch0_harq->codeword;
-      dlsch0_harq = dlsch[0]->harq_processes[harq_pid];
+      dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
 
       #ifdef DEBUG_HARQ
         printf("[DEMOD] I am assuming only TB0 is active\n");
@@ -265,8 +235,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     printf("[DEMOD] cw for TB0 = %d, cw for TB1 = %d\n", codeword_TB0, codeword_TB1);
   #endif
 
-  start_rb = dlsch0_harq->start_rb;
-  nb_rb_pdsch =  dlsch0_harq->nb_rb;
+  start_rb = dlsch[0].dlsch_config.start_rb;
+  nb_rb_pdsch =  dlsch[0].dlsch_config.number_rbs;
 
   DevAssert(dlsch0_harq);
 
@@ -278,11 +248,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 
   if (!common_vars) {
     LOG_W(PHY,"dlsch_demodulation.c: Null common_vars\n");
-    return(-1);
-  }
-
-  if (!dlsch[0]) {
-    LOG_W(PHY,"dlsch_demodulation.c: Null dlsch_ue pointer\n");
     return(-1);
   }
 
@@ -301,8 +266,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       slot = 1;
   }
 
-  uint8_t pilots = (dlsch0_harq->dlDmrsSymbPos >> symbol) & 1;
-  uint8_t config_type = dlsch0_harq->dmrsConfigType;
+  uint8_t pilots = (dlsch[0].dlsch_config.dlDmrsSymbPos >> symbol) & 1;
+  uint8_t config_type = dlsch[0].dlsch_config.dmrsConfigType;
   //----------------------------------------------------------
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
@@ -314,21 +279,21 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                        symbol,
                        pilots,
                        config_type,
-                       start_rb + dlsch0_harq->BWPStart,
+                       start_rb + dlsch[0].dlsch_config.BWPStart,
                        nb_rb_pdsch,
-                       dlsch0_harq->n_dmrs_cdm_groups,
-                       dlsch0_harq->Nl,
+                       dlsch[0].dlsch_config.n_dmrs_cdm_groups,
+                       dlsch[0].Nl,
                        frame_parms,
-                       dlsch0_harq->dlDmrsSymbPos,
+                       dlsch[0].dlsch_config.dlDmrsSymbPos,
                        ue->chest_time);
   stop_meas(&ue->generic_stat_bis[slot]);
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d type %d: Pilot/Data extraction %5.2f \n",
-	  frame,nr_slot_rx,slot,symbol,type,ue->generic_stat_bis[slot].p_time/(cpuf*1000.0));
+    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Pilot/Data extraction %5.2f \n",
+	  frame,nr_slot_rx,slot,symbol,ue->generic_stat_bis[slot].p_time/(cpuf*1000.0));
 
-  int nl = dlsch0_harq->Nl;
+  int nl = dlsch[0].Nl;
   int n_rx = frame_parms->nb_antennas_rx;
-  nb_re_pdsch = (pilots==1)? ((config_type==NFAPI_NR_DMRS_TYPE1)?nb_rb_pdsch*(12-6*dlsch0_harq->n_dmrs_cdm_groups): nb_rb_pdsch*(12-4*dlsch0_harq->n_dmrs_cdm_groups)) : (nb_rb_pdsch*12);
+  nb_re_pdsch = (pilots==1)? ((config_type==NFAPI_NR_DMRS_TYPE1)?nb_rb_pdsch*(12-6*dlsch[0].dlsch_config.n_dmrs_cdm_groups): nb_rb_pdsch*(12-4*dlsch[0].dlsch_config.n_dmrs_cdm_groups)) : (nb_rb_pdsch*12);
   //----------------------------------------------------------
   //--------------------- Channel Scaling --------------------
   //----------------------------------------------------------
@@ -337,7 +302,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                          frame_parms,
                          nl,
                          n_rx,
-                         dlsch,
                          symbol,
                          pilots,
                          nb_re_pdsch,
@@ -368,7 +332,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
         median[(aatx*n_rx)+aarx] = avg[(aatx*n_rx)+aarx];
       }
-    if (dlsch0_harq->Nl > 1) {
+    if (dlsch[0].Nl > 1) {
       nr_dlsch_channel_level_median(pdsch_vars[gNB_id]->dl_ch_estimates_ext,
                                     median,
                                     nl,
@@ -395,11 +359,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   stop_meas(&ue->generic_stat_bis[slot]);
 
 #if T_TRACER
-  if (type == PDSCH)
-  {
-    T(T_UE_PHY_PDSCH_ENERGY, T_INT(gNB_id),  T_INT(0), T_INT(frame%1024), T_INT(nr_slot_rx),
-                             T_INT(avg[0]), T_INT(avg[1]),    T_INT(avg[2]),             T_INT(avg[3]));
-  }
+  T(T_UE_PHY_PDSCH_ENERGY, T_INT(gNB_id),  T_INT(0), T_INT(frame%1024), T_INT(nr_slot_rx),
+                           T_INT(avg[0]), T_INT(avg[1]),    T_INT(avg[2]),             T_INT(avg[3]));
 #endif
 
   if (cpumeas(CPUMEAS_GETSTATE))
@@ -424,7 +385,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                 symbol,
                                 nb_re_pdsch,
                                 first_symbol_flag,
-                                dlsch0_harq->Qm,
+                                dlsch[0].dlsch_config.qamModOrder,
                                 nb_rb_pdsch,
                                 pdsch_vars[gNB_id]->log2_maxh,
                                 measurements); // log2_maxh+I0_shift
@@ -454,7 +415,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                                  nb_rb_pdsch,
                                  n_rx,
                                  nl,
-                                 dlsch0_harq->Qm,
+                                 dlsch[0].dlsch_config.qamModOrder,
                                  pdsch_vars[gNB_id]->log2_maxh,
                                  symbol,
                                  nb_re_pdsch);
@@ -473,18 +434,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   pdsch_vars[gNB_id]->dl_valid_re[symbol-1] = nb_re_pdsch;
 
   if(dlsch0_harq->status == ACTIVE) {
-    startSymbIdx = dlsch0_harq->start_symbol;
-    nbSymb = dlsch0_harq->nb_symbols;
-    pduBitmap = dlsch0_harq->pduBitmap;
+    startSymbIdx = dlsch[0].dlsch_config.start_symbol;
+    nbSymb = dlsch[0].dlsch_config.number_symbols;
+    pduBitmap = dlsch[0].dlsch_config.pduBitmap;
   }
   if(dlsch1_harq) {
-    startSymbIdx = dlsch1_harq->start_symbol;
-    nbSymb = dlsch1_harq->nb_symbols;
-    pduBitmap = dlsch1_harq->pduBitmap;
+    startSymbIdx = dlsch[1].dlsch_config.start_symbol;
+    nbSymb = dlsch[1].dlsch_config.number_symbols;
+    pduBitmap = dlsch[1].dlsch_config.pduBitmap;
   }
   
   /* Check for PTRS bitmap and process it respectively */
-  if((pduBitmap & 0x1) && (type == PDSCH)) {
+  if((pduBitmap & 0x1) && (dlsch[0].rnti_type == _C_RNTI_)) {
     nr_pdsch_ptrs_processing(ue,
                              pdsch_vars,
                              frame_parms,
@@ -494,7 +455,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              nr_slot_rx,
                              symbol,
                              (nb_rb_pdsch*12),
-                             dlsch[0]->rnti,rx_type);
+                             dlsch[0].rnti,dlsch);
     pdsch_vars[gNB_id]->dl_valid_re[symbol-1] -= pdsch_vars[gNB_id]->ptrs_re_per_slot[0][symbol];
   }
   
@@ -512,33 +473,35 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
       nr_dlsch_llr(pdsch_vars, frame_parms,
                    rxdataF_comp_ptr, dl_ch_mag_ptr,
                    dlsch0_harq, dlsch1_harq,
-                   rx_type, harq_pid,
+                   harq_pid,
                    gNB_id, gNB_id_i,
                    first_symbol_flag,
                    i, nb_rb_pdsch,
                    codeword_TB0, codeword_TB1,
                    pdsch_vars[gNB_id]->dl_valid_re[i-1],
-                   nr_slot_rx, beamforming_mode);
+                   nr_slot_rx, dlsch);
     }
     
-    int dmrs_type = dlsch[0]->harq_processes[harq_pid]->dmrsConfigType;
+    int dmrs_type = dlsch[0].dlsch_config.dmrsConfigType;
     uint8_t nb_re_dmrs;
-    uint16_t dmrs_len = get_num_dmrs(dlsch[0]->harq_processes[harq_pid]->dlDmrsSymbPos);
+    uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
     if (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
-      nb_re_dmrs = 6*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+      nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
     } else {
-      nb_re_dmrs = 4*dlsch[0]->harq_processes[harq_pid]->n_dmrs_cdm_groups;
+      nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
     }
-    dlsch[0]->harq_processes[harq_pid]->G = nr_get_G(dlsch[0]->harq_processes[harq_pid]->nb_rb,
-                                                     dlsch[0]->harq_processes[harq_pid]->nb_symbols,
-                                                     nb_re_dmrs,
-                                                     dmrs_len,
-                                                     dlsch[0]->harq_processes[harq_pid]->Qm,
-                                                     dlsch[0]->harq_processes[harq_pid]->Nl);
+
+    dlsch0_harq->G = nr_get_G(dlsch[0].dlsch_config.number_rbs,
+                              dlsch[0].dlsch_config.number_symbols,
+                              nb_re_dmrs,
+                              dmrs_len,
+                              dlsch[0].dlsch_config.qamModOrder,
+                              dlsch[0].Nl);
+
     nr_dlsch_layer_demapping(pdsch_vars[gNB_id]->llr,
-                             dlsch[0]->harq_processes[harq_pid]->Nl,
-                             dlsch[0]->harq_processes[harq_pid]->Qm,
-                             dlsch[0]->harq_processes[harq_pid]->G,
+                             dlsch[0].Nl,
+                             dlsch[0].dlsch_config.qamModOrder,
+                             dlsch0_harq->G,
                              codeword_TB0,
                              codeword_TB1,
                              pdsch_vars[gNB_id]->layer_llr);    
@@ -1345,7 +1308,6 @@ void nr_dlsch_scale_channel(int **dl_ch_estimates_ext,
 			    NR_DL_FRAME_PARMS *frame_parms,
 			    uint8_t n_tx,
 			    uint8_t n_rx,
-			    NR_UE_DLSCH_t **dlsch_ue,
 			    uint8_t symbol,
 			    uint8_t pilots,
 			    uint32_t len,
@@ -2387,7 +2349,6 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         int32_t **dl_ch_mag_ptr,
                         NR_DL_UE_HARQ_t *dlsch0_harq,
                         NR_DL_UE_HARQ_t *dlsch1_harq,
-                        RX_type_t rx_type,
                         unsigned char harq_pid,
                         unsigned char gNB_id,
                         unsigned char gNB_id_i,
@@ -2398,7 +2359,7 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                         int32_t codeword_TB1,
                         uint32_t len,
                         uint8_t nr_slot_rx,
-                        uint8_t beamforming_mode)
+                        NR_UE_DLSCH_t *dlsch)
 {
   uint32_t llr_offset_symbol;
   
@@ -2406,133 +2367,78 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
     pdsch_vars[gNB_id]->llr_offset[symbol-1] = 0;
   llr_offset_symbol = pdsch_vars[gNB_id]->llr_offset[symbol-1];
 
-  pdsch_vars[gNB_id]->llr_offset[symbol] = len*dlsch0_harq->Qm + llr_offset_symbol;
+  pdsch_vars[gNB_id]->llr_offset[symbol] = len*dlsch->dlsch_config.qamModOrder + llr_offset_symbol;
  
-  /*LOG_I(PHY,"compute LLRs [symbol %d] NbRB %d Qm %d LLRs-Length %d LLR-Offset %d @LLR Buff %x @LLR Buff(symb) %x\n",
-    symbol,
-    nb_rb,dlsch0_harq->Qm,
-    pdsch_vars[gNB_id]->llr_length[symbol],
-    pdsch_vars[gNB_id]->llr_offset[symbol],
-    (int16_t*)pdsch_vars[gNB_id]->llr[0],
-    pllr_symbol_cw0);*/
+  switch (dlsch[0].dlsch_config.qamModOrder) {
+    case 2 :
+      for(int l=0; l < dlsch[0].Nl; l++)
+        nr_dlsch_qpsk_llr(frame_parms,
+                          pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
+                          pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
+                          symbol,
+                          len,
+                          first_symbol_flag,
+                          nb_rb);
+      break;
 
-  switch (dlsch0_harq->Qm) {
-  case 2 :
-    switch (rx_type) {
-      case rx_standard :
-        for(int l =0; l<dlsch0_harq->Nl; l++)
-          nr_dlsch_qpsk_llr(frame_parms,
+    case 4 :
+      for(int l=0; l < dlsch[0].Nl; l++)
+        nr_dlsch_16qam_llr(frame_parms,
+                           pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
+                           pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
+                           pdsch_vars[gNB_id]->dl_ch_mag0[0],
+                           symbol,
+                           len,
+                           first_symbol_flag,
+                           nb_rb);
+      break;
+
+    case 6 :
+      for(int l=0; l < dlsch[0].Nl; l++)
+        nr_dlsch_64qam_llr(frame_parms,
+                           pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
+                           pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
+                           pdsch_vars[gNB_id]->dl_ch_mag0[0],
+                           pdsch_vars[gNB_id]->dl_ch_magb0[0],
+                           symbol,
+                           len,
+                           first_symbol_flag,
+                           nb_rb);
+      break;
+
+    case 8:
+      for(int l=0; l < dlsch[0].Nl; l++)
+        nr_dlsch_256qam_llr(frame_parms,
                             pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
                             pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
+                            pdsch_vars[gNB_id]->dl_ch_mag0[0],
+                            pdsch_vars[gNB_id]->dl_ch_magb0[0],
+                            pdsch_vars[gNB_id]->dl_ch_magr0[0],
                             symbol,
                             len,
                             first_symbol_flag,
-                            nb_rb,
-                            beamforming_mode);
-        break;
-      case rx_IC_single_stream ://From LTE Code!!
-        //not implemented yet
-        break;
-      case rx_IC_dual_stream :
-        //not implemented yet
-        break;
-      case rx_SIC_dual_stream :
-        //not implemented yet
-        break;
-    }
-    break;
-  case 4 :
-    switch (rx_type) {
-      case rx_standard :
-        for(int l =0; l<dlsch0_harq->Nl; l++)
-          nr_dlsch_16qam_llr(frame_parms,
-                             pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
-                             pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
-                             pdsch_vars[gNB_id]->dl_ch_mag0[0],
-                             symbol,
-                             len,
-                             first_symbol_flag,
-                             nb_rb,
-                             beamforming_mode);
-        break;
-      case rx_IC_single_stream ://not implemented yet
-        break;
-      case rx_IC_dual_stream ://not implemented yet
-        break;
-      case rx_SIC_dual_stream ://not implemented yet
-        break;
-    }
-    break;
-  case 6 :
-    switch (rx_type) {
-      case rx_standard :
-        for(int l =0; l<dlsch0_harq->Nl; l++)
-          nr_dlsch_64qam_llr(frame_parms,
-                             pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
-                             pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
-                             pdsch_vars[gNB_id]->dl_ch_mag0[0],
-                             pdsch_vars[gNB_id]->dl_ch_magb0[0],
-                             symbol,
-                             len,
-                             first_symbol_flag,
-                             nb_rb,
-                             beamforming_mode);
-        break;
-      case rx_IC_single_stream ://not implemented yet
-        break;
-      case rx_IC_dual_stream ://not implemented yet
-        break;
-      case rx_SIC_dual_stream ://not implemented yet
-        break;
-    }
+                            nb_rb);
+      break;
 
-    break;
-  case 8:
-    switch (rx_type) {
-      case rx_standard :
-        for(int l =0; l<dlsch0_harq->Nl; l++)
-          nr_dlsch_256qam_llr(frame_parms,
-                              pdsch_vars[gNB_id]->rxdataF_comp0[l*frame_parms->nb_antennas_rx],
-                              pdsch_vars[gNB_id]->layer_llr[l]+llr_offset_symbol,
-                              pdsch_vars[gNB_id]->dl_ch_mag0[0],
-                              pdsch_vars[gNB_id]->dl_ch_magb0[0],
-                              pdsch_vars[gNB_id]->dl_ch_magr0[0],
-                              symbol,
-                              len,
-                              first_symbol_flag,
-                              nb_rb,
-                              beamforming_mode);
-        break;
-      case rx_IC_single_stream ://not implemented yet
-        break;
-      case rx_IC_dual_stream ://not implemented yet
-        break;
-      case rx_SIC_dual_stream ://not implemented yet
-        break;
-    }
-    break;
-  default:
-    LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
-    return(-1);
-    break;
+    default:
+      LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
+      return(-1);
+      break;
   }
 
   if (dlsch1_harq) {
-    switch (dlsch1_harq->Qm) {
-    case 2 :
-      if (rx_type==rx_standard) {
+    switch (dlsch[1].dlsch_config.qamModOrder) {
+      case 2 :
         nr_dlsch_qpsk_llr(frame_parms,
                           pdsch_vars[gNB_id]->rxdataF_comp0[0],
                           pdsch_vars[gNB_id]->layer_llr[0]+llr_offset_symbol,
                           symbol,
                           len,
                           first_symbol_flag,
-                          nb_rb,
-                          beamforming_mode);
-      }
-      break;
-    case 4:
-      if (rx_type==rx_standard) {
+                          nb_rb);
+        break;
+
+      case 4:
         nr_dlsch_16qam_llr(frame_parms,
                            pdsch_vars[gNB_id]->rxdataF_comp0[0],
                            pdsch_vars[gNB_id]->layer_llr[0]+llr_offset_symbol,
@@ -2540,12 +2446,10 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                            symbol,
                            len,
                            first_symbol_flag,
-                           nb_rb,
-                           beamforming_mode);
-      }
-      break;
-    case 6 :
-      if (rx_type==rx_standard) {
+                           nb_rb);
+        break;
+
+      case 6 :
         nr_dlsch_64qam_llr(frame_parms,
                            pdsch_vars[gNB_id]->rxdataF_comp0[0],
                            pdsch_vars[gNB_id]->layer_llr[0]+llr_offset_symbol,
@@ -2554,12 +2458,10 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                            symbol,
                            len,
                            first_symbol_flag,
-                           nb_rb,
-                           beamforming_mode);
-        }
+                           nb_rb);
         break;
-    case 8 :
-      if (rx_type==rx_standard) {
+
+      case 8 :
         nr_dlsch_256qam_llr(frame_parms,
                             pdsch_vars[gNB_id]->rxdataF_comp0[0],
                             pdsch_vars[gNB_id]->layer_llr[0]+llr_offset_symbol,
@@ -2569,10 +2471,9 @@ static int nr_dlsch_llr(NR_UE_PDSCH **pdsch_vars,
                             symbol,
                             len,
                             first_symbol_flag,
-                            nb_rb,
-                            beamforming_mode);
-      }
+                            nb_rb);
         break;
+
       default:
         LOG_W(PHY,"rx_dlsch.c : Unknown mod_order!!!!\n");
         return(-1);

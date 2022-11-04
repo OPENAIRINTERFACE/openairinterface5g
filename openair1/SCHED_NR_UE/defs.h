@@ -96,7 +96,7 @@ typedef struct {
   @param proc Pointer to RXn-TXnp4 proc information
   @param eNB_id Local id of eNB on which to act
 */
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
 
 /*! \brief Scheduling for UE RX procedures in normal subframes.
   @param ue                     Pointer to UE variables on which to act
@@ -109,10 +109,10 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+                           nr_phy_data_t *phy_data,
                            notifiedFIFO_t *txFifo);
 
-int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t eNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
+int phy_procedures_slot_parallelization_nrUE_RX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, uint8_t abstraction_flag, uint8_t do_pdcch_flag, relaying_type_t r_type);
 
 void processSlotTX(void *arg);
 
@@ -176,22 +176,20 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             int gNB_id,
-                            PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
-                            NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors);
+                            NR_UE_DLSCH_t *dlsch1);
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           int eNB_id, PDSCH_t pdsch,
-                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1);
+                           int gNB_id,
+                           NR_UE_DLSCH_t *dlsch);
 
 int nr_ue_pdcch_procedures(uint8_t gNB_id,
                            PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            int32_t pdcch_est_size,
                            int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
-                           NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+                           nr_phy_data_t *phy_data,
                            int n_ss);
 
 int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);

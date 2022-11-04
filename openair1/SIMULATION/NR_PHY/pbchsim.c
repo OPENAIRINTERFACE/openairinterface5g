@@ -86,25 +86,23 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 			   UE_nr_rxtx_proc_t *proc,
          int32_t pdcch_est_size,
          int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
-         NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+         nr_phy_data_t *phy_data,
          int n_ss) {
   return 0;
 }
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           int eNB_id, PDSCH_t pdsch,
-                           NR_UE_DLSCH_t *dlsch0, NR_UE_DLSCH_t *dlsch1) {
+                           int eNB_id,
+                           NR_UE_DLSCH_t *dlsch) {
   return 0;
 }
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             int gNB_id,
-                            PDSCH_t pdsch,
                             NR_UE_DLSCH_t *dlsch0,
-                            NR_UE_DLSCH_t *dlsch1,
-                            int *dlsch_errors) {
+                            NR_UE_DLSCH_t *dlsch1) {
   return false;
 }
 
@@ -746,7 +744,7 @@ int main(int argc, char **argv)
       }
       else {
         UE_nr_rxtx_proc_t proc={0};
-        NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+        nr_phy_data_t phy_data={0};
 
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
@@ -776,7 +774,7 @@ int main(int argc, char **argv)
                          0,
                          ssb_index%8,
                          SISO,
-                         &phy_pdcch_config,
+                         &phy_data,
                          &result);
 
 	if (ret==0) {

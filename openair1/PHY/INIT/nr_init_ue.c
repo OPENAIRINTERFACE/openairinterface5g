@@ -34,6 +34,7 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "openair2/COMMON/prs_nr_paramdef.h"
+#include "SCHED_NR_UE/harq_nr.h"
 
 
 extern uint16_t beta_cqi[16];
@@ -627,21 +628,74 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
   }
 }
 
+void free_nr_ue_dl_harq(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb) {
+
+  uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;
+  if (num_rb != 273) {
+    a_segments = a_segments*num_rb;
+    a_segments = (a_segments/273)+1;
+  }
+
+  for (int i=0; i<number_of_processes; i++) {
+    free_and_zero(harq_list[i].b);
+
+    for (int r=0; r<a_segments; r++) {
+      free_and_zero(harq_list[i].c[r]);
+      free_and_zero(harq_list[i].d[r]);
+    }
+    free_and_zero(harq_list[i].c);
+    free_and_zero(harq_list[i].d);
+  }
+}
+
 void term_nr_ue_transport(PHY_VARS_NR_UE *ue)
 {
   const int N_RB_DL = ue->frame_parms.N_RB_DL;
+  int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
-    for (int j = 0; j < 2; j++) {
-      free_nr_ue_dlsch(&ue->dlsch[i][j], N_RB_DL);
-      if (j==0)
-        free_nr_ue_ulsch(&ue->ulsch[i], N_RB_DL, &ue->frame_parms);
+    for (int j = 0; j < num_cw; j++) {
+      free_nr_ue_dl_harq(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, N_RB_DL);
+      free_nr_ue_ulsch(&ue->ulsch[i], N_RB_DL, &ue->frame_parms);
     }
+  }
+}
 
-    free_nr_ue_dlsch(&ue->dlsch_SI[i], N_RB_DL);
-    free_nr_ue_dlsch(&ue->dlsch_ra[i], N_RB_DL);
+void nr_init_harq_processes(NR_DL_UE_HARQ_t* harq_list, int number_of_processes, int num_rb) {
+
+  int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
+  if (num_rb != 273) {
+    a_segments = a_segments*num_rb;
+    a_segments = (a_segments/273)+1;
   }
 
-  free_nr_ue_dlsch(&ue->dlsch_MCH[0], N_RB_DL);
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+
+  for (int i=0; i<number_of_processes; i++) {
+    memset(harq_list + i, 0, sizeof(NR_DL_UE_HARQ_t));
+    init_downlink_harq_status(harq_list + i);
+    harq_list[i].b = malloc16(dlsch_bytes);
+
+    if (harq_list[i].b)
+      memset(harq_list[i].b, 0, dlsch_bytes);
+    else
+      AssertFatal(true, "Unable to reset harq memory \"b\"\n");
+
+    harq_list[i].c = malloc16(a_segments*sizeof(uint8_t *));
+    harq_list[i].d = malloc16(a_segments*sizeof(int16_t *));
+    for (int r=0; r<a_segments; r++) {
+      harq_list[i].c[r] = malloc16(1056);
+      harq_list[i].d[r] = malloc16(5*8448*sizeof(int16_t));
+      if (harq_list[i].c[r])
+        memset(harq_list[i].c[r],0,1056);
+      else
+        AssertFatal(true, "Unable to reset harq memory \"c\"\n");
+
+      if (harq_list[i].d[r])
+        memset(harq_list[i].d[r],0,5*8448);
+      else
+        AssertFatal(true, "Unable to reset harq memory \"d\"\n");
+    }
+  }
 }
 
 void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
@@ -650,20 +704,13 @@ void init_nr_ue_transport(PHY_VARS_NR_UE *ue) {
 
   for (int i = 0; i < NUMBER_OF_CONNECTED_gNB_MAX; i++) {
     for (int j=0; j<num_codeword; j++) {
-      AssertFatal((ue->dlsch[i][j]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL))!=NULL,"Can't get ue dlsch structures\n");
-      LOG_D(PHY,"dlsch[%d][%d] => %p\n",i,j,ue->dlsch[i][j]);
+      nr_init_harq_processes(ue->dl_harq_processes[j], NR_MAX_DLSCH_HARQ_PROCESSES, ue->frame_parms.N_RB_DL);
       if (j==0) {
         AssertFatal((ue->ulsch[i] = new_nr_ue_ulsch(ue->frame_parms.N_RB_UL, NR_MAX_ULSCH_HARQ_PROCESSES,&ue->frame_parms))!=NULL,"Can't get ue ulsch structures\n");
         LOG_D(PHY,"ulsch[%d] => %p\n",i,ue->ulsch[i]);
       }
     }
-
-    ue->dlsch_SI[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
-    ue->dlsch_ra[i]  = new_nr_ue_dlsch(1,1,NSOFT,ue->max_ldpc_iterations,ue->frame_parms.N_RB_DL);
   }
-
-  //ue->frame_parms.pucch_config_common.deltaPUCCH_Shift = 1;
-  ue->dlsch_MCH[0]  = new_nr_ue_dlsch(1,NR_MAX_DLSCH_HARQ_PROCESSES,NSOFT,MAX_LDPC_ITERATIONS_MBSFN,ue->frame_parms.N_RB_DL);
 
   for(int i=0; i<5; i++)
     ue->dl_stats[i] = 0;

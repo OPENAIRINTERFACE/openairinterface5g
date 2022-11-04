@@ -413,12 +413,6 @@ int main( int argc, char **argv ) {
   if (set_exe_prio)
     set_priority(79);
 
-  if (mlockall(MCL_CURRENT | MCL_FUTURE) == -1)
-  {
-    fprintf(stderr, "mlockall: %s\n", strerror(errno));
-    return EXIT_FAILURE;
-  }
-
   //uint8_t beta_ACK=0,beta_RI=0,beta_CQI=2;
   PHY_VARS_NR_UE *UE[MAX_NUM_CCs];
   start_background_system();
@@ -529,7 +523,6 @@ int main( int argc, char **argv ) {
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);
     set_latency_target();
-    mlockall(MCL_CURRENT | MCL_FUTURE);
 
     if(IS_SOFTMODEM_DOSCOPE) {
       load_softscope("nr",PHY_vars_UE_g[0][0]);

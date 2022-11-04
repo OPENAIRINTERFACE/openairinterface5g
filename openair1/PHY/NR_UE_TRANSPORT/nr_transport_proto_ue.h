@@ -47,22 +47,10 @@
  * @{
  */
 
-/** \fn free_ue_dlsch(NR_UE_DLSCH_t *dlsch)
-    \brief This function frees memory allocated for a particular DLSCH at UE
-    @param dlsch Pointer to DLSCH to be removed
-*/
-void free_nr_ue_dlsch(NR_UE_DLSCH_t **dlsch, uint16_t N_RB_DL);
 
-
-/** \fn new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft)
-    \brief This function allocates structures for a particular DLSCH at UE
-    @returns Pointer to DLSCH to be removed
-    @param Kmimo Kmimo factor from 36-212/36-213
-    @param Mdlharq Maximum number of HARQ rounds (36-212/36-213)
-    @param Nsoft Soft-LLR buffer size from UE-Category
-    @params N_RB_DL total number of resource blocks (determine the operating BW)
+/** \brief This function initialises structures for DLSCH at UE
 */
-NR_UE_DLSCH_t *new_nr_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_t max_turbo_iterations,uint16_t N_RB_DL);
+void nr_ue_dlsch_init(NR_UE_DLSCH_t *dlsch_list, int num_dlsch, uint8_t max_ldpc_iterations);
 
 void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,
                       uint16_t N_RB_UL,
@@ -478,8 +466,7 @@ int32_t nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    uint8_t symbol,
                    uint32_t len,
                    uint8_t first_symbol_flag,
-                   uint16_t nb_rb,
-                   uint8_t beamforming_mode);
+                   uint16_t nb_rb);
 
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
@@ -502,8 +489,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint8_t beamforming_mode);
+                     uint16_t nb_rb);
 /**
    \brief This function generates log-likelihood ratios (decoder input) for single-stream 16QAM received waveforms
    @param frame_parms Frame descriptor structure
@@ -526,8 +512,7 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint8_t beamforming_mode);
+                     uint16_t nb_rb);
 
 void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      int32_t *rxdataF_comp,
@@ -538,8 +523,7 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint8_t beamforming_mode);
+                     uint16_t nb_rb);
 
 
 /** \fn dlsch_extract_rbs(int32_t **rxdataF,
@@ -683,7 +667,6 @@ void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
                          NR_DL_FRAME_PARMS *frame_parms,
                          uint8_t n_tx,
                          uint8_t n_rx,
-                         NR_UE_DLSCH_t **dlsch_ue,
                          uint8_t symbol,
                          uint8_t start_symbol,
                          uint32_t len,
@@ -718,8 +701,7 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint32_t frame,
                          uint16_t nb_symb_sch,
                          uint8_t nr_slot_rx,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti);
+                         uint8_t harq_pid);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,
@@ -800,13 +782,13 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                uint8_t eNB_id,
                uint8_t i_ssb,
                MIMO_mode_t mimo_mode,
-               NR_UE_PDCCH_CONFIG *phy_pdcch_config,
+               nr_phy_data_t *phy_data,
                fapiPbch_t* result);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
                       PHY_VARS_NR_UE *ue,
                       int pbch_initial_symbol,
-                      NR_UE_PDCCH_CONFIG *phy_pdcch_config);
+                      nr_phy_data_t *phy_data);
 
 
 #ifndef modOrder
@@ -865,8 +847,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   int16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
-                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                                  NR_UE_PDCCH_CONFIG *phy_pdcch_config);
+                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
 
 
 /** \brief This function is the top-level entry point to PDSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
@@ -884,21 +865,17 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     @param nr_slot_rx Slot number
     @param symbol Symbol on which to act (within sub-frame)
     @param first_symbol_flag set to 1 on first DLSCH symbol
-    @param rx_type. rx_type=RX_IC_single_stream will enable interference cancellation of a second stream when decoding the first stream. In case of TM1, 2, 5, and this can cancel interference from a neighbouring cell given by eNB_id_i. In case of TM5, eNB_id_i should be set to n_connected_eNB to perform multi-user interference cancellation. In case of TM3, eNB_id_i should be set to eNB_id to perform co-channel interference cancellation; this option should be used together with an interference cancellation step [...]. In case of TM3, if rx_type=RX_IC_dual_stream, both streams will be decoded by applying the IC single stream receiver twice.
-    @param i_mod Modulation order of the interfering stream
 */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
-             UE_nr_rxtx_proc_t *proc,
-             PDSCH_t type,
-             unsigned char eNB_id,
-             unsigned char eNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
-             uint32_t frame,
-             uint8_t nr_slot_rx,
-             unsigned char symbol,
-             unsigned char first_symbol_flag,
-             RX_type_t rx_type,
-             unsigned char i_mod,
-             unsigned char harq_pid);
+                UE_nr_rxtx_proc_t *proc,
+                NR_UE_DLSCH_t *dlsch,
+                unsigned char gNB_id,
+                unsigned char gNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
+                uint32_t frame,
+                uint8_t nr_slot_rx,
+                unsigned char symbol,
+                unsigned char first_symbol_flag,
+                unsigned char harq_pid);
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t slot);
 

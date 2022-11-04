@@ -634,8 +634,7 @@ int nr_dlsch_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
                    uint8_t symbol,
                    uint32_t len,
                    uint8_t first_symbol_flag,
-                   uint16_t nb_rb,
-                   uint8_t beamforming_mode)
+                   uint16_t nb_rb)
 {
 
   c16_t *rxF   = (c16_t *)&rxdataF_comp[((int32_t)symbol*nb_rb*12)];
@@ -677,8 +676,7 @@ void nr_dlsch_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint8_t beamforming_mode)
+                     uint16_t nb_rb)
 {
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -780,8 +778,7 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 			uint8_t symbol,
 			uint32_t len,
 			uint8_t first_symbol_flag,
-			uint16_t nb_rb,
-			uint8_t beamforming_mode)
+			uint16_t nb_rb)
 {
 #if defined(__x86_64__) || defined(__i386__)
   __m128i *rxF = (__m128i*)&rxdataF_comp[(symbol*nb_rb*12)];
@@ -923,8 +920,7 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t symbol,
                      uint32_t len,
                      uint8_t first_symbol_flag,
-                     uint16_t nb_rb,
-                     uint8_t beamforming_mode)
+                     uint16_t nb_rb)
 {
   __m128i *rxF = (__m128i*)&rxdataF_comp[(symbol*nb_rb*12)];
   __m128i *ch_mag,*ch_magb,*ch_magr;
