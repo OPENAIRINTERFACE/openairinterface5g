@@ -34,6 +34,7 @@
 #include "filt16a_32.h"
 #include "T.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
+extern openair0_config_t openair0_cfg[];
 
 //#define DEBUG_PDSCH
 //#define DEBUG_PDCCH
@@ -45,7 +46,7 @@
 #define NO_INTERP 1
 
 /* Generic function to find the peak of channel estimation buffer */
-void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val)
+void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val, int32_t mean_val)
 {
   int32_t max_val = 0, max_idx = 0, abs_val = 0;
   for(int k = 0; k < buf_len; k++)
@@ -57,18 +58,29 @@ void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t
       max_idx = k;
     }
   }
-  *peak_val = max_val;
-  *peak_idx = max_idx;
+  
+  // Check for detection threshold
+  LOG_D(PHY,"PRS ToA estimator: max_val %d, mean_val %d, max_idx %d\n", max_val, mean_val, max_idx);
+  if((mean_val !=0) && (max_val/mean_val > 10))
+  {
+    *peak_val = max_val;
+    *peak_idx = max_idx;
+  }
+  else
+  {
+    *peak_val = 0;
+    *peak_idx = 0;
+  }
 }
 
-int nr_prs_channel_estimation(uint8_t rsc_id,
+int nr_prs_channel_estimation(uint8_t gNB_id,
+                              uint8_t rsc_id,
                               uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params,
                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
-  int gNB_id = proc->gNB_id;
   uint8_t rxAnt = 0, idx = 0;
   prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
@@ -84,9 +96,10 @@ int nr_prs_channel_estimation(uint8_t rsc_id,
 
   int16_t *rxF, *pil, mod_prs[NR_MAX_PRS_LENGTH << 1];
   const int16_t *fl, *fm, *fmm, *fml, *fmr, *fr;
-  int16_t ch[2] = {0}, noiseFig[2] = {0};
+  int16_t ch[2] = {0};
   int16_t k_prime = 0, k = 0, re_offset = 0, first_half = 0, second_half = 0;
-  int32_t ch_pwr = 0, snr = 0;
+  int32_t ch_pwr = 0, snr = 0, noiseFig[2] = {0}, mean_val = 0;
+  double ch_pwr_dbm = 0.0f;
 #ifdef DEBUG_PRS_CHEST
   char filename[64] = {0}, varname[64] = {0};
 #endif
@@ -527,10 +540,17 @@ int nr_prs_channel_estimation(uint8_t rsc_id,
          (int16_t *)&chT_interpol[rxAnt][0],1);
 
     // peak estimator
+    mean_val = abs32((int32_t)ch_tmp[(prs_cfg->NumRB*12)]);
     peak_estimator(&chT_interpol[rxAnt][start_offset],
                    frame_params->ofdm_symbol_size,
                    &prs_meas[rxAnt]->dl_toa,
-                   &ch_pwr);
+                   &ch_pwr,
+                   mean_val);
+
+    // adjusting the rx_gains for channel peak power
+    ch_pwr_dbm =  10*log10(ch_pwr)+30
+                  - 10*log10(pow(2,30)) - ((int)openair0_cfg[0].rx_gain[0]
+                  - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(frame_params->ofdm_symbol_size);
 
     //prs measurements
     prs_meas[rxAnt]->gNB_id     = gNB_id;
@@ -538,7 +558,7 @@ int nr_prs_channel_estimation(uint8_t rsc_id,
     prs_meas[rxAnt]->slot       = proc->nr_slot_rx;
     prs_meas[rxAnt]->rxAnt_idx  = rxAnt;
     prs_meas[rxAnt]->dl_aoa     = rsc_id;
-    LOG_I(PHY, "[gNB %d][rsc %d][Rx %d][sfn %d][slot %d] DL PRS ToA ==> %d / %d samples, peak channel power %.1f dBm, SNR %+2d dB\n", gNB_id, rsc_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, prs_meas[rxAnt]->dl_toa, frame_params->ofdm_symbol_size, 10*log10(ch_pwr/frame_params->ofdm_symbol_size)-30, prs_meas[rxAnt]->snr);
+    LOG_I(PHY, "[gNB %d][rsc %d][Rx %d][sfn %d][slot %d] DL PRS ToA ==> %d / %d samples, peak channel power %.1f dBm, SNR %+2d dB\n", gNB_id, rsc_id, rxAnt, proc->frame_rx, proc->nr_slot_rx, prs_meas[rxAnt]->dl_toa, frame_params->ofdm_symbol_size, ch_pwr_dbm, prs_meas[rxAnt]->snr);
 
 #ifdef DEBUG_PRS_CHEST
     sprintf(filename, "%s%i%s", "PRSpilot_", rxAnt, ".m");

@@ -345,7 +345,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 }
 
 
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path)
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path, char* reconfig_file, char* rbconfig_file)
 {
   if(NB_NR_UE_INST > 0) {
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
@@ -370,10 +370,12 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
       // read in files for RRCReconfiguration and RBconfig
       FILE *fd;
       char filename[1024];
-      if (rrc_config_path)
-        sprintf(filename,"%s/reconfig.raw",rrc_config_path);
+      if (rrc_config_path && reconfig_file)
+        sprintf(filename,"%s/%s",rrc_config_path,reconfig_file);
       else
         sprintf(filename,"reconfig.raw");
+      
+      LOG_I(NR_RRC, "using %s for rrc init[1/2]\n",filename);
       fd = fopen(filename,"r");
       char buffer[1024];
       AssertFatal(fd,
@@ -384,10 +386,12 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
       int msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
-      if (rrc_config_path)
-        sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
+      if (rrc_config_path && rbconfig_file)
+        sprintf(filename,"%s/%s",rrc_config_path,rbconfig_file);
       else
         sprintf(filename,"rbconfig.raw");
+      
+      LOG_I(NR_RRC, "using %s for rrc init[2/2]\n",filename);
       fd = fopen(filename,"r");
       AssertFatal(fd,
                   "cannot read file %s: errno %d, %s\n",
