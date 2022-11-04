@@ -107,11 +107,15 @@ function test_run() {
         echo "<EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]}, Run = $run_index >" >> "$temp_exec_log"
         echo "Executing $main_exec $main_exec_args_array_index " >> "$temp_exec_log"
         uname -a >> "$temp_exec_log"
-        "$main_exec" $main_exec_args_array_index >> "$temp_exec_log"  2>&1
+        "$main_exec" $main_exec_args_array_index >> "$temp_exec_log"  2>&1 &
+     done
 
+     wait
+
+     for (( run_index=1; run_index <= $nruns; run_index++ ))
+      do
         echo "</EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]},  Run = $run_index >" >> $temp_exec_log  2>&1
         cat $temp_exec_log >> $log_file  2>&1
-
 
         result=PASS
         for search_expr in "${search_expr_array[@]}"
