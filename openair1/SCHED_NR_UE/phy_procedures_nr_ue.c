@@ -1291,12 +1291,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
   uint8_t mod_id = ue->Mod_id;
-  uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
-
-  nr_prach = nr_ue_get_rach(&ue->prach_vars[gNB_id]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
-  LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
 
   if (ue->prach_vars[gNB_id]->active) {
 
