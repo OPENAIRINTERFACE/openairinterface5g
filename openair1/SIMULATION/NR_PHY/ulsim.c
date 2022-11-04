@@ -1150,7 +1150,7 @@ int main(int argc, char **argv)
         pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = tbslbrm;
         pusch_pdu->pusch_data.rv_index = rv_index;
         pusch_pdu->pusch_data.harq_process_id = 0;
-        pusch_pdu->pusch_data.new_data_indicator = trial & 0x1;
+        pusch_pdu->pusch_data.new_data_indicator = round == 0 ? 1 : 0;
         pusch_pdu->pusch_data.num_cb = 0;
         pusch_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
         pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
