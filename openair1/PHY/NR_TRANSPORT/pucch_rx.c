@@ -53,7 +53,7 @@
 
 #include "T.h"
 
-//#define DEBUG_NR_PUCCH_RX 1
+#define DEBUG_NR_PUCCH_RX 1
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void){
     NR_gNB_PUCCH_t *pucch;
@@ -1551,7 +1551,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     } // cw loop
     corr_dB = dB_fixed64((uint64_t)corr);
 #ifdef DEBUG_NR_PUCCH_RX
-    LOG_I(PHY,"slot %d PUCCH2 cw_ML %d, metric %d dB\n",slot,cw_ML,corr_dB);
+    printf("slot %d PUCCH2 cw_ML %d, metric %d dB\n",slot,cw_ML,corr_dB);
 #endif
     decodedPayload[0]=(uint64_t)cw_ML;
   }
