@@ -69,7 +69,7 @@ function test_run() {
     mkdir -p $log_dir
 
     echo "" > $temp_exec_log
-    echo "" > $log_file
+    echo "start at $(date)" > "$log_file"
     #echo "log_dir = $log_dir"
     #echo "log_file = $log_file"
     #echo "exec_file = $exec_file"
@@ -105,9 +105,9 @@ function test_run() {
 
         echo "-----------------------------------------------------------------------------" > "$temp_exec_log"
         echo "<EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]}, Run = $run_index >" >> "$temp_exec_log"
-        echo "Executing $main_exec $main_exec_args_array_index " >> "$temp_exec_log"
+        echo "Executing $main_exec $main_exec_args_array_index at $(date)" >> "$temp_exec_log"
         uname -a >> "$temp_exec_log"
-        "$main_exec" $main_exec_args_array_index >> "$temp_exec_log"  2>&1 &
+        time "$main_exec" $main_exec_args_array_index >> "$temp_exec_log"  2>&1 &
      done
 
      wait
@@ -115,7 +115,7 @@ function test_run() {
      for (( run_index=1; run_index <= $nruns; run_index++ ))
       do
         echo "</EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]},  Run = $run_index >" >> $temp_exec_log  2>&1
-        cat $temp_exec_log >> $log_file  2>&1
+        cat "$temp_exec_log" >> "$log_file"  2>&1
 
         result=PASS
         for search_expr in "${search_expr_array[@]}"
@@ -134,10 +134,12 @@ function test_run() {
 
         result_string=$result_string" Run_$run_index =$result"
         if [ $result != PASS ] ; then 
-          global_result = FAIL
+          global_result=FAIL
         fi
 
-      done #End of for loop (nindex)
+     done #End of for loop (nindex)
+
+     echo "END at $(date)" >> "$log_file"
 
       if [ "$global_result" != PASS ]; then
          echo_error "execution $test_case_name.${tags_array[$tags_array_index]} {$PROPER_DESC} Run_Result = \"$result_string\" Result =  FAIL"
