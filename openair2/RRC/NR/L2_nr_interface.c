@@ -117,7 +117,8 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                              const rb_id_t     Srb_id,
                              const rnti_t      rnti,
                              const uint8_t     Nb_tb,
-                             uint8_t *const    buffer_pP ){
+                             uint8_t *const    buffer_pP)
+{
 
 #ifdef DEBUG_RRC
   LOG_D(RRC,"[eNB %d] mac_rrc_data_req to SRB ID=%ld\n",Mod_idP,Srb_id);
@@ -162,19 +163,21 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   if ((Srb_id & RAB_OFFSET) == CCCH) {
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
 
-    char *payload_pP;
     struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[Mod_idP], rnti);
 
     LOG_D(NR_RRC,"[gNB %d] Frame %d CCCH request (Srb_id %ld)\n", Mod_idP, frameP, Srb_id);
     if (ue_context_p == NULL) {
-      LOG_E(NR_RRC,"[gNB %d] Frame %d CCCH request but no ue_context\n", Mod_idP, frameP);
+      if(buffer_pP != NULL)
+        LOG_E(NR_RRC,"[gNB %d] Frame %d CCCH request but no ue_context\n", Mod_idP, frameP);
       return 0;
     }
 
     uint16_t payload_size = ue_context_p->ue_context.Srb0.Tx_buffer.payload_size;
+    if (buffer_pP == NULL)
+      return payload_size;
     // check if data is there for MAC
     if (payload_size > 0) {
-      payload_pP = ue_context_p->ue_context.Srb0.Tx_buffer.Payload;
+      char *payload_pP = ue_context_p->ue_context.Srb0.Tx_buffer.Payload;
       LOG_D(NR_RRC,"[gNB %d] CCCH has %d bytes (dest: %p, src %p)\n", Mod_idP, payload_size, buffer_pP, payload_pP);
       // Fill buffer
       memcpy((void *)buffer_pP, (void*)payload_pP, payload_size);
