@@ -24,6 +24,11 @@
 cmake_minimum_required (VERSION 3.5)
 project (OpenAirInterface LANGUAGES C CXX)
 
+#########################################################
+# Base directories, compatible with legacy OAI building #
+#########################################################
+set (OPENAIR_DIR     ${CMAKE_SOURCE_DIR})
+
 include("cmake_targets/macros.cmake")
 
 # System packages that are required
@@ -55,15 +60,15 @@ if (${RF_BOARD} STREQUAL "OAI_USRP")
   find_package(Boost REQUIRED)
 
 elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
-    include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
+    include_directories("radio/IRIS/USERSPACE/LIB/")
 
     set(HW_SOURCE ${HW_SOURCE}
-            ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp)
+           radio/IRIS/USERSPACE/LIB/iris_lib.cpp)
     LINK_DIRECTORIES("/usr/local/lib")
     set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
 
 elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
-    include_directories("${OPENAIR_DIR}/radio/AW2SORI")
+    include_directories("radio/AW2SORI")
     set(HW_SOURCE ${HW_SOURCE}
 	    ${OPENAIR_DIR}/radio/AW2SORI/ARCH/AW2SORI/oaiori.c)
     LINK_DIRECTORIES("/usr/local/lib")
@@ -145,7 +150,6 @@ endif()
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
-set (OPENAIR_DIR     ${CMAKE_SOURCE_DIR})
 set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
 set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
@@ -3004,3 +3008,4 @@ include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
 include(${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/CMakeLists.txt)
 
 add_subdirectory(openair2)
+add_subdirectory(doc)
