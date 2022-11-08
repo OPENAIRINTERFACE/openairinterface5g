@@ -44,6 +44,8 @@
 #include "OCG.h"
 #include "OCG_extern.h"
 
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+
 /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/NR/nr_rrc_extern.h"
@@ -2700,28 +2702,30 @@ void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 {
- NR_UEs_t *UE_info = &nr_mac->UE_info;
- pthread_mutex_lock(&UE_info->mutex);
- UE_iterator(UE_info->list, UE) {
-   if (UE->rnti==rnti)
-     break;
- }
+  nr_rlc_remove_ue(rnti);
 
- if (!UE) {
-   LOG_W(NR_MAC,"Call to del rnti %04x, but not existing\n", rnti);
-   pthread_mutex_unlock(&UE_info->mutex);
-   return;
- }
+  NR_UEs_t *UE_info = &nr_mac->UE_info;
+  pthread_mutex_lock(&UE_info->mutex);
+  UE_iterator(UE_info->list, UE) {
+    if (UE->rnti==rnti)
+      break;
+  }
 
- NR_UE_info_t * newUEs[MAX_MOBILES_PER_GNB+1]={0};
- int newListIdx=0;
- for (int i=0; i<MAX_MOBILES_PER_GNB; i++)
-   if(UE_info->list[i] && UE_info->list[i]->rnti != rnti)
-     newUEs[newListIdx++]=UE_info->list[i];
- memcpy(UE_info->list, newUEs, sizeof(UE_info->list));
- pthread_mutex_unlock(&UE_info->mutex);
+  if (!UE) {
+    LOG_W(NR_MAC,"Call to del rnti %04x, but not existing\n", rnti);
+    pthread_mutex_unlock(&UE_info->mutex);
+    return;
+  }
 
- delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
+  NR_UE_info_t * newUEs[MAX_MOBILES_PER_GNB+1]={0};
+  int newListIdx=0;
+  for (int i=0; i<MAX_MOBILES_PER_GNB; i++)
+    if(UE_info->list[i] && UE_info->list[i]->rnti != rnti)
+      newUEs[newListIdx++]=UE_info->list[i];
+  memcpy(UE_info->list, newUEs, sizeof(UE_info->list));
+  pthread_mutex_unlock(&UE_info->mutex);
+
+  delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
 }
 
 void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
@@ -3097,15 +3101,14 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
 
 void send_initial_ul_rrc_message(module_id_t        module_id,
                                  int                CC_id,
-                                 const NR_UE_info_t *UE,
-                                 rb_id_t            srb_id,
+                                 int                rnti,
+                                 int                uid,
                                  const uint8_t      *sdu,
                                  sdu_size_t         sdu_len) {
   const gNB_MAC_INST *mac = RC.nrmac[module_id];
-  const rnti_t rnti = UE->rnti;
   LOG_W(MAC,
-        "[RAPROC] Received SDU for CCCH on SRB %ld length %d for UE %04x\n",
-        srb_id, sdu_len, rnti);
+        "[RAPROC] Received SDU for CCCH length %d for UE %04x\n",
+        sdu_len, rnti);
 
   /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
   if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
@@ -3113,14 +3116,13 @@ void send_initial_ul_rrc_message(module_id_t        module_id,
     ue_context_p->ue_id_rnti                    = rnti;
     ue_context_p->ue_context.rnti               = rnti;
     ue_context_p->ue_context.random_ue_identity = rnti;
-    ue_context_p->ue_context.Srb0.Active        = 1;
     RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_id]->rrc_ue_head, ue_context_p);
   }
 
   const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
   const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;
   NR_CellGroupConfig_t cellGroupConfig = {0};
-  fill_initial_cellGroupConfig(UE->uid, &cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
+  fill_initial_cellGroupConfig(uid, &cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
 
   uint8_t du2cu_rrc_container[1024];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
