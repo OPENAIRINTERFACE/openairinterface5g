@@ -24,7 +24,7 @@
 #include "PHY/impl_defs_nr.h"
 
 #define NFAPI_UE_MAX_NUM_CB 8
-#define NFAPI_MAX_NUM_UL_PDU 8
+#define NFAPI_MAX_NUM_UL_PDU 255
 
 /*
   typedef unsigned int	   uint32_t;
