@@ -66,8 +66,8 @@ int compute_ph_factor(int mu,
   int delta_tf = 0;
   if(deltaMCS != NULL && n_layers == 1) {
     const int n_re = (NR_NB_SC_PER_RB * n_symbols - n_dmrs) * rb;
-    const int BPRE = tbs_bits/n_re;  //TODO change for PUSCH with CSI
-    const float f = pow(2, (float) BPRE * 1.25);
+    const float BPRE = (float) tbs_bits/n_re;  //TODO change for PUSCH with CSI
+    const float f = pow(2, BPRE * 1.25);
     const float beta = 1.0f; //TODO change for PUSCH with CSI
     delta_tf = (10 * log10((f - 1) * beta));
   }
@@ -2171,7 +2171,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     AssertFatal(cur_harq->round < nr_mac->ul_bler.harq_round_max, "Indexing nr_rv_round_map[%d] is out of bounds\n", cur_harq->round%4);
     pusch_pdu->pusch_data.rv_index = nr_rv_round_map[cur_harq->round%4];
     pusch_pdu->pusch_data.harq_process_id = harq_id;
-    pusch_pdu->pusch_data.new_data_indicator = cur_harq->ndi;
+    pusch_pdu->pusch_data.new_data_indicator = (cur_harq->round == 0) ? 1 : 0;  // not NDI but indicator for new transmission
     pusch_pdu->pusch_data.tb_size = sched_pusch->tb_size;
     pusch_pdu->pusch_data.num_cb = 0; //CBG not supported
 
@@ -2275,6 +2275,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
                  &sched_ctrl->srs_feedback,
                  sched_pusch->time_domain_allocation,
                  UE->UE_sched_ctrl.tpc0,
+                 cur_harq->ndi,
                  current_BWP);
 
     fill_dci_pdu_rel15(scc,

@@ -885,6 +885,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   nr_srs_feedback_t *srs_feedback,
                   int time_domain_assignment,
                   uint8_t tpc,
+                  uint8_t ndi,
                   NR_UE_UL_BWP_t *ul_bwp) {
 
   int bwp_id = ul_bwp->bwp_id;
@@ -895,7 +896,7 @@ void config_uldci(const NR_SIB1_t *sib1,
   dci_pdu_rel15->time_domain_assignment.val = time_domain_assignment;
   dci_pdu_rel15->frequency_hopping_flag.val = pusch_pdu->frequency_hopping;
   dci_pdu_rel15->mcs = pusch_pdu->mcs_index;
-  dci_pdu_rel15->ndi = pusch_pdu->pusch_data.new_data_indicator;
+  dci_pdu_rel15->ndi = ndi;
   dci_pdu_rel15->rv = pusch_pdu->pusch_data.rv_index;
   dci_pdu_rel15->harq_pid = pusch_pdu->pusch_data.harq_process_id;
   dci_pdu_rel15->tpc = tpc;
@@ -2245,6 +2246,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   else {
     DL_BWP = &UE->current_DL_BWP;
     UL_BWP = &UE->current_UL_BWP;
+    sched_ctrl->next_dl_bwp_id = -1;
+    sched_ctrl->next_ul_bwp_id = -1;
     CellGroup = UE->CellGroup;
   }
   NR_BWP_Downlink_t *dl_bwp = NULL;
@@ -2273,6 +2276,14 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
       DL_BWP->bwp_id = 0;
       UL_BWP->bwp_id = 0;
       UE->Msg3_dcch_dtch = false;
+
+      // Schedule BWP switching to the first active BWP (previous active BWP before RA with Msg3 carrying DCCH or DTCH message)
+      if (servingCellConfig->firstActiveDownlinkBWP_Id) {
+        sched_ctrl->next_dl_bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
+      }
+      if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id) {
+        sched_ctrl->next_ul_bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+      }
     }
     else {
       // (re)configuring BWP
@@ -2326,7 +2337,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   }
   else {
     DL_BWP->bwp_id = 0;
-    DL_BWP->bwp_id = 0;
+    UL_BWP->bwp_id = 0;
     target_ss = NR_SearchSpace__searchSpaceType_PR_common;
     DL_BWP->pdsch_Config = NULL;
     UL_BWP->pusch_Config = NULL;

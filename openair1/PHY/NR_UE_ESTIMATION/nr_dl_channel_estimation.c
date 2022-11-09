@@ -27,6 +27,7 @@
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ptrs_nr.h"
+#include "PHY/NR_REFSIG/nr_mod_table.h"
 #include "PHY/NR_TRANSPORT/nr_sch_dmrs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "common/utils/nr/nr_common.h"
@@ -39,7 +40,26 @@
 //#define DEBUG_PBCH
 //#define DEBUG_PRS_CHEST   // To enable PRS Matlab dumps
 //#define DEBUG_PRS_PRINTS  // To enable PRS channel estimation debug logs
-extern short nr_qpsk_mod_table[8];
+
+#define CH_INTERP 0
+#define NO_INTERP 1
+
+/* Generic function to find the peak of channel estimation buffer */
+void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val)
+{
+  int32_t max_val = 0, max_idx = 0, abs_val = 0;
+  for(int k = 0; k < buf_len; k++)
+  {
+    abs_val = squaredMod(((c16_t*)buffer)[k]);
+    if(abs_val > max_val)
+    {
+      max_val = abs_val;
+      max_idx = k;
+    }
+  }
+  *peak_val = max_val;
+  *peak_idx = max_idx;
+}
 
 int nr_prs_channel_estimation(uint8_t gNB_id,
                               uint8_t rsc_id,
@@ -545,29 +565,6 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
   return(0);
 }
 
-#define CH_INTERP 0
-#define NO_INTERP 1
-
-/* Generic function to find the peak of channel estimation buffer */
-void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t *peak_val)
-{
-  int32_t max_val = 0, max_idx = 0, abs_val = 0;
-  for(int k = 0; k < buf_len; k++)
-  {
-    abs_val = squaredMod(((c16_t*)buffer)[k]);
-    if(abs_val > max_val)
-    {
-      max_val = abs_val;
-      max_idx = k;
-    }
-  }
-  *peak_val = max_val;
-  *peak_idx = max_idx;
-}
-
-#define CH_INTERP 0
-#define NO_INTERP 1
-
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
                              uint8_t gNB_id,
@@ -990,7 +987,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   if (dmrss == 2)
-    UEscopeCopy(ue, pbchDlChEstimateTime, (void*)dl_ch_estimates_time, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, idftsizeidx);
+    UEscopeCopy(ue, pbchDlChEstimateTime, (void*)dl_ch_estimates_time, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, ue->frame_parms.ofdm_symbol_size);
 
   return(0);
 }
@@ -1223,6 +1220,10 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
         ch[0] = ch_sum[0] / 3;
         ch[1] = ch_sum[1] / 3;
         multadd_real_vector_complex_scalar(filt16a_1, ch, dl_ch, 16);
+#ifdef DEBUG_PDCCH
+        for (int m =0; m<12; m++)
+          printf("data :  dl_ch -> (%d,%d)\n",dl_ch[0+2*m],dl_ch[1+2*m]);
+#endif
         dl_ch += 24;
         ch_sum[0] = 0;
         ch_sum[1] = 0;
@@ -2206,7 +2207,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               unsigned char symbol,
                               uint32_t nb_re_pdsch,
                               uint16_t rnti,
-                              RX_type_t rx_type)
+                              NR_UE_DLSCH_t dlsch[2])
 {
   //#define DEBUG_DL_PTRS 1
   int32_t *ptrs_re_symbol = NULL;
@@ -2225,30 +2226,30 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint16_t *nb_rb           = NULL;
 
   if(dlsch0_harq->status == ACTIVE) {
-    symbInSlot      = dlsch0_harq->start_symbol + dlsch0_harq->nb_symbols;
-    startSymbIndex  = &dlsch0_harq->start_symbol;
-    nbSymb          = &dlsch0_harq->nb_symbols;
-    L_ptrs          = &dlsch0_harq->PTRSTimeDensity;
-    K_ptrs          = &dlsch0_harq->PTRSFreqDensity;
-    dmrsSymbPos     = &dlsch0_harq->dlDmrsSymbPos;
-    ptrsSymbPos     = &dlsch0_harq->ptrs_symbols;
-    ptrsSymbIdx     = &dlsch0_harq->ptrs_symbol_index;
-    ptrsReOffset    = &dlsch0_harq->PTRSReOffset;
-    dmrsConfigType  = &dlsch0_harq->dmrsConfigType;
-    nb_rb           = &dlsch0_harq->nb_rb;
+    symbInSlot      = dlsch[0].dlsch_config.start_symbol + dlsch[0].dlsch_config.number_symbols;
+    startSymbIndex  = &dlsch[0].dlsch_config.start_symbol;
+    nbSymb          = &dlsch[0].dlsch_config.number_symbols;
+    L_ptrs          = &dlsch[0].dlsch_config.PTRSTimeDensity;
+    K_ptrs          = &dlsch[0].dlsch_config.PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch[0].dlsch_config.dlDmrsSymbPos;
+    ptrsReOffset    = &dlsch[0].dlsch_config.PTRSReOffset;
+    dmrsConfigType  = &dlsch[0].dlsch_config.dmrsConfigType;
+    nb_rb           = &dlsch[0].dlsch_config.number_rbs;
+    ptrsSymbPos     = &dlsch[0].ptrs_symbols;
+    ptrsSymbIdx     = &dlsch[0].ptrs_symbol_index;
   }
   if(dlsch1_harq) {
-    symbInSlot      = dlsch1_harq->start_symbol + dlsch0_harq->nb_symbols;
-    startSymbIndex  = &dlsch1_harq->start_symbol;
-    nbSymb          = &dlsch1_harq->nb_symbols;
-    L_ptrs          = &dlsch1_harq->PTRSTimeDensity;
-    K_ptrs          = &dlsch1_harq->PTRSFreqDensity;
-    dmrsSymbPos     = &dlsch1_harq->dlDmrsSymbPos;
-    ptrsSymbPos     = &dlsch1_harq->ptrs_symbols;
-    ptrsSymbIdx     = &dlsch1_harq->ptrs_symbol_index;
-    ptrsReOffset    = &dlsch1_harq->PTRSReOffset;
-    dmrsConfigType  = &dlsch1_harq->dmrsConfigType;
-    nb_rb           = &dlsch1_harq->nb_rb;
+    symbInSlot      = dlsch[1].dlsch_config.start_symbol + dlsch[1].dlsch_config.number_symbols;
+    startSymbIndex  = &dlsch[1].dlsch_config.start_symbol;
+    nbSymb          = &dlsch[1].dlsch_config.number_symbols;
+    L_ptrs          = &dlsch[1].dlsch_config.PTRSTimeDensity;
+    K_ptrs          = &dlsch[1].dlsch_config.PTRSFreqDensity;
+    dmrsSymbPos     = &dlsch[1].dlsch_config.dlDmrsSymbPos;
+    ptrsReOffset    = &dlsch[1].dlsch_config.PTRSReOffset;
+    dmrsConfigType  = &dlsch[1].dlsch_config.dmrsConfigType;
+    nb_rb           = &dlsch[1].dlsch_config.number_rbs;
+    ptrsSymbPos     = &dlsch[1].ptrs_symbols;
+    ptrsSymbIdx     = &dlsch[1].ptrs_symbol_index;
   }
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {

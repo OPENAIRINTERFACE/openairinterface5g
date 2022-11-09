@@ -183,16 +183,6 @@ typedef struct {
   int16_t **d;
   /// Index of current HARQ round for this DLSCH
   uint8_t DLround;
-  /// MCS table for this DLSCH
-  uint8_t mcs_table;
-  /// MCS format for this DLSCH
-  uint8_t mcs;
-  /// Qm (modulation order) for this DLSCH
-  uint8_t Qm;
-  /// target code rate R x 1024
-  uint16_t R;
-  /// Redundancy-version of the current sub-frame
-  uint8_t rvidx;
   /// MIMO mode for this DLSCH
   MIMO_nrmode_t mimo_mode;
   /// Number of code segments 
@@ -203,32 +193,10 @@ typedef struct {
   uint32_t F;
   /// LDPC lifting factor
   uint32_t Z;
-  /// Number of MIMO layers (streams) 
-  uint8_t Nl;
   /// current delta_pucch
   int8_t delta_PUCCH;
   /// Number of soft channel bits
   uint32_t G;
-  /// Start PRB of BWP
-  uint16_t BWPStart;
-  /// Number of PRBs in BWP
-  uint16_t BWPSize;
-  /// Current Number of RBs
-  uint16_t nb_rb;
-  /// Starting RB number
-  uint16_t start_rb;
-  /// Number of Symbols
-  uint16_t nb_symbols;
-  /// DMRS symbol positions
-  uint16_t dlDmrsSymbPos;
-  /// DMRS Configuration Type
-  uint8_t dmrsConfigType;
-  // Number of DMRS CDM groups with no data
-  uint8_t n_dmrs_cdm_groups;
-  /// DMRS ports bitmap
-  uint16_t dmrs_ports;
-  /// Starting Symbol number
-  uint16_t start_symbol;
   /// Current subband PMI allocation
   uint16_t pmi_alloc;
   /// Current RB allocation (even slots)
@@ -243,22 +211,6 @@ typedef struct {
   uint8_t codeword;
   /// HARQ-ACKs
   uint8_t ack;
-  /// PTRS Frequency Density
-  uint8_t PTRSFreqDensity;
-  /// PTRS Time Density
-  uint8_t PTRSTimeDensity;
-  uint8_t PTRSPortIndex ;
-  uint8_t nEpreRatioOfPDSCHToPTRS;
-  uint8_t PTRSReOffset;
-  /// bit mask of PT-RS ofdm symbol indicies
-  uint16_t ptrs_symbols;
-  // PTRS symbol index, to be updated every PTRS symbol within a slot.
-  uint8_t ptrs_symbol_index;
-  uint32_t tbslbrm;
-  uint8_t nscid;
-  uint16_t dlDmrsScramblingId;
-  /// PDU BITMAP 
-  uint16_t pduBitmap;
   /// Last index of LLR buffer that contains information.
   /// Used for computing LDPC decoder R
   int llrLen;
@@ -270,17 +222,13 @@ typedef struct {
   /// RNTI type
   uint8_t rnti_type;
   /// Active flag for DLSCH demodulation
-  uint8_t active;
-  /// accumulated tx power adjustment for PUCCH
-  int8_t g_pucch;
+  bool active;
   /// Transmission mode
   uint8_t mode1_flag;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
-  /// Current HARQ process id threadRx Odd and threadRx Even
-  uint8_t current_harq_pid;
   /// Current subband antenna selection
   uint32_t antenna_alloc;
   /// Current subband RI allocation
@@ -291,24 +239,22 @@ typedef struct {
   uint32_t cqi_alloc2;
   /// saved subband PMI allocation from last PUSCH/PUCCH report
   uint16_t pmi_alloc;
-  /// Pointers to up to HARQ processes
-  NR_DL_UE_HARQ_t *harq_processes[NR_MAX_DLSCH_HARQ_PROCESSES];
-  // DL number of harq processes
-  uint8_t number_harq_processes_for_pdsch;
+  /// Structure to hold dlsch config from MAC
+  fapi_nr_dl_config_dlsch_pdu_rel15_t dlsch_config;
   /* higher layer parameter for reception of two transport blocks TS 38.213 9.1.3.1 Type-2 HARQ-ACK codebook dtermination */
   uint8_t Number_MCS_HARQ_DL_DCI;
   /* spatial bundling of PUCCH */
   uint8_t HARQ_ACK_spatial_bundling_PUCCH;
-  /// Maximum number of HARQ processes(for definition see 36-212 V8.6 2009-03, p.17
-  uint8_t Mdlharq;
-  /// MIMO transmission mode indicator for this sub-frame (for definition see 36-212 V8.6 2009-03, p.17)
-  uint8_t Kmimo;
-  /// Nsoft parameter related to UE Category
-  uint32_t Nsoft;
+  /// Number of MIMO layers (streams) 
+  uint8_t Nl;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last turbo decoding
   uint8_t last_iteration_cnt;
+  /// bit mask of PT-RS ofdm symbol indicies
+  uint16_t ptrs_symbols;
+  // PTRS symbol index, to be updated every PTRS symbol within a slot.
+  uint8_t ptrs_symbol_index;
 } NR_UE_DLSCH_t;
 
 typedef enum {format0_0,

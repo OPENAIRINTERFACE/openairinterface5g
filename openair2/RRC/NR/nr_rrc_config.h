@@ -41,84 +41,6 @@
   TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
   ASN_SEQUENCE_ADD(&VaR,lOcPtr);
 
-typedef struct rlc_bearer_config_s{
-  long        LogicalChannelIdentity[MAX_NUM_CCs];
-  long        servedRadioBearer_present[MAX_NUM_CCs];
-  long        srb_Identity[MAX_NUM_CCs];
-  long        drb_Identity[MAX_NUM_CCs];
-  long        reestablishRLC[MAX_NUM_CCs];
-  long        rlc_Config_present[MAX_NUM_CCs];
-  long        ul_AM_sn_FieldLength[MAX_NUM_CCs];
-  long        t_PollRetransmit[MAX_NUM_CCs];
-  long        pollPDU[MAX_NUM_CCs];
-  long        pollByte[MAX_NUM_CCs];
-  long        maxRetxThreshold[MAX_NUM_CCs];
-  long        dl_AM_sn_FieldLength[MAX_NUM_CCs];
-  long        dl_AM_t_Reassembly[MAX_NUM_CCs];
-  long        t_StatusProhibit[MAX_NUM_CCs];
-  long        ul_UM_sn_FieldLength[MAX_NUM_CCs];
-  long        dl_UM_sn_FieldLength[MAX_NUM_CCs];
-  long        dl_UM_t_Reassembly[MAX_NUM_CCs];
-  long        priority[MAX_NUM_CCs];
-  long        prioritisedBitRate[MAX_NUM_CCs];
-  long        bucketSizeDuration[MAX_NUM_CCs];
-  long        allowedServingCells[MAX_NUM_CCs];
-  long        subcarrierspacing[MAX_NUM_CCs];
-  long        maxPUSCH_Duration[MAX_NUM_CCs];
-  long        configuredGrantType1Allowed[MAX_NUM_CCs];
-  long        logicalChannelGroup[MAX_NUM_CCs];
-  long        schedulingRequestID[MAX_NUM_CCs]; /* OPTIONAL */
-  int         logicalChannelSR_Mask[MAX_NUM_CCs];
-  int         logicalChannelSR_DelayTimerApplied[MAX_NUM_CCs];
-}rlc_bearer_config_t;
-
-typedef struct mac_cellgroup_s{
-  long        DRX_Config_PR[MAX_NUM_CCs];
-  long        drx_onDurationTimer_PR[MAX_NUM_CCs];
-  long        subMilliSeconds[MAX_NUM_CCs];
-  long        milliSeconds[MAX_NUM_CCs];
-  long        drx_InactivityTimer[MAX_NUM_CCs];
-  long        drx_HARQ_RTT_TimerDL[MAX_NUM_CCs];
-  long        drx_HARQ_RTT_TimerUL[MAX_NUM_CCs];
-  long        drx_RetransmissionTimerDL[MAX_NUM_CCs];
-  long        drx_RetransmissionTimerUL[MAX_NUM_CCs];
-  long        drx_LongCycleStartOffset_PR[MAX_NUM_CCs];
-  long        drx_LongCycleStartOffset[MAX_NUM_CCs];
-  long        drx_ShortCycle[MAX_NUM_CCs];
-  long        drx_ShortCycleTimer[MAX_NUM_CCs];
-  long        drx_SlotOffset[MAX_NUM_CCs];
-  long        schedulingRequestId[MAX_NUM_CCs];
-  long        sr_ProhibitTimer[MAX_NUM_CCs];
-  long        sr_TransMax[MAX_NUM_CCs];
-  long        periodicBSR_Timer[MAX_NUM_CCs];
-  long        retxBSR_Timer[MAX_NUM_CCs];
-  long        logicalChannelSR_DelayTimer[MAX_NUM_CCs];
-  long        tag_Id[MAX_NUM_CCs];
-  long        timeAlignmentTimer[MAX_NUM_CCs];
-  long        PHR_Config_PR[MAX_NUM_CCs];
-  long        phr_PeriodicTimer[MAX_NUM_CCs];
-  long        phr_ProhibitTimer[MAX_NUM_CCs];
-  long        phr_Tx_PowerFactorChange[MAX_NUM_CCs];
-  int         multiplePHR[MAX_NUM_CCs];
-  int         phr_Type2SpCell[MAX_NUM_CCs];
-  int         phr_Type2OtherCell[MAX_NUM_CCs];
-  long        phr_ModeOtherCG[MAX_NUM_CCs];
-  int         skipUplinkTxDynamic[MAX_NUM_CCs];
-}mac_cellgroup_t;
-
-typedef struct physicalcellgroup_s{
-  long        harq_ACK_SpatialBundlingPUCCH[MAX_NUM_CCs];
-  long        harq_ACK_SpatialBundlingPUSCH[MAX_NUM_CCs];
-  long        p_NR[MAX_NUM_CCs];
-  long        pdsch_HARQ_ACK_Codebook[MAX_NUM_CCs];
-  long        tpc_SRS_RNTI[MAX_NUM_CCs];
-  long        tpc_PUCCH_RNTI[MAX_NUM_CCs];
-  long        tpc_PUSCH_RNTI[MAX_NUM_CCs];
-  long        sp_CSI_RNTI[MAX_NUM_CCs];
-  long        RNTI_Value_PR[MAX_NUM_CCs];
-  long        RNTI_Value[MAX_NUM_CCs];
-}physicalcellgroup_t;
-
 void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig);
 uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc);
 void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
@@ -152,6 +74,7 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 const int res_id,
                 const long maxMIMO_Layers,
                 const int do_srs);
+struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_Id, int dl_antenna_ports);
 void set_dl_mcs_table(int scs,
                       NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,

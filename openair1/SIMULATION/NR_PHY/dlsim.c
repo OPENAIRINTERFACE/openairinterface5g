@@ -379,17 +379,9 @@ int main(int argc, char **argv)
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;
-  uint32_t errors_scrambling[4][100] = {{0}};
-  int      n_errors[4][100]          = {{0}};
-  int      round_trials[4][100]      = {{0}};
-  double   roundStats[100]           = {0};
-  double   blerStats[4][100]         = {{0}};
-  double   berStats[4][100]          = {{0}};
-  double   snrStats[100]             = {0};
   float effRate;
   //float psnr;
   float eff_tp_check = 0.7;
-  uint8_t snrRun;
   uint32_t TBS = 0;
   int **txdata;
   double **s_re,**s_im,**r_re,**r_im;
@@ -470,8 +462,8 @@ int main(int argc, char **argv)
   int print_perf             = 0;
 
   FILE *scg_fd=NULL;
-  
-  while ((c = getopt (argc, argv, "f:hA:pf:g:i:n:s:S:t:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
+
+  while ((c = getopt(argc, argv, "f:hA:pf:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:Ea:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -575,6 +567,12 @@ int main(int argc, char **argv)
         exit(-1);
       }
 
+      break;
+
+    case 'v':
+      num_rounds = atoi(optarg);
+
+      AssertFatal(num_rounds > 0 && num_rounds < 16, "Unsupported number of rounds %d, should be in [1,16]\n", num_rounds);
       break;
 
     case 'y':
@@ -723,6 +721,7 @@ int main(int argc, char **argv)
       printf("-T Enable PTRS, arguments list L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 2 0 2 \n");
       printf("-U Change DMRS Config, arguments list DMRS TYPE{0=A,1=B} DMRS AddPos{0:2} DMRS ConfType{1:2}, e.g. -U 3 0 2 1 \n");
       printf("-P Print DLSCH performances\n");
+      printf("-v Maximum number of rounds\n");
       printf("-w Write txdata to binary file (one frame)\n");
       printf("-d number of dlsch threads, 0: no dlsch parallelization\n");
       printf("-X gNB thread pool configuration, n => no threads\n");
@@ -1015,7 +1014,7 @@ int main(int argc, char **argv)
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
-  NR_UE_PDCCH_CONFIG phy_pdcch_config={0};
+  nr_phy_data_t phy_data = {0};
 
   memset((void*)&dcireq,0,sizeof(dcireq));
   memset((void*)&scheduled_response,0,sizeof(scheduled_response));
@@ -1030,11 +1029,10 @@ int main(int argc, char **argv)
   scheduled_response.CC_id     = 0;
   scheduled_response.frame = frame;
   scheduled_response.slot  = slot;
-  scheduled_response.phy_data = &phy_pdcch_config;
+  scheduled_response.phy_data = &phy_data;
 
   nr_ue_phy_config_request(&UE_mac->phy_config);
   //NR_COMMON_channels_t *cc = RC.nrmac[0]->common_channels;
-  snrRun = 0;
   int n_errs = 0;
 
   initNamedTpool(gNBthreads, &gNB->threadPool, true, "gNB-tpool");
@@ -1065,6 +1063,13 @@ int main(int argc, char **argv)
 
     clear_pdsch_stats(gNB);
 
+    uint32_t errors_scrambling[16] = {0};
+    int n_errors[16] = {0};
+    int round_trials[16] = {0};
+    double roundStats = {0};
+    double blerStats[16] = {0};
+    double berStats[16] = {0};
+
     effRate = 0;
     //n_errors2 = 0;
     //n_alamouti = 0;
@@ -1084,10 +1089,10 @@ int main(int argc, char **argv)
       dcireq.frame     = frame;
       dcireq.slot      = slot;
 
-      NR_UE_DLSCH_t *dlsch0 = UE->dlsch[0][0];
+      NR_UE_DLSCH_t *dlsch0 = &phy_data.dlsch[0];
 
       int harq_pid = slot;
-      NR_DL_UE_HARQ_t *UE_harq_process = dlsch0->harq_processes[harq_pid];
+      NR_DL_UE_HARQ_t *UE_harq_process = &UE->dl_harq_processes[0][harq_pid];
 
       NR_gNB_DLSCH_t *gNB_dlsch = msgDataTx->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
@@ -1098,7 +1103,7 @@ int main(int argc, char **argv)
       UE_harq_process->first_rx = 1;
         
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
-        round_trials[round][snrRun]++;
+        round_trials[round]++;
 
         clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
@@ -1262,24 +1267,23 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               &phy_pdcch_config,
+                               &phy_data,
                                NULL);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------
         //----------------------------------------------------------
 
-        if (UE->dlsch[0][0]->last_iteration_cnt >=
-          UE->dlsch[0][0]->max_ldpc_iterations+1)
-          n_errors[round][snrRun]++;
+        if (dlsch0->last_iteration_cnt >= dlsch0->max_ldpc_iterations+1)
+          n_errors[round]++;
 
         NR_UE_PDSCH **pdsch_vars = UE->pdsch_vars;
         int16_t *UE_llr = pdsch_vars[0]->llr[0];
 
-        TBS                  = UE_harq_process->TBS;//rel15->TBSize[0];
+        TBS                  = dlsch0->dlsch_config.TBS;//rel15->TBSize[0];
         uint16_t length_dmrs = get_num_dmrs(rel15->dlDmrsSymbPos);
         uint16_t nb_rb       = rel15->rbSize;
-        uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6*UE_harq_process->n_dmrs_cdm_groups : 4*UE_harq_process->n_dmrs_cdm_groups;
+        uint8_t  nb_re_dmrs  = rel15->dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6*dlsch0->dlsch_config.n_dmrs_cdm_groups : 4*dlsch0->dlsch_config.n_dmrs_cdm_groups;
         uint8_t  mod_order   = rel15->qamModOrder[0];
         uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 
@@ -1293,10 +1297,10 @@ int main(int argc, char **argv)
           if(((gNB_dlsch->harq_process.f[i] == 0) && (UE_llr[i] <= 0)) ||
              ((gNB_dlsch->harq_process.f[i] == 1) && (UE_llr[i] >= 0)))
           {
-            if(errors_scrambling[round][snrRun] == 0) {
+            if (errors_scrambling[round] == 0) {
               LOG_D(PHY,"First bit in error in unscrambling = %d\n",i);
             }
-            errors_scrambling[round][snrRun]++;
+            errors_scrambling[round]++;
           }
         }
 
@@ -1324,51 +1328,34 @@ int main(int argc, char **argv)
 	if (n_trials == 1)
 	  printf("errors_bit = %u (trial %d)\n", errors_bit, trial);
       }
-      roundStats[snrRun]+=((float)round); 
+      roundStats += ((float)round);
       if (UE_harq_process->ack==1) effRate += ((float)TBS)/round;
     } // noise trials
 
-    roundStats[snrRun]/=((float)n_trials);
+    roundStats /= ((float)n_trials);
 
-    blerStats[0][snrRun] = (double)n_errors[0][snrRun]/round_trials[0][snrRun];
-    blerStats[1][snrRun] = (double)n_errors[1][snrRun]/round_trials[1][snrRun];
-    blerStats[2][snrRun] = (double)n_errors[2][snrRun]/round_trials[2][snrRun];
-    blerStats[3][snrRun] = (double)n_errors[3][snrRun]/round_trials[3][snrRun];
-
-    berStats[0][snrRun] = (double)errors_scrambling[0][snrRun]/available_bits/round_trials[0][snrRun];
-    berStats[1][snrRun] = (double)errors_scrambling[1][snrRun]/available_bits/round_trials[1][snrRun];
-    berStats[2][snrRun] = (double)errors_scrambling[2][snrRun]/available_bits/round_trials[2][snrRun];
-    berStats[3][snrRun] = (double)errors_scrambling[3][snrRun]/available_bits/round_trials[3][snrRun];
+    for (int r = 0; r < num_rounds; r++) {
+      blerStats[r] = (double)n_errors[r] / round_trials[r];
+      berStats[r] = (double)errors_scrambling[r] / available_bits / round_trials[r];
+    }
 
     effRate /= n_trials;
     printf("*****************************************\n");
-    printf("SNR %f: n_errors (%d/%d,%d/%d,%d/%d,%d/%d) (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u,%u/%u,%u/%u,%u/%u\n",
-           SNR,
-           n_errors[0][snrRun], round_trials[0][snrRun],
-           n_errors[1][snrRun], round_trials[1][snrRun],
-           n_errors[2][snrRun], round_trials[2][snrRun],
-           n_errors[3][snrRun], round_trials[3][snrRun],
-           n_false_positive, n_trials,
-           errors_scrambling[0][snrRun], available_bits*round_trials[0][snrRun],
-           errors_scrambling[1][snrRun], available_bits*round_trials[1][snrRun],
-           errors_scrambling[2][snrRun], available_bits*round_trials[2][snrRun],
-           errors_scrambling[3][snrRun], available_bits*round_trials[3][snrRun]);
-    printf("\n");
+    printf("SNR %f: n_errors (%d/%d", SNR, n_errors[0], round_trials[0]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%d/%d", n_errors[r], round_trials[r]);
+    printf(") (negative CRC), false_positive %d/%d, errors_scrambling (%u/%u", n_false_positive, n_trials, errors_scrambling[0], available_bits * round_trials[0]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%u/%u", errors_scrambling[r], available_bits * round_trials[r]);
+    printf(")\n\n");
     dump_pdsch_stats(stdout,gNB);
-    printf("SNR %f: Channel BLER (%e,%e,%e,%e), Channel BER (%e,%e,%e,%e) Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n",
-           SNR,
-           blerStats[0][snrRun],
-           blerStats[1][snrRun],
-           blerStats[2][snrRun],
-           blerStats[3][snrRun],
-           berStats[0][snrRun],
-           berStats[1][snrRun],
-           berStats[2][snrRun],
-           berStats[3][snrRun],
-           roundStats[snrRun],
-           effRate,
-           effRate/TBS*100,
-           TBS);
+    printf("SNR %f: Channel BLER (%e", SNR, blerStats[0]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%e", blerStats[r]);
+    printf("), Channel BER (%e", berStats[0]);
+    for (int r = 1; r < num_rounds; r++)
+      printf(",%e", berStats[r]);
+    printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", roundStats, effRate, effRate / TBS * 100, TBS);
     printf("*****************************************\n");
     printf("\n");
 
@@ -1442,23 +1429,8 @@ int main(int argc, char **argv)
       break;
     }
 
-    snrStats[snrRun] = SNR;
-    snrRun++;
-    n_errs = n_errors[0][snrRun];
+    n_errs = n_errors[0];
   } // NSR
-
-  LOG_M("dlsimStats.m","SNR",snrStats,snrRun,1,7);
-  LOG_MM("dlsimStats.m","BLER",blerStats,snrRun,1,7);
-  LOG_MM("dlsimStats.m","BER",berStats,snrRun,1,7);
-  LOG_MM("dlsimStats.m","rounds",roundStats,snrRun,1,7);
-  /*if (n_trials>1) {
-    printf("HARQ stats:\nSNR\tRounds\n");
-    psnr = snr0;
-    for (uint8_t i=0; i<snrRun; i++) {
-      printf("%.1f\t%.2f\n",psnr,roundStats[i]);
-      psnr+=0.2;
-    }
-  }*/
 
   free_channel_desc_scm(gNB2UE);
 

@@ -682,18 +682,22 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   int32_t avgs;
   int32_t avgP[4];
   int n_rb,rb_offset;
+  get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
 
   // Pointers to extracted PDCCH symbols in frequency-domain.
-  int32_t rx_size = 4*273*12;
-  __attribute__ ((aligned(32))) int32_t rxdataF_ext[4*frame_parms->nb_antennas_rx][rx_size];
-  __attribute__ ((aligned(32))) int32_t rxdataF_comp[4*frame_parms->nb_antennas_rx][rx_size];
-  __attribute__ ((aligned(32))) int32_t pdcch_dl_ch_estimates_ext[4*frame_parms->nb_antennas_rx][rx_size];
+  int32_t rx_size = 4*n_rb*12;
+  __attribute__ ((aligned(32))) int32_t rxdataF_ext[frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t rxdataF_comp[frame_parms->nb_antennas_rx][rx_size];
+  __attribute__ ((aligned(32))) int32_t pdcch_dl_ch_estimates_ext[frame_parms->nb_antennas_rx][rx_size];
+
+  memset(rxdataF_comp, 0, sizeof(rxdataF_comp));
 
   // Pointer to llrs, 4-bit resolution.
-  int32_t llr_size = 2*4*100*12;
+  int32_t llr_size = 2*4*n_rb*9;
   int16_t llr[llr_size];
 
-  get_coreset_rballoc(rel15->coreset.frequency_domain_resource,&n_rb,&rb_offset);
+  memset(llr, 0, sizeof(llr));
+
   LOG_D(PHY,"pdcch coreset: freq %x, n_rb %d, rb_offset %d\n",
         rel15->coreset.frequency_domain_resource[0],n_rb,rb_offset);
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
@@ -863,8 +867,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
                                   UE_nr_rxtx_proc_t *proc,
                                   int16_t *pdcch_e_rx,
                                   fapi_nr_dci_indication_t *dci_ind,
-                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                                  NR_UE_PDCCH_CONFIG *phy_pdcch_config) {
+                                  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
 
   //int gNB_id = 0;
   int16_t tmp_e[16*108];
@@ -941,7 +944,6 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
     }
     e_rx_cand_idx += 9*L*6*2; //e_rx index for next candidate (L CCEs, 6 REGs per CCE and 9 REs per REG and 2 uint16_t per RE)
   }
-  phy_pdcch_config->nb_search_space = 0;
   return(dci_ind->number_of_dcis);
 }
 

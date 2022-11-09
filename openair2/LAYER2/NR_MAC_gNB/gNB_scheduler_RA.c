@@ -833,6 +833,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  NULL,
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
+                 1, // Not toggling NDI in msg3 retransmissions
                  &ra->UL_BWP);
 
     fill_dci_pdu_rel15(scc,
@@ -1036,7 +1037,7 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   //Optional Data only included if indicated in pduBitmap
   pusch_pdu->pusch_data.rv_index = nr_rv_round_map[round%4];
   pusch_pdu->pusch_data.harq_process_id = 0;
-  pusch_pdu->pusch_data.new_data_indicator = 1;
+  pusch_pdu->pusch_data.new_data_indicator = (round == 0) ? 1 : 0;;
   pusch_pdu->pusch_data.num_cb = 0;
   int num_dmrs_symb = 0;
   for(int i = start_symbol_index; i < start_symbol_index+nr_of_symbols; i++)
@@ -1787,8 +1788,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       harq->round = 0;
       harq->ndi ^= 1;
 
-      sched_ctrl->rrc_processing_timer = 1; // No need to wait at this point in time, setting it to 1 just to enter in function nr_mac_update_timers
-      LOG_I(NR_MAC, "(%d.%d) Activating RRC processing timer for UE %04x with %d ms\n", frameP, slotP, UE->rnti, 1);
+      if(!UE->CellGroup)
+        // In the  specific scenario where UE correctly received MSG4 (assuming it decoded RRCsetup with CellGroup) and gNB didn't correctly received an ACK, 
+        // the UE would already have CG but the UE-dedicated gNB structure wouldn't (because RA didn't complete on gNB side).
+        uper_decode(NULL,
+                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    (void **)&UE->CellGroup,
+                    (uint8_t *)UE->cg_buf,
+                    (UE->enc_rval.encoded+7)/8, 0, 0);
+      process_CellGroup(UE->CellGroup, sched_ctrl);
+      configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
 
       // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
       UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt = 0;

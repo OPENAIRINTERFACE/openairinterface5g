@@ -69,21 +69,6 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier, gNB_RrcConfigurationReq *co
 uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
                     gNB_RrcConfigurationReq *configuration);
 
-void do_RLC_BEARER(uint8_t Mod_id,
-                    int CC_id,
-                    struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_BearerToAddModList,
-                    rlc_bearer_config_t  *rlc_config);
-void do_MAC_CELLGROUP(uint8_t Mod_id,
-                      int CC_id,
-                      NR_MAC_CellGroupConfig_t *mac_CellGroupConfig,
-                      mac_cellgroup_t *mac_cellgroup_config);
-
-void do_PHYSICALCELLGROUP(uint8_t Mod_id,
-                          int CC_id,
-                          NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig,
-                          physicalcellgroup_t *physicalcellgroup_config);
-
-
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
 
@@ -206,5 +191,7 @@ uint8_t
 do_RRCReestablishmentComplete(
     uint8_t *buffer, size_t buffer_size,
     int64_t rrc_TransactionIdentifier);
+
+NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf);
 
 #endif  /* __RRC_NR_MESSAGES_ASN1_MSG__H__ */

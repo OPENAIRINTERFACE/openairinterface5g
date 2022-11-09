@@ -941,6 +941,51 @@ struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Confi
   return setup_puschconfig;
 }
 
+struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_Id, int dl_antenna_ports)
+{
+  struct NR_SetupRelease_PDSCH_Config *setup_pdsch_Config = calloc(1,sizeof(*setup_pdsch_Config));
+  setup_pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
+  NR_PDSCH_Config_t *pdsch_Config = calloc(1, sizeof(*pdsch_Config));
+  setup_pdsch_Config->choice.setup = pdsch_Config;
+  pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1, sizeof(*pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA));
+  pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present = NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
+  pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1, sizeof(*pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
+  NR_DMRS_DownlinkConfig_t *dmrs_DownlinkForPDSCH_MappingTypeA = pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
+  if ((get_softmodem_params()->do_ra || get_softmodem_params()->phy_test) && dl_antenna_ports > 1) // for MIMO, we use DMRS Config Type 2 but only with OAI UE
+    dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_Type = calloc(1, sizeof(*dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_Type));
+  else
+    dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_Type = NULL;
+  dmrs_DownlinkForPDSCH_MappingTypeA->maxLength = NULL;
+  dmrs_DownlinkForPDSCH_MappingTypeA->scramblingID0 = NULL;
+  dmrs_DownlinkForPDSCH_MappingTypeA->scramblingID1 = NULL;
+  dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_AdditionalPosition = calloc(1, sizeof(*dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_AdditionalPosition));
+  // TODO possible improvement is to select based on some input additional position
+  *dmrs_DownlinkForPDSCH_MappingTypeA->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
+
+  pdsch_Config->dataScramblingIdentityPDSCH = NULL;
+  pdsch_Config->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
+
+  pdsch_Config->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
+  pdsch_Config->prb_BundlingType.choice.staticBundling = calloc(1, sizeof(*pdsch_Config->prb_BundlingType.choice.staticBundling));
+  pdsch_Config->prb_BundlingType.choice.staticBundling->bundleSize = calloc(1, sizeof(*pdsch_Config->prb_BundlingType.choice.staticBundling->bundleSize));
+  *pdsch_Config->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
+
+  int n_ssb = 0;
+  for (int i = 0; i < 64; i++) {
+    if (((ssb_bitmap >> (63 - i)) & 0x01) == 0)
+      continue;
+    NR_TCI_State_t *tcid = calloc(1, sizeof(*tcid));
+    tcid->tci_StateId = n_ssb++;
+    tcid->qcl_Type1.cell = NULL;
+    asn1cCallocOne(tcid->qcl_Type1.bwp_Id, bwp_Id);
+    tcid->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
+    tcid->qcl_Type1.referenceSignal.choice.ssb = i;
+    tcid->qcl_Type1.qcl_Type = NR_QCL_Info__qcl_Type_typeC;
+    ASN_SEQUENCE_ADD(&pdsch_Config->tci_StatesToAddModList->list, tcid);
+  }
+  return setup_pdsch_Config;
+}
+
 void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
                         const NR_ServingCellConfigCommon_t *scc,
                         const NR_ServingCellConfig_t *servingcellconfigdedicated,
@@ -1066,55 +1111,12 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
   ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list, ss2);
 
   bwp->bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToReleaseList = NULL;
+  bwp->bwp_Dedicated->pdsch_Config = config_pdsch(ssb_bitmap, bwp->bwp_Id, dl_antenna_ports);
 
-  struct NR_SetupRelease_PDSCH_Config *pdsch_Config = NULL;
-  pdsch_Config = calloc(1,sizeof(*pdsch_Config));
-  pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
-  pdsch_Config->choice.setup = calloc(1,sizeof(*pdsch_Config->choice.setup));
-  pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA = calloc(1,sizeof(*pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA));
-  pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->present= NR_SetupRelease_DMRS_DownlinkConfig_PR_setup;
-  pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup = calloc(1,sizeof(*pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup));
-  pdsch_Config->choice.setup->dataScramblingIdentityPDSCH = NULL;
-  struct NR_SetupRelease_DMRS_DownlinkConfig *dmrs_DownlinkForPDSCH_MappingTypeA = pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA;
-
-  if ((get_softmodem_params()->do_ra || get_softmodem_params()->phy_test) && dl_antenna_ports > 1) // for MIMO, we use DMRS Config Type 2 but only with OAI UE
-    dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=calloc(1,sizeof(*dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type));
-  else
-    dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_Type=NULL;
-  dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->maxLength=NULL;
-  dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID0=NULL;
-  dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->scramblingID1=NULL;
-  dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = calloc(1,sizeof(*dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition));
-  *dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NR_DMRS_DownlinkConfig__dmrs_AdditionalPosition_pos1;
-
-  pdsch_Config->choice.setup->resourceAllocation = NR_PDSCH_Config__resourceAllocation_resourceAllocationType1;
-  pdsch_Config->choice.setup->prb_BundlingType.present = NR_PDSCH_Config__prb_BundlingType_PR_staticBundling;
-  pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling = calloc(1,sizeof(*pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling));
-  pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = calloc(1,sizeof(*pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize));
-  *pdsch_Config->choice.setup->prb_BundlingType.choice.staticBundling->bundleSize = NR_PDSCH_Config__prb_BundlingType__staticBundling__bundleSize_wideband;
-
-  bwp->bwp_Dedicated->pdsch_Config = pdsch_Config;
   set_dl_mcs_table(bwp->bwp_Common->genericParameters.subcarrierSpacing,
                    force_256qam_off ? NULL : uecap,
                    bwp->bwp_Dedicated,
                    scc);
-
-  int n_ssb = 0;
-  NR_TCI_State_t *tcid[64];
-  for (int i=0;i<64;i++) {
-    if ((ssb_bitmap>>(63-i))&0x01){
-      tcid[i]=calloc(1,sizeof(*tcid[i]));
-      tcid[i]->tci_StateId=n_ssb;
-      tcid[i]->qcl_Type1.cell=NULL;
-      tcid[i]->qcl_Type1.bwp_Id=calloc(1,sizeof(*tcid[i]->qcl_Type1.bwp_Id));
-      *tcid[i]->qcl_Type1.bwp_Id=bwp->bwp_Id;
-      tcid[i]->qcl_Type1.referenceSignal.present = NR_QCL_Info__referenceSignal_PR_ssb;
-      tcid[i]->qcl_Type1.referenceSignal.choice.ssb = i;
-      tcid[i]->qcl_Type1.qcl_Type=NR_QCL_Info__qcl_Type_typeC;
-      ASN_SEQUENCE_ADD(&bwp->bwp_Dedicated->pdsch_Config->choice.setup->tci_StatesToAddModList->list,tcid[i]);
-      n_ssb++;
-    }
-  }
 }
 
 void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,

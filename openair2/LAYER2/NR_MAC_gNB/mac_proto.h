@@ -192,6 +192,7 @@ void config_uldci(const NR_SIB1_t *sib1,
                   nr_srs_feedback_t *srs_feedback,
                   int time_domain_assignment,
                   uint8_t tpc,
+                  uint8_t ndi,
                   NR_UE_UL_BWP_t *ul_bwp);
 
 void nr_schedule_pucch(gNB_MAC_INST *nrmac,
