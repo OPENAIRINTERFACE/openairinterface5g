@@ -3407,6 +3407,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
   /* Configure DRB */
   NR_DRB_ToAddMod_t            *DRB_config          = NULL;
   NR_DRB_ToAddModList_t        *DRB_configList      = NULL;
+  int drb_id_to_setup_start = 0;
   if(req->drbs_to_be_setup_length>0){
     if(ue_context_p->ue_context.DRB_configList == NULL){
       ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
@@ -3421,6 +3422,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
       memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
       addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
       extern instance_t DUuniqInstance;
+      if (!drb_id_to_setup_start) drb_id_to_setup_start = drb_p.drb_id;
       incoming_teid = newGtpuCreateTunnel(DUuniqInstance,
                                           req->rnti,
                                           drb_p.drb_id,
@@ -3436,7 +3438,6 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
 
   if(req->srbs_to_be_setup_length>0 || req->drbs_to_be_setup_length>0){
     cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-    uint8_t drb_id_to_setup_start = 1;
     long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
     fill_mastercellGroupConfig(cellGroupConfig,
                                ue_context_p->ue_context.masterCellGroup,
