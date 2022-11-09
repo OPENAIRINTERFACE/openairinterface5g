@@ -80,6 +80,8 @@ typedef struct {
   struct complexd **chF;
   ///Maximum path delay in mus.
   double Td;
+  ///Carrier center frequency
+  uint64_t center_freq;
   ///Channel bandwidth in MHz.
   double channel_bandwidth;
   ///System sampling rate in Msps.

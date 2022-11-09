@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <complex.h>
 
 
 #include "PHY/TOOLS/tools_defs.h"
@@ -37,6 +38,7 @@
 
 //#define DEBUG_CH
 //#define DEBUG_CH_POWER
+//#define DOPPLER_DEBUG
 
 #include "assertions.h"
 
@@ -448,6 +450,42 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
         chan_desc->R_sqrt[row][col].r = correlation_matrix[row][col];
       }
     }
+  }
+}
+
+void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc)
+{
+  // TS 38.104 - Table G.3-1
+  uint16_t Dmin = 2;
+  uint16_t Ds = 300;
+  double c = 299792458;
+  double v = chan_desc->max_Doppler * (c / (double)chan_desc->center_freq);
+
+#ifdef DOPPLER_DEBUG
+  printf("v = %f\n", v);
+#endif
+
+  double phase0 = 2 * M_PI * uniformrandom();
+  double cos_theta[chan_desc->channel_length];
+  double fs[chan_desc->channel_length];
+  for (int t_idx = 0; t_idx < chan_desc->channel_length; t_idx++) {
+    double t = t_idx / (chan_desc->sampling_rate * 1e6);
+    if (t >= 0 && t <= Ds / v) {
+      cos_theta[t_idx] = (Ds / 2 - v * t) / sqrt(Dmin * Dmin + (Ds / 2 - v * t) * (Ds / 2 - v * t));
+    } else if (t > Ds / v && t <= 2 * Ds / v) {
+      cos_theta[t_idx] = (-1.5 * Ds + v * t) / sqrt(Dmin * Dmin + (-1.5 * Ds + v * t) * (-1.5 * Ds + v * t));
+    } else {
+      cos_theta[t_idx] = cos(fmod(t, 2 * Ds / v));
+    }
+    fs[t_idx] = chan_desc->max_Doppler * cos_theta[t_idx];
+
+    double complex tmp_cexp_doppler = cexp(I * (2 * M_PI * fs[t_idx] * t + phase0));
+    cexp_doppler[t_idx].r = creal(tmp_cexp_doppler);
+    cexp_doppler[t_idx].i = cimag(tmp_cexp_doppler);
+
+#ifdef DOPPLER_DEBUG
+    printf("(%2i) t_us = %f, cos_theta = %f, fs = %f, cexp_doppler = (%f, %f)\n", t_idx, t * 1e6, cos_theta[t_idx], fs[t_idx], cexp_doppler[t_idx].r, cexp_doppler[t_idx].i);
+#endif
   }
 }
 
