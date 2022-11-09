@@ -453,7 +453,7 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   }
 }
 
-void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc)
+void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length)
 {
   // TS 38.104 - Table G.3-1
   uint16_t Dmin = 2;
@@ -466,9 +466,10 @@ void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc)
 #endif
 
   double phase0 = 2 * M_PI * uniformrandom();
-  double cos_theta[chan_desc->channel_length];
-  double fs[chan_desc->channel_length];
-  for (int t_idx = 0; t_idx < chan_desc->channel_length; t_idx++) {
+  double cos_theta[length];
+  double fs[length];
+
+  for (uint32_t t_idx = 0; t_idx < length; t_idx++) {
     double t = t_idx / (chan_desc->sampling_rate * 1e6);
     if (t >= 0 && t <= Ds / v) {
       cos_theta[t_idx] = (Ds / 2 - v * t) / sqrt(Dmin * Dmin + (Ds / 2 - v * t) * (Ds / 2 - v * t));
@@ -1898,6 +1899,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
 #ifdef DEBUG_CH
             printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
+
           } //channel_length
 #ifdef DEBUG_CH_POWER
           ch_power_count++;
