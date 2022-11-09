@@ -1297,11 +1297,7 @@ int main(int argc, char **argv)
             }
           }
 
-          if (UE2gNB->max_Doppler == 0) {
-            multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
-          } else {
-            multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
-          }
+          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
           add_noise(rxdata, (const double **) r_re, (const double **) r_im, sigma, slot_length, slot_offset, ts, delay, pdu_bit_map, frame_parms->nb_antennas_rx);
 
         } /*End input_fd */
