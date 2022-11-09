@@ -435,6 +435,10 @@ int main(int argc, char **argv)
         }
       }
 
+      if (optarg[3] == ',') {
+        maxDoppler = atoi(&optarg[4]);
+        printf("Maximum Doppler Frequency: %.0f Hz\n", maxDoppler);
+      }
       break;
       
     case 'i':
@@ -621,7 +625,7 @@ int main(int argc, char **argv)
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
-      printf("-g Channel model configuration. Arguments list: Number of arguments = 2, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, e.g. -g A,l\n");
+      printf("-g Channel model configuration. Arguments list: Number of arguments = 3, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, {Maximum Doppler shift} e.g. -g A,l,10\n");
       printf("-h This message\n");
       printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 1,0\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
