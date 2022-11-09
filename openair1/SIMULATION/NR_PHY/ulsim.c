@@ -683,26 +683,6 @@ int main(int argc, char **argv)
                         &tx_bandwidth,
                         &rx_bandwidth);
 
-  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
-
-  UE2gNB = new_channel_desc_scm(n_tx,
-                                n_rx, channel_model,
-                                sampling_frequency/1e6,
-                                tx_bandwidth,
-                                DS_TDL,
-                                corr_level,
-                                0,
-                                0,
-                                0,
-                                0);
-
-  if (UE2gNB == NULL) {
-    printf("Problem generating channel model. Exiting.\n");
-    exit(-1);
-  }
-
-  UE2gNB->max_Doppler = maxDoppler;
-
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
@@ -809,8 +789,27 @@ int main(int argc, char **argv)
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
 
+  // Configure channel model
+  UE2gNB = new_channel_desc_scm(n_tx,
+                                n_rx,
+                                channel_model,
+                                sampling_frequency / 1e6,
+                                frame_parms->ul_CarrierFreq,
+                                tx_bandwidth,
+                                DS_TDL,
+                                maxDoppler,
+                                corr_level,
+                                0,
+                                0,
+                                0,
+                                0);
 
-  //configure UE
+  if (UE2gNB == NULL) {
+    printf("Problem generating channel model. Exiting.\n");
+    exit(-1);
+  }
+
+  // Configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
