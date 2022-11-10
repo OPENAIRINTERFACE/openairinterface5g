@@ -894,8 +894,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         if(ra->cfra) {
           // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
           nr_ra_succeeded(mod_id, frame, nr_slot_tx);
-        } else {
-          ra->generate_nr_prach = GENERATE_IDLE;
         }
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
@@ -910,7 +908,7 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
 
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
-        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
+        if (ra->ra_state == GENERATE_PREAMBLE) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, rach_ConfigDedicated);
         }
       } else if (ra->RA_backoff_cnt > 0) {
@@ -919,10 +917,9 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
 
         ra->RA_backoff_cnt--;
 
-        if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) || ra->RA_backoff_cnt == 0) {
+        if ((ra->RA_backoff_cnt > 0 && ra->ra_state == GENERATE_PREAMBLE) || ra->RA_backoff_cnt == 0) {
           nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, rach_ConfigDedicated);
         }
-
       }
     }
   }
@@ -931,8 +928,7 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
 
-  LOG_D(MAC,"ra->generate_nr_prach %d ra->ra_state %d (GENERATE_IDLE %d)\n",ra->generate_nr_prach,ra->ra_state,GENERATE_IDLE);
-  return ra->generate_nr_prach;
+  return ra->ra_state;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
@@ -1039,7 +1035,6 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
-  ra->generate_nr_prach = GENERATE_IDLE;
   ra->ra_state = RA_SUCCEEDED;
 
 }
@@ -1058,7 +1053,6 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
 
   ra->first_Msg3 = 1;
   ra->ra_PreambleIndex = -1;
-  ra->generate_nr_prach = RA_FAILED;
   ra->ra_state = RA_UE_IDLE;
 
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;

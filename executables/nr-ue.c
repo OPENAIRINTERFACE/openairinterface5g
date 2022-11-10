@@ -312,18 +312,15 @@ static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_inf
                                       ul_info->frame_tx,
                                       ul_info->gNB_index,
                                       ul_info->slot_tx);
-    if (nr_prach == 1)
-    {
+    if (nr_prach == 1) {
       L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
       ul_config->number_pdus = 0;
       ul_info->ue_sched_mode = SCHED_PUSCH;
     }
-    else if (nr_prach == 2)
-    {
+    else if (nr_prach == 2) {
       LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, ul_info->module_id);
     }
-    else if(nr_prach == 3)
-    {
+    else if(nr_prach == 3) {
       LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, ul_info->module_id);
     }
   }
@@ -401,7 +398,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       continue;
     }
 
-    mac->ra.generate_nr_prach = 0;
     int CC_id = 0;
     uint8_t gNB_id = 0;
     nr_uplink_indication_t ul_info;

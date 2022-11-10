@@ -228,7 +228,6 @@ typedef struct {
 
 typedef enum {
   RA_UE_IDLE = 0,
-  GENERATE_IDLE = 0,
   GENERATE_PREAMBLE = 1,
   WAIT_RAR = 2,
   WAIT_CONTENTION_RESOLUTION = 3,
