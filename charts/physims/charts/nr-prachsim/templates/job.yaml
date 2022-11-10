@@ -1,20 +1,9 @@
-apiVersion: apps/v1
-kind: Deployment
+apiVersion: batch/v1
+kind: Job
 metadata:
   name: {{ .Chart.Name }}
-  labels:
-    {{- include "oai-nr-pbchsim-273rb.labels" . | nindent 4 }}
 spec:
-  replicas: {{ .Values.replicaCount }}
-  selector:
-    matchLabels:
-      {{- include "oai-nr-pbchsim-273rb.selectorLabels" . | nindent 6 }}
-  strategy:
-    type: Recreate
   template:
-    metadata:
-      labels:
-        {{- include "oai-nr-pbchsim-273rb.selectorLabels" . | nindent 8 }}
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -28,18 +17,16 @@ spec:
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
-        ports:
-        - containerPort: 80
         env:
         - name: OPENAIR_DIR
           value: /opt/oai-physim
         command: ["/bin/sh", "-c"]
         args:
-        - >
-          cmake_targets/autotests/run_exec_autotests.bash -g "nr_pbchsim.273rb" -d bin/ &&
-          echo "FINISHED" && sleep infinity
+        - >  
+          cmake_targets/autotests/run_exec_autotests.bash -g "nr_prachsim" -d bin/ &&
+          echo "FINISHED" 
       dnsPolicy: ClusterFirst
-      restartPolicy: Always
+      restartPolicy: Never
       schedulerName: default-scheduler
       serviceAccountName: {{ .Values.global.serviceAccountName }}
       terminationGracePeriodSeconds: 30

@@ -27,10 +27,10 @@ podSecurityContext:
   runAsGroup: 0
 
 securityContext:
-  privileged: true
-  capabilities:
-    add:
-      - SYS_CAP_PTRACE
+  privileged: false
+#  capabilities:
+#    add:
+#      - SYS_CAP_PTRACE
   #   drop:
   #   - ALL
   # readOnlyRootFilesystem: true
