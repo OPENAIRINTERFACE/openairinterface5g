@@ -340,7 +340,8 @@ void nr_pdcch_channel_level(int32_t rx_size,
 
 
 // This function will extract the mapped DM-RS PDCCH REs as per 38.211 Section 7.4.1.3.2 (Mapping to physical resources)
-void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
+void nr_pdcch_extract_rbs_single(uint32_t rxdataF_sz,
+                                 int32_t rxdataF[][rxdataF_sz],
                                  int32_t est_size,
                                  int32_t dl_ch_estimates[][est_size],
                                  int32_t rx_size,
@@ -671,11 +672,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     int32_t pdcch_est_size,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                    int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   uint32_t frame = proc->frame_rx;
   uint32_t slot  = proc->nr_slot_rx;
-  NR_UE_COMMON *common_vars      = &ue->common_vars;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   uint8_t log2_maxh, aarx;
@@ -703,7 +704,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
     LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
-    nr_pdcch_extract_rbs_single(common_vars->rxdataF,
+    nr_pdcch_extract_rbs_single(ue->frame_parms.samples_per_slot_wCP,
+                                rxdataF,
                                 pdcch_est_size,
                                 pdcch_dl_ch_estimates,
                                 rx_size,

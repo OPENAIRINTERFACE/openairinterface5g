@@ -65,6 +65,11 @@
 
 /*************** FUNCTIONS ****************************************/
 
+/** \brief This function update uplink harq context and return transmission type (new transmission or retransmission)
+    @param ulsch uplink harq context
+    @param harq process identifier harq_pid
+    @returns retransmission or new transmission */
+
 harq_result_t uplink_harq_process(NR_UE_ULSCH_t *ulsch, int harq_pid, NR_UL_UE_HARQ_t harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES], int ndi, uint8_t rnti_type);
 
 /** \brief This function initialises downlink HARQ status

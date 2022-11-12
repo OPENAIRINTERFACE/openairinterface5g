@@ -66,10 +66,10 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
-                              NR_DL_FRAME_PARMS *frame_params)
+                              NR_DL_FRAME_PARMS *frame_params,
+                              int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   uint8_t rxAnt = 0, idx = 0;
-  int32_t **rxdataF      = ue->common_vars.rxdataF;
   prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
   c16_t ch_tmp_buf[ ue->frame_parms.ofdm_symbol_size] __attribute__((aligned(32)));
@@ -571,7 +571,8 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              unsigned char Ns,
                              unsigned char symbol,
                              int dmrss,
-                             NR_UE_SSB *current_ssb)
+                             NR_UE_SSB *current_ssb,
+                             int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
@@ -583,7 +584,6 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   uint8_t nushift;
   uint8_t ssb_index=current_ssb->i_ssb;
   uint8_t n_hf=current_ssb->n_hf;
-  int **rxdataF=ue->common_vars.rxdataF;
 
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
@@ -735,7 +735,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                unsigned char symbol,
                                int dmrss,
                                uint8_t ssb_index,
-                               uint8_t n_hf)
+                               uint8_t n_hf,
+                               int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
@@ -745,8 +746,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   //int slot_pbch;
 
   uint8_t nushift;
-   int **rxdataF=ue->common_vars.rxdataF;
-
   nushift =  ue->frame_parms.Nid_cell%4;
   ue->frame_parms.nushift = nushift;
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
@@ -1001,7 +1000,8 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  uint16_t first_carrier_offset,
                                  uint16_t BWPStart,
                                  int32_t pdcch_est_size,
-                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size])
+                                 int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
+                                 int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
   unsigned char aarx;
@@ -1009,8 +1009,6 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF,*dl_ch;
   int ch_offset,symbol_offset;
-
-  int **rxdataF=ue->common_vars.rxdataF;
 
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
@@ -1249,7 +1247,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short BWPStart,
                                 uint8_t config_type,
                                 unsigned short bwp_start_subcarrier,
-                                unsigned short nb_rb_pdsch)
+                                unsigned short nb_rb_pdsch,
+                                uint32_t pdsch_est_size,
+                                int32_t dl_ch_estimates[][pdsch_est_size],
+                                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
@@ -1260,9 +1261,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   int ch_offset,symbol_offset;
 
   uint8_t nushift;
-  int **dl_ch_estimates = ue->pdsch_vars[gNB_id]->dl_ch_estimates;
-  int **rxdataF=ue->common_vars.rxdataF;
-
   ch_offset     = ue->frame_parms.ofdm_symbol_size*symbol;
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
@@ -2030,7 +2028,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
  * NAME :         nr_pdsch_ptrs_processing
  *
  * PARAMETERS :   PHY_VARS_NR_UE    : ue data structure
- *                NR_UE_PDSCH       : pdsch_vars pointer
+ *                c16_t             : ptrs_phase_per_slot array
+ *                int32_t           : ptrs_re_per_slot array
+ *                uint32_t          : rx_size,
+ *                int32_t           : rxdataF_comp, array
  *                NR_DL_FRAME_PARMS : frame_parms pointer
  *                NR_DL_UE_HARQ_t   : dlsch0_harq pointer
  *                NR_DL_UE_HARQ_t   : dlsch1_harq pointer
@@ -2049,7 +2050,10 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
  *  3) Compensate signal with PTRS estimation for slot
  *********************************************************************/
 void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
-                              NR_UE_PDSCH **pdsch_vars,
+                              c16_t ptrs_phase_per_slot[][14],
+                              int32_t ptrs_re_per_slot[][14],
+                              uint32_t rx_size,
+                              int32_t rxdataF_comp[][rx_size],
                               NR_DL_FRAME_PARMS *frame_parms,
                               NR_DL_UE_HARQ_t *dlsch0_harq,
                               NR_DL_UE_HARQ_t *dlsch1_harq,
@@ -2104,8 +2108,8 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   }
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    c16_t *phase_per_symbol = (c16_t*)pdsch_vars[gNB_id]->ptrs_phase_per_slot[aarx];
-    ptrs_re_symbol = (int32_t*)pdsch_vars[gNB_id]->ptrs_re_per_slot[aarx];
+    c16_t *phase_per_symbol = (c16_t*)ptrs_phase_per_slot[aarx];
+    ptrs_re_symbol = (int32_t*)ptrs_re_per_slot[aarx];
     ptrs_re_symbol[symbol] = 0;
     phase_per_symbol[symbol].i = 0; // Imag
     /* set DMRS estimates to 0 angle with magnitude 1 */
@@ -2141,7 +2145,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                                rnti,
                                nr_slot_rx,
                                symbol,frame_parms->ofdm_symbol_size,
-                               (int16_t*)&pdsch_vars[gNB_id]->rxdataF_comp0[aarx][(symbol * nb_re_pdsch)],
+                               (int16_t*)&rxdataF_comp[aarx][(symbol * nb_re_pdsch)],
                                ue->nr_gold_pdsch[gNB_id][nr_slot_rx][symbol][0],
                                (int16_t*)&phase_per_symbol[symbol],
                                &ptrs_re_symbol[symbol]);
@@ -2161,9 +2165,9 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
         }
       }
 #ifdef DEBUG_DL_PTRS
-      LOG_M("ptrsEst.m","est",pdsch_vars[gNB_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
+      LOG_M("ptrsEst.m","est",ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
       LOG_M("rxdataF_bf_ptrs_comp.m","bf_ptrs_cmp",
-            &pdsch_vars[gNB_id]->rxdataF_comp0[aarx][(*startSymbIndex) * NR_NB_SC_PER_RB * (*nb_rb) ],
+            &rxdataF_comp[aarx][(*startSymbIndex) * NR_NB_SC_PER_RB * (*nb_rb) ],
             (*nb_rb) * NR_NB_SC_PER_RB * (*nbSymb),1,1);
 #endif
       /*------------------------------------------------------------------------------------------------------- */
@@ -2176,9 +2180,9 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_DL_PTRS
           printf("[PHY][DL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[i].r,phase_per_symbol[i].i);
 #endif
-          rotate_cpx_vector((c16_t*)&pdsch_vars[gNB_id]->rxdataF_comp0[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+          rotate_cpx_vector((c16_t*)&rxdataF_comp[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
                             &phase_per_symbol[i],
-                            (c16_t*)&pdsch_vars[gNB_id]->rxdataF_comp0[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+                            (c16_t*)&rxdataF_comp[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
                             ((*nb_rb) * NR_NB_SC_PER_RB), 15);
         }// if not DMRS Symbol
       }// symbol loop

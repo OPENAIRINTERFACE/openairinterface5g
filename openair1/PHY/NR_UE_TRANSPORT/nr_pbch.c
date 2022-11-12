@@ -49,7 +49,8 @@
 #define PBCH_MAX_RE (PBCH_MAX_RE_PER_SYMBOL*4)
 #define print_shorts(s,x) printf("%s : %d,%d,%d,%d,%d,%d,%d,%d\n",s,((int16_t*)x)[0],((int16_t*)x)[1],((int16_t*)x)[2],((int16_t*)x)[3],((int16_t*)x)[4],((int16_t*)x)[5],((int16_t*)x)[6],((int16_t*)x)[7])
 
-static uint16_t nr_pbch_extract(int **rxdataF,
+static uint16_t nr_pbch_extract(uint32_t rxdataF_sz,
+                                int32_t rxdataF[][rxdataF_sz],
                                 const int estimateSz,
                                 struct complex16 dl_ch_estimates[][estimateSz],
                                 struct complex16 rxdataF_ext[][PBCH_MAX_RE_PER_SYMBOL],
@@ -392,9 +393,9 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 nr_phy_data_t *phy_data,
-                fapiPbch_t *result) {
+                fapiPbch_t *result,
+                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
-  NR_UE_COMMON *nr_ue_common_vars = &ue->common_vars;
   int max_h=0;
   int symbol;
   //uint8_t pbch_a[64];
@@ -424,7 +425,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_PBCH
   //printf("address dataf %p",nr_ue_common_vars->rxdataF);
   write_output("rxdataF0_pbch.m","rxF0pbch",
-               &nr_ue_common_vars->rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
+               &rxdataF[0][(symbol_offset+1)*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size*3,1,1);
 #endif
   // symbol refers to symbol within SSB. symbol_offset is the offset of the SSB wrt start of slot
   double log2_maxh = 0;
@@ -434,7 +435,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
     __attribute__ ((aligned(32))) struct complex16 rxdataF_ext[frame_parms->nb_antennas_rx][PBCH_MAX_RE_PER_SYMBOL];
     __attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_ext[frame_parms->nb_antennas_rx][PBCH_MAX_RE_PER_SYMBOL];
     memset(dl_ch_estimates_ext,0, sizeof  dl_ch_estimates_ext);
-    nr_pbch_extract(nr_ue_common_vars->rxdataF,
+    nr_pbch_extract(ue->frame_parms.samples_per_slot_wCP,
+                    rxdataF,
                     estimateSz,
                     dl_ch_estimates,
                     rxdataF_ext,

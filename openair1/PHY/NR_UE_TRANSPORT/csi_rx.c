@@ -190,9 +190,9 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const uint8_t *l_overline,
                          int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
                          uint32_t *rsrp,
-                         int *rsrp_dBm) {
+                         int *rsrp_dBm,
+                         int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
-  int32_t **rxdataF  =  ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint16_t meas_count = 0;
   uint32_t rsrp_sum = 0;
@@ -729,9 +729,9 @@ int nr_csi_rs_cqi_estimation(const uint32_t precoded_sinr,
 int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
                                const UE_nr_rxtx_proc_t *proc,
                                const fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu,
-                               uint32_t *interference_plus_noise_power) {
+                               uint32_t *interference_plus_noise_power,
+                               int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
-  int32_t **rxdataF = ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   const uint16_t end_rb = csiim_config_pdu->start_rb + csiim_config_pdu->nr_of_rbs > csiim_config_pdu->bwp_size ?
@@ -800,7 +800,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   if(!ue->csiim_vars[gNB_id]->active) {
     return -1;
@@ -818,13 +818,13 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csiim_config_pdu->l_csiim = %i.%i.%i.%i\n", csiim_config_pdu->l_csiim[0], csiim_config_pdu->l_csiim[1], csiim_config_pdu->l_csiim[2], csiim_config_pdu->l_csiim[3]);
 #endif
 
-  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_info->interference_plus_noise_power);
+  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_info->interference_plus_noise_power, rxdataF);
   ue->nr_csi_info->csi_im_meas_computed = true;
 
   return 0;
 }
 
-int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
+int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   if(!ue->csirs_vars[gNB_id]->active) {
     return -1;
@@ -901,7 +901,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                        l_overline,
                        csi_rs_received_signal,
                        &rsrp,
-                       &rsrp_dBm);
+                       &rsrp_dBm,
+                       rxdataF);
 
   nr_csi_rs_channel_estimation(ue,
                                proc,

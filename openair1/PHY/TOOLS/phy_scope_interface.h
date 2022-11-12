@@ -47,6 +47,9 @@ enum UEdataType {
   pbchRxdataF_comp,
   pdcchLlr,
   pdcchRxdataF_comp,
+  pdschLlr,
+  pdschRxdataF_comp,
+  commonRxdataF,
   UEdataTypeNumberOfItems
 };
 
