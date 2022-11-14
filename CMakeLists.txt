@@ -3185,5 +3185,6 @@ make_driver(ue_ip ${OPENAIR2_DIR}/NETWORK_DRIVER/UE_IP ${ue_ip_src})
 
 include (${OPENAIR_DIR}/common/utils/telnetsrv/telnetsrv_CMakeLists.txt)
 include(${OPENAIR1_DIR}/PHY/CODING/nrLDPC_decoder/nrLDPC_tools/CMakeLists.txt)
+include (${OPENAIR_DIR}/common/utils/websrv/websrv_CMakeLists.txt)
 
 add_subdirectory(openair2)

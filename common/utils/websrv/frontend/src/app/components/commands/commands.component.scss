@@ -1,0 +1,80 @@
+.spaceddiv {
+  height: 45px;
+  width: 40vw;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+
+.TableRowdiv {
+  height: 38px;
+  display: flex;
+/*  justify-content: space-between;*/
+  margin: 2px;
+  width: 95%;
+  .item:nth-child(1n){
+    width: 10%;
+  }
+  .item {
+    width: 4%;
+    margin: 10px;
+  } 
+}
+.TableBtn {
+  height: 25px;
+  width: 35p;
+  display:flex;
+  padding-bottom:8px;
+}
+
+.TableText {
+  display: flex;
+  width: 8em;
+  overflow-x: auto;
+}
+
+.scrollablefield  {
+  width: 80%;
+  height: 20px;
+  .mat-input-element {
+    overflow-x: auto;
+  }
+}
+
+.mat-card {
+  height: 95%;
+  overflow-y: auto;
+  overflow-x: scroll;
+}
+
+.status {
+  color: green;
+  font-weight: 800;
+}
+
+.ng-invalid .status {
+  color: red;
+}
+
+.grid-container {
+  margin: 20px;
+}
+
+.dashboard-card {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
+}
+
+.more-button {
+  position: absolute;
+  top: 5px;
+  right: 10px;
+}
+
+.dashboard-card-content {
+  text-align: center;
+}

@@ -46,6 +46,7 @@
 #define PARAMFLAG_NOFREE                  (1 << 3)         // don't free parameter in end function
 #define PARAMFLAG_BOOL                    (1 << 4)         // integer param can be 0 or 1
 #define PARAMFLAG_CMDLINE_NOPREFIXENABLED (1 << 5)         // on the command line, allow a parameter to be specified without the prefix
+#define PARAMFLAG_CMDLINEONLY (1 << 6) // this parameter cannot be specified in config file
 
 /*   Flags used by config modules to return info to calling modules and/or to  for internal usage*/
 #define PARAMFLAG_MALLOCINCONFIG          (1 << 15)        // parameter allocated in config module

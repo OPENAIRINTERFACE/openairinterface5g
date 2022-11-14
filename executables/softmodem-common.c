@@ -61,6 +61,12 @@ uint64_t set_softmodem_optmask(uint64_t bitmask) {
   return softmodem_params.optmask;
 }
 
+uint64_t clear_softmodem_optmask(uint64_t bitmask)
+{
+  softmodem_params.optmask = softmodem_params.optmask & (~bitmask);
+  return softmodem_params.optmask;
+}
+
 softmodem_params_t *get_softmodem_params(void) {
   return &softmodem_params;
 }
@@ -89,6 +95,7 @@ void get_common_options(uint32_t execmask) {
   uint32_t online_log_messages=0;
   uint32_t glog_level=0 ;
   uint32_t start_telnetsrv = 0, start_telnetclt = 0;
+  uint32_t start_websrv = 0;
   uint32_t noS1 = 0, nokrnmod = 1, nonbiot = 0;
   uint32_t rfsim = 0, do_forms = 0;
   char *logmem_filename = NULL;
@@ -144,6 +151,10 @@ void get_common_options(uint32_t execmask) {
 
   if (do_forms) {
     set_softmodem_optmask(SOFTMODEM_DOSCOPE_BIT);
+  }
+
+  if (start_websrv) {
+    load_module_shlib("websrv", NULL, 0, NULL);
   }
 
   if(parallel_config != NULL) set_parallel_conf(parallel_config);
