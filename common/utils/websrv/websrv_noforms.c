@@ -37,6 +37,7 @@
 #include "common/utils/websrv/websrv_noforms.h"
 #include <common/utils/assertions.h>
 
+
 #define MAX_LAYER 8
 
 /* replacement for xforms function used in xforms softscope */
@@ -53,6 +54,7 @@ typedef struct {
 FL_OBJECT *websrv_fl_add_xyplot(int t, FL_Coord x, FL_Coord y, FL_Coord w, FL_Coord h, const char *label)
 {
   FL_OBJECT *obj;
+
   obj = (FL_OBJECT *)calloc(1, sizeof(FL_OBJECT));
   AssertFatal((obj != NULL), "Cannot allocate scope object for %s\n", (label!=NULL)?label:"??");
   if (obj) {

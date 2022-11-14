@@ -1726,7 +1726,6 @@ FL_EXPORT int fl_get_drawmode(void)
 #define fl_set_linestyle fl_linestyle
 #define fl_set_drawmode fl_drawmode
 
-
 /*
  * Interfaces
  */
@@ -2260,6 +2259,7 @@ FL_EXPORT FL_HANDLE_CANVAS fl_add_canvas_handler(FL_OBJECT *ob, int ev, FL_HANDL
   return NULL;
 };
 
+
 FL_EXPORT Window fl_get_canvas_id(FL_OBJECT *ob)
 {
   return NULL;
@@ -2430,6 +2430,7 @@ FL_EXPORT FL_XYPLOT_SYMBOL fl_set_xyplot_symbol(FL_OBJECT *ob, int id, FL_XYPLOT
 };
 
 #endif  /* FL_XYPLOT_H */
+
 /*----------------------------------------------------------------------*/
 /* new functions for interfacing with webserver                         */
 
