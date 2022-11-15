@@ -248,6 +248,7 @@ void processULSegment(void * arg) {
   if(ulsch_harq->repetition_number == 1) {
     memset(ulsch_harq->pusch_rep_buffer[r],0,(sizeof(int32_t)*3*(6144+64))) ;  // reset the buffer every new repetitions
   }
+
   if(ulsch_harq->total_number_of_repetitions > 1) {
     if (ulsch_harq->rvidx==1) {
       LOG_E(PHY,"Adding HARQ data for segment: %d\n", r);
@@ -267,28 +268,21 @@ void processULSegment(void * arg) {
 				 soft_bits+96,
 				 ulsch_harq->w[r]);
   stop_meas(&eNB->ulsch_deinterleaving_stats);
-  rdata->decodeIterations = rdata->function( soft_bits+96,
-					     NULL,
-					     rdata->decoded_bytes,
-					     NULL,
-					     rdata->Kr,
-					     rdata->maxIterations,
-					     rdata->nbSegments == 1 ? CRC24_A: CRC24_B,
-					     rdata->Fbits,
-					     &eNB->ulsch_tc_init_stats,
-					     &eNB->ulsch_tc_alpha_stats,
-					     &eNB->ulsch_tc_beta_stats,
-					     &eNB->ulsch_tc_gamma_stats,
-					     &eNB->ulsch_tc_ext_stats,
-					     &eNB->ulsch_tc_intl1_stats,
-					     &eNB->ulsch_tc_intl2_stats);
-  stop_meas(&eNB->ulsch_turbo_decoding_stats);
-  
-}
-
-void *td_thread(void *param) {
-
-  return(NULL);
+  rdata->decodeIterations = rdata->function(soft_bits + 96,
+                                            NULL,
+                                            rdata->decoded_bytes,
+                                            NULL,
+                                            rdata->Kr,
+                                            rdata->maxIterations,
+                                            rdata->nbSegments == 1 ? CRC24_A : CRC24_B,
+                                            rdata->Fbits,
+                                            &eNB->ulsch_tc_init_stats,
+                                            &eNB->ulsch_tc_alpha_stats,
+                                            &eNB->ulsch_tc_beta_stats,
+                                            &eNB->ulsch_tc_gamma_stats,
+                                            &eNB->ulsch_tc_ext_stats,
+                                            &eNB->ulsch_tc_intl1_stats,
+                                            &eNB->ulsch_tc_intl2_stats);
 }
 
 int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
@@ -1097,6 +1091,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
 
   LOG_D(PHY,"frame %d subframe %d O_ACK:%d o_ACK[]=%d:%d:%d:%d\n",frame,subframe,ulsch_harq->O_ACK,ulsch_harq->o_ACK[0],ulsch_harq->o_ACK[1],ulsch_harq->o_ACK[2],ulsch_harq->o_ACK[3]);
   // Do ULSCH Decoding for data portion
+  start_meas(&eNB->ulsch_turbo_decoding_stats);
   ret = ulsch_decoding_data(eNB, proc, UE_id, harq_pid, llr8_flag);
   return(ret);
 }

@@ -179,14 +179,6 @@ extern void init_UE(int nb_inst,
 
 extern void init_thread(int sched_runtime, int sched_deadline, int sched_fifo, cpu_set_t *cpuset, char *name);
 
-extern void reset_opp_meas(void);
-extern void print_opp_meas(void);
-
-extern void init_td_thread(PHY_VARS_eNB *);
-extern void init_te_thread(PHY_VARS_eNB *);
-extern void kill_td_thread(PHY_VARS_eNB *);
-extern void kill_te_thread(PHY_VARS_eNB *);
-
 extern void init_ocm(void);
 extern void init_ue_devices(PHY_VARS_UE *);
 

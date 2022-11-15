@@ -1447,23 +1447,23 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
       rx_ulsch(eNB,proc, i);
       stop_meas(&eNB->ulsch_demodulation_stats);
       start_meas(&eNB->ulsch_decoding_stats);
-      ulsch_decoding(eNB,proc,
-                           i,
-                           0, // control_only_flag
-                           ulsch_harq->V_UL_DAI,
-                           ulsch_harq->nb_rb>20 ? 1 : 0);
-      stop_meas(&eNB->ulsch_decoding_stats);
-/*
-      int ulsch_id=-1;
-      for  (ulsch_id=0;ulsch_id<NUMBER_OF_ULSCH_MAX;ulsch_id++)
-         if (ulsch->rnti == eNB->ulsch_stats[ulsch_id].rnti) break;
-      AssertFatal(ulsch_id>=0,"no ulsch_id found\n");
+      ulsch_decoding(eNB,
+                     proc,
+                     i,
+                     0, // control_only_flag
+                     ulsch_harq->V_UL_DAI,
+                     ulsch_harq->nb_rb > 20 ? 1 : 0);
+      /*
+            int ulsch_id=-1;
+            for  (ulsch_id=0;ulsch_id<NUMBER_OF_ULSCH_MAX;ulsch_id++)
+               if (ulsch->rnti == eNB->ulsch_stats[ulsch_id].rnti) break;
+            AssertFatal(ulsch_id>=0,"no ulsch_id found\n");
 
-      if (eNB->ulsch_stats[ulsch_id].round_trials[0]>100) {
-         dump_ulsch(eNB,frame,subframe,i,ulsch_harq->round);
-         AssertFatal(1==0,"exiting\n");
-      }
-*/
+            if (eNB->ulsch_stats[ulsch_id].round_trials[0]>100) {
+               dump_ulsch(eNB,frame,subframe,i,ulsch_harq->round);
+               AssertFatal(1==0,"exiting\n");
+            }
+      */
     }
     else if ((ulsch) &&
              (ulsch->rnti>0) &&
@@ -1478,7 +1478,8 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
       LOG_W (PHY, "Removing stale ULSCH config for UE %x harq_pid %d (harq_mask is now 0x%2.2x)\n", ulsch->rnti, harq_pid, ulsch->harq_mask);
     }
   }   //   for (i=0; i<NUMBER_OF_ULSCH_MAX; i++)
-  
+
+  const bool decode = proc->nbDecode;
   while (proc->nbDecode > 0) {
     notifiedFIFO_elt_t *req=pullTpool(proc->respDecode, proc->threadPool);
     if (req == NULL)
@@ -1486,62 +1487,13 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     postDecode(proc, req);
     delNotifiedFIFO_elt(req);
   }
-}
-
-extern int      oai_exit;
-
-extern void    *td_thread (void *);
-
-void init_td_thread(PHY_VARS_eNB *eNB) {
-	/*
-  L1_proc_t *proc = &eNB->proc;
-  proc->tdp.eNB = eNB;
-  proc->instance_cnt_td = -1;
-  threadCreate(&proc->pthread_td, td_thread, (void *)&proc->tdp, "TD", -1, OAI_PRIORITY_RT);
-  */
-}
-
-void kill_td_thread(PHY_VARS_eNB *eNB) {
-	/*
-  L1_proc_t *proc = &eNB->proc;
-  proc->instance_cnt_td         = 0;
-  pthread_cond_signal(&proc->cond_td);
-  pthread_join(proc->pthread_td, NULL);
-  pthread_mutex_destroy( &proc->mutex_td );
-  pthread_cond_destroy( &proc->cond_td );
-  */
-}
-
-extern void    *te_thread (void *);
-
-void init_te_thread(PHY_VARS_eNB *eNB) {
-	/*
-  L1_proc_t *proc = &eNB->proc;
-
-  for(int i=0; i<3 ; i++) {
-    proc->tep[i].eNB = eNB;
-    proc->tep[i].instance_cnt_te = -1;
-    LOG_I(PHY,"Creating te_thread %d\n",i);
-    char txt[128];
-    sprintf(txt,"TE_%d", i);
-    threadCreate(&proc->tep[i].pthread_te, te_thread, (void *)&proc->tep[i], txt, -1, OAI_PRIORITY_RT);
+  if (decode) {
+    stop_meas(&eNB->ulsch_decoding_stats);
+    stop_meas(&eNB->ulsch_turbo_decoding_stats);
   }
-  */
 }
 
-void kill_te_thread(PHY_VARS_eNB *eNB) {
-	/*
-  L1_proc_t *proc = &eNB->proc;
-
-  for(int i=0; i<3 ; i++) {
-    proc->tep[i].instance_cnt_te         = 0;
-    pthread_cond_signal(&proc->tep[i].cond_te);
-    pthread_join(proc->tep[i].pthread_te, NULL);
-    pthread_mutex_destroy( &proc->tep[i].mutex_te);
-    pthread_cond_destroy( &proc->tep[i].cond_te);
-  }
-  */
-}
+extern int oai_exit;
 
 void fill_rx_indication(PHY_VARS_eNB *eNB,
                         int ULSCH_id,

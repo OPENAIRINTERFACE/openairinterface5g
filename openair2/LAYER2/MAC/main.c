@@ -45,41 +45,38 @@
 extern RAN_CONTEXT_t RC;
 extern int oai_exit;
 
-void *mac_stats_thread(void *param) {
-  eNB_MAC_INST     *mac      = (eNB_MAC_INST *)param;
-  FILE *fd;
-  UE_info_t        *UE_info  = &(mac->UE_info);
+void lte_dump_mac_stats(eNB_MAC_INST *mac, FILE *fd)
+{
+  UE_info_t *UE_info = &(mac->UE_info);
 
-  while (!oai_exit) {
-    sleep(1);
-    fd=fopen("MAC_stats.log","w+");
-    AssertFatal(fd!=NULL,"Cannot open MAC_stats.log\n");
+  for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+    if (UE_info->active[UE_id]) {
+      int rnti = UE_RNTI(mac->Mod_id, UE_id);
+      int CC_id = UE_PCCID(mac->Mod_id, UE_id);
+      UE_sched_ctrl_t *UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
 
-    for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
-      if (UE_info->active[UE_id]) {
-        int rnti = UE_RNTI(mac->Mod_id, UE_id);
-        int CC_id = UE_PCCID(mac->Mod_id, UE_id);
-        UE_sched_ctrl_t *UE_scheduling_control = &(UE_info->UE_sched_ctrl[UE_id]);
-
-        double total_bler;
-        if(UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
-          total_bler = 0;
-        }
-        else {
-          total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
-        }
-        fprintf(fd,"MAC UE rnti %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf (%lf/%lf) total_bler %lf mcsoff %d pre_allocated nb_rb %d, mcs %d, bsr %u sched %u tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d inactivity timer %d\n",
+      double total_bler;
+      if (UE_scheduling_control->pusch_rx_num[CC_id] == 0 && UE_scheduling_control->pusch_rx_error_num[CC_id] == 0) {
+        total_bler = 0;
+      } else {
+        total_bler = (double)UE_scheduling_control->pusch_rx_error_num[CC_id] / (double)(UE_scheduling_control->pusch_rx_error_num[CC_id] + UE_scheduling_control->pusch_rx_num[CC_id]) * 100;
+      }
+      fprintf(fd,
+              "MAC UE rnti %x : %s, PHR %d DLCQI %d PUSCH %d PUCCH %d RLC disc %d UL-stat rcv %lu err %lu bler %lf (%lf/%lf) total_bler %lf mcsoff %d pre_allocated nb_rb %d, mcs %d, bsr %u sched %u "
+              "tbs %lu cnt %u , DL-stat tbs %lu cnt %u rb %u buf %u 1st %u ret %u ri %d inactivity timer %d\n",
               rnti,
               UE_scheduling_control->ul_out_of_sync == 0 ? "in synch" : "out of sync",
               UE_info->UE_template[CC_id][UE_id].phr_info,
               UE_scheduling_control->dl_cqi[CC_id],
-              UE_scheduling_control->pusch_snr/*_avg*/[CC_id],
+              UE_scheduling_control->pusch_snr /*_avg*/[CC_id],
               UE_scheduling_control->pucch1_snr[CC_id],
               UE_scheduling_control->rlc_out_of_resources_cnt,
               UE_scheduling_control->pusch_rx_num[CC_id],
               UE_scheduling_control->pusch_rx_error_num[CC_id],
               UE_scheduling_control->pusch_bler[CC_id],
-              mac->bler_lower,mac->bler_upper,total_bler,
+              mac->bler_lower,
+              mac->bler_upper,
+              total_bler,
               UE_scheduling_control->mcs_offset[CC_id],
               UE_info->UE_template[CC_id][UE_id].pre_allocated_nb_rb_ul,
               UE_info->UE_template[CC_id][UE_id].pre_assigned_mcs_ul,
@@ -98,8 +95,7 @@ void *mac_stats_thread(void *param) {
               UE_scheduling_control->first_cnt[CC_id],
               UE_scheduling_control->ret_cnt[CC_id],
               UE_scheduling_control->aperiodic_ri_received[CC_id],
-              UE_scheduling_control->ul_inactivity_timer
-        );
+              UE_scheduling_control->ul_inactivity_timer);
         fprintf(fd,"              ULSCH rounds %d/%d/%d/%d, DLSCH rounds %d/%d/%d/%d, ULSCH errors %d, DLSCH errors %d\n",
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[0],
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_rounds[1],
@@ -111,13 +107,24 @@ void *mac_stats_thread(void *param) {
               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_rounds[3],
               UE_info->eNB_UE_stats[CC_id][UE_id].ulsch_errors,
               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_errors);
-
-
-      }
     }
+  }
+  return;
+}
+
+void *mac_stats_thread(void *param)
+{
+  eNB_MAC_INST *mac = (eNB_MAC_INST *)param;
+  FILE *fd;
+
+  while (!oai_exit) {
+    sleep(1);
+    fd = fopen("MAC_stats.log", "w+");
+    AssertFatal(fd != NULL, "Cannot open MAC_stats.log\n");
+    lte_dump_mac_stats(mac, fd);
     fclose(fd);
   }
-  return(NULL);
+  return NULL;
 }
 
 void init_UE_info(UE_info_t *UE_info)
@@ -206,8 +213,8 @@ void mac_top_init_eNB(void)
 
   rrc_init_global_param();
 
-  for (i=0;i<RC.nb_macrlc_inst; i++) pthread_create(&mac[i]->mac_stats_thread,NULL,mac_stats_thread,(void*)mac[i]);
-
+  for (i = 0; i < RC.nb_macrlc_inst; i++)
+    threadCreate(&mac[i]->mac_stats_thread, mac_stats_thread, (void *)mac[i], "mac stats", -1, sched_get_priority_min(SCHED_OAI));
 }
 
 void mac_init_cell_params(int Mod_idP, int CC_idP)

@@ -156,10 +156,6 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
 
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
-extern void reset_opp_meas(void);
-extern void print_opp_meas(void);
-
-
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
 int transmission_mode=1;
@@ -451,10 +447,6 @@ int main ( int argc, char **argv )
   //randominit (0);
   set_taus_seed (0);
   printf("configuring for RAU/RRU\n");
-
-  if (opp_enabled ==1) {
-    reset_opp_meas();
-  }
 
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
