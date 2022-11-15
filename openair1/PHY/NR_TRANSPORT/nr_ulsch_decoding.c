@@ -560,6 +560,13 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
   E = nr_get_E(G, harq_process->C, Qm, n_layers, r);
   memset(harq_process->c[r],0,Kr_bytes);
 
+  p_decParams->R = nr_get_R_ldpc_decoder(pusch_pdu->pusch_data.rv_index,
+                                         E,
+                                         p_decParams->BG,
+                                         p_decParams->Z,
+                                         &harq_process->llrLen,
+                                         harq_process->round);
+
   if ((dtx_det==0)&&(pusch_pdu->pusch_data.rv_index==0)){
   //if (dtx_det==0){
   if (mcs >9){
