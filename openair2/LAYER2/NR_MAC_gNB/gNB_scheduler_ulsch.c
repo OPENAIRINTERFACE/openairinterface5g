@@ -1540,11 +1540,11 @@ void pf_ul(module_id_t module_id,
   /* Loop UE_list to calculate throughput and coeff */
   UE_iterator(UE_list, UE) {
 
-    if (UE->Msg4_ACKed != true)
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    if (UE->Msg4_ACKed != true || sched_ctrl->ul_failure == 1)
       continue;
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %04x\n",UE->rnti);
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
     int rbStart = 0; // wrt BWP start
@@ -1576,7 +1576,7 @@ void pf_ul(module_id_t module_id,
 
       // we have filled all with mandatory retransmissions
       // no need to schedule new transmissions
-      if (remainUEs == 0)
+      if (remainUEs < 0)
 	      return;
 
       continue;
@@ -1639,7 +1639,7 @@ void pf_ul(module_id_t module_id,
 
       // we have filled all with mandatory retransmissions
       // no need to schedule new transmissions
-      if (remainUEs == 0)
+      if (remainUEs < 0)
         return;
 
       sched_pusch->nrOfLayers = 1;
