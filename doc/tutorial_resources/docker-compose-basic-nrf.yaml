@@ -144,6 +144,10 @@ services:
             - PLMN_SUPPORT_TAC=0x0001
             - SST_0=1
             - SD_0=0x1
+            - SST_1=1
+            - SD_1=0x2
+            - SST_2=1
+            - SD_2=0x3
             - AMF_INTERFACE_NAME_FOR_NGAP=eth0
             - AMF_INTERFACE_NAME_FOR_N11=eth0
             - SMF_INSTANCE_ID_0=1
@@ -232,6 +236,23 @@ services:
             - NSSAI_SD0=0x1
             - SESSION_AMBR_UL0=10000Mbps
             - SESSION_AMBR_DL0=10000Mbps
+            - DNN_NI1=oai2
+            - TYPE1=IPv4
+            - DNN_RANGE1=12.1.2.2 - 12.1.2.253
+            - NSSAI_SST1=1
+            - NSSAI_SD1=0x2
+            - SESSION_AMBR_UL1=10000Mbps
+            - SESSION_AMBR_DL1=10000Mbps
+            - DNN_NI2=oai3
+            - TYPE2=IPv4
+            - DNN_RANGE2=12.1.3.2 - 12.1.3.253
+            - NSSAI_SST2=1
+            - NSSAI_SD2=0x3
+            - SESSION_AMBR_UL2=10000Mbps
+            - SESSION_AMBR_DL2=10000Mbps
+            - DNN_NI3=ims
+            - TYPE3=IPv4v6
+            - DNN_RANGE3=14.1.1.2 - 14.1.1.253
             - DEFAULT_CSCF_IPV4_ADDRESS=127.0.0.1  # only needed when ims is being used
             - ENABLE_USAGE_REPORTING=no # Set yes if UE USAGE REPORTING is to be done at UPF
         depends_on:
@@ -276,6 +297,12 @@ services:
             - NSSAI_SST_0=1
             - NSSAI_SD_0=0x1
             - DNN_0=oai
+            - NSSAI_SST_1=1
+            - NSSAI_SD_1=0x2
+            - DNN_1=oai2
+            - NSSAI_SST_2=1
+            - NSSAI_SD_2=0x3
+            - DNN_2=oai3
         depends_on:
             - oai-nrf
             - oai-smf

@@ -21,7 +21,7 @@ In this tutorial we describe how to configure and run a 5G end-to-end setup with
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
-    - Operating System: [Ubuntu 20.04.5 LTS](https://releases.ubuntu.com/20.04/ubuntu-20.04.5-desktop-amd64.iso)
+    - Operating System: [Ubuntu 22.04.1 LTS](https://releases.ubuntu.com/22.04.1/ubuntu-22.04.1-desktop-amd64.iso)
     - CPU: 8 cores x86_64 @ 3.5 GHz
     - RAM: 32 GB
 - Laptop for UE
@@ -54,7 +54,7 @@ sudo usermod -a -G docker $(whoami)
 reboot
 
 # https://docs.docker.com/compose/install/
-sudo curl -L "https://github.com/docker/compose/releases/download/1.29.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/v2.12.2/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 ```
 
@@ -114,7 +114,7 @@ sudo apt install -y libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils p
 
 git clone https://github.com/EttusResearch/uhd.git ~/uhd
 cd ~/uhd
-git checkout v4.0.0.0
+git checkout v4.3.0.0
 cd host
 mkdir build
 cd build
@@ -134,7 +134,7 @@ git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git ~/openairinterfac
 cd ~/openairinterface5g
 git checkout develop
 
-# Install dependencies in Ubuntu 20.04
+# Install OAI dependencies
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets
