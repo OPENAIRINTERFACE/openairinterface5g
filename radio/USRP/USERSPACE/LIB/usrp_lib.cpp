@@ -1417,7 +1417,9 @@ extern "C" {
   s->tx_stream = s->usrp->get_tx_stream(stream_args_tx);
 
   /* Setting TX/RX BW after streamers are created due to USRP calibration issue */
-  if (device->type != USRP_N300_DEV) { // N310 with UHD >= 4.2.0 has issues with changing the BW
+  // N310 with UHD >= 4.2.0 has issues with changing the BW, which is a NOP on N310 in earlier versions
+  // see also: https://github.com/EttusResearch/uhd/issues/644
+  if (device->type != USRP_N300_DEV) {
     for(int i=0; i<((int) s->usrp->get_tx_num_channels()) && i<openair0_cfg[0].tx_num_channels; i++)
       s->usrp->set_tx_bandwidth(openair0_cfg[0].tx_bw,i+choffset);
 
