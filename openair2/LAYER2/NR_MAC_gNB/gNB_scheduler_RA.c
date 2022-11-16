@@ -1016,9 +1016,14 @@ void fill_msg3_pusch_pdu(nfapi_nr_pusch_pdu_t *pusch_pdu,
   pusch_pdu->cyclic_prefix = 0;
   pusch_pdu->mcs_table = 0;
   if (scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL)
-    pusch_pdu->transform_precoding = 1;
-  else
-    pusch_pdu->transform_precoding = 0;
+    pusch_pdu->transform_precoding = 1; // disabled
+  else {
+    pusch_pdu->transform_precoding = 0; // enabled
+    pusch_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30;
+    pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
+    if (scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding)
+      AssertFatal(1==0,"Hopping mode is not supported in transform precoding\n");
+  }
   pusch_pdu->data_scrambling_id = *scc->physCellId;
   pusch_pdu->nrOfLayers = 1;
   pusch_pdu->ul_dmrs_symb_pos = get_l_prime(nr_of_symbols,mappingtype,pusch_dmrs_pos2,pusch_len1,start_symbol_index, scc->dmrs_TypeA_Position);

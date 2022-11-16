@@ -1041,7 +1041,7 @@ uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
 void get_precoder_matrix_coef(char *w,
                               const uint8_t ul_ri,
                               const uint16_t num_ue_srs_ports,
-                              const uint8_t transform_precoding,
+                              const long *transform_precoding,
                               const uint8_t tpmi,
                               const uint8_t uI,
                               int layer_idx)
@@ -1050,7 +1050,7 @@ void get_precoder_matrix_coef(char *w,
     if (num_ue_srs_ports == 2) {
       *w = table_38211_6_3_1_5_1[tpmi][uI][layer_idx];
     } else {
-      if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
+      if (transform_precoding && *transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
         *w = table_38211_6_3_1_5_2[tpmi][uI][layer_idx];
       } else {
         *w = table_38211_6_3_1_5_3[tpmi][uI][layer_idx];
@@ -1068,7 +1068,7 @@ void get_precoder_matrix_coef(char *w,
 }
 
 int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
-                           const uint8_t transform_precoding,
+                           const long *transform_precoding,
                            const uint8_t *channel_matrix,
                            const uint8_t normalized_iq_representation,
                            const uint16_t num_gnb_antenna_elements,
@@ -2149,7 +2149,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = current_BWP->mcs_table;
-    pusch_pdu->transform_precoding = current_BWP->transform_precoding;
+    pusch_pdu->transform_precoding = current_BWP->transform_precoding ? *current_BWP->transform_precoding : 1;
     if (current_BWP->pusch_Config && current_BWP->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *current_BWP->pusch_Config->dataScramblingIdentityPUSCH;
     else
@@ -2174,7 +2174,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     }
     else {
       pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
-      if (NR_DMRS_UplinkConfig && NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      if (NR_DMRS_UplinkConfig &&
+          NR_DMRS_UplinkConfig->transformPrecodingEnabled &&
+          NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         pusch_pdu->pusch_identity = *NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
       else if (NR_DMRS_UplinkConfig)
         pusch_pdu->pusch_identity = *scc->physCellId;
@@ -2231,13 +2233,15 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;
 
       // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
-      if ((NR_DMRS_UplinkConfig==NULL) || ((NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
-					       (NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL)))
+      if ((!NR_DMRS_UplinkConfig ||
+          !NR_DMRS_UplinkConfig->transformPrecodingEnabled ||
+          (!NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping && !NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping)) &&
+          !scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding)
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
       else
-        AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+        AssertFatal(1==0,"Hopping mode is not supported in transform precoding\n");
 
-      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
+      LOG_I(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
     }
 
     /*-----------------------------------------------------------------------------*/
