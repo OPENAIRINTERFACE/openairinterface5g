@@ -121,30 +121,12 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
   ru=gNB->RU_list[0];
 
   int prach_id=find_nr_prach(gNB,frame,slot,SEARCH_EXIST);
-  
+
   if (prach_id>=0) {
     nfapi_nr_prach_pdu_t *prach_pdu = &gNB->prach_vars.list[prach_id].pdu;
     uint8_t prachStartSymbol;
     uint8_t N_dur = get_nr_prach_duration(prach_pdu->prach_format);
-    
-    /*
-    uint16_t format,RA_sfn_index;
-    uint8_t start_symbol,N_t_slot,N_dur,N_RA_slot,config_period;
 
-    get_nr_prach_info_from_index(gNB->gNB_config.prach_config.prach_ConfigurationIndex.value,
-				 frame,slot,
-				 gNB->gNB_config.carrier_config.dl_frequency.value,
-				 gNB->frame_parms.numerology_index,
-				 gNB->frame_parms.frame_type,
-				 &format,
-				 &start_symbol,
-				 &N_t_slot,
-				 &N_dur,
-				 &RA_sfn_index,
-				 &N_RA_slot,
-				 &config_period);
-    */
-    
     for(int prach_oc = 0; prach_oc < prach_pdu->num_prach_ocas; prach_oc++) {
       for (ru_aa=0,aa=0;ru_aa<ru->nb_rx;ru_aa++,aa++) {
 	gNB->prach_vars.rxsigF[aa] = ru->prach_rxsigF[prach_oc][ru_aa];
@@ -152,7 +134,7 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 
       prachStartSymbol = prach_pdu->prach_start_symbol+prach_oc*N_dur;
       //comment FK: the standard 38.211 section 5.3.2 has one extra term +14*N_RA_slot. This is because there prachStartSymbol is given wrt to start of the 15kHz slot or 60kHz slot. Here we work slot based, so this function is anyway only called in slots where there is PRACH. Its up to the MAC to schedule another PRACH PDU in the case there are there N_RA_slot \in {0,1}. 
-     
+
       rx_nr_prach(gNB,
 		  prach_pdu,
 		  prach_oc,
@@ -160,8 +142,8 @@ void L1_nr_prach_procedures(PHY_VARS_gNB *gNB,int frame,int slot) {
 		  slot,
 		  &max_preamble[0],
 		  &max_preamble_energy[0],
-		  &max_preamble_delay[0]
-		  );
+		  &max_preamble_delay[0]);
+
       free_nr_prach_entry(gNB,prach_id);
       LOG_D(PHY,"[RAPROC] Frame %d, slot %d, occasion %d (prachStartSymbol %d) : Most likely preamble %d, energy %d.%d dB delay %d (prach_energy counter %d)\n",
 	    frame,slot,prach_oc,prachStartSymbol,

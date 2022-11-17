@@ -632,7 +632,6 @@ int nr_rrc_mac_config_req_ue(
       build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
       if (!get_softmodem_params()->emulate_l1)
         mac->if_module->phy_config_request(&mac->phy_config);
-      mac->common_configuration_complete = 1;
     }
     if(scell_group_config != NULL ){
       mac->cg = scell_group_config;

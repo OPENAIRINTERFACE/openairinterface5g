@@ -590,11 +590,9 @@ typedef struct {
   // when off, defaults to frequency domain interpolation
   int chest_freq;
   int chest_time;
-  int generate_ul_signal[NUMBER_OF_CONNECTED_gNB_MAX];
 
   UE_NR_SCAN_INFO_t scan_info[NB_BANDS_MAX];
 
-  NR_PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_gNB_MAX];
   /// \brief ?.
   /// - first index: gNB [0..NUMBER_OF_CONNECTED_gNB_MAX[ (hard coded)
   uint32_t total_TBS[NUMBER_OF_CONNECTED_gNB_MAX];

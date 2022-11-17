@@ -75,7 +75,6 @@
 #include "NR_DLInformationTransfer.h"
 #include "NR_RRCReestablishmentRequest.h"
 #include "NR_UE-CapabilityRequestFilterNR.h"
-#include "PHY/defs_nr_common.h"
 #include "common/utils/nr/nr_common.h"
 #if defined(NR_Rel16)
   #include "NR_SCS-SpecificCarrier.h"

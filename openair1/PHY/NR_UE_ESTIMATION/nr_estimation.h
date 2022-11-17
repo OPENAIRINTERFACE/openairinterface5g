@@ -123,8 +123,6 @@ void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint32_t rx_power_fil_dB,
                         uint8_t gNB_id);
 
-int16_t get_nr_PL(uint8_t Mod_id, uint8_t CC_id, uint8_t gNB_index);
-
 void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                               NR_UE_PDSCH **pdsch_vars,
                               NR_DL_FRAME_PARMS *frame_parms,

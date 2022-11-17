@@ -35,6 +35,8 @@
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/RLC/rlc.h"
 
+#define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
+
 extern UE_RRC_INST *UE_rrc_inst;
 
 extern uint8_t DRB2LCHAN[8];

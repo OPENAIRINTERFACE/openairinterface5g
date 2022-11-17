@@ -38,9 +38,6 @@
 #include <string.h>
 #include "platform_types.h"
 
-/* PHY */
-#include "PHY/defs_nr_common.h"
-
 /* IF */
 #include "NR_IF_Module.h"
 #include "fapi_nr_ue_interface.h"
@@ -64,10 +61,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
 #include "NR_MeasConfig.h"
-#include "fapi_nr_ue_interface.h"
-#include "NR_IF_Module.h"
-#include "PHY/defs_nr_common.h"
-#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac.h"
+
 
 // ==========
 // NR UE defs
@@ -243,6 +237,31 @@ typedef enum {
 } RA_state_t;
 
 typedef struct {
+  /// PRACH format retrieved from prach_ConfigIndex
+  uint16_t prach_format;
+  /// Preamble Tx Counter
+  uint8_t RA_PREAMBLE_TRANSMISSION_COUNTER;
+  /// Preamble Power Ramping Counter
+  uint8_t RA_PREAMBLE_POWER_RAMPING_COUNTER;
+  /// 2-step RA power offset
+  int POWER_OFFSET_2STEP_RA;
+  /// Target received power at gNB. Baseline is range -202..-60 dBm. Depends on delta preamble, power ramping counter and step.
+  int ra_PREAMBLE_RECEIVED_TARGET_POWER;
+  /// PRACH index for TDD (0 ... 6) depending on TDD configuration and prachConfigIndex
+  uint8_t ra_TDD_map_index;
+  /// RA Preamble Power Ramping Step in dB
+  uint32_t RA_PREAMBLE_POWER_RAMPING_STEP;
+  ///
+  uint8_t RA_PREAMBLE_BACKOFF;
+  ///
+  uint8_t RA_SCALING_FACTOR_BI;
+  /// Indicating whether it is 2-step or 4-step RA
+  nr_ra_type_e RA_TYPE;
+  /// UE configured maximum output power
+  int RA_PCMAX;
+} NR_PRACH_RESOURCES_t;
+
+typedef struct {
 
   // pointer to RACH config dedicated
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated;
@@ -302,6 +321,8 @@ typedef struct {
 
   /// RA SearchSpace
   NR_SearchSpace_t *ss;
+
+  NR_PRACH_RESOURCES_t prach_resources;
 } RA_config_t;
 
 typedef struct {
@@ -344,6 +365,14 @@ typedef struct {
   int8_t delta_pucch;
 } PUCCH_sched_t;
 
+typedef struct {
+
+  uint32_t ssb_index;
+  /// SSB RSRP in dBm
+  short ssb_rsrp_dBm;
+
+} NR_PHY_meas_t;
+
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -355,7 +384,7 @@ typedef struct {
   NR_CSI_ReportConfig_t           *csirc;
   long                            physCellId;
   ////  MAC config
-  int                             common_configuration_complete;
+  int                             first_sync_frame;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;
@@ -396,8 +425,6 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
-  /// measured SSB RSRP in dBm
-  short ssb_rsrp_dBm;
 
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
 
@@ -432,6 +459,8 @@ typedef struct {
   frequency_range_t frequency_range;
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
+
+  NR_PHY_meas_t phy_measurements;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[8];
 
