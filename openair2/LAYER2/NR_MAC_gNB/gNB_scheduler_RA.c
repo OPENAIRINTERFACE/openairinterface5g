@@ -792,20 +792,13 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
     }
 
     uint8_t aggregation_level;
-    uint8_t nr_of_candidates;
-    for (int i=0; i<5; i++) {
-      // for now taking the lowest value among the available aggregation levels
-      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
-      if(nr_of_candidates>0) break;
-    }
-    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-    int CCEIndex = find_pdcch_candidate(nr_mac,
-                                        CC_id,
-                                        aggregation_level,
-                                        nr_of_candidates,
-                                        &ra->sched_pdcch,
-                                        coreset,
-                                        0);
+    int CCEIndex = get_cce_index(nr_mac,
+                                 CC_id, slot, 0,
+                                 &aggregation_level,
+                                 ss,
+                                 coreset,
+                                 &ra->sched_pdcch,
+                                 true);
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
       return;
@@ -1188,21 +1181,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     uint8_t aggregation_level;
-    uint8_t nr_of_candidates;
-    for (int i=0; i<5; i++) {
-      // for now taking the lowest value among the available aggregation levels
-      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
-      if(nr_of_candidates>0) break;
-    }
-    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-
-    int CCEIndex = find_pdcch_candidate(nr_mac,
-                                        CC_id,
-                                        aggregation_level,
-                                        nr_of_candidates,
-                                        &ra->sched_pdcch,
-                                        coreset,
-                                        0);
+    int CCEIndex = get_cce_index(nr_mac,
+                                 CC_id, slotP, 0,
+                                 &aggregation_level,
+                                 ss,
+                                 coreset,
+                                 &ra->sched_pdcch,
+                                 true);
 
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
@@ -1444,21 +1429,13 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // get CCEindex, needed also for PUCCH and then later for PDCCH
     uint8_t aggregation_level;
-    uint8_t nr_of_candidates;
-    for (int i=0; i<5; i++) {
-      // for now taking the lowest value among the available aggregation levels
-      find_aggregation_candidates(&aggregation_level, &nr_of_candidates, ss, 1<<i);
-      if(nr_of_candidates>0) break;
-    }
-    AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-
-    int CCEIndex = find_pdcch_candidate(nr_mac,
-                                        CC_id,
-                                        aggregation_level,
-                                        nr_of_candidates,
-                                        &ra->sched_pdcch,
-                                        coreset,
-                                        0);
+    int CCEIndex = get_cce_index(nr_mac,
+                                 CC_id, slotP, 0,
+                                 &aggregation_level,
+                                 ss,
+                                 coreset,
+                                 &ra->sched_pdcch,
+                                 true);
 
     if (CCEIndex < 0) {
       LOG_E(NR_MAC, "%s(): cannot find free CCE for RA RNTI 0x%04x!\n", __func__, ra->rnti);
@@ -1468,7 +1445,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     const int delta_PRI=0;
     int r_pucch = nr_get_pucch_resource(coreset, ra->UL_BWP.pucch_Config, CCEIndex);
 
-    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, nb_of_candidates %d, delta_PRI %d)\n", r_pucch, CCEIndex, nr_of_candidates, delta_PRI);
+    LOG_D(NR_MAC,"[RAPROC] Msg4 r_pucch %d (CCEIndex %d, delta_PRI %d)\n", r_pucch, CCEIndex, delta_PRI);
 
     int alloc = nr_acknack_scheduling(nr_mac, UE, frameP, slotP, r_pucch, 1);
     if (alloc<0) {

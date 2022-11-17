@@ -269,12 +269,12 @@ NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
                                      NR_BWP_t *bwp,
                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 
-int find_pdcch_candidate(gNB_MAC_INST *mac,
+int find_pdcch_candidate(const gNB_MAC_INST *mac,
                          int cc_id,
                          int aggregation,
                          int nr_of_candidates,
-                         NR_sched_pdcch_t *pdcch,
-                         NR_ControlResourceSet_t *coreset,
+                         const NR_sched_pdcch_t *pdcch,
+                         const NR_ControlResourceSet_t *coreset,
                          uint32_t Y);
 
 void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
@@ -473,7 +473,15 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
 
-bool find_free_CCE(sub_frame_t slot, NR_UE_info_t *UE);
+int get_cce_index(const gNB_MAC_INST *nrmac,
+                  const int CC_id,
+                  const int slot,
+                  const rnti_t rnti,
+                  uint8_t *aggregation_level,
+                  const NR_SearchSpace_t *ss,
+                  const NR_ControlResourceSet_t *coreset,
+                  NR_sched_pdcch_t *sched_pdcch,
+                  bool is_common);
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,

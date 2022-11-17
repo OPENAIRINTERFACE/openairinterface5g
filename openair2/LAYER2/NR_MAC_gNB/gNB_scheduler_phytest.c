@@ -250,27 +250,13 @@ void nr_preprocessor_phytest(module_id_t module_id,
                                                     0);
   sched_ctrl->num_total_bytes += sched_ctrl->rlc_status[lcid].bytes_in_buffer;
 
-  uint8_t nr_of_candidates;
-  for (int i=0; i<5; i++) {
-    // for now taking the lowest value among the available aggregation levels
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space,
-                                1<<i);
-    if(nr_of_candidates>0) break;
-  }
-  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-
-  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
-
-  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
-                                      CC_id,
-                                      sched_ctrl->aggregation_level,
-                                      nr_of_candidates,
-                                      &sched_ctrl->sched_pdcch,
-                                      sched_ctrl->coreset,
-                                      Y);
-
+  int CCEIndex = get_cce_index(RC.nrmac[module_id],
+                               CC_id, slot, UE->rnti,
+                               &sched_ctrl->aggregation_level,
+                               sched_ctrl->search_space,
+                               sched_ctrl->coreset,
+                               &sched_ctrl->sched_pdcch,
+                               false);
   AssertFatal(CCEIndex >= 0,
               "%s(): could not find CCE for UE %04x\n",
               __func__,
@@ -412,27 +398,13 @@ bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
 
-  uint8_t nr_of_candidates;
-  for (int i=0; i<5; i++) {
-    // for now taking the lowest value among the available aggregation levels
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space,
-                                1<<i);
-    if(nr_of_candidates>0) break;
-  }
-  AssertFatal(nr_of_candidates>0,"nr_of_candidates is 0\n");
-
-  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
-
-  int CCEIndex = find_pdcch_candidate(nr_mac,
-                                      CC_id,
-                                      sched_ctrl->aggregation_level,
-                                      nr_of_candidates,
-                                      &sched_ctrl->sched_pdcch,
-                                      sched_ctrl->coreset,
-                                      Y);
-
+  int CCEIndex = get_cce_index(nr_mac,
+                               CC_id, slot, UE->rnti,
+                               &sched_ctrl->aggregation_level,
+                               sched_ctrl->search_space,
+                               sched_ctrl->coreset,
+                               &sched_ctrl->sched_pdcch,
+                               false);
   if (CCEIndex < 0) {
     LOG_E(MAC, "%s(): CCE list not empty, couldn't schedule PUSCH\n", __func__);
     return false;
