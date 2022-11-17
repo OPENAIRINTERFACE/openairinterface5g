@@ -146,7 +146,7 @@ class PhySim:
 			isFinished1 = False
 			while(isFinished1 == False):
 				time.sleep(20)
-				mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
+				mySSH.command('oc get pods -l app=physim', '\$', 6, resync=True)
 				if re.search('No resources found', mySSH.getBefore()):
 					isFinished1 = True
 			mySSH.command('oc logout', '\$', 30)
@@ -231,7 +231,7 @@ class PhySim:
 		isFinished1 = False
 		while(isFinished1 == False):
 			time.sleep(20)
-			mySSH.command('oc get pods -l app.kubernetes.io/instance=physim', '\$', 6, resync=True)
+			mySSH.command('oc get pods -l app=physim', '\$', 6, resync=True)
 			if re.search('No resources found', mySSH.getBefore()):
 				isFinished1 = True
 		if isFinished1 == True:

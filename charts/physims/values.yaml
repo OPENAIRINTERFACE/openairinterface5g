@@ -11,4 +11,3 @@ global:
     version: TAG
     # pullPolicy: IfNotPresent or Never or Always
     pullPolicy: Always
-
