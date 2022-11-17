@@ -1078,6 +1078,17 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   f1ap_remove_ue(DUtype, instance, cplt->rnti);
   return 0;
 }
+
+static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport)
+{
+  openAddr_t tmp;
+  strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
+  strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
+  sprintf(tmp.originService, "%d", DUport);
+  sprintf(tmp.destinationService, "%d", CUport);
+  return gtpv1Init(tmp);
+}
+
 int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
     uint32_t         assoc_id,
     uint32_t         stream,
@@ -1159,6 +1170,26 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
       OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
       drb_p->up_ul_tnl[0].port=getCxt(false,instance)->setupReq.CUport;
+
+      extern instance_t DUuniqInstance;
+      if (DUuniqInstance == 0) {
+        char gtp_tunnel_ip_address[128];
+        sprintf(gtp_tunnel_ip_address, "%d.%d.%d.%d",
+                drb_p->up_ul_tnl[0].tl_address & 0xff,
+                (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
+                (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
+                (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
+        getCxt(DUtype, instance)->gtpInst=du_create_gtpu_instance_to_cu(
+                                            gtp_tunnel_ip_address,
+                                            getCxt(false,instance)->setupReq.CUport,
+                                            getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
+                                            getCxt(false,instance)->setupReq.DUport);
+        AssertFatal(getCxt(DUtype, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
+        // Fixme: fully inconsistent instances management
+        // dirty global var is a bad fix
+        extern instance_t legacyInstanceMapping;
+        legacyInstanceMapping = DUuniqInstance = getCxt(DUtype, instance)->gtpInst;
+      }
 
       switch (drbs_tobesetupmod_item_p->rLCMode) {
       case F1AP_RLCMode_rlc_am:

@@ -1115,7 +1115,7 @@ static int Gtpv1uHandleGpdu(int h,
 
   if(NR_PDCP_PDU_SN > 0 && NR_PDCP_PDU_SN %5 ==0){
     LOG_D (GTPU, "Create and send DL DATA Delivery status for the previously received PDU, NR_PDCP_PDU_SN: %u \n", NR_PDCP_PDU_SN);
-    int rlc_tx_buffer_space = nr_rlc_get_available_tx_space(ctxt.rnti, rb_id);
+    int rlc_tx_buffer_space = nr_rlc_get_available_tx_space(ctxt.rnti, rb_id + 3);
     LOG_D(GTPU, "Available buffer size in RLC for Tx: %d \n", rlc_tx_buffer_space);
     /*Total size of DDD_status PDU = 1 octet to report extension header length
      * size of mandatory part + 3 octets for highest transmitted/delivered PDCP SN
