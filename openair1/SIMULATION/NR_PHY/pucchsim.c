@@ -104,6 +104,7 @@ int main(int argc, char **argv)
   int nr_slot_tx=0;
   int nr_frame_tx=0;
   uint64_t actual_payload=0,payload_received;
+  bool random_payload = true;
   int nr_bit=1; // maximum value possible is 2
   uint8_t m0=0;// higher layer paramater initial cyclic shift
   uint8_t nrofSymbols=1; //number of OFDM symbols can be 1-2 for format 1
@@ -317,6 +318,7 @@ int main(int argc, char **argv)
       break;
     case 'B':
       actual_payload=atoi(optarg);
+      random_payload = false;
       break;
     case 'T':
       //nacktoack_flag=(uint8_t)atoi(optarg);
@@ -379,6 +381,10 @@ int main(int argc, char **argv)
   int do_DTX=0;
   if ((format < 2) && (actual_payload == 4)) do_DTX=1;
 
+  if (random_payload) {
+    srand(time(NULL));   // Initialization, should only be called once.
+    actual_payload = rand();      // Returns a pseudo-random integer between 0 and RAND_MAX.
+  }
   actual_payload &= ((1<<nr_bit)-1);
 
   printf("Transmitted payload is %ld, do_DTX = %d\n",actual_payload,do_DTX);
@@ -647,7 +653,7 @@ int main(int argc, char **argv)
           if (nr_bit==1 && do_DTX == 0)
             ack_nack_errors+=(actual_payload^(!harq_list[0].harq_value));
           else if (do_DTX == 0)
-            ack_nack_errors+=(((actual_payload&1)^(!harq_list[0].harq_value))+((actual_payload>>1)^(!harq_list[1].harq_value)));
+            ack_nack_errors+=(((actual_payload&1)^(!harq_list[1].harq_value))+((actual_payload>>1)^(!harq_list[0].harq_value)));
           else if ((!confidence_lvl && !harq_list[0].harq_value) ||
                    (!confidence_lvl && nr_bit == 2 && !harq_list[1].harq_value))
             ack_nack_errors++;
