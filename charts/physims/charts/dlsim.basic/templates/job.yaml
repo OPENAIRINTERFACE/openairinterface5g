@@ -1,9 +1,12 @@
 apiVersion: batch/v1
 kind: Job
 metadata:
-  name: {{ .Chart.Name }}
+  name: {{ .Chart.Name }}    
 spec:
   template:
+    metadata:
+      labels:
+         app: physim
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
@@ -15,13 +18,6 @@ spec:
       - name: physim
         image: "{{ .Values.global.image.repository }}:{{ .Values.global.image.version }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
-#        resources:
-#          requests:
-#            memory: "4096Mi"
-#            cpu: "4000m"
-#          limits:
-#            memory: "4096Mi"
-#            cpu: "4000m"
         securityContext:
           {{- toYaml .Values.securityContext | nindent 12 }}
         env:
@@ -35,5 +31,5 @@ spec:
       dnsPolicy: ClusterFirst
       restartPolicy: Never
       schedulerName: default-scheduler
-      serviceAccountName: oai-physim-sa 
+      serviceAccountName: {{ .Values.global.serviceAccountName }} 
       terminationGracePeriodSeconds: 30

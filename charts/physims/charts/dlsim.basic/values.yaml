@@ -20,7 +20,7 @@ serviceAccount:
   annotations: {}
   # The name of the service account to use.
   # If not set and create is true, a name is generated using the fullname template
-  name: "oai-physim-sa" #"oai-dlsim-basic"
+  name: "oai-dlsim-basic"
 
 podSecurityContext:
   runAsUser: 0
@@ -28,26 +28,14 @@ podSecurityContext:
 
 securityContext:
   privileged: false
-  #capabilities:
-  #  add:
-  #    - SYS_CAP_PTRACE
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
 
-service:
-  type: ClusterIP
-  port: 80
-
-resources:
-   limits:
-     cpu: 100m
-     memory: 128Mi
-   requests:
-     cpu: 100m
-     memory: 128Mi
+resources: {}
+   # limits:
+   #   cpu: 100m
+   #   memory: 128Mi
+   # requests:
+   #   cpu: 100m
+   #   memory: 128Mi
 
 nodeSelector: {}
 

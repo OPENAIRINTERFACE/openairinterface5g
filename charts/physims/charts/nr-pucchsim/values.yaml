@@ -28,14 +28,6 @@ podSecurityContext:
 
 securityContext:
   privileged: false
-#  capabilities:
-#    add:
-#      - SYS_CAP_PTRACE
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
 
 service:
   type: ClusterIP

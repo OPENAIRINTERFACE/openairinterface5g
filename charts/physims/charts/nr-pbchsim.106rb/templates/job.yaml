@@ -6,7 +6,7 @@ spec:
   template:
     metadata:
       labels:
-        {{- include "oai-nr-pbchsim-106rb.selectorLabels" . | nindent 8 }}
+        app: physim
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}

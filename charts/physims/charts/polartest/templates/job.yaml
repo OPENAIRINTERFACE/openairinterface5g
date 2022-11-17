@@ -4,6 +4,9 @@ metadata:
   name: {{ .Chart.Name }}
 spec:
   template:
+    metadata:
+      labels:
+        app: physim
     spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
