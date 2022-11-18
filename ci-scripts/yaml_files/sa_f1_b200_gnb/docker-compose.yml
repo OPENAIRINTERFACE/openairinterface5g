@@ -1,0 +1,89 @@
+version: '3.8'
+
+services:
+    gnb_cu:
+        image: oai-gnb:latest
+        privileged: true
+        container_name: sa-cu-gnb
+        environment:
+            USE_SA_CU: 'yes'
+            USE_B2XX: 'yes'
+            GNB_NAME: gNB-CU-in-docker
+            MCC: '222'
+            MNC: '01'
+            MNC_LENGTH: 2
+            TAC: 1
+            NSSAI_SST: 1
+            NSSAI_SD0: 1
+            NSSAI_SD1: 2
+            AMF_IP_ADDRESS: 172.21.16.136
+            GNB_NGA_IF_NAME: eth0
+            GNB_NGA_IP_ADDRESS: 192.168.68.194
+            GNB_NGU_IF_NAME: eth0
+            GNB_NGU_IP_ADDRESS: 192.168.68.194
+            F1_IF_NAME: eth0
+            F1_CU_IP_ADDRESS: 192.168.68.194
+            F1_DU_IP_ADDRESS: 192.168.68.195
+            F1_CU_D_PORT: 2153
+            F1_DU_D_PORT: 2153
+            USE_ADDITIONAL_OPTIONS: --sa --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - /dev:/dev
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.194
+        #entrypoint: /bin/bash -c "sleep infinity"
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    gnb_du_tdd:
+        image: oai-gnb:latest
+        privileged: true
+        container_name: sa-du-b200-gnb
+        environment:
+            USE_SA_TDD_DU: 'yes'
+            USE_B2XX: 'yes'
+            GNB_NAME: gNB-DU-in-docker
+            MCC: '222'
+            MNC: '01'
+            MNC_LENGTH: 2
+            TAC: 1
+            NSSAI_SST: 1
+            NSSAI_SD0: 1
+            NSSAI_SD1: 2
+            AMF_IP_ADDRESS: 172.21.16.136
+            GNB_NGA_IF_NAME: eth0
+            GNB_NGA_IP_ADDRESS: 192.168.68.194
+            GNB_NGU_IF_NAME: eth0
+            GNB_NGU_IP_ADDRESS: 192.168.68.194
+            F1_IF_NAME: eth0
+            F1_CU_IP_ADDRESS: 192.168.68.194
+            F1_DU_IP_ADDRESS: 192.168.68.195
+            F1_CU_D_PORT: 2153
+            F1_DU_D_PORT: 2153
+            USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --continuous-tx -E --log_config.global_log_options level,nocolor,time,line_num,function --gNBs.[0].min_rxtxtime 2 --gNBs.[0].do_CSIRS 1 --gNBs.[0].do_SRS 1 --RUs.[0].att_rx 14 --RUs.[0].att_tx 14
+        volumes:
+            - /dev:/dev
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.195
+        #entrypoint: /bin/bash -c "sleep infinity"
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: sa-b200-gnb-net
+        ipam:
+            config:
+                - subnet: 192.168.68.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "sa-gnb-net"

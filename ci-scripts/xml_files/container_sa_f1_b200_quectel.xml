@@ -21,113 +21,116 @@
 
 -->
 <testCaseList>
-  <htmlTabRef>TEST-SA-FR1-B200</htmlTabRef>
-  <htmlTabName>40 MHz TDD SA</htmlTabName>
+  <htmlTabRef>TEST-SA-FR1-F1-B200</htmlTabRef>
+  <htmlTabName>40 MHz TDD F1 SA</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
-    111111
-    010002
-    030101
-    000001
-    010000
-    000001
-    050000
-    050001
-    070001
-    070000
-    010002
-    000001
-    030201
+    110002
+    130101
+    130102
+    100001
+    110000
+    100001
+    150000
+    150001
+    110002
+    100001
+    130201
   </TestCaseRequestedList>
     <!--
+ 070001
+ 070000
  070002
  050002
  050003
     -->
   <TestCaseExclusionList></TestCaseExclusionList>
 
-  <testCase id="111111">
-    <class>Pull_Local_Registry</class>
-    <desc>Pull Images from Local Registry</desc>
-    <test_svr_id>0</test_svr_id>
-    <images_to_pull>oai-gnb</images_to_pull>
-  </testCase>
-
-  <testCase id="010000">
+  <testCase id="110000">
     <class>Initialize_UE</class>
     <desc>Initialize Quectel</desc>
     <id>idefix</id>
   </testCase>
 
 
-  <testCase id="010002">
+  <testCase id="110002">
     <class>Terminate_UE</class>
     <desc>Terminate Quectel</desc>
     <id>idefix</id>
   </testCase>
 
-  <testCase id="030101">
+  <testCase id="130101">
     <class>Deploy_Object</class>
-    <desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
+    <desc>Deploy gNB-CU in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_f1_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
+    <services>gnb_cu</services>
   </testCase>
 
-  <testCase id="000001">
+  <testCase id="130102">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB-DU (TDD/Band78/40MHz/B200) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_f1_b200_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <services>gnb_du_tdd</services>
+  </testCase>
+
+  <testCase id="100001">
     <class>IdleSleep</class>
     <desc>Sleep</desc>
     <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
   </testCase>
 
-  <testCase id="000002">
+  <testCase id="100002">
     <class>IdleSleep</class>
     <desc>Sleep</desc>
     <idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
   </testCase>
 
 
-  <testCase id="050000">
+  <testCase id="150000">
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec</desc>
     <id>idefix</id>
     <ping_args>-c 20</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
+    <ping_rttavg_threshold>25</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="050001">
+  <testCase id="150001">
     <class>Ping</class>
     <desc>Ping: 100pings in 20sec</desc>
     <id>idefix</id>
     <ping_args>-c 100 -i 0.2</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
+    <ping_rttavg_threshold>110</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="050002">
+  <testCase id="150002">
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec</desc>
     <id>idefix</id>
     <ping_args>-c 20</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
+    <ping_rttavg_threshold>110</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="050003">
+  <testCase id="150003">
     <class>Ping</class>
     <desc>Ping: 100pings in 20sec</desc>
     <id>idefix</id>
     <ping_args>-c 100 -i 0.2</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
+    <ping_rttavg_threshold>110</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="070000">
+  <testCase id="170000">
     <class>Iperf</class>
-    <desc>iperf (DL/30Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 30M -t 30 -i 1 -fm -l1400</iperf_args>
+    <desc>iperf (DL/125Mbps/UDP)(60 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 125M -t 60 -i 1 -fm</iperf_args>
     <direction>DL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
@@ -135,10 +138,10 @@
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070001">
+  <testCase id="170001">
     <class>Iperf</class>
-    <desc>iperf (UL/8Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 8M -t 30 -i 1 -fm -l1400</iperf_args>
+    <desc>iperf (UL/8Mbps/UDP)(60 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 8M -t 60 -i 1 -fm</iperf_args>
     <direction>UL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>1</iperf_packetloss_threshold>
@@ -146,7 +149,7 @@
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070002">
+  <testCase id="170002">
     <class>Iperf</class>
     <desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
     <iperf_args>-t 10 --bidir</iperf_args>
@@ -155,10 +158,10 @@
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="030201">
+  <testCase id="130201">
     <class>Undeploy_Object</class>
-    <desc>Undeploy gNB</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
+    <desc>Undeploy CU-DU</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_f1_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
     <d_retx_th>1,100,100,100</d_retx_th>

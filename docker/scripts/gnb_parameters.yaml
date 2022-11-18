@@ -109,7 +109,7 @@
     - key: parallel_config
       env: "@THREAD_PARALLEL_CONFIG@"
 
-  - filePrefix: gnb.sa.band78.fr1.106PRB.usrpb210.conf
+  - filePrefix: gnb.sa.band78.fr1.51PRB.usrpb210.conf
     outputfilename: "gnb.sa.tdd.b2xx.conf"
     config:
     - key: gNB_ID
