@@ -153,10 +153,8 @@ static uint8_t rrc_M2AP_do_MBSFNAreaConfig(
 
   for(i=0; i<m2ap_mbms_scheduling_information->num_mbms_area_config_list; i++){
 	  for(j=0;j < m2ap_mbms_scheduling_information->mbms_area_config_list[i].num_mbms_sf_config_list; j++){
- 
-		  mbsfn_SubframeConfig1= CALLOC(1,sizeof(*mbsfn_SubframeConfig1));
-		  memset((void *)mbsfn_SubframeConfig1,0,sizeof(*mbsfn_SubframeConfig1));
-		  //
+      mbsfn_SubframeConfig1 = CALLOC(1, sizeof(*mbsfn_SubframeConfig1));
+      //
 		  mbsfn_SubframeConfig1->radioframeAllocationPeriod= m2ap_mbms_scheduling_information->mbms_area_config_list[i].mbms_sf_config_list[j].radioframe_allocation_period;//LTE_MBSFN_SubframeConfig__radioframeAllocationPeriod_n4;
 		  mbsfn_SubframeConfig1->radioframeAllocationOffset= m2ap_mbms_scheduling_information->mbms_area_config_list[i].mbms_sf_config_list[j].radioframe_allocation_offset;
 		  if(m2ap_mbms_scheduling_information->mbms_area_config_list[i].mbms_sf_config_list[j].is_four_sf){
@@ -186,9 +184,8 @@ static uint8_t rrc_M2AP_do_MBSFNAreaConfig(
 	  // PMCHs Information List (PMCH-InfoList-r9)
 	  for(j=0; j < m2ap_mbms_scheduling_information->mbms_area_config_list[i].num_pmch_config_list; j++){
 		  // PMCH_1  Config
-		  pmch_Info_1 = CALLOC(1,sizeof(LTE_PMCH_Info_r9_t));
-		  memset((void *)pmch_Info_1,0,sizeof(LTE_PMCH_Info_r9_t));
-		  /*
+      pmch_Info_1 = CALLOC(1, sizeof(LTE_PMCH_Info_r9_t));
+      /*
 		   * take the value of last mbsfn subframe in this CSA period because there is only one PMCH in this mbsfn area
 		   * Note: this has to be set based on the subframeAllocation and CSA
 		   */
@@ -200,9 +197,8 @@ static uint8_t rrc_M2AP_do_MBSFNAreaConfig(
 		  for(k=0; k < m2ap_mbms_scheduling_information->mbms_area_config_list[i].pmch_config_list[j].num_mbms_session_list; k++){
 			  //  pmch_Info_1->mbms_SessionInfoList_r9 = CALLOC(1,sizeof(struct MBMS_SessionInfoList_r9));
 			  //  Session 1
-			  mbms_Session_1 = CALLOC(1,sizeof(LTE_MBMS_SessionInfo_r9_t));
-			  memset(mbms_Session_1,0,sizeof(LTE_MBMS_SessionInfo_r9_t));
-			  // TMGI value
+        mbms_Session_1 = CALLOC(1, sizeof(LTE_MBMS_SessionInfo_r9_t));
+        // TMGI value
 			  mbms_Session_1->tmgi_r9.plmn_Id_r9.present= LTE_TMGI_r9__plmn_Id_r9_PR_plmn_Index_r9;
 			  mbms_Session_1->tmgi_r9.plmn_Id_r9.choice.plmn_Index_r9= 1;
 			  // Service ID
@@ -382,8 +378,6 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
   eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
   rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
-
-  struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   LTE_MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList/*,*MBSFNSubframeConfigList_copy*/;
 
   asn_enc_rval_t enc_rval;
@@ -391,11 +385,6 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
   LTE_BCCH_DL_SCH_Message_MBMS_t *bcch_message_fembms = &RC.rrc[Mod_id]->carrier[CC_id].siblock1_MBMS;
 
   LTE_MBSFN_AreaInfoList_r9_t *MBSFNArea_list /*,*MBSFNArea_list_copy*/;
-
-  LTE_SystemInformationBlockType13_r9_t *sib13 = RC.rrc[Mod_id]->carrier[CC_id].sib13;
-  if (!sib13) {
-    LOG_I(RRC, "[eNB %d] sib13 is null, it should get created\n", Mod_id);
-  }
   struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1;
 
   uint8_t *encoded_buffer;
@@ -446,8 +435,8 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib12_v920: 
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920:
-        sib13 = &typeandinfo->choice.sib13_v920;
-        RC.rrc[Mod_id]->carrier[CC_id].sib13 = sib13;
+        RC.rrc[Mod_id]->carrier[CC_id].sib13 = &typeandinfo->choice.sib13_v920;
+        LTE_SystemInformationBlockType13_r9_t *sib13 = RC.rrc[Mod_id]->carrier[CC_id].sib13;
         sib13->notificationConfig_r9.notificationRepetitionCoeff_r9 = LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
         sib13->notificationConfig_r9.notificationOffset_r9 = 0;
         sib13->notificationConfig_r9.notificationSF_Index_r9 = 1;
@@ -542,16 +531,12 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
     }
   }
 
-  if (sib13 == NULL) {
-    LTE_SystemInformationBlockType13_r9_t *sib13 = RC.rrc[Mod_id]->carrier[CC_id].sib13;
-
-    sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-    memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  if (RC.rrc[Mod_id]->carrier[CC_id].sib13 == NULL) {
+    struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part = CALLOC(1, sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
     sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
 
-    sib13 = &sib13_part->choice.sib13_v920;
-    RC.rrc[Mod_id]->carrier[CC_id].sib13 = sib13;
-
+    RC.rrc[Mod_id]->carrier[CC_id].sib13 = &sib13_part->choice.sib13_v920;
+    LTE_SystemInformationBlockType13_r9_t *sib13 = RC.rrc[Mod_id]->carrier[CC_id].sib13;
     sib13->notificationConfig_r9.notificationRepetitionCoeff_r9 = LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
     sib13->notificationConfig_r9.notificationOffset_r9 = 0;
     sib13->notificationConfig_r9.notificationSF_Index_r9 = 1;
@@ -586,7 +571,7 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
   LTE_SystemInformationBlockType1_MBMS_r14_t *sib1_MBMS = RC.rrc[Mod_id]->carrier[CC_id].sib1_MBMS;
   if (sib1_MBMS->systemInformationBlockType13_r14 == NULL)
     sib1_MBMS->systemInformationBlockType13_r14 = CALLOC(1, sizeof(*sib1_MBMS->systemInformationBlockType13_r14));
-  memcpy(sib1_MBMS->systemInformationBlockType13_r14, sib13, sizeof(*sib13));
+  memcpy(sib1_MBMS->systemInformationBlockType13_r14, RC.rrc[Mod_id]->carrier[CC_id].sib13, sizeof(*RC.rrc[Mod_id]->carrier[CC_id].sib13));
 
   enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message_MBMS, NULL, (void *)bcch_message_fembms, RC.rrc[Mod_id]->carrier[CC_id].SIB1_MBMS, 100);
   AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
@@ -816,10 +801,9 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
 
 		for(l=0; l < m2ap_mbms_scheduling_information->mbms_area_config_list[j].num_mbms_sf_config_list; l++){
 			LTE_MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
-    			sib2_mbsfn_SubframeConfig1= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig1));
-    			memset((void *)sib2_mbsfn_SubframeConfig1,0,sizeof(*sib2_mbsfn_SubframeConfig1));
+      sib2_mbsfn_SubframeConfig1 = CALLOC(1, sizeof(*sib2_mbsfn_SubframeConfig1));
 
-			sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_period;
+      sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_period;
 			sib2_mbsfn_SubframeConfig1->radioframeAllocationOffset = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_offset;
 
 
@@ -898,8 +882,6 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
   eNB_RRC_INST *rrc = RC.rrc[ctxt_pP->module_id];
   rrc_eNB_carrier_data_t *carrier=&rrc->carrier[CC_id];
 
-
-  struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part=NULL;
   //LTE_MBSFN_SubframeConfigList_t *MBSFNSubframeConfigList;
   LTE_MBSFN_AreaInfoList_r9_t *MBSFNArea_list;
 
@@ -968,38 +950,37 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
  LTE_SystemInformationBlockType13_r9_t   **sib13       = &RC.rrc[Mod_id]->carrier[CC_id].sib13;
 
   struct LTE_MBSFN_AreaInfo_r9 *MBSFN_Area1/*, *MBSFN_Area2*/;
- sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
- memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
- sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
+  struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member *sib13_part = CALLOC(1, sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+  sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
 
- *sib13 = &sib13_part->choice.sib13_v920;
+  *sib13 = &sib13_part->choice.sib13_v920;
 
- (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9=LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
- (*sib13)->notificationConfig_r9.notificationOffset_r9=0;
- (*sib13)->notificationConfig_r9.notificationSF_Index_r9=1;
+  (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9 = LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
+  (*sib13)->notificationConfig_r9.notificationOffset_r9 = 0;
+  (*sib13)->notificationConfig_r9.notificationSF_Index_r9 = 1;
 
- //  MBSFN-AreaInfoList
- MBSFNArea_list= &(*sib13)->mbsfn_AreaInfoList_r9;//CALLOC(1,sizeof(*MBSFNArea_list));
- memset(MBSFNArea_list,0,sizeof(*MBSFNArea_list));
+  //  MBSFN-AreaInfoList
+  MBSFNArea_list = &(*sib13)->mbsfn_AreaInfoList_r9; // CALLOC(1,sizeof(*MBSFNArea_list));
+  memset(MBSFNArea_list, 0, sizeof(*MBSFNArea_list));
 
-for( i=0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++){
- // MBSFN Area 1
- MBSFN_Area1= CALLOC(1, sizeof(*MBSFN_Area1));
- MBSFN_Area1->mbsfn_AreaId_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].mbsfn_area;
- MBSFN_Area1->non_MBSFNregionLength= m2ap_setup_resp->mcch_config_per_mbsfn[i].pdcch_length;
- MBSFN_Area1->notificationIndicator_r9= 0;
- MBSFN_Area1->mcch_Config_r9.mcch_RepetitionPeriod_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].repetition_period;//LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_RepetitionPeriod_r9_rf32;
- MBSFN_Area1->mcch_Config_r9.mcch_Offset_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].offset; // in accordance with mbsfn subframe configuration in sib2
- MBSFN_Area1->mcch_Config_r9.mcch_ModificationPeriod_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].modification_period;
+  for (i = 0; i < m2ap_setup_resp->num_mcch_config_per_mbsfn; i++) {
+    // MBSFN Area 1
+    MBSFN_Area1 = CALLOC(1, sizeof(*MBSFN_Area1));
+    MBSFN_Area1->mbsfn_AreaId_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].mbsfn_area;
+    MBSFN_Area1->non_MBSFNregionLength = m2ap_setup_resp->mcch_config_per_mbsfn[i].pdcch_length;
+    MBSFN_Area1->notificationIndicator_r9 = 0;
+    MBSFN_Area1->mcch_Config_r9.mcch_RepetitionPeriod_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].repetition_period; // LTE_MBSFN_AreaInfo_r9__mcch_Config_r9__mcch_RepetitionPeriod_r9_rf32;
+    MBSFN_Area1->mcch_Config_r9.mcch_Offset_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].offset; // in accordance with mbsfn subframe configuration in sib2
+    MBSFN_Area1->mcch_Config_r9.mcch_ModificationPeriod_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].modification_period;
 
- //  Subframe Allocation Info
- MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf= MALLOC(1);
- MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size= 1;
- MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=m2ap_setup_resp->mcch_config_per_mbsfn[i].subframe_allocation_info<<2;  // FDD: SF1
- MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
- MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
- ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
- }
+    //  Subframe Allocation Info
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf = MALLOC(1);
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.size = 1;
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0] = m2ap_setup_resp->mcch_config_per_mbsfn[i].subframe_allocation_info << 2; // FDD: SF1
+    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused = 2;
+    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
+    ASN_SEQUENCE_ADD(&MBSFNArea_list->list, MBSFN_Area1);
+  }
 
  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
 
@@ -1180,10 +1161,9 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
 
 		for(l=0; l < m2ap_mbms_scheduling_information->mbms_area_config_list[j].num_mbms_sf_config_list; l++){
 			LTE_MBSFN_SubframeConfig_t *sib2_mbsfn_SubframeConfig1;
-    			sib2_mbsfn_SubframeConfig1= CALLOC(1,sizeof(*sib2_mbsfn_SubframeConfig1));
-    			memset((void *)sib2_mbsfn_SubframeConfig1,0,sizeof(*sib2_mbsfn_SubframeConfig1));
+      sib2_mbsfn_SubframeConfig1 = CALLOC(1, sizeof(*sib2_mbsfn_SubframeConfig1));
 
-			sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_period;
+      sib2_mbsfn_SubframeConfig1->radioframeAllocationPeriod = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_period;
 			sib2_mbsfn_SubframeConfig1->radioframeAllocationOffset = m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].radioframe_allocation_offset;
 
 
@@ -1219,10 +1199,9 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
   }
 
  if(*sib13==NULL){
-    sib13_part = CALLOC(1,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-    memset(sib13_part,0,sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
-    sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
-    *sib13 = &sib13_part->choice.sib13_v920;
+   sib13_part = CALLOC(1, sizeof(struct LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member));
+   sib13_part->present = LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib13_v920;
+   *sib13 = &sib13_part->choice.sib13_v920;
    (*sib13)->notificationConfig_r9.notificationRepetitionCoeff_r9=LTE_MBMS_NotificationConfig_r9__notificationRepetitionCoeff_r9_n2;
    (*sib13)->notificationConfig_r9.notificationOffset_r9=0;
    (*sib13)->notificationConfig_r9.notificationSF_Index_r9=1;
