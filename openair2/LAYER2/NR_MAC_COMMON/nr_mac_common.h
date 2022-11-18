@@ -50,7 +50,7 @@ typedef enum {
   typeB = 1
 } mappingType_t;
 
-uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti);
+uint32_t get_Y(const NR_SearchSpace_t *ss, int slot, rnti_t rnti);
 
 uint8_t get_BG(uint32_t A, uint16_t R);
 
@@ -90,7 +90,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss,
+                                 const NR_SearchSpace_t *ss,
                                  int maxL);
 
 void find_monitoring_periodicity_offset_common(NR_SearchSpace_t *ss,

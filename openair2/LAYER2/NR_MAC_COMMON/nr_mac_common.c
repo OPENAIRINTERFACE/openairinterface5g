@@ -1386,7 +1386,7 @@ int64_t *get_prach_config_info(frequency_range_t freq_range,
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
-                                 NR_SearchSpace_t *ss,
+                                 const NR_SearchSpace_t *ss,
                                  int L) {
   AssertFatal(L>=1 && L<=16,"L %d not ok\n",L);
   *nr_of_candidates = 0;
@@ -3931,7 +3931,7 @@ uint8_t get_BG(uint32_t A, uint16_t R) {
     return 1;
 }
 
-uint32_t get_Y(NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
+uint32_t get_Y(const NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
 
   if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)
     return 0;

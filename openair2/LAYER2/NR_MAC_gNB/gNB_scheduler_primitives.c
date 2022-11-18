@@ -114,10 +114,6 @@ uint8_t nr_ss_first_symb_idx_scs_240_120_set1_mux2[6] = {0,1,2,3,0,1};
   // Mux pattern type 3
 uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
 
-/// Search space max values indexed by scs
-uint8_t nr_max_number_of_candidates_per_slot[4] = {44, 36, 22, 20};
-uint8_t nr_max_number_of_cces_per_slot[4] = {56, 56, 48, 32};
-
 // CQI TABLES (10 times the value in 214 to adequately compare with R)
 // Table 1 (38.214 5.2.2.1-2)
 uint16_t cqi_table1[16][2] = {{0,0},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},{2,6020},{4,3780},
@@ -131,16 +127,6 @@ uint16_t cqi_table2[16][2] = {{0,0},{2,780},{2,1930},{2,4490},{4,3780},{4,4900},
 uint16_t cqi_table3[16][2] = {{0,0},{2,300},{2,500},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},
                               {2,6020},{4,3780},{4,4900},{4,6160},{6,4660},{6,5670},{6,6660},{6,7720}};
 
-
-static inline uint8_t get_max_candidates(uint8_t scs) {
-  AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
-  return (nr_max_number_of_candidates_per_slot[scs]);
-}
-
-static inline uint8_t get_max_cces(uint8_t scs) {
-  AssertFatal(scs<4, "Invalid PDCCH subcarrier spacing %d\n", scs);
-  return (nr_max_number_of_cces_per_slot[scs]);
-}
 
 uint8_t get_dl_nrOfLayers(const NR_UE_sched_ctrl_t *sched_ctrl,
                           const nr_dci_format_t dci_format) {
@@ -431,16 +417,15 @@ NR_sched_pdcch_t set_pdcch_structure(gNB_MAC_INST *gNB_mac,
   return pdcch;
 }
 
-
-int find_pdcch_candidate(gNB_MAC_INST *mac,
+int find_pdcch_candidate(const gNB_MAC_INST *mac,
                          int cc_id,
                          int aggregation,
                          int nr_of_candidates,
-                         NR_sched_pdcch_t *pdcch,
-                         NR_ControlResourceSet_t *coreset,
+                         const NR_sched_pdcch_t *pdcch,
+                         const NR_ControlResourceSet_t *coreset,
                          uint32_t Y){
 
-  uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
+  const uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
   const int N_ci = 0;
 
   const int N_rb = pdcch->n_rb;  // nb of rbs of coreset per symbol
@@ -473,6 +458,39 @@ int find_pdcch_candidate(gNB_MAC_INST *mac,
       return first_cce;
   }
   return -1;
+}
+
+
+int get_cce_index(const gNB_MAC_INST *nrmac,
+                  const int CC_id,
+                  const int slot,
+                  const rnti_t rnti,
+                  uint8_t *aggregation_level,
+                  const NR_SearchSpace_t *ss,
+                  const NR_ControlResourceSet_t *coreset,
+                  NR_sched_pdcch_t *sched_pdcch,
+                  bool is_common)
+{
+
+  const uint32_t Y = is_common ? 0 : get_Y(ss, slot, rnti);
+  uint8_t nr_of_candidates;
+  for (int i=0; i<5; i++) {
+    // for now taking the lowest value among the available aggregation levels
+    find_aggregation_candidates(aggregation_level,
+                                &nr_of_candidates,
+                                ss,
+                                1<<i);
+    if(nr_of_candidates>0)
+      break;
+  }
+  int CCEIndex = find_pdcch_candidate(nrmac,
+                                      CC_id,
+                                      *aggregation_level,
+                                      nr_of_candidates,
+                                      sched_pdcch,
+                                      coreset,
+                                      Y);
+  return CCEIndex;
 }
 
 void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
