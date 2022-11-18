@@ -1414,10 +1414,16 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     NR_ControlResourceSet_t *coreset = ra->coreset;
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg4\n");
 
+    uint16_t mac_sdu_length = 0;
+
     rnti_t tc_rnti = ra->rnti;
     // If UE is known by the network, C-RNTI to be used instead of TC-RNTI
-    if(ra->msg3_dcch_dtch) {
+    if (ra->msg3_dcch_dtch) {
       ra->rnti = ra->crnti;
+    } else {
+      mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, NULL);
+      if (mac_sdu_length <= 0)
+        return; // need to wait until RRCSetup is encoded
     }
 
     NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
@@ -1425,12 +1431,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
       return;
     }
-
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-
-    uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, NULL);
-
-    if(mac_sdu_length <= 0) return; // need to wait until RRCSetup is encoded
 
     long BWPStart = 0;
     long BWPSize = 0;
@@ -1532,6 +1532,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
 
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
     // HARQ management
