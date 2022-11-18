@@ -20,16 +20,6 @@
  *      contact@openairinterface.org
  */
 
-// Abstraction function to send social media messages:
-// like on Slack or Mattermost
-def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
-    if (params.pipelineUsesSlack != null) {
-        if (params.pipelineUsesSlack) {
-            slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
-        }
-    }
-}
-
 // Location of the executor node
 def nodeExecutor = params.nodeExecutor
 
@@ -389,10 +379,6 @@ OAI CI Team''',
                 if ("MERGE".equals(env.gitlabActionType)) {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
-                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    sendSocialMediaMessage('ci-enb', 'good', message2)
-                } else {
-                    sendSocialMediaMessage('ci-enb', 'good', message)
                 }
             }
         }
@@ -402,10 +388,6 @@ OAI CI Team''',
                 if ("MERGE".equals(env.gitlabActionType)) {
                     echo "This is a MERGE event"
                     addGitLabMRComment comment: message
-                    def message2 = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ") -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
-                    sendSocialMediaMessage('ci-enb', 'danger', message2)
-                } else {
-                    sendSocialMediaMessage('ci-enb', 'danger', message)
                 }
             }
         }

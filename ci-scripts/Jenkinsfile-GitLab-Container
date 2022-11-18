@@ -449,6 +449,10 @@ pipeline {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
           addGitLabMRComment comment: message
+          def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+          sendSocialMediaMessage('ci-enb', 'good', message2)
+        } else {
+          sendSocialMediaMessage('ci-enb', 'good', message)
         }
         echo "Pipeline is SUCCESSFUL"
       }
@@ -458,6 +462,10 @@ pipeline {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
         if ("MERGE".equals(env.gitlabActionType)) {
           addGitLabMRComment comment: message
+          def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+          sendSocialMediaMessage('ci-enb', 'danger', message2)
+        } else {
+          sendSocialMediaMessage('ci-enb', 'danger', message)
         }
         echo "Pipeline FAILED"
       }
@@ -540,4 +548,10 @@ def finalizeSlaveJob(jobName) {
       archiveArtifacts artifacts: fileName
     }
   }
+}
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+  slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
 }
