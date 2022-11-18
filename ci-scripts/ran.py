@@ -775,9 +775,9 @@ class RANManagement():
 		return stats
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
-		if (not os.path.isfile('./' + eNBlogFile)):
+		if (not os.path.isfile(eNBlogFile)):
 			return -1
-		enb_log_file = open('./' + eNBlogFile, 'r')
+		enb_log_file = open(eNBlogFile, 'r')
 		exitSignalReceived = False
 		foundAssertion = False
 		msgAssertion = ''
