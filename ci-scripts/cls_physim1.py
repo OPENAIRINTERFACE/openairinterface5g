@@ -139,10 +139,10 @@ class PhySim:
 		# Using helm charts deployment
 		mySSH.command(f'grep -rl OAICICD_PROJECT ./charts/ | xargs sed -i -e "s#OAICICD_PROJECT#{ocProjectName}#"', '\$', 30)
 		mySSH.command(f'sed -i -e "s#TAG#{imageTag}#g" ./charts/physims/values.yaml', '\$', 6)
-		mySSH.command('helm install physim ./charts/physims/ 2>&1 | tee -a cmake_targets/log/physim_helm_summary.txt', '\$', 30)
+		mySSH.command('helm install physim ./charts/physims/ --wait 2>&1 | tee -a cmake_targets/log/physim_helm_summary.txt', '\$', 30)
 		if mySSH.getBefore().count('STATUS: deployed') == 0:
 			logging.error('\u001B[1m Deploying PhySim Failed using helm chart on OC Cluster\u001B[0m')
-			mySSH.command('helm uninstall physim >> cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 30)
+			mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 30)
 			isFinished1 = False
 			while(isFinished1 == False):
 				time.sleep(20)
@@ -158,20 +158,22 @@ class PhySim:
 			logging.debug('\u001B[1m   Deployed PhySim Successfully using helm chart\u001B[0m')
 		isRunning = False
 		count = 0
-		# Below while sections means there is 2 mins for pods to be in running if not they will be removed
+		# Check whether the containers are in Running state or not under 2 mins
 		while(count < 2 and isRunning == False):
 			time.sleep(60)
 			mySSH.command('oc get pods -o wide -l app=physim | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 30, resync=True)
-			if mySSH.getBefore().count('Running') == 21:
+			running_count = mySSH.getBefore().count('Running')
+			completed_count = mySSH.getBefore().count('Completed')
+			if (running_count + completed_count) == 21:
 				logging.debug('\u001B[1m Running the physim test Scenarios\u001B[0m')
 				isRunning = True
 				podNames = re.findall('oai-[\S\d\w]+', mySSH.getBefore())
 			count +=1
 		if isRunning == False:
-			logging.error('\u001B[1m Some PODS Running FAILED \u001B[0m')
+			logging.error('\u001B[1m Some pods are in Error state \u001B[0m')
 			mySSH.command('oc get pods -l app=physim 2>&1 | tee -a cmake_targets/log/physim_pods_summary.txt', '\$', 6)
 			mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc describe pod $pod >> cmake_targets/log/physim_pods_summary.txt; done', '\$', 10)
-			mySSH.command('helm uninstall physim 2>&1 >> cmake_targets/log/physim_helm_summary.txt', '\$', 6)
+			mySSH.command('helm uninstall physim | tee -a cmake_targets/log/physim_helm_summary.txt 2>&1', '\$', 6)
 			self.AnalyzeLogFile_phySim()
 			isFinished1 = False
 			while(isFinished1 == False):
