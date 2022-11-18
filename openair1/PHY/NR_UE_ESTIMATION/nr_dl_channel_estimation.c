@@ -1395,9 +1395,22 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
 
     if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->chest_freq == 0) {
 
-      for (pilot_cnt = 0; pilot_cnt < (6 * nb_rb_pdsch); pilot_cnt++) {
-        ch[0] = (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
-        ch[1] = (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+      for (pilot_cnt = 0; pilot_cnt < 6 * nb_rb_pdsch; pilot_cnt++) {
+
+        if (pilot_cnt % 2 == 0) {
+          ch[0] = (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
+          ch[1] = (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+          pil += 2;
+          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
+          ch[0] += (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
+          ch[1] += (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+          ch[0] >>= 1;
+          ch[1] >>= 1;
+          pil += 2;
+          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
+        }
 
 #ifdef DEBUG_PDSCH
         printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil[0], pil[1], rxF[0], rxF[1], ch[0], ch[1]);
@@ -1418,9 +1431,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
         } else {
           multadd_real_vector_complex_scalar(fm, ch, dl_ch, 8);
         }
-        pil += 2;
-        re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-        rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
       }
 
       // check if PRB crosses DC and improve estimates around DC
@@ -1437,7 +1447,14 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
         rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
         ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
         ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-          
+        pil += 2;
+        re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
+        rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
+        ch[0] += (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
+        ch[1] += (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+        ch[0] >>= 1;
+        ch[1] >>= 1;
+
         // for proper allignment of SIMD vectors
         if((ue->frame_parms.N_RB_DL&1) == 0) {
               
@@ -1446,12 +1463,19 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                      dl_ch-4,
                      8);
               
-          pil += 4;
-          re_offset = (re_offset+4) % ue->frame_parms.ofdm_symbol_size;
+          pil += 2;
+          re_offset = (re_offset+2) % ue->frame_parms.ofdm_symbol_size;
           rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
           ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
           ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-              
+          pil += 2;
+          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
+          ch[0] += (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
+          ch[1] += (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+          ch[0] >>= 1;
+          ch[1] >>= 1;
+
           multadd_real_vector_complex_scalar(fdcr,
                      ch,
                      dl_ch-4,
@@ -1463,12 +1487,19 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                      dl_ch,
                      8);
               
-          pil += 4;
-          re_offset = (re_offset+4) % ue->frame_parms.ofdm_symbol_size;
+          pil += 2;
+          re_offset = (re_offset+2) % ue->frame_parms.ofdm_symbol_size;
           rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+nushift+re_offset)];
           ch[0] = (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
           ch[1] = (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
-              
+          pil += 2;
+          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
+          rxF = (int16_t *)&rxdataF[aarx][(symbol_offset + nushift + re_offset)];
+          ch[0] += (int16_t)(((int32_t)pil[0] * rxF[0] - (int32_t)pil[1] * rxF[1]) >> 15);
+          ch[1] += (int16_t)(((int32_t)pil[0] * rxF[1] + (int32_t)pil[1] * rxF[0]) >> 15);
+          ch[0] >>= 1;
+          ch[1] >>= 1;
+
           multadd_real_vector_complex_scalar(fdcrh,
                      ch,
                      dl_ch,
@@ -1985,9 +2016,9 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     dl_ch = (int16_t *)&dl_ch_estimates[p*ue->frame_parms.nb_antennas_rx+aarx][ch_offset];
     for(uint16_t idxP=0; idxP<ceil((float)nb_rb_pdsch*12/8); idxP++) {
       for(uint8_t idxI=0; idxI<16; idxI += 2) {
-        printf("%d\t%d\t",dl_ch[idxP*16+idxI],dl_ch[idxP*16+idxI+1]);
+        printf("%4d\t%4d\t",dl_ch[idxP*16+idxI],dl_ch[idxP*16+idxI+1]);
       }
-      printf("%d\n",idxP);
+      printf("%2d\n",idxP);
     }
 #endif
   }
