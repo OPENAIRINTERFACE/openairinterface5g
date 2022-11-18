@@ -771,7 +771,7 @@ class RANManagement():
 			#case where numerator > denumerator with denum ==0 is disregarded, cannot hapen in principle, will lead to 0%
 			perc[i] = 0 if (retx_data[i] == 0) else 100 * retx_data[i + 1] / retx_data[i]
 			#treating % > 100 , % > requirement
-			stats[i] = perc[i] < 100 and perc[i] <= checkers[i]
+			stats[i] = perc[i] <= 100 and perc[i] <= checkers[i]
 		return stats
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
