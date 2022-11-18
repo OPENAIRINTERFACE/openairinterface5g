@@ -25,9 +25,9 @@ spec:
           value: /opt/oai-physim
         command: ["/bin/sh", "-c"]
         args:
-        - >  
+        - >
           cmake_targets/autotests/run_exec_autotests.bash -g "nr_pucchsim" -d bin/ &&
-          echo "FINISHED"
+          echo "FINISHED" && sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Never
       schedulerName: default-scheduler

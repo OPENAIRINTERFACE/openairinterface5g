@@ -27,7 +27,7 @@ spec:
         args:
         - >
           cmake_targets/autotests/run_exec_autotests.bash -g "nr_ulsim.mimo" -d bin/ &&
-          echo "FINISHED"
+          echo "FINISHED" && sleep infinity
       dnsPolicy: ClusterFirst
       restartPolicy: Never
       schedulerName: default-scheduler
