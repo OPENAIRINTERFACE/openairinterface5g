@@ -319,7 +319,7 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
                           int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
                           uint8_t doPss, uint8_t doSss,
                           uint8_t subframe,
-                          int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) // add flag to indicate extracting only PSS, only SSS, or both
+                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) // add flag to indicate extracting only PSS, only SSS, or both
 {
   uint8_t aarx;
   int32_t *pss_rxF,*pss_rxF_ext;
@@ -334,8 +334,8 @@ int do_pss_sss_extract_nr(PHY_VARS_NR_UE *ue,
 
     unsigned int ofdm_symbol_size = frame_parms->ofdm_symbol_size;
 
-    pss_rxF  =  &rxdataF[aarx][pss_symbol*ofdm_symbol_size];
-    sss_rxF  =  &rxdataF[aarx][sss_symbol*ofdm_symbol_size];
+    pss_rxF  =  (int32_t *)&rxdataF[aarx][pss_symbol*ofdm_symbol_size];
+    sss_rxF  =  (int32_t *)&rxdataF[aarx][sss_symbol*ofdm_symbol_size];
 
     pss_rxF_ext = &pss_ext[aarx][0];
     sss_rxF_ext = &sss_ext[aarx][0];
@@ -401,7 +401,7 @@ int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
                        int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
                        int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR],
                        uint8_t subframe,
-                       int32_t rxdataF[][phy_vars_ue->frame_parms.samples_per_slot_wCP])
+                       c16_t rxdataF[][phy_vars_ue->frame_parms.samples_per_slot_wCP])
 {
   return do_pss_sss_extract_nr(phy_vars_ue, proc, pss_ext, sss_ext, 1 /* doPss */, 1 /* doSss */, subframe, rxdataF);
 }
@@ -419,7 +419,7 @@ int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
 *
 *********************************************************************/
 
-int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, uint8_t *phase_max, int *freq_offset_sss, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, uint8_t *phase_max, int *freq_offset_sss, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   uint8_t i;
   int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR];

@@ -67,7 +67,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params,
-                              int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                              c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   uint8_t rxAnt = 0, idx = 0;
   prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
@@ -572,7 +572,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              unsigned char symbol,
                              int dmrss,
                              NR_UE_SSB *current_ssb,
-                             int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                             c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
@@ -736,7 +736,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                int dmrss,
                                uint8_t ssb_index,
                                uint8_t n_hf,
-                               int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
@@ -1001,7 +1001,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  uint16_t BWPStart,
                                  int32_t pdcch_est_size,
                                  int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
-                                 int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
   unsigned char aarx;
@@ -1250,7 +1250,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short nb_rb_pdsch,
                                 uint32_t pdsch_est_size,
                                 int32_t dl_ch_estimates[][pdsch_est_size],
-                                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;

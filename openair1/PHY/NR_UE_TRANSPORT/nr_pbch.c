@@ -50,7 +50,7 @@
 #define print_shorts(s,x) printf("%s : %d,%d,%d,%d,%d,%d,%d,%d\n",s,((int16_t*)x)[0],((int16_t*)x)[1],((int16_t*)x)[2],((int16_t*)x)[3],((int16_t*)x)[4],((int16_t*)x)[5],((int16_t*)x)[6],((int16_t*)x)[7])
 
 static uint16_t nr_pbch_extract(uint32_t rxdataF_sz,
-                                int32_t rxdataF[][rxdataF_sz],
+                                c16_t rxdataF[][rxdataF_sz],
                                 const int estimateSz,
                                 struct complex16 dl_ch_estimates[][estimateSz],
                                 struct complex16 rxdataF_ext[][PBCH_MAX_RE_PER_SYMBOL],
@@ -68,7 +68,7 @@ static uint16_t nr_pbch_extract(uint32_t rxdataF_sz,
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     unsigned int rx_offset = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier;
     rx_offset = (rx_offset)%(frame_parms->ofdm_symbol_size);
-    struct complex16 *rxF        = (struct complex16 *)&rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
+    struct complex16 *rxF        = &rxdataF[aarx][(symbol+s_offset)*frame_parms->ofdm_symbol_size];
     struct complex16 *rxF_ext    = rxdataF_ext[aarx];
 #ifdef DEBUG_PBCH
     printf("extract_rbs (nushift %d): rx_offset=%d, symbol %u\n",frame_parms->nushift,
@@ -394,7 +394,7 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 MIMO_mode_t mimo_mode,
                 nr_phy_data_t *phy_data,
                 fapiPbch_t *result,
-                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int max_h=0;
   int symbol;

@@ -101,7 +101,7 @@ void free_list(NR_UE_SSB *node) {
 }
 
 
-int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, nr_phy_data_t *phy_data, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, nr_phy_data_t *phy_data, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
@@ -244,7 +244,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   */
 
   const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
-  __attribute__ ((aligned(32))) int32_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
+  __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
   cnt++;
   if (1){ // (cnt>100)
    cnt =0;

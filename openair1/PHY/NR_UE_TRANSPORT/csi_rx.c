@@ -191,7 +191,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
                          uint32_t *rsrp,
                          int *rsrp_dBm,
-                         int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                         c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint16_t meas_count = 0;
@@ -218,7 +218,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
             for (int lp = 0; lp <= l_prime; lp++) {
               uint16_t symb = lp + l_overline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
-              c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
+              c16_t *rx_signal = &rxdataF[ant_rx][symbol_offset];
               c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
               rx_csi_rs_signal[k].r = rx_signal[k].r;
               rx_csi_rs_signal[k].i = rx_signal[k].i;
@@ -730,7 +730,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
                                const UE_nr_rxtx_proc_t *proc,
                                const fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu,
                                uint32_t *interference_plus_noise_power,
-                               int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
@@ -764,7 +764,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
 
     for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
 
-      c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
+      c16_t *rx_signal = &rxdataF[ant_rx][symbol_offset];
 
       for (int rb = csiim_config_pdu->start_rb; rb < end_rb; rb++) {
 
@@ -800,7 +800,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   if(!ue->csiim_vars[gNB_id]->active) {
     return -1;
@@ -824,7 +824,7 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   return 0;
 }
 
-int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   if(!ue->csirs_vars[gNB_id]->active) {
     return -1;

@@ -52,7 +52,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *phy_vars_ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char l,
                 unsigned char Ns,
-                int32_t rxdataF[][phy_vars_ue->frame_parms.samples_per_slot_wCP]);
+                c16_t rxdataF[][phy_vars_ue->frame_parms.samples_per_slot_wCP]);
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           UE_nr_rxtx_proc_t *proc,
@@ -60,7 +60,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           unsigned char Ns,
                           int sample_offset,
                           bool pbch_decoded,
-                          int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    unsigned char l,

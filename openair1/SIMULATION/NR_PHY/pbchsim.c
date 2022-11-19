@@ -88,7 +88,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
          int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
          nr_phy_data_t *phy_data,
          int n_ss,
-         int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+         c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
   return 0;
 }
 
@@ -98,7 +98,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            NR_UE_DLSCH_t dlsch[2],
                            int16_t *llr[2],
                            int16_t *layer_llr[NR_MAX_NB_LAYERS],
-                           int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
   return 0;
 }
 
@@ -597,7 +597,7 @@ int main(int argc, char **argv)
   processingData_L1tx_t msgDataTx;
   // generate signal
   const uint32_t rxdataF_sz = UE->frame_parms.samples_per_slot_wCP;
-  __attribute__ ((aligned(32))) int32_t rxdataF[UE->frame_parms.nb_antennas_rx][rxdataF_sz];
+  __attribute__ ((aligned(32))) c16_t rxdataF[UE->frame_parms.nb_antennas_rx][rxdataF_sz];
   if (input_fd==NULL) {
 
     for (i=0; i<frame_parms->Lmax; i++) {

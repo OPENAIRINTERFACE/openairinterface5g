@@ -173,7 +173,7 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
                                  int ssb_index,
                                  UE_nr_rxtx_proc_t *proc,
                                  uint8_t slot,
-                                 int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int k_start = 56;
   int k_end   = 183;
@@ -229,7 +229,7 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
 void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             uint8_t slot,
-                            int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]){
+                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]){
 
   uint8_t k;
   int aarx, nb_nulls;

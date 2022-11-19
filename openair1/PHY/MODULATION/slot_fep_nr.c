@@ -38,7 +38,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
                 unsigned char Ns,
-                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars      = &ue->common_vars;
@@ -109,7 +109,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 #endif
 
     c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = (c16_t *)&rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
+    c16_t *this_symbol = &rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
 
     if (frame_parms->N_RB_DL & 1) {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,
@@ -153,7 +153,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           unsigned char Ns,
                           int sample_offset,
                           bool pbch_decoded,
-                          int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -242,7 +242,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
 	   symbol+symb_offset,rot2.r,rot2.i);
 #endif
 
-    c16_t *this_symbol = (c16_t *)&rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
+    c16_t *this_symbol = &rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
     rotate_cpx_vector(this_symbol, &rot2, this_symbol, frame_parms->ofdm_symbol_size, 15);
   }
 

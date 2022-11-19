@@ -152,7 +152,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 int32_t dl_ch_mag[][rx_size],
                 int32_t dl_ch_magb[][rx_size],
                 int32_t dl_ch_magr[][rx_size],
-                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
                 uint32_t llr_offset[NR_SYMBOLS_PER_SLOT],
                 int32_t *log2_maxh)
 {
@@ -1591,7 +1591,7 @@ void nr_dlsch_channel_level_median(uint32_t rx_size,
 //==============================================================================================
 
 void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
-                          int32_t rxdataF[][rxdataF_sz],
+                          c16_t rxdataF[][rxdataF_sz],
                           uint32_t rx_size,
                           int32_t dl_ch_estimates[][rx_size],
                           int32_t rxdataF_ext[][rx_size],

@@ -544,7 +544,7 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param frame_parms Pointer to frame descriptor
 */
 void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
-                          int rxdataF[][rxdataF_sz],
+                          c16_t rxdataF[][rxdataF_sz],
                           uint32_t rx_size,
                           int32_t dl_ch_estimates[][rx_size],
                           int32_t rxdataF_ext[][rx_size],
@@ -757,7 +757,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
                     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                    int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
@@ -784,13 +784,13 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                MIMO_mode_t mimo_mode,
                nr_phy_data_t *phy_data,
                fapiPbch_t* result,
-               int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
                       PHY_VARS_NR_UE *ue,
                       int pbch_initial_symbol,
                       nr_phy_data_t *phy_data,
-                      int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+                      c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 
 #ifndef modOrder
@@ -892,7 +892,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 int32_t dl_ch_mag[][rx_size],
                 int32_t dl_ch_magb[][rx_size],
                 int32_t dl_ch_magr[][rx_size],
-                int32_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
                 uint32_t llr_offset[NR_SYMBOLS_PER_SLOT],
                 int32_t *log2_maxh);
 
