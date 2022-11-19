@@ -81,8 +81,7 @@ nrUE_params_t *get_nrUE_params(void) {
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
-int nr_ue_pdcch_procedures(uint8_t gNB_id,
-			   PHY_VARS_NR_UE *ue,
+int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
          int32_t pdcch_est_size,
          int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
@@ -94,7 +93,6 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           int gNB_id,
                            NR_UE_DLSCH_t dlsch[2],
                            int16_t *llr[2],
                            int16_t *layer_llr[NR_MAX_NB_LAYERS],
@@ -104,7 +102,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
-                            int gNB_id,
                             NR_UE_DLSCH_t dlsch[2],
                             int16_t *llr[2]) {
   return false;
@@ -762,15 +759,16 @@ int main(int argc, char **argv)
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
         int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
+        proc.nr_slot_rx = ssb_slot;
+        proc.gNB_id = 0;
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
           nr_slot_fep(UE,
                       &proc,
                       i%frame_parms->symbols_per_slot,
-                      ssb_slot,
                       rxdataF);
 
           nr_pbch_channel_estimation(UE,estimateSz, dl_ch_estimates, dl_ch_estimates_time, &proc, 
-				     0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf,rxdataF);
+				     i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf,rxdataF);
 
         }
 	fapiPbch_t result;
@@ -779,7 +777,6 @@ int main(int argc, char **argv)
 			 estimateSz, dl_ch_estimates,
 			 UE->pbch_vars[0],
                          frame_parms,
-                         0,
                          ssb_index%8,
                          SISO,
                          &phy_data,

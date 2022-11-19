@@ -127,7 +127,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
       start_meas(&ue->dlsch_channel_estimation_stats);
       // computing correlation between received DMRS symbols and transmitted sequence for current i_ssb and n_hf
       for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
-          nr_pbch_dmrs_correlation(ue,proc,0,0,i,i-pbch_initial_symbol,current_ssb,rxdataF);
+          nr_pbch_dmrs_correlation(ue,proc,i,i-pbch_initial_symbol,current_ssb,rxdataF);
       stop_meas(&ue->dlsch_channel_estimation_stats);
       
       current_ssb->metric = current_ssb->c_re*current_ssb->c_re + current_ssb->c_im*current_ssb->c_im;
@@ -152,7 +152,7 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
 
     for(int i=pbch_initial_symbol; i<pbch_initial_symbol+3;i++)
       nr_pbch_channel_estimation(ue,estimateSz, dl_ch_estimates, dl_ch_estimates_time, 
-                                 proc,0,0,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf,rxdataF);
+                                 proc,i,i-pbch_initial_symbol,temp_ptr->i_ssb,temp_ptr->n_hf,rxdataF);
 
     stop_meas(&ue->dlsch_channel_estimation_stats);
     fapiPbch_t result;
@@ -162,7 +162,6 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
                      dl_ch_estimates,
                      ue->pbch_vars[0],
                      frame_parms,
-                     0,
                      temp_ptr->i_ssb,
                      SISO,
                      phy_data,
@@ -305,7 +304,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_slot_fep_init_sync(ue,
                               proc,
                               i,
-                              0,
                               is*fp->samples_per_frame+ue->ssb_offset,
                               false,
                               rxdataF);
@@ -529,7 +527,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   if (sa==1 && ret==0) {
     nr_ue_dlsch_init(phy_data.dlsch, 1, ue->max_ldpc_iterations);
     bool dec = false;
-    int gnb_id = 0; //FIXME
+    proc->gNB_id = 0; //FIXME
 
     // Hold the channel estimates in frequency domain.
     int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
@@ -543,15 +541,12 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
-                              phy_pdcch_config->slot,
                               is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                               true,
                               rxdataF);
 
         nr_pdcch_channel_estimation(ue,
                                     proc,
-                                    0,
-                                    phy_pdcch_config->slot,
                                     l,
                                     &phy_pdcch_config->pdcch_config[n_ss].coreset,
                                     fp->first_carrier_offset,
@@ -561,7 +556,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                     rxdataF);
 
       }
-      int  dci_cnt = nr_ue_pdcch_procedures(gnb_id, ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_data, n_ss, rxdataF);
+      int  dci_cnt = nr_ue_pdcch_procedures(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_data, n_ss, rxdataF);
       if (dci_cnt>0){
         NR_UE_DLSCH_t *dlsch = phy_data.dlsch;
         if (dlsch[0].active == 1) {
@@ -572,7 +567,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
             nr_slot_fep_init_sync(ue,
                                   proc,
                                   m,
-                                  phy_pdcch_config->slot,  // same slot and offset as pdcch
                                   is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                                   true,
                                   rxdataF);
@@ -602,7 +596,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
           int ret = nr_ue_pdsch_procedures(ue,
                                            proc,
-                                           gnb_id,
                                            phy_data.dlsch,
                                            llr,
                                            layer_llr,
@@ -610,7 +603,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
           if (ret >= 0)
             dec = nr_ue_dlsch_procedures(ue,
                                          proc,
-                                         gnb_id,
                                          phy_data.dlsch,
                                          llr);
 

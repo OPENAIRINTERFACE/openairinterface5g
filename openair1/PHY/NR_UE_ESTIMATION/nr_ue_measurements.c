@@ -172,11 +172,11 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
 void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
                                  int ssb_index,
                                  UE_nr_rxtx_proc_t *proc,
-                                 uint8_t slot,
                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int k_start = 56;
   int k_end   = 183;
+  int slot = proc->nr_slot_rx;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   int symbol_offset = nr_get_ssb_start_symbol(&ue->frame_parms,ssb_index);
 
@@ -228,10 +228,10 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
 // - psd_awgn (AWGN power spectral density):     dBm/Hz
 void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
-                            uint8_t slot,
                             c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]){
 
   uint8_t k;
+  int slot = proc->nr_slot_rx;
   int aarx, nb_nulls;
   int16_t *rxF_sss;
   uint8_t k_left = 48;

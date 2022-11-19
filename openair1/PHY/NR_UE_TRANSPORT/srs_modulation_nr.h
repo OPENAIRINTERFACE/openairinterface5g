@@ -175,7 +175,7 @@ int is_srs_period_nr(SRS_Resource_t *p_SRS_Resource,
     @param current gNB_id identifier
     @returns 0 if srs is transmitted -1 otherwise */
 
-int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id);
+int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc);
 
 #undef EXTERN
 #undef INIT_VARIABLES_SRS_MODULATION_NR_H

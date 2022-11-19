@@ -37,11 +37,11 @@
 int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char symbol,
-                unsigned char Ns,
                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars      = &ue->common_vars;
+  int Ns = proc->nr_slot_rx;
 
   AssertFatal(symbol < frame_parms->symbols_per_slot, "slot_fep: symbol must be between 0 and %d\n", frame_parms->symbols_per_slot-1);
   AssertFatal(Ns < frame_parms->slots_per_frame, "slot_fep: Ns must be between 0 and %d\n", frame_parms->slots_per_frame-1);
@@ -150,13 +150,13 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           UE_nr_rxtx_proc_t *proc,
                           unsigned char symbol,
-                          unsigned char Ns,
                           int sample_offset,
                           bool pbch_decoded,
                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
+  int Ns = proc->nr_slot_rx;
 
   AssertFatal(symbol < frame_parms->symbols_per_slot, "slot_fep: symbol must be between 0 and %d\n", frame_parms->symbols_per_slot-1);
   AssertFatal(Ns < frame_parms->slots_per_frame, "slot_fep: Ns must be between 0 and %d\n", frame_parms->slots_per_frame-1);

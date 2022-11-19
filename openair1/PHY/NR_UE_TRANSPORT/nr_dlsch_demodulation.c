@@ -115,8 +115,6 @@ static int nr_dlsch_llr(uint32_t rx_size,
                         NR_DL_UE_HARQ_t *dlsch0_harq,
                         NR_DL_UE_HARQ_t *dlsch1_harq,
                         unsigned char harq_pid,
-                        unsigned char gNB_id,
-                        unsigned char gNB_id_i,
                         unsigned char first_symbol_flag,
                         unsigned char symbol,
                         unsigned short nb_rb,
@@ -131,10 +129,6 @@ static int nr_dlsch_llr(uint32_t rx_size,
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 NR_UE_DLSCH_t dlsch[2],
-                unsigned char gNB_id,
-                unsigned char gNB_id_i,
-                uint32_t frame,
-                uint8_t nr_slot_rx,
                 unsigned char symbol,
                 unsigned char first_symbol_flag,
                 unsigned char harq_pid,
@@ -160,6 +154,9 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   NR_UE_COMMON *common_vars  = &ue->common_vars;
   NR_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
   PHY_NR_MEASUREMENTS *measurements = &ue->measurements;
+  int frame = proc->frame_rx;
+  int nr_slot_rx = proc->nr_slot_rx;
+  int gNB_id = proc->gNB_id;
 
   int avg[16];
 //  int avg_0[2];
@@ -492,8 +489,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                    dlsch0_harq,
                    dlsch1_harq,
                    harq_pid,
-                   gNB_id,
-                   gNB_id_i,
                    first_symbol_flag,
                    i,
                    nb_rb_pdsch,
@@ -1626,7 +1621,7 @@ void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
   for (unsigned char aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
 
     int32_t *rxF_ext = &rxdataF_ext[aarx][symbol * nb_rb_pdsch * NR_NB_SC_PER_RB];
-    int32_t *rxF     = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
+    int32_t *rxF     = (int32_t *)&rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
 
     for (unsigned char aatx = 0; aatx < Nl; aatx++) {
 
@@ -2384,8 +2379,6 @@ static int nr_dlsch_llr(uint32_t rx_size,
                         NR_DL_UE_HARQ_t *dlsch0_harq,
                         NR_DL_UE_HARQ_t *dlsch1_harq,
                         unsigned char harq_pid,
-                        unsigned char gNB_id,
-                        unsigned char gNB_id_i,
                         unsigned char first_symbol_flag,
                         unsigned char symbol,
                         unsigned short nb_rb,

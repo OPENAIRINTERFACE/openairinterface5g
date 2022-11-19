@@ -61,14 +61,14 @@ void peak_estimator(int32_t *buffer, int32_t buf_len, int32_t *peak_idx, int32_t
   *peak_idx = max_idx;
 }
 
-int nr_prs_channel_estimation(uint8_t gNB_id,
-                              uint8_t rsc_id,
+int nr_prs_channel_estimation(uint8_t rsc_id,
                               uint8_t rep_num,
                               PHY_VARS_NR_UE *ue,
                               UE_nr_rxtx_proc_t *proc,
                               NR_DL_FRAME_PARMS *frame_params,
                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
+  int gNB_id = proc->gNB_id;
   uint8_t rxAnt = 0, idx = 0;
   prs_config_t *prs_cfg  = &ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_cfg;
   prs_meas_t **prs_meas  = ue->prs_vars[gNB_id]->prs_resource[rsc_id].prs_meas;
@@ -567,8 +567,6 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 
 int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              UE_nr_rxtx_proc_t *proc,
-                             uint8_t gNB_id,
-                             unsigned char Ns,
                              unsigned char symbol,
                              int dmrss,
                              NR_UE_SSB *current_ssb,
@@ -600,7 +598,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_PBCH
-  printf("PBCH DMRS Correlation : gNB_id %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", gNB_id, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
+  printf("PBCH DMRS Correlation : gNB_id %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", proc->gNB_id, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
 #endif
 
   // generate pilot
@@ -730,14 +728,13 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                struct complex16 dl_ch_estimates [][estimateSz],
                                struct complex16 dl_ch_estimates_time [][ue->frame_parms.ofdm_symbol_size],
                                UE_nr_rxtx_proc_t *proc,
-                               uint8_t gNB_id,
-                               unsigned char Ns,
                                unsigned char symbol,
                                int dmrss,
                                uint8_t ssb_index,
                                uint8_t n_hf,
                                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
+  int Ns = proc->nr_slot_rx;
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
   unsigned int pilot_cnt;
@@ -763,7 +760,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   k = nushift;
 
 #ifdef DEBUG_PBCH
-  printf("PBCH Channel Estimation : gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", gNB_id, ch_offset, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
+  printf("PBCH Channel Estimation : gNB_id %d ch_offset %d, OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", proc->gNB_id, ch_offset, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
 #endif
 
   switch (k) {
@@ -993,8 +990,6 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
-                                 uint8_t gNB_id,
-                                 unsigned char Ns,
                                  unsigned char symbol,
                                  fapi_nr_coreset_t *coreset,
                                  uint16_t first_carrier_offset,
@@ -1004,6 +999,8 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
 
+  int Ns = proc->nr_slot_rx;
+  int gNB_id = proc->gNB_id;
   unsigned char aarx;
   unsigned short k;
   unsigned int pilot_cnt;
@@ -1237,9 +1234,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
 
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 UE_nr_rxtx_proc_t *proc,
-                                uint8_t gNB_id,
                                 bool is_SI,
-                                unsigned char Ns,
                                 unsigned short p,
                                 unsigned char symbol,
                                 unsigned char nscid,
@@ -1252,6 +1247,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 int32_t dl_ch_estimates[][pdsch_est_size],
                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
+  int gNB_id = proc->gNB_id;
+  int Ns = proc->nr_slot_rx;
   int pilot[3280] __attribute__((aligned(16)));
   unsigned char aarx;
   unsigned short k;

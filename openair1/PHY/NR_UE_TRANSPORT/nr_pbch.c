@@ -389,7 +389,6 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
                 int estimateSz, struct complex16 dl_ch_estimates [][estimateSz],
                 NR_UE_PBCH *nr_ue_pbch_vars,
                 NR_DL_FRAME_PARMS *frame_parms,
-                uint8_t gNB_id,
                 uint8_t i_ssb,
                 MIMO_mode_t mimo_mode,
                 nr_phy_data_t *phy_data,
@@ -582,8 +581,8 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
   fapi_nr_rx_indication_t *rx_ind=calloc(sizeof(*rx_ind),1);
   uint16_t number_pdus = 1;
 
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, phy_data);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, gNB_id, ue, NULL, NULL, number_pdus, proc,(void *)result);
+  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, phy_data);
+  nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, ue, NULL, NULL, number_pdus, proc,(void *)result);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);

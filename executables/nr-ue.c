@@ -689,7 +689,7 @@ void processSlotTX(void *arg) {
       stop_meas(&UE->ue_ul_indication_stats);
     }
 
-    phy_procedures_nrUE_TX(UE, proc, proc->gNB_id, &phy_data);
+    phy_procedures_nrUE_TX(UE, proc, &phy_data);
   }
 
   RU_write(rxtxD);
@@ -699,7 +699,6 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
-  uint8_t gNB_id = 0;
   nr_phy_data_t phy_data = {0};
 
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
@@ -716,7 +715,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
-      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id, &phy_data);
+      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, &phy_data);
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
 
@@ -725,7 +724,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc_oai();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_data);
+    phy_procedures_nrUE_RX(UE, proc, &phy_data);
     LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 #endif
 

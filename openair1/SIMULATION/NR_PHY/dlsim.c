@@ -1096,6 +1096,7 @@ int main(int argc, char **argv)
       UE->rx_offset=0;
       UE_proc.frame_rx   = frame;
       UE_proc.nr_slot_rx = slot;
+      UE_proc.gNB_id     = 0;
       
       dcireq.frame     = frame;
       dcireq.slot      = slot;
@@ -1277,7 +1278,6 @@ int main(int argc, char **argv)
 
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
-                               0,
                                &phy_data);
         
         //----------------------------------------------------------

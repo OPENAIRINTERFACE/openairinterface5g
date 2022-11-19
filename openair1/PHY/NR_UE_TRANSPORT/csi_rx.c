@@ -800,8 +800,9 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
+  int gNB_id = proc->gNB_id;
   if(!ue->csiim_vars[gNB_id]->active) {
     return -1;
   }
@@ -824,8 +825,9 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   return 0;
 }
 
-int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
+  int gNB_id = proc->gNB_id;
   if(!ue->csirs_vars[gNB_id]->active) {
     return -1;
   }
@@ -959,8 +961,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   csirs_measurements.cqi = cqi;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t *rx_ind = calloc(sizeof(*rx_ind),1);
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, NULL);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, gNB_id, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
+  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, NULL);
+  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
   if (ue->if_inst && ue->if_inst->dl_indication) {
     ue->if_inst->dl_indication(&dl_indication, NULL);
   } else {
