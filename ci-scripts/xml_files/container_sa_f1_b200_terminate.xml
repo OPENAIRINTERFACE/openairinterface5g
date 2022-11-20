@@ -21,21 +21,28 @@
 
 -->
 <testCaseList>
-  <htmlTabRef>TEST-SA-FR1-B200-terminate</htmlTabRef>
+  <htmlTabRef>TEST-SA-FR1-F1-B200-terminate</htmlTabRef>
   <htmlTabName>Tear-down</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
-  030201
+  230201
+  222222
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
 
-  <testCase id="030201">
+  <testCase id="230201">
     <class>Undeploy_Object</class>
-    <desc>Undeploy gNB</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
+    <desc>Undeploy CU-DU</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_f1_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
+  </testCase>
+
+  <testCase id="222222">
+    <class>Clean_Test_Server_Images</class>
+    <desc>Clean Test Images on Test Server</desc>
+    <test_svr_id>0</test_svr_id>
   </testCase>
 
 </testCaseList>

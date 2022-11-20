@@ -35,6 +35,8 @@
 #include "PHY/phy_extern.h"
 #include "nr_ul_estimation.h"
 
+#define I0_SKIP_DC 1
+
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
 int nr_est_timing_advance_pusch(PHY_VARS_gNB* gNB, int UE_id)
@@ -155,43 +157,43 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
   memset(measurements->n0_subband_power, 0, sizeof(measurements->n0_subband_power));
 
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
+    int offset0 = ((slot&3)*frame_parms->symbols_per_slot + s) * frame_parms->ofdm_symbol_size;
     for (rb=0; rb<frame_parms->N_RB_UL; rb++) {
-      if (s==first_symb /*&& ((gNB->rb_mask_ul[s][rb>>5]&(1<<(rb&31))) == 0)*/) {
-        nb_symb[rb]=0;
-        for (int aarx=0; aarx<frame_parms->nb_antennas_rx;aarx++) 
-           measurements->n0_subband_power[aarx][rb]=0;   
-      }
-      int offset0 = (slot&3)*(frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size) + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
-      if ((gNB->rb_mask_ul[s][rb >> 5] & (1U << (rb & 31))) == 0) {  // check that rb was not used in this subframe
-        nb_symb[rb]++;          
+      if ((gNB->rb_mask_ul[s][rb >> 5] & (1U << (rb & 31))) == 0 && // check that rb was not used in this subframe
+          !(I0_SKIP_DC && rb == frame_parms->N_RB_UL>>1)) {         // skip middle PRB because of artificial noise possibly created by FFT
+        int offset = offset0 + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
+        nb_symb[rb]++;
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-          int offset = offset0 + (s*frame_parms->ofdm_symbol_size);
-          int32_t *ul_ch  = &common_vars->rxdataF[aarx][offset];
-          int len = 12;
+          int32_t *ul_ch = &common_vars->rxdataF[aarx][offset];
+          int32_t signal_energy;
           if (((frame_parms->N_RB_UL&1) == 1) &&
               (rb==(frame_parms->N_RB_UL>>1))) {
-            len=6;
+            signal_energy = signal_energy_nodc(ul_ch, 6);
+            ul_ch = &common_vars->rxdataF[aarx][offset0];
+            signal_energy += signal_energy_nodc(ul_ch, 6);
+          } else {
+            signal_energy = signal_energy_nodc(ul_ch, 12);
           }
-          AssertFatal(ul_ch, "RX signal buffer (freq) problem\n");
-          measurements->n0_subband_power[aarx][rb] += signal_energy_nodc(ul_ch,len);
+          measurements->n0_subband_power[aarx][rb] += signal_energy;
+          LOG_D(PHY,"slot %d symbol %d RB %d aarx %d n0_subband_power %d\n", slot, s, rb, aarx, signal_energy);
         } //antenna
       }
     } //rb
   } // symb
   int nb_rb=0;
   int32_t n0_subband_tot=0;
-  int32_t n0_subband_tot_perPRB=0;
-  int32_t n0_subband_tot_perANT[1+frame_parms->nb_antennas_rx];
+  int32_t n0_subband_tot_perANT[frame_parms->nb_antennas_rx];
+
+  memset(n0_subband_tot_perANT, 0, sizeof(n0_subband_tot_perANT));
 
   for (int rb = 0 ; rb<frame_parms->N_RB_UL;rb++) {
-    n0_subband_tot_perPRB=0;
+    int32_t n0_subband_tot_perPRB=0;
     if (nb_symb[rb] > 0) {
       for (int aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++) {
         measurements->n0_subband_power[aarx][rb]/=nb_symb[rb];
         measurements->n0_subband_power_dB[aarx][rb] = dB_fixed(measurements->n0_subband_power[aarx][rb]);
         n0_subband_tot_perPRB+=measurements->n0_subband_power[aarx][rb];
-        if (rb==0) n0_subband_tot_perANT[aarx]=measurements->n0_subband_power[aarx][rb];
-        else       n0_subband_tot_perANT[aarx]+=measurements->n0_subband_power[aarx][rb];
+        n0_subband_tot_perANT[aarx]+=measurements->n0_subband_power[aarx][rb];
       }
       n0_subband_tot_perPRB/=frame_parms->nb_antennas_rx;
       measurements->n0_subband_power_tot_dB[rb] = dB_fixed(n0_subband_tot_perPRB);

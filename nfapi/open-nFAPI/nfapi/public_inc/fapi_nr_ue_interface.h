@@ -24,7 +24,7 @@
 #include "PHY/impl_defs_nr.h"
 
 #define NFAPI_UE_MAX_NUM_CB 8
-#define NFAPI_MAX_NUM_UL_PDU 8
+#define NFAPI_MAX_NUM_UL_PDU 255
 
 /*
   typedef unsigned int	   uint32_t;
@@ -191,7 +191,10 @@ typedef struct {
   uint16_t freq_msg1;
   // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
   uint8_t ssb_nb_in_ro;
-  // nfapi_nr_ul_beamforming_t beamforming;
+  /// Preamble index for PRACH (0-63)
+  uint8_t ra_PreambleIndex;
+  /// PRACH TX power (TODO possibly modify to uint)
+  int16_t prach_tx_power;
 } fapi_nr_ul_config_prach_pdu;
 
 typedef struct {

@@ -309,6 +309,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch);
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
+                              int scs,
                               NR_PUCCH_Config_t *pucch_Config,
                               PUCCH_sched_t *pucch,
                               uint8_t format_type,
@@ -392,6 +393,8 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
 
 void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot);
 
+void nr_get_RA_window(NR_UE_MAC_INST_t *mac);
+
 /* \brief Function called by PHY to retrieve information to be transmitted using the RA procedure.
 If the UE is not in PUSCH mode for a particular eNB index, this is assumed to be an Msg3 and MAC
 attempts to retrieves the CCCH message from RRC. If the UE is in PUSCH mode for a particular eNB
@@ -403,8 +406,7 @@ andom-access to transmit a BSR along with the C-RNTI control element (see 5.1.4 
 @param gNB_id gNB index
 @param nr_slot_tx slot for PRACH transmission
 @returns indication to generate PRACH to phy */
-uint8_t nr_ue_get_rach(NR_PRACH_RESOURCES_t *prach_resources,
-                       fapi_nr_ul_config_prach_pdu *prach_pdu,
+uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
                        module_id_t mod_id,
                        int CC_id,
                        frame_t frame,
@@ -424,7 +426,17 @@ void nr_get_prach_resources(module_id_t mod_id,
                             fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t * rach_ConfigDedicated);
 
-void nr_Msg1_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, uint8_t gNB_id);
+void init_RA(module_id_t mod_id,
+             NR_PRACH_RESOURCES_t *prach_resources,
+             NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon,
+             NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
+             NR_RACH_ConfigDedicated_t *rach_ConfigDedicated);
+
+int16_t get_prach_tx_power(module_id_t mod_id);
+
+void set_ra_rnti(NR_UE_MAC_INST_t *mac, fapi_nr_ul_config_prach_pdu *prach_pdu);
+
+void nr_Msg1_transmitted(module_id_t mod_id);
 
 void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot_t slotP, uint8_t gNB_id);
 
@@ -450,6 +462,8 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
+
+int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 
 // PUSCH scheduler:
 // - Calculate the slot in which ULSCH should be scheduled. This is current slot + K2,

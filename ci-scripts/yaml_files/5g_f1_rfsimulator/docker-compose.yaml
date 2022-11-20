@@ -270,7 +270,7 @@ services:
         container_name: rfsim5g-oai-du
         environment: 
             RFSIMULATOR: server
-            USE_SA_TDD_CU: 'yes'
+            USE_SA_TDD_DU: 'yes'
             GNB_NAME: du-rfsim
             TAC: 1
             MCC: '208'

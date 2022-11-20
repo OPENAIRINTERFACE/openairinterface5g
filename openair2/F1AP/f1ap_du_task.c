@@ -96,15 +96,6 @@ void du_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *sctp_dat
   AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
 }
 
-static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport) {
-  openAddr_t tmp= {0};
-  strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
-  strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
-  sprintf(tmp.originService, "%d", DUport);
-  sprintf(tmp.destinationService, "%d", CUport);
-  return gtpv1Init(tmp);
-}
-
 void *F1AP_DU_task(void *arg) {
   //sctp_cu_init();
   LOG_I(F1AP, "Starting F1AP at DU\n");
@@ -126,15 +117,6 @@ void *F1AP_DU_task(void *arg) {
         LOG_I(F1AP, "DU Task Received F1AP_SETUP_REQ\n");
         f1ap_setup_req_t *msgSetup=&F1AP_SETUP_REQ(msg);
         createF1inst(false, myInstance, msgSetup);
-        getCxt(DUtype, myInstance)->gtpInst=du_create_gtpu_instance_to_cu(msgSetup->CU_f1_ip_address.ipv4_address, //"172.21.6.9", //"172.21.10.9",//"172.21.9.5", //msgSetup->CU_f1_ip_address.ipv4_address, //"192.168.18.91"
-                                            msgSetup->CUport,
-                                            msgSetup->DU_f1_ip_address.ipv4_address,
-                                            msgSetup->DUport);
-        AssertFatal(getCxt(DUtype, myInstance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
-        // Fixme: fully inconsistent instances management
-        // dirty global var is a bad fix
-        extern instance_t legacyInstanceMapping;
-        legacyInstanceMapping = DUuniqInstance = getCxt(DUtype, myInstance)->gtpInst;
         du_task_send_sctp_association_req(myInstance,msgSetup);
         break;
 

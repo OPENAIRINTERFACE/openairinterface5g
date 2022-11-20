@@ -83,6 +83,7 @@
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
 
 #include "RRC/NR/MESSAGES/asn1_msg.h"
+#include "RRC/NR/nr_rrc_extern.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
 
 extern uint16_t sf_ahead;

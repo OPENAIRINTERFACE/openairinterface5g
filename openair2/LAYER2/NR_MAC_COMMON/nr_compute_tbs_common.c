@@ -27,7 +27,6 @@
 
 #include "common/utils/nr/nr_common.h"
 #include <math.h>
-#include "PHY/defs_nr_common.h"
 
 //Table 5.1.2.2-2
 uint16_t Tbstable_nr[INDEX_MAX_TBS_TABLE] = {24,32,40,48,56,64,72,80,88,96,104,112,120,128,136,144,152,160,168,176,184,192,208,224,240,256,272,288,304,320,336,352,368,384,408,432,456,480,504,528,552,576,608,640,672,704,736,768,808,848,888,928,984,1032,1064,1128,1160,1192,1224,1256,1288,1320,1352,1416,1480,1544,1608,1672,1736,1800,1864,1928,2024,2088,2152,2216,2280,2408,2472,2536,2600,2664,2728,2792,2856,2976,3104,3240,3368,3496,3624,3752,3824};
@@ -48,7 +47,8 @@ uint32_t nr_compute_tbs(uint16_t Qm,
 
   LOG_D(NR_MAC, "In %s: nb_symb_sch %d, nb_dmrs_prb %d, nb_rb %d, nb_rb_oh %d, tb_scaling %d Nl %d\n", __FUNCTION__, nb_symb_sch, nb_dmrs_prb, nb_rb, nb_rb_oh, tb_scaling, Nl);
 
-  const uint32_t nbp_re = NR_NB_SC_PER_RB * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
+  const int nb_subcarrier_per_rb = 12;
+  const uint32_t nbp_re =  nb_subcarrier_per_rb * nb_symb_sch - nb_dmrs_prb - nb_rb_oh;
   const uint32_t nb_re = min(156, nbp_re) * nb_rb;
   // Intermediate number of information bits
   // Rx1024 is tabulated as 10 times the actual code rate

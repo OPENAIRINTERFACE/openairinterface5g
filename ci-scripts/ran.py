@@ -748,7 +748,7 @@ class RANManagement():
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/enb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S mv /tmp/gnb_*.pcap .','\$',20)
 		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S rm -f enb.log.zip', '\$', 5)
-		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip enb*.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 60)
+		mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip *.log enb_*record.raw enb_*.pcap gnb_*.pcap enb_*txt physim_*.log *stats.log *monitor.pickle *monitor*.png ping*.log* iperf*.log log/*/*.log log/*/*.pcap', '\$', 60)
 		result = re.search('core.\d+', mySSH.getBefore())
 		if result is not None:
 			mySSH.command('echo ' + self.eNBPassword + ' | sudo -S zip enb.log.zip core* ran_build/build/{lte,nr}-softmodem', '\$', 60) # add core and executable to zip
@@ -771,13 +771,13 @@ class RANManagement():
 			#case where numerator > denumerator with denum ==0 is disregarded, cannot hapen in principle, will lead to 0%
 			perc[i] = 0 if (retx_data[i] == 0) else 100 * retx_data[i + 1] / retx_data[i]
 			#treating % > 100 , % > requirement
-			stats[i] = perc[i] < 100 and perc[i] <= checkers[i]
+			stats[i] = perc[i] <= 100 and perc[i] <= checkers[i]
 		return stats
 
 	def AnalyzeLogFile_eNB(self, eNBlogFile, HTML, checkers={}):
-		if (not os.path.isfile('./' + eNBlogFile)):
+		if (not os.path.isfile(eNBlogFile)):
 			return -1
-		enb_log_file = open('./' + eNBlogFile, 'r')
+		enb_log_file = open(eNBlogFile, 'r')
 		exitSignalReceived = False
 		foundAssertion = False
 		msgAssertion = ''
@@ -1048,10 +1048,7 @@ class RANManagement():
 					gnb_markers[k].append(line_cnt)
 
 			# check whether e/gNB log finishes with "Bye." message
-			# Note that it is "=" not "|=" so not only is the regex
-			# asking for EOF (\Z) but we also only retain the last
-			# line's result
-			showedByeMsg = re.search(r'^Bye.\n\Z', str(line), re.MULTILINE) is not None
+			showedByeMsg |= re.search(r'^Bye.\n', str(line), re.MULTILINE) is not None
 
 		enb_log_file.close()
 

@@ -61,7 +61,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
 
   NR_DL_FRAME_PARMS *fp=&ue->frame_parms;
   fapi_nr_config_request_t *nrUE_config = &ue->nrUE_config;
-  NR_PRACH_RESOURCES_t *prach_resources = ue->prach_resources[gNB_id];
   fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
@@ -73,7 +72,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
   int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
   int32_t Xu_re, Xu_im;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k, prachStartSymbol, sample_offset_slot;
-  //int restricted_Type;
 
   fd_occasion             = 0;
   prach_len               = 0;
@@ -91,12 +89,13 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
   n_ra_prb                = nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].k1,//prach_pdu->freq_msg1;
   NCS                     = prach_pdu->num_cs;
   prach_fmt_id            = prach_pdu->prach_format;
-  preamble_index          = prach_resources->ra_PreambleIndex;
+  preamble_index          = prach_pdu->ra_PreambleIndex;
   kbar                    = 1;
   K                       = 24;
   k                       = 12*n_ra_prb - 6*fp->N_RB_UL;
   prachStartSymbol        = prach_pdu->prach_start_symbol;
-  //restricted_Type         = 0;
+
+  LOG_D(PHY,"Generate NR PRACH %d.%d\n", frame, slot);
 
   compute_nr_prach_seq(nrUE_config->prach_config.prach_sequence_length,
                        nrUE_config->prach_config.num_prach_fd_occasions_list[fd_occasion].num_root_sequences,

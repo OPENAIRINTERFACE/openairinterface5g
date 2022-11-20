@@ -34,7 +34,6 @@
 #include "common/utils/nr/nr_common.h"
 #include "utils.h"
 #include <openair2/UTIL/OPT/opt.h>
-
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 //#define SRS_IND_DEBUG
@@ -1383,7 +1382,6 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
 				       int *n_rb_sched,
 				       NR_UE_info_t* UE,
 				       int harq_pid,
-				       const NR_SIB1_t *sib1,
 				       const NR_ServingCellConfigCommon_t *scc,
 				       const int tda)
 {
@@ -1450,24 +1448,13 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
   }
 
   /* Find a free CCE */
-  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
-  uint8_t nr_of_candidates;
-  for (int i=0; i<5; i++) {
-    // for now taking the lowest value among the available aggregation levels
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space,
-                                1<<i);
-    if(nr_of_candidates>0) break;
-  }
-  int CCEIndex = find_pdcch_candidate(nrmac,
-                                      CC_id,
-                                      sched_ctrl->aggregation_level,
-                                      nr_of_candidates,
-                                      &sched_ctrl->sched_pdcch,
-                                      sched_ctrl->coreset,
-                                      Y);
-
+  int CCEIndex = get_cce_index(nrmac,
+                               CC_id, slot, UE->rnti,
+                               &sched_ctrl->aggregation_level,
+                               sched_ctrl->search_space,
+                               sched_ctrl->coreset,
+                               &sched_ctrl->sched_pdcch,
+                               false);
   if (CCEIndex<0) {
     LOG_D(NR_MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE->rnti);
     return false;
@@ -1518,6 +1505,7 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
+
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -1529,22 +1517,21 @@ void pf_ul(module_id_t module_id,
   const int CC_id = 0;
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   
   const int min_rb = 5;
   // UEs that could be scheduled
   UEsched_t UE_sched[MAX_MOBILES_PER_GNB] = {0};
-  int remainUEs=max_num_ue;
+  int remainUEs = max_num_ue;
   int curUE=0;
 
   /* Loop UE_list to calculate throughput and coeff */
   UE_iterator(UE_list, UE) {
 
-    if (UE->Msg4_ACKed != true)
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    if (UE->Msg4_ACKed != true || sched_ctrl->ul_failure == 1)
       continue;
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %04x\n",UE->rnti);
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
     int rbStart = 0; // wrt BWP start
@@ -1558,13 +1545,16 @@ void pf_ul(module_id_t module_id,
     const uint32_t b = stats->current_bytes;
     UE->ul_thr_ue = (1 - a) * UE->ul_thr_ue + a * b;
 
+    if(remainUEs == 0)
+      continue;
+
     /* Check if retransmission is necessary */
     sched_pusch->ul_harq_pid = sched_ctrl->retrans_ul_harq.head;
     LOG_D(NR_MAC,"pf_ul: UE %04x harq_pid %d\n",UE->rnti,sched_pusch->ul_harq_pid);
     if (sched_pusch->ul_harq_pid >= 0) {
       /* Allocate retransmission*/
       const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
-      bool r = allocate_ul_retransmission(nrmac, frame, slot, rballoc_mask, &n_rb_sched, UE, sched_pusch->ul_harq_pid, sib1, scc, tda);
+      bool r = allocate_ul_retransmission(nrmac, frame, slot, rballoc_mask, &n_rb_sched, UE, sched_pusch->ul_harq_pid, scc, tda);
       if (!r) {
         LOG_D(NR_MAC, "%4d.%2d UL retransmission UE RNTI %04x can NOT be allocated\n", frame, slot, UE->rnti);
         continue;
@@ -1573,12 +1563,6 @@ void pf_ul(module_id_t module_id,
 
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
       remainUEs--;
-
-      // we have filled all with mandatory retransmissions
-      // no need to schedule new transmissions
-      if (remainUEs == 0)
-	      return;
-
       continue;
     } 
 
@@ -1604,43 +1588,24 @@ void pf_ul(module_id_t module_id,
     if (bo->harq_round_max == 1)
       sched_pusch->mcs = max_mcs;
     else
-      sched_pusch->mcs = get_mcs_from_bler(bo, stats, &UE->UE_sched_ctrl.ul_bler_stats, max_mcs, frame);
+      sched_pusch->mcs = get_mcs_from_bler(bo, stats, &sched_ctrl->ul_bler_stats, max_mcs, frame);
 
     /* Schedule UE on SR or UL inactivity and no data (otherwise, will be scheduled
      * based on data to transmit) */
     if (B == 0 && do_sched) {
       /* if no data, pre-allocate 5RB */
       /* Find a free CCE */
-      const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
-      uint8_t nr_of_candidates;
-      for (int i=0; i<5; i++) {
-        // for now taking the lowest value among the available aggregation levels
-        find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                    &nr_of_candidates,
-                                    sched_ctrl->search_space,
-                                    1<<i);
-        if(nr_of_candidates>0) break;
-      }
-      int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
-					  CC_id,
-					  sched_ctrl->aggregation_level,
-					  nr_of_candidates,
-					  &sched_ctrl->sched_pdcch,
-					  sched_ctrl->coreset,
-					  Y);
-
+      int CCEIndex = get_cce_index(nrmac,
+                                   CC_id, slot, UE->rnti,
+                                   &sched_ctrl->aggregation_level,
+                                   sched_ctrl->search_space,
+                                   sched_ctrl->coreset,
+                                   &sched_ctrl->sched_pdcch,
+                                   false);
       if (CCEIndex<0) {
         LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE->rnti);
         continue;
       }
-
-      /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
-      remainUEs--;
-
-      // we have filled all with mandatory retransmissions
-      // no need to schedule new transmissions
-      if (remainUEs == 0)
-        return;
 
       sched_pusch->nrOfLayers = 1;
       sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->slot);
@@ -1658,11 +1623,11 @@ void pf_ul(module_id_t module_id,
       if (rbStart + min_rb >= bwpSize) {
         LOG_W(NR_MAC, "cannot allocate continuous UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
               UE->rnti,rbStart,min_rb,bwpSize);
-        return;
+        continue;
       }
 
       sched_ctrl->cce_index = CCEIndex;
-      fill_pdcch_vrb_map(RC.nrmac[module_id],
+      fill_pdcch_vrb_map(nrmac,
                          CC_id,
                          &sched_ctrl->sched_pdcch,
                          CCEIndex,
@@ -1688,6 +1653,7 @@ void pf_ul(module_id_t module_id,
       for (int rb = 0; rb < sched_ctrl->sched_pusch.rbSize; rb++)
         rballoc_mask[rb + sched_ctrl->sched_pusch.rbStart] ^= slbitmap;
 
+      remainUEs--;
       continue;
     }
 
@@ -1705,30 +1671,18 @@ void pf_ul(module_id_t module_id,
   qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
   UEsched_t *iterator=UE_sched;
   
-  const int min_rbSize = 5;
   /* Loop UE_sched to find max coeff and allocate transmission */
-  while (remainUEs> 0 && n_rb_sched >= min_rbSize && iterator->UE != NULL) {
+  while (remainUEs> 0 && n_rb_sched >= min_rb && iterator->UE != NULL) {
 
     NR_UE_sched_ctrl_t *sched_ctrl = &iterator->UE->UE_sched_ctrl;
+    int CCEIndex = get_cce_index(nrmac,
+                                 CC_id, slot, iterator->UE->rnti,
+                                 &sched_ctrl->aggregation_level,
+                                 sched_ctrl->search_space,
+                                 sched_ctrl->coreset,
+                                 &sched_ctrl->sched_pdcch,
+                                 false);
 
-    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
-    uint8_t nr_of_candidates;
-    for (int i=0; i<5; i++) {
-      // for now taking the lowest value among the available aggregation levels
-      find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                  &nr_of_candidates,
-                                  sched_ctrl->search_space,
-                                  1<<i);
-      if(nr_of_candidates>0)
-        break;
-    }
-    int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
-                                        CC_id,
-                                        sched_ctrl->aggregation_level,
-                                        nr_of_candidates,
-                                        &sched_ctrl->sched_pdcch,
-                                        sched_ctrl->coreset,
-                                        Y);
     if (CCEIndex<0) {
       LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, iterator->UE->rnti);
       iterator++;
@@ -1738,7 +1692,6 @@ void pf_ul(module_id_t module_id,
 
     NR_UE_UL_BWP_t *current_BWP = &iterator->UE->current_UL_BWP;
 
-    const uint16_t bwpSize = current_BWP->BWPSize;
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
     sched_pusch->nrOfLayers = 1;
@@ -1749,10 +1702,9 @@ void pf_ul(module_id_t module_id,
                                                 &sched_pusch->tda_info,
                                                 sched_pusch->nrOfLayers);
 
-    update_ul_ue_R_Qm(sched_pusch->mcs, current_BWP->mcs_table, current_BWP->pusch_Config, &sched_pusch->R, &sched_pusch->Qm);
-
     int rbStart = 0;
     const uint16_t slbitmap = SL_to_bitmap(sched_pusch->tda_info.startSymbolIndex, sched_pusch->tda_info.nrOfSymbols);
+    const uint16_t bwpSize = current_BWP->BWPSize;
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     sched_pusch->rbStart = rbStart;
@@ -1763,7 +1715,7 @@ void pf_ul(module_id_t module_id,
     if (rbStart + min_rb >= bwpSize) {
       LOG_W(NR_MAC, "cannot allocate UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
 	    iterator->UE->rnti,rbStart,min_rb,bwpSize);
-      return;
+      continue;
     }
     else
       LOG_D(NR_MAC,"allocating UL data for RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti,rbStart,min_rb,bwpSize);
@@ -1771,24 +1723,24 @@ void pf_ul(module_id_t module_id,
     /* Calculate the current scheduling bytes */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     /* adjust rbSize and MCS according to PHR and BPRE */
-    sched_pusch->mu  = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
+    sched_pusch->mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
     if(sched_ctrl->pcmax!=0 ||
        sched_ctrl->ph!=0) // verify if the PHR related parameter have been initialized
-      nr_ue_max_mcs_min_rb(current_BWP->scs, sched_ctrl->ph, sched_pusch, current_BWP, min_rbSize, B, &max_rbSize, &sched_pusch->mcs);
+      nr_ue_max_mcs_min_rb(current_BWP->scs, sched_ctrl->ph, sched_pusch, current_BWP, min_rb, B, &max_rbSize, &sched_pusch->mcs);
 
     if (sched_pusch->mcs < sched_ctrl->ul_bler_stats.mcs)
       sched_ctrl->ul_bler_stats.mcs = sched_pusch->mcs; /* force estimated MCS down */
 
+    update_ul_ue_R_Qm(sched_pusch->mcs, current_BWP->mcs_table, current_BWP->pusch_Config, &sched_pusch->R, &sched_pusch->Qm);
     uint16_t rbSize = 0;
     uint32_t TBS = 0;
-
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
                   1, // layers
                   sched_pusch->tda_info.nrOfSymbols,
                   sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
                   B,
-                  min_rbSize,
+                  min_rb,
                   max_rbSize,
                   &TBS,
                   &rbSize);
@@ -1802,7 +1754,7 @@ void pf_ul(module_id_t module_id,
     /* Mark the corresponding RBs as used */
 
     sched_ctrl->cce_index = CCEIndex;
-    fill_pdcch_vrb_map(RC.nrmac[module_id],
+    fill_pdcch_vrb_map(nrmac,
                        CC_id,
                        &sched_ctrl->sched_pdcch,
                        CCEIndex,

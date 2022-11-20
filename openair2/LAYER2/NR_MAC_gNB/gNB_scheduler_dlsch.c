@@ -385,6 +385,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 NR_UE_info_t *UE,
                                 int current_harq_pid) {
 
+  int CC_id = 0;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   const NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels->ServingCellConfigCommon;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -400,11 +401,11 @@ bool allocate_dl_retransmission(module_id_t module_id,
   int pm_index = (curInfo->nrOfLayers < retInfo->nrOfLayers) ? curInfo->pm_index : retInfo->pm_index;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : dl_bwp->BWPSize;
+  const uint16_t bwpSize = coresetid == 0 ? nr_mac->cset0_bwp_size : dl_bwp->BWPSize;
 
   int rbStart = 0; // start wrt BWPstart
   int rbSize = 0;
-  const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
+  const int tda = get_dl_tda(nr_mac, scc, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
 
   if (tda == retInfo->time_domain_allocation &&
@@ -476,28 +477,13 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   /* Find a free CCE */
-
-  const uint32_t Y = get_Y(sched_ctrl->search_space, slot, UE->rnti);
-  uint8_t nr_of_candidates;
-
-  for (int i=0; i<5; i++) {
-    // for now taking the lowest value among the available aggregation levels
-    find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                &nr_of_candidates,
-                                sched_ctrl->search_space,
-                                1<<i);
-
-    if(nr_of_candidates>0) break;
-  }
-
-  int CCEIndex = find_pdcch_candidate(RC.nrmac[module_id],
-                                      /* CC_id = */ 0,
-                                      sched_ctrl->aggregation_level,
-                                      nr_of_candidates,
-                                      &sched_ctrl->sched_pdcch,
-                                      sched_ctrl->coreset,
-                                      Y);
-
+  int CCEIndex = get_cce_index(nr_mac,
+                               CC_id, slot, UE->rnti,
+                               &sched_ctrl->aggregation_level,
+                               sched_ctrl->search_space,
+                               sched_ctrl->coreset,
+                               &sched_ctrl->sched_pdcch,
+                               false);
   if (CCEIndex<0) {
     LOG_D(MAC, "%4d.%2d could not find CCE for DL DCI retransmission RNTI %04x\n",
           frame, slot, UE->rnti);
@@ -519,7 +505,7 @@ bool allocate_dl_retransmission(module_id_t module_id,
   }
 
   sched_ctrl->cce_index = CCEIndex;
-  fill_pdcch_vrb_map(RC.nrmac[module_id],
+  fill_pdcch_vrb_map(nr_mac,
                      /* CC_id = */ 0,
                      &sched_ctrl->sched_pdcch,
                      CCEIndex,
@@ -560,6 +546,7 @@ void pf_dl(module_id_t module_id,
   UEsched_t UE_sched[MAX_MOBILES_PER_GNB] = {0};
   int remainUEs = max_num_ue;
   int curUE = 0;
+  int CC_id = 0;
 
   /* Loop UE_info->list to check retransmission */
   UE_iterator(UE_list, UE) {
@@ -569,7 +556,8 @@ void pf_dl(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
-    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
+    if (sched_ctrl->ul_failure==1)
+      continue;
 
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.dl;
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
@@ -580,6 +568,9 @@ void pf_dl(module_id_t module_id,
     const uint32_t b = UE->mac_stats.dl.current_bytes;
     UE->dl_thr_ue = (1 - a) * UE->dl_thr_ue + a * b;
 
+    if (remainUEs == 0)
+      continue;
+
     /* retransmission */
     if (sched_pdsch->dl_harq_pid >= 0) {
       /* Allocate retransmission */
@@ -589,14 +580,8 @@ void pf_dl(module_id_t module_id,
         LOG_D(NR_MAC, "%4d.%2d retransmission can NOT be allocated\n", frame, slot);
         continue;
       }
-
       /* reduce max_num_ue once we are sure UE can be allocated, i.e., has CCE */
       remainUEs--;
-
-      // we have filled all with mandatory retransmissions
-      // no need to schedule new transmissions
-      if (remainUEs == 0)
-        return;
 
     } else {
       /* skip this UE if there are no free HARQ processes. This can happen e.g.
@@ -659,7 +644,7 @@ void pf_dl(module_id_t module_id,
 
     const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     const uint16_t bwpSize = coresetid == 0 ?
-      RC.nrmac[module_id]->cset0_bwp_size :
+      mac->cset0_bwp_size :
       dl_bwp->BWPSize;
     int rbStart = 0; // start wrt BWPstart
 
@@ -669,28 +654,13 @@ void pf_dl(module_id_t module_id,
       continue;
     }
 
-    /* Find a free CCE */
-    const uint32_t Y = get_Y(sched_ctrl->search_space, slot, iterator->UE->rnti);
-    uint8_t nr_of_candidates;
-
-    for (int i=0; i<5; i++) {
-      // for now taking the lowest value among the available aggregation levels
-      find_aggregation_candidates(&sched_ctrl->aggregation_level,
-                                  &nr_of_candidates,
-                                  sched_ctrl->search_space,
-                                  1<<i);
-
-      if(nr_of_candidates>0) break;
-    }
-
-    int CCEIndex = find_pdcch_candidate(mac,
-                                        /* CC_id = */ 0,
-                                        sched_ctrl->aggregation_level,
-                                        nr_of_candidates,
-                                        &sched_ctrl->sched_pdcch,
-                                        sched_ctrl->coreset,
-                                        Y);
-
+    int CCEIndex = get_cce_index(mac,
+                                 CC_id, slot, iterator->UE->rnti,
+                                 &sched_ctrl->aggregation_level,
+                                 sched_ctrl->search_space,
+                                 sched_ctrl->coreset,
+                                 &sched_ctrl->sched_pdcch,
+                                 false);
     if (CCEIndex<0) {
       LOG_D(NR_MAC, "%4d.%2d could not find CCE for DL DCI RNTI %04x\n", frame, slot, rnti);
       iterator++;
@@ -722,7 +692,7 @@ void pf_dl(module_id_t module_id,
 
     /* MCS has been set above */
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
-    sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
+    sched_pdsch->time_domain_allocation = get_dl_tda(mac, scc, slot);
     AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
 
     sched_pdsch->tda_info = nr_get_pdsch_tda_info(dl_bwp, sched_pdsch->time_domain_allocation);
