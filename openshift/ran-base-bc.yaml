@@ -26,6 +26,8 @@ metadata:
   name: "ran-base"
 spec:
     runPolicy: "Serial"
+    nodeSelector:
+        kubernetes.io/hostname: acamas
     source:
         type: "Binary"
         secrets:
