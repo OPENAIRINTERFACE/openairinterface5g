@@ -45,7 +45,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.asue.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --tune-offset 30000000 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.2x2.usrpn310.asue.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --tune-offset 30000000 --thread-pool 1,3,5,7,9,11,13,15 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -53,6 +53,7 @@
 		<eNB_Stats>yes</eNB_Stats>
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
 		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
+		<cmd_prefix>numactl --cpunodebind=netdev:ens2f0np0 --membind=netdev:ens2f0np0</cmd_prefix>
 	</testCase>
 
 	<testCase id="050000">
