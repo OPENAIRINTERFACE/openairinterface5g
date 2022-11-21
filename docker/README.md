@@ -30,52 +30,54 @@ For all platforms, the strategy for building docker/podman images is the same:
       *  all packages, compilers, ...
       *  especially UHD is installed 
 *  Then, from the `ran-base` shared image, we create a shared image `ran-build`
-   in which all targets are compiled:
+   into which all targets are compiled.
+*  Then from the `ran-build` shared image, we can build target images for:
    -  eNB
-   -  gNB
+   -  gNB (with UHD)
+   -  gNB (with AW2S), only on RHEL8
    -  lte-UE
    -  nr-UE
-*  Then from the `ran-build` shared image we can build target images for:
-   -  eNB
-   -  gNB
-   -  lte-UE
-   -  nr-UE
-*  These target images will only contain:
+
+   These target images will only contain:
    -  the generated executable (for example `lte-softmodem`)
    -  the generated shared libraries (for example `liboai_usrpdevif.so`)
    -  the needed libraries and packages to run these generated binaries
    -  Some configuration file templates
    -  Some tools (such as `ping`, `ifconfig`)
 
-TO DO:
-
--  Proper entrypoints
--  Proper port exposure
--  ...
+Note that on every push to develop (i.e., typically after integrating merge
+requests), we build all images and push them to [Docker
+Hub](https://hub.docker.com/u/oaisoftwarealliance). To pull them, do
+```
+docker pull oaisoftwarealliance/oai-gnb:develop
+docker pull oaisoftwarealliance/oai-nr-ue:develop
+docker pull oaisoftwarealliance/oai-enb:develop
+docker pull oaisoftwarealliance/oai-lte-ue:develop
+```
+Have a look at [this
+README](../ci-scripts/yaml_files/5g_rfsimulator/README.md) to get some
+information on how to use the images.
 
 # 2. File organization #
 
-Dockerfiles are named with the following naming convention: `Dockerfile.${target}.${OS-version}.${cluster-version}`
+Dockerfiles are named with the following naming convention: `Dockerfile.${target}.${OS-version}`
 
 Targets can be:
 
 -  `base` for an image named `ran-base` (shared image)
--  `ran` for an image named `ran-build` (shared image)
+-  `build` for an image named `ran-build` (shared image)
 -  `eNB` for an image named `oai-enb`
 -  `gNB` for an image named `oai-gnb`
+-  `gNB.aw2s` for an image named `oai-gnb-aw2s`
 -  `lteUE` for an image named `oai-lte-ue`
 -  `nrUE` for an image named `oai-nr-ue`
 
 The currently-supported OS are:
 
-- `rhel8.2` for Red Hat Entreprise Linux
+- `rhel8.2` for Red Hat Entreprise Linux (including images for an OpenShift cluster)
 - `ubuntu18` for Ubuntu 18.04 LTS
 
-The currently-supported cluster version is:
-
-- `rhel8.2.oc4-9`
-
-For more details in build within a Openshift Cluster, see [OpenShift README](../openshift/README.md) for more details.
+For more details regarding the build on an Openshift Cluster, see [OpenShift README](../openshift/README.md).
 
 # 3. Building using `docker` under Ubuntu 18.04 #
 
@@ -87,26 +89,12 @@ For more details in build within a Openshift Cluster, see [OpenShift README](../
 
 ## 3.2. Building the shared images ##
 
-Note: This can be done starting `2020.XX` tag on the `develop` branch, or any branch that includes that tag.
-
 There are two shared images: one that has all dependencies, and a second that compiles all targets (eNB, gNB, [nr]UE).
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
 cd openairinterface5g
 git checkout develop
-```
-
-In our Eurecom/OSA environment we need to pass a GIT proxy.
-
-```bash
-docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
-docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
-```
-
-if you don't need it, do NOT pass any value:
-
-```bash
 docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 .
 docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 .
 ```
@@ -149,11 +137,24 @@ docker image prune --force
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 
-TODO.
+Analogous to the above steps:
+```
+sudo podman build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.rhel8.2 .
+sudo podman build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.rhel8.2 .
+sudo podman build --target oai-enb --tag oai-enb:latest --file docker/Dockerfile.eNB.rhel8.2 .
+```
 
 # 5. Running modems using `docker` under Ubuntu 18.04 #
 
-TODO.
+The easiest is to run them from a `docker-compose` file, which is used by the
+CI to test OAI. Some folders under `ci-scripts/yaml_files` have a README that
+you can follow. For 5G, the easiest is to start with the RFsimulator, as
+described in [this README](../ci-scripts/yaml_files/5g_rfsimulator/README.md)
+(you would of course use your own images instead of downloading them from
+Docker hub).
+
+For an example using a B210, please refer to [this `docker-compose`
+file](../ci-scripts/yaml_files/sa_b200_gnb/docker-compose.yml).
 
 # 6. Running modems using `podman` under Red Hat Entreprise Linux 8.2 #
 

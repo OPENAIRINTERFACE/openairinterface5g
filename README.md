@@ -36,11 +36,20 @@ Please see [NOTICE](NOTICE.md) file for third party software that is included in
  *  [How to build](./doc/BUILD.md)
  *  [How to run the modems](./doc/RUNMODEM.md)
 
+More information and documentation can be found in the [doc folder](./doc).
+Unfortunately, not all information is available there, and information for
+specific sub-systems might be available in the corresponding sub-directories.
+To find all READMEs, this command might be handy:
+
+```
+find . -iname "readme*"
+```
+
 # RAN repository structure #
 
 The OpenAirInterface (OAI) software is composed of the following parts: 
 
-<pre>
+```
 openairinterface5g
 ├── ci-scripts        : Meta-scripts used by the OSA CI process. Contains also configuration files used day-to-day by CI.
 ├── cmake_targets     : Build utilities to compile (simulation, emulation and real-time platforms), and generated build files.
@@ -88,5 +97,6 @@ openairinterface5g
 │   ├── TEST
 │   ├── UDP
 │   └── UTILS
+├── radio             : drivers for various radios such as USRP, AW2S, RFsim, ...
 └── targets           : Top-level wrappers for unitary simulation for PHY channels, system-level emulation (eNB-UE with and without S1), and realtime eNB and UE and RRH GW.
-</pre>
+```
