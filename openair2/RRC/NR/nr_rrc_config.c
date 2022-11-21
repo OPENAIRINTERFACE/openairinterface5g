@@ -140,7 +140,7 @@ uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc) {
 void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period) {
 
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
-  int ideal_period = nb_slots_per_period*MAX_MOBILES_PER_GNB;
+  int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
 
   if (ideal_period<5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
@@ -397,7 +397,82 @@ long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
   return c_srs;
 }
 
-void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
+struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(const NR_ServingCellConfigCommon_t *scc,
+                                                                      const int uid)
+{
+
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  const int n_slots_frame = slotsperframe[*scc->ssbSubcarrierSpacing];
+  const int ul_slots_period = tdd ? tdd->nrofUplinkSlots : n_slots_frame;
+  const int n_slots_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
+
+  const int ideal_period = n_slots_period * MAX_MOBILES_PER_GNB;
+  struct NR_SRS_Resource__resourceType__periodic *periodic_srs = calloc(1,sizeof(*periodic_srs));
+  if (ideal_period < 5) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl4;
+    periodic_srs->periodicityAndOffset_p.choice.sl4 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 6) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl5;
+    periodic_srs->periodicityAndOffset_p.choice.sl5 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 9) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl8;
+    periodic_srs->periodicityAndOffset_p.choice.sl8 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 11) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl10;
+    periodic_srs->periodicityAndOffset_p.choice.sl10 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 17) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl16;
+    periodic_srs->periodicityAndOffset_p.choice.sl16 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 21) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl20;
+    periodic_srs->periodicityAndOffset_p.choice.sl20 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 33) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl32;
+    periodic_srs->periodicityAndOffset_p.choice.sl32 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 41) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
+    periodic_srs->periodicityAndOffset_p.choice.sl40 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 65) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl64;
+    periodic_srs->periodicityAndOffset_p.choice.sl64 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 81) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl80;
+    periodic_srs->periodicityAndOffset_p.choice.sl80 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 161) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
+    periodic_srs->periodicityAndOffset_p.choice.sl160 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 321) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl320;
+    periodic_srs->periodicityAndOffset_p.choice.sl320 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 641) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl640;
+    periodic_srs->periodicityAndOffset_p.choice.sl640 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else if (ideal_period < 1281) {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl1280;
+    periodic_srs->periodicityAndOffset_p.choice.sl1280 = (n_slots_period - ul_slots_period) * uid;
+  }
+  else {
+    periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl2560;
+    periodic_srs->periodicityAndOffset_p.choice.sl2560 = (n_slots_period - ul_slots_period) * uid;
+  }
+  return periodic_srs;
+}
+
+void config_srs(const NR_ServingCellConfigCommon_t *scc,
+                NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
                 const NR_UE_NR_Capability_t *uecap,
                 const int curr_bwp,
                 const int uid,
@@ -510,7 +585,7 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   srs_res0->transmissionComb.choice.n2 = calloc(1,sizeof(*srs_res0->transmissionComb.choice.n2));
   srs_res0->transmissionComb.choice.n2->combOffset_n2 = 0;
   srs_res0->transmissionComb.choice.n2->cyclicShift_n2 = 0;
-  srs_res0->resourceMapping.startPosition = 2 + uid%2;
+  srs_res0->resourceMapping.startPosition = 1;
   srs_res0->resourceMapping.nrofSymbols = NR_SRS_Resource__resourceMapping__nrofSymbols_n1;
   srs_res0->resourceMapping.repetitionFactor = NR_SRS_Resource__resourceMapping__repetitionFactor_n1;
   srs_res0->freqDomainPosition = 0;
@@ -521,9 +596,7 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   srs_res0->groupOrSequenceHopping = NR_SRS_Resource__groupOrSequenceHopping_neither;
   if (do_srs) {
     srs_res0->resourceType.present = NR_SRS_Resource__resourceType_PR_periodic;
-    srs_res0->resourceType.choice.periodic = calloc(1,sizeof(*srs_res0->resourceType.choice.periodic));
-    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
-    srs_res0->resourceType.choice.periodic->periodicityAndOffset_p.choice.sl160 = 17 + (uid >> 1) * 10; // 17/17/.../147/157 are mixed slots
+    srs_res0->resourceType.choice.periodic = configure_periodic_srs(scc, uid);
   } else {
     srs_res0->resourceType.present = NR_SRS_Resource__resourceType_PR_aperiodic;
     srs_res0->resourceType.choice.aperiodic = calloc(1,sizeof(*srs_res0->resourceType.choice.aperiodic));
@@ -1185,7 +1258,8 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                             *servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
 
   ubwp->bwp_Dedicated->srs_Config = calloc(1,sizeof(*ubwp->bwp_Dedicated->srs_Config));
-  config_srs(ubwp->bwp_Dedicated->srs_Config,
+  config_srs(scc,
+             ubwp->bwp_Dedicated->srs_Config,
              NULL,
              curr_bwp,
              uid,

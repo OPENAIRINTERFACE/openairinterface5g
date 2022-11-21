@@ -748,7 +748,7 @@ void fill_initial_SpCellConfig(int uid,
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
+  config_srs(scc, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
 
   scheduling_request_config(scc, pucch_Config);
 
@@ -1198,7 +1198,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
         SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config =
             calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config));
       }
-      config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
+      config_srs(scc,
+                 SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
                  uecap,
                  curr_bwp,
                  uid,
@@ -1224,7 +1225,8 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       for (int i=0; i<UL_BWP_list->list.count; i++) {
         NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[i];
         int bwp_size = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-        config_srs(ul_bwp->bwp_Dedicated->srs_Config,
+        config_srs(scc,
+                   ul_bwp->bwp_Dedicated->srs_Config,
                    uecap,
                    bwp_size,
                    uid,
