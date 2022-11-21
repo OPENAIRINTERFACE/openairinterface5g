@@ -725,25 +725,25 @@ int allocate_REs_in_RB_no_pilots_QPSK_tm2(PHY_VARS_eNB* phy_vars_eNB,
                     (((uint32_t)x0p[2])<<2)|
 		    (((uint32_t)x0p[3])<<3);
 
-  txF0[0]=qam_table4_0[qam4_table_offset];
-  txF1[0]=qam_table4_1[qam4_table_offset];
+  memcpy(txF0, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+  memcpy(txF1, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
   x0p+=4;
 
+  qam4_table_offset=(((uint32_t)x0p[0]))|
+    (((uint32_t)x0p[1])<<1)|
+    (((uint32_t)x0p[2])<<2)|
+    (((uint32_t)x0p[3])<<3);
+  memcpy(txF0+1, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+  memcpy(txF1+1, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
+
+  x0p+=4;
   qam4_table_offset=(((uint32_t)x0p[0]))|
 	            (((uint32_t)x0p[1])<<1)|
                     (((uint32_t)x0p[2])<<2)|
 		    (((uint32_t)x0p[3])<<3);
-  txF0[1]=qam_table4_0[qam4_table_offset];
-  txF1[1]=qam_table4_1[qam4_table_offset];
 
-  x0p+=4;
-  qam4_table_offset=(((uint32_t)x0p[0]))|
-	            (((uint32_t)x0p[1])<<1)|
-                    (((uint32_t)x0p[2])<<2)|
-		    (((uint32_t)x0p[3])<<3);
-
-  txF0[2]=qam_table4_0[qam4_table_offset];
-  txF1[2]=qam_table4_1[qam4_table_offset];
+  memcpy(txF0+2, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+  memcpy(txF1+2, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
 
   if(skip_half==0) {
     if (skip_dc>0) {
@@ -757,23 +757,23 @@ int allocate_REs_in_RB_no_pilots_QPSK_tm2(PHY_VARS_eNB* phy_vars_eNB,
                       (((uint32_t)x0p[2])<<2)|
 	  	      (((uint32_t)x0p[3])<<3);
 
-    txF0[3]=qam_table4_0[qam4_table_offset];
-    txF1[3]=qam_table4_1[qam4_table_offset];
+    memcpy(txF0+3, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+    memcpy(txF1+3, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
     x0p+=4;
     qam4_table_offset=(((uint32_t)x0p[0]))|
-  	              (((uint32_t)x0p[1])<<1)|
-                      (((uint32_t)x0p[2])<<2)|
-		      (((uint32_t)x0p[3])<<3);
-
-    txF0[4]=qam_table4_0[qam4_table_offset];
-    txF1[4]=qam_table4_1[qam4_table_offset];
+      (((uint32_t)x0p[1])<<1)|
+      (((uint32_t)x0p[2])<<2)|
+      (((uint32_t)x0p[3])<<3);
+    
+    memcpy(txF0+4, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+    memcpy(txF1+4, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
     x0p+=4;
     qam4_table_offset=(((uint32_t)x0p[0]))|
       	              (((uint32_t)x0p[1])<<1)|
                       (((uint32_t)x0p[2])<<2)|
 		      (((uint32_t)x0p[3])<<3);
-    txF0[5]=qam_table4_0[qam4_table_offset];
-    txF1[5]=qam_table4_1[qam4_table_offset];
+    memcpy(txF0+5, &qam_table4_0[qam4_table_offset], sizeof(*txF0));
+    memcpy(txF1+5, &qam_table4_1[qam4_table_offset], sizeof(*txF1));
   }
   if(skip_half!=0)
   {
@@ -3025,20 +3025,20 @@ inline int check_skip_dc(int rb,LTE_DL_FRAME_PARMS *frame_parms) {
 }
 
 
-uint64_t qam4_tm2_p2_0[8][16];
-uint64_t qam4_tm2_p2_1[8][16];
-uint64_t qam4_tm2_p2_b0[8][4][16];
-uint64_t qam4_tm2_p2_b1[8][4][16];
+uint64_t qam4_tm2_p2_0[8][16] __attribute__ ((aligned(32)));
+uint64_t qam4_tm2_p2_1[8][16] __attribute__ ((aligned(32)));
+uint64_t qam4_tm2_p2_b0[8][4][16] __attribute__ ((aligned(32)));
+uint64_t qam4_tm2_p2_b1[8][4][16] __attribute__ ((aligned(32)));
 
-uint64_t qam16_tm2_p2_0[8][256];
-uint64_t qam16_tm2_p2_1[8][256];
-uint64_t qam16_tm2_p2_b0[8][4][256];
-uint64_t qam16_tm2_p2_b1[8][4][256];
+uint64_t qam16_tm2_p2_0[8][256] __attribute__ ((aligned(32)));
+uint64_t qam16_tm2_p2_1[8][256] __attribute__ ((aligned(32)));
+uint64_t qam16_tm2_p2_b0[8][4][256] __attribute__ ((aligned(32)));
+uint64_t qam16_tm2_p2_b1[8][4][256] __attribute__ ((aligned(32)));
 
-uint64_t qam64_tm2_p2_0[8][4096];
-uint64_t qam64_tm2_p2_1[8][4096];
-uint64_t qam64_tm2_p2_b0[8][4][4096];
-uint64_t qam64_tm2_p2_b1[8][4][4096];
+uint64_t qam64_tm2_p2_0[8][4096] __attribute__ ((aligned(32)));
+uint64_t qam64_tm2_p2_1[8][4096] __attribute__ ((aligned(32)));
+uint64_t qam64_tm2_p2_b0[8][4][4096] __attribute__ ((aligned(32)));
+uint64_t qam64_tm2_p2_b1[8][4][4096] __attribute__ ((aligned(32)));
 
 
 void init_modulation_LUT_qam4_tm2_p2() {
