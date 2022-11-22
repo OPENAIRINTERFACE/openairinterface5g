@@ -552,42 +552,39 @@ int8_t nr_ue_process_spcell_config(NR_SpCellConfig_t *spcell_config){
 
 /*brief decode BCCH-BCH (MIB) message*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(
-    const module_id_t module_id,
-    const uint8_t     gNB_index,
-    uint8_t           *const bufferP,
-    const uint8_t     buffer_len ){
+  const module_id_t module_id,
+  const uint8_t     gNB_index,
+  uint8_t           *const bufferP,
+  const uint8_t     buffer_len ){
 
-    NR_BCCH_BCH_Message_t *bcch_message = NULL;
+  NR_BCCH_BCH_Message_t *bcch_message = NULL;
 
-    if (NR_UE_rrc_inst[module_id].mib != NULL)
-      SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-    else
-        LOG_A(NR_RRC, "Configuring MAC for first MIB reception\n");
+  if (NR_UE_rrc_inst[module_id].mib == NULL)
+    LOG_A(NR_RRC, "Configuring MAC for first MIB reception\n");
 
-    asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                                                   &asn_DEF_NR_BCCH_BCH_Message,
-                                                   (void **)&bcch_message,
-                                                   (const void *)bufferP,
-                                                   buffer_len );
+  asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                 &asn_DEF_NR_BCCH_BCH_Message,
+                                                 (void **)&bcch_message,
+                                                 (const void *)bufferP,
+                                                 buffer_len );
 
-    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
-      LOG_E(NR_RRC,"NR_BCCH_BCH decode error\n");
-      // free the memory
-      SEQUENCE_free( &asn_DEF_NR_BCCH_BCH_Message, (void *)bcch_message, 1 );
-      return -1;
-    }
-    else {
-      //  link to rrc instance
-      SEQUENCE_free( &asn_DEF_NR_MIB, (void *)NR_UE_rrc_inst[module_id].mib, 1 );
-      NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
-      //memcpy( (void *)mib,
-      //    (void *)&bcch_message->message.choice.mib,
-      //    sizeof(NR_MIB_t) );
+  int ret;
+  if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
+    LOG_E(NR_RRC,"NR_BCCH_BCH decode error\n");
+    ret = -1;
+  }
+  else {
+    //  link to rrc instance
+    ASN_STRUCT_FREE(asn_DEF_NR_MIB, NR_UE_rrc_inst[module_id].mib);
+    NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
+    bcch_message->message.choice.mib = NULL;
 
-      nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
-    }
+    nr_rrc_mac_config_req_ue( 0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
+    ret = 0;
+  }
+  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, bcch_message);
 
-    return 0;
+  return ret;
 }
 
 const char *nr_SIBreserved( long value ) {
@@ -2245,6 +2242,7 @@ nr_rrc_ue_establish_srb2(
 
    if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
      LOG_E(NR_RRC, "Failed to decode DL-DCCH (%zu bytes)\n", dec_rval.consumed);
+     ASN_STRUCT_FREE(asn_DEF_NR_DL_DCCH_Message, dl_dcch_msg);
      return -1;
    }
 
