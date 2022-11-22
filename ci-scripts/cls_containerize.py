@@ -1105,6 +1105,7 @@ class Containerize():
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
+		logging.info(cmd)
 		subprocess.run(cmd, shell=True)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
