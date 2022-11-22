@@ -1712,13 +1712,12 @@ void pf_ul(module_id_t module_id,
     while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
-    if (rbStart + min_rb >= bwpSize) {
-      LOG_W(NR_MAC, "cannot allocate UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
-	    iterator->UE->rnti,rbStart,min_rb,bwpSize);
+    if (rbStart + min_rb >= bwpSize || max_rbSize < min_rb) {
+      LOG_D(NR_MAC, "cannot allocate UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti, rbStart, min_rb, bwpSize);
+      iterator++;
       continue;
-    }
-    else
-      LOG_D(NR_MAC,"allocating UL data for RNTI %04x (rbStsart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti,rbStart,min_rb,bwpSize);
+    } else
+      LOG_D(NR_MAC, "allocating UL data for RNTI %04x (rbStart %d, min_rb %d, max_rbSize %d, bwpSize %d)\n", iterator->UE->rnti, rbStart, min_rb, max_rbSize, bwpSize);
 
     /* Calculate the current scheduling bytes */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
