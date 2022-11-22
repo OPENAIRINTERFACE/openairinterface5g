@@ -2445,7 +2445,7 @@ get_tmode(module_id_t module_idP,
     return (cc->p_eNB);
   }
 
-  AssertFatal(1 == 0, "Shouldn't be here\n");
+  AssertFatal(false, "Shouldn't be here, antenna info: %p, %d cc:%d, ue:%d active: %d; \n", physicalConfigDedicated->antennaInfo, physicalConfigDedicated->antennaInfo->present,CC_idP, UE_idP, is_UE_active( module_idP,UE_idP ) );
   return 0;
 }
 
