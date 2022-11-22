@@ -38,11 +38,12 @@ extern "C"
 #endif
 /* help strings definition for command line options, used in CMDLINE_XXX_DESC macros and printed when -h option is used */
 #define CONFIG_HLP_RFCFGF        "Configuration file for front-end (e.g. LMS7002M)\n"
-#define CONFIG_HLP_SPLIT73       "Split 7.3 (below rate matching) option: <cu|du>:<remote ip address>:<remote port>"
+#define CONFIG_HLP_SPLIT73       "Split 7.3 (below rate matching) option: <cu|du>:<remote ip address>:<remote port>\n"
 #define CONFIG_HLP_TPOOL         "Thread pool configuration: \n\
-  default no pool (runs in calling thread),\n\
   list of cores, comma separated (negative value is no core affinity)\n\
-  example: -1,3 launches two working threads one floating, the second set on core 3"
+  example: -1,3 launches two working threads one floating, the second set on core 3\n\
+  default 8 floating threads\n\
+  use N for no pool (runs in calling thread) recommended with rfsim.\n"
 #define CONFIG_HLP_ULMAXE        "set the eNodeB max ULSCH erros\n"
 #define CONFIG_HLP_CALUER        "set UE RX calibration\n"
 #define CONFIG_HLP_CALUERM       ""
