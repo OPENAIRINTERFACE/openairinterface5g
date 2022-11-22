@@ -712,11 +712,19 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   pusch_timedomainresourceallocation->startSymbolAndLength = get_SLIV(0,13);
   ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation); 
 
+  // UL TDA index 1 in case of SRS
+  struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation1 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
+  pusch_timedomainresourceallocation1->k2  = CALLOC(1,sizeof(long));
+  *pusch_timedomainresourceallocation1->k2 = k2;
+  pusch_timedomainresourceallocation1->mappingType = NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
+  pusch_timedomainresourceallocation1->startSymbolAndLength = get_SLIV(0,12);
+  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation1);
+
   if(frame_type==TDD) {
     if(scc->tdd_UL_DL_ConfigurationCommon) {
       int ul_symb = scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
       if (ul_symb>1) {
-        // UL TDA index 1 for mixed slot (TDD)
+        // UL TDA index 2 for mixed slot (TDD)
         pusch_timedomainresourceallocation = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
         pusch_timedomainresourceallocation->k2  = CALLOC(1,sizeof(long));
         *pusch_timedomainresourceallocation->k2 = k2;
@@ -724,7 +732,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
         pusch_timedomainresourceallocation->startSymbolAndLength = get_SLIV(14-ul_symb,ul_symb-1); // starting in fist ul symbol til the last but one
         ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation);
       }
-      // UL TDA index 2 for msg3 in the mixed slot (TDD)
+      // UL TDA index 3 for msg3 in the mixed slot (TDD)
       int nb_periods_per_frame = get_nb_periods_per_frame(scc->tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity);
       int nb_slots_per_period = ((1<<mu) * 10)/nb_periods_per_frame;
       struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation_msg3 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
