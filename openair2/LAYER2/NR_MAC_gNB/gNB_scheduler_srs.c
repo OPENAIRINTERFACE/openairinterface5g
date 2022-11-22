@@ -40,7 +40,10 @@ const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 4
                              160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
                              256, 264, 272, 272, 272 };
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_UE_info_t*  UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
+void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot,
+                      int module_id, int CC_id, NR_UE_info_t *UE,
+                      NR_SRS_ResourceSet_t *srs_resource_set,
+                      NR_SRS_Resource_t *srs_resource) {
 
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -92,6 +95,11 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int module_id, int CC_id,NR_U
     srs_pdu->beamforming.num_prgs = m_SRS[srs_pdu->config_index];
     srs_pdu->beamforming.prg_size = 1;
   }
+
+  uint16_t *vrb_map_UL = &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
+  uint64_t mask = SL_to_bitmap(13 - srs_pdu->time_start_position, srs_pdu->num_symbols);
+  for (int i = 0; i < srs_pdu->bwp_size; ++i)
+    vrb_map_UL[i + srs_pdu->bwp_start] |= mask;
 }
 
 void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
@@ -106,7 +114,7 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t s
   memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
   future_ul_tti_req->n_pdus += 1;
 
-  nr_configure_srs(srs_pdu, module_id, CC_id, UE, srs_resource_set, srs_resource);
+  nr_configure_srs(srs_pdu, slot, module_id, CC_id, UE, srs_resource_set, srs_resource);
 }
 
 /*******************************************************************
