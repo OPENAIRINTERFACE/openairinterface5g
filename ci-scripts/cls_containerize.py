@@ -966,15 +966,11 @@ class Containerize():
 			self.exitStatus = 1
 			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
 			return
-		displayUsedTag = False
 		for reqSvc in self.services[0].split(' '):
 			res = re.search(reqSvc, listServices)
 			if res is None:
 				logging.error(reqSvc + ' not found in specified docker-compose')
 				self.exitStatus = 1
-			res = re.search('oai-gnb|oai-nr-ue|oai-cu|oai-du|oai_enb|oai_ue', reqSvc)
-			if res is not None:
-				displayUsedTag = True
 		if (self.exitStatus == 1):
 			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
 			return
@@ -985,10 +981,8 @@ class Containerize():
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			logging.debug(cmd)
 			subprocess.run(cmd, shell=True)
-		if displayUsedTag:
-			tagToUse = self.ImageTagToUse('oai-xxx')
-			logging.info(f'\u001B[1m Using Image Tag: {tagToUse}\u001B[0m')
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
 		logging.info(cmd)
