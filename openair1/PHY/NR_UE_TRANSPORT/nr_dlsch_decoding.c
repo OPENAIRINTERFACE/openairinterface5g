@@ -77,7 +77,7 @@ void nr_dlsch_unscrambling(int16_t *llr, uint32_t size, uint8_t q, uint32_t Nid,
   nr_codeword_unscrambling(llr, size, q, Nid, n_RNTI);
 }
 
-bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last, notifiedFIFO_t *nf_p) {
+bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool last, notifiedFIFO_t *nf_p, int b_size, uint8_t b[b_size]) {
   ldpcDecode_ue_t *rdata = (ldpcDecode_ue_t*) NotifiedFifoData(req);
   NR_DL_UE_HARQ_t *harq_process = rdata->harq_process;
   NR_UE_DLSCH_t *dlsch = (NR_UE_DLSCH_t *) rdata->dlsch;
@@ -90,7 +90,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
   bool decodeSuccess = (rdata->decodeIterations < (1+dlsch->max_ldpc_iterations));
 
   if (decodeSuccess) {
-    memcpy(harq_process->b+rdata->offset,
+    memcpy(b+rdata->offset,
            harq_process->c[r],
            rdata->Kr_bytes - (harq_process->F>>3) -((harq_process->C>1)?3:0));
 
@@ -311,7 +311,9 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                            uint32_t frame,
                            uint16_t nb_symb_sch,
                            uint8_t nr_slot_rx,
-                           uint8_t harq_pid) {
+                           uint8_t harq_pid,
+                           int b_size,
+                           uint8_t b[b_size]) {
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
@@ -493,7 +495,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
     bool last = false;
     if (r == nbDecode - 1)
       last = true;
-    bool stop = nr_ue_postDecode(phy_vars_ue, req, last, &nf);
+    bool stop = nr_ue_postDecode(phy_vars_ue, req, last, &nf, b_size, b);
     delNotifiedFIFO_elt(req);
     if (stop)
       break;

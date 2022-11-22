@@ -21,6 +21,7 @@
 #include "stddef.h"
 #include "platform_types.h"
 #include "fapi_nr_ue_constants.h"
+#include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_nr.h"
 #include "common/utils/nr/nr_common.h"
 
@@ -390,8 +391,6 @@ typedef struct {
 } fapi_nr_ul_config_request_pdu_t;
 
 typedef struct {
-  //uint16_t sfn;
-  //uint16_t slot;
   uint16_t sfn;
   uint16_t slot;
   uint8_t number_pdus;
@@ -483,6 +482,7 @@ typedef struct {
   uint8_t nscid;
   uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
+  uint32_t k1_feedback;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {

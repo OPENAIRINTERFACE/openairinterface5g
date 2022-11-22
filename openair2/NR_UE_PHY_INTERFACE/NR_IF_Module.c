@@ -66,6 +66,7 @@ queue_t nr_dl_tti_req_queue;
 queue_t nr_tx_req_queue;
 queue_t nr_ul_dci_req_queue;
 queue_t nr_ul_tti_req_queue;
+pthread_mutex_t mac_IF_mutex;
 
 void nrue_init_standalone_socket(int tx_port, int rx_port)
 {
@@ -692,7 +693,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = dl_tti_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
-        free_and_zero(dl_tti_request);
     }
     /* This checks if the previously recevied DCI matches our current RNTI
        value. The assumption is that if the DCI matches our RNTI, then the
@@ -711,14 +711,12 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         else {
             LOG_D(NR_MAC, "Unexpected tx_data_req\n");
         }
-        free_and_zero(tx_data_request);
     }
     else if (ul_dci_request) {
         frame = ul_dci_request->SFN;
         slot = ul_dci_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] ul_dci_request\n", frame, slot);
         copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
-        free_and_zero(ul_dci_request);
     }
     else if (ul_tti_request) {
         frame = ul_tti_request->SFN;
@@ -735,7 +733,10 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
 
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
-    fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
+    if (dl_tti_request || tx_data_request || ul_dci_request) {
+      fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
+      fill_dci_from_dl_config(&mac->dl_info, dl_config);
+    }
     nr_ue_dl_scheduler(&mac->dl_info);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
 
@@ -1116,6 +1117,9 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
 {
+
+  pthread_mutex_lock(&mac_IF_mutex);
+
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -1125,15 +1129,19 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
   if (mac->phy_config_request_sent && is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_ul_scheduler(ul_info);
+
+  pthread_mutex_unlock(&mac_IF_mutex);
+
   return 0;
 }
 
 int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
+  pthread_mutex_lock(&mac_IF_mutex);
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
 
   if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
@@ -1160,7 +1168,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
           continue;
         }
-        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
+        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dl_info->slot][dci_index->dci_format];
         g_harq_pid = def_dci_pdu_rel15->harq_pid;
         LOG_T(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
 
@@ -1222,10 +1230,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
             break;
         }
       }
-      free(dl_info->rx_ind);
       dl_info->rx_ind = NULL;
     }
   }
+  pthread_mutex_unlock(&mac_IF_mutex);
   return 0;
 }
 
@@ -1247,6 +1255,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
   }
+  pthread_mutex_init(&mac_IF_mutex, NULL);
 
   return nr_ue_if_module_inst[module_id];
 }
@@ -1263,8 +1272,8 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
 
   fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-  dl_config->sfn = UE_mac->dl_config_request.sfn;
-  dl_config->slot = UE_mac->dl_config_request.slot;
+  dl_config->sfn = dcireq->frame;
+  dl_config->slot = dcireq->slot;
 
   LOG_T(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
 

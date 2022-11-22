@@ -578,16 +578,14 @@ int nr_rx_pbch( PHY_VARS_NR_UE *ue,
 
 #endif
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t *rx_ind=calloc(sizeof(*rx_ind),1);
+  fapi_nr_rx_indication_t rx_ind = {0};
   uint16_t number_pdus = 1;
 
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, phy_data);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, ue, NULL, NULL, number_pdus, proc,(void *)result);
+  nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, phy_data);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_RX_PDU_TYPE_SSB, ue, NULL, NULL, number_pdus, proc,(void *)result, NULL);
 
   if (ue->if_inst && ue->if_inst->dl_indication)
     ue->if_inst->dl_indication(&dl_indication, NULL);
-  else
-    free(rx_ind); // dl_indication would free(), so free() here if not called
 
   return 0;
 }

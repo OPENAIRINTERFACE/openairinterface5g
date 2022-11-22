@@ -112,11 +112,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
 
-  //Check if request to access ul_config is for a UL slot
-  if (is_nr_UL_slot(tdd_config, slot, mac->frame_type) == 0) {
-    LOG_W(NR_MAC, "Slot %d is not a UL slot. %s called for wrong slot!!!\n", slot, __FUNCTION__);
-    return NULL;
-  }
+  //Check if requested on the right slot
+  AssertFatal(is_nr_UL_slot(tdd_config, slot, mac->frame_type) != 0, "%s called at wrong slot %d\n", __func__, slot);
 
   // Calculate the index of the UL slot in mac->ul_config_request list. This is
   // based on the TDD pattern (slot configuration period) and number of UL+mixed
@@ -127,16 +124,57 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   const int num_slots_ul = tdd_config ? (tdd_config->pattern1.nrofUplinkSlots + (tdd_config->pattern1.nrofUplinkSymbols != 0)) : n;
   int index = slot % num_slots_ul;
 
-  LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots_ul %d, index %d\n",
+  LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots %d, index %d\n",
                 __FUNCTION__,
                 tdd_config ? "TDD" : "FDD",
                 num_slots_per_tdd,
                 num_slots_ul,
                 index);
 
-  if(!mac->ul_config_request)
+  if (mac->ul_config_request) return &mac->ul_config_request[index];
+  else {
+    LOG_E(NR_MAC, "mac->ul_config_request not set\n");
     return NULL;
-  return &mac->ul_config_request[index];
+  }
+}
+
+/*
+ * This function returns the DL config corresponding to a given DL slot
+ * from MAC instance .
+ */
+fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot)
+{
+  int index;
+  if (!mac->scc && !mac->scc_SIB)
+    index = 0;
+  else {
+    NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
+
+    //Check if requested on the right slot
+    AssertFatal(is_nr_DL_slot(tdd_config, slot) != 0, "%s called at wrong slot %d\n", __func__, slot);
+
+    // Calculate the index of the DL slot in mac->ul_config_request list. This is
+    // based on the TDD pattern (slot configuration period) and number of DL+mixed
+    // slots in the period. TS 38.213 Sec 11.1
+    int mu = mac->current_UL_BWP.scs;
+    const int n = nr_slots_per_frame[mu];
+    const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
+    const int num_slots_dl = tdd_config ? (tdd_config->pattern1.nrofDownlinkSlots + (tdd_config->pattern1.nrofDownlinkSymbols != 0)) : n;
+
+    index = slot % num_slots_dl;
+    LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots %d, index %d\n",
+                  __FUNCTION__,
+                  tdd_config ? "TDD" : "FDD",
+                  num_slots_per_tdd,
+                  num_slots_dl,
+                  index);
+  }
+
+  if (mac->dl_config_request) return &mac->dl_config_request[index];
+  else {
+    LOG_E(NR_MAC, "mac->dl_config_request not set\n");
+    return NULL;
+  }
 }
 
 void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)
@@ -895,7 +933,9 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
   slot_t rx_slot        = dl_info->slot;
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, rx_slot);
+  dl_config->sfn  = rx_frame;
+  dl_config->slot = rx_slot;
 
   nr_scheduled_response_t scheduled_response;
   nr_dcireq_t dcireq;
@@ -909,11 +949,11 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
     dcireq.slot      = rx_slot;
     dcireq.dl_config_req.number_pdus = 0;
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
-    mac->dl_config_request = dcireq.dl_config_req;
+    *dl_config = dcireq.dl_config_req;
 
     nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
     nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
-    dcireq.dl_config_req = mac->dl_config_request;
+    dcireq.dl_config_req = *dl_config;
 
     fill_scheduled_response(&scheduled_response, &dcireq.dl_config_req, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
     if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL) {
@@ -2177,7 +2217,7 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   if (csi_measconfig->csi_IM_ResourceToAddModList == NULL)
     return;
 
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
   NR_CSI_IM_Resource_t *imcsi;
   int period, offset;
 
@@ -2231,7 +2271,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   if (csi_measconfig->nzp_CSI_RS_ResourceToAddModList == NULL)
     return;
 
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
   NR_NZP_CSI_RS_Resource_t *nzpcsi;
   int period, offset;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
@@ -2553,9 +2593,6 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   nr_scheduled_response_t scheduled_response;
-  int frame_s,slot_s;
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
 
   uint8_t scs_ssb = get_softmodem_params()->numerology;
   uint16_t ssb_offset_point_a = (ssb_start_subcarrier - ssb_subcarrier_offset)/12;
@@ -2573,17 +2610,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
                                         1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
                                         ssb_offset_point_a);
 
-  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
-  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
-
-  fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
-  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
-  rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-  rel15->num_dci_options = 1;
-  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-  fill_dci_search_candidates(mac->search_space_zero, rel15, -1, -1);
-
+  int frame_s,slot_s;
   if(mac->type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern == 1){
     // same frame as ssb
     if ((mac->type0_PDCCH_CSS_config.frame & 0x1) == mac->type0_PDCCH_CSS_config.sfn_c)
@@ -2596,6 +2623,20 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
     frame_s = 0; // same frame as ssb
     slot_s = mac->type0_PDCCH_CSS_config.n_c;
   }
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request[0]; // Take the first dl_config_request for SIB1
+  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
+
+  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+
+  fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+  fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
+  rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
+  rel15->num_dci_options = 1;
+  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
+  fill_dci_search_candidates(mac->search_space_zero, rel15, -1, -1);
+
   LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
   fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, phy_data);
 

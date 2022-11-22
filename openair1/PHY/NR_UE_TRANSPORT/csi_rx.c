@@ -977,13 +977,11 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t r
   csirs_measurements.i2 = *i2;
   csirs_measurements.cqi = cqi;
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t *rx_ind = calloc(sizeof(*rx_ind),1);
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, NULL);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
+  fapi_nr_rx_indication_t rx_ind = {0};
+  nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, NULL);
+  nr_fill_rx_indication(&rx_ind, FAPI_NR_CSIRS_IND, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements, NULL);
   if (ue->if_inst && ue->if_inst->dl_indication) {
     ue->if_inst->dl_indication(&dl_indication, NULL);
-  } else {
-    free(rx_ind);
   }
 
   return 0;

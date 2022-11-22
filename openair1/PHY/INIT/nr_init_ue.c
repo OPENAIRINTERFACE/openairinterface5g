@@ -523,7 +523,6 @@ void free_nr_ue_dl_harq(NR_DL_UE_HARQ_t harq_list[2][NR_MAX_DLSCH_HARQ_PROCESSES
 
   for (int j=0; j < 2; j++) {
     for (int i=0; i<number_of_processes; i++) {
-      free_and_zero(harq_list[j][i].b);
 
       for (int r=0; r<a_segments; r++) {
         free_and_zero(harq_list[j][i].c[r]);
@@ -575,18 +574,10 @@ void nr_init_dl_harq_processes(NR_DL_UE_HARQ_t harq_list[2][NR_MAX_DLSCH_HARQ_PR
     a_segments = (a_segments/273)+1;
   }
 
-  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
-
   for (int j=0; j<2; j++) {
     for (int i=0; i<number_of_processes; i++) {
       memset(harq_list[j] + i, 0, sizeof(NR_DL_UE_HARQ_t));
       init_downlink_harq_status(harq_list[j] + i);
-      harq_list[j][i].b = malloc16(dlsch_bytes);
-
-      if (harq_list[j][i].b)
-        memset(harq_list[j][i].b, 0, dlsch_bytes);
-      else
-        AssertFatal(true, "Unable to reset harq memory \"b\"\n");
 
       harq_list[j][i].c = malloc16(a_segments*sizeof(uint8_t *));
       harq_list[j][i].d = malloc16(a_segments*sizeof(int16_t *));

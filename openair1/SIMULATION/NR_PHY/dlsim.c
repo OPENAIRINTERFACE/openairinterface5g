@@ -940,6 +940,13 @@ int main(int argc, char **argv)
   UE->phy_sim_pdsch_rxdataF_comp = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
   UE->phy_sim_pdsch_dl_ch_estimates = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
   UE->phy_sim_pdsch_dl_ch_estimates_ext = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
+  int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
+  if (g_rbSize != 273) {
+    a_segments = a_segments*g_rbSize;
+    a_segments = (a_segments/273)+1;
+  }
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  UE->phy_sim_dlsch_b = calloc(1, dlsch_bytes);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -1153,9 +1160,12 @@ int main(int argc, char **argv)
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
 
-        phy_procedures_nrUE_RX(UE,
-                               &UE_proc,
-                               &phy_data);
+        pbch_pdcch_processing(UE,
+                              &UE_proc,
+                              &phy_data);
+        pdsch_processing(UE,
+                         &UE_proc,
+                         &phy_data);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------
@@ -1198,7 +1208,7 @@ int main(int argc, char **argv)
 
       for (i = 0; i < TBS; i++) {
 
-	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
+	estimated_output_bit[i] = (UE->phy_sim_dlsch_b[i/8] & (1 << (i & 7))) >> (i & 7);
 	test_input_bit[i]       = (gNB_dlsch->harq_process.b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	
 	if (estimated_output_bit[i] != test_input_bit[i]) {
@@ -1347,6 +1357,7 @@ int main(int argc, char **argv)
   free(UE->phy_sim_pdsch_rxdataF_comp);
   free(UE->phy_sim_pdsch_dl_ch_estimates);
   free(UE->phy_sim_pdsch_dl_ch_estimates_ext);
+  free(UE->phy_sim_dlsch_b);
   
   if (output_fd)
     fclose(output_fd);
