@@ -1790,11 +1790,11 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   NR_CellGroupConfig_t *masterCellGroup = ue_context_pP->ue_context.masterCellGroup;
-  if (dl_bwp_id >= 0) {
+  if (dl_bwp_id > 0) {
     *masterCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = dl_bwp_id;
     *masterCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = dl_bwp_id;
   }
-  if (ul_bwp_id >= 0) {
+  if (ul_bwp_id > 0) {
     *masterCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = ul_bwp_id;
   }
 

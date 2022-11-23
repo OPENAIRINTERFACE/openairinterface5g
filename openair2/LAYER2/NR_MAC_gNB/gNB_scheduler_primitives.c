@@ -2298,9 +2298,13 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
       // Schedule BWP switching to the first active BWP (previous active BWP before RA with Msg3 carrying DCCH or DTCH message)
       if (servingCellConfig->firstActiveDownlinkBWP_Id) {
         sched_ctrl->next_dl_bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
+      } else {
+        sched_ctrl->next_dl_bwp_id = 0;
       }
       if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id) {
         sched_ctrl->next_ul_bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
+      } else {
+        sched_ctrl->next_ul_bwp_id = 0;
       }
     }
     else {
@@ -3059,26 +3063,17 @@ void schedule_nr_bwp_switch(module_id_t module_id,
     NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
     NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
     if (sched_ctrl->rrc_processing_timer == 0 && UE->Msg4_ACKed && sched_ctrl->next_dl_bwp_id >= 0) {
+      LOG_W(NR_MAC,
+            "%4d.%2d UE %04x Scheduling BWP switch from DL_BWP %ld to %ld and from UL_BWP %ld to %ld\n",
+            frame,
+            slot,
+            UE->rnti,
+            dl_bwp->bwp_id,
+            sched_ctrl->next_dl_bwp_id,
+            ul_bwp->bwp_id,
+            sched_ctrl->next_ul_bwp_id);
 
-      int schedule_bwp_switching = false;
-      if (dl_bwp->bwp_id == 0) {
-        // Switching from Initial BWP to Dedicated BWP
-        if (sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0) {
-          schedule_bwp_switching = true;
-          LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from Initial DL BWP to %ld and from Initial UL BWP to %ld\n",
-                frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
-        }
-      } else if (dl_bwp->bwp_id != sched_ctrl->next_dl_bwp_id && ul_bwp->bwp_id != sched_ctrl->next_ul_bwp_id) {
-        // Switching between Dedicated BWPs
-        schedule_bwp_switching = true;
-        LOG_W(NR_MAC,"%4d.%2d UE %04x Schedule BWP switch from dl_bwp_id %ld to %ld and from ul_bwp_id %ld to %ld\n",
-              frame, slot, UE->rnti, dl_bwp->bwp_id, sched_ctrl->next_dl_bwp_id, ul_bwp->bwp_id, sched_ctrl->next_ul_bwp_id);
-      }
-
-      if (schedule_bwp_switching) {
-        AssertFatal(sched_ctrl->next_dl_bwp_id > 0 && sched_ctrl->next_ul_bwp_id > 0, "BWP switching from a Dedicated BWP to the Initial BWP not handled yet!");
-        nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
-      }
+      nr_mac_rrc_bwp_switch_req(module_id, frame, slot, UE->rnti, sched_ctrl->next_dl_bwp_id, sched_ctrl->next_ul_bwp_id);
     }
   }
 }
