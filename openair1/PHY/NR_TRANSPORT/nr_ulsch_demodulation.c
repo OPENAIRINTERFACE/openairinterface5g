@@ -415,7 +415,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
 
   // Determine scaling amplitude based the symbol
 
-  ch_amp = 1024*8; //((pilots) ? (ulsch_gNB->sqrt_rho_b) : (ulsch_gNB->sqrt_rho_a));
+  ch_amp = 1024*8;
 
   LOG_D(PHY,"Scaling PUSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n", symbol, ch_amp, is_dmrs_symbol, nb_rb, frame_parms->Ncp, symbol);
    // printf("Scaling PUSCH Chest in OFDM symbol %d by %d\n",symbol_mod,ch_amp);

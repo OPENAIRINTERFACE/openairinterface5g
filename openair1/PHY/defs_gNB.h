@@ -95,8 +95,6 @@ typedef struct {
   uint32_t frame;
   /// Subframe where current HARQ round was sent
   uint32_t subframe;
-  /// MIMO mode for this DLSCH
-  MIMO_mode_t mimo_mode;
   /// Interleaver outputs
   uint8_t *f;
   /// LDPC lifting size
@@ -165,38 +163,14 @@ typedef struct {
   int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t ***ue_spec_bf_weights;
-  /// dl channel estimates (estimated from ul channel estimates)
-  int32_t **calib_dl_ch_estimates;
   /// Allocated RNTI (0 means DLSCH_t is not currently used)
   uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
-  /// Indicator of TX activation per subframe.  Used during PUCCH detection for ACK/NAK.
-  uint8_t slot_tx[80];
-  /// First CCE of last PDSCH scheduling per subframe.  Again used during PUCCH detection for ACK/NAK.
-  uint8_t nCCE[10];
-  /// Process ID's per subframe.  Used to associate received ACKs on PUSCH/PUCCH to DLSCH harq process ids
-  uint8_t harq_ids[2][80];
-  /// Window size (in outgoing transport blocks) for fine-grain rate adaptation
-  uint8_t ra_window_size;
-  /// First-round error threshold for fine-grain rate adaptation
-  uint8_t error_threshold;
   /// Number of soft channel bits
   uint32_t G;
-  /// Codebook index for this dlsch (0,1,2,3)
-  uint8_t codebook_index;
-  /// Maximum number of HARQ processes
-  uint8_t Mdlharq;
-  /// MIMO transmission mode indicator for this sub-frame
-  uint8_t Kmimo;
-  /// Nsoft parameter related to UE Category
-  uint32_t Nsoft;
-  /// amplitude of PDSCH (compared to RS) in symbols without pilots
-  int16_t sqrt_rho_a;
-  /// amplitude of PDSCH (compared to RS) in symbols containing pilots
-  int16_t sqrt_rho_b;
 } NR_gNB_DLSCH_t;
 
 typedef struct {
@@ -240,35 +214,11 @@ typedef struct {
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   bool new_rx;
-  /// Last TPC command
-  uint8_t TPC;
-  /// MIMO mode for this DLSCH
-  MIMO_mode_t mimo_mode;
-  /// Flag indicating that this ULSCH has been allocated by a DCI (otherwise it is a retransmission based on PHICH NAK)
-  uint8_t dci_alloc;
-  /// Flag indicating that this ULSCH has been allocated by a RAR (otherwise it is a retransmission based on PHICH NAK or DCI)
-  uint8_t rar_alloc;
   /// Status Flag indicating for this ULSCH (idle,active,disabled)
   NR_SCH_status_t status;
-  /// Subframe scheduling indicator (i.e. Transmission opportunity indicator)
-  uint8_t subframe_scheduling_flag;
-  /// Subframe cba scheduling indicator (i.e. CBA Transmission opportunity indicator)
-  uint8_t subframe_cba_scheduling_flag;
-  /// PHICH active flag
-  uint8_t phich_active;
-  /// PHICH ACK
-  uint8_t phich_ACK;
-  /// First Allocated RB - previous scheduling. This is needed for PHICH generation which is done after a new scheduling
-  uint16_t previous_first_rb;
   /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
   uint8_t handled;
-  /// Flag to indicate that this ULSCH is for calibration information sent from UE (i.e. no MAC SDU to pass up)
-  //  int calibration_flag;
-  /// delta_TF for power control
-  int32_t delta_TF;
-
-  
-  /////////////////////// ulsch decoding ///////////////////////
+    /////////////////////// ulsch decoding ///////////////////////
   /// Transport block size (This is A from 38.212 V15.4.0 section 5.1)
   uint32_t TBS;
   /// Pointer to the payload (38.212 V15.4.0 section 5.1)
@@ -291,56 +241,6 @@ typedef struct {
   uint32_t E;
   /// Number of segments processed so far
   uint32_t processedSegments;
-  //////////////////////////////////////////////////////////////
-
-
-  /////////////////////////// DMRS /////////////////////////////
-  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2)
-  uint8_t n_DMRS;
-  /// n_DMRS 2 for cyclic shift of DMRS (36.211 Table 5.5.1.1.-1)
-  uint8_t n_DMRS2;
-  /// n_DMRS  for cyclic shift of DMRS (36.213 Table 9.1.2-2) - previous scheduling
-  /// This is needed for PHICH generation which
-  /// is done after a new scheduling
-  uint8_t previous_n_DMRS;
-  //////////////////////////////////////////////////////////////
-
-
-  ///////////////////// UCI multiplexing ///////////////////////
-  /// CQI CRC status
-  uint8_t cqi_crc_status;
-  /// Pointer to CQI data
-  uint8_t o[MAX_CQI_BYTES];
-  /// Format of CQI data
-  UCI_format_t uci_format;
-  /// Length of CQI data under RI=1 assumption(bits)
-  uint8_t Or1;
-  /// Length of CQI data under RI=2 assumption(bits)
-  uint8_t Or2;
-  /// Rank information
-  uint8_t o_RI[2];
-  /// Length of rank information (bits)
-  uint8_t O_RI;
-  /// Pointer to ACK
-  uint8_t o_ACK[4];
-  /// Length of ACK information (bits)
-  uint8_t O_ACK;
-  /// The value of DAI in DCI format 0
-  uint8_t V_UL_DAI;
-  /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-  int8_t q[MAX_CQI_PAYLOAD];
-  /// number of coded CQI bits after interleaving
-  uint8_t o_RCC;
-  /// coded and interleaved CQI bits
-  int8_t o_w[(MAX_CQI_BITS+8)*3];
-  /// coded CQI bits
-  int8_t o_d[96+((MAX_CQI_BITS+8)*3)];
-  /// coded ACK bits
-  int16_t q_ACK[MAX_ACK_PAYLOAD];
-  /// coded RI bits
-  int16_t q_RI[MAX_RI_PAYLOAD];
-  /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
-  uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Last index of LLR buffer that contains information.
   /// Used for computing LDPC decoder R
   int llrLen;
@@ -353,30 +253,10 @@ typedef struct {
   NR_UL_gNB_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
-  /// ACK/NAK Bundling flag
-  uint8_t bundling;
-  /// beta_offset_cqi times 8
-  uint16_t beta_offset_cqi_times8;
-  /// beta_offset_ri times 8
-  uint16_t beta_offset_ri_times8;
-  /// beta_offset_harqack times 8
-  uint16_t beta_offset_harqack_times8;
-  /// Flag to indicate that gNB awaits UE Msg3
-  uint8_t Msg3_active;
-  /// Flag to indicate that gNB should decode UE Msg3
-  uint8_t Msg3_flag;
-  /// Subframe for Msg3
-  uint8_t Msg3_subframe;
-  /// Frame for Msg3
-  uint32_t Msg3_frame;
   /// Allocated RNTI for this ULSCH
   uint16_t rnti;
   /// RNTI type
   uint8_t rnti_type;
-  /// cyclic shift for DM RS
-  uint8_t cyclicShift;
-  /// for cooperative communication
-  uint8_t cooperation_flag;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
@@ -734,13 +614,9 @@ typedef struct PHY_VARS_gNB_s {
   /// NFAPI PRACH information
   nfapi_nr_prach_indication_preamble_t preamble_list[MAX_NUM_NR_RX_PRACH_PREAMBLES];
 
-  //Sched_Rsp_t         Sched_INFO;
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   nfapi_nr_uci_indication_t uci_indication;
   
-  //  nfapi_nr_dl_tti_pdcch_pdu    *pdcch_pdu;
-  //  nfapi_nr_ul_dci_request_pdus_t  *ul_dci_pdu;
-  uint16_t num_pdsch_rnti[80];
   NR_gNB_PBCH        pbch;
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
@@ -752,8 +628,6 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
-  NR_gNB_DLSCH_t     *dlsch_SI,*dlsch_ra,*dlsch_p;
-  NR_gNB_DLSCH_t     *dlsch_PCH;
   /// statistics for DLSCH measurement collection
   NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
   /// statistics for ULSCH measurement collection
@@ -766,9 +640,6 @@ typedef struct PHY_VARS_gNB_s {
 
   /// CSI variables
   nr_csi_info_t *nr_csi_info;
-
-  uint8_t pbch_configured;
-  char gNB_generate_rar;
 
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
@@ -801,34 +672,13 @@ typedef struct PHY_VARS_gNB_s {
   /// PRS sequence
   uint32_t ****nr_gold_prs;
 
-  /// Indicator set to 0 after first SR
-  uint8_t first_sr[NUMBER_OF_NR_SR_MAX];
-
   /// PRACH root sequence
   uint32_t X_u[64][839];
 
-  uint32_t max_peak_val;
-
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
-  /// \brief sinr for all subcarriers of the current link (used only for abstraction).
-  /// first index: ? [0..N_RB_DL*12[
-  double *sinr_dB;
 
-  /// N0 (used for abstraction)
-  double N0;
-
-  unsigned char first_run_I0_measurements;
   int ldpc_offload_flag;
-
-  unsigned char    is_secondary_gNB; // primary by default
-  unsigned char    is_init_sync;     /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
-  unsigned char    has_valid_precoder; /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from, and this B/F vector is created.
-  unsigned char    PgNB_id;          /// id of Primary eNB
-
-  /// hold the precoder for NULL beam to the primary user
-  int              **dl_precoder_SgNB[3];
-  char             log2_maxp; /// holds the maximum channel/precoder coefficient
 
   int max_ldpc_iterations;
   /// indicate the channel estimation technique in time domain
@@ -836,8 +686,6 @@ typedef struct PHY_VARS_gNB_s {
   /// indicate the channel estimation technique in freq domain
   int chest_freq;
 
-  /// if ==0 enables phy only test mode
-  int mac_enabled;
   /// counter to average prach energh over first 100 prach opportunities
   int prach_energy_counter;
 
@@ -909,7 +757,7 @@ typedef struct PHY_VARS_gNB_s {
   int nbDecode;
   int number_of_nr_dlsch_max;
   int number_of_nr_ulsch_max;
-  void * scopeData;
+  void *scopeData;
   /// structure for analyzing high-level RT measurements
   rt_L1_profiling_t rt_L1_profiling; 
 } PHY_VARS_gNB;

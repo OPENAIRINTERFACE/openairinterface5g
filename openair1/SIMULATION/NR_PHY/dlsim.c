@@ -1003,7 +1003,6 @@ int main(int argc, char **argv)
   
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
-  gNB->pbch_configured = 1;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);

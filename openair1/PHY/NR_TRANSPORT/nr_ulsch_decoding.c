@@ -119,42 +119,24 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
 
 void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
 {
-  unsigned char i, j;
+
 
   if (ulsch) {
     ulsch->harq_mask = 0;
-    ulsch->bundling = 0;
-    ulsch->beta_offset_cqi_times8 = 0;
-    ulsch->beta_offset_ri_times8 = 0;
-    ulsch->beta_offset_harqack_times8 = 0;
-    ulsch->Msg3_active = 0;
-    ulsch->Msg3_flag = 0;
-    ulsch->Msg3_subframe = 0;
-    ulsch->Msg3_frame = 0;
     ulsch->rnti = 0;
     ulsch->rnti_type = 0;
-    ulsch->cyclicShift = 0;
-    ulsch->cooperation_flag = 0;
     ulsch->max_ldpc_iterations = 0;
     ulsch->last_iteration_cnt = 0;
 
-    for (i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
+    for (int i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
       if (ulsch->harq_processes[i]){
         /// Nfapi ULSCH PDU
         //nfapi_nr_ul_config_ulsch_pdu ulsch_pdu;
         ulsch->harq_processes[i]->frame=0;
         ulsch->harq_processes[i]->slot=0;
         ulsch->harq_processes[i]->round=0;
-        ulsch->harq_processes[i]->TPC=0;
-        ulsch->harq_processes[i]->mimo_mode=0;
-        ulsch->harq_processes[i]->dci_alloc=0;
-        ulsch->harq_processes[i]->rar_alloc=0;
         ulsch->harq_processes[i]->status=NR_SCH_IDLE;
-        ulsch->harq_processes[i]->subframe_scheduling_flag=0;
-        ulsch->harq_processes[i]->previous_first_rb=0;
         ulsch->harq_processes[i]->handled=0;
-        ulsch->harq_processes[i]->delta_TF=0;
-
         ulsch->harq_processes[i]->TBS=0;
         /// Pointer to the payload (38.212 V15.4.0 section 5.1)
         //uint8_t *b;
@@ -170,37 +152,6 @@ void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch)
         /// code blocks after bit selection in rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
         //int16_t e[MAX_NUM_NR_ULSCH_SEGMENTS][3*8448];
         ulsch->harq_processes[i]->E=0;
-
-
-        ulsch->harq_processes[i]->n_DMRS=0;
-        ulsch->harq_processes[i]->n_DMRS2=0;
-        ulsch->harq_processes[i]->previous_n_DMRS=0;
-
-
-        ulsch->harq_processes[i]->cqi_crc_status=0;
-        for (j=0;j<MAX_CQI_BYTES;j++) ulsch->harq_processes[i]->o[j]=0;
-        ulsch->harq_processes[i]->uci_format=0;
-        ulsch->harq_processes[i]->Or1=0;
-        ulsch->harq_processes[i]->Or2=0;
-        ulsch->harq_processes[i]->o_RI[0]=0; ulsch->harq_processes[i]->o_RI[1]=0;
-        ulsch->harq_processes[i]->O_RI=0;
-        ulsch->harq_processes[i]->o_ACK[0]=0; ulsch->harq_processes[i]->o_ACK[1]=0;
-        ulsch->harq_processes[i]->o_ACK[2]=0; ulsch->harq_processes[i]->o_ACK[3]=0;
-        ulsch->harq_processes[i]->O_ACK=0;
-        ulsch->harq_processes[i]->V_UL_DAI=0;
-        /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
-        //int8_t q[MAX_CQI_PAYLOAD];
-        ulsch->harq_processes[i]->o_RCC=0;
-        /// coded and interleaved CQI bits
-        //int8_t o_w[(MAX_CQI_BITS+8)*3];
-        /// coded CQI bits
-        //int8_t o_d[96+((MAX_CQI_BITS+8)*3)];
-        for (j=0;j<MAX_ACK_PAYLOAD;j++) ulsch->harq_processes[i]->q_ACK[j]=0;
-        for (j=0;j<MAX_RI_PAYLOAD;j++) ulsch->harq_processes[i]->q_RI[j]=0;
-        /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
-        //uint8_t h[MAX_NUM_CHANNEL_BITS];
-        /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
-        //int16_t w[MAX_NUM_NR_ULSCH_SEGMENTS][3*(6144+64)];
       }
     }
   }

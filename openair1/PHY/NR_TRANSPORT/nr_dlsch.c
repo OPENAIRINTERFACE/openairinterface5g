@@ -544,7 +544,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
     }// port loop
 
     stop_meas(&gNB->dlsch_precoding_stats);
-    dlsch->slot_tx[slot]=0;
 
     // TODO: handle precoding
     // this maps the layers onto antenna ports
