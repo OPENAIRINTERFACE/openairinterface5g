@@ -1345,7 +1345,7 @@ class Containerize():
 			self.UndeployGenObject(HTML, RAN, UE)
 			self.exitStatus = 1
 
-	def IperfFromContainer(self, HTML, RAN):
+	def IperfFromContainer(self, HTML, RAN, UE):
 		self.exitStatus = 0
 
 		ymlPath = self.yamlPath[0].split('/')
@@ -1382,7 +1382,7 @@ class Containerize():
 				message = 'Could not connect to iperf server!'
 			else:
 				message = 'Server Report and Connection refused Not Found!'
-			self.IperfExit(HTML, False, message)
+			self.IperfExit(HTML, RAN, UE, False, message)
 			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 			return
 
@@ -1449,17 +1449,17 @@ class Containerize():
 			if jitter is not None:
 				msg += 'Jitter      : ' + jitter + '\n'
 				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
-			self.IperfExit(HTML, iperfStatus, msg)
+			self.IperfExit(HTML, RAN, UE, iperfStatus, msg)
 		else:
 			iperfStatus = False
 			logging.error('problem?')
-			self.IperfExit(HTML, iperfStatus, 'problem?')
+			self.IperfExit(HTML, RAN, UE, iperfStatus, 'problem?')
 		if iperfStatus:
 			logging.info('\u001B[1m Iperf Test PASS\u001B[0m')
 		else:
 			logging.error('\u001B[1;37;41m Iperf Test FAIL\u001B[0m')
 
-	def IperfExit(self, HTML, status, message):
+	def IperfExit(self, HTML, RAN, UE, status, message):
 		html_queue = SimpleQueue()
 		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
 		html_queue.put(html_cell)
@@ -1468,6 +1468,14 @@ class Containerize():
 		else:
 			logging.error('\u001B[1m Iperf Test FAIL -- ' + message + ' \u001B[0m')
 			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+			# Automatic undeployment
+			logging.warning('----------------------------------------')
+			logging.warning('\u001B[1m Starting Automatic undeployment \u001B[0m')
+			logging.warning('----------------------------------------')
+			HTML.testCase_id = 'AUTO-UNDEPLOY'
+			HTML.desc = 'Automatic Un-Deployment'
+			self.UndeployGenObject(HTML, RAN, UE)
+			self.exitStatus = 1
 
 
 	def CheckAndAddRoute(self, svrName, ipAddr, userName, password):
