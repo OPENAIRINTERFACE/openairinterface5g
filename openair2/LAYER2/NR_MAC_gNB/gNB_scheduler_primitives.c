@@ -513,8 +513,21 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
   }
 }
 
+bool multiple_2_3_5(int rb)
+{
+  while (rb % 2 == 0)
+    rb /= 2;
+  while (rb % 3 == 0)
+    rb /= 3;
+  while (rb % 5 == 0)
+    rb /= 5;
+
+  return (rb == 1);
+}
+
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   int transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
@@ -524,6 +537,11 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb)
 {
+  // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+  while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+        !multiple_2_3_5(nb_rb_max))
+    nb_rb_max--;
+
   /* is the maximum (not even) enough? */
   *nb_rb = nb_rb_max;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
@@ -545,6 +563,10 @@ bool nr_find_nb_rb(uint16_t Qm,
   int hi = nb_rb_max;
   int lo = nb_rb_min;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+    // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+    while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+          !multiple_2_3_5(p))
+      p++;
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
       hi = p;
@@ -568,7 +590,7 @@ NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
 
   NR_pusch_dmrs_t dmrs = {0};
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (ul_bwp->transform_precoding || Layers<3)
+  if (ul_bwp->transform_precoding && Layers < 3)
     dmrs.num_dmrs_cdm_grps_no_data = ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1 || tda_info->nrOfSymbols == 2 ? 1 : 2;
   else
     dmrs.num_dmrs_cdm_grps_no_data = 2;
@@ -2259,22 +2281,24 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
   // 0 precoding enabled 1 precoding disabled
+  long *transform_precoding;
   if (UL_BWP->dci_format == NR_UL_DCI_FORMAT_0_0 ||
       UL_BWP->pusch_Config == NULL || UL_BWP->pusch_Config->transformPrecoder == NULL)
-    UL_BWP->transform_precoding = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
+    transform_precoding = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
-    UL_BWP->transform_precoding = UL_BWP->pusch_Config->transformPrecoder;
+    transform_precoding = UL_BWP->pusch_Config->transformPrecoder;
+
+  UL_BWP->transform_precoding = (transform_precoding == NULL || *transform_precoding == 1);
 
   // Set uplink MCS table
   long *mcs_Table = NULL;
-  bool not_tp = (UL_BWP->transform_precoding == NULL || *UL_BWP->transform_precoding == 1);
   if (UL_BWP->pusch_Config)
-    mcs_Table = not_tp ?
+    mcs_Table = UL_BWP->transform_precoding ?
                 UL_BWP->pusch_Config->mcs_Table :
                 UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
 
   UL_BWP->mcs_table = get_pusch_mcs_table(mcs_Table,
-                                          !not_tp,
+                                          !UL_BWP->transform_precoding,
                                           UL_BWP->dci_format,
                                           NR_RNTI_C,
                                           target_ss,

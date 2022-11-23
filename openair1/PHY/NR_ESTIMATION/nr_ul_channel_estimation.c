@@ -164,9 +164,9 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
     const uint8_t u = pusch_pdu->dfts_ofdm.low_papr_group_number;
     const uint8_t v = pusch_pdu->dfts_ofdm.low_papr_sequence_number;
     int16_t *dmrs_seq = gNB_dmrs_lowpaprtype1_sequence[u][v][index];
+    LOG_D(PHY,"Transform Precoding params. u: %d, v: %d, index for dmrsseq: %d\n", u, v, index);
     AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
     AssertFatal(dmrs_seq != NULL, "DMRS low PAPR seq not found, check if DMRS sequences are generated");
-    LOG_D(PHY,"Transform Precoding params. u: %d, v: %d, index for dmrsseq: %d\n", u, v, index);
     nr_pusch_lowpaprtype1_dmrs_rx(gNB, Ns, dmrs_seq, (int32_t *)pilot, 1000, 0, nb_rb_pusch, 0, pusch_pdu->dmrs_config_type);
 #ifdef DEBUG_PUSCH
     printf ("NR_UL_CHANNEL_EST: index %d, u %d,v %d\n", index, u, v);

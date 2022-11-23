@@ -1041,7 +1041,7 @@ uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
 void get_precoder_matrix_coef(char *w,
                               const uint8_t ul_ri,
                               const uint16_t num_ue_srs_ports,
-                              const long *transform_precoding,
+                              const long transform_precoding,
                               const uint8_t tpmi,
                               const uint8_t uI,
                               int layer_idx)
@@ -1050,7 +1050,7 @@ void get_precoder_matrix_coef(char *w,
     if (num_ue_srs_ports == 2) {
       *w = table_38211_6_3_1_5_1[tpmi][uI][layer_idx];
     } else {
-      if (transform_precoding && *transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
+      if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
         *w = table_38211_6_3_1_5_2[tpmi][uI][layer_idx];
       } else {
         *w = table_38211_6_3_1_5_3[tpmi][uI][layer_idx];
@@ -1068,7 +1068,7 @@ void get_precoder_matrix_coef(char *w,
 }
 
 int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
-                           const long *transform_precoding,
+                           const long transform_precoding,
                            const uint8_t *channel_matrix,
                            const uint8_t normalized_iq_representation,
                            const uint16_t num_gnb_antenna_elements,
@@ -1470,6 +1470,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 UE->current_UL_BWP.transform_precoding,
                                  nrOfLayers,
                                  tda_info.nrOfSymbols,
                                  dmrs_info.N_PRB_DMRS * dmrs_info.num_dmrs_symb,
@@ -1815,6 +1816,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  current_BWP->transform_precoding,
                   sched_pusch->nrOfLayers,
                   sched_pusch->tda_info.nrOfSymbols,
                   sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
@@ -2149,7 +2151,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     pusch_pdu->qam_mod_order = sched_pusch->Qm;
     pusch_pdu->mcs_index = sched_pusch->mcs;
     pusch_pdu->mcs_table = current_BWP->mcs_table;
-    pusch_pdu->transform_precoding = current_BWP->transform_precoding ? *current_BWP->transform_precoding : 1;
+    pusch_pdu->transform_precoding = current_BWP->transform_precoding;
     if (current_BWP->pusch_Config && current_BWP->pusch_Config->dataScramblingIdentityPUSCH)
       pusch_pdu->data_scrambling_id = *current_BWP->pusch_Config->dataScramblingIdentityPUSCH;
     else
@@ -2182,7 +2184,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-    pusch_pdu->num_dmrs_cdm_grps_no_data = sched_pusch->dmrs_info.num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = ((1<<sched_pusch->nrOfLayers) - 1);
 
     /* FAPI: Pusch Allocation in frequency domain */
@@ -2241,7 +2242,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       else
         AssertFatal(1==0,"Hopping mode is not supported in transform precoding\n");
 
-      LOG_I(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
+      LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
     }
 
     /*-----------------------------------------------------------------------------*/
