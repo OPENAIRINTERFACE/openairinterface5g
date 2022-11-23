@@ -110,7 +110,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                             unsigned char harq_pid,
                             uint32_t frame,
                             uint8_t slot,
-                            int gNB_id) {
+                            int gNB_id,
+                            nr_phy_data_tx_t *phy_data) {
 
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
@@ -126,9 +127,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[gNB_id];
-  NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch_ue->harq_processes[harq_pid];
-  nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
+  NR_UE_ULSCH_t *ulsch_ue = &phy_data->ulsch;
+  NR_UL_UE_HARQ_t *harq_process_ul_ue = &UE->ul_harq_processes[harq_pid];
+  nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch_ue->pusch_pdu;
 
   int start_symbol          = pusch_pdu->start_symbol_index;
   uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
@@ -169,7 +170,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   trace_NRpdu(DIRECTION_UPLINK,
               harq_process_ul_ue->a,
-              harq_process_ul_ue->pusch_pdu.pusch_data.tb_size,
+              pusch_pdu->pusch_data.tb_size,
               WS_C_RNTI, rnti, frame, slot, 0, 0);
 
   if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
@@ -236,8 +237,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   if (pusch_pdu->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
 
-    K_ptrs = harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_freq_density;
-    L_ptrs = 1<<harq_process_ul_ue->pusch_pdu.pusch_ptrs.ptrs_time_density;
+    K_ptrs = pusch_pdu->pusch_ptrs.ptrs_freq_density;
+    L_ptrs = 1<<pusch_pdu->pusch_ptrs.ptrs_time_density;
 
     beta_ptrs = 1; // temp value until power control is implemented
 
@@ -572,7 +573,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   }// port loop
 
   NR_UL_UE_HARQ_t *harq_process_ulsch=NULL;
-  harq_process_ulsch = UE->ulsch[gNB_id]->harq_processes[harq_pid];
+  harq_process_ulsch = &UE->ul_harq_processes[harq_pid];
   harq_process_ulsch->status = SCH_IDLE;
 
   for (int nl = 0; nl < Nl; nl++) {

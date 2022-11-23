@@ -43,137 +43,6 @@
 
 //#define DEBUG_ULSCH_CODING
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,
-                      uint16_t N_RB_UL,
-                      NR_DL_FRAME_PARMS* frame_parms) {
-
-  NR_UE_ULSCH_t *ulsch = *ulschptr;
-
-  if (ulsch) {
-#ifdef DEBUG_ULSCH_FREE
-    printf("Freeing ulsch %p\n",ulsch);
-#endif
-
-    int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
-    uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
-
-    if (N_RB_UL != 273) {
-      a_segments = a_segments*N_RB_UL;
-      a_segments = a_segments/273 +1;
-    }
-
-    for (int i=0; i<NR_MAX_ULSCH_HARQ_PROCESSES; i++) {
-      if (ulsch->harq_processes[i]) {
-
-        if (ulsch->harq_processes[i]->a) {
-          free16(ulsch->harq_processes[i]->a,a_segments*1056);
-          ulsch->harq_processes[i]->a = NULL;
-        }
-        if (ulsch->harq_processes[i]->b) {
-          free16(ulsch->harq_processes[i]->b,a_segments*1056);
-          ulsch->harq_processes[i]->b = NULL;
-        }
-        if (ulsch->harq_processes[i]->e) {
-          free16(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
-          ulsch->harq_processes[i]->e = NULL;
-        }
-        if (ulsch->harq_processes[i]->f) {
-          free16(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
-          ulsch->harq_processes[i]->f = NULL;
-        }
-        for (int r=0; r<a_segments; r++) {
-          if (ulsch->harq_processes[i]->c[r]) {
-            free16(ulsch->harq_processes[i]->c[r],((r==0)?8:0) + 3+768);
-            ulsch->harq_processes[i]->c[r] = NULL;
-          }
-
-          if (ulsch->harq_processes[i]->d[r]) {
-            free16(ulsch->harq_processes[i]->d[r],68*384);
-            ulsch->harq_processes[i]->d[r] = NULL;
-          }
-
-        }
-
-        if (ulsch->harq_processes[i]->c) {
-          free16(ulsch->harq_processes[i]->c,a_segments);
-          ulsch->harq_processes[i]->c = NULL;
-        }
-        if (ulsch->harq_processes[i]->d) {
-          free16(ulsch->harq_processes[i]->d,a_segments);
-          ulsch->harq_processes[i]->d = NULL;
-        }
-
-        free16(ulsch->harq_processes[i],sizeof(NR_UL_UE_HARQ_t));
-        ulsch->harq_processes[i] = NULL;
-      }
-    }
-    free16(ulsch,sizeof(NR_UE_ULSCH_t));
-    *ulschptr = NULL;
-  }
-}
-
-
-NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, NR_DL_FRAME_PARMS* frame_parms) {
-
-  int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
-  uint16_t a_segments = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
-
-  if (N_RB_UL != 273) {
-    a_segments = a_segments*N_RB_UL;
-    a_segments = a_segments/273 +1;
-  }  
-
-  uint32_t ulsch_bytes = a_segments*1056;  // allocated bytes per segment
-
-  NR_UE_ULSCH_t *ulsch = malloc16(sizeof(NR_UE_ULSCH_t));
-  DevAssert(ulsch);
-  memset(ulsch, 0, sizeof(*ulsch));
-
-  ulsch->number_harq_processes_for_pusch = NR_MAX_ULSCH_HARQ_PROCESSES;
-
-  for (int i = 0; i < number_of_harq_pids; i++) {
-
-    ulsch->harq_processes[i] = malloc16(sizeof(NR_UL_UE_HARQ_t));
-    DevAssert(ulsch->harq_processes[i]);
-    memset(ulsch->harq_processes[i], 0, sizeof(NR_UL_UE_HARQ_t));
-
-    ulsch->harq_processes[i]->a = malloc16(ulsch_bytes);
-    DevAssert(ulsch->harq_processes[i]->a);
-    bzero(ulsch->harq_processes[i]->a,ulsch_bytes);
-
-    ulsch->harq_processes[i]->b = malloc16(ulsch_bytes);
-    DevAssert(ulsch->harq_processes[i]->b);
-    bzero(ulsch->harq_processes[i]->b,ulsch_bytes);
-
-    ulsch->harq_processes[i]->c = malloc16(a_segments*sizeof(uint8_t *));
-    ulsch->harq_processes[i]->d = malloc16(a_segments*sizeof(uint16_t *));
-    for (int r = 0; r < a_segments; r++) {
-      // account for filler in first segment and CRCs for multiple segment case
-      ulsch->harq_processes[i]->c[r] = malloc16(8448);
-      DevAssert(ulsch->harq_processes[i]->c[r]);
-      bzero(ulsch->harq_processes[i]->c[r],8448);
-
-      ulsch->harq_processes[i]->d[r] = malloc16(68*384); //max size for coded output
-      DevAssert(ulsch->harq_processes[i]->d[r]);
-      bzero(ulsch->harq_processes[i]->d[r],(68*384));
-    }
-
-    ulsch->harq_processes[i]->e = malloc16(14*N_RB_UL*12*8);
-    DevAssert(ulsch->harq_processes[i]->e);
-    bzero(ulsch->harq_processes[i]->e,14*N_RB_UL*12*8);
-
-    ulsch->harq_processes[i]->f = malloc16(14*N_RB_UL*12*8);
-    DevAssert(ulsch->harq_processes[i]->f);
-    bzero(ulsch->harq_processes[i]->f,14*N_RB_UL*12*8);
-
-    ulsch->harq_processes[i]->subframe_scheduling_flag = 0;
-    ulsch->harq_processes[i]->first_tx = 1;
-  }
-
-  return(ulsch);
-}
-
-
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                       NR_UE_ULSCH_t *ulsch,
                       NR_DL_FRAME_PARMS* frame_parms,
@@ -186,29 +55,29 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 ///////////
 
   unsigned int crc = 1;
-  NR_UL_UE_HARQ_t *harq_process = ulsch->harq_processes[harq_pid];
-  uint16_t nb_rb = harq_process->pusch_pdu.rb_size;
-  uint32_t A = harq_process->pusch_pdu.pusch_data.tb_size<<3;
+  NR_UL_UE_HARQ_t *harq_process = &ue->ul_harq_processes[harq_pid];
+  uint16_t nb_rb = ulsch->pusch_pdu.rb_size;
+  uint32_t A = ulsch->pusch_pdu.pusch_data.tb_size<<3;
   uint32_t *pz = &harq_process->Z;
-  uint8_t mod_order = harq_process->pusch_pdu.qam_mod_order;
+  uint8_t mod_order = ulsch->pusch_pdu.qam_mod_order;
   uint16_t Kr=0;
   uint32_t r_offset=0;
   uint32_t F=0;
   // target_code_rate is in 0.1 units
-  float Coderate = (float) harq_process->pusch_pdu.target_code_rate / 10240.0f;
+  float Coderate = (float) ulsch->pusch_pdu.target_code_rate / 10240.0f;
 
 ///////////
 /////////////////////////////////////////////////////////////////////////////////////////  
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_UE_ULSCH_ENCODING, VCD_FUNCTION_IN);
 
-  LOG_D(NR_PHY, "ulsch coding nb_rb %d, Nl = %d\n", nb_rb, harq_process->pusch_pdu.nrOfLayers);
+  LOG_D(NR_PHY, "ulsch coding nb_rb %d, Nl = %d\n", nb_rb, ulsch->pusch_pdu.nrOfLayers);
   LOG_D(NR_PHY, "ulsch coding A %d G %d mod_order %d Coderate %f\n", A, G, mod_order, Coderate);
   LOG_D(NR_PHY, "harq_pid %d harq_process->ndi %d, pusch_data.new_data_indicator %d\n",
-        harq_pid,harq_process->ndi,harq_process->pusch_pdu.pusch_data.new_data_indicator);
+        harq_pid,harq_process->ndi,ulsch->pusch_pdu.pusch_data.new_data_indicator);
 
   if (harq_process->first_tx == 1 ||
-      harq_process->ndi != harq_process->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
+      harq_process->ndi != ulsch->pusch_pdu.pusch_data.new_data_indicator) {  // this is a new packet
 #ifdef DEBUG_ULSCH_CODING
   printf("encoding thinks this is a new packet \n");
 #endif
@@ -223,7 +92,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
     printf("\n");
    */ 
 
-    int max_payload_bytes = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*harq_process->pusch_pdu.nrOfLayers*1056;
+    int max_payload_bytes = MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER*ulsch->pusch_pdu.nrOfLayers*1056;
 
     if (A > 3824) {
       // Add 24-bit crc (polynomial A) to payload
@@ -278,7 +147,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                                  &harq_process->F,
                                  harq_process->BG);
 
-    if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*harq_process->pusch_pdu.nrOfLayers) {
+    if (harq_process->C>MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*ulsch->pusch_pdu.nrOfLayers) {
       LOG_E(PHY,"nr_segmentation.c: too many segments %d, B %d\n",harq_process->C,harq_process->B);
       return(-1);
     }
@@ -350,8 +219,8 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 ///////////
 ///////////////////////////////////////////////////////////////////////////////
-    LOG_D(PHY,"setting ndi to %d from pusch_data\n", harq_process->pusch_pdu.pusch_data.new_data_indicator);
-    harq_process->ndi = harq_process->pusch_pdu.pusch_data.new_data_indicator;
+    LOG_D(PHY,"setting ndi to %d from pusch_data\n", ulsch->pusch_pdu.pusch_data.new_data_indicator);
+    harq_process->ndi = ulsch->pusch_pdu.pusch_data.new_data_indicator;
   }
   F = harq_process->F;
   Kr = harq_process->K;
@@ -371,17 +240,17 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 	  G,
 	  Kr*3,
 	  mod_order,nb_rb,
-	  harq_process->pusch_pdu.pusch_data.rv_index);
+	  ulsch->pusch_pdu.pusch_data.rv_index);
 
     //start_meas(rm_stats);
 ///////////////////////// d---->| Rate matching bit selection |---->e /////////////////////////
 ///////////
 
-    uint32_t E = nr_get_E(G, harq_process->C, mod_order, harq_process->pusch_pdu.nrOfLayers, r);
+    uint32_t E = nr_get_E(G, harq_process->C, mod_order, ulsch->pusch_pdu.nrOfLayers, r);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RATE_MATCHING_LDPC, VCD_FUNCTION_IN);
     start_meas(&ue->ulsch_rate_matching_stats);
-    if (nr_rate_matching_ldpc(harq_process->pusch_pdu.tbslbrm,
+    if (nr_rate_matching_ldpc(ulsch->pusch_pdu.tbslbrm,
                               harq_process->BG,
                               *pz,
                               harq_process->d[r],
@@ -389,7 +258,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                               harq_process->C,
                               F,
                               Kr-F-2*(*pz),
-                              harq_process->pusch_pdu.pusch_data.rv_index,
+                              ulsch->pusch_pdu.pusch_data.rv_index,
                               E) == -1)
       return -1;
 

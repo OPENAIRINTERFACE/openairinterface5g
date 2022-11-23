@@ -868,7 +868,7 @@ int main(int argc, char **argv)
 
   nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
-  NR_UE_ULSCH_t *ulsch_ue = UE->ulsch[0];
+  nr_phy_data_tx_t phy_data = {0};
 
   unsigned char *estimated_output_bit;
   unsigned char *test_input_bit;
@@ -1093,7 +1093,7 @@ int main(int argc, char **argv)
       errors_decoding = 0;
       while (round < max_rounds && crc_status) {
         round_trials[round]++;
-        ulsch_ue->harq_processes[harq_pid]->round = round;
+        UE->ul_harq_processes[harq_pid].round = round;
         rv_index = nr_rv_round_map[round % 4];
 
         UE_proc.nr_slot_tx = slot;
@@ -1178,6 +1178,7 @@ int main(int argc, char **argv)
         scheduled_response.dl_config = NULL;
         scheduled_response.ul_config = &ul_config;
         scheduled_response.tx_request = &tx_req;
+        scheduled_response.phy_data = (void *)&phy_data;
 
         // Config UL TX PDU
         tx_req.slot = slot;
@@ -1232,7 +1233,7 @@ int main(int argc, char **argv)
         // nr_fill_ulsch(gNB,frame,slot,pusch_pdu); // Not needed as its its already filled as apart of "nr_schedule_response(Sched_INFO);"
 
         for (int i = 0; i < (TBS / 8); i++)
-          ulsch_ue->harq_processes[harq_pid]->a[i] = i & 0xff;
+          UE->ul_harq_processes[harq_pid].a[i] = i & 0xff;
         if (input_fd == NULL) {
           // set FAPI parameters for UE, put them in the scheduled response and call
           nr_ue_scheduled_response(&scheduled_response);
@@ -1240,7 +1241,7 @@ int main(int argc, char **argv)
           /////////////////////////phy_procedures_nr_ue_TX///////////////////////
           ///////////
 
-          phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id);
+          phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, &phy_data);
 
           /* We need to call common sending function to send signal */
           LOG_D(PHY, "Sending Uplink data \n");
@@ -1507,8 +1508,8 @@ int main(int argc, char **argv)
         }
 
         for (i = 0; i < available_bits; i++) {
-          if (((ulsch_ue->harq_processes[harq_pid]->f[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0))
-              || ((ulsch_ue->harq_processes[harq_pid]->f[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0))) {
+          if (((UE->ul_harq_processes[harq_pid].f[i] == 0) && (gNB->pusch_vars[UE_id]->llr[i] <= 0))
+              || ((UE->ul_harq_processes[harq_pid].f[i] == 1) && (gNB->pusch_vars[UE_id]->llr[i] >= 0))) {
             /*if(errors_scrambling == 0)
               printf("\x1B[34m" "[frame %d][trial %d]\t1st bit in error in unscrambling = %d\n" "\x1B[0m", frame, trial, i);*/
             errors_scrambling[round]++;
@@ -1524,7 +1525,7 @@ int main(int argc, char **argv)
       for (i = 0; i < TBS; i++) {
       
         estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
-        test_input_bit[i] = (ulsch_ue->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+        test_input_bit[i] = (UE->ul_harq_processes[harq_pid].b[i / 8] & (1 << (i & 7))) >> (i & 7);
       
         if (estimated_output_bit[i] != test_input_bit[i]) {
           /*if(errors_decoding == 0)
@@ -1533,14 +1534,14 @@ int main(int argc, char **argv)
         }
       }
       if (n_trials == 1) {
-        for (int r = 0; r < ulsch_ue->harq_processes[harq_pid]->C; r++)
-          for (int i = 0; i < ulsch_ue->harq_processes[harq_pid]->K >> 3; i++) {
-            if ((ulsch_ue->harq_processes[harq_pid]->c[r][i] ^ ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
+        for (int r = 0; r < UE->ul_harq_processes[harq_pid].C; r++)
+          for (int i = 0; i < UE->ul_harq_processes[harq_pid].K >> 3; i++) {
+            if ((UE->ul_harq_processes[harq_pid].c[r][i] ^ ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
               printf("************");
             /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
-              i,ulsch_ue->harq_processes[harq_pid]->c[r][i],
+              i,UE->ul_harq_processes[harq_pid].c[r][i],
               i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-              ulsch_ue->harq_processes[harq_pid]->c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
+              UE->ul_harq_processes[harq_pid].c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
           }
       }
       if (errors_decoding > 0 && error_flag == 0) {

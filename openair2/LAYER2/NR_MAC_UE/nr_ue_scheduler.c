@@ -1251,7 +1251,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
         }
         pthread_mutex_unlock(&ul_config->mutex_ul_config); // avoid double lock
 
-        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, NULL);
+        fill_scheduled_response(&scheduled_response, NULL, ul_config, &tx_req, mod_id, cc_id, frame_tx, slot_tx, ul_info->phy_data);
         if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL){
           LOG_D(NR_MAC,"3# scheduled_response transmitted,%d, %d\n", frame_tx, slot_tx);
           mac->if_module->scheduled_response(&scheduled_response);

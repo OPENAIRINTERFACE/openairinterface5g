@@ -329,8 +329,8 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
     NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
-    NR_UE_ULSCH_t *ulsch = PHY_vars_UE_g[module_id][cc_id]->ulsch[0];
-    NR_UE_PUCCH *pucch_vars = &((nr_phy_data_t *)scheduled_response->phy_data)->pucch_vars;
+    NR_UE_ULSCH_t *ulsch = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->ulsch;
+    NR_UE_PUCCH *pucch_vars = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->pucch_vars;
     NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
     NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
     NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
@@ -426,26 +426,21 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
           // pusch config pdu
           pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
           current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
-          NR_UL_UE_HARQ_t *harq_process_ul_ue = ulsch->harq_processes[current_harq_pid];
+          NR_UL_UE_HARQ_t *harq_process_ul_ue = &PHY_vars_UE_g[module_id][cc_id]->ul_harq_processes[current_harq_pid];
 
-          if (harq_process_ul_ue){
+          nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch->pusch_pdu;
 
-            nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &harq_process_ul_ue->pusch_pdu;
-            
-            LOG_D(PHY, "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n", __FUNCTION__, i, pusch_config_pdu->nrOfLayers,pusch_config_pdu->num_dmrs_cdm_grps_no_data);
+          LOG_D(PHY, "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n", __FUNCTION__, i, pusch_config_pdu->nrOfLayers,pusch_config_pdu->num_dmrs_cdm_grps_no_data);
 
-            memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+          memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
 
-            ulsch->f_pusch = pusch_config_pdu->absolute_delta_PUSCH;
-
-            if (scheduled_response->tx_request) {
-              for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
-                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
-                if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
-                  LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
-                  memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
-                  break;
-                }
+          if (scheduled_response->tx_request) {
+            for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
+              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+              if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
+                LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
+                memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+                break;
               }
             }
 

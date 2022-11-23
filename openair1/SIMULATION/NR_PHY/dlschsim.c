@@ -406,7 +406,7 @@ int main(int argc, char **argv)
   nr_ue_dlsch_init(dlsch_ue, num_codeword, 5);
   for (int i=0; i < num_codeword; i++)
     dlsch_ue[0].rnti = n_rnti;
-  nr_init_harq_processes(UE->dl_harq_processes[0], 8, nb_rb);
+  nr_init_dl_harq_processes(UE->dl_harq_processes[0], 8, nb_rb);
 
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   processingData_L1tx_t msgDataTx;

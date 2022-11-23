@@ -269,7 +269,8 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
 
 void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
-                            uint8_t gNB_id) {
+                            uint8_t gNB_id,
+                            nr_phy_data_tx_t *phy_data) {
 
   int slot_tx = proc->nr_slot_tx;
   int frame_tx = proc->frame_tx;
@@ -287,9 +288,9 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   if (ue->UE_mode[gNB_id] <= PUSCH){
 
-    for (uint8_t harq_pid = 0; harq_pid < ue->ulsch[gNB_id]->number_harq_processes_for_pusch; harq_pid++) {
-      if (ue->ulsch[gNB_id]->harq_processes[harq_pid]->status == ACTIVE)
-        nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id);
+    for (uint8_t harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
+      if (ue->ul_harq_processes[harq_pid].status == ACTIVE)
+        nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id, phy_data);
     }
   }
 
@@ -492,7 +493,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   unsigned int dci_cnt=0;
-  fapi_nr_dci_indication_t *dci_ind = calloc(1, sizeof(*dci_ind));
+  fapi_nr_dci_indication_t dci_ind = {0};
   nr_downlink_indication_t dl_indication;
   NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data->phy_pdcch_config;
 
@@ -516,7 +517,7 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
 	 n_ss);
 #endif
 
-  dci_cnt = nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, dci_ind, rel15);
+  dci_cnt = nr_dci_decoding_procedure(ue, proc, pdcch_e_rx, &dci_ind, rel15);
 
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
@@ -530,14 +531,14 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
       ue->Mod_id,frame_rx%1024,nr_slot_rx,nr_mode_string[ue->UE_mode[gNB_id]],
       i + 1,
       dci_cnt,
-      dci_ind->dci_list[i].rnti,
-      dci_ind->dci_list[i].dci_format);
+      dci_ind.dci_list[i].rnti,
+      dci_ind.dci_list[i].dci_format);
   }
 
-  dci_ind->number_of_dcis = dci_cnt;
+  dci_ind.number_of_dcis = dci_cnt;
 
   // fill dl_indication message
-  nr_fill_dl_indication(&dl_indication, dci_ind, NULL, proc, ue, gNB_id, phy_data);
+  nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, gNB_id, phy_data);
   //  send to mac
   ue->if_inst->dl_indication(&dl_indication, NULL);
 
