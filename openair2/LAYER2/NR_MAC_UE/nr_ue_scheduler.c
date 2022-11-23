@@ -145,8 +145,7 @@ void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
   NR_SRS_Config_t *srs_config = current_UL_BWP->srs_Config;
   NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
 
-  long transformPrecoder = get_transformPrecoding(current_UL_BWP, dci_format, 0);
-  pusch_config_pdu->transform_precoding = transformPrecoder;
+  int transformPrecoder = pusch_config_pdu->transform_precoding;
 
   /* PRECOD_NBR_LAYERS */
   // 0 bits if the higher layer parameter txConfig = nonCodeBook
@@ -606,7 +605,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr
       pusch_config_pdu->scid = dci->dmrs_sequence_initialization.val;
 
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
-
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
 
       pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
@@ -616,15 +614,15 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr
           NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         n_RS_Id = *NR_DMRS_ulconfig->transformPrecodingEnabled->nPUSCH_Identity;
       else
-        n_RS_Id = *mac->scc->physCellId;
+        n_RS_Id = mac->physCellId;
 
       // U as specified in section 6.4.1.1.1.2 in 38.211, if sequence hopping and group hopping are disabled
       pusch_config_pdu->dfts_ofdm.low_papr_group_number = n_RS_Id % 30;
 
       // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
-      if ((NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
-            (NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceHopping == NULL))
-          pusch_config_pdu->dfts_ofdm.low_papr_sequence_number = 0;
+      if (!NR_DMRS_ulconfig || !NR_DMRS_ulconfig->transformPrecodingEnabled ||
+          (!NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceGroupHopping && !NR_DMRS_ulconfig->transformPrecodingEnabled->sequenceHopping))
+        pusch_config_pdu->dfts_ofdm.low_papr_sequence_number = 0;
       else
         AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
 
