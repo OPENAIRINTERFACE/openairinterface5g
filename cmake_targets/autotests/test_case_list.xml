@@ -127,8 +127,8 @@
       <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 217 PRB),
                                    (Test2: PBCH and synchronization, 217 RPB)</desc>
       <main_exec>nr_pbchsim</main_exec>
-      <main_exec_args>-s-11 -S-8 -n10 -R217
-                      -s-11 -S-8 -n10 -o8000 -I -R217</main_exec_args>
+      <main_exec_args>-s-10 -S-8 -n10 -R217
+                      -s-10 -S-8 -n10 -o8000 -I -R217</main_exec_args>
       <tags>test1 test2</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
@@ -139,8 +139,8 @@
       <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 273 PRB),
                                    (Test2: PBCH and synchronization, 273 PRB)</desc>
       <main_exec>nr_pbchsim</main_exec>
-      <main_exec_args>-s-11 -S-8 -n10 -R273
-                      -s-11 -S-8 -n10 -o8000 -I -R273</main_exec_args>
+      <main_exec_args>-s-10 -S-8 -n10 -R273
+                      -s-10 -S-8 -n10 -o8000 -I -R273</main_exec_args>
       <tags>test1 test2</tags>
       <search_expr_true>PBCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>

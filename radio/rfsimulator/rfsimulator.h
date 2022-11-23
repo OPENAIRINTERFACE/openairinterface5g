@@ -23,8 +23,6 @@
 
 #ifndef __RFSIMULATOR_H
 #define  __RFSIMULATOR_H
-double gaussZiggurat(double mean, double variance);
-void tableNor(unsigned long seed);
 void rxAddInput( const c16_t *input_sig,
                  c16_t *after_channel_sig,
                  int rxAnt,

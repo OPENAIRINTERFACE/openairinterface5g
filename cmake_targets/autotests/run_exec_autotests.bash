@@ -1,4 +1,5 @@
 #!/bin/bash
+#set -xv
 #/*
 # * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
 # * contributor license agreements.  See the NOTICE file distributed with
@@ -68,7 +69,7 @@ function test_run() {
     mkdir -p $log_dir
 
     echo "" > $temp_exec_log
-    echo "" > $log_file
+    echo "start at $(date)" > "$log_file"
     #echo "log_dir = $log_dir"
     #echo "log_file = $log_file"
     #echo "exec_file = $exec_file"
@@ -92,78 +93,61 @@ function test_run() {
     tags_array_index=0
     for main_exec_args_array_index in "${main_exec_args_array[@]}"
     do
-      global_result=1
+      global_result=PASS
       result_string=""
       PROPER_DESC=`echo ${desc_array[$tags_array_index]} | sed -e "s@^.*Test cases.*(Test@Test@" -e "s@^ *(@@" -e"s/)$//" -e "s/),$//"`
       echo_info "$PROPER_DESC"
 
      for (( run_index=1; run_index <= $nruns; run_index++ ))
       do
-        temp_exec_log=$log_dir/test.$test_case_name.${tags_array[$tags_array_index]}.run_$run_index
-        echo "" > $temp_exec_log
-
+        temp_exec_log="$log_dir/test.$test_case_name.${tags_array[$tags_array_index]}.run_$run_index"
         echo "Executing test case $test_case_name.${tags_array[$tags_array_index]}, Run Index = $run_index, Execution Log file = $temp_exec_log"
 
-        echo "-----------------------------------------------------------------------------" >> $temp_exec_log  2>&1
-        echo "<EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]}, Run = $run_index >" >> $temp_exec_log  2>&1
-        echo "Executing $main_exec $main_exec_args_array_index " | tee $temp_exec_log
-        { uname -a ; eval "$main_exec $main_exec_args_array_index" ;} >> $temp_exec_log  2>&1
+        echo "-----------------------------------------------------------------------------" > "$temp_exec_log"
+        echo "<EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]}, Run = $run_index >" >> "$temp_exec_log"
+        echo "Executing $main_exec $main_exec_args_array_index at $(date)" >> "$temp_exec_log"
+        uname -a >> "$temp_exec_log"
+        time "$main_exec" $main_exec_args_array_index >> "$temp_exec_log"  2>&1 &
+     done
 
+     wait
+
+     for (( run_index=1; run_index <= $nruns; run_index++ ))
+      do
         echo "</EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]},  Run = $run_index >" >> $temp_exec_log  2>&1
-        cat $temp_exec_log >> $log_file  2>&1
+        cat "$temp_exec_log" >> "$log_file"  2>&1
 
-
-        result=1
+        result=PASS
         for search_expr in "${search_expr_array[@]}"
         do
-
-          search_result=`grep -E "$search_expr" $temp_exec_log`
-
-          if [ -z "$search_result" ]; then
-            let "result = result & 0"
-          else
-            let "result = result & 1"
-          fi
+          grep -Eq "$search_expr" $temp_exec_log || result=FAIL
         done
 
         #If we find a negative search result then there is crash of program and test case is failed even if above condition is true
-        search_result=`grep -iE "$search_expr_negative" $temp_exec_log`
-        if [ -n "$search_result" ]; then
-          result=0
-        fi
-        let "global_result = global_result & result"
-
-        #echo "result = $result"
-
-        if [ "$result" -eq "0" ]; then
-          result_string=$result_string" Run_$run_index =FAIL"
+        grep -q -iE "$search_expr_negative" $temp_exec_log && result=FAIL
+        
+        if [ "$result" != PASS ]; then
           echo_error "$test_case_name.${tags_array[$tags_array_index]} RUN = $run_index Result = FAIL"
-        fi
-
-        if [ "$result" -eq "1" ]; then
-          result_string=$result_string" Run_$run_index =PASS"
+        else
           echo_success "$test_case_name.${tags_array[$tags_array_index]} RUN = $run_index Result = PASS"
         fi
 
+        result_string=$result_string" Run_$run_index =$result"
+        if [ $result != PASS ] ; then 
+          global_result=FAIL
+        fi
 
-      done #End of for loop (nindex)
+     done #End of for loop (nindex)
 
-     echo " Result String = $result_string"
+     echo "END at $(date)" >> "$log_file"
 
-     if [ "$result_string" == "" ]; then
-         echo_error "execution $test_case_name.${tags_array[$tags_array_index]} {$PROPER_DESC} Run_Result = \"$result_string\"  Result = FAIL"
-         xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase" "$PROPER_DESC"
-     else
-      if [ "$global_result" == "0" ]; then
+      if [ "$global_result" != PASS ]; then
          echo_error "execution $test_case_name.${tags_array[$tags_array_index]} {$PROPER_DESC} Run_Result = \"$result_string\" Result =  FAIL"
          xUnit_fail "execution" "$test_case_name.${tags_array[$tags_array_index]}" "FAIL" "$result_string" "$xmlfile_testcase" "$PROPER_DESC"
-      fi
-
-      if [ "$global_result" == "1" ]; then
+       else
          echo_success "execution $test_case_name.${tags_array[$tags_array_index]} {$PROPER_DESC} Run_Result = \"$result_string\"  Result = PASS "
          xUnit_success "execution" "$test_case_name.${tags_array[$tags_array_index]}" "PASS" "$result_string"   "$xmlfile_testcase"  "$PROPER_DESC"
       fi
-     fi
 
      let "tags_array_index++"
    done
