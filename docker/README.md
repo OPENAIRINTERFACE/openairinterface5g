@@ -156,6 +156,59 @@ Docker hub).
 For an example using a B210, please refer to [this `docker-compose`
 file](../ci-scripts/yaml_files/sa_b200_gnb/docker-compose.yml).
 
+It is also possible to mount your own configuration file. The following
+docker-compose file can be used to start a gNB using a B210 and your own
+config, located at `/tmp/gnb.conf`:
+```
+version: '3.8'
+
+services:
+    gnb_mono_tdd:
+        image: oai-gnb:latest
+        privileged: true
+        container_name: sa-b200-gnb
+        environment:
+            USE_VOLUMED_CONF: 'yes'
+            USE_B2XX: 'yes'
+            USE_ADDITIONAL_OPTIONS: --sa -E --continuous-tx
+        volumes:
+            - /dev:/dev
+            - /tmp/gnb.conf:/opt/oai-gnb/etc/mounted.conf
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.194
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: sa-b200-gnb-net
+        ipam:
+            config:
+                - subnet: 192.168.68.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "sa-gnb-net"
+```
+
+You should also change the `image` to the right image name and tag of the gNB
+you are using. Start like this:
+```
+docker-compose up    # gNB in foreground
+docker-compose up -d # gNB in background
+```
+Stop it like this (in both cases):
+```
+docker-compose down
+```
+
+Note that in the above case, ALL devices are passed into the container (by
+mounting `/dev`), which allows the container to access all devices connected to
+the host!
+
 # 6. Running modems using `podman` under Red Hat Entreprise Linux 8.2 #
 
 TODO.
