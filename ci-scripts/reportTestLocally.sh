@@ -251,7 +251,7 @@ function report_test {
     echo "   <h2>Test Summary</h2>" >> ./test_simulator_results.html
 
     ARCHIVES_LOC=archives/rf_sim/test
-    if [ -d $ARCHIVES_LOC ]
+    if test   # evaluates to false
     then
         echo "   <h3>4G LTE RF Simulator Check</h3>" >> ./test_simulator_results.html
 
