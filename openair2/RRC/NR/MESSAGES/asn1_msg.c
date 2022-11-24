@@ -1021,12 +1021,12 @@ void fill_initial_SpCellConfig(int uid,
                              bwp_id,
                              uid);
     }
-    conig_rsrp_meas_report(csi_MeasConfig,
-                           scc,
-                           pucchcsires1,
-                           configuration->do_CSIRS,
-                           bwp_id+10,
-                           uid);
+    config_rsrp_meas_report(csi_MeasConfig,
+                            scc,
+                            pucchcsires1,
+                            configuration->do_CSIRS,
+                            bwp_id+10,
+                            uid);
   }
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;

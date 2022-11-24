@@ -283,7 +283,8 @@ void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
                   NR_CSI_MeasConfig_t *csi_MeasConfig, int id) {
 
  if (do_csirs && dl_antenna_ports > 1) {
-   csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
+   if(!csi_MeasConfig->csi_IM_ResourceToAddModList)
+     csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
    NR_CSI_IM_Resource_t *imres = calloc(1,sizeof(*imres));
    imres->csi_IM_ResourceId = id;
    NR_NZP_CSI_RS_Resource_t *nzpcsi = NULL;
@@ -309,7 +310,8 @@ void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
    imres->periodicityAndOffset->present = nzpcsi->periodicityAndOffset->present;
    set_csiim_offset(imres->periodicityAndOffset, nzpcsi->periodicityAndOffset);
    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_IM_ResourceToAddModList->list,imres);
-   csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
+   if(!csi_MeasConfig->csi_IM_ResourceSetToAddModList)
+     csi_MeasConfig->csi_IM_ResourceSetToAddModList = calloc(1,sizeof(*csi_MeasConfig->csi_IM_ResourceSetToAddModList));
    NR_CSI_IM_ResourceSet_t *imset = calloc(1,sizeof(*imset));
    imset->csi_IM_ResourceSetId = id;
    NR_CSI_IM_ResourceId_t *res = calloc(1,sizeof(*res));
@@ -1450,12 +1452,12 @@ void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
   ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ReportConfigToAddModList->list,csirep);
 }
 
-void conig_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
-                            const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                            NR_PUCCH_CSI_Resource_t *pucchcsires,
-                            int do_csi, // if rsrp is based on CSI or SSB
-                            int rep_id,
-                            int uid)
+void config_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
+                             const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                             NR_PUCCH_CSI_Resource_t *pucchcsires,
+                             int do_csi, // if rsrp is based on CSI or SSB
+                             int rep_id,
+                             int uid)
 {
 
   NR_CSI_ReportConfig_t *csirep = calloc(1,sizeof(*csirep));

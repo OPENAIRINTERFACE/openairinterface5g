@@ -419,12 +419,12 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
                           NR_MAX_SUPPORTED_DL_LAYERS,
                           bwp->bwp_Id,
                           uid);
-   conig_rsrp_meas_report(csi_MeasConfig,
-                          servingcellconfigcommon,
-                          pucchcsires1,
-                          do_csirs,
-                          bwp->bwp_Id+10,
-                          uid);
+   config_rsrp_meas_report(csi_MeasConfig,
+                           servingcellconfigcommon,
+                           pucchcsires1,
+                           do_csirs,
+                           bwp->bwp_Id+10,
+                           uid);
 
  }
  secondaryCellGroup->spCellConfig->spCellConfigDedicated->sCellDeactivationTimer=NULL;
