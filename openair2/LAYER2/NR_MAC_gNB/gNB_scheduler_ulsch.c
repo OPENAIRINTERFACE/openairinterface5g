@@ -1333,7 +1333,7 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
   AssertFatal(*Rb >= minRb, "illegal Rb %d < minRb %d\n", *Rb, minRb);
   AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
 
-  const int tbs_bits = tbs << 3;
+  int tbs_bits = tbs << 3;
   uint16_t R;
   uint8_t Qm;
   update_ul_ue_R_Qm(*mcs, ul_bwp->mcs_table, ul_bwp->pusch_Config, &R, &Qm);
@@ -1349,6 +1349,12 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
 
   while (ph_limit < tx_power && *Rb >= minRb) {
     (*Rb)--;
+    tbs_bits = nr_compute_tbs(Qm, R, *Rb,
+                              sched_pusch->tda_info.nrOfSymbols,
+                              sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
+                              0, // nb_rb_oh
+                              0,
+                              sched_pusch->nrOfLayers);
     tx_power = compute_ph_factor(mu,
                                  tbs_bits,
                                  *Rb,
@@ -1361,6 +1367,12 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
   while (ph_limit < tx_power && *mcs > 6) {
     (*mcs)--;
     update_ul_ue_R_Qm(*mcs, ul_bwp->mcs_table, ul_bwp->pusch_Config, &R, &Qm);
+    tbs_bits = nr_compute_tbs(Qm, R, *Rb,
+                              sched_pusch->tda_info.nrOfSymbols,
+                              sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
+                              0, // nb_rb_oh
+                              0,
+                              sched_pusch->nrOfLayers);
     tx_power = compute_ph_factor(mu,
                                  tbs_bits,
                                  *Rb,
