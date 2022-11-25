@@ -25,6 +25,9 @@
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 
+#include "uper_decoder.h"
+#include "uper_encoder.h"
+
 static NR_RLC_BearerConfig_t *get_bearerconfig_from_srb(const f1ap_srb_to_be_setup_t *srb)
 {
   long priority = srb->srb_id; // high priority for SRB

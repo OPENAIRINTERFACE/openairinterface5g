@@ -50,6 +50,9 @@
 
 #include "T.h"
 
+#include "uper_encoder.h"
+#include "uper_decoder.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 

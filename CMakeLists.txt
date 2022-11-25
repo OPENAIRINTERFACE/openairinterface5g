@@ -307,6 +307,9 @@ if (DEBUG_ASN1C)
   add_definitions(-DHAVE_CONFIG_H)
 endif()
 
+# asn1c skeletons need this
+add_definitions(-DHAVE_NETINET_IN_H)
+
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
 ##################################################
@@ -2087,9 +2090,6 @@ add_custom_target (
   generate_T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_IDs.h
 )
-
-# Hack on a test of asn1c version (already dirty)
-add_definitions(-DASN1_MINIMUM_VERSION=924)
 
 #################################
 # add executables for operation

@@ -42,6 +42,7 @@
 #include "common/ran_context.h"
 #include "sctp_default_values.h"
 #include "LTE_SystemInformationBlockType2.h"
+#include "uper_decoder.h"
 #include "LAYER2/MAC/mac_extern.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "PHY/phy_extern.h"

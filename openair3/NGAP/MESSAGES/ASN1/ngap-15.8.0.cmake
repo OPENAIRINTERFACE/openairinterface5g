@@ -1,28 +1,70 @@
 set(NGAP_GRAMMAR ASN1/ngap-15.8.0.asn1)
 
 set(ngap_source
+    ANY_aper.c
     ANY.c
+    ANY_uper.c
+    ANY_xer.c
+    aper_decoder.c
+    aper_encoder.c
+    aper_opentype.c
+    aper_support.c
     asn_application.c
     asn_bit_data.c
     asn_codecs_prim.c
+    asn_codecs_prim_xer.c
     asn_internal.c
     asn_random_fill.c
     asn_SEQUENCE_OF.c
     asn_SET_OF.c
-    ber_decoder.c
     ber_tlv_length.c
     ber_tlv_tag.c
     BIT_STRING.c
+    BIT_STRING_print.c
+    BIT_STRING_rfill.c
+    BIT_STRING_uper.c
+    BIT_STRING_xer.c
     constraints.c
+    constr_CHOICE_aper.c
     constr_CHOICE.c
+    constr_CHOICE_print.c
+    constr_CHOICE_rfill.c
+    constr_CHOICE_uper.c
+    constr_CHOICE_xer.c
+    constr_SEQUENCE_aper.c
     constr_SEQUENCE.c
+    constr_SEQUENCE_OF_aper.c
     constr_SEQUENCE_OF.c
+    constr_SEQUENCE_OF_uper.c
+    constr_SEQUENCE_OF_xer.c
+    constr_SEQUENCE_print.c
+    constr_SEQUENCE_rfill.c
+    constr_SEQUENCE_uper.c
+    constr_SEQUENCE_xer.c
+    constr_SET_OF_aper.c
     constr_SET_OF.c
+    constr_SET_OF_print.c
+    constr_SET_OF_rfill.c
+    constr_SET_OF_uper.c
+    constr_SET_OF_xer.c
     constr_TYPE.c
-    der_encoder.c
+    GraphicString.c
+    INTEGER_aper.c
     INTEGER.c
+    INTEGER_print.c
+    INTEGER_rfill.c
+    INTEGER_uper.c
+    INTEGER_xer.c
+    NativeEnumerated_aper.c
     NativeEnumerated.c
+    NativeEnumerated_uper.c
+    NativeEnumerated_xer.c
+    NativeInteger_aper.c
     NativeInteger.c
+    NativeInteger_print.c
+    NativeInteger_rfill.c
+    NativeInteger_uper.c
+    NativeInteger_xer.c
     NGAP_AdditionalDLUPTNLInformationForHOItem.c
     NGAP_AdditionalDLUPTNLInformationForHOList.c
     NGAP_AdditionalQosFlowInformation.c
@@ -111,7 +153,7 @@ set(ngap_source
     NGAP_ConfidentialityProtectionIndication.c
     NGAP_ConfidentialityProtectionResult.c
     NGAP_ConfiguredNSSAI.c
-                                                    NGAP_CoreNetworkAssistanceInformationForInactive.c
+    NGAP_CoreNetworkAssistanceInformationForInactive.c
     NGAP_COUNTValueForPDCP-SN12.c
     NGAP_COUNTValueForPDCP-SN18.c
     NGAP_CPTransportLayerInformation.c
@@ -184,6 +226,7 @@ set(ngap_source
     NGAP_ExpectedUEMobility.c
     NGAP_ExpectedUEMovingTrajectory.c
     NGAP_ExpectedUEMovingTrajectoryItem.c
+    NGAP_EXTERNAL.c
     NGAP_FiveG-S-TMSI.c
     NGAP_FiveG-TMSI.c
     NGAP_FiveQI.c
@@ -213,7 +256,7 @@ set(ngap_source
     NGAP_HandoverRequest.c
     NGAP_HandoverRequired.c
     NGAP_HandoverRequiredTransfer.c
-                                                    NGAP_HandoverResourceAllocationUnsuccessfulTransfer.c
+    NGAP_HandoverResourceAllocationUnsuccessfulTransfer.c
     NGAP_HandoverType.c
     NGAP_IMSVoiceSupportIndicator.c
     NGAP_IndexToRFSP.c
@@ -331,7 +374,7 @@ set(ngap_source
     NGAP_PDUSessionResourceModifyConfirmTransfer.c
     NGAP_PDUSessionResourceModifyIndication.c
     NGAP_PDUSessionResourceModifyIndicationTransfer.c
-                                                    NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer.c
+    NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer.c
     NGAP_PDUSessionResourceModifyItemModCfm.c
     NGAP_PDUSessionResourceModifyItemModInd.c
     NGAP_PDUSessionResourceModifyItemModReq.c
@@ -344,7 +387,7 @@ set(ngap_source
     NGAP_PDUSessionResourceModifyRequestTransfer.c
     NGAP_PDUSessionResourceModifyResponse.c
     NGAP_PDUSessionResourceModifyResponseTransfer.c
-                                                    NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.c
+    NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.c
     NGAP_PDUSessionResourceNotify.c
     NGAP_PDUSessionResourceNotifyItem.c
     NGAP_PDUSessionResourceNotifyList.c
@@ -378,7 +421,7 @@ set(ngap_source
     NGAP_PDUSessionResourceSetupRequestTransfer.c
     NGAP_PDUSessionResourceSetupResponse.c
     NGAP_PDUSessionResourceSetupResponseTransfer.c
-                                                    NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.c
+    NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.c
     NGAP_PDUSessionResourceSwitchedItem.c
     NGAP_PDUSessionResourceSwitchedList.c
     NGAP_PDUSessionResourceToBeSwitchedDLItem.c
@@ -616,14 +659,30 @@ set(ngap_source
     NGAP_XnGTP-TLAs.c
     NGAP_XnTLAs.c
     NGAP_XnTNLConfigurationInfo.c
+    ObjectDescriptor.c
     OBJECT_IDENTIFIER.c
+    OBJECT_IDENTIFIER_print.c
+    OBJECT_IDENTIFIER_rfill.c
+    OBJECT_IDENTIFIER_xer.c
+    OCTET_STRING_aper.c
     OCTET_STRING.c
+    OCTET_STRING_print.c
+    OCTET_STRING_rfill.c
+    OCTET_STRING_uper.c
+    OCTET_STRING_xer.c
+    OPEN_TYPE_aper.c
     OPEN_TYPE.c
+    OPEN_TYPE_uper.c
+    OPEN_TYPE_xer.c
     per_decoder.c
     per_encoder.c
     per_opentype.c
     per_support.c
     PrintableString.c
+    uper_decoder.c
+    uper_encoder.c
+    uper_opentype.c
+    uper_support.c
     xer_decoder.c
     xer_encoder.c
     xer_support.c
@@ -631,17 +690,21 @@ set(ngap_source
 
 set(ngap_headers
     ANY.h
+    aper_decoder.h
+    aper_encoder.h
+    aper_opentype.h
+    aper_support.h
     asn_application.h
     asn_bit_data.h
     asn_codecs.h
     asn_codecs_prim.h
+    asn_config.h
     asn_internal.h
     asn_ioc.h
     asn_random_fill.h
     asn_SEQUENCE_OF.h
     asn_SET_OF.h
     asn_system.h
-    ber_decoder.h
     ber_tlv_length.h
     ber_tlv_tag.h
     BIT_STRING.h
@@ -651,7 +714,7 @@ set(ngap_headers
     constr_SEQUENCE_OF.h
     constr_SET_OF.h
     constr_TYPE.h
-    der_encoder.h
+    GraphicString.h
     INTEGER.h
     NativeEnumerated.h
     NativeInteger.h
@@ -744,7 +807,7 @@ set(ngap_headers
     NGAP_ConfidentialityProtectionIndication.h
     NGAP_ConfidentialityProtectionResult.h
     NGAP_ConfiguredNSSAI.h
-                                                    NGAP_CoreNetworkAssistanceInformationForInactive.h
+    NGAP_CoreNetworkAssistanceInformationForInactive.h
     NGAP_COUNTValueForPDCP-SN12.h
     NGAP_COUNTValueForPDCP-SN18.h
     NGAP_CPTransportLayerInformation.h
@@ -817,6 +880,7 @@ set(ngap_headers
     NGAP_ExpectedUEMobility.h
     NGAP_ExpectedUEMovingTrajectory.h
     NGAP_ExpectedUEMovingTrajectoryItem.h
+    NGAP_EXTERNAL.h
     NGAP_FiveG-S-TMSI.h
     NGAP_FiveG-TMSI.h
     NGAP_FiveQI.h
@@ -846,7 +910,7 @@ set(ngap_headers
     NGAP_HandoverRequest.h
     NGAP_HandoverRequired.h
     NGAP_HandoverRequiredTransfer.h
-                                                    NGAP_HandoverResourceAllocationUnsuccessfulTransfer.h
+    NGAP_HandoverResourceAllocationUnsuccessfulTransfer.h
     NGAP_HandoverType.h
     NGAP_IMSVoiceSupportIndicator.h
     NGAP_IndexToRFSP.h
@@ -964,7 +1028,7 @@ set(ngap_headers
     NGAP_PDUSessionResourceModifyConfirmTransfer.h
     NGAP_PDUSessionResourceModifyIndication.h
     NGAP_PDUSessionResourceModifyIndicationTransfer.h
-                                                    NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer.h
+    NGAP_PDUSessionResourceModifyIndicationUnsuccessfulTransfer.h
     NGAP_PDUSessionResourceModifyItemModCfm.h
     NGAP_PDUSessionResourceModifyItemModInd.h
     NGAP_PDUSessionResourceModifyItemModReq.h
@@ -977,7 +1041,7 @@ set(ngap_headers
     NGAP_PDUSessionResourceModifyRequestTransfer.h
     NGAP_PDUSessionResourceModifyResponse.h
     NGAP_PDUSessionResourceModifyResponseTransfer.h
-                                                    NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.h
+    NGAP_PDUSessionResourceModifyUnsuccessfulTransfer.h
     NGAP_PDUSessionResourceNotify.h
     NGAP_PDUSessionResourceNotifyItem.h
     NGAP_PDUSessionResourceNotifyList.h
@@ -1011,7 +1075,7 @@ set(ngap_headers
     NGAP_PDUSessionResourceSetupRequestTransfer.h
     NGAP_PDUSessionResourceSetupResponse.h
     NGAP_PDUSessionResourceSetupResponseTransfer.h
-                                                    NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.h
+    NGAP_PDUSessionResourceSetupUnsuccessfulTransfer.h
     NGAP_PDUSessionResourceSwitchedItem.h
     NGAP_PDUSessionResourceSwitchedList.h
     NGAP_PDUSessionResourceToBeSwitchedDLItem.h
@@ -1249,6 +1313,7 @@ set(ngap_headers
     NGAP_XnGTP-TLAs.h
     NGAP_XnTLAs.h
     NGAP_XnTNLConfigurationInfo.h
+    ObjectDescriptor.h
     OBJECT_IDENTIFIER.h
     OCTET_STRING.h
     OPEN_TYPE.h
@@ -1257,6 +1322,10 @@ set(ngap_headers
     per_opentype.h
     per_support.h
     PrintableString.h
+    uper_decoder.h
+    uper_encoder.h
+    uper_opentype.h
+    uper_support.h
     xer_decoder.h
     xer_encoder.h
     xer_support.h

@@ -44,6 +44,8 @@
 #include "NR_RRCReconfiguration.h"
 #include "NR_MeasConfig.h"
 #include "NR_UL-DCCH-Message.h"
+#include "uper_encoder.h"
+#include "uper_decoder.h"
 
 #include "rrc_defs.h"
 #include "rrc_proto.h"

@@ -69,6 +69,9 @@
 #include "NGAP_NonDynamic5QIDescriptor.h"
 #include "conversions.h"
 #include "RRC/NR/rrc_gNB_radio_bearers.h"
+
+#include "uper_encoder.h"
+
 extern RAN_CONTEXT_t RC;
 
 /* Masks for NGAP Encryption algorithms, NEA0 is always supported (not coded) */

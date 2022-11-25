@@ -25,7 +25,7 @@ You should install the asn1c utility using `./build_oai -I`.
 
 Run
 ```bash
-ASN1C_PREFIX=LTE_ asn1c -pdu=all -fcompound-names -gen-PER -no-gen-OER -no-gen-example -D <dir> <asn.1-file>
+ASN1C_PREFIX=LTE_ asn1c -pdu=all -fcompound-names -gen-UPER -no-gen-BER -no-gen-JER -no-gen-OER -no-gen-APER -no-gen-example -D <dir> <asn.1-file>
 ```
 to generate the files that result from the asn.1-file. Create an `ASN.1/*.cmake` file
 with the following structure:
