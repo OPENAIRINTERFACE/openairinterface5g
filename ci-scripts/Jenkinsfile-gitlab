@@ -332,7 +332,7 @@ pipeline {
                     script {
                       if (doMandatoryTests) {
                         dir ('archives') {
-                            sh "if [ -d rf_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
+                            sh "if [ -d rf_sim/test ] || [ -d rf5g_sim/test ] || [ -d l2_sim/test ]; then zip -r -qq vm_tests_logs.zip */test ; fi"
                         }
                         if(fileExists('archives/vm_tests_logs.zip')) {
                             archiveArtifacts artifacts: 'archives/vm_tests_logs.zip'
