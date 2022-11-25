@@ -672,7 +672,9 @@ rrc_gNB_generate_defaultRRCReconfiguration(
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
   LOG_W(RRC, "do_RRCReconfiguration(): size %d\n", size);
 
-  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
+  }
 
   free(ue_context_pP->ue_context.nas_pdu.buffer);
 
@@ -1788,11 +1790,11 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   NR_CellGroupConfig_t *masterCellGroup = ue_context_pP->ue_context.masterCellGroup;
-  if (dl_bwp_id >= 0) {
+  if (dl_bwp_id > 0) {
     *masterCellGroup->spCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = dl_bwp_id;
     *masterCellGroup->spCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id = dl_bwp_id;
   }
-  if (ul_bwp_id >= 0) {
+  if (ul_bwp_id > 0) {
     *masterCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id = ul_bwp_id;
   }
 
@@ -3567,7 +3569,9 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
         sizeof(*cellGroupConfig->rlc_BearerToAddModList));
     }
   }
-  xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+  }
 
   if (ue_context_p->ue_context.established_pdu_sessions_flag == 1) {
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
@@ -3629,7 +3633,9 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, c
       }
     }
     LOG_I(NR_RRC, "Updated master cell group configuration stored at the UE context of the CU:\n");
-    xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+    if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_context_p->ue_context.masterCellGroup);
+    }
 
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
 

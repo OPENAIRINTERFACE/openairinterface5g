@@ -513,6 +513,8 @@ int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 double gaussdouble(double,double);
 void randominit(unsigned int seed_init);
 double uniformrandom(void);
+double gaussZiggurat(double mean, double variance);
+void tableNor(unsigned long seed);
 int freq_channel(channel_desc_t *desc,uint16_t nb_rb, int16_t n_samples,int scs);
 int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs);
 void term_freq_channel(void);

@@ -6,7 +6,7 @@ rules:
 - apiGroups:
   - security.openshift.io
   resourceNames:
-  - privileged
+  - anyuid
   resources:
   - securitycontextconstraints
   verbs:

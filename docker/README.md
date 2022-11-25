@@ -30,52 +30,54 @@ For all platforms, the strategy for building docker/podman images is the same:
       *  all packages, compilers, ...
       *  especially UHD is installed 
 *  Then, from the `ran-base` shared image, we create a shared image `ran-build`
-   in which all targets are compiled:
+   into which all targets are compiled.
+*  Then from the `ran-build` shared image, we can build target images for:
    -  eNB
-   -  gNB
+   -  gNB (with UHD)
+   -  gNB (with AW2S), only on RHEL8
    -  lte-UE
    -  nr-UE
-*  Then from the `ran-build` shared image we can build target images for:
-   -  eNB
-   -  gNB
-   -  lte-UE
-   -  nr-UE
-*  These target images will only contain:
+
+   These target images will only contain:
    -  the generated executable (for example `lte-softmodem`)
    -  the generated shared libraries (for example `liboai_usrpdevif.so`)
    -  the needed libraries and packages to run these generated binaries
    -  Some configuration file templates
    -  Some tools (such as `ping`, `ifconfig`)
 
-TO DO:
-
--  Proper entrypoints
--  Proper port exposure
--  ...
+Note that on every push to develop (i.e., typically after integrating merge
+requests), we build all images and push them to [Docker
+Hub](https://hub.docker.com/u/oaisoftwarealliance). To pull them, do
+```
+docker pull oaisoftwarealliance/oai-gnb:develop
+docker pull oaisoftwarealliance/oai-nr-ue:develop
+docker pull oaisoftwarealliance/oai-enb:develop
+docker pull oaisoftwarealliance/oai-lte-ue:develop
+```
+Have a look at [this
+README](../ci-scripts/yaml_files/5g_rfsimulator/README.md) to get some
+information on how to use the images.
 
 # 2. File organization #
 
-Dockerfiles are named with the following naming convention: `Dockerfile.${target}.${OS-version}.${cluster-version}`
+Dockerfiles are named with the following naming convention: `Dockerfile.${target}.${OS-version}`
 
 Targets can be:
 
 -  `base` for an image named `ran-base` (shared image)
--  `ran` for an image named `ran-build` (shared image)
+-  `build` for an image named `ran-build` (shared image)
 -  `eNB` for an image named `oai-enb`
 -  `gNB` for an image named `oai-gnb`
+-  `gNB.aw2s` for an image named `oai-gnb-aw2s`
 -  `lteUE` for an image named `oai-lte-ue`
 -  `nrUE` for an image named `oai-nr-ue`
 
 The currently-supported OS are:
 
-- `rhel8.2` for Red Hat Entreprise Linux
+- `rhel8.2` for Red Hat Entreprise Linux (including images for an OpenShift cluster)
 - `ubuntu18` for Ubuntu 18.04 LTS
 
-The currently-supported cluster version is:
-
-- `rhel8.2.oc4-9`
-
-For more details in build within a Openshift Cluster, see [OpenShift README](../openshift/README.md) for more details.
+For more details regarding the build on an Openshift Cluster, see [OpenShift README](../openshift/README.md).
 
 # 3. Building using `docker` under Ubuntu 18.04 #
 
@@ -87,26 +89,12 @@ For more details in build within a Openshift Cluster, see [OpenShift README](../
 
 ## 3.2. Building the shared images ##
 
-Note: This can be done starting `2020.XX` tag on the `develop` branch, or any branch that includes that tag.
-
 There are two shared images: one that has all dependencies, and a second that compiles all targets (eNB, gNB, [nr]UE).
 
 ```bash
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
 cd openairinterface5g
 git checkout develop
-```
-
-In our Eurecom/OSA environment we need to pass a GIT proxy.
-
-```bash
-docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
-docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 --build-arg NEEDED_GIT_PROXY="http://proxy.eurecom.fr:8080" .
-```
-
-if you don't need it, do NOT pass any value:
-
-```bash
 docker build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.ubuntu18 .
 docker build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.ubuntu18 .
 ```
@@ -149,11 +137,77 @@ docker image prune --force
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 
-TODO.
+Analogous to the above steps:
+```
+sudo podman build --target ran-base --tag ran-base:latest --file docker/Dockerfile.base.rhel8.2 .
+sudo podman build --target ran-build --tag ran-build:latest --file docker/Dockerfile.build.rhel8.2 .
+sudo podman build --target oai-enb --tag oai-enb:latest --file docker/Dockerfile.eNB.rhel8.2 .
+```
 
 # 5. Running modems using `docker` under Ubuntu 18.04 #
 
-TODO.
+The easiest is to run them from a `docker-compose` file, which is used by the
+CI to test OAI. Some folders under `ci-scripts/yaml_files` have a README that
+you can follow. For 5G, the easiest is to start with the RFsimulator, as
+described in [this README](../ci-scripts/yaml_files/5g_rfsimulator/README.md)
+(you would of course use your own images instead of downloading them from
+Docker hub).
+
+For an example using a B210, please refer to [this `docker-compose`
+file](../ci-scripts/yaml_files/sa_b200_gnb/docker-compose.yml).
+
+It is also possible to mount your own configuration file. The following
+docker-compose file can be used to start a gNB using a B210 and your own
+config, located at `/tmp/gnb.conf`:
+```
+version: '3.8'
+
+services:
+    gnb_mono_tdd:
+        image: oai-gnb:latest
+        privileged: true
+        container_name: sa-b200-gnb
+        environment:
+            USE_VOLUMED_CONF: 'yes'
+            USE_B2XX: 'yes'
+            USE_ADDITIONAL_OPTIONS: --sa -E --continuous-tx
+        volumes:
+            - /dev:/dev
+            - /tmp/gnb.conf:/opt/oai-gnb/etc/mounted.conf
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.194
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: sa-b200-gnb-net
+        ipam:
+            config:
+                - subnet: 192.168.68.192/26
+        driver_opts:
+            com.docker.network.bridge.name: "sa-gnb-net"
+```
+
+You should also change the `image` to the right image name and tag of the gNB
+you are using. Start like this:
+```
+docker-compose up    # gNB in foreground
+docker-compose up -d # gNB in background
+```
+Stop it like this (in both cases):
+```
+docker-compose down
+```
+
+Note that in the above case, ALL devices are passed into the container (by
+mounting `/dev`), which allows the container to access all devices connected to
+the host!
 
 # 6. Running modems using `podman` under Red Hat Entreprise Linux 8.2 #
 

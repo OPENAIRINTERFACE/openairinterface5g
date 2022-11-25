@@ -2545,7 +2545,6 @@ target_link_libraries(nrscope ${XFORMS_LIBRARIES})
 add_library(rfsimulator MODULE
   ${OPENAIR_DIR}/radio/rfsimulator/simulator.c
   ${OPENAIR_DIR}/radio/rfsimulator/apply_channelmod.c
-  ${OPENAIR_DIR}/radio/rfsimulator/new_channel_sim.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator SIMU_COMMON ${ATLAS_LIBRARIES})

@@ -52,13 +52,6 @@
 */
 void nr_ue_dlsch_init(NR_UE_DLSCH_t *dlsch_list, int num_dlsch, uint8_t max_ldpc_iterations);
 
-void free_nr_ue_ulsch(NR_UE_ULSCH_t **ulschptr,
-                      uint16_t N_RB_UL,
-                      NR_DL_FRAME_PARMS* frame_parms);
-
-
-NR_UE_ULSCH_t *new_nr_ue_ulsch(uint16_t N_RB_UL, int number_of_harq_pids, NR_DL_FRAME_PARMS* frame_parms);
-
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
@@ -735,7 +728,8 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
                                unsigned char harq_pid,
                                uint32_t frame,
                                uint8_t slot,
-                               int gNB_id);
+                               int gNB_id,
+                               nr_phy_data_tx_t *phy_data);
 
 
 /** \brief This function does IFFT for PUSCH

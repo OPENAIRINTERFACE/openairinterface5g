@@ -1401,20 +1401,26 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     uint16_t mac_sdu_length = 0;
 
-    rnti_t tc_rnti = ra->rnti;
     // If UE is known by the network, C-RNTI to be used instead of TC-RNTI
+    rnti_t tc_rnti = ra->rnti;
     if (ra->msg3_dcch_dtch) {
       ra->rnti = ra->crnti;
-    } else {
-      mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, NULL);
-      if (mac_sdu_length <= 0)
-        return; // need to wait until RRCSetup is encoded
     }
 
     NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
     if (!UE) {
       LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
       return;
+    }
+
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
+    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
+
+    if (ra->msg3_dcch_dtch == false && current_harq_pid < 0) {
+      mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, NULL);
+      if (mac_sdu_length <= 0)
+        return; // need to wait until RRCSetup is encoded
     }
 
     long BWPStart = 0;
@@ -1464,9 +1470,17 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int rbSize = 0;
     uint8_t tb_scaling = 0;
     uint32_t tb_size = 0;
-    uint8_t subheader_len = (mac_sdu_length < 256) ? sizeof(NR_MAC_SUBHEADER_SHORT) : sizeof(NR_MAC_SUBHEADER_LONG);
-    uint16_t pdu_length = mac_sdu_length + subheader_len + 7; //7 is contetion resolution length
-    uint16_t *vrb_map = cc[CC_id].vrb_map;
+    uint16_t pdu_length;
+    if(current_harq_pid >= 0) { // in case of retransmission
+      NR_UE_harq_t *harq = &sched_ctrl->harq_processes[current_harq_pid];
+      DevAssert(!harq->is_waiting);
+      pdu_length = harq->tb_size;
+    }
+    else {
+      uint8_t subheader_len = (mac_sdu_length < 256) ? sizeof(NR_MAC_SUBHEADER_SHORT) : sizeof(NR_MAC_SUBHEADER_LONG);
+      pdu_length = mac_sdu_length + subheader_len + 7; //7 is contetion resolution length
+    }
+
     // increase PRBs until we get to BWPSize or TBS is bigger than MAC PDU size
     do {
       if(rbSize < BWPSize)
@@ -1482,6 +1496,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     AssertFatal(tb_size >= pdu_length,"Cannot allocate Msg4\n");
 
     int i = 0;
+    uint16_t *vrb_map = cc[CC_id].vrb_map;
     while ((i < rbSize) && (rbStart + rbSize <= BWPSize)) {
       if (vrb_map[BWPStart + rbStart + i]&SL_to_bitmap(msg4_tda.startSymbolIndex, msg4_tda.nrOfSymbols)) {
         rbStart += i+1;
@@ -1509,9 +1524,6 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
 
-    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
-    int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
     // HARQ management
     if (current_harq_pid < 0) {
       AssertFatal(sched_ctrl->available_dl_harq.head >= 0,

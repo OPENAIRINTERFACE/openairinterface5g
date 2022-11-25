@@ -38,7 +38,7 @@ uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
 
 //#define CHANNEL_SSE
 #ifdef CHANNEL_SSE
-void multipath_channel(channel_desc_t *desc,
+void __attribute__ ((no_sanitize_address)) multipath_channel(channel_desc_t *desc,
                        double tx_sig_re[NB_ANTENNAS_TX][30720*2],
                        double tx_sig_im[NB_ANTENANS_TX][30720*2],
                        double rx_sig_re[NB_ANTENNAS_RX][30720*2],
@@ -160,8 +160,8 @@ void add_noise(c16_t **rxdata,
   for (int i = 0; i < length; i++) {
     for (int ap = 0; ap < nb_antennas_rx; ap++) {
       c16_t *rxd = &rxdata[ap][slot_offset + i + delay];
-      rxd->r = r_re[ap][i] + sqrt(sigma / 2) * gaussdouble(0.0, 1.0); // convert to fixed point
-      rxd->i = r_im[ap][i] + sqrt(sigma / 2) * gaussdouble(0.0, 1.0);
+      rxd->r = r_re[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0); // convert to fixed point
+      rxd->i = r_im[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0);
       /* Add phase noise if enabled */
       if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
         phase_noise(ts, &rxdata[ap][slot_offset + i + delay].r, &rxdata[ap][slot_offset + i + delay].i);
@@ -170,7 +170,7 @@ void add_noise(c16_t **rxdata,
   }
 }
 
-void multipath_channel(channel_desc_t *desc,
+void __attribute__ ((no_sanitize_address)) multipath_channel(channel_desc_t *desc,
                        double *tx_sig_re[NB_ANTENNAS_TX],
                        double *tx_sig_im[NB_ANTENNAS_TX],
                        double *rx_sig_re[NB_ANTENNAS_RX],
@@ -179,9 +179,6 @@ void multipath_channel(channel_desc_t *desc,
                        uint8_t keep_channel,
 		                   int log_channel)
 {
-
-  int i,ii,j,l;
-  struct complexd rx_tmp,tx;
 
   double path_loss = pow(10,desc->path_loss_dB/20);
   int dd;
@@ -204,29 +201,24 @@ void multipath_channel(channel_desc_t *desc,
   }
 #endif
 
-  for (i=0; i<((int)length-dd); i++) {
-    for (ii=0; ii<desc->nb_rx; ii++) {
-      rx_tmp.r = 0;
-      rx_tmp.i = 0;
-
-      for (j=0; j<desc->nb_tx; j++) {
-        for (l = 0; l<(int)desc->channel_length; l++) {
+  for (int i=0; i<((int)length-dd); i++) {
+    for (int ii=0; ii<desc->nb_rx; ii++) {
+      struct complexd rx_tmp={0};
+      for (int j=0; j<desc->nb_tx; j++) {
+        struct complexd *chan=desc->ch[ii+(j*desc->nb_rx)];        
+        for (int l = 0; l<(int)desc->channel_length; l++) {
           if ((i>=0) && (i-l)>=0) {
+            struct complexd tx;
             tx.r = tx_sig_re[j][i-l];
             tx.i = tx_sig_im[j][i-l];
-          } else {
-            tx.r =0;
-            tx.i =0;
+            rx_tmp.r += (tx.r * chan[l].r) - (tx.i * chan[l].i);
+            rx_tmp.i += (tx.i * chan[l].r) + (tx.r * chan[l].i);
           }
-
-          rx_tmp.r += (tx.r * desc->ch[ii+(j*desc->nb_rx)][l].r) - (tx.i * desc->ch[ii+(j*desc->nb_rx)][l].i);
-          rx_tmp.i += (tx.i * desc->ch[ii+(j*desc->nb_rx)][l].r) + (tx.r * desc->ch[ii+(j*desc->nb_rx)][l].i);
-
           if (i==0 && log_channel == 1) {
 	           printf("channel[%d][%d][%d] = %f dB \t(%e, %e)\n",
-                    ii, j, l, 10*log10(pow(desc->ch[ii+(j*desc->nb_rx)][l].r,2.0)+pow(desc->ch[ii+(j*desc->nb_rx)][l].i,2.0)),
-		         desc->ch[ii+(j*desc->nb_rx)][l].r,
-		         desc->ch[ii+(j*desc->nb_rx)][l].i);
+                    ii, j, l, 10*log10(pow(chan[l].r,2.0)+pow(chan[l].i,2.0)),
+		         chan[l].r,
+		         chan[l].i);
 	        }
         } //l
       }  // j

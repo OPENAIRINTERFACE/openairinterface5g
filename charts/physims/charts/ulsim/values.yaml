@@ -27,19 +27,7 @@ podSecurityContext:
   runAsGroup: 0
 
 securityContext:
-  privileged: true
-  capabilities:
-    add:
-      - SYS_CAP_PTRACE
-  #   drop:
-  #   - ALL
-  # readOnlyRootFilesystem: true
-  # runAsNonRoot: true
-  # runAsUser: 1000
-
-service:
-  type: ClusterIP
-  port: 80
+  privileged: false
 
 resources: {}
   # We usually recommend not to specify default resources and to leave this as a conscious

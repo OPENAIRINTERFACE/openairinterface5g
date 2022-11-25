@@ -1214,7 +1214,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
         }
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
-      free(dl_info->dci_ind);
       dl_info->dci_ind = NULL;
     }
 

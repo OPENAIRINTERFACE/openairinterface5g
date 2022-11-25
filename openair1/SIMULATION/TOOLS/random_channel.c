@@ -467,8 +467,9 @@ double get_normalization_ch_factor(channel_desc_t *desc)
     for (int l = 0; l < (int)desc->nb_taps; l++) {
       for (int aarx = 0; aarx < desc->nb_rx; aarx++) {
         for (int aatx = 0; aatx < desc->nb_tx; aatx++) {
-          anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
-          anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussdouble(0.0, 1.0);
+          struct complexd *anewp = &anew[aarx + (aatx * desc->nb_rx)];
+          anewp->r = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussZiggurat(0.0, 1.0);
+          anewp->i = sqrt(desc->ricean_factor * desc->amps[l] / 2) * gaussZiggurat(0.0, 1.0);
           if ((l == 0) && (desc->ricean_factor != 1.0)) {
             anew[aarx + (aatx * desc->nb_rx)].r += sqrt((1.0 - desc->ricean_factor) / 2);
             anew[aarx + (aatx * desc->nb_rx)].i += sqrt((1.0 - desc->ricean_factor) / 2);
@@ -527,6 +528,12 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      int32_t channel_offset,
                                      double path_loss_dB,
                                      float noise_power_dB) {
+
+  // To create tables for normal distribution
+  struct timespec t;
+  clock_gettime(CLOCK_MONOTONIC, &t);
+  tableNor((long)(t.tv_nsec%INT_MAX));
+
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
 
   for(int i=0; i<max_chan; i++) {
@@ -1712,8 +1719,9 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
     for (aarx=0; aarx<desc->nb_rx; aarx++) {
       for (aatx=0; aatx<desc->nb_tx; aatx++) {
 
-        anew[aarx + (aatx * desc->nb_rx)].r = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
-        anew[aarx + (aatx * desc->nb_rx)].i = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussdouble(0.0, 1.0) * desc->normalization_ch_factor;
+        struct complexd *anewp = &anew[aarx + (aatx * desc->nb_rx)];
+        anewp->r = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussZiggurat(0.0, 1.0) * desc->normalization_ch_factor;
+        anewp->i = sqrt(desc->ricean_factor * desc->amps[i] / 2) * gaussZiggurat(0.0, 1.0) * desc->normalization_ch_factor;
 
         if ((i==0) && (desc->ricean_factor != 1.0)) {
           if (desc->random_aoa==1) {
