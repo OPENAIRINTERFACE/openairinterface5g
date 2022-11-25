@@ -399,12 +399,16 @@
     <testCase id="nr_ulsim.mimo">
       <desc>nr_ulsim Test cases. (Test1: MCS 19 50 PRBs 2 RX_Antenna),
                                  (Test2: MCS 9 106 PRBs MIMO 2 layers),
-                                 (Test3: MCS 9 106 PRBs MIMO 4 layers)</desc>
+                                 (Test3: MCS 10 106 PRBs MIMO 2 layers),
+                                 (Test4: MCS 19 106 PRBs MIMO 2 layers),
+                                 (Test5: MCS 9 106 PRBs MIMO 4 layers)</desc>
       <main_exec>nr_ulsim</main_exec>
       <main_exec_args>-n100 -m19 -s10 -S15 -z2
                       -n100 -m9 -r106 -s8 -W2 -y2 -z2
+                      -n100 -m10 -r106 -s12 -W2 -y2 -z2
+                      -n100 -m19 -r106 -s22 -W2 -y2 -z2
                       -n100 -m9 -r106 -s10 -W4 -y4 -z4</main_exec_args>
-      <tags>test1 test2 test3</tags>
+      <tags>test1 test2 test3 test4 test5</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
