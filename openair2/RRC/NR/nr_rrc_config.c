@@ -405,68 +405,68 @@ struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(const NR_
   const int n_slots_frame = slotsperframe[*scc->ssbSubcarrierSpacing];
   const int ul_slots_period = tdd ? tdd->nrofUplinkSlots : n_slots_frame;
   const int n_slots_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
-
+  const int first_full_ul_slot = n_slots_period - ul_slots_period;
   const int ideal_period = n_slots_period * MAX_MOBILES_PER_GNB;
   struct NR_SRS_Resource__resourceType__periodic *periodic_srs = calloc(1,sizeof(*periodic_srs));
   if (ideal_period < 5) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl4;
-    periodic_srs->periodicityAndOffset_p.choice.sl4 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl4 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 6) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl5;
-    periodic_srs->periodicityAndOffset_p.choice.sl5 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl5 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 9) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl8;
-    periodic_srs->periodicityAndOffset_p.choice.sl8 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl8 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 11) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl10;
-    periodic_srs->periodicityAndOffset_p.choice.sl10 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl10 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 17) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl16;
-    periodic_srs->periodicityAndOffset_p.choice.sl16 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl16 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 21) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl20;
-    periodic_srs->periodicityAndOffset_p.choice.sl20 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl20 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 33) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl32;
-    periodic_srs->periodicityAndOffset_p.choice.sl32 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl32 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 41) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
-    periodic_srs->periodicityAndOffset_p.choice.sl40 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl40 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 65) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl64;
-    periodic_srs->periodicityAndOffset_p.choice.sl64 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl64 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 81) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl80;
-    periodic_srs->periodicityAndOffset_p.choice.sl80 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl80 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 161) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
-    periodic_srs->periodicityAndOffset_p.choice.sl160 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl160 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 321) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl320;
-    periodic_srs->periodicityAndOffset_p.choice.sl320 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl320 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 641) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl640;
-    periodic_srs->periodicityAndOffset_p.choice.sl640 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl640 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else if (ideal_period < 1281) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl1280;
-    periodic_srs->periodicityAndOffset_p.choice.sl1280 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl1280 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   else {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl2560;
-    periodic_srs->periodicityAndOffset_p.choice.sl2560 = (n_slots_period - ul_slots_period) * uid;
+    periodic_srs->periodicityAndOffset_p.choice.sl2560 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
   }
   return periodic_srs;
 }

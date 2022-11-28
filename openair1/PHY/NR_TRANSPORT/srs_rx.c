@@ -74,7 +74,7 @@ int nr_find_srs(rnti_t rnti,
   }
 
   if (index==-1)
-    LOG_E(MAC,"SRS list is full\n");
+    LOG_E(PHY,"SRS list is full\n");
 
   return(index);
 }
