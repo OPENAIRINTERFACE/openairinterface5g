@@ -524,34 +524,11 @@ target_include_directories(f1ap PUBLIC F1AP_DIR)
 target_link_libraries(f1ap PUBLIC asn1_f1ap)
 target_link_libraries(f1ap PRIVATE ngap nr_rrc)
 
-
 # LPP
 ##############
-set(LPP_DIR ${OPENAIR3_DIR}/LPP)
-set(LPP_ASN_DIR ${LPP_DIR}/MESSAGES)
-set(LPP_ASN_FILES
-  ${LPP_ASN_DIR}/37355-g60.asn
-  )
+# target asn1_lpp in openair3/LPP/MESSAGES/CMakeLists.txt used below
 
-set(LPP_ASN_GENERATED_C_DIR ${asn1_generated_dir}/LPP)
-
-set(lpp_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh "LPP_" "-findirect-choice -fno-include-deps" "${LPP_ASN_GENERATED_C_DIR}")
-
-compile_asn1("${LPP_ASN_FILES}" "${lpp_cmd}" lpp_flag)
-
-file(GLOB LPP_ASN_GENERATED_C_FILES ${LPP_ASN_GENERATED_C_DIR}/*.c)
-add_library(LPP_LIB
-  ${LPP_ASN_GENERATED_C_FILES}
-  )
-add_dependencies (LPP_LIB  lpp_flag)
-target_link_libraries(LPP_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
   
-include_directories ("${LPP_ASN_GENERATED_C_DIR}")
-include_directories ("${LPP_DIR}")
-  
-#file(GLOB LPP_C_FILES ${LPP_DIR}/*.c)
-#add_library(LPP ${LPP_C_FILES} )
-
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
