@@ -362,13 +362,20 @@ endif()
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
 ##################################################
-# A difficulty: asn1c generates C code of a un-predictable list of files
-# so, generate the c from asn1c once at cmake run time
-# So, if someone modify the asn.1 source file in such as way that it will create
-# (so creating new asn.1 objects instead of modifying the object attributes)
-# New C code source file, cmake must be re-run (instead of re-running make only)
-#############
-set(asn1_generated_dir ${OPENAIR_BIN_DIR})
+# this custom target regroups all ASN.1 generation/compilation targets
+# add_custom_target is always considered out-of-date, and will always force the
+# generation of all ASN.1 definitions
+add_custom_target(asn1)
+add_dependencies(asn1
+                 asn1_lte_rrc
+                 asn1_nr_rrc
+                 asn1_s1ap
+                 asn1_ngap
+                 asn1_m2ap
+                 asn1_m3ap
+                 asn1_x2ap
+                 asn1_f1ap
+                 asn1_lpp)
 
 # RRC
 ######
