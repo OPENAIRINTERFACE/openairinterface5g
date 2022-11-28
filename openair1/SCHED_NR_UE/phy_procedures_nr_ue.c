@@ -52,6 +52,7 @@
 #include "executables/softmodem-common.h"
 #include "executables/nr-uesoftmodem.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair1/SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 //#define DEBUG_PHY_PROC
 #define NR_PDCCH_SCHED
