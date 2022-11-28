@@ -429,51 +429,10 @@ target_link_libraries(ngap PUBLIC asn1_ngap lte_rrc)
 target_link_libraries(ngap PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 #M2AP
-# Same limitation as described in RRC/S1AP: unknown generated file list
-# so we generate it at cmake time
 ##############
-add_list1_option(M2AP_RELEASE R14 "M2AP ASN.1 grammar version" R14)
-
 set(M2AP_DIR ${OPENAIR2_DIR}/M2AP)
-if (${M2AP_RELEASE} STREQUAL "R8")
-  make_version(M2AP_VERSION 8 9 0)
-  set(M2AP_ASN_FILES m2ap-8.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R11")
-  make_version(M2AP_VERSION 11 9 0)
-  set(M2AP_ASN_FILES m2ap-11.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R12")
-  make_version(M2AP_VERSION 12 9 0)
-  set(M2AP_ASN_FILES m2ap-12.9.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R14")
-  make_version(M2AP_VERSION 14 0 0)
-  set(M2AP_ASN_FILES m2ap-14.0.0.asn1)
-elseif (${M2AP_RELEASE} STREQUAL "R15")
-  make_version(M2AP_VERSION 15 1 0)
-  set(M2AP_ASN_FILES m2ap-15.1.0.asn1)
-endif(${M2AP_RELEASE} STREQUAL "R8")
-add_definitions(-DM2AP_VERSION=${M2AP_VERSION})
-set(M2AP_ASN_DIR ${M2AP_DIR}/MESSAGES/ASN1/${M2AP_RELEASE})
-set(M2AP_C_DIR ${asn1_generated_dir}/M2AP_${M2AP_RELEASE})
-
-# Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-
-set(m2ap_cmd ${OPENAIR_CMAKE}/tools/make_asn1c_includes.sh  "M2AP_" "-fno-include-deps -DEMIT_ASN_DEBUG=1" "${M2AP_C_DIR}")
-
-
-compile_asn1("${M2AP_ASN_DIR}/${M2AP_ASN_FILES}" "${m2ap_cmd}"  m2_flag)
-file(GLOB M2AP_source ${M2AP_C_DIR}/*.c)
-
-add_library(M2AP_LIB
-  ${M2AP_source}
+add_library(m2ap
   ${M2AP_DIR}/m2ap_common.c
-  )
-add_dependencies(M2AP_LIB m2_flag)
-target_link_libraries(M2AP_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
-
-include_directories ("${M2AP_C_DIR}")
-include_directories ("${M2AP_DIR}")
-
-add_library(M2AP_ENB
   ${M2AP_DIR}/m2ap_eNB.c
   ${M2AP_DIR}/m2ap_MCE.c
   ${M2AP_DIR}/m2ap_decoder.c
@@ -490,8 +449,9 @@ add_library(M2AP_ENB
   ${M2AP_DIR}/m2ap_MCE_interface_management.c
   ${M2AP_DIR}/m2ap_eNB_interface_management.c
  )
-add_dependencies(M2AP_ENB m2_flag)
-target_link_libraries(M2AP_ENB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(m2ap PUBLIC asn1_m2ap)
+target_link_libraries(m2ap PRIVATE lte_rrc nr_rrc)
+target_include_directories(m2ap PRIVATE "${M2AP_DIR}")
 
 #M3AP
 # Same limitation as described in RRC/S1AP: unknown generated file list
@@ -554,6 +514,7 @@ add_library(M3AP_ENB
   )
 add_dependencies(M3AP_ENB m3_flag)
 target_link_libraries(M3AP_ENB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(m3ap PRIVATE m2ap)
 
 #X2AP
 ##############
@@ -1793,8 +1754,8 @@ add_library(L2
   ${ENB_APP_SRC}
   ${MCE_APP_SRC}
   )
-add_dependencies(L2 m2_flag m3_flag)
-target_link_libraries(L2 PRIVATE f1ap x2ap s1ap lte_rrc)
+add_dependencies(L2 m3_flag)
+target_link_libraries(L2 PRIVATE f1ap x2ap s1ap lte_rrc m2ap)
 target_link_libraries(L2 PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(MAC_NR ${MAC_NR_SRC})
@@ -1875,7 +1836,8 @@ set (MME_APP_SRC
   ${OPENAIR3_DIR}/MME_APP/mme_config.c
 )
 add_library(MME_APP ${MME_APP_SRC})
-add_dependencies(MME_APP m2_flag m3_flag)
+add_dependencies(MME_APP m3_flag)
+target_link_libraries(MME_APP PRIVATE m2ap)
 target_link_libraries(MME_APP PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set(SCTP_SRC
@@ -2407,7 +2369,7 @@ add_dependencies(lte-softmodem oai_iqplayer)
 
 target_link_libraries(lte-softmodem PRIVATE
   -Wl,--start-group
-  lte_rrc nr_rrc s1ap M2AP_LIB M2AP_ENB x2ap M3AP_LIB M3AP_ENB GTPV1U f1ap SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
+  lte_rrc nr_rrc s1ap m2ap x2ap M3AP_LIB M3AP_ENB GTPV1U f1ap SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
@@ -2447,7 +2409,7 @@ add_dependencies(ocp-enb oai_iqplayer coding params_libconfig rfsimulator)
 
 target_link_libraries (ocp-enb
   -Wl,--start-group
-  lte_rrc nr_rrc s1ap f1ap M2AP_LIB M2AP_ENB x2ap M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
+  lte_rrc nr_rrc s1ap f1ap m2ap x2ap M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU_COMMON
   ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
@@ -2503,7 +2465,7 @@ if (NOT ${NOS1})
 endif()
 target_link_libraries(lte-uesoftmodem PRIVATE
   -Wl,--start-group
-  lte_rrc nr_rrc s1ap x2ap M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
+  lte_rrc nr_rrc s1ap x2ap m2ap M3AP_LIB M3AP_ENB
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${RAL_LIB} ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
@@ -2547,7 +2509,7 @@ target_link_libraries(nr-softmodem PRIVATE
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
   ITTI ${RAL_LIB} ${NAS_UE_LIB} lte_rrc nr_rrc
   ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  x2ap f1ap M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
+  x2ap f1ap m2ap M3AP_LIB M3AP_ENB
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
@@ -2844,7 +2806,7 @@ if (${T_TRACER})
         syncsim nr_ulsim nr_dlsim nr_dlschsim nr_pbchsim nr_pucchsim
         nr_ulschsim ldpctest polartest smallblocktest cu_test du_test
         #all "add_library" definitions
-        ITTI lte_rrc nr_rrc s1ap x2ap M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB f1ap
+        ITTI lte_rrc nr_rrc s1ap x2ap m2ap M3AP_LIB M3AP_ENB f1ap
         params_libconfig oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
         oai_eth_transpro oai_mobipass coding HASHTABLE UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
