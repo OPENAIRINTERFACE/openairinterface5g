@@ -1396,10 +1396,16 @@ initiate_ra_proc(module_id_t module_idP,
       ra[i].RA_rnti = ra_rnti;
       ra[i].preamble_index = preamble_index;
       failure_cnt = 0;
-      LOG_D(MAC,
+      LOG_I(MAC,
             "[eNB %d][RAPROC] CC_id %d Frame %d Activating RAR generation in Frame %d, subframe %d for process %d, rnti %x, state %d\n",
-            module_idP, CC_id, frameP, ra[i].Msg2_frame,
-            ra[i].Msg2_subframe, i, ra[i].rnti, ra[i].state);
+            module_idP,
+            CC_id,
+            frameP,
+            ra[i].Msg2_frame,
+            ra[i].Msg2_subframe,
+            i,
+            ra[i].rnti,
+            ra[i].state);
       return;
     }
   }

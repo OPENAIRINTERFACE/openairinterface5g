@@ -482,6 +482,7 @@ int main ( int argc, char **argv )
       MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
       RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+      rrc_enb_process_itti_msg(NULL);
     }
     node_type = RC.rrc[0]->node_type;
   }

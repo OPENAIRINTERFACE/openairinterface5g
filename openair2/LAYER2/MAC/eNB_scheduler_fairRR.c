@@ -3206,11 +3206,7 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
         UE_template->nb_rb_ul[harq_pid]    = rb_table[rb_table_index];
         UE_template->first_rb_ul[harq_pid] = first_rb[CC_id];
         UE_template->cqi_req[harq_pid] = cqi_req;
-        UE_sched_ctrl->ul_scheduled |= (1<<harq_pid);
-
-        if (UE_id == UE_info->list.head)
-          VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME(VCD_SIGNAL_DUMPER_VARIABLES_UE0_SCHEDULED,UE_sched_ctrl->ul_scheduled);
-
+        UE_sched_ctrl->ul_scheduled |= (1 << harq_pid);
         // adjust total UL buffer status by TBS, wait for UL sdus to do final update
         /*LOG_D(MAC,"[eNB %d] CC_id %d UE %d/%x : adjusting ul_total_buffer, old %d, TBS %d\n", module_idP,CC_id,UE_id,rnti,UE_template->ul_total_buffer,UE_template->TBS_UL[harq_pid]);
         if (UE_template->ul_total_buffer > UE_template->TBS_UL[harq_pid])

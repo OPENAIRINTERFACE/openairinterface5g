@@ -109,6 +109,7 @@ void lte_dump_mac_stats(eNB_MAC_INST *mac, FILE *fd)
               UE_info->eNB_UE_stats[CC_id][UE_id].dlsch_errors);
     }
   }
+  fflush(fd);
   return;
 }
 
@@ -269,48 +270,4 @@ int l2_init_eNB(void)
 
 
     return (1);
-}
-
-//-----------------------------------------------------------------------------
-/*
- * Main loop of MAC itti message handling
- */
-void *mac_enb_task(void *arg)
-//-----------------------------------------------------------------------------
-{
-  MessageDef *received_msg = NULL;
-  int         result;
-
-  itti_mark_task_ready(TASK_MAC_ENB); // void function 10/2019
-  LOG_I(MAC,"Starting main loop of MAC message task\n");
-
-  while (1) {
-    itti_receive_msg(TASK_MAC_ENB, &received_msg);
-
-    switch (ITTI_MSG_ID(received_msg)) {
-      case RRC_MAC_DRX_CONFIG_REQ:
-        LOG_I(MAC, "MAC Task Received RRC_MAC_DRX_CONFIG_REQ\n");
-        /* Set timers and thresholds values in local MAC context of UE */
-        eNB_Config_Local_DRX(ITTI_MSG_DESTINATION_INSTANCE(received_msg), &received_msg->ittiMsg.rrc_mac_drx_config_req);
-        break;
-
-      case TERMINATE_MESSAGE:
-        LOG_W(MAC, " *** Exiting MAC thread\n");
-        itti_exit_task();
-        break;
-
-      default:
-        LOG_E(MAC, "MAC instance received unhandled message: %d:%s\n",
-              ITTI_MSG_ID(received_msg), 
-              ITTI_MSG_NAME(received_msg));
-        break;  
-    } // end switch
-
-    result = itti_free(ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
-    AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-    
-    received_msg = NULL;
-  } // end while
-
-  return NULL;
 }

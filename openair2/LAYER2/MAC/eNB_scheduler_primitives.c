@@ -1989,12 +1989,11 @@ find_UE_id(module_id_t mod_idP,
            rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-  int UE_id;
   UE_info_t *UE_info = &RC.mac[mod_idP]->UE_info;
   if(!UE_info)
     return -1;
 
-  for (UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
+  for (int UE_id = 0; UE_id < MAX_MOBILES_PER_ENB; UE_id++) {
     if (UE_info->active[UE_id] == true) {
       int CC_id = UE_PCCID(mod_idP, UE_id);
       if (CC_id>=0 && CC_id<NFAPI_CC_MAX && UE_info->UE_template[CC_id][UE_id].rnti == rntiP) {
@@ -2144,6 +2143,7 @@ inline void add_ue_list(UE_list_t *listP, int UE_id) {
   while (*cur >= 0)
     cur = &listP->next[*cur];
   *cur = UE_id;
+  LOG_D(MAC, "added UE %d in UE list\n", UE_id);
 }
 
 //------------------------------------------------------------------------------

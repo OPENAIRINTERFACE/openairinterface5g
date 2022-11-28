@@ -265,8 +265,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
   int               nb_cc                         = 0;
   int32_t           offsetMaxLimit                = 0;
   int32_t           cycleNb                       = 0;
-   
-  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_ENB, 0, RRC_CONFIGURATION_REQ);
+
+  RrcConfigurationReq *RRCcfg = &rrc->configuration;
   ccparams_lte_t ccparams_lte;
   ccparams_sidelink_t SLconfig;
   ccparams_eMTC_t eMTCconfig;
@@ -369,9 +369,9 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
         // In the configuration file it is in seconds. For RRC it has to be in milliseconds
-        RRC_CONFIGURATION_REQ (msg_p).rrc_inactivity_timer_thres = (*ENBParamList.paramarray[i][ENB_RRC_INACTIVITY_THRES_IDX].uptr) * 1000;
-        RRC_CONFIGURATION_REQ (msg_p).cell_identity = enb_id;
-        RRC_CONFIGURATION_REQ (msg_p).tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
+        RRCcfg->rrc_inactivity_timer_thres = (*ENBParamList.paramarray[i][ENB_RRC_INACTIVITY_THRES_IDX].uptr) * 1000;
+        RRCcfg->cell_identity = enb_id;
+        RRCcfg->tac = *ENBParamList.paramarray[i][ENB_TRACKING_AREA_CODE_IDX].uptr;
         AssertFatal(!ENBParamList.paramarray[i][ENB_MOBILE_COUNTRY_CODE_IDX_OLD].strptr
                     && !ENBParamList.paramarray[i][ENB_MOBILE_NETWORK_CODE_IDX_OLD].strptr,
                     "It seems that you use an old configuration file. Please change the existing\n"
@@ -387,41 +387,38 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
           AssertFatal(0, "The number of PLMN IDs must be in [1,6], but is %d\n",
                       PLMNParamList.numelt);
 
-        RRC_CONFIGURATION_REQ(msg_p).num_plmn = PLMNParamList.numelt;
+        RRCcfg->num_plmn = PLMNParamList.numelt;
 
         for (int l = 0; l < PLMNParamList.numelt; ++l) {
-          RRC_CONFIGURATION_REQ(msg_p).mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
-          RRC_CONFIGURATION_REQ(msg_p).mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
-          RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
-          AssertFatal(RRC_CONFIGURATION_REQ(msg_p).mnc_digit_length[l] == 3
-                      || RRC_CONFIGURATION_REQ(msg_p).mnc[l] < 100,
-                      "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n",
-                      RRC_CONFIGURATION_REQ(msg_p).mnc[l]);
+          RRCcfg->mcc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_COUNTRY_CODE_IDX].uptr;
+          RRCcfg->mnc[l] = *PLMNParamList.paramarray[l][ENB_MOBILE_NETWORK_CODE_IDX].uptr;
+          RRCcfg->mnc_digit_length[l] = *PLMNParamList.paramarray[l][ENB_MNC_DIGIT_LENGTH].u8ptr;
+          AssertFatal(RRCcfg->mnc_digit_length[l] == 3 || RRCcfg->mnc[l] < 100, "MNC %d cannot be encoded in two digits as requested (change mnc_digit_length to 3)\n", RRCcfg->mnc[l]);
         }
 
         /* measurement reports enabled? */
         if (ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr != NULL &&
             *(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr) != NULL &&
             !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_MEASUREMENT_REPORTS].strptr), "yes"))
-          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 1;
+          RRCcfg->enable_measurement_reports = 1;
         else
-          RRC_CONFIGURATION_REQ (msg_p).enable_measurement_reports = 0;
+          RRCcfg->enable_measurement_reports = 0;
 
         /* x2 enabled? */
         if (ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr != NULL &&
             *(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr) != NULL &&
             !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_X2].strptr), "yes"))
-          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 1;
+          RRCcfg->enable_x2 = 1;
         else
-          RRC_CONFIGURATION_REQ (msg_p).enable_x2 = 0;
+          RRCcfg->enable_x2 = 0;
 
        /* m2 enabled */
        if (ENBParamList.paramarray[i][ENB_ENABLE_ENB_M2].strptr != NULL &&
             *(ENBParamList.paramarray[i][ENB_ENABLE_ENB_M2].strptr) != NULL &&
             !strcmp(*(ENBParamList.paramarray[i][ENB_ENABLE_ENB_M2].strptr), "yes"))
-          RRC_CONFIGURATION_REQ (msg_p).eMBMS_M2_configured = 1;
+         RRCcfg->eMBMS_M2_configured = 1;
         else
-          RRC_CONFIGURATION_REQ (msg_p).eMBMS_M2_configured = 0;
+          RRCcfg->eMBMS_M2_configured = 0;
 
         // Parse optional physical parameters
         config_getlist( &CCsParamList,NULL,0,enbpath);
@@ -437,11 +434,11 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             //printf("Component carrier %d\n",component_carrier);
             nb_cc++;
             // Cell params, MIB/SIB1 in DU
-            RRC_CONFIGURATION_REQ (msg_p).tdd_config[j] = ccparams_lte.tdd_config;
+            RRCcfg->tdd_config[j] = ccparams_lte.tdd_config;
             AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
                          "Failed to parse eNB configuration file %s, enb %u illegal tdd_config %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config, LTE_TDD_Config__subframeAssignment_sa6);
-            RRC_CONFIGURATION_REQ (msg_p).tdd_config_s[j] = ccparams_lte.tdd_config_s;
+            RRCcfg->tdd_config_s[j] = ccparams_lte.tdd_config_s;
             AssertFatal (ccparams_lte.tdd_config_s <= LTE_TDD_Config__specialSubframePatterns_ssp8,
                          "Failed to parse eNB configuration file %s, enb %u illegal tdd_config_s %d (should be 0-%d)!",
                          RC.config_file_name, i, ccparams_lte.tdd_config_s, LTE_TDD_Config__specialSubframePatterns_ssp8);
@@ -451,9 +448,9 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                            "Failed to parse eNB configuration file %s, enb %u define %s: NORMAL,EXTENDED!\n",
                            RC.config_file_name, i, ENB_CONFIG_STRING_PREFIX_TYPE);
             else if (strcmp(ccparams_lte.prefix_type, "NORMAL") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = NORMAL;
+              RRCcfg->prefix_type[j] = NORMAL;
             } else  if (strcmp(ccparams_lte.prefix_type, "EXTENDED") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).prefix_type[j] = EXTENDED;
+              RRCcfg->prefix_type[j] = EXTENDED;
             } else {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for prefix_type choice: NORMAL or EXTENDED !\n",
@@ -465,19 +462,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                            "Failed to parse eNB configuration file %s, enb %u define %s: TRUE,FALSE!\n",
                            RC.config_file_name, i, ENB_CONFIG_STRING_PBCH_REPETITION);
             else if (strcmp(ccparams_lte.pbch_repetition, "TRUE") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 1;
+              RRCcfg->pbch_repetition[j] = 1;
             } else  if (strcmp(ccparams_lte.pbch_repetition, "FALSE") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).pbch_repetition[j] = 0;
+              RRCcfg->pbch_repetition[j] = 0;
             } else {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pbch_repetition choice: TRUE or FALSE !\n",
                            RC.config_file_name, i, ccparams_lte.pbch_repetition);
             }
 
-            RRC_CONFIGURATION_REQ (msg_p).eutra_band[j] = ccparams_lte.eutra_band;
-            RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j] = (uint32_t) ccparams_lte.downlink_frequency;
-            RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j] = (unsigned int) ccparams_lte.uplink_frequency_offset;
-            RRC_CONFIGURATION_REQ (msg_p).Nid_cell[j]= ccparams_lte.Nid_cell;
+            RRCcfg->eutra_band[j] = ccparams_lte.eutra_band;
+            RRCcfg->downlink_frequency[j] = (uint32_t)ccparams_lte.downlink_frequency;
+            RRCcfg->uplink_frequency_offset[j] = (unsigned int)ccparams_lte.uplink_frequency_offset;
+            RRCcfg->Nid_cell[j] = ccparams_lte.Nid_cell;
 
             if (ccparams_lte.Nid_cell>503) {
               AssertFatal (0,
@@ -485,7 +482,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                            RC.config_file_name, i, ccparams_lte.Nid_cell);
             }
 
-            RRC_CONFIGURATION_REQ (msg_p).N_RB_DL[j]= ccparams_lte.N_RB_DL;
+            RRCcfg->N_RB_DL[j] = ccparams_lte.N_RB_DL;
 
             if ((ccparams_lte.N_RB_DL!=6) &&
                 (ccparams_lte.N_RB_DL!=15) &&
@@ -499,20 +496,16 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
             }
 
             if (strcmp(ccparams_lte.frame_type, "FDD") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = FDD;
+              RRCcfg->frame_type[j] = FDD;
             } else  if (strcmp(ccparams_lte.frame_type, "TDD") == 0) {
-              RRC_CONFIGURATION_REQ (msg_p).frame_type[j] = TDD;
+              RRCcfg->frame_type[j] = TDD;
             } else {
               AssertFatal (0,
                            "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for frame_type choice: FDD or TDD !\n",
                            RC.config_file_name, i, ccparams_lte.frame_type);
             }
 
-            if (config_check_band_frequencies(j,
-                                              RRC_CONFIGURATION_REQ (msg_p).eutra_band[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).downlink_frequency[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).uplink_frequency_offset[j],
-                                              RRC_CONFIGURATION_REQ (msg_p).frame_type[j])) {
+            if (config_check_band_frequencies(j, RRCcfg->eutra_band[j], RRCcfg->downlink_frequency[j], RRCcfg->uplink_frequency_offset[j], RRCcfg->frame_type[j])) {
               AssertFatal(0, "error calling enb_check_band_frequencies\n");
             }
 
@@ -521,18 +514,18 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                            "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for nb_antenna_ports choice: 1..2 !\n",
                            RC.config_file_name, i, ccparams_lte.nb_antenna_ports);
 
-            RRC_CONFIGURATION_REQ (msg_p).nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
+            RRCcfg->nb_antenna_ports[j] = ccparams_lte.nb_antenna_ports;
 
             if (!NODE_IS_DU(rrc->node_type)) { //this is CU or eNB, SIB2-20 in CU
               // Radio Resource Configuration (SIB2)
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_root =  ccparams_lte.prach_root;
+              RRCcfg->radioresourceconfig[j].prach_root = ccparams_lte.prach_root;
 
               if ((ccparams_lte.prach_root <0) || (ccparams_lte.prach_root > 1023))
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_root choice: 0..1023 !\n",
                              RC.config_file_name, i, ccparams_lte.prach_root);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_config_index = ccparams_lte.prach_config_index;
+              RRCcfg->radioresourceconfig[j].prach_config_index = ccparams_lte.prach_config_index;
 
               if ((ccparams_lte.prach_config_index <0) || (ccparams_lte.prach_config_index > 63))
                 AssertFatal (0,
@@ -544,15 +537,15 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PRACH_HIGH_SPEED);
               else if (strcmp(ccparams_lte.prach_high_speed, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_high_speed = true;
+                RRCcfg->radioresourceconfig[j].prach_high_speed = true;
               } else if (strcmp(ccparams_lte.prach_high_speed, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_high_speed = false;
+                RRCcfg->radioresourceconfig[j].prach_high_speed = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for prach_config choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.prach_high_speed);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_zero_correlation = ccparams_lte.prach_zero_correlation;
+              RRCcfg->radioresourceconfig[j].prach_zero_correlation = ccparams_lte.prach_zero_correlation;
 
               if ((ccparams_lte.prach_zero_correlation <0) ||
                   (ccparams_lte.prach_zero_correlation > 15))
@@ -560,7 +553,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_zero_correlation choice: 0..15!\n",
                              RC.config_file_name, i, ccparams_lte.prach_zero_correlation);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].prach_freq_offset = ccparams_lte.prach_freq_offset;
+              RRCcfg->radioresourceconfig[j].prach_freq_offset = ccparams_lte.prach_freq_offset;
 
               if ((ccparams_lte.prach_freq_offset <0) ||
                   (ccparams_lte.prach_freq_offset > 94))
@@ -568,7 +561,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for prach_freq_offset choice: 0..94!\n",
                              RC.config_file_name, i, ccparams_lte.prach_freq_offset);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_delta_shift = ccparams_lte.pucch_delta_shift-1;
+              RRCcfg->radioresourceconfig[j].pucch_delta_shift = ccparams_lte.pucch_delta_shift - 1;
 
               if ((ccparams_lte.pucch_delta_shift <1) ||
                   (ccparams_lte.pucch_delta_shift > 3))
@@ -576,7 +569,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_delta_shift choice: 1..3!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_delta_shift);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nRB_CQI = ccparams_lte.pucch_nRB_CQI;
+              RRCcfg->radioresourceconfig[j].pucch_nRB_CQI = ccparams_lte.pucch_nRB_CQI;
 
               if ((ccparams_lte.pucch_nRB_CQI <0) ||
                   (ccparams_lte.pucch_nRB_CQI > 98))
@@ -584,7 +577,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_nRB_CQI choice: 0..98!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_nRB_CQI);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_nCS_AN = ccparams_lte.pucch_nCS_AN;
+              RRCcfg->radioresourceconfig[j].pucch_nCS_AN = ccparams_lte.pucch_nCS_AN;
 
               if ((ccparams_lte.pucch_nCS_AN <0) ||
                   (ccparams_lte.pucch_nCS_AN > 7))
@@ -592,7 +585,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_nCS_AN choice: 0..7!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_nCS_AN);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_n1_AN = ccparams_lte.pucch_n1_AN;
+              RRCcfg->radioresourceconfig[j].pucch_n1_AN = ccparams_lte.pucch_n1_AN;
 
               if ((ccparams_lte.pucch_n1_AN <0) ||
                   (ccparams_lte.pucch_n1_AN > 2047))
@@ -600,7 +593,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_n1_AN choice: 0..2047!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_n1_AN);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_referenceSignalPower = ccparams_lte.pdsch_referenceSignalPower;
+              RRCcfg->radioresourceconfig[j].pdsch_referenceSignalPower = ccparams_lte.pdsch_referenceSignalPower;
 
               if ((ccparams_lte.pdsch_referenceSignalPower <-60) ||
                   (ccparams_lte.pdsch_referenceSignalPower > 50))
@@ -608,7 +601,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pdsch_referenceSignalPower choice:-60..50!\n",
                              RC.config_file_name, i, ccparams_lte.pdsch_referenceSignalPower);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pdsch_p_b = ccparams_lte.pdsch_p_b;
+              RRCcfg->radioresourceconfig[j].pdsch_p_b = ccparams_lte.pdsch_p_b;
 
               if ((ccparams_lte.pdsch_p_b <0) ||
                   (ccparams_lte.pdsch_p_b > 3))
@@ -616,7 +609,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pdsch_p_b choice: 0..3!\n",
                              RC.config_file_name, i, ccparams_lte.pdsch_p_b);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_n_SB = ccparams_lte.pusch_n_SB;
+              RRCcfg->radioresourceconfig[j].pusch_n_SB = ccparams_lte.pusch_n_SB;
 
               if ((ccparams_lte.pusch_n_SB <1) ||
                   (ccparams_lte.pusch_n_SB > 4))
@@ -629,15 +622,15 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u define %s: interSubframe,intraAndInterSubframe!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_HOPPINGMODE);
               else if (strcmp(ccparams_lte.pusch_hoppingMode,"interSubFrame")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
+                RRCcfg->radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_interSubFrame;
               } else if (strcmp(ccparams_lte.pusch_hoppingMode,"intraAndInterSubFrame")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
+                RRCcfg->radioresourceconfig[j].pusch_hoppingMode = LTE_PUSCH_ConfigCommon__pusch_ConfigBasic__hoppingMode_intraAndInterSubFrame;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_hoppingMode choice: interSubframe,intraAndInterSubframe!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_hoppingMode);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_hoppingOffset = ccparams_lte.pusch_hoppingOffset;
+              RRCcfg->radioresourceconfig[j].pusch_hoppingOffset = ccparams_lte.pusch_hoppingOffset;
 
               if ((ccparams_lte.pusch_hoppingOffset<0) ||
                   (ccparams_lte.pusch_hoppingOffset>98))
@@ -650,9 +643,9 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_ENABLE64QAM);
               else if (strcmp(ccparams_lte.pusch_enable64QAM, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = true;
+                RRCcfg->radioresourceconfig[j].pusch_enable64QAM = true;
               } else if (strcmp(ccparams_lte.pusch_enable64QAM, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_enable64QAM = false;
+                RRCcfg->radioresourceconfig[j].pusch_enable64QAM = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_enable64QAM choice: ENABLE,DISABLE!\n",
@@ -663,15 +656,15 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_GROUP_HOPPING_EN);
               else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled = true;
+                RRCcfg->radioresourceconfig[j].pusch_groupHoppingEnabled = true;
               } else if (strcmp(ccparams_lte.pusch_groupHoppingEnabled, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupHoppingEnabled= false;
+                RRCcfg->radioresourceconfig[j].pusch_groupHoppingEnabled = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_groupHoppingEnabled choice: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_groupHoppingEnabled);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_groupAssignment = ccparams_lte.pusch_groupAssignment;
+              RRCcfg->radioresourceconfig[j].pusch_groupAssignment = ccparams_lte.pusch_groupAssignment;
 
               if ((ccparams_lte.pusch_groupAssignment<0)||
                   (ccparams_lte.pusch_groupAssignment>29))
@@ -684,15 +677,15 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u define %s: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_PUSCH_SEQUENCE_HOPPING_EN);
               else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = true;
+                RRCcfg->radioresourceconfig[j].pusch_sequenceHoppingEnabled = true;
               } else if (strcmp(ccparams_lte.pusch_sequenceHoppingEnabled, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_sequenceHoppingEnabled = false;
+                RRCcfg->radioresourceconfig[j].pusch_sequenceHoppingEnabled = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pusch_sequenceHoppingEnabled choice: ENABLE,DISABLE!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_sequenceHoppingEnabled);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_nDMRS1= ccparams_lte.pusch_nDMRS1;  //cyclic_shift in RRC!
+              RRCcfg->radioresourceconfig[j].pusch_nDMRS1 = ccparams_lte.pusch_nDMRS1; // cyclic_shift in RRC!
 
               if ((ccparams_lte.pusch_nDMRS1 <0) ||
                   (ccparams_lte.pusch_nDMRS1>7))
@@ -701,49 +694,51 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              RC.config_file_name, i, ccparams_lte.pusch_nDMRS1);
 
               if (strcmp(ccparams_lte.phich_duration,"NORMAL")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_duration= LTE_PHICH_Config__phich_Duration_normal;
+                RRCcfg->radioresourceconfig[j].phich_duration = LTE_PHICH_Config__phich_Duration_normal;
               } else if (strcmp(ccparams_lte.phich_duration,"EXTENDED")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_duration= LTE_PHICH_Config__phich_Duration_extended;
+                RRCcfg->radioresourceconfig[j].phich_duration = LTE_PHICH_Config__phich_Duration_extended;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for phich_duration choice: NORMAL,EXTENDED!\n",
                              RC.config_file_name, i, ccparams_lte.phich_duration);
 
               if (strcmp(ccparams_lte.phich_resource,"ONESIXTH")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_oneSixth ;
+                RRCcfg->radioresourceconfig[j].phich_resource = LTE_PHICH_Config__phich_Resource_oneSixth;
               } else if (strcmp(ccparams_lte.phich_resource,"HALF")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_half;
+                RRCcfg->radioresourceconfig[j].phich_resource = LTE_PHICH_Config__phich_Resource_half;
               } else if (strcmp(ccparams_lte.phich_resource,"ONE")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_one;
+                RRCcfg->radioresourceconfig[j].phich_resource = LTE_PHICH_Config__phich_Resource_one;
               } else if (strcmp(ccparams_lte.phich_resource,"TWO")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource= LTE_PHICH_Config__phich_Resource_two;
+                RRCcfg->radioresourceconfig[j].phich_resource = LTE_PHICH_Config__phich_Resource_two;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for phich_resource choice: ONESIXTH,HALF,ONE,TWO!\n",
                              RC.config_file_name, i, ccparams_lte.phich_resource);
 
               printf("phich.resource %ld (%s), phich.duration %ld (%s)\n",
-                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_resource,ccparams_lte.phich_resource,
-                     RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].phich_duration,ccparams_lte.phich_duration);
+                     RRCcfg->radioresourceconfig[j].phich_resource,
+                     ccparams_lte.phich_resource,
+                     RRCcfg->radioresourceconfig[j].phich_duration,
+                     ccparams_lte.phich_duration);
 
               if (strcmp(ccparams_lte.srs_enable, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable= true;
+                RRCcfg->radioresourceconfig[j].srs_enable = true;
               } else if (strcmp(ccparams_lte.srs_enable, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable= false;
+                RRCcfg->radioresourceconfig[j].srs_enable = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.srs_enable);
 
-              if (RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_enable== true) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_BandwidthConfig= ccparams_lte.srs_BandwidthConfig;
+              if (RRCcfg->radioresourceconfig[j].srs_enable == true) {
+                RRCcfg->radioresourceconfig[j].srs_BandwidthConfig = ccparams_lte.srs_BandwidthConfig;
 
                 if ((ccparams_lte.srs_BandwidthConfig < 0) ||
                     (ccparams_lte.srs_BandwidthConfig >7))
                   AssertFatal (0, "Failed to parse eNB configuration file %s, enb %u unknown value %d for srs_BandwidthConfig choice: 0...7\n",
                                RC.config_file_name, i, ccparams_lte.srs_BandwidthConfig);
 
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_SubframeConfig= ccparams_lte.srs_SubframeConfig;
+                RRCcfg->radioresourceconfig[j].srs_SubframeConfig = ccparams_lte.srs_SubframeConfig;
 
                 if ((ccparams_lte.srs_SubframeConfig<0) ||
                     (ccparams_lte.srs_SubframeConfig>15))
@@ -752,25 +747,25 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                                RC.config_file_name, i, ccparams_lte.srs_SubframeConfig);
 
                 if (strcmp(ccparams_lte.srs_ackNackST, "ENABLE") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_ackNackST= true;
+                  RRCcfg->radioresourceconfig[j].srs_ackNackST = true;
                 } else if (strcmp(ccparams_lte.srs_ackNackST, "DISABLE") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_ackNackST= false;
+                  RRCcfg->radioresourceconfig[j].srs_ackNackST = false;
                 } else
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_BandwidthConfig choice: ENABLE,DISABLE !\n",
                                RC.config_file_name, i, ccparams_lte.srs_ackNackST);
 
                 if (strcmp(ccparams_lte.srs_MaxUpPts, "ENABLE") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_MaxUpPts= true;
+                  RRCcfg->radioresourceconfig[j].srs_MaxUpPts = true;
                 } else if (strcmp(ccparams_lte.srs_MaxUpPts, "DISABLE") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].srs_MaxUpPts= false;
+                  RRCcfg->radioresourceconfig[j].srs_MaxUpPts = false;
                 } else
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for srs_MaxUpPts choice: ENABLE,DISABLE !\n",
                                RC.config_file_name, i, ccparams_lte.srs_MaxUpPts);
               }
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_p0_Nominal= ccparams_lte.pusch_p0_Nominal;
+              RRCcfg->radioresourceconfig[j].pusch_p0_Nominal = ccparams_lte.pusch_p0_Nominal;
 
               if ((ccparams_lte.pusch_p0_Nominal<-126) ||
                   (ccparams_lte.pusch_p0_Nominal>24))
@@ -779,27 +774,27 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              RC.config_file_name, i, ccparams_lte.pusch_p0_Nominal);
 
               if (strcmp(ccparams_lte.pusch_alpha,"AL0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al0;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al0;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL04")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al04;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al04;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL05")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al05;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al05;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL06")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al06;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al06;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL07")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al07;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al07;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL08")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al08;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al08;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL09")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al09;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al09;
               } else if (strcmp(ccparams_lte.pusch_alpha,"AL1")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pusch_alpha= LTE_Alpha_r12_al1;
+                RRCcfg->radioresourceconfig[j].pusch_alpha = LTE_Alpha_r12_al1;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_Alpha choice: AL0,AL04,AL05,AL06,AL07,AL08,AL09,AL1!\n",
                              RC.config_file_name, i, ccparams_lte.pusch_alpha);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_p0_Nominal= ccparams_lte.pucch_p0_Nominal;
+              RRCcfg->radioresourceconfig[j].pucch_p0_Nominal = ccparams_lte.pucch_p0_Nominal;
 
               if ((ccparams_lte.pucch_p0_Nominal<-127) ||
                   (ccparams_lte.pucch_p0_Nominal>-96))
@@ -807,7 +802,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for pucch_p0_Nominal choice: -127..-96 !\n",
                              RC.config_file_name, i, ccparams_lte.pucch_p0_Nominal);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].msg3_delta_Preamble= ccparams_lte.msg3_delta_Preamble;
+              RRCcfg->radioresourceconfig[j].msg3_delta_Preamble = ccparams_lte.msg3_delta_Preamble;
 
               if ((ccparams_lte.msg3_delta_Preamble<-1) ||
                   (ccparams_lte.msg3_delta_Preamble>6))
@@ -816,63 +811,63 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              RC.config_file_name, i, ccparams_lte.msg3_delta_Preamble);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF_2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF_2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF_2;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF0;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF0;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format1,"deltaF2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1_deltaF2;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format1 choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF1")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF1;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF3")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF3;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format1b,"deltaF5")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format1b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format1b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format1b_deltaF5;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format1b choice: deltaF1,dltaF3,deltaF5!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format1b);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF_2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF_2;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF0;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF1")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF1;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2,"deltaF2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2 = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2_deltaF2;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2 choice: deltaF_2,dltaF0,deltaF1,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF_2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2a = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF_2;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2a = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF0;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2a,"deltaF2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2a= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2a = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2a_deltaF2;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2a choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2a);
 
               if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF_2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF_2;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF0")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF0;
               } else if (strcmp(ccparams_lte.pucch_deltaF_Format2b,"deltaF2")==0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pucch_deltaF_Format2b= LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
+                RRCcfg->radioresourceconfig[j].pucch_deltaF_Format2b = LTE_DeltaFList_PUCCH__deltaF_PUCCH_Format2b_deltaF2;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pucch_deltaF_Format2b choice: deltaF_2,dltaF0,deltaF2!\n",
                              RC.config_file_name, i, ccparams_lte.pucch_deltaF_Format2b);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_numberOfRA_Preambles= (ccparams_lte.rach_numberOfRA_Preambles/4)-1;
+              RRCcfg->radioresourceconfig[j].rach_numberOfRA_Preambles = (ccparams_lte.rach_numberOfRA_Preambles / 4) - 1;
 
               if ((ccparams_lte.rach_numberOfRA_Preambles <4) ||
                   (ccparams_lte.rach_numberOfRA_Preambles>64) ||
@@ -882,8 +877,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              RC.config_file_name, i, ccparams_lte.rach_numberOfRA_Preambles);
 
               if (strcmp(ccparams_lte.rach_preamblesGroupAConfig, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preamblesGroupAConfig= true;
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_sizeOfRA_PreamblesGroupA= (ccparams_lte.rach_sizeOfRA_PreamblesGroupA/4)-1;
+                RRCcfg->radioresourceconfig[j].rach_preamblesGroupAConfig = true;
+                RRCcfg->radioresourceconfig[j].rach_sizeOfRA_PreamblesGroupA = (ccparams_lte.rach_sizeOfRA_PreamblesGroupA / 4) - 1;
 
                 if ((ccparams_lte.rach_numberOfRA_Preambles <4) ||
                     (ccparams_lte.rach_numberOfRA_Preambles>60) ||
@@ -894,19 +889,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
                 switch (ccparams_lte.rach_messageSizeGroupA) {
                   case 56:
-                    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b56;
+                    RRCcfg->radioresourceconfig[j].rach_messageSizeGroupA = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b56;
                     break;
 
                   case 144:
-                    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b144;
+                    RRCcfg->radioresourceconfig[j].rach_messageSizeGroupA = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b144;
                     break;
 
                   case 208:
-                    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b208;
+                    RRCcfg->radioresourceconfig[j].rach_messageSizeGroupA = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b208;
                     break;
 
                   case 256:
-                    RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messageSizeGroupA= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b256;
+                    RRCcfg->radioresourceconfig[j].rach_messageSizeGroupA = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messageSizeGroupA_b256;
                     break;
 
                   default:
@@ -917,33 +912,33 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 }
 
                 if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"minusinfinity")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_minusinfinity;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_minusinfinity;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB0")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB0;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB0;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB5")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB5;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB5;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB8")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB8;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB8;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB10")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB10;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB10;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB12")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB12;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB12;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB15")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB15;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB15;
                 } else if (strcmp(ccparams_lte.rach_messagePowerOffsetGroupB,"dB18")==0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_messagePowerOffsetGroupB= LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB18;
+                  RRCcfg->radioresourceconfig[j].rach_messagePowerOffsetGroupB = LTE_RACH_ConfigCommon__preambleInfo__preamblesGroupAConfig__messagePowerOffsetGroupB_dB18;
                 } else
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for rach_messagePowerOffsetGroupB choice: minusinfinity,dB0,dB5,dB8,dB10,dB12,dB15,dB18!\n",
                                RC.config_file_name, i, ccparams_lte.rach_messagePowerOffsetGroupB);
               } else if (strcmp(ccparams_lte.rach_preamblesGroupAConfig, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preamblesGroupAConfig= false;
+                RRCcfg->radioresourceconfig[j].rach_preamblesGroupAConfig = false;
               } else
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for rach_preamblesGroupAConfig choice: ENABLE,DISABLE !\n",
                              RC.config_file_name, i, ccparams_lte.rach_preamblesGroupAConfig);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleInitialReceivedTargetPower= (ccparams_lte.rach_preambleInitialReceivedTargetPower+120)/2;
+              RRCcfg->radioresourceconfig[j].rach_preambleInitialReceivedTargetPower = (ccparams_lte.rach_preambleInitialReceivedTargetPower + 120) / 2;
 
               if ((ccparams_lte.rach_preambleInitialReceivedTargetPower<-120) ||
                   (ccparams_lte.rach_preambleInitialReceivedTargetPower>-90) ||
@@ -952,7 +947,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_preambleInitialReceivedTargetPower choice: -120,-118,...,-90 !\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleInitialReceivedTargetPower);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_powerRampingStep= ccparams_lte.rach_powerRampingStep/2;
+              RRCcfg->radioresourceconfig[j].rach_powerRampingStep = ccparams_lte.rach_powerRampingStep / 2;
 
               if ((ccparams_lte.rach_powerRampingStep<0) ||
                   (ccparams_lte.rach_powerRampingStep>6) ||
@@ -963,47 +958,47 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               switch (ccparams_lte.rach_preambleTransMax) {
                 case 3:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n3;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n3;
                   break;
 
                 case 4:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n4;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n4;
                   break;
 
                 case 5:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n5;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n5;
                   break;
 
                 case 6:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n6;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n6;
                   break;
 
                 case 7:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n7;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n7;
                   break;
 
                 case 8:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n8;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n8;
                   break;
 
                 case 10:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n10;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n10;
                   break;
 
                 case 20:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n20;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n20;
                   break;
 
                 case 50:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n50;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n50;
                   break;
 
                 case 100:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n100;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n100;
                   break;
 
                 case 200:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_preambleTransMax= LTE_PreambleTransMax_n200;
+                  RRCcfg->radioresourceconfig[j].rach_preambleTransMax = LTE_PreambleTransMax_n200;
                   break;
 
                 default:
@@ -1013,7 +1008,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   break;
               }
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_raResponseWindowSize=  (ccparams_lte.rach_raResponseWindowSize==10)?7:ccparams_lte.rach_raResponseWindowSize-2;
+              RRCcfg->radioresourceconfig[j].rach_raResponseWindowSize = (ccparams_lte.rach_raResponseWindowSize == 10) ? 7 : ccparams_lte.rach_raResponseWindowSize - 2;
 
               if ((ccparams_lte.rach_raResponseWindowSize<0)||
                   (ccparams_lte.rach_raResponseWindowSize==9)||
@@ -1022,7 +1017,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_raResponseWindowSize choice: 2,3,4,5,6,7,8,10!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_macContentionResolutionTimer= (ccparams_lte.rach_macContentionResolutionTimer/8)-1;
+              RRCcfg->radioresourceconfig[j].rach_macContentionResolutionTimer = (ccparams_lte.rach_macContentionResolutionTimer / 8) - 1;
 
               if ((ccparams_lte.rach_macContentionResolutionTimer<8) ||
                   (ccparams_lte.rach_macContentionResolutionTimer>64) ||
@@ -1031,7 +1026,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for rach_macContentionResolutionTimer choice: 8,16,...,56,64!\n",
                              RC.config_file_name, i, ccparams_lte.rach_preambleTransMax);
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].rach_maxHARQ_Msg3Tx= ccparams_lte.rach_maxHARQ_Msg3Tx;
+              RRCcfg->radioresourceconfig[j].rach_maxHARQ_Msg3Tx = ccparams_lte.rach_maxHARQ_Msg3Tx;
 
               if ((ccparams_lte.rach_maxHARQ_Msg3Tx<0) ||
                   (ccparams_lte.rach_maxHARQ_Msg3Tx>8))
@@ -1041,19 +1036,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               switch (ccparams_lte.pcch_defaultPagingCycle) {
                 case 32:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf32;
+                  RRCcfg->radioresourceconfig[j].pcch_defaultPagingCycle = LTE_PCCH_Config__defaultPagingCycle_rf32;
                   break;
 
                 case 64:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf64;
+                  RRCcfg->radioresourceconfig[j].pcch_defaultPagingCycle = LTE_PCCH_Config__defaultPagingCycle_rf64;
                   break;
 
                 case 128:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf128;
+                  RRCcfg->radioresourceconfig[j].pcch_defaultPagingCycle = LTE_PCCH_Config__defaultPagingCycle_rf128;
                   break;
 
                 case 256:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_defaultPagingCycle= LTE_PCCH_Config__defaultPagingCycle_rf256;
+                  RRCcfg->radioresourceconfig[j].pcch_defaultPagingCycle = LTE_PCCH_Config__defaultPagingCycle_rf256;
                   break;
 
                 default:
@@ -1064,21 +1059,21 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (strcmp(ccparams_lte.pcch_nB, "fourT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_fourT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_fourT;
               } else if (strcmp(ccparams_lte.pcch_nB, "twoT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_twoT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_twoT;
               } else if (strcmp(ccparams_lte.pcch_nB, "oneT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_oneT;
               } else if (strcmp(ccparams_lte.pcch_nB, "halfT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_halfT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_halfT;
               } else if (strcmp(ccparams_lte.pcch_nB, "quarterT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_quarterT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_quarterT;
               } else if (strcmp(ccparams_lte.pcch_nB, "oneEighthT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneEighthT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_oneEighthT;
               } else if (strcmp(ccparams_lte.pcch_nB, "oneSixteenthT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneSixteenthT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_oneSixteenthT;
               } else if (strcmp(ccparams_lte.pcch_nB, "oneThirtySecondT") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].pcch_nB= LTE_PCCH_Config__nB_oneThirtySecondT;
+                RRCcfg->radioresourceconfig[j].pcch_nB = LTE_PCCH_Config__nB_oneThirtySecondT;
               } else {
                 AssertFatal (0, "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for pcch_nB choice: fourT,twoT,oneT,halfT,quarterT,oneighthT,oneSixteenthT,oneThirtySecondT !\n",
                              RC.config_file_name,
@@ -1087,11 +1082,11 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (strcmp(ccparams_lte.drx_Config_present, "prNothing") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_NOTHING;
+                RRCcfg->radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_NOTHING;
               } else if (strcmp(ccparams_lte.drx_Config_present, "prRelease") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_release;
+                RRCcfg->radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_release;
               } else if (strcmp(ccparams_lte.drx_Config_present, "prSetup") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_setup;
+                RRCcfg->radioresourceconfig[j].drx_Config_present = LTE_DRX_Config_PR_setup;
               } else {
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_Config_present choice: prNothing, prRelease, prSetup!\n",
@@ -1099,37 +1094,37 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (strcmp(ccparams_lte.drx_onDurationTimer, "psf1") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf1;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf1;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf2") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf2;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf2;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf3") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf3;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf3;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf4") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf4;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf4;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf5") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf5;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf5;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf6") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf6;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf6;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf8") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf8;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf8;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf10") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf10;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf10;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf20") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf20;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf20;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf30") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf30;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf30;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf40") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf40;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf40;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf50") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf50;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf50;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf60") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf60;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf60;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf80") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf80;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf80;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf100") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf100;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf100;
               } else if (strcmp(ccparams_lte.drx_onDurationTimer, "psf200") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_onDurationTimer = (long) LTE_DRX_Config__setup__onDurationTimer_psf200;
+                RRCcfg->radioresourceconfig[j].drx_onDurationTimer = (long)LTE_DRX_Config__setup__onDurationTimer_psf200;
               } else {
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_onDurationTimer choice !\n",
@@ -1138,69 +1133,69 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (strcmp(ccparams_lte.drx_InactivityTimer, "psf1") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf1;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf1;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf2") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf2;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf2;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf3") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf3;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf3;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf4") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf4;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf4;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf5") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf5;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf5;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf6") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf6;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf6;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf8") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf8;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf8;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf10") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf10;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf10;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf20") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf20;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf20;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf30") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf30;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf30;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf40") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf40;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf40;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf50") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf50;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf50;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf60") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf60;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf60;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf80") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf80;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf80;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf100") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf100;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf100;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf200") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf200;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf200;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf300") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf300;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf300;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf500") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf500;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf500;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf750") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf750;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf750;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf1280") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf1280;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf1280;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf1920") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf1920;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf1920;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf2560") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf2560;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf2560;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "psf0-v1020") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_psf0_v1020;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_psf0_v1020;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare9") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare9;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare9;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare8") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare8;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare8;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare7") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare7;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare7;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare6") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare6;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare6;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare5") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare5;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare5;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare4") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare4;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare4;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare3") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare3;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare3;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare2") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare2;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare2;
               } else if (strcmp(ccparams_lte.drx_InactivityTimer, "spare1") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_InactivityTimer = (long) LTE_DRX_Config__setup__drx_InactivityTimer_spare1;
+                RRCcfg->radioresourceconfig[j].drx_InactivityTimer = (long)LTE_DRX_Config__setup__drx_InactivityTimer_spare1;
               } else {
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_InactivityTimer choice !\n",
@@ -1208,16 +1203,16 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 break;
               }
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_multiple_max= ccparams_lte.ue_multiple_max;
+              RRCcfg->radioresourceconfig[j].ue_multiple_max = ccparams_lte.ue_multiple_max;
 
               if (!ccparams_lte.mbms_dedicated_serving_cell)
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u define %s: TRUE,FALSE!\n",
                              RC.config_file_name, i, ENB_CONFIG_STRING_MBMS_DEDICATED_SERVING_CELL);
               else if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "ENABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell = true;
+                RRCcfg->radioresourceconfig[j].mbms_dedicated_serving_cell = true;
               } else  if (strcmp(ccparams_lte.mbms_dedicated_serving_cell, "DISABLE") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].mbms_dedicated_serving_cell  = false;
+                RRCcfg->radioresourceconfig[j].mbms_dedicated_serving_cell = false;
               } else {
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for mbms_dedicated_serving_cell choice: TRUE or FALSE !\n",
@@ -1260,21 +1255,21 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf1") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf1;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf1;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf2") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf2;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf2;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf4") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf4;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf4;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf6") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf6;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf6;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf8") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf8;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf8;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf16") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf16;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf16;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf24") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf24;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf24;
               } else if (strcmp(ccparams_lte.drx_RetransmissionTimer, "psf33") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_RetransmissionTimer = (long) LTE_DRX_Config__setup__drx_RetransmissionTimer_psf33;
+                RRCcfg->radioresourceconfig[j].drx_RetransmissionTimer = (long)LTE_DRX_Config__setup__drx_RetransmissionTimer_psf33;
               } else {
                 AssertFatal (0,
                              "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for drx_RetransmissionTimer choice !\n",
@@ -1283,55 +1278,55 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               if (ccparams_lte.drx_longDrx_CycleStartOffset_present == NULL || strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prNothing") == 0) {
-                RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_NOTHING;
+                RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_NOTHING;
               } else {
                 if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf10") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf10;
                   offsetMaxLimit = 10;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf20") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf20;
                   offsetMaxLimit = 20;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf32") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf32;
                   offsetMaxLimit = 32;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf40") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf40;
                   offsetMaxLimit = 40;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf64") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf64;
                   offsetMaxLimit = 64;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf80") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf80;
                   offsetMaxLimit = 80;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf128") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf128;
                   offsetMaxLimit = 128;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf160") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf160;
                   offsetMaxLimit = 160;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf256") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf256;
                   offsetMaxLimit = 256;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf320") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf320;
                   offsetMaxLimit = 320;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf512") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf512;
                   offsetMaxLimit = 512;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf640") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf640;
                   offsetMaxLimit = 640;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf1024") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1024;
                   offsetMaxLimit = 1024;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf1280") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf1280;
                   offsetMaxLimit = 1280;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf2048") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2048;
                   offsetMaxLimit = 2048;
                 } else if (strcmp(ccparams_lte.drx_longDrx_CycleStartOffset_present, "prSf2560") == 0) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset_present = LTE_DRX_Config__setup__longDRX_CycleStartOffset_PR_sf2560;
                   offsetMaxLimit = 2560;
                 } else {
                   AssertFatal (0,
@@ -1340,7 +1335,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 }
 
                 if (ccparams_lte.drx_longDrx_CycleStartOffset >= 0 && ccparams_lte.drx_longDrx_CycleStartOffset < offsetMaxLimit) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_longDrx_CycleStartOffset = ccparams_lte.drx_longDrx_CycleStartOffset;
+                  RRCcfg->radioresourceconfig[j].drx_longDrx_CycleStartOffset = ccparams_lte.drx_longDrx_CycleStartOffset;
                 } else {
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u incoherent value \"%d\" for drx_longDrx_CycleStartOffset !\n",
@@ -1354,58 +1349,58 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                                "Failed to parse eNB configuration file %s, enb %u incoherent values \"%s\" -  \"%d\" for drx_shortDrx_Cycle or drx_shortDrx_ShortCycleTimer choice !\n",
                                RC.config_file_name, i, ccparams_lte.drx_shortDrx_Cycle, ccparams_lte.drx_shortDrx_ShortCycleTimer);
                 } else {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = -1;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_ShortCycleTimer = 0;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = -1;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_ShortCycleTimer = 0;
                 }
               } else {
                 if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf2") == 0) {
                   cycleNb = 2;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf2;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf2;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf5") == 0) {
                   cycleNb = 5;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf5;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf5;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf8") == 0) {
                   cycleNb = 8;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf8;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf8;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf10") == 0) {
                   cycleNb = 10;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf10;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf10;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf16") == 0) {
                   cycleNb = 16;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf16;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf16;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf20") == 0) {
                   cycleNb = 20;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf20;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf20;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf32") == 0) {
                   cycleNb = 32;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf32;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf32;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf40") == 0) {
                   cycleNb = 40;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf40;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf40;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf64") == 0) {
                   cycleNb = 64;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf64;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf64;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf80") == 0) {
                   cycleNb = 80;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf80;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf80;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf128") == 0) {
                   cycleNb = 128;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf128;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf128;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf160") == 0) {
                   cycleNb = 160;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf160;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf160;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf256") == 0) {
                   cycleNb = 256;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf256;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf256;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf320") == 0) {
                   cycleNb = 320;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf320;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf320;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf512") == 0) {
                   cycleNb = 512;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf512;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf512;
                 } else if (strcmp(ccparams_lte.drx_shortDrx_Cycle, "sf640") == 0) {
                   cycleNb = 640;
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf640;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_Cycle = LTE_DRX_Config__setup__shortDRX__shortDRX_Cycle_sf640;
                 } else {
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u incoherent value \"%s\" for drx_shortDrx_Cycle !\n",
@@ -1419,7 +1414,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                 }
 
                 if (ccparams_lte.drx_shortDrx_ShortCycleTimer >= 1 && ccparams_lte.drx_shortDrx_ShortCycleTimer <= 16 ) {
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].drx_shortDrx_ShortCycleTimer = ccparams_lte.drx_shortDrx_ShortCycleTimer;
+                  RRCcfg->radioresourceconfig[j].drx_shortDrx_ShortCycleTimer = ccparams_lte.drx_shortDrx_ShortCycleTimer;
                 } else {
                   AssertFatal (0,
                                "Failed to parse eNB configuration file %s, enb %u unknown value \"%d\" for drx_shortDrx_ShortCycleTimer choice !\n",
@@ -1429,19 +1424,19 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
 
               switch (ccparams_lte.bcch_modificationPeriodCoeff) {
                 case 2:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n2;
+                  RRCcfg->radioresourceconfig[j].bcch_modificationPeriodCoeff = LTE_BCCH_Config__modificationPeriodCoeff_n2;
                   break;
 
                 case 4:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n4;
+                  RRCcfg->radioresourceconfig[j].bcch_modificationPeriodCoeff = LTE_BCCH_Config__modificationPeriodCoeff_n4;
                   break;
 
                 case 8:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n8;
+                  RRCcfg->radioresourceconfig[j].bcch_modificationPeriodCoeff = LTE_BCCH_Config__modificationPeriodCoeff_n8;
                   break;
 
                 case 16:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].bcch_modificationPeriodCoeff= LTE_BCCH_Config__modificationPeriodCoeff_n16;
+                  RRCcfg->radioresourceconfig[j].bcch_modificationPeriodCoeff = LTE_BCCH_Config__modificationPeriodCoeff_n16;
                   break;
 
                 default:
@@ -1451,40 +1446,40 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   break;
               }
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t300= ccparams_lte.ue_TimersAndConstants_t300;
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t301= ccparams_lte.ue_TimersAndConstants_t301;
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t310= ccparams_lte.ue_TimersAndConstants_t310;
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_t311= ccparams_lte.ue_TimersAndConstants_t311;
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_n310= ccparams_lte.ue_TimersAndConstants_n310;
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TimersAndConstants_n311= ccparams_lte.ue_TimersAndConstants_n311;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_t300 = ccparams_lte.ue_TimersAndConstants_t300;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_t301 = ccparams_lte.ue_TimersAndConstants_t301;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_t310 = ccparams_lte.ue_TimersAndConstants_t310;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_t311 = ccparams_lte.ue_TimersAndConstants_t311;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_n310 = ccparams_lte.ue_TimersAndConstants_n310;
+              RRCcfg->radioresourceconfig[j].ue_TimersAndConstants_n311 = ccparams_lte.ue_TimersAndConstants_n311;
 
               switch (ccparams_lte.ue_TransmissionMode) {
                 case 1:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm1;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm1;
                   break;
 
                 case 2:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm2;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm2;
                   break;
 
                 case 3:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm3;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm3;
                   break;
 
                 case 4:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm4;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm4;
                   break;
 
                 case 5:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm5;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm5;
                   break;
 
                 case 6:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm6;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm6;
                   break;
 
                 case 7:
-                  RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_TransmissionMode= LTE_AntennaInfoDedicated__transmissionMode_tm7;
+                  RRCcfg->radioresourceconfig[j].ue_TransmissionMode = LTE_AntennaInfoDedicated__transmissionMode_tm7;
                   break;
 
                 default:
@@ -1494,7 +1489,7 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
                   break;
               }
 
-              RRC_CONFIGURATION_REQ (msg_p).radioresourceconfig[j].ue_multiple_max= ccparams_lte.ue_multiple_max;
+              RRCcfg->radioresourceconfig[j].ue_multiple_max = ccparams_lte.ue_multiple_max;
 
               switch (ccparams_lte.N_RB_DL) {
                 case 25:
@@ -1532,15 +1527,16 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               }
 
               // eMBMS configuration
-              RRC_CONFIGURATION_REQ(msg_p).eMBMS_configured = 0;
+              RRCcfg->eMBMS_configured = 0;
               printf("No eMBMS configuration, skipping it\n");
               // eMTC configuration
               char brparamspath[MAX_OPTNAME_SIZE*2 + 160];
               sprintf(brparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_EMTC_PARAMETERS);
               config_get(eMTCParams, sizeof(eMTCParams)/sizeof(paramdef_t), brparamspath);
-              RRC_CONFIGURATION_REQ(msg_p).eMTC_configured = eMTCconfig.eMTC_configured&1;
+              RRCcfg->eMTC_configured = eMTCconfig.eMTC_configured & 1;
 
-              if (eMTCconfig.eMTC_configured > 0) fill_eMTC_configuration(msg_p,&eMTCconfig, i,j,RC.config_file_name,brparamspath);
+              if (eMTCconfig.eMTC_configured > 0)
+                fill_eMTC_configuration(RRCcfg, &eMTCconfig, i, j, RC.config_file_name, brparamspath);
               else                            printf("No eMTC configuration, skipping it\n");
 
               // Sidelink configuration
@@ -1548,14 +1544,15 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
               sprintf(SLparamspath,"%s.%s", ccspath, ENB_CONFIG_STRING_SL_PARAMETERS);
               config_get( SLParams, sizeof(SLParams)/sizeof(paramdef_t), SLparamspath);
               // Sidelink Resource pool information
-              RRC_CONFIGURATION_REQ (msg_p).SL_configured=SLconfig.sidelink_configured&1;
+              RRCcfg->SL_configured = SLconfig.sidelink_configured & 1;
 
-              if (SLconfig.sidelink_configured==1) fill_SL_configuration(msg_p,&SLconfig,i,j,RC.config_file_name);
+              if (SLconfig.sidelink_configured == 1)
+                fill_SL_configuration(RRCcfg, &SLconfig, i, j, RC.config_file_name);
               else                                 printf("No SL configuration skipping it\n");
             } // !NODE_IS_DU(node_type)
           }
 
-          RRC_CONFIGURATION_REQ (msg_p).nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
+          RRCcfg->nr_scg_ssb_freq = ccparams_lte.nr_scg_ssb_freq;
 
           if (!NODE_IS_DU(rrc->node_type)) {
             char srb1path[MAX_OPTNAME_SIZE*2 + 8];
@@ -1861,8 +1858,6 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1) {
         }
       }
     }
-
-    memcpy(&rrc->configuration, &RRC_CONFIGURATION_REQ(msg_p), sizeof(RRC_CONFIGURATION_REQ(msg_p)));
   }
 
   LOG_I(RRC,"Node type %d \n ", rrc->node_type);
