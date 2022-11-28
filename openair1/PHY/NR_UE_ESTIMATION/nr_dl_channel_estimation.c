@@ -1252,7 +1252,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch_l[2],ch_r[2],ch[2],*pil,*rxF,*dl_ch;
-  int16_t *fl=NULL,*fm=NULL,*fr=NULL,*fml=NULL,*fmr=NULL,*fmm=NULL,*fdcl=NULL,*fdcr=NULL,*fdclh=NULL,*fdcrh=NULL, *frl=NULL, *frr=NULL;
+  int16_t *fdcl = NULL, *fdcr = NULL, *fdclh = NULL, *fdcrh = NULL;
   int ch_offset,symbol_offset;
 
   uint8_t nushift;
@@ -1296,33 +1296,17 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     switch (delta) {
 
     case 0://port 0,1
-      fl = filt8_l0;//left interpolation Filter for DMRS config. 1
-      fm = filt8_m0;//left middle interpolation Filter
-      fr = filt8_r0;//right interpolation Filter
-      fmm = filt8_mm0;;//middle middle interpolation Filter
-      fml = filt8_m0;//left middle interpolation Filter
-      fmr = filt8_mr0;//middle right interpolation Filter
-      fdcl = filt8_dcl0;//left DC interpolation Filter (even RB)
-      fdcr = filt8_dcr0;//right DC interpolation Filter (even RB)
-      fdclh = filt8_dcl0_h;//left DC interpolation Filter (odd RB)
-      fdcrh = filt8_dcr0_h;//right DC interpolation Filter (odd RB)
-      frl = NULL;
-      frr = NULL;
+      fdcl = filt8_dcl0; //left DC interpolation Filter (even RB)
+      fdcr = filt8_dcr0; //right DC interpolation Filter (even RB)
+      fdclh = filt8_dcl0_h; //left DC interpolation Filter (odd RB)
+      fdcrh = filt8_dcr0_h; //right DC interpolation Filter (odd RB)
       break;
 
     case 1://port2,3
-      fl = filt8_l1;
-      fm = filt8_m1;
-      fr = filt8_r1;
-      fmm = filt8_mm1;
-      fml = filt8_ml1;
-      fmr = filt8_m1;
       fdcl = filt8_dcl1;
       fdcr = filt8_dcr1;
       fdclh = filt8_dcl1_h;
       fdcrh = filt8_dcr1_h;
-      frl = NULL;
-      frr = NULL;
       break;
 
     default:
@@ -1335,14 +1319,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     if (p<6) ue->frame_parms.nushift = nushift;
     switch (delta) {
     case 0://port 0,1
-      fl = filt8_l2;//left interpolation Filter should be fml
-      fr = filt8_r2;//right interpolation Filter should be fmr
-      fm = filt8_l2;
-      fmm = filt8_r2;
-      fml = filt8_ml2;
-      fmr = filt8_mr2;
-      frl = filt8_rl2;
-      frr = filt8_rm2;
       fdcl = filt8_dcl1;
       fdcr = filt8_dcr1;
       fdclh = filt8_dcl1_h;
@@ -1350,14 +1326,6 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
       break;
 
     case 2://port2,3
-      fl = filt8_l3;
-      fm = filt8_m2;
-      fr = filt8_r3;
-      fmm = filt8_mm2;
-      fml = filt8_l2;
-      fmr = filt8_r2;
-      frl = filt8_rl3;
-      frr = filt8_rr3;
       fdcl = NULL;
       fdcr = NULL;
       fdclh = NULL;
@@ -1409,20 +1377,15 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
         printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil[0], pil[1], rxF[0], rxF[1], ch[0], ch[1]);
 #endif
 
-        if (pilot_cnt == 0) {
-          multadd_real_vector_complex_scalar(fl, ch, dl_ch, 8);
-        } else if (pilot_cnt == 1) {
-          multadd_real_vector_complex_scalar(fml, ch, dl_ch, 8);
-        } else if (pilot_cnt == 6 * nb_rb_pdsch - 2) {
-          multadd_real_vector_complex_scalar(fmr, ch, dl_ch, 8);
-          dl_ch += 8;
-        } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) {
-          multadd_real_vector_complex_scalar(fr, ch, dl_ch, 8);
-        } else if (pilot_cnt % 2 == 0) {
-          multadd_real_vector_complex_scalar(fmm, ch, dl_ch, 8);
-          dl_ch += 8;
-        } else {
-          multadd_real_vector_complex_scalar(fm, ch, dl_ch, 8);
+        if (pilot_cnt == 0) { // Treat first pilot
+          multadd_real_vector_complex_scalar(filt16_dl_first, ch, dl_ch, 16);
+        } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) { // Treat last pilot
+          multadd_real_vector_complex_scalar(filt16_dl_last, ch, dl_ch, 16);
+        } else { // Treat middle pilots
+          multadd_real_vector_complex_scalar(filt16_dl_middle, ch, dl_ch, 16);
+          if (pilot_cnt % 2 == 0) {
+            dl_ch += 8;
+          }
         }
       }
 
@@ -1520,39 +1483,16 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
           ch[0] = (ch_l[0] + ch_r[0]) >> 1;
           ch[1] = (ch_l[1] + ch_r[1]) >> 1;
 
-          if (pilot_cnt == 3) {
-            multadd_real_vector_complex_scalar(fr, ch, dl_ch, 8);
-            dl_ch += 12;
-          } else if (pilot_cnt % 4 == 1) {
-            multadd_real_vector_complex_scalar(fmr, ch, dl_ch, 8);
-            dl_ch += 8;
-          } else if (pilot_cnt > 3) {
-            multadd_real_vector_complex_scalar(fmm, ch, dl_ch, 8);
-            dl_ch += 12;
-          }
-
-          dl_ch[0 + (nushift << 1)] = ch[0];
-          dl_ch[1 + (nushift << 1)] = ch[1];
-          dl_ch[2 + (nushift << 1)] = ch[0];
-          dl_ch[3 + (nushift << 1)] = ch[1];
-
           if (pilot_cnt == 1) {
-            multadd_real_vector_complex_scalar(fl, ch, dl_ch, 8);
-          } else if (pilot_cnt % 4 == 1) {
-            multadd_real_vector_complex_scalar(fm, ch, dl_ch, 8);
-
+            multadd_real_vector_complex_scalar(filt16_dl_first_type2, ch, dl_ch, 16);
+            dl_ch += 6;
           } else if (pilot_cnt == (4 * nb_rb_pdsch - 1)) {
-            dl_ch += 4;
-            // Treat last 2 pilots specially (right edge)
-            multadd_real_vector_complex_scalar(frl, dl_ch - 2 + (nushift << 1), dl_ch, 8);
-            multadd_real_vector_complex_scalar(frr, dl_ch - 14 + (nushift << 1), dl_ch, 8);
-
+            multadd_real_vector_complex_scalar(filt16_dl_last_type2, ch, dl_ch, 16);
           } else {
-            dl_ch += 4;
-            multadd_real_vector_complex_scalar(fml, ch, dl_ch, 8);
+            multadd_real_vector_complex_scalar(filt16_dl_middle_type2, ch, dl_ch, 16);
+            dl_ch += 12;
           }
         }
-
         pil += 2;
         int re_offset_add = pilot_cnt % 2 == 0 ? 1 : 5;
         re_offset = (re_offset + re_offset_add) % ue->frame_parms.ofdm_symbol_size;
