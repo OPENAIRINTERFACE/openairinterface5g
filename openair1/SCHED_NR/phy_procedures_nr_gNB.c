@@ -529,7 +529,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
 
-  for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+  for (int i = 0; i < gNB->max_nb_pucch; i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if ((pucch->active == 1) &&
@@ -713,7 +713,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   start_meas(&gNB->phy_proc_rx);
 
-  for (int i=0;i<NUMBER_OF_NR_PUCCH_MAX;i++){
+  for (int i = 0; i < gNB->max_nb_pucch; i++){
     NR_gNB_PUCCH_t *pucch = gNB->pucch[i];
     if (pucch) {
       if (NFAPI_MODE == NFAPI_MODE_PNF)

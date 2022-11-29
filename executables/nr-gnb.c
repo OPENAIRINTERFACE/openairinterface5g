@@ -198,7 +198,8 @@ void rx_func(void *param) {
         }
         up_removed++;
       }
-    for (j = 0; j < NUMBER_OF_NR_PUCCH_MAX; j++)
+
+    for (j = 0; j < gNB->max_nb_pucch; j++)
       if (gNB->pucch[j]->active > 0 &&
           gNB->pucch[j]->pucch_pdu.rnti == rnti_to_remove[i]) {
         gNB->pucch[j]->active = 0;

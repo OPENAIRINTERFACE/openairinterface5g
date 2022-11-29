@@ -617,12 +617,13 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_nr_ul_tti_request_t     UL_tti_req;
   nfapi_nr_uci_indication_t uci_indication;
   
+  int max_nb_pucch;
   NR_gNB_PBCH        pbch;
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PRS         prs_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
-  NR_gNB_PUCCH_t     *pucch[NUMBER_OF_NR_PUCCH_MAX];
+  NR_gNB_PUCCH_t     **pucch;
   NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];

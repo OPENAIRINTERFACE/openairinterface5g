@@ -134,7 +134,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
       int max_mimo_layers = (CSI_RS_antenna_ports<NR_MAX_NB_LAYERS) ? CSI_RS_antenna_ports : NR_MAX_NB_LAYERS;
 
-      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers* sizeof(int32_t **));
+      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers * sizeof(int32_t **));
       int32_t ***mat = gNB->nr_mimo_precoding_matrix;
       double complex res_code;
 
@@ -1002,14 +1002,43 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
       free_gNB_dlsch(&msg->dlsch[i][j], grid_size, fp);
 }
 
-void init_nr_transport(PHY_VARS_gNB *gNB) {
+void init_nr_transport(PHY_VARS_gNB *gNB)
+{
+
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
 
-  for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
+  int nb_slots_per_period = cfg->cell_config.frame_duplex_type.value ?
+                            fp->slots_per_frame / get_nb_periods_per_frame(cfg->tdd_table.tdd_period.value) :
+                            fp->slots_per_frame;
+  int nb_ul_slots_period = 0;
+  if (cfg->cell_config.frame_duplex_type.value) {
+    for(int i=0; i<nb_slots_per_period; i++) {
+      for(int j=0; j<NR_NUMBER_OF_SYMBOLS_PER_SLOT; j++) {
+        if(cfg->tdd_table.max_tdd_periodicity_list[i].max_num_of_symbol_per_slot_list[j].slot_config.value == 1) { // UL symbol
+          nb_ul_slots_period++;
+          break;
+        }  
+      }
+    }
+  }
+  else
+    nb_ul_slots_period = fp->slots_per_frame;
+
+  int pucch_slots;
+  if (gNB->if_inst->sl_ahead > nb_slots_per_period)
+    pucch_slots = nb_ul_slots_period + (gNB->if_inst->sl_ahead - nb_slots_per_period);
+  else
+    pucch_slots = (nb_ul_slots_period < gNB->if_inst->sl_ahead) ? nb_ul_slots_period : gNB->if_inst->sl_ahead;
+
+  gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * pucch_slots;
+
+  gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
+  for (int i = 0; i < gNB->max_nb_pucch; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
     gNB->pucch[i] = new_gNB_pucch();
-    AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
+    AssertFatal(gNB->pucch[i] != NULL,"Can't initialize pucch %d \n", i);
   }
 
   for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
@@ -1039,7 +1068,7 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
 {
   const NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 
-  for (int i = 0; i < NUMBER_OF_NR_PUCCH_MAX; i++)
+  for (int i = 0; i < gNB->max_nb_pucch; i++)
     free_gNB_pucch(gNB->pucch[i]);
 
   for (int i = 0; i < NUMBER_OF_NR_SRS_MAX; i++)
