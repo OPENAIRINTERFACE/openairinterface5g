@@ -487,8 +487,9 @@ void config_srs(NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
   srs_res0->sequenceId = 40;
   srs_res0->spatialRelationInfo = calloc(1,sizeof(*srs_res0->spatialRelationInfo));
   srs_res0->spatialRelationInfo->servingCellId = NULL;
-  srs_res0->spatialRelationInfo->referenceSignal.present = NR_SRS_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
-  srs_res0->spatialRelationInfo->referenceSignal.choice.csi_RS_Index = 0;
+  // TODO include CSI as reference signal when BWPs are handled properly
+  srs_res0->spatialRelationInfo->referenceSignal.present = NR_SRS_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
+  srs_res0->spatialRelationInfo->referenceSignal.choice.ssb_Index = 0;
   ASN_SEQUENCE_ADD(&srs_Config->srs_ResourceToAddModList->list,srs_res0);
 }
 
@@ -728,14 +729,9 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
   pucch_Config->pucch_PowerControl->pathlossReferenceRSs = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->pathlossReferenceRSs));
   struct NR_PUCCH_PathlossReferenceRS *PL_ref_RS = calloc(1,sizeof(*PL_ref_RS));
   PL_ref_RS->pucch_PathlossReferenceRS_Id = 0;
-  if(do_csirs) {
-    PL_ref_RS->referenceSignal.present = NR_PUCCH_PathlossReferenceRS__referenceSignal_PR_csi_RS_Index;
-    PL_ref_RS->referenceSignal.choice.csi_RS_Index = 0;
-  }
-  else {
-    PL_ref_RS->referenceSignal.present = NR_PUCCH_PathlossReferenceRS__referenceSignal_PR_ssb_Index;
-    PL_ref_RS->referenceSignal.choice.ssb_Index = 0;
-  }
+  // TODO include CSI as reference signal when BWPs are handled properly
+  PL_ref_RS->referenceSignal.present = NR_PUCCH_PathlossReferenceRS__referenceSignal_PR_ssb_Index;
+  PL_ref_RS->referenceSignal.choice.ssb_Index = 0;
   ASN_SEQUENCE_ADD(&pucch_Config->pucch_PowerControl->pathlossReferenceRSs->list,PL_ref_RS);
 
   pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0 = calloc(1,sizeof(*pucch_Config->pucch_PowerControl->deltaF_PUCCH_f0));
@@ -748,14 +744,10 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
   NR_PUCCH_SpatialRelationInfo_t *pucchspatial = calloc(1,sizeof(*pucchspatial));
   pucchspatial->pucch_SpatialRelationInfoId = 1;
   pucchspatial->servingCellId = NULL;
-  if(do_csirs) {
-    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_csi_RS_Index;
-    pucchspatial->referenceSignal.choice.csi_RS_Index = 0;
-  }
-  else {
-    pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
-    pucchspatial->referenceSignal.choice.ssb_Index = 0;
-  }
+  // TODO include CSI as reference signal when BWPs are handled properly
+  pucchspatial->referenceSignal.present = NR_PUCCH_SpatialRelationInfo__referenceSignal_PR_ssb_Index;
+  pucchspatial->referenceSignal.choice.ssb_Index = 0;
+
 
   pucchspatial->pucch_PathlossReferenceRS_Id = PL_ref_RS->pucch_PathlossReferenceRS_Id;
   pucchspatial->p0_PUCCH_Id = p00->p0_PUCCH_Id;
