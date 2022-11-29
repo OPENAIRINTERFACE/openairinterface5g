@@ -333,7 +333,8 @@ function main() {
             echo_info "Will compile with verbose instructions"
             shift;;
        --build-doxygen)
-	        BUILD_DOXYGEN=1
+            CMAKE_CMD="$CMAKE_CMD -DGENERATE_DOXYGEN=ON"
+            BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
        --build-coverity-scan)
@@ -533,6 +534,10 @@ function main() {
   fi
   if [ "$nrUE" = 1 ] ; then
       execlist="$execlist nr-uesoftmodem"
+  fi
+
+  if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" && "$HW" == "None" ]]; then
+    SKIP_SHARED_LIB_FLAG="True"
   fi
 
   echo_info "3. building the compilation directives ..."

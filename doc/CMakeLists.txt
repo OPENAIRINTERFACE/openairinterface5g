@@ -1,15 +1,13 @@
+add_boolean_option(GENERATE_DOXYGEN False "Generate source code doc using doxygen")
 
-find_package(Doxygen QUIET)
+if(GENERATE_DOXYGEN)
+  find_package(Doxygen REQUIRED)
 
-if(DOXYGEN_FOUND)
   configure_file(Doxyfile ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile @ONLY)
   add_custom_target(doc
     ${DOXYGEN_EXECUTABLE} ${CMAKE_CURRENT_BINARY_DIR}/Doxyfile
     COMMENT "Generating API documentation with Doxygen" VERBATIM
-    )
+  )
 else()
-  add_custom_target(doc
-    message(FATAL_ERROR "required to generate doxygen documentation but doxygen not installed")
-    )
-endif(DOXYGEN_FOUND)
-
+  message(STATUS "No Doxygen documentation requested")
+endif()
