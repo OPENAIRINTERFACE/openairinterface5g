@@ -640,8 +640,8 @@ static void trx_usrp_write_reset(openair0_thread_t *wt) {
   pthread_mutex_lock(&wt->mutex_write);
   wt->count_write = 1;
   wt->write_thread_exit = true;
-  pthread_mutex_unlock(&wt->mutex_write);
   pthread_cond_signal(&wt->cond_write);
+  pthread_mutex_unlock(&wt->mutex_write);
   void *retval = NULL;
   pthread_join(wt->pthread_write, &retval);
   LOG_I(HW, "stopped USRP write thread\n");
