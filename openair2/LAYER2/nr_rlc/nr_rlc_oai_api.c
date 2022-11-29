@@ -1252,13 +1252,10 @@ void nr_rlc_srb0_recv_sdu(int rnti, unsigned char *buf, int size)
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
 
   rb = ue->srb0;
+  AssertFatal(rb != NULL, "SDU sent to unknown RB rnti %d srb0\n", rnti);
 
-  if (rb != NULL) {
-    rb->set_time(rb, nr_rlc_current_time);
-    rb->recv_sdu(rb, (char *)buf, size, -1);
-  } else {
-    LOG_E(RLC, "SDU sent to unknown RB rnti %d srb0\n", rnti);
-  }
+  rb->set_time(rb, nr_rlc_current_time);
+  rb->recv_sdu(rb, (char *)buf, size, -1);
 
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }

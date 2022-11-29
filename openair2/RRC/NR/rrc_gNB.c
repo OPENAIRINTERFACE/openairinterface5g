@@ -362,6 +362,7 @@ rrc_gNB_generate_RRCSetup(
                          scc,
                          sccd,
                          &rrc->configuration);
+  AssertFatal(size > 0, "do_RRCSetup failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
@@ -413,6 +414,7 @@ rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(
                          scc,
                          sccd,
                          &rrc_instance_p->configuration);
+  AssertFatal(size > 0, "do_RRCSetup failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
   AssertFatal(size>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
@@ -471,7 +473,9 @@ rrc_gNB_generate_RRCReject(
 
   unsigned char buf[1024];
   int size = do_RRCReject(ctxt_pP->module_id, buf);
+  AssertFatal(size > 0, "do_RRCReject failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
+
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
               (char *)buf,
               size,
@@ -481,32 +485,18 @@ rrc_gNB_generate_RRCReject(
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
       size);
 
-  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
-    case ngran_gNB:
-    case ngran_gNB_CU: {
-      f1ap_dl_rrc_message_t dl_rrc = {
-        .gNB_CU_ue_id = 0,
-        .gNB_DU_ue_id = 0,
-        .old_gNB_DU_ue_id = 0xFFFFFF,
-        .rrc_container = buf,
-        .rrc_container_length = size,
-        .rnti = ue_p->rnti,
-        .srb_id = CCCH,
-        .execute_duplication  = 1,
-        .RAT_frequency_priority_information.en_dc = 0
-      };
-      rrc->mac_rrc.dl_rrc_message_transfer(ctxt_pP->module_id, &dl_rrc);
-      break;
-    }
-
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      AssertFatal(1==0,"nothing to do for DU\n");
-      break;
-
-    default :
-      LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
-  }
+  f1ap_dl_rrc_message_t dl_rrc = {
+    .gNB_CU_ue_id = 0,
+    .gNB_DU_ue_id = 0,
+    .old_gNB_DU_ue_id = 0xFFFFFF,
+    .rrc_container = buf,
+    .rrc_container_length = size,
+    .rnti = ue_p->rnti,
+    .srb_id = CCCH,
+    .execute_duplication  = 1,
+    .RAT_frequency_priority_information.en_dc = 0
+  };
+  rrc->mac_rrc.dl_rrc_message_transfer(ctxt_pP->module_id, &dl_rrc);
 }
 
 //-----------------------------------------------------------------------------

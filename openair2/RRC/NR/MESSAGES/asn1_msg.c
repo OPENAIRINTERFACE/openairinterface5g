@@ -726,11 +726,11 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 }
 
 //------------------------------------------------------------------------------
-uint8_t do_RRCReject(uint8_t Mod_id,
-                  uint8_t *const buffer)
+int do_RRCReject(uint8_t Mod_id,
+                 uint8_t *const buffer)
 //------------------------------------------------------------------------------
 {
-    asn_enc_rval_t                                   enc_rval;;
+    asn_enc_rval_t                                   enc_rval;
     NR_DL_CCCH_Message_t                             dl_ccch_msg;
     NR_RRCReject_t                                   *rrcReject;
     NR_RejectWaitTime_t                              waitTime = 1;
@@ -767,7 +767,7 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 
     LOG_D(NR_RRC,"RRCReject Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
-    return((enc_rval.encoded+7)/8);
+    return (enc_rval.encoded + 7) / 8;
 }
 
 void fill_initial_SpCellConfig(int uid,
