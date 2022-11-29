@@ -2203,12 +2203,12 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size,
   int32_t determ_fin[12*nb_rb_0] __attribute__((aligned(32)));
 
   ///Allocate H^*H matrix elements and sub elements
-  conjH_H_elements        = (int32_t ***)malloc16_clear( n_rx*sizeof(int32_t **) );
-  for (int aarx=0;aarx<n_rx;aarx++) {
-    conjH_H_elements[aarx] = (int32_t **)malloc16_clear( n_tx*n_tx*sizeof(int32_t) );
-    for (int rtx=0;rtx<n_tx;rtx++) {//row
-      for (int ctx=0;ctx<n_tx;ctx++) {//column
-        conjH_H_elements[aarx][ctx*n_tx+rtx] = (int32_t *)malloc16_clear( 12*nb_rb_0*sizeof(int32_t *) );
+  conjH_H_elements = (int32_t ***)malloc16_clear(n_rx * sizeof(int32_t **));
+  for (int aarx = 0; aarx < n_rx; aarx++) {
+    conjH_H_elements[aarx] = (int32_t **)malloc16_clear(n_tx * n_tx * sizeof(int32_t *));
+    for (int rtx = 0; rtx < n_tx; rtx++) { // row
+      for (int ctx = 0; ctx < n_tx; ctx++) { // column
+        conjH_H_elements[aarx][ctx * n_tx + rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
       }
     }
   }
