@@ -1845,7 +1845,7 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
     rxdataF_comp128_0[0] = mmtmpD0;
     if (mod_order > 2) {
       // We need to check why it is a shift of 3
-      rxdataF_comp128_1[0] = _mm_srai_epi16(mmtmpD1, 3);
+      rxdataF_comp128_1[0] = simde_mm_srai_epi16(mmtmpD1, 3);
     } else {
       rxdataF_comp128_1[0] = mmtmpD1;
     }
