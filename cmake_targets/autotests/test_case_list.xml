@@ -193,15 +193,17 @@
                                  (Test3: 106 MCS-TABLE 256 QAM MCS Index 26),
                                  (Test4: MCS 0, low SNR performance),
                                  (Test5: 4x4 MIMO, 1 Layer),
-                                 (Test6: 4x4 MIMO, 2 Layers)</desc>
+                                 (Test6: 4x4 MIMO, 2 Layers),
+                                 (Test7: 4x4 MIMO, 4 Layers)</desc>
       <main_exec>nr_dlsim</main_exec>
       <main_exec_args>-n100 -e27 -s30
                       -n100 -e16 -s10
                       -n100 -q1 -e26 -s30
                       -n100 -e0 -t95 -S-1.0 -i 2 1 0
                       -n10 -s20 -U 3 0 0 2 -gR -x1 -y4 -z4
-                      -n10 -s20 -U 3 0 0 2 -gR -x2 -y4 -z4</main_exec_args>
-      <tags>test1 test2 test3 test4 test5 test6</tags>
+                      -n10 -s20 -U 3 0 0 2 -gR -x2 -y4 -z4
+                      -n10 -s20 -U 3 0 0 2 -x4 -y4 -z4</main_exec_args>
+      <tags>test1 test2 test3 test4 test5 test6 test7</tags>
       <search_expr_true>PDSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>
