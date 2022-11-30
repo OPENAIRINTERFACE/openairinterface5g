@@ -626,8 +626,6 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     **pucch;
   NR_gNB_SRS_t       **srs;
-  NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
-  NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
   /// statistics for DLSCH measurement collection
