@@ -618,13 +618,14 @@ typedef struct PHY_VARS_gNB_s {
   nfapi_nr_uci_indication_t uci_indication;
   
   int max_nb_pucch;
+  int max_nb_srs;
   NR_gNB_PBCH        pbch;
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PRS         prs_vars;
   NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
   NR_gNB_PUCCH_t     **pucch;
-  NR_gNB_SRS_t       *srs[NUMBER_OF_NR_SRS_MAX];
+  NR_gNB_SRS_t       **srs;
   NR_gNB_PDCCH_t     pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_UL_PDCCH_t  ul_pdcch_pdu[NUMBER_OF_NR_PDCCH_MAX];
   NR_gNB_DLSCH_t     *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];    // Nusers times two spatial streams
@@ -637,7 +638,7 @@ typedef struct PHY_VARS_gNB_s {
   t_nrPolar_params    **polarParams;
 
   /// SRS variables
-  nr_srs_info_t *nr_srs_info[NUMBER_OF_NR_SRS_MAX];
+  nr_srs_info_t **nr_srs_info;
 
   /// CSI variables
   nr_csi_info_t *nr_csi_info;

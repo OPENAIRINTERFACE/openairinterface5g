@@ -607,14 +607,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   //PRS init
   nr_init_prs(gNB);
 
-  for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
-    gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
-    for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
-      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    }
-  }
-
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
@@ -622,6 +614,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
+
+  gNB->nr_srs_info = (nr_srs_info_t **)malloc16_clear(gNB->max_nb_srs * sizeof(nr_srs_info_t*));
+  for (int id = 0; id < gNB->max_nb_srs; id++) {
+    gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
+    for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
+      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
+  }
 
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
@@ -760,7 +761,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(nr_gold_csi_rs);
   free_and_zero(gNB->nr_csi_info);
 
-  for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
+  for (int id = 0; id < gNB->max_nb_srs; id++) {
     for(int i=0; i<MAX_NUM_NR_SRS_AP; i++) {
       free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
     }
@@ -1026,13 +1027,14 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
   else
     nb_ul_slots_period = fp->slots_per_frame;
 
-  int pucch_slots;
+  int buffer_ul_slots; // the UL channels are scheduled sl_ahead before they are transmitted
   if (gNB->if_inst->sl_ahead > nb_slots_per_period)
-    pucch_slots = nb_ul_slots_period + (gNB->if_inst->sl_ahead - nb_slots_per_period);
+    buffer_ul_slots = nb_ul_slots_period + (gNB->if_inst->sl_ahead - nb_slots_per_period);
   else
-    pucch_slots = (nb_ul_slots_period < gNB->if_inst->sl_ahead) ? nb_ul_slots_period : gNB->if_inst->sl_ahead;
+    buffer_ul_slots = (nb_ul_slots_period < gNB->if_inst->sl_ahead) ? nb_ul_slots_period : gNB->if_inst->sl_ahead;
 
-  gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * pucch_slots;
+  gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * buffer_ul_slots;
+  gNB->max_nb_srs = buffer_ul_slots << 1; // assuming at most 2 SRS per slot
 
   gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
   for (int i = 0; i < gNB->max_nb_pucch; i++) {
@@ -1041,8 +1043,9 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
     AssertFatal(gNB->pucch[i] != NULL,"Can't initialize pucch %d \n", i);
   }
 
-  for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n",i,NUMBER_OF_NR_SRS_MAX);
+  gNB->srs = (NR_gNB_SRS_t **) malloc16(gNB->max_nb_srs * sizeof(NR_gNB_SRS_t*));
+  for (int i = 0; i < gNB->max_nb_srs; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
     gNB->srs[i] = new_gNB_srs();
     AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
   }
@@ -1071,7 +1074,7 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
   for (int i = 0; i < gNB->max_nb_pucch; i++)
     free_gNB_pucch(gNB->pucch[i]);
 
-  for (int i = 0; i < NUMBER_OF_NR_SRS_MAX; i++)
+  for (int i = 0; i < gNB->max_nb_srs; i++)
     free_gNB_srs(gNB->srs[i]);
 
   for (int i=0; i<gNB->number_of_nr_ulsch_max; i++)
