@@ -30,10 +30,6 @@
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
-/*#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "TDD-Config.h"
-#include "MBSFN-SubframeConfigList.h"*/
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/CODING/nrLDPC_extern.h"
 #include "assertions.h"
@@ -634,8 +630,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
 
-  gNB->first_run_I0_measurements = 1;
-
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
   /* Do NOT allocate per-antenna txdataF/rxdataF: the gNB gets a pointer to the
@@ -905,7 +899,6 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   gNB_config->tdd_table.tdd_period.value = 0;
   //gNB_config->subframe_config.dl_cyclic_prefix_type.value = (fp->Ncp == NORMAL) ? NFAPI_CP_NORMAL : NFAPI_CP_EXTENDED;
 
-  gNB->mac_enabled   = 1;
   if (mu==0) {
     fp->dl_CarrierFreq = 2600000000;//from_nrarfcn(gNB_config->nfapi_config.rf_bands.rf_band[0],gNB_config->nfapi_config.nrarfcn.value);
     fp->ul_CarrierFreq = 2600000000;//fp->dl_CarrierFreq - (get_uldl_offset(gNB_config->nfapi_config.rf_bands.rf_band[0])*100000);
@@ -944,7 +937,6 @@ void nr_phy_config_request(NR_PHY_Config_t *phy_config) {
   nfapi_nr_config_request_scf_t *gNB_config = &RC.gNB[Mod_id]->gNB_config;
 
   memcpy((void*)gNB_config,phy_config->cfg,sizeof(*phy_config->cfg));
-  RC.gNB[Mod_id]->mac_enabled     = 1;
 
   uint64_t dl_bw_khz = (12*gNB_config->carrier_config.dl_grid_size[gNB_config->ssb_config.scs_common.value].value)*(15<<gNB_config->ssb_config.scs_common.value);
   fp->dl_CarrierFreq = ((dl_bw_khz>>1) + gNB_config->carrier_config.dl_frequency.value)*1000 ;
@@ -1000,7 +992,7 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
     for (int j=0; j<num_cw; j++) {
-      msg->dlsch[i][j] = new_gNB_dlsch(fp,1,16,NSOFT,0,grid_size);
+      msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
     }
   }
@@ -1020,8 +1012,6 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
 void init_nr_transport(PHY_VARS_gNB *gNB) {
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   LOG_I(PHY, "Initialise nr transport\n");
-
-  memset(gNB->num_pdsch_rnti, 0, sizeof(uint16_t)*80);
 
   for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
     LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);

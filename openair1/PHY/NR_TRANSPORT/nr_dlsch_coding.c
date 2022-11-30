@@ -80,10 +80,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
   free(harq->c);
   free(harq->pdu);
 
-  for (int aa = 0; aa < 64; aa++)
-    free(dlsch->calib_dl_ch_estimates[aa]);
-  free(dlsch->calib_dl_ch_estimates);
-
   int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
   for (int q=0; q<nb_codewords; q++)
     free(dlsch->mod_symbs[q]);
@@ -103,10 +99,6 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
 }
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
-                              unsigned char Kmimo,
-                              unsigned char Mdlharq,
-                              uint32_t Nsoft,
-                              uint8_t  abstraction_flag,
                               uint16_t N_RB) {
 
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
@@ -122,9 +114,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
   AssertFatal(dlsch, "cannot allocate dlsch\n");
   bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
-  dlsch->Kmimo = Kmimo;
-  dlsch->Mdlharq = Mdlharq;
-  dlsch->Nsoft = Nsoft;
 
   int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer
 
@@ -148,17 +137,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
   dlsch->mod_symbs = (int32_t **)malloc16(nb_codewords*sizeof(int32_t *));
   for (int q=0; q<nb_codewords; q++)
     dlsch->mod_symbs[q] = (int32_t *)malloc16(txdataf_size*max_layers*sizeof(int32_t));
-
-  dlsch->calib_dl_ch_estimates = (int32_t **)malloc16(64*sizeof(int32_t *));
-
-  for (int aa=0; aa<64; aa++) {
-    dlsch->calib_dl_ch_estimates[aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
-  }
-
-  for (int i=0; i<20; i++) {
-    dlsch->harq_ids[0][i] = 0;
-    dlsch->harq_ids[1][i] = 0;
-  }
 
   NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
   bzero(harq, sizeof(NR_DL_gNB_HARQ_t));
@@ -190,13 +168,8 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch) {
   AssertFatal(dlsch!=NULL,"dlsch is null\n");
-  unsigned char Mdlharq = dlsch->Mdlharq;
   dlsch->rnti = 0;
   dlsch->active = 0;
-  for (int i=0; i<10; i++) {
-    dlsch->harq_ids[0][i] = Mdlharq;
-    dlsch->harq_ids[1][i] = Mdlharq;
-  }
 }
 
 void ldpc8blocks( void *p) {

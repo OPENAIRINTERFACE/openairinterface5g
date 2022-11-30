@@ -108,10 +108,6 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
 void nr_init_pbch_interleaver(uint8_t *interleaver);
 
 NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
-                              unsigned char Kmimo,
-                              unsigned char Mdlharq,
-                              uint32_t Nsoft,
-                              uint8_t abstraction_flag,
                               uint16_t N_RB);
 
 void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, const NR_DL_FRAME_PARMS* frame_parms);
