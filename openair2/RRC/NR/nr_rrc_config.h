@@ -47,6 +47,9 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
                         int bwp_id,
                         int curr_bwp,
                         uint64_t ssb_bitmap);
+NR_SearchSpace_t *rrc_searchspace_config(bool is_common,
+                                         int searchspaceid,
+                                         int coresetid);
 void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsch_TimeDomainAllocationList,
                           frame_type_t frame_type,
                           NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,
