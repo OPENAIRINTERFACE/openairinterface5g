@@ -236,8 +236,8 @@ static inline void abortNotifiedFIFO(notifiedFIFO_t *nf) {
 
   if (nf->outF == NULL)
     nf->inF = NULL;
-  mutexunlock(nf->lockF);
   condbroadcast(nf->notifF);
+  mutexunlock(nf->lockF);
 }
 
 struct one_thread {
