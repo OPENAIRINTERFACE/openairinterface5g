@@ -102,12 +102,12 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 
 
 void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
-             int frame,int slot,
-			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
+                               int frame,int slot,
+                               nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
 
   int found = 0;
 
-  for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
+  for (int id = 0; id < NR_SYMBOLS_PER_SLOT; id++) {
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[id];
     if (csirs->active == 0) {
       LOG_D(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
