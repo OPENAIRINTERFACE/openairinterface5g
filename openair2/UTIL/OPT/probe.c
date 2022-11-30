@@ -266,7 +266,7 @@ int opt_create_listener_socket(char *ip_address, uint16_t port) {
     return -1;
   }
 
-  threadCreate(&opt_listener.thread, opt_listener_thread, NULL, "flexran", -1, OAI_PRIORITY_RT_LOW);
+  threadCreate(&opt_listener.thread, opt_listener_thread, NULL, "optListener", -1, OAI_PRIORITY_RT_LOW);
   return 0;
 }
 

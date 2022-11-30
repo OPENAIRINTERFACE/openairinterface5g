@@ -22,7 +22,7 @@
 -->
 <testCaseList>
 	<htmlTabRef>test-05-tm1-rrc-w-flex</htmlTabRef>
-	<htmlTabName>Test-05MHz-TM1-RRC-Inactivity-FlexRan</htmlTabName>
+	<htmlTabName>Test-05MHz-TM1-RRC-Inactivity</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
@@ -70,19 +70,9 @@
 		<expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
 	</testCase>
 
-	<testCase id="050102">
-		<class>Initialize_FlexranCtrl</class>
-		<desc>Starting Flexran Controller</desc>
-	</testCase>
-
-	<testCase id="050202">
-		<class>Terminate_FlexranCtrl</class>
-		<desc>Stopping Flexran Controller</desc>
-	</testCase>
-
 	<testCase id="030103">
 		<class>Initialize_eNB</class>
-		<desc>Initialize eNB (FDD/Band7/5MHz) for RRC Inactivity Timer testing -- with FlexRan Ctl</desc>
+		<desc>Initialize eNB (FDD/Band7/5MHz) for RRC Inactivity Timer testing</desc>
 		<Initialize_eNB_args>-O ci-scripts/conf_files/enb.band7.tm1.25PRB.usrpb210.conf --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 	</testCase>
 

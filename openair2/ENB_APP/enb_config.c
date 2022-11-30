@@ -65,45 +65,6 @@ extern char *worker_config;
 
 RAN_CONTEXT_t RC;
 
-void RCconfig_flexran() {
-  /* get number of eNBs */
-  paramdef_t ENBSParams[] = ENBSPARAMS_DESC;
-  config_get(ENBSParams, sizeof(ENBSParams)/sizeof(paramdef_t), NULL);
-  uint16_t num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
-  paramdef_t flexranParams[] = FLEXRANPARAMS_DESC;
-  config_get(flexranParams, sizeof(flexranParams)/sizeof(paramdef_t), CONFIG_STRING_NETWORK_CONTROLLER_CONFIG);
-
-  if (!RC.flexran) {
-    RC.flexran = calloc(num_enbs, sizeof(flexran_agent_info_t *));
-    AssertFatal(RC.flexran,
-                "can't ALLOCATE %zu Bytes for %d flexran agent info with size %zu\n",
-                num_enbs * sizeof(flexran_agent_info_t *),
-                num_enbs, sizeof(flexran_agent_info_t *));
-  }
-
-  for (uint16_t i = 0; i < num_enbs; i++) {
-    RC.flexran[i] = calloc(1, sizeof(flexran_agent_info_t));
-    AssertFatal(RC.flexran[i],
-                "can't ALLOCATE %zu Bytes for flexran agent info (iteration %d/%d)\n",
-                sizeof(flexran_agent_info_t), i + 1, num_enbs);
-    /* if config says "yes", enable Agent, in all other cases it's like "no" */
-    RC.flexran[i]->enabled          = strcasecmp(*(flexranParams[FLEXRAN_ENABLED].strptr), "yes") == 0;
-
-    /* if not enabled, simply skip the rest, it is not needed anyway */
-    if (!RC.flexran[i]->enabled)
-      continue;
-
-    RC.flexran[i]->interface_name   = strdup(*(flexranParams[FLEXRAN_INTERFACE_NAME_IDX].strptr));
-    //inet_ntop(AF_INET, &(enb_properties->properties[mod_id]->flexran_agent_ipv4_address), in_ip, INET_ADDRSTRLEN);
-    RC.flexran[i]->remote_ipv4_addr = strdup(*(flexranParams[FLEXRAN_IPV4_ADDRESS_IDX].strptr));
-    RC.flexran[i]->remote_port      = *(flexranParams[FLEXRAN_PORT_IDX].uptr);
-    RC.flexran[i]->cache_name       = strdup(*(flexranParams[FLEXRAN_CACHE_IDX].strptr));
-    RC.flexran[i]->node_ctrl_state  = strcasecmp(*(flexranParams[FLEXRAN_AWAIT_RECONF_IDX].strptr), "yes") == 0 ? ENB_WAIT : ENB_NORMAL_OPERATION;
-    RC.flexran[i]->mod_id  = i;
-  }
-}
-
-
 void RCconfig_L1(void) {
   int               i,j;
   paramdef_t L1_Params[] = L1PARAMS_DESC;
@@ -3220,6 +3181,4 @@ void read_config_and_init(void) {
     memset((void *)RC.rrc[enb_id], 0, sizeof(eNB_RRC_INST));
     RCconfig_RRC(enb_id, RC.rrc[enb_id],macrlc_has_f1[enb_id]);
   }
-
-  RCconfig_flexran();
 }

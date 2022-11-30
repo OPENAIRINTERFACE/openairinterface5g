@@ -54,10 +54,6 @@ pipeline {
                         echo "Platform is ${env.TESTPLATFORM_OWNER}"
                     }
 
-                    if (fileExists("flexran")) {
-                        sh "rm -Rf flexran > /dev/null 2>&1"
-                    }
-
                     echo '\u2705 \u001B[32mVerify Labels\u001B[0m'
                     if ("MERGE".equals(env.gitlabActionType)) {
                         LABEL_CHECK = sh returnStdout: true, script: 'ci-scripts/checkGitLabMergeRequestLabels.sh --mr-id ' + env.gitlabMergeRequestIid

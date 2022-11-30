@@ -86,13 +86,6 @@ char *split73_config;
 int split73;
 AGENT_RRC_xface *agent_rrc_xface[NUM_MAX_ENB]= {0};
 AGENT_MAC_xface *agent_mac_xface[NUM_MAX_ENB]= {0};
-void flexran_agent_slice_update(mid_t module_idP) {
-}
-int proto_agent_start(mid_t mod_id, const cudu_params_t *p) {
-  return 0;
-}
-void proto_agent_stop(mid_t mod_id) {
-}
 
 static void *ru_thread( void *param );
 void kill_RU_proc(RU_t *ru) {
@@ -1077,62 +1070,6 @@ void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
   itti_send_msg_to_task (to, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 
-int stop_L1L2(module_id_t enb_id) {
-  LOG_W(ENB_APP, "stopping lte-softmodem\n");
-  /* these tasks need to pick up new configuration */
-  terminate_task(enb_id, TASK_ENB_APP, TASK_RRC_ENB);
-  oai_exit = 1;
-  LOG_I(ENB_APP, "calling kill_RU_proc() for instance %d\n", enb_id);
-  //kill_RU_proc(RC.ru[enb_id]);
-  LOG_I(ENB_APP, "calling kill_eNB_proc() for instance %d\n", enb_id);
-  kill_eNB_proc(enb_id);
-  oai_exit = 0;
-
-  for (int cc_id = 0; cc_id < RC.nb_CC[enb_id]; cc_id++) {
-    free_transport(RC.eNB[enb_id][cc_id]);
-    phy_free_lte_eNB(RC.eNB[enb_id][cc_id]);
-  }
-
-  //phy_free_RU(RC.ru[enb_id]);
-  free_lte_top();
-  return 0;
-}
-
-/*
- * Restart the lte-softmodem after it has been soft-stopped with stop_L1L2()
- */
-int restart_L1L2(module_id_t enb_id) {
-  RU_t *ru = NULL; //RC.ru[enb_id];
-  MessageDef *msg_p = NULL;
-  LOG_W(ENB_APP, "restarting lte-softmodem\n");
-  /* block threads */
-  pthread_mutex_lock(&sync_mutex);
-  sync_var = -1;
-  pthread_mutex_unlock(&sync_mutex);
-  /* copy the changed frame parameters to the RU */
-  /* TODO this should be done for all RUs associated to this eNB */
-  memcpy(&ru->frame_parms, &RC.eNB[enb_id][0]->frame_parms, sizeof(LTE_DL_FRAME_PARMS));
-  /* reset the list of connected UEs in the MAC, since in this process with
-   * loose all UEs (have to reconnect) */
-  init_UE_info(&RC.mac[enb_id]->UE_info);
-  LOG_I(ENB_APP, "attempting to create ITTI tasks\n");
-  // No more rrc thread, as many race conditions are hidden behind
-  rrc_enb_init();
-  itti_mark_task_ready(TASK_RRC_ENB);
-  /* pass a reconfiguration request which will configure everything down to
-   * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
-  RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
-  itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-  init_eNB_afterRU();
-  printf("Sending sync to all threads\n");
-  pthread_mutex_lock(&sync_mutex);
-  sync_var=0;
-  pthread_cond_broadcast(&sync_cond);
-  pthread_mutex_unlock(&sync_mutex);
-  return 0;
-}
-
 int main ( int argc, char **argv ) {
   //mtrace();
   int i;
@@ -1177,8 +1114,6 @@ int main ( int argc, char **argv ) {
   // some initialization is necessary and init_ru_vnf do this.
   RU_t ru;
 
-  /* We need to read RU configuration before FlexRAN starts so it knows what
-   * splits to report. Actual RU start comes later. */
   if  ( NFAPI_MODE != NFAPI_MODE_VNF) {
     ocpRCconfig_RU(&ru);
     LOG_I(PHY,
@@ -1201,9 +1136,6 @@ int main ( int argc, char **argv ) {
 
   if (RC.nb_inst > 0) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
-    for (i = 0; i < RC.nb_inst; i++) {
-      //flexran_agent_start(i);
-    }
 
     /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
      * for monolithic/F1 modes */

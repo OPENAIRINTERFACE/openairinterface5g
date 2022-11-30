@@ -42,8 +42,6 @@ RUN apt-get update && \
        psmisc \
        git \
        xxd \
-       #unzip is needed for protobuf
-       unzip \
        # python3-pip for conf template generation
        python3-pip && \
     pip3 install --ignore-installed pyyaml

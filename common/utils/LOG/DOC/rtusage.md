@@ -71,7 +71,6 @@ The list of components defined within oai can be retrieved from the  [config mod
 [CONFIG] log_config.eral_log_level set to default value "info"
 [CONFIG] log_config.mral_log_level set to default value "info"
 [CONFIG] log_config.enb_app_log_level set to default value "info"
-[CONFIG] log_config.flexran_agent_log_level set to default value "info"
 [CONFIG] log_config.tmr_log_level set to default value "info"
 [CONFIG] log_config.usim_log_level set to default value "info"
 [CONFIG] log_config.localize_log_level set to default value "info"
@@ -140,8 +139,6 @@ The list of components defined within oai can be retrieved from the  [config mod
 [CONFIG] log_config.mral_log_infile set to default value
 [CONFIG] enb_app_log_infile: 0
 [CONFIG] log_config.enb_app_log_infile set to default value
-[CONFIG] flexran_agent_log_infile: 0
-[CONFIG] log_config.flexran_agent_log_infile set to default value
 [CONFIG] tmr_log_infile: 0
 [CONFIG] log_config.tmr_log_infile set to default value
 [CONFIG] usim_log_infile: 0

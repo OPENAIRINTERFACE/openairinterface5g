@@ -55,8 +55,7 @@ RUN yum update -y && \
         net-tools \
         iputils \
         bc \
-        iproute \
-        libyaml && \
+        iproute && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 

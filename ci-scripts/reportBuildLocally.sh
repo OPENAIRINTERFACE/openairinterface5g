@@ -53,7 +53,7 @@ function details_table {
     echo "        <th>Message</th>" >> $3
     echo "      </tr>" >> $3
 
-    LIST_MESSAGES=`egrep "error:|warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto|disabling jobserver mode"`
+    LIST_MESSAGES=`egrep "error:|warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|disabling jobserver mode"`
     COMPLETE_MESSAGE="start"
     for MESSAGE in $LIST_MESSAGES
     do
@@ -146,7 +146,7 @@ function summary_table_row {
         else
             echo "        <td bgcolor = \"red\" >$NB_ERRORS</th>" >> ./build_results.html
         fi
-        NB_WARNINGS=`egrep "warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto|disabling jobserver mode" | egrep -c "warning:"`
+        NB_WARNINGS=`egrep "warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|disabling jobserver mode" | egrep -c "warning:"`
         if [ $NB_WARNINGS -eq 0 ]
         then
             echo "        <td bgcolor = \"green\" >$NB_WARNINGS</th>" >> ./build_results.html

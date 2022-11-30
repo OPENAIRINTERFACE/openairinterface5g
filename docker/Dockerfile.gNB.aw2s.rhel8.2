@@ -56,8 +56,7 @@ RUN yum repolist --disablerepo=* && \
         tzdata \
         net-tools \
         iputils \
-        python3-pip \
-        libyaml && \
+        python3-pip && \
     pip3 install six && \
     pip3 install requests && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
@@ -90,8 +89,6 @@ COPY --from=gnb-base \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/
-
-COPY --from=gnb-base /usr/lib64/libprotobuf-c.so.1 /usr/local/lib
 
 RUN ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so && \
     ldconfig

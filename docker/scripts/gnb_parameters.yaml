@@ -62,12 +62,6 @@
       env: "@GNB_X2_IP_ADDRESS@"
     - key: rrc_inactivity_threshold
       env: "@RRC_INACTIVITY_THRESHOLD@"
-    - key: FLEXRAN_ENABLED
-      env: "@FLEXRAN_ENABLED@"
-    - key: FLEXRAN_INTERFACE_NAME
-      env: "@FLEXRAN_INTERFACE_NAME@"
-    - key: FLEXRAN_IPV4_ADDRESS
-      env: "@FLEXRAN_IPV4_ADDRESS@"
     - key: parallel_config
       env: "@THREAD_PARALLEL_CONFIG@"
 

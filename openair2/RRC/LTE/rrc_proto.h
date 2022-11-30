@@ -35,7 +35,6 @@
 
 #include "RRC/LTE/rrc_defs.h"
 #include "x2ap_messages_types.h"
-#include "flexran_agent_extern.h"
 
 //main.c
 int rrc_init_global_param(void);
@@ -303,12 +302,6 @@ rrc_eNB_generate_defaultRRCConnectionReconfiguration(
 );
 
 
-void
-flexran_rrc_eNB_generate_defaultRRCConnectionReconfiguration(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t *const ue_context_pP,
-  const uint8_t ho_state
-);
 void
 rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ctxt_pP,
     rrc_eNB_ue_context_t  *const ue_context_pP,
@@ -624,11 +617,6 @@ rrc_eNB_generate_HandoverPreparationInformation(
   //LTE_PhysCellId_t targetPhyId
 );
 
-int
-flexran_rrc_eNB_trigger_handover (int mod_id,
-                                  const protocol_ctxt_t *const ctxt_pP,
-                                  rrc_eNB_ue_context_t  *ue_context_pP,
-                                  int target_cell_id);
 
 void
 check_handovers(

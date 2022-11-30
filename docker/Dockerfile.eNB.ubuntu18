@@ -58,8 +58,7 @@ RUN apt-get update && \
         python3 \
         python3-six \
         python3-requests \
-        libusb-1.0-0 \
-        libyaml-0-2 && \
+        libusb-1.0-0 && \
     rm -rf /var/lib/apt/lists/*
 
 WORKDIR /opt/oai-enb/bin
@@ -82,10 +81,7 @@ COPY --from=enb-build \
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=enb-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=enb-base \
-     /usr/local/lib/libuhd.so.3.15.0 \
-     /usr/lib/x86_64-linux-gnu/libprotobuf-c.so.1 \
-     /usr/local/lib/
+COPY --from=enb-base /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
 COPY --from=enb-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-enb/bin
 COPY --from=enb-base \
      /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \

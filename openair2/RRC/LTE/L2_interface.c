@@ -47,7 +47,6 @@
 
 #include "intertask_interface.h"
 
-#include "flexran_agent_extern.h"
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 extern RAN_CONTEXT_t RC;
@@ -403,11 +402,6 @@ void mac_eNB_rrc_ul_failure(const module_id_t Mod_instP,
       ue_context_p->ue_context.ul_failure_timer=1;
   } else {
     LOG_W(RRC,"Frame %d, Subframe %d: UL failure: UE %x unknown \n",frameP,subframeP,rntiP);
-  }
-
-  if (flexran_agent_get_rrc_xface(Mod_instP)) {
-    flexran_agent_get_rrc_xface(Mod_instP)->flexran_agent_notify_ue_state_change(Mod_instP,
-        rntiP, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
   }
 
   //rrc_mac_remove_ue(Mod_instP,rntiP);
