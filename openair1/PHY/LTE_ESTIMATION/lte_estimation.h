@@ -75,28 +75,6 @@ void lte_sync_timefreq(PHY_VARS_UE *ue,
                        int band,
                        unsigned int DL_freq);
 
-
-/*!
-\brief This function performs detection of the PRACH (=SRS) at the eNb to estimate the timing advance
-The algorithm uses a time domain correlation with a downsampled version of the received signal.
-\param rxdata Received time domain data for all rx antennas
-\param frame_parms LTE DL frame parameter structure
-\param length Length for correlation
-\param peak_val pointer to value of returned peak
-\param sync_corr_eNb pointer to correlation buffer
-\return sync_pos Position of the sync within the frame (downsampled) if successfull and -1 if there was an error or no peak was detected.
- */
-int lte_sync_time_eNB(int32_t **rxdata,
-                      LTE_DL_FRAME_PARMS *frame_parms,
-                      uint32_t length,
-                      uint32_t *peak_val,
-                      uint32_t *sync_corr_eNb);
-
-int lte_sync_time_eNB_emul(PHY_VARS_eNB *phy_vars_eNb,
-                           uint8_t sect_id,
-                           int32_t *sync_val);
-
-
 int ru_sync_time_init(RU_t *ru);
 
 int ru_sync_time(RU_t *ru,
