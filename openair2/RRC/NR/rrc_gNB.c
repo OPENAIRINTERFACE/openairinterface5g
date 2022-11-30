@@ -3266,7 +3266,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   NR_DRB_ToAddModList_t        *DRB_configList      = NULL;
   uint8_t drb_id_to_setup_start = 0;
   uint8_t nb_drb_to_setup = 0;
-  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu session with a default priority (will be dynamic in future)
+  long drb_priority[NGAP_MAX_DRBS_PER_UE];
   if(req->drbs_to_be_setup_length>0){
     if(ue_context_p->ue_context.DRB_configList == NULL){
       ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
@@ -3293,6 +3293,8 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
                                           drb_p.up_ul_tnl[0].port,
                                           DURecvCb,
                                           NULL);
+      /* TODO: hardcoded to 13 for the time being, to be changed? */
+      drb_priority[DRB_config->drb_Identity-1] = 13;
     }
   }
 
@@ -3411,7 +3413,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
   NR_DRB_ToAddMod_t            *DRB_config          = NULL;
   NR_DRB_ToAddModList_t        *DRB_configList      = NULL;
   int drb_id_to_setup_start = 0;
-  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu session with a default priority (will be dynamic in future)
+  long drb_priority[NGAP_MAX_DRBS_PER_UE];
   if(req->drbs_to_be_setup_length>0){
     if(ue_context_p->ue_context.DRB_configList == NULL){
       ue_context_p->ue_context.DRB_configList = CALLOC(1, sizeof(*ue_context_p->ue_context.DRB_configList));
@@ -3438,6 +3440,8 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
                                           drb_p.up_ul_tnl[0].port,
                                           DURecvCb,
                                           NULL);
+      /* TODO: hardcoded to 13 for the time being, to be changed? */
+      drb_priority[DRB_config->drb_Identity-1] = 13;
     }
   }
 
