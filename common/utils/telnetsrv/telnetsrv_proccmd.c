@@ -194,58 +194,60 @@ int nullprnt(char *fmt, ...)
 {
   return 0;
 }
+
 void proccmd_get_threaddata(char *buf, int debug, telnet_printfunc_t fprnt, webdatadef_t *tdata)
 {
 char aname[256];
 
-DIR *proc_dir;
-struct dirent *entry;
-telnet_printfunc_t prnt = (fprnt != NULL) ? fprnt : (telnet_printfunc_t)nullprnt;
-if (tdata != NULL) {
-  tdata->numcols = 7;
-  snprintf(tdata->columns[0].coltitle, sizeof(tdata->columns[0].coltitle), "thread id");
-  tdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[1].coltitle, sizeof(tdata->columns[1].coltitle), "thread name");
-  tdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[2].coltitle, sizeof(tdata->columns[2].coltitle), "priority");
-  tdata->columns[2].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[3].coltitle, sizeof(tdata->columns[3].coltitle), "nice");
-  tdata->columns[3].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[4].coltitle, sizeof(tdata->columns[4].coltitle), "core");
-  tdata->columns[4].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
-  tdata->columns[5].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
-  tdata->columns[6].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
-  snprintf(tdata->columns[6].coltitle, sizeof(tdata->columns[6].coltitle), "oai priority");
-  tdata->numlines = 0;
-}
-
-unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
-
-asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
-
-prnt("System has %d cores %d threads %d Actual threads", eax, ebx, edx);
-
-prnt("\n  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
-snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
-read_statfile(aname, debug, prnt, NULL);
-prnt("\n");
-snprintf(aname, sizeof(aname), "/proc/%d/task", getpid());
-proc_dir = opendir(aname);
-if (proc_dir == NULL) {
-  prnt("Error: Couldn't open %s %i %s\n", aname, errno, strerror(errno));
-  return;
-}
-
-while ((entry = readdir(proc_dir)) != NULL) {
-  if (entry->d_name[0] != '.') {
-    snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(), (int)(sizeof(aname) - 24), entry->d_name);
-    read_statfile(aname, debug, prnt, tdata);
+  DIR *proc_dir;
+  struct dirent *entry;
+  telnet_printfunc_t prnt = (fprnt != NULL) ? fprnt : (telnet_printfunc_t)nullprnt;
+  if (tdata != NULL) {
+    tdata->numcols = 7;
+    snprintf(tdata->columns[0].coltitle, sizeof(tdata->columns[0].coltitle), "thread id");
+    tdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[1].coltitle, sizeof(tdata->columns[1].coltitle), "thread name");
+    tdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[2].coltitle, sizeof(tdata->columns[2].coltitle), "priority");
+    tdata->columns[2].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[3].coltitle, sizeof(tdata->columns[3].coltitle), "nice");
+    tdata->columns[3].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[4].coltitle, sizeof(tdata->columns[4].coltitle), "core");
+    tdata->columns[4].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
+    tdata->columns[5].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
+    tdata->columns[6].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[6].coltitle, sizeof(tdata->columns[6].coltitle), "oai priority");
+    tdata->numlines = 0;
   }
-} /* while entry != NULL */
-closedir(proc_dir);
-} /* print_threads */
+
+  unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
+
+  asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
+
+  prnt("System has %d cores %d threads %d Actual threads", eax, ebx, edx);
+
+  prnt("\n  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
+  snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
+  read_statfile(aname, debug, prnt, NULL);
+  prnt("\n");
+  snprintf(aname, sizeof(aname), "/proc/%d/task", getpid());
+  proc_dir = opendir(aname);
+  if (proc_dir == NULL) {
+    prnt("Error: Couldn't open %s %i %s\n", aname, errno, strerror(errno));
+    return;
+  }
+
+  while ((entry = readdir(proc_dir)) != NULL) {
+    if (entry->d_name[0] != '.') {
+      snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(), (int)(sizeof(aname) - 24), entry->d_name);
+      read_statfile(aname, debug, prnt, tdata);
+    }
+  } /* while entry != NULL */
+  closedir(proc_dir);
+} /* proccmd_get_threaddata */
+
 void print_threads(char *buf, int debug, telnet_printfunc_t prnt)
 {
   proccmd_get_threaddata(buf, debug, prnt, NULL);

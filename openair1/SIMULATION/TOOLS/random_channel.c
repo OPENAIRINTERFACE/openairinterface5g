@@ -1999,7 +1999,7 @@ int get_channel_params(char *buf, int debug, void *vdata, telnet_printfunc_t prn
         sprintf(cmdbuf, "channelmod modify %i %s %s", chanidx, pnames[pidx], tdata->lines[0].val[1]);
       }
       channelmod_modify_cmd(cmdbuf, debug, prnt);
-      return 200;
+      return CMDSTATUS_FOUND;
     } else {
       prnt("  channel index not found in cannelmod command\n");
     }
@@ -2007,7 +2007,7 @@ int get_channel_params(char *buf, int debug, void *vdata, telnet_printfunc_t prn
     prnt("%s not implemented\n", buf);
   }
 
-  return 500;
+  return CMDSTATUS_NOTFOUND;
 
 } /* get_currentchannel_type */
 

@@ -523,7 +523,7 @@ int process_command(char *buf, int iteration)
   int rt;
   memset(modulename,0,sizeof(modulename));
   memset(cmd,0,sizeof(cmd));
-  extern char **environ;
+
 
   if (strncasecmp(buf,"ex",2) == 0)
     return CMDSTATUS_EXIT;
@@ -953,7 +953,8 @@ int  telnetsrv_checkbuildver(char *mainexec_buildversion, char **shlib_buildvers
 }
 
 int telnetsrv_getfarray(loader_shlibfunc_t  **farray) {
-  *farray = malloc(sizeof(loader_shlibfunc_t) * 3);
+  int const num_func_tln_srv = 3;	
+  *farray = malloc(sizeof(loader_shlibfunc_t) * num_func_tln_srv);
   (*farray)[0].fname=TELNET_ADDCMD_FNAME;
   (*farray)[0].fptr=(int (*)(void) )add_telnetcmd;
   (*farray)[1].fname=TELNET_POLLCMDQ_FNAME;

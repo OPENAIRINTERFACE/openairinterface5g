@@ -26,18 +26,21 @@
 #include <stdlib.h>
 #include "executables/softmodem-common.h"
 #include "executables/nr-softmodem-common.h"
-#ifndef WEBSRVSCOPE
-#include <forms.h>
-#define STATICFORXSCOPE static
-static const int scope_enb_num_ue = 1;
-#else
+#ifdef WEBSRVSCOPE
 #include <ulfius.h>
 #include "common/utils/websrv/websrv.h"
 #include "common/utils/websrv/websrv_noforms.h"
+/* STATICFORXSCOPE will be used to make function being called from websrv code non static when we compile 
+ * with WEBSRVSCOPE mocro defined, but static when we compile for Xforms scope
+*/
 #define STATICFORXSCOPE
 #define fl_add_canvas websrv_fl_add_canvas
 #define fl_add_xyplot websrv_fl_add_xyplot
 #define fl_get_xyplot_data_pointer websrv_fl_get_xyplot_data_pointer
+#else
+#include <forms.h>
+#define STATICFORXSCOPE static
+static const int scope_enb_num_ue = 1;
 #endif
 #include "nr_phy_scope.h"
 #include "phy_scope.h"
@@ -379,7 +382,12 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
 #endif
   }
 
-#ifndef WEBSRVSCOPE
+#ifdef WEBSRVSCOPE
+  for (int i = 0; i < sizeof(water_colors) / sizeof(FL_COLOR); i++) {
+    msgp[i]->header.msgseg = graph->iteration % displayPart;
+    websrv_scope_senddata(msgp[i]->data_xy[0], 2, msgp[i]);
+  }
+#else
   if (graph->initDone==false) {
     for ( int i=0; i < graph->waterFallh; i++ )
       for ( int j = 0 ; j < graph->w ; j++ )
@@ -393,23 +401,18 @@ static void genericWaterFall (OAIgraph_t *graph, scopeSample_t *values, const in
   }
 
   fl_set_object_label_f(graph->text, "%s, avg I/Q pow: %4.1f", label, 0/*sqrt(avg)*/);
-#else
-  for (int i = 0; i < sizeof(water_colors) / sizeof(FL_COLOR); i++) {
-    msgp[i]->header.msgseg = graph->iteration % displayPart;
-    websrv_scope_senddata(msgp[i]->data_xy[0], 2, msgp[i]);
-  }
 #endif
   graph->iteration++;
 }
 
 static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const scopeSample_t **data, const int len) {
-#ifndef WEBSRVSCOPE
-  float *values, *time;
-  oai_xygraph_getbuff(graph, &time, &values, len, 0);
-#else
+#ifdef WEBSRVSCOPE
   websrv_scopedata_msg_t *msg = NULL;
   websrv_nf_getdata(graph->graph, 0, &msg);
   float *values = (float *)msg->data_xy;
+#else
+  float *values, *time;
+  oai_xygraph_getbuff(graph, &time, &values, len, 0);
 #endif
 
   for (int ant=0; ant<nb_ant; ant++) {
@@ -417,15 +420,15 @@ static void genericPowerPerAntena(OAIgraph_t  *graph, const int nb_ant, const sc
       for (int i=0; i<len; i++) {
         values[i] = SquaredNorm(data[ant][i]);
       }
-#ifndef WEBSRVSCOPE
-      oai_xygraph(graph,time,values, len, ant, 10);
-#else
+#ifdef WEBSRVSCOPE
       msg->header.msgtype = SCOPEMSG_TYPE_DATA;
       msg->header.chartid = graph->chartid;
       msg->header.datasetid = graph->datasetid;
       msg->header.msgseg = 0;
       msg->header.update = (ant == (nb_ant - 1)) ? 1 : 0;
       websrv_scope_senddata(len, 4, msg);
+#else
+      oai_xygraph(graph,time,values, len, ant, 10);
 #endif
     }
   }
@@ -454,13 +457,13 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 
 static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   const int len = p->gNB->frame_parms.ofdm_symbol_size;
-#ifndef WEBSRVSCOPE
-  float *values, *time;
-  oai_xygraph_getbuff(graph, &time, &values, len, 0);
-#else
+#ifdef WEBSRVSCOPE
   websrv_scopedata_msg_t *msg = NULL;
   websrv_nf_getdata(graph->graph, 0, &msg);
   float *values = (float *)msg->data_xy;
+#else
+  float *values, *time;
+  oai_xygraph_getbuff(graph, &time, &values, len, 0);
 #endif
 
   const int ant = 0; // display antenna 0 for each UE
@@ -479,15 +482,15 @@ static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
         for (int i=0; i<len; i++) {
           values[i] = SquaredNorm(data[i]);
         }
-#ifndef WEBSRVSCOPE
-        oai_xygraph(graph,time,values, len, ue, 10);
-#else
+#ifdef WEBSRVSCOPE
         msg->header.msgtype = SCOPEMSG_TYPE_DATA;
         msg->header.chartid = graph->chartid;
         msg->header.datasetid = graph->datasetid;
         msg->header.msgseg = 0;
         msg->header.update = 1;
         websrv_scope_senddata(len, 4, msg);
+#else
+        oai_xygraph(graph,time,values, len, ue, 10);
 #endif
       }
     }
