@@ -1266,8 +1266,7 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               &phy_data,
-                               NULL);
+                               &phy_data);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------

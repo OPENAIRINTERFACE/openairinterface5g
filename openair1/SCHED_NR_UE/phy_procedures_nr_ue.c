@@ -52,6 +52,7 @@
 #include "executables/softmodem-common.h"
 #include "executables/nr-uesoftmodem.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "openair1/SCHED_NR_UE/pucch_uci_ue_nr.h"
 
 //#define DEBUG_PHY_PROC
 #define NR_PDCCH_SCHED
@@ -297,6 +298,23 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
   if (ue->UE_mode[gNB_id] == PUSCH) {
     ue_srs_procedures_nr(ue, proc, gNB_id);
   }
+
+  if (ue->UE_mode[gNB_id] <= PUSCH) {
+    pucch_procedures_ue_nr(ue,
+                           gNB_id,
+                           proc,
+                           phy_data);
+  }
+
+  LOG_D(PHY, "Sending Uplink data \n");
+  nr_ue_pusch_common_procedures(ue,
+                                proc->nr_slot_tx,
+                                &ue->frame_parms,
+                                ue->frame_parms.nb_antennas_tx);
+
+  if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH)
+    nr_ue_prach_procedures(ue, proc, proc->gNB_id);
+
   LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
@@ -981,8 +999,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            uint8_t gNB_id,
-                           nr_phy_data_t *phy_data,
-                           notifiedFIFO_t *txFifo) {
+                           nr_phy_data_t *phy_data) {
 
   int frame_rx = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
@@ -1176,13 +1193,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
 #endif //NR_PDCCH_SCHED
 
-  // Start PUSCH processing here. It runs in parallel with PDSCH processing
-  notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), proc->nr_slot_tx,txFifo,processSlotTX);
-  nr_rxtx_thread_data_t *curMsg=(nr_rxtx_thread_data_t *)NotifiedFifoData(newElt);
-  curMsg->proc = *proc;
-  curMsg->UE = ue;
-  curMsg->ue_sched_mode = SCHED_PUSCH;
-  pushTpool(&(get_nrUE_params()->Tpool), newElt);
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
   int ret_pdsch = 0;
