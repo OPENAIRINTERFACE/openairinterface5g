@@ -264,7 +264,6 @@ static void get_options(void) {
   paramdef_t cmdline_params[] =CMDLINE_NRUEPARAMS_DESC ;
   int numparams = sizeof(cmdline_params)/sizeof(paramdef_t);
   config_get(cmdline_params,numparams,NULL);
-  config_process_cmdline( cmdline_params,numparams,NULL);
 
   if (vcdflag > 0)
     ouput_vcd = 1;
@@ -272,38 +271,7 @@ static void get_options(void) {
 
 // set PHY vars from command line
 void set_options(int CC_id, PHY_VARS_NR_UE *UE){
-  NR_DL_FRAME_PARMS *fp       = &UE->frame_parms;
-  paramdef_t cmdline_params[] = CMDLINE_NRUE_PHYPARAMS_DESC ;
-  int numparams               = sizeof(cmdline_params)/sizeof(paramdef_t);
-
-  UE->mode = normal_txrx;
-
-  config_get(cmdline_params,numparams,NULL);
-
-  int pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRX_OPT);
-  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue;
-  
-  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXMED_OPT);
-  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_med;
-
-  pindex = config_paramidx_fromname(cmdline_params,numparams, CALIBRXBYP_OPT);              
-  if ( (cmdline_params[pindex].paramflags &  PARAMFLAG_PARAMSET) != 0) UE->mode = rx_calib_ue_byp;
-
-  pindex = config_paramidx_fromname(cmdline_params,numparams, DBGPRACH_OPT); 
-  if (cmdline_params[pindex].uptr)
-    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = debug_prach;
-
-  pindex = config_paramidx_fromname(cmdline_params,numparams,NOL2CONNECT_OPT ); 
-  if (cmdline_params[pindex].uptr)
-    if ( *(cmdline_params[pindex].uptr) > 0)  UE->mode = no_L2_connect;
-
-  pindex = config_paramidx_fromname(cmdline_params,numparams,CALIBPRACH_OPT );
-  if (cmdline_params[pindex].uptr)
-    if ( *(cmdline_params[pindex].uptr) > 0) UE->mode = calib_prach_tx;
-
-  pindex = config_paramidx_fromname(cmdline_params,numparams,DUMPFRAME_OPT );
-  if ((cmdline_params[pindex].paramflags & PARAMFLAG_PARAMSET) != 0)
-    UE->mode = rx_dump_frame;
+  NR_DL_FRAME_PARMS *fp = &UE->frame_parms;
 
   // Init power variables
   tx_max_power[CC_id] = tx_max_power[0];
@@ -316,9 +284,18 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
   UE->tx_power_max_dBm     = tx_max_power[CC_id];
   UE->rf_map.card          = card_offset;
   UE->rf_map.chain         = CC_id + chain_offset;
+  UE->max_ldpc_iterations  = nrUE_params.max_ldpc_iterations;
+  UE->UE_scan_carrier      = nrUE_params.UE_scan_carrier;
+  UE->UE_fo_compensation   = nrUE_params.UE_fo_compensation;
+  UE->if_freq              = nrUE_params.if_freq;
+  UE->if_freq_off          = nrUE_params.if_freq_off;
+  UE->chest_freq           = nrUE_params.chest_freq;
+  UE->chest_time           = nrUE_params.chest_time;
+  UE->no_timing_correction = nrUE_params.no_timing_correction;
+  UE->timing_advance       = nrUE_params.timing_advance;
 
-  LOG_I(PHY,"Set UE mode %d, UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, chest-freq %d\n",
-  	   UE->mode, UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->chest_freq);
+  LOG_I(PHY,"Set UE_fo_compensation %d, UE_scan_carrier %d, UE_no_timing_correction %d \n, chest-freq %d, chest-time %d\n",
+        UE->UE_fo_compensation, UE->UE_scan_carrier, UE->no_timing_correction, UE->chest_freq, UE->chest_time);
 
   // Set FP variables
 
@@ -327,10 +304,14 @@ void set_options(int CC_id, PHY_VARS_NR_UE *UE){
     LOG_I(PHY, "Set UE frame_type %d\n", fp->frame_type);
   }
 
-  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d, ssb_start_subcarrier %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs, fp->ssb_start_subcarrier);
+  fp->nb_antennas_rx       = nrUE_params.nb_antennas_rx;
+  fp->nb_antennas_tx       = nrUE_params.nb_antennas_tx;
+  fp->threequarter_fs      = nrUE_params.threequarter_fs;
+  fp->N_RB_DL              = nrUE_params.N_RB_DL;
+  fp->ssb_start_subcarrier = nrUE_params.ssb_start_subcarrier;
+  fp->ofdm_offset_divisor  = nrUE_params.ofdm_offset_divisor;
 
-  fp->ofdm_offset_divisor = nrUE_params.ofdm_offset_divisor;
-  UE->max_ldpc_iterations = nrUE_params.max_ldpc_iterations;
+  LOG_I(PHY, "Set UE nb_rx_antenna %d, nb_tx_antenna %d, threequarter_fs %d, ssb_start_subcarrier %d\n", fp->nb_antennas_rx, fp->nb_antennas_tx, fp->threequarter_fs, fp->ssb_start_subcarrier);
 
 }
 

@@ -450,7 +450,7 @@ static void UE_synch(void *arg) {
       break;
     */
     case pbch:
-      LOG_I(PHY, "[UE thread Synch] Running Initial Synch (mode %d)\n",UE->mode);
+      LOG_I(PHY, "[UE thread Synch] Running Initial Synch \n");
 
       uint64_t dl_carrier, ul_carrier;
       nr_get_carrier_frequencies(UE, &dl_carrier, &ul_carrier);
@@ -708,7 +708,7 @@ void readFrame(PHY_VARS_NR_UE *UE,  openair0_timestamp *timestamp, bool toTrash)
 
 void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
-    LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
+    LOG_I(PHY,"Resynchronizing RX by %d samples\n",UE->rx_offset);
 
     if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
       // Resynchonize by slot (will work with numerology 1 only)

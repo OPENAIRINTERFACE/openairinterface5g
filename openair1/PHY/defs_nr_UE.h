@@ -385,9 +385,6 @@ typedef struct {
   uint8_t CC_id;
   /// \brief Mapping of CC_id antennas to cards
   openair0_rf_map      rf_map;
-  //uint8_t local_flag;
-  /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
-  runmode_t mode;
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
   /// \brief Indicator that UE should perform coarse scanning around carrier
