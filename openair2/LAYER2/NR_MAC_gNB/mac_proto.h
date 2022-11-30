@@ -510,8 +510,8 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 void send_initial_ul_rrc_message(module_id_t        module_id,
                                  int                CC_id,
-                                 const NR_UE_info_t *UE,
-                                 rb_id_t            srb_id,
+                                 int                rnti,
+                                 int                uid,
                                  const uint8_t      *sdu,
                                  sdu_size_t         sdu_len);
 
