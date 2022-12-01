@@ -628,7 +628,7 @@ void pf_dl(module_id_t module_id,
     }
   }
 
-  qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
+  qsort(UE_sched, sizeofArray(UE_sched), sizeof(UEsched_t), comparator);
   UEsched_t *iterator = UE_sched;
 
   const int min_rbSize = 5;
