@@ -2745,23 +2745,21 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
 }
 
 
-void get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
+int get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
                                 nr_dci_format_t dci_format,
                                 uint8_t *pdsch_to_harq_feedback) {
 
   if (dci_format == NR_DL_DCI_FORMAT_1_0) {
-    for (int i=0; i<8; i++)
-      pdsch_to_harq_feedback[i] = i+1;
+    for (int i = 0; i < 8; i++)
+      pdsch_to_harq_feedback[i] = i + 1;
+    return 8;
   }
   else {
-    AssertFatal(pucch_Config!=NULL,"pucch_Config shouldn't be null here\n");
-    if(pucch_Config->dl_DataToUL_ACK != NULL) {
-      for (int i=0; i<8; i++) {
-        pdsch_to_harq_feedback[i] = *pucch_Config->dl_DataToUL_ACK->list.array[i];
-      }
+    AssertFatal(pucch_Config != NULL && pucch_Config->dl_DataToUL_ACK != NULL,"dl_DataToUL_ACK shouldn't be null here\n");
+    for (int i = 0; i < pucch_Config->dl_DataToUL_ACK->list.count; i++) {
+      pdsch_to_harq_feedback[i] = *pucch_Config->dl_DataToUL_ACK->list.array[i];
     }
-    else
-      AssertFatal(0==1,"There is no allocated dl_DataToUL_ACK for pdsch to harq feedback\n");
+    return pucch_Config->dl_DataToUL_ACK->list.count;
   }
 }
 

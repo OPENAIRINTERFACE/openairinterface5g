@@ -820,7 +820,7 @@ void fill_initial_SpCellConfig(int uid,
 
   scheduling_request_config(scc, pucch_Config);
 
-  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
+  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
 
   SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;

@@ -1111,9 +1111,9 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
    dci_format = UE->current_DL_BWP.dci_format;
 
   uint8_t pdsch_to_harq_feedback[8];
-  get_pdsch_to_harq_feedback(pucch_Config, dci_format, pdsch_to_harq_feedback);
+  int fb_size = get_pdsch_to_harq_feedback(pucch_Config, dci_format, pdsch_to_harq_feedback);
 
-  for (int f=0; f<8; f++) {
+  for (int f = 0; f < fb_size; f++) {
     // can't schedule ACKNACK before minimum feedback time
     if(pdsch_to_harq_feedback[f] < minfbtime)
       continue;
