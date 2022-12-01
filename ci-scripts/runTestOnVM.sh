@@ -1305,14 +1305,8 @@ function run_test_on_vm {
         return
     elif [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf5g-sim.* ))  ]]
     then
-        GNB_VM_NAME=`echo $VM_NAME | sed -e "s#rf5g-sim#gnb-usrp#"`
-        GNB_VM_CMDS=${GNB_VM_NAME}_cmds.txt
-        echo "GNB_VM_NAME         = $GNB_VM_NAME"
-        echo "GNB_VM_CMD_FILE     = $GNB_VM_CMDS"
-        NR_UE_VM_NAME=`echo $VM_NAME | sed -e "s#rf5g-sim#nr-ue-usrp#"`
-        NR_UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
-        echo "NR_UE_VM_NAME       = $NR_UE_VM_NAME"
-        echo "NR_UE_VM_CMD_FILE   = $NR_UE_VM_CMDS"
+        echo "This VM test type is no longer supported in the pipeline framework"
+        return
     else
         echo "VM_NAME             = $VM_NAME"
         echo "VM_CMD_FILE         = $VM_CMDS"
