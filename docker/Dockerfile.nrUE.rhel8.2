@@ -50,8 +50,7 @@ RUN yum update -y && \
         python3 \
         python3-pip \
         libXpm \
-        libX11 \
-        libyaml && \
+        libX11 && \
     pip3 install six && \
     pip3 install requests && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
@@ -108,7 +107,6 @@ COPY --from=nr-ue-base \
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=nr-ue-base /usr/lib64/libprotobuf-c.so.1 /usr/local/lib
 COPY --from=nr-ue-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
 COPY --from=nr-ue-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
 

@@ -2424,7 +2424,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
 
 int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
   // no UL-SCH resources available for this tti && UE has a valid PUCCH resources for SR configuration for this tti
-  DevCheck(module_idP < (int) NB_UE_INST, module_idP, NB_NR_UE_MAC_INST, 0);
+  DevCheck(module_idP < NB_NR_UE_MAC_INST, module_idP, NB_NR_UE_MAC_INST, 0);
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   DSR_TRANSMAX_t dsr_TransMax = sr_n64; // todo
   LOG_D(NR_MAC, "[UE %d] Frame %d slot %d send SR indication (SR_COUNTER/dsr_TransMax %d/%d), SR_pending %d\n",

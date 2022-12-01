@@ -41,6 +41,9 @@
 #include "UTIL/OPT/opt.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
+/* rlc */
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+
 #include <executables/softmodem-common.h>
 extern RAN_CONTEXT_t RC;
 extern const uint8_t nr_slots_per_frame[5];
@@ -1418,9 +1421,19 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
     if (ra->msg3_dcch_dtch == false && current_harq_pid < 0) {
-      mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, NULL);
-      if (mac_sdu_length <= 0)
-        return; // need to wait until RRCSetup is encoded
+      /* need to wait until RRCSetup is ready */
+      mac_rlc_status_resp_t srb0_status = mac_rlc_status_ind(module_idP,
+                                                             ra->rnti,
+                                                             module_idP,
+                                                             frameP,
+                                                             slotP,
+                                                             ENB_FLAG_YES,
+                                                             MBMS_FLAG_NO,
+                                                             0 /* lcid 0 */,
+                                                             0,
+                                                             0);
+      if (srb0_status.bytes_in_buffer == 0) return;
+      mac_sdu_length = srb0_status.bytes_in_buffer;
     }
 
     long BWPStart = 0;
@@ -1559,7 +1572,17 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
         uint8_t buffer[CCCH_SDU_SIZE];
         uint8_t mac_subheader_len = sizeof(NR_MAC_SUBHEADER_SHORT);
-        uint16_t mac_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, CCCH, ra->rnti, 1, buffer);
+        mac_sdu_length = mac_rlc_data_req(module_idP,
+                                          ra->rnti,
+                                          module_idP,
+                                          frameP,
+                                          ENB_FLAG_YES,
+                                          MBMS_FLAG_NO,
+                                          CCCH,
+                                          CCCH_SDU_SIZE,
+                                          (char *)buffer,
+                                          0,
+                                          0);
         if (mac_sdu_length < 256) {
           ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
           ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;

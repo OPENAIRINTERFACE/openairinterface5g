@@ -150,6 +150,14 @@ typedef enum {
   gpsdo=2
 } clock_source_t;
 
+/*! \brief Radio Tx burst flags */
+typedef enum {
+  Invalid = 0,
+  MiddleOfBurst,
+  StartOfBurst,
+  EndOfBurst
+} radio_tx_flag_t;
+
 /*! \brief Structure used for initializing UDP read threads */
 typedef struct {
   openair0_device *device;

@@ -72,8 +72,8 @@ uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
 void do_SpCellConfig(gNB_RRC_INST *rrc,
                       struct NR_SpCellConfig  *spconfig);
 
-uint8_t do_RRCReject(uint8_t Mod_id,
-                     uint8_t *const buffer);
+int do_RRCReject(uint8_t Mod_id,
+                 uint8_t *const buffer);
 
 void fill_initial_SpCellConfig(int uid,
                                NR_SpCellConfig_t *SpCellConfig,

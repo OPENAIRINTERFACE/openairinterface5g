@@ -1003,7 +1003,6 @@ int main(int argc, char **argv)
   
   // generate signal
   AssertFatal(input_fd==NULL,"Not ready for input signal file\n");
-  gNB->pbch_configured = 1;
 
   //Configure UE
   rrc.carrier.MIB = (uint8_t*) malloc(4);
@@ -1267,8 +1266,7 @@ int main(int argc, char **argv)
         phy_procedures_nrUE_RX(UE,
                                &UE_proc,
                                0,
-                               &phy_data,
-                               NULL);
+                               &phy_data);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------

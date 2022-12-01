@@ -1007,11 +1007,6 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
 
   pdcp_remove_UE(&ctxt);
 
-  /* notify the agent */
-  if (flexran_agent_get_rrc_xface(instance))
-    flexran_agent_get_rrc_xface(instance)->flexran_agent_notify_ue_state_change(
-      instance, rnti, PROTOCOL__FLEX_UE_STATE_CHANGE_TYPE__FLUESC_DEACTIVATED);
-
   LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
   f1ap_remove_ue(CUtype, instance, rnti);
   return 0;

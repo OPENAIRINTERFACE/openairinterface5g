@@ -1301,14 +1301,8 @@ function run_test_on_vm {
     fi
     if [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf-sim.* ))  ]]
     then
-        ENB_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#enb-ethernet#"`
-        ENB_VM_CMDS=${ENB_VM_NAME}_cmds.txt
-        echo "ENB_VM_NAME         = $ENB_VM_NAME"
-        echo "ENB_VM_CMD_FILE     = $ENB_VM_CMDS"
-        UE_VM_NAME=`echo $VM_NAME | sed -e "s#rf-sim#ue-ethernet#"`
-        UE_VM_CMDS=${UE_VM_NAME}_cmds.txt
-        echo "UE_VM_NAME          = $UE_VM_NAME"
-        echo "UE_VM_CMD_FILE      = $UE_VM_CMDS"
+        echo "This VM test type is no longer supported in the pipeline framework"
+        return
     elif [[ (( "$RUN_OPTIONS" == "complex" ) && ( $VM_NAME =~ .*-rf5g-sim.* ))  ]]
     then
         GNB_VM_NAME=`echo $VM_NAME | sed -e "s#rf5g-sim#gnb-usrp#"`

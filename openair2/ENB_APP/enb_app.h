@@ -36,6 +36,4 @@
 
 void *eNB_app_task(void *args_p);
 
-void handle_reconfiguration(module_id_t mod_id);
-
 #endif /* ENB_APP_H_ */

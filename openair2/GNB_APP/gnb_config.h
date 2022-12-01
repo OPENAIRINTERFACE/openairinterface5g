@@ -91,7 +91,6 @@ typedef struct ru_config_s {
 } ru_config_t;
 */
 extern void NRRCconfig_RU(void);
-extern void RCconfig_nr_flexran(void);
 extern void RCconfig_nr_prs(void);
 extern void RCconfig_NR_L1(void);
 extern void RCconfig_nr_macrlc(void);

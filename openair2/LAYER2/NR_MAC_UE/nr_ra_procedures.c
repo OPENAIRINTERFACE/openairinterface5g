@@ -194,7 +194,7 @@ void init_RA(module_id_t mod_id,
   for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
     ss = commonSearchSpaceList->list.array[i];
     if (ss->searchSpaceId == ss_id)
-          ra->ss = ss;
+      ra->ss = ss;
   }
 
   if (rach_ConfigDedicated) {

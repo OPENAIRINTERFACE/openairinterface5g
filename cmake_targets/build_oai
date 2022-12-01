@@ -259,9 +259,6 @@ function main() {
             RU=1
             echo_info "Will compile RRU"
 	    shift;;
-       -a | --agent)
-            echo_info "FlexRAN support is always compiled into the eNB"
-            shift;;
        --UE)
             UE=1
             echo_info "Will compile UE"
@@ -511,9 +508,6 @@ function main() {
       #  flash_firmware_iris
       #fi
     fi
-    echo_info "Installing protobuf/protobuf-c for flexran agent support"
-    install_protobuf_c
-    echo_success "protobuf/protobuf-c installation successful"
   fi
 
   if [ "$INSTALL_OPTIONAL" = "1" ] ; then

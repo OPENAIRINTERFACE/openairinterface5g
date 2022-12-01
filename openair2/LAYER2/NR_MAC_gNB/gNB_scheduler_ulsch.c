@@ -35,6 +35,7 @@
 #include "utils.h"
 #include <openair2/UTIL/OPT/opt.h>
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 //#define SRS_IND_DEBUG
 
@@ -363,12 +364,19 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 6;
         }
 
-        send_initial_ul_rrc_message(module_idP,
-                                    CC_id,
-                                    UE,
-                                    CCCH,
-                                    pduP + mac_subheader_len,
-                                    mac_len);
+        nr_rlc_activate_srb0(UE->rnti, module_idP, CC_id, UE->uid, send_initial_ul_rrc_message);
+
+        mac_rlc_data_ind(module_idP,
+                         UE->rnti,
+                         module_idP,
+                         frameP,
+                         ENB_FLAG_YES,
+                         MBMS_FLAG_NO,
+                         0,
+                         (char *) (pduP + mac_subheader_len),
+                         mac_len,
+                         1,
+                         NULL);
         break;
 
       case UL_SCH_LCID_DTCH ... (UL_SCH_LCID_DTCH + 28):
@@ -1333,7 +1341,7 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
   AssertFatal(*Rb >= minRb, "illegal Rb %d < minRb %d\n", *Rb, minRb);
   AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
 
-  const int tbs_bits = tbs << 3;
+  int tbs_bits = tbs << 3;
   uint16_t R;
   uint8_t Qm;
   update_ul_ue_R_Qm(*mcs, ul_bwp->mcs_table, ul_bwp->pusch_Config, &R, &Qm);
@@ -1349,6 +1357,12 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
 
   while (ph_limit < tx_power && *Rb >= minRb) {
     (*Rb)--;
+    tbs_bits = nr_compute_tbs(Qm, R, *Rb,
+                              sched_pusch->tda_info.nrOfSymbols,
+                              sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
+                              0, // nb_rb_oh
+                              0,
+                              sched_pusch->nrOfLayers);
     tx_power = compute_ph_factor(mu,
                                  tbs_bits,
                                  *Rb,
@@ -1361,6 +1375,12 @@ void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, N
   while (ph_limit < tx_power && *mcs > 6) {
     (*mcs)--;
     update_ul_ue_R_Qm(*mcs, ul_bwp->mcs_table, ul_bwp->pusch_Config, &R, &Qm);
+    tbs_bits = nr_compute_tbs(Qm, R, *Rb,
+                              sched_pusch->tda_info.nrOfSymbols,
+                              sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
+                              0, // nb_rb_oh
+                              0,
+                              sched_pusch->nrOfLayers);
     tx_power = compute_ph_factor(mu,
                                  tbs_bits,
                                  *Rb,

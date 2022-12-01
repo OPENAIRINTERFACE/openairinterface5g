@@ -42,7 +42,6 @@
 #   include "s1ap_eNB.h"
 #   include "sctp_eNB_task.h"
 #   include "gtpv1u_eNB_task.h"
-#   include "flexran_agent.h"
 
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"
@@ -390,10 +389,6 @@ void *MCE_app_task(void *args_p) {
       LOG_I(MCE_APP, "Received %s\n", ITTI_MSG_NAME(msg_p));
       break;
 
-    case SOFT_RESTART_MESSAGE:
-      //handle_reconfiguration(instance);
-      break;
-
     case M3AP_REGISTER_MCE_CNF:
       //AssertFatal(!NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received S1AP_REGISTER_ENB_CNF\n");
           LOG_I(MCE_APP, "[MCE %ld] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
@@ -700,57 +695,3 @@ void *MCE_app_task(void *args_p) {
 
   return NULL;
 }
-
-//void handle_reconfiguration(module_id_t mod_id) {
-//  struct timespec start, end;
-//  clock_gettime(CLOCK_MONOTONIC, &start);
-//  flexran_agent_info_t *flexran = RC.flexran[mod_id];
-//  LOG_I(ENB_APP, "lte-softmodem soft-restart requested\n");
-//
-//  if (ENB_WAIT == flexran->node_ctrl_state) {
-//    /* this is already waiting, just release */
-//    pthread_mutex_lock(&flexran->mutex_node_ctrl);
-//    flexran->node_ctrl_state = ENB_NORMAL_OPERATION;
-//    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
-//    pthread_cond_signal(&flexran->cond_node_ctrl);
-//    return;
-//  }
-//
-//  if (stop_L1L2(mod_id) < 0) {
-//    LOG_E(ENB_APP, "can not stop lte-softmodem, aborting restart\n");
-//    return;
-//  }
-//
-//  /* node_ctrl_state should have value ENB_MAKE_WAIT only if this method is not
-//   * executed by the FlexRAN thread */
-//  if (ENB_MAKE_WAIT == flexran->node_ctrl_state) {
-//    LOG_I(ENB_APP, " * MCE %d: Waiting for FlexRAN RTController command *\n", mod_id);
-//    pthread_mutex_lock(&flexran->mutex_node_ctrl);
-//    flexran->node_ctrl_state = ENB_WAIT;
-//
-//    while (ENB_NORMAL_OPERATION != flexran->node_ctrl_state)
-//      pthread_cond_wait(&flexran->cond_node_ctrl, &flexran->mutex_node_ctrl);
-//
-//    pthread_mutex_unlock(&flexran->mutex_node_ctrl);
-//  }
-//
-//  if (restart_L1L2(mod_id) < 0) {
-//    LOG_E(ENB_APP, "can not restart, killing lte-softmodem\n");
-//    exit_fun("can not restart L1L2, killing lte-softmodem");
-//    return;
-//  }
-//
-//  clock_gettime(CLOCK_MONOTONIC, &end);
-//  end.tv_sec -= start.tv_sec;
-//
-//  if (end.tv_nsec >= start.tv_nsec) {
-//    end.tv_nsec -= start.tv_nsec;
-//  } else {
-//    end.tv_sec -= 1;
-//    end.tv_nsec = end.tv_nsec - start.tv_nsec + 1000000000;
-//  }
-//
-//  LOG_I(ENB_APP, "lte-softmodem restart succeeded in %ld.%ld s\n", end.tv_sec, end.tv_nsec / 1000000);
-//}
-
-

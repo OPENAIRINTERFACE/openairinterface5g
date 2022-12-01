@@ -75,13 +75,15 @@ int nr_find_pucch(uint16_t rnti,
   AssertFatal(gNB!=NULL,"gNB is null\n");
   int index = -1;
 
-  for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
-    AssertFatal(gNB->pucch[i]!=NULL,"gNB->pucch[%d] is null\n",i);
-    if ((gNB->pucch[i]->active >0) &&
-        (gNB->pucch[i]->pucch_pdu.rnti==rnti) &&
-        (gNB->pucch[i]->frame==frame) &&
-        (gNB->pucch[i]->slot==slot)) return(i);
-    else if ((gNB->pucch[i]->active == 0) && (index==-1)) index=i;
+  for (int i = 0; i < NUMBER_OF_NR_PUCCH_MAX; i++) {
+    AssertFatal(gNB->pucch[i] != NULL,"gNB->pucch[%d] is null\n",i);
+    if ((gNB->pucch[i]->active > 0) &&
+        (gNB->pucch[i]->pucch_pdu.rnti == rnti) &&
+        (gNB->pucch[i]->frame == frame) &&
+        (gNB->pucch[i]->slot == slot))
+      return(i);
+    else if ((gNB->pucch[i]->active == 0) && (index == -1))
+      index=i;
   }
 
   if (index==-1)
@@ -97,15 +99,16 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
   if (NFAPI_MODE == NFAPI_MODE_PNF)
     gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
   int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
-  AssertFatal( (id>=0) && (id<NUMBER_OF_NR_PUCCH_MAX),
+  AssertFatal((id >= 0) && (id < NUMBER_OF_NR_PUCCH_MAX),
               "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
 
   NR_gNB_PUCCH_t  *pucch = gNB->pucch[id];
   pucch->frame = frame;
   pucch->slot = slot;
   pucch->active = 1;
-  if (pucch->pucch_pdu.format_type > 0) LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",id,
-                                          pucch->frame,pucch->slot,pucch->pucch_pdu.format_type,pucch->pucch_pdu.bit_len_harq,pucch->pucch_pdu.sr_flag,pucch->pucch_pdu.bit_len_csi_part1);
+  if (pucch->pucch_pdu.format_type > 0)
+    LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",id,
+          pucch->frame,pucch->slot,pucch->pucch_pdu.format_type,pucch->pucch_pdu.bit_len_harq,pucch->pucch_pdu.sr_flag,pucch->pucch_pdu.bit_len_csi_part1);
   memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
 }
 

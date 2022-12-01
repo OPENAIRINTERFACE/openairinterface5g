@@ -374,35 +374,6 @@ typedef enum {
 #define CONFIG_STRING_L1_CONFIG                            "l1_config"
 
 
-
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-
-/*----------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CONFIG_STRING_NETWORK_CONTROLLER_CONFIG         "NETWORK_CONTROLLER"
-
-#define CONFIG_STRING_FLEXRAN_ENABLED                   "FLEXRAN_ENABLED"
-#define CONFIG_STRING_FLEXRAN_INTERFACE_NAME            "FLEXRAN_INTERFACE_NAME"
-#define CONFIG_STRING_FLEXRAN_IPV4_ADDRESS              "FLEXRAN_IPV4_ADDRESS"
-#define CONFIG_STRING_FLEXRAN_PORT                      "FLEXRAN_PORT"
-#define CONFIG_STRING_FLEXRAN_CACHE                     "FLEXRAN_CACHE"
-#define CONFIG_STRING_FLEXRAN_AWAIT_RECONF              "FLEXRAN_AWAIT_RECONF"
-
-#define FLEXRAN_ENABLED                               0
-#define FLEXRAN_INTERFACE_NAME_IDX                    1
-#define FLEXRAN_IPV4_ADDRESS_IDX                      2
-#define FLEXRAN_PORT_IDX                              3
-#define FLEXRAN_CACHE_IDX                             4
-#define FLEXRAN_AWAIT_RECONF_IDX                      5
-
-#define FLEXRANPARAMS_DESC { \
-{CONFIG_STRING_FLEXRAN_ENABLED,                NULL,   0,   strptr:NULL,   defstrval:"no",                    TYPE_STRING,   0},           \
-{CONFIG_STRING_FLEXRAN_INTERFACE_NAME,         NULL,   0,   strptr:NULL,   defstrval:"lo",                    TYPE_STRING,   0},           \
-{CONFIG_STRING_FLEXRAN_IPV4_ADDRESS,           NULL,   0,   strptr:NULL,   defstrval:"127.0.0.1",             TYPE_STRING,   0},           \
-{CONFIG_STRING_FLEXRAN_PORT,                   NULL,   0,   uptr:NULL,     defintval:2210,                    TYPE_UINT,     0},           \
-{CONFIG_STRING_FLEXRAN_CACHE,                  NULL,   0,   strptr:NULL,   defstrval:"/mnt/oai_agent_cache",  TYPE_STRING,   0},           \
-{CONFIG_STRING_FLEXRAN_AWAIT_RECONF,           NULL,   0,   strptr:NULL,   defstrval:"no",                    TYPE_STRING,   0}            \
-}
-
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /* MACRLC configuration section names   */

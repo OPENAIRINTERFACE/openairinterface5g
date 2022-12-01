@@ -245,89 +245,6 @@ compilations() {
 # External packages installers
 ############################################
 
-install_protobuf_from_source(){
-    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
-    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
-    (
-    cd /tmp
-    echo "Downloading protobuf"
-    #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    #wget https://github.com/protocolbuffers/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
-    #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
-    #cd protobuf-2.6.1/
-
-    if [ $IS_CONTAINER -eq 0 ]
-    then
-      rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-      wget --tries=3 --retry-connrefused https://github.com/protocolbuffers/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-      tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $(id -u) --group $(id -g) --no-same-owner
-      cd protobuf-3.3.0/
-    else
-      export LD_LIBRARY_PATH=/usr/local/lib #protoc needs to know where toclook for shared libs
-      rm -rf /tmp/protobuf
-      git clone --depth=1 --branch=v3.3.0 https://github.com/protocolbuffers/protobuf.git /tmp/protobuf
-      cd /tmp/protobuf
-      git submodule update --init --recursive
-      ./autogen.sh
-    fi
-    ./configure
-    echo "Compiling protobuf"
-    make -j`nproc`
-    $SUDO make install
-    $SUDO ldconfig
-    if [[ -v CI_ENV ]]; then
-        cd /tmp
-        $SUDO rm -rf protobuf*
-    fi
-    ) >& $protobuf_install_log
-}
-
-install_protobuf_c_from_source(){
-    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
-    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
-    (
-    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-    fi
-    cd /tmp
-    echo "Downloading protobuf-c"
-    rm -rf /tmp/protobuf-c
-    git clone https://github.com/protobuf-c/protobuf-c.git
-    cd protobuf-c
-	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
-    ./autogen.sh
-    ./configure
-    echo "Compiling protobuf-c"
-    make -j`nproc`
-    $SUDO make install
-    $SUDO ldconfig
-    if [[ -v CI_ENV ]]; then
-        cd /tmp
-        $SUDO rm -rf protobuf*
-    fi
-    ) >& $protobuf_c_install_log
-}
-
-install_protobuf_c() {
-  local protobuf_packages=""
-  case "$(get_distribution_release)" in
-    "ubuntu18.04" | "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04")
-      protobuf_packages="protobuf-c-compiler libprotobuf-c1 libprotobuf-c-dev"
-      ;;
-  esac
-  case "$OS_DISTRO" in
-    "rhel" | "centos" | "fedora") # in EPEL and Fedora repos (at least as of 35)
-      protobuf_packages="protobuf-c-compiler protobuf-c protobuf-c-devel"
-      ;;
-  esac
-  if [[ "$protobuf_packages" == "" ]]; then
-    install_protobuf_from_source
-    install_protobuf_c_from_source
-  else
-    $SUDO $INSTALLER -y install $protobuf_packages
-  fi
-}
-
 install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
@@ -802,7 +719,6 @@ check_install_oai_software() {
 	openssl \
 	subversion \
 	xmlstarlet \
-	libyaml-dev \
 	wget \
 	libxpm-dev \
         libboost-all-dev
@@ -883,8 +799,7 @@ check_install_oai_software() {
       lapack \
       lapack-devel \
       blas \
-      blas-devel \
-      libyaml-devel
+      blas-devel
   fi
 
     install_asn1c_from_source $1

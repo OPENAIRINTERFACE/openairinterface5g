@@ -487,86 +487,6 @@ void terminate_task(task_id_t task_id, module_id_t mod_id) {
 //extern void  free_transport(PHY_VARS_gNB *);
 extern void  nr_phy_free_RU(RU_t *);
 
-int stop_L1L2(module_id_t gnb_id) {
-  LOG_W(GNB_APP, "stopping nr-softmodem\n");
-  oai_exit = 1;
-
-  if (!RC.ru) {
-    LOG_F(GNB_APP, "no RU configured\n");
-    return -1;
-  }
-
-  /* stop trx devices, multiple carrier currently not supported by RU */
-  if (RC.ru[gnb_id]) {
-    if (RC.ru[gnb_id]->rfdevice.trx_stop_func) {
-      RC.ru[gnb_id]->rfdevice.trx_stop_func(&RC.ru[gnb_id]->rfdevice);
-      LOG_I(GNB_APP, "turned off RU rfdevice\n");
-    } else {
-      LOG_W(GNB_APP, "can not turn off rfdevice due to missing trx_stop_func callback, proceeding anyway!\n");
-    }
-
-    if (RC.ru[gnb_id]->ifdevice.trx_stop_func) {
-      RC.ru[gnb_id]->ifdevice.trx_stop_func(&RC.ru[gnb_id]->ifdevice);
-      LOG_I(GNB_APP, "turned off RU ifdevice\n");
-    } else {
-      LOG_W(GNB_APP, "can not turn off ifdevice due to missing trx_stop_func callback, proceeding anyway!\n");
-    }
-  } else {
-    LOG_W(GNB_APP, "no RU found for index %d\n", gnb_id);
-    return -1;
-  }
-
-  /* these tasks need to pick up new configuration */
-  terminate_task(TASK_RRC_ENB, gnb_id);
-  LOG_I(GNB_APP, "calling kill_gNB_proc() for instance %d\n", gnb_id);
-  kill_gNB_proc(gnb_id);
-  LOG_I(GNB_APP, "calling kill_NR_RU_proc() for instance %d\n", gnb_id);
-  kill_NR_RU_proc(gnb_id);
-  oai_exit = 0;
-  //free_transport(RC.gNB[gnb_id]);
-  phy_free_nr_gNB(RC.gNB[gnb_id]);
-  nr_phy_free_RU(RC.ru[gnb_id]);
-  free_lte_top();
-  return 0;
-}
-
-/*
- * Restart the nr-softmodem after it has been soft-stopped with stop_L1L2()
- */
-int restart_L1L2(module_id_t gnb_id) {
-  RU_t *ru = RC.ru[gnb_id];
-  MessageDef *msg_p = NULL;
-  LOG_W(GNB_APP, "restarting nr-softmodem\n");
-  /* block threads */
-  sync_var = -1;
-  RC.gNB[gnb_id]->configured = 0;
-  RC.ru_mask |= (1 << ru->idx);
-  set_function_spec_param(RC.ru[gnb_id]);
-  LOG_I(GNB_APP, "attempting to create ITTI tasks\n");
-  // No more rrc thread, as many race conditions are hidden behind
-  rrc_enb_init();
-  itti_mark_task_ready(TASK_RRC_ENB);
-  /* pass a reconfiguration request which will configure everything down to
-   * RC.eNB[i][j]->frame_parms, too */
-  msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
-  RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[gnb_id]->configuration;
-  itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-  /* TODO XForms might need to be restarted, but it is currently (09/02/18)
-   * broken, so we cannot test it */
-  wait_gNBs();
-  init_RU_proc(ru);
-  ru->rf_map.card = 0;
-  ru->rf_map.chain = 0; /* CC_id + chain_offset;*/
-  wait_RUs();
-  init_eNB_afterRU();
-  printf("Sending sync to all threads\n");
-  pthread_mutex_lock(&sync_mutex);
-  sync_var=0;
-  pthread_cond_broadcast(&sync_cond);
-  pthread_mutex_unlock(&sync_mutex);
-  return 0;
-}
-
 static  void wait_nfapi_init(char *thread_name) {
   printf( "waiting for NFAPI PNF connection and population of global structure (%s)\n",thread_name);
   pthread_mutex_lock( &nfapi_sync_mutex );
@@ -664,14 +584,6 @@ int main( int argc, char **argv ) {
   int ret=create_gNB_tasks(1);
   AssertFatal(ret==0,"cannot create ITTI tasks\n");
 
-  /* Start the agent. If it is turned off in the configuration, it won't start */
-  /*
-  RCconfig_nr_flexran();
-
-  for (i = 0; i < RC.nb_nr_L1_inst; i++) {
-    flexran_agent_start(i);
-  }
-  */
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
   memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*NUMBER_OF_UE_MAX*MAX_NUM_CCs);

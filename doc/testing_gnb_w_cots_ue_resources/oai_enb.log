@@ -54,7 +54,6 @@ ITTI init, useMME: 1
 [0m[0m[TMR]   Starting itti queue: TASK_GNB_APP as task 23
 [0m[0m[TMR]   Starting itti queue: TASK_MCE_APP as task 24
 [0m[0m[TMR]   Starting itti queue: TASK_MME_APP as task 25
-[0m[0m[TMR]   Starting itti queue: TASK_FLEXRAN_AGENT as task 26
 [0m[0m[TMR]   Starting itti queue: TASK_PHY_UE as task 27
 [0m[0m[TMR]   Starting itti queue: TASK_MAC_UE as task 28
 [0m[0m[TMR]   Starting itti queue: TASK_RLC_UE as task 29
@@ -113,7 +112,6 @@ No SL configuration skipping it
 Creating RC.ru[0]:0x2b41780
 Setting function for RU 0 to eNodeB_3GPP
 [0m[PHY]   number of L1 instances 1, number of RU 1, number of CPU cores 4
-[0m[0m[FLEXRAN_AGENT]   FlexRAN Agent for eNB 0 is DISABLED
 [0m[0m[PDCP]   PDCP layer has been initialized
 [0m[0m[PDCP]   pdcp init,usegtp 
 [0m[0m[93m[PDCP]   ENB pdcp will use tun interface for MBMS

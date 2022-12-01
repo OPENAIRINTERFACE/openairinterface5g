@@ -441,87 +441,19 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList = 
        CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
 
-  asn1cSequenceAdd(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,
-		   NR_SearchSpace_t, ss1);
-  ss1->searchSpaceId = 1;
-  asn1cCallocOne(ss1->controlResourceSetId, 0);
-  ss1->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss1->monitoringSlotPeriodicityAndOffset));
-  ss1->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
-  ss1->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss1->monitoringSymbolsWithinSlot));
-  ss1->monitoringSymbolsWithinSlot->buf = calloc(1,2);
-  // should be '1000 0000 0000 00'B (LSB first!), first symbol in slot, adjust if needed
-  ss1->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss1->monitoringSymbolsWithinSlot->buf[0] = 0x80;
-  ss1->monitoringSymbolsWithinSlot->size = 2;
-  ss1->monitoringSymbolsWithinSlot->bits_unused = 2;
-  ss1->nrofCandidates = calloc(1,sizeof(*ss1->nrofCandidates));
-  ss1->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  ss1->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss1->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n2;
-  ss1->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
-  ss1->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
-  ss1->searchSpaceType = calloc(1,sizeof(*ss1->searchSpaceType));
-  ss1->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
-  ss1->searchSpaceType->choice.common=calloc(1,sizeof(*ss1->searchSpaceType->choice.common));
-  ss1->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss1->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+  NR_SearchSpace_t *ss1 = rrc_searchspace_config(true, 1, 0);
+  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss1);
 
-  asn1cSequenceAdd(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,
-		   NR_SearchSpace_t, ss5);
-  ss5->searchSpaceId = 5;
-  ss5->controlResourceSetId=calloc(1,sizeof(*ss5->controlResourceSetId));
-  *ss5->controlResourceSetId=0;
-  ss5->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss5->monitoringSlotPeriodicityAndOffset));
-  ss5->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5;
-  ss5->monitoringSlotPeriodicityAndOffset->choice.sl5 = 0;
-  ss5->duration = calloc(1,sizeof(*ss5->duration));
-  *ss5->duration = 2;
-  ss5->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss5->monitoringSymbolsWithinSlot));
-  ss5->monitoringSymbolsWithinSlot->buf = calloc(1,2);
-  // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
-  ss5->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss5->monitoringSymbolsWithinSlot->buf[0] = 0x80;
-  ss5->monitoringSymbolsWithinSlot->size = 2;
-  ss5->monitoringSymbolsWithinSlot->bits_unused = 2;
-  ss5->nrofCandidates = calloc(1,sizeof(*ss5->nrofCandidates));
-  ss5->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  ss5->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss5->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
-  ss5->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n2;
-  ss5->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n1;
-  ss5->searchSpaceType = calloc(1,sizeof(*ss5->searchSpaceType));
-  ss5->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
-  ss5->searchSpaceType->choice.common=calloc(1,sizeof(*ss5->searchSpaceType->choice.common));
-  ss5->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss5->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+  NR_SearchSpace_t *ss2 = rrc_searchspace_config(true, 2, 0);
+  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss2);
 
-  asn1cSequenceAdd(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list,
-		   NR_SearchSpace_t, ss7);
-  ss7->searchSpaceId = 7;
-  ss7->controlResourceSetId=calloc(1,sizeof(*ss7->controlResourceSetId));
-  *ss7->controlResourceSetId=0;
-  ss7->monitoringSlotPeriodicityAndOffset = calloc(1,sizeof(*ss7->monitoringSlotPeriodicityAndOffset));
-  ss7->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
-  ss7->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss7->monitoringSymbolsWithinSlot));
-  ss7->monitoringSymbolsWithinSlot->buf = calloc(1,2);
-  // should be '1100 0000 0000 00'B (LSB first!), first two symols in slot, adjust if needed
-  ss7->monitoringSymbolsWithinSlot->buf[1] = 0;
-  ss7->monitoringSymbolsWithinSlot->buf[0] = 0x80;
-  ss7->monitoringSymbolsWithinSlot->size = 2;
-  ss7->monitoringSymbolsWithinSlot->bits_unused = 2;
-  ss7->nrofCandidates = calloc(1,sizeof(*ss7->nrofCandidates));
-  ss7->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  ss7->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n0;
-  ss7->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n4;
-  ss7->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n2;
-  ss7->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n1;
-  ss7->searchSpaceType = calloc(1,sizeof(*ss7->searchSpaceType));
-  ss7->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_common;
-  ss7->searchSpaceType->choice.common=calloc(1,sizeof(*ss7->searchSpaceType->choice.common));
-  ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0 = calloc(1,sizeof(*ss7->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0));
+  NR_SearchSpace_t *ss3 = rrc_searchspace_config(true, 3, 0);
+  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss3);
 
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1,  0);
-  asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation, 7);
-  asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace, 5);
-  asn1cCallocOne( initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace, 1);
+  asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation, 3);
+  asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->pagingSearchSpace, 2);
+  asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace, 1);
    
   initialDownlinkBWP->pdsch_ConfigCommon = configuration->scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon;
   ServCellCom->downlinkConfigCommon.bcch_Config.modificationPeriodCoeff = NR_BCCH_Config__modificationPeriodCoeff_n2;
@@ -726,11 +658,11 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 }
 
 //------------------------------------------------------------------------------
-uint8_t do_RRCReject(uint8_t Mod_id,
-                  uint8_t *const buffer)
+int do_RRCReject(uint8_t Mod_id,
+                 uint8_t *const buffer)
 //------------------------------------------------------------------------------
 {
-    asn_enc_rval_t                                   enc_rval;;
+    asn_enc_rval_t                                   enc_rval;
     NR_DL_CCCH_Message_t                             dl_ccch_msg;
     NR_RRCReject_t                                   *rrcReject;
     NR_RejectWaitTime_t                              waitTime = 1;
@@ -767,7 +699,7 @@ uint8_t do_RRCReject(uint8_t Mod_id,
 
     LOG_D(NR_RRC,"RRCReject Encoded %zd bits (%zd bytes)\n",
             enc_rval.encoded,(enc_rval.encoded+7)/8);
-    return((enc_rval.encoded+7)/8);
+    return (enc_rval.encoded + 7) / 8;
 }
 
 void fill_initial_SpCellConfig(int uid,
@@ -841,35 +773,10 @@ void fill_initial_SpCellConfig(int uid,
                    coreset);
 
   bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
-  
-  NR_SearchSpace_t *ss2 = calloc(1,sizeof(*ss2));
+
+  NR_SearchSpace_t *ss2 = rrc_searchspace_config(false, 5, coreset->controlResourceSetId);
+  ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list, ss2);
  
-  ss2->searchSpaceId=2;
-  ss2->controlResourceSetId=calloc(1,sizeof(*ss2->controlResourceSetId));
-  *ss2->controlResourceSetId=coreset->controlResourceSetId;
-  ss2->monitoringSlotPeriodicityAndOffset=calloc(1,sizeof(*ss2->monitoringSlotPeriodicityAndOffset));
-  ss2->monitoringSlotPeriodicityAndOffset->present = NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1;
-  ss2->monitoringSlotPeriodicityAndOffset->choice.sl1=(NULL_t)0;
-  ss2->duration=NULL;
-  ss2->monitoringSymbolsWithinSlot = calloc(1,sizeof(*ss2->monitoringSymbolsWithinSlot));
-  ss2->monitoringSymbolsWithinSlot->buf = calloc(1,2);
-  ss2->monitoringSymbolsWithinSlot->size = 2;
-  ss2->monitoringSymbolsWithinSlot->buf[0]=0x80;
-  ss2->monitoringSymbolsWithinSlot->buf[1]=0x0;
-  ss2->monitoringSymbolsWithinSlot->bits_unused = 2;
-  ss2->nrofCandidates=calloc(1,sizeof(*ss2->nrofCandidates));
-  ss2->nrofCandidates->aggregationLevel1 = NR_SearchSpace__nrofCandidates__aggregationLevel1_n0;
-  ss2->nrofCandidates->aggregationLevel2 = NR_SearchSpace__nrofCandidates__aggregationLevel2_n2;
-  ss2->nrofCandidates->aggregationLevel4 = NR_SearchSpace__nrofCandidates__aggregationLevel4_n1;
-  ss2->nrofCandidates->aggregationLevel8 = NR_SearchSpace__nrofCandidates__aggregationLevel8_n0;
-  ss2->nrofCandidates->aggregationLevel16 = NR_SearchSpace__nrofCandidates__aggregationLevel16_n0;
-  ss2->searchSpaceType=calloc(1,sizeof(*ss2->searchSpaceType));
-  ss2->searchSpaceType->present = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
-  ss2->searchSpaceType->choice.ue_Specific = calloc(1,sizeof(*ss2->searchSpaceType->choice.ue_Specific));
-  ss2->searchSpaceType->choice.ue_Specific->dci_Formats=NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1;
-  
-  ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list,
-                   ss2);
   bwp_Dedicated->pdsch_Config = config_pdsch(bitmap, 0, pdsch_AntennaPorts);
 
   SpCellConfig->spCellConfigDedicated->tag_Id=0;

@@ -27,9 +27,6 @@ services:
             ENB_S1U_IP_ADDRESS: 192.168.68.130
             ENB_X2_IP_ADDRESS: 192.168.68.130
             RRC_INACTIVITY_THRESHOLD: 0
-            FLEXRAN_ENABLED: 'no'
-            FLEXRAN_INTERFACE_NAME: eth0
-            FLEXRAN_IPV4_ADDRESS: 172.21.16.136
             THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
             USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:

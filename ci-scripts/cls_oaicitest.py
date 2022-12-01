@@ -299,50 +299,6 @@ class OaiCiTest():
 			HTML.CreateHtmlTabFooter(False)
 			self.ConditionalExit()
 
-	def CheckFlexranCtrlInstallation(self,RAN,EPC,CONTAINERS):
-		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
-			return
-		SSH = sshconnection.SSHConnection()
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		SSH.command('ls -ls /opt/flexran_rtc/*/rt_controller', '\$', 5)
-		result = re.search('/opt/flexran_rtc/build/rt_controller', SSH.getBefore())
-		if result is not None:
-			RAN.flexranCtrlInstalled=True
-			RAN.flexranCtrlIpAddress=EPC.IPAddress
-			logging.debug('Flexran Controller is installed')
-		else:
-			# Maybe flexran-rtc is deployed into a container
-			SSH.command('docker inspect --format="FLEX_RTC_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-flexran-rtc', '\$', 5)
-			result = re.search('FLEX_RTC_IP_ADDR = (?P<flex_ip_addr>[0-9\.]+)', SSH.getBefore())
-			if result is not None:
-				RAN.flexranCtrlDeployed=True
-				RAN.flexranCtrlIpAddress=result.group('flex_ip_addr')
-				CONTAINERS.flexranCtrlDeployed=True
-				CONTAINERS.flexranCtrlIpAddress=result.group('flex_ip_addr')
-				logging.debug('Flexran Controller is deployed: ' + RAN.flexranCtrlIpAddress)
-		SSH.close()
-
-	def InitializeFlexranCtrl(self, HTML,RAN,EPC):
-		if RAN.flexranCtrlInstalled == False:
-			return
-		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		SSH = sshconnection.SSHConnection()
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		SSH.command('cd /opt/flexran_rtc', '\$', 5)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S rm -f log/*.log', '\$', 5)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S echo "build/rt_controller -c log_config/basic_log" > ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S chmod 755 ./my-flexran-ctl.sh', '\$', 5)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S daemon --unsafe --name=flexran_rtc_daemon --chdir=/opt/flexran_rtc -o /opt/flexran_rtc/log/flexranctl_' + self.testCase_id + '.log ././my-flexran-ctl.sh', '\$', 5)
-		SSH.command('ps -aux | grep --color=never rt_controller', '\$', 5)
-		result = re.search('rt_controller -c ', SSH.getBefore())
-		if result is not None:
-			logging.debug('\u001B[1m Initialize FlexRan Controller Completed\u001B[0m')
-			RAN.flexranCtrlStarted=True
-		SSH.close()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-	
 	def InitializeUE_common(self, device_id, idx,COTS_UE):
 		try:
 			SSH = sshconnection.SSHConnection()
@@ -1464,27 +1420,8 @@ class OaiCiTest():
 			i += 1
 		for job in multi_jobs:
 			job.join()
-		if (RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted) or RAN.flexranCtrlDeployed:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-			SSH.command('curl http://' + RAN.flexranCtrlIpAddress + ':9999/stats | jq \'.\' > check_status_' + self.testCase_id + '.log 2>&1', '\$', 5)
-			SSH.command('cat check_status_' + self.testCase_id + '.log | jq \'.eNB_config[0].UE\' | grep -c rnti | sed -e "s#^#Nb Connected UE = #"', '\$', 5)
-			result = re.search('Nb Connected UE = (?P<nb_ues>[0-9]+)', SSH.getBefore())
-			passStatus = True
-			if result is not None:
-				nb_ues = int(result.group('nb_ues'))
-				htmlOptions = 'Nb Connected UE(s) to eNB = ' + str(nb_ues)
-				logging.debug('\u001B[1;37;44m ' + htmlOptions + ' \u001B[0m')
-				if self.expectedNbOfConnectedUEs > -1:
-					if nb_ues != self.expectedNbOfConnectedUEs:
-						passStatus = False
-			else:
-				htmlOptions = 'N/A'
-			SSH.close()
-		else:
-			passStatus = True
-			htmlOptions = 'N/A'
+		passStatus = True
+		htmlOptions = 'N/A'
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
@@ -3145,8 +3082,6 @@ class OaiCiTest():
 					if logStatus < 0:
 						result = logStatus
 					RAN.eNBLogFiles[0]=''
-				if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-					self.TerminateFlexranCtrl()
 			return result
 
 	def CheckOAIUEProcessExist(self, initialize_OAI_UE_flag,HTML,RAN):
@@ -3462,22 +3397,6 @@ class OaiCiTest():
 		return global_status
 
 
-	def TerminateFlexranCtrl(self,HTML,RAN,EPC):
-		if RAN.flexranCtrlInstalled == False or RAN.flexranCtrlStarted == False:
-			return
-		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		SSH = sshconnection.SSHConnection()
-		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S daemon --name=flexran_rtc_daemon --stop', '\$', 5)
-		time.sleep(1)
-		SSH.command('echo ' + EPC.Password + ' | sudo -S killall --signal SIGKILL rt_controller', '\$', 5)
-		time.sleep(1)
-		SSH.close()
-		RAN.flexranCtrlStarted=False
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-
 	def TerminateUE_common(self, device_id, idx,COTS_UE):
 		try:
 			SSH = sshconnection.SSHConnection()
@@ -3628,13 +3547,6 @@ class OaiCiTest():
 					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
 					RAN.eNB_instance=instance
 					RAN.TerminateeNB(HTML,EPC)
-		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-			self.testCase_id = 'AUTO-KILL-flexran-ctl'
-			HTML.testCase_id = self.testCase_id
-			self.desc = 'Automatic Termination of FlexRan CTL'
-			HTML.desc = self.desc
-			self.ShowTestID()
-			self.TerminateFlexranCtrl(HTML,RAN,EPC)
 		if CONTAINERS.yamlPath[0] != '':
 			self.testCase_id = 'AUTO-KILL-CONTAINERS'
 			HTML.testCase_id = self.testCase_id
@@ -3662,13 +3574,6 @@ class OaiCiTest():
 					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
 					RAN.eNB_instance=instance
 					RAN.TerminateeNB(HTML,EPC)
-		if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-			self.testCase_id = 'AUTO-KILL-flexran-ctl'
-			HTML.testCase_id = self.testCase_id
-			self.desc = 'Automatic Termination of FlexRan CTL'
-			HTML.desc = self.desc
-			self.ShowTestID()
-			self.TerminateFlexranCtrl(HTML,RAN,EPC)
 		if CONTAINERS.yamlPath[0] != '':
 			self.testCase_id = 'AUTO-KILL-CONTAINERS'
 			HTML.testCase_id = self.testCase_id
@@ -3712,9 +3617,6 @@ class OaiCiTest():
 				ueIdx += 1
 			cnt += 1
 
-		msg = "FlexRan Controller is connected to " + str(self.x2NbENBs) + " eNB(s)"
-		logging.debug(msg)
-		message += msg + '\n'
 		cnt = 0
 		while cnt < self.x2NbENBs:
 			msg = "   -- eNB: " + str(self.x2ENBBsIds[idx][cnt]) + " is connected to " + str(len(self.x2ENBConnectedUEs[idx][cnt])) + " UE(s)"
@@ -3736,65 +3638,7 @@ class OaiCiTest():
 		logging.debug(msg)
 		fullMessage += msg + '\n'
 		if self.x2_ho_options == 'network':
-			if RAN.flexranCtrlInstalled and RAN.flexranCtrlStarted:
-				self.x2ENBBsIds = []
-				self.x2ENBConnectedUEs = []
-				self.x2ENBBsIds.append([])
-				self.x2ENBBsIds.append([])
-				self.x2ENBConnectedUEs.append([])
-				self.x2ENBConnectedUEs.append([])
-				fullMessage += self.X2_Status(0, self.testCase_id + '_pre_ho.json') 
-
-				msg = "Activating the X2 Net control on each eNB"
-				logging.debug(msg)
-				fullMessage += msg + '\n'
-				eNB_cnt = self.x2NbENBs
-				cnt = 0
-				while cnt < eNB_cnt:
-					cmd = "curl -XPOST http://" + EPC.IPAddress + ":9999/rrc/x2_ho_net_control/enb/" + str(self.x2ENBBsIds[0][cnt]) + "/1"
-					logging.debug(cmd)
-					fullMessage += cmd + '\n'
-					subprocess.run(cmd, shell=True)
-					cnt += 1
-				# Waiting for the activation to be active
-				time.sleep(10)
-				msg = "Switching UE(s) from eNB to eNB"
-				logging.debug(msg)
-				fullMessage += msg + '\n'
-				cnt = 0
-				while cnt < eNB_cnt:
-					ueIdx = 0
-					while ueIdx < len(self.x2ENBConnectedUEs[0][cnt]):
-						cmd = "curl -XPOST http://" + EPC.IPAddress() + ":9999/rrc/ho/senb/" + str(self.x2ENBBsIds[0][cnt]) + "/ue/" + str(self.x2ENBConnectedUEs[0][cnt][ueIdx]) + "/tenb/" + str(self.x2ENBBsIds[0][eNB_cnt - cnt - 1])
-						logging.debug(cmd)
-						fullMessage += cmd + '\n'
-						subprocess.run(cmd, shell=True)
-						ueIdx += 1
-					cnt += 1
-				time.sleep(10)
-				# check
-				logging.debug("Checking the Status after X2 Handover")
-				fullMessage += self.X2_Status(1, self.testCase_id + '_post_ho.json') 
-				cnt = 0
-				x2Status = True
-				while cnt < eNB_cnt:
-					if len(self.x2ENBConnectedUEs[0][cnt]) == len(self.x2ENBConnectedUEs[1][cnt]):
-						x2Status = False
-					cnt += 1
-				if x2Status:
-					msg = "X2 Handover was successful"
-					logging.debug(msg)
-					fullMessage += msg + '</pre>'
-					html_queue.put(fullMessage)
-					HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
-				else:
-					msg = "X2 Handover FAILED"
-					logging.error(msg)
-					fullMessage += msg + '</pre>'
-					html_queue.put(fullMessage)
-					HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
-			else:
-				HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
+			HTML.CreateHtmlTestRow('Cannot perform requested X2 Handover', 'KO', CONST.ALL_PROCESSES_OK)
 
 	def LogCollectBuild(self,RAN):
 		# Some pipelines are using "none" IP / Credentials

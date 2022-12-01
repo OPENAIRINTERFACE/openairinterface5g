@@ -50,7 +50,6 @@ CPU Freq is 3.092986
 [0m[0m[TMR]   Starting itti queue: TASK_GNB_APP as task 23
 [0m[0m[TMR]   Starting itti queue: TASK_MCE_APP as task 24
 [0m[0m[TMR]   Starting itti queue: TASK_MME_APP as task 25
-[0m[0m[TMR]   Starting itti queue: TASK_FLEXRAN_AGENT as task 26
 [0m[0m[TMR]   Starting itti queue: TASK_PHY_UE as task 27
 [0m[0m[TMR]   Starting itti queue: TASK_MAC_UE as task 28
 [0m[0m[TMR]   Starting itti queue: TASK_RLC_UE as task 29

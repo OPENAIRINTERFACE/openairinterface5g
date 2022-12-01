@@ -144,8 +144,7 @@ runs tests:
 triggers pipelines:
 - [eNB-CI-FDD-Band7-B210](https://open5glab.eurecom.fr:8083/jenkins/job/eNB-CI-FDD-Band7-B210/)
   - hutch + B210, nano w/ ltebox + 2x UE
-  - tests T tracer, information through FlexRAN, RRC inactivity timers,
-    inactivity timers + FlexRAN, different bandwidths
+  - tests T tracer, RRC inactivity timers, different bandwidths
 - [eNB-CI-IF4p5-FDD-Band7-B210](https://open5glab.eurecom.fr:8083/jenkins/job/eNB-CI-IF4p5-FDD-Band7-B210/)
   - hutch + B210, nano w/ ltebox + 2x UE
   - tests IF4.5 split over bandwidths 5, 10, 20 MHz in Band 7

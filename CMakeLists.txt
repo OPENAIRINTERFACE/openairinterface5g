@@ -145,11 +145,7 @@ endif()
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
-set (OPENAIR_DIR     $ENV{OPENAIR_DIR})
-if("${OPENAIR_DIR}" STREQUAL "")
-  string(REGEX REPLACE "/cmake_targets.*$" "" OPENAIR_DIR ${CMAKE_CURRENT_BINARY_DIR})
-endif()
-
+set (OPENAIR_DIR     ${CMAKE_SOURCE_DIR})
 set (NFAPI_DIR       ${OPENAIR_DIR}/nfapi/open-nFAPI)
 set (NFAPI_USER_DIR  ${OPENAIR_DIR}/nfapi/oai_integration)
 set (OPENAIR1_DIR    ${OPENAIR_DIR}/openair1)
@@ -373,9 +369,6 @@ endif()
 # New C code source file, cmake must be re-run (instead of re-running make only)
 #############
 set(asn1_generated_dir ${OPENAIR_BIN_DIR})
-
-set(protoc_call "${OPENAIR_CMAKE}/tools/generate_protobuf")
-set(protobuf_generated_dir ${OPENAIR_BIN_DIR})
 
 # RRC
 ######
@@ -1067,179 +1060,6 @@ include_directories("${OPENAIR2_DIR}/UTIL/OPT")
 include_directories("${OPENAIR2_DIR}/UTIL/OMV")
 include_directories("${OPENAIR2_DIR}/RRC/LTE/MESSAGES")
 include_directories("${OPENAIR_DIR}")
-
-# flexran
-################
-# Make lfds as a own source code (even if it is a outside library)
-# only user: Flexran, please don't use lfds in any other component
-###################################################################
-
-set(lfds7 ${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/src/)
-file(GLOB lfds7_queue ${lfds7}/lfds700_queue/*.c)
-file(GLOB lfds7_ring ${lfds7}/lfds700_ringbuffer/*.c)
-file(GLOB lfds7_qbss ${lfds7}/lfds700_queue_bounded_singleconsumer_singleproducer/*.c)
-file(GLOB lfds7_stack ${lfds7}/lfds700_stack/*.c)
-file(GLOB lfds7_freelist ${lfds7}/lfds700_freelist/*.c)
-file(GLOB lfds7_btree ${lfds7}/lfds700_btree_addonly_unbalanced/*.c)
-file(GLOB lfds7_hash ${lfds7}/lfds700_hash_addonly/*.c)
-file(GLOB lfds7_ordered_list ${lfds7}/lfds700_list_addonly_ordered_singlylinked/*.c)
-file(GLOB lfds7_unordered_list ${lfds7}/lfds700_list_addonly_singlylinked_unordered/*.c)
-file(GLOB lfds7_misc ${lfds7}/lfds700_misc/*.c)
-
-add_library(LFDS7
-  ${lfds7_queue} ${lfds7_ring} ${lfds7_qbss} ${lfds7_stack} ${lfds7_freelist} ${lfds7_btree} ${lfds7_hash} ${lfds7_ordered_list} ${lfds7_unordered_list} ${lfds7_misc}
-)
-
-target_include_directories(LFDS7 PRIVATE "${lfds7}")
-# set the version of protobuf messages, V3 not supported yet
-add_list1_option(FLPT_VERSION V2 "FLPT MSG  protobuf  grammar version" V2 V3)
-
-if (${FLPT_VERSION} STREQUAL "V2")
-  set (FLPTDIR V2)
-elseif (${FLPT_VERSION} STREQUAL "V3")
-  set (FLPTDIR V3)
-endif(${FLPT_VERSION} STREQUAL "V2")
-
-set(FLPT_MSG_DIR ${OPENAIR2_DIR}/ENB_APP/MESSAGES/${FLPTDIR} )
-set(FLPT_MSG_FILES
-  ${FLPT_MSG_DIR}/header.proto
-  ${FLPT_MSG_DIR}/flexran.proto
-  ${FLPT_MSG_DIR}/stats_common.proto
-  ${FLPT_MSG_DIR}/stats_messages.proto
-  ${FLPT_MSG_DIR}/time_common.proto
-  ${FLPT_MSG_DIR}/controller_commands.proto
-  ${FLPT_MSG_DIR}/mac_primitives.proto
-  ${FLPT_MSG_DIR}/config_messages.proto
-  ${FLPT_MSG_DIR}/config_common.proto
-  ${FLPT_MSG_DIR}/control_delegation.proto
-  )
-
-set(FLPT_C_DIR ${protobuf_generated_dir}/FLPT_${FLPTDIR})
-#message("calling protoc_call=${protoc_call} FLPT_C_DIR=${FLPT_C_DIR} FLPT_MSG_FILES=${FLPT_MSG_FILES}")
-execute_process(COMMAND ${protoc_call} ${FLPT_C_DIR} ${FLPT_MSG_DIR} ${FLPT_MSG_FILES})
-file(GLOB FLPT_source ${FLPT_C_DIR}/*.c)
-set(FLPT_OAI_generated
-  ${FLPT_C_DIR}/header.pb-c.c
-  ${FLPT_C_DIR}/flexran.pb-c.c
-  ${FLPT_C_DIR}/stats_common.pb-c.c
-  ${FLPT_C_DIR}/stats_messages.pb-c.c
-  ${FLPT_C_DIR}/time_common.pb-c.c
-  ${FLPT_C_DIR}/controller_commands.pb-c.c
-  ${FLPT_C_DIR}/mac_primitives.pb-c.c
-  ${FLPT_C_DIR}/config_messages.pb-c.c
-  ${FLPT_C_DIR}/config_common.pb-c.c
-  ${FLPT_C_DIR}/control_delegation.pb-c.c
-  )
-
-file(GLOB flpt_h ${FLPT_C_DIR}/*.h)
-set(flpt_h ${flpt_h} )
-
-add_library(FLPT_MSG
-  ${FLPT_OAI_generated}
-  ${FLPT_source}
-  )
-target_link_libraries(FLPT_MSG LFDS7)
-add_dependencies(FLPT_MSG LFDS7)
-
-set(FLPT_MSG_LIB FLPT_MSG)
-#message("prpt c dir is : ${FLPT_C_DIR}")
-include_directories (${FLPT_C_DIR})
-
-add_library(ASYNC_IF
-  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/socket_link.c
-  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/link_manager.c
-  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/message_queue.c
-  ${OPENAIR2_DIR}/UTIL/ASYNC_IF/ringbuffer_queue.c
-  )
-set(ASYNC_IF_LIB ASYNC_IF)
-target_include_directories(ASYNC_IF PRIVATE "${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
-include_directories(${OPENAIR2_DIR}/UTIL/ASYNC_IF)
-
-add_library(FLEXRAN_AGENT
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_handler.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_timer.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_common_internal.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PHY/flexran_agent_phy.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/RRC/flexran_agent_rrc_internal.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/PDCP/flexran_agent_pdcp.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/S1AP/flexran_agent_s1ap.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_task_manager.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_net_comm.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_async.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_internal.c
-  ${OPENAIR2_DIR}/ENB_APP/CONTROL_MODULES/MAC/flexran_agent_mac_slice_verification.c
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_app.c
-  )
-add_dependencies(FLEXRAN_AGENT rrc_flag ASYNC_IF)
-target_link_libraries(FLEXRAN_AGENT ASYNC_IF LFDS7)
-target_include_directories(FLEXRAN_AGENT PRIVATE "${OPENAIR2_DIR}/UTIL/LFDS/liblfds7.0.0/liblfds700/inc")
-set(FLEXRAN_AGENT_LIB FLEXRAN_AGENT)
-add_library(flapp_sample SHARED
-  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/sample.c
-)
-set_target_properties(flapp_sample PROPERTIES C_VISIBILITY_PRESET hidden)
-add_library(flapp_imsi SHARED
-  ${OPENAIR2_DIR}/ENB_APP/flexran_apps/imsi.c
-)
-set_target_properties(flapp_imsi PROPERTIES C_VISIBILITY_PRESET hidden)
-add_custom_target(flapp_all DEPENDS
-  flapp_sample
-  flapp_imsi
-)
-#include_directories(${OPENAIR2_DIR}/ENB_APP)
-
-set(PROTOBUF_LIB "protobuf-c")
-
-FIND_PATH(LIBYAML_INCLUDE_DIR NAMES yaml.h)
-FIND_LIBRARY(LIBYAML_LIBRARIES NAMES yaml libyaml)
-
-INCLUDE(FindPackageHandleStandardArgs)
-FIND_PACKAGE_HANDLE_STANDARD_ARGS(Yaml DEFAULT_MSG LIBYAML_LIBRARIES LIBYAML_INCLUDE_DIR)
-MARK_AS_ADVANCED(LIBYAML_INCLUDE_DIR LIBYAML_LIBRARIES)
-
-#set(PROTOBUF_LIB "protobuf") #for Cpp
-
-# set the version of protobuf messages, V3 not supported yet
-add_list1_option(FSPT_VERSION V2 "FSPT MSG  protobuf  grammar version" V2 V3)
-
-if (${FSPT_VERSION} STREQUAL "V2")
-  set (FSPTDIR V2)
-elseif (${FSPT_VERSION} STREQUAL "V3")
-  set (FSPTDIR V3)
-endif(${FSPT_VERSION} STREQUAL "V2")
-
-set(FSPT_MSG_DIR ${OPENAIR_DIR}/targets/COMMON/MESSAGES/${FSPTDIR} )
-set(FSPT_MSG_FILES
-  ${FSPT_MSG_DIR}/flexsplit.proto
-  )
-
-set(FSPT_C_DIR ${protobuf_generated_dir}/FSPT_${FSPTDIR})
-message("calling protoc_call=${protoc_call} FSPT_C_DIR=${FSPT_C_DIR} FSPT_MSG_DIR=${FSPT_MSG_DIR} FSPT_MSG_FILES=${FSPT_MSG_FILES}")
-execute_process(COMMAND ${protoc_call} ${FSPT_C_DIR} ${FSPT_MSG_DIR} ${FSPT_MSG_FILES})
-file(GLOB FSPT_source ${FSPT_C_DIR}/*.c)
-set(FSPT_OAI_generated
-  ${FSPT_C_DIR}/flexsplit.pb-c.c
-  )
-
-file(GLOB fspt_h ${FSPT_C_DIR}/*.h)
-set(fspt_h ${fspt_h} )
-
-add_library(FSPT_MSG
-  ${FSPT_OAI_generated}
-  ${FSPT_source}
-  )
-set(FSPT_MSG_LIB FSPT_MSG)
-message("fspt c dir is : ${FSPT_C_DIR}")
-include_directories (${FSPT_C_DIR})
-
-set(PROTOBUF_LIB "protobuf-c")
-
-#set(PROTOBUF_LIB "protobuf") #for Cpp
 
 ###########
 # Utilities
@@ -2660,11 +2480,11 @@ target_link_libraries (lte-softmodem
   -Wl,--start-group
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U F1AP_LIB F1AP SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB} ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES})
+target_link_libraries (lte-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS})
 target_link_libraries (lte-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-softmodem ${T_LIB})
 
@@ -2700,9 +2520,9 @@ target_link_libraries (ocp-enb
 
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB X2AP_LIB X2AP_ENB M3AP_LIB M3AP_ENB GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU_COMMON
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB}  ${FLEXRAN_AGENT_LIB} ${FSPT_MSG_LIB}
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
-target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
+target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${LIB_LMS_LIBRARIES} ${T_LIB})
 
 add_executable(oairu
   ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
@@ -2758,11 +2578,11 @@ target_link_libraries (lte-uesoftmodem
   RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU_COMMON SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${FLPT_MSG_LIB}  ${ATLAS_LIBRARIES}
+  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
 target_link_libraries (lte-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (lte-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (lte-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (lte-uesoftmodem ${T_LIB})
 
@@ -2791,19 +2611,18 @@ add_executable(nr-softmodem
   ${XFORMSINTERFACE_SOURCE}
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
-  ${OPENAIR2_DIR}/ENB_APP/flexran_agent_ran_api_to_fix.c
   )
 
 target_link_libraries (nr-softmodem
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
-  ITTI ${FLPT_MSG_LIB} ${FLEXRAN_AGENT_LIB} ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
+  ITTI ${RAL_LIB} ${NAS_UE_LIB} RRC_LIB NR_RRC_LIB
   NGAP_LIB NGAP_GNB S1AP_LIB S1AP_ENB L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB
-  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB ${FSPT_MSG_LIB}
+  X2AP_LIB X2AP_ENB F1AP_LIB F1AP M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-softmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (nr-softmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp  ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries (nr-softmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-softmodem ${T_LIB})
 
@@ -2846,7 +2665,7 @@ target_link_libraries (nr-uesoftmodem
   -Wl,--end-group z dl)
 
 target_link_libraries (nr-uesoftmodem ${LIBXML2_LIBRARIES})
-target_link_libraries (nr-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries (nr-uesoftmodem pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${LIB_LMS_LIBRARIES})
 target_link_libraries (nr-uesoftmodem ${T_LIB})
 
@@ -3085,7 +2904,7 @@ if (${T_TRACER})
         #all "add_library" definitions
         ITTI RRC_LIB NR_RRC_LIB S1AP_LIB S1AP_ENB X2AP_LIB X2AP_ENB M2AP_LIB M2AP_ENB M3AP_LIB M3AP_ENB F1AP_LIB F1AP
         params_libconfig oai_usrpdevif oai_bladerfdevif oai_lmssdrdevif oai_iqplayer
-        oai_eth_transpro oai_mobipass coding FLPT_MSG FLEXRAN_AGENT HASHTABLE UTIL OMG_SUMO
+        oai_eth_transpro oai_mobipass coding HASHTABLE UTIL OMG_SUMO
         SECU_OSA SECU_CN SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX

@@ -796,7 +796,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 			logging.error('requested test is invalidly formatted: ' + test)
 			sys.exit(1)
 	if (EPC.IPAddress != '') and (EPC.IPAddress != 'none'):
-		CiTestObj.CheckFlexranCtrlInstallation(RAN,EPC,CONTAINERS)
 		EPC.SetMmeIPAddress()
 		EPC.SetAmfIPAddress()
 
@@ -943,10 +942,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					EPC.DeployEpc(HTML)
 				elif action == 'Undeploy_EPC':
 					EPC.UndeployEpc(HTML)
-				elif action == 'Initialize_FlexranCtrl':
-					CiTestObj.InitializeFlexranCtrl(HTML,RAN,EPC)
-				elif action == 'Terminate_FlexranCtrl':
-					CiTestObj.TerminateFlexranCtrl(HTML,RAN,EPC)
 				elif action == 'IdleSleep':
 					CiTestObj.IdleSleep(HTML)
 				elif action == 'Perform_X2_Handover':
@@ -1013,7 +1008,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'IperfFromContainer':
-					CONTAINERS.IperfFromContainer(HTML, RAN)
+					CONTAINERS.IperfFromContainer(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'StatsFromGenObject':

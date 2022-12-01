@@ -53,7 +53,7 @@ function details_table {
     echo "        <th>Message</th>" >> $3
     echo "      </tr>" >> $3
 
-    LIST_MESSAGES=`egrep "error:|warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto|disabling jobserver mode"`
+    LIST_MESSAGES=`egrep "error:|warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|disabling jobserver mode"`
     COMPLETE_MESSAGE="start"
     for MESSAGE in $LIST_MESSAGES
     do
@@ -146,7 +146,7 @@ function summary_table_row {
         else
             echo "        <td bgcolor = \"red\" >$NB_ERRORS</th>" >> ./build_results.html
         fi
-        NB_WARNINGS=`egrep "warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|flexran.proto|disabling jobserver mode" | egrep -c "warning:"`
+        NB_WARNINGS=`egrep "warning:" $2 | egrep -v "jobserver unavailable|Clock skew detected.|disabling jobserver mode" | egrep -c "warning:"`
         if [ $NB_WARNINGS -eq 0 ]
         then
             echo "        <td bgcolor = \"green\" >$NB_WARNINGS</th>" >> ./build_results.html
@@ -536,28 +536,6 @@ function report_build {
     fi
 
     echo "   <h2>Ubuntu 16.04 LTS -- Summary</h2>" >> ./build_results.html
-
-    summary_table_header "OAI Build: 4G LTE eNB -- USRP option" ./archives/enb_eth
-    summary_table_row "LTE SoftModem" ./archives/enb_eth/lte-softmodem.txt "Built target lte-softmodem" ./enb_eth_row1.html
-    summary_table_row "Coding" ./archives/enb_eth/coding.txt "Built target coding" ./enb_eth_row2.html
-    summary_table_row "OAI ETHERNET transport" ./archives/enb_eth/oai_eth_transpro.txt "Built target oai_eth_transpro" ./enb_eth_row3.html
-    summary_table_row "Parameters Lib Config" ./archives/enb_eth/params_libconfig.txt "Built target params_libconfig" ./enb_eth_row4.html
-    summary_table_row "RF Simulator" ./archives/enb_eth/rfsimulator.txt "Built target rfsimulator" ./enb_eth_row5.html
-    summary_table_row "OAI USRP device if" ./archives/enb_eth/oai_usrpdevif.txt "Built target oai_usrpdevif" ./enb_eth_row7.html
-    summary_table_footer
-
-    summary_table_header "OAI Build: 4G LTE UE -- USRP option" ./archives/ue_eth
-    summary_table_row "LTE UE SoftModem" ./archives/ue_eth/lte-uesoftmodem.txt "Built target lte-uesoftmodem" ./ue_eth_row1.html
-    summary_table_row "Coding" ./archives/ue_eth/coding.txt "Built target coding" ./ue_eth_row2.html
-    summary_table_row "OAI ETHERNET transport" ./archives/ue_eth/oai_eth_transpro.txt "Built target oai_eth_transpro" ./ue_eth_row3.html
-    summary_table_row "Parameters Lib Config" ./archives/ue_eth/params_libconfig.txt "Built target params_libconfig" ./ue_eth_row4.html
-    summary_table_row "RF Simulator" ./archives/ue_eth/rfsimulator.txt "Built target rfsimulator" ./ue_eth_row5.html
-    summary_table_row "Conf 2 UE Data" ./archives/ue_eth/conf2uedata.txt "Built target conf2uedata" ./ue_eth_row7.html
-    summary_table_row "NVRAM" ./archives/ue_eth/nvram.txt "Built target nvram" ./ue_eth_row8.html
-    summary_table_row "UE IP" ./archives/ue_eth/ue_ip.txt "Built target ue_ip" ./ue_eth_row9.html
-    summary_table_row "USIM" ./archives/ue_eth/usim.txt "Built target usim" ./ue_eth_row9a.html
-    summary_table_row "OAI USRP device if" ./archives/ue_eth/oai_usrpdevif.txt "Built target oai_usrpdevif" ./ue_eth_row9b.html
-    summary_table_footer
 
     if [ -f archives/gnb_usrp/nr-softmodem.txt ]
     then

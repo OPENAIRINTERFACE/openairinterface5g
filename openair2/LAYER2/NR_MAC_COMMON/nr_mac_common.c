@@ -3936,7 +3936,7 @@ uint32_t get_Y(const NR_SearchSpace_t *ss, int slot, rnti_t rnti) {
   if(ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common)
     return 0;
 
-  const int cid = *ss->controlResourceSetId%3;
+  const int cid = *ss->controlResourceSetId % 3;
   const uint32_t A[3] = {39827, 39829, 39839};
   const uint32_t D = 65537;
   uint32_t Y;

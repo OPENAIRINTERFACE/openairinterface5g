@@ -23,6 +23,7 @@
 
 #include "mac_proto.h"
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 #include "NR_RRCSetup.h"
 #include "NR_DL-CCCH-Message.h"
@@ -111,13 +112,10 @@ int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *
   gNB_RRC_INST *rrc = RC.nrrrc[module_id];
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, dl_rrc->rnti);
   gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-  ue_context_p->ue_context.SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
-  ue_context_p->ue_context.masterCellGroup = cellGroup;
+  ue_p->SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
+  ue_p->masterCellGroup = cellGroup;
 
-  /* TODO: this should pass through RLC and NOT the RRC with a shared buffer */
-  AssertFatal(ue_p->Srb0.Active == 1,"SRB0 is not active\n");
-  memcpy(ue_p->Srb0.Tx_buffer.Payload, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-  ue_p->Srb0.Tx_buffer.payload_size = dl_rrc->rrc_container_length;
+  nr_rlc_srb0_recv_sdu(dl_rrc->rnti, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
 
   protocol_ctxt_t ctxt = { .module_id = module_id, .rnti = dl_rrc->rnti };
   nr_rrc_rlc_config_asn1_req(&ctxt,
