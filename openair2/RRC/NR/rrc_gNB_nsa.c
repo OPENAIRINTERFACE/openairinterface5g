@@ -164,7 +164,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
   ue_context_p->ue_context.rb_config = calloc(1,sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
     fill_default_rbconfig(ue_context_p->ue_context.rb_config,
-                          5 /* EPS bearer ID */,
+                          10 /* EPS bearer ID */,
                           1 /* drb ID */,
                           NR_CipheringAlgorithm_nea0,
                           NR_SecurityConfig__keyToUse_master);
