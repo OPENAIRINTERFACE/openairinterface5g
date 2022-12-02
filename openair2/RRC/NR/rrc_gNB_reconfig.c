@@ -237,7 +237,8 @@ void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellco
   if (servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList) {
     pusch_Config = servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup;
   }
-  initialUplinkBWP->pusch_Config = config_pusch(pusch_Config, servingcellconfigcommon);
+  initialUplinkBWP->pusch_Config = config_pusch(pusch_Config,
+                                                servingcellconfigcommon->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder);
 
   long maxMIMO_Layers = servingcellconfigdedicated->uplinkConfig &&
                                 servingcellconfigdedicated->uplinkConfig->pusch_ServingCellConfig &&

@@ -83,7 +83,7 @@
 #define GNB_CONFIG_STRING_PRACHROOTSEQUENCEINDEX                "prach_RootSequenceIndex"                     
 #define GNB_CONFIG_STRING_MSG1SUBCARRIERSPACING                 "msg1_SubcarrierSpacing"                           
 #define GNB_CONFIG_STRING_RESTRICTEDSETCONFIG                   "restrictedSetConfig"
-#define GNB_CONFIG_STRING_MSG3TRANSFPREC                        "msg3_transformPrecoder"
+#define GNB_CONFIG_STRING_TRANSFPREC                            "transformPrecoder"
 #define GNB_CONFIG_STRING_PUSCHTIMEDOMAINALLOCATIONLIST         "puschTimeDomainAllocationList"
 #define GNB_CONFIG_STRING_MSG3DELTAPREABMLE                     "msg3_DeltaPreamble"
 #define GNB_CONFIG_STRING_P0NOMINALWITHGRANT                    "p0_NominalWithGrant"
@@ -212,7 +212,7 @@
 {GNB_CONFIG_STRING_PRACHROOTSEQUENCEINDEXPR,NULL,0,.uptr=&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present,.defuintval=NR_RACH_ConfigCommon__prach_RootSequenceIndex_PR_l139,TYPE_UINT,0/*83*/},\
 {GNB_CONFIG_STRING_PRACHROOTSEQUENCEINDEX,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.choice.l139,.defint64val=0,TYPE_INT64,0/*84*/},\
 {GNB_CONFIG_STRING_RESTRICTEDSETCONFIG,NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->restrictedSetConfig,.defintval=NR_RACH_ConfigCommon__restrictedSetConfig_unrestrictedSet,TYPE_INT64,0/*85*/}, \
-{GNB_CONFIG_STRING_MSG3TRANSFPREC,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder,.defintval=1,TYPE_INT64,0/*86*/}, \
+{GNB_CONFIG_STRING_TRANSFPREC,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder,.defintval=1,TYPE_INT64,0/*86*/}, \
 {GNB_CONFIG_STRING_MSG3DELTAPREABMLE, NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble,.defint64val=1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_P0NOMINALWITHGRANT, NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant,.defint64val=1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_PUCCHGROUPHOPPING, NULL,0,.i64ptr=&scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping,.defint64val=NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither,TYPE_INT64,0},\
@@ -234,6 +234,7 @@
 {GNB_CONFIG_STRING_NROFUPLINKSYMBOLS2,NULL,0,.i64ptr=&scc->tdd_UL_DL_ConfigurationCommon->pattern2->nrofUplinkSymbols,.defint64val=-1,TYPE_INT64,0},\
 {GNB_CONFIG_STRING_SSPBCHBLOCKPOWER,NULL,0,.i64ptr=&scc->ss_PBCH_BlockPower,.defint64val=20,TYPE_INT64,0}, \
 {GNB_CONFIG_STRING_MSG1SUBCARRIERSPACING,NULL,0,.i64ptr=scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg1_SubcarrierSpacing,.defintval=-1,TYPE_INT64,0}}
+
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     Serving Cell Config Dedicated configuration parameters                                                                                                     */
