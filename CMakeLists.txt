@@ -362,20 +362,6 @@ endif()
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
 ##################################################
-# this custom target regroups all ASN.1 generation/compilation targets
-# add_custom_target is always considered out-of-date, and will always force the
-# generation of all ASN.1 definitions
-add_custom_target(asn1)
-add_dependencies(asn1
-                 asn1_lte_rrc
-                 asn1_nr_rrc
-                 asn1_s1ap
-                 asn1_ngap
-                 asn1_m2ap
-                 asn1_m3ap
-                 asn1_x2ap
-                 asn1_f1ap
-                 asn1_lpp)
 
 # RRC
 ######
@@ -2379,6 +2365,10 @@ target_link_libraries(oairu PRIVATE
 target_link_libraries(oairu PRIVATE pthread m CONFIG_LIB rt ${CMAKE_DL_LIBS} ${T_LIB})
 target_link_libraries(oairu PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
+# force the generation of ASN.1 so that we don't need to wait during the build
+target_link_libraries(lte-softmodem PRIVATE
+                      asn1_lte_rrc asn1_s1ap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap)
+
 
 # lte-uesoftmodem is  UE implementation
 #######################################
@@ -2419,6 +2409,10 @@ target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CR
 target_link_libraries(lte-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+
+# force the generation of ASN.1 so that we don't need to wait during the build
+target_link_libraries(lte-uesoftmodem PRIVATE
+                      asn1_lte_rrc asn1_s1ap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap)
 
 # nr-softmodem
 ###################################################
@@ -2467,6 +2461,10 @@ if(T1_OFFLOAD_FOUND)
 add_dependencies( nr-softmodem ldpc_offload)
 endif ()
 
+# force the generation of ASN.1 so that we don't need to wait during the build
+target_link_libraries(nr-softmodem PRIVATE
+                      asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
+
 # nr-uesoftmodem is  UE implementation
 #######################################
 
@@ -2510,6 +2508,10 @@ if (CUDA_FOUND)
    add_dependencies( nr-uesoftmodem ldpc_cuda)
    add_dependencies( nr-softmodem ldpc_cuda)
 endif (CUDA_FOUND)
+
+# force the generation of ASN.1 so that we don't need to wait during the build
+target_link_libraries(nr-uesoftmodem PRIVATE
+                      asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
 
 ###################################"
 # Addexecutables for tests
