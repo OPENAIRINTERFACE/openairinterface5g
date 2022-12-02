@@ -1939,7 +1939,8 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
             if ((ue_context_p = rrc_gNB_ue_context_5g_s_tmsi_exist(RC.nrrrc[ctxt_pP->module_id], s_tmsi_part1))) {
               LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, ue_context_p %p, old rnti %x => %x\n",ue_context_p, ue_context_p->ue_context.rnti, ctxt_pP->rnti);
 
-              nr_rrc_mac_remove_ue(ctxt_pP->module_id, ue_context_p->ue_context.rnti);
+              gNB_MAC_INST *nrmac=RC.nrmac[ctxt_pP->module_id]; //WHAT A BEAUTIFULL RACE CONDITION !!!
+              mac_remove_nr_ue(nrmac, ue_context_p->ue_context.rnti);
 
               /* replace rnti in the context */
               /* for that, remove the context from the RB tree */
