@@ -217,6 +217,7 @@ void nr_csi_meas_reporting(int Mod_idP,
       if ((sched_frame*n_slots_frame + sched_slot - offset)%period != 0)
         continue;
 
+      AssertFatal(is_xlsch_in_slot(RC.nrmac[Mod_idP]->ulsch_slot_bitmap[sched_slot / 64], sched_slot), "CSI reporting slot %d is not set for an uplink slot\n", sched_slot);
       LOG_D(NR_MAC, "CSI reporting in frame %d slot %d CSI report ID %ld\n", sched_frame, sched_slot, csirep->reportConfigId);
 
       const NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1

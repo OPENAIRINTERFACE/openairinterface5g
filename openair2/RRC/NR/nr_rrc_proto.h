@@ -31,6 +31,9 @@
  *  @{
  */
 
+#ifndef __NR_RRC_PROTO_H__
+#define __NR_RRC_PROTO_H__
+
 #include "RRC/NR/nr_rrc_defs.h"
 #include "NR_RRCReconfiguration.h"
 #include "NR_UE-NR-Capability.h"
@@ -39,6 +42,8 @@
 #include "NR_CG-Config.h"
 #include "NR_CG-ConfigInfo.h"
 #include "NR_SecurityConfig.h"
+
+#define NR_MAX_SUPPORTED_DL_LAYERS 2
 
 int rrc_init_nr_global_param(void);
 
@@ -217,3 +222,5 @@ bool nr_rrc_pdcp_config_asn1_req(const protocol_ctxt_t *const  ctxt_pP,
                                  LTE_PMCH_InfoList_r9_t   *pmch_InfoList_r9,
                                  rb_id_t                  *const defaultDRB,
                                  struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
+
+#endif
