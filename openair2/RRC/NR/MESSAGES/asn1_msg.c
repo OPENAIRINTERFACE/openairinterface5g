@@ -984,8 +984,7 @@ void fill_initial_SpCellConfig(int uid,
     pucchcsires1->uplinkBandwidthPartId=bwp_id;
     pucchcsires1->pucch_Resource=2;
 
-    if(configuration->do_CSIRS) {
-
+    if (configuration->do_CSIRS) {
       NR_CSI_ResourceConfig_t *csires0 = calloc(1,sizeof(*csires0));
       csires0->csi_ResourceConfigId = bwp_id;
       csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
@@ -1000,7 +999,6 @@ void fill_initial_SpCellConfig(int uid,
     }
 
     if (configuration->do_CSIRS && pdsch_AntennaPorts > 1) {
-
       NR_CSI_ResourceConfig_t *csires2 = calloc(1,sizeof(*csires2));
       csires2->csi_ResourceConfigId = bwp_id+10;
       csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
@@ -1012,21 +1010,9 @@ void fill_initial_SpCellConfig(int uid,
       csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
       ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
 
-      config_csi_meas_report(csi_MeasConfig,
-                             scc,
-                             pucchcsires1,
-                             pdsch_Config,
-                             &configuration->pdsch_AntennaPorts,
-                             NR_MAX_SUPPORTED_DL_LAYERS,
-                             bwp_id,
-                             uid);
+      config_csi_meas_report(csi_MeasConfig, scc, pucchcsires1, pdsch_Config, &configuration->pdsch_AntennaPorts, NR_MAX_SUPPORTED_DL_LAYERS, bwp_id, uid);
     }
-    config_rsrp_meas_report(csi_MeasConfig,
-                            scc,
-                            pucchcsires1,
-                            configuration->do_CSIRS,
-                            bwp_id+10,
-                            uid);
+    config_rsrp_meas_report(csi_MeasConfig, scc, pucchcsires1, configuration->do_CSIRS, bwp_id + 10, uid);
   }
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
