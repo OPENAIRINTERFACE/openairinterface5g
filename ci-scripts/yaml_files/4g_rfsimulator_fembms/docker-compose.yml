@@ -12,7 +12,7 @@ services:
             TZ: Europe/Paris
             USE_VOLUMED_CONF: 'yes'
             RFSIMULATOR: enb
-            USE_ADDITIONAL_OPTIONS: --rfsim --noS1 --eNBs.[0].component_carriers.[0].mbms_dedicated_serving_cell ENABLE --MCEs.[0].mbms_sched_info.mbms_area_config_list.[0].pmch_config_list.[0].allocated_sf_end 512 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --rfsim --noS1 --eNBs.[0].component_carriers.[0].mbms_dedicated_serving_cell ENABLE --log_config.global_log_options level,nocolor,time
         volumes:
             - ../../conf_files/enb.band7.tm1.25PRB.rfsim.mbms.conf:/opt/oai-enb/etc/mounted.conf
         healthcheck:
