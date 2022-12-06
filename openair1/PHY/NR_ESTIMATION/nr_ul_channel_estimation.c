@@ -108,7 +108,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu) {
   c16_t pilot[3280] __attribute__((aligned(16)));
-  int16_t *fl,*fm,*fr,*fml,*fmr,*fmm,*fdcl,*fdcr,*fdclh,*fdcrh;
+  int16_t *fdcl, *fdcr, *fdclh, *fdcrh;
 
   const int chest_freq = gNB->chest_freq;
 
@@ -139,12 +139,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   switch (nushift) {
     case 0:
-      fl = filt8_l0;
-      fm = filt8_m0;
-      fr = filt8_r0;
-      fmm = filt8_mm0;
-      fml = filt8_m0;
-      fmr = filt8_mr0;
       fdcl = filt8_dcl0;
       fdcr = filt8_dcr0;
       fdclh = filt8_dcl0_h;
@@ -152,12 +146,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       break;
 
     case 1:
-      fl = filt8_l1;
-      fm = filt8_m1;
-      fr = filt8_r1;
-      fmm = filt8_mm1;
-      fml = filt8_ml1;
-      fmr = filt8_mm1;
       fdcl = filt8_dcl1;
       fdcr = filt8_dcr1;
       fdclh = filt8_dcl1_h;
@@ -256,19 +244,16 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #endif
 
           if (pilot_cnt == 0) {
-            c16multaddVectRealComplex(fl, &ch16, ul_ch, 8);
-          } else if (pilot_cnt == 1) {
-            c16multaddVectRealComplex(fml, &ch16, ul_ch, 8);
-          } else if (pilot_cnt == (6*nb_rb_pusch-2)) {
-            c16multaddVectRealComplex(fmr, &ch16, ul_ch, 8);
-            ul_ch+=4;
-          } else if (pilot_cnt == (6*nb_rb_pusch-1)) {
-            c16multaddVectRealComplex(fr, &ch16, ul_ch, 8);
-          } else if (pilot_cnt%2 == 0) {
-            c16multaddVectRealComplex(fmm, &ch16, ul_ch, 8);
-            ul_ch+=4;
+            c16multaddVectRealComplex(filt16_ul_p0, &ch16, ul_ch, 16);
+          } else if (pilot_cnt == 1 || pilot_cnt == 2) {
+            c16multaddVectRealComplex(filt16_ul_p1p2, &ch16, ul_ch, 16);
+          } else if (pilot_cnt == (6 * nb_rb_pusch - 1)) {
+            c16multaddVectRealComplex(filt16_ul_last, &ch16, ul_ch, 16);
           } else {
-            c16multaddVectRealComplex(fm, &ch16, ul_ch, 8);
+            c16multaddVectRealComplex(filt16_ul_middle, &ch16, ul_ch, 16);
+            if (pilot_cnt % 2 == 0) {
+              ul_ch += 4;
+            }
           }
 
           pilot_cnt++;
