@@ -567,6 +567,11 @@ bool nr_find_nb_rb(uint16_t Qm,
     while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
           !multiple_2_3_5(p))
       p++;
+
+    // If by increasing p for transform precoding we already hit the high, break to avoid infinite loop
+    if (p == hi)
+      break;
+
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
       hi = p;

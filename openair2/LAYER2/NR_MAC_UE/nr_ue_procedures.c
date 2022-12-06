@@ -1295,9 +1295,11 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     NR_PUSCH_Config_t *pusch_Config = current_UL_BWP ? current_UL_BWP->pusch_Config : NULL;
     if (pusch_Config) {
       pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
-      if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+      if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL &&
+          pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled != NULL)
         id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-      else if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+      else if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL &&
+               pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled != NULL)
         id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
     }
 
