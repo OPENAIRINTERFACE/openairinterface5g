@@ -82,21 +82,6 @@ function(make_version VERSION_VALUE)
   set(${VERSION_VALUE} "${RESULT}" PARENT_SCOPE)
 endfunction()
 
-macro(compile_asn1 asn1Source asn1cCmd ResultFlag)
-   # Warning: if you modify ASN.1 source file to generate new C files, cmake should be re-run instead of make
-   execute_process(COMMAND ${asn1cCmd}  ${asn1Source} RESULT_VARIABLE ret)
-
-   if (NOT ${ret} STREQUAL 0)
-      message(FATAL_ERROR "${ret}: error")
-   endif (NOT ${ret} STREQUAL 0)
-
-   add_custom_target (
-     ${ResultFlag} ALL
-     ${asn1cCmd} ${asn1Source}
-     DEPENDS ${asn1Source}
-   )
-endmacro(compile_asn1)
-
 macro(eval_boolean VARIABLE)
   if(${ARGN})
     set(${VARIABLE} ON)
