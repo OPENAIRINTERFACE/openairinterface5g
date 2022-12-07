@@ -419,7 +419,7 @@ int main(int argc, char **argv)
 
   nr_phy_config_request_sim(gNB, N_RB_UL, N_RB_UL, mu, Nid_cell, SSB_positions);
 
-  phy_init_nr_gNB(gNB, 0, 1); //lowmem
+  phy_init_nr_gNB(gNB);
 
   //configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));

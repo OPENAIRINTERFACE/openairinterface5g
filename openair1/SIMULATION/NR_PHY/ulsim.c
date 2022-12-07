@@ -778,7 +778,7 @@ int main(int argc, char **argv)
   gNB->chest_freq = chest_type[0];
   gNB->chest_time = chest_type[1];
 
-  phy_init_nr_gNB(gNB,0,1);
+  phy_init_nr_gNB(gNB);
   /* RU handles rxdataF, and gNB just has a pointer. Here, we don't have an RU,
    * so we need to allocate that memory as well. */
   for (i = 0; i < n_rx; i++)

@@ -673,7 +673,7 @@ int main(int argc, char **argv){
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
   RC.nb_nr_L1_inst=1;
-  phy_init_nr_gNB(gNB,0,1); //lowmem
+  phy_init_nr_gNB(gNB);
   nr_phy_init_RU(ru);
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);
 
