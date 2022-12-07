@@ -108,8 +108,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 }
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
-  if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
-  return (bitmap >> slot) & 0x01;
+  return (bitmap >> (slot % 64)) & 0x01;
 }
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
