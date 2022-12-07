@@ -3669,7 +3669,7 @@ class OaiCiTest():
 	def LogCollectPing(self,EPC):
 		# Some pipelines are using "none" IP / Credentials
 		# In that case, just forget about it
-		if self.IPAddress == 'none':
+		if EPC.IPAddress == 'none':
 			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
@@ -3683,7 +3683,7 @@ class OaiCiTest():
 	def LogCollectIperf(self,EPC):
 		# Some pipelines are using "none" IP / Credentials
 		# In that case, just forget about it
-		if self.IPAddress == 'none':
+		if EPC.IPAddress == 'none':
 			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
