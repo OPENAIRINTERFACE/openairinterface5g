@@ -135,7 +135,7 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
   const uint64_t dl_freq_khz = downlink_frequency / 1000;
   const int32_t  delta_duplex_khz = delta_duplex / 1000;
 
-  uint64_t center_freq_diff_khz = 999999999999999999; // 2^64
+  uint64_t center_freq_diff_khz = UINT64_MAX; // 2^64
   uint16_t current_band = 0;
 
   for (int ind = 0; ind < sizeofArray(nr_bandtable); ind++) {

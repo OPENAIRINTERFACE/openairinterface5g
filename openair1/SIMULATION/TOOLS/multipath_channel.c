@@ -29,6 +29,7 @@
 #include "sim.h"
 
 //#define DEBUG_CH
+//#define DOPPLER_DEBUG
 
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc)
 {
@@ -201,11 +202,16 @@ void __attribute__ ((no_sanitize_address)) multipath_channel(channel_desc_t *des
   }
 #endif
 
+  struct complexd cexp_doppler[length];
+  if (desc->max_Doppler != 0.0) {
+    get_cexp_doppler(cexp_doppler, desc, length);
+  }
+
   for (int i=0; i<((int)length-dd); i++) {
     for (int ii=0; ii<desc->nb_rx; ii++) {
       struct complexd rx_tmp={0};
       for (int j=0; j<desc->nb_tx; j++) {
-        struct complexd *chan=desc->ch[ii+(j*desc->nb_rx)];        
+        struct complexd *chan=desc->ch[ii+(j*desc->nb_rx)];
         for (int l = 0; l<(int)desc->channel_length; l++) {
           if ((i>=0) && (i-l)>=0) {
             struct complexd tx;
@@ -215,13 +221,22 @@ void __attribute__ ((no_sanitize_address)) multipath_channel(channel_desc_t *des
             rx_tmp.i += (tx.i * chan[l].r) + (tx.r * chan[l].i);
           }
           if (i==0 && log_channel == 1) {
-	           printf("channel[%d][%d][%d] = %f dB \t(%e, %e)\n",
-                    ii, j, l, 10*log10(pow(chan[l].r,2.0)+pow(chan[l].i,2.0)),
-		         chan[l].r,
-		         chan[l].i);
+            printf("channel[%d][%d][%d] = %f dB \t(%e, %e)\n",
+                   ii, j, l, 10 * log10(pow(chan[l].r, 2.0) + pow(chan[l].i, 2.0)), chan[l].r, chan[l].i);
 	        }
         } //l
       }  // j
+
+      if (desc->max_Doppler != 0.0)
+        rx_tmp = cdMul(rx_tmp, cexp_doppler[i]);
+
+#ifdef DOPPLER_DEBUG
+      printf("[k %2i] cexp_doppler = (%7.4f, %7.4f), abs(cexp_doppler) = %.4f\n",
+                   i,
+                   cexp_doppler[i].r,
+                   cexp_doppler[i].i,
+                   sqrt(cexp_doppler[i].r * cexp_doppler[i].r + cexp_doppler[i].i * cexp_doppler[i].i));
+#endif
 
       rx_sig_re[ii][i+dd] = rx_tmp.r*path_loss;
       rx_sig_im[ii][i+dd] = rx_tmp.i*path_loss;

@@ -80,6 +80,8 @@ typedef struct {
   struct complexd **chF;
   ///Maximum path delay in mus.
   double Td;
+  ///Carrier center frequency
+  uint64_t center_freq;
   ///Channel bandwidth in MHz.
   double channel_bandwidth;
   ///System sampling rate in Msps.
@@ -315,8 +317,10 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
                                      double sampling_rate,
+                                     uint64_t center_freq,
                                      double channel_bandwidth,
                                      double DS_TDL,
+                                     double maxDoppler,
                                      const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
@@ -344,6 +348,15 @@ void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_i
 \param module_name is the C string to use as model name for the channel pointed by cdesc
 */
 void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
+
+/** \fn void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length)
+\brief This routine generates the complex exponential to apply the Doppler shift
+\param cexp_doppler Output with the complex exponential of Doppler shift
+\param desc Pointer to the channel descriptor
+\param length Size of complex exponential of Doppler shift
+*/
+void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length);
+
 /** \fn void random_channel(channel_desc_t *desc)
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model.
 \param desc Pointer to the channel descriptor
