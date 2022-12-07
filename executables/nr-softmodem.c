@@ -68,7 +68,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/GNB_APP/gnb_app.h>
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-#include "stats.h"
 #include "nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"

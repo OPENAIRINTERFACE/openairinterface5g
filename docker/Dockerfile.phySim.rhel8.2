@@ -101,7 +101,6 @@ WORKDIR /usr/bin/
 COPY --from=phy-sim-build \
     /usr/bin/killall \
     /usr/bin/xmlstarlet \
-    /usr/bin/svn \
     ./
 
 # Copy the relevant configuration files for phySim

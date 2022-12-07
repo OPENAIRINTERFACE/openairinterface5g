@@ -2377,7 +2377,7 @@ target_link_libraries(nr-softmodem PRIVATE
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
+target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2424,7 +2424,7 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${XFORMS_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
+target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2465,7 +2465,7 @@ add_executable(rftest
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${SHLIB_LOADER_SOURCES}
 )
-target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m forms ${T_LIB} )
+target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m ${T_LIB} )
 target_link_libraries(rftest PRIVATE asn1_lte_rrc asn1_nr_rrc)
 
 add_executable(polartest
@@ -2631,14 +2631,13 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${OPENAIR_DIR}/common/utils/lte/ue_power.c
     ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
     ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
-    ${XFORMS_SOURCE}
     ${T_SOURCE}
     ${SHLIB_LOADER_SOURCES}
     ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe} PRIVATE
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
-    pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES}  ${XFORMS_LIBRARIES} ${T_LIB} dl
+    pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES} ${T_LIB} dl
     )
   target_link_libraries(${myExe} PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
