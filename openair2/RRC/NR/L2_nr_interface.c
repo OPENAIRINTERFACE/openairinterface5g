@@ -70,10 +70,6 @@ nr_rrc_data_req(
 )
 //------------------------------------------------------------------------------
 {
-  if(sdu_sizeP == 255) {
-    LOG_D(RRC,"sdu_sizeP == 255");
-    return false;
-  }
 
   MessageDef *message_p;
   // Uses a new buffer to avoid issue with PDCP buffer content that could be changed by PDCP (asynchronous message handling).
