@@ -47,7 +47,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "assertions.h"
 #include "LTE_RRCConnectionRequest.h"
 #include "LTE_UL-CCCH-Message.h"

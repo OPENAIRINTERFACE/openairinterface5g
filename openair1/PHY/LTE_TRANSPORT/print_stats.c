@@ -31,7 +31,7 @@
 */
 
 #include "PHY/LTE_TRANSPORT/proto.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "PHY/defs.h"
 #include "PHY/extern.h"
 #include "SCHED/extern.h"

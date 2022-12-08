@@ -74,7 +74,7 @@
 #include <common/utils/system.h>
 
 #include "intertask_interface.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 

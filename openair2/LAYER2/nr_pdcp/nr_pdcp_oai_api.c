@@ -553,7 +553,7 @@ void pdcp_layer_init(void)
 }
 
 #include "nfapi/oai_integration/vendor_ext.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "openair2/RRC/NAS/nas_config.h"
 
 uint64_t nr_pdcp_module_init(uint64_t _pdcp_optmask, int id)

@@ -25,7 +25,7 @@
 #include <common/utils/LOG/log.h>
 #include <common/utils/system.h>
 #include <common/config/config_userapi.h>
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 #include <openair1/PHY/defs_eNB.h>
 #include <openair1/PHY/phy_extern.h>
 #include <nfapi/oai_integration/vendor_ext.h>

@@ -2527,7 +2527,7 @@ set(XFORMS_SOURCE_NR
   ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_scope.c
   )
 set(XFORMS_SOURCE_SOFTMODEM
-  ${OPENAIR_TARGETS}/RT/USER/stats.c
+  ${OPENAIR_DIR}/executables/stats.c
   )
 set(XFORMSINTERFACE_SOURCE
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
@@ -2631,10 +2631,10 @@ target_link_libraries (test5Gnas LIB_5GNAS_GNB CONFIG_LIB minimal_lib )
 ###################################################
 
 add_executable(lte-softmodem
-  ${OPENAIR_TARGETS}/RT/USER/lte-enb.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/ru_control.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-softmodem.c
+  ${OPENAIR_DIR}/executables/lte-enb.c
+  ${OPENAIR_DIR}/executables/lte-ru.c
+  ${OPENAIR_DIR}/executables/ru_control.c
+  ${OPENAIR_DIR}/executables/lte-softmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
   ${OPENAIR1_DIR}/SIMULATION/TOOLS/taus.c
@@ -2707,8 +2707,8 @@ target_link_libraries (ocp-enb
 target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${PROTOBUF_LIB}  ${CMAKE_DL_LIBS} ${LIBYAML_LIBRARIES} ${LIB_LMS_LIBRARIES} ${T_LIB})
 
 add_executable(oairu
-  ${OPENAIR_TARGETS}/RT/USER/lte-ru.c
-  ${OPENAIR_TARGETS}/RT/USER/ru_control.c
+  ${OPENAIR_DIR}/executables/lte-ru.c
+  ${OPENAIR_DIR}/executables/ru_control.c
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
@@ -2731,8 +2731,8 @@ target_link_libraries (oairu pthread m CONFIG_LIB rt ${CMAKE_DL_LIBS} ${T_LIB})
 #######################################
 
 add_executable(lte-uesoftmodem
-  ${OPENAIR_TARGETS}/RT/USER/lte-ue.c
-  ${OPENAIR_TARGETS}/RT/USER/lte-uesoftmodem.c
+  ${OPENAIR_DIR}/executables/lte-ue.c
+  ${OPENAIR_DIR}/executables/lte-uesoftmodem.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/executables/create_tasks_ue.c
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c

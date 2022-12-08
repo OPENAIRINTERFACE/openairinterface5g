@@ -31,7 +31,7 @@
  */
 #include "PHY/sse_intrin.h"
 #include "PHY/defs_UE.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "PHY/phy_extern_ue.h"
 //#include "prach.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"

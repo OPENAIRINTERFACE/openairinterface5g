@@ -53,7 +53,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/config/config_load_configmodule.h"
 #include "executables/thread-common.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "executables/split_headers.h"
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"

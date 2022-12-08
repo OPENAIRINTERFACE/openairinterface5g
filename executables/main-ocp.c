@@ -24,11 +24,11 @@
 
 /*
  * This file replaces
- * targets/RT/USER/lte-softmodem.c
- * targets/RT/USER/rt_wrapper.c
- * targets/RT/USER/lte-ru.c
- * targets/RT/USER/lte-enb.c
- * targets/RT/USER/ru_control.c
+ * executables/lte-softmodem.c
+ * executables/rt_wrapper.c
+ * executables/lte-ru.c
+ * executables/lte-enb.c
+ * executables/ru_control.c
  * openair1/SCHED/prach_procedures.c
  * The merger of OpenAir central code to this branch
  * should check if these 3 files are modified and analyze if code code has to be copied in here
@@ -42,7 +42,7 @@
 static int DEFBANDS[] = {7};
 static int DEFENBS[] = {0};
 #include <common/config/config_userapi.h>
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 #include <openair1/PHY/defs_eNB.h>
 #include <openair1/PHY/phy_extern.h>
 #include <nfapi/oai_integration/vendor_ext.h>

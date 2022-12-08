@@ -34,7 +34,7 @@
 #include "mce_config.h"
 #include "assertions.h"
 #include "common/ran_context.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 #include "common/utils/LOG/log.h"
 
@@ -59,7 +59,7 @@ extern RAN_CONTEXT_t RC;
 
 #   define MCE_REGISTER_RETRY_DELAY 10
 
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 static m2ap_mbms_scheduling_information_t * m2ap_mbms_scheduling_information_local = NULL;
 static m2ap_setup_resp_t * m2ap_setup_resp_local = NULL;

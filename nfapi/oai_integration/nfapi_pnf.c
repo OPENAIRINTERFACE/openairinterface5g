@@ -59,7 +59,7 @@
 #include "openair1/PHY/defs_gNB.h"
 #include <openair1/SCHED/fapi_l1.h>
 #include <openair1/PHY/NR_TRANSPORT/nr_transport_proto.h>
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 #include "nfapi/open-nFAPI/pnf/inc/pnf_p7.h"
 
 #define NUM_P5_PHY 2
