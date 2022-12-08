@@ -222,6 +222,8 @@ int32_t dlsch_encoding_2threads(PHY_VARS_eNB *eNB,
     \param frame_parms Frame parameter descriptor
 */
 
+void init_modulation_LUTs(void);
+
 int32_t allocate_REs_in_RB(PHY_VARS_eNB *phy_vars_eNB,
                            int32_t **txdataF,
                            uint32_t *jj,

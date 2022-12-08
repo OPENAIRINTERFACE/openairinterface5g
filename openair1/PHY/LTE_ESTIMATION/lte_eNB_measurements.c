@@ -107,7 +107,7 @@ void lte_eNB_I0_measurements(PHY_VARS_eNB *eNB,
     n0_power_tot=0; 
     int offset0= (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
 
-    if ((rb_mask[rb>>5]&(1<<(rb&31))) == 0) {  // check that rb was not used in this subframe
+    if ((rb_mask[rb>>5]&(1U<<(rb&31))) == 0) {  // check that rb was not used in this subframe
       nb_rb++;
       for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
         measurements->n0_subband_power[aarx][rb] = 0;

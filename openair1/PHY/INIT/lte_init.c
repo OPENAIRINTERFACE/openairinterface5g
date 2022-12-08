@@ -535,6 +535,8 @@ int phy_init_lte_eNB(PHY_VARS_eNB *eNB,
   }
 
   eNB->pdsch_config_dedicated->p_a = dB0;       //defaul value until overwritten by RRCConnectionReconfiguration
+
+  init_modulation_LUTs();
   return (0);
 }
 
