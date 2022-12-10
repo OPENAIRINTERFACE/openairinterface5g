@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <complex.h>
 
 
 #include "PHY/TOOLS/tools_defs.h"
@@ -37,6 +38,7 @@
 
 //#define DEBUG_CH
 //#define DEBUG_CH_POWER
+//#define DOPPLER_DEBUG
 
 #include "assertions.h"
 
@@ -451,6 +453,43 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   }
 }
 
+void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length)
+{
+  // TS 38.104 - Table G.3-1
+  uint16_t Dmin = 2;
+  uint16_t Ds = 300;
+  double c = 299792458;
+  double v = chan_desc->max_Doppler * (c / (double)chan_desc->center_freq);
+
+#ifdef DOPPLER_DEBUG
+  printf("v = %f\n", v);
+#endif
+
+  double phase0 = 2 * M_PI * uniformrandom();
+  double cos_theta[length];
+  double fs[length];
+
+  for (uint32_t t_idx = 0; t_idx < length; t_idx++) {
+    double t = t_idx / (chan_desc->sampling_rate * 1e6);
+    if (t >= 0 && t <= Ds / v) {
+      cos_theta[t_idx] = (Ds / 2 - v * t) / sqrt(Dmin * Dmin + (Ds / 2 - v * t) * (Ds / 2 - v * t));
+    } else if (t > Ds / v && t <= 2 * Ds / v) {
+      cos_theta[t_idx] = (-1.5 * Ds + v * t) / sqrt(Dmin * Dmin + (-1.5 * Ds + v * t) * (-1.5 * Ds + v * t));
+    } else {
+      cos_theta[t_idx] = cos(fmod(t, 2 * Ds / v));
+    }
+    fs[t_idx] = chan_desc->max_Doppler * cos_theta[t_idx];
+
+    double complex tmp_cexp_doppler = cexp(I * (2 * M_PI * fs[t_idx] * t + phase0));
+    cexp_doppler[t_idx].r = creal(tmp_cexp_doppler);
+    cexp_doppler[t_idx].i = cimag(tmp_cexp_doppler);
+
+#ifdef DOPPLER_DEBUG
+    printf("(%2i) t_us = %f, cos_theta = %f, fs = %f, cexp_doppler = (%f, %f)\n", t_idx, t * 1e6, cos_theta[t_idx], fs[t_idx], cexp_doppler[t_idx].r, cexp_doppler[t_idx].i);
+#endif
+  }
+}
+
 double get_normalization_ch_factor(channel_desc_t *desc)
 {
   if (!(desc->channel_length > 1 && desc->modelid >= TDL_A && desc->modelid <= TDL_E)) {
@@ -521,18 +560,20 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
                                      double sampling_rate,
+                                     uint64_t center_freq,
                                      double channel_bandwidth,
                                      double DS_TDL,
+                                     double maxDoppler,
                                      const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
                                      double path_loss_dB,
-                                     float noise_power_dB) {
-
+                                     float noise_power_dB)
+{
   // To create tables for normal distribution
   struct timespec t;
   clock_gettime(CLOCK_MONOTONIC, &t);
-  tableNor((long)(t.tv_nsec%INT_MAX));
+  tableNor((long) (t.tv_nsec % INT_MAX));
 
   channel_desc_t *chan_desc = (channel_desc_t *)calloc(1,sizeof(channel_desc_t));
 
@@ -549,14 +590,16 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 
   uint16_t i,j;
   double sum_amps;
-  double aoa,ricean_factor,Td,maxDoppler;
+  double aoa, ricean_factor, Td;
   int channel_length,nb_taps;
   struct complexd *R_sqrt_ptr2;
   chan_desc->modelid                    = channel_model;
   chan_desc->nb_tx                      = nb_tx;
   chan_desc->nb_rx                      = nb_rx;
   chan_desc->sampling_rate              = sampling_rate;
+  chan_desc->center_freq                = center_freq;
   chan_desc->channel_bandwidth          = channel_bandwidth;
+  chan_desc->max_Doppler                = maxDoppler;
   chan_desc->corr_level                 = corr_level;
   chan_desc->forgetting_factor          = forgetting_factor;
   chan_desc->channel_offset             = channel_offset;
@@ -1856,6 +1899,7 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag) {
 #ifdef DEBUG_CH
             printf("(%d,%d,%d)->(%e,%e)\n",k,aarx,aatx,desc->ch[aarx+(aatx*desc->nb_rx)][k].r,desc->ch[aarx+(aatx*desc->nb_rx)][k].i);
 #endif
+
           } //channel_length
 #ifdef DEBUG_CH_POWER
           ch_power_count++;
@@ -2123,8 +2167,10 @@ int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double 
                                                          nb_rx,
                                                          modid,
                                                          sampling_rate,
+                                                         0,
                                                          channel_bandwidth,
                                                          *(channel_list.paramarray[i][pindex_DT].dblptr),
+                                                         0.0,
                                                          CORR_LEVEL_LOW,
                                                          *(channel_list.paramarray[i][pindex_FF].dblptr),
                                                          *(channel_list.paramarray[i][pindex_CO].iptr),

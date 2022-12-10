@@ -704,8 +704,7 @@ typedef struct {
   LTE_BCCH_DL_SCH_Message_t             systemInformation;
   LTE_BCCH_DL_SCH_Message_t             systemInformation_BR;
   LTE_BCCH_BCH_Message_MBMS_t            mib_fembms;
-  LTE_BCCH_DL_SCH_Message_MBMS_t         siblock1_MBMS;
-  LTE_BCCH_DL_SCH_Message_MBMS_t         systemInformation_MBMS;
+  LTE_BCCH_DL_SCH_Message_MBMS_t siblock1_MBMS;
   LTE_SchedulingInfo_MBMS_r14_t 	 schedulingInfo_MBMS;
   LTE_PLMN_IdentityInfo_t		 PLMN_identity_info_MBMS[6];
   LTE_MCC_MNC_Digit_t			 dummy_mcc_MBMS[6][3], dummy_mnc_MBMS[6][3];

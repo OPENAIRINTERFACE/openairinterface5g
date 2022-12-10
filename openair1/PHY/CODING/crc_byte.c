@@ -298,11 +298,11 @@ crc8 (unsigned char * inptr, int bitlen)
   resbit = (bitlen % 8);
 
   while (octetlen-- > 0) {
-    crc = crc8Table[(*inptr++) ^ (crc >> 24)] << 24;
+    crc = ((unsigned int)crc8Table[(*inptr++) ^ (crc >> 24)]) << 24;
   }
 
   if (resbit > 0)
-    crc = (crc << resbit) ^ (crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))] << 24);
+    crc = (crc << resbit) ^ ((unsigned int)(crc8Table[((*inptr) >> (8 - resbit)) ^ (crc >> (32 - resbit))]) << 24);
 
   return crc;
 }

@@ -9,6 +9,7 @@ set(TELNETSRV_SOURCE
     
 add_library(telnetsrv MODULE ${TELNETSRV_SOURCE} )
 target_link_libraries(telnetsrv PRIVATE history ncurses form )
+target_link_libraries(telnetsrv PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 foreach(TELNETLIB enb gnb 4Gue 5Gue)
     set(TELNETLIB_SRCS "")
@@ -22,6 +23,7 @@ foreach(TELNETLIB enb gnb 4Gue 5Gue)
        message("Add ${TELNETLIB} specific telnet functions in libtelnetsrv_${TELNETLIB}.so")
        add_library(telnetsrv_${TELNETLIB} MODULE ${TELNETLIB_SRCS} )
        add_dependencies(telnetsrv telnetsrv_${TELNETLIB})
+       target_link_libraries(telnetsrv_${TELNETLIB} PRIVATE asn1_nr_rrc asn1_lte_rrc)
        install(TARGETS  telnetsrv_${TELNETLIB} DESTINATION bin)
     else()
        message("No specific telnet functions for ${TELNETLIB}")

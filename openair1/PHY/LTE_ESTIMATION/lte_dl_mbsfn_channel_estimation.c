@@ -289,8 +289,8 @@ int lte_dl_mbsfn_channel_estimation(PHY_VARS_UE *ue,
         ch[13] = (short)(((int)pil[6]*rxF[1] + (int)pil[7]*rxF[0])>>15);
         ch[14] = ch[12]>>1;
         ch[15] = ch[13]>>1;
-        ch[10] = (ch[8]/3)+(ch[12]<<1)/3;
-        ch[11] = (ch[9]/3)+(ch[13]<<1)/3;
+        ch[10] = (ch[8] / 3) + (ch[12] * 2) / 3;
+        ch[11] = (ch[9] / 3) + (ch[13] * 2) / 3;
         /*  printf("rb %d: pil3 (%d,%d) x (%d,%d) = (%d,%d)\n",
           rb,pil[6],pil[7],rxF[0],rxF[1],ch[12],ch[13]);*/
         // ------------------------5th pilot------------------------

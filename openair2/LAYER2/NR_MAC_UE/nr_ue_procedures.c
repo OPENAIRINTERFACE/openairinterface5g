@@ -2529,7 +2529,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
 
         const int n_slots_frame = nr_slots_per_frame[scs];
         if (((n_slots_frame*frame + slot - offset)%period) == 0 && pucch_Config) {
-
+          LOG_D(NR_MAC, "Preparing CSI report in frame %d slot %d CSI report ID %d\n", frame, slot, csi_report_id);
           NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
           NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
           int n = pucchresset->resourceList.list.count;

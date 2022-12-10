@@ -256,38 +256,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
         if (radioResourceConfigDedicated->mac_MainConfig)
           mac_MainConfig = &radioResourceConfigDedicated->mac_MainConfig->choice.explicitValue;
-
-        rrc_mac_config_req_eNB(
-          ctxt.instance,
-          0, //primaryCC_id,
-          0,0,0,0,0,0,
-          ctxt.rnti,
-          (LTE_BCCH_BCH_Message_t *) NULL,
-          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-          radioResourceConfigDedicated->physicalConfigDedicated,
-          (LTE_SCellToAddMod_r10_t *)NULL,
-          //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-          (LTE_MeasObjectToAddMod_t **) NULL,
-          mac_MainConfig,
-          1,
-          SRB1_logicalChannelConfig,
-          NULL, // measGapConfig,
-          (LTE_TDD_Config_t *) NULL,
-          NULL,
-          (LTE_SchedulingInfoList_t *) NULL,
-          0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-          , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-          (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL
-          ,
-          0,
-          (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-          (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-          (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-        );
+        rrc_mac_config_req_eNB_t tmp = {0};
+        tmp.rnti = ctxt.rnti;
+        tmp.physicalConfigDedicated = radioResourceConfigDedicated->physicalConfigDedicated;
+        tmp.mac_MainConfig = mac_MainConfig;
+        tmp.logicalChannelIdentity = 1;
+        tmp.logicalChannelConfig = SRB1_logicalChannelConfig;
+        rrc_mac_config_req_eNB(ctxt.instance, &tmp);
         break;
       } // case
 
@@ -433,37 +408,14 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                         if (DRB_configList->list.array[i]->logicalChannelIdentity) {
                           DRB2LCHAN[i] = (uint8_t) * DRB_configList->list.array[i]->logicalChannelIdentity;
                         }
-
-                        rrc_mac_config_req_eNB(
-                          ctxt.instance,
-                          0,0,0,0,0,0,
-                          0,
-                          ue_context_p->ue_context.rnti,
-                          (LTE_BCCH_BCH_Message_t *) NULL,
-                          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                          (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                          physicalConfigDedicated,
-                          (LTE_SCellToAddMod_r10_t *)NULL,
-                          //(struct PhysicalConfigDedicatedSCell_r10 *)NULL,
-                          (LTE_MeasObjectToAddMod_t **) NULL,
-                          mac_MainConfig,
-                          DRB2LCHAN[i],
-                          DRB_configList->list.array[i]->logicalChannelConfig,
-                          measGapConfig,
-                          (LTE_TDD_Config_t *) NULL,
-                          NULL,
-                          (LTE_SchedulingInfoList_t *) NULL,
-                          0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL
-                          , 0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-                          (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-                          0,
-                          (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                          (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                          (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                          (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                          (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                          (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                        );
+                        rrc_mac_config_req_eNB_t tmp = {0};
+                        tmp.rnti = ue_context_p->ue_context.rnti;
+                        tmp.physicalConfigDedicated = physicalConfigDedicated;
+                        tmp.mac_MainConfig = mac_MainConfig;
+                        tmp.logicalChannelIdentity = DRB2LCHAN[i];
+                        tmp.logicalChannelConfig = DRB_configList->list.array[i]->logicalChannelConfig;
+                        tmp.measGapConfig = measGapConfig;
+                        rrc_mac_config_req_eNB(ctxt.instance, &tmp);
                       }
                     } else {        // remove LCHAN from MAC/PHY
                       AssertFatal(1==0,"Can't handle this yet in DU\n");

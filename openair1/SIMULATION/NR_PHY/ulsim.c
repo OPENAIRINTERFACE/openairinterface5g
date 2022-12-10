@@ -435,6 +435,10 @@ int main(int argc, char **argv)
         }
       }
 
+      if (optarg[3] == ',') {
+        maxDoppler = atoi(&optarg[4]);
+        printf("Maximum Doppler Frequency: %.0f Hz\n", maxDoppler);
+      }
       break;
       
     case 'i':
@@ -621,7 +625,7 @@ int main(int argc, char **argv)
       //printf("-d Use TDD\n");
       printf("-d Introduce delay in terms of number of samples\n");
       printf("-f Number of frames to simulate\n");
-      printf("-g Channel model configuration. Arguments list: Number of arguments = 2, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, e.g. -g A,l\n");
+      printf("-g Channel model configuration. Arguments list: Number of arguments = 3, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, {Maximum Doppler shift} e.g. -g A,l,10\n");
       printf("-h This message\n");
       printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 1,0\n");
       //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
@@ -682,26 +686,6 @@ int main(int argc, char **argv)
                         &samples,
                         &tx_bandwidth,
                         &rx_bandwidth);
-
-  LOG_I( PHY,"++++++++++++++++++++++++++++++++++++++++++++++%i+++++++++++++++++++++++++++++++++++++++++",loglvl);  
-
-  UE2gNB = new_channel_desc_scm(n_tx,
-                                n_rx, channel_model,
-                                sampling_frequency/1e6,
-                                tx_bandwidth,
-                                DS_TDL,
-                                corr_level,
-                                0,
-                                0,
-                                0,
-                                0);
-
-  if (UE2gNB == NULL) {
-    printf("Problem generating channel model. Exiting.\n");
-    exit(-1);
-  }
-
-  UE2gNB->max_Doppler = maxDoppler;
 
   RC.gNB = (PHY_VARS_gNB **) malloc(sizeof(PHY_VARS_gNB *));
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
@@ -809,8 +793,27 @@ int main(int argc, char **argv)
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
 
+  // Configure channel model
+  UE2gNB = new_channel_desc_scm(n_tx,
+                                n_rx,
+                                channel_model,
+                                sampling_frequency / 1e6,
+                                frame_parms->ul_CarrierFreq,
+                                tx_bandwidth,
+                                DS_TDL,
+                                maxDoppler,
+                                corr_level,
+                                0,
+                                0,
+                                0,
+                                0);
 
-  //configure UE
+  if (UE2gNB == NULL) {
+    printf("Problem generating channel model. Exiting.\n");
+    exit(-1);
+  }
+
+  // Configure UE
   UE = malloc(sizeof(PHY_VARS_NR_UE));
   memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
@@ -1290,11 +1293,7 @@ int main(int argc, char **argv)
             }
           }
 
-          if (UE2gNB->max_Doppler == 0) {
-            multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials==1)?1:0);
-          } else {
-            multipath_tv_channel(UE2gNB, s_re, s_im, r_re, r_im, 2*slot_length, 0);
-          }
+          multipath_channel(UE2gNB, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
           add_noise(rxdata, (const double **) r_re, (const double **) r_im, sigma, slot_length, slot_offset, ts, delay, pdu_bit_map, frame_parms->nb_antennas_rx);
 
         } /*End input_fd */

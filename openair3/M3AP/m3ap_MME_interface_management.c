@@ -190,10 +190,10 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	//tnl_information->iPMCAddress.buf[2]
 	//tnl_information->iPMCAddress.buf[3]
 	//tnl_information->iPMCAddress.buf.size = 4;
-	uint32_t ip= (224<<24) | (0) << 16 | (0) << 8 | (2);
-	INT32_TO_OCTET_STRING(ip,&tnl_information->iPMCAddress);
-	ip= (224<<24) | (0) << 16 | (0) << 8 | (2);
-	INT32_TO_OCTET_STRING(ip,&tnl_information->iPSourceAddress);
+  uint32_t ip = (224U << 24) | (0) << 16 | (0) << 8 | (2);
+  INT32_TO_OCTET_STRING(ip, &tnl_information->iPMCAddress);
+  ip = (224U << 24) | (0) << 16 | (0) << 8 | (2);
+  INT32_TO_OCTET_STRING(ip, &tnl_information->iPSourceAddress);
   }
   ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
   /* optional */

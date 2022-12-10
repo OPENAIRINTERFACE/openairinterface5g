@@ -333,7 +333,8 @@ function main() {
             echo_info "Will compile with verbose instructions"
             shift;;
        --build-doxygen)
-	        BUILD_DOXYGEN=1
+            CMAKE_CMD="$CMAKE_CMD -DGENERATE_DOXYGEN=ON"
+            BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
        --build-coverity-scan)
@@ -535,9 +536,8 @@ function main() {
       execlist="$execlist nr-uesoftmodem"
   fi
 
-  if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" ]]; then
-    echo_success "installing dependencies successful"
-    exit
+  if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" && "$HW" == "None" ]]; then
+    SKIP_SHARED_LIB_FLAG="True"
   fi
 
   echo_info "3. building the compilation directives ..."
@@ -727,11 +727,7 @@ function main() {
     echo_info "Doxygen generation log is located here: $doxygen_log"
     echo_info "Generating Doxygen files....please wait"
     (
-    [ "$CLEAN" = "1" ] && rm -rf $OPENAIR_DIR/cmake_targets/doxygen/build
-    mkdir -p $OPENAIR_DIR/cmake_targets/doxygen/build
-    cd $OPENAIR_DIR/cmake_targets/doxygen/build
-    eval $CMAKE_CMD ..
-    make doc
+    $MAKE_CMD doc
     ) >& $doxygen_log
   fi
 

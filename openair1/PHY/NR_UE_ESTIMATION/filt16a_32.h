@@ -219,4 +219,9 @@ extern short filt24_start[24];
 extern short filt24_end[24];
 extern short filt24_middle[24];
 
+/*UL*/
+extern short filt16_ul_p0[16];
+extern short filt16_ul_p1p2[16];
+extern short filt16_ul_middle[16];
+extern short filt16_ul_last[16];
 #endif

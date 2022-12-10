@@ -464,48 +464,38 @@ init_SI(
 
   if (NODE_IS_MONOLITHIC(rrc->node_type)) {
     LOG_D(RRC, "About to call rrc_mac_config_req_eNB for ngran_eNB\n");
-    rrc_mac_config_req_eNB(ctxt_pP->module_id, CC_id,
-                           carrier->physCellId,
-                           carrier->p_eNB,
-                           carrier->Ncp,
-                           carrier->sib1->freqBandIndicator,
-                           carrier->dl_CarrierFreq,
-                           carrier->pbch_repetition,
-                           0, // rnti
-                           (LTE_BCCH_BCH_Message_t *) &carrier->mib,
-                           (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2->radioResourceConfigCommon,
-                           (LTE_RadioResourceConfigCommonSIB_t *) &carrier->sib2_BR->radioResourceConfigCommon,
-                           (struct LTE_PhysicalConfigDedicated *)NULL,
-                           (LTE_SCellToAddMod_r10_t *)NULL,
-                           (LTE_MeasObjectToAddMod_t **) NULL,
-                           (LTE_MAC_MainConfig_t *) NULL, 0,
-                           (struct LTE_LogicalChannelConfig *)NULL,
-                           (LTE_MeasGapConfig_t *) NULL,
-                           carrier->sib1->tdd_Config,
-                           NULL,
-                           &carrier->sib1->schedulingInfoList,
-                           carrier->ul_CarrierFreq,
-                           carrier->sib2->freqInfo.ul_Bandwidth,
-                           &carrier->sib2->freqInfo.additionalSpectrumEmission,
-                           (LTE_MBSFN_SubframeConfigList_t *) carrier->sib2->mbsfn_SubframeConfigList,
-                           carrier->MBMS_flag,
-                           (LTE_MBSFN_AreaInfoList_r9_t *) & carrier->sib13->mbsfn_AreaInfoList_r9,
-                           (LTE_PMCH_InfoList_r9_t *) NULL,
-                           sib1_v13ext,
-                           RC.rrc[ctxt_pP->module_id]->carrier[CC_id].FeMBMS_flag,
-                           (carrier->sib1_MBMS==NULL?(LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL:(LTE_BCCH_DL_SCH_Message_MBMS_t *)carrier->sib1_MBMS),//(LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                           (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                           (carrier->sib1_MBMS==NULL
-                            ? (struct LTE_NonMBSFN_SubframeConfig_r14 *)NULL
-                            : (struct LTE_NonMBSFN_SubframeConfig_r14 *)carrier->sib1_MBMS->nonMBSFN_SubframeConfig_r14),//(struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                           (carrier->sib1_MBMS==NULL
-                            ? (LTE_SystemInformationBlockType1_MBMS_r14_t *)NULL
-                            : (LTE_SystemInformationBlockType1_MBMS_r14_t *)carrier->sib1_MBMS->systemInformationBlockType13_r14),//(LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                           (carrier->sib1_MBMS==NULL
-                            ? (LTE_MBSFN_AreaInfoList_r9_t *)NULL
-                            : (LTE_MBSFN_AreaInfoList_r9_t *)&carrier->sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9),//(LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                           (LTE_MBSFNAreaConfiguration_r9_t *)NULL
-                          );
+    rrc_mac_config_req_eNB_t tmp = {
+        .CC_id = CC_id,
+        .physCellId = carrier->physCellId,
+        .p_eNB = carrier->p_eNB,
+        .Ncp = carrier->Ncp,
+        .eutra_band = carrier->sib1->freqBandIndicator,
+        .dl_CarrierFreq = carrier->dl_CarrierFreq,
+        .pbch_repetition = carrier->pbch_repetition,
+        .mib = &carrier->mib,
+        .radioResourceConfigCommon = &carrier->sib2->radioResourceConfigCommon,
+        .tdd_Config = carrier->sib1->tdd_Config,
+        .schedulingInfoList = &carrier->sib1->schedulingInfoList,
+        .ul_CarrierFreq = carrier->ul_CarrierFreq,
+        .ul_Bandwidth = carrier->sib2->freqInfo.ul_Bandwidth,
+        .additionalSpectrumEmission = &carrier->sib2->freqInfo.additionalSpectrumEmission,
+        .mbsfn_SubframeConfigList = carrier->sib2->mbsfn_SubframeConfigList,
+        .MBMS_Flag = carrier->MBMS_flag,
+        .sib1_ext_r13 = sib1_v13ext,
+        .FeMBMS_Flag = RC.rrc[ctxt_pP->module_id]->carrier[CC_id].FeMBMS_flag,
+        .mib_fembms = &carrier->siblock1_MBMS,
+    };
+    if (carrier->sib2_BR)
+      tmp.LTE_radioResourceConfigCommon_BR = &carrier->sib2_BR->radioResourceConfigCommon;
+    if (carrier->sib13)
+      tmp.mbsfn_AreaInfoList = &carrier->sib13->mbsfn_AreaInfoList_r9;
+    if (carrier->sib1_MBMS) {
+      tmp.nonMBSFN_SubframeConfig = carrier->sib1_MBMS->nonMBSFN_SubframeConfig_r14;
+      tmp.sib1_mbms_r14_fembms = carrier->sib1_MBMS->systemInformationBlockType13_r14;
+      if (carrier->sib1_MBMS->systemInformationBlockType13_r14)
+        tmp.mbsfn_AreaInfoList_fembms = &carrier->sib1_MBMS->systemInformationBlockType13_r14->mbsfn_AreaInfoList_r9;
+    }
+    rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -564,34 +554,10 @@ init_MCCH(
   //  LOG_I(RRC, "DUY: serviceID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->tmgi_r9.serviceId_r9.buf[2]);
   //  LOG_I(RRC, "DUY: session ID is %d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->sessionId_r9->buf[0]);
   if (NODE_IS_MONOLITHIC(rrc->node_type)) {
-    rrc_mac_config_req_eNB(enb_mod_idP, CC_id,
-                           0,0,0,0,0, 0, 0,//rnti
-                           (LTE_BCCH_BCH_Message_t *)NULL,
-                           (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                           (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                           (struct LTE_PhysicalConfigDedicated *)NULL,
-                           (LTE_SCellToAddMod_r10_t *)NULL,
-                           //(struct LTE_PhysicalConfigDedicatedSCell_r10 *)NULL,
-                           (LTE_MeasObjectToAddMod_t **) NULL,
-                           (LTE_MAC_MainConfig_t *) NULL,
-                           0,
-                           (struct LTE_LogicalChannelConfig *)NULL,
-                           (LTE_MeasGapConfig_t *) NULL,
-                           (LTE_TDD_Config_t *) NULL,
-                           (LTE_MobilityControlInfo_t *)NULL,
-                           (LTE_SchedulingInfoList_t *) NULL,
-                           0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL, 0,
-                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                           (LTE_PMCH_InfoList_r9_t *) & (RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9),
-                           (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-                           0,
-                           (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                           (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                           (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                           (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                           (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                           (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                          );
+    rrc_mac_config_req_eNB_t tmp = {0};
+    tmp.CC_id = CC_id;
+    tmp.pmch_InfoList = &RC.rrc[enb_mod_idP]->carrier[CC_id].mcch_message->pmch_InfoList_r9;
+    rrc_mac_config_req_eNB(enb_mod_idP, &tmp);
   }
 
   //LOG_I(RRC,"DUY: lcid after rrc_mac_config_req is %02d\n",RC.rrc[enb_mod_idP]->mcch_message->pmch_InfoList_r9.list.array[0]->mbms_SessionInfoList_r9.list.array[0]->logicalChannelIdentity_r9);
@@ -1363,43 +1329,14 @@ rrc_eNB_generate_RRCConnectionReestablishment(
               PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
         if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
-          rrc_mac_config_req_eNB(module_id,
-                                 ue_context->primaryCC_id,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 0,
-                                 rnti,
-                                 (LTE_BCCH_BCH_Message_t *) NULL,
-                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                 (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                 (struct LTE_PhysicalConfigDedicated * ) ue_context->physicalConfigDedicated,
-                                 (LTE_SCellToAddMod_r10_t *)NULL,
-                                 (LTE_MeasObjectToAddMod_t **) NULL,
-                                 ue_context->mac_MainConfig,
-                                 1,
-                                 SRB1_logicalChannelConfig,
-                                 ue_context->measGapConfig,
-                                 (LTE_TDD_Config_t *) NULL,
-                                 NULL,
-                                 (LTE_SchedulingInfoList_t *) NULL,
-                                 0,
-                                 NULL,
-                                 NULL,
-                                 (LTE_MBSFN_SubframeConfigList_t *) NULL, 0,
-                                 (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                 (LTE_PMCH_InfoList_r9_t *) NULL,
-                                 (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL,
-                                 0,
-                                 (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                                 (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                                 (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                                 (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                 (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                 (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                                );
+          rrc_mac_config_req_eNB_t tmp = {0};
+          tmp.CC_id = ue_context->primaryCC_id;
+          tmp.physicalConfigDedicated = ue_context->physicalConfigDedicated;
+          tmp.mac_MainConfig = ue_context->mac_MainConfig;
+          tmp.logicalChannelIdentity = 1;
+          tmp.logicalChannelConfig = SRB1_logicalChannelConfig;
+          tmp.measGapConfig = ue_context->measGapConfig;
+          rrc_mac_config_req_eNB(module_id, &tmp);
           break;
         }
       }  // if ((*SRB_configList)->list.array[cnt]->srb_Identity == 1)
@@ -4785,38 +4722,14 @@ rrc_eNB_generate_HO_RRCConnectionReconfiguration(const protocol_ctxt_t *const ct
   LOG_D(RRC,
         "handover_config [FRAME %05d][RRC_eNB][MOD %02d][][--- MAC_CONFIG_REQ  (SRB1 UE %x) --->][MAC_eNB][MOD %02d][]\n",
         ctxt_pP->frame, ctxt_pP->module_id, ue_context_pP->ue_context.rnti, ctxt_pP->module_id);
-  rrc_mac_config_req_eNB(
-    ctxt_pP->module_id,
-    ue_context_pP->ue_context.primaryCC_id,
-    0,0,0,0,0,0,
-    ue_context_pP->ue_context.rnti,
-    (LTE_BCCH_BCH_Message_t *) NULL,
-    (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-    (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-    ue_context_pP->ue_context.physicalConfigDedicated,
-    (LTE_SCellToAddMod_r10_t *)NULL,
-    (LTE_MeasObjectToAddMod_t **) NULL,
-    ue_context_pP->ue_context.mac_MainConfig,
-    1,
-    NULL,//SRB1_logicalChannelConfig,
-    ue_context_pP->ue_context.measGapConfig,
-    (LTE_TDD_Config_t *) NULL,
-    (LTE_MobilityControlInfo_t *) NULL,
-    (LTE_SchedulingInfoList_t *) NULL,
-    0,
-    NULL,
-    NULL,
-    (LTE_MBSFN_SubframeConfigList_t *) NULL,
-    0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-    (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-    0,
-    (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-    (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-    (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-    (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-    (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-    (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-  );
+  rrc_mac_config_req_eNB_t tmp = {0};
+  tmp.CC_id = ue_context_pP->ue_context.primaryCC_id;
+  tmp.rnti = ue_context_pP->ue_context.rnti;
+  tmp.physicalConfigDedicated = ue_context_pP->ue_context.physicalConfigDedicated;
+  tmp.mac_MainConfig = ue_context_pP->ue_context.mac_MainConfig;
+  tmp.logicalChannelIdentity = 1;
+  tmp.measGapConfig = ue_context_pP->ue_context.measGapConfig;
+  rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
   // Configure target eNB SRB2
   /// SRB2
   SRB2_config = CALLOC(1, sizeof(*SRB2_config));
@@ -5446,38 +5359,15 @@ rrc_eNB_configure_rbs_handover(struct rrc_eNB_ue_context_s *ue_context_p, protoc
   // Add a new user (called during the HO procedure)
   LOG_I(RRC, "rrc_eNB_target_add_ue_handover module_id %d rnti %d\n", ctxt_pP->module_id, ctxt_pP->rnti);
   // Configure MAC for the target
-  rrc_mac_config_req_eNB(
-    ctxt_pP->module_id,
-    ue_context_p->ue_context.primaryCC_id,
-    0,0,0,0,0, 0,
-    ue_context_p->ue_context.rnti,
-    (LTE_BCCH_BCH_Message_t *) NULL,
-    (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-    (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-    ue_context_p->ue_context.physicalConfigDedicated,
-    (LTE_SCellToAddMod_r10_t *)NULL,
-    (LTE_MeasObjectToAddMod_t **) NULL,
-    ue_context_p->ue_context.mac_MainConfig,
-    1,
-    NULL,//SRB1_logicalChannelConfig,
-    ue_context_p->ue_context.measGapConfig,
-    (LTE_TDD_Config_t *) NULL,
-    (LTE_MobilityControlInfo_t *) ue_context_p->ue_context.mobilityInfo,
-    (LTE_SchedulingInfoList_t *) NULL,
-    0,
-    NULL,
-    NULL,
-    (LTE_MBSFN_SubframeConfigList_t *) NULL, 0,
-    (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-    (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-    0,
-    (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-    (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-    (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-    (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-    (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-    (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-  );
+  rrc_mac_config_req_eNB_t tmp = {0};
+  tmp.CC_id = ue_context_p->ue_context.primaryCC_id;
+  tmp.rnti = ue_context_p->ue_context.rnti;
+  tmp.physicalConfigDedicated = ue_context_p->ue_context.physicalConfigDedicated;
+  tmp.mac_MainConfig = ue_context_p->ue_context.mac_MainConfig;
+  tmp.logicalChannelIdentity = 1;
+  tmp.measGapConfig = ue_context_p->ue_context.measGapConfig;
+  tmp.mobilityControlInfo = ue_context_p->ue_context.mobilityInfo;
+  rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
 }
 
 //-----------------------------------------------------------------------------
@@ -5655,43 +5545,15 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
           }
 
           if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
-            rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                                   ue_context_pP->ue_context.primaryCC_id,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   ue_context_pP->ue_context.rnti,
-                                   (LTE_BCCH_BCH_Message_t *) NULL,
-                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                   ue_context_pP->ue_context.physicalConfigDedicated,
-                                   (LTE_SCellToAddMod_r10_t *)NULL,
-                                   (LTE_MeasObjectToAddMod_t **) NULL,
-                                   ue_context_pP->ue_context.mac_MainConfig,
-                                   DRB2LCHAN[i],
-                                   DRB_configList->list.array[i]->logicalChannelConfig,
-                                   ue_context_pP->ue_context.measGapConfig,
-                                   (LTE_TDD_Config_t *) NULL,
-                                   NULL,
-                                   (LTE_SchedulingInfoList_t *) NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   (LTE_MBSFN_SubframeConfigList_t *) NULL, 0,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                   (LTE_PMCH_InfoList_r9_t *) NULL,
-                                   (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL,
-                                   0,
-                                   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                                   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                                   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                                   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                   (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                                  );
+            rrc_mac_config_req_eNB_t tmp = {0};
+            tmp.CC_id = ue_context_pP->ue_context.primaryCC_id;
+            tmp.rnti = ue_context_pP->ue_context.rnti;
+            tmp.physicalConfigDedicated = ue_context_pP->ue_context.physicalConfigDedicated;
+            tmp.mac_MainConfig = ue_context_pP->ue_context.mac_MainConfig;
+            tmp.logicalChannelIdentity = DRB2LCHAN[i];
+            tmp.logicalChannelConfig = DRB_configList->list.array[i]->logicalChannelConfig;
+            tmp.measGapConfig = ue_context_pP->ue_context.measGapConfig;
+            rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
           }
         } else {        // remove LCHAN from MAC/PHY
           if (DRB_configList->list.array[i]->logicalChannelIdentity) {
@@ -5702,44 +5564,13 @@ rrc_eNB_process_RRCConnectionReconfigurationComplete(
                 PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
           if (NODE_IS_MONOLITHIC(RC.rrc[ctxt_pP->module_id]->node_type)) {
-            rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                                   ue_context_pP->ue_context.primaryCC_id,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   0,
-                                   ue_context_pP->ue_context.rnti,
-                                   (LTE_BCCH_BCH_Message_t *) NULL,
-                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                   (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                   ue_context_pP->ue_context.physicalConfigDedicated,
-                                   (LTE_SCellToAddMod_r10_t *) NULL,
-                                   (LTE_MeasObjectToAddMod_t **) NULL,
-                                   ue_context_pP->ue_context.mac_MainConfig,
-                                   DRB2LCHAN[i],
-                                   (LTE_LogicalChannelConfig_t *) NULL,
-                                   (LTE_MeasGapConfig_t *) NULL,
-                                   (LTE_TDD_Config_t *) NULL,
-                                   NULL,
-                                   (LTE_SchedulingInfoList_t *) NULL,
-                                   0,
-                                   NULL,
-                                   NULL,
-                                   NULL,
-                                   0,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                   (LTE_PMCH_InfoList_r9_t *) NULL,
-                                   (LTE_SystemInformationBlockType1_v1310_IEs_t *) NULL,
-                                   0,
-                                   (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                                   (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                                   (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                                   (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                   (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                   (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                                  );
+            rrc_mac_config_req_eNB_t tmp = {0};
+            tmp.CC_id = ue_context_pP->ue_context.primaryCC_id;
+            tmp.rnti = ue_context_pP->ue_context.rnti;
+            tmp.physicalConfigDedicated = ue_context_pP->ue_context.physicalConfigDedicated;
+            tmp.mac_MainConfig = ue_context_pP->ue_context.mac_MainConfig;
+            tmp.logicalChannelIdentity = DRB2LCHAN[i];
+            rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
           }
         } // end else of if (ue_context_pP->ue_context.DRB_active[drb_id] == 0)
       } // end if (DRB_configList->list.array[i])
@@ -5875,34 +5706,15 @@ rrc_eNB_generate_RRCConnectionSetup(
                   PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP));
 
             if (RC.rrc[ctxt_pP->module_id]->node_type == ngran_eNB) {
-              rrc_mac_config_req_eNB(ctxt_pP->module_id,
-                                     ue_context_pP->ue_context.primaryCC_id,
-                                     0,0,0,0,0, 0,
-                                     ue_context_pP->ue_context.rnti,
-                                     (LTE_BCCH_BCH_Message_t *) NULL,
-                                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                     (LTE_RadioResourceConfigCommonSIB_t *) NULL,
-                                     ue_context_pP->ue_context.physicalConfigDedicated,
-                                     (LTE_SCellToAddMod_r10_t *)NULL,
-                                     (LTE_MeasObjectToAddMod_t **) NULL,
-                                     ue_context_pP->ue_context.mac_MainConfig,
-                                     1,
-                                     SRB1_logicalChannelConfig,
-                                     ue_context_pP->ue_context.measGapConfig,
-                                     (LTE_TDD_Config_t *) NULL,
-                                     NULL,
-                                     (LTE_SchedulingInfoList_t *) NULL,
-                                     0, NULL, NULL, (LTE_MBSFN_SubframeConfigList_t *) NULL,
-                                     0, (LTE_MBSFN_AreaInfoList_r9_t *) NULL, (LTE_PMCH_InfoList_r9_t *) NULL,
-                                     (LTE_SystemInformationBlockType1_v1310_IEs_t *)NULL,
-                                     0,
-                                     (LTE_BCCH_DL_SCH_Message_MBMS_t *) NULL,
-                                     (LTE_SchedulingInfo_MBMS_r14_t *) NULL,
-                                     (struct LTE_NonMBSFN_SubframeConfig_r14 *) NULL,
-                                     (LTE_SystemInformationBlockType1_MBMS_r14_t *) NULL,
-                                     (LTE_MBSFN_AreaInfoList_r9_t *) NULL,
-                                     (LTE_MBSFNAreaConfiguration_r9_t *) NULL
-                                    );
+              rrc_mac_config_req_eNB_t tmp = {0};
+              tmp.CC_id = ue_context_pP->ue_context.primaryCC_id;
+              tmp.rnti = ue_context_pP->ue_context.rnti;
+              tmp.physicalConfigDedicated = ue_context_pP->ue_context.physicalConfigDedicated;
+              tmp.mac_MainConfig = ue_context_pP->ue_context.mac_MainConfig;
+              tmp.logicalChannelIdentity = 1;
+              tmp.logicalChannelConfig = SRB1_logicalChannelConfig;
+              tmp.measGapConfig = ue_context_pP->ue_context.measGapConfig;
+              rrc_mac_config_req_eNB(ctxt_pP->module_id, &tmp);
               break;
             }
           }
