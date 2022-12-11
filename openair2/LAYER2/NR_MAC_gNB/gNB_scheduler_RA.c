@@ -884,6 +884,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   int NrOfSymbols = 0;
   int startSymbolAndLength = 0;
   int abs_slot = 0;
+  int Msg3maxsymb = 14, Msg3start = 0;
   ra->Msg3_tda_id = 16; // initialization to a value above limit
 
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp->tdaList;
@@ -893,22 +894,27 @@ void nr_get_Msg3alloc(module_id_t module_id,
   uint8_t k2 = 0;
   if (frame_type == TDD) {
     int msg3_slot = tdd->nrofDownlinkSlots; // first uplink slot
-    if (tdd->nrofUplinkSymbols > 0 && tdd->nrofUplinkSymbols < 3)
+    if (tdd->nrofUplinkSymbols < 3)
       msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
+    else {
+      Msg3maxsymb = tdd->nrofUplinkSymbols;
+      Msg3start = 14 - tdd->nrofUplinkSymbols;
+    }
     const int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     const int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
     for (int i=0; i<pusch_TimeDomainAllocationList->list.count; i++) {
       startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength;
       SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
       k2 = *pusch_TimeDomainAllocationList->list.array[i]->k2;
-      int start_symbol_index,nr_of_symbols;
-      SLIV2SL(pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength, &start_symbol_index, &nr_of_symbols);
-      LOG_D(NR_MAC,"Checking Msg3 TDA %d : k2 %d, sliv %d,S %d L %d\n",i,(int)k2,(int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength,start_symbol_index,nr_of_symbols);
+      LOG_D(NR_MAC,"Checking Msg3 TDA %d for Msg3_slot %d Msg3_start %d Msg3_nsymb %d: k2 %d, sliv %d,S %d L %d\n",
+            i, msg3_slot, Msg3start, Msg3maxsymb, (int)k2, (int)pusch_TimeDomainAllocationList->list.array[i]->startSymbolAndLength, StartSymbolIndex, NrOfSymbols);
       // we want to transmit in the uplink symbols of mixed slot or the first uplink slot
       abs_slot = (current_slot + k2 + DELTA[mu]);
       int temp_slot = abs_slot % nr_slots_per_frame[mu]; // msg3 slot according to 8.3 in 38.213
       if ((temp_slot % nb_slots_per_period) == msg3_slot &&
-          is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot)) {
+          is_xlsch_in_slot(RC.nrmac[module_id]->ulsch_slot_bitmap[temp_slot / 64], temp_slot) &&
+          StartSymbolIndex == Msg3start &&
+          NrOfSymbols <= Msg3maxsymb) {
         ra->Msg3_tda_id = i;
         ra->msg3_startsymb = StartSymbolIndex;
         ra->msg3_nrsymb = NrOfSymbols;
