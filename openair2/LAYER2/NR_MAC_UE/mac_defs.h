@@ -280,8 +280,6 @@ typedef struct {
   uint8_t RA_active;
   /// Random-access preamble index
   int ra_PreambleIndex;
-  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  RA_state_t generate_nr_prach;
   // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
   uint8_t ssb_nb_in_ro;
 

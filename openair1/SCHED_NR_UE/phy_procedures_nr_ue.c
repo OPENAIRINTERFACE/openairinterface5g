@@ -1323,6 +1323,8 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       ue->tx_power_dBm[nr_slot_tx],
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
+
+    ue->prach_vars[gNB_id]->active = false;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);

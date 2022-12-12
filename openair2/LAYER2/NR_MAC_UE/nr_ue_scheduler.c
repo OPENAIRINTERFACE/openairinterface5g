@@ -35,13 +35,6 @@
 /* exe */
 #include <common/utils/nr/nr_common.h>
 
-/* RRC*/
-#include "RRC/NR_UE/rrc_proto.h"
-#include "NR_RACH-ConfigCommon.h"
-#include "NR_RACH-ConfigGeneric.h"
-#include "NR_FrequencyInfoDL.h"
-#include "NR_PDCCH-ConfigCommon.h"
-
 /* MAC */
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_COMMON/nr_mac_common.h"

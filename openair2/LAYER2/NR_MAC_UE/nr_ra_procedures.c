@@ -31,7 +31,6 @@
  */
 
 /* RRC */
-#include "NR_RACH-ConfigCommon.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
 /* MAC */
