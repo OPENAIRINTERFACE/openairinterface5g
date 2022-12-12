@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-down</htmlTabRef>
-        <htmlTabName>CleanUp Monolithic TDD gNB</htmlTabName>
+        <htmlTabName>CleanUp SA Monolithic TDD gNB</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100002
