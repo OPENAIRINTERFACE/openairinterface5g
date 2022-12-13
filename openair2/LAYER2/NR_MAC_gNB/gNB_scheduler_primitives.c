@@ -1670,7 +1670,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
+      fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
       pos+=fsize;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos);
       // Time domain assignment 4bit
@@ -1695,7 +1695,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos+=2;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->tpc & 0x3) << (dci_size - pos);
       // Padding bits
-      for (int a = pos; a < 32; a++)
+      for (int a = pos; a < dci_size; a++)
         *dci_pdu |= ((uint64_t)dci_pdu_rel15->padding & 1) << (dci_size - pos++);
       // UL/SUL indicator – 1 bit
       /* commented for now (RK): need to get this from BWP descriptor
@@ -1723,7 +1723,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
       pos=1;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->format_indicator & 1) << (dci_size - pos);
       // Freq domain assignment  max 16 bit
-      fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
+      fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
       pos+=fsize;
       *dci_pdu |= ((uint64_t)dci_pdu_rel15->frequency_domain_assignment.val & ((1 << fsize) - 1)) << (dci_size - pos);
       // Time domain assignment 4bit
