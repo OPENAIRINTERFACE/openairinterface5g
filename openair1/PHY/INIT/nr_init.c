@@ -489,9 +489,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   while(gNB->configured == 0) usleep(10000);
 
-  gNB->number_of_nr_dlsch_max = NUMBER_OF_NR_DLSCH_MAX;
-  gNB->number_of_nr_ulsch_max = NUMBER_OF_NR_ULSCH_MAX;
-
   load_dftslib();
 
   crcTableInit();
@@ -654,7 +651,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   int nb_re_pusch = N_RB_UL * NR_NB_SC_PER_RB;
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
 
-  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
     pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
@@ -805,7 +802,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(prach_vars->prach_ifft);
 
   NR_gNB_PUSCH** pusch_vars = gNB->pusch_vars;
-  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     for (int i=0; i< max_ul_mimo_layers; i++)
       free_and_zero(pusch_vars[ULSCH_id]->llr_layers[i]);
     for (int i = 0; i < Prx; i++) {
@@ -983,8 +980,8 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   msg->num_pdsch_slot = 0;
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
+  for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
     for (int j=0; j<num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
@@ -998,7 +995,7 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
   const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   const uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++)
+  for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++)
     for (int j=0; j<num_cw; j++)
       free_gNB_dlsch(&msg->dlsch[i][j], grid_size, fp);
 }
@@ -1050,9 +1047,9 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
     AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
   }
 
-  for (int i=0; i<gNB->number_of_nr_ulsch_max; i++) {
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
+    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
 
     gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
 
@@ -1077,6 +1074,6 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
   for (int i = 0; i < gNB->max_nb_srs; i++)
     free_gNB_srs(gNB->srs[i]);
 
-  for (int i=0; i<gNB->number_of_nr_ulsch_max; i++)
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
 }

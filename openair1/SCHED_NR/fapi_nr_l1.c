@@ -203,8 +203,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-            AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-                        msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+            AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+                        msgTx->num_pdsch_slot, NUMBER_OF_NR_DLSCH_MAX);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }

@@ -552,7 +552,7 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
 
-  for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id];
     int harq_pid;
     NR_UL_gNB_HARQ_t *ulsch_harq;
@@ -775,7 +775,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     }
   }
 
-  for (int ULSCH_id=0;ULSCH_id<gNB->number_of_nr_ulsch_max;ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[ULSCH_id];
     NR_UL_gNB_HARQ_t *ulsch_harq;
 
