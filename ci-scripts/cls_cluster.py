@@ -70,7 +70,7 @@ class Cluster:
 		regres2 = re.search(r"/etc/pki/entitlement/[0-9]+-key.pem", sshSession.getBefore())
 		if regres1 is None or regres2 is None:
 			logging.error("could not find entitlements")
-			return false
+			return False
 		file1 = regres1.group(0)
 		file2 = regres2.group(0)
 		sshSession.command(f'oc create secret generic etc-pki-entitlement --from-file {file1} --from-file {file2}', '\$', 5)
