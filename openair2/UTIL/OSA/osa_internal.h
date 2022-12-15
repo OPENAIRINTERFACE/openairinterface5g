@@ -37,6 +37,7 @@
 #define FC_KASME_TO_CK  (0x16)
 
 #define NR_FC_ALG_KEY_DER  (0x69)
+#define NR_FC_ALG_KEY_NG_RAN_STAR_DER  (0x70)
 
 #ifndef hton_int32
 # define hton_int32(x)   \
