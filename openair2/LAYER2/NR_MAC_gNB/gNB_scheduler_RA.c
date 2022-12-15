@@ -893,7 +893,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
   if (frame_type == TDD) {
-    int msg3_slot = tdd->nrofDownlinkSlots; // first uplink slot
+    int msg3_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
     if (tdd->nrofUplinkSymbols < 3)
       msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
     else {

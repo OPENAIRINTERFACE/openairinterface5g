@@ -64,7 +64,7 @@ const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon
 
   if (tdd && tdd->nrofDownlinkSymbols > 1) { // if there is a mixed slot where we can transmit DL
     const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
-    if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
+    if ((slot % nr_slots_period) == tdd->nrofDownlinkSlots)
       return 2;
   }
   return 0; // if FDD or not mixed slot in TDD, for now use default TDA

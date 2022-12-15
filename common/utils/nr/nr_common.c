@@ -227,7 +227,8 @@ void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset) {
   *n_rb = 6*count;
 }
 
-int get_nb_periods_per_frame(uint8_t tdd_period) {
+int get_nb_periods_per_frame(uint8_t tdd_period)
+{
 
   int nb_periods_per_frame;
   switch(tdd_period) {
@@ -270,7 +271,13 @@ int get_nb_periods_per_frame(uint8_t tdd_period) {
 }
 
 
-int get_dmrs_port(int nl, uint16_t dmrs_ports) {
+int get_first_ul_slot(int nrofDownlinkSlots, int nrofDownlinkSymbols, int nrofUplinkSymbols)
+{
+  return (nrofDownlinkSlots + (nrofDownlinkSymbols != 0 && nrofUplinkSymbols == 0));
+}
+
+int get_dmrs_port(int nl, uint16_t dmrs_ports)
+{
 
   if (dmrs_ports == 0) return 0; // dci 1_0
   int p = -1;
