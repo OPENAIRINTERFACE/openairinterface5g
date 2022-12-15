@@ -432,7 +432,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     @returns void
     */
 
-void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format){
+void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint32_t *bwp_ind, uint8_t *dci_format)
+{
 
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
 
@@ -471,7 +472,6 @@ void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint16_t *bwp_ind, uint8_t *dci_format
   }
 
   LOG_D(MAC, "In %s setting DL_BWP_Id %ld UL_BWP_Id %ld \n", __FUNCTION__, mac->DL_BWP_Id, mac->UL_BWP_Id);
-
 }
 
 /** \brief This function is relavant for the UE procedures for control. It loads the search spaces, the BWPs and the CORESETs into the MAC instance and
