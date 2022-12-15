@@ -1014,8 +1014,8 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
 
       srs_config_pdu->rnti = mac->crnti;
       srs_config_pdu->handle = 0;
-      srs_config_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
-      srs_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);;
+      srs_config_pdu->bwp_size = NRRIV2BW(ubwp.locationAndBandwidth, MAX_BWP_SIZE);
+      srs_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp.locationAndBandwidth, MAX_BWP_SIZE);
       srs_config_pdu->subcarrier_spacing = ubwp.subcarrierSpacing;
       srs_config_pdu->cyclic_prefix = 0;
       srs_config_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;

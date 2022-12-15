@@ -278,6 +278,7 @@ int main(int argc, char **argv)
   double snr_step = .2;
   uint8_t snr1set = 0;
   int slot = 8, frame = 1;
+  int do_SRS = 1;
   FILE *output_fd = NULL;
   double **s_re,**s_im,**r_re,**r_im;
   //uint8_t write_output_file = 0;
@@ -803,7 +804,7 @@ int main(int argc, char **argv)
                                 maxDoppler,
                                 corr_level,
                                 0,
-                                0,
+                                delay,
                                 0,
                                 0);
 
@@ -867,8 +868,6 @@ int main(int argc, char **argv)
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
   memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
   Sched_INFO->UL_tti_req=UL_tti_req;
-
-  nfapi_nr_pusch_pdu_t  *pusch_pdu = &UL_tti_req->pdus_list[0].pusch_pdu;
 
   nr_phy_data_tx_t phy_data = {0};
 
@@ -1090,23 +1089,27 @@ int main(int argc, char **argv)
 
     clear_pusch_stats(gNB);
     for (trial = 0; trial < n_trials; trial++) {
+
       uint8_t round = 0;
       crc_status = 1;
       errors_decoding = 0;
+
       while (round < max_rounds && crc_status) {
+
         round_trials[round]++;
-        UE->ul_harq_processes[harq_pid].round = round;
         rv_index = nr_rv_round_map[round % 4];
 
-        UE_proc.nr_slot_tx = slot;
-        UE_proc.frame_tx = frame;
-        UE_proc.gNB_id   = 0;
+        /// gNB UL PDUs
 
         UL_tti_req->SFN = frame;
         UL_tti_req->Slot = slot;
-        UL_tti_req->n_pdus = 1;
-        UL_tti_req->pdus_list[0].pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
-        UL_tti_req->pdus_list[0].pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+        UL_tti_req->n_pdus = do_SRS == 1 ? 2 : 1;
+
+        nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_element0 = &UL_tti_req->pdus_list[0];
+        pdu_element0->pdu_type = NFAPI_NR_UL_CONFIG_PUSCH_PDU_TYPE;
+        pdu_element0->pdu_size = sizeof(nfapi_nr_pusch_pdu_t);
+
+        nfapi_nr_pusch_pdu_t *pusch_pdu = &pdu_element0->pusch_pdu;
         memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
         int abwp_size = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
@@ -1168,6 +1171,42 @@ int main(int argc, char **argv)
           pusch_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
         }
 
+        if (do_SRS == 1) {
+          const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 48, 52, 56, 60, 64, 72, 72, 76, 80, 88,
+                                      96, 96, 104, 112, 120, 120, 120, 128, 128, 128, 132, 136, 144, 144, 144, 144, 152, 160,
+                                      160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
+                                      256, 264, 272, 272, 272 };
+          nfapi_nr_ul_tti_request_number_of_pdus_t *pdu_element1 = &UL_tti_req->pdus_list[1];
+          pdu_element1->pdu_type = NFAPI_NR_UL_CONFIG_SRS_PDU_TYPE;
+          pdu_element1->pdu_size = sizeof(nfapi_nr_srs_pdu_t);
+          nfapi_nr_srs_pdu_t *srs_pdu = &pdu_element1->srs_pdu;
+          memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
+          srs_pdu->rnti = n_rnti;
+          srs_pdu->bwp_size = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+          srs_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+          srs_pdu->subcarrier_spacing = frame_parms->subcarrier_spacing;
+          srs_pdu->num_ant_ports = n_tx == 4 ? 2 : n_tx == 2 ? 1 : 0;
+          srs_pdu->sequence_id = 40;
+          srs_pdu->config_index = rrc_get_max_nr_csrs(srs_pdu->bwp_size, srs_pdu->bandwidth_index);
+          srs_pdu->resource_type = NR_SRS_Resource__resourceType_PR_periodic;
+          srs_pdu->t_srs = 1;
+          srs_pdu->srs_parameters_v4.srs_bandwidth_size = m_SRS[srs_pdu->config_index];
+          srs_pdu->srs_parameters_v4.usage = 1 << NR_SRS_ResourceSet__usage_codebook;
+          srs_pdu->srs_parameters_v4.report_type[0] = 1;
+          srs_pdu->srs_parameters_v4.iq_representation = 1;
+          srs_pdu->srs_parameters_v4.prg_size = 1;
+          srs_pdu->srs_parameters_v4.num_total_ue_antennas = 1 << srs_pdu->num_ant_ports;
+          srs_pdu->beamforming.num_prgs = m_SRS[srs_pdu->config_index];
+          srs_pdu->beamforming.prg_size = 1;
+        }
+
+        /// UE UL PDUs
+
+        UE->ul_harq_processes[harq_pid].round = round;
+        UE_proc.nr_slot_tx = slot;
+        UE_proc.frame_tx = frame;
+        UE_proc.gNB_id = 0;
+
         // prepare ULSCH/PUSCH reception
         pushNotifiedFIFO(&gNB->L1_tx_free, msgL1Tx); // to unblock the process in the beginning
         nr_schedule_response(Sched_INFO);
@@ -1186,57 +1225,71 @@ int main(int argc, char **argv)
         // Config UL TX PDU
         tx_req.slot = slot;
         tx_req.sfn = frame;
-        // tx_req->tx_config // TbD
-        tx_req.number_of_pdus = 1;
+        tx_req.number_of_pdus = 1; //do_SRS == 1 ? 2 : 1;
+
         tx_req.tx_request_body[0].pdu_length = TBS / 8;
         tx_req.tx_request_body[0].pdu_index = 0;
         tx_req.tx_request_body[0].pdu = &ulsch_input_buffer[0];
 
         ul_config.slot = slot;
-        ul_config.number_pdus = 1;
-        ul_config.ul_config_list[0].pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
-        ul_config.ul_config_list[0].pusch_config_pdu.rnti = n_rnti;
-        ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map = pdu_bit_map;
-        ul_config.ul_config_list[0].pusch_config_pdu.qam_mod_order = mod_order;
-        ul_config.ul_config_list[0].pusch_config_pdu.rb_size = nb_rb;
-        ul_config.ul_config_list[0].pusch_config_pdu.rb_start = start_rb;
-        ul_config.ul_config_list[0].pusch_config_pdu.nr_of_symbols = nb_symb_sch;
-        ul_config.ul_config_list[0].pusch_config_pdu.start_symbol_index = start_symbol;
-        ul_config.ul_config_list[0].pusch_config_pdu.ul_dmrs_symb_pos = l_prime_mask;
-        ul_config.ul_config_list[0].pusch_config_pdu.dmrs_config_type = dmrs_config_type;
-        ul_config.ul_config_list[0].pusch_config_pdu.mcs_index = Imcs;
-        ul_config.ul_config_list[0].pusch_config_pdu.mcs_table = mcs_table;
-        ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
-        ul_config.ul_config_list[0].pusch_config_pdu.nrOfLayers = precod_nbr_layers;
-        ul_config.ul_config_list[0].pusch_config_pdu.dmrs_ports = ((1 << precod_nbr_layers) - 1);
-        ul_config.ul_config_list[0].pusch_config_pdu.absolute_delta_PUSCH = 0;
-        ul_config.ul_config_list[0].pusch_config_pdu.target_code_rate = code_rate;
-        ul_config.ul_config_list[0].pusch_config_pdu.tbslbrm = tbslbrm;
+        ul_config.number_pdus = do_SRS == 1 ? 2 : 1;
 
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.tb_size = TBS / 8;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.new_data_indicator = trial & 0x1;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.rv_index = rv_index;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_data.harq_process_id = harq_pid;
-
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_time_density = ptrs_time_density;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list = (nfapi_nr_ue_ptrs_ports_t *)malloc(2 * sizeof(nfapi_nr_ue_ptrs_ports_t));
-        ul_config.ul_config_list[0].pusch_config_pdu.pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
-
-        ul_config.ul_config_list[0].pusch_config_pdu.transform_precoding = transform_precoding;
-
+        fapi_nr_ul_config_request_pdu_t *ul_config0 = &ul_config.ul_config_list[0];
+        ul_config0->pdu_type = FAPI_NR_UL_CONFIG_TYPE_PUSCH;
+        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu = &ul_config0->pusch_config_pdu;
+        pusch_config_pdu->rnti = n_rnti;
+        pusch_config_pdu->pdu_bit_map = pdu_bit_map;
+        pusch_config_pdu->qam_mod_order = mod_order;
+        pusch_config_pdu->rb_size = nb_rb;
+        pusch_config_pdu->rb_start = start_rb;
+        pusch_config_pdu->nr_of_symbols = nb_symb_sch;
+        pusch_config_pdu->start_symbol_index = start_symbol;
+        pusch_config_pdu->ul_dmrs_symb_pos = l_prime_mask;
+        pusch_config_pdu->dmrs_config_type = dmrs_config_type;
+        pusch_config_pdu->mcs_index = Imcs;
+        pusch_config_pdu->mcs_table = mcs_table;
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
+        pusch_config_pdu->nrOfLayers = precod_nbr_layers;
+        pusch_config_pdu->dmrs_ports = ((1 << precod_nbr_layers) - 1);
+        pusch_config_pdu->absolute_delta_PUSCH = 0;
+        pusch_config_pdu->target_code_rate = code_rate;
+        pusch_config_pdu->tbslbrm = tbslbrm;
+        pusch_config_pdu->pusch_data.tb_size = TBS / 8;
+        pusch_config_pdu->pusch_data.new_data_indicator = trial & 0x1;
+        pusch_config_pdu->pusch_data.rv_index = rv_index;
+        pusch_config_pdu->pusch_data.harq_process_id = harq_pid;
+        pusch_config_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
+        pusch_config_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
+        pusch_config_pdu->pusch_ptrs.ptrs_ports_list = (nfapi_nr_ue_ptrs_ports_t *)malloc(2 * sizeof(nfapi_nr_ue_ptrs_ports_t));
+        pusch_config_pdu->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset = 0;
+        pusch_config_pdu->transform_precoding = transform_precoding;
         // if transform precoding is enabled
         if (transform_precoding == transformPrecoder_enabled) {
-          ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2
-          ul_config.ul_config_list[0].pusch_config_pdu.dfts_ofdm.low_papr_sequence_number = 0; // V as defined in 38.211 section 6.4.1.1.1.2
-          // ul_config.ul_config_list[0].pusch_config_pdu.pdu_bit_map |= PUSCH_PDU_BITMAP_DFTS_OFDM;
-          ul_config.ul_config_list[0].pusch_config_pdu.num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
+          pusch_config_pdu->dfts_ofdm.low_papr_group_number = *scc->physCellId % 30; // U as defined in 38.211 section 6.4.1.1.1.2
+          pusch_config_pdu->dfts_ofdm.low_papr_sequence_number = 0; // V as defined in 38.211 section 6.4.1.1.1.2
+          // pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_DFTS_OFDM;
+          pusch_config_pdu->num_dmrs_cdm_grps_no_data = num_dmrs_cdm_grps_no_data;
         }
 
-        // nr_fill_ulsch(gNB,frame,slot,pusch_pdu); // Not needed as its its already filled as apart of "nr_schedule_response(Sched_INFO);"
+        if (do_SRS == 1) {
+          fapi_nr_ul_config_request_pdu_t *ul_config1 = &ul_config.ul_config_list[1];
+          ul_config1->pdu_type = FAPI_NR_UL_CONFIG_TYPE_SRS;
+          fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ul_config1->srs_config_pdu;
+          memset(srs_config_pdu, 0, sizeof(fapi_nr_ul_config_srs_pdu));
+          srs_config_pdu->rnti = n_rnti;
+          srs_config_pdu->bwp_size = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+          srs_config_pdu->bwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, 275);
+          srs_config_pdu->subcarrier_spacing = frame_parms->subcarrier_spacing;
+          srs_config_pdu->num_ant_ports = n_tx == 4 ? 2 : n_tx == 2 ? 1 : 0;
+          srs_config_pdu->config_index = rrc_get_max_nr_csrs(srs_config_pdu->bwp_size, srs_config_pdu->bandwidth_index);
+          srs_config_pdu->sequence_id = 40;
+          srs_config_pdu->resource_type = NR_SRS_Resource__resourceType_PR_periodic;
+          srs_config_pdu->t_srs = 1;
+        }
 
         for (int i = 0; i < (TBS / 8); i++)
           UE->ul_harq_processes[harq_pid].a[i] = i & 0xff;
+
         if (input_fd == NULL) {
           // set FAPI parameters for UE, put them in the scheduled response and call
           nr_ue_scheduled_response(&scheduled_response);
@@ -1280,7 +1333,6 @@ int main(int argc, char **argv)
           // Justification of division by precod_nbr_layers:
           // When the channel is the identity matrix, the results in terms of SNR should be almost equal for 2x2 and 4x4.
           sigma_dB = 10 * log10((double)txlev_sum / precod_nbr_layers * ((double)frame_parms->ofdm_symbol_size / (12 * nb_rb))) - SNR;
-          ;
           sigma = pow(10, sigma_dB / 10);
 
           if (n_trials == 1)
@@ -1310,6 +1362,7 @@ int main(int argc, char **argv)
         //----------------------------------------------------------
         gNB->UL_INFO.rx_ind.number_of_pdus = 0;
         gNB->UL_INFO.crc_ind.number_crcs = 0;
+        gNB->UL_INFO.srs_ind.number_of_pdus = 0;
 
         for(uint8_t symbol = 0; symbol < (gNB->frame_parms.Ncp == EXTENDED ? 12 : 14); symbol++) {
           for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)
