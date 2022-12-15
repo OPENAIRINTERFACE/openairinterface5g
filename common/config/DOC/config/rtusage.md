@@ -18,6 +18,7 @@ The debug level is a mask:
 *  bit 2: print memory allocation/free performed by the config module
 *  bit 3: print command line processing messages
 *  bit 4: disable execution abort when parameters checking fails
+*  bit 5: write a config file  reflecting the parameters after reading the configuration file and processing the command line
 
 As a oai user, you may have to use bit 1 (dbgl1) , to check your configuration and get the full name of a parameter you would like to modify on the command line. Other bits are for developers usage, (dbgl7 will print all debug messages).
 
@@ -27,7 +28,10 @@ $ ./lte-softmodem -O libconfig:<config>:dbgl1
 ```bash
 $ ./lte-uesoftmodem -O cmdlineonly:dbgl1
 ```
+bit 5 (dbgl32) can be useful to detect unused parameters from a config file or to detect parameters set to their default values, and not present in the config file
+
 To get help on supported parameters you can use specific options:
+
 *  ---help: print help for command line only parameters and for parameters not defined in a specific section
 	*  ---help_< prefix > : print help for parameters defined under the section < prefix >
 

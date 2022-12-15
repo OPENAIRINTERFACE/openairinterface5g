@@ -41,13 +41,10 @@
 
 static int coding_setmod_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t coding_cmdarray[] = {
-   {"mode","[sse,avx2,stdc,none]",coding_setmod_cmd},
-   {"","",NULL},
+    {"mode", "[sse,avx2,stdc,none]", coding_setmod_cmd, {NULL}, 0, NULL},
+    {"", "", NULL, {NULL}, 0, NULL},
 };
-telnetshell_vardef_t coding_vardef[] = {
-{"maxiter",TELNET_VARTYPE_INT32,&max_turbo_iterations},
-{"",0,NULL}
-};
+telnetshell_vardef_t coding_vardef[] = {{"maxiter", TELNET_VARTYPE_INT32, 0, &max_turbo_iterations}, {"", 0, 0, NULL}};
 /* PHY/defs.h contains MODE_DECODE_XXX macros, following table must match */
 static char *modedesc[] = {"none","sse","C","avx2"};
 static int curmode;

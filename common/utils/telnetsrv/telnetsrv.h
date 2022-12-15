@@ -48,19 +48,54 @@
 #define CMDSTATUS_VARNOTFOUND 3
 #define CMDSTATUS_NOTFOUND    4
 
+/* definitions to store 2 dim table, used to store command results before */
+/* displaying them either on console or web page */
+#define TELNET_MAXLINE_NUM 100
+#define TELNET_MAXCOL_NUM 10
+
+typedef struct col {
+  char coltitle[TELNET_CMD_MAXSIZE];
+  unsigned int coltype;
+} acol_t;
+
+typedef struct line {
+  char *val[TELNET_MAXCOL_NUM];
+} aline_t;
+
+typedef struct webdatadef {
+  char tblname[TELNET_HELPSTR_SIZE];
+  int numlines;
+  int numcols;
+  acol_t columns[TELNET_MAXCOL_NUM];
+  aline_t lines[TELNET_MAXLINE_NUM];
+} webdatadef_t;
 /*----------------------------------------------------------------------------*/
 /* structure to be used when adding a module to the telnet server */
 /* This is the second parameter of the add_telnetcmd function, which can be used   */
 /* to add a set of new command to the telnet server shell */
 typedef void(*telnet_printfunc_t)(const char* format, ...);
 typedef int(*cmdfunc_t)(char*, int, telnet_printfunc_t prnt);
+typedef int (*webfunc_t)(char *cmdbuff, int debug, telnet_printfunc_t prnt, ...);
+typedef int (*webfunc_getdata_t)(char *cmdbuff, int debug, void *data, telnet_printfunc_t prnt);
 typedef int(*qcmdfunc_t)(char*, int, telnet_printfunc_t prnt,void *arg);
 
-#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ   (1<<0)    // ask the telnet server to push the command in a thread pool queue
+#define TELNETSRV_CMDFLAG_PUSHINTPOOLQ (1 << 0) // ask the telnet server to push the command in a thread pool queue
+#define TELNETSRV_CMDFLAG_GETWEBDATA (1 << 1) // When called from web server, use the getdata variant of the function
+#define TELNETSRV_CMDFLAG_TELNETONLY (1 << 2) // Command only for telnet client connections
+#define TELNETSRV_CMDFLAG_WEBSRVONLY (1 << 3) // Command only for web server connections
+#define TELNETSRV_CMDFLAG_CONFEXEC (1 << 4) // Ask for confirm before exec
+#define TELNETSRV_CMDFLAG_GETWEBTBLDATA (1 << 8) // When called from web server, use the get table data variant of the function
+#define TELNETSRV_CMDFLAG_NEEDPARAM (1 << 10) // websrv: The command needs a parameter
+#define TELNETSRV_CMDFLAG_WEBSRV_SETRETURNTBL (1 << 11) // websrv: set callback returns a new table
+#define TELNETSRV_CMDFLAG_AUTOUPDATE (1 << 12) // command can be re-submitted automatically for result update
 typedef struct cmddef {
     char cmdname[TELNET_CMD_MAXSIZE];
     char helpstr[TELNET_HELPSTR_SIZE];
-    cmdfunc_t cmdfunc; 
+    cmdfunc_t cmdfunc;
+    union {
+      webfunc_t webfunc;
+      webfunc_getdata_t webfunc_getdata;
+    };
     unsigned int cmdflags;
     void *qptr;
 } telnetshell_cmddef_t;
@@ -78,6 +113,8 @@ typedef struct telnetsrv_qmsg {
 /*structure to be used when adding a module to the telnet server */
 /* This is the first parameter of the add_telnetcmd function, which can be used   */
 /* to add a set of new variables which can be got/set from the telnet server shell */
+/* var type: bits 0-3, type value (1 to 15)
+ * type modifier, bits 4-31 */
 #define TELNET_VARTYPE_INT32  1
 #define TELNET_VARTYPE_INT16  2
 #define TELNET_VARTYPE_INT64  3
@@ -85,9 +122,16 @@ typedef struct telnetsrv_qmsg {
 #define TELNET_VARTYPE_DOUBLE 5
 #define TELNET_VARTYPE_INT8   6
 #define TELNET_VARTYPE_UINT   7
+
+#define TELNET_CHECKVAL_RDONLY 16
+#define TELNET_CHECKVAL_BOOL 32
+#define TELNET_VAR_NEEDFREE 64
+#define TELNET_CHECKVAL_LOGLVL 128
+#define TELNET_CHECKVAL_SIMALGO 256
 typedef struct variabledef {
     char varname[TELNET_CMD_MAXSIZE];
     char vartype;
+    char checkval;
     void *varvalptr;
 } telnetshell_vardef_t;
 
@@ -113,6 +157,7 @@ typedef struct {
      int priority;                   // server running priority
      char *histfile;                 // command history
      int histsize;                   // command history length
+     char *logfile; // filename to use when redirecting output to file
      int new_socket;                 // socket of the client connection
      int logfilefd;                  // file id of the log file when log output is redirected to a file
      int  saved_stdout;              // file id of the previous stdout, used to be able to restore original stdout 
@@ -145,14 +190,25 @@ VT escape sequence definition, for smarter display....
 #define STDFMT   "\x1b[0m"
 
 /*---------------------------------------------------------------------------------------------*/
+#define NICE_MAX 19
+#define NICE_MIN -20
 #define TELNET_ADDCMD_FNAME "add_telnetcmd"
 #define TELNET_POLLCMDQ_FNAME "poll_telnetcmdq"
+#define TELNET_PUSHCMD_FNAME "telnet_pushcmd"
 typedef int(*add_telnetcmd_func_t)(char *, telnetshell_vardef_t *, telnetshell_cmddef_t *);
 typedef void(*poll_telnetcmdq_func_t)(void *qid,void *arg);
+typedef void (*push_telnetcmd_func_t)(telnetshell_cmddef_t *cmd, char *cmdbuff, telnet_printfunc_t prnt);
 #ifdef TELNETSERVERCODE
 int add_telnetcmd(char *modulename, telnetshell_vardef_t *var, telnetshell_cmddef_t *cmd);
 void set_sched(pthread_t tid, int pid,int priority);
 void set_affinity(pthread_t tid, int pid, int coreid);
 extern int get_phybsize(void); 
+#endif
+#ifdef WEBSERVERCODE
+extern void telnet_pushcmd(telnetshell_cmddef_t *cmd, char *cmdbuff, telnet_printfunc_t prnt);
+extern telnetsrv_params_t *get_telnetsrv_params(void);
+extern char *telnet_getvarvalue(telnetshell_vardef_t *var, int varindex);
+extern int telnet_setvarvalue(telnetshell_vardef_t *var, char *strval, telnet_printfunc_t prnt);
+extern void telnetsrv_freetbldata(webdatadef_t *wdata);
 #endif
 #endif

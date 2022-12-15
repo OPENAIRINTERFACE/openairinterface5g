@@ -32,6 +32,6 @@ endforeach()
 
 install(TARGETS telnetsrv DESTINATION bin)
 
-if (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")
-     install(TARGETS telnetsrv DESTINATION ${OPENAIR_BUILD_DIR}/ran_build/build)
-endif (EXISTS "${OPENAIR_BUILD_DIR}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_BUILD_DIR}/ran_build/build")
+if (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")
+     install(TARGETS telnetsrv DESTINATION ${OPENAIR_CMAKE}/ran_build/build)
+endif (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")

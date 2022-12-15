@@ -91,9 +91,7 @@ telnetshell_cmddef_t measur_cmdarray[] = {
   {"","",NULL}
 };
 
-telnetshell_vardef_t measur_vardef[] = {
-  {"",0,NULL}
-};
+telnetshell_vardef_t measur_vardef[] = {{"", 0, 0, NULL}};
 /* function to be implemented in any telnetsrv_xxx_measurements.c sources
    to allow common measurment code to access measurments data             */
 extern int get_measurgroups(telnet_measurgroupdef_t **measurgroups);

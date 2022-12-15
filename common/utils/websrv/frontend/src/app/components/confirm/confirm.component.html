@@ -1,0 +1,5 @@
+<h3>{{ data.title }}</h3>
+<div fxLayoutGap="10px" mat-dialog-actions fxLayout="row" fxLayoutAlign="center start">
+    <button mat-button [mat-dialog-close]="true" cdkFocusInitial>Ok</button>
+    <button mat-button (click)="onNoClick()">Cancel</button>
+</div>

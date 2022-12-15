@@ -54,6 +54,7 @@
 #define CONFIG_DEBUGPTR       (1<<1)            // print memory allocation/free debug messages
 #define CONFIG_DEBUGCMDLINE   (1<<2)            // print command line processing messages
 #define CONFIG_NOABORTONCHKF  (1<<4)            // disable abort execution when parameter checking function fails
+#define CONFIG_SAVERUNCFG (1 << 5) // create config file with running values, as after cfg file + command line processing
 #define CONFIG_NOEXITONHELP   (1<<19)           // do not exit after printing help
 #define CONFIG_HELP           (1<<20)           // print help message
 #define CONFIG_ABORT          (1<<21)           // config failed,abort execution 
@@ -61,7 +62,20 @@
 typedef int(*configmodule_initfunc_t)(char *cfgP[],int numP);
 typedef int(*configmodule_getfunc_t)(paramdef_t *,int numparams, char *prefix);
 typedef int(*configmodule_getlistfunc_t)(paramlist_def_t *, paramdef_t *,int numparams, char *prefix);
+typedef int (*configmodule_setfunc_t)(paramdef_t *cfgoptions, int numoptions, char *prefix);
 typedef void(*configmodule_endfunc_t)(void);
+
+typedef struct configmodule_status {
+  int num_paramgroups;
+  char **paramgroups_names;
+  int num_err_nullvalue;
+  int emptyla;
+  int num_err_read;
+  int num_err_write;
+  int num_read;
+  int num_write;
+  char *debug_cfgname;
+} configmodule_status_t;
 
 typedef struct oneBlock_s{
     void *ptrs;
@@ -80,11 +94,15 @@ typedef struct configmodule_interface {
   configmodule_initfunc_t         init;
   configmodule_getfunc_t          get;
   configmodule_getlistfunc_t      getlist;
+  configmodule_setfunc_t set;
   configmodule_endfunc_t          end;
   pthread_mutex_t  memBlocks_mutex;
+  configmodule_endfunc_t write_parsedcfg;
   uint32_t numptrs;
   uint32_t rtflags;
   oneBlock_t oneBlock[CONFIG_MAX_ALLOCATEDPTRS];
+  char *tmpdir;
+  configmodule_status_t *status; // allocated in debug mode only
 } configmodule_interface_t;
 
 #ifdef CONFIG_LOADCONFIG_MAIN
@@ -97,16 +115,19 @@ static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugfl
           incp parameter can be used to define the include path used for config files (@include directive)\n \
                          defaults is set to the path of the main config file.\n";
 
-#define CONFIG_SECTIONNAME "config"
-#define CONFIGPARAM_DEBUGFLAGS_IDX        0
+#define CONFIG_HELP_TMPDIR "<Repository to create temporary file>"
 
+#define CONFIG_SECTIONNAME "config"
+#define CONFIGP_DEBUGFLAGS "debugflags"
+#define CONFIGP_TMPDIR "tmpdir"
 
 static paramdef_t Config_Params[] = {
-  /*-----------------------------------------------------------------------------------------------------------------------*/
-  /*                                            config parameters for config module                                        */
-  /*   optname              helpstr           paramflags     XXXptr       defXXXval            type       numelt           */
-  /*-----------------------------------------------------------------------------------------------------------------------*/
-  {"debugflags",            config_helpstr,   0,             uptr:NULL,   defintval:0,        TYPE_MASK,  0},
+    /*--------------------------------------------------------------------------------------------------------------------------*/
+    /*                                            config parameters for config module                                           */
+    /*   optname              helpstr           paramflags         XXXptr                defXXXval            type       numelt */
+    /*--------------------------------------------------------------------------------------------------------------------------*/
+    {CONFIGP_DEBUGFLAGS, config_helpstr, 0, uptr : NULL, defintval : 0, TYPE_MASK, 0},
+    {CONFIGP_TMPDIR, CONFIG_HELP_TMPDIR, PARAMFLAG_NOFREE, strptr : NULL, defstrval : "/tmp", TYPE_STRING, 0},
 };
 
 #else
@@ -126,6 +147,8 @@ extern configmodule_interface_t *load_configmodule(int argc, char **argv, uint32
  * a new config module init
 */
 extern void end_configmodule(void);
+extern void write_parsedcfg(void);
+
 /* free all config module memory, to be used at end of program as
  * it will free parameters values even those specified with the PARAMFLAG_NOFREE flag */
 extern void free_configmodule(void);

@@ -46,20 +46,32 @@ extern void print_shorts(char *s,__m128i *x);
 static mapping channelmod_names[] = {
   CHANNELMOD_MAP_INIT
 };
-
+static char *module_id_str[] = MODULEID_STR_INIT;
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt);
+int get_modchannel_index(char *buf, int debug, void *vdata, telnet_printfunc_t prnt);
+int get_channel_params(char *buf, int debug, void *tdata, telnet_printfunc_t prnt);
+int get_currentchannels_type(char *buf, int debug, void *vdata, telnet_printfunc_t prnt);
+
+#define HELP_WEBIF_MODIFCHAN_STRING "Current channel index? <chanidx>"
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
-  {"help","",channelmod_print_help},
-  {"show","<predef,current>",channelmod_show_cmd},
-  {"modify","<channelid> <param> <value>",channelmod_modify_cmd},
-  {"","",NULL},
+    {"help", "", channelmod_print_help, {NULL}, 0, NULL},
+    {"show", "<predef,current>", channelmod_show_cmd, {NULL}, TELNETSRV_CMDFLAG_TELNETONLY, NULL},
+    {"show predef", "", channelmod_show_cmd, {NULL}, TELNETSRV_CMDFLAG_WEBSRVONLY, NULL},
+    {"show current", "", channelmod_show_cmd, {NULL}, TELNETSRV_CMDFLAG_WEBSRVONLY, NULL},
+    {"modify", "<channelid> <param> <value>", channelmod_modify_cmd, {NULL}, TELNETSRV_CMDFLAG_TELNETONLY, NULL},
+    {"show params", "<channelid> <param> <value>", channelmod_modify_cmd, {webfunc_getdata : get_currentchannels_type}, TELNETSRV_CMDFLAG_GETWEBTBLDATA | TELNETSRV_CMDFLAG_WEBSRV_SETRETURNTBL, NULL},
+    {"show channelid",
+     HELP_WEBIF_MODIFCHAN_STRING,
+     channelmod_modify_cmd,
+     {webfunc_getdata : get_channel_params},
+     TELNETSRV_CMDFLAG_NEEDPARAM | TELNETSRV_CMDFLAG_WEBSRVONLY | TELNETSRV_CMDFLAG_GETWEBTBLDATA,
+     NULL},
+    {"", "", NULL, {NULL}, 0, NULL},
 };
 
-static telnetshell_vardef_t channelmod_vardef[] = {
-  {"",0,NULL}
-};
+static telnetshell_vardef_t channelmod_vardef[] = {{"", 0, 0, NULL}};
 
 static double snr_dB=25;
 static double sinr_dB=0;
@@ -1976,7 +1988,8 @@ double N_RB2channel_bandwidth(uint16_t N_RB) {
   return(channel_bandwidth);
 }
 
-
+/*-----------------------------------------------------------------------------------------------------------*/
+/* functions for telnet server and webserver                                                                 */
 static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt ) {
   prnt("channelmod commands can be used to display or modify channel models parameters\n");
   prnt("channelmod show predef: display predefined model algorithms available in oai\n");
@@ -1987,9 +2000,70 @@ static int channelmod_print_help(char *buff, int debug, telnet_printfunc_t prnt 
   return CMDSTATUS_FOUND;
 }
 
+static char *pnames[] = {"riceanf", "aoa", "randaoa", "ploss", "noise_power_dB", "offset", "forgetf", NULL};
+static char *pformat[] = {"%lf", "%lf", "%i", "%lf", "%lf", "%i", "%lf", NULL};
+int get_channel_params(char *buf, int debug, void *vdata, telnet_printfunc_t prnt)
+{
+  if (buf == NULL) {
+    LOG_I(UTIL, "%s received NULL buffer\n", __FUNCTION__);
+    return -1;
+  }
+  if (debug)
+    LOG_I(UTIL, "%s received %s\n", __FUNCTION__, buf);
+  int chanidx = 0;
+  webdatadef_t *tdata = (webdatadef_t *)vdata;
+  if (strstr(buf, "show") == buf) {
+    if (tdata->lines[0].val[0] != NULL) {
+      chanidx = strtol(tdata->lines[0].val[0], NULL, 0);
+    } else {
+      LOG_I(UTIL, "Channel index set to 0, not available in received data\n");
+    }
+    if (tdata != NULL && defined_channels[chanidx] != NULL) {
+      tdata->numcols = 2;
+      snprintf(tdata->columns[0].coltitle, sizeof(tdata->columns[0].coltitle), "parameter");
+      tdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+      snprintf(tdata->columns[1].coltitle, sizeof(tdata->columns[1].coltitle), "value");
+      tdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
+      tdata->numlines = 0;
+      channel_desc_t *cd = defined_channels[chanidx];
+      void *valptr[] = {&(cd->ricean_factor), &(cd->aoa), &(cd->random_aoa), &(cd->path_loss_dB), &(cd->noise_power_dB), &(cd->channel_offset), &(cd->forgetting_factor)};
+      for (int i = 0; pnames[i] != NULL; i++) {
+        tdata->lines[tdata->numlines].val[0] = malloc(strlen(pnames[i] + 1));
+        tdata->lines[tdata->numlines].val[1] = malloc(64);
+        strcpy(tdata->lines[tdata->numlines].val[0], pnames[i]);
+        if (pformat[i][1] == 'i') {
+          snprintf(tdata->lines[tdata->numlines].val[1], 64, pformat[i], *(int *)valptr[i]);
+        } else {
+          snprintf(tdata->lines[tdata->numlines].val[1], 64, pformat[i], *(double *)valptr[i]);
+        }
+        tdata->numlines++;
+      }
+    }
+    return tdata->numlines;
+  } /* show */ else if (strstr(buf, "set") == buf) {
+    char cmdbuf[TELNET_MAX_MSGLENGTH];
+    int sst = sscanf(tdata->tblname, "%*[^=]=%i", &chanidx);
+    if (sst == 1) {
+      int pidx = tdata->numlines;
+      if (pformat[pidx][1] == 'i') {
+        sprintf(cmdbuf, "channelmod modify %i %s %s", chanidx, pnames[pidx], tdata->lines[0].val[0]);
+      } else {
+        sprintf(cmdbuf, "channelmod modify %i %s %s", chanidx, pnames[pidx], tdata->lines[0].val[1]);
+      }
+      channelmod_modify_cmd(cmdbuf, debug, prnt);
+      return CMDSTATUS_FOUND;
+    } else {
+      prnt("  channel index not found in cannelmod command\n");
+    }
+  } else {
+    prnt("%s not implemented\n", buf);
+  }
+
+  return CMDSTATUS_NOTFOUND;
+
+} /* get_currentchannel_type */
 
 static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_t prnt) {
-  char *module_id_str[]=MODULEID_STR_INIT;
   prnt("model owner: %s\n",(cd->module_id != 0)?module_id_str[cd->module_id]:"not set");
   prnt("nb_tx: %i    nb_rx: %i    taps: %i bandwidth: %lf    sampling: %lf\n",cd->nb_tx, cd->nb_rx, cd->nb_taps, cd->channel_bandwidth, cd->sampling_rate);
   prnt("channel length: %i    Max path delay: %lf   ricean fact.: %lf    angle of arrival: %lf (randomized:%s)\n",
@@ -2004,10 +2078,60 @@ static void display_channelmodel(channel_desc_t *cd,int debug, telnet_printfunc_
   }
 }
 
+int get_currentchannels_type(char *buf, int debug, void *vdata, telnet_printfunc_t prnt)
+{
+  webdatadef_t *tdata;
+  if (buf == NULL) {
+    LOG_I(UTIL, "%s received NULL buffer\n", __FUNCTION__);
+    return -1;
+  }
+  if (debug)
+    LOG_I(UTIL, "%s received %s\n", __FUNCTION__, buf);
+
+  if (vdata != NULL) {
+    tdata = (webdatadef_t *)vdata;
+  } else {
+    LOG_I(UTIL, "%s vdata is NULL\n", __FUNCTION__);
+    return -1;
+  }
+
+  if (strncmp(buf, "set", 3) == 0) {
+    tdata->numcols = 1;
+    return get_channel_params(buf, debug, vdata, prnt);
+  }
+
+  tdata->numcols = 4;
+  snprintf(tdata->columns[0].coltitle, sizeof(tdata->columns[0].coltitle), "model index");
+  tdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+  snprintf(tdata->columns[1].coltitle, sizeof(tdata->columns[1].coltitle), "model name");
+  tdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+  snprintf(tdata->columns[2].coltitle, sizeof(tdata->columns[2].coltitle), "module owner");
+  tdata->columns[2].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+  snprintf(tdata->columns[3].coltitle, sizeof(tdata->columns[3].coltitle), "algorithm");
+  tdata->columns[3].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_SIMALGO;
+  tdata->numlines = 0;
+  for (int i = 0; ((i < max_chan) && (i < TELNET_MAXLINE_NUM)); i++) {
+    if (defined_channels[i] != NULL) {
+      tdata->lines[tdata->numlines].val[0] = malloc(64);
+      snprintf(tdata->lines[tdata->numlines].val[0], 64, "%02u", (unsigned int)i);
+      tdata->lines[tdata->numlines].val[1] = (defined_channels[i]->model_name != NULL) ? defined_channels[i]->model_name : "(not set)";
+      tdata->lines[tdata->numlines].val[2] = (defined_channels[i]->module_id != 0) ? module_id_str[defined_channels[i]->module_id] : "not set";
+      tdata->lines[tdata->numlines].val[3] = map_int_to_str(channelmod_names, defined_channels[i]->modelid);
+      tdata->numlines++;
+    }
+  }
+  return tdata->numlines;
+} /* get_currentchannel_type */
 
 static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *subcmd=NULL;
-  int s = sscanf(buff,"%ms\n",&subcmd);
+  int s;
+  if (buff == NULL) {
+    subcmd = strdup(""); // enforce help display
+    s = 2;
+  } else {
+    s = sscanf(buff, "%ms\n", &subcmd);
+  }
 
   if (s>0) {
     if ( strcmp(subcmd,"predef") == 0) {
@@ -2038,7 +2162,7 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *param=NULL, *value=NULL;
   int cd_id= -1;
-  int s = sscanf(buff,"%i %ms %ms \n",&cd_id,&param, &value);
+  int s = sscanf(buff, "%*s %*s %i %ms %ms \n", &cd_id, &param, &value);
 
   if (cd_id<0 || cd_id >= max_chan) {
     prnt("ERROR, %i: Channel model id outof range (0-%i)\n",cd_id,max_chan-1);
@@ -2100,6 +2224,36 @@ static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt)
 
   return CMDSTATUS_FOUND;
 }
+
+int get_modchannel_index(char *buf, int debug, void *vdata, telnet_printfunc_t prnt)
+{
+  if (buf == NULL) {
+    LOG_I(UTIL, "%s received NULL buffer\n", __FUNCTION__);
+    return -1;
+  }
+  if (debug)
+    LOG_I(UTIL, "%s received %s\n", __FUNCTION__, buf);
+  webdatadef_t *tdata = (webdatadef_t *)vdata;
+  tdata->numlines = 0;
+  if (strncmp(buf, "set", 3) == 0) {
+    return get_channel_params(buf, debug, vdata, prnt);
+  }
+  if (tdata != NULL) {
+    for (int i = 0; i < max_chan; i++) {
+      if (defined_channels[i] != NULL) {
+        tdata->numlines++;
+      }
+    }
+    tdata->numcols = 0;
+    if (tdata->numlines > 0)
+      snprintf(tdata->tblname, sizeof(tdata->tblname) - 1, "Running channel index (0-%i)", (tdata->numlines - 1));
+    else {
+      snprintf(tdata->tblname, sizeof(tdata->tblname) - 1, "No running model in the system");
+    }
+  }
+  return tdata->numlines;
+} /* get_currentchannel_type */
+/*------------------------------------------------------------------------------------------------------------------*/
 
 int modelid_fromstrtype(char *modeltype) {
   int modelid=map_str_to_int(channelmod_names,modeltype);

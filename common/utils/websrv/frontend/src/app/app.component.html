@@ -1,0 +1,8 @@
+<mat-tab-group backgroundColor="primary" color="accent">
+  <mat-tab label="Commands">
+    <app-commands></app-commands>
+  </mat-tab>
+  <mat-tab label={{scopelabel}} disabled={{!isscopeavailable}}>
+    <app-scope (ScopeEnabled)="onScopeEnabled($event)"></app-scope>
+  </mat-tab>
+</mat-tab-group>

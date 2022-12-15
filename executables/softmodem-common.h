@@ -178,20 +178,20 @@ extern int usrp_tx_thread;
 #define CONFIG_HLP_FLOG          "Enable online log \n"
 #define CONFIG_HLP_LOGL          "Set the global log level, valid options: (4:trace, 3:debug, 2:info, 1:warn, (0:error))\n"
 #define CONFIG_HLP_TELN          "Start embedded telnet server \n"
+#define CONFIG_HLP_WEB "Start embedded web server \n"
 #define CONFIG_FLOG_OPT          "R"
 #define CONFIG_LOGL_OPT          "g"
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters for LOG utility                                                              */
 /*   optname                        helpstr       paramflags        XXXptr                              defXXXval            type           numelt */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_LOGPARAMS_DESC {  \
-    {CONFIG_FLOG_OPT ,           CONFIG_HLP_FLOG, 0,                uptr:&online_log_messages,           defintval:1,         TYPE_INT,      0},     \
-    {CONFIG_LOGL_OPT ,           CONFIG_HLP_LOGL, 0,                uptr:&glog_level,                    defintval:0,         TYPE_UINT,     0},     \
-	{"telnetsrv",                CONFIG_HLP_TELN, PARAMFLAG_BOOL,   uptr:&start_telnetsrv,               defintval:0,         TYPE_UINT,     0},     \
-	{"log-mem",                  NULL,            0,                strptr:&logmem_filename,    defstrval:NULL,      TYPE_STRING,   0},     \
-	{"telnetclt",                NULL,            0,                uptr:&start_telnetclt,               defstrval:NULL,      TYPE_UINT,     0},     \
+#define CMDLINE_LOGPARAMS_DESC                                                                                                                                                              \
+  {                                                                                                                                                                                         \
+    {CONFIG_FLOG_OPT, CONFIG_HLP_FLOG, 0, uptr : &online_log_messages, defintval : 1, TYPE_INT, 0}, {CONFIG_LOGL_OPT, CONFIG_HLP_LOGL, 0, uptr : &glog_level, defintval : 0, TYPE_UINT, 0}, \
+        {"telnetsrv", CONFIG_HLP_TELN, PARAMFLAG_BOOL | PARAMFLAG_CMDLINEONLY, uptr : &start_telnetsrv, defintval : 0, TYPE_UINT, 0},                                                       \
+        {"websrv", CONFIG_HLP_WEB, PARAMFLAG_BOOL | PARAMFLAG_CMDLINEONLY, uptr : &start_websrv, defintval : 0, TYPE_UINT, 0},                                                              \
+        {"log-mem", NULL, 0, strptr : &logmem_filename, defstrval : NULL, TYPE_STRING, 0}, {"telnetclt", NULL, 0, uptr : &start_telnetclt, defstrval : NULL, TYPE_UINT, 0},                 \
   }
-
 
 /* check function for global log level */
 #define CMDLINE_LOGPARAMS_CHECK_DESC { \
@@ -272,6 +272,7 @@ typedef struct {
 
 extern uint64_t get_softmodem_optmask(void);
 extern uint64_t set_softmodem_optmask(uint64_t bitmask);
+extern uint64_t clear_softmodem_optmask(uint64_t bitmask);
 extern softmodem_params_t *get_softmodem_params(void);
 extern void get_common_options(uint32_t execmask);
 extern char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr);
