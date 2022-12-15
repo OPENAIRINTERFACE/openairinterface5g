@@ -352,7 +352,7 @@ class Cluster:
 		self.cmd.run(f'for pod in $(oc get pods | tail -n +2 | awk \'{{print $1}}\'); do oc get pod $pod -o json &>> cmake_targets/log/build_pod_summary.log; done', '\$', 60)
 
 		build_log_name = f'build_log_{self.testCase_id}'
-		cls_containerize.CopyLogsToExecutor(self.cmd, lSourcePath, build_log_name, lIpAddr, 'oaicicd', CONST.CI_NO_PASSWORD)
+		cls_containerize.CopyLogsToExecutor(self.cmd, lSourcePath, build_log_name)
 
 		self.cmd.run('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc delete pod ${pod}; done')
 
