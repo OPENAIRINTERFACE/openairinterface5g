@@ -22,7 +22,7 @@
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
-# include "targets/RT/USER/lte-softmodem.h"
+# include "executables/lte-softmodem.h"
 # include "common/ran_context.h"
 
   #include "sctp_eNB_task.h"

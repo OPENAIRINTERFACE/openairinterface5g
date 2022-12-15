@@ -30,11 +30,11 @@
  * \warning
  */
 
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "UTIL/OPT/opt.h"
 #include "common/config/config_userapi.h"
 #include "PHY/TOOLS/lte_phy_scope.h"
-#include "targets/RT/USER/stats.h"
+#include "executables/stats.h"
 
 // current status is that every UE has a DL scope for a SINGLE eNB (eNB_id=0)
 // at eNB 0, an UL scope for every UE

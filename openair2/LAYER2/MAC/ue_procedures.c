@@ -50,7 +50,7 @@
 #include "openair2/PHY_INTERFACE/phy_stub_UE.h"
 
 #include "pdcp.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 #include "intertask_interface.h"
 

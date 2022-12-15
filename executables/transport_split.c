@@ -29,7 +29,7 @@
 #include <netinet/in.h>
 #include <netinet/udp.h>
 #include <netdb.h>
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 
 bool createUDPsock (char *sourceIP, char *sourcePort, char *destIP, char *destPort, UDPsock_t *result) {
   struct addrinfo hints= {0}, *servinfo, *p;

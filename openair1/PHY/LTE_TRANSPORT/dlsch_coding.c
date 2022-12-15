@@ -40,7 +40,7 @@
 #include "SCHED/sched_eNB.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/LOG/log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include <syscall.h>
 #include <common/utils/threadPool/thread-pool.h>
 

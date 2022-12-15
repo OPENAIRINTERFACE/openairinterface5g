@@ -50,7 +50,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ngran_types.h"
 #include "common/openairinterface5g_limits.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
 #include "UTIL/OSA/osa_defs.h"
 #include "openair2/RRC/NAS/nas_config.h"

@@ -71,7 +71,7 @@
 
 #include <time.h>
 #include "openair1/SCHED/sched_common_extern.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "common/ran_context.h"
 
 void feptx0(RU_t *ru,

@@ -45,7 +45,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/LTE_TRANSPORT/transport_extern.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 //#define DEBUG_DCI_ENCODING 1
 //#define DEBUG_DCI_DECODING 1
 //#define DEBUG_PHY

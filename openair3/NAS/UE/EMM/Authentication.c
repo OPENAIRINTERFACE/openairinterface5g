@@ -68,7 +68,7 @@ Description Defines the authentication EMM procedure executed by the
 #include "usim_api.h"
 #include "secu_defs.h"
 #include "Authentication.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 
 /****************************************************************************/
