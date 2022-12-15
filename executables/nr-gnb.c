@@ -254,7 +254,7 @@ void rx_func(void *param) {
   stop_meas(&gNB->ul_indication_stats);
 
   int tx_slot_type = nr_slot_select(cfg,frame_rx,slot_tx);
-  if (tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) {
+  if ((tx_slot_type == NR_DOWNLINK_SLOT || tx_slot_type == NR_MIXED_SLOT) && NFAPI_MODE != NFAPI_MODE_PNF) {
     notifiedFIFO_elt_t *res;
     processingData_L1tx_t *syncMsg;
     // Its a FIFO so it maitains the order in which the MAC fills the messages
@@ -470,7 +470,7 @@ void init_gNB_Tpool(int inst) {
     pushNotifiedFIFO(&gNB->L1_tx_free, msgL1Tx); // to unblock the process in the beginning
   }
 
-  if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT))
+  if ((!get_softmodem_params()->emulate_l1) && (!IS_SOFTMODEM_NOSTATS_BIT) && (NFAPI_MODE!=NFAPI_MODE_VNF))
      threadCreate(&proc->L1_stats_thread,nrL1_stats_thread,(void*)gNB,"L1_stats",-1,OAI_PRIORITY_RT_LOW);
 
   LOG_I(PHY,"Creating thread for TX reordering and dispatching to RU\n");
