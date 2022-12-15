@@ -278,7 +278,7 @@ int main(int argc, char **argv)
   double snr_step = .2;
   uint8_t snr1set = 0;
   int slot = 8, frame = 1;
-  int do_SRS = 1;
+  int do_SRS = 0;
   FILE *output_fd = NULL;
   double **s_re,**s_im,**r_re,**r_im;
   //uint8_t write_output_file = 0;
@@ -355,7 +355,7 @@ int main(int argc, char **argv)
   /* initialize the sin-cos table */
    InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:E:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
 
@@ -619,6 +619,18 @@ int main(int argc, char **argv)
       printf("NOTE: TRANSFORM PRECODING (SC-FDMA) is ENABLED in UPLINK (0 - ENABLE, 1 - DISABLE) : %d \n", transform_precoding);
       break;
 
+    case 'E':
+      do_SRS = atoi(optarg);
+      if (do_SRS == 0) {
+        printf("SRS disabled\n");
+      } else if (do_SRS == 1) {
+        printf("SRS enabled\n");
+      } else {
+        printf("Invalid SRS option. SRS disabled.\n");
+        do_SRS = 0;
+      }
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -i Intefrence0 -j Interference1 -n n_frames -s snr0 -S snr1 -t Delayspread -x transmission_mode -y TXant -z RXant -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
@@ -660,6 +672,7 @@ int main(int argc, char **argv)
       printf("-Q If -F used, read parameters from file\n");
       printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       printf("-W Num of layer for PUSCH\n");
+      printf("-E {SRS: [0] Disabled, [1] Enabled} e.g. -E 1\n");
       exit(-1);
       break;
 
