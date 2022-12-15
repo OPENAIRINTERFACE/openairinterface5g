@@ -1410,9 +1410,9 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       ra->rnti = ra->crnti;
     }
 
-    NR_UE_info_t * UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
+    NR_UE_info_t *UE = find_nr_UE(&nr_mac->UE_info, ra->rnti);
     if (!UE) {
-      LOG_E(NR_MAC,"want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
+      LOG_E(NR_MAC, "want to generate Msg4, but rnti %04x not in the table\n", ra->rnti);
       return;
     }
 
@@ -1420,20 +1420,22 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     int current_harq_pid = sched_ctrl->retrans_dl_harq.head;
 
+    logical_chan_id_t lcid = DL_SCH_LCID_CCCH;
     if (ra->msg3_dcch_dtch == false && current_harq_pid < 0) {
-      /* need to wait until RRCSetup is ready */
-      mac_rlc_status_resp_t srb0_status = mac_rlc_status_ind(module_idP,
-                                                             ra->rnti,
-                                                             module_idP,
-                                                             frameP,
-                                                             slotP,
-                                                             ENB_FLAG_YES,
-                                                             MBMS_FLAG_NO,
-                                                             0 /* lcid 0 */,
-                                                             0,
-                                                             0);
-      if (srb0_status.bytes_in_buffer == 0) return;
-      mac_sdu_length = srb0_status.bytes_in_buffer;
+      // Check for data on SRB0 (RRCSetup)
+      mac_rlc_status_resp_t srb_status = mac_rlc_status_ind(module_idP, ra->rnti, module_idP, frameP, slotP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid, 0, 0);
+
+      if (srb_status.bytes_in_buffer == 0) {
+        lcid = DL_SCH_LCID_DCCH;
+        // Check for data on SRB1 (RRCReestablishment)
+        srb_status = mac_rlc_status_ind(module_idP, ra->rnti, module_idP, frameP, slotP, ENB_FLAG_YES, MBMS_FLAG_NO, lcid, 0, 0);
+      }
+
+      // Need to wait until data for Msg4 is ready
+      if (srb_status.bytes_in_buffer == 0)
+        return;
+      LOG_I(NR_MAC, "(%4d.%2d) SRB%d has %d bytes\n", frameP, slotP, lcid, srb_status.bytes_in_buffer);
+      mac_sdu_length = srb_status.bytes_in_buffer;
     }
 
     long BWPStart = 0;
@@ -1568,33 +1570,36 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
         // Just send padding LCID
         ra->mac_pdu_length = 0;
       } else {
+        // UE Contention Resolution Identity MAC CE
         uint16_t mac_pdu_length = nr_write_ce_dlsch_pdu(module_idP, nr_mac->sched_ctrlCommon, buf, 255, ra->cont_res_id);
         LOG_D(NR_MAC,"Encoded contention resolution mac_pdu_length %d\n",mac_pdu_length);
         uint8_t buffer[CCCH_SDU_SIZE];
         uint8_t mac_subheader_len = sizeof(NR_MAC_SUBHEADER_SHORT);
+        // Get RLC data on the SRB (RRCSetup, RRCReestablishment)
         mac_sdu_length = mac_rlc_data_req(module_idP,
                                           ra->rnti,
                                           module_idP,
                                           frameP,
                                           ENB_FLAG_YES,
                                           MBMS_FLAG_NO,
-                                          CCCH,
+                                          lcid,
                                           CCCH_SDU_SIZE,
                                           (char *)buffer,
                                           0,
                                           0);
+
         if (mac_sdu_length < 256) {
-          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->R = 0;
-          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->F = 0;
-          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-          ((NR_MAC_SUBHEADER_SHORT *) &buf[mac_pdu_length])->L = mac_sdu_length;
+          ((NR_MAC_SUBHEADER_SHORT *)&buf[mac_pdu_length])->R = 0;
+          ((NR_MAC_SUBHEADER_SHORT *)&buf[mac_pdu_length])->F = 0;
+          ((NR_MAC_SUBHEADER_SHORT *)&buf[mac_pdu_length])->LCID = lcid;
+          ((NR_MAC_SUBHEADER_SHORT *)&buf[mac_pdu_length])->L = mac_sdu_length;
           ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_SHORT);
         } else {
           mac_subheader_len = sizeof(NR_MAC_SUBHEADER_LONG);
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->R = 0;
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->F = 1;
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->LCID = DL_SCH_LCID_CCCH;
-          ((NR_MAC_SUBHEADER_LONG *) &buf[mac_pdu_length])->L = htons(mac_sdu_length);
+          ((NR_MAC_SUBHEADER_LONG *)&buf[mac_pdu_length])->R = 0;
+          ((NR_MAC_SUBHEADER_LONG *)&buf[mac_pdu_length])->F = 1;
+          ((NR_MAC_SUBHEADER_LONG *)&buf[mac_pdu_length])->LCID = lcid;
+          ((NR_MAC_SUBHEADER_LONG *)&buf[mac_pdu_length])->L = htons(mac_sdu_length);
           ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_LONG);
         }
         LOG_I(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, mac_subheader_len, ra->mac_pdu_length);
@@ -1829,7 +1834,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra) {
 
-  NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, ra->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, ra->rnti);
   const int current_harq_pid = ra->harq_pid;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
