@@ -1,0 +1,86 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>rfsim-tdd-dora-5gnr-tdd</htmlTabRef>
+        <htmlTabName>Monolithic do-ra TDD gNB</htmlTabName>
+        <htmlTabIcon>wrench</htmlTabIcon>
+        <repeatCount>1</repeatCount>
+        <TestCaseRequestedList>
+ 111111
+ 100001
+ 000000
+ 000001
+ 020001
+ 020002
+ 100001
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-gnb oai-nr-ue</images_to_pull>
+        </testCase>
+
+        <testCase id="000000">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI gNB</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_tdd_dora</yaml_path>
+                <services>oai-gnb</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
+
+        <testCase id="000001">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI NR-UE</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_tdd_dora</yaml_path>
+                <services>oai-nr-ue</services>
+                <nb_healthy>2</nb_healthy>
+        </testCase>
+
+        <testCase id="020001">
+                <class>PingFromContainer</class>
+                <desc>Ping gNB from NR-UE</desc>
+                <container_name>rfsim5g-oai-nr-ue</container_name>
+                <options>-c20 -i0.2 10.0.1.1</options>
+                <loss_threshold>0</loss_threshold>
+        </testCase>
+
+        <testCase id="020002">
+                <class>PingFromContainer</class>
+                <desc>Ping NR-UE from gNB</desc>
+                <container_name>rfsim5g-oai-gnb</container_name>
+                <options>-c20 -i0.2 10.0.1.2</options>
+                <loss_threshold>0</loss_threshold>
+        </testCase>
+
+        <testCase id="100001">
+                <class>UndeployGenObject</class>
+                <desc>Undeploy all OAI 5G stack</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_tdd_dora</yaml_path>
+                <d_retx_th>0,0,0,0</d_retx_th>
+                <u_retx_th>0,0,0,0</u_retx_th>
+        </testCase>
+
+</testCaseList>

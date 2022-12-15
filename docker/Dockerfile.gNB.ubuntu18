@@ -50,6 +50,7 @@ RUN apt-get update && \
         libconfig9 \
         openssl \
         net-tools \
+        iperf \
         iproute2 \
         iputils-ping \
         gdb \

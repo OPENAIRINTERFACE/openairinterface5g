@@ -33,5 +33,10 @@ spec:
       schedulerName: default-scheduler
       serviceAccountName: {{ .Values.global.serviceAccountName }}
       terminationGracePeriodSeconds: 30
+      {{- if .Values.global.nodeSelector}}
       nodeSelector:
          {{- toYaml .Values.global.nodeSelector | nindent 12 }}
+      {{- end }}
+      {{- if .Values.global.nodeName.polartest}}
+      nodeName: {{ .Values.global.nodeName.polartest }}
+      {{- end }}

@@ -469,9 +469,8 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
   return 0;
 }
 
-int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
-                    unsigned char is_secondary_gNB,
-                    unsigned char lowmem_flag) {
+int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
+{
   // shortcuts
   NR_DL_FRAME_PARMS *const fp       = &gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -490,14 +489,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB,
 
   while(gNB->configured == 0) usleep(10000);
 
-  if (lowmem_flag == 1) {
-    gNB->number_of_nr_dlsch_max = 2;
-    gNB->number_of_nr_ulsch_max = 2;
-  }
-  else {
-    gNB->number_of_nr_dlsch_max = NUMBER_OF_NR_DLSCH_MAX;
-    gNB->number_of_nr_ulsch_max = NUMBER_OF_NR_ULSCH_MAX;
-  }  
+  gNB->number_of_nr_dlsch_max = NUMBER_OF_NR_DLSCH_MAX;
+  gNB->number_of_nr_ulsch_max = NUMBER_OF_NR_ULSCH_MAX;
 
   load_dftslib();
 

@@ -21,8 +21,8 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-5gnr-down</htmlTabRef>
-        <htmlTabName>CleanUp SA Monolithic TDD gNB</htmlTabName>
+        <htmlTabRef>rfsim-tdd-dora-5gnr-down</htmlTabRef>
+        <htmlTabName>CleanUp Monolithic do-ra TDD gNB</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
  100002
@@ -33,7 +33,7 @@
         <testCase id="100002">
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_rfsimulator_tdd_dora</yaml_path>
         </testCase>
 
         <testCase id="222222">

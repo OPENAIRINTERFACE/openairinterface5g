@@ -21,19 +21,19 @@
 
 -->
 <testCaseList>
-        <htmlTabRef>rfsim-5gnr-down</htmlTabRef>
-        <htmlTabName>CleanUp SA Monolithic TDD gNB</htmlTabName>
+        <htmlTabRef>rfsim-5gnr-fdd-phytest-down</htmlTabRef>
+        <htmlTabName>CleanUp Monolithic FDD phytest gNB</htmlTabName>
         <htmlTabIcon>trash</htmlTabIcon>
         <TestCaseRequestedList>
- 100002
+ 100012
  222222
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
 
-        <testCase id="100002">
+        <testCase id="100012">
                 <class>UndeployGenObject</class>
                 <desc>Undeploy all OAI 5G stack</desc>
-                <yaml_path>yaml_files/5g_rfsimulator</yaml_path>
+                <yaml_path>yaml_files/5g_rfsimulator_fdd_phytest</yaml_path>
         </testCase>
 
         <testCase id="222222">
