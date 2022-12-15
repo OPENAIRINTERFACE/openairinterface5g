@@ -598,28 +598,6 @@ int main( int argc, char **argv ) {
     pthread_mutex_init(&sync_mutex, NULL);
   }
 
-  const char *nfapi_mode_str = "<UNKNOWN>";
-
-  switch(NFAPI_MODE) {
-    case 0:
-      nfapi_mode_str = "MONOLITHIC";
-      break;
-
-    case 1:
-      nfapi_mode_str = "PNF";
-      break;
-
-    case 2:
-      nfapi_mode_str = "VNF";
-      break;
-
-    default:
-      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
-      break;
-  }
-
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
-
   printf("START MAIN THREADS\n");
   // start the main threads
   number_of_cards = 1;
