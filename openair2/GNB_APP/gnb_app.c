@@ -45,7 +45,7 @@
 #include "intertask_interface.h"
 #include "ngap_gNB.h"
 #include "sctp_eNB_task.h"
-#include "gtpv1u_eNB_task.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 #include "PHY/INIT/phy_init.h" 
 #include "f1ap_cu_task.h"
 #include "f1ap_du_task.h"

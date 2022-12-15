@@ -29,15 +29,13 @@
 #define NR_GTPV1U_MAX_BEARERS_PER_UE max_val_NR_DRB_Identity
 
 #define GTPV1U_ENB_TUNNEL_DATA_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataInd
-#define GTPV1U_ENB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataReq
+#define GTPV1U_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uTunnelDataReq
 #define GTPV1U_ENB_DATA_FORWARDING_REQ(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uDataForwardingReq
 #define GTPV1U_ENB_DATA_FORWARDING_IND(mSGpTR)    (mSGpTR)->ittiMsg.Gtpv1uDataForwardingInd
 #define GTPV1U_ENB_END_MARKER_REQ(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerReq
 #define GTPV1U_ENB_END_MARKER_IND(mSGpTR)     (mSGpTR)->ittiMsg.Gtpv1uEndMarkerInd
 
 #define GTPV1U_REQ(mSGpTR)    (mSGpTR)->ittiMsg.gtpv1uReq
-
-#define GTPV1U_GNB_TUNNEL_DATA_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uTunnelDataReq
 
 #define GTPV1U_DU_BUFFER_REPORT_REQ(mSGpTR)    (mSGpTR)->ittiMsg.NRGtpv1uBufferReportReq
 
@@ -108,21 +106,14 @@ typedef struct gtpv1u_enb_delete_tunnel_resp_s {
   teid_t                 enb_S1u_teid;         ///< local S1U Tunnel Endpoint Identifier to be deleted
 } gtpv1u_enb_delete_tunnel_resp_t;
 
-typedef struct gtpv1u_enb_tunnel_data_ind_s {
-  rnti_t                 rnti;
-  uint8_t               *buffer;
-  uint32_t               length;
-  uint32_t               offset;               ///< start of message offset in buffer
-  teid_t                 enb_S1u_teid;         ///< Tunnel Endpoint Identifier
-} gtpv1u_enb_tunnel_data_ind_t;
 
-typedef struct gtpv1u_enb_tunnel_data_req_s {
+typedef struct gtpv1u_tunnel_data_req_s {
   uint8_t               *buffer;
   uint32_t               length;
   uint32_t               offset;               ///< start of message offset in buffer
-  rnti_t                 rnti;
-  rb_id_t                rab_id;
-} gtpv1u_enb_tunnel_data_req_t;
+  ue_id_t                ue_id;
+  rb_id_t                bearer_id;
+} gtpv1u_tunnel_data_req_t;
 
 typedef struct gtpv1u_enb_data_forwarding_req_s {
   uint8_t               *buffer;
@@ -133,39 +124,39 @@ typedef struct gtpv1u_enb_data_forwarding_req_s {
 } gtpv1u_enb_data_forwarding_req_t;
 
 typedef struct gtpv1u_enb_data_forwarding_ind_s {
-  uint32_t 				 frame;
-  uint8_t 				 enb_flag;
-  rb_id_t 				 rb_id;
-  uint32_t 				 muip;
-  uint32_t 				 confirmp;
-  uint32_t 				 sdu_size;
-  uint8_t 				 *sdu_p;
-  uint8_t 				 mode;
-  uint16_t     			 rnti;
-  uint8_t      			 module_id;
-  uint8_t 				 eNB_index;
+  uint32_t         frame;
+  uint8_t          enb_flag;
+  rb_id_t          rb_id;
+  uint32_t         muip;
+  uint32_t         confirmp;
+  uint32_t         sdu_size;
+  uint8_t          *sdu_p;
+  uint8_t          mode;
+  uint16_t         rnti;
+  uint8_t          module_id;
+  uint8_t          eNB_index;
 } gtpv1u_enb_data_forwarding_ind_t;
 
 typedef struct gtpv1u_enb_end_marker_req_s {
-	  uint8_t               *buffer;
-	  uint32_t               length;
-	  uint32_t               offset;               ///< start of message offset in buffer
-	  rnti_t                 rnti;
-	  rb_id_t                rab_id;
+  uint8_t               *buffer;
+  uint32_t               length;
+  uint32_t               offset;               ///< start of message offset in buffer
+  rnti_t                 rnti;
+  rb_id_t                rab_id;
 } gtpv1u_enb_end_marker_req_t;
 
 typedef struct gtpv1u_enb_end_marker_ind_s {
-  uint32_t 			 frame;
-  uint8_t 			 enb_flag;
-  rb_id_t 			 rb_id;
-  uint32_t 			 muip;
-  uint32_t 			 confirmp;
-  uint32_t 			 sdu_size;
-  uint8_t 			 *sdu_p;
-  uint8_t 			 mode;
-  uint16_t     	 rnti;
-  uint8_t      	 module_id;
-  uint8_t 			 eNB_index;
+  uint32_t       frame;
+  uint8_t        enb_flag;
+  rb_id_t        rb_id;
+  uint32_t       muip;
+  uint32_t       confirmp;
+  uint32_t       sdu_size;
+  uint8_t        *sdu_p;
+  uint8_t        mode;
+  uint16_t       rnti;
+  uint8_t        module_id;
+  uint8_t        eNB_index;
 } gtpv1u_enb_end_marker_ind_t;
 
 typedef struct {
@@ -177,7 +168,7 @@ typedef struct {
 
 
 typedef struct gtpv1u_gnb_create_tunnel_req_s {
-  rnti_t                 rnti;
+  ue_id_t                ue_id;
   int                    num_tunnels;
   //teid_t                 upf_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
   teid_t                 outgoing_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];
@@ -191,34 +182,28 @@ typedef struct gtpv1u_gnb_create_tunnel_req_s {
 
 typedef struct gtpv1u_gnb_create_tunnel_resp_s {
   uint8_t                status;               ///< Status of S1U endpoint creation (Failed = 0xFF or Success = 0x0)
-  rnti_t                 rnti;
+  ue_id_t                ue_id;
   int                    num_tunnels;
   teid_t                 gnb_NGu_teid[NR_GTPV1U_MAX_BEARERS_PER_UE];  ///< Tunnel Endpoint Identifier
-  pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
+  pdusessionid_t pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
   transport_layer_addr_t gnb_addr;
 } gtpv1u_gnb_create_tunnel_resp_t;
 typedef struct gtpv1u_gnb_delete_tunnel_req_s {
-  rnti_t                 rnti;
+  ue_id_t                ue_id;
   uint8_t                num_pdusession;
   pdusessionid_t         pdusession_id[NR_GTPV1U_MAX_BEARERS_PER_UE];
 } gtpv1u_gnb_delete_tunnel_req_t;
 
 typedef struct gtpv1u_gnb_delete_tunnel_resp_s {
-  rnti_t                 rnti;
+  ue_id_t                ue_id;
   uint8_t                status;               ///< Status of NGU endpoint deleteion (Failed = 0xFF or Success = 0x0)
   teid_t                 gnb_NGu_teid;         ///< local NGU Tunnel Endpoint Identifier to be deleted
 } gtpv1u_gnb_delete_tunnel_resp_t;
-typedef struct gtpv1u_gnb_tunnel_data_req_s {
-  uint8_t               *buffer;
-  uint32_t               length;
-  uint32_t               offset;               ///< start of message offset in buffer
-  rnti_t                 rnti;
-  pdusessionid_t         pdusession_id;
-} gtpv1u_gnb_tunnel_data_req_t;
+
 
 typedef struct gtpv1u_DU_buffer_report_req_s {
   uint32_t               buffer_availability;
-  rnti_t                 rnti;
+  ue_id_t                ue_id;
   pdusessionid_t         pdusession_id;
 } gtpv1u_DU_buffer_report_req_t;
 

@@ -292,7 +292,7 @@ rrc_data_req_ue(
     RRC_DCCH_DATA_REQ (message_p).sdu_p     = message_buffer;
     RRC_DCCH_DATA_REQ (message_p).mode      = modeP;
     RRC_DCCH_DATA_REQ (message_p).module_id = ctxt_pP->module_id;
-    RRC_DCCH_DATA_REQ (message_p).rnti      = ctxt_pP->rnti;
+    RRC_DCCH_DATA_REQ(message_p).rnti = ctxt_pP->rntiMaybeUEid;
     RRC_DCCH_DATA_REQ (message_p).eNB_index = ctxt_pP->eNB_index;
     itti_send_msg_to_task (
       TASK_PDCP_UE,
@@ -326,7 +326,7 @@ rrc_data_ind_ue(
     RRC_DCCH_DATA_IND (message_p).dcch_index = DCCH_index;
     RRC_DCCH_DATA_IND (message_p).sdu_size   = sdu_sizeP;
     RRC_DCCH_DATA_IND (message_p).sdu_p      = message_buffer;
-    RRC_DCCH_DATA_IND (message_p).rnti       = ctxt_pP->rnti;
+    RRC_DCCH_DATA_IND(message_p).rnti = ctxt_pP->rntiMaybeUEid;
     RRC_DCCH_DATA_IND (message_p).module_id  = ctxt_pP->module_id;
     RRC_DCCH_DATA_IND (message_p).eNB_index  = ctxt_pP->eNB_index;
     itti_send_msg_to_task (TASK_RRC_UE, ctxt_pP->instance, message_p);
