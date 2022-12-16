@@ -463,7 +463,7 @@ class Containerize():
 			else:
 				result = re.search('Size *= *(?P<size>[0-9\-]+) *bytes', cmd.getBefore())
 				if result is not None:
-					size = float(result.group("size")) / 1000000
+					size = float(result.group("size")) / 1000000 # convert to MB
 					imageSizeStr = f'{size:.1f}'
 					logging.debug(f'\u001B[1m   {image} size is {imageSizeStr} Mbytes\u001B[0m')
 					allImagesSize[image] = f'{imageSizeStr} Mbytes'
