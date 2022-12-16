@@ -26,42 +26,57 @@
 
 #include  "sim.h"
 
-static unsigned int seed, iy, ir[98];
-/*
-@defgroup _uniformdouble
-@ingroup numerical Uniform linear congruential random number generator.
-*/
-
-/*!\brief Initialization routine for Uniform/Gaussian random number generators. */
+static unsigned int urseed, iy, ir[98]; /// uniformrandom
+static bool tableNordDone = false; /// gaussZiggurat
 
 #define a 1664525lu
 #define mod 4294967296.0                /* is 2**32 */
 
-#if 1
-void randominit(unsigned seed_init)
+/*!\brief Generate a random number form `/dev/urandom`. */
+unsigned long get_random_seed(void)
 {
-  int i;
-  // this need to be integrated with the existing rng, like taus: navid
-
-  if (seed_init == 0) {
-    srand((unsigned)time(NULL));
-
-    seed = (unsigned int) rand();
-  } else {
-    seed = seed_init;
+  unsigned long seed;
+  const char* fn = "/dev/urandom";
+  FILE* f = fopen(fn, "rb");
+  if (f == NULL) {
+    fprintf(stderr, "could not open %s for seed generation: %d %s\n", fn, errno, strerror(errno));
+    abort();
   }
-  printf("Initializing random number generator, seed %x\n",seed);
-
-  if (seed % 2 == 0) seed += 1; /* seed and mod are relative prime */
-
-  for (i=1; i<=97; i++) {
-    seed = a*seed;                 /* mod 2**32  */
-    ir[i]= seed;                   /* initialize the shuffle table    */
+  int rc = fread(&seed, sizeof(seed), 1, f);
+  if (rc < 0) {
+    fprintf(stderr, "could not read %s for seed generation: %d %s\n", fn, errno, strerror(errno));
+    abort();
   }
-
- iy=1;
+  fclose(f);
+  return seed;
 }
-#endif
+
+
+/*!\brief Initialization routine for Uniform/Gaussian random number generators. */
+void randominit(unsigned long seed_init)
+{
+  unsigned long seed = seed_init != 0 ? seed_init : get_random_seed();
+  printf("Initializing random number generator, seed %ld\n", seed);
+
+  // initialize uniformrandom RNG
+  urseed = (unsigned int) seed;
+  if (urseed % 2 == 0)
+    urseed += 1; /* urseed and mod are relative prime */
+  for (int i = 1; i <= 97; i++) {
+    urseed = a * urseed; /* mod 2**32  */
+    ir[i] = urseed; /* initialize the shuffle table    */
+  }
+  iy = 1;
+
+  // initialize gaussZiggurat RNG
+  tableNor(seed);
+  tableNordDone = true;
+}
+
+/*
+@defgroup _uniformdouble
+@ingroup numerical Uniform linear congruential random number generator.
+*/
 
 /*!\brief Uniform linear congruential random number generator on \f$[0,1)\f$.  Returns a double-precision floating-point number.*/
 
@@ -70,13 +85,11 @@ double uniformrandom(void)
 #define a 1664525lu
 #define mod 4294967296.0                /* is 2**32 */
 
-  int j;
-
-  j=1 + 97.0*iy/mod;
-  iy=ir[j];
-  seed = a*seed;                          /* mod 2**32 */
-  ir[j] = seed;
-  return( (double) iy/mod );
+  int j = 1 + 97.0 * iy / mod;
+  iy = ir[j];
+  urseed = a * urseed; /* mod 2**32 */
+  ir[j] = urseed;
+  return (double)iy / mod;
 }
 
 /*
@@ -109,8 +122,12 @@ double __attribute__ ((no_sanitize_address)) gaussdouble(double mean, double var
   }
 }
 
+
+/*
+@defgroup _gaussZiggurat
+@ingroup numerical ziggurat random number generator for exponentially distributed numbers
+*/
 // Ziggurat
-static bool tableNordDone=false;
 static double wn[128], fn[128];
 static uint32_t iz, jz, jsr = 123456789, kn[128];
 static int32_t hz;
@@ -180,9 +197,7 @@ double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double v
 {
   if (!tableNordDone) {
     // let's make reasonnable constant tables
-    struct timespec t;
-    clock_gettime(CLOCK_MONOTONIC, &t);
-    tableNor((long)(t.tv_nsec%INT_MAX));
+    tableNor(get_random_seed());
   }
   hz = SHR3;
   iz = hz & 127;
