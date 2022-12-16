@@ -742,6 +742,14 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t ulsch_rbs_extraction_stats;
   time_stats_t ulsch_mrc_stats;
   time_stats_t ulsch_llr_stats;
+  time_stats_t rx_srs_stats;
+  time_stats_t generate_srs_stats;
+  time_stats_t get_srs_signal_stats;
+  time_stats_t srs_channel_estimation_stats;
+  time_stats_t srs_timing_advance_stats;
+  time_stats_t srs_report_tlv_stats;
+  time_stats_t srs_beam_report_stats;
+  time_stats_t srs_iq_matrix_stats;
 
   /*
   time_stats_t rx_dft_stats;

@@ -1093,6 +1093,14 @@ int main(int argc, char **argv)
     reset_meas(&UE->ulsch_rate_matching_stats);
     reset_meas(&UE->ulsch_interleaving_stats);
     reset_meas(&UE->ulsch_encoding_stats);
+    reset_meas(&gNB->rx_srs_stats);
+    reset_meas(&gNB->generate_srs_stats);
+    reset_meas(&gNB->get_srs_signal_stats);
+    reset_meas(&gNB->srs_channel_estimation_stats);
+    reset_meas(&gNB->srs_timing_advance_stats);
+    reset_meas(&gNB->srs_report_tlv_stats);
+    reset_meas(&gNB->srs_beam_report_stats);
+    reset_meas(&gNB->srs_iq_matrix_stats);
 
     uint32_t errors_scrambling[16] = {0};
     int n_errors[16] = {0};
@@ -1672,6 +1680,14 @@ int main(int argc, char **argv)
       //printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       //printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
       //printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
+      printStatIndent(&gNB->rx_srs_stats,"RX SRS time");
+      printStatIndent2(&gNB->generate_srs_stats,"Generate SRS sequence time");
+      printStatIndent2(&gNB->get_srs_signal_stats,"Get SRS signal time");
+      printStatIndent2(&gNB->srs_channel_estimation_stats,"SRS channel estimation time");
+      printStatIndent2(&gNB->srs_timing_advance_stats,"SRS timing advance estimation time");
+      printStatIndent2(&gNB->srs_report_tlv_stats,"SRS report TLV build time");
+      printStatIndent3(&gNB->srs_beam_report_stats,"SRS beam report build time");
+      printStatIndent3(&gNB->srs_iq_matrix_stats,"SRS IQ matrix build time");
       printf("\n");
     }
 

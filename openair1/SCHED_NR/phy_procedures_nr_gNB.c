@@ -867,6 +867,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
       if ((srs->active == 1) && (srs->frame == frame_rx) && (srs->slot == slot_rx)) {
         LOG_D(NR_PHY, "(%d.%d) gNB is waiting for SRS, id = %i\n", frame_rx, slot_rx, i);
 
+        start_meas(&gNB->rx_srs_stats);
+
         NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
         nfapi_nr_srs_pdu_t *srs_pdu = &srs->srs_pdu;
         uint8_t N_symb_SRS = 1 << srs_pdu->num_symbols;
@@ -877,10 +879,16 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         int8_t snr_per_rb[srs_pdu->bwp_size];
         int8_t snr;
 
+        start_meas(&gNB->generate_srs_stats);
         generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+        stop_meas(&gNB->generate_srs_stats);
+
+        start_meas(&gNB->get_srs_signal_stats);
         int srs_est = nr_get_srs_signal(gNB, frame_rx, slot_rx, srs_pdu, gNB->nr_srs_info[i], srs_received_signal);
+        stop_meas(&gNB->get_srs_signal_stats);
 
         if (srs_est >= 0) {
+          start_meas(&gNB->srs_channel_estimation_stats);
           nr_srs_channel_estimation(gNB,
                                     frame_rx,
                                     slot_rx,
@@ -893,6 +901,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
                                     srs_estimated_channel_time_shifted,
                                     snr_per_rb,
                                     &snr);
+          stop_meas(&gNB->srs_channel_estimation_stats);
         }
 
         if ((snr * 10) < gNB->srs_thres) {
@@ -922,7 +931,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         nfapi_nr_srs_indication_pdu_t *srs_indication = &gNB->srs_pdu_list[gNB->UL_INFO.srs_ind.number_of_pdus];
         srs_indication->handle = srs_pdu->handle;
         srs_indication->rnti = srs_pdu->rnti;
+        start_meas(&gNB->srs_timing_advance_stats);
         srs_indication->timing_advance_offset = srs_est >= 0 ? nr_est_timing_advance_srs(frame_parms, srs_estimated_channel_time[0]) : 0xFFFF;
+        stop_meas(&gNB->srs_timing_advance_stats);
         srs_indication->timing_advance_offset_nsec = srs_est >= 0 ? (int16_t)((((int32_t)srs_indication->timing_advance_offset - 31) * ((int32_t)TC_NSEC_x32768)) >> 15) : 0xFFFF;
         switch (srs_pdu->srs_parameters_v4.usage) {
           case 0:
@@ -961,8 +972,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         srs_indication->report_tlv->tag = 0;
         srs_indication->report_tlv->length = 0;
 
+        start_meas(&gNB->srs_report_tlv_stats);
         switch (srs_indication->srs_usage) {
           case NR_SRS_ResourceSet__usage_beamManagement: {
+            start_meas(&gNB->srs_beam_report_stats);
             nfapi_nr_srs_beamforming_report_t nr_srs_beamforming_report;
             nr_srs_beamforming_report.prg_size = srs_pdu->beamforming.prg_size;
             nr_srs_beamforming_report.num_symbols = 1 << srs_pdu->num_symbols;
@@ -987,10 +1000,12 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 #endif
 
             srs_indication->report_tlv->length = pack_nr_srs_beamforming_report(&nr_srs_beamforming_report, srs_indication->report_tlv->value, 16384 * sizeof(uint32_t));
+            stop_meas(&gNB->srs_beam_report_stats);
             break;
           }
 
           case NR_SRS_ResourceSet__usage_codebook: {
+            start_meas(&gNB->srs_iq_matrix_stats);
             nfapi_nr_srs_normalized_channel_iq_matrix_t nr_srs_normalized_channel_iq_matrix;
             nr_srs_normalized_channel_iq_matrix.normalized_iq_representation = srs_pdu->srs_parameters_v4.iq_representation;
             nr_srs_normalized_channel_iq_matrix.num_gnb_antenna_elements = gNB->frame_parms.nb_antennas_rx;
@@ -1036,7 +1051,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             srs_indication->report_tlv->length = pack_nr_srs_normalized_channel_iq_matrix(&nr_srs_normalized_channel_iq_matrix,
                                                                                           srs_indication->report_tlv->value,
                                                                                           16384 * sizeof(uint32_t));
-
+            stop_meas(&gNB->srs_iq_matrix_stats);
             break;
           }
 
@@ -1048,6 +1063,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           default:
             AssertFatal(1 == 0, "Invalid SRS usage\n");
         }
+        stop_meas(&gNB->srs_report_tlv_stats);
 
 #ifdef SRS_IND_DEBUG
         LOG_I(NR_PHY, "srs_indication->report_tlv->tag = %i\n", srs_indication->report_tlv->tag);
@@ -1060,6 +1076,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
         gNB->UL_INFO.srs_ind.number_of_pdus += 1;
         srs->active = 0;
+
+        stop_meas(&gNB->rx_srs_stats);
       }
     }
   }
