@@ -375,7 +375,7 @@ void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
 }
 
 // TODO: Implement to b_SRS = 1 and b_SRS = 2
-long rrc_get_max_nr_csrs(const uint8_t max_rbs, const long b_SRS) {
+long rrc_get_max_nr_csrs(const int max_rbs, const long b_SRS) {
 
   if(b_SRS>0) {
     LOG_E(NR_RRC,"rrc_get_max_nr_csrs(): Not implemented yet for b_SRS>0\n");
