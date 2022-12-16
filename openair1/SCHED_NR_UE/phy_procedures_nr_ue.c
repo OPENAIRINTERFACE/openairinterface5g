@@ -573,7 +573,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            NR_UE_DLSCH_t dlsch[2],
                            int16_t *llr[2],
-                           int16_t *layer_llr[NR_MAX_NB_LAYERS],
                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int frame_rx = proc->frame_rx;
@@ -711,7 +710,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                       pdsch_est_size,
                       pdsch_dl_ch_estimates,
                       llr,
-                      layer_llr,
                       ptrs_phase_per_slot,
                       ptrs_re_per_slot,
                       dl_valid_re,
@@ -738,12 +736,14 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
 
     UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, rx_size);
 
-    if (ue->phy_sim_mode) {
+    if (ue->phy_sim_pdsch_rxdataF_comp)
       memcpy(ue->phy_sim_pdsch_rxdataF_comp, rxdataF_comp, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+    if (ue->phy_sim_pdsch_rxdataF_ext)
       memcpy(ue->phy_sim_pdsch_rxdataF_ext, rxdataF_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+    if (ue->phy_sim_pdsch_dl_ch_estimates_ext)
       memcpy(ue->phy_sim_pdsch_dl_ch_estimates_ext, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+    if (ue->phy_sim_pdsch_dl_ch_estimates)
       memcpy(ue->phy_sim_pdsch_dl_ch_estimates, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
-    }
   }
   return 0;
 }
@@ -1282,21 +1282,16 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
                                           dlsch[0].dlsch_config.qamModOrder,
                                           dlsch[0].Nl);
     const uint32_t rx_llr_buf_sz = ((rx_llr_size+15)/16)*16;
-    const uint32_t rx_llr_layer_size = (rx_llr_size + dlsch[0].Nl - 1) / dlsch[0].Nl;
     const uint32_t nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
     int16_t* llr[2];
-    int16_t* layer_llr[NR_MAX_NB_LAYERS];
     for (int i=0; i<nb_codewords; i++)
       llr[i] = (int16_t *)malloc16_clear(rx_llr_buf_sz*sizeof(int16_t));
-    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size*sizeof(int16_t));
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_IN);
     ret_pdsch = nr_ue_pdsch_procedures(ue,
                                        proc,
                                        dlsch,
                                        llr,
-                                       layer_llr,
                                        rxdataF);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_OUT);
@@ -1317,16 +1312,14 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
       LOG_D(PHY, "[SFN %d] Slot0 Slot1: Dlsch Proc %5.2f\n",nr_slot_rx,ue->dlsch_procedures_stat.p_time/(cpuf*1000.0));
     }
 
-    if (ue->phy_sim_mode) {
+    if (ue->phy_sim_rxdataF)
       memcpy(ue->phy_sim_rxdataF, rxdataF, sizeof(int32_t)*rxdataF_sz*ue->frame_parms.nb_antennas_rx);
+    if (ue->phy_sim_pdsch_llr)
       memcpy(ue->phy_sim_pdsch_llr, llr[0], sizeof(int16_t)*rx_llr_buf_sz);
-    }
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_OUT);
     for (int i=0; i<nb_codewords; i++)
       free(llr[i]);
-    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-      free(layer_llr[i]);
   }
 
   // do procedures for CSI-IM

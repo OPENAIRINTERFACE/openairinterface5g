@@ -587,18 +587,14 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                                 dmrs_len,
                                                 dlsch[0].dlsch_config.qamModOrder,
                                                 dlsch[0].Nl);
-          const uint32_t rx_llr_layer_size = (rx_llr_size + dlsch[0].Nl - 1) / dlsch[0].Nl;
           int16_t* llr[2];
           int16_t* layer_llr[NR_MAX_NB_LAYERS];
           llr[0] = (int16_t *)malloc16_clear(rx_llr_size*sizeof(int16_t));
-          for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-            layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size*sizeof(int16_t));
 
           int ret = nr_ue_pdsch_procedures(ue,
                                            proc,
                                            phy_data.dlsch,
                                            llr,
-                                           layer_llr,
                                            rxdataF);
           if (ret >= 0)
             dec = nr_ue_dlsch_procedures(ue,

@@ -864,7 +864,6 @@ void *UE_thread(void *arg) {
   bool syncRunning=false;
   const int nb_slot_frame = UE->frame_parms.slots_per_frame;
   int absolute_slot=0, decoded_frame_rx=INT_MAX, trashed_frames=0;
-  UE->phy_sim_mode = false;
 
   while (!oai_exit) {
     if (UE->lost_sync) {

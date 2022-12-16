@@ -95,7 +95,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            NR_UE_DLSCH_t dlsch[2],
                            int16_t *llr[2],
-                           int16_t *layer_llr[NR_MAX_NB_LAYERS],
                            c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
   return 0;
 }

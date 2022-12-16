@@ -135,7 +135,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 uint32_t pdsch_est_size,
                 int32_t dl_ch_estimates[][pdsch_est_size],
                 int16_t *llr[2],
-                int16_t *layer_llr[NR_MAX_NB_LAYERS],
                 c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
                 int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT],
                 uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT],
@@ -470,6 +469,26 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   
   /* at last symbol in a slot calculate LLR's for whole slot */
   if(symbol == (startSymbIdx + nbSymb -1)) {
+    uint8_t nb_re_dmrs;
+    if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
+      nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
+    }
+    else {
+      nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
+    }
+    uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
+
+    const uint32_t rx_llr_size = nr_get_G(dlsch[0].dlsch_config.number_rbs,
+                                          dlsch[0].dlsch_config.number_symbols,
+                                          nb_re_dmrs,
+                                          dmrs_len,
+                                          dlsch[0].dlsch_config.qamModOrder,
+                                          dlsch[0].Nl);
+    const uint32_t rx_llr_layer_size = (rx_llr_size + dlsch[0].Nl - 1) / dlsch[0].Nl;
+
+    int16_t* layer_llr[NR_MAX_NB_LAYERS];
+    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
+      layer_llr[i] = (int16_t *)malloc16_clear(rx_llr_layer_size*sizeof(int16_t));
     for(uint8_t i =startSymbIdx; i < (startSymbIdx+nbSymb);i++) {
       /* re evaluating the first symbol flag as LLR's are done in symbol loop  */
       if(i == startSymbIdx && i < 3) {
@@ -500,15 +519,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                    llr_offset);
     }
     
-    int dmrs_type = dlsch[0].dlsch_config.dmrsConfigType;
-    uint8_t nb_re_dmrs;
-    uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
-    if (dmrs_type==NFAPI_NR_DMRS_TYPE1) {
-      nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    } else {
-      nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-    }
-
     dlsch0_harq->G = nr_get_G(dlsch[0].dlsch_config.number_rbs,
                               dlsch[0].dlsch_config.number_symbols,
                               nb_re_dmrs,
@@ -524,6 +534,8 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              codeword_TB1,
                              layer_llr);
 
+    for (int i=0; i<NR_MAX_NB_LAYERS; i++)
+      free(layer_llr[i]);
   // Please keep it: useful for debugging
 #ifdef DEBUG_PDSCH_RX
     char filename[50];
