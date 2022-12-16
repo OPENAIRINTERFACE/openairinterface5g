@@ -374,7 +374,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     else
       ssb_sc_offset_norm = ssb_subcarrier_offset;
 
-    if (mac->first_sync_frame == -1)
+    if (!mac->sib1_decoded) {
       nr_ue_sib1_scheduler(module_id,
                            cc_id,
                            ssb_start_symbol,
@@ -384,18 +384,20 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
                            ssb_start_subcarrier,
                            mac->frequency_range,
                            phy_data);
+      mac->first_sync_frame = frame;
+    }
   }
   else {
     NR_ServingCellConfigCommon_t *scc = mac->scc;
     scs_ssb = *scc->ssbSubcarrierSpacing;
     band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
     ssb_start_symbol = get_ssb_start_symbol(band,scs_ssb,ssb_index);
+    if (mac->first_sync_frame == -1)
+      mac->first_sync_frame = frame;
   }
 
   mac->dl_config_request.sfn = frame;
   mac->dl_config_request.slot = ssb_start_symbol/14;
-  if (mac->first_sync_frame == -1)
-    mac->first_sync_frame = frame;
 
   return 0;
 }
@@ -408,6 +410,8 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 uint32_t pdu_len) {
   if(ack_nack) {
     LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
+    NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+    mac->sib1_decoded = true;
     nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   }
   else
@@ -425,11 +429,11 @@ uint32_t get_ssb_frame(uint32_t test){
  * These tables and functions are going to be called by function nr_ue_process_dci
  */
 int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
-						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-						      uint16_t n_RB_ULBWP,
-						      uint16_t n_RB_DLBWP,
-						      uint16_t riv
-						      ){
+                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      uint16_t n_RB_ULBWP,
+                                                      uint16_t n_RB_DLBWP,
+                                                      uint16_t riv)
+{
 
   /*
    * TS 38.214 subclause 5.1.2.2 Resource allocation in frequency domain (downlink)

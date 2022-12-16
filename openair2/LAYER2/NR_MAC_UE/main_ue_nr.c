@@ -51,6 +51,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     //init mac here
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
     nr_ue_mac_inst->first_sync_frame = -1;
+    nr_ue_mac_inst->sib1_decoded = false;
 
     for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
 	nr_ue_init_mac(j);
