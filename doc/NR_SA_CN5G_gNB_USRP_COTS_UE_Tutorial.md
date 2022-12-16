@@ -292,6 +292,8 @@ sudo ethtool -G enp1s0f0 tx 4096 rx 4096
 ```
 
 ## 6.2 Real-time performance workarounds
+- Enable Performance Mode in Ubuntu 22:
+  - Settings/Power/Power Mode: Performance
 - If you get real-time problems on heavy UL traffic, reduce the maximum UL MCS using an additional command-line switch: `--MACRLCs.[0].ul_max_mcs 14`.
 
 ## 6.3 Uplink issues related with noise on the DC carriers
