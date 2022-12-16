@@ -238,6 +238,7 @@ docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 100M 
 Important notes:
 - This should be run in a second Ubuntu 20.04 host, other than gNB
 - It only applies when running OAI gNB with USRP B210
+- OAI gNB must run with the following flag: `--gNBs.[0].min_rxtxtime 6`
 
 Run OAI UE
 ```bash
