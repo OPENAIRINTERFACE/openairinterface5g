@@ -87,23 +87,23 @@
     {"offset",                 "<channel offset in samps>\n",         simOpt,  iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
   };
 
-
-
+static void getset_currentchannels_type(char *buf, int debug, webdatadef_t *tdata, telnet_printfunc_t prnt);
+extern int get_currentchannels_type(char *buf, int debug, webdatadef_t *tdata, telnet_printfunc_t prnt); // in random_channel.c
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static int rfsimu_vtime_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg);
 static telnetshell_cmddef_t rfsimu_cmdarray[] = {
-  {"setmodel","<model name> <model type>",(cmdfunc_t)rfsimu_setchanmod_cmd,TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"setdistance","<model name> <distance>", (cmdfunc_t)rfsimu_setdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"getdistance","<model name>", (cmdfunc_t) rfsimu_getdistance_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"vtime","", (cmdfunc_t) rfsimu_vtime_cmd, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
-  {"","",NULL},
+    {"show models", "", (cmdfunc_t)rfsimu_setchanmod_cmd, {(webfunc_t)getset_currentchannels_type}, TELNETSRV_CMDFLAG_WEBSRVONLY | TELNETSRV_CMDFLAG_GETWEBTBLDATA, NULL},
+    {"setmodel", "<model name> <model type>", (cmdfunc_t)rfsimu_setchanmod_cmd, {NULL}, TELNETSRV_CMDFLAG_PUSHINTPOOLQ | TELNETSRV_CMDFLAG_TELNETONLY, NULL},
+    {"setdistance", "<model name> <distance>", (cmdfunc_t)rfsimu_setdistance_cmd, {NULL}, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+    {"getdistance", "<model name>", (cmdfunc_t)rfsimu_getdistance_cmd, {NULL}, TELNETSRV_CMDFLAG_PUSHINTPOOLQ},
+    {"vtime", "", (cmdfunc_t)rfsimu_vtime_cmd, {NULL}, TELNETSRV_CMDFLAG_PUSHINTPOOLQ | TELNETSRV_CMDFLAG_AUTOUPDATE},
+    {"", "", NULL},
 };
+static telnetshell_cmddef_t *setmodel_cmddef = &(rfsimu_cmdarray[1]);
 
-static telnetshell_vardef_t rfsimu_vardef[] = {
-  {"",0,NULL}
-};
+static telnetshell_vardef_t rfsimu_vardef[] = {{"", 0, 0, NULL}};
 pthread_mutex_t Sockmutex;
 
 typedef c16_t sample_t; // 2*16 bits complex number
@@ -322,6 +322,15 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
 static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg) {
   char *modelname=NULL;
   char *modeltype=NULL;
+  rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
+  if (t->channelmod == false) {
+    prnt("ERROR channel modelisation disabled...\n");
+    return 0;
+  }
+  if (buff == NULL) {
+    prnt("ERROR wrong rfsimu setchannelmod command...\n");
+    return 0;
+  }
   if (debug)
   	  prnt("rfsimu_setchanmod_cmd buffer \"%s\"\n",buff);
   int s = sscanf(buff,"%m[^ ] %ms\n",&modelname, &modeltype);
@@ -376,6 +385,19 @@ static int rfsimu_setchanmod_cmd(char *buff, int debug, telnet_printfunc_t prnt,
   free(modeltype);
   return CMDSTATUS_FOUND;
 }
+
+static void getset_currentchannels_type(char *buf, int debug, webdatadef_t *tdata, telnet_printfunc_t prnt)
+{
+  if (strncmp(buf, "set", 3) == 0) {
+    char cmd[256];
+    snprintf(cmd, sizeof(cmd), "setmodel %s %s", tdata->lines[0].val[1], tdata->lines[0].val[3]);
+    push_telnetcmd_func_t push_telnetcmd = (push_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_PUSHCMD_FNAME);
+    push_telnetcmd(setmodel_cmddef, cmd, prnt);
+  } else {
+    get_currentchannels_type("modify type", debug, tdata, prnt);
+  }
+}
+/*getset_currentchannels_type */
 
 //static void print_cirBuf(struct complex16 *circularBuf,
 //                         uint64_t firstSample,
@@ -474,17 +496,18 @@ static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt
   /* Set distance in rfsim and channel model, update channel and ringbuffer */
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
-    if (b->conn_sock <= 0
-        || b->channel_model == NULL
-        || b->channel_model->model_name == NULL
-        || strcmp(b->channel_model->model_name, modelname) != 0)
+    if (b->conn_sock <= 0 || b->channel_model == NULL || b->channel_model->model_name == NULL || strcmp(b->channel_model->model_name, modelname) != 0) {
+      if (b->channel_model != NULL && b->channel_model->model_name != NULL)
+        prnt("  model %s unmodified\n", b->channel_model->model_name);
       continue;
+    }
 
     channel_desc_t *cd = b->channel_model;
     const int old_offset = cd->channel_offset;
     cd->channel_offset = new_offset;
 
     const int nbTx = cd->nb_tx;
+    prnt("  Modifying model %s...\n", modelname);
     rfsimu_offset_change_cirBuf(b->circularBuf, t->nextRxTstamp, CirSize, old_offset, new_offset, nbTx);
   }
 
@@ -496,14 +519,7 @@ static int rfsimu_setdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt
 static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt, void *arg)
 {
   if (debug)
-    prnt("%s() buffer \"%s\"\n", __func__, buff);
-
-  char *modelname;
-  int s = sscanf(buff,"%ms\n", &modelname);
-  if (s != 1) {
-    prnt("require exact two parameters\n");
-    return CMDSTATUS_VARNOTFOUND;
-  }
+    prnt("%s() buffer \"%s\"\n", __func__, (buff != NULL) ? buff : "NULL");
 
   rfsimulator_state_t *t = (rfsimulator_state_t *)arg;
   const double sample_rate = t->sample_rate;
@@ -511,16 +527,13 @@ static int rfsimu_getdistance_cmd(char *buff, int debug, telnet_printfunc_t prnt
 
   for (int i=0; i<FD_SETSIZE; i++) {
     buffer_t *b=&t->buf[i];
-    if (b->conn_sock <= 0
-        || b->channel_model == NULL
-        || b->channel_model->model_name == NULL
-        || strcmp(b->channel_model->model_name, modelname) != 0)
+    if (b->conn_sock <= 0 || b->channel_model == NULL || b->channel_model->model_name == NULL)
       continue;
 
     channel_desc_t *cd = b->channel_model;
     const int offset = cd->channel_offset;
     const double distance = (double) offset * c / sample_rate;
-    prnt("\noffset %d distance %.3f m\n", offset, distance);
+    prnt("\%s offset %d distance %.3f m\n", cd->model_name, offset, distance);
   }
 
   return CMDSTATUS_FOUND;
@@ -804,7 +817,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
     if ( t->nextRxTstamp == 0)
       LOG_W(HW,"No connected device, generating void samples...\n");
 
-    if (!flushInput(t, 10,  nsamps)) {
+    if (!flushInput(t, 1,  nsamps)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 

@@ -30,7 +30,7 @@
  */
 
 #include "assertions.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
 

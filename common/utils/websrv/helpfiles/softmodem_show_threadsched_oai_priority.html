@@ -1,0 +1,7 @@
+the oai priority field is used to provide the linux scheduling mode, priority and nice value in a single field.
+Priority value is mapped to linux scheduling mode, priority and nice as listed below:
+  -101 to -199: real time, Round-Robin 1 to 99
+  -1 to -99   : real time, fifo 1 to 99
+  0 to 39     : time sharing, nice value -20 to 19
+  40 to 79    : batch, nice value -20 to 19
+  >80         : idle

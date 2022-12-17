@@ -56,6 +56,13 @@ CMAKE_CMD="$CMAKE"
 BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
+ulfiusdep=$(basename ./`find /usr/lib* -name libulfius.so`)
+jssondep=$(basename ./`find /usr/lib* -name libjansson.so`)
+if [ "$ulfiusdep" == "libulfius.so" -a "$jssondep" == "libjansson.so" ] ; then
+  OPTIONAL_LIBRARIES+=" websrv"
+else
+  echo_warning "  websrv optional build not included in build-lib option  as dependencies requirements not met "
+fi
 RU=0
 CMAKE_C_FLAGS=()
 CMAKE_CXX_FLAGS=()
@@ -644,9 +651,27 @@ function main() {
   if [ ! -z "$BUILD_OPTLIB" ] ; then 
      for oklib in $BUILD_OPTLIB ; do
          compilations $BUILD_DIR $oklib
+         if [ "$oklib" == "websrv" ] ; then
+           BUILD_WEBSRVFRONT=1
+           echo_info "Build of websrv frontend enabled"
+           fi
      done
   fi
   
+  ############################################
+  # Optional targets (others than libraries) #
+  ############################################  
+  if [ "$BUILD_WEBSRVFRONT" = "1" ] ; then
+    npmv=`command npm -v`
+    npms=$?
+    nodev=`command node -v`
+    nodes=$?
+    if [ "$npms" == "0" -a "$nodes" == "0" ] ; then
+      compilations $BUILD_DIR websrvfront
+    else
+      echo_warning "build of websrv front-end skipped, dependencies not met : " $npmv " " $nodev
+    fi
+  fi
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################

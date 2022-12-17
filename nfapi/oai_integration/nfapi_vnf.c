@@ -40,7 +40,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 
 #include "common/ran_context.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"

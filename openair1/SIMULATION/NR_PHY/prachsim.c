@@ -94,7 +94,7 @@ int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
 teid_t newGtpuCreateTunnel(instance_t instance,
-                           rnti_t rnti,
+                           ue_id_t ue_id,
                            int incoming_bearer_id,
                            int outgoing_bearer_id,
                            teid_t outgoing_teid,
@@ -106,7 +106,7 @@ teid_t newGtpuCreateTunnel(instance_t instance,
   return 0;
 }
 
-int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
   return 0;
 }
 
@@ -150,7 +150,7 @@ int
 gtpv1u_update_ngu_tunnel(
   const instance_t                              instanceP,
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  const rnti_t                                  prior_rnti
+  const ue_id_t                                 prior_ue_id
 ){
   return 0;
 }
@@ -673,7 +673,7 @@ int main(int argc, char **argv){
 
   memcpy((void*)&ru->config,(void*)&RC.gNB[0]->gNB_config,sizeof(ru->config));
   RC.nb_nr_L1_inst=1;
-  phy_init_nr_gNB(gNB,0,1); //lowmem
+  phy_init_nr_gNB(gNB);
   nr_phy_init_RU(ru);
   set_tdd_config_nr(&gNB->gNB_config, mu, 7, 6, 2, 4);
 

@@ -21,7 +21,7 @@
 
 #ifndef _NR_RLC_UE_MANAGER_H_
 #define _NR_RLC_UE_MANAGER_H_
-
+#include "openair2/COMMON/platform_types.h"
 #include "nr_rlc_entity.h"
 
 typedef void nr_rlc_ue_manager_t;

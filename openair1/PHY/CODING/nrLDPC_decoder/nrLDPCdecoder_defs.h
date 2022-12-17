@@ -85,7 +85,7 @@
 
 /** Number of bit node (BN) groups in BG2 for rate 1/5
  A BN group is defined by its number of connected CNs. */
-#define NR_LDPC_NUM_BN_GROUPS_BG2_R15 23
+#define NR_LDPC_NUM_BN_GROUPS_BG2_R15 13
 /** Number of bit node (BN) groups in BG2 for rate 1/3 */
 #define NR_LDPC_NUM_BN_GROUPS_BG2_R13 10
 /** Number of bit node (BN) groups in BG2 for rate 2/3 */

@@ -199,6 +199,10 @@ void nr_schedule_pucch(gNB_MAC_INST *nrmac,
                        frame_t frameP,
                        sub_frame_t slotP);
 
+void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr_srs_normalized_channel_iq_matrix,
+                           const NR_UE_UL_BWP_t *current_BWP,
+                           uint8_t *ul_ri);
+
 void nr_schedule_srs(int module_id, frame_t frame);
 
 void nr_csirs_scheduling(int Mod_idP,
@@ -471,7 +475,7 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
                           const NR_ServingCellConfigCommon_t *scc);
 
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
-const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot);
+const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot);
 
 int get_cce_index(const gNB_MAC_INST *nrmac,
                   const int CC_id,

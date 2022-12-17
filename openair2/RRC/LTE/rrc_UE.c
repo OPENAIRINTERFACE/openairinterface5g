@@ -76,7 +76,7 @@
 #include <common/utils/system.h>
 
 #include "intertask_interface.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 #include "SIMULATION/TOOLS/sim.h" // for taus
 
@@ -548,7 +548,7 @@ static void rrc_ue_generate_RRCConnectionSetupComplete(
   LOG_D(RLC,
         "[FRAME %05d][RRC_UE][MOD %02d][][--- PDCP_DATA_REQ/%d Bytes (RRCConnectionSetupComplete to eNB %d MUI %d) --->][PDCP][MOD %02d][RB %02d]\n",
         ctxt_pP->frame, ctxt_pP->module_id+NB_eNB_INST, size, eNB_index, rrc_mui, ctxt_pP->module_id+NB_eNB_INST, DCCH);
-  ctxt_pP_local.rnti = ctxt_pP->rnti;
+  ctxt_pP_local.rntiMaybeUEid = ctxt_pP->rntiMaybeUEid;
   rrc_data_req_ue (
     ctxt_pP,
     DCCH,
@@ -648,11 +648,7 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
           break;
 
         case LTE_DL_CCCH_MessageType__c1_PR_rrcConnectionSetup:
-          LOG_A(RRC,
-                "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %x\n",
-                ctxt_pP->module_id,
-                ctxt_pP->frame,
-                ctxt_pP->rnti);
+          LOG_A(RRC, "[UE%d][RAPROC] Frame %d : Logical Channel DL-CCCH (SRB0), Received RRCConnectionSetup RNTI %lx\n", ctxt_pP->module_id, ctxt_pP->frame, ctxt_pP->rntiMaybeUEid);
           // Get configuration
           // Release T300 timer
           UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].T300_active = 0;
@@ -662,7 +658,7 @@ int rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const SRB_INFO *co
             &dl_ccch_msg->message.choice.c1.choice.rrcConnectionSetup.criticalExtensions.choice.c1.choice.rrcConnectionSetup_r8.radioResourceConfigDedicated);
           rrc_set_state (ctxt_pP->module_id, RRC_STATE_CONNECTED);
           rrc_set_sub_state (ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED);
-          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].rnti = ctxt_pP->rnti;
+          UE_rrc_inst[ctxt_pP->module_id].Info[eNB_index].rnti = ctxt_pP->rntiMaybeUEid;
           rrc_ue_generate_RRCConnectionSetupComplete(
             ctxt_pP,
             eNB_index,
@@ -1546,8 +1542,7 @@ rrc_ue_process_securityModeCommand(
   pdcp_t *pdcp_p = NULL;
   hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t h_rc;
-  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rnti,
-                            ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
+  key = PDCP_COLL_KEY_VALUE(ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, ctxt_pP->enb_flag, DCCH, SRB_FLAG_YES);
   h_rc = hashtable_get(pdcp_coll_p, key, (void **) &pdcp_p);
 
   if (h_rc == HASH_TABLE_OK) {
@@ -2047,7 +2042,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
         message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_CONNECTION_REESTABLISHMENT_IND);
         memset(&connection_reestablishment_ind, 0, sizeof(rrc_ral_connection_reestablishment_ind_t));
         // TO DO ral_si_ind.plmn_id        = 0;
-        connection_reestablishment_ind.ue_id            = ctxt_pP->rnti;
+        connection_reestablishment_ind.ue_id = ctxt_pP->rntiMaybeUEid;
 
         if (rrcConnectionReconfiguration->criticalExtensions.choice.c1.choice.rrcConnectionReconfiguration_r8.radioResourceConfigDedicated->drb_ToAddModList != NULL) {
           connection_reestablishment_ind.num_drb      =

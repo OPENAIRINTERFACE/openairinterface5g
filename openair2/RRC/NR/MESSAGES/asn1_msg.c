@@ -748,7 +748,7 @@ void fill_initial_SpCellConfig(int uid,
 
   // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
-  config_srs(initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
+  config_srs(scc, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
 
   scheduling_request_config(scc, pucch_Config);
 
@@ -1062,24 +1062,59 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   NR_ServingCellConfigCommon_t *scc = configuration ? configuration->scc : NULL;
 
   if(scc) {
-    int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
+
+    int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
     NR_UplinkConfig_t *uplinkConfig = SpCellConfig && SpCellConfig->spCellConfigDedicated ? SpCellConfig->spCellConfigDedicated->uplinkConfig : NULL;
+
+    uint8_t ul_max_layers = 1;
+    if (uecap &&
+        uecap->featureSets &&
+        uecap->featureSets->featureSetsUplinkPerCC &&
+        uecap->featureSets->featureSetsUplinkPerCC->list.count > 0) {
+      NR_FeatureSetUplinkPerCC_t *ul_feature_setup_per_cc = uecap->featureSets->featureSetsUplinkPerCC->list.array[0];
+      if (ul_feature_setup_per_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH) {
+        switch (*ul_feature_setup_per_cc->mimo_CB_PUSCH->maxNumberMIMO_LayersCB_PUSCH) {
+          case NR_MIMO_LayersUL_twoLayers:
+            ul_max_layers = 2;
+            break;
+          case NR_MIMO_LayersUL_fourLayers:
+            ul_max_layers = 4;
+            break;
+          default:
+            ul_max_layers = 1;
+        }
+      }
+      ul_max_layers = min(ul_max_layers, configuration->pusch_AntennaPorts);
+      if (uplinkConfig->initialUplinkBWP->pusch_Config) {
+        NR_PUSCH_Config_t *pusch_Config = uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup;
+        if (pusch_Config->maxRank == NULL) {
+          pusch_Config->maxRank = calloc(1, sizeof(*pusch_Config->maxRank));
+        }
+        *pusch_Config->maxRank = ul_max_layers;
+      }
+      if (uplinkConfig->pusch_ServingCellConfig == NULL) {
+        uplinkConfig->pusch_ServingCellConfig = calloc(1, sizeof(*uplinkConfig->pusch_ServingCellConfig));
+        uplinkConfig->pusch_ServingCellConfig->present = NR_SetupRelease_PUSCH_ServingCellConfig_PR_setup;
+        uplinkConfig->pusch_ServingCellConfig->choice.setup = calloc(1, sizeof(*uplinkConfig->pusch_ServingCellConfig->choice.setup));
+        uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1 = calloc(1, sizeof(*uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1));
+        uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers = calloc(1, sizeof(*uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers));
+      }
+      *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers = ul_max_layers;
+    }
+
     long maxMIMO_Layers = uplinkConfig &&
                                   uplinkConfig->pusch_ServingCellConfig &&
                                   uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1 &&
                                   uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers ?
                               *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers : 1;
-    // SRS configuration
-    if (configuration->do_SRS &&
-        SpCellConfig &&
-        SpCellConfig->spCellConfigDedicated &&
-        SpCellConfig->spCellConfigDedicated->uplinkConfig &&
-        SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-      if (!SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config) {
-        SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config =
-            calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config));
+
+    // UL and SRS configuration
+    if (configuration->do_SRS && uplinkConfig && uplinkConfig->initialUplinkBWP) {
+      if (!uplinkConfig->initialUplinkBWP->srs_Config) {
+        uplinkConfig->initialUplinkBWP->srs_Config = calloc(1, sizeof(*uplinkConfig->initialUplinkBWP->srs_Config));
       }
-      config_srs(SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
+      config_srs(scc,
+                 SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config,
                  uecap,
                  curr_bwp,
                  uid,
@@ -1093,7 +1128,7 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
     set_dl_mcs_table(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
                      configuration->force_256qam_off ? NULL : uecap, bwp_Dedicated, scc);
     struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
-    struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = SpCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList;
+    struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = uplinkConfig->uplinkBWP_ToAddModList;
     if (DL_BWP_list) {
       for (int i=0; i<DL_BWP_list->list.count; i++){
         NR_BWP_Downlink_t *bwp = DL_BWP_list->list.array[i];
@@ -1101,11 +1136,19 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
         set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
       }
     }
-    if (UL_BWP_list) {
+    if (configuration->do_SRS && UL_BWP_list) {
       for (int i=0; i<UL_BWP_list->list.count; i++) {
         NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[i];
         int bwp_size = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-        config_srs(ul_bwp->bwp_Dedicated->srs_Config,
+        if (ul_bwp->bwp_Dedicated->pusch_Config) {
+          NR_PUSCH_Config_t *pusch_Config = ul_bwp->bwp_Dedicated->pusch_Config->choice.setup;
+          if (pusch_Config->maxRank == NULL) {
+            pusch_Config->maxRank = calloc(1, sizeof(*pusch_Config->maxRank));
+          }
+          *pusch_Config->maxRank = ul_max_layers;
+        }
+        config_srs(scc,
+                   ul_bwp->bwp_Dedicated->srs_Config,
                    uecap,
                    bwp_size,
                    uid,
@@ -1311,16 +1354,10 @@ uint8_t do_NR_SecurityModeCommand(
     return -1;
   }
 
-  LOG_D(NR_RRC,"[gNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(NR_RRC, "[gNB %d] securityModeCommand for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(NR_RRC,"[gNB %d] ASN1 : securityModeCommand encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(NR_RRC, "[gNB %d] ASN1 : securityModeCommand encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -1406,16 +1443,10 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     return -1;
   }
 
-  LOG_D(NR_RRC,"[gNB %d] NR UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(NR_RRC, "[gNB %d] NR UECapabilityRequest for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(NR_RRC,"[gNB %d] ASN1 : NR UECapabilityRequest encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(NR_RRC, "[gNB %d] ASN1 : NR UECapabilityRequest encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 

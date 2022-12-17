@@ -73,7 +73,7 @@ typedef enum {
 #define MAX_UE_NR_CAPABILITY_SIZE 2048
 typedef struct OAI_NR_UECapability_s {
   uint8_t sdu[MAX_UE_NR_CAPABILITY_SIZE];
-  uint8_t sdu_size;
+  uint16_t sdu_size;
   NR_UE_NR_Capability_t *UE_NR_Capability;
 } OAI_NR_UECapability_t;
 
@@ -129,7 +129,7 @@ typedef struct NR_UE_RRC_INST_s {
     uint8_t                        MBMS_flag;
     OAI_NR_UECapability_t          *UECap;
     uint8_t 			   *UECapability;
-    uint8_t                        UECapability_size;
+    uint16_t                       UECapability_size;
 
     RA_trigger_t                   ra_trigger;
     BIT_STRING_t                   requested_SI_List;

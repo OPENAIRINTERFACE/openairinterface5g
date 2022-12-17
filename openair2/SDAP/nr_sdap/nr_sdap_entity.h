@@ -68,10 +68,10 @@ typedef struct qfi2drb_s {
   bool    hasSdap;
 } qfi2drb_t;
 
-void nr_pdcp_submit_sdap_ctrl_pdu(int rnti, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
+void nr_pdcp_submit_sdap_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
 
 typedef struct nr_sdap_entity_s {
-  uint16_t rnti;
+  ue_id_t ue_id;
   rb_id_t default_drb;
   int pdusession_id;
   qfi2drb_t qfi2drb_table[SDAP_MAX_QFI];
@@ -82,8 +82,7 @@ typedef struct nr_sdap_entity_s {
 
   nr_sdap_ul_hdr_t (*sdap_construct_ctrl_pdu)(uint8_t qfi);
   rb_id_t (*sdap_map_ctrl_pdu)(struct nr_sdap_entity_s *entity, rb_id_t pdcp_entity, int map_type, uint8_t dl_qfi);
-  void (*sdap_submit_ctrl_pdu)(int rnti, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
-
+  void (*sdap_submit_ctrl_pdu)(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
 
   bool (*tx_entity)(struct nr_sdap_entity_s *entity,
                     protocol_ctxt_t *ctxt_p,
@@ -105,7 +104,7 @@ typedef struct nr_sdap_entity_s {
                     int has_sdap,
                     int has_sdapULheader,
                     int pdusession_id,
-                    int rnti,
+                    ue_id_t ue_id,
                     char *buf,
                     int size);
 
@@ -148,36 +147,24 @@ rb_id_t nr_sdap_map_ctrl_pdu(nr_sdap_entity_t *entity, rb_id_t pdcp_entity, int 
  * TS 37.324 5.3 QoS flow to DRB Mapping 
  * Submit the end-marker control PDU to the lower layer.
  */
-void nr_sdap_submit_ctrl_pdu(int rnti, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
+void nr_sdap_submit_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu);
 
 /*
  * TS 37.324 5.3 QoS flow to DRB Mapping 
  * 5.3.1 Configuration Procedures
  */
-void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity, 
-                               rb_id_t pdcp_entity, 
-                               uint16_t rnti,
-                               NR_QFI_t *mapped_qfi_2_add, 
-                               uint8_t mappedQFIs2AddCount,
-                               uint8_t drb_identity);
+void nr_sdap_ue_qfi2drb_config(nr_sdap_entity_t *existing_sdap_entity, rb_id_t pdcp_entity, ue_id_t ue_id, NR_QFI_t *mapped_qfi_2_add, uint8_t mappedQFIs2AddCount, uint8_t drb_identity);
 
 /*
  * TS 37.324 4.4 5.1.1 SDAP entity establishment
  * Establish an SDAP entity.
  */
-nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb,
-                                     int has_sdap,
-                                     uint16_t rnti,
-                                     int pdusession_id,
-                                     bool is_defaultDRB,
-                                     uint8_t default_DRB,
-                                     NR_QFI_t *mapped_qfi_2_add,
-                                     uint8_t mappedQFIs2AddCount);
+nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, int has_sdap, ue_id_t ue_id, int pdusession_id, bool is_defaultDRB, uint8_t default_DRB, NR_QFI_t *mapped_qfi_2_add, uint8_t mappedQFIs2AddCount);
 
 /* Entity Handling Related Functions */
-nr_sdap_entity_t *nr_sdap_get_entity(uint16_t rnti, int pdusession_id);
+nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id);
 
 /* Entity Handling Related Functions */
-void delete_nr_sdap_entity(uint16_t rnti);
+void delete_nr_sdap_entity(ue_id_t ue_id);
 
 #endif

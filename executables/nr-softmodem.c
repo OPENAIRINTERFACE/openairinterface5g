@@ -51,7 +51,7 @@
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include <targets/RT/USER/lte-softmodem.h>
+#include "executables/lte-softmodem.h"
 
 #ifdef SMBV
 #include "PHY/TOOLS/smbv.h"

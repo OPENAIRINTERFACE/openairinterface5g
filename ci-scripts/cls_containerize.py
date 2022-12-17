@@ -153,11 +153,11 @@ def AnalyzeBuildLogs(buildRoot, images, globalStatus):
 
 def AnalyzeIperf(cliOptions, clientReport, serverReport):
 	req_bw = 1.0 # default iperf throughput, in Mbps
-	result = re.search('-b *(?P<iperf_bandwidth>[0-9\.]+)(?P<magnitude>[KMG])', cliOptions)
+	result = re.search('-b *(?P<iperf_bandwidth>[0-9\.]+)(?P<magnitude>[kKMG])', cliOptions)
 	if result is not None:
 		req_bw = float(result.group('iperf_bandwidth'))
 		magn = result.group('magnitude')
-		if magn == "K":
+		if magn == "k" or magn == "K":
 			req_bw /= 1000
 		elif magn == "G":
 			req_bw *= 1000
@@ -180,7 +180,7 @@ def AnalyzeIperf(cliOptions, clientReport, serverReport):
 			reportLine = clientReportLines[l+1]
 			logging.debug(f'found server report: "{reportLine}"')
 
-	statusTemplate = '(?:|\[ *\d+\].*) +0\.0-(?P<duration>[0-9\.]+) +sec +[0-9\.]+ [KMG]Bytes +(?P<bitrate>[0-9\.]+) (?P<magnitude>[KMG])bits\/sec +(?P<jitter>[0-9\.]+) ms +(\d+\/ ..\d+) +(\((?P<packetloss>[0-9\.]+)%\))'
+	statusTemplate = '(?:|\[ *\d+\].*) +0\.0-\s*(?P<duration>[0-9\.]+) +sec +[0-9\.]+ [kKMG]Bytes +(?P<bitrate>[0-9\.]+) (?P<magnitude>[kKMG])bits\/sec +(?P<jitter>[0-9\.]+) ms +(\d+\/ ..\d+) +(\((?P<packetloss>[0-9\.]+)%\))'
 	# if we do not find a server report in the client logs, check the server logs
 	# and use the last line which is typically close/identical to server report
 	if reportLine is None:
@@ -201,10 +201,10 @@ def AnalyzeIperf(cliOptions, clientReport, serverReport):
 	duration = float(result.group('duration'))
 	bitrate = float(result.group('bitrate'))
 	magn = result.group('magnitude')
-	if magn == "K":
-		bitrate *= 1000
-	elif magn == "G": # we assume bitrate in Mbps, therefore it must be G now
+	if magn == "k" or magn == "K":
 		bitrate /= 1000
+	elif magn == "G": # we assume bitrate in Mbps, therefore it must be G now
+		bitrate *= 1000
 	jitter = float(result.group('jitter'))
 	packetloss = float(result.group('packetloss'))
 

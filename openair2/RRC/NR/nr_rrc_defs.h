@@ -411,7 +411,7 @@ typedef struct rrc_gNB_ue_context_s {
   /* Uniquely identifies the UE between MME and eNB within the eNB.
    * This id is encoded on 24bits.
    */
-  rnti_t         ue_id_rnti;
+  ue_id_t         ue_id_rnti;
 
   // another key for protocol layers but should not be used as a key for RB tree
   uid_t          local_uid;

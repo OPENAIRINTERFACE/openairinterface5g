@@ -338,13 +338,14 @@ Also, incoming downlink sdu can comme from internal RRC: in this case, pdcp_run(
 
 At Rx side, pdcp_data_ind() is the entry point that receives the data from RLC.
 - Inside pdcp_data_ind(), the pdcp manager mutex protects the access to the PDU receiving function of PDCP (recv_pdu() callback corresponding to nr_pdcp_entity_drb_am_recv_pdu() for DRBs)
-- Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_ENB_TUNNEL_DATA_REQ).
+- Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_TUNNEL_DATA_REQ).
 
 pdcp_config_set_security(): not yet developped
 
 nr_DRB_preconfiguration(): the mac layer calls this for ???
 
-nr_rrc_pdcp_config_asn1_req() adds a UE in pdcp, pdcp_remove_UE() removes it
+nr_pdcp_add_srbs() adds UE SRBs in pdcp, pdcp_remove_UE() removes it
+nr_pdcp_add_drbs() adds UE DRBs in pdcp, pdcp_remove_UE() removes it
 
 # GTP
 Gtp + UDP are two twin threads performing the data plane interface to the core network

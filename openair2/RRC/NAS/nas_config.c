@@ -44,7 +44,7 @@
 
 #include "nas_config.h"
 #include "common/utils/LOG/log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "common/config/config_userapi.h"
 #include "pdcp.h"
 

@@ -49,7 +49,7 @@
 #include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "L1_paramdef.h"
 #include "MACRLC_paramdef.h"
 #include "common/config/config_userapi.h"

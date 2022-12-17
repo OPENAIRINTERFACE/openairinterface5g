@@ -102,7 +102,7 @@ nfapi_ue_release_request_body_t release_rntis;
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
 teid_t newGtpuCreateTunnel(instance_t instance,
-                           rnti_t rnti,
+                           ue_id_t ue_id,
                            int incoming_bearer_id,
                            int outgoing_bearer_id,
                            teid_t outgoing_teid,
@@ -114,7 +114,7 @@ teid_t newGtpuCreateTunnel(instance_t instance,
   return 0;
 }
 
-int newGtpuDeleteAllTunnels(instance_t instance, rnti_t rnti) {
+int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
   return 0;
 }
 
@@ -189,7 +189,7 @@ int
 gtpv1u_update_ngu_tunnel(
   const instance_t                              instanceP,
   const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  const rnti_t                                  prior_rnti
+  const ue_id_t                                 prior_ue_id
 ){
   return 0;
 }
@@ -869,7 +869,7 @@ int main(int argc, char **argv)
   // reset preprocessor to the one of DLSIM after it has been set during
   // rrc_mac_config_req_gNB
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
-  phy_init_nr_gNB(gNB,0,1);
+  phy_init_nr_gNB(gNB);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.list[0];
 

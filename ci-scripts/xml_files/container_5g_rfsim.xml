@@ -22,7 +22,7 @@
 -->
 <testCaseList>
         <htmlTabRef>rfsim-5gnr-tdd</htmlTabRef>
-        <htmlTabName>Monolithic TDD gNB</htmlTabName>
+        <htmlTabName>Monolithic SA TDD gNB</htmlTabName>
         <htmlTabIcon>wrench</htmlTabIcon>
         <repeatCount>1</repeatCount>
         <TestCaseRequestedList>

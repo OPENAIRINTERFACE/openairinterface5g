@@ -47,7 +47,7 @@
 #include <asn_application.h>
 #include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "assertions.h"
 #include "LTE_RRCConnectionRequest.h"
 #include "LTE_UL-CCCH-Message.h"
@@ -3211,16 +3211,10 @@ uint8_t do_SecurityModeCommand(
     return -1;
   }
 
-  LOG_D(RRC,"[eNB %d] securityModeCommand for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(RRC, "[eNB %d] securityModeCommand for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[eNB %d] ASN1 : securityModeCommand encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[eNB %d] ASN1 : securityModeCommand encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -3334,16 +3328,10 @@ uint8_t do_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     return -1;
   }
 
-  LOG_D(RRC,"[eNB %d] UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(RRC, "[eNB %d] UECapabilityRequest for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[eNB %d] ASN1 : UECapabilityRequest encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -3455,16 +3443,10 @@ uint8_t do_NR_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     return -1;
   }
 
-  LOG_D(RRC,"[eNB %d] NR UECapabilityRequest for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(RRC, "[eNB %d] NR UECapabilityRequest for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[eNB %d] ASN1 : NR UECapabilityRequest encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[eNB %d] ASN1 : NR UECapabilityRequest encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 

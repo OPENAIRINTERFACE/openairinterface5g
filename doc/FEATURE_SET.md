@@ -265,8 +265,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
-   - Support for 2 RX antenna
-   - Support for 1 layer
+   - Support for up to 2 RX antenna
+   - Support for up to 2 layers
 *  NR-PUCCH 
    - Format 0 (2 bits, for ACK/NACK and SR)
    - Format 2 (up to 11 bits, mainly for CSI feedback)
@@ -308,7 +308,8 @@ The following features are valid for the gNB and the 5G-NR UE.
   - HARQ procedures for uplink
 - Scheduler procedures for SRS reception
   - Periodic SRS reception
-  - TPMI computation based on SRS up 4 antenna ports and 1 layer
+  - Channel rank computation up to 2x2 scenario
+  - TPMI computation based on SRS up 4 antenna ports and 2 layers
 - MAC procedures to handle CSI measurement report
   - evalution of RSRP report
   - evaluation of CQI report
@@ -434,8 +435,8 @@ The following features are valid for the gNB and the 5G-NR UE.
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
-   - Support for 2 TX antenna
-   - Support for 1 layer
+   - Support for up to 2 TX antenna
+   - Support for up to 2 layers
 *  NR-PUCCH 
    - Format 0 (2 bits for ACK/NACK and SR)
    - Format 2 (up to 11 bits, mainly for CSI feedback)

@@ -22,13 +22,13 @@
 # include "intertask_interface.h"
 # include "create_tasks.h"
 # include "common/utils/LOG/log.h"
-# include "targets/RT/USER/lte-softmodem.h"
+# include "executables/lte-softmodem.h"
 # include "common/ran_context.h"
 
   #include "sctp_eNB_task.h"
   #include "x2ap_eNB.h"
   #include "s1ap_eNB.h"
-  #include "gtpv1u_eNB_task.h"
+  #include "openair3/ocp-gtpu/gtp_itf.h"
   #if ENABLE_RAL
     #include "lteRALue.h"
     #include "lteRALenb.h"

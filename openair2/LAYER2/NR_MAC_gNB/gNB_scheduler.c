@@ -64,18 +64,18 @@ uint8_t vnf_first_sched_entry = 1;
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
                                 int CC_idP,
                                 frame_t frameP,
-                                sub_frame_t slotP){
+                                sub_frame_t slotP)
+{
   NR_ServingCellConfigCommon_t *scc = gNB->common_channels->ServingCellConfigCommon;
   const int num_slots = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
 
   UL_tti_req_ahead_initialization(gNB, scc, num_slots, CC_idP);
 
-  nfapi_nr_dl_tti_request_t    *DL_req = &gNB->DL_req[0];
+  nfapi_nr_dl_tti_request_t *DL_req = &gNB->DL_req[0];
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t **pdcch = (nfapi_nr_dl_tti_pdcch_pdu_rel15_t **)gNB->pdcch_pdu_idx[CC_idP];
-  nfapi_nr_ul_tti_request_t    *future_ul_tti_req =
-    &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
-  nfapi_nr_ul_dci_request_t    *UL_dci_req = &gNB->UL_dci_req[0];
-  nfapi_nr_tx_data_request_t   *TX_req = &gNB->TX_req[0];
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &gNB->UL_tti_req_ahead[CC_idP][(slotP + num_slots - 1) % num_slots];
+  nfapi_nr_ul_dci_request_t *UL_dci_req = &gNB->UL_dci_req[0];
+  nfapi_nr_tx_data_request_t *TX_req = &gNB->TX_req[0];
 
   gNB->pdu_index[CC_idP] = 0;
 
@@ -108,8 +108,7 @@ void clear_nr_nfapi_information(gNB_MAC_INST * gNB,
 }
 
 bool is_xlsch_in_slot(uint64_t bitmap, sub_frame_t slot) {
-  if (slot>=64) return false; //quickfix for FR2 where there are more than 64 slots (bitmap to be removed)
-  return (bitmap >> slot) & 0x01;
+  return (bitmap >> (slot % 64)) & 0x01;
 }
 
 void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
@@ -223,7 +222,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
     nr_schedule_srs(module_idP, frame);
 
   // This schedule RA procedure if not in phy_test mode
-  // Otherwise already consider 5G already connected
+  // Otherwise consider 5G already connected
   if (get_softmodem_params()->phy_test == 0) {
     nr_schedule_RA(module_idP, frame, slot);
   }

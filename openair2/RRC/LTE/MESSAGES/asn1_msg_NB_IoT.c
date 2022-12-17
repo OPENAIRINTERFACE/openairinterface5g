@@ -758,16 +758,10 @@ uint8_t do_SecurityModeCommand_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-  LOG_D(RRC,"[NB-IoT %d] securityModeCommand-NB for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
+  LOG_D(RRC, "[NB-IoT %d] securityModeCommand-NB for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[NB-IoT %d] ASN1 : securityModeCommand-NB encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[NB-IoT %d] ASN1 : securityModeCommand-NB encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -811,17 +805,10 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-  LOG_D(RRC,"[NB-IoT %d] UECapabilityEnquiry-NB for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
-
+  LOG_D(RRC, "[NB-IoT %d] UECapabilityEnquiry-NB for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[NB-IoT %d] ASN1 : UECapabilityEnquiry-NB encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[NB-IoT %d] ASN1 : UECapabilityEnquiry-NB encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 

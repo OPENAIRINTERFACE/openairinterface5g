@@ -757,13 +757,13 @@ void nr_init_ul_harq_processes(NR_UL_UE_HARQ_t *harq_list, int number_of_process
       bzero(harq_list[i].d[r],(68*384));
     }
 
-    harq_list[i].e = malloc16(14*num_rb*12*8);
+    harq_list[i].e = malloc16(14*num_rb*12*16);
     DevAssert(harq_list[i].e);
-    bzero(harq_list[i].e,14*num_rb*12*8);
+    bzero(harq_list[i].e,14*num_rb*12*16);
 
-    harq_list[i].f = malloc16(14*num_rb*12*8);
+    harq_list[i].f = malloc16(14*num_rb*12*16);
     DevAssert(harq_list[i].f);
-    bzero(harq_list[i].f,14*num_rb*12*8);
+    bzero(harq_list[i].f,14*num_rb*12*16);
 
     harq_list[i].first_tx = 1;
     harq_list[i].round = 0;

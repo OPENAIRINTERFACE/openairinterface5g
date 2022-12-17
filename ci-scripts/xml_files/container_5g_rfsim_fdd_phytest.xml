@@ -1,0 +1,106 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+        <htmlTabRef>rfsim-5gnr-fdd-phytest</htmlTabRef>
+        <htmlTabName>Monolithic FDD phytest gNB</htmlTabName>
+        <htmlTabIcon>wrench</htmlTabIcon>
+        <repeatCount>1</repeatCount>
+        <TestCaseRequestedList>
+ 111111
+ 100011
+ 000010
+ 000011
+ 020011
+ 020012
+ 030011
+ 030012
+ 100011
+        </TestCaseRequestedList>
+        <TestCaseExclusionList></TestCaseExclusionList>
+
+        <testCase id="111111">
+                <class>Pull_Local_Registry</class>
+                <desc>Pull Images from Local Registry</desc>
+                <test_svr_id>0</test_svr_id>
+                <images_to_pull>oai-gnb oai-nr-ue</images_to_pull>
+        </testCase>
+
+        <testCase id="000010">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G gNB RF sim SA</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_fdd_phytest</yaml_path>
+                <services>oai-gnb</services>
+                <nb_healthy>1</nb_healthy>
+        </testCase>
+
+        <testCase id="000011">
+                <class>DeployGenObject</class>
+                <desc>Deploy OAI 5G NR-UE RF sim SA</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_fdd_phytest</yaml_path>
+                <services>oai-nr-ue</services>
+                <nb_healthy>2</nb_healthy>
+        </testCase>
+
+        <testCase id="020011">
+                <class>PingFromContainer</class>
+                <desc>Ping gNB from NR-UE</desc>
+                <container_name>rfsim5g-oai-nr-ue</container_name>
+                <options>-c20 -i0.2 10.0.1.1</options>
+                <loss_threshold>0</loss_threshold>
+        </testCase>
+
+        <testCase id="020012">
+                <class>PingFromContainer</class>
+                <desc>Ping NR-UE from gNB</desc>
+                <container_name>rfsim5g-oai-gnb</container_name>
+                <options>-c20 -i0.2 10.0.1.2</options>
+                <loss_threshold>0</loss_threshold>
+        </testCase>
+
+        <testCase id="030011">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Downlink</desc>
+                <server_container_name>rfsim5g-oai-nr-ue</server_container_name>
+                <client_container_name>rfsim5g-oai-gnb</client_container_name>
+                <server_options>-sui1 -B10.0.1.2</server_options>
+                <client_options>-uc10.0.1.2 -i1 -t10 -b30k -B10.0.1.1</client_options>
+        </testCase>
+
+        <testCase id="030012">
+                <class>IperfFromContainer</class>
+                <desc>Iperf UDP Uplink</desc>
+                <server_container_name>rfsim5g-oai-gnb</server_container_name>
+                <client_container_name>rfsim5g-oai-nr-ue</client_container_name>
+                <server_options>-sui1 -B10.0.1.1</server_options>
+                <client_options>-uc10.0.1.1 -i1 -t10 -b30k -B10.0.1.2</client_options>
+        </testCase>
+
+        <testCase id="100011">
+                <class>UndeployGenObject</class>
+                <desc>Undeploy all OAI 5G stack</desc>
+                <yaml_path>yaml_files/5g_rfsimulator_fdd_phytest</yaml_path>
+                <d_retx_th>10,100,100,100</d_retx_th> <!-- phytest: will fail at start! -->
+                <u_retx_th>10,100,100,100</u_retx_th> <!-- phytest: will fail at start! -->
+        </testCase>
+
+</testCaseList>

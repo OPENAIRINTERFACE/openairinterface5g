@@ -834,7 +834,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     f1ap_ue_context_release_cmd->rnti = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
   }
   else{
-    ctxt.rnti = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
+    ctxt.rntiMaybeUEid = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
     ctxt.instance = instance;
     ctxt.module_id = instance;
     ctxt.enb_flag  = 1;
@@ -850,9 +850,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
             rnti, f1ap_ue_context_release_cmd->rnti);
   }
   else{
-    AssertFatal(ctxt.rnti == rnti,
-        "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
-        rnti, ctxt.rnti);
+    AssertFatal(ctxt.rntiMaybeUEid == rnti, "RNTI obtained through DU ID (%x) is different from CU ID (%lx)\n", rnti, ctxt.rntiMaybeUEid);
   }
   int UE_out_of_sync = 0;
 
@@ -946,7 +944,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     return 0;
   } else {
     struct rrc_eNB_ue_context_s *ue_context_p;
-    ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rnti);
+    ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt.instance], ctxt.rntiMaybeUEid);
 
     if (ue_context_p && !UE_out_of_sync) {
       // UE exists and is in sync so we start a timer before releasing the
@@ -960,13 +958,12 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
           else
             rrc_release_info.RRC_release_ctrl[release_num].flag = 2;
 
-          rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rnti;
-          LOG_D(F1AP, "add rrc_release_info RNTI %x\n", ctxt.rnti);
+          rrc_release_info.RRC_release_ctrl[release_num].rnti = ctxt.rntiMaybeUEid;
+          LOG_D(F1AP, "add rrc_release_info RNTI %lx\n", ctxt.rntiMaybeUEid);
           // TODO: how to provide the correct MUI?
           rrc_release_info.RRC_release_ctrl[release_num].rrc_eNB_mui = 0;
           rrc_release_info.num_UEs++;
-          LOG_D(RRC,"Generate DLSCH Release send: index %d rnti %x mui %d flag %d \n",release_num,
-                ctxt.rnti, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
+          LOG_D(RRC, "Generate DLSCH Release send: index %d rnti %lx mui %d flag %d \n", release_num, ctxt.rntiMaybeUEid, 0, rrc_release_info.RRC_release_ctrl[release_num].flag);
           break;
         }
       }
@@ -982,7 +979,7 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
 
     // TODO send this once the connection has really been released
     f1ap_ue_context_release_cplt_t cplt;
-    cplt.rnti = ctxt.rnti;
+    cplt.rnti = ctxt.rntiMaybeUEid;
     DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance, &cplt);
     return 0;
   }
@@ -1248,7 +1245,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
           ieRRC->value.choice.RRCContainer.buf, ieRRC->value.choice.RRCContainer.size);
       protocol_ctxt_t ctxt;
       // decode RRC Container and act on the message type
-      ctxt.rnti = f1ap_ue_context_modification_req->rnti;
+      ctxt.rntiMaybeUEid = f1ap_ue_context_modification_req->rnti;
       ctxt.instance = instance;
       ctxt.module_id  = instance;
       ctxt.enb_flag  = 1;

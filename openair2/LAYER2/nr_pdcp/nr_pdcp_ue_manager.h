@@ -24,10 +24,12 @@
 
 #include "nr_pdcp_entity.h"
 
+#include "platform_types.h"
+
 typedef void nr_pdcp_ue_manager_t;
 
 typedef struct nr_pdcp_ue_t {
-  int rnti;
+  ue_id_t rntiMaybeUEid;
   nr_pdcp_entity_t *srb[3];
   nr_pdcp_entity_t *drb[MAX_DRBS_PER_UE];
 } nr_pdcp_ue_t;
@@ -43,8 +45,8 @@ int nr_pdcp_manager_get_enb_flag(nr_pdcp_ue_manager_t *m);
 void nr_pdcp_manager_lock(nr_pdcp_ue_manager_t *m);
 void nr_pdcp_manager_unlock(nr_pdcp_ue_manager_t *m);
 
-nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *m, int rnti);
-void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *m, int rnti);
+nr_pdcp_ue_t *nr_pdcp_manager_get_ue(nr_pdcp_ue_manager_t *m, ue_id_t rntiMaybeUEid);
+void nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager_t *m, ue_id_t rntiMaybeUEid);
 
 nr_pdcp_ue_t **nr_pdcp_manager_get_ue_list(nr_pdcp_ue_manager_t *_m);
 int nr_pdcp_manager_get_ue_count(nr_pdcp_ue_manager_t *_m);
@@ -62,7 +64,7 @@ void nr_pdcp_ue_add_drb_pdcp_entity(nr_pdcp_ue_t *ue, int drb_id,
 /* hacks                                                               */
 /***********************************************************************/
 
-/* returns -1 if no UE */
-int nr_pdcp_get_first_rnti(nr_pdcp_ue_manager_t *m);
+/* returns 0 if no UE, 1 otherwise */
+bool nr_pdcp_get_first_ue_id(nr_pdcp_ue_manager_t *m, ue_id_t *ret);
 
 #endif /* _NR_PDCP_UE_MANAGER_H_ */

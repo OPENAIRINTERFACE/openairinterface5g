@@ -39,7 +39,7 @@
 
 //#define SRS_IND_DEBUG
 
-const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
+const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot) {
 
   /* there is a mixed slot only when in TDD */
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -48,8 +48,16 @@ const int get_ul_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon
   if (tdd && tdd->nrofUplinkSymbols > 1) { // if there is uplink symbols in mixed slot
     const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
     if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
+      return 2;
+  }
+
+  // Avoid slots with the SRS
+  UE_iterator(nrmac->UE_info.list, UE) {
+    NR_sched_srs_t sched_srs = UE->UE_sched_ctrl.sched_srs;
+    if(sched_srs.srs_scheduled && sched_srs.frame == frame && sched_srs.slot == slot)
       return 1;
   }
+
   return 0; // if FDD or not mixed slot in TDD, for now use default TDA (TODO handle CSI-RS slots)
 }
 
@@ -1033,19 +1041,27 @@ void get_precoder_matrix_coef(char *w,
                               const uint16_t num_ue_srs_ports,
                               const uint8_t transform_precoding,
                               const uint8_t tpmi,
-                              const uint8_t uI) {
+                              const uint8_t uI,
+                              int layer_idx)
+{
   if (ul_ri == 0) {
     if (num_ue_srs_ports == 2) {
-      *w = *table_38211_6_3_1_5_1[tpmi][uI];
+      *w = table_38211_6_3_1_5_1[tpmi][uI][layer_idx];
     } else {
       if (transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
-        *w = *table_38211_6_3_1_5_2[tpmi][uI];
+        *w = table_38211_6_3_1_5_2[tpmi][uI][layer_idx];
       } else {
-        *w = *table_38211_6_3_1_5_3[tpmi][uI];
+        *w = table_38211_6_3_1_5_3[tpmi][uI][layer_idx];
       }
     }
+  } else if (ul_ri == 1) {
+    if (num_ue_srs_ports == 2) {
+      *w = table_38211_6_3_1_5_4[tpmi][uI][layer_idx];
+    } else {
+      *w = table_38211_6_3_1_5_5[tpmi][uI][layer_idx];
+    }
   } else {
-    AssertFatal(1==0,"Function get_precoder_matrix_coef() does not support %i layers yet!\n", ul_ri+1);
+    AssertFatal(1 == 0, "Function get_precoder_matrix_coef() does not support %i layers yet!\n", ul_ri + 1);
   }
 }
 
@@ -1058,20 +1074,21 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
                            const uint16_t prg_size,
                            const uint16_t num_prgs,
                            const uint8_t ul_ri) {
+  if (ul_ri > 1) {
+    LOG_D(NR_MAC, "TPMI computation for ul_ri %i is not implemented yet!\n", ul_ri);
+    return 0;
+  }
 
   uint8_t tpmi_sel = 0;
-  int16_t precoded_channel_matrix_re[num_prgs*num_gnb_antenna_elements];
-  int16_t precoded_channel_matrix_im[num_prgs*num_gnb_antenna_elements];
-  c16_t *channel_matrix16 = (c16_t*)channel_matrix;
+  const uint8_t nrOfLayers = ul_ri + 1;
+  int16_t precoded_channel_matrix_re[num_prgs * num_gnb_antenna_elements];
+  int16_t precoded_channel_matrix_im[num_prgs * num_gnb_antenna_elements];
+  c16_t *channel_matrix16 = (c16_t *)channel_matrix;
   uint32_t max_precoded_signal_power = 0;
   int additional_max_tpmi = -1;
   char w;
 
-  uint8_t max_tpmi = get_max_tpmi(pusch_Config,
-                                  num_ue_srs_ports,
-                                  &ul_ri,
-                                  &additional_max_tpmi);
-
+  uint8_t max_tpmi = get_max_tpmi(pusch_Config, num_ue_srs_ports, &nrOfLayers, &additional_max_tpmi);
   uint8_t end_tpmi_loop = additional_max_tpmi > max_tpmi ? additional_max_tpmi : max_tpmi;
 
   //                      channel_matrix                          x   precoder_matrix
@@ -1080,44 +1097,43 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
   // [ (gI=2,uI=0) (gI=2,uI=1) ... (gI=2,uI=num_ue_srs_ports-1) ]     [uI=2]
   //                           ...                                     ...
 
-  for(uint8_t tpmi = 0; tpmi<=end_tpmi_loop; tpmi++) {
-
+  for (uint8_t tpmi = 0; tpmi <= end_tpmi_loop && end_tpmi_loop > 0; tpmi++) {
     if (tpmi > max_tpmi) {
       tpmi = end_tpmi_loop;
     }
 
-    for(int pI = 0; pI <num_prgs; pI++) {
-      for(int gI = 0; gI < num_gnb_antenna_elements; gI++) {
-
-        uint16_t index_gI_pI = gI*num_prgs + pI;
+    for (int pI = 0; pI < num_prgs; pI++) {
+      for (int gI = 0; gI < num_gnb_antenna_elements; gI++) {
+        uint16_t index_gI_pI = gI * num_prgs + pI;
         precoded_channel_matrix_re[index_gI_pI] = 0;
         precoded_channel_matrix_im[index_gI_pI] = 0;
 
-        for(int uI = 0; uI < num_ue_srs_ports; uI++) {
+        for (int uI = 0; uI < num_ue_srs_ports; uI++) {
+          for (int layer_idx = 0; layer_idx < nrOfLayers; layer_idx++) {
+            uint16_t index = uI * num_gnb_antenna_elements * num_prgs + index_gI_pI;
+            get_precoder_matrix_coef(&w, ul_ri, num_ue_srs_ports, transform_precoding, tpmi, uI, layer_idx);
+            c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
 
-          uint16_t index = uI*num_gnb_antenna_elements*num_prgs + index_gI_pI;
-          get_precoder_matrix_coef(&w, ul_ri, num_ue_srs_ports, transform_precoding, tpmi, uI);
-          c16_t h_times_w = nr_h_times_w(channel_matrix16[index], w);
-
-          precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
-          precoded_channel_matrix_im[index_gI_pI] += h_times_w.i;
+            precoded_channel_matrix_re[index_gI_pI] += h_times_w.r;
+            precoded_channel_matrix_im[index_gI_pI] += h_times_w.i;
 
 #ifdef SRS_IND_DEBUG
-          LOG_I(NR_MAC, "(uI %i, gI %i, pI %i) channel_matrix --> real %i, imag %i\n",
-                uI, gI, pI, channel_matrix16[index].r, channel_matrix16[index].i);
+            LOG_I(NR_MAC, "(pI %i, gI %i,  uI %i, layer_idx %i) w = %c, channel_matrix --> real %i, imag %i\n",
+                  pI, gI, uI, layer_idx, w, channel_matrix16[index].r, channel_matrix16[index].i);
 #endif
+          }
         }
 
 #ifdef SRS_IND_DEBUG
-        LOG_I(NR_MAC, "(gI %i, pI %i) precoded_channel_coef --> real %i, imag %i\n",
-              gI, pI, precoded_channel_matrix_re[index_gI_pI], precoded_channel_matrix_im[index_gI_pI]);
+        LOG_I(NR_MAC, "(pI %i, gI %i) precoded_channel_coef --> real %i, imag %i\n",
+              pI, gI, precoded_channel_matrix_re[index_gI_pI], precoded_channel_matrix_im[index_gI_pI]);
 #endif
       }
     }
 
     uint32_t precoded_signal_power = calc_power_complex(precoded_channel_matrix_re,
                                                         precoded_channel_matrix_im,
-                                                        num_prgs*num_gnb_antenna_elements);
+                                                        num_prgs * num_gnb_antenna_elements);
 
 #ifdef SRS_IND_DEBUG
     LOG_I(NR_MAC, "(tpmi %i) precoded_signal_power = %i\n", tpmi, precoded_signal_power);
@@ -1198,7 +1214,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
 
-      uint8_t num_rbs = nr_srs_beamforming_report.prg_size * nr_srs_beamforming_report.prgs[0].num_prgs;
+      uint16_t num_rbs = nr_srs_beamforming_report.prg_size * nr_srs_beamforming_report.prgs[0].num_prgs;
       memset(ulprbbl, 0, num_rbs * sizeof(uint16_t));
       for (int rb = 0; rb < num_rbs; rb++) {
         int snr = (nr_srs_beamforming_report.prgs[0].prg_list[rb / nr_srs_beamforming_report.prg_size].rb_snr >> 1) - 64;
@@ -1242,11 +1258,12 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       }
 #endif
 
-      // TODO: This should be improved
       NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
       NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
       sched_ctrl->srs_feedback.sri = NR_SRS_SRI_0;
-      sched_ctrl->srs_feedback.ul_ri = 0; // TODO: Compute this
+
+      nr_srs_ri_computation(&nr_srs_normalized_channel_iq_matrix, current_BWP, &sched_ctrl->srs_feedback.ul_ri);
+
       sched_ctrl->srs_feedback.tpmi = nr_srs_tpmi_estimation(current_BWP->pusch_Config,
                                                              current_BWP->transform_precoding,
                                                              nr_srs_normalized_channel_iq_matrix.channel_matrix,
@@ -1256,7 +1273,9 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                                              nr_srs_normalized_channel_iq_matrix.prg_size,
                                                              nr_srs_normalized_channel_iq_matrix.num_prgs,
                                                              sched_ctrl->srs_feedback.ul_ri);
+
       sprintf(stats->srs_stats, "UL-RI %d, TPMI %d", sched_ctrl->srs_feedback.ul_ri + 1, sched_ctrl->srs_feedback.tpmi);
+
       break;
     }
 
@@ -1411,7 +1430,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
 
   int rbStart = 0; // wrt BWP start
   const uint16_t bwpSize = UE->current_UL_BWP.BWPSize;
-  const uint8_t nrOfLayers = 1;
+  const uint8_t nrOfLayers = retInfo->nrOfLayers;
   LOG_D(NR_MAC,"retInfo->time_domain_allocation = %d, tda = %d\n", retInfo->time_domain_allocation, tda);
   LOG_D(NR_MAC,"tbs %d\n",retInfo->tb_size);
   if (tda == retInfo->time_domain_allocation &&
@@ -1445,7 +1464,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
-                                 1, // layers
+                                 nrOfLayers,
                                  tda_info.nrOfSymbols,
                                  dmrs_info.N_PRB_DMRS * dmrs_info.num_dmrs_symb,
                                  retInfo->tb_size,
@@ -1525,7 +1544,6 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
-
 void pf_ul(module_id_t module_id,
            frame_t frame,
            sub_frame_t slot,
@@ -1573,7 +1591,7 @@ void pf_ul(module_id_t module_id,
     LOG_D(NR_MAC,"pf_ul: UE %04x harq_pid %d\n",UE->rnti,sched_pusch->ul_harq_pid);
     if (sched_pusch->ul_harq_pid >= 0) {
       /* Allocate retransmission*/
-      const int tda = get_ul_tda(nrmac, scc, sched_pusch->slot);
+      const int tda = get_ul_tda(nrmac, scc, sched_pusch->frame, sched_pusch->slot);
       bool r = allocate_ul_retransmission(nrmac, frame, slot, rballoc_mask, &n_rb_sched, UE, sched_pusch->ul_harq_pid, scc, tda);
       if (!r) {
         LOG_D(NR_MAC, "%4d.%2d UL retransmission UE RNTI %04x can NOT be allocated\n", frame, slot, UE->rnti);
@@ -1627,8 +1645,8 @@ void pf_ul(module_id_t module_id,
         continue;
       }
 
-      sched_pusch->nrOfLayers = 1;
-      sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->slot);
+      sched_pusch->nrOfLayers = sched_ctrl->srs_feedback.ul_ri + 1;
+      sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->frame, sched_pusch->slot);
       sched_pusch->tda_info = nr_get_pusch_tda_info(current_BWP, sched_pusch->time_domain_allocation);
       sched_pusch->dmrs_info = get_ul_dmrs_params(scc,
                                                   current_BWP,
@@ -1665,8 +1683,7 @@ void pf_ul(module_id_t module_id,
                                             sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
                                             0, // nb_rb_oh
                                             0,
-                                            sched_pusch->nrOfLayers)
-                             >> 3;
+                                            sched_pusch->nrOfLayers) >> 3;
 
       /* Mark the corresponding RBs as used */
       n_rb_sched -= sched_pusch->rbSize;
@@ -1690,7 +1707,7 @@ void pf_ul(module_id_t module_id,
 
   qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
   UEsched_t *iterator=UE_sched;
-  
+
   /* Loop UE_sched to find max coeff and allocate transmission */
   while (remainUEs> 0 && n_rb_sched >= min_rb && iterator->UE != NULL) {
 
@@ -1714,8 +1731,8 @@ void pf_ul(module_id_t module_id,
 
     NR_sched_pusch_t *sched_pusch = &sched_ctrl->sched_pusch;
 
-    sched_pusch->nrOfLayers = 1;
-    sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->slot);
+    sched_pusch->nrOfLayers = sched_ctrl->srs_feedback.ul_ri + 1;
+    sched_pusch->time_domain_allocation = get_ul_tda(nrmac, scc, sched_pusch->frame, sched_pusch->slot);
     sched_pusch->tda_info = nr_get_pusch_tda_info(current_BWP, sched_pusch->time_domain_allocation);
     sched_pusch->dmrs_info = get_ul_dmrs_params(scc,
                                                 current_BWP,
@@ -1755,7 +1772,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
-                  1, // layers
+                  sched_pusch->nrOfLayers,
                   sched_pusch->tda_info.nrOfSymbols,
                   sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
                   B,
@@ -1812,25 +1829,17 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   NR_UE_sched_ctrl_t *sched_ctrl = &nr_mac->UE_info.list[0]->UE_sched_ctrl;
   NR_UE_UL_BWP_t *current_BWP = &nr_mac->UE_info.list[0]->current_UL_BWP;
   int mu = current_BWP->scs;
-  const int temp_tda = get_ul_tda(nr_mac, scc, slot);
+  const int temp_tda = get_ul_tda(nr_mac, scc, frame, slot);
   int K2 = get_K2(current_BWP->tdaList, temp_tda, mu);
   const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) & 1023;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
-  const int tda = get_ul_tda(nr_mac, scc, sched_slot);
+  const int tda = get_ul_tda(nr_mac, scc, sched_frame, sched_slot);
   if (tda < 0)
     return false;
   DevAssert(K2 == get_K2(current_BWP->tdaList, tda, mu));
 
   if (!is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot))
     return false;
-
-  // Avoid slots with the SRS
-  UE_iterator(nr_mac->UE_info.list, UE) {
-    NR_sched_srs_t sched_srs = UE->UE_sched_ctrl.sched_srs;
-    if(sched_srs.srs_scheduled && sched_srs.frame==sched_frame && sched_srs.slot==sched_slot) {
-      return false;
-    }
-  }
 
   sched_ctrl->sched_pusch.slot = sched_slot;
   sched_ctrl->sched_pusch.frame = sched_frame;
@@ -2001,9 +2010,10 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       /* Save information on MCS, TBS etc for the current initial transmission
        * so we have access to it when retransmitting */
       cur_harq->sched_pusch = *sched_pusch;
-      /* save which time allocation has been used, to be used on
+      /* save which time allocation and nrOfLayers have been used, to be used on
        * retransmissions */
       cur_harq->sched_pusch.time_domain_allocation = sched_pusch->time_domain_allocation;
+      cur_harq->sched_pusch.nrOfLayers = sched_pusch->nrOfLayers;
       sched_ctrl->sched_ul_bytes += sched_pusch->tb_size;
       UE->mac_stats.ul.total_rbs += sched_pusch->rbSize;
 

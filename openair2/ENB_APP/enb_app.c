@@ -34,14 +34,13 @@
 #include "enb_config.h"
 #include "assertions.h"
 #include "common/ran_context.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 #include "common/utils/LOG/log.h"
 
 # include "intertask_interface.h"
 #   include "s1ap_eNB.h"
-#   include "sctp_eNB_task.h"
-#   include "gtpv1u_eNB_task.h"
+#include "sctp_eNB_task.h"
 
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"
@@ -56,7 +55,7 @@ extern RAN_CONTEXT_t RC;
 
 #   define ENB_REGISTER_RETRY_DELAY 10
 
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 
 /*************************** ENB M2AP **************************/

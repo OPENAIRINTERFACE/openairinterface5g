@@ -38,7 +38,7 @@
 //#include "defs.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/phy_extern.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 int generate_pss(int32_t **txdataF,
                  short amp,

@@ -1,0 +1,90 @@
+if ( "${OPENAIR_CMAKE}" STREQUAL "")
+  message( FATAL_ERROR "oai Environment variables not set")
+endif ( "${OPENAIR_CMAKE}" STREQUAL "")
+set(WEBSRVROOT ${OPENAIR_DIR}/common/utils/websrv )
+set (WBACK TRUE)
+set (WFRONT TRUE)
+# websrv dependencies
+unset(ULFIUS)
+unset(ULFIUS CACHE)
+find_library(ULFIUS NAMES "libulfius.so"  NO_CACHE)
+if ("${ULFIUS}" STREQUAL "ULFIUS-NOTFOUND")
+  message( WARNING "ulfius library (https://github.com/babelouest/ulfius) not found, install libulfius-dev (ubuntu) if you need to build websrv back-end")
+  set (WBACK FALSE)
+endif("${ULFIUS}" STREQUAL "ULFIUS-NOTFOUND")
+
+unset(JSON)
+unset(JSON CACHE)
+find_library(JSON NAMES "libjansson.so"  NO_CACHE )
+if ("${JSON}" STREQUAL "ULFIUS-NOTFOUND")
+  message( WARNING "libjansson not found, install libjansson-dev for ubuntu, jansson-devel for fedora if you need to build websrv back-end")
+  set (WBACK FALSE)
+endif("${JSON}" STREQUAL "ULFIUS-NOTFOUND")
+
+unset(NPM)
+unset(NPM CACHE)
+find_program(NPM NAMES npm NO_CACHE)
+if ("${NPM}" STREQUAL "ULFIUS-NOTFOUND")
+  message( WARNING " npm is not installed, frontend won't be built. Possibly install npm, package is available for ubuntu and fedora")
+endif("${NPM}" STREQUAL "ULFIUS-NOTFOUND")
+
+if ( ${WBACK}   ) 
+  message (STATUS "websrv backend can be built")
+else ( ${WBACK} )
+  message (STATUS "websrv backend build skipped, dependencies not found")
+endif ( ${WBACK} )
+
+if ( ${WFRONT} ) 
+  message (STATUS "websrv frontend can be built")
+else( ${WFRONT} )
+  message (STATUS "websrv frontend build skipped,  dependencies not found")
+endif ( ${WFRONT} )
+
+
+# build the backend ( the embedded web server)
+
+set(WEBSRV_SOURCE
+    ${WEBSRVROOT}/websrv.c ${WEBSRVROOT}/websrv_websockets.c  
+    ${WEBSRVROOT}/websrv_scope.c ${WEBSRVROOT}/websrv_noforms.c 
+    ${WEBSRVROOT}/websrv_scope.c ${WEBSRVROOT}/websrv_utils.c 
+    ${OPENAIR_DIR}/openair1/PHY/TOOLS/nr_phy_scope.c
+    )
+    
+
+  add_library(websrv MODULE ${WEBSRV_SOURCE} )
+  target_link_libraries(websrv PRIVATE ulfius jansson)
+  target_compile_definitions(websrv PUBLIC WEBSRVSCOPE)
+
+# build the frontend ( loaded from web server by browsers)
+
+add_custom_target (
+  websrvfront_installjsdep
+  WORKING_DIRECTORY ${WEBSRVROOT}/frontend
+  COMMAND npm install
+  DEPENDS ${WEBSRVROOT}/frontend/package-lock.json
+)
+
+add_custom_target (
+  websrvfront
+  WORKING_DIRECTORY ${WEBSRVROOT}/frontend
+  COMMAND npm run build
+  #COMMAND npm run builddev
+  DEPENDS websrvfront_installjsdep
+)
+
+
+#install built files, required at exec time
+if (  ${WBACK}  )
+  install(TARGETS websrv DESTINATION bin)
+endif ( ${WBACK} )
+
+if ( ${WFRONT} )
+  if (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")
+     add_custom_command(TARGET websrvfront
+                   POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_CMAKE}/ran_build/build/websrv 
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/frontend/dist/softmodem-ngx ${OPENAIR_TARGETS}/bin/websrv 
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/helpfiles ${OPENAIR_CMAKE}/ran_build/build/websrv/helpfiles
+                              COMMAND ${CMAKE_COMMAND} -E copy_directory ${WEBSRVROOT}/helpfiles ${OPENAIR_TARGETS}/bin/websrv/helpfiles
+                   COMMENT "Moving frontend files to:\n    ${OPENAIR_CMAKE}/ran_build/build/websrv\n    ${OPENAIR_TARGETS}/bin/websrv" )
+  endif (EXISTS "${OPENAIR_CMAKE}/ran_build/build" AND IS_DIRECTORY "${OPENAIR_CMAKE}/ran_build/build")
+endif ( ${WFRONT} )

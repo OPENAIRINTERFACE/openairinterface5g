@@ -88,10 +88,26 @@ int load_config_sharedlib(configmodule_interface_t *cfgptr) {
       st = -1;
     }
 
+    if (cfgptr->rtflags & CONFIG_SAVERUNCFG) {
+      sprintf(fname, "config_%s_set", cfgptr->cfgmode);
+      cfgptr->set = dlsym(lib_handle, fname);
+
+      if (cfgptr->set == NULL) {
+        printf("[CONFIG] %s %d no function %s for config mode %s\n", __FILE__, __LINE__, fname, cfgptr->cfgmode);
+        st = -1;
+      }
+      sprintf(fname, "config_%s_write_parsedcfg", cfgptr->cfgmode);
+      cfgptr->write_parsedcfg = dlsym(lib_handle, fname);
+
+      if (cfgptr->write_parsedcfg == NULL) {
+        printf("[CONFIG] %s %d no function %s for config mode %s\n", __FILE__, __LINE__, fname, cfgptr->cfgmode);
+      }
+    }
+
     sprintf (fname,"config_%s_end",cfgptr->cfgmode);
     cfgptr->end = dlsym(lib_handle,fname);
 
-    if (cfgptr->getlist == NULL ) {
+    if (cfgptr->end == NULL) {
       printf("[CONFIG] %s %d no function %s for config mode %s\n",
              __FILE__, __LINE__,fname, cfgptr->cfgmode);
     }
@@ -193,6 +209,7 @@ configmodule_interface_t *load_configmodule(int argc,
   uint32_t tmpflags=0;
   int i;
   int OoptIdx=-1;
+  int OWoptIdx = -1;
 
   printf("CMDLINE: ");
   for (int i=0; i<argc; i++)
@@ -209,6 +226,10 @@ configmodule_interface_t *load_configmodule(int argc,
       OoptIdx=i;
     }
 
+    char *OWopt = strstr(argv[i], "OW");
+    if (OWopt == argv[i] + 2) {
+      OWoptIdx = i;
+    }
     if ( strstr(argv[i], "help_config") != NULL  ) {
       config_printhelp(Config_Params,CONFIG_PARAMLENGTH(Config_Params),CONFIG_SECTIONNAME);
       exit(0);
@@ -258,6 +279,11 @@ configmodule_interface_t *load_configmodule(int argc,
   /* argv[0] is the exec name, always Ok */
     cfgptr->argv_info[0] |= CONFIG_CMDLINEOPT_PROCESSED;
 
+    /* When reuested _(_--OW or rtflag is 5), a file with config parameters, as defined after all processing, will be created */
+    if (OWoptIdx >= 0) {
+      cfgptr->argv_info[OWoptIdx] |= CONFIG_CMDLINEOPT_PROCESSED;
+      cfgptr->rtflags |= CONFIG_SAVERUNCFG;
+    }
   /* when OoptIdx is >0, -O option has been detected at position OoptIdx 
    *  we must memorize arv[OoptIdx is Ok                                  */ 
     if (OoptIdx >= 0) {
@@ -294,14 +320,18 @@ configmodule_interface_t *load_configmodule(int argc,
     printf("%s ",cfgptr->cfgP[i]);
   }
 
-  printf(", debug flags: 0x%08x\n",cfgptr->rtflags);
-
+  if (cfgptr->rtflags & CONFIG_PRINTPARAMS) {
+    cfgptr->status = malloc(sizeof(configmodule_status_t));
+  }
   if (strstr(cfgparam,CONFIG_CMDLINEONLY) == NULL) {
     i=load_config_sharedlib(cfgptr);
 
     if (i ==  0) {
       printf("[CONFIG] config module %s loaded\n",cfgmode);
-      Config_Params[CONFIGPARAM_DEBUGFLAGS_IDX].uptr=&(cfgptr->rtflags);
+      int idx = config_paramidx_fromname(Config_Params, CONFIG_PARAMLENGTH(Config_Params), CONFIGP_DEBUGFLAGS);
+      Config_Params[idx].uptr = &(cfgptr->rtflags);
+      idx = config_paramidx_fromname(Config_Params, CONFIG_PARAMLENGTH(Config_Params), CONFIGP_TMPDIR);
+      Config_Params[idx].strptr = &(cfgptr->tmpdir);
       config_get(Config_Params,CONFIG_PARAMLENGTH(Config_Params), CONFIG_SECTIONNAME );
     } else {
       fprintf(stderr,"[CONFIG] %s %d config module \"%s\" couldn't be loaded\n", __FILE__, __LINE__,cfgmode);
@@ -313,6 +343,8 @@ configmodule_interface_t *load_configmodule(int argc,
     cfgptr->getlist = config_cmdlineonly_getlist;
     cfgptr->end = (configmodule_endfunc_t)nooptfunc;
   }
+
+  printf("[CONFIG] debug flags: 0x%08x\n", cfgptr->rtflags);
 
   if (modeparams != NULL) free(modeparams);
 
@@ -326,10 +358,28 @@ configmodule_interface_t *load_configmodule(int argc,
   return cfgptr;
 }
 
+/* Possibly write config file, with parameters which have been read and  after command line parsing */
+void write_parsedcfg(void)
+{
+  if (cfgptr->status && (cfgptr->rtflags & CONFIG_SAVERUNCFG)) {
+    printf_params("[CONFIG] Runtime params creation status: %i null values, %i errors, %i empty list or array, %i successfull \n",
+                  cfgptr->status->num_err_nullvalue,
+                  cfgptr->status->num_err_write,
+                  cfgptr->status->emptyla,
+                  cfgptr->status->num_write);
+  }
+  if (cfgptr != NULL) {
+    if (cfgptr->write_parsedcfg != NULL) {
+      printf("[CONFIG] calling config module write_parsedcfg function...\n");
+      cfgptr->write_parsedcfg();
+    }
+  }
+}
 
 /* free memory allocated when reading parameters */
 /* config module could be initialized again after this call */
 void end_configmodule(void) {
+  write_parsedcfg();
   if (cfgptr != NULL) {
     if (cfgptr->end != NULL) {
       printf ("[CONFIG] calling config module end function...\n");

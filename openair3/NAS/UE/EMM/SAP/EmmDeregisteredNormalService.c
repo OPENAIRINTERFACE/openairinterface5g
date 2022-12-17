@@ -47,7 +47,7 @@ Description Implements the EPS Mobility Management procedures executed
 #include "commonDef.h"
 #include "networkDef.h"
 #include "nas_log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "emm_proc.h"
 
 #include <assert.h>

@@ -57,84 +57,119 @@
 #include "openair1/PHY/phy_extern.h"
 #include "telnetsrv_proccmd.h"
 
-void decode_procstat(char *record, int debug, telnet_printfunc_t prnt)
+void decode_procstat(char *record, int debug, telnet_printfunc_t prnt, webdatadef_t *tdata)
 {
 char prntline[160];
-char *procfile_fiels;
+char *procfile_fields;
 char *strtokptr;
 char *lptr;
 int fieldcnt;
 char toksep[2];
 
-  fieldcnt=0;	  
-  procfile_fiels =strtok_r(record," ",&strtokptr);
-  lptr= prntline;
+fieldcnt = 0;
+procfile_fields = strtok_r(record, " ", &strtokptr);
+lptr = prntline;
 /*http://man7.org/linux/man-pages/man5/proc.5.html gives the structure of the stat file */
- 
-  while( 	procfile_fiels != NULL && fieldcnt < 42) {
-    long int policy;
-    if (strlen(procfile_fiels) == 0)
-       continue;
-    fieldcnt++;
-    sprintf(toksep," ");
-    switch(fieldcnt) {
-       case 1: /* id */
-           lptr+=sprintf(lptr,"%9.9s ",procfile_fiels);
-           sprintf(toksep,")");
-       break;  
-       case 2: /* name */
-	   lptr+=sprintf(lptr,"%20.20s ",procfile_fiels+1);
-       break;              
-       case 3:   //thread state
-           lptr+=sprintf(lptr,"  %c   ",procfile_fiels[0]);
-       break;
-       case 14:   //time in user mode
-       case 15:   //time in kernel mode
-           lptr+=sprintf(lptr,"%9.9s ",procfile_fiels);
-       break;
-       case 18:   //priority
-       case 19:   //nice	       
-           lptr+=sprintf(lptr,"%3.3s ",procfile_fiels);
-       break;
-       case 23:   //vsize	       
-           lptr+=sprintf(lptr,"%9.9s ",procfile_fiels);
-       break;
-       case 39:   //processor	       
-           lptr+=sprintf(lptr," %2.2s  ",procfile_fiels);
-       break;
-       case 41:   //policy	       
-           lptr+=sprintf(lptr,"%3.3s ",procfile_fiels);
-           policy=strtol(procfile_fiels,NULL,0);
-           switch(policy) {
-              case SCHED_FIFO:
-                   lptr+=sprintf(lptr,"%s ","rt: fifo");
-              break;
-              case SCHED_OTHER:
-                   lptr+=sprintf(lptr,"%s ","other");
-              break;
-              case SCHED_IDLE:
-                   lptr+=sprintf(lptr,"%s ","idle");
-              break;
-              case SCHED_BATCH:
-                   lptr+=sprintf(lptr,"%s ","batch");
-              break;
-              case SCHED_RR:
-                   lptr+=sprintf(lptr,"%s ","rt: rr");
-              break;
-              default:
-                   lptr+=sprintf(lptr,"%s ","????");
-              break;
-           }
-       break;
-       default:
-       break;	       	       	       	       	       
-    }/* switch on fieldcnr */  
-    procfile_fiels =strtok_r(NULL,toksep,&strtokptr); 
-  } /* while on proc_fields != NULL */
-  prnt("%s\n",prntline); 
+int priority = 0;
+int nice = 0;
+while (procfile_fields != NULL && fieldcnt < 42) {
+  long int policy;
+  if (strlen(procfile_fields) == 0)
+    continue;
+  fieldcnt++;
+  sprintf(toksep, " ");
+  switch (fieldcnt) {
+    case 1: /* id */
+      if (tdata != NULL) {
+        tdata->lines[tdata->numlines].val[0] = strdup(procfile_fields);
+      }
+      lptr += sprintf(lptr, "%9.9s ", procfile_fields);
+      sprintf(toksep, ")");
+      break;
+    case 2: /* name */
+      if (tdata != NULL) {
+        tdata->lines[tdata->numlines].val[1] = strdup(procfile_fields);
+      }
+      lptr += sprintf(lptr, "%20.20s ", procfile_fields + 1);
+      break;
+    case 3: // thread state
+      lptr += sprintf(lptr, "  %c   ", procfile_fields[0]);
+      break;
+    case 14: // time in user mode
+    case 15: // time in kernel mode
+      lptr += sprintf(lptr, "%9.9s ", procfile_fields);
+      break;
+    case 18: // priority column index 2 in tdata, -2 to -100 (1, min to 99, highest prio)
+      priority = strtol(procfile_fields, NULL, 0);
+    case 19: // nice	  column index 3 in tdata  0 to 39 (-20, highest prio, to 19)
+      if (tdata != NULL) {
+        tdata->lines[tdata->numlines].val[fieldcnt - 16] = strdup(procfile_fields);
+      }
+      lptr += sprintf(lptr, "%3.3s ", procfile_fields);
+      nice = strtol(procfile_fields, NULL, 0);
+      break;
+    case 23: // vsize
+      lptr += sprintf(lptr, "%9.9s ", procfile_fields);
+      break;
+    case 39: // processor
+      if (tdata != NULL) {
+        tdata->lines[tdata->numlines].val[4] = strdup(procfile_fields);
+      }
+      lptr += sprintf(lptr, " %2.2s  ", procfile_fields);
+      break;
+    case 41: // policy
+      lptr += sprintf(lptr, "%3.3s ", procfile_fields);
+      policy = strtol(procfile_fields, NULL, 0);
+      char strschedp[64];
+      switch (policy) {
+        case SCHED_FIFO:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "rt:fifo");
+          priority = priority + 1; // in /proc file system priority 1 to 99 mapped to -2 to -100
+          break;
+        case SCHED_OTHER:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "other");
+          priority = nice - NICE_MIN; // linux nice is -20 to 19
+          break;
+        case SCHED_IDLE:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "idle");
+          priority = 2 * (NICE_MAX - NICE_MIN + 1);
+          break;
+        case SCHED_BATCH:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "batch");
+          priority = (NICE_MAX - NICE_MIN + 1) + nice - NICE_MIN;
+          break;
+        case SCHED_RR:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "rt:rr");
+          priority = priority - 99;
+          break;
+#ifdef SCHED_DEADLINE
+        case SCHED_DEADLINE:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "rt:deadline");
+          break;
+#endif
+        default:
+          snprintf(strschedp, sizeof(strschedp), "%s ", "????");
+          break;
+      }
+      lptr += sprintf(lptr, "%s ", strschedp);
+      if (tdata != NULL) {
+        tdata->lines[tdata->numlines].val[5] = strdup(strschedp);
+        tdata->lines[tdata->numlines].val[6] = malloc(10);
+        snprintf(tdata->lines[tdata->numlines].val[6], 9, "%i", priority);
+      }
+      break;
+    default:
+      break;
+  } /* switch on fieldcnr */
+  procfile_fields = strtok_r(NULL, toksep, &strtokptr);
+} /* while on proc_fields != NULL */
+prnt("%s\n", prntline);
+if (tdata != NULL) {
+  tdata->numlines++;
+}
 } /*decode_procstat */
 
-void read_statfile(char *fname,int debug, telnet_printfunc_t prnt)
+void read_statfile(char *fname, int debug, telnet_printfunc_t prnt, webdatadef_t *tdata)
 {
 FILE *procfile;
 char arecord[1024];
@@ -152,44 +187,207 @@ char arecord[1024];
        return;
        }    
     fclose(procfile);
-    decode_procstat(arecord, debug, prnt);
+    decode_procstat(arecord, debug, prnt, tdata);
 }
 
-void print_threads(char *buf, int debug, telnet_printfunc_t prnt)
+int nullprnt(char *fmt, ...)
+{
+  return 0;
+}
+
+void proccmd_get_threaddata(char *buf, int debug, telnet_printfunc_t fprnt, webdatadef_t *tdata)
 {
 char aname[256];
 
-DIR *proc_dir;
-struct dirent *entry;
+  DIR *proc_dir;
+  struct dirent *entry;
+  telnet_printfunc_t prnt = (fprnt != NULL) ? fprnt : (telnet_printfunc_t)nullprnt;
+  if (tdata != NULL) {
+    tdata->numcols = 7;
+    snprintf(tdata->columns[0].coltitle, sizeof(tdata->columns[0].coltitle), "thread id");
+    tdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[1].coltitle, sizeof(tdata->columns[1].coltitle), "thread name");
+    tdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[2].coltitle, sizeof(tdata->columns[2].coltitle), "priority");
+    tdata->columns[2].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[3].coltitle, sizeof(tdata->columns[3].coltitle), "nice");
+    tdata->columns[3].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[4].coltitle, sizeof(tdata->columns[4].coltitle), "core");
+    tdata->columns[4].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
+    tdata->columns[5].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[5].coltitle, sizeof(tdata->columns[5].coltitle), "sched policy");
+    tdata->columns[6].coltype = TELNET_VARTYPE_STRING | TELNET_VAR_NEEDFREE;
+    snprintf(tdata->columns[6].coltitle, sizeof(tdata->columns[6].coltitle), "oai priority");
+    tdata->numlines = 0;
+  }
 
+  unsigned int eax = 11, ebx = 0, ecx = 1, edx = 0;
 
+  asm volatile("cpuid" : "=a"(eax), "=b"(ebx), "=c"(ecx), "=d"(edx) : "0"(eax), "2"(ecx) :);
 
-    prnt("  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
-    snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
-    read_statfile(aname,debug,prnt);
-    prnt("\n");
-    snprintf(aname, sizeof(aname), "/proc/%d/task", getpid());
-    proc_dir = opendir(aname);
-    if (proc_dir == NULL)
-       {
-       prnt("Error: Couldn't open %s %i %s\n",aname,errno,strerror(errno));
-       return;
-       }
-    
-    while ((entry = readdir(proc_dir)) != NULL)
-        {
-        if(entry->d_name[0] == '.')
-            continue;
-	snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(),(int)(sizeof(aname)-24),entry->d_name);    
-        read_statfile(aname,debug,prnt);      
-        } /* while entry != NULL */
-	closedir(proc_dir);
-} /* print_threads */
+  prnt("System has %d cores %d threads %d Actual threads", eax, ebx, edx);
 
+  prnt("\n  id          name            state   USRmod    KRNmod  prio nice   vsize   proc pol \n\n");
+  snprintf(aname, sizeof(aname), "/proc/%d/stat", getpid());
+  read_statfile(aname, debug, prnt, NULL);
+  prnt("\n");
+  snprintf(aname, sizeof(aname), "/proc/%d/task", getpid());
+  proc_dir = opendir(aname);
+  if (proc_dir == NULL) {
+    prnt("Error: Couldn't open %s %i %s\n", aname, errno, strerror(errno));
+    return;
+  }
+
+  while ((entry = readdir(proc_dir)) != NULL) {
+    if (entry->d_name[0] != '.') {
+      snprintf(aname, sizeof(aname), "/proc/%d/task/%.*s/stat", getpid(), (int)(sizeof(aname) - 24), entry->d_name);
+      read_statfile(aname, debug, prnt, tdata);
+    }
+  } /* while entry != NULL */
+  closedir(proc_dir);
+} /* proccmd_get_threaddata */
+
+void print_threads(char *buf, int debug, telnet_printfunc_t prnt)
+{
+  proccmd_get_threaddata(buf, debug, prnt, NULL);
+}
+
+int proccmd_websrv_getdata(char *cmdbuff, int debug, void *data, telnet_printfunc_t prnt)
+{
+  webdatadef_t *logsdata = (webdatadef_t *)data;
+  if (strncmp(cmdbuff, "set", 3) == 0) {
+    telnet_printfunc_t printfunc = (prnt != NULL) ? prnt : (telnet_printfunc_t)printf;
+    if (strcasestr(cmdbuff, "loglvl") != NULL) {
+      int level = map_str_to_int(log_level_names, logsdata->lines[0].val[1]);
+      int enabled = (strcmp(logsdata->lines[0].val[2], "true") == 0) ? 1 : 0;
+      int loginfile = (strcmp(logsdata->lines[0].val[3], "true") == 0) ? 1 : 0;
+      set_log(logsdata->numlines, level);
+      if (enabled == 0)
+        set_log(logsdata->numlines, OAILOG_DISABLE);
+      if (loginfile == 1) {
+        set_component_filelog(logsdata->numlines);
+      } else {
+        close_component_filelog(logsdata->numlines);
+      }
+      printfunc("%s log level %s is %s, output to %s\n",
+                logsdata->lines[0].val[0],
+                logsdata->lines[0].val[1],
+                enabled ? "enabled" : "disabled",
+                loginfile ? g_log->log_component[logsdata->numlines].filelog_name : "stdout");
+    }
+    if (strcasestr(cmdbuff, "logopt") != NULL) {
+      int optbit = map_str_to_int(log_options, logsdata->lines[0].val[0]);
+      if (optbit < 0) {
+        printfunc("option %s unknown\n", logsdata->lines[0].val[0]);
+      } else {
+        if (strcmp(logsdata->lines[0].val[1], "true") == 0) {
+          SET_LOG_OPTION(optbit);
+        } else {
+          CLEAR_LOG_OPTION(optbit);
+        }
+        printfunc("%s log option %s\n", logsdata->lines[0].val[0], (strcmp(logsdata->lines[0].val[1], "true") == 0) ? "enabled" : "disabled");
+      }
+    }
+    if (strcasestr(cmdbuff, "dbgopt") != NULL) {
+      int optbit = map_str_to_int(log_maskmap, logsdata->lines[0].val[0]);
+      if (optbit < 0) {
+        printfunc("debug option %s unknown\n", logsdata->lines[0].val[0]);
+      } else {
+        if (strcmp(logsdata->lines[0].val[1], "true") == 0)
+          SET_LOG_DEBUG(optbit);
+        else
+          CLEAR_LOG_DEBUG(optbit);
+        if (strcmp(logsdata->lines[0].val[2], "true") == 0)
+          SET_LOG_DUMP(optbit);
+        else
+          CLEAR_LOG_DUMP(optbit);
+        printfunc("%s debug %s dump %s\n",
+                  logsdata->lines[0].val[0],
+                  (strcmp(logsdata->lines[0].val[1], "true") == 0) ? "enabled" : "disabled",
+                  (strcmp(logsdata->lines[0].val[2], "true") == 0) ? "enabled" : "disabled");
+      }
+    }
+    if (strcasestr(cmdbuff, "threadsched") != NULL) {
+      unsigned int tid = strtoll(logsdata->lines[0].val[0], NULL, 0);
+      unsigned int core = strtoll(logsdata->lines[0].val[4], NULL, 0);
+      int priority = strtoll(logsdata->lines[0].val[6], NULL, 0);
+      printfunc("Thread %s id %u set affinity to core %u\n", logsdata->lines[0].val[0], tid, core);
+      set_affinity(0, (pid_t)tid, core);
+      set_sched(0, (pid_t)tid, priority);
+    }
+  } else { /* end of set, => show */
+    if (strcasestr(cmdbuff, "loglvl") != NULL) {
+      logsdata->numcols = 4;
+      logsdata->numlines = 0;
+      snprintf(logsdata->columns[0].coltitle, TELNET_CMD_MAXSIZE, "component");
+      logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+      snprintf(logsdata->columns[1].coltitle, TELNET_CMD_MAXSIZE, "level");
+      logsdata->columns[1].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_LOGLVL;
+      snprintf(logsdata->columns[2].coltitle, TELNET_CMD_MAXSIZE, "enabled");
+      logsdata->columns[2].coltype = TELNET_CHECKVAL_BOOL;
+      snprintf(logsdata->columns[3].coltitle, TELNET_CMD_MAXSIZE, "in file");
+      logsdata->columns[3].coltype = TELNET_CHECKVAL_BOOL;
+
+      for (int i = MIN_LOG_COMPONENTS; i < MAX_LOG_COMPONENTS; i++) {
+        if (g_log->log_component[i].name != NULL) {
+          logsdata->numlines++;
+          logsdata->lines[i].val[0] = (char *)(g_log->log_component[i].name);
+
+          logsdata->lines[i].val[1] = map_int_to_str(log_level_names, (g_log->log_component[i].level >= 0) ? g_log->log_component[i].level : g_log->log_component[i].savedlevel);
+          logsdata->lines[i].val[2] = (g_log->log_component[i].level >= 0) ? "true" : "false";
+          logsdata->lines[i].val[3] = (g_log->log_component[i].filelog > 0) ? "true" : "false";
+        }
+      }
+    }
+    if (strcasestr(cmdbuff, "dbgopt") != NULL) {
+      webdatadef_t *logsdata = (webdatadef_t *)data;
+      logsdata->numcols = 3;
+      logsdata->numlines = 0;
+      snprintf(logsdata->columns[0].coltitle, TELNET_CMD_MAXSIZE, "module");
+      logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+      snprintf(logsdata->columns[1].coltitle, TELNET_CMD_MAXSIZE, "debug");
+      logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
+      snprintf(logsdata->columns[2].coltitle, TELNET_CMD_MAXSIZE, "dump");
+      logsdata->columns[2].coltype = TELNET_CHECKVAL_BOOL;
+
+      for (int i = 0; log_maskmap[i].name != NULL; i++) {
+        logsdata->numlines++;
+        logsdata->lines[i].val[0] = log_maskmap[i].name;
+        logsdata->lines[i].val[1] = (g_log->debug_mask & log_maskmap[i].value) ? "true" : "false";
+        logsdata->lines[i].val[2] = (g_log->dump_mask & log_maskmap[i].value) ? "true" : "false";
+      }
+    }
+
+    if (strcasestr(cmdbuff, "logopt") != NULL) {
+      webdatadef_t *logsdata = (webdatadef_t *)data;
+      logsdata->numcols = 2;
+      logsdata->numlines = 0;
+      snprintf(logsdata->columns[0].coltitle, TELNET_CMD_MAXSIZE, "option");
+      logsdata->columns[0].coltype = TELNET_VARTYPE_STRING | TELNET_CHECKVAL_RDONLY;
+      snprintf(logsdata->columns[1].coltitle, TELNET_CMD_MAXSIZE, "enabled");
+      logsdata->columns[1].coltype = TELNET_CHECKVAL_BOOL;
+
+      for (int i = 0; log_options[i].name != NULL; i++) {
+        logsdata->numlines++;
+        logsdata->lines[i].val[0] = log_options[i].name;
+        logsdata->lines[i].val[1] = (g_log->flag & log_options[i].value) ? "true" : "false";
+      }
+    }
+    if (strcasestr(cmdbuff, "threadsched") != NULL) {
+      proccmd_get_threaddata(cmdbuff, debug, prnt, (webdatadef_t *)data);
+    }
+  } // show
+
+  return 0;
+}
 
 int proccmd_show(char *buf, int debug, telnet_printfunc_t prnt)
 {
-   
+  if (buf == NULL) {
+    prnt("ERROR wrong softmodem SHOW command...\n");
+    return 0;
+  }
    if (debug > 0)
        prnt(" proccmd_show received %s\n",buf);
    if (strcasestr(buf,"thread") != NULL) {
@@ -263,8 +461,12 @@ int proccmd_thread(char *buf, int debug, telnet_printfunc_t prnt)
 {
 int bv1,bv2;   
 int res;
-char sv1[64]; 
- 
+char sv1[64];
+
+if (buf == NULL) {
+  prnt("ERROR wrong thread command...\n");
+  return 0;
+}
    bv1=0;
    bv2=0;
    sv1[0]=0;
@@ -279,7 +481,7 @@ char sv1[64];
        prnt(" proccmd_thread: %i params = %i,%s,%i\n",res,bv1,sv1,bv2);   
    if(res != 3)
      {
-     prnt("softmodem thread needs 3 params, %i received\n",res);
+     print_threads(buf, debug, prnt);
      return 0;
      }
 
@@ -302,11 +504,20 @@ int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt)
 {
    if (debug > 0)
        prnt("process module received %s\n",buf);
-
+   end_configmodule();
    exit_fun("telnet server received exit command\n");
    return 0;
 }
- 
+
+int proccmd_restart(char *buf, int debug, telnet_printfunc_t prnt)
+{
+  if (debug > 0)
+    prnt("process module received %s\n", buf);
+  end_configmodule();
+  configmodule_interface_t *cfg = config_get_if();
+  execvpe(cfg->argv[0], cfg->argv, environ);
+  return 0;
+}
 
 int proccmd_log(char *buf, int debug, telnet_printfunc_t prnt)
 {
@@ -391,7 +602,7 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
                 SET_LOG_DUMP(optbit);
             else
                 CLEAR_LOG_DUMP(optbit);
-            proccmd_show("dbgopt",debug,prnt);
+            proccmd_show("dump", debug, prnt);
          }
       }       
       if (logparam != NULL) free(logparam);
@@ -431,7 +642,8 @@ int s = sscanf(buf,"%ms %i-%i\n",&logsubcmd, &idx1,&idx2);
              prnt("%s%s unknown log sub command \n",logparam, tmpstr);
          }
       } else {
-          prnt("%s unknown log sub command \n",logsubcmd); 
+        level = map_str_to_int(log_level_names, tmpstr);
+        prnt("%s unknown log sub command \n", logsubcmd);
       }
       if (logparam != NULL) free(logparam);
       if (tmpstr != NULL)   free(tmpstr);
