@@ -605,11 +605,6 @@ int fill_srs_reported_symbol_list(nfapi_nr_srs_reported_symbol_t *prgs,
                                   const int srs_est) {
 
   prgs->num_prgs = srs_pdu->beamforming.num_prgs;
-
-  if (!prgs->prg_list) {
-    prgs->prg_list = (nfapi_nr_srs_reported_symbol_prgs_t*) calloc(1, N_RB_UL*sizeof(nfapi_nr_srs_reported_symbol_prgs_t));
-  }
-
   for(int prg_idx = 0; prg_idx < prgs->num_prgs; prg_idx++) {
     if (srs_est<0) {
       prgs->prg_list[prg_idx].rb_snr = 0xFF;
@@ -966,11 +961,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         LOG_I(NR_PHY, "srs_indication->report_type = %i\n", srs_indication->report_type);
 #endif
 
-        if (!srs_indication->report_tlv) {
-          srs_indication->report_tlv = (nfapi_srs_report_tlv_t *)calloc(1, sizeof(nfapi_srs_report_tlv_t));
-        }
-        srs_indication->report_tlv->tag = 0;
-        srs_indication->report_tlv->length = 0;
+        nfapi_srs_report_tlv_t *report_tlv = &srs_indication->report_tlv;
+        report_tlv->tag = 0;
+        report_tlv->length = 0;
 
         start_meas(&gNB->srs_report_tlv_stats);
         switch (srs_indication->srs_usage) {
@@ -981,8 +974,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             nr_srs_bf_report.num_symbols = 1 << srs_pdu->num_symbols;
             nr_srs_bf_report.wide_band_snr = srs_est >= 0 ? (snr + 64) << 1 : 0xFF; // 0xFF will be set if this field is invalid
             nr_srs_bf_report.num_reported_symbols = 1 << srs_pdu->num_symbols;
-            nr_srs_bf_report.prgs = (nfapi_nr_srs_reported_symbol_t *)calloc(1, nr_srs_bf_report.num_reported_symbols * sizeof(nfapi_nr_srs_reported_symbol_t));
-            fill_srs_reported_symbol_list(&nr_srs_bf_report.prgs[0], srs_pdu, frame_parms->N_RB_UL, snr_per_rb, srs_est);
+            fill_srs_reported_symbol_list(&nr_srs_bf_report.prgs, srs_pdu, frame_parms->N_RB_UL, snr_per_rb, srs_est);
 
 #ifdef SRS_IND_DEBUG
             LOG_I(NR_PHY, "nr_srs_bf_report.prg_size = %i\n", nr_srs_bf_report.prg_size);
@@ -999,7 +991,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             }
 #endif
 
-            srs_indication->report_tlv->length = pack_nr_srs_beamforming_report(&nr_srs_bf_report, srs_indication->report_tlv->value, 16384 * sizeof(uint32_t));
+            report_tlv->length = pack_nr_srs_beamforming_report(&nr_srs_bf_report, report_tlv->value, sizeof(report_tlv->value));
             stop_meas(&gNB->srs_beam_report_stats);
             break;
           }
@@ -1048,9 +1040,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
             }
 #endif
 
-            srs_indication->report_tlv->length = pack_nr_srs_normalized_channel_iq_matrix(&nr_srs_channel_iq_matrix,
-                                                                                          srs_indication->report_tlv->value,
-                                                                                          16384 * sizeof(uint32_t));
+            report_tlv->length = pack_nr_srs_normalized_channel_iq_matrix(&nr_srs_channel_iq_matrix, report_tlv->value, sizeof(report_tlv->value));
             stop_meas(&gNB->srs_iq_matrix_stats);
             break;
           }
@@ -1066,10 +1056,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         stop_meas(&gNB->srs_report_tlv_stats);
 
 #ifdef SRS_IND_DEBUG
-        LOG_I(NR_PHY, "srs_indication->report_tlv->tag = %i\n", srs_indication->report_tlv->tag);
-        LOG_I(NR_PHY, "srs_indication->report_tlv->length = %i\n", srs_indication->report_tlv->length);
-        char *value = (char *)srs_indication->report_tlv->value;
-        for (int b = 0; b < srs_indication->report_tlv->length; b++) {
+        LOG_I(NR_PHY, "report_tlv->tag = %i\n", report_tlv->tag);
+        LOG_I(NR_PHY, "report_tlv->length = %i\n", report_tlv->length);
+        char *value = (char *)report_tlv->value;
+        for (int b = 0; b < report_tlv->length; b++) {
           LOG_I(NR_PHY, "value[%i] = 0x%02x\n", b, value[b] & 0xFF);
         }
 #endif

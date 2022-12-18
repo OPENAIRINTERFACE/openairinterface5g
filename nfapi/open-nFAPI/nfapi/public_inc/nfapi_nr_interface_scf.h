@@ -1702,7 +1702,7 @@ typedef struct {
 
 typedef struct {
   uint16_t num_prgs;                    // Number of PRBs to be reported for this SRS PDU. Value: 0 -> 272.
-  nfapi_nr_srs_reported_symbol_prgs_t *prg_list;
+  nfapi_nr_srs_reported_symbol_prgs_t prg_list[272];
 } nfapi_nr_srs_reported_symbol_t;
 
 typedef struct {
@@ -1710,7 +1710,7 @@ typedef struct {
   uint8_t num_symbols;                  // Number of symbols for SRS. Value: 1 -> 4. If a PHY does not report for individual symbols then this parameter should be set to 1.
   uint8_t wide_band_snr;                // SNR value in dB measured within configured SRS bandwidth on each symbol. Value: 0 -> 255 representing -64 dB to 63 dB with a step size 0.5 dB. 0xff will be set if this field is invalid.
   uint8_t num_reported_symbols;         // Number of symbols reported in this message. This allows PHY to report individual symbols or aggregated symbols where this field will be set to 1. Value: 1 -> 4.
-  nfapi_nr_srs_reported_symbol_t *prgs;
+  nfapi_nr_srs_reported_symbol_t prgs;
 } nfapi_nr_srs_beamforming_report_t;
 
 // SRS indication
@@ -1728,7 +1728,7 @@ typedef struct {
   int16_t timing_advance_offset_nsec;   // Timing advance measured for the UE between the reference uplink time and the observed arrival time for the UE. Value: -16800 … +16800 nanoseconds. 0xffff should be set if this field is invalid.
   uint8_t srs_usage;                    // 0 – beamManagement; 1 – codebook; 2 – nonCodebook; 3 – antennaSwitching; 4 – 255: reserved; Note: This field matches the SRS usage field of the SRS PDU to which this report is linked.
   uint8_t report_type;                  // The type of report included in or pointed to by Report TLV depends on the SRS usage: Beam management (1: Beamforming report); Codebook (1: Normalized Channel I/Q Matrix); nonCodebook (1: Normalized Channel I/Q Matrix); antennaSwitch (1: Channel SVD Representation); all (0: null report)
-  nfapi_srs_report_tlv_t *report_tlv;
+  nfapi_srs_report_tlv_t report_tlv;
 } nfapi_nr_srs_indication_pdu_t;
 
 typedef struct {

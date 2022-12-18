@@ -446,7 +446,7 @@ void handle_nr_ul_harq(const int CC_idP,
 void handle_nr_srs_measurements(const module_id_t module_id,
                                 const frame_t frame,
                                 const sub_frame_t slot,
-                                const nfapi_nr_srs_indication_pdu_t *srs_ind);
+                                nfapi_nr_srs_indication_pdu_t *srs_ind);
 
 int16_t ssb_index_from_prach(module_id_t module_idP,
                              frame_t frameP,

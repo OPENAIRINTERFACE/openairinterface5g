@@ -1151,7 +1151,7 @@ int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
 void handle_nr_srs_measurements(const module_id_t module_id,
                                 const frame_t frame,
                                 const sub_frame_t slot,
-                                const nfapi_nr_srs_indication_pdu_t *srs_ind)
+                                nfapi_nr_srs_indication_pdu_t *srs_ind)
 {
   LOG_D(NR_MAC, "(%d.%d) Received SRS indication for UE %04x\n", frame, slot, srs_ind->rnti);
 
@@ -1178,12 +1178,13 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_mac_stats_t *stats = &UE->mac_stats;
+  nfapi_srs_report_tlv_t *report_tlv = &srs_ind->report_tlv;
 
   switch (srs_ind->srs_usage) {
     case NR_SRS_ResourceSet__usage_beamManagement: {
       nfapi_nr_srs_beamforming_report_t nr_srs_bf_report;
-      unpack_nr_srs_beamforming_report(srs_ind->report_tlv->value,
-                                       srs_ind->report_tlv->length,
+      unpack_nr_srs_beamforming_report(report_tlv->value,
+                                       report_tlv->length,
                                        &nr_srs_bf_report,
                                        sizeof(nfapi_nr_srs_beamforming_report_t));
 
@@ -1214,10 +1215,10 @@ void handle_nr_srs_measurements(const module_id_t module_id,
       const int ul_prbblack_SNR_threshold = nr_mac->ul_prbblack_SNR_threshold;
       uint16_t *ulprbbl = nr_mac->ulprbbl;
 
-      uint16_t num_rbs = nr_srs_bf_report.prg_size * nr_srs_bf_report.prgs[0].num_prgs;
+      uint16_t num_rbs = nr_srs_bf_report.prg_size * nr_srs_bf_report.prgs.num_prgs;
       memset(ulprbbl, 0, num_rbs * sizeof(uint16_t));
       for (int rb = 0; rb < num_rbs; rb++) {
-        int snr = (nr_srs_bf_report.prgs[0].prg_list[rb / nr_srs_bf_report.prg_size].rb_snr >> 1) - 64;
+        int snr = (nr_srs_bf_report.prgs.prg_list[rb / nr_srs_bf_report.prg_size].rb_snr >> 1) - 64;
         if (snr < wide_band_snr_dB - ul_prbblack_SNR_threshold) {
           ulprbbl[rb] = 0x3FFF; // all symbols taken
         }
@@ -1229,8 +1230,8 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
     case NR_SRS_ResourceSet__usage_codebook: {
       nfapi_nr_srs_normalized_channel_iq_matrix_t nr_srs_channel_iq_matrix;
-      unpack_nr_srs_normalized_channel_iq_matrix(srs_ind->report_tlv->value,
-                                                 srs_ind->report_tlv->length,
+      unpack_nr_srs_normalized_channel_iq_matrix(report_tlv->value,
+                                                 report_tlv->length,
                                                  &nr_srs_channel_iq_matrix,
                                                  sizeof(nfapi_nr_srs_normalized_channel_iq_matrix_t));
 
