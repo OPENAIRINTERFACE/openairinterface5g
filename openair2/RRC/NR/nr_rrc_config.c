@@ -137,50 +137,52 @@ static uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
   return bitmap;
 }
 
-static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period)
+static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period, int nb_dl_slots_period)
 {
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
   int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
+  int offset = nb_slots_per_period * uid;
 
-  if (ideal_period<5) {
+  if (ideal_period < 5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
-    nzpcsi0->periodicityAndOffset->choice.slots4 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots4 = offset;
   }
-  else if (ideal_period<6) {
+  else if (ideal_period < 6) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots5;
-    nzpcsi0->periodicityAndOffset->choice.slots5 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots5 = offset;
   }
-  else if (ideal_period<9) {
+  else if (ideal_period < 9) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots8;
-    nzpcsi0->periodicityAndOffset->choice.slots8 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots8 = offset;
   }
-  else if (ideal_period<11) {
+  else if (ideal_period < 11) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots10;
-    nzpcsi0->periodicityAndOffset->choice.slots10 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots10 = offset;
   }
-  else if (ideal_period<17) {
+  else if (ideal_period < 17) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots16;
-    nzpcsi0->periodicityAndOffset->choice.slots16 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots16 = offset;
   }
-  else if (ideal_period<21) {
+  else if (ideal_period < 21) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots20;
-    nzpcsi0->periodicityAndOffset->choice.slots20 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots20 = offset;
   }
-  else if (ideal_period<41) {
+  else if (ideal_period < 41) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots40;
-    nzpcsi0->periodicityAndOffset->choice.slots40 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots40 = offset;
   }
-  else if (ideal_period<81) {
+  else if (ideal_period < 81) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots80;
-    nzpcsi0->periodicityAndOffset->choice.slots80 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots80 = offset;
   }
-  else if (ideal_period<161) {
+  else if (ideal_period < 161) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots160;
-    nzpcsi0->periodicityAndOffset->choice.slots160 = nb_slots_per_period*uid;
+    nzpcsi0->periodicityAndOffset->choice.slots160 = offset;
   }
   else {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-    nzpcsi0->periodicityAndOffset->choice.slots320 = (nb_slots_per_period*uid)%320 + (nb_slots_per_period*uid)/320;
+    AssertFatal(offset / 320 < nb_dl_slots_period, "Cannot allocate %dth UE. Not enough resources for CSI-RS\n", uid);
+    nzpcsi0->periodicityAndOffset->choice.slots320 = (offset % 320) + (offset / 320);
   }
 }
 
@@ -210,10 +212,8 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
                                         &servingcellconfigcommon->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
     const int n_slots_frame = slotsperframe[*servingcellconfigcommon->ssbSubcarrierSpacing];
-
-    int nb_slots_per_period = n_slots_frame;
-    if (tdd)
-      nb_slots_per_period = n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+    int nb_slots_per_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity): n_slots_frame;
+    int nb_dl_slots_period = tdd ? tdd->nrofDownlinkSlots : n_slots_frame;
 
     if(!csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList)
       csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList = calloc(1,sizeof(*csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList));
@@ -257,13 +257,13 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
     resourceMapping.density.present = NR_CSI_RS_ResourceMapping__density_PR_one;
     resourceMapping.density.choice.one = (NULL_t)0;
     resourceMapping.freqBand.startingRB = 0;
-    resourceMapping.freqBand.nrofRBs = ((curr_bwp>>2)+(curr_bwp%4>0))<<2;
+    resourceMapping.freqBand.nrofRBs = ((curr_bwp >> 2) + (curr_bwp % 4 > 0)) << 2;
     nzpcsi0->resourceMapping = resourceMapping;
     nzpcsi0->powerControlOffset = 0;
-    nzpcsi0->powerControlOffsetSS=calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
+    nzpcsi0->powerControlOffsetSS = calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
     *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
     nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
-    set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period);
+    set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period, nb_dl_slots_period);
     nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS));
     *nzpcsi0->qcl_InfoPeriodicCSI_RS = 0;
     asn1cSeqAdd(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
@@ -776,26 +776,26 @@ static void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int c
 {
   NR_PUCCH_ResourceSet_t *pucchresset = calloc(1,sizeof(*pucchresset));
   pucchresset->pucch_ResourceSetId = 0;
-  NR_PUCCH_ResourceId_t *pucchid=calloc(1,sizeof(*pucchid));
-  *pucchid=0;
+  NR_PUCCH_ResourceId_t *pucchid = calloc(1,sizeof(*pucchid));
+  *pucchid = 0;
   asn1cSeqAdd(&pucchresset->resourceList.list,pucchid);
-  pucchresset->maxPayloadSize=NULL;
+  pucchresset->maxPayloadSize = NULL;
 
   if(uecap) {
     long *pucch_F0_2WithoutFH = uecap->phy_Parameters.phy_ParametersFRX_Diff->pucch_F0_2WithoutFH;
     AssertFatal(pucch_F0_2WithoutFH == NULL,"UE does not support PUCCH F0 without frequency hopping. Current configuration is without FH\n");
   }
 
-  NR_PUCCH_Resource_t *pucchres0=calloc(1,sizeof(*pucchres0));
-  pucchres0->pucch_ResourceId=*pucchid;
+  NR_PUCCH_Resource_t *pucchres0 = calloc(1,sizeof(*pucchres0));
+  pucchres0->pucch_ResourceId = *pucchid;
   pucchres0->startingPRB= (8 + uid) % curr_bwp;
-  pucchres0->intraSlotFrequencyHopping=NULL;
-  pucchres0->secondHopPRB=NULL;
-  pucchres0->format.present= NR_PUCCH_Resource__format_PR_format0;
-  pucchres0->format.choice.format0=calloc(1,sizeof(*pucchres0->format.choice.format0));
-  pucchres0->format.choice.format0->initialCyclicShift=0;
-  pucchres0->format.choice.format0->nrofSymbols=1;
-  pucchres0->format.choice.format0->startingSymbolIndex=13;
+  pucchres0->intraSlotFrequencyHopping = NULL;
+  pucchres0->secondHopPRB = NULL;
+  pucchres0->format.present = NR_PUCCH_Resource__format_PR_format0;
+  pucchres0->format.choice.format0 = calloc(1,sizeof(*pucchres0->format.choice.format0));
+  pucchres0->format.choice.format0->initialCyclicShift = 0;
+  pucchres0->format.choice.format0->nrofSymbols = 1;
+  pucchres0->format.choice.format0->startingSymbolIndex = 13;
   asn1cSeqAdd(&pucch_Config->resourceToAddModList->list,pucchres0);
 
   asn1cSeqAdd(&pucch_Config->resourceSetToAddModList->list,pucchresset);
@@ -2025,11 +2025,6 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
                                                    const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                                    const gNB_RrcConfigurationReq *configuration)
 {
-  // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
-  // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
-  // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
-  AssertFatal(uid >= 0 && uid < 30, "gNB cannot allocate the SRS resources\n");
-
   const int pdsch_AntennaPorts =
       configuration->pdsch_AntennaPorts.N1 * configuration->pdsch_AntennaPorts.N2 * configuration->pdsch_AntennaPorts.XP;
   int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
