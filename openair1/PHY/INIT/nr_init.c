@@ -765,6 +765,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
     free_and_zero(gNB->nr_srs_info[id]);
   }
+  free_and_zero(gNB->nr_srs_info);
 
   free_ul_reference_signal_sequences();
   free_gnb_lowpapr_sequences();
@@ -1025,10 +1026,11 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
     nb_ul_slots_period = fp->slots_per_frame;
 
   int buffer_ul_slots; // the UL channels are scheduled sl_ahead before they are transmitted
-  if (gNB->if_inst->sl_ahead > nb_slots_per_period)
-    buffer_ul_slots = nb_ul_slots_period + (gNB->if_inst->sl_ahead - nb_slots_per_period);
+  int slot_ahead = gNB->if_inst ? gNB->if_inst->sl_ahead : 6;
+  if (slot_ahead > nb_slots_per_period)
+    buffer_ul_slots = nb_ul_slots_period + (slot_ahead - nb_slots_per_period);
   else
-    buffer_ul_slots = (nb_ul_slots_period < gNB->if_inst->sl_ahead) ? nb_ul_slots_period : gNB->if_inst->sl_ahead;
+    buffer_ul_slots = (nb_ul_slots_period < slot_ahead) ? nb_ul_slots_period : slot_ahead;
 
   gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * buffer_ul_slots;
   gNB->max_nb_srs = buffer_ul_slots << 1; // assuming at most 2 SRS per slot
@@ -1070,9 +1072,11 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
 
   for (int i = 0; i < gNB->max_nb_pucch; i++)
     free_gNB_pucch(gNB->pucch[i]);
+  free(gNB->pucch);
 
   for (int i = 0; i < gNB->max_nb_srs; i++)
     free_gNB_srs(gNB->srs[i]);
+  free(gNB->srs);
 
   for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
