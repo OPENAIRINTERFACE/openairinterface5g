@@ -144,7 +144,9 @@ class gtpEndPoints {
   map<uint64_t, gtpEndPoint> instances;
 
   gtpEndPoints() {
-    srandom(get_random_seed());
+    unsigned int seed;
+    fill_random(&seed, sizeof(seed));
+    srandom(seed);
   }
 
   ~gtpEndPoints() {

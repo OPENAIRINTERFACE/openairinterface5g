@@ -52,9 +52,9 @@ void set_taus_seed(unsigned int seed_init)
   unsigned long result = 0;
 
   if (seed_init == 0) {
-    s0 = (unsigned int) get_random_seed();
-    s1 = (unsigned int) get_random_seed();
-    s2 = (unsigned int) get_random_seed();
+    fill_random(&s0, sizeof(s0));
+    fill_random(&s1, sizeof(s1));
+    fill_random(&s2, sizeof(s2));
   } else {
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);

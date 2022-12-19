@@ -29,33 +29,32 @@
 static unsigned int urseed, iy, ir[98]; /// uniformrandom
 static bool tableNordDone = false; /// gaussZiggurat
 
-#define a 1664525lu
-#define mod 4294967296.0                /* is 2**32 */
-
 /*!\brief Generate a random number form `/dev/urandom`. */
-unsigned long get_random_seed(void)
+void fill_random(void *buf, size_t sz)
 {
-  unsigned long seed;
   const char* fn = "/dev/urandom";
   FILE* f = fopen(fn, "rb");
   if (f == NULL) {
     fprintf(stderr, "could not open %s for seed generation: %d %s\n", fn, errno, strerror(errno));
     abort();
   }
-  int rc = fread(&seed, sizeof(seed), 1, f);
+  int rc = fread(buf, sz, 1, f);
   if (rc < 0) {
     fprintf(stderr, "could not read %s for seed generation: %d %s\n", fn, errno, strerror(errno));
     abort();
   }
   fclose(f);
-  return seed;
 }
 
+
+static const unsigned int a = 1664525lu;
 
 /*!\brief Initialization routine for Uniform/Gaussian random number generators. */
 void randominit(unsigned long seed_init)
 {
-  unsigned long seed = seed_init != 0 ? seed_init : get_random_seed();
+  unsigned long seed = seed_init;
+  if (seed_init == 0)
+    fill_random(&seed, sizeof(seed));
   printf("Initializing random number generator, seed %ld\n", seed);
 
   // initialize uniformrandom RNG
@@ -82,9 +81,7 @@ void randominit(unsigned long seed_init)
 
 double uniformrandom(void)
 {
-#define a 1664525lu
-#define mod 4294967296.0                /* is 2**32 */
-
+  const double mod = 4294967296.0; /* is 2**32 */
   int j = 1 + 97.0 * iy / mod;
   iy = ir[j];
   urseed = a * urseed; /* mod 2**32 */
@@ -197,7 +194,9 @@ double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double v
 {
   if (!tableNordDone) {
     // let's make reasonnable constant tables
-    tableNor(get_random_seed());
+    unsigned long seed;
+    fill_random(&seed, sizeof(seed));
+    tableNor(seed);
   }
   hz = SHR3;
   iz = hz & 127;
