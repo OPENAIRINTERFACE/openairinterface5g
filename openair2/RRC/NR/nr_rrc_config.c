@@ -140,8 +140,8 @@ static uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
 static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period, int nb_dl_slots_period)
 {
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
-  int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
-  int offset = nb_slots_per_period * uid;
+  const int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
+  const int offset = nb_slots_per_period * uid;
 
   if (ideal_period < 5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
@@ -412,66 +412,68 @@ static struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(co
   const int n_slots_period = tdd ? n_slots_frame/get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int first_full_ul_slot = n_slots_period - ul_slots_period;
   const int ideal_period = n_slots_period * MAX_MOBILES_PER_GNB;
+  const int offset = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+  AssertFatal(offset < 2560, "Cannot allocate SRS configuration for uid %d, not enough resources\n", uid);
   struct NR_SRS_Resource__resourceType__periodic *periodic_srs = calloc(1,sizeof(*periodic_srs));
   if (ideal_period < 5) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl4;
-    periodic_srs->periodicityAndOffset_p.choice.sl4 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl4 = offset;
   }
   else if (ideal_period < 6) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl5;
-    periodic_srs->periodicityAndOffset_p.choice.sl5 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl5 = offset;
   }
   else if (ideal_period < 9) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl8;
-    periodic_srs->periodicityAndOffset_p.choice.sl8 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl8 = offset;
   }
   else if (ideal_period < 11) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl10;
-    periodic_srs->periodicityAndOffset_p.choice.sl10 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl10 = offset;
   }
   else if (ideal_period < 17) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl16;
-    periodic_srs->periodicityAndOffset_p.choice.sl16 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl16 = offset;
   }
   else if (ideal_period < 21) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl20;
-    periodic_srs->periodicityAndOffset_p.choice.sl20 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl20 = offset;
   }
   else if (ideal_period < 33) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl32;
-    periodic_srs->periodicityAndOffset_p.choice.sl32 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl32 = offset;
   }
   else if (ideal_period < 41) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl40;
-    periodic_srs->periodicityAndOffset_p.choice.sl40 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl40 = offset;
   }
   else if (ideal_period < 65) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl64;
-    periodic_srs->periodicityAndOffset_p.choice.sl64 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl64 = offset;
   }
   else if (ideal_period < 81) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl80;
-    periodic_srs->periodicityAndOffset_p.choice.sl80 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl80 = offset;
   }
   else if (ideal_period < 161) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl160;
-    periodic_srs->periodicityAndOffset_p.choice.sl160 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl160 = offset;
   }
   else if (ideal_period < 321) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl320;
-    periodic_srs->periodicityAndOffset_p.choice.sl320 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl320 = offset;
   }
   else if (ideal_period < 641) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl640;
-    periodic_srs->periodicityAndOffset_p.choice.sl640 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl640 = offset;
   }
   else if (ideal_period < 1281) {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl1280;
-    periodic_srs->periodicityAndOffset_p.choice.sl1280 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl1280 = offset;
   }
   else {
     periodic_srs->periodicityAndOffset_p.present = NR_SRS_PeriodicityAndOffset_PR_sl2560;
-    periodic_srs->periodicityAndOffset_p.choice.sl2560 = first_full_ul_slot + (uid % ul_slots_period) + (n_slots_period * (uid / ul_slots_period));
+    periodic_srs->periodicityAndOffset_p.choice.sl2560 = offset;
   }
   return periodic_srs;
 }
@@ -788,7 +790,8 @@ static void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int c
 
   NR_PUCCH_Resource_t *pucchres0 = calloc(1,sizeof(*pucchres0));
   pucchres0->pucch_ResourceId = *pucchid;
-  pucchres0->startingPRB= (8 + uid) % curr_bwp;
+  pucchres0->startingPRB = 8 + uid;
+  AssertFatal(pucchres0->startingPRB < curr_bwp, "Not enough resources in current BWP (size %d) to allocate uid %d\n", curr_bwp, uid);
   pucchres0->intraSlotFrequencyHopping = NULL;
   pucchres0->secondHopPRB = NULL;
   pucchres0->format.present = NR_PUCCH_Resource__format_PR_format0;
@@ -808,44 +811,43 @@ static void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, const NR_UE_NR
   NR_PUCCH_ResourceSet_t *pucchresset=calloc(1,sizeof(*pucchresset));
   pucchresset->pucch_ResourceSetId = 1;
   NR_PUCCH_ResourceId_t *pucchressetid=calloc(1,sizeof(*pucchressetid));
-  *pucchressetid=2;
+  *pucchressetid = 2;
   asn1cSeqAdd(&pucchresset->resourceList.list,pucchressetid);
-  pucchresset->maxPayloadSize=NULL;
+  pucchresset->maxPayloadSize = NULL;
 
   if(uecap) {
     long *pucch_F0_2WithoutFH = uecap->phy_Parameters.phy_ParametersFRX_Diff->pucch_F0_2WithoutFH;
     AssertFatal(pucch_F0_2WithoutFH == NULL,"UE does not support PUCCH F2 without frequency hopping. Current configuration is without FH\n");
   }
 
-  NR_PUCCH_Resource_t *pucchres2=calloc(1,sizeof(*pucchres2));
-  pucchres2->pucch_ResourceId=*pucchressetid;
-  pucchres2->startingPRB=0;
-  pucchres2->intraSlotFrequencyHopping=NULL;
-  pucchres2->secondHopPRB=NULL;
-  pucchres2->format.present= NR_PUCCH_Resource__format_PR_format2;
-  pucchres2->format.choice.format2=calloc(1,sizeof(*pucchres2->format.choice.format2));
-  pucchres2->format.choice.format2->nrofPRBs=8;
-  pucchres2->format.choice.format2->nrofSymbols=1;
-  pucchres2->format.choice.format2->startingSymbolIndex=13;
+  NR_PUCCH_Resource_t *pucchres2 = calloc(1,sizeof(*pucchres2));
+  pucchres2->pucch_ResourceId = *pucchressetid;
+  pucchres2->startingPRB = 0;
+  pucchres2->intraSlotFrequencyHopping = NULL;
+  pucchres2->secondHopPRB = NULL;
+  pucchres2->format.present = NR_PUCCH_Resource__format_PR_format2;
+  pucchres2->format.choice.format2 = calloc(1,sizeof(*pucchres2->format.choice.format2));
+  pucchres2->format.choice.format2->nrofPRBs = 8;
+  pucchres2->format.choice.format2->nrofSymbols = 1;
+  pucchres2->format.choice.format2->startingSymbolIndex = 13;
   asn1cSeqAdd(&pucch_Config->resourceToAddModList->list,pucchres2);
 
   asn1cSeqAdd(&pucch_Config->resourceSetToAddModList->list,pucchresset);
 
-  pucch_Config->format2=calloc(1,sizeof(*pucch_Config->format2));
-  pucch_Config->format2->present=NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
+  pucch_Config->format2 = calloc(1,sizeof(*pucch_Config->format2));
+  pucch_Config->format2->present = NR_SetupRelease_PUCCH_FormatConfig_PR_setup;
   NR_PUCCH_FormatConfig_t *pucchfmt2 = calloc(1,sizeof(*pucchfmt2));
   pucch_Config->format2->choice.setup = pucchfmt2;
-  pucchfmt2->interslotFrequencyHopping=NULL;
-  pucchfmt2->additionalDMRS=NULL;
-  pucchfmt2->maxCodeRate=calloc(1,sizeof(*pucchfmt2->maxCodeRate));
-  *pucchfmt2->maxCodeRate=NR_PUCCH_MaxCodeRate_zeroDot35;
-  pucchfmt2->nrofSlots=NULL;
-  pucchfmt2->pi2BPSK=NULL;
+  pucchfmt2->interslotFrequencyHopping = NULL;
+  pucchfmt2->additionalDMRS = NULL;
+  pucchfmt2->maxCodeRate = calloc(1,sizeof(*pucchfmt2->maxCodeRate));
+  *pucchfmt2->maxCodeRate = NR_PUCCH_MaxCodeRate_zeroDot35;
+  pucchfmt2->nrofSlots = NULL;
+  pucchfmt2->pi2BPSK = NULL;
 
   // to check UE capabilities for that in principle
-  pucchfmt2->simultaneousHARQ_ACK_CSI=calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
-  *pucchfmt2->simultaneousHARQ_ACK_CSI=NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
-
+  pucchfmt2->simultaneousHARQ_ACK_CSI = calloc(1,sizeof(*pucchfmt2->simultaneousHARQ_ACK_CSI));
+  *pucchfmt2->simultaneousHARQ_ACK_CSI = NR_PUCCH_FormatConfig__simultaneousHARQ_ACK_CSI_true;
 }
 
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
@@ -1301,10 +1303,10 @@ static void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR
   const int n_ul_slots_period = tdd ? (tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0)) : n_slots_frame;
   const int n_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int ideal_period = MAX_MOBILES_PER_GNB * 2 * n_slots_period / n_ul_slots_period; // 2 reports per UE
-  AssertFatal(ideal_period < 320, "Not enough UL slots to accomodate all possible UEs. Need to rework the implementation\n");
   const int first_ul_slot_period = tdd ? get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols) : 0;
   const int idx = (uid << 1) + is_rsrp;
   const int offset = first_ul_slot_period + idx % n_ul_slots_period + (idx / n_ul_slots_period) * n_slots_period;
+  AssertFatal(offset < 320, "Not enough UL slots to accomodate all possible UEs. Need to rework the implementation\n");
 
   if (ideal_period < 5) {
     csirep->reportConfigType.choice.periodic->reportSlotConfig.present = NR_CSI_ReportPeriodicityAndOffset_PR_slots4;
