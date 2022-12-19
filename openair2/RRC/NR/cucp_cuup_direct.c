@@ -164,7 +164,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
                    kRRCenc,
                    kRRCint);
                    
-  nr_pdcp_add_drbs(ctxt_p->enb_flag, ctxt_p->rntiMaybeUEid,
+  nr_pdcp_add_drbs(ctxt_p->enb_flag, ctxt_p->rntiMaybeUEid, 0,
                    DRB_configList,
                    (ue_context_p->ue_context.integrity_algorithm << 4)
                    | ue_context_p->ue_context.ciphering_algorithm,

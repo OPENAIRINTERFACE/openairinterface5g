@@ -45,7 +45,7 @@ void nr_pdcp_e1_add_drbs(eNB_flag_t enb_flag,
                          uint8_t        *const kUPenc,
                          uint8_t        *const kUPint);
 
-void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s,
+void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, ue_id_t reestablish_ue_id, struct NR_DRB_ToAddMod *s,
                 int ciphering_algorithm,
                 int integrity_algorithm,
                 unsigned char *ciphering_key,
