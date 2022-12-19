@@ -5950,7 +5950,7 @@ rrc_eNB_decode_ccch(
           }
 
           c_rnti = BIT_STRING_to_uint16(&rrcConnectionReestablishmentRequest->ue_Identity.c_RNTI);
-          LOG_I(RRC, "reestablishment, previous c_rnti is %x (new is %x)\n", c_rnti, ctxt_pP->rnti);
+          LOG_I(RRC, "reestablishment, previous c_rnti is %x (new is %lx)\n", c_rnti, ctxt_pP->rntiMaybeUEid);
           ue_context_p = rrc_eNB_get_ue_context(RC.rrc[ctxt_pP->module_id], c_rnti);
 
           if (ue_context_p == NULL) {
