@@ -206,6 +206,7 @@ typedef struct {
   uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;
+  nfapi_nr_srs_pdu_t srs_pdu;
 } nr_srs_info_t;
 
 typedef struct {

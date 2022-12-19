@@ -670,6 +670,20 @@ int fill_srs_channel_matrix(uint8_t *channel_matrix,
   return 0;
 }
 
+int check_srs_pdu(const nfapi_nr_srs_pdu_t *srs_pdu, nfapi_nr_srs_pdu_t *saved_srs_pdu)
+{
+  if (saved_srs_pdu->bwp_start == srs_pdu->bwp_start &&
+      saved_srs_pdu->bwp_size == srs_pdu->bwp_size &&
+      saved_srs_pdu->num_ant_ports == srs_pdu->num_ant_ports &&
+      saved_srs_pdu->time_start_position == srs_pdu->time_start_position &&
+      saved_srs_pdu->num_symbols == srs_pdu->num_symbols &&
+      saved_srs_pdu->config_index == srs_pdu->config_index) {
+    return 1;
+  }
+  *saved_srs_pdu = *srs_pdu;
+  return 0;
+}
+
 int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
   /* those variables to log T_GNB_PHY_PUCCH_PUSCH_IQ only when we try to decode */
   int pucch_decode_done = 0;
@@ -875,7 +889,9 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
         int8_t snr;
 
         start_meas(&gNB->generate_srs_stats);
-        generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+        if (check_srs_pdu(srs_pdu, &gNB->nr_srs_info[i]->srs_pdu) == 0) {
+          generate_srs_nr(srs_pdu, frame_parms, gNB->nr_srs_info[i]->srs_generated_signal, 0, gNB->nr_srs_info[i], AMP, frame_rx, slot_rx);
+        }
         stop_meas(&gNB->generate_srs_stats);
 
         start_meas(&gNB->get_srs_signal_stats);
