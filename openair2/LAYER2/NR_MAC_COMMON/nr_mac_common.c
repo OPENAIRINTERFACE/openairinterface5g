@@ -2476,7 +2476,7 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
 // Table 5.1.2.2.1-1 38.214
 uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
   
-  AssertFatal(bwp_size<276,"BWP Size > 275\n");
+  AssertFatal(bwp_size < 276,"Invalid BWP Size > 275\n");
   
   if (bwp_size < 37)  return (rbg_size_config ? 4 : 2);
   if (bwp_size < 73)  return (rbg_size_config ? 8 : 4);
@@ -2487,8 +2487,7 @@ uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
 uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {
 
   uint8_t rbg_size = getRBGSize(bwp_size,rbg_size_config);
-
-  return (uint8_t)ceil((bwp_size+(bwp_start % rbg_size))/rbg_size);
+  return (uint8_t)ceil((float)(bwp_size+(bwp_start % rbg_size))/(float)rbg_size);
 }
 
 uint8_t getAntPortBitWidth(NR_SetupRelease_DMRS_DownlinkConfig_t *typeA, NR_SetupRelease_DMRS_DownlinkConfig_t *typeB) {
@@ -2770,7 +2769,7 @@ uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servi
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        nr_srs_feedback_t *srs_feedback,
-                                       uint16_t *val)
+                                       uint32_t *val)
 {
   uint8_t nbits = 0;
 
@@ -2892,7 +2891,7 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
                                       dci_field_t srs_resource_indicator,
                                       nr_srs_feedback_t *srs_feedback,
                                       const uint8_t *nrOfLayers,
-                                      uint16_t *val) {
+                                      uint32_t *val) {
 
   // It is only applicable to codebook based transmission. This field occupies 0 bits for non-codebook based
   // transmission. It also occupies 0 bits for codebook based transmission using a single antenna port.

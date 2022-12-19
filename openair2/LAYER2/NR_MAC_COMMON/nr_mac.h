@@ -273,7 +273,7 @@ typedef struct {
 
 // DCI pdu structures. Used by both gNB and UE.
 typedef struct {
-  uint16_t val;
+  uint32_t val;
   uint8_t nbits;
 } dci_field_t;
 
