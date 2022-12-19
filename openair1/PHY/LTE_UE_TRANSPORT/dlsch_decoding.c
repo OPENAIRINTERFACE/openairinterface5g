@@ -148,21 +148,17 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_
   return(NULL);
 }
 
-uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
-                         short *dlsch_llr,
-                         LTE_DL_FRAME_PARMS *frame_parms,
-                         LTE_UE_DLSCH_t *dlsch,
-                         LTE_DL_UE_HARQ_t *harq_process,
-                         uint32_t frame,
-                         uint8_t subframe,
-                         uint8_t harq_pid,
-                         uint8_t is_crnti,
-                         uint8_t llr8_flag) {
-#if UE_TIMING_TRACE
-  time_stats_t *dlsch_rate_unmatching_stats=&phy_vars_ue->dlsch_rate_unmatching_stats;
-  time_stats_t *dlsch_turbo_decoding_stats=&phy_vars_ue->dlsch_turbo_decoding_stats;
-  time_stats_t *dlsch_deinterleaving_stats=&phy_vars_ue->dlsch_deinterleaving_stats;
-#endif
+uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
+                        short *dlsch_llr,
+                        LTE_DL_FRAME_PARMS *frame_parms,
+                        LTE_UE_DLSCH_t *dlsch,
+                        LTE_DL_UE_HARQ_t *harq_process,
+                        uint32_t frame,
+                        uint8_t subframe,
+                        uint8_t harq_pid,
+                        uint8_t is_crnti,
+                        uint8_t llr8_flag)
+{
   uint32_t A,E;
   uint32_t G;
   uint32_t ret,offset;
@@ -174,27 +170,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   uint16_t i;
 #endif
   //#ifdef __WASAVX2__
-#if 0
-  int Kr_last,skipped_last=0;
-  uint8_t (*tc_2cw)(int16_t *y,
-                    int16_t *y2,
-                    uint8_t *,
-                    uint8_t *,
-                    uint16_t,
-                    uint16_t,
-                    uint16_t,
-                    uint8_t,
-                    uint8_t,
-                    uint8_t,
-                    time_stats_t *,
-                    time_stats_t *,
-                    time_stats_t *,
-                    time_stats_t *,
-                    time_stats_t *,
-                    time_stats_t *,
-                    time_stats_t *);
-#endif
-  decoder_if_t *tc;
+  decoder_if_t *td;
 
   if (!dlsch_llr) {
     printf("dlsch_decoding.c: NULL dlsch_llr pointer\n");
@@ -222,11 +198,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   }
 
   if (llr8_flag == 0) {
-    tc = decoder16;
+    td = decoder16;
   } else {
     AssertFatal (harq_process->TBS >= 256 , "Mismatch flag nbRB=%d TBS=%d mcs=%d Qm=%d RIV=%d round=%d \n",
                  harq_process->nb_rb, harq_process->TBS,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
-    tc = decoder8;
+    td = decoder8;
   }
 
   //  nb_rb = dlsch->nb_rb;
@@ -310,9 +286,7 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
       Kr = harq_process->Kplus;
 
     Kr_bytes = Kr>>3;
-#if UE_TIMING_TRACE
-    start_meas(dlsch_rate_unmatching_stats);
-#endif
+    start_UE_TIMING(phy_vars_ue->dlsch_rate_unmatching_stats);
     memset(&dummy_w[r][0],0,3*(6144+64)*sizeof(short));
     harq_process->RTC[r] = generate_dummy_w(4+(Kr_bytes*8),
                                             (uint8_t *) &dummy_w[r][0],
@@ -347,15 +321,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                                    harq_process->Nl,
                                    r,
                                    &E)==-1) {
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_rate_unmatching_stats);
-#endif
+      stop_UE_TIMING(phy_vars_ue->dlsch_rate_unmatching_stats);
       LOG_E(PHY,"dlsch_decoding.c: Problem in rate_matching\n");
       return(dlsch->max_turbo_iterations);
     } else {
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_rate_unmatching_stats);
-#endif
+      stop_UE_TIMING(phy_vars_ue->dlsch_rate_unmatching_stats);
     }
 
     r_offset += E;
@@ -364,15 +334,11 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
      harq_process->d[r],
      harq_process->w);
     */
-#if UE_TIMING_TRACE
-    start_meas(dlsch_deinterleaving_stats);
-#endif
+    start_UE_TIMING(phy_vars_ue->dlsch_deinterleaving_stats);
     sub_block_deinterleaving_turbo(4+Kr,
                                    &harq_process->d[r][96],
                                    harq_process->w[r]);
-#if UE_TIMING_TRACE
-    stop_meas(dlsch_deinterleaving_stats);
-#endif
+    stop_UE_TIMING(phy_vars_ue->dlsch_deinterleaving_stats);
 #ifdef DEBUG_DLSCH_DECODING
     /*
     if (r==0) {
@@ -394,183 +360,30 @@ uint32_t  dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
     else
       crc_type = CRC24_B;
 
-    /*
-    printf("decoder input(segment %d)\n",r);
-    for (i=0;i<(3*8*Kr_bytes)+12;i++)
-      if ((harq_process->d[r][96+i]>7) ||
-    (harq_process->d[r][96+i] < -8))
-    printf("%d : %d\n",i,harq_process->d[r][96+i]);
-    printf("\n");
-    */
-    //#ifndef __WASAVX2__
-#if 1
-
     if (err_flag == 0) {
-      /*
-              LOG_I(PHY, "turbo algo Kr=%d cb_cnt=%d C=%d nbRB=%d crc_type %d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d maxIter %d\n",
-                                  Kr,r,harq_process->C,harq_process->nb_rb,crc_type,A,harq_process->TBS,
-                                  harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round,dlsch->max_turbo_iterations);
-      */
       if (llr8_flag) {
         AssertFatal (Kr >= 256, "turbo algo issue Kr=%d cb_cnt=%d C=%d nbRB=%d TBSInput=%d TBSHarq=%d TBSplus24=%d mcs=%d Qm=%d RIV=%d round=%d\n",
                      Kr,r,harq_process->C,harq_process->nb_rb,A,harq_process->TBS,harq_process->B,harq_process->mcs,harq_process->Qm,harq_process->rvidx,harq_process->round);
       }
-
-#if UE_TIMING_TRACE
-      start_meas(dlsch_turbo_decoding_stats);
-#endif
       LOG_D(PHY,"AbsSubframe %d.%d Start turbo segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);
-      ret = tc
-            (&harq_process->d[r][96],
-             NULL,
-             harq_process->c[r],
-             NULL,
-             Kr,
-             dlsch->max_turbo_iterations,
-             crc_type,
-             (r==0) ? harq_process->F : 0,
-             &phy_vars_ue->dlsch_tc_init_stats,
-             &phy_vars_ue->dlsch_tc_alpha_stats,
-             &phy_vars_ue->dlsch_tc_beta_stats,
-             &phy_vars_ue->dlsch_tc_gamma_stats,
-             &phy_vars_ue->dlsch_tc_ext_stats,
-             &phy_vars_ue->dlsch_tc_intl1_stats,
-             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_turbo_decoding_stats);
-#endif
+      start_UE_TIMING(phy_vars_ue->dlsch_turbo_decoding_stats);
+      ret = td(&harq_process->d[r][96],
+               NULL,
+               harq_process->c[r],
+               NULL,
+               Kr,
+               dlsch->max_turbo_iterations,
+               crc_type,
+               (r == 0) ? harq_process->F : 0,
+               &phy_vars_ue->dlsch_tc_init_stats,
+               &phy_vars_ue->dlsch_tc_alpha_stats,
+               &phy_vars_ue->dlsch_tc_beta_stats,
+               &phy_vars_ue->dlsch_tc_gamma_stats,
+               &phy_vars_ue->dlsch_tc_ext_stats,
+               &phy_vars_ue->dlsch_tc_intl1_stats,
+               &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+      stop_UE_TIMING(phy_vars_ue->dlsch_turbo_decoding_stats);
     }
-
-#else
-
-    if ((harq_process->C == 1) ||
-        ((r==harq_process->C-1) && (skipped_last==0))) { // last segment with odd number of segments
-#if UE_TIMING_TRACE
-      start_meas(dlsch_turbo_decoding_stats);
-#endif
-      ret = tc
-            (&harq_process->d[r][96],
-             harq_process->c[r],
-             Kr,
-             dlsch->max_turbo_iterations,
-             crc_type,
-             (r==0) ? harq_process->F : 0,
-             &phy_vars_ue->dlsch_tc_init_stats,
-             &phy_vars_ue->dlsch_tc_alpha_stats,
-             &phy_vars_ue->dlsch_tc_beta_stats,
-             &phy_vars_ue->dlsch_tc_gamma_stats,
-             &phy_vars_ue->dlsch_tc_ext_stats,
-             &phy_vars_ue->dlsch_tc_intl1_stats,
-             &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-#if UE_TIMING_TRACE
-      stop_meas(dlsch_turbo_decoding_stats);
-#endif
-      //      printf("single decode, exit\n");
-      //      exit(-1);
-    } else {
-      // we can merge code segments
-      if ((skipped_last == 0) && (r<harq_process->C-1)) {
-        skipped_last = 1;
-        Kr_last = Kr;
-      } else {
-        skipped_last=0;
-
-        if (Kr_last == Kr) { // decode 2 code segments with AVX2 version
-#ifdef DEBUG_DLSCH_DECODING
-          printf("single decoding segment %d (%p)\n",r-1,&harq_process->d[r-1][96]);
-#endif
-#if UE_TIMING_TRACE
-          start_meas(dlsch_turbo_decoding_stats);
-#endif
-#ifdef DEBUG_DLSCH_DECODING
-          printf("double decoding segments %d,%d (%p,%p)\n",r-1,r,&harq_process->d[r-1][96],&harq_process->d[r][96]);
-#endif
-          ret = tc_2cw
-                (&harq_process->d[r-1][96],
-                 &harq_process->d[r][96],
-                 harq_process->c[r-1],
-                 harq_process->c[r],
-                 Kr,
-                 dlsch->max_turbo_iterations,
-                 crc_type,
-                 (r==0) ? harq_process->F : 0,
-                 &phy_vars_ue->dlsch_tc_init_stats,
-                 &phy_vars_ue->dlsch_tc_alpha_stats,
-                 &phy_vars_ue->dlsch_tc_beta_stats,
-                 &phy_vars_ue->dlsch_tc_gamma_stats,
-                 &phy_vars_ue->dlsch_tc_ext_stats,
-                 &phy_vars_ue->dlsch_tc_intl1_stats,
-                 &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-          /*
-          ret = tc
-                  (&harq_process->d[r-1][96],
-                   harq_process->c[r-1],
-                   Kr_last,
-                   dlsch->max_turbo_iterations,
-                   crc_type,
-                   (r==0) ? harq_process->F : 0,
-                   &phy_vars_ue->dlsch_tc_init_stats,
-                   &phy_vars_ue->dlsch_tc_alpha_stats,
-                   &phy_vars_ue->dlsch_tc_beta_stats,
-                   &phy_vars_ue->dlsch_tc_gamma_stats,
-                   &phy_vars_ue->dlsch_tc_ext_stats,
-                   &phy_vars_ue->dlsch_tc_intl1_stats,
-                   &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-
-             exit(-1);*/
-#if UE_TIMING_TRACE
-          stop_meas(dlsch_turbo_decoding_stats);
-#endif
-        } else { // Kr_last != Kr
-#if UE_TIMING_TRACE
-          start_meas(dlsch_turbo_decoding_stats);
-#endif
-          ret = tc
-                (&harq_process->d[r-1][96],
-                 harq_process->c[r-1],
-                 Kr_last,
-                 dlsch->max_turbo_iterations,
-                 crc_type,
-                 (r==0) ? harq_process->F : 0,
-                 &phy_vars_ue->dlsch_tc_init_stats,
-                 &phy_vars_ue->dlsch_tc_alpha_stats,
-                 &phy_vars_ue->dlsch_tc_beta_stats,
-                 &phy_vars_ue->dlsch_tc_gamma_stats,
-                 &phy_vars_ue->dlsch_tc_ext_stats,
-                 &phy_vars_ue->dlsch_tc_intl1_stats,
-                 &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-#if UE_TIMING_TRACE
-          stop_meas(dlsch_turbo_decoding_stats);
-          start_meas(dlsch_turbo_decoding_stats);
-#endif
-          ret = tc
-                (&harq_process->d[r][96],
-                 harq_process->c[r],
-                 Kr,
-                 dlsch->max_turbo_iterations,
-                 crc_type,
-                 (r==0) ? harq_process->F : 0,
-                 &phy_vars_ue->dlsch_tc_init_stats,
-                 &phy_vars_ue->dlsch_tc_alpha_stats,
-                 &phy_vars_ue->dlsch_tc_beta_stats,
-                 &phy_vars_ue->dlsch_tc_gamma_stats,
-                 &phy_vars_ue->dlsch_tc_ext_stats,
-                 &phy_vars_ue->dlsch_tc_intl1_stats,
-                 &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
-#if UE_TIMING_TRACE
-          stop_meas(dlsch_turbo_decoding_stats);
-          /*printf("Segmentation: C %d r %d, dlsch_rate_unmatching_stats %5.3f dlsch_deinterleaving_stats %5.3f  dlsch_turbo_decoding_stats %5.3f \n",
-                    harq_process->C,
-                    r,
-                    dlsch_rate_unmatching_stats->p_time/(cpuf*1000.0),
-                    dlsch_deinterleaving_stats->p_time/(cpuf*1000.0),
-                    dlsch_turbo_decoding_stats->p_time/(cpuf*1000.0));*/
-#endif
-        }
-      }
-    }
-
-#endif
 
     if ((err_flag == 0) && (ret>=(1+dlsch->max_turbo_iterations))) {// a Code segment is in error so break;
       LOG_D(PHY,"AbsSubframe %d.%d CRC failed, segment %d/%d \n",frame%1024,subframe,r,harq_process->C-1);

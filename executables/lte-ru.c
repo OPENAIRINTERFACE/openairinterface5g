@@ -2337,16 +2337,6 @@ void init_RU_proc(RU_t *ru) {
 
   if (opp_enabled == 1)
     pthread_create(&ru->ru_stats_thread, NULL, ru_stats_thread, (void *)ru);
-  /*
-    if (ru->function == eNodeB_3GPP) {
-      usleep(10000);
-      LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d,send_dmrs %d) is ready in state %s\n",ru->idx,ru->is_slave,ru->generate_dmrs_sync,ru_states[ru->state]);
-      AssertFatal((ret=pthread_mutex_lock(ru->ru_mutex))==0,"mutex_lock returns %d\n",ret);
-      *ru->ru_mask &= ~(1<<ru->idx);
-      pthread_cond_signal(ru->ru_cond);
-      AssertFatal((ret=pthread_mutex_unlock(ru->ru_mutex))==0,"mutex_unlock returns %d\n",ret);
-    }
-    */
 }
 
 

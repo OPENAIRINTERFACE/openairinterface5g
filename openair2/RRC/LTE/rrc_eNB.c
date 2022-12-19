@@ -971,7 +971,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
 
   for(int ue_num = 0; ue_num < sizeofArray(eNB_MAC->UE_free_ctrl) ; ue_num++) {
     rnti_t rnti = eNB_MAC->UE_free_ctrl[ue_num].rnti;
-    if (!rnti)
+    if (rnti == 0)
       continue;
       protocol_ctxt_t  ctxt;
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0, mod_id);
@@ -1006,15 +1006,14 @@ void release_UE_in_freeList(module_id_t mod_id) {
             int pdu_number = ul_req_tmp->number_of_pdus;
 
           for (int pdu_index = pdu_number - 1; pdu_index >= 0; pdu_index--) {
-            if ((ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == rnti)
-                || (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti)
-                || (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti)
-                || (ul_req_tmp->ul_config_pdu_list[pdu_index].uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti)
-                || (ul_req_tmp->ul_config_pdu_list[pdu_index].srs_pdu.srs_pdu_rel8.rnti == rnti)) {
+            nfapi_ul_config_request_pdu_t *pdu = ul_req_tmp->ul_config_pdu_list + pdu_index;
+            if (pdu->ulsch_pdu.ulsch_pdu_rel8.rnti == rnti || pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti || pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti
+                || pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti || pdu->srs_pdu.srs_pdu_rel8.rnti == rnti) {
                 LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
 
+              // Very inefficient memory management, but simple
               if (pdu_index < pdu_number - 1) {
-                memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index + 1], (pdu_number - 1 - pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
+                memcpy(pdu, pdu + 1, (pdu_number - 1 - pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
                 }
 
                 ul_req_tmp->number_of_pdus--;
@@ -1879,46 +1878,6 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
       PDCP_TRANSMISSION_MODE_CONTROL);
   }
 
-  // delete UE data of prior RNTI.  UE use current RNTI.
-  //  protocol_ctxt_t ctxt_prior = *ctxt_pP;
-  //  ctxt_prior.rnti = reestablish_rnti;
-  //
-  //  LTE_eNB_ULSCH_t *ulsch = NULL;
-  //  nfapi_ul_config_request_body_t *ul_req_tmp = NULL;
-  //  PHY_VARS_eNB *eNB_PHY = NULL;
-  //  eNB_MAC_INST *eNB_MAC = RC.mac[ctxt_prior.module_id];
-  //  for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-  //    eNB_PHY = RC.eNB[ctxt_prior.module_id][CC_id];
-  //    for (int i=0; i<MAX_MOBILES_PER_ENB; i++) {
-  //      ulsch = eNB_PHY->ulsch[i];
-  //      if((ulsch != NULL) && (ulsch->rnti == ctxt_prior.rnti)){
-  //        void clean_eNb_ulsch(LTE_eNB_ULSCH_t *ulsch);
-  //        LOG_I(RRC, "clean_eNb_ulsch UE %x \n", ctxt_prior.rnti);
-  //        clean_eNb_ulsch(ulsch);
-  //        break;
-  //      }
-  //    }
-  //
-  //    for(int j = 0; j < 10; j++){
-  //      ul_req_tmp = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-  //      if(ul_req_tmp){
-  //        int pdu_number = ul_req_tmp->number_of_pdus;
-  //        for(int pdu_index = pdu_number-1; pdu_index >= 0; pdu_index--){
-  //          if(ul_req_tmp->ul_config_pdu_list[pdu_index].ulsch_pdu.ulsch_pdu_rel8.rnti == ctxt_prior.rnti){
-  //            LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", ctxt_prior.rnti, pdu_index, pdu_number);
-  //            if(pdu_index < pdu_number -1){
-  //               memcpy(&ul_req_tmp->ul_config_pdu_list[pdu_index], &ul_req_tmp->ul_config_pdu_list[pdu_index+1], (pdu_number-1-pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-  //            }
-  //            ul_req_tmp->number_of_pdus--;
-  //          }
-  //        }
-  //      }
-  //    }
-  //  }
-  //  rrc_mac_remove_ue(ctxt_prior.module_id, ctxt_prior.rnti);
-  //  rrc_rlc_remove_ue(&ctxt_prior);
-  //  pdcp_remove_UE(&ctxt_prior);
-  // add UE info to freeList for RU_thread to remove the UE instead of remove it here
   LOG_I(RRC, "[RRCConnectionReestablishment]put UE %x into freeList\n", reestablish_rnti);
   put_UE_in_freelist(ctxt_pP->module_id, reestablish_rnti, 0);
 }

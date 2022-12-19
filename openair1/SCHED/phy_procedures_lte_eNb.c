@@ -1453,17 +1453,6 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
                      0, // control_only_flag
                      ulsch_harq->V_UL_DAI,
                      ulsch_harq->nb_rb > 20 ? 1 : 0);
-      /*
-            int ulsch_id=-1;
-            for  (ulsch_id=0;ulsch_id<NUMBER_OF_ULSCH_MAX;ulsch_id++)
-               if (ulsch->rnti == eNB->ulsch_stats[ulsch_id].rnti) break;
-            AssertFatal(ulsch_id>=0,"no ulsch_id found\n");
-
-            if (eNB->ulsch_stats[ulsch_id].round_trials[0]>100) {
-               dump_ulsch(eNB,frame,subframe,i,ulsch_harq->round);
-               AssertFatal(1==0,"exiting\n");
-            }
-      */
     }
     else if ((ulsch) &&
              (ulsch->rnti>0) &&
@@ -1485,12 +1474,12 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
     if (req == NULL)
       break; // Tpool has been stopped
     postDecode(proc, req);
+    const time_stats_t ts = exec_time_stats_NotifiedFIFO(req);
+    merge_meas(&eNB->ulsch_turbo_decoding_stats, &ts);
     delNotifiedFIFO_elt(req);
   }
-  if (decode) {
+  if (decode)
     stop_meas(&eNB->ulsch_decoding_stats);
-    stop_meas(&eNB->ulsch_turbo_decoding_stats);
-  }
 }
 
 extern int oai_exit;

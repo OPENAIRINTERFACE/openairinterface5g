@@ -68,6 +68,14 @@
 #include <pthread.h>
 #include "assertions.h"
 
+#if UE_TIMING_TRACE
+#define start_UE_TIMING(a) start_meas(&(a))
+#define stop_UE_TIMING(a) stop_meas(&(a))
+#else
+#define start_UE_TIMING(a)
+#define stop_UE_TIMING(a)
+#endif
+
 #ifdef MEX
   #include "mex.h"
   #define msg mexPrintf
