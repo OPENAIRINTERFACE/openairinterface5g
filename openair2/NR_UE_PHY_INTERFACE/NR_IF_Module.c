@@ -692,8 +692,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
-    if (dl_tti_request)
-    {
+    if (dl_tti_request) {
         frame = dl_tti_request->SFN;
         slot = dl_tti_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
@@ -705,40 +704,34 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
        incoming tx_data_request is also destined for the current UE. If the
        RAR hasn't been processed yet, we do not want to be filtering the
        tx_data_requests. */
-    if (tx_data_request)
-    {
+    if (tx_data_request) {
         if (mac->nr_ue_emul_l1.expected_sib ||
             mac->nr_ue_emul_l1.expected_rar ||
-            mac->nr_ue_emul_l1.expected_dci)
-        {
+            mac->nr_ue_emul_l1.expected_dci) {
             frame = tx_data_request->SFN;
             slot = tx_data_request->Slot;
             LOG_D(NR_PHY, "[%d, %d] PDSCH in tx_request\n", frame, slot);
             copy_tx_data_req_to_dl_info(&mac->dl_info, tx_data_request);
         }
-        else
-        {
+        else {
             LOG_D(NR_MAC, "Unexpected tx_data_req\n");
         }
         free_and_zero(tx_data_request);
     }
-    else if (ul_dci_request)
-    {
+    else if (ul_dci_request) {
         frame = ul_dci_request->SFN;
         slot = ul_dci_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] ul_dci_request\n", frame, slot);
         copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
         free_and_zero(ul_dci_request);
     }
-    else if (ul_tti_request)
-    {
+    else if (ul_tti_request) {
         frame = ul_tti_request->SFN;
         slot = ul_tti_request->Slot;
         LOG_T(NR_PHY, "[%d, %d] ul_tti_request\n", frame, slot);
         copy_ul_tti_data_req_to_dl_info(&mac->dl_info, ul_tti_request);
     }
-    else
-    {
+    else {
         if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
         LOG_T(NR_MAC, "All indications were NULL in %s\n", __FUNCTION__);
         return;
@@ -762,15 +755,12 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
-    ul_info.ue_sched_mode = SCHED_PUSCH;
-    if (mac->scc || mac->scc_SIB)
-    {
+    if (mac->scc || mac->scc_SIB) {
         if (is_nr_UL_slot(mac->scc ?
                           mac->scc->tdd_UL_DL_ConfigurationCommon :
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
-                          mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED)
-        {
+                          mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED) {
             nr_ue_scheduler(NULL, &ul_info);
             nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx);
         }
@@ -1137,8 +1127,8 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
-  LOG_T(NR_MAC, "In %s():%d not calling scheduler. sched mode = %d and mac->ra.ra_state = %d\n",
-        __FUNCTION__, __LINE__, ul_info->ue_sched_mode, mac->ra.ra_state);
+  LOG_T(NR_MAC, "In %s():%d not calling scheduler mac->ra.ra_state = %d\n",
+        __FUNCTION__, __LINE__, mac->ra.ra_state);
 
   ret = nr_ue_scheduler(NULL, ul_info);
   if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type)) {

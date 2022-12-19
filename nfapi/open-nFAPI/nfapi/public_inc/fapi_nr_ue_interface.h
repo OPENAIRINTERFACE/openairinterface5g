@@ -189,8 +189,6 @@ typedef struct {
   uint8_t  restricted_set;
   /// see TS 38.211 (6.3.3.2).
   uint16_t freq_msg1;
-  // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
-  uint8_t ssb_nb_in_ro;
   /// Preamble index for PRACH (0-63)
   uint8_t ra_PreambleIndex;
   /// PRACH TX power (TODO possibly modify to uint)

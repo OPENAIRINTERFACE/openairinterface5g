@@ -32,10 +32,8 @@
 #define __LAYER2_NR_MAC_COMMON_H__
 
 #include "NR_MIB.h"
-#include "NR_PDSCH-Config.h"
 #include "NR_CellGroupConfig.h"
 #include "nr_mac.h"
-#include "openair1/PHY/impl_defs_nr.h"
 #include "common/utils/nr/nr_common.h"
 
 typedef enum {

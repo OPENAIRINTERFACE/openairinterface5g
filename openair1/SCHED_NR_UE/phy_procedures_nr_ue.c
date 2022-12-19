@@ -76,8 +76,6 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
-char nr_mode_string[NUM_UE_MODE][20] = {"NOT SYNCHED","PRACH","RAR","RA_WAIT_CR", "PUSCH", "RESYNCH"};
-
 #if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
 extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
 #endif
@@ -287,22 +285,17 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
 
   start_meas(&ue->phy_proc_tx);
 
-  if (ue->UE_mode[gNB_id] <= PUSCH){
-
-    for (uint8_t harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
-      if (ue->ul_harq_processes[harq_pid].status == ACTIVE)
-        nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id, phy_data);
-    }
+  for (uint8_t harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
+    if (ue->ul_harq_processes[harq_pid].status == ACTIVE)
+      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id, phy_data);
   }
 
   ue_srs_procedures_nr(ue, proc, gNB_id);
 
-  if (ue->UE_mode[gNB_id] <= PUSCH) {
-    pucch_procedures_ue_nr(ue,
-                           gNB_id,
-                           proc,
-                           phy_data);
-  }
+  pucch_procedures_ue_nr(ue,
+                         gNB_id,
+                         proc,
+                         phy_data);
 
   LOG_D(PHY, "Sending Uplink data \n");
   nr_ue_pusch_common_procedures(ue,
@@ -310,8 +303,7 @@ void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
                                 &ue->frame_parms,
                                 ue->frame_parms.nb_antennas_tx);
 
-  if (ue->UE_mode[gNB_id] > NOT_SYNCHED && ue->UE_mode[gNB_id] < PUSCH)
-    nr_ue_prach_procedures(ue, proc, proc->gNB_id);
+  nr_ue_prach_procedures(ue, proc, proc->gNB_id);
 
   LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
 
@@ -402,15 +394,6 @@ static void nr_ue_pbch_procedures(uint8_t gNB_id,
   if (ret==0) {
 
     ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
-
-    // Switch to PRACH state if it is first PBCH after initial synch and no timing correction is performed
-    if (ue->UE_mode[gNB_id] == NOT_SYNCHED && ue->no_timing_correction == 1){
-      if (get_softmodem_params()->do_ra) {
-        ue->UE_mode[gNB_id] = PRACH;
-      } else {
-        ue->UE_mode[gNB_id] = PUSCH;
-      }
-    }
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
@@ -543,12 +526,12 @@ int nr_ue_pdcch_procedures(uint8_t gNB_id,
   //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d nr_slot_rx %d PHICH RX\n",ue->Mod_id,frame_rx,nr_slot_rx);
 
   for (int i=0; i<dci_cnt; i++) {
-    LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d, Mode %s: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
-      ue->Mod_id,frame_rx%1024,nr_slot_rx,nr_mode_string[ue->UE_mode[gNB_id]],
-      i + 1,
-      dci_cnt,
-      dci_ind.dci_list[i].rnti,
-      dci_ind.dci_list[i].dci_format);
+    LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
+          ue->Mod_id,frame_rx%1024,nr_slot_rx,
+          i + 1,
+          dci_cnt,
+          dci_ind.dci_list[i].rnti,
+          dci_ind.dci_list[i].dci_format);
   }
 
   dci_ind.number_of_dcis = dci_cnt;
@@ -1308,14 +1291,10 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
 
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
   uint8_t mod_id = ue->Mod_id;
-  uint8_t nr_prach = 0;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
-  nr_prach = nr_ue_get_rach(&ue->prach_vars[gNB_id]->prach_pdu, mod_id, ue->CC_id, frame_tx, gNB_id, nr_slot_tx);
-  LOG_D(PHY, "In %s:[%d.%d] getting PRACH resources : %d\n", __FUNCTION__, frame_tx, nr_slot_tx,nr_prach);
-
-  if (nr_prach == GENERATE_PREAMBLE) {
+  if (ue->prach_vars[gNB_id]->active) {
 
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
     ue->tx_power_dBm[nr_slot_tx] = prach_pdu->prach_tx_power;
@@ -1345,15 +1324,7 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
       dB_fixed(prach_power),
       ue->prach_vars[gNB_id]->amp);
 
-  } else if (nr_prach == WAIT_CONTENTION_RESOLUTION) {
-    LOG_D(PHY, "In %s: [UE %d] RA waiting contention resolution\n", __FUNCTION__, mod_id);
-    ue->UE_mode[gNB_id] = RA_WAIT_CR;
-  } else if (nr_prach == RA_SUCCEEDED) {
-    LOG_D(PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, mod_id);
-    ue->UE_mode[gNB_id] = PUSCH;
-  } else if(nr_prach == RA_FAILED){
-    LOG_D(PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, mod_id);
-    ue->UE_mode[gNB_id] = PRACH;
+    ue->prach_vars[gNB_id]->active = false;
   }
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_OUT);

@@ -464,7 +464,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
           frame_parms->Nid_cell,frame_parms->frame_type);
 #endif
 
-    ue->UE_mode[0] = NOT_SYNCHED;
     ue->pbch_vars[0]->pdu_errors_last=ue->pbch_vars[0]->pdu_errors;
     ue->pbch_vars[0]->pdu_errors++;
     ue->pbch_vars[0]->pdu_errors_conseq++;

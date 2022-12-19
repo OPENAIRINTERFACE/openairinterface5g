@@ -958,8 +958,10 @@ int main(int argc, char **argv)
   UE->frame_parms.nb_antennas_rx = n_rx;
   UE->max_ldpc_iterations = max_ldpc_iterations;
 
-  if (run_initial_sync==1)  UE->is_synchronized = 0;
-  else                      {UE->is_synchronized = 1; UE->UE_mode[0]=PUSCH;}
+  if (run_initial_sync==1)
+    UE->is_synchronized = 0;
+  else
+    UE->is_synchronized = 1;
 
   if (init_nr_ue_signal(UE, 1) != 0)
   {

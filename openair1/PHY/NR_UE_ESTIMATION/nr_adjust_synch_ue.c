@@ -101,18 +101,9 @@ void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
       
   //printf("adjust sync count_max_pos_ok = %d\n",count_max_pos_ok);
 
-  if(count_max_pos_ok > 10 && first_time == 1)
-  {
+  if(count_max_pos_ok > 10 && first_time == 1) {
     first_time = 0;
     ue->time_sync_cell = 1;
-    if (get_softmodem_params()->do_ra || get_softmodem_params()->sa) {
-      LOG_I(PHY,"[UE%d] Sending synch status to higher layers\n",ue->Mod_id);
-      //mac_resynch();
-      //dl_phy_sync_success(ue->Mod_id,frame,0,1);//ue->common_vars.eNb_id);
-      ue->UE_mode[0] = PRACH;
-    } else {
-      ue->UE_mode[0] = PUSCH;
-    }
   }
 
 #ifdef DEBUG_PHY
