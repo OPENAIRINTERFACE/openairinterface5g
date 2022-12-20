@@ -38,84 +38,83 @@
 extern f1ap_setup_req_t *f1ap_du_data_from_du;
 
 int CU_send_Paging(instance_t instance, f1ap_paging_ind_t *paging) {
-  F1AP_F1AP_PDU_t                 pdu;
-  F1AP_Paging_t    *out;
-  F1AP_PagingIEs_t *ie;
+  F1AP_F1AP_PDU_t pdu = {0};
 
-  uint8_t  *buffer;
-  uint32_t  len;
-
-  memset(&pdu, 0, sizeof(pdu));
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
-  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_Paging;
-  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
-  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_Paging;
-  out = &pdu.choice.initiatingMessage->value.choice.Paging;
+  asn1cCalloc(pdu.choice.initiatingMessage, msg);
+  msg->procedureCode = F1AP_ProcedureCode_id_Paging;
+  msg->criticality = F1AP_Criticality_reject;
+  msg->value.present = F1AP_InitiatingMessage__value_PR_Paging;
 
   /* mandatory */
   /* UEIdentityIndexValue */
-  ie = (F1AP_PagingIEs_t *)calloc(1, sizeof(F1AP_PagingIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_UEIdentityIndexValue;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_PagingIEs__value_PR_UEIdentityIndexValue;
-  ie->value.choice.UEIdentityIndexValue.present = F1AP_UEIdentityIndexValue_PR_indexLength10;
-  UEIDENTITYINDEX_TO_BIT_STRING(paging->ueidentityindexvalue, &ie->value.choice.UEIdentityIndexValue.choice.indexLength10);
-  //LOG_D(F1AP, "indexLength10 %d \n", BIT_STRING_to_uint32(&ie->value.choice.UEIdentityIndexValue.choice.indexLength10));
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(msg->value.choice.Paging.protocolIEs.list,
+                     F1AP_PagingIEs_t, ie);
+    ie->id = F1AP_ProtocolIE_ID_id_UEIdentityIndexValue;
+    ie->criticality = F1AP_Criticality_reject;
+    ie->value.present = F1AP_PagingIEs__value_PR_UEIdentityIndexValue;
+    ie->value.choice.UEIdentityIndexValue.present =
+        F1AP_UEIdentityIndexValue_PR_indexLength10;
+    UEIDENTITYINDEX_TO_BIT_STRING(
+        paging->ueidentityindexvalue,
+        &ie->value.choice.UEIdentityIndexValue.choice.indexLength10);
+  }
 
   /* mandatory */
   /* PagingIdentity */
-  ie = (F1AP_PagingIEs_t *)calloc(1, sizeof(F1AP_PagingIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_PagingIdentity;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_PagingIEs__value_PR_PagingIdentity;
-  ie->value.choice.PagingIdentity.present = F1AP_PagingIdentity_PR_cNUEPagingIdentity;
-  ie->value.choice.PagingIdentity.choice.cNUEPagingIdentity = (F1AP_CNUEPagingIdentity_t*)calloc(1, sizeof(F1AP_CNUEPagingIdentity_t));
-  ie->value.choice.PagingIdentity.choice.cNUEPagingIdentity->present = F1AP_CNUEPagingIdentity_PR_fiveG_S_TMSI;
-  FIVEG_S_TMSI_TO_BIT_STRING(paging->fiveg_s_tmsi,
-                             &ie->value.choice.PagingIdentity.choice.cNUEPagingIdentity->choice.fiveG_S_TMSI);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(msg->value.choice.Paging.protocolIEs.list,
+                     F1AP_PagingIEs_t, ie);
+    ie->id = F1AP_ProtocolIE_ID_id_PagingIdentity;
+    ie->criticality = F1AP_Criticality_reject;
+    ie->value.present = F1AP_PagingIEs__value_PR_PagingIdentity;
+    ie->value.choice.PagingIdentity.present =
+        F1AP_PagingIdentity_PR_cNUEPagingIdentity;
+    asn1cCalloc(ie->value.choice.PagingIdentity.choice.cNUEPagingIdentity, id);
+    id->present = F1AP_CNUEPagingIdentity_PR_fiveG_S_TMSI;
+    FIVEG_S_TMSI_TO_BIT_STRING(paging->fiveg_s_tmsi, &id->choice.fiveG_S_TMSI);
+  }
 
   /* optional */
   /* PagingDRX */
-  ie = (F1AP_PagingIEs_t *)calloc(1, sizeof(F1AP_PagingIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_PagingDRX;
-  ie->criticality                    = F1AP_Criticality_ignore;
-  ie->value.present                  = F1AP_PagingIEs__value_PR_PagingDRX;
-  ie->value.choice.PagingDRX = paging->paging_drx;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(msg->value.choice.Paging.protocolIEs.list,
+                     F1AP_PagingIEs_t, ie);
+    ie->id = F1AP_ProtocolIE_ID_id_PagingDRX;
+    ie->criticality = F1AP_Criticality_ignore;
+    ie->value.present = F1AP_PagingIEs__value_PR_PagingDRX;
+    ie->value.choice.PagingDRX = paging->paging_drx;
+  }
 
   /* mandatory */
   /* PagingCell_list */
-  ie = (F1AP_PagingIEs_t *)calloc(1, sizeof(F1AP_PagingIEs_t));
-  ie->id                             = F1AP_ProtocolIE_ID_id_PagingCell_List;
-  ie->criticality                    = F1AP_Criticality_reject;
-  ie->value.present                  = F1AP_PagingIEs__value_PR_PagingCell_list;
-  F1AP_PagingCell_ItemIEs_t *itemies;
-  F1AP_PagingCell_Item_t item;
-  memset((void *)&item, 0, sizeof(F1AP_PagingCell_Item_t));
-  itemies = (F1AP_PagingCell_ItemIEs_t *)calloc(1, sizeof(F1AP_PagingCell_ItemIEs_t));
-  itemies->id = F1AP_ProtocolIE_ID_id_PagingCell_Item;
-  itemies->criticality = F1AP_Criticality_reject;
-  itemies->value.present = F1AP_PagingCell_ItemIEs__value_PR_PagingCell_Item;
-  F1AP_NRCGI_t nRCGI;
-  MCC_MNC_TO_PLMNID(paging->mcc,
-                    paging->mnc,
-                    paging->mnc_digit_length,
-                    &nRCGI.pLMN_Identity);
-  NR_CELL_ID_TO_BIT_STRING(paging->nr_cellid, &nRCGI.nRCellIdentity);
-  item.nRCGI = nRCGI;
-  itemies->value.choice.PagingCell_Item = item;
-  ASN_SEQUENCE_ADD(&ie->value.choice.PagingCell_list, itemies);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(msg->value.choice.Paging.protocolIEs.list,
+                     F1AP_PagingIEs_t, ie);
+    ie->id = F1AP_ProtocolIE_ID_id_PagingCell_List;
+    ie->criticality = F1AP_Criticality_reject;
+    ie->value.present = F1AP_PagingIEs__value_PR_PagingCell_list;
+    asn1cSequenceAdd(ie->value.choice.PagingCell_list,
+                     F1AP_PagingCell_ItemIEs_t, itemies);
+    itemies->id = F1AP_ProtocolIE_ID_id_PagingCell_Item;
+    itemies->criticality = F1AP_Criticality_reject;
+    itemies->value.present = F1AP_PagingCell_ItemIEs__value_PR_PagingCell_Item;
+    F1AP_NRCGI_t *nRCGI = &itemies->value.choice.PagingCell_Item.nRCGI;
+    MCC_MNC_TO_PLMNID(paging->mcc, paging->mnc, paging->mnc_digit_length,
+                      &nRCGI->pLMN_Identity);
+    NR_CELL_ID_TO_BIT_STRING(paging->nr_cellid, &nRCGI->nRCellIdentity);
+  }
 
+  uint8_t *buffer;
+  uint32_t len;
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
     LOG_E(F1AP, "Failed to encode F1 Paging failure\n");
+    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
     return -1;
   }
-
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
   f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
   return 0;
 }
