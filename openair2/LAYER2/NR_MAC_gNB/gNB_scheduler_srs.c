@@ -222,7 +222,8 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t s
 *                Only for periodic scheduling yet.
 *
 *********************************************************************/
-void nr_schedule_srs(int module_id, frame_t frame) {
+void nr_schedule_srs(int module_id, frame_t frame, int slot)
+ {
 
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
   NR_UEs_t *UE_info = &nrmac->UE_info;
@@ -232,9 +233,11 @@ void nr_schedule_srs(int module_id, frame_t frame) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
-    sched_ctrl->sched_srs.frame = -1;
-    sched_ctrl->sched_srs.slot = -1;
-    sched_ctrl->sched_srs.srs_scheduled = false;
+    if(sched_ctrl->sched_srs.srs_scheduled && sched_ctrl->sched_srs.frame == frame && sched_ctrl->sched_srs.slot == slot) {
+      sched_ctrl->sched_srs.frame = -1;
+      sched_ctrl->sched_srs.slot = -1;
+      sched_ctrl->sched_srs.srs_scheduled = false;
+    }
 
     if((sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) ||
        sched_ctrl->rrc_processing_timer > 0) {
@@ -271,16 +274,28 @@ void nr_schedule_srs(int module_id, frame_t frame) {
         continue;
       }
 
-      uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
-      uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
-      int n_slots_frame = nr_slots_per_frame[current_BWP->scs];
+      const int num_tda = current_BWP->tdaList->list.count;
+      int max_k2 = 0;
+      // avoid last one in the list (for msg3)
+      for (int i = 0; i < num_tda - 1; i++) {
+        int k2 = get_K2(current_BWP->tdaList, i, current_BWP->scs);
+        max_k2 = k2 > max_k2 ? k2 : max_k2;
+      }
+
+      // we are sheduling SRS max_k2 slot in advance for the presence of SRS to be taken into account when scheduling PUSCH
+      const int n_slots_frame = nr_slots_per_frame[current_BWP->scs];
+      const int sched_slot = (slot + max_k2) % n_slots_frame;
+      const int sched_frame = (frame + ((slot + max_k2) / n_slots_frame)) % 1024;
+
+      const uint16_t period = srs_period[srs_resource->resourceType.choice.periodic->periodicityAndOffset_p.present];
+      const uint16_t offset = get_nr_srs_offset(srs_resource->resourceType.choice.periodic->periodicityAndOffset_p);
 
       // Check if UE will transmit the SRS in this frame
-      if (((frame - offset / n_slots_frame) * n_slots_frame) % period == 0) {
-        LOG_D(NR_MAC,"Scheduling SRS reception for %d.%d\n", frame, offset%n_slots_frame);
-        nr_fill_nfapi_srs(module_id, CC_id, UE, offset%n_slots_frame, srs_resource_set, srs_resource);
-        sched_ctrl->sched_srs.frame = frame;
-        sched_ctrl->sched_srs.slot = offset%n_slots_frame;
+      if ((sched_frame * n_slots_frame + sched_slot - offset) % period == 0) {
+        LOG_D(NR_MAC," %d.%d Scheduling SRS reception for %d.%d\n", frame, slot, sched_frame, sched_slot);
+        nr_fill_nfapi_srs(module_id, CC_id, UE, sched_slot, srs_resource_set, srs_resource);
+        sched_ctrl->sched_srs.frame = sched_frame;
+        sched_ctrl->sched_srs.slot = sched_slot;
         sched_ctrl->sched_srs.srs_scheduled = true;
       }
     }
