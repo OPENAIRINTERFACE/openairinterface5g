@@ -659,10 +659,7 @@ void rx_rf(RU_t *ru,int *frame,int *slot) {
   //"rx_rf: Asked for %d samples, got %d from USRP\n",fp->samples_per_subframe,rxs);
   if (rxs != samples_per_slot) LOG_E(PHY, "rx_rf: Asked for %d samples, got %d from USRP\n",samples_per_slot,rxs);
 
-  if (proc->first_rx == 1) {
-    //ru->ts_offset = proc->timestamp_rx;
-    //proc->timestamp_rx = 0;
-  } else {
+  if (proc->first_rx != 1) {
     samples_per_slot_prev = fp->get_samples_per_slot((*slot-1)%fp->slots_per_frame,fp);
 
     if (proc->timestamp_rx - old_ts != samples_per_slot_prev) {
