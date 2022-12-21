@@ -146,8 +146,8 @@ static void nr_processULSegment(void *arg)
   int16_t z[68 * 384 + 16] __attribute__((aligned(16)));
   int8_t l[68 * 384 + 16] __attribute__((aligned(16)));
 
-  __m128i *pv = (__m128i *)&z;
-  __m128i *pl = (__m128i *)&l;
+  simde__m128i *pv = (simde__m128i *)&z;
+  simde__m128i *pl = (simde__m128i *)&l;
 
   Kr = ulsch_harq->K;
   Kr_bytes = Kr >> 3;
@@ -233,7 +233,7 @@ static void nr_processULSegment(void *arg)
   memcpy((&z[0] + Kr), ulsch_harq->d[r] + (Kr - 2 * ulsch_harq->Z), (kc * ulsch_harq->Z - Kr) * sizeof(int16_t));
   // Saturate coded bits before decoding into 8 bits values
   for (i = 0, j = 0; j < ((kc * ulsch_harq->Z) >> 4) + 1; i += 2, j++) {
-    pl[j] = _mm_packs_epi16(pv[i], pv[i + 1]);
+    pl[j] = simde_mm_packs_epi16(pv[i], pv[i + 1]);
   }
   //////////////////////////////////////////////////////////////////////////////////////////
 
@@ -411,10 +411,10 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       if ((dtx_det == 0) && (pusch_pdu->pusch_data.rv_index == 0)) {
         // if (dtx_det==0){
           memcpy((&z_ol[0]), ulsch_llr + r_offset, E * sizeof(short));
-          __m128i *pv_ol128 = (__m128i *)&z_ol;
-          __m128i *pl_ol128 = (__m128i *)&l_ol;
+          simde__m128i *pv_ol128 = (simde__m128i *)&z_ol;
+          simde__m128i *pl_ol128 = (simde__m128i *)&l_ol;
           for (int i = 0, j = 0; j < ((kc * harq_process->Z) >> 4) + 1; i += 2, j++) {
-            pl_ol128[j] = _mm_packs_epi16(pv_ol128[i], pv_ol128[i + 1]);
+            pl_ol128[j] = simde_mm_packs_epi16(pv_ol128[i], pv_ol128[i + 1]);
           }
 
           int ret = nrLDPC_decoder_offload(&decParams, harq_pid, ULSCH_id, r, pusch_pdu->pusch_data.rv_index, harq_process->F, E, Qm, (int8_t *)&pl_ol128[0], llrProcBuf, 1);

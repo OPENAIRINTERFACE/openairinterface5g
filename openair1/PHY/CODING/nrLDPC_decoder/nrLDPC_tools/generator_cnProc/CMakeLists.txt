@@ -2,7 +2,12 @@ add_executable(cnProc_gen_avx2
                cnProc_gen_BG1_avx2.c
                cnProc_gen_BG2_avx2.c
                main.c)
-target_compile_options(cnProc_gen_avx2 PRIVATE -W -Wall -mavx2)
+add_executable(cnProc_gen_128
+               cnProc_gen_BG1_128.c
+               cnProc_gen_BG2_128.c
+               main128.c)
+target_compile_options(cnProc_gen_avx2 PRIVATE -W -Wall )
+target_compile_options(cnProc_gen_128 PRIVATE -W -Wall )
 
 #set(cnProc_headers
 #    cnProc/rLDPC_cnProc_BG1_R13_AVX2.h
@@ -20,6 +25,17 @@ add_custom_command(TARGET cnProc_gen_avx2 POST_BUILD
   COMMENT "Generating LDPC cnProc header files for AVX2"
 )
 
+add_custom_command(TARGET cnProc_gen_128 POST_BUILD
+  #OUTPUT ${cnProc_headers}
+  COMMAND ${CMAKE_COMMAND} -E make_directory cnProc128
+  COMMAND cnProc_gen_128 .
+  DEPENDS cnProc_gen_128
+  COMMENT "Generating LDPC cnProc header files for 128-bit SIMD"
+)
 add_library(cnProc_gen_avx2_HEADERS INTERFACE)
 target_include_directories(cnProc_gen_avx2_HEADERS INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
 add_dependencies(cnProc_gen_avx2_HEADERS cnProc_gen_avx2)
+
+add_library(cnProc_gen_128_HEADERS INTERFACE)
+target_include_directories(cnProc_gen_128_HEADERS INTERFACE ${CMAKE_CURRENT_BINARY_DIR})
+add_dependencies(cnProc_gen_128_HEADERS cnProc_gen_128)

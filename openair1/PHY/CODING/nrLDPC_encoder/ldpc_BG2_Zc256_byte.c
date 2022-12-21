@@ -1,9 +1,10 @@
+#ifdef __AVX2__
 #include "PHY/sse_intrin.h"
 // generated code for Zc=256, byte encoding
 static inline __attribute__ ((no_sanitize("address", "undefined"))) void ldpc_BG2_Zc256_byte(uint8_t *c,uint8_t *d) {
-  __m256i *csimd=(__m256i *)c,*dsimd=(__m256i *)d;
+  simde__m256i *csimd=(simde__m256i *)c,*dsimd=(simde__m256i *)d;
 
-  __m256i *c2,*d2;
+  simde__m256i *c2,*d2;
 
   int i2;
   for (i2=0; i2<8; i2++) {
@@ -137,3 +138,4 @@ static inline __attribute__ ((no_sanitize("address", "undefined"))) void ldpc_BG
      d2[328]=simde_mm256_xor_si256(c2[4963],simde_mm256_xor_si256(c2[4803],simde_mm256_xor_si256(c2[4480],simde_mm256_xor_si256(c2[966],simde_mm256_xor_si256(c2[1783],simde_mm256_xor_si256(c2[1623],simde_mm256_xor_si256(c2[1143],simde_mm256_xor_si256(c2[4659],simde_mm256_xor_si256(c2[180],simde_mm256_xor_si256(c2[354],simde_mm256_xor_si256(c2[194],simde_mm256_xor_si256(c2[2437],simde_mm256_xor_si256(c2[2612],simde_mm256_xor_si256(c2[2452],simde_mm256_xor_si256(c2[4368],simde_mm256_xor_si256(c2[213],simde_mm256_xor_si256(c2[2947],simde_mm256_xor_si256(c2[1509],simde_mm256_xor_si256(c2[3104],simde_mm256_xor_si256(c2[2967],simde_mm256_xor_si256(c2[4726],simde_mm256_xor_si256(c2[887],simde_mm256_xor_si256(c2[3137],simde_mm256_xor_si256(c2[2977],simde_mm256_xor_si256(c2[3778],simde_mm256_xor_si256(c2[1058],simde_mm256_xor_si256(c2[2832],simde_mm256_xor_si256(c2[1877],simde_mm256_xor_si256(c2[3490],simde_mm256_xor_si256(c2[931],simde_mm256_xor_si256(c2[1252],simde_mm256_xor_si256(c2[626],simde_mm256_xor_si256(c2[466],simde_mm256_xor_si256(c2[2867],c2[3511]))))))))))))))))))))))))))))))))));
   }
 }
+#endif

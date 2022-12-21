@@ -470,33 +470,20 @@ static int trx_usrp_write(openair0_device *device,
      last_packet_state  = true;
     }
 
-  if(usrp_tx_thread == 0){
-#if defined(__x86_64) || defined(__i386__)
+    if (usrp_tx_thread == 0) {
       nsamps2 = (nsamps+7)>>3;
-      __m256i buff_tx[cc<2?2:cc][nsamps2];
-#elif defined(__arm__) || defined(__aarch64__)
-    nsamps2 = (nsamps+3)>>2;
-    int16x8_t buff_tx[cc<2?2:cc][nsamps2];
-#else
-#error Unsupported CPU architecture, USRP device cannot be built
-#endif
+      simde__m256i buff_tx[cc < 2 ? 2 : cc][nsamps2];
 
-    // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
-#if defined(__x86_64__) || defined(__i386__)
-        if ((((uintptr_t) buff[i])&0x1F)==0) {
-          buff_tx[i][j] = simde_mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+      // bring RX data into 12 LSBs for softmodem RX
+      for (int i = 0; i < cc; i++) {
+        for (int j = 0; j < nsamps2; j++) {
+          if ((((uintptr_t)buff[i]) & 0x1F) == 0) {
+            buff_tx[i][j] = simde_mm256_slli_epi16(((simde__m256i *)buff[i])[j], 4);
+          } else {
+            simde__m256i tmp = simde_mm256_loadu_si256(((simde__m256i *)buff[i]) + j);
+            buff_tx[i][j] = simde_mm256_slli_epi16(tmp, 4);
+          }
         }
-        else 
-        {
-          __m256i tmp = simde_mm256_loadu_si256(((__m256i *)buff[i])+j);
-          buff_tx[i][j] = simde_mm256_slli_epi16(tmp,4);
-        }
-#elif defined(__arm__) || defined(__aarch64__)
-        buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
-#endif
-      }
     }
 
     s->tx_md.has_time_spec  = true;
@@ -529,33 +516,35 @@ VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHI
 
     if (ret != nsamps) LOG_E(HW,"[xmit] tx samples %d != %d\n",ret,nsamps);
     return ret;
-  }
-  else{
-    pthread_mutex_lock(&write_thread->mutex_write);
+    } else {
+      pthread_mutex_lock(&write_thread->mutex_write);
 
-    if(write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE){
-      LOG_W(HW,"Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n", write_thread->count_write, write_thread->start, write_thread->end);
-      write_thread->end = write_thread->start;
-      write_thread->count_write = 0;
+      if (write_thread->count_write >= MAX_WRITE_THREAD_PACKAGE) {
+        LOG_W(HW,
+              "Buffer overflow, count_write = %d, start = %d end = %d, resetting write package\n",
+              write_thread->count_write,
+              write_thread->start,
+              write_thread->end);
+        write_thread->end = write_thread->start;
+        write_thread->count_write = 0;
+      }
+
+      end = write_thread->end;
+      write_package[end].timestamp = timestamp;
+      write_package[end].nsamps = nsamps;
+      write_package[end].cc = cc;
+      write_package[end].first_packet = first_packet_state;
+      write_package[end].last_packet = last_packet_state;
+      write_package[end].flags_gpio = flags_gpio;
+      for (int i = 0; i < cc; i++)
+        write_package[end].buff[i] = buff[i];
+      write_thread->count_write++;
+      write_thread->end = (write_thread->end + 1) % MAX_WRITE_THREAD_PACKAGE;
+      LOG_D(HW, "Signaling TX TS %llu\n", (unsigned long long)timestamp);
+      pthread_cond_signal(&write_thread->cond_write);
+      pthread_mutex_unlock(&write_thread->mutex_write);
+      return 0;
     }
-
-    end = write_thread->end;
-    write_package[end].timestamp    = timestamp;
-    write_package[end].nsamps       = nsamps;
-    write_package[end].cc           = cc;
-    write_package[end].first_packet = first_packet_state;
-    write_package[end].last_packet  = last_packet_state;
-    write_package[end].flags_gpio    = flags_gpio;
-    for (int i = 0; i < cc; i++)
-      write_package[end].buff[i]    = buff[i];
-    write_thread->count_write++;
-    write_thread->end = (write_thread->end + 1)% MAX_WRITE_THREAD_PACKAGE;
-    LOG_D(HW,"Signaling TX TS %llu\n",(unsigned long long)timestamp);
-    pthread_cond_signal(&write_thread->cond_write);
-    pthread_mutex_unlock(&write_thread->mutex_write);
-    return 0;
-  }
-
 }
 
 //-----------------------start--------------------------
@@ -609,34 +598,22 @@ void *trx_usrp_write_thread(void * arg){
       LOG_W(HW,"count write = %d, start = %d, end = %d\n", write_thread->count_write, write_thread->start, write_thread->end);
     }*/
 
-    #if defined(__x86_64) || defined(__i386__)
         nsamps2 = (nsamps+7)>>3;
-        __m256i buff_tx[cc<2?2:cc][nsamps2];
-    #elif defined(__arm__) || defined(__aarch64__)
-      nsamps2 = (nsamps+3)>>2;
-      int16x8_t buff_tx[cc<2?2:cc][nsamps2];
-    #else
-    #error Unsupported CPU architecture, USRP device cannot be built
-    #endif
+        simde__m256i buff_tx[cc < 2 ? 2 : cc][nsamps2];
 
-    // bring RX data into 12 LSBs for softmodem RX
-    for (int i=0; i<cc; i++) {
-      for (int j=0; j<nsamps2; j++) {
-        #if defined(__x86_64__) || defined(__i386__)
+        // bring RX data into 12 LSBs for softmodem RX
+        for (int i = 0; i < cc; i++) {
+          for (int j = 0; j < nsamps2; j++) {
             if ((((uintptr_t) buff[i])&0x1F)==0) {
-              buff_tx[i][j] = simde_mm256_slli_epi16(((__m256i *)buff[i])[j],4);
+              buff_tx[i][j] = simde_mm256_slli_epi16(((simde__m256i *)buff[i])[j], 4);
             }
             else
             {
-              __m256i tmp = simde_mm256_loadu_si256(((__m256i *)buff[i])+j);
+              simde__m256i tmp = simde_mm256_loadu_si256(((simde__m256i *)buff[i]) + j);
               buff_tx[i][j] = simde_mm256_slli_epi16(tmp,4);
             }
-        #elif defined(__arm__) || defined(__aarch64__)
-          buff_tx[i][j] = vshlq_n_s16(((int16x8_t *)buff[i])[j],4);
-        #endif
-      }
-    }
-
+          }
+        }
 
     s->tx_md.has_time_spec  = true;
     s->tx_md.start_of_burst = (s->tx_count==0) ? true : first_packet;
@@ -723,14 +700,9 @@ static void trx_usrp_write_reset(openair0_thread_t *wt) {
 static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp, void **buff, int nsamps, int cc) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
   int samples_received=0;
-  int nsamps2;  // aligned to upper 32 or 16 byte boundary
-#if defined(__x86_64) || defined(__i386__)
+  int nsamps2; // aligned to upper 32 or 16 byte boundary
   nsamps2 = (nsamps+7)>>3;
-  __m256i buff_tmp[cc<2 ? 2 : cc][nsamps2];
-#elif defined(__arm__) || defined(__aarch64__)
-  nsamps2 = (nsamps+3)>>2;
-  int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
-#endif
+  simde__m256i buff_tmp[cc < 2 ? 2 : cc][nsamps2];
   static int read_count = 0;
   int rxshift;
   switch (device->type) {
@@ -772,21 +744,16 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
   // bring RX data into 12 LSBs for softmodem RX
   for (int i=0; i<cc; i++) {
-    for (int j=0; j<nsamps2; j++) {
-#if defined(__x86_64__) || defined(__i386__)
+    for (int j = 0; j < nsamps2; j++) {
       // FK: in some cases the buffer might not be 32 byte aligned, so we cannot use avx2
 
       if ((((uintptr_t) buff[i])&0x1F)==0) {
-        ((__m256i *)buff[i])[j] = simde_mm256_srai_epi16(buff_tmp[i][j],rxshift);
+        ((simde__m256i *)buff[i])[j] = simde_mm256_srai_epi16(buff_tmp[i][j], rxshift);
       } else {
-        __m256i tmp = simde_mm256_srai_epi16(buff_tmp[i][j],rxshift);
-        simde_mm256_storeu_si256(((__m256i *)buff[i])+j, tmp);
+        simde__m256i tmp = simde_mm256_srai_epi16(buff_tmp[i][j], rxshift);
+        simde_mm256_storeu_si256(((simde__m256i *)buff[i]) + j, tmp);
       }
     }
-#elif defined(__arm__) || defined(__aarch64__)
-      for (int j=0; j<nsamps2; j++) 
-        ((int16x8_t *)buff[i])[j] = vshrq_n_s16(buff_tmp[i][j],rxshift);
-#endif
   }
 
   if (samples_received < nsamps) {

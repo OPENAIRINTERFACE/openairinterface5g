@@ -11,8 +11,8 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 	
 	uint32_t i,j;
 
-	__m256i A,B,C,D,E,U,zerosOnly, OUT;
-	__m256i inc;
+	simde__m256i A,B,C,D,E,U,zerosOnly, OUT;
+	simde__m256i inc;
 	uint32_t dTest[8];
 	uint32_t uArray[8];
 	uint32_t k;	
@@ -21,7 +21,7 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 	//initialisation
 	for(k=0; k<8; k++)
 		incArray[k]=k;
-	inc=simde_mm256_loadu_si256((__m256i const*)incArray); // 0, 1, ..., 7 to increase
+	inc=simde_mm256_loadu_si256((simde__m256i const*)incArray); // 0, 1, ..., 7 to increase
 	
 	zerosOnly=simde_mm256_setzero_si256(); // for comparison
 
@@ -38,7 +38,7 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 			A=simde_mm256_sub_epi32(A, B); //(j-i), (j-(i+1)), ... (j-(i+7))  
 			
 			U=simde_mm256_set1_epi32((int)u[j]);
-			simde_mm256_storeu_si256((__m256i*)uArray, U); //u(j) ... u(j) for the maskload
+			simde_mm256_storeu_si256((simde__m256i*)uArray, U); //u(j) ... u(j) for the maskload
 
 			C=simde_mm256_and_si256(A, B); //(j-i)&i -> If zero, then XOR with the u(j)
 			D=simde_mm256_cmpeq_epi32(C, zerosOnly); // compare with zero and use the result as mask
@@ -47,7 +47,7 @@ void nr_polar_kernal_operation(uint8_t *u, uint8_t *d, uint16_t N)
 			OUT=simde_mm256_xor_si256(OUT, E); //32 bit x 8
 
 		}
-		simde_mm256_storeu_si256((__m256i*)dTest, OUT);
+		simde_mm256_storeu_si256((simde__m256i*)dTest, OUT);
 
 		for(k=0; k<8; k++) // Conversion from 32 bits to 8 bits
                 {	

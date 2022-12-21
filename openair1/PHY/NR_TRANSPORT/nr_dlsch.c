@@ -387,31 +387,31 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
           }
           // fix the alignment issues later, use 64-bit SIMD below instead of 128.
           if (0/*(frame_parms->N_RB_DL&1)==0*/) {
-            __m128i *txF=(__m128i*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size+start_sc)<<1)];
+            simde__m128i *txF=(simde__m128i*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size+start_sc)<<1)];
 
-            __m128i *txl = (__m128i*)&tx_layers[nl][m<<1];
-            __m128i amp128=_mm_set1_epi16(amp);
+            simde__m128i *txl = (simde__m128i*)&tx_layers[nl][m<<1];
+            simde__m128i amp128=simde_mm_set1_epi16(amp);
             for (int i=0; i<(upper_limit>>2); i++) {
-              txF[i] = _mm_mulhrs_epi16(amp128,txl[i]);
+              txF[i] = simde_mm_mulhrs_epi16(amp128,txl[i]);
             } //RE loop, first part
             m+=upper_limit;
             if (remaining_re > 0) {
-               txF = (__m128i*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size)<<1)];
-               txl = (__m128i*)&tx_layers[nl][m<<1];
+               txF = (simde__m128i*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size)<<1)];
+               txl = (simde__m128i*)&tx_layers[nl][m<<1];
                for (int i=0; i<(remaining_re>>2); i++) {
-                 txF[i] = _mm_mulhrs_epi16(amp128,txl[i]);
+                 txF[i] = simde_mm_mulhrs_epi16(amp128,txl[i]);
                }
             }
           }
           else {
-            __m128i *txF = (__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc) << 1)];
+            simde__m128i *txF = (simde__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc) << 1)];
 
-            __m128i *txl = (__m128i *)&tx_layers[nl][m << 1];
-            __m128i amp64 = _mm_set1_epi16(amp);
+            simde__m128i *txl = (simde__m128i *)&tx_layers[nl][m << 1];
+            simde__m128i amp64 = simde_mm_set1_epi16(amp);
             int i;
             for (i = 0; i < (upper_limit >> 2); i++) {
-              const __m128i txL = _mm_loadu_si128(txl + i);
-              _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
+              const simde__m128i txL = simde_mm_loadu_si128(txl + i);
+              simde_mm_storeu_si128(txF + i, simde_mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
               if ((i&1) > 0)
                   printf("m %u\t l %d \t k %d \t txdataF: %d %d\n",
@@ -434,12 +434,13 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             }
             m+=upper_limit;
             if (remaining_re > 0) {
-              txF = (__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size) << 1)];
-              txl = (__m128i *)&tx_layers[nl][m << 1];
+              txF = (simde__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size) << 1)];
+              txl = (simde__m128i *)&tx_layers[nl][m << 1];
               int i;
               for (i = 0; i < (remaining_re >> 2); i++) {
-                const __m128i txL = _mm_loadu_si128(txl + i);
-                _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
+                const simde__m128i txL = simde_mm_loadu_si128(txl + i);
+                simde_mm_storeu_si128(txF + i, simde_mm_mulhrs_epi16(amp64, txL));
+
 #ifdef DEBUG_DLSCH_MAPPING
                  if ((i&1) > 0)
                    printf("m %u\t l %d \t k %d \t txdataF: %d %d\n",

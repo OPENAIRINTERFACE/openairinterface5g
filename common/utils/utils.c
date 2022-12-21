@@ -118,12 +118,6 @@ char *itoa(int i) {
   return strdup(buffer);
 }
 
-void *memcpy1(void *dst,const void *src,size_t n) {
-
-  void *ret=dst;
-  asm volatile("rep movsb" : "+D" (dst) : "c"(n), "S"(src) : "cc","memory");
-  return(ret);
-}
 
 void set_priority(int priority)
 {

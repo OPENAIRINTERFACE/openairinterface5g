@@ -9,6 +9,7 @@
 #include "PHY/defs_nr_common.h"
 #include "common/utils/nr/nr_common.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
+#include "PHY/sse_intrin.h"
 
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
@@ -20,13 +21,8 @@
 void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 {
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i idft_in128[1][3240], idft_out128[1][3240];
-  __m128i norm128;
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t idft_in128[1][3240], idft_out128[1][3240];
-  int16x8_t norm128;
-#endif
+  simde__m128i idft_in128[1][3240], idft_out128[1][3240];
+  simde__m128i norm128;
   int16_t *idft_in0 = (int16_t*)idft_in128[0], *idft_out0 = (int16_t*)idft_out128[0];
 
   int i, ip;
@@ -36,11 +32,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
   if ((Msc_PUSCH % 1536) > 0) {
     // conjugate input
     for (i = 0; i < (Msc_PUSCH>>2); i++) {
-#if defined(__x86_64__)||defined(__i386__)
-      *&(((__m128i*)z)[i]) = _mm_sign_epi16(*&(((__m128i*)z)[i]), *(__m128i*)&conjugate2[0]);
-#elif defined(__arm__) || defined(__aarch64__)
-      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
-#endif
+      *&(((simde__m128i*)z)[i]) = simde_mm_sign_epi16(*&(((simde__m128i*)z)[i]), *(simde__m128i*)&conjugate2[0]);
     }
     for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4)
       ((uint32_t*)idft_in0)[ip+0] = z[i];
@@ -50,18 +42,10 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
     case 12:
       dft(DFT_12,(int16_t *)idft_in0, (int16_t *)idft_out0,0);
 
-#if defined(__x86_64__)||defined(__i386__)
-      norm128 = _mm_set1_epi16(9459);
-#elif defined(__arm__) || defined(__aarch64__)
-      norm128 = vdupq_n_s16(9459);
-#endif
+      norm128 = simde_mm_set1_epi16(9459);
 
       for (i = 0; i < 12; i++) {
-#if defined(__x86_64__)||defined(__i386__)
-        ((__m128i*)idft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)idft_out0)[i], norm128), 1);
-#elif defined(__arm__) || defined(__aarch64__)
-        ((int16x8_t*)idft_out0)[i] = vqdmulhq_s16(((int16x8_t*)idft_out0)[i], norm128);
-#endif
+        ((simde__m128i*)idft_out0)[i] = simde_mm_slli_epi16(simde_mm_mulhi_epi16(((simde__m128i*)idft_out0)[i], norm128), 1);
       }
 
       break;
@@ -288,18 +272,12 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 
     // conjugate output
     for (i = 0; i < (Msc_PUSCH>>2); i++) {
-#if defined(__x86_64__) || defined(__i386__)
-      ((__m128i*)z)[i] = _mm_sign_epi16(((__m128i*)z)[i], *(__m128i*)&conjugate2[0]);
-#elif defined(__arm__) || defined(__aarch64__)
-      *&(((int16x8_t*)z)[i]) = vmulq_s16(*&(((int16x8_t*)z)[i]), *(int16x8_t*)&conjugate2[0]);
-#endif
+      ((simde__m128i*)z)[i] = simde_mm_sign_epi16(((simde__m128i*)z)[i], *(simde__m128i*)&conjugate2[0]);
     }
   }
 
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 
 }
 
@@ -339,18 +317,18 @@ void nr_ulsch_extract_rbs(c16_t **rxdataF,
     
     if (is_dmrs_symbol == 0) {
       if (start_re + nb_re_pusch <= frame_parms->ofdm_symbol_size) {
-        memcpy1((void*)rxF_ext, (void*)&rxF[start_re*2], nb_re_pusch*sizeof(int32_t));
+        memcpy((void*)rxF_ext, (void*)&rxF[start_re*2], nb_re_pusch*sizeof(int32_t));
       } else {
         int neg_length = frame_parms->ofdm_symbol_size-start_re;
         int pos_length = nb_re_pusch-neg_length;
-        memcpy1((void*)rxF_ext,(void*)&rxF[start_re*2],neg_length*sizeof(int32_t));
-        memcpy1((void*)&rxF_ext[2*neg_length],(void*)rxF,pos_length*sizeof(int32_t));
+        memcpy((void*)rxF_ext,(void*)&rxF[start_re*2],neg_length*sizeof(int32_t));
+        memcpy((void*)&rxF_ext[2*neg_length],(void*)rxF,pos_length*sizeof(int32_t));
       }
 
       for (aatx = 0; aatx < pusch_pdu->nrOfLayers; aatx++) {
         ul_ch0 = &pusch_vars->ul_ch_estimates[aatx*frame_parms->nb_antennas_rx+aarx][pusch_vars->dmrs_symbol*frame_parms->ofdm_symbol_size]; // update channel estimates if new dmrs symbol are available
         ul_ch0_ext = &pusch_vars->ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*nb_re_pusch2];
-        memcpy1((void*)ul_ch0_ext,(void*)ul_ch0,nb_re_pusch*sizeof(int32_t));
+        memcpy((void*)ul_ch0_ext,(void*)ul_ch0,nb_re_pusch*sizeof(int32_t));
       }
 
     } else {
@@ -407,9 +385,6 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
                             unsigned short nb_rb,
                             int shift_ch_ext)
 {
-
-#if defined(__x86_64__)||defined(__i386__)
-
   // Determine scaling amplitude based the symbol
   int b = 3;
   short ch_amp = 1024 * 8;
@@ -422,28 +397,27 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
   } else {
     b -= shift_ch_ext;
   }
-  __m128i ch_amp128 = _mm_set1_epi16(ch_amp); // Q3.13
+  simde__m128i ch_amp128 = simde_mm_set1_epi16(ch_amp); // Q3.13
   LOG_D(PHY, "Scaling PUSCH Chest in OFDM symbol %d by %d, pilots %d nb_rb %d NCP %d symbol %d\n", symbol, ch_amp, is_dmrs_symbol, nb_rb, frame_parms->Ncp, symbol);
 
   uint32_t nb_rb_0 = len / 12 + ((len % 12) ? 1 : 0);
   int off = ((nb_rb & 1) == 1) ? 4 : 0;
   for (int aatx = 0; aatx < nrOfLayers; aatx++) {
     for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
-      __m128i *ul_ch128 = (__m128i *)&ul_ch_estimates_ext[aatx * frame_parms->nb_antennas_rx + aarx][symbol * (off + (nb_rb * NR_NB_SC_PER_RB))];
+      simde__m128i *ul_ch128 = (simde__m128i *)&ul_ch_estimates_ext[aatx * frame_parms->nb_antennas_rx + aarx][symbol * (off + (nb_rb * NR_NB_SC_PER_RB))];
       for (int rb = 0; rb < nb_rb_0; rb++) {
-        ul_ch128[0] = _mm_mulhi_epi16(ul_ch128[0], ch_amp128);
-        ul_ch128[0] = _mm_slli_epi16(ul_ch128[0], b);
+        ul_ch128[0] = simde_mm_mulhi_epi16(ul_ch128[0], ch_amp128);
+        ul_ch128[0] = simde_mm_slli_epi16(ul_ch128[0], b);
 
-        ul_ch128[1] = _mm_mulhi_epi16(ul_ch128[1], ch_amp128);
-        ul_ch128[1] = _mm_slli_epi16(ul_ch128[1], b);
+        ul_ch128[1] = simde_mm_mulhi_epi16(ul_ch128[1], ch_amp128);
+        ul_ch128[1] = simde_mm_slli_epi16(ul_ch128[1], b);
 
-        ul_ch128[2] = _mm_mulhi_epi16(ul_ch128[2], ch_amp128);
-        ul_ch128[2] = _mm_slli_epi16(ul_ch128[2], b);
+        ul_ch128[2] = simde_mm_mulhi_epi16(ul_ch128[2], ch_amp128);
+        ul_ch128[2] = simde_mm_slli_epi16(ul_ch128[2], b);
         ul_ch128 += 3;
       }
     }
   }
-#endif
 }
 
 //compute average channel_level on each (TX,RX) antenna pair
@@ -456,11 +430,10 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             unsigned short nb_rb)
 {
 
-#if defined(__x86_64__)||defined(__i386__)
 
   short rb;
   unsigned char aatx, aarx;
-  __m128i *ul_ch128, avg128U;
+  simde__m128i *ul_ch128, avg128U;
 
   int16_t x = factor2(len);
   int16_t y = (len)>>x;
@@ -472,14 +445,14 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   for (aatx = 0; aatx < nrOfLayers; aatx++) {
     for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
       //clear average level
-      avg128U = _mm_setzero_si128();
+      avg128U = simde_mm_setzero_si128();
 
-      ul_ch128=(__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch128=(simde__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
       for (rb = 0; rb < nb_rb_0; rb++) {
-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));
-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));
-        avg128U = _mm_add_epi32(avg128U, _mm_srai_epi32(_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));
+        avg128U = simde_mm_add_epi32(avg128U, simde_mm_srai_epi32(simde_mm_madd_epi16(ul_ch128[0], ul_ch128[0]), x));
+        avg128U = simde_mm_add_epi32(avg128U, simde_mm_srai_epi32(simde_mm_madd_epi16(ul_ch128[1], ul_ch128[1]), x));
+        avg128U = simde_mm_add_epi32(avg128U, simde_mm_srai_epi32(simde_mm_madd_epi16(ul_ch128[2], ul_ch128[2]), x));
         ul_ch128+=3;
       }
 
@@ -490,77 +463,23 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
     }
   }
 
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 
-#elif defined(__arm__) || defined(__aarch64__)
-
-  short rb;
-  unsigned char aatx, aarx, nre = 12, symbol_mod;
-  int32x4_t avg128U;
-  int16x4_t *ul_ch128;
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-  uint32_t nb_rb_0 = len/12 + ((len%12)?1:0);
-  for (aatx=0; aatx<nrOfLayers; aatx++) {
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      //clear average level
-      avg128U = vdupq_n_s32(0);
-      // 5 is always a symbol with no pilots for both normal and extended prefix
-
-      ul_ch128 = (int16x4_t *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
-
-      for (rb = 0; rb < nb_rb_0; rb++) {
-        //  printf("rb %d : ",rb);
-        //  print_shorts("ch",&ul_ch128[0]);
-        avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[0], ul_ch128[0]));
-        avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[1], ul_ch128[1]));
-        avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[2], ul_ch128[2]));
-        avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[3], ul_ch128[3]));
-
-        if (((symbol_mod == 0) || (symbol_mod == (frame_parms->Ncp-1)))&&(nrOfLayers!=1)) {
-          ul_ch128+=4;
-        } else {
-          avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[4], ul_ch128[4]));
-          avg128U = vqaddq_s32(avg128U, vmull_s16(ul_ch128[5], ul_ch128[5]));
-          ul_ch128+=6;
-        }
-
-        /*
-          if (rb==0) {
-          print_shorts("ul_ch128",&ul_ch128[0]);
-          print_shorts("ul_ch128",&ul_ch128[1]);
-          print_shorts("ul_ch128",&ul_ch128[2]);
-          }
-        */
-      }
-
-      if (symbol==2) //assume start symbol 2
-          nre=6;
-      else
-          nre=12;
-
-      avg[aatx*frame_parms->nb_antennas_rx+aarx] = (((int32_t*)&avg128U)[0] +
-                                                    ((int32_t*)&avg128U)[1] +
-                                                    ((int32_t*)&avg128U)[2] +
-                                                    ((int32_t*)&avg128U)[3]) / (nb_rb*nre);
-    }
-  }
-#endif
 }
 
-__m128i a_mult_conjb(__m128i a, __m128i b, unsigned char output_shift)
+static simde__m128i a_mult_conjb(simde__m128i a, simde__m128i b, unsigned char output_shift)
 {
-  __m128i mmtmpD0 = _mm_madd_epi16(b, a);
-  __m128i mmtmpD1 = _mm_shufflelo_epi16(b, _MM_SHUFFLE(2, 3, 0, 1));
-  mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1, _MM_SHUFFLE(2, 3, 0, 1));
-  mmtmpD1 = _mm_sign_epi16(mmtmpD1, *(__m128i *)&conjugate[0]);
-  mmtmpD1 = _mm_madd_epi16(mmtmpD1, a);
-  mmtmpD0 = _mm_srai_epi32(mmtmpD0, output_shift);
-  mmtmpD1 = _mm_srai_epi32(mmtmpD1, output_shift);
-  __m128i mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0, mmtmpD1);
-  __m128i mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0, mmtmpD1);
-  return _mm_packs_epi32(mmtmpD2, mmtmpD3);
+  simde__m128i mmtmpD0 = simde_mm_madd_epi16(b, a);
+  simde__m128i mmtmpD1 = simde_mm_shufflelo_epi16(b, SIMDE_MM_SHUFFLE(2, 3, 0, 1));
+  mmtmpD1 = simde_mm_shufflehi_epi16(mmtmpD1, SIMDE_MM_SHUFFLE(2, 3, 0, 1));
+  mmtmpD1 = simde_mm_sign_epi16(mmtmpD1, *(simde__m128i *)&conjugate[0]);
+  mmtmpD1 = simde_mm_madd_epi16(mmtmpD1, a);
+  mmtmpD0 = simde_mm_srai_epi32(mmtmpD0, output_shift);
+  mmtmpD1 = simde_mm_srai_epi32(mmtmpD1, output_shift);
+  simde__m128i mmtmpD2 = simde_mm_unpacklo_epi32(mmtmpD0, mmtmpD1);
+  simde__m128i mmtmpD3 = simde_mm_unpackhi_epi32(mmtmpD0, mmtmpD1);
+  return simde_mm_packs_epi32(mmtmpD2, mmtmpD3);
 }
 
 //==============================================================================================
@@ -624,41 +543,40 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
 #endif
 
-#if defined(__i386) || defined(__x86_64__)
 
   unsigned short rb;
   unsigned char aatx,aarx;
-  __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*ul_ch_mag128c,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128c={0};
-  QAM_amp128b = _mm_setzero_si128();
+  simde__m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*ul_ch_mag128c,*rxdataF128,*rxdataF_comp128,*rho128;
+  simde__m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128c={0};
+  QAM_amp128b = simde_mm_setzero_si128();
 
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
   for (aatx=0; aatx<nrOfLayers; aatx++) {
     if (mod_order == 4) {
-      QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
-      QAM_amp128b = _mm_setzero_si128();
-      QAM_amp128c = _mm_setzero_si128();
-    }
+      QAM_amp128 = simde_mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
+      QAM_amp128b = simde_mm_setzero_si128();
+      QAM_amp128c = simde_mm_setzero_si128();
+    } 
     else if (mod_order == 6) {
-      QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
-      QAM_amp128b = _mm_set1_epi16(QAM64_n2);
-      QAM_amp128c = _mm_setzero_si128();
+      QAM_amp128  = simde_mm_set1_epi16(QAM64_n1); //
+      QAM_amp128b = simde_mm_set1_epi16(QAM64_n2);
+      QAM_amp128c = simde_mm_setzero_si128();
     }
     else if (mod_order == 8) {
-      QAM_amp128  = _mm_set1_epi16(QAM256_n1); //
-      QAM_amp128b = _mm_set1_epi16(QAM256_n2);
-      QAM_amp128c = _mm_set1_epi16(QAM256_n3);
+      QAM_amp128  = simde_mm_set1_epi16(QAM256_n1); //
+      QAM_amp128b = simde_mm_set1_epi16(QAM256_n2);
+      QAM_amp128c = simde_mm_set1_epi16(QAM256_n3);
     }
 
     //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++)  {
-      ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-      ul_ch_mag128      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-      ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-      ul_ch_mag128c     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-      rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*(off+(nb_rb*12))];
-      rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch128          = (simde__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128      = (simde__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128b     = (simde__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128c     = (simde__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      rxdataF128        = (simde__m128i *)&rxdataF_ext[aarx][symbol*(off+(nb_rb*12))];
+      rxdataF_comp128   = (simde__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
 
       for (rb=0; rb<nb_rb_0; rb++) {
@@ -667,44 +585,44 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
           //print_shorts("ch:",(int16_t*)&ul_ch128[0]);
 
-          mmtmpD0 = _mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD0 = simde_mm_madd_epi16(ul_ch128[0],ul_ch128[0]);
+          mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift);
 
-          mmtmpD1 = _mm_madd_epi16(ul_ch128[1],ul_ch128[1]);
-          mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+          mmtmpD1 = simde_mm_madd_epi16(ul_ch128[1],ul_ch128[1]);
+          mmtmpD1 = simde_mm_srai_epi32(mmtmpD1,output_shift);
 
-          mmtmpD0 = _mm_packs_epi32(mmtmpD0,mmtmpD1);
+          mmtmpD0 = simde_mm_packs_epi32(mmtmpD0,mmtmpD1);
 
           // store channel magnitude here in a new field of ulsch
 
-          ul_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
+          ul_ch_mag128[0] = simde_mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
           ul_ch_mag128b[0] = ul_ch_mag128[0];
           ul_ch_mag128c[0] = ul_ch_mag128[0];
-          ul_ch_mag128[0] = _mm_mulhrs_epi16(ul_ch_mag128[0],QAM_amp128);
-          ul_ch_mag128b[0] = _mm_mulhrs_epi16(ul_ch_mag128b[0],QAM_amp128b);
-          ul_ch_mag128c[0] = _mm_mulhrs_epi16(ul_ch_mag128c[0],QAM_amp128c);
+          ul_ch_mag128[0] = simde_mm_mulhrs_epi16(ul_ch_mag128[0],QAM_amp128);
+          ul_ch_mag128b[0] = simde_mm_mulhrs_epi16(ul_ch_mag128b[0],QAM_amp128b);
+          ul_ch_mag128c[0] = simde_mm_mulhrs_epi16(ul_ch_mag128c[0],QAM_amp128c);
           // print_ints("ch: = ",(int32_t*)&mmtmpD0);
           // print_shorts("QAM_amp:",(int16_t*)&QAM_amp128);
           // print_shorts("mag:",(int16_t*)&ul_ch_mag128[0]);
 
-          ul_ch_mag128[1]  = _mm_unpackhi_epi16(mmtmpD0,mmtmpD0);
+          ul_ch_mag128[1]  = simde_mm_unpackhi_epi16(mmtmpD0,mmtmpD0);
           ul_ch_mag128b[1] = ul_ch_mag128[1];
           ul_ch_mag128c[1] = ul_ch_mag128[1];
-          ul_ch_mag128[1]  = _mm_mulhrs_epi16(ul_ch_mag128[1],QAM_amp128);
-          ul_ch_mag128b[1] = _mm_mulhrs_epi16(ul_ch_mag128b[1],QAM_amp128b);
-          ul_ch_mag128c[1] = _mm_mulhrs_epi16(ul_ch_mag128c[1],QAM_amp128c);
+          ul_ch_mag128[1]  = simde_mm_mulhrs_epi16(ul_ch_mag128[1],QAM_amp128);
+          ul_ch_mag128b[1] = simde_mm_mulhrs_epi16(ul_ch_mag128b[1],QAM_amp128b);
+          ul_ch_mag128c[1] = simde_mm_mulhrs_epi16(ul_ch_mag128c[1],QAM_amp128c);
 
-          mmtmpD0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
-          mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-          mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
+          mmtmpD0 = simde_mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
+          mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift);
+          mmtmpD1 = simde_mm_packs_epi32(mmtmpD0,mmtmpD0);
 
-          ul_ch_mag128[2]  = _mm_unpacklo_epi16(mmtmpD1,mmtmpD1);
+          ul_ch_mag128[2]  = simde_mm_unpacklo_epi16(mmtmpD1,mmtmpD1);
           ul_ch_mag128b[2] = ul_ch_mag128[2];
           ul_ch_mag128c[2] = ul_ch_mag128[2];
 
-          ul_ch_mag128[2]  = _mm_mulhrs_epi16(ul_ch_mag128[2],QAM_amp128);
-          ul_ch_mag128b[2] = _mm_mulhrs_epi16(ul_ch_mag128b[2],QAM_amp128b);
-          ul_ch_mag128c[2] = _mm_mulhrs_epi16(ul_ch_mag128c[2],QAM_amp128c);
+          ul_ch_mag128[2]  = simde_mm_mulhrs_epi16(ul_ch_mag128[2],QAM_amp128);
+          ul_ch_mag128b[2] = simde_mm_mulhrs_epi16(ul_ch_mag128b[2],QAM_amp128b);
+          ul_ch_mag128c[2] = simde_mm_mulhrs_epi16(ul_ch_mag128c[2],QAM_amp128c);
         }
 
         // Multiply received data by conjugated channel
@@ -737,31 +655,31 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
           avg_rho_re[aarx][aatx*nrOfLayers+atx] = 0;
           avg_rho_im[aarx][aatx*nrOfLayers+atx] = 0;
-          rho128        = (__m128i *)&rho[aarx][aatx*nrOfLayers+atx][symbol*(off+(nb_rb*12))];
-          ul_ch128      = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
-          ul_ch128_2    = (__m128i *)&ul_ch_estimates_ext[atx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+          rho128        = (simde__m128i *)&rho[aarx][aatx*nrOfLayers+atx][symbol*(off+(nb_rb*12))];
+          ul_ch128      = (simde__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+          ul_ch128_2    = (simde__m128i *)&ul_ch_estimates_ext[atx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
           for (rb=0; rb<nb_rb_0; rb++) {
             // multiply by conjugated channel
-            mmtmpD0 = _mm_madd_epi16(ul_ch128[0],ul_ch128_2[0]);
+            mmtmpD0 = simde_mm_madd_epi16(ul_ch128[0],ul_ch128_2[0]);
             //  print_ints("re",&mmtmpD0);
 
             // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-            mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[0],_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
+            mmtmpD1 = simde_mm_shufflelo_epi16(ul_ch128[0], SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_shufflehi_epi16(mmtmpD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_sign_epi16(mmtmpD1,*(simde__m128i*)&conjugate[0]);
             //  print_ints("im",&mmtmpD1);
-            mmtmpD1 = _mm_madd_epi16(mmtmpD1,ul_ch128_2[0]);
+            mmtmpD1 = simde_mm_madd_epi16(mmtmpD1,ul_ch128_2[0]);
             // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-            mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
+            mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift);
             //  print_ints("re(shift)",&mmtmpD0);
-            mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
+            mmtmpD1 = simde_mm_srai_epi32(mmtmpD1,output_shift);
             //  print_ints("im(shift)",&mmtmpD1);
-            mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-            mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+            mmtmpD2 = simde_mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+            mmtmpD3 = simde_mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
             //        print_ints("c0",&mmtmpD2);
             //  print_ints("c1",&mmtmpD3);
-            rho128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+            rho128[0] = simde_mm_packs_epi32(mmtmpD2,mmtmpD3);
 
             //print_shorts("rx:",ul_ch128_2);
             //print_shorts("ch:",ul_ch128);
@@ -777,18 +695,18 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
               ((int16_t*)&rho128[0])[5] +
               ((int16_t*)&rho128[0])[7])/16;//
             // multiply by conjugated channel
-            mmtmpD0 = _mm_madd_epi16(ul_ch128[1],ul_ch128_2[1]);
+            mmtmpD0 = simde_mm_madd_epi16(ul_ch128[1],ul_ch128_2[1]);
             // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-            mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[1],_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-            mmtmpD1 = _mm_madd_epi16(mmtmpD1,ul_ch128_2[1]);
+            mmtmpD1 = simde_mm_shufflelo_epi16(ul_ch128[1], SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_shufflehi_epi16(mmtmpD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_sign_epi16(mmtmpD1,*(simde__m128i*)conjugate);
+            mmtmpD1 = simde_mm_madd_epi16(mmtmpD1,ul_ch128_2[1]);
             // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-            mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-            mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-            mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-            mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-            rho128[1] =_mm_packs_epi32(mmtmpD2,mmtmpD3);
+            mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift);
+            mmtmpD1 = simde_mm_srai_epi32(mmtmpD1,output_shift);
+            mmtmpD2 = simde_mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+            mmtmpD3 = simde_mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+            rho128[1] =simde_mm_packs_epi32(mmtmpD2,mmtmpD3);
             //print_shorts("rx:",ul_ch128_2+1);
             //print_shorts("ch:",ul_ch128+1);
             //print_shorts("pack:",rho128+1);
@@ -804,19 +722,19 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
               ((int16_t*)&rho128[1])[5] +
               ((int16_t*)&rho128[1])[7])/16;
 
-            mmtmpD0 = _mm_madd_epi16(ul_ch128[2],ul_ch128_2[2]);
+            mmtmpD0 = simde_mm_madd_epi16(ul_ch128[2],ul_ch128_2[2]);
             // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-            mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[2],_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-            mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-            mmtmpD1 = _mm_madd_epi16(mmtmpD1,ul_ch128_2[2]);
+            mmtmpD1 = simde_mm_shufflelo_epi16(ul_ch128[2], SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_shufflehi_epi16(mmtmpD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+            mmtmpD1 = simde_mm_sign_epi16(mmtmpD1,*(simde__m128i*)conjugate);
+            mmtmpD1 = simde_mm_madd_epi16(mmtmpD1,ul_ch128_2[2]);
             // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-            mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-            mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-            mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-            mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+            mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift);
+            mmtmpD1 = simde_mm_srai_epi32(mmtmpD1,output_shift);
+            mmtmpD2 = simde_mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+            mmtmpD3 = simde_mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
-            rho128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+            rho128[2] = simde_mm_packs_epi32(mmtmpD2,mmtmpD3);
             //print_shorts("rx:",ul_ch128_2+2);
             //print_shorts("ch:",ul_ch128+2);
             //print_shorts("pack:",rho128+2);
@@ -845,204 +763,8 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
     }
   }
 
-  _mm_empty();
-  _m_empty();
-
-#elif defined(__arm__) || defined(__aarch64__)
-
-  unsigned short rb;
-  unsigned char aatx,aarx,symbol_mod,is_dmrs_symbol=0;
-
-  int16x4_t *ul_ch128,*ul_ch128_2,*rxdataF128;
-  int32x4_t mmtmpD0,mmtmpD1,mmtmpD0b,mmtmpD1b;
-  int16x8_t *ul_ch_mag128,*ul_ch_mag128b,mmtmpD2,mmtmpD3,mmtmpD4;
-  int16x8_t QAM_amp128,QAM_amp128b;
-  int16x4x2_t *rxdataF_comp128,*rho128;
-
-  int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
-  int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
-
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
-
-  if ((symbol_mod == 0) || (symbol_mod == (4-frame_parms->Ncp))) {
-    if (nrOfLayers==1) { // 10 out of 12 so don't reduce size
-      nb_rb=1+(5*nb_rb/6);
-    }
-    else {
-      is_dmrs_symbol=1;
-    }
-  }
-
-  for (aatx=0; aatx<nrOfLayers; aatx++) {
-    if (mod_order == 4) {
-      QAM_amp128  = vmovq_n_s16(QAM16_n1);  // 2/sqrt(10)
-      QAM_amp128b = vmovq_n_s16(0);
-    } else if (mod_order == 6) {
-      QAM_amp128  = vmovq_n_s16(QAM64_n1); //
-      QAM_amp128b = vmovq_n_s16(QAM64_n2);
-    }
-    //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
-
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      ul_ch128          = (int16x4_t*)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch_mag128      = (int16x8_t*)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch_mag128b     = (int16x8_t*)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
-      rxdataF128        = (int16x4_t*)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_UL*12];
-      rxdataF_comp128   = (int16x4x2_t*)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*frame_parms->N_RB_UL*12];
-
-      for (rb=0; rb<nb_rb; rb++) {
-  if (mod_order>2) {
-    // get channel amplitude if not QPSK
-    mmtmpD0 = vmull_s16(ul_ch128[0], ul_ch128[0]);
-    // mmtmpD0 = [ch0*ch0,ch1*ch1,ch2*ch2,ch3*ch3];
-    mmtmpD0 = vqshlq_s32(vqaddq_s32(mmtmpD0,vrev64q_s32(mmtmpD0)),output_shift128);
-    // mmtmpD0 = [ch0*ch0 + ch1*ch1,ch0*ch0 + ch1*ch1,ch2*ch2 + ch3*ch3,ch2*ch2 + ch3*ch3]>>output_shift128 on 32-bits
-    mmtmpD1 = vmull_s16(ul_ch128[1], ul_ch128[1]);
-    mmtmpD1 = vqshlq_s32(vqaddq_s32(mmtmpD1,vrev64q_s32(mmtmpD1)),output_shift128);
-    mmtmpD2 = vcombine_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-    // mmtmpD2 = [ch0*ch0 + ch1*ch1,ch0*ch0 + ch1*ch1,ch2*ch2 + ch3*ch3,ch2*ch2 + ch3*ch3,ch4*ch4 + ch5*ch5,ch4*ch4 + ch5*ch5,ch6*ch6 + ch7*ch7,ch6*ch6 + ch7*ch7]>>output_shift128 on 16-bits
-    mmtmpD0 = vmull_s16(ul_ch128[2], ul_ch128[2]);
-    mmtmpD0 = vqshlq_s32(vqaddq_s32(mmtmpD0,vrev64q_s32(mmtmpD0)),output_shift128);
-    mmtmpD1 = vmull_s16(ul_ch128[3], ul_ch128[3]);
-    mmtmpD1 = vqshlq_s32(vqaddq_s32(mmtmpD1,vrev64q_s32(mmtmpD1)),output_shift128);
-    mmtmpD3 = vcombine_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-    if (is_dmrs_symbol==0) {
-      mmtmpD0 = vmull_s16(ul_ch128[4], ul_ch128[4]);
-      mmtmpD0 = vqshlq_s32(vqaddq_s32(mmtmpD0,vrev64q_s32(mmtmpD0)),output_shift128);
-      mmtmpD1 = vmull_s16(ul_ch128[5], ul_ch128[5]);
-      mmtmpD1 = vqshlq_s32(vqaddq_s32(mmtmpD1,vrev64q_s32(mmtmpD1)),output_shift128);
-      mmtmpD4 = vcombine_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-    }
-
-    ul_ch_mag128b[0] = vqdmulhq_s16(mmtmpD2,QAM_amp128b);
-    ul_ch_mag128b[1] = vqdmulhq_s16(mmtmpD3,QAM_amp128b);
-    ul_ch_mag128[0] = vqdmulhq_s16(mmtmpD2,QAM_amp128);
-    ul_ch_mag128[1] = vqdmulhq_s16(mmtmpD3,QAM_amp128);
-
-    if (is_dmrs_symbol==0) {
-      ul_ch_mag128b[2] = vqdmulhq_s16(mmtmpD4,QAM_amp128b);
-      ul_ch_mag128[2]  = vqdmulhq_s16(mmtmpD4,QAM_amp128);
-    }
-  }
-
-  mmtmpD0 = vmull_s16(ul_ch128[0], rxdataF128[0]);
-  //mmtmpD0 = [Re(ch[0])Re(rx[0]) Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1]) Im(ch[1])Im(ch[1])]
-  mmtmpD1 = vmull_s16(ul_ch128[1], rxdataF128[1]);
-  //mmtmpD1 = [Re(ch[2])Re(rx[2]) Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3]) Im(ch[3])Im(ch[3])]
-  mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-             vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-  //mmtmpD0 = [Re(ch[0])Re(rx[0])+Im(ch[0])Im(ch[0]) Re(ch[1])Re(rx[1])+Im(ch[1])Im(ch[1]) Re(ch[2])Re(rx[2])+Im(ch[2])Im(ch[2]) Re(ch[3])Re(rx[3])+Im(ch[3])Im(ch[3])]
-
-  mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[0],*(int16x4_t*)conj)), rxdataF128[0]);
-  //mmtmpD0 = [-Im(ch[0])Re(rx[0]) Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1]) Re(ch[1])Im(rx[1])]
-  mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[1],*(int16x4_t*)conj)), rxdataF128[1]);
-  //mmtmpD0 = [-Im(ch[2])Re(rx[2]) Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3]) Re(ch[3])Im(rx[3])]
-  mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-             vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-  //mmtmpD1 = [-Im(ch[0])Re(rx[0])+Re(ch[0])Im(rx[0]) -Im(ch[1])Re(rx[1])+Re(ch[1])Im(rx[1]) -Im(ch[2])Re(rx[2])+Re(ch[2])Im(rx[2]) -Im(ch[3])Re(rx[3])+Re(ch[3])Im(rx[3])]
-
-  mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-  mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-  rxdataF_comp128[0] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-  mmtmpD0 = vmull_s16(ul_ch128[2], rxdataF128[2]);
-  mmtmpD1 = vmull_s16(ul_ch128[3], rxdataF128[3]);
-  mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-             vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-  mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[2],*(int16x4_t*)conj)), rxdataF128[2]);
-  mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[3],*(int16x4_t*)conj)), rxdataF128[3]);
-  mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-             vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-  mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-  mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-  rxdataF_comp128[1] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-
-  if (is_dmrs_symbol==0) {
-    mmtmpD0 = vmull_s16(ul_ch128[4], rxdataF128[4]);
-    mmtmpD1 = vmull_s16(ul_ch128[5], rxdataF128[5]);
-    mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-         vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-
-    mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[4],*(int16x4_t*)conj)), rxdataF128[4]);
-    mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[5],*(int16x4_t*)conj)), rxdataF128[5]);
-    mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-         vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-
-
-    mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-    mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-    rxdataF_comp128[2] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-
-
-    ul_ch128+=6;
-    ul_ch_mag128+=3;
-    ul_ch_mag128b+=3;
-    rxdataF128+=6;
-    rxdataF_comp128+=3;
-
-  } else { // we have a smaller PUSCH in symbols with pilots so skip last group of 4 REs and increment less
-    ul_ch128+=4;
-    ul_ch_mag128+=2;
-    ul_ch_mag128b+=2;
-    rxdataF128+=4;
-    rxdataF_comp128+=2;
-  }
-      }
-    }
-  }
-
-  if (rho) {
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      rho128        = (int16x4x2_t*)&rho[aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch128      = (int16x4_t*)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_UL*12];
-      ul_ch128_2    = (int16x4_t*)&ul_ch_estimates_ext[2+aarx][symbol*frame_parms->N_RB_UL*12];
-      for (rb=0; rb<nb_rb; rb++) {
-  mmtmpD0 = vmull_s16(ul_ch128[0], ul_ch128_2[0]);
-  mmtmpD1 = vmull_s16(ul_ch128[1], ul_ch128_2[1]);
-  mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-             vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-  mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[0],*(int16x4_t*)conj)), ul_ch128_2[0]);
-  mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[1],*(int16x4_t*)conj)), ul_ch128_2[1]);
-  mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-             vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-
-  mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-  mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-  rho128[0] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-
-  mmtmpD0 = vmull_s16(ul_ch128[2], ul_ch128_2[2]);
-  mmtmpD1 = vmull_s16(ul_ch128[3], ul_ch128_2[3]);
-  mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-             vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-  mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[2],*(int16x4_t*)conj)), ul_ch128_2[2]);
-  mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[3],*(int16x4_t*)conj)), ul_ch128_2[3]);
-  mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-             vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-
-  mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-  mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-  rho128[1] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-
-  mmtmpD0 = vmull_s16(ul_ch128[0], ul_ch128_2[0]);
-  mmtmpD1 = vmull_s16(ul_ch128[1], ul_ch128_2[1]);
-  mmtmpD0 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0),vget_high_s32(mmtmpD0)),
-             vpadd_s32(vget_low_s32(mmtmpD1),vget_high_s32(mmtmpD1)));
-  mmtmpD0b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[4],*(int16x4_t*)conj)), ul_ch128_2[4]);
-  mmtmpD1b = vmull_s16(vrev32_s16(vmul_s16(ul_ch128[5],*(int16x4_t*)conj)), ul_ch128_2[5]);
-  mmtmpD1 = vcombine_s32(vpadd_s32(vget_low_s32(mmtmpD0b),vget_high_s32(mmtmpD0b)),
-             vpadd_s32(vget_low_s32(mmtmpD1b),vget_high_s32(mmtmpD1b)));
-
-  mmtmpD0 = vqshlq_s32(mmtmpD0,output_shift128);
-  mmtmpD1 = vqshlq_s32(mmtmpD1,output_shift128);
-  rho128[2] = vzip_s16(vmovn_s32(mmtmpD0),vmovn_s32(mmtmpD1));
-
-
-  ul_ch128+=6;
-  ul_ch128_2+=6;
-  rho128+=3;
-      }
-    }
-  }
-#endif
+  simde_mm_empty();
+  simde_m_empty();
 
 
 #ifdef DEBUG_CH_COMP
@@ -1089,81 +811,54 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                 uint16_t nb_rb,
                 int length) {
   int n_rx = frame_parms->nb_antennas_rx;
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxdataF_comp128[2],*ul_ch_mag128[2],*ul_ch_mag128b[2],*ul_ch_mag128c[2];
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
-  int16x8_t *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
-#endif
+  simde__m128i *rxdataF_comp128[2],*ul_ch_mag128[2],*ul_ch_mag128b[2],*ul_ch_mag128c[2];
   int32_t i;
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
 
   int off = ((nb_rb&1) == 1)? 4:0;
 
   if (n_rx > 1) {
-    #if defined(__x86_64__) || defined(__i386__)
 
     int nb_re = nb_rb * 12;
 
     for (int aatx = 0; aatx < nrOfLayers; aatx++) {
 
-      rxdataF_comp128[0]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
-      ul_ch_mag128[0]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
-      ul_ch_mag128b[0]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
-      ul_ch_mag128c[0]     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
+      rxdataF_comp128[0]   = (simde__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
+      ul_ch_mag128[0]      = (simde__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
+      ul_ch_mag128b[0]     = (simde__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
+      ul_ch_mag128c[0]     = (simde__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
 
       for (int aa=1;aa < n_rx;aa++) {
-        rxdataF_comp128[1]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
-        ul_ch_mag128[1]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
-        ul_ch_mag128b[1]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
-        ul_ch_mag128c[1]     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
+        rxdataF_comp128[1]   = (simde__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
+        ul_ch_mag128[1]      = (simde__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
+        ul_ch_mag128b[1]     = (simde__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
+        ul_ch_mag128c[1]     = (simde__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
 
         // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
         for (i=0; i<nb_rb_0*3; i++) {
-            rxdataF_comp128[0][i] = _mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[1][i]);
-            ul_ch_mag128[0][i]    = _mm_adds_epi16(ul_ch_mag128[0][i],ul_ch_mag128[1][i]);
-            ul_ch_mag128b[0][i]   = _mm_adds_epi16(ul_ch_mag128b[0][i],ul_ch_mag128b[1][i]);
-            ul_ch_mag128c[0][i]   = _mm_adds_epi16(ul_ch_mag128c[0][i],ul_ch_mag128c[1][i]);
+            rxdataF_comp128[0][i] = simde_mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[1][i]);
+            ul_ch_mag128[0][i]    = simde_mm_adds_epi16(ul_ch_mag128[0][i],ul_ch_mag128[1][i]);
+            ul_ch_mag128b[0][i]   = simde_mm_adds_epi16(ul_ch_mag128b[0][i],ul_ch_mag128b[1][i]);
+            ul_ch_mag128c[0][i]   = simde_mm_adds_epi16(ul_ch_mag128c[0][i],ul_ch_mag128c[1][i]);
             //rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
         }
       }
 
       if (rho) {
-        __m128i *rho128[2];
+        simde__m128i *rho128[2];
         for (int aatx2 = 0; aatx2 < nrOfLayers; aatx2++) {
-          rho128[0] = (__m128i *) &rho[0][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
+          rho128[0] = (simde__m128i *) &rho[0][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
           for (int aa = 1; aa < n_rx; aa++) {
-            rho128[1] = (__m128i *) &rho[aa][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
+            rho128[1] = (simde__m128i *) &rho[aa][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
             for (i = 0; i < nb_rb_0 * 3; i++) {
-              rho128[0][i] = _mm_adds_epi16(rho128[0][i], rho128[1][i]);
+              rho128[0][i] = simde_mm_adds_epi16(rho128[0][i], rho128[1][i]);
             }
           }
         }
       }
 
     }
-    #elif defined(__arm__) || defined(__aarch64__)
-    rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
-    rxdataF_comp128_1   = (int16x8_t *)&rxdataF_comp[1][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128_0      = (int16x8_t *)&ul_ch_mag[0][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128_1      = (int16x8_t *)&ul_ch_mag[1][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128_0b     = (int16x8_t *)&ul_ch_magb[0][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128_1b     = (int16x8_t *)&ul_ch_magb[1][symbol*frame_parms->N_RB_DL*12];
-      
-    // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
-    for (i=0; i<nb_rb*3; i++) {
-      rxdataF_comp128_0[i] = vhaddq_s16(rxdataF_comp128_0[i],rxdataF_comp128_1[i]);
-      ul_ch_mag128_0[i]    = vhaddq_s16(ul_ch_mag128_0[i],ul_ch_mag128_1[i]);
-      ul_ch_mag128_0b[i]   = vhaddq_s16(ul_ch_mag128_0b[i],ul_ch_mag128_1b[i]);
-      rxdataF_comp128_0[i] = vqaddq_s16(rxdataF_comp128_0[i],(*(int16x8_t *)&jitterc[0]));
-    }
-    #endif
   }
-
-#if defined(__x86_64__) || defined(__i386__)
-  _mm_empty();
-  _m_empty();
-#endif
 }
 
 /* Zero Forcing Rx function: nr_det_HhH()
@@ -1181,39 +876,39 @@ void nr_ulsch_det_HhH(int32_t *after_mf_00,//a
 {
   int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
   unsigned short rb;
-  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128; //ad_im_128, bc_im_128;
-  __m128i *det_fin_128, det_re_128; //det_im_128, tmp_det0, tmp_det1;
+  simde__m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128; //ad_im_128, bc_im_128;
+  simde__m128i *det_fin_128, det_re_128; //det_im_128, tmp_det0, tmp_det1;
 
-  after_mf_00_128 = (__m128i *)after_mf_00;
-  after_mf_01_128 = (__m128i *)after_mf_01;
-  after_mf_10_128 = (__m128i *)after_mf_10;
-  after_mf_11_128 = (__m128i *)after_mf_11;
+  after_mf_00_128 = (simde__m128i *)after_mf_00;
+  after_mf_01_128 = (simde__m128i *)after_mf_01;
+  after_mf_10_128 = (simde__m128i *)after_mf_10;
+  after_mf_11_128 = (simde__m128i *)after_mf_11;
 
-  det_fin_128 = (__m128i *)det_fin;
+  det_fin_128 = (simde__m128i *)det_fin;
 
   for (rb=0; rb<3*nb_rb; rb++) {
 
     //complex multiplication (I_a+jQ_a)(I_d+jQ_d) = (I_aI_d - Q_aQ_d) + j(Q_aI_d + I_aQ_d)
     //The imag part is often zero, we compute only the real part
-    ad_re_128 = _mm_sign_epi16(after_mf_00_128[0],*(__m128i*)&nr_conjug2[0]);
-    ad_re_128 = _mm_madd_epi16(ad_re_128,after_mf_11_128[0]); //Re: I_a0*I_d0 - Q_a1*Q_d1
-    //ad_im_128 = _mm_shufflelo_epi16(after_mf_00_128[0],_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-    //ad_im_128 = _mm_shufflehi_epi16(ad_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-    //ad_im_128 = _mm_madd_epi16(ad_im_128,after_mf_11_128[0]);//Im: (Q_aI_d + I_aQ_d)
+    ad_re_128 = simde_mm_sign_epi16(after_mf_00_128[0],*(simde__m128i*)&nr_conjug2[0]);
+    ad_re_128 = simde_mm_madd_epi16(ad_re_128,after_mf_11_128[0]); //Re: I_a0*I_d0 - Q_a1*Q_d1
+    //ad_im_128 = simde_mm_shufflelo_epi16(after_mf_00_128[0], SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+    //ad_im_128 = simde_mm_shufflehi_epi16(ad_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+    //ad_im_128 = simde_mm_madd_epi16(ad_im_128,after_mf_11_128[0]);//Im: (Q_aI_d + I_aQ_d)
 
     //complex multiplication (I_b+jQ_b)(I_c+jQ_c) = (I_bI_c - Q_bQ_c) + j(Q_bI_c + I_bQ_c)
     //The imag part is often zero, we compute only the real part
-    bc_re_128 = _mm_sign_epi16(after_mf_01_128[0],*(__m128i*)&nr_conjug2[0]);
-    bc_re_128 = _mm_madd_epi16(bc_re_128,after_mf_10_128[0]); //Re: I_b0*I_c0 - Q_b1*Q_c1
-    //bc_im_128 = _mm_shufflelo_epi16(after_mf_01_128[0],_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
-    //bc_im_128 = _mm_shufflehi_epi16(bc_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
-    //bc_im_128 = _mm_madd_epi16(bc_im_128,after_mf_10_128[0]);//Im: (Q_bI_c + I_bQ_c)
+    bc_re_128 = simde_mm_sign_epi16(after_mf_01_128[0],*(simde__m128i*)&nr_conjug2[0]);
+    bc_re_128 = simde_mm_madd_epi16(bc_re_128,after_mf_10_128[0]); //Re: I_b0*I_c0 - Q_b1*Q_c1
+    //bc_im_128 = simde_mm_shufflelo_epi16(after_mf_01_128[0], SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
+    //bc_im_128 = simde_mm_shufflehi_epi16(bc_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_b0 Q_b1 I_b2 Q_b3]_64bits to [Q_b1 I_b0 Q_b3 I_b2]_64bits
+    //bc_im_128 = simde_mm_madd_epi16(bc_im_128,after_mf_10_128[0]);//Im: (Q_bI_c + I_bQ_c)
 
-    det_re_128 = _mm_sub_epi32(ad_re_128, bc_re_128);
-    //det_im_128 = _mm_sub_epi32(ad_im_128, bc_im_128);
+    det_re_128 = simde_mm_sub_epi32(ad_re_128, bc_re_128);
+    //det_im_128 = simde_mm_sub_epi32(ad_im_128, bc_im_128);
 
     //det in Q30 format
-    det_fin_128[0] = _mm_abs_epi32(det_re_128);
+    det_fin_128[0] = simde_mm_abs_epi32(det_re_128);
 
 
 #ifdef DEBUG_DLSCH_DEMOD
@@ -1228,45 +923,45 @@ void nr_ulsch_det_HhH(int32_t *after_mf_00,//a
     after_mf_10_128+=1;
     after_mf_11_128+=1;
   }
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 }
 
 /* Zero Forcing Rx function: nr_inv_comp_muli
  * Complex number multi: z = x*y
  *                         = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
  * */
-__m128i nr_ulsch_inv_comp_muli(__m128i input_x,
-                         __m128i input_y)
+simde__m128i nr_ulsch_inv_comp_muli(simde__m128i input_x,
+                         simde__m128i input_y)
 {
   int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 
-  __m128i xy_re_128, xy_im_128;
-  __m128i output_z, tmp_z0, tmp_z1;
+  simde__m128i xy_re_128, xy_im_128;
+  simde__m128i output_z, tmp_z0, tmp_z1;
 
   // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
 
   // the real part
-  xy_re_128 = _mm_sign_epi16(input_x,*(__m128i*)&nr_conjug2[0]);
-  xy_re_128 = _mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
+  xy_re_128 = simde_mm_sign_epi16(input_x,*(simde__m128i*)&nr_conjug2[0]);
+  xy_re_128 = simde_mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
 
   // the imag part
-  xy_im_128 = _mm_shufflelo_epi16(input_x,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_shufflehi_epi16(xy_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
+  xy_im_128 = simde_mm_shufflelo_epi16(input_x, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = simde_mm_shufflehi_epi16(xy_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = simde_mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
 
   //convert back to Q15 before packing
-  xy_re_128 = _mm_srai_epi32(xy_re_128,4);//(2^15/64*2*16)
-  xy_im_128 = _mm_srai_epi32(xy_im_128,4);
+  xy_re_128 = simde_mm_srai_epi32(xy_re_128,4);//(2^15/64*2*16)
+  xy_im_128 = simde_mm_srai_epi32(xy_im_128,4);
 
-  tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
+  tmp_z0  = simde_mm_unpacklo_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack lo:",&tmp_z0[0]);
-  tmp_z1  = _mm_unpackhi_epi32(xy_re_128,xy_im_128);
+  tmp_z1  = simde_mm_unpackhi_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack hi:",&tmp_z1[0]);
-  output_z = _mm_packs_epi32(tmp_z0,tmp_z1);
+  output_z = simde_mm_packs_epi32(tmp_z0,tmp_z1);
 
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
   return(output_z);
 }
 
@@ -1283,26 +978,26 @@ void nr_ulsch_conjch0_mult_ch1(int *ch0,
   //This function is used to compute multiplications in H_hermitian * H matrix
   short nr_conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
   unsigned short rb;
-  __m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
+  simde__m128i *dl_ch0_128,*dl_ch1_128, *ch0conj_ch1_128, mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
 
-  dl_ch0_128 = (__m128i *)ch0;
-  dl_ch1_128 = (__m128i *)ch1;
+  dl_ch0_128 = (simde__m128i *)ch0;
+  dl_ch1_128 = (simde__m128i *)ch1;
 
-  ch0conj_ch1_128 = (__m128i *)ch0conj_ch1;
+  ch0conj_ch1_128 = (simde__m128i *)ch0conj_ch1;
 
   for (rb=0; rb<3*nb_rb; rb++) {
 
-    mmtmpD0 = _mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
-    mmtmpD1 = _mm_shufflelo_epi16(dl_ch0_128[0],_MM_SHUFFLE(2,3,0,1));
-    mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-    mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&nr_conjugate[0]);
-    mmtmpD1 = _mm_madd_epi16(mmtmpD1,dl_ch1_128[0]);
-    mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift0);
-    mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift0);
-    mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-    mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
+    mmtmpD0 = simde_mm_madd_epi16(dl_ch0_128[0],dl_ch1_128[0]);
+    mmtmpD1 = simde_mm_shufflelo_epi16(dl_ch0_128[0], SIMDE_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = simde_mm_shufflehi_epi16(mmtmpD1, SIMDE_MM_SHUFFLE(2,3,0,1));
+    mmtmpD1 = simde_mm_sign_epi16(mmtmpD1,*(simde__m128i*)&nr_conjugate[0]);
+    mmtmpD1 = simde_mm_madd_epi16(mmtmpD1,dl_ch1_128[0]);
+    mmtmpD0 = simde_mm_srai_epi32(mmtmpD0,output_shift0);
+    mmtmpD1 = simde_mm_srai_epi32(mmtmpD1,output_shift0);
+    mmtmpD2 = simde_mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
+    mmtmpD3 = simde_mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
 
-    ch0conj_ch1_128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
+    ch0conj_ch1_128[0] = simde_mm_packs_epi32(mmtmpD2,mmtmpD3);
 
     /*printf("\n Computing conjugates \n");
     print_shorts("ch0:",(int16_t*)&dl_ch0_128[0]);
@@ -1313,43 +1008,43 @@ void nr_ulsch_conjch0_mult_ch1(int *ch0,
     dl_ch1_128+=1;
     ch0conj_ch1_128+=1;
   }
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 }
-__m128i nr_ulsch_comp_muli_sum(__m128i input_x,
-                         __m128i input_y,
-                         __m128i input_w,
-                         __m128i input_z,
-                         __m128i det)
+simde__m128i nr_ulsch_comp_muli_sum(simde__m128i input_x,
+                         simde__m128i input_y,
+                         simde__m128i input_w,
+                         simde__m128i input_z,
+                         simde__m128i det)
 {
   int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 
-  __m128i xy_re_128, xy_im_128, wz_re_128, wz_im_128;
-  __m128i output, tmp_z0, tmp_z1;
+  simde__m128i xy_re_128, xy_im_128, wz_re_128, wz_im_128;
+  simde__m128i output, tmp_z0, tmp_z1;
 
   // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
   // the real part
-  xy_re_128 = _mm_sign_epi16(input_x,*(__m128i*)&nr_conjug2[0]);
-  xy_re_128 = _mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
+  xy_re_128 = simde_mm_sign_epi16(input_x,*(simde__m128i*)&nr_conjug2[0]);
+  xy_re_128 = simde_mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
 
   // the imag part
-  xy_im_128 = _mm_shufflelo_epi16(input_x,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_shufflehi_epi16(xy_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = _mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
+  xy_im_128 = simde_mm_shufflelo_epi16(input_x, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = simde_mm_shufflehi_epi16(xy_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  xy_im_128 = simde_mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
 
   // complex multiplication (w_re + jw_im)*(z_re + jz_im) = (w_re*z_re - w_im*z_im) + j(w_im*z_re + w_re*z_im)
   // the real part
-  wz_re_128 = _mm_sign_epi16(input_w,*(__m128i*)&nr_conjug2[0]);
-  wz_re_128 = _mm_madd_epi16(wz_re_128,input_z); //Re: (w_re*z_re - w_im*z_im)
+  wz_re_128 = simde_mm_sign_epi16(input_w,*(simde__m128i*)&nr_conjug2[0]);
+  wz_re_128 = simde_mm_madd_epi16(wz_re_128,input_z); //Re: (w_re*z_re - w_im*z_im)
 
   // the imag part
-  wz_im_128 = _mm_shufflelo_epi16(input_w,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  wz_im_128 = _mm_shufflehi_epi16(wz_im_128,_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  wz_im_128 = _mm_madd_epi16(wz_im_128,input_z);//Im: (w_im*z_re + w_re*z_im)
+  wz_im_128 = simde_mm_shufflelo_epi16(input_w, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  wz_im_128 = simde_mm_shufflehi_epi16(wz_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
+  wz_im_128 = simde_mm_madd_epi16(wz_im_128,input_z);//Im: (w_im*z_re + w_re*z_im)
 
 
-  xy_re_128 = _mm_sub_epi32(xy_re_128, wz_re_128);
-  xy_im_128 = _mm_sub_epi32(xy_im_128, wz_im_128);
+  xy_re_128 = simde_mm_sub_epi32(xy_re_128, wz_re_128);
+  xy_im_128 = simde_mm_sub_epi32(xy_im_128, wz_im_128);
   //print_ints("rx_re:",(int32_t*)&xy_re_128[0]);
   //print_ints("rx_Img:",(int32_t*)&xy_im_128[0]);
   //divide by matrix det and convert back to Q15 before packing
@@ -1361,21 +1056,21 @@ __m128i nr_ulsch_comp_muli_sum(__m128i input_x,
 
   int b = log2_approx(sum_det) - 8;
   if (b > 0) {
-    xy_re_128 = _mm_srai_epi32(xy_re_128, b);
-    xy_im_128 = _mm_srai_epi32(xy_im_128, b);
+    xy_re_128 = simde_mm_srai_epi32(xy_re_128, b);
+    xy_im_128 = simde_mm_srai_epi32(xy_im_128, b);
   } else {
-    xy_re_128 = _mm_slli_epi32(xy_re_128, -b);
-    xy_im_128 = _mm_slli_epi32(xy_im_128, -b);
+    xy_re_128 = simde_mm_slli_epi32(xy_re_128, -b);
+    xy_im_128 = simde_mm_slli_epi32(xy_im_128, -b);
   }
 
-  tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
+  tmp_z0  = simde_mm_unpacklo_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack lo:",&tmp_z0[0]);
-  tmp_z1  = _mm_unpackhi_epi32(xy_re_128,xy_im_128);
+  tmp_z1  = simde_mm_unpackhi_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack hi:",&tmp_z1[0]);
-  output = _mm_packs_epi32(tmp_z0,tmp_z1);
+  output = simde_mm_packs_epi32(tmp_z0,tmp_z1);
 
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
   return(output);
 }
 /* Zero Forcing Rx function: nr_construct_HhH_elements()
@@ -1407,54 +1102,54 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
 {
   //This function is used to construct the (H_hermitian * H matrix) matrix elements
   unsigned short rb;
-  __m128i *conjch00_ch00_128, *conjch01_ch01_128, *conjch11_ch11_128, *conjch10_ch10_128;
-  __m128i *conjch20_ch20_128, *conjch21_ch21_128, *conjch30_ch30_128, *conjch31_ch31_128;
-  __m128i *conjch00_ch01_128, *conjch01_ch00_128, *conjch10_ch11_128, *conjch11_ch10_128;
-  __m128i *conjch20_ch21_128, *conjch21_ch20_128, *conjch30_ch31_128, *conjch31_ch30_128;
-  __m128i *after_mf_00_128, *after_mf_01_128, *after_mf_10_128, *after_mf_11_128;
+  simde__m128i *conjch00_ch00_128, *conjch01_ch01_128, *conjch11_ch11_128, *conjch10_ch10_128;
+  simde__m128i *conjch20_ch20_128, *conjch21_ch21_128, *conjch30_ch30_128, *conjch31_ch31_128;
+  simde__m128i *conjch00_ch01_128, *conjch01_ch00_128, *conjch10_ch11_128, *conjch11_ch10_128;
+  simde__m128i *conjch20_ch21_128, *conjch21_ch20_128, *conjch30_ch31_128, *conjch31_ch30_128;
+  simde__m128i *after_mf_00_128, *after_mf_01_128, *after_mf_10_128, *after_mf_11_128;
 
-  conjch00_ch00_128 = (__m128i *)conjch00_ch00;
-  conjch01_ch01_128 = (__m128i *)conjch01_ch01;
-  conjch11_ch11_128 = (__m128i *)conjch11_ch11;
-  conjch10_ch10_128 = (__m128i *)conjch10_ch10;
+  conjch00_ch00_128 = (simde__m128i *)conjch00_ch00;
+  conjch01_ch01_128 = (simde__m128i *)conjch01_ch01;
+  conjch11_ch11_128 = (simde__m128i *)conjch11_ch11;
+  conjch10_ch10_128 = (simde__m128i *)conjch10_ch10;
 
-  conjch20_ch20_128 = (__m128i *)conjch20_ch20;
-  conjch21_ch21_128 = (__m128i *)conjch21_ch21;
-  conjch30_ch30_128 = (__m128i *)conjch30_ch30;
-  conjch31_ch31_128 = (__m128i *)conjch31_ch31;
+  conjch20_ch20_128 = (simde__m128i *)conjch20_ch20;
+  conjch21_ch21_128 = (simde__m128i *)conjch21_ch21;
+  conjch30_ch30_128 = (simde__m128i *)conjch30_ch30;
+  conjch31_ch31_128 = (simde__m128i *)conjch31_ch31;
 
-  conjch00_ch01_128 = (__m128i *)conjch00_ch01;
-  conjch01_ch00_128 = (__m128i *)conjch01_ch00;
-  conjch10_ch11_128 = (__m128i *)conjch10_ch11;
-  conjch11_ch10_128 = (__m128i *)conjch11_ch10;
+  conjch00_ch01_128 = (simde__m128i *)conjch00_ch01;
+  conjch01_ch00_128 = (simde__m128i *)conjch01_ch00;
+  conjch10_ch11_128 = (simde__m128i *)conjch10_ch11;
+  conjch11_ch10_128 = (simde__m128i *)conjch11_ch10;
 
-  conjch20_ch21_128 = (__m128i *)conjch20_ch21;
-  conjch21_ch20_128 = (__m128i *)conjch21_ch20;
-  conjch30_ch31_128 = (__m128i *)conjch30_ch31;
-  conjch31_ch30_128 = (__m128i *)conjch31_ch30;
+  conjch20_ch21_128 = (simde__m128i *)conjch20_ch21;
+  conjch21_ch20_128 = (simde__m128i *)conjch21_ch20;
+  conjch30_ch31_128 = (simde__m128i *)conjch30_ch31;
+  conjch31_ch30_128 = (simde__m128i *)conjch31_ch30;
 
-  after_mf_00_128 = (__m128i *)after_mf_00;
-  after_mf_01_128 = (__m128i *)after_mf_01;
-  after_mf_10_128 = (__m128i *)after_mf_10;
-  after_mf_11_128 = (__m128i *)after_mf_11;
+  after_mf_00_128 = (simde__m128i *)after_mf_00;
+  after_mf_01_128 = (simde__m128i *)after_mf_01;
+  after_mf_10_128 = (simde__m128i *)after_mf_10;
+  after_mf_11_128 = (simde__m128i *)after_mf_11;
 
   for (rb=0; rb<3*nb_rb; rb++) {
 
-    after_mf_00_128[0] =_mm_adds_epi16(conjch00_ch00_128[0],conjch10_ch10_128[0]);//00_00 + 10_10
-    if (conjch20_ch20 != NULL) after_mf_00_128[0] =_mm_adds_epi16(after_mf_00_128[0],conjch20_ch20_128[0]);
-    if (conjch30_ch30 != NULL) after_mf_00_128[0] =_mm_adds_epi16(after_mf_00_128[0],conjch30_ch30_128[0]);
+    after_mf_00_128[0] =simde_mm_adds_epi16(conjch00_ch00_128[0],conjch10_ch10_128[0]);//00_00 + 10_10
+    if (conjch20_ch20 != NULL) after_mf_00_128[0] =simde_mm_adds_epi16(after_mf_00_128[0],conjch20_ch20_128[0]);
+    if (conjch30_ch30 != NULL) after_mf_00_128[0] =simde_mm_adds_epi16(after_mf_00_128[0],conjch30_ch30_128[0]);
 
-    after_mf_11_128[0] =_mm_adds_epi16(conjch01_ch01_128[0], conjch11_ch11_128[0]); //01_01 + 11_11
-    if (conjch21_ch21 != NULL) after_mf_11_128[0] =_mm_adds_epi16(after_mf_11_128[0],conjch21_ch21_128[0]);
-    if (conjch31_ch31 != NULL) after_mf_11_128[0] =_mm_adds_epi16(after_mf_11_128[0],conjch31_ch31_128[0]);
+    after_mf_11_128[0] =simde_mm_adds_epi16(conjch01_ch01_128[0], conjch11_ch11_128[0]); //01_01 + 11_11
+    if (conjch21_ch21 != NULL) after_mf_11_128[0] =simde_mm_adds_epi16(after_mf_11_128[0],conjch21_ch21_128[0]);
+    if (conjch31_ch31 != NULL) after_mf_11_128[0] =simde_mm_adds_epi16(after_mf_11_128[0],conjch31_ch31_128[0]);
 
-    after_mf_01_128[0] =_mm_adds_epi16(conjch00_ch01_128[0], conjch10_ch11_128[0]);//00_01 + 10_11
-    if (conjch20_ch21 != NULL) after_mf_01_128[0] =_mm_adds_epi16(after_mf_01_128[0],conjch20_ch21_128[0]);
-    if (conjch30_ch31 != NULL) after_mf_01_128[0] =_mm_adds_epi16(after_mf_01_128[0],conjch30_ch31_128[0]);
+    after_mf_01_128[0] =simde_mm_adds_epi16(conjch00_ch01_128[0], conjch10_ch11_128[0]);//00_01 + 10_11
+    if (conjch20_ch21 != NULL) after_mf_01_128[0] =simde_mm_adds_epi16(after_mf_01_128[0],conjch20_ch21_128[0]);
+    if (conjch30_ch31 != NULL) after_mf_01_128[0] =simde_mm_adds_epi16(after_mf_01_128[0],conjch30_ch31_128[0]);
 
-    after_mf_10_128[0] =_mm_adds_epi16(conjch01_ch00_128[0], conjch11_ch10_128[0]);//01_00 + 11_10
-    if (conjch21_ch20 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch21_ch20_128[0]);
-    if (conjch31_ch30 != NULL) after_mf_10_128[0] =_mm_adds_epi16(after_mf_10_128[0],conjch31_ch30_128[0]);
+    after_mf_10_128[0] =simde_mm_adds_epi16(conjch01_ch00_128[0], conjch11_ch10_128[0]);//01_00 + 11_10
+    if (conjch21_ch20 != NULL) after_mf_10_128[0] =simde_mm_adds_epi16(after_mf_10_128[0],conjch21_ch20_128[0]);
+    if (conjch31_ch30 != NULL) after_mf_10_128[0] =simde_mm_adds_epi16(after_mf_10_128[0],conjch31_ch30_128[0]);
 
 #ifdef DEBUG_DLSCH_DEMOD
     if ((rb<=30))
@@ -1491,8 +1186,8 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
     after_mf_10_128 += 1;
     after_mf_11_128 += 1;
   }
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
 }
 
 /*
@@ -1733,9 +1428,9 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
 
   // Add noise_var such that: H^h * H + noise_var * I
   if (noise_var != 0) {
-    __m128i nvar_128i = simde_mm_set1_epi32(noise_var);
-    __m128i *af_mf_00_128i = (__m128i *)af_mf_00;
-    __m128i *af_mf_11_128i = (__m128i *)af_mf_11;
+    simde__m128i nvar_128i = simde_mm_set1_epi32(noise_var);
+    simde__m128i *af_mf_00_128i = (simde__m128i *)af_mf_00;
+    simde__m128i *af_mf_11_128i = (simde__m128i *)af_mf_11;
     for (int k = 0; k < 3 * nb_rb_0; k++) {
       af_mf_00_128i[0] = simde_mm_add_epi32(af_mf_00_128i[0], nvar_128i);
       af_mf_11_128i[0] = simde_mm_add_epi32(af_mf_11_128i[0], nvar_128i);
@@ -1766,41 +1461,42 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
      *
      *
      **************************************************************************/
-  __m128i *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128c_0 = NULL; // Layer 0
-  __m128i *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *ul_ch_mag128c_1 = NULL; // Layer 1
-  __m128i mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
-  __m128i QAM_amp128 = {0}, QAM_amp128b = {0}, QAM_amp128c = {0};
+  simde__m128i *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128c_0 = NULL; // Layer 0
+  simde__m128i *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *ul_ch_mag128c_1 = NULL; // Layer 1
+  simde__m128i mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
+  simde__m128i QAM_amp128 = {0}, QAM_amp128b = {0}, QAM_amp128c = {0};
 
-  __m128i *determ_fin_128 = (__m128i *)&determ_fin[0];
+  simde__m128i *determ_fin_128 = (simde__m128i *)&determ_fin[0];
 
-  __m128i *rxdataF_comp128_0 = (__m128i *)&rxdataF_comp[0][symbol * (off + nb_rb * 12)]; // aatx=0 @ aarx =0
-  __m128i *rxdataF_comp128_1 = (__m128i *)&rxdataF_comp[n_rx][symbol * (off + nb_rb * 12)]; // aatx=1 @ aarx =0
+  simde__m128i *rxdataF_comp128_0 = (simde__m128i *)&rxdataF_comp[0][symbol * (off + nb_rb * 12)]; // aatx=0 @ aarx =0
+  simde__m128i *rxdataF_comp128_1 = (simde__m128i *)&rxdataF_comp[n_rx][symbol * (off + nb_rb * 12)]; // aatx=1 @ aarx =0
 
-  __m128i *after_mf_a_128 = (__m128i *)af_mf_00;
-  __m128i *after_mf_b_128 = (__m128i *)af_mf_01;
-  __m128i *after_mf_c_128 = (__m128i *)af_mf_10;
-  __m128i *after_mf_d_128 = (__m128i *)af_mf_11;
+  simde__m128i *after_mf_a_128 = (simde__m128i *)af_mf_00;
+  simde__m128i *after_mf_b_128 = (simde__m128i *)af_mf_01;
+  simde__m128i *after_mf_c_128 = (simde__m128i *)af_mf_10;
+  simde__m128i *after_mf_d_128 = (simde__m128i *)af_mf_11;
+
 
   if (mod_order > 2) {
     if (mod_order == 4) {
-      QAM_amp128 = _mm_set1_epi16(QAM16_n1); // 2/sqrt(10)
-      QAM_amp128b = _mm_setzero_si128();
-      QAM_amp128c = _mm_setzero_si128();
+      QAM_amp128 = simde_mm_set1_epi16(QAM16_n1); // 2/sqrt(10)
+      QAM_amp128b = simde_mm_setzero_si128();
+      QAM_amp128c = simde_mm_setzero_si128();
     } else if (mod_order == 6) {
-      QAM_amp128 = _mm_set1_epi16(QAM64_n1); // 4/sqrt{42}
-      QAM_amp128b = _mm_set1_epi16(QAM64_n2); // 2/sqrt{42}
-      QAM_amp128c = _mm_setzero_si128();
+      QAM_amp128 = simde_mm_set1_epi16(QAM64_n1); // 4/sqrt{42}
+      QAM_amp128b = simde_mm_set1_epi16(QAM64_n2); // 2/sqrt{42}
+      QAM_amp128c = simde_mm_setzero_si128();
     } else if (mod_order == 8) {
-      QAM_amp128 = _mm_set1_epi16(QAM256_n1);
-      QAM_amp128b = _mm_set1_epi16(QAM256_n2);
-      QAM_amp128c = _mm_set1_epi16(QAM256_n3);
+      QAM_amp128 = simde_mm_set1_epi16(QAM256_n1);
+      QAM_amp128b = simde_mm_set1_epi16(QAM256_n2);
+      QAM_amp128c = simde_mm_set1_epi16(QAM256_n3);
     }
-    ul_ch_mag128_0 = (__m128i *)&ul_ch_mag[0][symbol * (off + nb_rb * 12)];
-    ul_ch_mag128b_0 = (__m128i *)&ul_ch_magb[0][symbol * (off + nb_rb * 12)];
-    ul_ch_mag128c_0 = (__m128i *)&ul_ch_magc[0][symbol * (off + nb_rb * 12)];
-    ul_ch_mag128_1 = (__m128i *)&ul_ch_mag[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
-    ul_ch_mag128b_1 = (__m128i *)&ul_ch_magb[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
-    ul_ch_mag128c_1 = (__m128i *)&ul_ch_magc[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128_0 = (simde__m128i *)&ul_ch_mag[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_0 = (simde__m128i *)&ul_ch_magb[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128c_0 = (simde__m128i *)&ul_ch_magc[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128_1 = (simde__m128i *)&ul_ch_mag[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_1 = (simde__m128i *)&ul_ch_magb[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128c_1 = (simde__m128i *)&ul_ch_magc[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
   }
 
   for (int rb = 0; rb < 3 * nb_rb_0; rb++) {
@@ -1815,35 +1511,35 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
 
       int b = log2_approx(sum_det) - 8;
       if (b > 0) {
-        mmtmpD2 = _mm_srai_epi32(determ_fin_128[0], b);
+        mmtmpD2 = simde_mm_srai_epi32(determ_fin_128[0], b);
       } else {
-        mmtmpD2 = _mm_slli_epi32(determ_fin_128[0], -b);
+        mmtmpD2 = simde_mm_slli_epi32(determ_fin_128[0], -b);
       }
-      mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2, mmtmpD2);
-      mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2, mmtmpD2);
-      mmtmpD2 = _mm_packs_epi32(mmtmpD3, mmtmpD2);
+      mmtmpD3 = simde_mm_unpacklo_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = simde_mm_unpackhi_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = simde_mm_packs_epi32(mmtmpD3, mmtmpD2);
 
       // Layer 0
       ul_ch_mag128_0[0] = mmtmpD2;
       ul_ch_mag128b_0[0] = mmtmpD2;
       ul_ch_mag128c_0[0] = mmtmpD2;
-      ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0], QAM_amp128);
-      ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0], 1);
-      ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0], QAM_amp128b);
-      ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0], 1);
-      ul_ch_mag128c_0[0] = _mm_mulhi_epi16(ul_ch_mag128c_0[0], QAM_amp128c);
-      ul_ch_mag128c_0[0] = _mm_slli_epi16(ul_ch_mag128c_0[0], 1);
+      ul_ch_mag128_0[0] = simde_mm_mulhi_epi16(ul_ch_mag128_0[0], QAM_amp128);
+      ul_ch_mag128_0[0] = simde_mm_slli_epi16(ul_ch_mag128_0[0], 1);
+      ul_ch_mag128b_0[0] = simde_mm_mulhi_epi16(ul_ch_mag128b_0[0], QAM_amp128b);
+      ul_ch_mag128b_0[0] = simde_mm_slli_epi16(ul_ch_mag128b_0[0], 1);
+      ul_ch_mag128c_0[0] = simde_mm_mulhi_epi16(ul_ch_mag128c_0[0], QAM_amp128c);
+      ul_ch_mag128c_0[0] = simde_mm_slli_epi16(ul_ch_mag128c_0[0], 1);
 
       // Layer 1
       ul_ch_mag128_1[0] = mmtmpD2;
       ul_ch_mag128b_1[0] = mmtmpD2;
       ul_ch_mag128c_1[0] = mmtmpD2;
-      ul_ch_mag128_1[0] = _mm_mulhi_epi16(ul_ch_mag128_1[0], QAM_amp128);
-      ul_ch_mag128_1[0] = _mm_slli_epi16(ul_ch_mag128_1[0], 1);
-      ul_ch_mag128b_1[0] = _mm_mulhi_epi16(ul_ch_mag128b_1[0], QAM_amp128b);
-      ul_ch_mag128b_1[0] = _mm_slli_epi16(ul_ch_mag128b_1[0], 1);
-      ul_ch_mag128c_1[0] = _mm_mulhi_epi16(ul_ch_mag128c_1[0], QAM_amp128c);
-      ul_ch_mag128c_1[0] = _mm_slli_epi16(ul_ch_mag128c_1[0], 1);
+      ul_ch_mag128_1[0] = simde_mm_mulhi_epi16(ul_ch_mag128_1[0], QAM_amp128);
+      ul_ch_mag128_1[0] = simde_mm_slli_epi16(ul_ch_mag128_1[0], 1);
+      ul_ch_mag128b_1[0] = simde_mm_mulhi_epi16(ul_ch_mag128b_1[0], QAM_amp128b);
+      ul_ch_mag128b_1[0] = simde_mm_slli_epi16(ul_ch_mag128b_1[0], 1);
+      ul_ch_mag128c_1[0] = simde_mm_mulhi_epi16(ul_ch_mag128c_1[0], QAM_amp128c);
+      ul_ch_mag128c_1[0] = simde_mm_slli_epi16(ul_ch_mag128c_1[0], 1);
     }
 
     // multiply by channel Inv
@@ -1885,8 +1581,8 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
     after_mf_c_128 += 1;
     after_mf_d_128 += 1;
   }
-  _mm_empty();
-  _m_empty();
+  simde_mm_empty();
+  simde_m_empty();
    return(0);
 }
 

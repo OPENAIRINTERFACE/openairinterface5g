@@ -34,9 +34,9 @@ void exit_function(const char* file, const char* function, const int line, const
   exit(-1);
 }
 
-signed char quantize(double D, double x, unsigned char B) {
+int8_t quantize(double D, double x, uint8_t B) {
   double qxd;
-  short maxlev;
+  int16_t maxlev;
   qxd = floor(x / D);
   maxlev = 1 << (B - 1); //(char)(pow(2,B-1));
 
@@ -45,7 +45,7 @@ signed char quantize(double D, double x, unsigned char B) {
   else if (qxd >= maxlev)
     qxd = maxlev - 1;
 
-  return ((char) qxd);
+  return ((int8_t) qxd);
 }
 
 

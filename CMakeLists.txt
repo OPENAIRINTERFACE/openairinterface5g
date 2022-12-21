@@ -102,21 +102,20 @@ add_list_string_option(CMAKE_BUILD_TYPE "RelWithDebInfo" "Choose the type of bui
 # in case /proc/cpuinfo exists we want to inspect available Intrinsics
 # -so not to go always through SIMDE emulation
 # -so to avoid AVX512 instructions generation by gcc   
-execute_process(COMMAND uname -m OUTPUT_VARIABLE CPUARCH OUTPUT_STRIP_TRAILING_WHITESPACE)
-message(STATUS "CPUARCH ${CPUARCH}")
 if(EXISTS "/proc/cpuinfo")
   file(STRINGS "/proc/cpuinfo" CPUFLAGS REGEX flags LIMIT_COUNT 1)
 else()
   message(WARNING "did not find /proc/cpuinfo -- not setting any x86-specific compilation variables")
 endif()
-
+ 
 eval_boolean(AUTODETECT_AVX512 DEFINED CPUFLAGS AND CPUFLAGS MATCHES "avx512")
 add_boolean_option(AVX512 ${AUTODETECT_AVX512} "Whether AVX512 intrinsics is available on the host processor" ON)
 
 eval_boolean(AUTODETECT_AVX2 DEFINED CPUFLAGS AND CPUFLAGS MATCHES "avx2")
 add_boolean_option(AVX2 ${AUTODETECT_AVX2} "Whether AVX2 intrinsics is available on the host processor" ON)
 
-if(${CPUARCH} STREQUAL "x86_64" AND DEFINED CPUFLAGS)
+message(STATUS "CPU architecture is ${CMAKE_SYSTEM_PROCESSOR}")
+if(CMAKE_SYSTEM_PROCESSOR STREQUAL "x86_64")
   # The following intrinsics are assumed to be available on any x86 system
   # (avx, f16c, fma, gnfi, mmx, pclmul, sse, sse2, sse3, xop)
   set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_AVX_NATIVE -DSIMDE_X86_F16C_NATIVE -DSIMDE_X86_FMA_NATIVE -DSIMDE_X86_GFNI_NATIVE -DSIMDE_X86_MMX_NATIVE -DSIMDE_X86_PCLMUL_NATIVE -DSIMDE_X86_SSE2_NATIVE -DSIMDE_X86_SSE3_NATIVE -DSIMDE_X86_SSE_NATIVE -DSIMDE_X86_XOP_HAVE_COM_ -DSIMDE_X86_XOP_NATIVE")
@@ -139,8 +138,12 @@ if(${CPUARCH} STREQUAL "x86_64" AND DEFINED CPUFLAGS)
   if(CPUINFO MATCHES "ssse3")
     set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -DSIMDE_X86_SSSE3_NATIVE")
   endif()
-elseif(${CPUARCH} NOT STREQUAL "x86_64")
-  message(FATAL_ERROR "Cannot compile for CPU architecture ${CPUARCH}")
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "armv7l")
+  set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -gdwarf-2 -mfloat-abi=hard -mfpu=neon -lgcc -lrt")
+elseif (CMAKE_SYSTEM_PROCESSOR STREQUAL "aarch64")
+  set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -gdwarf-2 -lgcc -lrt")
+else()
+  message(FATAL_ERROR "compile for CPU architecture ${CPUARCH}, CMAKE_SYSTEM_PROCESSOR ${CMAKE_SYSTEM_PROCESSOR}")
 endif()
 
 set(C_FLAGS_PROCESSOR "${C_FLAGS_PROCESSOR} -march=native")
@@ -856,7 +859,7 @@ target_link_libraries(ldpc_parityCheck  PRIVATE ldpc_gen_HEADERS)
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 
-add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c )
+add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts_neon.c)
 
 
 set(PHY_SRC_COMMON

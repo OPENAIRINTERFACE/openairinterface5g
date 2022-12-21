@@ -2,7 +2,7 @@ add_executable(cnProc_gen_avx512
                cnProc_gen_BG1_avx512.c
                cnProc_gen_BG2_avx512.c
                main.c)
-target_compile_options(cnProc_gen_avx512 PRIVATE -W -Wall -mavx2)
+target_compile_options(cnProc_gen_avx512 PRIVATE -W -Wall )
 
 #set(cnProc_avx512_headers
 #    cnProc_avx512/nrLDPC_cnProc_BG1_R13_AVX512.h

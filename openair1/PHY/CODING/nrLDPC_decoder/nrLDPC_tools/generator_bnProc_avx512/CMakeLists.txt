@@ -4,7 +4,7 @@ add_executable(bnProc_gen_avx512
                bnProcPc_gen_BG1_avx512.c
                bnProcPc_gen_BG2_avx512.c
                main.c)
-target_compile_options(bnProc_gen_avx512 PRIVATE -W -Wall -mavx2)
+target_compile_options(bnProc_gen_avx512 PRIVATE -W -Wall )
 
 #set(bnProc_avx512_headers
 #    bnProc_avx512/rLDPC_bnProc_BG1_R13_AVX512.h

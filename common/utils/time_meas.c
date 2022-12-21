@@ -38,7 +38,7 @@ static time_stats_t  **measur_table;
 notifiedFIFO_t measur_fifo;
 double get_cpu_freq_GHz(void)
 {
-  if (cpu_freq_GHz <1 ) {
+  if (cpu_freq_GHz <0.01 ) {
     time_stats_t ts = {0};
     reset_meas(&ts);
     ts.trials++;
@@ -46,8 +46,7 @@ double get_cpu_freq_GHz(void)
     sleep(1);
     ts.diff = (rdtsc_oai()-ts.in);
     cpu_freq_GHz = (double)ts.diff/1000000000;
-    printf("CPU Freq is %f \n", cpu_freq_GHz);
-  }
+  } 
   return cpu_freq_GHz;
 }
 

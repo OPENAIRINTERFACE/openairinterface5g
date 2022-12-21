@@ -49,8 +49,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    __m256i* p_cnProcBuf;
-    __m256i* p_cnProcBufRes;
+    simde__m256i* p_cnProcBuf;
+    simde__m256i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -60,11 +60,11 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
     // Offset to each bit within a group in terms of 32 Byte
     uint32_t bitOffsetInGroup;
 
-    __m256i ymm0, min, sgn;
-    __m256i* p_cnProcBufResBit;
+    simde__m256i ymm0, min, sgn;
+    simde__m256i* p_cnProcBufResBit;
 
-    const __m256i* p_ones   = (__m256i*) ones256_epi8;
-    const __m256i* p_maxLLR = (__m256i*) maxLLR256_epi8;
+    const simde__m256i* p_ones   = (simde__m256i*) ones256_epi8;
+    const simde__m256i* p_maxLLR = (simde__m256i*) maxLLR256_epi8;
 
     // LUT with offsets for bits that need to be processed
     // 1. bit proc requires LLRs of 2. and 3. bit, 2.bits of 1. and 3. etc.
@@ -83,8 +83,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[0]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over every BN
         for (j=0; j<3; j++)
@@ -92,8 +92,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
             // Set of results pointer to correct BN address
             p_cnProcBufResBit = p_cnProcBufRes + (j*bitOffsetInGroup);
 
-            __m256i *pj0 = &p_cnProcBuf[lut_idxCnProcG3[j][0]];
-            __m256i *pj1 = &p_cnProcBuf[lut_idxCnProcG3[j][1]];
+            simde__m256i *pj0 = &p_cnProcBuf[lut_idxCnProcG3[j][0]];
+            simde__m256i *pj1 = &p_cnProcBuf[lut_idxCnProcG3[j][1]];
 
             // Loop over CNs
             for (i=0; i<M; i++)
@@ -134,8 +134,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[1]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over every BN
         for (j=0; j<4; j++)
@@ -183,8 +183,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[2]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over every BN
         for (j=0; j<5; j++)
@@ -233,8 +233,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[3]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over every BN
         for (j=0; j<6; j++)
@@ -284,8 +284,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[4]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over every BN
         for (j=0; j<8; j++)
@@ -336,8 +336,8 @@ static inline void nrLDPC_cnProc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG2_R15[5]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over every BN
         for (j=0; j<10; j++)
@@ -390,8 +390,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    __m256i* p_cnProcBuf;
-    __m256i* p_cnProcBufRes;
+    simde__m256i* p_cnProcBuf;
+    simde__m256i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -401,11 +401,11 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
     // Offset to each bit within a group in terms of 32 Byte
     uint32_t bitOffsetInGroup;
 
-    __m256i ymm0, min, sgn;
-    __m256i* p_cnProcBufResBit;
+    simde__m256i ymm0, min, sgn;
+    simde__m256i* p_cnProcBufResBit;
 
-    const __m256i* p_ones   = (__m256i*) ones256_epi8;
-    const __m256i* p_maxLLR = (__m256i*) maxLLR256_epi8;
+    const simde__m256i* p_ones   = (simde__m256i*) ones256_epi8;
+    const simde__m256i* p_maxLLR = (simde__m256i*) maxLLR256_epi8;
 
     // LUT with offsets for bits that need to be processed
     // 1. bit proc requires LLRs of 2. and 3. bit, 2.bits of 1. and 3. etc.
@@ -425,8 +425,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[0]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over every BN
         for (j=0; j<3; j++)
@@ -472,8 +472,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[1]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over every BN
         for (j=0; j<4; j++)
@@ -522,8 +522,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[2]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over every BN
         for (j=0; j<5; j++)
@@ -573,8 +573,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[3]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over every BN
         for (j=0; j<6; j++)
@@ -625,8 +625,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[4]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 7
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over every BN
         for (j=0; j<7; j++)
@@ -677,8 +677,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[5]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over every BN
         for (j=0; j<8; j++)
@@ -730,8 +730,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[6]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 9
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[6]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[6]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[6]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[6]];
 
         // Loop over every BN
         for (j=0; j<9; j++)
@@ -783,8 +783,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[7]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[7]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[7]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[7]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[7]];
 
         // Loop over every BN
         for (j=0; j<10; j++)
@@ -841,8 +841,8 @@ static inline void nrLDPC_cnProc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int
         bitOffsetInGroup = (lut_numCnInCnGroups_BG1_R13[8]*NR_LDPC_ZMAX)>>5;
 
         // Set pointers to start of group 19
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[8]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[8]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[8]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[8]];
 
         // Loop over every BN
         for (j=0; j<19; j++)
@@ -889,8 +889,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    __m256i* p_cnProcBuf;
-    __m256i* p_cnProcBufRes;
+    simde__m256i* p_cnProcBuf;
+    simde__m256i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -901,7 +901,7 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
     uint32_t Mrem;
     uint32_t M32;
 
-    __m256i ymm0, ymm1;
+    simde__m256i ymm0, ymm1;
 
     // =====================================================================
     // Process group with 3 BNs
@@ -920,8 +920,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -988,8 +988,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1056,8 +1056,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1125,8 +1125,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1193,8 +1193,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 7
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1261,8 +1261,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1329,8 +1329,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 9
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[6]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[6]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[6]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[6]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1397,8 +1397,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[7]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[7]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[7]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[7]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1465,8 +1465,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG1(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 19
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[8]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[8]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[8]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[8]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1530,8 +1530,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
     const uint8_t*  lut_numCnInCnGroups   = p_lut->numCnInCnGroups;
     const uint32_t* lut_startAddrCnGroups = p_lut->startAddrCnGroups;
 
-    __m256i* p_cnProcBuf;
-    __m256i* p_cnProcBufRes;
+    simde__m256i* p_cnProcBuf;
+    simde__m256i* p_cnProcBufRes;
 
     // Number of CNs in Groups
     uint32_t M;
@@ -1542,7 +1542,7 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
     uint32_t Mrem;
     uint32_t M32;
 
-    __m256i ymm0, ymm1;
+    simde__m256i ymm0, ymm1;
 
     // =====================================================================
     // Process group with 3 BNs
@@ -1561,8 +1561,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 3
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[0]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[0]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1629,8 +1629,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 4
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[1]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[1]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1697,8 +1697,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 5
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[2]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[2]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1765,8 +1765,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 6
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[3]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[3]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1833,8 +1833,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 8
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[4]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[4]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)
@@ -1901,8 +1901,8 @@ static inline uint32_t nrLDPC_cnProcPc_BG2(t_nrLDPC_lut* p_lut, int8_t* cnProcBu
         M32 = (M + 31)>>5;
 
         // Set pointers to start of group 10
-        p_cnProcBuf    = (__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
-        p_cnProcBufRes = (__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
+        p_cnProcBuf    = (simde__m256i*) &cnProcBuf   [lut_startAddrCnGroups[5]];
+        p_cnProcBufRes = (simde__m256i*) &cnProcBufRes[lut_startAddrCnGroups[5]];
 
         // Loop over CNs
         for (i=0; i<(M32-1); i++)

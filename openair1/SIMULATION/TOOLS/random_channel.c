@@ -42,7 +42,7 @@
 
 #include "assertions.h"
 
-extern void print_shorts(char *s,__m128i *x);
+extern void print_shorts(char *s,simde__m128i *x);
 static mapping channelmod_names[] = {
   CHANNELMOD_MAP_INIT
 };

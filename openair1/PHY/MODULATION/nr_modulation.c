@@ -124,8 +124,8 @@ void nr_modulation(uint32_t *in,
   uint32_t i;
 
 #if defined(__SSE2__)
-  __m128i *nr_mod_table128;
-  __m128i *out128;
+  simde__m128i *nr_mod_table128;
+  simde__m128i *out128;
 #endif
 
   LOG_D(PHY,"nr_modulation: length %d, mod_order %d\n",length,mod_order);
@@ -134,8 +134,8 @@ void nr_modulation(uint32_t *in,
 
 #if defined(__SSE2__)
   case 2:
-    nr_mod_table128 = (__m128i*) nr_qpsk_byte_mod_table;
-    out128 = (__m128i*) out;
+    nr_mod_table128 = (simde__m128i *)nr_qpsk_byte_mod_table;
+    out128 = (simde__m128i *)out;
     for (i=0; i<length/8; i++)
       out128[i] = nr_mod_table128[in_bytes[i]];
     // the bits that are left out
@@ -329,20 +329,12 @@ void nr_ue_layer_mapping(int16_t *mod_symbs,
 
 void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
 {
-#if defined(__x86_64__) || +defined(__i386__)
-  __m128i dft_in128[1][3240], dft_out128[1][3240];
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t dft_in128[1][3240], dft_out128[1][3240];
-#endif
+  simde__m128i dft_in128[1][3240], dft_out128[1][3240];
   uint32_t *dft_in0 = (uint32_t*)dft_in128[0], *dft_out0 = (uint32_t*)dft_out128[0];
 
   uint32_t i, ip;
 
-#if defined(__x86_64__) || defined(__i386__)
-  __m128i norm128;
-#elif defined(__arm__) || defined(__aarch64__)
-  int16x8_t norm128;
-#endif
+  simde__m128i norm128;
 
   if ((Msc_PUSCH % 1536) > 0) {
     for (i = 0, ip = 0; i < Msc_PUSCH; i++, ip+=4) {
@@ -354,17 +346,9 @@ void nr_dft(int32_t *z, int32_t *d, uint32_t Msc_PUSCH)
     case 12:
       dft(DFT_12,(int16_t *)dft_in0, (int16_t *)dft_out0,0);
 
-#if defined(__x86_64__) || defined(__i386__)
-      norm128 = _mm_set1_epi16(9459);
-#elif defined(__arm__) || defined(__aarch64__)
-      norm128 = vdupq_n_s16(9459);
-#endif
+      norm128 = simde_mm_set1_epi16(9459);
       for (i=0; i<12; i++) {
-#if defined(__x86_64__) || defined(__i386__)
-        ((__m128i*)dft_out0)[i] = _mm_slli_epi16(_mm_mulhi_epi16(((__m128i*)dft_out0)[i], norm128), 1);
-#elif defined(__arm__) || defined(__aarch64__)
-        ((int16x8_t*)dft_out0)[i] = vqdmulhq_s16(((int16x8_t*)dft_out0)[i], norm128);
-#endif
+        ((simde__m128i*)dft_out0)[i] = simde_mm_slli_epi16(simde_mm_mulhi_epi16(((simde__m128i*)dft_out0)[i], norm128), 1);
       }
 
       break;

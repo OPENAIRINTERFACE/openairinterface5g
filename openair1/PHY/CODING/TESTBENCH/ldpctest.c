@@ -23,6 +23,7 @@
 #include <math.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint.h>
 #include "assertions.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "common/utils/load_module_shlib.h"
@@ -43,7 +44,7 @@
 #define NR_LDPC_ENABLE_PARITY_CHECK
 
 // 4-bit quantizer
-char quantize4bit(double D,double x)
+int8_t quantize4bit(double D,double x)
 {
   double qxd;
   qxd = floor(x/D);
@@ -54,13 +55,13 @@ char quantize4bit(double D,double x)
   else if (qxd > 7)
     qxd = 7;
 
-  return((char)qxd);
+  return((int8_t)qxd);
 }
 
-char quantize8bit(double D,double x)
+int8_t quantize8bit(double D,double x)
 {
   double qxd;
-  //char maxlev;
+  //int8_t maxlev;
   qxd = floor(x/D);
 
   //maxlev = 1<<(B-1);
@@ -72,7 +73,7 @@ char quantize8bit(double D,double x)
   else if (qxd >= 128)
     qxd = 127;
 
-  return((char)qxd);
+  return((int8_t)qxd);
 }
 
 typedef struct {
@@ -92,7 +93,7 @@ int test_ldpc(short max_iterations,
               int nom_rate,
               int denom_rate,
               double SNR,
-              unsigned char qbits,
+              uint8_t qbits,
               short block_length,
               unsigned int ntrials,
               int n_segments,
@@ -117,15 +118,15 @@ int test_ldpc(short max_iterations,
   sigma = 1.0/sqrt(2*SNR);
   opp_enabled=1;
   //short test_input[block_length];
-  unsigned char *test_input[MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
+  uint8_t *test_input[MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS]={NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL};;
   //short *c; //padded codeword
-  unsigned char estimated_output[MAX_NUM_DLSCH_SEGMENTS][block_length];
+  uint8_t estimated_output[MAX_NUM_DLSCH_SEGMENTS][block_length];
   memset(estimated_output, 0, sizeof(estimated_output));
-  unsigned char *channel_input[MAX_NUM_DLSCH_SEGMENTS];
-  unsigned char *channel_input_optim[MAX_NUM_DLSCH_SEGMENTS];
+  uint8_t *channel_input[MAX_NUM_DLSCH_SEGMENTS];
+  uint8_t *channel_input_optim[MAX_NUM_DLSCH_SEGMENTS];
   //double channel_output[68 * 384];
   double modulated_input[MAX_NUM_DLSCH_SEGMENTS][68 * 384] = { 0 };
-  char channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS][68  * 384] = { 0 };
+  int8_t channel_output_fixed[MAX_NUM_DLSCH_SEGMENTS][68  * 384] = { 0 };
   short BG=0,nrows=0;//,ncols;
   int no_punctured_columns,removed_bit;
   int i1,Zc,Kb=0;
@@ -149,12 +150,12 @@ int test_ldpc(short max_iterations,
 
   // generate input block
   for(int j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
-    test_input[j]=(unsigned char *)malloc16(sizeof(unsigned char) * block_length/8);
-    memset(test_input[j], 0, sizeof(unsigned char) * block_length / 8);
-    channel_input[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-    memset(channel_input[j], 0, sizeof(unsigned char) * 68 * 384);
-    channel_input_optim[j] = (unsigned char *)malloc16(sizeof(unsigned char) * 68*384);
-    memset(channel_input_optim[j], 0, sizeof(unsigned char) * 68 * 384);
+    test_input[j]=(uint8_t *)malloc16(sizeof(uint8_t) * block_length/8);
+    memset(test_input[j], 0, sizeof(uint8_t) * block_length / 8);
+    channel_input[j] = (uint8_t *)malloc16(sizeof(uint8_t) * 68*384);
+    memset(channel_input[j], 0, sizeof(uint8_t) * 68 * 384);
+    channel_input_optim[j] = (uint8_t *)malloc16(sizeof(uint8_t) * 68*384);
+    memset(channel_input_optim[j], 0, sizeof(uint8_t) * 68 * 384);
   }
 
   reset_meas(&time);
@@ -179,7 +180,7 @@ int test_ldpc(short max_iterations,
 
   for (int j=0;j<MAX_NUM_DLSCH_SEGMENTS;j++) {
     for (int i=0; i<block_length/8; i++) {
-      test_input[j][i]=(unsigned char) rand();
+      test_input[j][i]=(uint8_t) rand();
       //test_input[j][i]=j%256;
       //test_input[j][i]=252;
     }
@@ -265,7 +266,7 @@ int test_ldpc(short max_iterations,
   removed_bit=(nrows-no_punctured_columns-2) * Zc+block_length-(int)(block_length/((float)nom_rate/(float)denom_rate));
   encoder_implemparams_t impp=INIT0_LDPCIMPLEMPARAMS;
 
-  impp.gen_code=1;
+  impp.gen_code = 2;
   if (ntrials==0)
     encoder_orig(test_input,channel_input, Zc, BG, block_length, BG, &impp);
   impp.gen_code=0;
@@ -327,21 +328,21 @@ int test_ldpc(short max_iterations,
             modulated_input[j][i]=-1.0;///sqrt(2);
 
           ///channel_output[i] = modulated_input[i] + gaussdouble(0.0,1.0) * 1/sqrt(2*SNR);
-          //channel_output_fixed[i] = (char) ((channel_output[i]*128)<0?(channel_output[i]*128-0.5):(channel_output[i]*128+0.5)); //fixed point 9-7
+          //channel_output_fixed[i] = (int8_t) ((channel_output[i]*128)<0?(channel_output[i]*128-0.5):(channel_output[i]*128+0.5)); //fixed point 9-7
           //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
 
-          //channel_output_fixed[i] = (char)quantize(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
-          channel_output_fixed[j][i] = (char)quantize(sigma/4.0/4.0,modulated_input[j][i] + sigma*gaussdouble(0.0,1.0),qbits);
-          //channel_output_fixed[i] = (char)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
+          //channel_output_fixed[i] = (int8_t)quantize(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0),qbits);
+          channel_output_fixed[j][i] = (int8_t)quantize(sigma/4.0/4.0,modulated_input[j][i] + sigma*gaussdouble(0.0,1.0),qbits);
+          //channel_output_fixed[i] = (int8_t)quantize8bit(sigma/4.0,(2.0*modulated_input[i]) - 1.0 + sigma*gaussdouble(0.0,1.0));
           //printf("llr[%d]=%d\n",i,channel_output_fixed[i]);
           //printf("channel_output_fixed[%d]: %d\n",i,channel_output_fixed[i]);
 
 
           //Uncoded BER
-          unsigned char channel_output_uncoded = channel_output_fixed[j][i]<0 ? 1 /* QPSK demod */ : 0;
+          uint8_t channel_output_uncoded = channel_output_fixed[j][i]<0 ? 1 /* QPSK demod */ : 0;
 
           if (channel_output_uncoded != channel_input_optim[j][i-2*Zc])
-      *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
+            *errors_bit_uncoded = (*errors_bit_uncoded) + 1;
 
         }
      
@@ -373,8 +374,8 @@ int test_ldpc(short max_iterations,
         }
         for (int i=0; i<block_length; i++)
         {
-          unsigned char estoutputbit = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
-          unsigned char inputbit = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
+          uint8_t estoutputbit = (estimated_output[j][i/8]&(1<<(i&7)))>>(i&7);
+          uint8_t inputbit = (test_input[j][i/8]&(1<<(i&7)))>>(i&7); // Further correct for multiple segments
           if (estoutputbit != inputbit)
             *errors_bit = (*errors_bit) + 1;
         }
@@ -445,7 +446,7 @@ int main(int argc, char *argv[])
   int nom_rate=1;
   int denom_rate=3;
   double SNR0=-2.0,SNR,SNR_lin;
-  unsigned char qbits=8;
+  uint8_t qbits=8;
   unsigned int decoded_errors[10000]; // initiate the size of matrix equivalent to size of SNR
   int c,i=0, i1 = 0;
 

@@ -276,7 +276,7 @@ int NB_UE_INST = 1;
 int main(int argc, char **argv)
 {
   setbuf(stdout, NULL);
-  char c;
+  int c;
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
   uint8_t snr1set=0;

@@ -49,10 +49,6 @@
 #define SSE_INTRIN_H
 
 
-#if defined(__x86_64) || defined(__i386__)
-
-/* x86 processors */
-
 #include <simde/x86/mmx.h>
 #include <simde/x86/sse.h>
 #include <simde/x86/sse2.h>
@@ -62,63 +58,54 @@
 #include <simde/x86/sse4.2.h>
 #include <simde/x86/avx2.h>
 #include <simde/x86/fma.h>
+#if defined(__x86_64) || defined(__i386__)
+
+/* x86 processors */
 
 #if defined(__AVX512BW__) || defined(__AVX512F__)
 #include <immintrin.h>
 #endif
-
 #elif defined(__arm__) || defined(__aarch64__)
 
 /* ARM processors */
+// note this fails on some x86 machines, with an error like:
+// /usr/lib/gcc/x86_64-redhat-linux/8/include/gfniintrin.h:57:1: error: inlining failed in call to always_inline ‘_mm_gf2p8affine_epi64_epi8’: target specific option mismatch
+#include <simde/x86/clmul.h>
 
 #include <simde/arm/neon.h>
-
 #endif // x86_64 || i386
+#include <stdbool.h>
+#include "assertions.h"
 
 /*
  * OAI specific
  */
 
-#if defined(__x86_64__) || defined(__i386__)
-  #define vect128 __m128i
-#elif defined(__arm__) || defined(__aarch64__)
-  #define vect128 int16x8_t
-#endif
-
 static const short minusConjug128[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
-static inline vect128 mulByConjugate128(vect128 *a, vect128 *b, int8_t output_shift) {
+static inline simde__m128i mulByConjugate128(simde__m128i *a, simde__m128i *b, int8_t output_shift) {
 
-#if defined(__x86_64__) || defined(__i386__)
-  vect128 realPart = _mm_madd_epi16(*a,*b);
-  realPart = _mm_srai_epi32(realPart,output_shift);
-  vect128 imagPart = _mm_shufflelo_epi16(*b,_MM_SHUFFLE(2,3,0,1));
-  imagPart = _mm_shufflehi_epi16(imagPart,_MM_SHUFFLE(2,3,0,1));
-  imagPart = _mm_sign_epi16(imagPart,*(vect128 *)minusConjug128);
-  imagPart = _mm_madd_epi16(imagPart,*a);
-  imagPart = _mm_srai_epi32(imagPart,output_shift);
-  vect128 lowPart = _mm_unpacklo_epi32(realPart,imagPart);
-  vect128 highPart = _mm_unpackhi_epi32(realPart,imagPart);
-  return ( _mm_packs_epi32(lowPart,highPart));
-#elif defined(__arm__) || defined(__aarch64__)
-  AssertFatal(false, "not developped\n");
-#endif
+  simde__m128i realPart = simde_mm_madd_epi16(*a,*b);
+  realPart = simde_mm_srai_epi32(realPart,output_shift);
+  simde__m128i imagPart = simde_mm_shufflelo_epi16(*b, SIMDE_MM_SHUFFLE(2,3,0,1));
+  imagPart = simde_mm_shufflehi_epi16(imagPart, SIMDE_MM_SHUFFLE(2,3,0,1));
+  imagPart = simde_mm_sign_epi16(imagPart,*(simde__m128i *)minusConjug128);
+  imagPart = simde_mm_madd_epi16(imagPart,*a);
+  imagPart = simde_mm_srai_epi32(imagPart,output_shift);
+  simde__m128i lowPart = simde_mm_unpacklo_epi32(realPart,imagPart);
+  simde__m128i highPart = simde_mm_unpackhi_epi32(realPart,imagPart);
+  return ( simde_mm_packs_epi32(lowPart,highPart));
 }
 
-#if defined(__x86_64__) || defined(__i386__)
 #define displaySamples128(vect)  {\
-    __m128i x=vect;                                       \
+    simde__m128i x=vect;                                       \
     printf("vector: %s = (%hd,%hd) (%hd,%hd) (%hd,%hd) (%hd,%hd)\n", #vect, \
-           _mm_extract_epi16(x,0),                                  \
-           _mm_extract_epi16(x,1),\
-           _mm_extract_epi16(x,2),\
-           _mm_extract_epi16(x,3),\
-           _mm_extract_epi16(x,4),\
-           _mm_extract_epi16(x,5),\
-           _mm_extract_epi16(x,6),\
-           _mm_extract_epi16(x,7));\
+           simde_mm_extract_epi16(x,0),                                  \
+           simde_mm_extract_epi16(x,1),\
+           simde_mm_extract_epi16(x,2),\
+           simde_mm_extract_epi16(x,3),\
+           simde_mm_extract_epi16(x,4),\
+           simde_mm_extract_epi16(x,5),\
+           simde_mm_extract_epi16(x,6),\
+           simde_mm_extract_epi16(x,7));\
   }
-#elif defined(__arm__) || defined(__aarch64__)
-  displaySamples128(vect) {}
-//TBD
-#endif
 #endif // SSE_INTRIN_H

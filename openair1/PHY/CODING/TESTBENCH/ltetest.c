@@ -116,7 +116,7 @@ void lte_param_init(unsigned char N_tx, unsigned char N_rx,unsigned char transmi
 }
 
 /*
-void print_shorts(char *s,__m128i *x) {
+void print_shorts(char *s,simde__m128i *x) {
 
   short *tempb = (short *)x;
 
