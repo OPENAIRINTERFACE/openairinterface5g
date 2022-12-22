@@ -308,7 +308,7 @@ int main(int argc, char **argv)
   int tx_offset;
   int32_t txlev_sum = 0, atxlev[4];
   int start_rb = 0;
-  int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
+  int UE_id = 0;
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
