@@ -114,6 +114,7 @@ function test_run() {
 
      for (( run_index=1; run_index <= $nruns; run_index++ ))
       do
+        temp_exec_log="$log_dir/test.$test_case_name.${tags_array[$tags_array_index]}.run_$run_index"
         echo "</EXECUTION LOG Test Case = $test_case_name.${tags_array[$tags_array_index]},  Run = $run_index >" >> $temp_exec_log  2>&1
         cat "$temp_exec_log" >> "$log_file"  2>&1
 
