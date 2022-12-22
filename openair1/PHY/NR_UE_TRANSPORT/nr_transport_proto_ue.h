@@ -543,10 +543,12 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param n_dmrs_cdm_groups
     @param frame_parms Pointer to frame descriptor
 */
-void nr_dlsch_extract_rbs(int **rxdataF,
-                          int **dl_ch_estimates,
-                          int **rxdataF_ext,
-                          int **dl_ch_estimates_ext,
+void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
+                          c16_t rxdataF[][rxdataF_sz],
+                          uint32_t rx_size,
+                          int32_t dl_ch_estimates[][rx_size],
+                          int32_t rxdataF_ext[][rx_size],
+                          int32_t dl_ch_estimates_ext[][rx_size],
                           unsigned char symbol,
                           uint8_t pilots,
                           uint8_t config_type,
@@ -557,7 +559,6 @@ void nr_dlsch_extract_rbs(int **rxdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
                           uint16_t dlDmrsSymbPos,
                           int chest_time_type);
-
 
 /** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
     @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
@@ -574,22 +575,23 @@ void nr_dlsch_extract_rbs(int **rxdataF,
     @param output_shift Rescaling for compensated output (should be energy-normalizing)
     @param phy_measurements Pointer to UE PHY measurements
 */
-void nr_dlsch_channel_compensation(int32_t **rxdataF_ext,
-                                int32_t **dl_ch_estimates_ext,
-                                int32_t **dl_ch_mag,
-                                int32_t **dl_ch_magb,
-                                int32_t **dl_ch_magr,
-                                int32_t **rxdataF_comp,
-                                int32_t ***rho,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                uint8_t nb_aatx,
-                                uint8_t symbol,
-                                int length,
-                                uint8_t first_symbol_flag,
-                                uint8_t mod_order,
-                                uint16_t nb_rb,
-                                uint8_t output_shift,
-                                PHY_NR_MEASUREMENTS *phy_measurements);
+void nr_dlsch_channel_compensation(uint32_t rx_size,
+                                   int32_t rxdataF_ext[][rx_size],
+                                   int32_t dl_ch_estimates_ext[][rx_size],
+                                   int32_t dl_ch_mag[][rx_size],
+                                   int32_t dl_ch_magb[][rx_size],
+                                   int32_t dl_ch_magr[][rx_size],
+                                   int32_t rxdataF_comp[][rx_size],
+                                   int ***rho,
+                                   NR_DL_FRAME_PARMS *frame_parms,
+                                   uint8_t nb_aatx,
+                                   unsigned char symbol,
+                                   int length,
+                                   uint8_t first_symbol_flag,
+                                   unsigned char mod_order,
+                                   unsigned short nb_rb,
+                                   unsigned char output_shift,
+                                   PHY_NR_MEASUREMENTS *measurements);
 
 void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
                                      int **dl_ch_estimates_ext,
@@ -611,18 +613,20 @@ void nr_dlsch_deinterleaving(uint8_t symbol,
                              uint16_t *llr_deint,
                              uint16_t nb_rb_pdsch);
 
-void nr_dlsch_channel_level_median(int **dl_ch_estimates_ext,
-                                int32_t *median,
-                                int n_tx,
-                                int n_rx,
-                                int length,
-                                int start_point);
+void nr_dlsch_channel_level_median(uint32_t rx_size,
+                                   int32_t dl_ch_estimates[][rx_size],
+                                   int32_t *median,
+                                   int n_tx,
+                                   int n_rx,
+                                   int length,
+                                   int start_point);
 
-void nr_dlsch_detection_mrc(int **rxdataF_comp,
+void nr_dlsch_detection_mrc(uint32_t rx_size,
+                            int32_t rxdataF_comp[][rx_size],
                             int ***rho,
-                            int **dl_ch_mag,
-                            int **dl_ch_magb,
-                            int **dl_ch_magr,
+                            int32_t dl_ch_mag[][rx_size],
+                            int32_t dl_ch_magb[][rx_size],
+                            int32_t dl_ch_magr[][rx_size],
                             short n_tx,
                             short n_rx,
                             unsigned char symbol,
@@ -647,23 +651,24 @@ void nr_a_sum_b(__m128i *input_x,
     @param pilots_flag Flag to indicate pilots in symbol
     @param nb_rb Number of allocated RBs
 */
-void nr_dlsch_channel_level(int **dl_ch_estimates_ext,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         uint8_t n_tx,
-                         int32_t *avg,
-                         uint8_t symbol,
-                         uint32_t len,
-                         unsigned short nb_rb);
+void nr_dlsch_channel_level(uint32_t rx_size,
+                            int32_t dl_ch_estimates[][rx_size],
+			                      NR_DL_FRAME_PARMS *frame_parms,
+			                      uint8_t n_tx,
+			                      int32_t *avg,
+			                      uint8_t symbol,
+			                      uint32_t len,
+			                      unsigned short nb_rb);
 
-
-void nr_dlsch_scale_channel(int32_t **dl_ch_estimates_ext,
-                         NR_DL_FRAME_PARMS *frame_parms,
-                         uint8_t n_tx,
-                         uint8_t n_rx,
-                         uint8_t symbol,
-                         uint8_t start_symbol,
-                         uint32_t len,
-                         uint16_t nb_rb);
+void nr_dlsch_scale_channel(uint32_t rx_size,
+                            int32_t dl_ch_estimates[][rx_size],
+			                      NR_DL_FRAME_PARMS *frame_parms,
+			                      uint8_t n_tx,
+			                      uint8_t n_rx,
+			                      uint8_t symbol,
+			                      uint8_t pilots,
+			                      uint32_t len,
+			                      unsigned short nb_rb);
 
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first
@@ -751,7 +756,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     int32_t pdcch_est_size,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15);
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 
 /*! \brief Performs detection of SSS to find cell ID and other framing parameters (FDD/TDD, normal/extended prefix)
@@ -773,16 +779,17 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                struct complex16 dl_ch_estimates[][estimateSz],
                NR_UE_PBCH *nr_ue_pbch_vars,
                NR_DL_FRAME_PARMS *frame_parms,
-               uint8_t eNB_id,
                uint8_t i_ssb,
                MIMO_mode_t mimo_mode,
                nr_phy_data_t *phy_data,
-               fapiPbch_t* result);
+               fapiPbch_t* result,
+               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 int nr_pbch_detection(UE_nr_rxtx_proc_t *proc,
                       PHY_VARS_NR_UE *ue,
                       int pbch_initial_symbol,
-                      nr_phy_data_t *phy_data);
+                      nr_phy_data_t *phy_data,
+                      c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 
 #ifndef modOrder
@@ -862,14 +869,26 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
 */
 int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
-                NR_UE_DLSCH_t *dlsch,
-                unsigned char gNB_id,
-                unsigned char gNB_id_i, //if this == ue->n_connected_eNB, we assume MU interference
-                uint32_t frame,
-                uint8_t nr_slot_rx,
+                NR_UE_DLSCH_t dlsch[2],
                 unsigned char symbol,
                 unsigned char first_symbol_flag,
-                unsigned char harq_pid);
+                unsigned char harq_pid,
+                uint32_t pdsch_est_size,
+                int32_t dl_ch_estimates[][pdsch_est_size],
+                int16_t *llr[2],
+                c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
+                int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT],
+                uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT],
+                uint32_t rx_size,
+                int32_t dl_ch_estimates_ext[][rx_size],
+                int32_t rxdataF_ext[][rx_size],
+                int32_t rxdataF_comp[][rx_size],
+                int32_t dl_ch_mag[][rx_size],
+                int32_t dl_ch_magb[][rx_size],
+                int32_t dl_ch_magr[][rx_size],
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
+                uint32_t llr_offset[NR_SYMBOLS_PER_SLOT],
+                int32_t *log2_maxh);
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t slot);
 

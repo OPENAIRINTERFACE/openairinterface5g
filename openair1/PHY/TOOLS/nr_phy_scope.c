@@ -788,13 +788,19 @@ static void ueChannelResponse  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_
 }
 
 static void ueFreqWaterFall (scopeGraphData_t **data, OAIgraph_t *graph,PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id ) {
-  NR_DL_FRAME_PARMS *frame_parms=&phy_vars_ue->frame_parms;
   //use 1st antenna
+  if (!data[commonRxdataF])
+    return;
+
+  const int sz = data[commonRxdataF]->lineSz;
+
+  scopeSample_t *rxdataF = (scopeSample_t *)(data[commonRxdataF]+1);
+
   genericWaterFall(graph,
-                   (scopeSample_t *)phy_vars_ue->common_vars.rxdataF[0],
-                   frame_parms->samples_per_slot_wCP,
-                   phy_vars_ue->frame_parms.slots_per_frame,
-                   "X axis: one frame frequency" );
+                   rxdataF,
+                   sz,
+                   1,
+                   "X axis: one slot frequency" );
 }
 /*
 static void uePbchFrequencyResp  (OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
@@ -925,70 +931,48 @@ static void uePcchIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_U
 }
 static void uePdschLLR  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH LLRs
-  if (!phy_vars_ue->pdsch_vars[eNB_id]->llr[0])
+  if (!data[pdschLlr])
     return;
 
-  int num_re = 4500;
-  int Qm = 2;
-  int coded_bits_per_codeword = num_re*Qm;
-  int newsz = 0;
+  const int sz = data[pdschLlr]->lineSz;
   float *llr, *bit;
+  int nx = sz;
+  int16_t *pdsch_llr = (int16_t *)(data[pdschLlr]+1);
 
-#ifndef WEBSRVSCOPE
-  oai_xygraph_getbuff(graph, &bit, &llr, coded_bits_per_codeword*RX_NB_TH_MAX, 0);
-#endif
-  int base=0;
-
-  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
-    int16_t *pdsch_llr = (int16_t *) phy_vars_ue->pdsch_vars[eNB_id]->llr[0]; // stream 0
 #ifdef WEBSRVSCOPE
-    newsz += websrv_cpllrbuff_tomsg(graph, pdsch_llr, coded_bits_per_codeword, 0, thr, RX_NB_TH_MAX);
+  nx = websrv_cpllrbuff_tomsg(graph, pdsch_llr, sz, UE_id, 0, 0);
 #else
-    for (int i=0; i<coded_bits_per_codeword; i++) {
-      llr[base+i] = (float) pdsch_llr[i];
-      bit[base+i] = (float) base+i;
-    }
-    newsz += coded_bits_per_codeword;
-#endif
-    base+=coded_bits_per_codeword;
-  }
+  oai_xygraph_getbuff(graph, &bit, &llr, sz, 0);
 
-  AssertFatal(base <= coded_bits_per_codeword*RX_NB_TH_MAX, "");
+  for (int i=0; i<sz; i++) {
+    llr[i] = (float) pdsch_llr[i];
+  }
+#endif
+
   //fl_set_xyplot_xbounds(form->pdsch_llr,0,coded_bits_per_codeword);
-  oai_xygraph(graph, bit, llr, newsz, 0, 10);
+  oai_xygraph(graph, bit, llr, nx, 0, 10);
 }
 static void uePdschIQ  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   // PDSCH I/Q of MF Output
-  if (!phy_vars_ue->pdsch_vars[eNB_id]->rxdataF_comp0[0])
+  if (!data[pdschRxdataF_comp])
     return;
 
-  NR_DL_FRAME_PARMS *frame_parms = &phy_vars_ue->frame_parms;
-  int sz=7*2*frame_parms->N_RB_DL*12; // size of the malloced buffer
-  int newsz = 0;
+  const int sz=data[pdschRxdataF_comp]->lineSz;
+  int nz = sz;
   float *I, *Q;
-  int base=0;
-
-#ifndef WEBSRVSCOPE
-  oai_xygraph_getbuff(graph, &I, &Q, sz * RX_NB_TH_MAX, 0);
-  memset(I+base, 0, sz*RX_NB_TH_MAX * sizeof(*I));
-  memset(Q+base, 0, sz*RX_NB_TH_MAX * sizeof(*Q));
-#endif
-  for (int thr=0 ; thr < RX_NB_TH_MAX ; thr ++ ) {
-    scopeSample_t *pdsch_comp = (scopeSample_t *) phy_vars_ue->pdsch_vars[eNB_id]->rxdataF_comp0[0];
+  scopeSample_t *pdsch_comp = (scopeSample_t *) (data[pdschRxdataF_comp]+1);
 #ifdef WEBSRVSCOPE
-    newsz += websrv_cpiqbuff_tomsg(graph, pdsch_comp, sz, 0, base);
+  nz += websrv_cpiqbuff_tomsg(graph, pdsch_comp, sz, 0, 0);
 #else
-    for (int s=0; s<sz; s++) {
-      I[s+base] += pdsch_comp[s].r;
-      Q[s+base] += pdsch_comp[s].i;
-    }
-    newsz += sz;
-#endif
-    base+=sz;
-  }
+  oai_xygraph_getbuff(graph, &I, &Q, sz, 0);
 
-  AssertFatal(base <= sz*RX_NB_TH_MAX, "");
-  oai_xygraph(graph, I, Q, newsz, 0, 10);
+  for (int s=0; s<sz; s++) {
+    I[s] = pdsch_comp[s].r;
+    Q[s] = pdsch_comp[s].i;
+  }
+#endif
+
+  oai_xygraph(graph, I, Q, nz, 0, 10);
 }
 static void uePdschThroughput  (scopeGraphData_t **data, OAIgraph_t *graph, PHY_VARS_NR_UE *phy_vars_ue, int eNB_id, int UE_id) {
   /*
@@ -1153,19 +1137,23 @@ static void *nrUEscopeThread(void *arg) {
 }
 #endif
 
+pthread_mutex_t UEcopyDataMutex;
+
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
   // Local static copy of the scope data bufs
   // The active data buf is alterned to avoid interference between the Scope thread (display) and the Rx thread (data input)
   // Index of "2" could be set to the number of Rx threads + 1
-  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][2] = {0};
+  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][3] = {0};
   static int  copyDataBufsIdx[UEdataTypeNumberOfItems] = {0};
 
   scopeData_t *tmp=(scopeData_t *)ue->scopeData;
 
   if (tmp) {
-    // Begin of critical zone between UE Rx threads that might copy new data at the same time: might require a mutex
-    int newCopyDataIdx = (copyDataBufsIdx[type]==0)?1:0;
+    // Begin of critical zone between UE Rx threads that might copy new data at the same time:
+    pthread_mutex_lock(&UEcopyDataMutex);
+    int newCopyDataIdx = (copyDataBufsIdx[type]<2)?copyDataBufsIdx[type]+1:0;
     copyDataBufsIdx[type] = newCopyDataIdx;
+    pthread_mutex_unlock(&UEcopyDataMutex);
     // End of critical zone between UE Rx threads
 
     // New data will be copied in a different buffer than the live one
@@ -1204,6 +1192,7 @@ STATICFORXSCOPE void nrUEinitScope(PHY_VARS_NR_UE *ue)
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
 #endif
+  pthread_mutex_init(&UEcopyDataMutex, NULL);
 }
 
 void nrscope_autoinit(void *dataptr) {

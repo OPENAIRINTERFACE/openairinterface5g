@@ -81,28 +81,28 @@ nrUE_params_t *get_nrUE_params(void) {
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 
-int nr_ue_pdcch_procedures(uint8_t gNB_id,
-			   PHY_VARS_NR_UE *ue,
+int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
          int32_t pdcch_est_size,
          int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
          nr_phy_data_t *phy_data,
-         int n_ss) {
+         int n_ss,
+         c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
   return 0;
 }
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
-                           int eNB_id,
-                           NR_UE_DLSCH_t *dlsch) {
+                           NR_UE_DLSCH_t dlsch[2],
+                           int16_t *llr[2],
+                           c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
   return 0;
 }
 
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
-                            int gNB_id,
-                            NR_UE_DLSCH_t *dlsch0,
-                            NR_UE_DLSCH_t *dlsch1) {
+                            NR_UE_DLSCH_t dlsch[2],
+                            int16_t *llr[2]) {
   return false;
 }
 
@@ -592,6 +592,8 @@ int main(int argc, char **argv)
 
   processingData_L1tx_t msgDataTx;
   // generate signal
+  const uint32_t rxdataF_sz = UE->frame_parms.samples_per_slot_wCP;
+  __attribute__ ((aligned(32))) c16_t rxdataF[UE->frame_parms.nb_antennas_rx][rxdataF_sz];
   if (input_fd==NULL) {
 
     for (i=0; i<frame_parms->Lmax; i++) {
@@ -756,14 +758,16 @@ int main(int argc, char **argv)
 	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
 
         int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
+        proc.nr_slot_rx = ssb_slot;
+        proc.gNB_id = 0;
 	for (int i=UE->symbol_offset+1; i<UE->symbol_offset+4; i++) {
           nr_slot_fep(UE,
                       &proc,
                       i%frame_parms->symbols_per_slot,
-                      ssb_slot);
+                      rxdataF);
 
           nr_pbch_channel_estimation(UE,estimateSz, dl_ch_estimates, dl_ch_estimates_time, &proc, 
-				     0,ssb_slot,i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf);
+				     i%frame_parms->symbols_per_slot,i-(UE->symbol_offset+1),ssb_index%8,n_hf,rxdataF);
 
         }
 	fapiPbch_t result;
@@ -772,11 +776,11 @@ int main(int argc, char **argv)
 			 estimateSz, dl_ch_estimates,
 			 UE->pbch_vars[0],
                          frame_parms,
-                         0,
                          ssb_index%8,
                          SISO,
                          &phy_data,
-                         &result);
+                         &result,
+                         rxdataF);
 
 	if (ret==0) {
 	  //UE->rx_ind.rx_indication_body->mib_pdu.ssb_index;  //not yet detected automatically
