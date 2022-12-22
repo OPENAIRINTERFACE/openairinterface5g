@@ -756,14 +756,18 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   }
 }
 
-void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time) {
-
+void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing)
+{
   pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
+  const int n_slots_frame = slotsperframe[subcarrierSpacing];
   long *delay[8];
-  for (int i=0;i<8;i++) {
-    delay[i] = calloc(1,sizeof(*delay[i]));
-    *delay[i] = i+min_feedback_time;
-    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
+  for (int i = 0; i < 8; i++) {
+    int curr_delay = i + min_feedback_time;
+    if (curr_delay <= n_slots_frame) {
+      delay[i] = calloc(1,sizeof(*delay[i]));
+      *delay[i] = curr_delay;
+      ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
+    }
   }
 }
 
@@ -1238,7 +1242,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   config_pucch_resset1(pucch_Config, uecap);
   set_pucch_power_config(pucch_Config, configuration->do_CSIRS);
   scheduling_request_config(scc, pucch_Config);
-  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
+  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, ubwp->bwp_Common->genericParameters.subcarrierSpacing);
 
   NR_PUSCH_Config_t *pusch_Config = NULL;
   if(servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList &&

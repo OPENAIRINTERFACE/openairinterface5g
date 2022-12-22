@@ -221,9 +221,9 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
                           int r_pucch,
                           int do_common);
 
-void get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
-                                nr_dci_format_t dci_format,
-                                uint8_t *pdsch_to_harq_feedback);
+int get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
+                               nr_dci_format_t dci_format,
+                               uint8_t *pdsch_to_harq_feedback);
   
 void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
                                   nr_scs_e scs_common,
