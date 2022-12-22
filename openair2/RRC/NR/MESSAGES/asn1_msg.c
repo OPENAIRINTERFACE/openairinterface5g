@@ -74,6 +74,8 @@
 #include "NR_RRCReconfigurationComplete-IEs.h"
 #include "NR_DLInformationTransfer.h"
 #include "NR_RRCReestablishmentRequest.h"
+#include "NR_PCCH-Message.h"
+#include "NR_PagingRecord.h"
 #include "NR_UE-CapabilityRequestFilterNR.h"
 #include "common/utils/nr/nr_common.h"
 #if defined(NR_Rel16)
@@ -136,6 +138,7 @@
 #include "intertask_interface.h"
 
 #include "common/ran_context.h"
+#include "conversions.h"
 
 //#define XER_PRINT
 
@@ -2130,4 +2133,43 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
 
   return mc;
+}
+
+uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi) {
+  LOG_D(NR_RRC, "[gNB %d] do_NR_Paging start\n", Mod_id);
+  NR_PCCH_Message_t pcch_msg;
+  pcch_msg.message.present           = NR_PCCH_MessageType_PR_c1;
+  asn1cCalloc(pcch_msg.message.choice.c1, c1);
+  c1->present = NR_PCCH_MessageType__c1_PR_paging;
+  c1->choice.paging = CALLOC(1, sizeof(NR_Paging_t));
+  c1->choice.paging->pagingRecordList = CALLOC(
+      1, sizeof(*pcch_msg.message.choice.c1->choice.paging->pagingRecordList));
+  c1->choice.paging->nonCriticalExtension = NULL;
+  asn_set_empty(&c1->choice.paging->pagingRecordList->list);
+  c1->choice.paging->pagingRecordList->list.count = 0;
+
+  asn1cSequenceAdd(c1->choice.paging->pagingRecordList->list, NR_PagingRecord_t,
+                   paging_record_p);
+  /* convert ue_paging_identity_t to PagingUE_Identity_t */
+  paging_record_p->ue_Identity.present = NR_PagingUE_Identity_PR_ng_5G_S_TMSI;
+  // set ng_5G_S_TMSI
+  INT32_TO_BIT_STRING(tmsi, &paging_record_p->ue_Identity.choice.ng_5G_S_TMSI);
+
+  /* add to list */
+  LOG_D(NR_RRC, "[gNB %d] do_Paging paging_record: PagingRecordList.count %d\n",
+        Mod_id, c1->choice.paging->pagingRecordList->list.count);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(
+      &asn_DEF_NR_PCCH_Message, NULL, (void *)&pcch_msg, buffer, RRC_BUF_SIZE);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_PCCH_Message, &pcch_msg);
+  if(enc_rval.encoded == -1) {
+    LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_PCCH_Message, (void *)&pcch_msg);
+  }
+
+  return((enc_rval.encoded+7)/8);
 }

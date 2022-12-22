@@ -50,6 +50,8 @@
 #define F1AP_UE_CONTEXT_RELEASE_REQ(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
 #define F1AP_UE_CONTEXT_RELEASE_CMD(mSGpTR)        (mSGpTR)->ittiMsg.f1ap_ue_context_release_req
 
+#define F1AP_PAGING_IND(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_paging_ind
+
 /* Length of the transport layer address string
  * 160 bits / 8 bits by char.
  */
@@ -423,5 +425,16 @@ typedef struct f1ap_ue_context_release_s {
   int           rrc_container_length;
 } f1ap_ue_context_release_req_t, f1ap_ue_context_release_cmd_t,
   f1ap_ue_context_release_cplt_t;
+
+typedef struct f1ap_paging_ind_s {
+  uint16_t ueidentityindexvalue;
+  uint64_t fiveg_s_tmsi;
+  uint8_t  fiveg_s_tmsi_length;
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+  uint64_t nr_cellid;
+  uint8_t  paging_drx;
+} f1ap_paging_ind_t;
 
 #endif /* F1AP_MESSAGES_TYPES_H_ */
