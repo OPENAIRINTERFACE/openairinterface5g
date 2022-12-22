@@ -3244,7 +3244,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 #endif
         if (dci_pdu_rel15->format_indicator == 1)
           return 1; // discard dci, format indicator not corresponding to dci_format
-	fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
+	fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
 	pos+=fsize;
 	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
 #ifdef DEBUG_EXTRACT_DCI
@@ -3308,7 +3308,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 #endif
         if (dci_pdu_rel15->format_indicator == 1)
           return 1; // discard dci, format indicator not corresponding to dci_format
-	fsize = (int)ceil( log2( (N_RB_UL*(N_RB_UL+1))>>1 ) );
+	fsize = dci_pdu_rel15->frequency_domain_assignment.nbits;
 	pos+=fsize;
 	dci_pdu_rel15->frequency_domain_assignment.val = (*dci_pdu>>(dci_size-pos))&((1<<fsize)-1);
 #ifdef DEBUG_EXTRACT_DCI
