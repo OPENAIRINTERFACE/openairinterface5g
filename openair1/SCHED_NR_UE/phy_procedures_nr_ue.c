@@ -911,8 +911,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    NR_BWP_Id_t dl_bwp = mac->DL_BWP_Id;
-    NR_BWP_Id_t ul_bwp = mac->UL_BWP_Id;
+    NR_BWP_Id_t dl_bwp = mac->current_DL_BWP.bwp_id;
+    NR_BWP_Id_t ul_bwp = mac->current_UL_BWP.bwp_id;
 
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
     if(ul_bwp){

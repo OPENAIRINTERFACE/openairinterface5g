@@ -310,10 +310,10 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   mac->physCellId = cell_id;
 
-  nr_mac_rrc_data_ind_ue( module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3 );    //  fixed 3 bytes MIB PDU
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3);    //  fixed 3 bytes MIB PDU
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
-  //if(mac->mib != NULL){
+
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
 
@@ -649,17 +649,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   RA_config_t *ra = &mac->ra;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
+  NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
   int default_abc = 1;
 
-  uint16_t n_RB_DLBWP;
-  if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) n_RB_DLBWP = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  else if (mac->scc) n_RB_DLBWP =  NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-  else if (mac->scc_SIB) n_RB_DLBWP =  NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-  else n_RB_DLBWP = mac->type0_PDCCH_CSS_config.num_rbs;
-
-  LOG_D(MAC, "In %s: Processing received DCI format %s (DL BWP %d)\n", __FUNCTION__, dci_formats[dci_format], n_RB_DLBWP);
+  LOG_D(MAC, "In %s: Processing received DCI format %s\n", __FUNCTION__, dci_formats[dci_format]);
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0: {
@@ -1066,8 +1062,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 	  dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
 	  dci->pucch_resource_indicator,
 	  1+dci->pdsch_to_harq_feedback_timing_indicator.val);
-
-    //	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
 	    
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
             
@@ -1111,9 +1105,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(NR_MAC,"[%d.%d] bwp_indicator %d > NR_MAX_NUM_BWP Possibly due to false DCI. Ignoring DCI!\n", frame, slot,dci->bwp_indicator.val);
       return -1;
     }
-    config_bwp_ue(mac, &dci->bwp_indicator.val, &dci_format);
-    NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-    NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+    NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
+    NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
     NR_PDSCH_Config_t *pdsch_Config=NULL;
     NR_BWP_DownlinkDedicated_t *bwpd=NULL;
     NR_BWP_DownlinkCommon_t *bwpc=NULL;
@@ -1127,16 +1120,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_1 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
-    dlsch_config_pdu_1_1->BWPSize = NRRIV2BW(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    dlsch_config_pdu_1_1->BWPStart = NRRIV2PRBOFFSET(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    dlsch_config_pdu_1_1->SubcarrierSpacing = bwpc->genericParameters.subcarrierSpacing;
+    dlsch_config_pdu_1_1->BWPSize = current_DL_BWP->BWPSize;
+    dlsch_config_pdu_1_1->BWPStart = current_DL_BWP->BWPStart;
+    dlsch_config_pdu_1_1->SubcarrierSpacing = current_DL_BWP->scs;
 
     /* IDENTIFIER_DCI_FORMATS */
     /* CARRIER_IND */
     /* BANDWIDTH_PART_IND */
     //    dlsch_config_pdu_1_1->bandwidth_part_ind = dci->bandwidth_part_ind;
     /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,dlsch_config_pdu_1_1,0,n_RB_DLBWP,dci->frequency_domain_assignment.val) < 0) {
+    if (nr_ue_process_dci_freq_dom_resource_assignment(NULL, dlsch_config_pdu_1_1, 0, current_DL_BWP->BWPSize, dci->frequency_domain_assignment.val) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
@@ -1357,8 +1350,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* DMRS_SEQ_INI */
     //FIXME!!!
 
-    //	    dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15.N_RB_BWP = n_RB_DLBWP;
-
     /* PDSCH_TO_HARQ_FEEDBACK_TIME_IND */
     // according to TS 38.213 Table 9.2.3-1
     uint8_t feedback_ti =
@@ -1406,9 +1397,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     long *maxMIMO_Layers = mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers;
     AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
     int nl_tbslbrm = *maxMIMO_Layers < 4 ? *maxMIMO_Layers : 4;
-    NR_BWP_t genericParameters = mac->scc ? mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters :
-                                            mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
-    int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int BWPSize = current_DL_BWP->BWPSize;
     int bw_tbslbrm = get_dlbw_tbslbrm(BWPSize, mac->cg);
     dlsch_config_pdu_1_1->tbslbrm = nr_compute_tbslbrm(dlsch_config_pdu_1_1->mcs_table,
 			                               bw_tbslbrm,
@@ -1527,23 +1516,12 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
   int O_CRC = 0; //FIXME
   uint16_t O_uci = O_CSI + O_ACK;
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   long *pusch_id = NULL;
   long *id0 = NULL;
-  int scs;
-  NR_BWP_UplinkCommon_t *initialUplinkBWP;
-  if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
-  else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-  if (mac->cg && bwp_id > 1 && mac->ULbwp[bwp_id - 1] &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    scs = mac->ULbwp[bwp_id - 1]->bwp_Common->genericParameters.subcarrierSpacing;
-  }
-  else
-    scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
+  const int scs = current_UL_BWP->scs;
 
   int subframe_number = slot / (nr_slots_per_frame[scs]/10);
   nb_pucch_format_4_in_subframes[subframe_number] = 0;
@@ -1560,10 +1538,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->start_symbol_index = initial_pucch_resource[pucch->initial_pucch_id].startingSymbolIndex;
     pucch_pdu->nr_of_symbols = initial_pucch_resource[pucch->initial_pucch_id].nrofSymbols;
 
-    pucch_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
-                                   MAX_BWP_SIZE);
-    pucch_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,
-                                           MAX_BWP_SIZE);
+    pucch_pdu->bwp_size = current_UL_BWP->BWPSize;
+    pucch_pdu->bwp_start = current_UL_BWP->BWPStart;
 
     pucch_pdu->prb_size = 1; // format 0 or 1
     int RB_BWP_offset;
@@ -1626,8 +1602,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
       else *id0 = mac->physCellId;
       pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
-      pucch_pdu->bwp_size = NRRIV2BW(mac->ULbwp[bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-      pucch_pdu->bwp_start = NRRIV2PRBOFFSET(mac->ULbwp[bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
     }
     else if (bwp_id==0 &&
              mac->cg &&
@@ -1638,12 +1612,11 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
              mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config &&
              mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup) {
       pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
-      pucch_pdu->bwp_size = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
-      pucch_pdu->bwp_start = NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
     }
     else AssertFatal(1==0,"no pucch_Config\n");
 
-
+    pucch_pdu->bwp_size = current_UL_BWP->BWPSize;
+    pucch_pdu->bwp_start = current_UL_BWP->BWPStart;
     pucch_pdu->prb_start = pucchres->startingPRB;
     pucch_pdu->freq_hop_flag = pucchres->intraSlotFrequencyHopping!= NULL ?  1 : 0;
     pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
@@ -1955,7 +1928,7 @@ int get_deltatf(uint16_t nb_of_prbs,
 
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
   int pucch_resource_set_id = 0;
-  NR_BWP_Id_t bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t bwp_id = mac->current_DL_BWP.bwp_id;
 
   //long *pucch_max_pl_bits = NULL;
 
@@ -2027,7 +2000,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch) {
 
   NR_PUCCH_ResourceId_t *current_resource_id = NULL;
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_BWP_Id_t bwp_id = mac->current_UL_BWP.bwp_id;
   int n_list;
 
   if (pucch->is_common == 1 ||
@@ -2151,10 +2124,12 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   int V_DAI_m_DL = 0;
   NR_UE_HARQ_STATUS_t *current_harq;
   int sched_frame,sched_slot;
-  int slots_per_frame,scs;
+  int slots_per_frame;
 
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
-  NR_BWP_Id_t ul_bwp_id = mac->UL_BWP_Id;
+  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
+  NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
   NR_BWP_DownlinkDedicated_t *bwpd=NULL;
   NR_BWP_DownlinkCommon_t *bwpc=NULL;
   NR_BWP_UplinkDedicated_t *ubwpd=NULL;
@@ -2170,7 +2145,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     number_of_code_word = 2;
   }
 
-  scs = ubwpc->genericParameters.subcarrierSpacing;
+  int scs = current_UL_BWP->scs;
 
   slots_per_frame = nr_slots_per_frame[scs];
 
@@ -2350,24 +2325,11 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          frame_t frame,
                                          int slot) {
 
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
-  int scs;
-  NR_BWP_UplinkCommon_t *initialUplinkBWP;
-  if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
-  else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
 
-  if (mac->cg && bwp_id && mac->ULbwp[bwp_id - 1] &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    scs = mac->ULbwp[bwp_id - 1]->bwp_Common->genericParameters.subcarrierSpacing;
-  }
-  else
-    scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
-
-  const int n_slots_frame = nr_slots_per_frame[scs];
+  const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
 
   if (bwp_id>0 &&
       mac->ULbwp[bwp_id-1] &&
@@ -2476,7 +2438,8 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
                                 int slot,
                                 PUCCH_sched_t *pucch) {
 
-  NR_BWP_Id_t bwp_id = mac->UL_BWP_Id;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
   int csi_bits = 0;
 
@@ -2499,19 +2462,6 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
         int period, offset;
         csi_period_offset(csirep, NULL, &period, &offset);
 
-        int scs;
-        NR_BWP_Uplink_t *ubwp = mac->ULbwp[bwp_id-1];
-        NR_BWP_UplinkCommon_t *initialUplinkBWP;
-        if (mac->scc) initialUplinkBWP = mac->scc->uplinkConfigCommon->initialUplinkBWP;
-        else          initialUplinkBWP = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-
-        if (ubwp &&
-            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-            mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
-          scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
-        else
-          scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
-
         if (bwp_id>0 &&
             mac->ULbwp[bwp_id-1] &&
             mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
@@ -2527,7 +2477,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
           pucch_Config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
         }
 
-        const int n_slots_frame = nr_slots_per_frame[scs];
+        const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
         if (((n_slots_frame*frame + slot - offset)%period) == 0 && pucch_Config) {
           LOG_D(NR_MAC, "Preparing CSI report in frame %d slot %d CSI report ID %d\n", frame, slot, csi_report_id);
           NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
@@ -2859,7 +2809,7 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
 int get_n_rb(NR_UE_MAC_INST_t *mac, int rnti_type){
 
   int N_RB = 0, start_RB;
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
   switch(rnti_type) {
     case NR_RNTI_RA:
     case NR_RNTI_TC:
@@ -2896,17 +2846,10 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   int fsize = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
-  NR_BWP_Id_t dl_bwp_id =  mac->DL_BWP_Id ;
-  NR_BWP_Id_t ul_bwp_id =  mac->UL_BWP_Id ;
-
-  int N_RB_UL = 0;
-  if(ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1]) {
-    N_RB_UL = NRRIV2BW(mac->ULbwp[ul_bwp_id - 1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  } else if(mac->scc) {
-    N_RB_UL = NRRIV2BW(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  } else if(mac->scc_SIB) {
-    N_RB_UL = NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  }
+  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
+  int N_RB_UL = current_UL_BWP->BWPSize;
 
   LOG_D(MAC,"nr_extract_dci_info : dci_pdu %lx, size %d\n",*dci_pdu,dci_size);
   switch(dci_format) {
@@ -2968,10 +2911,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
       LOG_D(MAC,"Format indicator %d (%d bits) N_RB_BWP %d => %d (0x%lx)\n",dci_pdu_rel15->format_indicator,1,N_RB,dci_size-pos,*dci_pdu);
 #endif
 
-      // check BWP id
-      if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) N_RB=NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      else         N_RB=NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
+      N_RB = current_DL_BWP->BWPSize;
       // Freq domain assignment (275rb >> fsize = 16)
       fsize = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
       pos+=fsize;
@@ -3234,9 +3174,6 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     break;
   
   case NR_UL_DCI_FORMAT_0_0:
-    if (mac->ULbwp[ul_bwp_id-1]) N_RB_UL=NRRIV2BW(mac->ULbwp[ul_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    else         N_RB_UL=NRRIV2BW(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
     switch(rnti_type)
       {
       case NR_RNTI_C:

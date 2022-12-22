@@ -451,8 +451,6 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
-void config_bwp_ue(NR_UE_MAC_INST_t *mac, uint32_t *bwp_ind, uint8_t *dci_format);
-
 void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,
                           NR_BWP_Id_t dl_bwp_id);

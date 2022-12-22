@@ -94,10 +94,10 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
 
-  NR_BWP_Id_t dl_bwp_id = mac->DL_BWP_Id;
+  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
-  NR_BWP_DownlinkCommon_t *bwp_Common=NULL;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP=NULL;
   NR_BWP_UplinkCommon_t *initialUplinkBWP=NULL;
 
@@ -105,7 +105,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     initialDownlinkBWP =  scc!=NULL ? scc->downlinkConfigCommon->initialDownlinkBWP : &scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
     initialUplinkBWP = scc!=NULL ? scc->uplinkConfigCommon->initialUplinkBWP : &scc_SIB->uplinkConfigCommon->initialUplinkBWP;
   }
-  bwp_Common = dl_bwp_id>0 ? mac->DLbwp[dl_bwp_id-1]->bwp_Common : NULL;
 
   NR_SearchSpace_t *ss;
   NR_ControlResourceSet_t *coreset;
@@ -167,28 +166,20 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   switch(rnti_type) {
     case NR_RNTI_C:
     // we use DL BWP dedicated
-      sps = bwp_Common ?
-	      (bwp_Common->genericParameters.cyclicPrefix ? 12 : 14) :
-        initialDownlinkBWP->genericParameters.cyclicPrefix ? 12 : 14;
+    sps = current_DL_BWP->cyclicprefix ? 12 : 14;
     // for SPS=14 8 MSBs in positions 13 down to 6
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
     rel15->rnti = mac->crnti;
-    if (!bwp_Common) {
-      rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->BWPStart = NRRIV2PRBOFFSET(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    }
-    else {
-      rel15->BWPSize = NRRIV2BW(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->SubcarrierSpacing = bwp_Common->genericParameters.subcarrierSpacing;
-    }
+    rel15->BWPSize = current_DL_BWP->BWPSize;
+    rel15->BWPStart = current_DL_BWP->BWPStart;
+    rel15->SubcarrierSpacing = current_DL_BWP->scs;
     for (int i = 0; i < rel15->num_dci_options; i++) {
       rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_C, rel15->BWPSize, dl_bwp_id, coreset_id, mac->type0_PDCCH_CSS_config.num_rbs);
     }
     break;
     case NR_RNTI_RA:
     // we use the initial DL BWP
-    sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+    sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
     monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
     rel15->rnti = mac->ra.ra_rnti;
     if (get_softmodem_params()->sa) {
@@ -196,9 +187,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
     } else { // NSA mode is not using the Initial BWP
       rel15->BWPSize = NRRIV2BW(initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      rel15->BWPStart = NRRIV2PRBOFFSET(bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      rel15->BWPStart = current_DL_BWP->BWPStart;
     }
-    rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+    rel15->SubcarrierSpacing = current_DL_BWP->scs;
     rel15->dci_length_options[0] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[0]], rel15->dci_format_options[0], NR_RNTI_RA, rel15->BWPSize, dl_bwp_id, coreset_id, mac->type0_PDCCH_CSS_config.num_rbs);
     break;
     case NR_RNTI_P:
@@ -207,12 +198,12 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     break;
     case NR_RNTI_TC:
       // we use the initial DL BWP
-      sps = initialDownlinkBWP->genericParameters.cyclicPrefix == NULL ? 14 : 12;
+      sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
       rel15->rnti = mac->ra.t_crnti;
       rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
       rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
-      rel15->SubcarrierSpacing = initialDownlinkBWP->genericParameters.subcarrierSpacing;
+      rel15->SubcarrierSpacing = current_DL_BWP->scs;
       for (int i = 0; i < rel15->num_dci_options; i++) {
         rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &mac->def_dci_pdu_rel15[rel15->dci_format_options[i]], rel15->dci_format_options[i], NR_RNTI_TC, rel15->BWPSize, dl_bwp_id, coreset_id, mac->type0_PDCCH_CSS_config.num_rbs);
       }
@@ -220,9 +211,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     case NR_RNTI_SP_CSI:
     break;
     case NR_RNTI_SI:
-      // we use DL BWP dedicated
-      if (bwp_Common) sps = bwp_Common->genericParameters.cyclicPrefix == NULL ? 14 : 12;
-      else sps=14; // note: normally this would be found with SSS detection
+      sps=14;
 
       // for SPS=14 8 MSBs in positions 13 down to 6
       monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
@@ -280,7 +269,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   RA_config_t *ra = &mac->ra;
   int ss_id;
 
-  uint8_t bwp_id = (mac->cg) ? mac->DL_BWP_Id : 0;
+  uint8_t bwp_id = mac->current_DL_BWP.bwp_id;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_DownlinkDedicated_t *bwpd  = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Dedicated : mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP;
   NR_BWP_DownlinkCommon_t *bwp_Common = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Common : &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
@@ -431,7 +420,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
       } // for ss_id
   }
   else {
-
     AssertFatal(1==0,"Handle DCI searching when CellGroup without dedicated BWP\n");
   }
 }
