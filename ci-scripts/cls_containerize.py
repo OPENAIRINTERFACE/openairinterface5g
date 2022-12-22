@@ -1001,7 +1001,7 @@ class Containerize():
 				services.append(s)
 		logging.info(f'stopping services {services}')
 
-		mySSH.command(f'docker-compose -f ci-docker-compose.yml stop', '\$', 30)
+		mySSH.command(f'docker-compose -f ci-docker-compose.yml stop -t3', '\$', 30)
 		time.sleep(5)  # give some time to running containers to stop
 		for svcName in services:
 			# head -n -1 suppresses the final "X exited with status code Y"
@@ -1203,7 +1203,7 @@ class Containerize():
 
 		# Stop the containers to shut down objects
 		logging.debug('\u001B[1m Stopping containers \u001B[0m')
-		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml stop'
+		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml stop -t3'
 		logging.info(cmd)
 		try:
 			deployStatus = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=100)
