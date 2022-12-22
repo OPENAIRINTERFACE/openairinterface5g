@@ -32,13 +32,14 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
-#include "PHY/LTE_TRANSPORT/transport_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "SCHED/sched_eNB.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "nfapi_pnf_interface.h"
 #include "fapi_l1.h"
 
 #include "common/ran_context.h"
+#include "openair1/PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 extern RAN_CONTEXT_t RC;
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req);

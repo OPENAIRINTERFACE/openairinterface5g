@@ -60,7 +60,6 @@ static int DEFENBS[] = {0};
 #include <openair2/UTIL/OPT/opt.h>
 #include <openair1/SIMULATION/TOOLS/sim.h>
 #include <openair1/PHY/phy_vars.h>
-#include <openair1/SCHED/sched_common_vars.h>
 #include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 

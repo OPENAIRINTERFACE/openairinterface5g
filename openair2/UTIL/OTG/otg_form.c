@@ -35,7 +35,6 @@
 #include "otg_externs.h"
 #include "otg_kpi.h"
 
-extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
 
 FD_otg *form_dl, *form_ul;

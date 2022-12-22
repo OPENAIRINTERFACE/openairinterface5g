@@ -165,8 +165,7 @@ void measurcmd_display_rlcstats(telnet_printfunc_t prnt) {
     statsptr[i].vptr = rlcstats + i;
   }
 
-  for (int UE_id=UE_info->list.head; UE_id>=0; UE_id=UE_info->list.next[UE_id]) {
-#define NB_eNB_INST 1
+  for (int UE_id = UE_info->list.head; UE_id >= 0; UE_id = UE_info->list.next[UE_id]) {
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,eNB_id, ENB_FLAG_YES,UE_info->eNB_UE_stats[0][UE_id].crnti,
                                    eNB->frame,eNB->subframe,eNB_id);
     measurcmd_display_one_rlcstat(prnt, UE_id, statsptr, num_rlcmeasure, rlcstats, "DCCH", &ctxt, SRB_FLAG_YES, DCCH);

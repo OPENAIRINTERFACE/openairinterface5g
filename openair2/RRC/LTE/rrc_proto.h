@@ -655,9 +655,9 @@ rrc_eNB_free_UE(
   const struct rrc_eNB_ue_context_s         *const ue_context_pP
 );
 
-long binary_search_int(int elements[], long numElem, int value);
+long binary_search_int(const int elements[], long numElem, int value);
 
-long binary_search_float(float elements[], long numElem, float value);
+long binary_search_float(const float elements[], long numElem, float value);
 
 void openair_rrc_top_init_eNB(int eMBMS_active,uint8_t HO_active);
 

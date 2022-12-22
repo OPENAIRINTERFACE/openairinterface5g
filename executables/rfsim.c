@@ -45,7 +45,7 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "enb_config.h"
 #include "enb_paramdef.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 #include "common/config/config_paramdesc.h"
 #include "common/config/config_userapi.h"
 #include "common/ran_context.h"
@@ -180,11 +180,12 @@ int ru_trx_read(openair0_device *device, openair0_timestamp *ptimestamp, void **
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_UL_SIGNAL,1);
       do_UL_sig(&sim,
                 subframe,
-                0,  // abstraction_flag
+                0, // abstraction_flag
                 RC.ru[ru_id]->frame_parms,
-                0,  // frame is only used for abstraction
+                0, // frame is only used for abstraction
                 ru_id,
-                CC_id);
+                CC_id,
+                1);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_SIM_DO_UL_SIGNAL,0);
     }
 

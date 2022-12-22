@@ -40,7 +40,6 @@ unsigned int start_log_jitter=0;
 #include "otg_kpi.h"
 #include "otg_externs.h"
 
-extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
 
 void tx_throughput(int src, int dst, int application) {

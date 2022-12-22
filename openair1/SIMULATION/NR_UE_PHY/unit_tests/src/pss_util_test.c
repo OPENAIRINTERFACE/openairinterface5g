@@ -44,8 +44,6 @@
 /* to declare ue variables */
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
-#include "SCHED/sched_common_vars.h"
-#include "PHY/MODULATION/modulation_vars.h"
 
 #include "PHY/NR_REFSIG/pss_nr.h"
 #include "PHY/NR_REFSIG/sss_nr.h"

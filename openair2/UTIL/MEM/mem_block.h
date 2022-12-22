@@ -36,7 +36,7 @@
 #ifdef __cplusplus
 extern "C" {
 #endif
-#include "openair2/COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 //-----------------------------------------------------------------------------
 
 typedef struct mem_block_t {

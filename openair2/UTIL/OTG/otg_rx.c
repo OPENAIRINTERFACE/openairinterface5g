@@ -43,7 +43,6 @@
   #include <sql_common.h>
 #endif
 
-extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
 
 //#include "LAYER2/MAC/extern.h"

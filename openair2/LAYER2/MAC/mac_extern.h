@@ -36,33 +36,12 @@
 #include "mac.h"
 #include "RRC/LTE/rrc_defs.h"
 
-extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
-//extern uint32_t EBSR_Level[63];
-extern const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE];
-//extern uint32_t Extended_BSR_TABLE[63];  ----currently not used 
-
-extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-
-extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-
-extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-
 extern UE_RRC_INST *UE_rrc_inst;
 extern UE_MAC_INST *UE_mac_inst;
-
-extern eNB_ULSCH_INFO eNB_ulsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
-extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];	// eNBxUE = 8x8
-
-extern unsigned char NB_INST;
-extern unsigned char NB_eNB_INST;
-extern uint16_t NB_UE_INST;
-extern uint16_t NB_THREAD_INST;
-extern unsigned char NB_RN_INST;
+extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB];
+extern int NB_UE_INST;
 
 extern const int cqi_to_mcs[16];
-
-extern uint32_t RRC_CONNECTION_FLAG;
-
 extern uint8_t rb_table[34];
 extern rb_id_t mbms_rab_id;
 
@@ -81,4 +60,10 @@ extern SCHEDULER_MODES global_scheduler_mode;
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 extern rb_id_t mbms_rab_id;
+
+static const uint32_t BSR_TABLE[BSR_TABLE_SIZE] = {0,     10,    12,    14,    17,    19,    22,    26,    31,    36,    42,    49,    57,     67,     78,     91,
+                                                   105,   125,   146,   171,   200,   234,   274,   321,   376,   440,   515,   603,   706,    826,    967,    1132,
+                                                   1326,  1552,  1817,  2127,  2490,  2915,  3413,  3995,  4677,  5467,  6411,  7505,  8787,   10287,  12043,  14099,
+                                                   16507, 19325, 22624, 26487, 31009, 36304, 42502, 49759, 58255, 68201, 79846, 93479, 109439, 128125, 150000, 300000};
+
 #endif //DEF_H

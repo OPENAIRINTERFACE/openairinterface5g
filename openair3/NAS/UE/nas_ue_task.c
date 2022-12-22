@@ -32,11 +32,11 @@
 # include "memory.h"
 
 #include "nas_user.h"
+#include "common/ran_context.h"
 // FIXME make command line option for NAS_UE_AUTOSTART
 # define NAS_UE_AUTOSTART 1
 
 // FIXME review these externs
-extern unsigned char NB_eNB_INST;
 extern uint16_t NB_UE_INST;
 
 uint16_t ue_idx_standalone = 0xFFFF;

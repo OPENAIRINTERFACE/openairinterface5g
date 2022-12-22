@@ -37,7 +37,6 @@
 #include <signal.h>
 #include "common/config/config_load_configmodule.h"
 #include "common/utils/LOG/log.h"
-#include "LAYER2/MAC/mac_vars.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
@@ -51,7 +50,6 @@
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/TOOLS/lte_phy_scope.h"
 #include "SCHED/sched_eNB.h"
-#include "SCHED/sched_common_vars.h"
 #include "SCHED_UE/sched_UE.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "UTIL/LISTS/list.h"

@@ -43,10 +43,9 @@
 #include "transport_proto.h"
 #include <executables/split_headers.h>
 
-extern WORKER_CONF_t get_thread_worker_conf(void);
 extern int oai_exit;
 
-
+static const int8_t wACK_RX[5][4] = {{-1, -1, -1, -1}, {-1, 1, -1, 1}, {-1, -1, 1, 1}, {-1, 1, 1, -1}, {1, 1, 1, 1}};
 
 void free_eNB_ulsch(LTE_eNB_ULSCH_t *ulsch) {
   int i,r;
@@ -412,7 +411,7 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *eNB,
   unsigned int ret=0;
   //  uint8_t dummy_channel_output[(3*8*block_length)+12];
   int r,Kr;
-  uint8_t *columnset;
+  const uint8_t *columnset;
   unsigned int sumKr=0;
   unsigned int Qprime,L,G,Q_CQI,Q_RI,H,Hprime,Hpp,Cmux,Rmux_prime,O_RCC;
   unsigned int Qprime_ACK,Qprime_RI,len_ACK=0,len_RI=0;

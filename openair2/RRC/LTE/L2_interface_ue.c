@@ -44,7 +44,7 @@
 #include "common/utils/LOG/log.h"
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
-
+#include "common/ran_context.h"
 
 #include "intertask_interface.h"
 

@@ -12,8 +12,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-//#include "COMMON/openair_defs.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "COMMON/mac_rrc_primitives.h"
 #include "PHY/LTE_TRANSPORT/defs_NB_IoT.h"
 //#include "PHY/defs.h"

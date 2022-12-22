@@ -35,7 +35,7 @@
 
 /* \brief To define the NUMBER_OF_eNB_MAX and MAX_MOBILES_PER_ENB */
 #include "common/openairinterface5g_limits.h"
-#include <openair2/COMMON/platform_constants.h>
+#include <common/platform_constants.h>
 #include "otg_config.h"
 
 /**

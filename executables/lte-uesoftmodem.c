@@ -54,11 +54,8 @@
 
 #include "PHY/phy_vars_ue.h"
 #include "PHY/LTE_TRANSPORT/transport_vars.h"
-#include "SCHED/sched_common_vars.h"
-#include "PHY/MODULATION/modulation_vars.h"
 
 #include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_vars.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
@@ -102,7 +99,7 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 int oai_exit = 0;
 
 unsigned int                    mmapped_dma=0;
-
+UE_MAC_INST *UE_mac_inst = NULL;
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];
@@ -518,14 +515,14 @@ AssertFatal(false,"");
 	return NULL;
 }
 
+int NB_UE_INST = 1;
+
 int main( int argc, char **argv ) {
 
   int CC_id;
   uint8_t  abstraction_flag=0;
   // Default value for the number of UEs. It will hold,
   // if not changed from the command line option --num-ues
-  NB_UE_INST=1;
-  NB_THREAD_INST=1;
   configmodule_interface_t *config_mod;
   start_background_system();
   config_mod = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY);
@@ -551,18 +548,6 @@ int main( int argc, char **argv ) {
 
   EPC_MODE_ENABLED = !IS_SOFTMODEM_NOS1;
   printf("Running with %d UE instances\n",NB_UE_INST);
-
-  // Checking option of nums_ue_thread.
-  if(NB_THREAD_INST < 1) {
-    printf("Running with 0 UE rxtx thread, exiting.\n");
-    abort();
-  }
-
-  // Checking option's relation between nums_ue_thread and num-ues
-  if(NB_UE_INST <NB_THREAD_INST ) {
-    printf("Number of UEs < number of UE rxtx threads, exiting.\n");
-    abort();
-  }
 
 #if T_TRACER
   T_Config_Init();
@@ -605,8 +590,6 @@ int main( int argc, char **argv ) {
     frame_parms[CC_id]->nb_antennas_rx     = nb_antenna_rx;
     frame_parms[CC_id]->nb_antenna_ports_eNB = 1; //initial value overwritten by initial sync later
   }
-
-  NB_INST=1;
 
   if(NFAPI_MODE==NFAPI_UE_STUB_PNF || NFAPI_MODE==NFAPI_MODE_STANDALONE_PNF) {
     PHY_vars_UE_g = malloc(sizeof(PHY_VARS_UE **)*NB_UE_INST);

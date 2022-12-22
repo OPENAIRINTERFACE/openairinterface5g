@@ -25,10 +25,6 @@
 #include <math.h>
 #include "PHY/sse_intrin.h"
 
-extern short conjugate75[8];
-extern short conjugate75_2[8];
-extern short negate[8];
-
 void apply_7_5_kHz(PHY_VARS_UE *ue,int32_t*txdata,uint8_t slot)
 {
 

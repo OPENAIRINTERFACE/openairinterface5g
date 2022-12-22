@@ -57,7 +57,7 @@ extern int otg_enabled;
 #include "UTIL/OTG/otg_tx.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 #include "pdcp.h"
 
 #include "assertions.h"

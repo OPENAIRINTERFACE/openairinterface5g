@@ -33,11 +33,7 @@
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 //#define DEBUG_PCFICH
-
-extern uint8_t pcfich_b[4][32];
-
-
-
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 void pcfich_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
                          uint8_t subframe,

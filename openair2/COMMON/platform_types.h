@@ -224,9 +224,9 @@ typedef struct protocol_ctxt_s {
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)
 
-#define UE_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD + NB_eNB_INST
+#define UE_MODULE_ID_TO_INSTANCE(mODULE_iD) mODULE_iD + RC.nb_inst
 #define ENB_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD
-#define UE_INSTANCE_TO_MODULE_ID( iNSTANCE ) iNSTANCE - NB_eNB_INST
+#define UE_INSTANCE_TO_MODULE_ID(iNSTANCE) iNSTANCE - RC.nb_inst
 #define ENB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
 //NR

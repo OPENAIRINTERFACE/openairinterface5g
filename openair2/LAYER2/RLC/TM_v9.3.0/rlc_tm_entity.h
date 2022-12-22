@@ -32,7 +32,7 @@
 #        define __RLC_TM_ENTITY_H__
 //-----------------------------------------------------------------------------
 #        include "platform_types.h"
-#        include "platform_constants.h"
+#include "common/platform_constants.h"
 #        include "rlc_tm_structs.h"
 #        include "rlc_def.h"
 //-----------------------------------------------------------------------------

@@ -37,6 +37,7 @@
 #include "hashtable.h"
 #include "assertions.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "openair2/LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 
 //#define DEBUG_MAC_INTERFACE 1
 

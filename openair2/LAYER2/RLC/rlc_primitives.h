@@ -34,7 +34,7 @@
 #    include <stdio.h>
 #    include <stdlib.h>
 #    include "platform_types.h"
-#    include "platform_constants.h"
+#include "common/platform_constants.h"
 #    include "mem_block.h"
 
 

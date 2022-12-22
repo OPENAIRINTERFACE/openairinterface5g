@@ -45,8 +45,6 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "PHY/phy_vars.h"
-#include "SCHED/sched_common_vars.h"
-#include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "gnb_config.h"
@@ -94,6 +92,8 @@ int config_sync_var=-1;
 
 volatile int             start_gNB = 0;
 int oai_exit = 0;
+
+int NB_UE_INST = 0;
 
 static int wait_for_sync = 0;
 

@@ -476,6 +476,7 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue)
 }
 
 //u8 NB_INST=2;
+const int NB_UE_INST = 1;
 
 int main (int argc, char **argv)
 {
@@ -491,10 +492,6 @@ int main (int argc, char **argv)
   int i,comp;
 
   logInit();
-
-  NB_UE_INST  = 1;
-  NB_eNB_INST = 1;
-  NB_INST=2;
 
   // Parse arguments
   if(parse_args(argc, argv, &args) > 0) {

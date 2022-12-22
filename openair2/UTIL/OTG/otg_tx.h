@@ -41,10 +41,7 @@
 #include <math.h>
 #include <unistd.h>
 
-
 #include "otg.h"
-//#include "COMMON/platform_constants.h"
-
 
 /*! \fn int time_dist(const int src, const int dst, const int state)
 * \brief compute Inter Departure Time, in ms

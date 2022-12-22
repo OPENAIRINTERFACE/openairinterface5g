@@ -36,7 +36,7 @@
 
 #include "commonDef.h"
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
 #include "ngap_messages_types.h"

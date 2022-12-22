@@ -29,7 +29,7 @@
  */
 
 #include "COMMON/platform_types.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "LTE_SystemInformationBlockType2.h"
 //#include "RadioResourceConfigCommonSIB.h"
 #include "LTE_RadioResourceConfigDedicated.h"
@@ -58,6 +58,7 @@ extern int l2_init_eNB(void);
 extern void mac_top_init_eNB(void);
 extern void mac_init_cell_params(int Mod_idP,int CC_idP);
 
+SCHEDULER_MODES global_scheduler_mode;
 typedef struct eutra_bandentry_s {
   int16_t band;
   uint32_t ul_min;

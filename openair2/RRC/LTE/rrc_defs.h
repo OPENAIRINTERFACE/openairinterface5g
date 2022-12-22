@@ -44,12 +44,11 @@
 #include "NR_UE-MRDC-Capability.h"
 #include "NR_UE-NR-Capability.h"
 
-
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "COMMON/platform_types.h"
 
 #include "LAYER2/MAC/mac.h"
-
+#include "openair2/RRC/common.h"
 //for D2D
 #define DEBUG_CTRL_SOCKET
 
