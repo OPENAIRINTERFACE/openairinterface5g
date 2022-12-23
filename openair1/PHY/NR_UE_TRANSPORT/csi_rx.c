@@ -773,9 +773,12 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
         for (int sc_idx = 0; sc_idx<4; sc_idx++) {
 
           uint16_t sc = sc0_offset + csiim_config_pdu->k_csiim[sc_idx];
+          if (sc >= frame_parms->ofdm_symbol_size) {
+            sc -= frame_parms->ofdm_symbol_size;
+          }
 
 #ifdef NR_CSIIM_DEBUG
-          LOG_I(NR_PHY, "(ant_rx %i, sc %i) real %i, imag %i\n", ant_rx, rb, rx_signal[sc].r, rx_signal[sc].i);
+          LOG_I(NR_PHY, "(ant_rx %i, sc %i) real %i, imag %i\n", ant_rx, sc, rx_signal[sc].r, rx_signal[sc].i);
 #endif
 
           sum_re += rx_signal[sc].r;
