@@ -63,6 +63,7 @@ static inline int get_num_dmrs(uint16_t dmrs_mask ) {
   return(num_dmrs);
 }
 
+int get_first_ul_slot(int nrofDownlinkSlots, int nrofDownlinkSymbols, int nrofUplinkSymbols);
 int cce_to_reg_interleaving(const int R, int k, int n_shift, const int C, int L, const int N_regs);
 int get_SLIV(uint8_t S, uint8_t L);
 void get_coreset_rballoc(uint8_t *FreqDomainResource,int *n_rb,int *rb_offset);

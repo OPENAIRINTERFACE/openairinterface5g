@@ -23,7 +23,7 @@
 #include <stdlib.h>
 #include <fcntl.h>
 #include <unistd.h>
-//#include "SIMULATION/TOOLS/sim.h"
+#include "sim.h"
 
 
 static unsigned int s0, s1, s2;
@@ -52,20 +52,9 @@ void set_taus_seed(unsigned int seed_init)
   unsigned long result = 0;
 
   if (seed_init == 0) {
-    unsigned int data[3];
-    int fd = open("/dev/urandom", O_RDONLY);
-    if (fd == -1)
-    {
-      abort();
-    }
-    if (read(fd, data, sizeof(data)) != sizeof(data))
-    {
-      abort();
-    }
-    close(fd);
-    s0 = data[0];
-    s1 = data[1];
-    s2 = data[2];
+    fill_random(&s0, sizeof(s0));
+    fill_random(&s1, sizeof(s1));
+    fill_random(&s2, sizeof(s2));
   } else {
     /* Use reentrant version of rand48 to ensure that no conflicts with other generators occur */
     srand48_r((long int)seed_init, &buffer);

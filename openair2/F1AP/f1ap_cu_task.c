@@ -34,6 +34,7 @@
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "f1ap_cu_ue_context_management.h"
+#include "f1ap_cu_paging.h"
 #include "f1ap_cu_task.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
@@ -191,6 +192,12 @@ void *F1AP_CU_task(void *arg) {
         LOG_I(F1AP, "CU Task Received F1AP_UE_CONTEXT_RELEASE_CMD\n");
         CU_send_UE_CONTEXT_RELEASE_COMMAND(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
                                            &F1AP_UE_CONTEXT_RELEASE_CMD(received_msg));
+        break;
+
+      case F1AP_PAGING_IND:
+        LOG_I(F1AP, "CU Task Received F1AP_PAGING_IND\n");
+        CU_send_Paging(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
+                       &F1AP_PAGING_IND(received_msg));
         break;
 
       //    case F1AP_SETUP_RESPONSE: // This is from RRC

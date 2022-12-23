@@ -66,7 +66,7 @@ int8_t get_next_dmrs_symbol_in_slot(uint16_t  ul_dmrs_symb_pos, uint8_t counter,
 uint8_t get_dmrs_symbols_in_slot(uint16_t l_prime_mask,  uint16_t nb_symb);
 int8_t get_valid_dmrs_idx_for_channel_est(uint16_t  dmrs_symb_pos, uint8_t counter);
 void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
-                              int **ch_est,
+                              int32_t **ch_estimates,
                               uint8_t num_symbols,
                               uint8_t start_symbol,
                               uint16_t dmrs_bitmap,

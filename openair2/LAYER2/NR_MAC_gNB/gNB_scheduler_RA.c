@@ -893,7 +893,7 @@ void nr_get_Msg3alloc(module_id_t module_id,
   const int n_slots_frame = nr_slots_per_frame[mu];
   uint8_t k2 = 0;
   if (frame_type == TDD) {
-    int msg3_slot = tdd->nrofDownlinkSlots; // first uplink slot
+    int msg3_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
     if (tdd->nrofUplinkSymbols < 3)
       msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
     else {
@@ -1934,10 +1934,6 @@ void nr_fill_rar(uint8_t Mod_idP,
   NR_RA_HEADER_RAPID *rarh = (NR_RA_HEADER_RAPID *) (dlsch_buffer + 1);
   NR_MAC_RAR *rar = (NR_MAC_RAR *) (dlsch_buffer + 2);
   unsigned char csi_req = 0, tpc_command;
-  //uint8_t N_UL_Hop;
-  uint8_t valid_bits;
-  uint32_t ul_grant;
-  uint16_t f_alloc, prb_alloc, bwp_size, truncation=0;
 
   tpc_command = 3; // this is 0 dB
 
@@ -1973,24 +1969,15 @@ void nr_fill_rar(uint8_t Mod_idP,
 
   ra->msg3_TPC = tpc_command;
 
-  bwp_size = pusch_pdu->bwp_size;
-  prb_alloc = PRBalloc_to_locationandbandwidth0(ra->msg3_nb_rb, ra->msg3_first_rb, bwp_size);
-  if (bwp_size>180) {
-    AssertFatal(1==0,"Initial UBWP larger than 180 currently not supported");
-  }
-  else {
-    valid_bits = (uint8_t)ceil(log2(bwp_size*(bwp_size+1)>>1));
-  }
-
-  if (pusch_pdu->frequency_hopping){
+  if (pusch_pdu->frequency_hopping)
     AssertFatal(1==0,"PUSCH with frequency hopping currently not supported");
-  } else {
-    for (int i=0; i<valid_bits; i++)
-      truncation |= (1<<i);
-    f_alloc = (prb_alloc&truncation);
-  }
 
-  ul_grant = csi_req | (tpc_command << 1) | (pusch_pdu->mcs_index << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
+  int bwp_size = pusch_pdu->bwp_size;
+  int prb_alloc = PRBalloc_to_locationandbandwidth0(ra->msg3_nb_rb, ra->msg3_first_rb, bwp_size);
+  int valid_bits = 14;
+  int f_alloc = prb_alloc & ((1 << valid_bits) - 1);
+
+  uint32_t ul_grant = csi_req | (tpc_command << 1) | (pusch_pdu->mcs_index << 4) | (ra->Msg3_tda_id << 8) | (f_alloc << 12) | (pusch_pdu->frequency_hopping << 26);
 
   rar->UL_GRANT_1 = (uint8_t) (ul_grant >> 24) & 0x07;
   rar->UL_GRANT_2 = (uint8_t) (ul_grant >> 16) & 0xff;

@@ -190,9 +190,9 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
                          const uint8_t *l_overline,
                          int32_t csi_rs_received_signal[][ue->frame_parms.samples_per_slot_wCP],
                          uint32_t *rsrp,
-                         int *rsrp_dBm) {
+                         int *rsrp_dBm,
+                         c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
-  int32_t **rxdataF  =  ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   uint16_t meas_count = 0;
   uint32_t rsrp_sum = 0;
@@ -218,7 +218,7 @@ int nr_get_csi_rs_signal(const PHY_VARS_NR_UE *ue,
             for (int lp = 0; lp <= l_prime; lp++) {
               uint16_t symb = lp + l_overline[cdm_id];
               uint64_t symbol_offset = symb*frame_parms->ofdm_symbol_size;
-              c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
+              c16_t *rx_signal = &rxdataF[ant_rx][symbol_offset];
               c16_t *rx_csi_rs_signal = (c16_t*)&csi_rs_received_signal[ant_rx][symbol_offset];
               rx_csi_rs_signal[k].r = rx_signal[k].r;
               rx_csi_rs_signal[k].i = rx_signal[k].i;
@@ -729,9 +729,9 @@ int nr_csi_rs_cqi_estimation(const uint32_t precoded_sinr,
 int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
                                const UE_nr_rxtx_proc_t *proc,
                                const fapi_nr_dl_config_csiim_pdu_rel15_t *csiim_config_pdu,
-                               uint32_t *interference_plus_noise_power) {
+                               uint32_t *interference_plus_noise_power,
+                               c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
-  int32_t **rxdataF = ue->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   const uint16_t end_rb = csiim_config_pdu->start_rb + csiim_config_pdu->nr_of_rbs > csiim_config_pdu->bwp_size ?
@@ -764,7 +764,7 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
 
     for (int ant_rx = 0; ant_rx < frame_parms->nb_antennas_rx; ant_rx++) {
 
-      c16_t *rx_signal = (c16_t*)&rxdataF[ant_rx][symbol_offset];
+      c16_t *rx_signal = &rxdataF[ant_rx][symbol_offset];
 
       for (int rb = csiim_config_pdu->start_rb; rb < end_rb; rb++) {
 
@@ -800,8 +800,9 @@ int nr_csi_im_power_estimation(const PHY_VARS_NR_UE *ue,
   return 0;
 }
 
-int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
+int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
+  int gNB_id = proc->gNB_id;
   if(!ue->csiim_vars[gNB_id]->active) {
     return -1;
   }
@@ -818,14 +819,15 @@ int nr_ue_csi_im_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   LOG_I(NR_PHY, "csiim_config_pdu->l_csiim = %i.%i.%i.%i\n", csiim_config_pdu->l_csiim[0], csiim_config_pdu->l_csiim[1], csiim_config_pdu->l_csiim[2], csiim_config_pdu->l_csiim[3]);
 #endif
 
-  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_info->interference_plus_noise_power);
+  nr_csi_im_power_estimation(ue, proc, csiim_config_pdu, &ue->nr_csi_info->interference_plus_noise_power, rxdataF);
   ue->nr_csi_info->csi_im_meas_computed = true;
 
   return 0;
 }
 
-int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id) {
+int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
+  int gNB_id = proc->gNB_id;
   if(!ue->csirs_vars[gNB_id]->active) {
     return -1;
   }
@@ -901,7 +903,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
                        l_overline,
                        csi_rs_received_signal,
                        &rsrp,
-                       &rsrp_dBm);
+                       &rsrp_dBm,
+                       rxdataF);
 
   nr_csi_rs_channel_estimation(ue,
                                proc,
@@ -958,8 +961,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t
   csirs_measurements.cqi = cqi;
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t *rx_ind = calloc(sizeof(*rx_ind),1);
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, gNB_id, NULL);
-  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, gNB_id, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
+  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, NULL);
+  nr_fill_rx_indication(rx_ind, FAPI_NR_CSIRS_IND, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements);
   if (ue->if_inst && ue->if_inst->dl_indication) {
     ue->if_inst->dl_indication(&dl_indication, NULL);
   } else {

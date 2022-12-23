@@ -19,7 +19,7 @@ extern "C" {
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
 #include <openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
-//#include <openair1/PHY/phy_extern.h>
+#include "sim.h"
 
 #pragma pack(1)
 
@@ -142,6 +142,12 @@ class gtpEndPoints {
   pthread_mutex_t gtp_lock=PTHREAD_MUTEX_INITIALIZER;
   // the instance id will be the Linux socket handler, as this is uniq
   map<uint64_t, gtpEndPoint> instances;
+
+  gtpEndPoints() {
+    unsigned int seed;
+    fill_random(&seed, sizeof(seed));
+    srandom(seed);
+  }
 
   ~gtpEndPoints() {
     // automatically close all sockets on quit

@@ -26,21 +26,7 @@
 //#include "PHY/defs.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "rf.h"
-/*
-extern void randominit(void);
-extern double gaussdouble(double,double);
-  //free(input_data);
 
-//extern int LOG_M(const char *,const char *,void *,int,int,char);
-//flag change
-extern int LOG_M(const char *,const char *,void *,int,int,char);
-*/
-
-//double pn[1024];
-
-//#define DEBUG_RF 1
-
-//free(input_data);
 void rf_rx(double **r_re,
            double **r_im,
            double **r_re_i1,

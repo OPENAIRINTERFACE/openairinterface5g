@@ -35,13 +35,6 @@
 /* exe */
 #include <common/utils/nr/nr_common.h>
 
-/* RRC*/
-#include "RRC/NR_UE/rrc_proto.h"
-#include "NR_RACH-ConfigCommon.h"
-#include "NR_RACH-ConfigGeneric.h"
-#include "NR_FrequencyInfoDL.h"
-#include "NR_PDCCH-ConfigCommon.h"
-
 /* MAC */
 #include "NR_MAC_COMMON/nr_mac.h"
 #include "NR_MAC_COMMON/nr_mac_common.h"
@@ -1154,8 +1147,6 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
   } else if (ul_info) {
 
     int cc_id             = ul_info->cc_id;
-    //frame_t rx_frame      = ul_info->frame_rx;
-    //slot_t rx_slot        = ul_info->slot_rx;
     frame_t frame_tx      = ul_info->frame_tx;
     slot_t slot_tx        = ul_info->slot_tx;
     module_id_t mod_id    = ul_info->module_id;
@@ -1169,6 +1160,7 @@ NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_in
       LOG_E(NR_MAC, "mac->ul_config is null!\n");
     }
 
+    nr_ue_get_rach(mod_id, cc_id, frame_tx, gNB_index, slot_tx);
     // Periodic SRS scheduling
     nr_ue_periodic_srs_scheduling(mod_id, frame_tx, slot_tx);
 
@@ -2659,12 +2651,12 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
 void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
 
-  uint16_t format, format0, format1, ncs;
-  int is_nr_prach_slot;
-  prach_occasion_info_t *prach_occasion_info_p;
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   RA_config_t *ra = &mac->ra;
+  ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
+  if(ra->ra_state != GENERATE_PREAMBLE)
+    return;
+
   fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
   if (!ul_config) {
     LOG_E(NR_MAC, "mac->ul_config is null! \n");
@@ -2683,8 +2675,6 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   else           setup = scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
-  ra->RA_offset = 2; // to compensate the rx frame offset at the gNB
-  ra->generate_nr_prach = GENERATE_IDLE; // Reset flag for PRACH generation
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = scc==NULL ? scc_SIB->tdd_UL_DL_ConfigurationCommon : scc->tdd_UL_DL_ConfigurationCommon;
 
   if (is_nr_UL_slot(tdd_config, slotP, mac->frame_type)) {
@@ -2694,22 +2684,21 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
     uint8_t selected_gnb_ssb_idx = mac->mib_ssb;
 
     // Get any valid PRACH occasion in the current slot for the selected SSB index
-    is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,
+    prach_occasion_info_t *prach_occasion_info_p;
+    int is_nr_prach_slot = get_nr_prach_info_from_ssb_index(selected_gnb_ssb_idx,
                                                        (int)frameP,
                                                        (int)slotP,
                                                         &prach_occasion_info_p);
 
-    if (is_nr_prach_slot && ra->ra_state == GENERATE_PREAMBLE) {
+    if (is_nr_prach_slot) {
       AssertFatal(NULL != prach_occasion_info_p,"PRACH Occasion Info not returned in a valid NR Prach Slot\n");
-
-      ra->generate_nr_prach = GENERATE_PREAMBLE;
 
       init_RA(module_idP, &ra->prach_resources, setup, rach_ConfigGeneric, ra->rach_ConfigDedicated);
       nr_get_RA_window(mac);
 
-      format = prach_occasion_info_p->format;
-      format0 = format & 0xff;        // single PRACH format
-      format1 = (format >> 8) & 0xff; // dual PRACH format
+      uint16_t format = prach_occasion_info_p->format;
+      uint16_t format0 = format & 0xff;        // single PRACH format
+      uint16_t format1 = (format >> 8) & 0xff; // dual PRACH format
       AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
                   "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
 
@@ -2723,7 +2712,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 
       memset(prach_config_pdu, 0, sizeof(fapi_nr_ul_config_prach_pdu));
 
-      ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
+      uint16_t ncs = get_NCS(rach_ConfigGeneric->zeroCorrelationZoneConfig, format0, setup->restrictedSetConfig);
 
       prach_config_pdu->phys_cell_id = mac->physCellId;
       prach_config_pdu->num_prach_ocas = 1;
@@ -2736,15 +2725,17 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
       prach_config_pdu->restricted_set = prach_config->restricted_set_config;
       prach_config_pdu->freq_msg1 = prach_config->num_prach_fd_occasions_list[prach_occasion_info_p->fdm].k1;
 
-      LOG_D(NR_MAC,"PRACH scheduler: Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n",
+      LOG_I(NR_MAC,"PRACH scheduler: Selected RO Frame %u, Slot %u, Symbol %u, Fdm %u\n",
             frameP, prach_config_pdu->prach_slot, prach_config_pdu->prach_start_symbol, prach_config_pdu->num_ra);
 
       // Search which SSB is mapped in the RO (among all the SSBs mapped to this RO)
-      for (prach_config_pdu->ssb_nb_in_ro=0; prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; prach_config_pdu->ssb_nb_in_ro++) {
-        if (prach_occasion_info_p->mapped_ssb_idx[prach_config_pdu->ssb_nb_in_ro] == selected_gnb_ssb_idx)
+      for (int ssb_nb_in_ro=0; ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb; ssb_nb_in_ro++) {
+        if (prach_occasion_info_p->mapped_ssb_idx[ssb_nb_in_ro] == selected_gnb_ssb_idx) {
+          ra->ssb_nb_in_ro = ssb_nb_in_ro;
           break;
+        }
       }
-      AssertFatal(prach_config_pdu->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
+      AssertFatal(ra->ssb_nb_in_ro<prach_occasion_info_p->nb_mapped_ssb, "%u not found in the mapped SSBs to the PRACH occasion", selected_gnb_ssb_idx);
 
       if (format1 != 0xff) {
         switch(format0) { // dual PRACH format
@@ -2800,7 +2791,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
         }
       } // if format1
 
-      nr_get_prach_resources(module_idP, 0, 0, &ra->prach_resources, prach_config_pdu, ra->rach_ConfigDedicated);
+      nr_get_prach_resources(module_idP, 0, 0, &ra->prach_resources, ra->rach_ConfigDedicated);
       prach_config_pdu->ra_PreambleIndex = ra->ra_PreambleIndex;
       prach_config_pdu->prach_tx_power = get_prach_tx_power(module_idP);
       set_ra_rnti(mac, prach_config_pdu);

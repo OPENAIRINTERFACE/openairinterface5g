@@ -47,7 +47,7 @@ const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *sc
 
   if (tdd && tdd->nrofUplinkSymbols > 1) { // if there is uplink symbols in mixed slot
     const int nr_slots_period = tdd->nrofDownlinkSlots + tdd->nrofUplinkSlots + 1;
-    if ((slot%nr_slots_period) == tdd->nrofDownlinkSlots)
+    if ((slot % nr_slots_period) == tdd->nrofDownlinkSlots)
       return 2;
   }
 
@@ -1305,8 +1305,7 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
     return 3;
 }
 
-static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc,
-			      int CC_id,  NR_UE_info_t* UE, frame_t frame, sub_frame_t slot, uint32_t ulsch_max_frame_inactivity)
+static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc, int CC_id,  NR_UE_info_t* UE, frame_t frame, sub_frame_t slot, uint32_t ulsch_max_frame_inactivity)
 {
   const int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
   const int now = frame * n + slot;
@@ -1317,10 +1316,9 @@ static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc,
       scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   int num_slots_per_period;
   int last_ul_slot;
-  int tdd_period_len[8] = {500,625,1000,1250,2000,2500,5000,10000};
   if (tdd) { // Force the default transmission in a full slot as early as possible in the UL portion of TDD period (last_ul_slot)
-    num_slots_per_period = n*tdd_period_len[tdd->dl_UL_TransmissionPeriodicity]/10000;
-    last_ul_slot=1+tdd->nrofDownlinkSlots;
+    num_slots_per_period =  n / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+    last_ul_slot = 1 + tdd->nrofDownlinkSlots;
   } else {
     num_slots_per_period = n;
     last_ul_slot = sched_ctrl->last_ul_slot;
@@ -1705,7 +1703,7 @@ void pf_ul(module_id_t module_id,
     curUE++;
   }
 
-  qsort(UE_sched, sizeof(*UE_sched), sizeofArray(UE_sched), comparator);
+  qsort(UE_sched, sizeofArray(UE_sched), sizeof(UEsched_t), comparator);
   UEsched_t *iterator=UE_sched;
 
   /* Loop UE_sched to find max coeff and allocate transmission */

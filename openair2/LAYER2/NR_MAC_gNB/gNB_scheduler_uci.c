@@ -135,7 +135,7 @@ int get_pucch_index(int frame, int slot, int n_slots_frame, const NR_TDD_UL_DL_P
 {
   // PUCCH structures are indexed by slot in the PUCCH period determined by sched_pucch_size number of UL slots
   // this functions return the index to the structure for slot passed to the function
-  const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+  const int first_ul_slot_period = tdd ? get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols) : 0;
   const int n_ul_slots_period = tdd ? tdd->nrofUplinkSlots + (tdd->nrofUplinkSymbols > 0 ? 1 : 0) : n_slots_frame;
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int n_ul_slots_frame = n_slots_frame / nr_slots_period * n_ul_slots_period;
@@ -1099,7 +1099,7 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   AssertFatal(tdd || mac->common_channels[CC_id].frame_type == FDD, "Dynamic TDD not handled yet\n");
   const int nr_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
-  const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+  const int first_ul_slot_period = tdd ? get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols) : 0;
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_PUCCH_Config_t *pucch_Config = ul_bwp->pucch_Config;
@@ -1112,9 +1112,9 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
    dci_format = UE->current_DL_BWP.dci_format;
 
   uint8_t pdsch_to_harq_feedback[8];
-  get_pdsch_to_harq_feedback(pucch_Config, dci_format, pdsch_to_harq_feedback);
+  int fb_size = get_pdsch_to_harq_feedback(pucch_Config, dci_format, pdsch_to_harq_feedback);
 
-  for (int f=0; f<8; f++) {
+  for (int f = 0; f < fb_size; f++) {
     // can't schedule ACKNACK before minimum feedback time
     if(pdsch_to_harq_feedback[f] < minfbtime)
       continue;

@@ -228,7 +228,6 @@ typedef struct {
 
 typedef enum {
   RA_UE_IDLE = 0,
-  GENERATE_IDLE = 0,
   GENERATE_PREAMBLE = 1,
   WAIT_RAR = 2,
   WAIT_CONTENTION_RESOLUTION = 3,
@@ -281,8 +280,8 @@ typedef struct {
   uint8_t RA_active;
   /// Random-access preamble index
   int ra_PreambleIndex;
-  /// Flag for the Msg1 generation: enabled at every occurrence of nr prach slot
-  RA_state_t generate_nr_prach;
+  // When multiple SSBs per RO is configured, this indicates which one is selected in this RO -> this is used to properly compute the PRACH preamble
+  uint8_t ssb_nb_in_ro;
 
   /// Random-access window counter
   int16_t RA_window_cnt;
@@ -385,6 +384,7 @@ typedef struct {
   long                            physCellId;
   ////  MAC config
   int                             first_sync_frame;
+  bool                            sib1_decoded;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;

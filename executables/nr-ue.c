@@ -31,8 +31,6 @@
 #include "SCHED_NR_UE/defs.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "executables/softmodem-common.h"
-#include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
-#include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "radio/COMMON/common_lib.h"
 
@@ -103,8 +101,6 @@ typedef enum {
   si = 2
 } sync_mode_t;
 
-queue_t nr_rach_ind_queue;
-
 static void *NRUE_phy_stub_standalone_pnf_task(void *arg);
 
 static size_t dump_L1_UE_meas_stats(PHY_VARS_NR_UE *ue, char *output, size_t max_len)
@@ -154,16 +150,12 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
                      uint8_t abstraction_flag)
 {
 
-  int nb_connected_gNB = 1, gNB_id;
+  int nb_connected_gNB = 1;
 
   ue->Mod_id      = UE_id;
   ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
   ue->dci_thres   = 0;
-
-  // Setting UE mode to NOT_SYNCHED by default
-  for (gNB_id = 0; gNB_id < nb_connected_gNB; gNB_id++)
-    ue->UE_mode[gNB_id] = NOT_SYNCHED;
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB);
@@ -196,47 +188,6 @@ void init_nrUE_standalone_thread(int ue_idx)
   pthread_setname_np(phy_thread, "oai:nrue-stand-phy");
 }
 
-static void L1_nsa_prach_procedures(frame_t frame, int slot, fapi_nr_ul_config_prach_pdu *prach_pdu)
-{
-  NR_UE_MAC_INST_t *mac    = get_mac_inst(0);
-  nfapi_nr_rach_indication_t *rach_ind = CALLOC(1, sizeof(*rach_ind));
-  rach_ind->sfn = frame;
-  rach_ind->slot = slot;
-  rach_ind->header.message_id = NFAPI_NR_PHY_MSG_TYPE_RACH_INDICATION;
-
-  uint8_t pdu_index = 0;
-  rach_ind->pdu_list = CALLOC(1, sizeof(*rach_ind->pdu_list));
-  rach_ind->number_of_pdus  = 1;
-  rach_ind->pdu_list[pdu_index].phy_cell_id                         = prach_pdu->phys_cell_id;
-  rach_ind->pdu_list[pdu_index].symbol_index                        = prach_pdu->prach_start_symbol;
-  rach_ind->pdu_list[pdu_index].slot_index                          = prach_pdu->prach_slot;
-  rach_ind->pdu_list[pdu_index].freq_index                          = prach_pdu->num_ra;
-  rach_ind->pdu_list[pdu_index].avg_rssi                            = 128;
-  rach_ind->pdu_list[pdu_index].avg_snr                             = 0xff; // invalid for now
-
-  rach_ind->pdu_list[pdu_index].num_preamble                        = 1;
-  const int num_p = rach_ind->pdu_list[pdu_index].num_preamble;
-  rach_ind->pdu_list[pdu_index].preamble_list = calloc(num_p, sizeof(nfapi_nr_prach_indication_preamble_t));
-  uint8_t preamble_index = get_softmodem_params()->nsa ?
-                           mac->ra.rach_ConfigDedicated->cfra->resources.choice.ssb->ssb_ResourceList.list.array[0]->ra_PreambleIndex :
-                           mac->ra.ra_PreambleIndex;
-  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_index     = preamble_index;
-
-  rach_ind->pdu_list[pdu_index].preamble_list[0].timing_advance     = 0;
-  rach_ind->pdu_list[pdu_index].preamble_list[0].preamble_pwr       = 0xffffffff;
-
-  if (!put_queue(&nr_rach_ind_queue, rach_ind))
-  {
-    for (int pdu_index = 0; pdu_index < rach_ind->number_of_pdus; pdu_index++)
-    {
-      free(rach_ind->pdu_list[pdu_index].preamble_list);
-    }
-    free(rach_ind->pdu_list);
-    free(rach_ind);
-  }
-  LOG_D(NR_MAC, "We have successfully filled the rach_ind queue with the recently filled rach ind\n");
-}
-
 static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
 {
   nfapi_nr_rach_indication_t *rach_ind = unqueue_matching(&nr_rach_ind_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &sfn_slot);
@@ -248,14 +199,12 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
             NFAPI_SFNSLOT2SFN(mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot),
             NFAPI_SFNSLOT2SLOT(mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot), nr_ul_tti_req_queue.num_items);
     nfapi_nr_ul_tti_request_t *ul_tti_request_crc = unqueue_matching(&nr_ul_tti_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot);
-    if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0)
-    {
+    if (ul_tti_request_crc && ul_tti_request_crc->n_pdus > 0) {
       check_and_process_dci(NULL, NULL, NULL, ul_tti_request_crc);
     }
   }
 
-  if (rach_ind && rach_ind->number_of_pdus > 0)
-  {
+  if (rach_ind && rach_ind->number_of_pdus > 0) {
       NR_UL_IND_t UL_INFO = {
         .rach_ind = *rach_ind,
       };
@@ -266,71 +215,29 @@ static void process_queued_nr_nfapi_msgs(NR_UE_MAC_INST_t *mac, int sfn_slot)
       }
       free_and_zero(rach_ind->pdu_list);
       free_and_zero(rach_ind);
-      nr_Msg1_transmitted(0);
   }
-  if (dl_tti_request)
-  {
+  if (dl_tti_request) {
     int dl_tti_sfn_slot = NFAPI_SFNSLOT2HEX(dl_tti_request->SFN, dl_tti_request->Slot);
     nfapi_nr_tx_data_request_t *tx_data_request = unqueue_matching(&nr_tx_req_queue, MAX_QUEUE_SIZE, sfn_slot_matcher, &dl_tti_sfn_slot);
-    if (!tx_data_request)
-    {
+    if (!tx_data_request) {
       LOG_E(NR_MAC, "[%d %d] No corresponding tx_data_request for given dl_tti_request sfn/slot\n",
             NFAPI_SFNSLOT2SFN(dl_tti_sfn_slot), NFAPI_SFNSLOT2SLOT(dl_tti_sfn_slot));
       if (get_softmodem_params()->nsa)
         save_nr_measurement_info(dl_tti_request);
       free_and_zero(dl_tti_request);
     }
-    else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0)
-    {
+    else if (dl_tti_request->dl_tti_request_body.nPDUs > 0 && tx_data_request->Number_of_PDUs > 0) {
       if (get_softmodem_params()->nsa)
         save_nr_measurement_info(dl_tti_request);
       check_and_process_dci(dl_tti_request, tx_data_request, NULL, NULL);
     }
-    else
-    {
+    else {
       AssertFatal(false, "We dont have PDUs in either dl_tti %d or tx_req %d\n",
                   dl_tti_request->dl_tti_request_body.nPDUs, tx_data_request->Number_of_PDUs);
     }
   }
-  if (ul_dci_request && ul_dci_request->numPdus > 0)
-  {
+  if (ul_dci_request && ul_dci_request->numPdus > 0) {
     check_and_process_dci(NULL, NULL, ul_dci_request, NULL);
-  }
-}
-
-static void check_nr_prach(NR_UE_MAC_INST_t *mac, nr_uplink_indication_t *ul_info)
-{
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, ul_info->slot_tx);
-  if (!ul_config)
-  {
-    LOG_E(NR_MAC, "mac->ul_config is null! \n");
-    return;
-  }
-  if (mac->ra.ra_state != RA_SUCCEEDED)
-  {
-    AssertFatal(ul_config->number_pdus < sizeof(ul_config->ul_config_list) / sizeof(ul_config->ul_config_list[0]),
-                "Number of PDUS in ul_config = %d > ul_config_list num elements", ul_config->number_pdus);
-    fapi_nr_ul_config_prach_pdu *prach_pdu = &ul_config->ul_config_list[ul_config->number_pdus].prach_config_pdu;
-    uint8_t nr_prach = nr_ue_get_rach(prach_pdu,
-                                      ul_info->module_id,
-                                      ul_info->cc_id,
-                                      ul_info->frame_tx,
-                                      ul_info->gNB_index,
-                                      ul_info->slot_tx);
-    if (nr_prach == 1)
-    {
-      L1_nsa_prach_procedures(ul_info->frame_tx, ul_info->slot_tx, prach_pdu);
-      ul_config->number_pdus = 0;
-      ul_info->ue_sched_mode = SCHED_PUSCH;
-    }
-    else if (nr_prach == 2)
-    {
-      LOG_I(NR_PHY, "In %s: [UE %d] RA completed, setting UE mode to PUSCH\n", __FUNCTION__, ul_info->module_id);
-    }
-    else if(nr_prach == 3)
-    {
-      LOG_I(NR_PHY, "In %s: [UE %d] RA failed, setting UE mode to PRACH\n", __FUNCTION__, ul_info->module_id);
-    }
   }
 }
 
@@ -358,17 +265,14 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       mac->nr_ue_emul_l1.harq[i].active_ul_harq_sfn_slot = -1;
   }
 
-  while (!oai_exit)
-  {
-    if (sem_wait(&sfn_slot_semaphore) != 0)
-    {
+  while (!oai_exit) {
+    if (sem_wait(&sfn_slot_semaphore) != 0) {
       LOG_E(NR_MAC, "sem_wait() error\n");
       abort();
     }
     uint16_t *slot_ind = get_queue(&nr_sfn_slot_queue);
     nr_phy_channel_params_t *ch_info = get_queue(&nr_chan_param_queue);
-    if (!slot_ind && !ch_info)
-    {
+    if (!slot_ind && !ch_info) {
       LOG_D(MAC, "get nr_sfn_slot_queue and nr_chan_param_queue == NULL!\n");
       continue;
     }
@@ -383,8 +287,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     frame_t frame = NFAPI_SFNSLOT2SFN(sfn_slot);
     int slot = NFAPI_SFNSLOT2SLOT(sfn_slot);
-    if (sfn_slot == last_sfn_slot)
-    {
+    if (sfn_slot == last_sfn_slot) {
       LOG_D(NR_MAC, "repeated sfn_sf = %d.%d\n",
             frame, slot);
       continue;
@@ -394,19 +297,16 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     LOG_D(NR_MAC, "The received sfn/slot [%d %d] from proxy\n",
           frame, slot);
 
-    if (get_softmodem_params()->sa && mac->mib == NULL)
-    {
+    if (get_softmodem_params()->sa && mac->mib == NULL) {
       LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
       process_queued_nr_nfapi_msgs(mac, sfn_slot);
     }
-    if (mac->scc == NULL && mac->scc_SIB == NULL)
-    {
+    if (mac->scc == NULL && mac->scc_SIB == NULL) {
       LOG_D(MAC, "[NSA] mac->scc == NULL and [SA] mac->scc_SIB == NULL!\n");
       continue;
     }
 
-    mac->ra.generate_nr_prach = 0;
     int CC_id = 0;
     uint8_t gNB_id = 0;
     nr_uplink_indication_t ul_info;
@@ -419,7 +319,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     ul_info.slot_rx = slot;
     ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
     ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
-    ul_info.ue_sched_mode = SCHED_PUSCH;
 
     if (pthread_mutex_lock(&mac->mutex_dl_info)) abort();
 
@@ -441,8 +340,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     if (is_nr_DL_slot(get_softmodem_params()->nsa ?
                       mac->scc->tdd_UL_DL_ConfigurationCommon :
                       mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
-                      ul_info.slot_rx))
-    {
+                      ul_info.slot_rx)) {
       nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
     }
 
@@ -451,13 +349,11 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
     if (is_nr_UL_slot(get_softmodem_params()->nsa ?
                       mac->scc->tdd_UL_DL_ConfigurationCommon :
                       mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
-                      ul_info.slot_tx, mac->frame_type))
-    {
+                      ul_info.slot_tx, mac->frame_type)) {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind() and nr_ue_pucch_scheduler() from %s\n", ul_info.slot_tx, __FUNCTION__);
       nr_ue_scheduler(NULL, &ul_info);
       nr_ue_prach_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx);
       nr_ue_pucch_scheduler(mod_id, ul_info.frame_tx, ul_info.slot_tx, NULL);
-      check_nr_prach(mac, &ul_info);
     }
     if (!IS_SOFTMODEM_NOS1 && get_softmodem_params()->sa) {
       NR_UE_MAC_INST_t *mac = get_mac_inst(0);
@@ -682,14 +578,13 @@ void processSlotTX(void *arg) {
       ul_indication.slot_rx   = proc->nr_slot_rx;
       ul_indication.frame_tx  = proc->frame_tx;
       ul_indication.slot_tx   = proc->nr_slot_tx;
-      ul_indication.ue_sched_mode = rxtxD->ue_sched_mode;
       ul_indication.phy_data      = &phy_data;
 
       UE->if_inst->ul_indication(&ul_indication);
       stop_meas(&UE->ue_ul_indication_stats);
     }
 
-    phy_procedures_nrUE_TX(UE, proc, proc->gNB_id, &phy_data);
+    phy_procedures_nrUE_TX(UE, proc, &phy_data);
   }
 
   RU_write(rxtxD);
@@ -699,7 +594,6 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
   PHY_VARS_NR_UE    *UE   = rxtxD->UE;
-  uint8_t gNB_id = 0;
   nr_phy_data_t phy_data = {0};
 
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
@@ -716,7 +610,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
 
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
-      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, gNB_id, &phy_data);
+      nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, &phy_data);
       UE->if_inst->dl_indication(&dl_indication, NULL);
     }
 
@@ -725,7 +619,7 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
     phy_procedures_slot_parallelization_nrUE_RX( UE, proc, 0, 0, 1, no_relay, NULL );
 #else
     uint64_t a=rdtsc_oai();
-    phy_procedures_nrUE_RX(UE, proc, gNB_id, &phy_data);
+    phy_procedures_nrUE_RX(UE, proc, &phy_data);
     LOG_D(PHY, "In %s: slot %d, time %llu\n", __FUNCTION__, proc->nr_slot_rx, (rdtsc_oai()-a)/3500);
 #endif
 

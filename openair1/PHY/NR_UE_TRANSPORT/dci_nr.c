@@ -340,7 +340,8 @@ void nr_pdcch_channel_level(int32_t rx_size,
 
 
 // This function will extract the mapped DM-RS PDCCH REs as per 38.211 Section 7.4.1.3.2 (Mapping to physical resources)
-void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
+void nr_pdcch_extract_rbs_single(uint32_t rxdataF_sz,
+                                 c16_t rxdataF[][rxdataF_sz],
                                  int32_t est_size,
                                  int32_t dl_ch_estimates[][est_size],
                                  int32_t rx_size,
@@ -415,7 +416,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       // first we set initial conditions for pointer to rxdataF depending on the situation of the first RB within the CORESET (c_rb = n_BWP_start)
       if (((c_rb + n_BWP_start) < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): even case
-        rxF = &rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
+        rxF = (int32_t *)&rxdataF[aarx][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size)))+n_BWP_start*12];
         LOG_DDD("in even case c_rb (%d) is lower than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))) = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * c_rb + (symbol * (frame_parms->ofdm_symbol_size))));
       }
@@ -423,14 +424,14 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb + n_BWP_start) >= (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) == 0)) {
         // number of RBs is even  and c_rb is higher than half system bandwidth (we don't skip DC)
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF
-        rxF = &rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        rxF = (int32_t *)&rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
         LOG_DDD("in even case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
                c_rb,aarx,(12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) + symbol * frame_parms->ofdm_symbol_size));
       }
 
       if (((c_rb + n_BWP_start) < (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         //if RB to be treated is lower than middle system bandwidth then rxdataF pointed at (offset + c_br + symbol * ofdm_symbol_size): odd case
-        rxF = &rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
+        rxF = (int32_t *)&rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
         LOG_DDD("in odd case c_rb (%d) is lower or equal than half N_RB_DL -> rxF = &rxdataF[aarx = (%d)][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size));
       }
@@ -438,7 +439,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb + n_BWP_start) > (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) {
         // number of RBs is odd  and   c_rb is higher than half system bandwidth + 1
         // if these conditions are true the pointer has to be situated at the 1st part of the rxdataF just after the first IQ symbols of the RB containing DC
-        rxF = &rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        rxF = (int32_t *)&rxdataF[aarx][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
         LOG_DDD("in odd case c_rb (%d) is higher than half N_RB_DL (not DC) -> rxF = &rxdataF[aarx = (%d)][12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
                c_rb,aarx,(12*(c_rb + n_BWP_start - (frame_parms->N_RB_DL>>1)) - 6 + symbol * frame_parms->ofdm_symbol_size));
       }
@@ -446,7 +447,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
       if (((c_rb + n_BWP_start) == (frame_parms->N_RB_DL >> 1)) && ((frame_parms->N_RB_DL & 1) != 0)) { // treatment of RB containing the DC
         // if odd number RBs in system bandwidth and first RB to be treated is higher than middle system bandwidth (around DC)
         // we have to treat the RB in two parts: first part from i=0 to 5, the data is at the end of rxdataF (pointing at the end of the table)
-        rxF = &rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
+        rxF = (int32_t *)&rxdataF[aarx][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size];
         LOG_DDD("in odd case c_rb (%d) is half N_RB_DL + 1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
                c_rb,aarx,(frame_parms->first_carrier_offset + 12 * (c_rb + n_BWP_start) + symbol * frame_parms->ofdm_symbol_size));
         j = 0;
@@ -467,7 +468,7 @@ void nr_pdcch_extract_rbs_single(int32_t **rxdataF,
         }
 
         // then we point at the begining of the symbol part of rxdataF do process second part of RB
-        rxF = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
+        rxF = (int32_t *)&rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size]; // we point at the 1st part of the rxdataF in symbol
         LOG_DDD("in odd case c_rb (%d) is half N_RB_DL +1 we treat DC case -> rxF = &rxdataF[aarx = (%d)][symbol * frame_parms->ofdm_symbol_size = (%d)]\n",
                c_rb,aarx,(symbol * frame_parms->ofdm_symbol_size));
         for (; i < 12; i++) {
@@ -671,11 +672,11 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
                     int32_t pdcch_est_size,
                     int32_t pdcch_dl_ch_estimates[][pdcch_est_size],
                     int16_t *pdcch_e_rx,
-                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15) {
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                    c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   uint32_t frame = proc->frame_rx;
   uint32_t slot  = proc->nr_slot_rx;
-  NR_UE_COMMON *common_vars      = &ue->common_vars;
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
 
   uint8_t log2_maxh, aarx;
@@ -703,7 +704,8 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
   for (int s=rel15->coreset.StartSymbolIndex; s<(rel15->coreset.StartSymbolIndex+rel15->coreset.duration); s++) {
     LOG_D(PHY,"in nr_pdcch_extract_rbs_single(rxdataF -> rxdataF_ext || dl_ch_estimates -> dl_ch_estimates_ext)\n");
 
-    nr_pdcch_extract_rbs_single(common_vars->rxdataF,
+    nr_pdcch_extract_rbs_single(ue->frame_parms.samples_per_slot_wCP,
+                                rxdataF,
                                 pdcch_est_size,
                                 pdcch_dl_ch_estimates,
                                 rx_size,

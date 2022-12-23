@@ -127,40 +127,38 @@ int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
   return 0;
 }
 
-/*
-int derive_keNB(const uint8_t key[32], const uint32_t nas_count, uint8_t **keNB)
+int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star)
 {
-    uint8_t string[7];
+  uint8_t *out;
+  uint8_t s[10];
 
-    // FC
-    string[0] = FC_KENB;
-    // P0 = Uplink NAS count
-    string[1] = (nas_count & 0xff000000) >> 24;
-    string[2] = (nas_count & 0x00ff0000) >> 16;
-    string[3] = (nas_count & 0x0000ff00) >> 8;
-    string[4] = (nas_count & 0x000000ff);
+  /* FC */
+  s[0] = NR_FC_ALG_KEY_NG_RAN_STAR_DER;
 
-    // Length of NAS count
-    string[5] = 0x00;
-    string[6] = 0x04;
+  /* P0 = PCI */
+  s[1] = (pci & 0x0000ff00) >> 8;
+  s[2] = (pci & 0x000000ff);
 
-#if defined(SECU_DEBUG)
-    {
-        int i;
-        char payload[6 * sizeof(string) + 1];
-        int  index = 0;
+  /* L0 = length(P0) = 2 */
+  s[3] = 0x00;
+  s[4] = 0x02;
 
-        for (i = 0; i < sizeof(string); i++)
-            index += sprintf(&payload[index], "0x%02x ", string[i]);
-        LOG_D(OSA, "KeNB deriver input string: %s\n", payload);
-    }
-#endif
+  /* P1 = NR ARFCN */
+  s[5] = (nr_arfcn_dl & 0x00ff0000) >> 16;
+  s[6] = (nr_arfcn_dl & 0x0000ff00) >> 8;
+  s[7] = (nr_arfcn_dl & 0x000000ff);
 
-    kdf(string, 7, key, 32, keNB, 32);
+  /* L1 = length(P1) = 3 */
+  s[8] = 0x00;
+  s[9] = 0x03;
 
-    return 0;
+  kdf(s, 10, key, 32, &out, 32);
+
+  memcpy(key_ng_ran_star, out, 32);
+  free(out);
+
+  return 0;
 }
-*/
 
 int derive_skgNB(const uint8_t *keNB, const uint16_t sk_counter, uint8_t *skgNB)
 {

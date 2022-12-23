@@ -119,6 +119,10 @@
 #define CH_OFFSET      0x0004
 #define CH_SHIFT       2
 
+// RLC Entity
+#define RLC_TX_MAXSIZE       10000000
+#define RLC_RX_MAXSIZE       10000000
+
 // RLC_AM_SEND_MRW
 #        define SEND_MRW_OFF    15
 #        define SEND_MRW_ON     240

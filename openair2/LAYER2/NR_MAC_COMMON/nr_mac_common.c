@@ -2476,7 +2476,7 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
 // Table 5.1.2.2.1-1 38.214
 uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
   
-  AssertFatal(bwp_size<276,"BWP Size > 275\n");
+  AssertFatal(bwp_size < 276,"Invalid BWP Size > 275\n");
   
   if (bwp_size < 37)  return (rbg_size_config ? 4 : 2);
   if (bwp_size < 73)  return (rbg_size_config ? 8 : 4);
@@ -2487,8 +2487,7 @@ uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
 uint8_t getNRBG(uint16_t bwp_size, uint16_t bwp_start, long rbg_size_config) {
 
   uint8_t rbg_size = getRBGSize(bwp_size,rbg_size_config);
-
-  return (uint8_t)ceil((bwp_size+(bwp_start % rbg_size))/rbg_size);
+  return (uint8_t)ceil((float)(bwp_size+(bwp_start % rbg_size))/(float)rbg_size);
 }
 
 uint8_t getAntPortBitWidth(NR_SetupRelease_DMRS_DownlinkConfig_t *typeA, NR_SetupRelease_DMRS_DownlinkConfig_t *typeB) {
@@ -2770,7 +2769,7 @@ uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servi
                                        NR_PUSCH_Config_t *pusch_Config,
                                        NR_SRS_Config_t *srs_config,
                                        nr_srs_feedback_t *srs_feedback,
-                                       uint16_t *val)
+                                       uint32_t *val)
 {
   uint8_t nbits = 0;
 
@@ -2892,7 +2891,7 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
                                       dci_field_t srs_resource_indicator,
                                       nr_srs_feedback_t *srs_feedback,
                                       const uint8_t *nrOfLayers,
-                                      uint16_t *val) {
+                                      uint32_t *val) {
 
   // It is only applicable to codebook based transmission. This field occupies 0 bits for non-codebook based
   // transmission. It also occupies 0 bits for codebook based transmission using a single antenna port.
@@ -3191,10 +3190,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
     case NR_UL_DCI_FORMAT_0_0:
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment -- hopping scenario to be updated
+      dci_pdu->frequency_domain_assignment.nbits = (uint8_t)ceil(log2((N_RB * (N_RB + 1)) >>1)); // Freq domain assignment -- hopping scenario to be updated
+      size += dci_pdu->frequency_domain_assignment.nbits;
       int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
-      AssertFatal(dci_10_size >= size, "NR_UL_DCI_FORMAT_0_0 size is bigger than NR_DL_DCI_FORMAT_1_0! 3GPP TS 38.212 Section 7.3.1.0: DCI size alignment is not fully implemented");
-      size += dci_10_size - size; // Padding to match 1_0 size
+      if(dci_10_size >= size)
+        size += dci_10_size - size; // Padding to match 1_0 size
+      else {
+        dci_pdu->frequency_domain_assignment.nbits -= (size - dci_10_size);
+        size = dci_10_size;
+      }
       // UL/SUL indicator assumed to be 0
       break;
 

@@ -61,6 +61,8 @@ int derive_key(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
 int nr_derive_key(algorithm_type_dist_t alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out);
 
+int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t key[32], uint8_t *key_ng_ran_star);
+
 //#define derive_key_nas_enc(aLGiD, kEY, kNAS)    derive_key(NAS_ENC_ALG, aLGiD, kEY, kNAS)
 
 //#define derive_key_nas_int(aLGiD, kEY, kNAS)    derive_key(NAS_INT_ALG, aLGiD, kEY, kNAS)

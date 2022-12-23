@@ -432,9 +432,8 @@ int generate_srs_nr(nfapi_nr_srs_pdu_t *srs_config_pdu,
 *                send srs according to current configuration
 *
 *********************************************************************/
-int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, uint8_t gNB_id)
+int ue_srs_procedures_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc)
 {
-
   if(!ue->srs_vars[0]->active) {
     return -1;
   }

@@ -523,8 +523,9 @@ the value \f$\mathrm{sgn}(u)i\f$.  The search requires at most \f$Nbits-1\f$ com
 */
 int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 
+void fill_random(void *buf, size_t sz);
 double gaussdouble(double,double);
-void randominit(unsigned int seed_init);
+void randominit(unsigned long seed_init);
 double uniformrandom(void);
 double gaussZiggurat(double mean, double variance);
 void tableNor(unsigned long seed);

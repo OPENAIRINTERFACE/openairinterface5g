@@ -756,14 +756,18 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   }
 }
 
-void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time) {
-
+void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing)
+{
   pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
+  const int n_slots_frame = slotsperframe[subcarrierSpacing];
   long *delay[8];
-  for (int i=0;i<8;i++) {
-    delay[i] = calloc(1,sizeof(*delay[i]));
-    *delay[i] = i+min_feedback_time;
-    ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
+  for (int i = 0; i < 8; i++) {
+    int curr_delay = i + min_feedback_time;
+    if (curr_delay <= n_slots_frame) {
+      delay[i] = calloc(1,sizeof(*delay[i]));
+      *delay[i] = curr_delay;
+      ASN_SEQUENCE_ADD(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
+    }
   }
 }
 
@@ -886,7 +890,7 @@ static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedul
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   int sr_slot = 1; // in FDD SR in slot 1
   if(tdd)
-    sr_slot = tdd->nrofDownlinkSlots; // SR in the first uplink slot
+    sr_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
 
   schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
 
@@ -1238,7 +1242,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   config_pucch_resset1(pucch_Config, uecap);
   set_pucch_power_config(pucch_Config, configuration->do_CSIRS);
   scheduling_request_config(scc, pucch_Config);
-  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
+  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, ubwp->bwp_Common->genericParameters.subcarrierSpacing);
 
   NR_PUSCH_Config_t *pusch_Config = NULL;
   if(servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList &&
@@ -1286,7 +1290,7 @@ void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR_CSI_Re
   const int n_slots_period = tdd ? n_slots_frame / get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity) : n_slots_frame;
   const int ideal_period = MAX_MOBILES_PER_GNB * 2 * n_slots_period / n_ul_slots_period; // 2 reports per UE
   AssertFatal(ideal_period < 320, "Not enough UL slots to accomodate all possible UEs. Need to rework the implementation\n");
-  const int first_ul_slot_period = tdd ? tdd->nrofDownlinkSlots : 0;
+  const int first_ul_slot_period = tdd ? get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols) : 0;
   const int idx = (uid << 1) + is_rsrp;
   const int offset = first_ul_slot_period + idx % n_ul_slots_period + (idx / n_ul_slots_period) * n_slots_period;
 

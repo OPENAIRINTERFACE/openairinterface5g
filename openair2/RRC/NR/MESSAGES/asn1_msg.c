@@ -74,6 +74,8 @@
 #include "NR_RRCReconfigurationComplete-IEs.h"
 #include "NR_DLInformationTransfer.h"
 #include "NR_RRCReestablishmentRequest.h"
+#include "NR_PCCH-Message.h"
+#include "NR_PagingRecord.h"
 #include "NR_UE-CapabilityRequestFilterNR.h"
 #include "common/utils/nr/nr_common.h"
 #if defined(NR_Rel16)
@@ -136,6 +138,7 @@
 #include "intertask_interface.h"
 
 #include "common/ran_context.h"
+#include "conversions.h"
 
 //#define XER_PRINT
 
@@ -223,16 +226,16 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
 
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
   int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  frequency_range_t frequency_range = band<100?FR1:FR2;
+  frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
   int ssb_subcarrier_offset = 31; // default value for NSA
   if (get_softmodem_params()->sa) {
     uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
     int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-    ssb_subcarrier_offset = (absolute_diff/scs_scaling)%24;
+    ssb_subcarrier_offset = (absolute_diff/scs_scaling) % 24;
     if(frequency_range == FR2)
       ssb_subcarrier_offset >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for now)
   }
-  mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset&15;
+  mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset & 15;
 
   /*
   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
@@ -752,7 +755,7 @@ void fill_initial_SpCellConfig(int uid,
 
   scheduling_request_config(scc, pucch_Config);
 
-  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME);
+  set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
 
   SpCellConfig->spCellConfigDedicated->initialDownlinkBWP = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
   NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
@@ -1206,8 +1209,7 @@ void fill_initial_cellGroupConfig(int uid,
   cellGroupConfig->mac_CellGroupConfig                                      = mac_CellGroupConfig;
 
   physicalCellGroupConfig                                                   = calloc(1,sizeof(*physicalCellGroupConfig));
-  physicalCellGroupConfig->p_NR_FR1                                         = calloc(1,sizeof(*physicalCellGroupConfig->p_NR_FR1));
-  *physicalCellGroupConfig->p_NR_FR1                                        = 10;
+  physicalCellGroupConfig->p_NR_FR1                                         = NULL;
   physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook                          = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
   cellGroupConfig->physicalCellGroupConfig                                  = physicalCellGroupConfig;
   
@@ -2131,4 +2133,43 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
 
   return mc;
+}
+
+uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi) {
+  LOG_D(NR_RRC, "[gNB %d] do_NR_Paging start\n", Mod_id);
+  NR_PCCH_Message_t pcch_msg;
+  pcch_msg.message.present           = NR_PCCH_MessageType_PR_c1;
+  asn1cCalloc(pcch_msg.message.choice.c1, c1);
+  c1->present = NR_PCCH_MessageType__c1_PR_paging;
+  c1->choice.paging = CALLOC(1, sizeof(NR_Paging_t));
+  c1->choice.paging->pagingRecordList = CALLOC(
+      1, sizeof(*pcch_msg.message.choice.c1->choice.paging->pagingRecordList));
+  c1->choice.paging->nonCriticalExtension = NULL;
+  asn_set_empty(&c1->choice.paging->pagingRecordList->list);
+  c1->choice.paging->pagingRecordList->list.count = 0;
+
+  asn1cSequenceAdd(c1->choice.paging->pagingRecordList->list, NR_PagingRecord_t,
+                   paging_record_p);
+  /* convert ue_paging_identity_t to PagingUE_Identity_t */
+  paging_record_p->ue_Identity.present = NR_PagingUE_Identity_PR_ng_5G_S_TMSI;
+  // set ng_5G_S_TMSI
+  INT32_TO_BIT_STRING(tmsi, &paging_record_p->ue_Identity.choice.ng_5G_S_TMSI);
+
+  /* add to list */
+  LOG_D(NR_RRC, "[gNB %d] do_Paging paging_record: PagingRecordList.count %d\n",
+        Mod_id, c1->choice.paging->pagingRecordList->list.count);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(
+      &asn_DEF_NR_PCCH_Message, NULL, (void *)&pcch_msg, buffer, RRC_BUF_SIZE);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_PCCH_Message, &pcch_msg);
+  if(enc_rval.encoded == -1) {
+    LOG_I(NR_RRC, "[gNB AssertFatal]ASN1 message encoding failed (%s, %lu)!\n",
+          enc_rval.failed_type->name, enc_rval.encoded);
+    return -1;
+  }
+
+  if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    xer_fprint(stdout, &asn_DEF_NR_PCCH_Message, (void *)&pcch_msg);
+  }
+
+  return((enc_rval.encoded+7)/8);
 }

@@ -304,11 +304,10 @@ int main(int argc, char **argv)
   uint16_t nb_rb = 50;
   int Imcs = 9;
   uint8_t precod_nbr_layers = 1;
-  int gNB_id = 0;
   int tx_offset;
   int32_t txlev_sum = 0, atxlev[4];
   int start_rb = 0;
-  int UE_id =0; // [hna] only works for UE_id = 0 because NUMBER_OF_NR_UE_MAX is set to 1 (phy_init_nr_gNB causes segmentation fault)
+  int UE_id = 0;
   int print_perf = 0;
   cpuf = get_cpu_freq_GHz();
   int msg3_flag = 0;
@@ -1101,6 +1100,7 @@ int main(int argc, char **argv)
 
         UE_proc.nr_slot_tx = slot;
         UE_proc.frame_tx = frame;
+        UE_proc.gNB_id   = 0;
 
         UL_tti_req->SFN = frame;
         UL_tti_req->Slot = slot;
@@ -1244,7 +1244,7 @@ int main(int argc, char **argv)
           /////////////////////////phy_procedures_nr_ue_TX///////////////////////
           ///////////
 
-          phy_procedures_nrUE_TX(UE, &UE_proc, gNB_id, &phy_data);
+          phy_procedures_nrUE_TX(UE, &UE_proc, &phy_data);
 
           if (n_trials == 1) {
             LOG_M("txsig0.m", "txs0", &UE->common_vars.txdata[0][slot_offset], slot_length, 1, 1);

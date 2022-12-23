@@ -31,7 +31,6 @@
  */
 
 /* RRC */
-#include "NR_RACH-ConfigCommon.h"
 #include "RRC/NR_UE/rrc_proto.h"
 
 /* MAC */
@@ -403,7 +402,7 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
   return receivedTargerPower;
 }
 
-void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon, fapi_nr_ul_config_prach_pdu *prach_pdu){
+void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon){
 
   // Determine the SSB to RACH mapping ratio
   // =======================================
@@ -467,7 +466,7 @@ void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_
   if ((true == multiple_ssb_per_ro) && (ssb_rach_ratio > 1)) {
     total_preambles_per_ssb = numberOfRA_Preambles / ssb_rach_ratio;
 
-    ssb_nb_in_ro = prach_pdu->ssb_nb_in_ro;
+    ssb_nb_in_ro = ra->ssb_nb_in_ro;
     ra->starting_preamble_nb = total_preambles_per_ssb * ssb_nb_in_ro;
   } else {
     total_preambles_per_ssb = numberOfRA_Preambles;
@@ -657,7 +656,6 @@ void nr_get_prach_resources(module_id_t mod_id,
                             int CC_id,
                             uint8_t gNB_id,
                             NR_PRACH_RESOURCES_t *prach_resources,
-                            fapi_nr_ul_config_prach_pdu *prach_pdu,
                             NR_RACH_ConfigDedicated_t *rach_ConfigDedicated){
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
@@ -667,7 +665,7 @@ void nr_get_prach_resources(module_id_t mod_id,
     mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup : 
     mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
 
-  LOG_D(PHY, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, ra->first_Msg3);
+  LOG_D(MAC, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, ra->first_Msg3);
 
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
@@ -679,7 +677,7 @@ void nr_get_prach_resources(module_id_t mod_id,
     /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
              can abstract this, perhaps in the proxy. But for the time being lets leave it as below. */
     int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm) : 0;
-    ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon, prach_pdu);
+    ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", ra->ra_PreambleIndex);
   }
@@ -738,8 +736,7 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
  * @gNB_id              gNB ID
  * @nr_slot_tx          current UL TX slot
  */
-uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
-                       module_id_t mod_id,
+uint8_t nr_ue_get_rach(module_id_t mod_id,
                        int CC_id,
                        frame_t frame,
                        uint8_t gNB_id,
@@ -896,13 +893,11 @@ uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
         if(ra->cfra) {
           // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
           nr_ra_succeeded(mod_id, frame, nr_slot_tx);
-        } else {
-          ra->generate_nr_prach = GENERATE_IDLE;
         }
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
 
-        LOG_I(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
+        LOG_W(MAC, "[UE %d][%d:%d] RAR reception failed \n", mod_id, frame, nr_slot_tx);
 
         nr_ra_failed(mod_id, CC_id, prach_resources, frame, nr_slot_tx);
 
@@ -912,8 +907,8 @@ uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
 
         // Fill in preamble and PRACH resources
         ra->RA_window_cnt--;
-        if (ra->generate_nr_prach == GENERATE_PREAMBLE) {
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        if (ra->ra_state == GENERATE_PREAMBLE) {
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, rach_ConfigDedicated);
         }
       } else if (ra->RA_backoff_cnt > 0) {
 
@@ -921,10 +916,9 @@ uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
 
         ra->RA_backoff_cnt--;
 
-        if ((ra->RA_backoff_cnt > 0 && ra->generate_nr_prach == GENERATE_PREAMBLE) || ra->RA_backoff_cnt == 0) {
-          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, prach_pdu, rach_ConfigDedicated);
+        if ((ra->RA_backoff_cnt > 0 && ra->ra_state == GENERATE_PREAMBLE) || ra->RA_backoff_cnt == 0) {
+          nr_get_prach_resources(mod_id, CC_id, gNB_id, prach_resources, rach_ConfigDedicated);
         }
-
       }
     }
   }
@@ -933,8 +927,7 @@ uint8_t nr_ue_get_rach(fapi_nr_ul_config_prach_pdu *prach_pdu,
     nr_ue_contention_resolution(mod_id, CC_id, frame, nr_slot_tx, prach_resources);
   }
 
-  LOG_D(MAC,"ra->generate_nr_prach %d ra->ra_state %d (GENERATE_IDLE %d)\n",ra->generate_nr_prach,ra->ra_state,GENERATE_IDLE);
-  return ra->generate_nr_prach;
+  return ra->ra_state;
 }
 
 void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
@@ -1041,7 +1034,6 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
-  ra->generate_nr_prach = GENERATE_IDLE;
   ra->ra_state = RA_SUCCEEDED;
 
 }
@@ -1060,7 +1052,6 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
 
   ra->first_Msg3 = 1;
   ra->ra_PreambleIndex = -1;
-  ra->generate_nr_prach = RA_FAILED;
   ra->ra_state = RA_UE_IDLE;
 
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER++;

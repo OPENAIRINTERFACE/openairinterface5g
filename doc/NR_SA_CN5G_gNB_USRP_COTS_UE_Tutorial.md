@@ -17,7 +17,7 @@
 [[_TOC_]]
 
 #  1. Scenario
-In this tutorial we describe how to configure and run a 5G end-to-end setup with OAI CN5G, OAI gNB, OAI UE and COTS UE.
+In this tutorial we describe how to configure and run a 5G end-to-end setup with OAI CN5G, OAI gNB, OAI nrUE and COTS UE.
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
@@ -233,13 +233,14 @@ iperf -s -u -i 1 -B 12.1.1.2
 docker exec -it oai-ext-dn iperf -u -t 86400 -i 1 -fk -B 192.168.70.135 -b 100M -c 12.1.1.2
 ```
 
-## 5.2 Testing with OAI UE
-### 5.2.1 Testing with OAI UE with USRP B210
+## 5.2 Testing with OAI nrUE
+### 5.2.1 Testing with OAI nrUE with USRP B210
 Important notes:
 - This should be run in a second Ubuntu 20.04 host, other than gNB
 - It only applies when running OAI gNB with USRP B210
+- OAI gNB must run with the following flag: `--gNBs.[0].min_rxtxtime 6`
 
-Run OAI UE
+Run OAI nrUE
 ```bash
 cd ~/openairinterface5g
 source oaienv
@@ -247,12 +248,12 @@ cd cmake_targets/ran_build/build
 sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001 --uicc0.nssai_sd 1
 ```
 
-### 5.2.2 Testing with OAI UE with RFsimulator
+### 5.2.2 Testing with OAI nrUE with RFsimulator
 Important notes:
 - This should be run on the same host as the OAI gNB
 - It only applies when running OAI gNB with RFsimulator
 
-Run OAI UE with RFsimulator
+Run OAI nrUE with RFsimulator
 ```bash
 cd ~/openairinterface5g
 source oaienv
@@ -291,6 +292,8 @@ sudo ethtool -G enp1s0f0 tx 4096 rx 4096
 ```
 
 ## 6.2 Real-time performance workarounds
+- Enable Performance Mode in Ubuntu 22:
+  - Settings/Power/Power Mode: Performance
 - If you get real-time problems on heavy UL traffic, reduce the maximum UL MCS using an additional command-line switch: `--MACRLCs.[0].ul_max_mcs 14`.
 
 ## 6.3 Uplink issues related with noise on the DC carriers
