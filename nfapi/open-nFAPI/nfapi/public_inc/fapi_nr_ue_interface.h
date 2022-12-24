@@ -86,6 +86,7 @@ typedef struct {
 typedef struct {
   uint16_t rnti;
   uint8_t dci_format;
+  int ss_type;
   // n_CCE index of first CCE for PDCCH reception
   int n_CCE;
   // N_CCE is L, or number of CCEs for DCI
@@ -413,6 +414,7 @@ typedef struct {
   uint8_t num_dci_options;  // Num DCIs the UE actually needs to decode (1 or 2)
   uint8_t dci_length_options[2];
   uint8_t dci_format_options[2];
+  uint8_t dci_type_options[2];
 } fapi_nr_dl_config_dci_dl_pdu_rel15_t;
 
 typedef struct {

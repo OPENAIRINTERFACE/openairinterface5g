@@ -574,7 +574,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
     NR_BWP_Uplink_t *ubwp = ul_bwp_id > 0 ? mac->ULbwp[ul_bwp_id - 1] : NULL;
     NR_BWP_UplinkDedicated_t *ibwp;
-    int scs,abwp_start,abwp_size,startSymbolAndLength,mappingtype;
+    int startSymbolAndLength,mappingtype;
     NR_PUSCH_Config_t *pusch_Config=NULL;
     if (mac->cg && ubwp &&
         mac->cg->spCellConfig &&
@@ -587,22 +587,16 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
       mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
 
-      // active BWP start
-      abwp_start = NRRIV2PRBOFFSET(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      abwp_size = NRRIV2BW(ubwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      scs = ubwp->bwp_Common->genericParameters.subcarrierSpacing;
     }
     else {
       startSymbolAndLength = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
       mappingtype = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
-
-      // active BWP start
-      abwp_start = NRRIV2PRBOFFSET(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      abwp_size = NRRIV2BW(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-      scs = initialUplinkBWP->genericParameters.subcarrierSpacing;
     }
-    int ibwp_start = NRRIV2PRBOFFSET(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int ibwp_size = NRRIV2BW(initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    int ibwp_start = current_UL_BWP->initial_BWPStart;
+    int ibwp_size = current_UL_BWP->initial_BWPSize;
+    int abwp_start = current_UL_BWP->BWPStart;
+    int abwp_size = current_UL_BWP->BWPSize;
+    int scs = current_UL_BWP->scs;
 
       // BWP start selection according to 8.3 of TS 38.213
     if ((ibwp_start < abwp_start) || (ibwp_size > abwp_size)) {
@@ -862,15 +856,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       if (!maxMIMO_Layers)
         maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-      int bw_tbslbrm;
-      if (mac->scc || mac->scc_SIB || mac->cg) {
-        NR_BWP_t genericParameters = initialUplinkBWP->genericParameters;
-        int BWPSize = NRRIV2BW(genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        bw_tbslbrm = get_ulbw_tbslbrm(BWPSize, mac->cg);
-      }
-      else {
-        bw_tbslbrm = pusch_config_pdu->bwp_size;
-      }
+      int bw_tbslbrm = get_ulbw_tbslbrm(current_UL_BWP->initial_BWPSize, mac->cg);
       pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table,
                                                      bw_tbslbrm,
                                                      *maxMIMO_Layers);

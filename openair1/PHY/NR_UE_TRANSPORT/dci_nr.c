@@ -931,10 +931,11 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         else {
           dci_ind->SFN = proc->frame_rx;
           dci_ind->slot = proc->nr_slot_rx;
-          dci_ind->dci_list[dci_ind->number_of_dcis].rnti        = n_rnti;
-          dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE       = CCEind;
-          dci_ind->dci_list[dci_ind->number_of_dcis].N_CCE       = L;
-          dci_ind->dci_list[dci_ind->number_of_dcis].dci_format  = rel15->dci_format_options[k];
+          dci_ind->dci_list[dci_ind->number_of_dcis].rnti = n_rnti;
+          dci_ind->dci_list[dci_ind->number_of_dcis].n_CCE = CCEind;
+          dci_ind->dci_list[dci_ind->number_of_dcis].N_CCE = L;
+          dci_ind->dci_list[dci_ind->number_of_dcis].dci_format = rel15->dci_format_options[k];
+          dci_ind->dci_list[dci_ind->number_of_dcis].ss_type = rel15->dci_type_options[k];
           dci_ind->dci_list[dci_ind->number_of_dcis].payloadSize = dci_length;
           memcpy((void*)dci_ind->dci_list[dci_ind->number_of_dcis].payloadBits,(void*)dci_estimation,8);
           dci_ind->number_of_dcis++;

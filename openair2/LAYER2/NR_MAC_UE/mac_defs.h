@@ -377,6 +377,8 @@ typedef struct NR_DL_BWP {
   NR_BWP_t genericParameters;
   int scs;
   long *cyclicprefix;
+  uint16_t initial_BWPSize;
+  uint16_t initial_BWPStart;
   uint16_t BWPSize;
   uint16_t BWPStart;
 } NR_DL_BWP_t;
@@ -386,6 +388,8 @@ typedef struct NR_UL_BWP {
   NR_BWP_t genericParameters;
   int scs;
   long *cyclicprefix;
+  uint16_t initial_BWPSize;
+  uint16_t initial_BWPStart;
   uint16_t BWPSize;
   uint16_t BWPStart;
 } NR_UL_BWP_t;
