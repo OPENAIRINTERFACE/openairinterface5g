@@ -3157,13 +3157,16 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
 
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
+                     const NR_UE_DL_BWP_t *DL_BWP,
+                     const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
                      int controlResourceSetId,
                      int bwp_id,
-                     uint16_t N_RB,
+                     int ss_type,
+                     uint16_t cset0_bwp_size,
                      uint16_t alt_size)
 {
 
@@ -3210,6 +3213,16 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
     srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
   }
 
+  uint16_t N_RB = cset0_bwp_size;
+  if (DL_BWP)
+    N_RB = get_rb_bwp_dci(format,
+                          ss_type,
+                          cset0_bwp_size,
+                          UL_BWP->BWPSize,
+                          DL_BWP->BWPSize,
+                          UL_BWP->initial_BWPSize,
+                          DL_BWP->initial_BWPSize);
+
   int n_ul_bwp = 1,n_dl_bwp = 1;
   switch(format) {
     case NR_UL_DCI_FORMAT_0_0:
@@ -3219,7 +3232,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->frequency_domain_assignment.nbits;
       if(alt_size >= size)
         size += alt_size - size; // Padding to match 1_0 size
-      else {
+      else if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
         dci_pdu->frequency_domain_assignment.nbits -= (size - alt_size);
         size = alt_size;
       }
@@ -3255,9 +3268,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
           rbg_size_config = 1;
         else
           rbg_size_config = 0;
-        numRBG = getNRBG(NRRIV2BW(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                         NRRIV2PRBOFFSET(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                         rbg_size_config);
+        numRBG = getNRBG(UL_BWP->BWPSize, UL_BWP->BWPStart, rbg_size_config);
         if (pusch_Config->resourceAllocation == 0)
           dci_pdu->frequency_domain_assignment.nbits = numRBG;
         else if (pusch_Config->resourceAllocation == 1)
@@ -3383,9 +3394,10 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       // Size of DCI format 1_0 is given by the size of CORESET 0 if CORESET 0 is configured for the cell and the size
       // of initial DL bandwidth part if CORESET 0 is not configured for the cell
       size = 28;
-      size += (uint8_t)ceil(log2((N_RB * (N_RB + 1)) >> 1)); // Freq domain assignment
-
-      dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
+      dci_pdu->frequency_domain_assignment.nbits = (uint8_t)ceil(log2((N_RB * (N_RB + 1)) >> 1)); // Freq domain assignment
+      size += dci_pdu->frequency_domain_assignment.nbits;
+      if(ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific && alt_size >= size)
+        size += alt_size - size; // Padding to match 0_0 size
       dci_pdu->time_domain_assignment.nbits = 4;
       dci_pdu->vrb_to_prb_mapping.nbits = 1;
       break;
@@ -3414,9 +3426,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       if (pdsch_Config) rbg_size_config = pdsch_Config->rbg_Size;
       else rbg_size_config = 0;
       
-      numRBG = getNRBG(NRRIV2BW(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                       NRRIV2PRBOFFSET(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                       rbg_size_config);
+      numRBG = getNRBG(DL_BWP->BWPSize, DL_BWP->BWPStart, rbg_size_config);
       if (pdsch_Config && pdsch_Config->resourceAllocation == 0)
          dci_pdu->frequency_domain_assignment.nbits = numRBG;
       else if (pdsch_Config == NULL || pdsch_Config->resourceAllocation == 1)

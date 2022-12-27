@@ -1151,7 +1151,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     long BWPStart = 0;
     long BWPSize = 0;
     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
-    if(*ss->controlResourceSetId!=0) {
+    if(*ss->controlResourceSetId != 0) {
       BWPStart = dl_bwp->BWPStart;
       BWPSize  = dl_bwp->initial_BWPSize;
     } else {

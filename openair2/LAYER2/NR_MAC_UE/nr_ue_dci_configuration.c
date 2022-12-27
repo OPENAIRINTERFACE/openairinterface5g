@@ -95,9 +95,9 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
   AssertFatal(mac->scc == NULL || mac->scc_SIB == NULL, "both scc and scc_SIB cannot be non-null\n");
 
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_Id_t dl_bwp_id = current_DL_BWP ? current_DL_BWP->bwp_id : 0;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
   NR_BWP_DownlinkCommon_t *initialDownlinkBWP=NULL;
@@ -164,50 +164,37 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.scrambling_rnti = 0;
   }
   // loop over RNTI type and configure resource allocation for DCI
-  int N_RB;
   for (int i = 0; i < rel15->num_dci_options; i++) {
     rel15->dci_type_options[i] = ss->searchSpaceType->present;
     const int dci_format = rel15->dci_format_options[i];
     uint16_t alt_size = 0;
     if(current_DL_BWP) {
-      N_RB =  get_rb_bwp_dci(dci_format,
-                             ss->searchSpaceType->present,
-                             mac->type0_PDCCH_CSS_config.num_rbs,
-                             current_UL_BWP->BWPSize,
-                             current_DL_BWP->BWPSize,
-                             current_UL_BWP->initial_BWPSize,
-                             current_DL_BWP->initial_BWPSize);
 
       // computing alternative size for padding
-      uint16_t alt_rb;
       dci_pdu_rel15_t temp_pdu;
-      if(dci_format == NR_DL_DCI_FORMAT_1_0) {
-        alt_rb = get_rb_bwp_dci(NR_UL_DCI_FORMAT_0_0,
-                                ss->searchSpaceType->present,
-                                mac->type0_PDCCH_CSS_config.num_rbs,
-                                current_UL_BWP->BWPSize,
-                                current_DL_BWP->BWPSize,
-                                current_UL_BWP->initial_BWPSize,
-                                current_DL_BWP->initial_BWPSize);
-
-        alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &temp_pdu,
-                               NR_UL_DCI_FORMAT_0_0, rnti_type, coreset_id, dl_bwp_id, alt_rb, 0);
-      }
-      if(dci_format == NR_UL_DCI_FORMAT_0_0) {
-        alt_rb = get_rb_bwp_dci(NR_DL_DCI_FORMAT_1_0,
-                                ss->searchSpaceType->present,
-                                mac->type0_PDCCH_CSS_config.num_rbs,
-                                current_UL_BWP->BWPSize,
-                                current_DL_BWP->BWPSize,
-                                current_UL_BWP->initial_BWPSize,
-                                current_DL_BWP->initial_BWPSize);
-
-        alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg, &temp_pdu,
-                               NR_DL_DCI_FORMAT_1_0, rnti_type, coreset_id, dl_bwp_id, alt_rb, 0);
-      }
+      if(dci_format == NR_DL_DCI_FORMAT_1_0)
+        alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
+                               current_DL_BWP, current_UL_BWP,
+                               mac->cg, &temp_pdu,
+                               NR_UL_DCI_FORMAT_0_0, rnti_type, coreset_id, dl_bwp_id,
+                               ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
+      if(dci_format == NR_UL_DCI_FORMAT_0_0)
+        alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
+                               current_DL_BWP, current_UL_BWP,
+                               mac->cg, &temp_pdu,
+                               NR_DL_DCI_FORMAT_1_0, rnti_type, coreset_id, dl_bwp_id,
+                               ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
     }
-    else
-      N_RB = mac->type0_PDCCH_CSS_config.num_rbs;
+
+    rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
+                                               current_DL_BWP, current_UL_BWP,
+                                               mac->cg, &mac->def_dci_pdu_rel15[dci_format],
+                                               dci_format, NR_RNTI_TC, coreset_id, dl_bwp_id, 
+                                               ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, alt_size);
+
+    rel15->BWPStart = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.cset_start_rb : current_DL_BWP->BWPStart;
+    rel15->BWPSize = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->BWPSize;
+
     switch(rnti_type) {
       case NR_RNTI_C:
         // we use DL BWP dedicated
@@ -215,29 +202,14 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
         // for SPS=14 8 MSBs in positions 13 down to 6
         monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
         rel15->rnti = mac->crnti;
-        rel15->BWPSize = current_DL_BWP->BWPSize;
-        rel15->BWPStart = current_DL_BWP->BWPStart;
         rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg,
-                                                   &mac->def_dci_pdu_rel15[dci_format],
-                                                   dci_format, NR_RNTI_C, coreset_id, dl_bwp_id, N_RB, alt_size);
         break;
       case NR_RNTI_RA:
         // we use the initial DL BWP
         sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
         monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
         rel15->rnti = mac->ra.ra_rnti;
-        if (get_softmodem_params()->sa) {
-          rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-          rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
-        } else { // NSA mode is not using the Initial BWP
-          rel15->BWPSize = current_DL_BWP->initial_BWPSize;
-          rel15->BWPStart = current_DL_BWP->BWPStart;
-        }
         rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg,
-                                                  &mac->def_dci_pdu_rel15[dci_format],
-                                                  dci_format, NR_RNTI_RA, coreset_id, dl_bwp_id, N_RB, alt_size);
         break;
       case NR_RNTI_P:
         break;
@@ -248,12 +220,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
         sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
         monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
         rel15->rnti = mac->ra.t_crnti;
-        rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-        rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
         rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
-                                                   mac->cg, &mac->def_dci_pdu_rel15[dci_format],
-                                                   dci_format, NR_RNTI_TC, coreset_id, dl_bwp_id, N_RB, alt_size);
         break;
       case NR_RNTI_SP_CSI:
         break;
@@ -263,17 +230,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
         monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
 
         rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
-        rel15->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-        rel15->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
 
         if(mac->frequency_range == FR1)
           rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
         else
           rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
-
-        rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP, mac->cg,
-                                                   &mac->def_dci_pdu_rel15[dci_format],
-                                                   dci_format, NR_RNTI_SI, coreset_id, 0, mac->type0_PDCCH_CSS_config.num_rbs, alt_size);
         break;
       case NR_RNTI_SFI:
         break;

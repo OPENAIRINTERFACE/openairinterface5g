@@ -543,17 +543,19 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
                            NR_ServingCellConfigCommonSIB_t *scc,
                            NR_CellGroupConfig_t *cell_group_config)
 {
-  NR_DL_BWP_t *DL_BWP = &mac->current_DL_BWP;
-  NR_UL_BWP_t *UL_BWP = &mac->current_UL_BWP;
+  NR_UE_DL_BWP_t *DL_BWP = &mac->current_DL_BWP;
+  NR_UE_UL_BWP_t *UL_BWP = &mac->current_UL_BWP;
+  NR_BWP_t dl_genericParameters = {0};
+  NR_BWP_t ul_genericParameters = {0};
 
   if(scc) {
     DL_BWP->bwp_id = 0;
     UL_BWP->bwp_id = 0;
-    DL_BWP->genericParameters = scc->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+    dl_genericParameters = scc->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
     if(scc->uplinkConfigCommon)
-      UL_BWP->genericParameters = scc->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+      ul_genericParameters = scc->uplinkConfigCommon->initialUplinkBWP.genericParameters;
     else
-      UL_BWP->genericParameters = scc->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+      ul_genericParameters = scc->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
   }
   if(cell_group_config) {
     if (cell_group_config->spCellConfig &&
@@ -573,14 +575,14 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
             break;
         }
         AssertFatal(bwp_downlink != NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n", DL_BWP->bwp_id);
-        DL_BWP->genericParameters = bwp_downlink->bwp_Common->genericParameters;
+        dl_genericParameters = bwp_downlink->bwp_Common->genericParameters;
       }
       else {
         if(mac->scc) {
-          DL_BWP->genericParameters = mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
+          dl_genericParameters = mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
         }
         if(mac->scc_SIB) {
-          DL_BWP->genericParameters = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
+          dl_genericParameters = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters;
         }
       }
       NR_BWP_Uplink_t *bwp_uplink = NULL;
@@ -592,14 +594,14 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
             break;
         }
         AssertFatal(bwp_uplink != NULL,"Couldn't find ULBWP corresponding to BWP ID %ld\n",UL_BWP->bwp_id);
-        UL_BWP->genericParameters = bwp_uplink->bwp_Common->genericParameters;
+        ul_genericParameters = bwp_uplink->bwp_Common->genericParameters;
       }
       else {
         if(mac->scc) {
-          UL_BWP->genericParameters = mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
+          ul_genericParameters = mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
         }
         if(mac->scc_SIB) {
-          UL_BWP->genericParameters = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
+          ul_genericParameters = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters;
         }
       }
     }
@@ -607,14 +609,14 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
       AssertFatal(1==0,"We shouldn't end here in configuring BWP\n");
   }
 
-  DL_BWP->scs = DL_BWP->genericParameters.subcarrierSpacing;
-  DL_BWP->cyclicprefix = DL_BWP->genericParameters.cyclicPrefix;
-  DL_BWP->BWPSize = NRRIV2BW(DL_BWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  DL_BWP->BWPStart = NRRIV2PRBOFFSET(DL_BWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  UL_BWP->scs = UL_BWP->genericParameters.subcarrierSpacing;
-  UL_BWP->cyclicprefix = UL_BWP->genericParameters.cyclicPrefix;
-  UL_BWP->BWPSize = NRRIV2BW(UL_BWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  UL_BWP->BWPStart = NRRIV2PRBOFFSET(UL_BWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  DL_BWP->scs = dl_genericParameters.subcarrierSpacing;
+  DL_BWP->cyclicprefix = dl_genericParameters.cyclicPrefix;
+  DL_BWP->BWPSize = NRRIV2BW(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  DL_BWP->BWPStart = NRRIV2PRBOFFSET(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  UL_BWP->scs = ul_genericParameters.subcarrierSpacing;
+  UL_BWP->cyclicprefix = ul_genericParameters.cyclicPrefix;
+  UL_BWP->BWPSize = NRRIV2BW(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  UL_BWP->BWPStart = NRRIV2PRBOFFSET(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   DL_BWP->initial_BWPSize = mac->scc ? NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) :
                             NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);

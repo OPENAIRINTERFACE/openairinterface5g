@@ -107,6 +107,7 @@
  * @}
  */
 
+#include <common/utils/nr/nr_common.h>
 #include <common/utils/utils.h>
 #include "defs_eNB.h"
 #include "types.h"
@@ -277,8 +278,6 @@
   #define DURATION_RX_TO_TX           (6)   /* For LTE, this duration is fixed to 4 and it is linked to LTE standard for both modes FDD/TDD */
 #endif
 
-
-#define NR_MAX_HARQ_PROCESSES                    (16)
 #define NR_MAX_ULSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* cf 38.214 6.1 UE procedure for receiving the physical uplink shared channel */
 #define NR_MAX_DLSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* cf 38.214 5.1 UE procedure for receiving the physical downlink shared channel */
 #endif

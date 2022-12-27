@@ -540,7 +540,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,
                         uint16_t rnti,
-                        uint8_t *dci_format){
+                        uint8_t *dci_format)
+{
 
   int f_alloc;
   int mask;
@@ -553,7 +554,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   int                N_PRB_oh  = 0;
 
   int rnti_type = get_rnti_type(mac, rnti);
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
 
   // Common configuration
@@ -935,7 +936,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
   bool srs_scheduled = false;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
 
   NR_SRS_Config_t *srs_config = NULL;
@@ -1567,7 +1568,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
                           uint8_t tda_id){
 
   int delta = 0;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
 
   // Get the numerology to calculate the Tx frame and slot
@@ -2405,7 +2406,7 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   NR_CSI_IM_Resource_t *imcsi;
   int period, offset;
 
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   int mu = current_DL_BWP->scs;
   uint16_t bwp_size = current_DL_BWP->BWPSize;
   uint16_t bwp_start = current_DL_BWP->BWPStart;
@@ -2462,7 +2463,7 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   NR_NZP_CSI_RS_Resource_t *nzpcsi;
   int period, offset;
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
 
   int mu = current_DL_BWP->scs;

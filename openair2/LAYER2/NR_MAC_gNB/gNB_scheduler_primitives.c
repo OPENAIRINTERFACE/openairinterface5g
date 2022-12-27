@@ -1412,39 +1412,30 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                           current_DL_BWP->initial_BWPSize);
 
     // computing alternative size for padding
-    uint16_t alt_rb;
     dci_pdu_rel15_t temp_pdu;
-    if(dci_format == NR_DL_DCI_FORMAT_1_0) {
-      alt_rb = get_rb_bwp_dci(NR_UL_DCI_FORMAT_0_0,
-                              ss->searchSpaceType->present,
-                              cset0_bwp_size,
-                              current_UL_BWP->BWPSize,
-                              current_DL_BWP->BWPSize,
-                              current_UL_BWP->initial_BWPSize,
-                              current_DL_BWP->initial_BWPSize);
+    if(dci_format == NR_DL_DCI_FORMAT_1_0)
       alt_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
                              scc->uplinkConfigCommon->initialUplinkBWP,
-                             CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type, controlResourceSetId, bwp_id, alt_rb, 0);
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type,
+                             controlResourceSetId, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
 
-    }
-    if(dci_format == NR_UL_DCI_FORMAT_0_0) {
-      alt_rb = get_rb_bwp_dci(NR_DL_DCI_FORMAT_1_0,
-                              ss->searchSpaceType->present,
-                              cset0_bwp_size,
-                              current_UL_BWP->BWPSize,
-                              current_DL_BWP->BWPSize,
-                              current_UL_BWP->initial_BWPSize,
-                              current_DL_BWP->initial_BWPSize);
+    if(dci_format == NR_UL_DCI_FORMAT_0_0)
       alt_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
                              scc->uplinkConfigCommon->initialUplinkBWP,
-                             CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type, controlResourceSetId, bwp_id, alt_rb, 0);
-    }
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type,
+                             controlResourceSetId, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+
   }
   else
     N_RB = cset0_bwp_size;
+
   int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
                              scc->uplinkConfigCommon->initialUplinkBWP,
-                             CellGroup, dci_pdu_rel15, dci_format, rnti_type, controlResourceSetId, bwp_id, N_RB, alt_size);
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, dci_pdu_rel15, dci_format, rnti_type, controlResourceSetId,
+                             bwp_id, ss->searchSpaceType->present, cset0_bwp_size, alt_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)

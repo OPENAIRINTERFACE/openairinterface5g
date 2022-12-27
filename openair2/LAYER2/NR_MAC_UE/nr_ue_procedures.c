@@ -50,6 +50,7 @@
 
 /* PHY */
 #include "executables/softmodem-common.h"
+#include "openair1/PHY/defs_nr_UE.h"
 
 /* utils */
 #include "assertions.h"
@@ -642,8 +643,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   RA_config_t *ra = &mac->ra;
   fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
   uint8_t is_Msg3 = 0;
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
   int default_abc = 1;
@@ -816,15 +817,22 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     NR_PDSCH_Config_t *pdsch_config= (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) ? mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
     int is_common=0;
+    if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
+      dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
+      dlsch_config_pdu_1_0->BWPStart = dci_ind->cset_start;
+    }
+    else {
+      dlsch_config_pdu_1_0->BWPSize = current_DL_BWP->BWPSize;
+      dlsch_config_pdu_1_0->BWPStart = current_DL_BWP->BWPStart;
+    }
     if(rnti == SI_RNTI) {
       NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config = mac->type0_PDCCH_CSS_config;
       default_abc = type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH;
-      dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-      dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
       dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
       if (pdsch_config) pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
     } else {
+      dlsch_config_pdu_1_0->SubcarrierSpacing = current_DL_BWP->scs;
       if (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti){
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
       } else {
@@ -832,34 +840,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       }
       if( (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti) || (rnti == ra->t_crnti) ) {
         if (mac->scc == NULL) { // use coreset0
-          dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs;
-          dlsch_config_pdu_1_0->BWPStart = mac->type0_PDCCH_CSS_config.cset_start_rb;
           is_common=1;
         }
-        else {
-          dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        }
         if (!get_softmodem_params()->sa) { // NSA mode is not using the Initial BWP
-          dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
           pdsch_config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
         }
       } else if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) {
-        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->DLbwp[dl_bwp_id-1]->bwp_Common->genericParameters.subcarrierSpacing;
         pdsch_config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
-      } else if (mac->scc) {
-        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing;
+      } else if (mac->scc)
         pdsch_config = NULL;
-      } else if (mac->scc_SIB) {
-        dlsch_config_pdu_1_0->BWPSize = NRRIV2BW(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->BWPStart = NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-        dlsch_config_pdu_1_0->SubcarrierSpacing = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.subcarrierSpacing;
-        pdsch_config = NULL;
-      }
     }
 
     /* IDENTIFIER_DCI_FORMATS */
@@ -1504,7 +1493,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
   int O_CRC = 0; //FIXME
   uint16_t O_uci = O_CSI + O_ACK;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_FormatConfig_t *pucchfmt;
   long *pusch_id = NULL;
@@ -1564,7 +1553,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         mac->cg->physicalCellGroupConfig &&
         (mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL ||
         mac->cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook != 1)) {
-      LOG_E(MAC,"PUCCH Unsupported cell group configuration : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported cell group configuration\n");
       return;
     }
     else if (mac->cg &&
@@ -1573,7 +1562,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig &&
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
              mac->cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-      LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config\n");
       return;
     }
     NR_PUCCH_Config_t *pucch_Config;
@@ -1611,7 +1600,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->prb_size = 1; // format 0 or 1
 
     if ((O_SR+O_CSI+O_SR) > (sizeof(uint64_t)*8)) {
-      LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size\n");
       return;
     }
     pucch_pdu->payload = (pucch->csi_part1_payload << (O_ACK + O_SR)) |  (pucch->sr_payload << O_ACK) | pucch->ack_payload;
@@ -1783,7 +1772,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   int16_t G_b_f_c = 0;
 
   if (pucch_Config->spatialRelationInfoToAddModList != NULL) {  /* FFS TODO NR */
-    LOG_D(MAC,"PUCCH Spatial relation infos are not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_D(MAC,"PUCCH Spatial relation infos are not yet implemented\n");
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1793,7 +1782,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
   }
   else {
     G_b_f_c = pucch->delta_pucch;
-    LOG_D(MAC,"PUCCH Transmit power control command not yet implemented for NR : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_E(MAC,"PUCCH Transmit power control command not yet implemented for NR\n");
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1854,13 +1843,13 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
       break;
     default:
     {
-      LOG_E(MAC,"PUCCH unknown pucch format : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+      LOG_E(MAC,"PUCCH unknown pucch format %d\n", format_type);
       return (0);
     }
   }
 
   if (*power_config->twoPUCCH_PC_AdjustmentStates > 1) {
-    LOG_E(MAC,"PUCCH power control adjustment states with 2 states not yet implemented : at line %d in function %s of file %s \n", LINE_FILE , __func__, __FILE__);
+    LOG_E(MAC,"PUCCH power control adjustment states with 2 states not yet implemented\n");
     return (PUCCH_POWER_DEFAULT);
   }
 
@@ -1869,8 +1858,8 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
 
   int16_t pucch_power = P_O_PUCCH + M_pucch_component + pathloss + delta_F_PUCCH + DELTA_TF + G_b_f_c;
 
-  NR_TST_PHY_PRINTF("PUCCH ( Tx power : %d dBm ) ( 10Log(...) : %d ) ( from Path Loss : %d ) ( delta_F_PUCCH : %d ) ( DELTA_TF : %d ) ( G_b_f_c : %d ) \n",
-                    pucch_power, M_pucch_component, pathloss, delta_F_PUCCH, DELTA_TF, G_b_f_c);
+  LOG_D(MAC, "PUCCH ( Tx power : %d dBm ) ( 10Log(...) : %d ) ( from Path Loss : %d ) ( delta_F_PUCCH : %d ) ( DELTA_TF : %d ) ( G_b_f_c : %d ) \n",
+        pucch_power, M_pucch_component, pathloss, delta_F_PUCCH, DELTA_TF, G_b_f_c);
 
   return (pucch_power);
 }
@@ -2017,7 +2006,7 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac,
     int n_CCE_0 = pucch->n_CCE;
     int N_CCE_0 = pucch->N_CCE;
     if (N_CCE_0 == 0) {
-      AssertFatal(1==0,"PUCCH No compatible pucch format found : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+      AssertFatal(1==0,"PUCCH No compatible pucch format found\n");
     }
     int r_PUCCH = ((2 * n_CCE_0)/N_CCE_0) + (2 * delta_PRI);
     pucch->initial_pucch_id = r_PUCCH;
@@ -2114,8 +2103,8 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   int sched_frame,sched_slot;
   int slots_per_frame;
 
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
   NR_BWP_DownlinkDedicated_t *bwpd=NULL;
@@ -2164,7 +2153,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
           }
 
           if (current_harq->dai > NR_DL_MAX_DAI) {
-            LOG_E(MAC,"PUCCH Downlink DAI has an invalid value : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+            LOG_E(MAC,"PUCCH Downlink DAI has an invalid value of %d\n", current_harq->dai);
           }
           else {
 
@@ -2175,7 +2164,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
               dai_current = current_harq->dai+1; // DCI DAI to counter DAI conversion
 
               if (dai_current == 0) {
-                LOG_E(MAC,"PUCCH Downlink dai is invalid : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+                LOG_E(MAC,"PUCCH Downlink dai is invalid\n");
                 return(0);
               } else if (dai_current > dai_max) {
                 dai_max = dai_current;
@@ -2209,7 +2198,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
     return(0);
   }
   else  if (number_harq_feedback > (sizeof(uint32_t)*8)) {
-    LOG_E(MAC,"PUCCH number of ack bits exceeds payload size : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    LOG_E(MAC,"PUCCH number of ack bits exceeds payload size\n");
     return(0);
   }
 
@@ -2223,7 +2212,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
       mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL) {
     int N_TB_max_DL = bwpd->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
     pucch->n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
-    NR_TST_PHY_PRINTF("PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", pucch->n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
+    LOG_D(MAC, "PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", pucch->n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
   }
 
   /*
@@ -2295,7 +2284,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   }
 
   if (number_harq_feedback != O_ACK) {
-    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment : at line %d in function %s of file %s \n", LINE_FILE , __func__, FILE_NAME);
+    LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment\n");
     return (0);
   }
 
@@ -2313,7 +2302,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          frame_t frame,
                                          int slot) {
 
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
 
@@ -2426,7 +2415,7 @@ uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
                                 int slot,
                                 PUCCH_sched_t *pucch) {
 
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_Config_t *pucch_Config = NULL;
   int csi_bits = 0;
@@ -2805,8 +2794,8 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   int pos = 0;
   int fsize = 0;
   int rnti_type = get_rnti_type(mac, rnti);
-  NR_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  NR_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   int N_RB;
   if(current_DL_BWP)
     N_RB = get_rb_bwp_dci(dci_format,
