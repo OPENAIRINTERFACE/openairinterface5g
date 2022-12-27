@@ -3087,7 +3087,7 @@ void schedule_nr_bwp_switch(module_id_t module_id,
   }
 }
 
-void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid) {
+void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid, frame_t frameP) {
 
   if(gNB->UL_tti_req_ahead[CCid]) return;
 
@@ -3099,7 +3099,7 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
    * already "in the past" and thus we put frame 1 instead of 0! */
   for (int i = 0; i < n; ++i) {
     nfapi_nr_ul_tti_request_t *req = &gNB->UL_tti_req_ahead[CCid][i];
-    req->SFN = i < (gNB->if_inst->sl_ahead-1);
+    req->SFN = frameP + (i < (gNB->if_inst->sl_ahead-1));
     req->Slot = i;
   }
 }
