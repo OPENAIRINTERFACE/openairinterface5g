@@ -366,9 +366,14 @@ void set_latency_target(void) {
     LOG_E(HW,"Can't set /dev/cpu_dma_latency to %u us\n", latency_target_value);
 
   // Set CPU frequency to it's maximum
-  if ( 0 != system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done"))
-	  LOG_E(HW,"Can't set cpu frequency\n");
-
+  int system_ret = system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done");
+  if (system_ret == -1) {
+    LOG_E(HW, "Can't set cpu frequency: [%d]  %s\n", errno, strerror(errno));
+    return;
+  }
+  if (!((WIFEXITED(system_ret)) && (WEXITSTATUS(system_ret) == 0))) {
+    LOG_E(HW, "Can't set cpu frequency\n");
+  }
   mlockall(MCL_CURRENT | MCL_FUTURE);
 
 }
