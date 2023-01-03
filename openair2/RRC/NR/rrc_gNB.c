@@ -141,14 +141,16 @@ void openair_nr_rrc_on(const protocol_ctxt_t *const ctxt_pP) {
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration) {
+static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
+{
+
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     rrc->carrier.MIB             = (uint8_t *) malloc16(4);
     rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
   }
 
-    if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
+  if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
     rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
   }
 
