@@ -36,8 +36,8 @@
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
 #include "common/utils/LOG/log.h"
+#include "oai_asn1.h"
 #include <asn_application.h>
-#include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
 #include <nr/nr_common.h>
 #include <softmodem-common.h>
@@ -382,24 +382,24 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   NR_SIB_TypeInfo_t *sib_type3 = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
   sib_type3->type = NR_SIB_TypeInfo__type_sibType3;
   sib_type3->valueTag = CALLOC(1,sizeof(sib_type3->valueTag));
-  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type3);
+  asn1cSeqAdd(&schedulingInfo->sib_MappingInfo.list,sib_type3);
 
   NR_SIB_TypeInfo_t *sib_type5 = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
   sib_type5->type = NR_SIB_TypeInfo__type_sibType5;
   sib_type5->valueTag = CALLOC(1,sizeof(sib_type5->valueTag));
-  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type5);
+  asn1cSeqAdd(&schedulingInfo->sib_MappingInfo.list,sib_type5);
 
   NR_SIB_TypeInfo_t *sib_type4 = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
   sib_type4->type = NR_SIB_TypeInfo__type_sibType4;
   sib_type4->valueTag = CALLOC(1,sizeof(sib_type4->valueTag));
-  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type4);
+  asn1cSeqAdd(&schedulingInfo->sib_MappingInfo.list,sib_type4);
 
   NR_SIB_TypeInfo_t *sib_type2 = CALLOC(1,sizeof(e_NR_SIB_TypeInfo__type));
   sib_type2->type = NR_SIB_TypeInfo__type_sibType2;
   sib_type2->valueTag = CALLOC(1,sizeof(sib_type2->valueTag));
-  ASN_SEQUENCE_ADD(&schedulingInfo->sib_MappingInfo.list,sib_type2);
+  asn1cSeqAdd(&schedulingInfo->sib_MappingInfo.list,sib_type2);
 
-  ASN_SEQUENCE_ADD(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);*/
+  asn1cSeqAdd(&sib1->si_SchedulingInfo->schedulingInfoList.list,schedulingInfo);*/
 
   // servingCellConfigCommon
   asn1cCalloc(sib1->servingCellConfigCommon,  ServCellCom);
@@ -435,7 +435,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
         absolute_diff,scs_scaling2,scs_scaling,(int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
 
   for(int i = 0; i< configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
-    ASN_SEQUENCE_ADD(&ServCellCom->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,
+    asn1cSeqAdd(&ServCellCom->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,
 		     configuration->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);
   }
 
@@ -445,13 +445,13 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
        CALLOC(1,sizeof(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList));
 
   NR_SearchSpace_t *ss1 = rrc_searchspace_config(true, 1, 0);
-  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss1);
+  asn1cSeqAdd(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss1);
 
   NR_SearchSpace_t *ss2 = rrc_searchspace_config(true, 2, 0);
-  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss2);
+  asn1cSeqAdd(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss2);
 
   NR_SearchSpace_t *ss3 = rrc_searchspace_config(true, 3, 0);
-  ASN_SEQUENCE_ADD(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss3);
+  asn1cSeqAdd(&initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList->list, ss3);
 
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceSIB1,  0);
   asn1cCallocOne(initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation, 3);
@@ -476,10 +476,10 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
 		   ZoneEight);
   asn1cCallocOne(ZoneEight, 0);
 
-  asn1cCalloc(ServCellCom->uplinkConfigCommon, UL)
+  asn1cCalloc(ServCellCom->uplinkConfigCommon, UL);
   asn_set_empty(&UL->frequencyInfoUL.scs_SpecificCarrierList.list);
   for(int i = 0; i< configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.count; i++) {
-    ASN_SEQUENCE_ADD(&UL->frequencyInfoUL.scs_SpecificCarrierList.list,
+    asn1cSeqAdd(&UL->frequencyInfoUL.scs_SpecificCarrierList.list,
 		     configuration->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[i]);
   }
 
@@ -573,7 +573,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.buf = CALLOC(1, 1);
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.size = 1;
   nr_uac_BarringInfoSet->uac_BarringForAccessIdentity.bits_unused = 1;
-  ASN_SEQUENCE_ADD(&sib1->uac_BarringInfo->uac_BarringInfoSetList, nr_uac_BarringInfoSet);*/
+  asn1cSeqAdd(&sib1->uac_BarringInfo->uac_BarringInfoSetList, nr_uac_BarringInfoSet);*/
 
   // useFullResumeID
   // TODO: add useFullResumeID
@@ -626,12 +626,12 @@ uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
   sib2->choice.sib2->intraFreqCellReselectionInfo.s_IntraSearchP = 2; // INTEGER (0..31)
   sib2->choice.sib2->intraFreqCellReselectionInfo.t_ReselectionNR = 2; // INTEGER (0..7)
   sib2->choice.sib2->intraFreqCellReselectionInfo.deriveSSB_IndexFromCell = true;
-  ASN_SEQUENCE_ADD(&ies->sib_TypeAndInfo.list, sib2);
+  asn1cSeqAdd(&ies->sib_TypeAndInfo.list, sib2);
 
   sib3 = CALLOC(1, sizeof(SystemInformation_IEs__sib_TypeAndInfo__Member));
   sib3->present = NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3;
   sib3->choice.sib3 = CALLOC(1, sizeof(struct NR_SIB3));
-  ASN_SEQUENCE_ADD(&ies->sib_TypeAndInfo.list, sib3);
+  asn1cSeqAdd(&ies->sib_TypeAndInfo.list, sib3);
 
   //encode SIB to data
   // carrier->SIB23 = (uint8_t *) malloc16(128);
@@ -772,13 +772,13 @@ void fill_initial_SpCellConfig(int uid,
   uint64_t bitmap = get_ssb_bitmap(scc);
   rrc_coreset_config(coreset, 0, curr_bwp, bitmap);
 
-  ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
+  asn1cSeqAdd(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
                    coreset);
 
   bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
 
   NR_SearchSpace_t *ss2 = rrc_searchspace_config(false, 5, coreset->controlResourceSetId);
-  ASN_SEQUENCE_ADD(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list, ss2);
+  asn1cSeqAdd(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list, ss2);
  
   bwp_Dedicated->pdsch_Config = config_pdsch(bitmap, 0, pdsch_AntennaPorts);
 
@@ -803,7 +803,7 @@ void fill_initial_SpCellConfig(int uid,
                          servingcellconfigdedicated,
                          NULL, 0,
                          false, bwp_loop, true);
-      ASN_SEQUENCE_ADD(&SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list,bwp);
+      asn1cSeqAdd(&SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list,bwp);
     }
     SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = calloc(1,sizeof(*SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id));
     *SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id = servingcellconfigdedicated->firstActiveDownlinkBWP_Id ? *servingcellconfigdedicated->firstActiveDownlinkBWP_Id : 1;
@@ -827,7 +827,7 @@ void fill_initial_SpCellConfig(int uid,
                        servingcellconfigdedicated,
                        scc,
                        NULL);
-      ASN_SEQUENCE_ADD(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
+      asn1cSeqAdd(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
     }
     uplinkConfig->firstActiveUplinkBWP_Id = calloc(1,sizeof(*uplinkConfig->firstActiveUplinkBWP_Id));
     *uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id : 1;
@@ -853,10 +853,10 @@ void fill_initial_SpCellConfig(int uid,
     if ((bitmap >> (63 - i)) & 0x01) {
       NR_SSB_Index_t *ssbres = NULL;
       asn1cCallocOne(ssbres, i);
-      ASN_SEQUENCE_ADD(&ssbresset0->csi_SSB_ResourceList.list, ssbres);
+      asn1cSeqAdd(&ssbresset0->csi_SSB_ResourceList.list, ssbres);
     }
   }
-  ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
+  asn1cSeqAdd(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list,ssbresset0);
 
   int bwp_loop_end = n_dl_bwp>0 ? n_dl_bwp : 1;
   for (int bwp_loop = 0; bwp_loop < bwp_loop_end; bwp_loop++) {
@@ -885,10 +885,10 @@ void fill_initial_SpCellConfig(int uid,
     csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList = calloc(1,sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
     NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1,sizeof(*ssbres00));
     *ssbres00 = 0;
-    ASN_SEQUENCE_ADD(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
+    asn1cSeqAdd(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list,ssbres00);
     csires1->bwp_Id = bwp_id;
     csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
-    ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
+    asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires1);
 
     NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1,sizeof(*pucchcsires1));
     pucchcsires1->uplinkBandwidthPartId=bwp_id;
@@ -902,10 +902,10 @@ void fill_initial_SpCellConfig(int uid,
       csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList = calloc(1,sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
       NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1,sizeof(*nzp0));
       *nzp0 = bwp_loop;
-      ASN_SEQUENCE_ADD(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
+      asn1cSeqAdd(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list,nzp0);
       csires0->bwp_Id = bwp_id;
       csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
-      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
+      asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires0);
     }
 
     if (configuration->do_CSIRS && pdsch_AntennaPorts > 1) {
@@ -915,10 +915,10 @@ void fill_initial_SpCellConfig(int uid,
       csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList = calloc(1,sizeof(*csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
       NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1,sizeof(*csiim00));
       *csiim00 = bwp_loop;
-      ASN_SEQUENCE_ADD(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
+      asn1cSeqAdd(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list,csiim00);
       csires2->bwp_Id = bwp_id;
       csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
-      ASN_SEQUENCE_ADD(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
+      asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list,csires2);
 
       config_csi_meas_report(csi_MeasConfig, scc, pucchcsires1, pdsch_Config, &configuration->pdsch_AntennaPorts, NR_MAX_SUPPORTED_DL_LAYERS, bwp_id, uid);
     }
@@ -1025,16 +1025,16 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGr
   // TS38.331 9.2.1 Default SRB configurations
   if (configure_srb){
     NR_RLC_BearerConfig_t *rlc_BearerConfig = get_SRB_RLC_BearerConfig(2, 3, NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms5);
-    ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
-    ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
+    asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+    asn1cSeqAdd(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
   }
 
   // DRB Configuration
   for (int i = bearer_id_start; i < bearer_id_start + nb_bearers_to_setup; i++ ){
     const NR_RLC_Config_PR rlc_conf = use_rlc_um_for_drb ? NR_RLC_Config_PR_um_Bi_Directional : NR_RLC_Config_PR_am;
     NR_RLC_BearerConfig_t *rlc_BearerConfig = get_DRB_RLC_BearerConfig(3 + i, i, rlc_conf, priority[i-1]);
-    ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
-    ASN_SEQUENCE_ADD(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
+    asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+    asn1cSeqAdd(&ue_context_mastercellGroup->rlc_BearerToAddModList->list, rlc_BearerConfig);
   }
 }
 
@@ -1179,7 +1179,7 @@ void fill_initial_cellGroupConfig(int uid,
   /* TS38.331 9.2.1	Default SRB configurations */
   cellGroupConfig->rlc_BearerToAddModList                          = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
   NR_RLC_BearerConfig_t *rlc_BearerConfig = get_SRB_RLC_BearerConfig(1, 1, NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000);
-  ASN_SEQUENCE_ADD(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+  asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
   
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
   
@@ -1195,7 +1195,7 @@ void fill_initial_cellGroupConfig(int uid,
   struct NR_TAG *tag=calloc(1,sizeof(*tag));
   tag->tag_Id             = 0;
   tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
-  ASN_SEQUENCE_ADD(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
+  asn1cSeqAdd(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
   set_phr_config(mac_CellGroupConfig);
 
   mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
@@ -1204,7 +1204,7 @@ void fill_initial_cellGroupConfig(int uid,
   schedulingrequestlist->schedulingRequestId  = 0;
   schedulingrequestlist->sr_ProhibitTimer = NULL;
   schedulingrequestlist->sr_TransMax      = NR_SchedulingRequestToAddMod__sr_TransMax_n64;
-  ASN_SEQUENCE_ADD(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
+  asn1cSeqAdd(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
 
   cellGroupConfig->mac_CellGroupConfig                                      = mac_CellGroupConfig;
 
@@ -1273,7 +1273,7 @@ int do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
     // pdcp_Config->t_Reordering
     SRB1_config->pdcp_Config = pdcp_Config;
     ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
-    ASN_SEQUENCE_ADD(&(*SRB_configList)->list, SRB1_config);
+    asn1cSeqAdd(&(*SRB_configList)->list, SRB1_config);
 
     ie->radioBearerConfig.srb3_ToRelease    = NULL;
     ie->radioBearerConfig.drb_ToAddModList  = NULL;
@@ -1403,7 +1403,7 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   sa_band_info->choice.bandInformationNR = sa_band_infoNR;
   
   sa_band_list = (NR_FreqBandList_t *)calloc(1, sizeof(NR_FreqBandList_t));
-  ASN_SEQUENCE_ADD(&sa_band_list->list, sa_band_info);
+  asn1cSeqAdd(&sa_band_list->list, sa_band_info);
 
   sa_band_filter = (NR_UE_CapabilityRequestFilterNR_t*)calloc(1,sizeof(NR_UE_CapabilityRequestFilterNR_t));
   sa_band_filter->frequencyBandListFilter = sa_band_list;
@@ -1425,7 +1425,7 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
   ue_capabilityrat_request->capabilityRequestFilter = &req_freq;
 
-  ASN_SEQUENCE_ADD(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
+  asn1cSeqAdd(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
                    ue_capabilityrat_request);
 
 
@@ -1941,7 +1941,7 @@ NR_SRB_ToAddModList_t               **SRB_configList
     if (SRB2_config == NULL) {
       LOG_W(NR_RRC,"SRB2 configuration does not exist in SRB configuration list\n");
     } else {
-      ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
+      asn1cSeqAdd(&(*SRB_configList2)->list, SRB2_config);
     }
 
     if (*SRB_configList) {
@@ -1949,7 +1949,7 @@ NR_SRB_ToAddModList_t               **SRB_configList
     }
 
     *SRB_configList = CALLOC(1, sizeof(LTE_SRB_ToAddModList_t));
-    ASN_SEQUENCE_ADD(&(*SRB_configList)->list,SRB1_config);
+    asn1cSeqAdd(&(*SRB_configList)->list,SRB1_config);
 
     rrcReestablishment->rrc_TransactionIdentifier = Transaction_id;
     rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
@@ -2076,9 +2076,8 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   monr1->ext1 = calloc(1, sizeof(*monr1->ext1));
   asn1cCallocOne(monr1->ext1->freqBandIndicatorNR, band);
   mo1->measObject.choice.measObjectNR = monr1;
-  int ret = ASN_SEQUENCE_ADD(&mc->measObjectToAddModList->list, mo1);
-  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
-
+  asn1cSeqAdd(&mc->measObjectToAddModList->list, mo1);
+  
   // Reporting Configuration: Specifies how reporting should be done. This could be periodic or event-triggered.
   NR_ReportConfigToAddMod_t *rc = calloc(1, sizeof(*rc));
   rc->reportConfigId = 1;
@@ -2105,9 +2104,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
 
 
   rc->reportConfig.choice.reportConfigNR = rcnr;
-  ret = ASN_SEQUENCE_ADD(&mc->reportConfigToAddModList->list, rc);
-  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
-  //prc->reportQuantityRS_Indexes->rsrp = 1;
+  asn1cSeqAdd(&mc->reportConfigToAddModList->list, rc);
 
   // Measurement ID: Identifies how to report measurements of a specific object. This is a many-to-many mapping: a
   // measurement object could have multiple reporting configurations, a reporting configuration could apply to multiple
@@ -2118,8 +2115,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   measid->measId = 1;
   measid->measObjectId = 1;
   measid->reportConfigId = 1;
-  ret = ASN_SEQUENCE_ADD(&mc->measIdToAddModList->list, measid);
-  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+  asn1cSeqAdd(&mc->measIdToAddModList->list, measid);
 
   // Quantity Configuration: Specifies parameters for layer 3 filtering of measurements. Only after filtering, reporting
   // criteria are evaluated. The formula used is F_n = (1-a)F_(n-1) + a*M_n, where M is the latest measurement, F is the
@@ -2129,8 +2125,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   NR_QuantityConfigNR_t *qcnr3 = calloc(1, sizeof(*qcnr3));
   asn1cCallocOne(qcnr3->quantityConfigCell.ssb_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
   asn1cCallocOne(qcnr3->quantityConfigCell.csi_RS_FilterConfig.filterCoefficientRSRP, NR_FilterCoefficient_fc6);
-  ret = ASN_SEQUENCE_ADD(&mc->quantityConfig->quantityConfigNR_List->list, qcnr3);
-  AssertFatal(ret == 0, "ASN_SEQUENCE_ADD() returned %d\n", ret);
+  asn1cSeqAdd(&mc->quantityConfig->quantityConfigNR_List->list, qcnr3);
 
   return mc;
 }

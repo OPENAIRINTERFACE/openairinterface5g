@@ -32,7 +32,7 @@
 #include "f1ap_common.h"
 #include "f1ap_du_paging.h"
 #include "conversions.h"
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "openair2/RRC/LTE/rrc_proto.h"
 
 int DU_handle_Paging(instance_t       instance,

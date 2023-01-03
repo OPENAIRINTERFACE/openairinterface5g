@@ -23,6 +23,7 @@
 #include "rrc_extern.h"
 #include "rrc_eNB_UE_context.h"
 #include "common/ran_context.h"
+#include "oai_asn1.h"
 #include "LTE_DL-DCCH-Message.h"
 
 #include <stdio.h>
@@ -95,7 +96,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
   drb.logicalChannelIdentity = &lcid;
   drb.logicalChannelConfig = &lc;
 
-  ASN_SEQUENCE_ADD(&drb_list.list, &drb);
+  asn1cSeqAdd(&drb_list.list, &drb);
 
   rlc.present = LTE_RLC_Config_PR_am;
   rlc.choice.am.ul_AM_RLC.t_PollRetransmit = LTE_T_PollRetransmit_ms50;
@@ -110,7 +111,7 @@ int rrc_eNB_generate_RRCConnectionReconfiguration_endc(protocol_ctxt_t *ctxt,
 
   /* release drb 1 */
   drb = 1;
-  ASN_SEQUENCE_ADD(&drb_list.list, &drb);
+  asn1cSeqAdd(&drb_list.list, &drb);
   rrcd.drb_ToReleaseList = &drb_list;
 
   ul_params.priority = 12;

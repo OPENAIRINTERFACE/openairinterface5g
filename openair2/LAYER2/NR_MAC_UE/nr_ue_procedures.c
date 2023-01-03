@@ -53,7 +53,7 @@
 
 /* utils */
 #include "assertions.h"
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 

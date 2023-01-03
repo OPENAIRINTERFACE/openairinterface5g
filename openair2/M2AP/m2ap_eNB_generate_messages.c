@@ -84,7 +84,7 @@
 //          ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf[1],
 //          ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf[2]);
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  ///* mandatory */
 //  ///* c2. GNB_eNB_ID (integrer value) */
@@ -93,7 +93,7 @@
 //  //ie->criticality               = M2AP_Criticality_reject;
 //  //ie->value.present             = M2AP_M2SetupRequestIEs__value_PR_GNB_eNB_ID;
 //  //asn_int642INTEGER(&ie->value.choice.GNB_eNB_ID, f1ap_du_data->gNB_eNB_id);
-//  //ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  //asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* optional */
 //  /* c3. ENBname */
@@ -104,7 +104,7 @@
 //    ie->value.present             = M2AP_M2SetupRequest_Ies__value_PR_ENBname;
 //    //OCTET_STRING_fromBuf(&ie->value.choice.ENB_Name, m2ap_eNB_data_p->eNB_name,
 //                         //strlen(m2ap_eNB_data_p->eNB_name));
-//    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//    asn1cSeqAdd(&out->protocolIEs.list, ie);
 //  }
 //
 //  /* mandatory */
@@ -138,7 +138,7 @@
 //                                   &mbms_configuration_data_item->eCGI.eUTRANcellIdentifier);
 //		M2AP_MBMS_Service_Area_t * mbms_service_area;
 //		mbms_service_area = (M2AP_MBMS_Service_Area_t*)calloc(1,sizeof(M2AP_MBMS_Service_Area_t));
-//		ASN_SEQUENCE_ADD(&mbms_configuration_data_item->mbmsServiceAreaList.list,mbms_service_area);
+//		asn1cSeqAdd(&mbms_configuration_data_item->mbmsServiceAreaList.list,mbms_service_area);
 //
 //
 //	}
@@ -154,10 +154,10 @@
 //	//M2AP_MBMS_Service_Area_ID_List_t         mbmsServiceAreaList;
 //
 //
-//	ASN_SEQUENCE_ADD(&ie->value.choice.ENB_MBMS_Configuration_data_List.list,mbms_configuration_data_list_item_ies);
+//	asn1cSeqAdd(&ie->value.choice.ENB_MBMS_Configuration_data_List.list,mbms_configuration_data_list_item_ies);
 //
 // }
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  LOG_W(M2AP,"m2ap_eNB_data_p->assoc_id %d\n",m2ap_eNB_data_p->assoc_id);
 //  /* encode */
@@ -213,7 +213,7 @@
 //  //          ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf[0],
 //  //          ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf[1],
 //  //          ie->value.choice.GlobalENB_ID.eNB_ID.choice.macro_eNB_ID.buf[2]);
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_M2SetupResponse_Ies_t *)calloc(1, sizeof(M2AP_M2SetupResponse_Ies_t));
@@ -235,7 +235,7 @@
 //  //      plmn = (M2AP_PLMN_Identity_t *)calloc(1,sizeof(M2AP_PLMN_Identity_t));
 //  //      {
 //  //        MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length, plmn);
-//  //        ASN_SEQUENCE_ADD(&servedCellMember->servedCellInfo.broadcastPLMNs.list, plmn);
+//  //        asn1cSeqAdd(&servedCellMember->servedCellInfo.broadcastPLMNs.list, plmn);
 //  //      }
 //
 //  //      if (instance_p->frame_type[i] == FDD) {
@@ -276,10 +276,10 @@
 //  //        AssertFatal(0,"M2Setupresponse not supported for TDD!");
 //  //      }
 //  //    }
-//  //    ASN_SEQUENCE_ADD(&ie->value.choice.ServedCells.list, servedCellMember);
+//  //    asn1cSeqAdd(&ie->value.choice.ServedCells.list, servedCellMember);
 //  //  }
 //  //}
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_M2SetupResponse_Ies_t *)calloc(1, sizeof(M2AP_M2SetupResponse_Ies_t));
@@ -294,9 +294,9 @@
 //  //    //@TODO: consider to update this value
 //  //    INT16_TO_OCTET_STRING(0, &gu->mME_Group_ID);
 //  //  }
-//  //  ASN_SEQUENCE_ADD(&ie->value.choice.GUGroupIDList.list, gu);
+//  //  asn1cSeqAdd(&ie->value.choice.GUGroupIDList.list, gu);
 //  //}
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode M2 setup response\n");
@@ -340,7 +340,7 @@
 //
 //  //m2ap_eNB_set_cause (&ie->value.choice.Cause, cause_type, cause_value);
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* optional: consider to handle this later */
 //  ie = (M2AP_M2SetupFailure_Ies_t *)calloc(1, sizeof(M2AP_M2SetupFailure_Ies_t));
@@ -352,7 +352,7 @@
 //  //  ie->value.choice.TimeToWait = time_to_wait;
 //  //}
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode M2 setup failure\n");
@@ -428,7 +428,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_reject;
 //  ie->value.present = M2AP_HandoverRequest_IEs__value_PR_UE_M2AP_ID;
 //  ie->value.choice.UE_M2AP_ID = m2ap_id_get_id_source(&instance_p->id_manager, ue_id);
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequest_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequest_IEs_t));
@@ -437,7 +437,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->value.present = M2AP_HandoverRequest_IEs__value_PR_Cause;
 //  ie->value.choice.Cause.present = M2AP_Cause_PR_radioNetwork;
 //  ie->value.choice.Cause.choice.radioNetwork = M2AP_CauseRadioNetwork_handover_desirable_for_radio_reasons;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequest_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequest_IEs_t));
@@ -447,7 +447,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  MCC_MNC_TO_PLMNID(instance_p->mcc, instance_p->mnc, instance_p->mnc_digit_length,
 //                       &ie->value.choice.ECGI.pLMN_Identity);
 //  MACRO_ENB_ID_TO_CELL_IDENTITY(m2ap_eNB_data_p->eNB_id, 0, &ie->value.choice.ECGI.eUTRANcellIdentifier);
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequest_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequest_IEs_t));
@@ -459,7 +459,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  //@TODO: consider to update these values
 //  INT16_TO_OCTET_STRING(m2ap_handover_req->ue_gummei.mme_group_id, &ie->value.choice.GUMMEI.gU_Group_ID.mME_Group_ID);
 //  MME_CODE_TO_OCTET_STRING(m2ap_handover_req->ue_gummei.mme_code, &ie->value.choice.GUMMEI.mME_Code);
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequest_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequest_IEs_t));
@@ -511,13 +511,13 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //
 //        INT32_TO_OCTET_STRING(m2ap_handover_req->e_rabs_tobesetup[i].gtp_teid,&e_RABs_ToBeSetup_Item->uL_GTPtunnelEndpoint.gTP_TEID);
 //      }
-//      ASN_SEQUENCE_ADD(&ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list, e_RABS_ToBeSetup_ItemIEs);
+//      asn1cSeqAdd(&ie->value.choice.UE_ContextInformation.e_RABs_ToBeSetup_List.list, e_RABS_ToBeSetup_ItemIEs);
 //    }
 //  }
 //
 //  OCTET_STRING_fromBuf(&ie->value.choice.UE_ContextInformation.rRC_Context, (char*) m2ap_handover_req->rrc_buffer, m2ap_handover_req->rrc_buffer_size);
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequest_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequest_IEs_t));
@@ -533,10 +533,10 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //   MACRO_ENB_ID_TO_CELL_IDENTITY(0, 0, &lastVisitedCell_Item->choice.e_UTRAN_Cell.global_Cell_ID.eUTRANcellIdentifier);
 //   lastVisitedCell_Item->choice.e_UTRAN_Cell.cellType.cell_Size = M2AP_Cell_Size_small;
 //   lastVisitedCell_Item->choice.e_UTRAN_Cell.time_UE_StayedInCell = 2;
-//   ASN_SEQUENCE_ADD(&ie->value.choice.UE_HistoryInformation.list, lastVisitedCell_Item);
+//   asn1cSeqAdd(&ie->value.choice.UE_HistoryInformation.list, lastVisitedCell_Item);
 //  }
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode X2 handover request\n");
@@ -587,7 +587,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_ignore;
 //  ie->value.present = M2AP_HandoverRequestAcknowledge_IEs__value_PR_UE_M2AP_ID;
 //  ie->value.choice.UE_M2AP_ID = id_source;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequestAcknowledge_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequestAcknowledge_IEs_t));
@@ -595,7 +595,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_ignore;
 //  ie->value.present = M2AP_HandoverRequestAcknowledge_IEs__value_PR_UE_M2AP_ID_1;
 //  ie->value.choice.UE_M2AP_ID_1 = id_target;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequestAcknowledge_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequestAcknowledge_IEs_t));
@@ -613,11 +613,11 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //        {
 //          e_RABs_Admitted_Item->e_RAB_ID = m2ap_handover_req_ack->e_rabs_tobesetup[i].e_rab_id;
 //        }
-//        ASN_SEQUENCE_ADD(&ie->value.choice.E_RABs_Admitted_List.list, e_RABS_Admitted_ItemIEs);
+//        asn1cSeqAdd(&ie->value.choice.E_RABs_Admitted_List.list, e_RABS_Admitted_ItemIEs);
 //      }
 //  }
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_HandoverRequestAcknowledge_IEs_t *)calloc(1, sizeof(M2AP_HandoverRequestAcknowledge_IEs_t));
@@ -627,7 +627,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //
 //  OCTET_STRING_fromBuf(&ie->value.choice.TargeteNBtoSource_eNBTransparentContainer, (char*) m2ap_handover_req_ack->rrc_buffer, m2ap_handover_req_ack->rrc_buffer_size);
 //
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode X2 handover response\n");
@@ -679,7 +679,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_reject;
 //  ie->value.present = M2AP_UEContextRelease_IEs__value_PR_UE_M2AP_ID;
 //  ie->value.choice.UE_M2AP_ID = id_source;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  ie = (M2AP_UEContextRelease_IEs_t *)calloc(1, sizeof(M2AP_UEContextRelease_IEs_t));
@@ -687,7 +687,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_reject;
 //  ie->value.present = M2AP_UEContextRelease_IEs__value_PR_UE_M2AP_ID_1;
 //  ie->value.choice.UE_M2AP_ID_1 = id_target;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode X2 UE Context Release\n");
@@ -736,7 +736,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //  ie->criticality = M2AP_Criticality_reject;
 //  ie->value.present = M2AP_HandoverCancel_IEs__value_PR_UE_M2AP_ID;
 //  ie->value.choice.UE_M2AP_ID = id_source;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* optional */
 //  if (id_target != -1) {
@@ -745,7 +745,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    ie->criticality = M2AP_Criticality_ignore;
 //    ie->value.present = M2AP_HandoverCancel_IEs__value_PR_UE_M2AP_ID_1;
 //    ie->value.choice.UE_M2AP_ID_1 = id_target;
-//    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//    asn1cSeqAdd(&out->protocolIEs.list, ie);
 //  }
 //
 //  /* mandatory */
@@ -769,7 +769,7 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //    M2AP_ERROR("unhandled cancel cause\n");
 //    exit(1);
 //  }
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  if (m2ap_eNB_encode_pdu(&pdu, &buffer, &len) < 0) {
 //    M2AP_ERROR("Failed to encode X2 Handover Cancel\n");

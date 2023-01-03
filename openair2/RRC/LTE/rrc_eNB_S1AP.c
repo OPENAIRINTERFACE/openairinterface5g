@@ -41,7 +41,7 @@
 #include "s1ap_eNB_defs.h"
 #include "s1ap_eNB_management_procedures.h"
 #include "s1ap_eNB_ue_context.h"
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "intertask_interface.h"
 #include "pdcp.h"
 #include "pdcp_primitives.h"

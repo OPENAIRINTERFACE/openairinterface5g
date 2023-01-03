@@ -20,7 +20,7 @@
  */
 #ifndef M2AP_COMMON_H_
 #define M2AP_COMMON_H_
-
+#include "oai_asn1.h"
 #include "M2AP_ProtocolIE-Field.h"
 #include "M2AP_M2AP-PDU.h"
 #include "M2AP_InitiatingMessage.h"

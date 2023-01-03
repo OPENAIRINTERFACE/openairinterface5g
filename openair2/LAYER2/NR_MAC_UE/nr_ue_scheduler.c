@@ -43,7 +43,7 @@
 
 /* utils */
 #include "assertions.h"
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include "utils.h"
 

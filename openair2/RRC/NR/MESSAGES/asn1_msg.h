@@ -40,7 +40,6 @@
 #include <errno.h>  /* for errno */
 
 #include <asn_application.h>
-#include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 
 #include "RRC/NR/nr_rrc_defs.h"
 #include "RRC/NR/nr_rrc_config.h"

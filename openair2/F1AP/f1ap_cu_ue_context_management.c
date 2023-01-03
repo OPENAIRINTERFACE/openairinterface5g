@@ -1262,7 +1262,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
                         F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
           uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;
           asn1cCalloc(uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.choice.gTPTunnel,
-                  gTPTunnel)
+                      gTPTunnel);
           /* transportLayerAddress */
           TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(1234, &gTPTunnel->transportLayerAddress);
           /* gTP_TEID */

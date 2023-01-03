@@ -38,6 +38,7 @@
 
 
 #include "common/utils/LOG/log.h"
+#include "oai_asn1.h"
 
 #include "NGAP_ProtocolIE-Field.h"
 #include "NGAP_NGAP-PDU.h"

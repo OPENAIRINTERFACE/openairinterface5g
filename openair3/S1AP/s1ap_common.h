@@ -27,6 +27,7 @@
 #define S1AP_COMMON_H_
 
 #include "common/utils/LOG/log.h"
+#include "oai_asn1.h"
 
 #include "S1AP_ProtocolIE-Field.h"
 #include "S1AP_S1AP-PDU.h"
