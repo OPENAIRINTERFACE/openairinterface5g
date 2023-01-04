@@ -151,6 +151,8 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
 
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
 
+uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type);
+
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
 int64_t *get_prach_config_info(frequency_range_t freq_range,

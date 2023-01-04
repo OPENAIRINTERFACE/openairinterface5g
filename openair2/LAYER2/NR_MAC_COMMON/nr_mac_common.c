@@ -3727,12 +3727,36 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
   return l_prime;
 }
 
+uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type)
+{
+
+  // Set downlink MCS table (Semi-persistend scheduling ignored for now)
+  uint8_t mcsTableIdx = 0; // default value
+  if (mcs_Table &&
+      *mcs_Table == NR_PDSCH_Config__mcs_Table_qam256 &&
+      dci_format == NR_DL_DCI_FORMAT_1_1 &&
+      rnti_type == NR_RNTI_C)
+    mcsTableIdx = 1;
+  else if (rnti_type != NR_RNTI_MCS_C &&
+           mcs_Table &&
+           *mcs_Table == NR_PDSCH_Config__mcs_Table_qam64LowSE &&
+           ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+    mcsTableIdx = 2;
+  else if (rnti_type == NR_RNTI_MCS_C)
+    mcsTableIdx = 2;
+
+  LOG_D(NR_MAC,"DL MCS Table Index: %d\n", mcsTableIdx);
+  return mcsTableIdx;
+
+}
+
 uint8_t get_pusch_mcs_table(long *mcs_Table,
                             int is_tp,
                             int dci_format,
                             int rnti_type,
                             int target_ss,
-                            bool config_grant) {
+                            bool config_grant)
+{
 
   // implementing 6.1.4.1 in 38.214
   if (mcs_Table != NULL) {
