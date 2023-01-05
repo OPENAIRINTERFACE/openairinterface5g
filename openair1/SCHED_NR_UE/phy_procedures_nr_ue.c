@@ -713,16 +713,16 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     } // CRNTI active
     stop_meas(&ue->rx_pdsch_stats);
 
-    UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx, rx_size);
+    UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx*dlsch0->Nl, rx_size);
 
     if (ue->phy_sim_pdsch_rxdataF_comp)
-      memcpy(ue->phy_sim_pdsch_rxdataF_comp, rxdataF_comp, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+      memcpy(ue->phy_sim_pdsch_rxdataF_comp, rxdataF_comp, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
     if (ue->phy_sim_pdsch_rxdataF_ext)
-      memcpy(ue->phy_sim_pdsch_rxdataF_ext, rxdataF_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+      memcpy(ue->phy_sim_pdsch_rxdataF_ext, rxdataF_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
     if (ue->phy_sim_pdsch_dl_ch_estimates_ext)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates_ext, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+      memcpy(ue->phy_sim_pdsch_dl_ch_estimates_ext, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
     if (ue->phy_sim_pdsch_dl_ch_estimates)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx);
+      memcpy(ue->phy_sim_pdsch_dl_ch_estimates, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
   }
   return 0;
 }
