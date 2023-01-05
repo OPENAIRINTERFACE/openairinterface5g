@@ -579,8 +579,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
           ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
     const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot*ue->frame_parms.ofdm_symbol_size+15)/16)*16;
-    __attribute__ ((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx][pdsch_est_size];
-    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t)*ue->frame_parms.nb_antennas_rx*pdsch_est_size);
+    __attribute__ ((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][pdsch_est_size];
+    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t)*ue->frame_parms.nb_antennas_rx*dlsch0->Nl*pdsch_est_size);
 
     for (m = s0; m < (s0 +s1); m++) {
       if (dlsch0->dlsch_config.dlDmrsSymbPos & (1 << m)) {
@@ -645,26 +645,25 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT] = {0};
     uint32_t llr_offset[NR_SYMBOLS_PER_SLOT] = {0};
 
-    const uint32_t rx_size = NR_SYMBOLS_PER_SLOT*
-                             dlsch[0].dlsch_config.number_rbs*
-                             NR_NB_SC_PER_RB;
-    __attribute__ ((aligned(32))) int32_t dl_ch_estimates_ext[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(dl_ch_estimates_ext, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    const uint32_t rx_size = ((NR_SYMBOLS_PER_SLOT * dlsch[0].dlsch_config.number_rbs * NR_NB_SC_PER_RB + 15) >> 4) << 4;
 
-    __attribute__ ((aligned(32))) int32_t rxdataF_ext[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(rxdataF_ext, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    __attribute__ ((aligned(32))) int32_t dl_ch_estimates_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(dl_ch_estimates_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
-    __attribute__ ((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(rxdataF_comp, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    __attribute__ ((aligned(32))) int32_t rxdataF_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(rxdataF_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
-    __attribute__ ((aligned(32))) int32_t dl_ch_mag[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(dl_ch_mag, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    __attribute__ ((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(rxdataF_comp, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
-    __attribute__ ((aligned(32))) int32_t dl_ch_magb[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(dl_ch_magb, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    __attribute__ ((aligned(32))) int32_t dl_ch_mag[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(dl_ch_mag, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
-    __attribute__ ((aligned(32))) int32_t dl_ch_magr[ue->frame_parms.nb_antennas_rx][rx_size];
-    memset(dl_ch_magr, 0, ue->frame_parms.nb_antennas_rx*rx_size*sizeof(int32_t));
+    __attribute__ ((aligned(32))) int32_t dl_ch_magb[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(dl_ch_magb, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
+
+    __attribute__ ((aligned(32))) int32_t dl_ch_magr[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
+    memset(dl_ch_magr, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
     int32_t log2_maxh = 0;
     start_meas(&ue->rx_pdsch_stats);
