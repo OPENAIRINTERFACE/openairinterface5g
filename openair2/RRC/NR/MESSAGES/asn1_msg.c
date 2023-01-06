@@ -246,13 +246,8 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   long ss0 = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero ?
              *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero : 0;
 
-  if(rrc->carrier.pdcch_ConfigSIB1) {
-    mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = rrc->carrier.pdcch_ConfigSIB1->controlResourceSetZero;
-    mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = rrc->carrier.pdcch_ConfigSIB1->searchSpaceZero;
-  } else {
-    mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = cset0;
-    mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = ss0;
-  }
+  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = cset0;
+  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = ss0;
 
   switch (*scc->ssbSubcarrierSpacing) {
   case NR_SubcarrierSpacing_kHz15:
