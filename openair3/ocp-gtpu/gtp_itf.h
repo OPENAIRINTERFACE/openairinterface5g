@@ -92,10 +92,11 @@ extern "C" {
                              gtpCallback callBack,
                              gtpCallbackSDAP callBackSDAP);
 
-  void GtpuUpdateTunnelOutgoingTeid(instance_t instance,
-                                    ue_id_t ue_id,
-                                    ebi_t bearer_id,
-                                    teid_t newOutgoingTeid);
+  void GtpuUpdateTunnelOutgoingAddressAndTeid(instance_t instance,
+                                              ue_id_t ue_id,
+                                              ebi_t bearer_id,
+                                              in_addr_t newOutgoingAddr,
+                                              teid_t newOutgoingTeid);
 
   int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id);
   int newGtpuDeleteTunnels(instance_t instance, ue_id_t ue_id, int nbTunnels, pdusessionid_t *pdusession_id);
