@@ -237,19 +237,6 @@ NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_I
   return bwp_Common;
 }
 
-NR_PDSCH_TimeDomainResourceAllocationList_t *choose_dl_tda_list(NR_PDSCH_Config_t *pdsch_Config,NR_PDSCH_ConfigCommon_t *pdsch_ConfigCommon) {
-
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList=NULL;
-
-    if (pdsch_Config &&
-        pdsch_Config->pdsch_TimeDomainAllocationList)
-      pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-    else if (pdsch_ConfigCommon->pdsch_TimeDomainAllocationList)
-      pdsch_TimeDomainAllocationList = pdsch_ConfigCommon->pdsch_TimeDomainAllocationList;
-
-    return(pdsch_TimeDomainAllocationList);
-}
-
 NR_PUSCH_TimeDomainResourceAllocationList_t *choose_ul_tda_list(const NR_PUSCH_Config_t *pusch_Config,NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon) {
 
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList=NULL;
@@ -645,7 +632,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   uint8_t is_Msg3 = 0;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
   NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
   int default_abc = 1;
 
@@ -815,8 +801,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
-    NR_PDSCH_Config_t *pdsch_config= (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) ? mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
-    int is_common=0;
+    NR_PDSCH_Config_t *pdsch_config = current_DL_BWP ? current_DL_BWP->pdsch_Config : NULL;
+    int is_common = 0;
     if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
       dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
       dlsch_config_pdu_1_0->BWPStart = dci_ind->cset_start;
@@ -839,16 +825,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
       }
       if( (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti) || (rnti == ra->t_crnti) ) {
-        if (mac->scc == NULL) { // use coreset0
+        if (mac->scc == NULL) // use coreset0
           is_common=1;
-        }
-        if (!get_softmodem_params()->sa) { // NSA mode is not using the Initial BWP
-          pdsch_config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
-        }
-      } else if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1]) {
-        pdsch_config = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup;
-      } else if (mac->scc)
-        pdsch_config = NULL;
+      }
     }
 
     /* IDENTIFIER_DCI_FORMATS */
@@ -859,17 +838,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
 
 
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-    if (dl_bwp_id>0 &&
-        mac->DLbwp[dl_bwp_id-1] &&
-        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated &&
-        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config &&
-        mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-      pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList->choice.setup;
-    else if (dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1] && mac->DLbwp[dl_bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
-      pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp_id-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
-      pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = (rnti == SI_RNTI) ? NULL : current_DL_BWP->tdaList;
 
     int mappingtype;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
@@ -880,14 +849,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
-    if(pdsch_TimeDomainAllocationList && rnti!=SI_RNTI)
+    if(pdsch_TimeDomainAllocationList)
       mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
 
     struct NR_DMRS_DownlinkConfig *dl_dmrs_config = NULL;
-    if(dl_bwp_id>0 && mac->DLbwp[dl_bwp_id-1] != NULL)
+    if(pdsch_config)
       dl_dmrs_config = (mappingtype == typeA) ?
-                       mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
-                       mac->DLbwp[dl_bwp_id-1]->bwp_Dedicated->pdsch_Config->choice.setup->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+                       pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
+                       pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
 
     dlsch_config_pdu_1_0->nscid = 0;
     if(dl_dmrs_config && dl_dmrs_config->scramblingID0)
@@ -1084,16 +1053,15 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(NR_MAC,"[%d.%d] bwp_indicator %d > NR_MAX_NUM_BWP Possibly due to false DCI. Ignoring DCI!\n", frame, slot,dci->bwp_indicator.val);
       return -1;
     }
-    NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
-    NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
-    NR_PDSCH_Config_t *pdsch_Config=NULL;
+    NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
+    NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
+    NR_PDSCH_Config_t *pdsch_Config = current_DL_BWP->pdsch_Config;
     NR_BWP_DownlinkDedicated_t *bwpd=NULL;
     NR_BWP_DownlinkCommon_t *bwpc=NULL;
     NR_BWP_UplinkDedicated_t *ubwpd=NULL;
     NR_BWP_UplinkCommon_t *ubwpc=NULL;
     get_bwp_info(mac,dl_bwp_id,ul_bwp_id,&bwpd,&bwpc,&ubwpd,&ubwpc);
 
-    pdsch_Config = bwpd->pdsch_Config->choice.setup;
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
 
@@ -1114,7 +1082,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     int mappingtype;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = choose_dl_tda_list(pdsch_Config,bwpc->pdsch_ConfigCommon->choice.setup);
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = current_DL_BWP->tdaList;
     if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
                                                        NULL,dlsch_config_pdu_1_1,&mappingtype,
                                                        dci->time_domain_assignment.val,0,false) < 0) {
@@ -2115,11 +2083,10 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   NR_BWP_UplinkCommon_t *ubwpc=NULL;
   get_bwp_info(mac,dl_bwp_id,ul_bwp_id,&bwpd,&bwpc,&ubwpd,&ubwpc);
 
-  if (bwpd &&
-      bwpd->pdsch_Config &&
-      bwpd->pdsch_Config->choice.setup &&
-      bwpd->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI &&
-      bwpd->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0] == 2) {
+  if (current_DL_BWP &&
+      current_DL_BWP->pdsch_Config &&
+      current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI &&
+      current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI[0] == 2) {
     two_transport_blocks = true;
     number_of_code_word = 2;
   }
@@ -2212,7 +2179,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   if (mac->cg != NULL &&
       mac->cg->physicalCellGroupConfig != NULL &&
       mac->cg->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH != NULL) {
-    int N_TB_max_DL = bwpd->pdsch_Config->choice.setup->maxNrofCodeWordsScheduledByDCI[0];
+    int N_TB_max_DL = current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI[0];
     pucch->n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
     LOG_D(MAC, "PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", pucch->n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
   }
