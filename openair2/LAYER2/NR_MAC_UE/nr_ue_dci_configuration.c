@@ -176,20 +176,20 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
         alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
                                current_DL_BWP, current_UL_BWP,
                                mac->cg, &temp_pdu,
-                               NR_UL_DCI_FORMAT_0_0, rnti_type, coreset_id, dl_bwp_id,
+                               NR_UL_DCI_FORMAT_0_0, rnti_type, coreset, dl_bwp_id,
                                ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
       if(dci_format == NR_UL_DCI_FORMAT_0_0)
         alt_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
                                current_DL_BWP, current_UL_BWP,
                                mac->cg, &temp_pdu,
-                               NR_DL_DCI_FORMAT_1_0, rnti_type, coreset_id, dl_bwp_id,
+                               NR_DL_DCI_FORMAT_1_0, rnti_type, coreset, dl_bwp_id,
                                ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, 0);
     }
 
     rel15->dci_length_options[i] = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,
                                                current_DL_BWP, current_UL_BWP,
                                                mac->cg, &mac->def_dci_pdu_rel15[dci_format],
-                                               dci_format, NR_RNTI_TC, coreset_id, dl_bwp_id, 
+                                               dci_format, NR_RNTI_TC, coreset, dl_bwp_id, 
                                                ss->searchSpaceType->present, mac->type0_PDCCH_CSS_config.num_rbs, alt_size);
 
     rel15->BWPStart = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.cset_start_rb : current_DL_BWP->BWPStart;

@@ -3163,7 +3163,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
-                     int controlResourceSetId,
+                     NR_ControlResourceSet_t *coreset,
                      int bwp_id,
                      int ss_type,
                      uint16_t cset0_bwp_size,
@@ -3180,29 +3180,22 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
     uplinkConfig = cg->spCellConfig->spCellConfigDedicated->uplinkConfig;
   }
 
-  const NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   const NR_BWP_UplinkCommon_t *ubwpc = NULL;
   NR_PDSCH_Config_t *pdsch_Config = DL_BWP ? DL_BWP->pdsch_Config : NULL;
   NR_PUSCH_Config_t *pusch_Config = NULL;
   NR_PUCCH_Config_t *pucch_Config = NULL;
-  NR_PDCCH_Config_t *pdcch_Config = NULL;
   NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
     AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
-    bwpd = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated;
     ubwpd = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated : NULL;
     ubwpc = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common : NULL;
-    pdcch_Config = (bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
     pucch_Config = (ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
     pusch_Config = (ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup : NULL;
     srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup : NULL;
   } else if (cg) {
     ubwpc = initialUplinkBWP;
-    bwpd = cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated ?
-           cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL;
     ubwpd = uplinkConfig ? uplinkConfig->initialUplinkBWP : NULL;
-    pdcch_Config = (bwpd && bwpd->pdcch_Config) ? bwpd->pdcch_Config->choice.setup : NULL;
     pucch_Config = (ubwpd && ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
     pusch_Config = (ubwpd && ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup :  NULL;
     srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
@@ -3499,15 +3492,9 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->antenna_ports.nbits;
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits %d\n",dci_pdu->antenna_ports.nbits);
       // Tx Config Indication
-      for (int i = 0; i < pdcch_Config->controlResourceSetToAddModList->list.count; i++) {
-        if (pdcch_Config->controlResourceSetToAddModList->list.array[i]->controlResourceSetId == controlResourceSetId) {
-          long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[i]->tci_PresentInDCI;
-          if (isTciEnable != NULL) {
-            dci_pdu->transmission_configuration_indication.nbits = 3;
-            size += dci_pdu->transmission_configuration_indication.nbits;
-          }
-          break;
-        }
+      if (coreset->tci_PresentInDCI != NULL) {
+        dci_pdu->transmission_configuration_indication.nbits = 3;
+        size += dci_pdu->transmission_configuration_indication.nbits;
       }
       // SRS request
       if (cg->spCellConfig->spCellConfigDedicated->supplementaryUplink==NULL)
