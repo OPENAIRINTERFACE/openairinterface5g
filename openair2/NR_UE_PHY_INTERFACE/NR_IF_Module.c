@@ -667,6 +667,7 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
         if (rel15_dci->dci_length_options[j] == dl_ind->dci_ind->dci_list[k].payloadSize) {
             dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
             dl_ind->dci_ind->dci_list[k].ss_type = rel15_dci->dci_type_options[j];
+            dl_ind->dci_ind->dci_list[k].CoreSetType = rel15_dci->coreset.CoreSetType;
             LOG_D(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
                   dl_ind->dci_ind->dci_list[k].dci_format);
         }

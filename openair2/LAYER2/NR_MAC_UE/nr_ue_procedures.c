@@ -237,19 +237,6 @@ NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_I
   return bwp_Common;
 }
 
-NR_PUSCH_TimeDomainResourceAllocationList_t *choose_ul_tda_list(const NR_PUSCH_Config_t *pusch_Config,NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon) {
-
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList=NULL;
-
-    if (pusch_Config &&
-        pusch_Config->pusch_TimeDomainAllocationList)
-      pusch_TimeDomainAllocationList = pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
-    else if (pusch_ConfigCommon->pusch_TimeDomainAllocationList)
-      pusch_TimeDomainAllocationList = pusch_ConfigCommon->pusch_TimeDomainAllocationList;
-
-    return(pusch_TimeDomainAllocationList);
-}
-
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
 
     RA_config_t *ra = &mac->ra;
@@ -469,60 +456,19 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
 }
 
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-                                                      NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
-						      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
 						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
                                                       int *mapping_type,
 						      uint8_t time_domain_ind,
                                                       int default_abc,
-                                                      bool use_default){
+                                                      bool use_default)
+{
 
   int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
 
 //  uint8_t k_offset=0;
   int sliv_S=0;
   int sliv_L=0;
-  uint8_t mu_pusch = 1;
-
-  // definition table j Table 6.1.2.1.1-4
-  uint8_t j = (mu_pusch==3)?3:(mu_pusch==2)?2:1;
-  uint8_t table_6_1_2_1_1_2_time_dom_res_alloc_A[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
-    {j,  0,14}, // row index 1
-    {j,  0,12}, // row index 2
-    {j,  0,10}, // row index 3
-    {j,  2,10}, // row index 4
-    {j,  4,10}, // row index 5
-    {j,  4,8},  // row index 6
-    {j,  4,6},  // row index 7
-    {j+1,0,14}, // row index 8
-    {j+1,0,12}, // row index 9
-    {j+1,0,10}, // row index 10
-    {j+2,0,14}, // row index 11
-    {j+2,0,12}, // row index 12
-    {j+2,0,10}, // row index 13
-    {j,  8,6},  // row index 14
-    {j+3,0,14}, // row index 15
-    {j+3,0,10}  // row index 16
-  };
-  /*uint8_t table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[16][3]={ // for PUSCH from TS 38.214 subclause 6.1.2.1.1
-    {j,  0,8},  // row index 1
-    {j,  0,12}, // row index 2
-    {j,  0,10}, // row index 3
-    {j,  2,10}, // row index 4
-    {j,  4,4},  // row index 5
-    {j,  4,8},  // row index 6
-    {j,  4,6},  // row index 7
-    {j+1,0,8},  // row index 8
-    {j+1,0,12}, // row index 9
-    {j+1,0,10}, // row index 10
-    {j+2,0,6},  // row index 11
-    {j+2,0,12}, // row index 12
-    {j+2,0,10}, // row index 13
-    {j,  8,4},  // row index 14
-    {j+3,0,8},  // row index 15
-    {j+3,0,10}  // row index 16
-    };*/
 
   /*
    * TS 38.214 subclause 5.1.2.1 Resource allocation in time domain (downlink)
@@ -563,39 +509,6 @@ int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
       dlsch_config_pdu->number_symbols = sliv_L;
       dlsch_config_pdu->start_symbol = sliv_S;
     }
-  }	/*
-	 * TS 38.214 subclause 6.1.2.1 Resource allocation in time domain (uplink)
-	 */
-  if(pusch_config_pdu != NULL){
-    if (pusch_TimeDomainAllocationList && use_default==false) {
-      if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
-        LOG_E(NR_MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
-              time_domain_ind, pusch_TimeDomainAllocationList->list.count);
-        pusch_config_pdu->start_symbol_index=0;
-        pusch_config_pdu->nr_of_symbols=0;
-        return -1;
-      }
-      
-      LOG_D(NR_MAC,"Filling Time-Domain Allocation from pusch_TimeDomainAllocationList\n");
-      int startSymbolAndLength = pusch_TimeDomainAllocationList->list.array[time_domain_ind]->startSymbolAndLength;
-      int S,L;
-      SLIV2SL(startSymbolAndLength,&S,&L);
-      pusch_config_pdu->start_symbol_index=S;
-      pusch_config_pdu->nr_of_symbols=L;
-    }
-    else {
-      LOG_D(NR_MAC,"Filling Time-Domain Allocation from tables\n");
-//      k_offset = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind-1][0];
-      sliv_S   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][1];
-      sliv_L   = table_6_1_2_1_1_2_time_dom_res_alloc_A[time_domain_ind][2];
-      // k_offset = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][0];
-      // sliv_S   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][1];
-      // sliv_L   = table_6_1_2_1_1_3_time_dom_res_alloc_A_extCP[nr_pdci_info_extracted->time_dom_resource_assignment][2];
-      pusch_config_pdu->nr_of_symbols = sliv_L;
-      pusch_config_pdu->start_symbol_index = sliv_S;
-    }
-    LOG_D(NR_MAC,"start_symbol = %i\n", pusch_config_pdu->start_symbol_index);
-    LOG_D(NR_MAC,"number_symbols = %i\n", pusch_config_pdu->nr_of_symbols);
   }
   return 0;
 }
@@ -621,6 +534,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
   uint16_t rnti = dci_ind->rnti;
   uint8_t dci_format = dci_ind->dci_format;
+  int coreset_type = dci_ind->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG;  // 0 for coreset0, 1 otherwise
   int ret = 0;
   int pucch_res_set_cnt = 0, valid = 0;
   frame_t frame_tx = 0;
@@ -636,6 +550,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   int default_abc = 1;
 
   LOG_D(MAC, "In %s: Processing received DCI format %s\n", __FUNCTION__, dci_formats[dci_format]);
+  NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
+  int normal_CP = current_UL_BWP->cyclicprefix ? 0 : 1;
+  NR_ul_tda_info_t tda_info = {0};
 
   switch(dci_format){
   case NR_UL_DCI_FORMAT_0_0: {
@@ -660,7 +578,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SUL_IND_0_0
 
     // Schedule PUSCH
-    ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, dci->time_domain_assignment.val);
+    pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
+    tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, dci->time_domain_assignment.val, current_UL_BWP->scs, normal_CP);
+    if(tda_info.nrOfSymbols == 0)
+      ret = -1;
+    else
+      ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
 
     if (ret != -1){
 
@@ -679,9 +602,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
       // Config PUSCH PDU
-      ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
+      ret = nr_config_pusch_pdu(mac, &tda_info, pusch_config_pdu, dci, NULL, rnti, &dci_format);
     }
-    
+    else
+      LOG_E(MAC,"Cannot schedule PUSCH\n");
     break;
   }
 
@@ -720,7 +644,12 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SRS_RESOURCE_IND
 
     // Schedule PUSCH
-    ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, dci->time_domain_assignment.val);
+    pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
+    tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, dci->time_domain_assignment.val, current_UL_BWP->scs, normal_CP);
+    if(tda_info.nrOfSymbols == 0)
+      ret = -1;
+    else
+      ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
 
     if (ret != -1){
 
@@ -741,8 +670,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
       // Config PUSCH PDU
-      ret = nr_config_pusch_pdu(mac, pusch_config_pdu, dci, NULL, rnti, &dci_format);
-    } else AssertFatal(1==0,"Cannot schedule PUSCH\n");
+      ret = nr_config_pusch_pdu(mac, &tda_info, pusch_config_pdu, dci, NULL, rnti, &dci_format);
+    }
+    else
+      LOG_E(MAC,"Cannot schedule PUSCH\n");
     break;
   }
 
@@ -837,13 +768,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
-
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = (rnti == SI_RNTI) ? NULL : current_DL_BWP->tdaList;
-
     int mappingtype;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
-                                                       NULL,dlsch_config_pdu_1_0,&mappingtype,
+    pdsch_TimeDomainAllocationList = get_dl_tdalist(current_DL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,pdsch_TimeDomainAllocationList,
+                                                       dlsch_config_pdu_1_0,&mappingtype,
                                                        dci->time_domain_assignment.val,
                                                        default_abc,rnti==SI_RNTI) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
@@ -1082,9 +1011,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     int mappingtype;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = current_DL_BWP->tdaList;
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac,NULL,pdsch_TimeDomainAllocationList,
-                                                       NULL,dlsch_config_pdu_1_1,&mappingtype,
+
+    pdsch_TimeDomainAllocationList = get_dl_tdalist(current_DL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
+    if (nr_ue_process_dci_time_dom_resource_assignment(mac,pdsch_TimeDomainAllocationList,
+                                                       dlsch_config_pdu_1_1,&mappingtype,
                                                        dci->time_domain_assignment.val,0,false) < 0) {
       LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
@@ -1382,25 +1312,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     break;
   }
 
-
-  if(rnti == SI_RNTI){
-
-    //    }else if(rnti == mac->ra_rnti){
-
-  }else if(rnti == P_RNTI){
-
-  }else{  //  c-rnti
-
-    ///  check if this is pdcch order 
-    //dci->random_access_preamble_index;
-    //dci->ss_pbch_index;
-    //dci->prach_mask_index;
-
-    ///  else normal DL-SCH grant
-  }
-
   return ret;
-
 }
 
 int8_t nr_ue_process_csirs_measurements(module_id_t module_id,
@@ -1535,19 +1447,22 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
       LOG_E(MAC,"PUCCH Unsupported code block group for serving cell config\n");
       return;
     }
+
+    NR_PUSCH_Config_t *pusch_Config = current_UL_BWP ? current_UL_BWP->pusch_Config : NULL;
+    if (pusch_Config) {
+      pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
+      if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
+      else if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
+    }
+
     NR_PUCCH_Config_t *pucch_Config;
     if (bwp_id>0 &&
         mac->ULbwp[bwp_id-1] &&
         mac->ULbwp[bwp_id-1]->bwp_Dedicated &&
         mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config &&
         mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup) {
-      NR_PUSCH_Config_t *pusch_Config = mac->ULbwp[bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup;
-      pusch_id = pusch_Config->dataScramblingIdentityPUSCH;
-      if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
-        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-      else if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
-        id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
-      else *id0 = mac->physCellId;
       pucch_Config =  mac->ULbwp[bwp_id-1]->bwp_Dedicated->pucch_Config->choice.setup;
     }
     else if (bwp_id==0 &&
@@ -1610,8 +1525,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         pucch_pdu->n_bit = O_uci+O_SR;
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format2->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
-        pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : mac->physCellId;
-        pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : mac->physCellId;
+        pucch_pdu->data_scrambling_id = pusch_id != NULL ? *pusch_id : mac->physCellId;
+        pucch_pdu->dmrs_scrambling_id = id0 != NULL ? *id0 : mac->physCellId;
         pucch_pdu->prb_size = compute_pucch_prb_size(2,pucchres->format.choice.format2->nrofPRBs,
                                                      O_uci+O_SR,O_CSI,pucch_Config->format2->choice.setup->maxCodeRate,
                                                      2,pucchres->format.choice.format2->nrofSymbols,8);
@@ -1621,7 +1536,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         pucch_pdu->n_bit = O_uci+O_SR;
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format3->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format3->startingSymbolIndex;
-        pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : mac->physCellId;
+        pucch_pdu->data_scrambling_id = pusch_id != NULL ? *pusch_id : mac->physCellId;
         if (pucch_Config->format3 == NULL) {
           pucch_pdu->pi_2bpsk = 0;
           pucch_pdu->add_dmrs_flag = 0;
@@ -4041,7 +3956,15 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 #endif
 
     // Schedule Msg3
-    ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, rar_grant.Msg3_t_alloc);
+    NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+    int normal_CP = current_UL_BWP->cyclicprefix ? 0 : 1;
+    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, *ra->ss->controlResourceSetId, ra->ss->searchSpaceType->present, NR_RNTI_RA);
+    NR_ul_tda_info_t tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, rar_grant.Msg3_t_alloc, current_UL_BWP->scs, normal_CP);
+    if(tda_info.nrOfSymbols == 0) {
+      LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");
+      return -1;
+    }
+    ret = nr_ue_pusch_scheduler(mac, is_Msg3, frame, slot, &frame_tx, &slot_tx, tda_info.k2);
 
     if (ret != -1){
 
@@ -4069,7 +3992,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       pthread_mutex_unlock(&ul_config->mutex_ul_config);
 
       // Config Msg3 PDU
-      nr_config_pusch_pdu(mac, pusch_config_pdu, NULL, &rar_grant, rnti, NULL);
+      nr_config_pusch_pdu(mac, &tda_info, pusch_config_pdu, NULL, &rar_grant, rnti, NULL);
     }
 
   } else {

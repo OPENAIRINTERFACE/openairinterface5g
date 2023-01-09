@@ -51,11 +51,6 @@ typedef enum {
   pusch_len2 = 2
 } pusch_maxLength_t;
 
-typedef enum {
-  typeA = 0,
-  typeB = 1
-} mappingType_t;
-
 uint32_t get_Y(const NR_SearchSpace_t *ss, int slot, rnti_t rnti);
 
 uint8_t get_BG(uint32_t A, uint16_t R);
@@ -88,6 +83,21 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
                                       nr_srs_feedback_t *srs_feedback,
                                       const uint8_t *nrOfLayers,
                                       uint32_t *val);
+
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type);
+
+NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type);
+
+NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist,
+                                 int tda_index,
+                                 int scs,
+                                 int normal_CP);
 
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,

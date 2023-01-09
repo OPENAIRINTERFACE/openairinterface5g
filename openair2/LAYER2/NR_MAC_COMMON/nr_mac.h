@@ -603,5 +603,17 @@ typedef struct NR_UE_UL_BWP {
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 
+typedef enum {
+  typeA = 0,
+  typeB = 1
+} mappingType_t;
+
+typedef struct NR_ul_tda_info {
+  mappingType_t mapping_type;
+  int startSymbolIndex;
+  int nrOfSymbols;
+  long k2;
+} NR_ul_tda_info_t;
+
 #endif /*__LAYER2_MAC_H__ */
 

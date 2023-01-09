@@ -563,11 +563,10 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-NR_tda_info_t nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList,
                                     const int tda) {
 
   NR_tda_info_t tda_info = {0};
-  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList = dl_bwp->tdaList;
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   tda_info.mapping_type = tdaList->list.array[tda]->mappingType;
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
@@ -1177,7 +1176,6 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
   *dci_pdu = 0;
   uint16_t alt_size = 0;
   uint16_t N_RB;
-  const int controlResourceSetId = *ss->controlResourceSetId;
   if(current_DL_BWP) {
     N_RB = get_rb_bwp_dci(dci_format,
                           ss->searchSpaceType->present,

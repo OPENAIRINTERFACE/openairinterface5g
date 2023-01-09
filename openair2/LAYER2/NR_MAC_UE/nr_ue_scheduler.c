@@ -101,49 +101,6 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
 }
 
 /*
- * This function returns the slot offset K2 corresponding to a given time domain
- * indication value from RRC configuration.
- */
-long get_k2(NR_UE_MAC_INST_t *mac, uint8_t time_domain_ind) {
-  long k2 = -1;
-
-  NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
-  // Get K2 from RRC configuration
-  NR_PUSCH_Config_t *pusch_config= ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : NULL;
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-  if (pusch_config && pusch_config->pusch_TimeDomainAllocationList) {
-    pusch_TimeDomainAllocationList = pusch_config->pusch_TimeDomainAllocationList->choice.setup;
-  }
-  else if (ul_bwp_id > 0 &&
-	   mac->ULbwp[ul_bwp_id-1] &&
-	   mac->ULbwp[ul_bwp_id-1]->bwp_Common&&
-	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon&&
-	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-	   mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-    pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  }
-  else if (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList)
-    pusch_TimeDomainAllocationList=mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-  else AssertFatal(1==0,"need to fall back to default PUSCH time-domain allocations\n");
-
-  if (pusch_TimeDomainAllocationList) {
-    if (time_domain_ind >= pusch_TimeDomainAllocationList->list.count) {
-      LOG_E(NR_MAC, "time_domain_ind %d >= pusch->TimeDomainAllocationList->list.count %d\n",
-            time_domain_ind, pusch_TimeDomainAllocationList->list.count);
-      return -1;
-    }
-    k2 = *pusch_TimeDomainAllocationList->list.array[time_domain_ind]->k2;
-  }
-
-  AssertFatal(k2 >= DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). K2 set according to min_rxtxtime in config file.\n",
-              k2,DURATION_RX_TO_TX);
-
-  LOG_D(NR_MAC, "get_k2(): k2 is %ld\n", k2);
-  return k2;
-}
-
-/*
  * This function returns the UL config corresponding to a given UL slot
  * from MAC instance .
  */
@@ -182,8 +139,7 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
 void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
-  NR_BWP_UplinkDedicated_t *ubwpd=NULL;
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_SRS_Config_t *srs_config = NULL;
 
   if (mac->cg &&
@@ -191,15 +147,10 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
       mac->cg->spCellConfig->spCellConfigDedicated &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
       mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-    ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
     srs_config = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
   }
 
-  NR_PUSCH_Config_t *pusch_Config = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
-    mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup :
-    (ubwpd?
-     ubwpd->pusch_Config->choice.setup:
-     NULL);
+  NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
 
   long	transformPrecoder;
   if (pusch_Config && pusch_Config->transformPrecoder)
@@ -339,19 +290,9 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci) {
 
   uint8_t rank = pusch_config_pdu->nrOfLayers;
-
-  NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
   NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_BWP_UplinkDedicated_t *ubwpd=NULL;
 
-  if (mac->cg &&
-      mac->cg->spCellConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-      mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP)
-    ubwpd = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-
-  NR_PUSCH_Config_t *pusch_Config = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ? mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup : (ubwpd?ubwpd->pusch_Config->choice.setup:NULL);
+  NR_PUSCH_Config_t *pusch_Config = mac->current_UL_BWP.pusch_Config;
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
   long	transformPrecoder;
@@ -536,6 +477,7 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
 int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        NR_ul_tda_info_t *tda_info,
                         nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,
@@ -545,8 +487,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   int f_alloc;
   int mask;
-  int StartSymbolIndex;
-  int NrOfSymbols;
   uint8_t nb_dmrs_re_per_rb;
 
   uint16_t        l_prime_mask = 0;
@@ -555,7 +495,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   int rnti_type = get_rnti_type(mac, rnti);
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
 
   // Common configuration
   pusch_config_pdu->dmrs_config_type = pusch_dmrs_type1;
@@ -569,30 +508,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
   pusch_dmrs_AdditionalPosition_t add_pos = pusch_dmrs_pos2;
   int dmrslength = 1;
+  NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
 
   if (rar_grant) {
 
     // Note: for Msg3 or MsgA PUSCH transmission the N_PRB_oh is always set to 0
-    NR_BWP_Uplink_t *ubwp = ul_bwp_id > 0 ? mac->ULbwp[ul_bwp_id - 1] : NULL;
-    NR_BWP_UplinkDedicated_t *ibwp;
-    int startSymbolAndLength,mappingtype;
-    NR_PUSCH_Config_t *pusch_Config=NULL;
-    if (mac->cg && ubwp &&
-        mac->cg->spCellConfig &&
-        mac->cg->spCellConfig->spCellConfigDedicated &&
-        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-        mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP) {
-
-      ibwp = mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
-      pusch_Config = ibwp->pusch_Config->choice.setup;
-      startSymbolAndLength = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
-      mappingtype = ubwp->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
-
-    }
-    else {
-      startSymbolAndLength = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->startSymbolAndLength;
-      mappingtype = initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.array[rar_grant->Msg3_t_alloc]->mappingType;
-    }
     int ibwp_start = current_UL_BWP->initial_BWPStart;
     int ibwp_size = current_UL_BWP->initial_BWPSize;
     int abwp_start = current_UL_BWP->BWPStart;
@@ -623,12 +543,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     //pusch_config_pdu->rb_start += ibwp_start - abwp_start;
 
     // Time domain allocation
-    SLIV2SL(startSymbolAndLength, &StartSymbolIndex, &NrOfSymbols);
-    pusch_config_pdu->start_symbol_index = StartSymbolIndex;
-    pusch_config_pdu->nr_of_symbols = NrOfSymbols;
+    pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
+    pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
 
-    l_prime_mask = get_l_prime(NrOfSymbols, mappingtype, add_pos, dmrslength, StartSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
-    LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, mappingtype, l_prime_mask);
+    l_prime_mask = get_l_prime(tda_info->nrOfSymbols, tda_info->mapping_type, add_pos, dmrslength, tda_info->startSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
+    LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, tda_info->mapping_type, l_prime_mask);
 
     #ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);
@@ -683,8 +602,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_start = current_UL_BWP->BWPStart;
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
-    const NR_PUSCH_Config_t *pusch_Config = ubwpd? ubwpd->pusch_Config->choice.setup : NULL;
-
     // Basic sanity check for MCS value to check for a false or erroneous DCI
     if (dci->mcs > 28) {
       LOG_W(NR_MAC, "MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", dci->mcs);
@@ -716,10 +633,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     }
 
-    NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon = ubwpc->pusch_ConfigCommon->choice.setup;
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = choose_ul_tda_list(pusch_Config,pusch_ConfigCommon);
-
-    int mappingtype = pusch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+    int mappingtype = tda_info->mapping_type;
 
     NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = NULL;
     if(pusch_Config) {
@@ -774,10 +688,9 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     if (nr_ue_process_dci_freq_dom_resource_assignment(pusch_config_pdu, NULL, current_UL_BWP->BWPSize, 0, dci->frequency_domain_assignment.val) < 0){
       return -1;
     }
-    /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pusch_TimeDomainAllocationList, NULL, pusch_config_pdu, NULL, NULL, dci->time_domain_assignment.val,0,false) < 0) {
-      return -1;
-    }
+
+    pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
+    pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
 
     /* FREQ_HOPPING_FLAG */
     if ((pusch_Config!=NULL) && (pusch_Config->frequencyHopping!=NULL) && (pusch_Config->resourceAllocation != NR_PUSCH_Config__resourceAllocation_resourceAllocationType0)){
@@ -866,17 +779,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->tbslbrm = 0;
 
     /* PTRS */
-    if (ul_bwp_id > 0 &&
-        mac->ULbwp[ul_bwp_id-1] &&
-        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated &&
-        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config &&
-        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup &&
-        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB &&
-        mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
+    if (pusch_Config &&
+        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB &&
+        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
-        valid_ptrs_setup = set_ul_ptrs_values(mac->ULbwp[ul_bwp_id-1]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+        valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
                                               pusch_config_pdu->rb_size, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table,
                                               &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,&pusch_config_pdu->pusch_ptrs.ptrs_time_density,
                                               &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
@@ -1565,24 +1474,22 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
                           int current_slot,
                           frame_t *frame_tx,
                           int *slot_tx,
-                          uint8_t tda_id){
+                          long k2){
+
+  AssertFatal(k2 >= DURATION_RX_TO_TX,
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). K2 set according to min_rxtxtime in config file.\n",
+              k2,DURATION_RX_TO_TX);
 
   int delta = 0;
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  NR_BWP_Id_t ul_bwp_id = current_UL_BWP->bwp_id;
 
   // Get the numerology to calculate the Tx frame and slot
   int mu = current_UL_BWP->scs;
 
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp_id > 0 && mac->ULbwp[ul_bwp_id-1] ?
-    mac->ULbwp[ul_bwp_id-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList:
-    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
   // k2 as per 3GPP TS 38.214 version 15.9.0 Release 15 ch 6.1.2.1.1
   // PUSCH time domain resource allocation is higher layer configured from uschTimeDomainAllocationList in either pusch-ConfigCommon
-  int k2;
 
   if (is_Msg3) {
-    k2 = *pusch_TimeDomainAllocationList->list.array[tda_id]->k2;
 
     switch (mu) {
       case 0:
@@ -1599,9 +1506,9 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
         break;
     }
 
-    AssertFatal((k2+delta) >= DURATION_RX_TO_TX,
-                "Slot offset (%d) for Msg3 cannot be less than DURATION_RX_TO_TX (%d)\n",
-                k2+delta,DURATION_RX_TO_TX);
+    AssertFatal((k2 + delta) >= DURATION_RX_TO_TX,
+                "Slot offset (%ld) for Msg3 cannot be less than DURATION_RX_TO_TX (%d)\n",
+                k2 + delta, DURATION_RX_TO_TX);
 
     *slot_tx = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
     if (current_slot + k2 + delta > nr_slots_per_frame[mu]){
@@ -1612,10 +1519,8 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   } else {
 
-    // Get slot offset K2 which will be used to calculate TX slot
-    k2 = get_k2(mac, tda_id);
     if (k2 < 0) { // This can happen when a false DCI is received
-      LOG_W(PHY,"%d.%d. Received k2 %d, tda_id %d\n",current_frame,current_slot,k2,tda_id);
+      LOG_W(PHY,"%d.%d. Received k2 %ld\n", current_frame, current_slot, k2);
       return -1;
     }
 
@@ -1625,7 +1530,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   }
 
-  LOG_D(NR_MAC, "In %s: currently at [%d.%d] UL transmission in [%d.%d] (k2 %d delta %d)\n", __FUNCTION__, current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
+  LOG_D(NR_MAC, "In %s: currently at [%d.%d] UL transmission in [%d.%d] (k2 %ld delta %d)\n", __FUNCTION__, current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
 
   return 0;
 

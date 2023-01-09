@@ -59,7 +59,8 @@ void nr_preprocessor_phytest(module_id_t module_id,
   const int CC_id = 0;
 
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  NR_tda_info_t tda_info = nr_get_pdsch_tda_info(dl_bwp, tda);
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(dl_bwp, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+  NR_tda_info_t tda_info = nr_get_pdsch_tda_info(tdalist, tda);
   sched_ctrl->sched_pdsch.tda_info = tda_info;
   sched_ctrl->sched_pdsch.time_domain_allocation = tda;
 

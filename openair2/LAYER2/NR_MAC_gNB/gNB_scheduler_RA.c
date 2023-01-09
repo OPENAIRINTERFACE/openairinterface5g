@@ -1161,12 +1161,12 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       BWPSize = type0_PDCCH_CSS_config->num_rbs;
     }
 
+    NR_ControlResourceSet_t *coreset = ra->coreset;
+    const int coresetid = coreset->controlResourceSetId;
     // Calculate number of symbols
     int time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
-    NR_tda_info_t tda_info = nr_get_pdsch_tda_info(dl_bwp,
-                                                   time_domain_assignment);
-
-    NR_ControlResourceSet_t *coreset = ra->coreset;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *tda_list = get_dl_tdalist(dl_bwp, coresetid, ss->searchSpaceType->present, NR_RNTI_RA);
+    NR_tda_info_t tda_info = nr_get_pdsch_tda_info(tda_list, time_domain_assignment);
 
     AssertFatal(coreset!=NULL,"Coreset cannot be null for RA-Msg2\n");
 
@@ -1208,7 +1208,6 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 
     // look up the PDCCH PDU for this CC, BWP, and CORESET. If it does not exist, create it. This is especially
     // important if we have multiple RAs, and the DLSCH has to reuse them, so we need to mark them
-    const int coresetid = coreset->controlResourceSetId;
     nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_rel15 = nr_mac->pdcch_pdu_idx[CC_id][coresetid];
     if (!pdcch_pdu_rel15) {
       nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdcch_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
@@ -1480,7 +1479,8 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     }
 
     uint8_t time_domain_assignment = get_dl_tda(nr_mac, scc, slotP);
-    NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(dl_bwp, time_domain_assignment);
+    NR_PDSCH_TimeDomainResourceAllocationList_t *tda_list = get_dl_tdalist(dl_bwp, coreset->controlResourceSetId, ss->searchSpaceType->present, NR_RNTI_TC);
+    NR_tda_info_t msg4_tda = nr_get_pdsch_tda_info(tda_list, time_domain_assignment);
     NR_pdsch_dmrs_t dmrs_info = get_dl_dmrs_params(scc,
                                                    dl_bwp,
                                                    &msg4_tda,

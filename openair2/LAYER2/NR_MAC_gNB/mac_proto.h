@@ -307,7 +307,7 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
-NR_tda_info_t nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList,
                                     const int tda);
 
 NR_tda_info_t nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,

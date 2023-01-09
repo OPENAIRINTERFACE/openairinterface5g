@@ -261,15 +261,11 @@ void get_bwp_info(NR_UE_MAC_INST_t *mac,
 
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
 
-NR_PUSCH_TimeDomainResourceAllocationList_t *choose_ul_tda_list(const NR_PUSCH_Config_t *pusch_Config,NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon);
-
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-                                                      NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList,
                                                       NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
-                                                      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
-                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                                                      int *mappingtype,
-                                                      uint8_t time_domain_ind,
+						      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      int *mapping_type,
+						      uint8_t time_domain_ind,
                                                       int default_abc,
                                                       bool use_default);
 
@@ -474,7 +470,7 @@ int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 // - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, uint8_t tda_id);
+int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2);
 
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 
@@ -487,6 +483,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
 int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        NR_ul_tda_info_t *tda_info,
                         nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                         dci_pdu_rel15_t *dci,
                         RAR_grant_t *rar_grant,

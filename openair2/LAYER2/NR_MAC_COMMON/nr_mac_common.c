@@ -419,6 +419,82 @@ const char table_38211_6_3_1_5_5[22][4][2] = {
     {{'1', '1'}, {'o', 'o'}, {'j', 'o'}, {'1', 'n'}}  // tpmi 21
 };
 
+const uint8_t table_6_1_2_1_1_2[16][4]={
+    {0,0,0,14},   // row index 1
+    {0,0,0,12},    // row index 2
+    {0,0,0,10},    // row index 3
+    {1,0,2,10},    // row index 4
+    {1,0,4,10},    // row index 5
+    {1,0,4,8},   // row index 6
+    {1,0,4,6},    // row index 7
+    {0,1,0,14},    // row index 8
+    {0,1,0,12},    // row index 9
+    {0,1,0,10},    // row index 10
+    {0,2,0,14},   // row index 11
+    {0,2,0,12},   // row index 12
+    {0,2,0,10},    // row index 13
+    {1,0,8,6},    // row index 14
+    {0,3,0,14},    // row index 15
+    {0,3,0,10}     // row index 16
+};
+
+const uint8_t table_6_1_2_1_1_3[16][4]={
+    {0,0,0,8},   // row index 1
+    {0,0,0,12},    // row index 2
+    {0,0,0,10},    // row index 3
+    {1,0,2,10},    // row index 4
+    {1,0,4,4},    // row index 5
+    {1,0,4,8},   // row index 6
+    {1,0,4,6},    // row index 7
+    {0,1,0,8},    // row index 8
+    {0,1,0,12},    // row index 9
+    {0,1,0,10},    // row index 10
+    {0,2,0,6},   // row index 11
+    {0,2,0,12},   // row index 12
+    {0,2,0,10},    // row index 13
+    {1,0,8,4},    // row index 14
+    {0,3,0,8},    // row index 15
+    {0,3,0,10}     // row index 16
+};
+
+NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist,
+                                 int tda_index,
+                                 int scs,
+                                 int normal_CP)
+{
+
+  NR_ul_tda_info_t tda_info = {0};
+  int j = scs == 0 ? 1 : scs;
+  if(tdalist) {
+    if(tda_index >= tdalist->list.count) {
+      LOG_E(MAC, "TDA index from DCI %d exceeds TDA list array size %d\n", tda_index, tdalist->list.count);
+      return tda_info;
+    }
+    NR_PUSCH_TimeDomainResourceAllocation_t *tda = tdalist->list.array[tda_index];
+    tda_info.mapping_type = tda->mappingType;
+    tda_info.k2 = tda->k2 ? *tda->k2 : j;
+    int S, L;
+    SLIV2SL(tda->startSymbolAndLength, &S, &L);
+    tda_info.startSymbolIndex = S;
+    tda_info.nrOfSymbols = L;
+  }
+  else {
+    if(normal_CP) {
+      tda_info.mapping_type = table_6_1_2_1_1_2[tda_index][0];
+      tda_info.k2 = table_6_1_2_1_1_2[tda_index][1] + j;
+      tda_info.startSymbolIndex = table_6_1_2_1_1_2[tda_index][2];
+      tda_info.nrOfSymbols = table_6_1_2_1_1_2[tda_index][3];
+    }
+    else {
+      tda_info.mapping_type = table_6_1_2_1_1_3[tda_index][0];
+      tda_info.k2 = table_6_1_2_1_1_3[tda_index][1] + j;
+      tda_info.startSymbolIndex = table_6_1_2_1_1_3[tda_index][2];
+      tda_info.nrOfSymbols = table_6_1_2_1_1_3[tda_index][3];
+    }
+  }
+  return tda_info;
+}
+
 void get_info_from_tda_tables(int default_abc,
                               int tda,
                               int dmrs_TypeA_Position,
@@ -3130,6 +3206,39 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
   return nbits;
 }
 
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type)
+{
+
+  if(!DL_BWP) return NULL;
+  // see table 5.1.2.1.1-1 in 38.214
+  if((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) &&
+     !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0) &&
+     (DL_BWP->pdsch_Config && DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList))
+    return DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
+  else
+    return DL_BWP->tdaList;
+
+}
+
+
+NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP,
+                                                            int controlResourceSetId,
+                                                            int ss_type,
+                                                            nr_rnti_type_t rnti_type)
+{
+
+  if((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) &&
+     !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0) &&
+     (UL_BWP->pusch_Config && UL_BWP->pusch_Config->pusch_TimeDomainAllocationList))
+    return UL_BWP->pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
+  else
+    return UL_BWP->tdaList;
+}
+
+
 uint16_t get_rb_bwp_dci(nr_dci_format_t format,
                         int ss_type,
                         uint16_t cset0_bwp_size,
@@ -3181,23 +3290,18 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
   }
 
   const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
-  const NR_BWP_UplinkCommon_t *ubwpc = NULL;
   NR_PDSCH_Config_t *pdsch_Config = DL_BWP ? DL_BWP->pdsch_Config : NULL;
-  NR_PUSCH_Config_t *pusch_Config = NULL;
+  NR_PUSCH_Config_t *pusch_Config = UL_BWP ? UL_BWP->pusch_Config : NULL;
   NR_PUCCH_Config_t *pucch_Config = NULL;
   NR_SRS_Config_t *srs_config = NULL;
   if(bwp_id > 0) {
     AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
     ubwpd = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated : NULL;
-    ubwpc = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Common : NULL;
     pucch_Config = (ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
-    pusch_Config = (ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup : NULL;
     srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup : NULL;
   } else if (cg) {
-    ubwpc = initialUplinkBWP;
     ubwpd = uplinkConfig ? uplinkConfig->initialUplinkBWP : NULL;
     pucch_Config = (ubwpd && ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
-    pusch_Config = (ubwpd && ubwpd->pusch_Config) ? ubwpd->pusch_Config->choice.setup :  NULL;
     srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
   }
 
@@ -3269,14 +3373,11 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
-      if (pusch_Config==NULL || pusch_Config->pusch_TimeDomainAllocationList==NULL) {
-        if (ubwpc->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList==NULL)
-          num_entries = 16; // num of entries in default table
-        else
-          num_entries = ubwpc->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list.count;
-      }
+      NR_PUSCH_TimeDomainResourceAllocationList_t *tdalistul = get_ul_tdalist(UL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
+      if (tdalistul)
+        num_entries = tdalistul->list.count;
       else
-        num_entries = pusch_Config->pusch_TimeDomainAllocationList->choice.setup->list.count;
+        num_entries = 16; // num of entries in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       LOG_D(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n",dci_pdu->time_domain_assignment.nbits,pusch_Config);
       size += dci_pdu->time_domain_assignment.nbits;
@@ -3423,9 +3524,9 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
          dci_pdu->frequency_domain_assignment.nbits = ((int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) > numRBG) ? (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) + 1 : numRBG + 1;
       size += dci_pdu->frequency_domain_assignment.nbits;
       LOG_D(NR_MAC,"dci_pdu->frequency_domain_assignment.nbits %d (N_RB %d)\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
-      // Time domain assignment (see table 5.1.2.1.1-1 in 38.214)
-      if (DL_BWP->tdaList)
-        num_entries = DL_BWP->tdaList->list.count;
+      NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(DL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
+      if (tdalist)
+        num_entries = tdalist->list.count;
       else
         num_entries = 16; // num of entries in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
