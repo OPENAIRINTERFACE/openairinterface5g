@@ -1170,12 +1170,14 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
 
       extern instance_t DUuniqInstance;
       if (DUuniqInstance == 0) {
-        char gtp_tunnel_ip_address[128];
-        sprintf(gtp_tunnel_ip_address, "%d.%d.%d.%d",
-                drb_p->up_ul_tnl[0].tl_address & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
+        char gtp_tunnel_ip_address[32];
+        snprintf(gtp_tunnel_ip_address,
+                 sizeof(gtp_tunnel_ip_address),
+                 "%d.%d.%d.%d",
+                 drb_p->up_ul_tnl[0].tl_address & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
         getCxt(DUtype, instance)->gtpInst=du_create_gtpu_instance_to_cu(
                                             gtp_tunnel_ip_address,
                                             getCxt(false,instance)->setupReq.CUport,
