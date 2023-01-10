@@ -525,6 +525,10 @@ target_link_libraries(f1ap PRIVATE ngap nr_rrc)
 ##############
 # target asn1_lpp in openair3/LPP/MESSAGES/CMakeLists.txt used below
 
+# NRPPA
+##############
+add_executable(main_nrppa ${OPENAIR3_DIR}/NRPPA/main_nrppa.c )
+target_link_libraries(main_nrppa asn1_nrppa)
   
 # Hardware dependant options
 ###################################
