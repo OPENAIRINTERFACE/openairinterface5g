@@ -483,6 +483,7 @@ add_library(CONFIG_LIB
   ${CONFIG_ROOTDIR}/config_userapi.c
   ${CONFIG_ROOTDIR}/config_cmdline.c
 )
+target_link_libraries(CONFIG_LIB PRIVATE dl UTIL)
 add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
 target_link_libraries(params_libconfig config)
 # shared library loader
