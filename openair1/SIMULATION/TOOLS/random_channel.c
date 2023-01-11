@@ -2162,7 +2162,7 @@ static int channelmod_show_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
 static int channelmod_modify_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   char *param=NULL, *value=NULL;
   int cd_id= -1;
-  int s = sscanf(buff, "%*s %*s %i %ms %ms \n", &cd_id, &param, &value);
+  int s = sscanf(buff, "%i %ms %ms \n", &cd_id, &param, &value);
 
   if (cd_id<0 || cd_id >= max_chan) {
     prnt("ERROR, %i: Channel model id outof range (0-%i)\n",cd_id,max_chan-1);
