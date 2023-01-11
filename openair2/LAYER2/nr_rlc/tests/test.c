@@ -10,6 +10,9 @@
 #include <sys/wait.h>
 #include <unistd.h>
 
+#include "common/utils/LOG/log.h"
+
+int oai_exit;
 /*
  * GNB_AM <rx_maxsize> <tx_maxsize> <t_poll_retransmit> <t_reassembly>
  *       <t_status_prohibit> <poll_pdu> <poll_byte> <max_retx_threshold>
@@ -222,6 +225,7 @@ int test_main(void)
   int ue_recv_fails = 0;
   int gnb_pdu_size = 1000;
   int ue_pdu_size = 1000;
+  logInit();
 
   printf("TEST: start\n");
 
