@@ -12,7 +12,6 @@
 
 #include "common/utils/LOG/log.h"
 
-int oai_exit;
 /*
  * GNB_AM <rx_maxsize> <tx_maxsize> <t_poll_retransmit> <t_reassembly>
  *       <t_status_prohibit> <poll_pdu> <poll_byte> <max_retx_threshold>
