@@ -19,26 +19,27 @@
 # *      contact@openairinterface.org
 # */
 #---------------------------------------------------------------------
-# Python for CI of OAI-eNB + COTS-UE
 #
 #   Required Python Version
 #     Python 3.x
 #
-#   Required Python Package
-#     pexpect
 #---------------------------------------------------------------------
 
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
 import logging
-import cls_oai_html
 import re
 import time
+
+import cls_oai_html
 import constants as CONST
 import helpreadme as HELP
 import cls_containerize
 import cls_cmd
+
+IMAGE_REGISTRY_SERVICE_NAME = "image-registry.openshift-image-registry.svc"
+NAMESPACE = "oaicicd-ran"
 
 class Cluster:
 	def __init__(self):
@@ -110,17 +111,8 @@ class Cluster:
 		regres = re.search(r'build.build.openshift.io/(?P<jobname>[a-zA-Z0-9\-]+) started', ret.stdout)
 		if ret.returncode != 0 or ret.stdout.count('Uploading finished') != 1 or regres is None:
 			logging.error(f"error during oc start-build: {ret.stdout}")
-			self._delete_pod(name)
 			return None
 		return regres.group('jobname') + '-build'
-
-	def _delete_pod(self, shortName):
-		ret = self.cmd.run(f"oc get pods | grep {shortName}")
-		regres = re.search(rf'{shortName}-[0-9]+-build', ret.stdout)
-		if regres is not None:
-			self.cmd.run(f"oc delete pod {regres.group(0)}")
-		else:
-			logging.warning(f"no pod found with name {shortName}")
 
 	def _wait_build_end(self, jobs, timeout_sec, check_interval_sec = 5):
 		logging.debug(f"waiting for jobs {jobs} to finish building")
@@ -146,7 +138,7 @@ class Cluster:
 	def _get_image_size(self, image, tag):
 		# get the SHA of the image we built using the image name and its tag
 		ret = self.cmd.run(f'oc describe is {image} | grep -A4 {tag}')
-		result = re.search(f'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/(?P<imageSha>{image}@sha256:[a-f0-9]+)', ret.stdout)
+		result = re.search(f'{IMAGE_REGISTRY_SERVICE_NAME}:5000/{NAMESPACE}/(?P<imageSha>{image}@sha256:[a-f0-9]+)', ret.stdout)
 		if result is None:
 			return -1
 		imageSha = result.group("imageSha")
@@ -225,7 +217,7 @@ class Cluster:
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
-		ret = self.cmd.run(f'oc login -u {ocUserName} -p {ocPassword}')
+		ret = self.cmd.run(f'oc login -u {ocUserName} -p {ocPassword} --server {self.OCUrl}')
 		if ret.returncode != 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -357,7 +349,7 @@ class Cluster:
 		self.cmd.run('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc delete pod ${pod}; done')
 
 		# logout will return eventually, but we don't care when -> start in background
-		self.cmd.run(f'oc logout &')
+		self.cmd.run(f'oc logout')
 		self.cmd.close()
 
 		# Analyze the logs
