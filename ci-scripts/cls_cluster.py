@@ -19,29 +19,27 @@
 # *      contact@openairinterface.org
 # */
 #---------------------------------------------------------------------
-# Python for CI of OAI-eNB + COTS-UE
 #
 #   Required Python Version
 #     Python 3.x
 #
-#   Required Python Package
-#     pexpect
 #---------------------------------------------------------------------
 
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
 import logging
-import sshconnection as SSH
-import cls_oai_html
-#import os
 import re
 import time
-#import subprocess
-import sys
+
+import cls_oai_html
 import constants as CONST
 import helpreadme as HELP
 import cls_containerize
+import cls_cmd
+
+IMAGE_REGISTRY_SERVICE_NAME = "image-registry.openshift-image-registry.svc"
+NAMESPACE = "oaicicd-ran"
 
 class Cluster:
 	def __init__(self):
@@ -58,86 +56,73 @@ class Cluster:
 		self.ranCommitID = ""
 		self.ranAllowMerge = False
 		self.ranTargetBranch = ""
+		self.cmd = None
 
-	def _recreate_entitlements(self, sshSession):
+
+	def _recreate_entitlements(self):
 		# recreating entitlements, don't care if deletion fails
-		sshSession.command('oc delete secret etc-pki-entitlement', '\$', 5)
-		if re.search(r"not found", sshSession.getBefore()):
-			logging.warning("no secrets etc-pki-entitlement found, recreating")
-		sshSession.command('ls /etc/pki/entitlement/???????????????????.pem | tail -1', '\$', 5, silent=True)
-		regres1 = re.search(r"/etc/pki/entitlement/[0-9]+.pem", sshSession.getBefore())
-		sshSession.command('ls /etc/pki/entitlement/???????????????????-key.pem | tail -1', '\$', 5, silent=True)
-		regres2 = re.search(r"/etc/pki/entitlement/[0-9]+-key.pem", sshSession.getBefore())
+		self.cmd.run('oc delete secret etc-pki-entitlement')
+		ret = self.cmd.run('ls /etc/pki/entitlement/???????????????????.pem | tail -1', silent=True)
+		regres1 = re.search(r"/etc/pki/entitlement/[0-9]+.pem", ret.stdout)
+		ret = self.cmd.run('ls /etc/pki/entitlement/???????????????????-key.pem | tail -1', silent=True)
+		regres2 = re.search(r"/etc/pki/entitlement/[0-9]+-key.pem", ret.stdout)
 		if regres1 is None or regres2 is None:
 			logging.error("could not find entitlements")
 			return False
 		file1 = regres1.group(0)
 		file2 = regres2.group(0)
-		sshSession.command(f'oc create secret generic etc-pki-entitlement --from-file {file1} --from-file {file2}', '\$', 5)
-		regres = re.search(r"secret/etc-pki-entitlement created", sshSession.getBefore())
-		if regres is None:
+		ret = self.cmd.run(f'oc create secret generic etc-pki-entitlement --from-file {file1} --from-file {file2}')
+		regres = re.search(r"secret/etc-pki-entitlement created", ret.stdout)
+		if ret.returncode != 0 or regres is None:
 			logging.error("could not create secret/etc-pki-entitlement")
 			return False
 		return True
 
-	def _recreate_bc(self, sshSession, name, newTag, filename):
-		self._retag_image_statement(sshSession, name, name, newTag, filename)
-		sshSession.command(f'oc delete -f {filename}', '\$', 5)
-		sshSession.command(f'oc create -f {filename}', '\$', 5)
-		before = sshSession.getBefore()
-		if re.search('buildconfig.build.openshift.io/[a-zA-Z\-0-9]+ created', before) is not None:
+	def _recreate_bc(self, name, newTag, filename):
+		self._retag_image_statement(name, name, newTag, filename)
+		self.cmd.run(f'oc delete -f {filename}')
+		ret = self.cmd.run(f'oc create -f {filename}')
+		if re.search('buildconfig.build.openshift.io/[a-zA-Z\-0-9]+ created', ret.stdout) is not None:
 			return True
-		logging.error('error while creating buildconfig: ' + sshSession.getBefore())
+		logging.error('error while creating buildconfig: ' + ret.stdout)
 		return False
 
-	def _recreate_is_tag(self, sshSession, name, newTag, filename):
-		sshSession.command(f'oc describe is {name}', '\$', 5)
-		if sshSession.getBefore().count('NotFound') > 0:
-			sshSession.command(f'oc create -f {filename}', '\$', 5)
-			before = sshSession.getBefore()
-			if re.search(f'imagestream.image.openshift.io/{name} created', before) is None:
-				logging.error('error while creating imagestream: ' + sshSession.getBefore())
+	def _recreate_is_tag(self, name, newTag, filename):
+		ret = self.cmd.run(f'oc describe is {name}')
+		if ret.returncode != 0:
+			ret = self.cmd.run(f'oc create -f {filename}')
+			if ret.returncode != 0:
+				logging.error(f'error while creating imagestream: {ret.stdout}')
 				return False
 		else:
 			logging.debug(f'-> imagestream {name} found')
 		image = f'{name}:{newTag}'
-		sshSession.command(f'oc delete istag {image}', '\$', 5) # we don't care if this fails, e.g., if it is missing
-		sshSession.command(f'oc create istag {image}', '\$', 5)
-		before = sshSession.getBefore()
-		if re.search(f'imagestreamtag.image.openshift.io/{image} created', before) is not None:
+		self.cmd.run(f'oc delete istag {image}', reportNonZero=False) # we don't care if this fails, e.g., if it is missing
+		ret = self.cmd.run(f'oc create istag {image}')
+		if ret.returncode == 0:
 			return True
-		logging.error('error while creating imagestreamtag: ' + sshSession.getBefore())
+		logging.error(f'error while creating imagestreamtag: {ret.stdout}')
 		return False
 
-	def _start_build(self, sshSession, name):
+	def _start_build(self, name):
 		# will return "immediately" but build runs in background
 		# if multiple builds are started at the same time, this can take some time, however
-		ret = sshSession.command(f'oc start-build {name} --from-file={self.eNBSourceCodePath}', '\$', 300)
-		before = sshSession.getBefore()
-		regres = re.search(r'build.build.openshift.io/(?P<jobname>[a-zA-Z0-9\-]+) started', str(before))
-		if ret != 0 or before.count('Uploading finished') != 1 or regres is None:
-			logging.error("error during oc start-build: " + sshSession.getBefore())
-			self._delete_pod(sshSession, name)
+		ret = self.cmd.run(f'oc start-build {name} --from-file={self.eNBSourceCodePath}')
+		regres = re.search(r'build.build.openshift.io/(?P<jobname>[a-zA-Z0-9\-]+) started', ret.stdout)
+		if ret.returncode != 0 or ret.stdout.count('Uploading finished') != 1 or regres is None:
+			logging.error(f"error during oc start-build: {ret.stdout}")
 			return None
 		return regres.group('jobname') + '-build'
 
-	def _delete_pod(self, sshSession, shortName):
-		sshSession.command(f"oc get pods | grep {shortName}", '\$', 5)
-		regres = re.search(rf'{shortName}-[0-9]+-build', sshSession.getBefore())
-		if regres is not None:
-			sshSession.command(f"oc delete pod {regres.group(0)}", '\$', 5)
-		else:
-			logging.warning(f"no pod found with name {shortName}")
-
-	def _wait_build_end(self, sshSession, jobs, timeout_sec, check_interval_sec = 5):
+	def _wait_build_end(self, jobs, timeout_sec, check_interval_sec = 5):
 		logging.debug(f"waiting for jobs {jobs} to finish building")
 		while timeout_sec > 0:
 			# check status
 			for j in jobs:
-				sshSession.command(f'oc get pods | grep {j}', '\$', 30, silent = True)
-				if sshSession.getBefore().count('Completed') > 0: jobs.remove(j)
-				if sshSession.getBefore().count('Error') > 0:
-					logging.error(f'error for job {j}: ' + sshSession.getBefore())
+				ret = self.cmd.run(f'oc get pods | grep {j}', silent = True)
+				if ret.stdout.count('Completed') > 0: jobs.remove(j)
+				if ret.stdout.count('Error') > 0:
+					logging.error(f'error for job {j}: {ret.stdout}')
 					return False
 			if jobs == []:
 				logging.debug('all jobs completed')
@@ -147,44 +132,43 @@ class Cluster:
 		logging.error(f"timeout while waiting for end of build of {jobs}")
 		return False
 
-	def _retag_image_statement(self, sshSession, oldImage, newImage, newTag, filename):
-		sshSession.command(f'sed -i -e "s#{oldImage}:latest#{newImage}:{newTag}#" {filename}', '\$', 5)
+	def _retag_image_statement(self, oldImage, newImage, newTag, filename):
+		self.cmd.run(f'sed -i -e "s#{oldImage}:latest#{newImage}:{newTag}#" {filename}')
 
-	def _get_image_size(self, sshSession, image, tag):
+	def _get_image_size(self, image, tag):
 		# get the SHA of the image we built using the image name and its tag
-		sshSession.command(f'oc describe is {image} | grep -A4 {tag}', '\$', 5)
-		result = re.search(f'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/(?P<imageSha>{image}@sha256:[a-f0-9]+)', sshSession.getBefore())
+		ret = self.cmd.run(f'oc describe is {image} | grep -A4 {tag}')
+		result = re.search(f'{IMAGE_REGISTRY_SERVICE_NAME}:5000/{NAMESPACE}/(?P<imageSha>{image}@sha256:[a-f0-9]+)', ret.stdout)
 		if result is None:
 			return -1
 		imageSha = result.group("imageSha")
 
 		# retrieve the size
-		sshSession.command(f'oc get -o json isimage {imageSha} | jq -Mc "{{dockerImageSize: .image.dockerImageMetadata.Size}}"', '\$', 5)
-		result = re.search('{"dockerImageSize":(?P<size>[0-9]+)}', str(sshSession.getBefore()))
+		ret = self.cmd.run(f'oc get -o json isimage {imageSha} | jq -Mc "{{dockerImageSize: .image.dockerImageMetadata.Size}}"')
+		result = re.search('{"dockerImageSize":(?P<size>[0-9]+)}', ret.stdout)
 		if result is None:
 			return -1
 		return int(result.group("size"))
 
-	def _deploy_pod(self, sshSession, filename, timeout = 30):
-		sshSession.command(f'oc create -f {filename}', '\$', 10)
-		result = re.search(f'pod/(?P<pod>[a-zA-Z0-9_\-]+) created', sshSession.getBefore())
+	def _deploy_pod(self, filename, timeout = 30):
+		ret = self.cmd.run(f'oc create -f {filename}')
+		result = re.search(f'pod/(?P<pod>[a-zA-Z0-9_\-]+) created', ret.stdout)
 		if result is None:
-			logging.error(f'could not deploy pod: {sshSession.getBefore()}')
+			logging.error(f'could not deploy pod: {ret.stdout}')
 			return None
 		pod = result.group("pod")
 		logging.debug(f'checking if pod {pod} is in Running state')
 		while timeout > 0:
-			sshSession.command(f'oc get pod {pod} -o json | jq -Mc .status.phase', '\$', 5, silent=True)
-			if re.search('"Running"', sshSession.getBefore()) is not None: return pod
+			ret = self.cmd.run(f'oc get pod {pod} -o json | jq -Mc .status.phase', silent=True)
+			if re.search('"Running"', ret.stdout) is not None: return pod
 			timeout -= 1
 			time.sleep(1)
 		logging.error(f'pod {pod} did not reach Running state')
-		self._undeploy_pod(sshSession, filename)
+		self._undeploy_pod(filename)
 		return None
 
-	def _undeploy_pod(self, sshSession, filename):
-		# to save time we start this in the background and trust that oc stops correctly
-		sshSession.command(f'oc delete -f {filename} &', '\$', 5)
+	def _undeploy_pod(self, filename):
+		self.cmd.run(f'oc delete -f {filename}')
 
 	def BuildClusterImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
@@ -194,8 +178,7 @@ class Cluster:
 		lIpAddr = self.eNBIPAddress
 		lSourcePath = self.eNBSourceCodePath
 		if lIpAddr == '' or lSourcePath == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter: no SSH Credentials')
+			sys.exit('Insufficient Parameter: eNBSourceCodePath missing')
 		ocUserName = self.OCUserName
 		ocPassword = self.OCPassword
 		ocProjectName = self.OCProjectName
@@ -206,29 +189,27 @@ class Cluster:
 			sys.exit(f'ocRegistry {self.OCRegistry} should not start with http:// or https:// and end on a slash /')
 
 		logging.debug(f'Building on cluster triggered from server: {lIpAddr}')
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, "oaicicd", "SHOULD NOT BE NECESSARY")
+		self.cmd = cls_cmd.RemoteCmd(lIpAddr)
 
 		self.testCase_id = HTML.testCase_id
 
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
-			mySSH.command(f'rm -Rf {lSourcePath}', '\$', 15)
-		cls_containerize.CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
+			self.cmd.run(f'rm -Rf {lSourcePath}')
+		cls_containerize.CreateWorkspace(self.cmd, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
-		# we don't necessarily need a forced workspace cleanup, but in
-		# order to reduce the amount of data send to OpenShift, we
+		# to reduce the amount of data send to OpenShift, we
 		# manually delete all generated files in the workspace
-		mySSH.command(f'rm -rf {lSourcePath}/cmake_targets/ran_build', '\$', 30);
+		self.cmd.run(f'rm -rf {lSourcePath}/cmake_targets/ran_build');
 
 		baseTag = 'develop'
 		forceBaseImageBuild = False
 		imageTag = 'develop'
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
-			imageTag = 'ci-temp'
+			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == 'develop':
-				mySSH.command(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel8.2 | grep --colour=never -i INDEX', '\$', 5)
-				result = re.search('index', mySSH.getBefore())
+				ret = self.cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel8.2 | grep --colour=never -i INDEX')
+				result = re.search('index', ret.stdout)
 				if result is not None:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
@@ -236,122 +217,120 @@ class Cluster:
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
-		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server {self.OCUrl}', '\$', 31)
-		if mySSH.getBefore().count('Login successful.') == 0:
+		ret = self.cmd.run(f'oc login -u {ocUserName} -p {ocPassword} --server {self.OCUrl}')
+		if ret.returncode != 0:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
-			mySSH.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			return False
 
-		mySSH.command(f'oc project {ocProjectName}', '\$', 30)
-		if mySSH.getBefore().count(f'Already on project "{ocProjectName}"') == 0 and mySSH.getBefore().count(f'Now using project "{self.OCProjectName}"') == 0:
+		ret = self.cmd.run(f'oc project {ocProjectName}')
+		if ret.returncode != 0:
 			logging.error(f'\u001B[1mUnable to access OC project {ocProjectName}\u001B[0m')
-			mySSH.command('oc logout', '\$', 30)
-			mySSH.close()
+			self.cmd.run('oc logout')
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
 			return False
 
-		self._recreate_entitlements(mySSH)
+		self._recreate_entitlements()
 
 		status = True # flag to abandon compiling if any image fails
 		attemptedImages = []
 		if forceBaseImageBuild:
-			self._recreate_is_tag(mySSH, 'ran-base', baseTag, 'openshift/ran-base-is.yaml')
-			self._recreate_bc(mySSH, 'ran-base', baseTag, 'openshift/ran-base-bc.yaml')
-			ranbase_job = self._start_build(mySSH, 'ran-base')
+			self._recreate_is_tag('ran-base', baseTag, 'openshift/ran-base-is.yaml')
+			self._recreate_bc('ran-base', baseTag, 'openshift/ran-base-bc.yaml')
+			ranbase_job = self._start_build('ran-base')
 			attemptedImages += ['ran-base']
-			status = ranbase_job is not None and self._wait_build_end(mySSH, [ranbase_job], 600)
+			status = ranbase_job is not None and self._wait_build_end([ranbase_job], 600)
 			if not status: logging.error('failure during build of ran-base')
-			mySSH.command(f'oc logs {ranbase_job} &> cmake_targets/log/ran-base.log', '\$', 10)
+			self.cmd.run(f'oc logs {ranbase_job} &> cmake_targets/log/ran-base.log') # cannot use cmd.run because of redirect
 			# recover logs by mounting image
-			self._retag_image_statement(mySSH, 'ran-base', 'ran-base', baseTag, 'openshift/ran-base-log-retrieval.yaml')
-			pod = self._deploy_pod(mySSH, 'openshift/ran-base-log-retrieval.yaml')
+			self._retag_image_statement('ran-base', 'ran-base', baseTag, 'openshift/ran-base-log-retrieval.yaml')
+			pod = self._deploy_pod('openshift/ran-base-log-retrieval.yaml')
 			if pod is not None:
-				mySSH.command(f'mkdir -p cmake_targets/log/ran-base', '\$', 5)
-				mySSH.command(f'oc rsync {pod}:/oai-ran/cmake_targets/log/ cmake_targets/log/ran-base', '\$', 5)
-				self._undeploy_pod(mySSH, 'openshift/ran-base-log-retrieval.yaml')
+				self.cmd.run(f'mkdir -p cmake_targets/log/ran-base')
+				self.cmd.run(f'oc rsync {pod}:/oai-ran/cmake_targets/log/ cmake_targets/log/ran-base')
+				self._undeploy_pod('openshift/ran-base-log-retrieval.yaml')
 			else:
 				status = False
 
 		if status:
-			self._recreate_is_tag(mySSH, 'oai-physim', imageTag, 'openshift/oai-physim-is.yaml')
-			self._recreate_bc(mySSH, 'oai-physim', imageTag, 'openshift/oai-physim-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.phySim.rhel8.2')
-			physim_job = self._start_build(mySSH, 'oai-physim')
+			self._recreate_is_tag('oai-physim', imageTag, 'openshift/oai-physim-is.yaml')
+			self._recreate_bc('oai-physim', imageTag, 'openshift/oai-physim-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.phySim.rhel8.2')
+			physim_job = self._start_build('oai-physim')
 			attemptedImages += ['oai-physim']
 
-			self._recreate_is_tag(mySSH, 'ran-build', imageTag, 'openshift/ran-build-is.yaml')
-			self._recreate_bc(mySSH, 'ran-build', imageTag, 'openshift/ran-build-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.build.rhel8.2')
-			ranbuild_job = self._start_build(mySSH, 'ran-build')
+			self._recreate_is_tag('ran-build', imageTag, 'openshift/ran-build-is.yaml')
+			self._recreate_bc('ran-build', imageTag, 'openshift/ran-build-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.build.rhel8.2')
+			ranbuild_job = self._start_build('ran-build')
 			attemptedImages += ['ran-build']
 
-			wait = ranbuild_job is not None and physim_job is not None and self._wait_build_end(mySSH, [ranbuild_job, physim_job], 1200)
+			wait = ranbuild_job is not None and physim_job is not None and self._wait_build_end([ranbuild_job, physim_job], 1200)
 			if not wait: logging.error('error during build of ranbuild_job or physim_job')
 			status = status and wait
-			mySSH.command(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log', '\$', 10)
-			mySSH.command(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log', '\$', 10)
-			mySSH.command('oc get pods.metrics.k8s.io >> cmake_targets/log/build-metrics.log', '\$', 10)
+			self.cmd.run(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log')
+			self.cmd.run(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log')
+			self.cmd.run(f'oc get pods.metrics.k8s.io &>> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		if status:
-			self._recreate_is_tag(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
-			self._recreate_bc(mySSH, 'oai-enb', imageTag, 'openshift/oai-enb-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.eNB.rhel8.2')
-			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.eNB.rhel8.2')
-			enb_job = self._start_build(mySSH, 'oai-enb')
+			self._recreate_is_tag('oai-enb', imageTag, 'openshift/oai-enb-is.yaml')
+			self._recreate_bc('oai-enb', imageTag, 'openshift/oai-enb-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.eNB.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.eNB.rhel8.2')
+			enb_job = self._start_build('oai-enb')
 			attemptedImages += ['oai-enb']
 
-			self._recreate_is_tag(mySSH, 'oai-gnb', imageTag, 'openshift/oai-gnb-is.yaml')
-			self._recreate_bc(mySSH, 'oai-gnb', imageTag, 'openshift/oai-gnb-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.rhel8.2')
-			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.rhel8.2')
-			gnb_job = self._start_build(mySSH, 'oai-gnb')
+			self._recreate_is_tag('oai-gnb', imageTag, 'openshift/oai-gnb-is.yaml')
+			self._recreate_bc('oai-gnb', imageTag, 'openshift/oai-gnb-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.rhel8.2')
+			gnb_job = self._start_build('oai-gnb')
 			attemptedImages += ['oai-gnb']
 
-			self._recreate_is_tag(mySSH, 'oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-is.yaml')
-			self._recreate_bc(mySSH, 'oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
-			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
-			gnb_aw2s_job = self._start_build(mySSH, 'oai-gnb-aw2s')
+			self._recreate_is_tag('oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-is.yaml')
+			self._recreate_bc('oai-gnb-aw2s', imageTag, 'openshift/oai-gnb-aw2s-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.gNB.aw2s.rhel8.2')
+			gnb_aw2s_job = self._start_build('oai-gnb-aw2s')
 			attemptedImages += ['oai-gnb-aw2s']
 
-			wait = enb_job is not None and gnb_job is not None and gnb_aw2s_job is not None and self._wait_build_end(mySSH, [enb_job, gnb_job, gnb_aw2s_job], 600)
+			wait = enb_job is not None and gnb_job is not None and gnb_aw2s_job is not None and self._wait_build_end([enb_job, gnb_job, gnb_aw2s_job], 600)
 			if not wait: logging.error('error during build of eNB/gNB')
 			status = status and wait
 			# recover logs
-			mySSH.command(f'oc logs {enb_job} &> cmake_targets/log/oai-enb.log', '\$', 10)
-			mySSH.command(f'oc logs {gnb_job} &> cmake_targets/log/oai-gnb.log', '\$', 10)
-			mySSH.command(f'oc logs {gnb_aw2s_job} &> cmake_targets/log/oai-gnb-aw2s.log', '\$', 10)
+			self.cmd.run(f'oc logs {enb_job} &> cmake_targets/log/oai-enb.log')
+			self.cmd.run(f'oc logs {gnb_job} &> cmake_targets/log/oai-gnb.log')
+			self.cmd.run(f'oc logs {gnb_aw2s_job} &> cmake_targets/log/oai-gnb-aw2s.log')
 
-			self._recreate_is_tag(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
-			self._recreate_bc(mySSH, 'oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel8.2')
-			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.lteUE.rhel8.2')
-			lteue_job = self._start_build(mySSH, 'oai-lte-ue')
+			self._recreate_is_tag('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
+			self._recreate_bc('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.lteUE.rhel8.2')
+			lteue_job = self._start_build('oai-lte-ue')
 			attemptedImages += ['oai-lte-ue']
 
-			self._recreate_is_tag(mySSH, 'oai-nr-ue', imageTag, 'openshift/oai-nr-ue-is.yaml')
-			self._recreate_bc(mySSH, 'oai-nr-ue', imageTag, 'openshift/oai-nr-ue-bc.yaml')
-			self._retag_image_statement(mySSH, 'ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nrUE.rhel8.2')
-			self._retag_image_statement(mySSH, 'ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nrUE.rhel8.2')
-			nrue_job = self._start_build(mySSH, 'oai-nr-ue')
+			self._recreate_is_tag('oai-nr-ue', imageTag, 'openshift/oai-nr-ue-is.yaml')
+			self._recreate_bc('oai-nr-ue', imageTag, 'openshift/oai-nr-ue-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nrUE.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nrUE.rhel8.2')
+			nrue_job = self._start_build('oai-nr-ue')
 			attemptedImages += ['oai-nr-ue']
 
-			wait = lteue_job is not None and nrue_job is not None and self._wait_build_end(mySSH, [lteue_job, nrue_job], 600)
+			wait = lteue_job is not None and nrue_job is not None and self._wait_build_end([lteue_job, nrue_job], 600)
 			if not wait: logging.error('error during build of lteUE/nrUE')
 			status = status and wait
 			# recover logs
-			mySSH.command(f'oc logs {lteue_job} &> cmake_targets/log/oai-lte-ue.log', '\$', 10)
-			mySSH.command(f'oc logs {nrue_job} &> cmake_targets/log/oai-nr-ue.log', '\$', 10)
-			mySSH.command('oc get pods.metrics.k8s.io >> cmake_targets/log/build-metrics.log', '\$', 10)
+			self.cmd.run(f'oc logs {lteue_job} &> cmake_targets/log/oai-lte-ue.log')
+			self.cmd.run(f'oc logs {nrue_job} &> cmake_targets/log/oai-nr-ue.log')
+			self.cmd.run(f'oc get pods.metrics.k8s.io &>> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		# split and analyze logs
 		imageSize = {}
 		for image in attemptedImages:
-			mySSH.command(f'mkdir -p cmake_targets/log/{image}', '\$', 5)
-			mySSH.command(f'python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/{image}.log', '\$', 5)
+			self.cmd.run(f'mkdir -p cmake_targets/log/{image}')
+			self.cmd.run(f'python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/{image}.log')
 			tag = imageTag if image != 'ran-base' else baseTag
-			size = self._get_image_size(mySSH, image, tag)
+			size = self._get_image_size(image, tag)
 			if size <= 0:
 				imageSize[image] = 'unknown -- BUILD FAILED'
 				status = False
@@ -361,17 +340,17 @@ class Cluster:
 			logging.info(f'\u001B[1m{image} size is {imageSize[image]}\u001B[0m')
 
 		grep_exp = "\|".join(attemptedImages)
-		mySSH.command(f'oc get images | grep -e \'{grep_exp}\' &> cmake_targets/log/image_registry.log', '\$', 10);
-		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc get pod $pod -o json >> cmake_targets/log/build_pod_summary.log; done', '\$', 60)
+		self.cmd.run(f'oc get images | grep -e \'{grep_exp}\' &> cmake_targets/log/image_registry.log');
+		self.cmd.run(f'for pod in $(oc get pods | tail -n +2 | awk \'{{print $1}}\'); do oc get pod $pod -o json &>> cmake_targets/log/build_pod_summary.log; done', '\$', 60)
 
 		build_log_name = f'build_log_{self.testCase_id}'
-		cls_containerize.CopyLogsToExecutor(mySSH, lSourcePath, build_log_name, lIpAddr, 'oaicicd', CONST.CI_NO_PASSWORD)
+		cls_containerize.CopyLogsToExecutor(self.cmd, lSourcePath, build_log_name)
 
-		mySSH.command('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc delete pod ${pod}; done', '\$', 60)
+		self.cmd.run('for pod in $(oc get pods | tail -n +2 | awk \'{print $1}\'); do oc delete pod ${pod}; done')
 
 		# logout will return eventually, but we don't care when -> start in background
-		mySSH.command('oc logout &', '\$', 5)
-		mySSH.close()
+		self.cmd.run(f'oc logout')
+		self.cmd.close()
 
 		# Analyze the logs
 		collectInfo = cls_containerize.AnalyzeBuildLogs(build_log_name, attemptedImages, status)
