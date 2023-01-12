@@ -3162,7 +3162,7 @@ int pack_nr_srs_beamforming_report(void *pMessageBuf, void *pPackedBuf, uint32_t
     return 0;
   }
 
-  if(!pack_nr_srs_reported_symbol(nr_srs_beamforming_report->prgs, &pWritePackedMessage, end)) {
+  if (!pack_nr_srs_reported_symbol(&nr_srs_beamforming_report->prgs, &pWritePackedMessage, end)) {
     return 0;
   }
 
@@ -3199,7 +3199,7 @@ static uint8_t pack_nr_srs_indication_body(nfapi_nr_srs_indication_pdu_t *value,
     return 0;
   }
 
-  if(!pack_nr_srs_report_tlv(value->report_tlv,ppWritePackedMsg, end)) {
+  if (!pack_nr_srs_report_tlv(&value->report_tlv, ppWritePackedMsg, end)) {
     return 0;
   }
 
@@ -5920,10 +5920,6 @@ static uint8_t unpack_nr_srs_reported_symbol(nfapi_nr_srs_reported_symbol_t *prg
     return 0;
   }
 
-  if(!prgs->prg_list) {
-    prgs->prg_list = (nfapi_nr_srs_reported_symbol_prgs_t*) calloc(1, prgs->num_prgs*sizeof(nfapi_nr_srs_reported_symbol_prgs_t));
-  }
-
   for(int i = 0; i < prgs->num_prgs; i++) {
     if (!pull8(ppReadPackedMsg, &prgs->prg_list[i].rb_snr, end)) {
       return 0;
@@ -5948,11 +5944,7 @@ int unpack_nr_srs_beamforming_report(void *pMessageBuf, uint32_t messageBufLen, 
     return -1;
   }
 
-  if(!nr_srs_beamforming_report->prgs) {
-    nr_srs_beamforming_report->prgs = (nfapi_nr_srs_reported_symbol_t*) calloc(1, sizeof(nfapi_nr_srs_reported_symbol_t));
-  }
-
-  if(!unpack_nr_srs_reported_symbol(nr_srs_beamforming_report->prgs, &pReadPackedMessage, end)) {
+  if (!unpack_nr_srs_reported_symbol(&nr_srs_beamforming_report->prgs, &pReadPackedMessage, end)) {
     return -1;
   }
 
@@ -5986,7 +5978,7 @@ static uint8_t unpack_nr_srs_indication_body(nfapi_nr_srs_indication_pdu_t *valu
     return 0;
   }
 
-  if(!unpack_nr_srs_report_tlv(value->report_tlv, ppReadPackedMsg, end)) {
+  if (!unpack_nr_srs_report_tlv(&value->report_tlv, ppReadPackedMsg, end)) {
     return 0;
   }
 
