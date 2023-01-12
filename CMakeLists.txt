@@ -525,7 +525,6 @@ target_link_libraries(f1ap PRIVATE ngap nr_rrc)
 ##############
 # target asn1_lpp in openair3/LPP/MESSAGES/CMakeLists.txt used below
 
-  
 # Hardware dependant options
 ###################################
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
