@@ -733,8 +733,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
   int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
-  int flags=0,flags_gpio=0;
   radio_tx_burst_flag_t flags_burst = TX_BURST_INVALID;
+  radio_tx_gpio_flag_t flags_gpio = 0;
 
   if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx) {
     int slot_type = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
@@ -796,11 +796,11 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       if (slot==30 || slot==70) beam=3|8;
       */
 
-      flags_gpio = beam & 0x1000; //enable change of gpio
+      flags_gpio = beam | TX_GPIO_CHANGE; //enable change of gpio
     }
 
-    flags = flags_burst | flags_gpio<<4;
-    
+    const int flags = flags_burst | flags_gpio << 4;
+
     if (proc->first_tx == 1) proc->first_tx = 0;
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags );

@@ -390,7 +390,7 @@ static int trx_usrp_write(openair0_device *device,
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 
   radio_tx_burst_flag_t flags_burst = (radio_tx_burst_flag_t) (flags & 0xf);
-  int flags_gpio = (flags>>4)&0x1fff; //MSB to enable sending GPIO command, 12 LSB carry GPIO values
+  radio_tx_gpio_flag_t flags_gpio = (radio_tx_gpio_flag_t) ((flags >> 4) & 0x1fff);
 
   int end;
   openair0_thread_t *write_thread = &device->write_thread;
@@ -466,7 +466,7 @@ static int trx_usrp_write(openair0_device *device,
 
 VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_BEAM_SWITCHING_GPIO,1);
     // bit 13 enables gpio 
-    if (flags_gpio&0x1000) {
+    if ((flags_gpio & TX_GPIO_CHANGE) != 0) {
       // push GPIO bits 
       s->usrp->set_command_time(s->tx_md.time_spec);
       s->usrp->set_gpio_attr(s->gpio_bank, "OUT", flags_gpio, MAN_MASK);

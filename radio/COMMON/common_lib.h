@@ -160,6 +160,12 @@ typedef enum {
   TX_BURST_END_NO_TIME_SPEC = 10,
 } radio_tx_burst_flag_t;
 
+/*! \brief Radio TX GPIO flags: MSB to enable sending GPIO command, 12 LSB carry GPIO values */
+typedef enum {
+  /* first 12 bits reserved for beams */
+  TX_GPIO_CHANGE = 0x1000,
+} radio_tx_gpio_flag_t;
+
 /*! \brief Structure used for initializing UDP read threads */
 typedef struct {
   openair0_device *device;
@@ -317,7 +323,7 @@ typedef struct {
   int cc;
   signed char first_packet;
   signed char last_packet;
-  int flags_gpio;
+  radio_tx_gpio_flag_t flags_gpio;
 } openair0_write_package_t;
 
 typedef struct {
