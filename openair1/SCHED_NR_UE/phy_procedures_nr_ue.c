@@ -577,9 +577,9 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
           ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
-    const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot*ue->frame_parms.ofdm_symbol_size+15)/16)*16;
-    __attribute__ ((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][pdsch_est_size];
-    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t)*ue->frame_parms.nb_antennas_rx*dlsch0->Nl*pdsch_est_size);
+    const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot * ue->frame_parms.ofdm_symbol_size + 15) / 16) * 16;
+    __attribute__((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx * dlsch0->Nl][pdsch_est_size];
+    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t) * ue->frame_parms.nb_antennas_rx * dlsch0->Nl * pdsch_est_size);
 
     for (m = s0; m < (s0 +s1); m++) {
       if (dlsch0->dlsch_config.dlDmrsSymbPos & (1 << m)) {
