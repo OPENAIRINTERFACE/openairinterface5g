@@ -888,6 +888,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/libconfig/config_libconfig.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/libconfig/config_libconfig_private.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/config_userapi.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../common/oai_asn1.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_meas.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/backtrace.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_stat.h \
@@ -930,7 +931,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/load_module_shlib.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/backtrace.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/assertions.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/asn1_conversions.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/oai_asn1.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/threadPool/thread-pool.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/threadPool/thread-pool.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/T/T.c \
@@ -1248,7 +1249,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_entity_am.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_sdu.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_entity.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/asn1_utils.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_asn1_utils.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_ue_manager.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_oai_api.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/rlc_v2/rlc_sdu.h \
@@ -1356,7 +1357,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_security_nea2.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_ue_manager.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/asn1_utils.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_asn1_utils.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/asn1_utils.c \
@@ -1390,7 +1391,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_entity.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_pdu.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_sdu.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/asn1_utils.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_asn1_utils.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_pdu.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/nr_rlc_entity_am.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_rlc/asn1_utils.c \

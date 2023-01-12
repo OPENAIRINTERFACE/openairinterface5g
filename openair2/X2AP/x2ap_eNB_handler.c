@@ -30,8 +30,6 @@
 
 #include "intertask_interface.h"
 
-#include "asn1_conversions.h"
-
 #include "x2ap_common.h"
 #include "x2ap_eNB_defs.h"
 #include "x2ap_eNB_handler.h"

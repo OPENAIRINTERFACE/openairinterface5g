@@ -1053,11 +1053,11 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   //        criticalityDiagnostics_ie_item->iECriticality = F1AP_Criticality_reject;
   //        criticalityDiagnostics_ie_item->iE_ID         = 0L;
   //        criticalityDiagnostics_ie_item->typeOfError   = F1AP_TypeOfError_not_understood;
-  //        ASN_SEQUENCE_ADD(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
+  //        asn1cSeqAdd(&ie->value.choice.CriticalityDiagnostics.iEsCriticalityDiagnostics->list,
   //                    criticalityDiagnostics_ie_item);
   //    }
   //  }
-  //  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  //  asn1cSeqAdd(&out->protocolIEs.list, ie);
   //}
   /* encode */
   uint8_t  *buffer;
@@ -1078,7 +1078,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
 
 static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport)
 {
-  openAddr_t tmp;
+  openAddr_t tmp={0};
   strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
   strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d", DUport);
@@ -1170,12 +1170,14 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
 
       extern instance_t DUuniqInstance;
       if (DUuniqInstance == 0) {
-        char gtp_tunnel_ip_address[128];
-        sprintf(gtp_tunnel_ip_address, "%d.%d.%d.%d",
-                drb_p->up_ul_tnl[0].tl_address & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
-                (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
+        char gtp_tunnel_ip_address[32];
+        snprintf(gtp_tunnel_ip_address,
+                 sizeof(gtp_tunnel_ip_address),
+                 "%d.%d.%d.%d",
+                 drb_p->up_ul_tnl[0].tl_address & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
+                 (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
         getCxt(DUtype, instance)->gtpInst=du_create_gtpu_instance_to_cu(
                                             gtp_tunnel_ip_address,
                                             getCxt(false,instance)->setupReq.CUport,
@@ -1427,7 +1429,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         &srbs_failedToBeSetupMod_item_ies->value.choice.SRBs_FailedToBeSetupMod_Item;
       /* - sRBID */
       srbs_failedToBeSetupMod_item->sRBID = resp->srbs_failed_to_be_setup[i].rb_id;
-      asn1cCalloc(srbs_failedToBeSetupMod_item->cause, tmp)
+      asn1cCalloc(srbs_failedToBeSetupMod_item->cause, tmp);
       tmp->present = F1AP_Cause_PR_radioNetwork;
       tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
     }

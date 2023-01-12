@@ -20,7 +20,7 @@
  */
 #ifndef X2AP_COMMON_H_
 #define X2AP_COMMON_H_
-
+#include "oai_asn1.h"
 #include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_X2AP-PDU.h"
 #include "X2AP_InitiatingMessage.h"

@@ -110,4 +110,5 @@ typedef struct {
 } RAN_CONTEXT_t;
 
 extern RAN_CONTEXT_t RC;
+
 #endif

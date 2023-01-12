@@ -48,10 +48,10 @@ int slot_fep(PHY_VARS_UE *phy_vars_ue,
              int no_prefix,
 	     int reset_freq_est);
 
-int nr_slot_fep(PHY_VARS_NR_UE *phy_vars_ue,
+int nr_slot_fep(PHY_VARS_NR_UE *ue,
                 UE_nr_rxtx_proc_t *proc,
                 unsigned char l,
-                c16_t rxdataF[][phy_vars_ue->frame_parms.samples_per_slot_wCP]);
+                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 
 int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           UE_nr_rxtx_proc_t *proc,

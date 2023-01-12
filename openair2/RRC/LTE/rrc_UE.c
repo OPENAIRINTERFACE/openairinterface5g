@@ -36,7 +36,7 @@
 
 #include "assertions.h"
 #include "hashtable.h"
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -373,7 +373,7 @@ void init_SL_preconfig(UE_RRC_INST *UE, const uint8_t eNB_index ) {
   preconfigpool->dataHoppingConfig_r12.numSubbands_r12                              = LTE_SL_HoppingConfigComm_r12__numSubbands_r12_ns1;
   preconfigpool->dataHoppingConfig_r12.rb_Offset_r12                                = 0;
   preconfigpool->dataTxParameters_r12                                               = 0;
-  ASN_SEQUENCE_ADD(&UE->SL_Preconfiguration[eNB_index]->preconfigComm_r12.list,preconfigpool);
+  asn1cSeqAdd(&UE->SL_Preconfiguration[eNB_index]->preconfigComm_r12.list,preconfigpool);
   // Rel13 extensions
   UE->SL_Preconfiguration[eNB_index]->ext1 = NULL;
 }
@@ -1656,7 +1656,7 @@ rrc_ue_process_MBMSCountingRequest(
   MBMSCountingResponse_r10_IEs->mbsfn_AreaIndex_r10 = calloc(1,sizeof(long));
  // MBMSCountingResponse_r10_IEs->countingResponseList_r10 = calloc(1,sizeof(struct LTE_CountingResponseList_r10));
 //
-//  ASN_SEQUENCE_ADD(
+//  asn1cSeqAdd(
 //        &MBMSCountingResponse->criticalExtensions.choice.c1.choice.countingResponse_r10.countingResponseList_r10.list,
 //        &CountingResponse);
 //
@@ -1743,7 +1743,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
   for (int i = 0; i < count; i++) {
     enc_rval.encoded = 0;
     if (*cap_req->list.array[i] == LTE_RAT_Type_nr) {
-        ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+        asn1cSeqAdd(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
                          &ue_CapabilityRAT_Container);
         ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_nr;
         asn_enc_rval_t enc_rval_nr = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, sizeof(buffer));
@@ -1755,7 +1755,7 @@ rrc_ue_process_nrueCapabilityEnquiry(
               __FUNCTION__, enc_rval.encoded, (enc_rval.encoded+7)/8);
     }
     else if (*cap_req->list.array[i] == LTE_RAT_Type_eutra_nr) {
-        ASN_SEQUENCE_ADD(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
+        asn1cSeqAdd(&ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
                          &ue_CapabilityRAT_Container_mrdc);
         ue_cap->criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list.array[i]->rat_Type = LTE_RAT_Type_eutra_nr;
         asn_enc_rval_t enc_rval_eutra_nr = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, sizeof(buffer));
@@ -1825,7 +1825,7 @@ rrc_ue_process_ueCapabilityEnquiry(
   for (i=0; i<UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.count; i++) {
     if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
         == LTE_RAT_Type_eutra) {
-      ASN_SEQUENCE_ADD(
+      asn1cSeqAdd(
         &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
         &ue_CapabilityRAT_Container);
       enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, 100);
@@ -1849,7 +1849,7 @@ rrc_ue_process_ueCapabilityEnquiry(
     }
     else if (*UECapabilityEnquiry->criticalExtensions.choice.c1.choice.ueCapabilityEnquiry_r8.ue_CapabilityRequest.list.array[i]
             == LTE_RAT_Type_nr) {
-        ASN_SEQUENCE_ADD(
+        asn1cSeqAdd(
           &ul_dcch_msg.message.choice.c1.choice.ueCapabilityInformation.criticalExtensions.choice.c1.choice.ueCapabilityInformation_r8.ue_CapabilityRAT_ContainerList.list,
           &ue_CapabilityRAT_Container);
         enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_UL_DCCH_Message, NULL, (void *) &ul_dcch_msg, buffer, 100);
@@ -2108,7 +2108,7 @@ rrc_ue_process_mobilityControlInfo(
   lcid= CALLOC (1, sizeof (DRB_Identity_t)); // long
   for (*lcid=0;*lcid<NB_RB_MAX;*lcid++)
   {
-    ASN_SEQUENCE_ADD (&(drb2release_list)->list,lcid);
+    asn1cSeqAdd (&(drb2release_list)->list,lcid);
   }
    */
   //Removing SRB1 and SRB2 and DRB0
@@ -2419,7 +2419,7 @@ rrc_ue_decode_dcch(
             sl_destination_identity->buf[1] = 0x00;
             sl_destination_identity->buf[2] = 0x01;
             sl_destination_identity->bits_unused = 0;
-            ASN_SEQUENCE_ADD(&destinationInfoList->list,sl_destination_identity);
+            asn1cSeqAdd(&destinationInfoList->list,sl_destination_identity);
             rrc_ue_generate_SidelinkUEInformation(ctxt_pP, eNB_indexP, destinationInfoList, NULL, SL_TRANSMIT_NON_RELAY_ONE_TO_ONE);
             send_ue_information ++;
           }
@@ -5813,7 +5813,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
         *logicalchannelgroup_drb = 1;
         DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
         UE->DRB_configList = CALLOC(1,sizeof(LTE_DRB_ToAddModList_t));
-        ASN_SEQUENCE_ADD(&UE->DRB_configList->list,UE->DRB_config[0][0]);
+        asn1cSeqAdd(&UE->DRB_configList->list,UE->DRB_config[0][0]);
         rrc_pdcp_config_asn1_req(&ctxt,
                                  (LTE_SRB_ToAddModList_t *) NULL,
                                  UE->DRB_configList,
@@ -6018,7 +6018,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
         *logicalchannelgroup_drb = 1;
         DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
         UE->DRB_configList = CALLOC(1,sizeof(LTE_DRB_ToAddModList_t));
-        ASN_SEQUENCE_ADD(&UE->DRB_configList->list,UE->DRB_config[0][0]);
+        asn1cSeqAdd(&UE->DRB_configList->list,UE->DRB_config[0][0]);
         rrc_pdcp_config_asn1_req(&ctxt,
                                  (LTE_SRB_ToAddModList_t *) NULL,
                                  UE->DRB_configList,
@@ -6172,7 +6172,7 @@ void *rrc_control_socket_thread_fct(void *arg) {
         *logicalchannelgroup_drb = 1;
         DRB_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup_drb;
         UE->DRB_configList = CALLOC(1,sizeof(LTE_DRB_ToAddModList_t));
-        ASN_SEQUENCE_ADD(&UE->DRB_configList->list,UE->DRB_config[0][0]);
+        asn1cSeqAdd(&UE->DRB_configList->list,UE->DRB_config[0][0]);
         rrc_pdcp_config_asn1_req(&ctxt,
                                  (LTE_SRB_ToAddModList_t *) NULL,
                                  UE->DRB_configList,

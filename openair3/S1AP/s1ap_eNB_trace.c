@@ -66,7 +66,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
     ie->criticality = S1AP_Criticality_reject;
     ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_MME_UE_S1AP_ID;
     ie->value.choice.MME_UE_S1AP_ID = ue_desc_p->mme_ue_s1ap_id;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
 
     /* mandatory */
     ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
@@ -74,7 +74,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
     ie->criticality = S1AP_Criticality_reject;
     ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_ENB_UE_S1AP_ID;
     ie->value.choice.ENB_UE_S1AP_ID = ue_desc_p->eNB_ue_s1ap_id;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
 
     /* mandatory */
     ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
@@ -82,7 +82,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_E_UTRAN_Trace_ID;
     memcpy(&ie->value.choice.E_UTRAN_Trace_ID, trace_id, sizeof(S1AP_E_UTRAN_Trace_ID_t));
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
 
     /* mandatory */
     ie = (S1AP_TraceFailureIndicationIEs_t *)calloc(1, sizeof(S1AP_TraceFailureIndicationIEs_t));
@@ -90,7 +90,7 @@ void s1ap_eNB_generate_trace_failure(struct s1ap_eNB_ue_context_s *ue_desc_p,
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_TraceFailureIndicationIEs__value_PR_Cause;
     memcpy(&ie->value.choice.Cause, cause_p, sizeof(S1AP_Cause_t));
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
 
     if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
         return;

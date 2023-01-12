@@ -31,8 +31,6 @@
 
 #include "intertask_interface.h"
 
-#include "asn1_conversions.h"
-
 #include "ngap_common.h"
 // #include "ngap_gNB.h"
 #include "ngap_gNB_defs.h"

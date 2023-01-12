@@ -24,7 +24,7 @@
 #include "pdcp.h"
 
 /* from new rlc module */
-#include "asn1_utils.h"
+#include "rlc_asn1_utils.h"
 #include "rlc_ue_manager.h"
 #include "rlc_entity.h"
 

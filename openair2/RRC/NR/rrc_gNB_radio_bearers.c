@@ -20,6 +20,7 @@
  */
 
 #include "rrc_gNB_radio_bearers.h"
+#include "oai_asn1.h"
 
 NR_SRB_ToAddMod_t *generateSRB2() {
   NR_SRB_ToAddMod_t *SRB2_config = NULL;
@@ -40,8 +41,8 @@ NR_SRB_ToAddModList_t **generateSRB2_confList(gNB_RRC_UE_t *ue,
     *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
     memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
     NR_SRB_ToAddMod_t *SRB2_config = generateSRB2();
-    ASN_SEQUENCE_ADD(&(*SRB_configList2)->list, SRB2_config);
-    ASN_SEQUENCE_ADD(&SRB_configList->list, SRB2_config);
+    asn1cSeqAdd(&(*SRB_configList2)->list, SRB2_config);
+    asn1cSeqAdd(&SRB_configList->list, SRB2_config);
   }
 
   return SRB_configList2;
@@ -83,7 +84,7 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   {
     NR_QFI_t *qfi = calloc(1, sizeof(NR_QFI_t));
     *qfi = pduSession->param.qos[qos_flow_index].qfi;
-    ASN_SEQUENCE_ADD(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
+    asn1cSeqAdd(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
 
     if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
       ue->pduSession[pduSession->param.pdusession_id].param.used_drbs[drb_id-1] = DRB_ACTIVE_NONGBR;

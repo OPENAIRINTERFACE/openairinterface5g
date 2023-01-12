@@ -93,7 +93,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_MME_UE_S1AP_ID;
   ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
@@ -101,7 +101,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_ENB_UE_S1AP_ID;
   ie->value.choice.ENB_UE_S1AP_ID = ue_release_complete_p->eNB_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
@@ -177,7 +177,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_MME_UE_S1AP_ID;
   ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
@@ -185,7 +185,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_ENB_UE_S1AP_ID;
   ie->value.choice.ENB_UE_S1AP_ID = ue_release_req_p->eNB_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
@@ -225,7 +225,7 @@ int s1ap_ue_context_release_req(instance_t instance,
       break;
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
 
 

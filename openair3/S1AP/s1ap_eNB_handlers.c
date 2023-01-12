@@ -31,8 +31,6 @@
 
 #include "intertask_interface.h"
 
-#include "asn1_conversions.h"
-
 #include "s1ap_common.h"
 // #include "s1ap_eNB.h"
 #include "s1ap_eNB_defs.h"
@@ -1898,7 +1896,7 @@ static int s1ap_eNB_snd_s1_setup_request(
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[0],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[1],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[2]);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* optional */
   if (instance_p->eNB_name) {
@@ -1908,7 +1906,7 @@ static int s1ap_eNB_snd_s1_setup_request(
     ie->value.present = S1AP_S1SetupRequestIEs__value_PR_ENBname;
     OCTET_STRING_fromBuf(&ie->value.choice.ENBname, instance_p->eNB_name,
                          strlen(instance_p->eNB_name));
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* mandatory */
@@ -1926,19 +1924,19 @@ static int s1ap_eNB_snd_s1_setup_request(
                         instance_p->mnc[s1ap_mme_data_p->broadcast_plmn_index[i]],
                         instance_p->mnc_digit_length[s1ap_mme_data_p->broadcast_plmn_index[i]],
                         plmn);
-        ASN_SEQUENCE_ADD(&ta->broadcastPLMNs.list, plmn);
+        asn1cSeqAdd(&ta->broadcastPLMNs.list, plmn);
       }
     }
-    ASN_SEQUENCE_ADD(&ie->value.choice.SupportedTAs.list, ta);
+    asn1cSeqAdd(&ie->value.choice.SupportedTAs.list, ta);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   ie = (S1AP_S1SetupRequestIEs_t *)calloc(1, sizeof(S1AP_S1SetupRequestIEs_t));
   ie->id = S1AP_ProtocolIE_ID_id_DefaultPagingDRX;
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_S1SetupRequestIEs__value_PR_PagingDRX;
   ie->value.choice.PagingDRX = instance_p->default_drx;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* optional */
   if (0) {
@@ -1947,7 +1945,7 @@ static int s1ap_eNB_snd_s1_setup_request(
     ie->criticality = S1AP_Criticality_reject;
     ie->value.present = S1AP_S1SetupRequestIEs__value_PR_CSG_IdList;
     // ie->value.choice.CSG_IdList = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* optional */
@@ -1959,7 +1957,7 @@ static int s1ap_eNB_snd_s1_setup_request(
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_S1SetupRequestIEs__value_PR_UE_RetentionInformation;
     // ie->value.choice.UE_RetentionInformation = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* optional */
@@ -1969,7 +1967,7 @@ static int s1ap_eNB_snd_s1_setup_request(
     ie->criticality = S1AP_Criticality_ignore;
     ie->value.present = S1AP_S1SetupRequestIEs__value_PR_NB_IoT_DefaultPagingDRX;
     // ie->value.choice.NB_IoT_DefaultPagingDRX = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
 #endif /* #if (S1AP_VERSION >= MAKE_VERSION(14, 0, 0)) */

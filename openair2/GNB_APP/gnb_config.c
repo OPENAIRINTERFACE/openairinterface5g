@@ -34,6 +34,7 @@
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log_extern.h"
 #include "assertions.h"
+#include "oai_asn1.h"
 #include "executables/softmodem-common.h"
 #include "gnb_config.h"
 #include "gnb_paramdef.h"
@@ -125,8 +126,8 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   dl_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
   dl_scs_SpecificCarrierList        = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
 
-  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list,dl_frequencyBandList);  
-  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list,dl_scs_SpecificCarrierList);		   		   
+  asn1cSeqAdd(&scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list,dl_frequencyBandList);  
+  asn1cSeqAdd(&scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list,dl_scs_SpecificCarrierList);		   		   
   //  scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.cyclicPrefix    = CALLOC(1,sizeof(long));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon                = CALLOC(1,sizeof(struct NR_SetupRelease_PDCCH_ConfigCommon));
   scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->present=NR_SetupRelease_PDCCH_ConfigCommon_PR_setup; 
@@ -148,7 +149,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
 
   ul_frequencyBandList              = CALLOC(1,sizeof(NR_FreqBandIndicatorNR_t));
   scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList          = CALLOC(1,sizeof(struct NR_MultiFrequencyBandListNR));
-  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,ul_frequencyBandList);
+  asn1cSeqAdd(&scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list,ul_frequencyBandList);
 
   scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA    = CALLOC(1,sizeof(NR_ARFCN_ValueNR_t));
   //  scc->uplinkConfigCommon->frequencyInfoUL->additionalSpectrumEmission = CALLOC(1,sizeof(NR_AdditionalSpectrumEmission_t));
@@ -191,7 +192,7 @@ void prepare_scc(NR_ServingCellConfigCommon_t *scc) {
   
 
   ul_scs_SpecificCarrierList  = CALLOC(1,sizeof(struct NR_SCS_SpecificCarrier));
-  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list,ul_scs_SpecificCarrierList);
+  asn1cSeqAdd(&scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list,ul_scs_SpecificCarrierList);
 
   //ratematchpattern                              = CALLOC(1,sizeof(struct NR_RateMatchPattern));
   //ratematchpattern->patternType.choice.bitmaps  = CALLOC(1,sizeof(struct NR_RateMatchPattern__patternType__bitmaps));
@@ -237,12 +238,12 @@ void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_R
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation0 = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
   timedomainresourceallocation0->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
   timedomainresourceallocation0->startSymbolAndLength=54;
-  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+  asn1cSeqAdd(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
                    timedomainresourceallocation0);
   struct NR_PDSCH_TimeDomainResourceAllocation *timedomainresourceallocation1 = CALLOC(1,sizeof(NR_PDSCH_TimeDomainResourceAllocation_t));
   timedomainresourceallocation1->mappingType=NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
   timedomainresourceallocation1->startSymbolAndLength=57;
-  ASN_SEQUENCE_ADD(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
+  asn1cSeqAdd(&scc->downlinkConfigCommon->initialDownlinkBWP->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList->list,
                    timedomainresourceallocation1);
   *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0]=mu_ul?78:38;
   *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA=-1;
@@ -272,13 +273,13 @@ void fill_scc_sim(NR_ServingCellConfigCommon_t *scc,uint64_t *ssb_bitmap,int N_R
   *pusch_timedomainresourceallocation0->k2=6;
   pusch_timedomainresourceallocation0->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
   pusch_timedomainresourceallocation0->startSymbolAndLength=55;
-  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation0);
+  asn1cSeqAdd(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation0);
   struct NR_PUSCH_TimeDomainResourceAllocation *pusch_timedomainresourceallocation1 = CALLOC(1,sizeof(struct NR_PUSCH_TimeDomainResourceAllocation));
   pusch_timedomainresourceallocation1->k2  = CALLOC(1,sizeof(long));
   *pusch_timedomainresourceallocation1->k2=6;
   pusch_timedomainresourceallocation1->mappingType=NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB;
   pusch_timedomainresourceallocation1->startSymbolAndLength=38;
-  ASN_SEQUENCE_ADD(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation1);
+  asn1cSeqAdd(&scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList->list,pusch_timedomainresourceallocation1);
   *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble=1;
   *scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->p0_NominalWithGrant=-90;
  scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_GroupHopping=NR_PUCCH_ConfigCommon__pucch_GroupHopping_neither; 
@@ -426,17 +427,17 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
     NR_PTRS_DownlinkCfg->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->frequencyDensity));
     long *dl_rbs = CALLOC(2, sizeof(long));
     for (int i=0;i<2;i++) {
-      ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
+      asn1cSeqAdd(&NR_PTRS_DownlinkCfg->frequencyDensity->list, &dl_rbs[i]);
     }
     NR_PTRS_DownlinkCfg->timeDensity = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->timeDensity));
     long *dl_mcs = CALLOC(3, sizeof(long));
     for (int i=0;i<3;i++) {
-      ASN_SEQUENCE_ADD(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
+      asn1cSeqAdd(&NR_PTRS_DownlinkCfg->timeDensity->list, &dl_mcs[i]);
     }
     NR_PTRS_DownlinkCfg->epre_Ratio = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->epre_Ratio));
     NR_PTRS_DownlinkCfg->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_DownlinkCfg->resourceElementOffset));
     *NR_PTRS_DownlinkCfg->resourceElementOffset = 0;
-    ASN_SEQUENCE_ADD(&scd->downlinkBWP_ToAddModList->list,bwp);
+    asn1cSeqAdd(&scd->downlinkBWP_ToAddModList->list,bwp);
 
     // Allocate uplink structures
 
@@ -455,12 +456,12 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
     NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity));
     long *n_rbs = CALLOC(2, sizeof(long));
     for (int i=0;i<2;i++) {
-      ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
+      asn1cSeqAdd(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->frequencyDensity->list, &n_rbs[i]);
     }
     NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity));
     long *ptrs_mcs = CALLOC(3, sizeof(long));
     for (int i = 0; i < 3; i++) {
-      ASN_SEQUENCE_ADD(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
+      asn1cSeqAdd(&NR_PTRS_UplinkConfig->transformPrecoderDisabled->timeDensity->list, &ptrs_mcs[i]);
     }
     NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = CALLOC(1, sizeof(*NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset));
     *NR_PTRS_UplinkConfig->transformPrecoderDisabled->resourceElementOffset = 0;
@@ -475,7 +476,7 @@ void prepare_scd(NR_ServingCellConfig_t *scd) {
     ubwp->bwp_Dedicated->pusch_Config->present = NR_SetupRelease_PUSCH_Config_PR_setup;
     ubwp->bwp_Dedicated->pusch_Config->choice.setup = pusch_Config;
 
-    ASN_SEQUENCE_ADD(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
+    asn1cSeqAdd(&scd->uplinkConfig->uplinkBWP_ToAddModList->list,ubwp);
   }
 }
 

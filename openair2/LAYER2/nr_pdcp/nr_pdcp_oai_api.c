@@ -22,7 +22,7 @@
 #ifndef _GNU_SOURCE
 #define _GNU_SOURCE
 #endif
-#include "asn1_utils.h"
+#include "nr_pdcp_asn1_utils.h"
 #include "nr_pdcp_ue_manager.h"
 #include "nr_pdcp_timer_thread.h"
 #include "NR_RadioBearerConfig.h"
@@ -33,6 +33,7 @@
 #include <stdint.h>
 
 /* from OAI */
+#include "oai_asn1.h"
 #include "pdcp.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
@@ -1071,7 +1072,7 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
   *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
   drb_ToAddMod->pdcp_Config->ext1 = NULL;
 
-  ASN_SEQUENCE_ADD(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
+  asn1cSeqAdd(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
 
   rbconfig->drb_ToReleaseList = NULL;
 
@@ -1093,7 +1094,7 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
   nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
 
   Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
-  ASN_SEQUENCE_ADD(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
+  asn1cSeqAdd(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
 
   if (ENB_NAS_USE_TUN){
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, ENB_FLAG_YES, crntiMaybeUEid, 0, 0, 0);

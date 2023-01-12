@@ -550,7 +550,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
   ie->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, rnti);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
@@ -558,7 +558,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   ie->criticality                    = F1AP_Criticality_reject;
   ie->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
   ie->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, rnti);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c3. SRBID */
   ie = (F1AP_ULRRCMessageTransferIEs_t *)calloc(1, sizeof(F1AP_ULRRCMessageTransferIEs_t));
@@ -566,7 +566,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   ie->criticality                   = F1AP_Criticality_reject;
   ie->value.present                 = F1AP_ULRRCMessageTransferIEs__value_PR_SRBID;
   ie->value.choice.SRBID            = msg->srb_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   // issue in here
   /* mandatory */
   /* c4. RRCContainer */
@@ -577,7 +577,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   OCTET_STRING_fromBuf(&ie->value.choice.RRCContainer,
                        (const char *) msg->rrc_container,
                        msg->rrc_container_length);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   if (msg->srb_id == 1 || msg->srb_id == 2) {
     struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);

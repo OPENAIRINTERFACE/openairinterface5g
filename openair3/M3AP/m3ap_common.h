@@ -20,7 +20,7 @@
  */
 #ifndef M3AP_COMMON_H_
 #define M3AP_COMMON_H_
-
+#include "oai_asn1.h"
 #include "M3AP_ProtocolIE-Field.h"
 #include "M3AP_M3AP-PDU.h"
 #include "M3AP_InitiatingMessage.h"

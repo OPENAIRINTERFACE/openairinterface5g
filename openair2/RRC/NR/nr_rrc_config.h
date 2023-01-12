@@ -32,14 +32,7 @@
 #define __NR_RRC_CONFIG_H__
 
 #include "nr_rrc_defs.h"
-
-#define asn1cCallocOne(VaR, VaLue) \
-  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue;
-#define asn1cCalloc(VaR, lOcPtr) \
-  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR));
-#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
-  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
-  ASN_SEQUENCE_ADD(&VaR,lOcPtr);
+#include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 
 void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig);
 uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc);

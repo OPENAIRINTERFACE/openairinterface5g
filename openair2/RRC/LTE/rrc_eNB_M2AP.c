@@ -32,7 +32,7 @@
 # include "RRC/LTE/MESSAGES/asn1_msg.h"
 # include "rrc_eNB_M2AP.h"
 //# include "rrc_eNB_UE_context.h"
-#   include "asn1_conversions.h"
+#   include "oai_asn1.h"
 #   include "intertask_interface.h"
 # include "common/ran_context.h"
 
@@ -96,7 +96,7 @@ static uint8_t rrc_M2AP_do_MBSFNCountingRequest(
   lte_counting_request_info->tmgi_r10.plmn_Id_r9.choice.plmn_Index_r9= 1;
   memset(&lte_counting_request_info->tmgi_r10.serviceId_r9,0,sizeof(OCTET_STRING_t));
   OCTET_STRING_fromBuf(&lte_counting_request_info->tmgi_r10.serviceId_r9,(const char*)&TMGI[2],3);
-  ASN_SEQUENCE_ADD(&(*mbsfnCoutingRequest)->countingRequestList_r10.list,lte_counting_request_info);
+  asn1cSeqAdd(&(*mbsfnCoutingRequest)->countingRequestList_r10.list,lte_counting_request_info);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout,&asn_DEF_LTE_MCCH_Message,(void *)mcch_message);
@@ -177,7 +177,7 @@ static uint8_t rrc_M2AP_do_MBSFNAreaConfig(
 			  mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0] = (m2ap_mbms_scheduling_information->mbms_area_config_list[i].mbms_sf_config_list[j].subframe_allocation & 0x3F)<<2;
 		  }
 
-		  ASN_SEQUENCE_ADD(&(*mbsfnAreaConfiguration)->commonSF_Alloc_r9.list,mbsfn_SubframeConfig1);
+		  asn1cSeqAdd(&(*mbsfnAreaConfiguration)->commonSF_Alloc_r9.list,mbsfn_SubframeConfig1);
 	  }
 	  //  commonSF-AllocPeriod-r9
 	  (*mbsfnAreaConfiguration)->commonSF_AllocPeriod_r9= m2ap_mbms_scheduling_information->mbms_area_config_list[i].common_sf_allocation_period;//LTE_MBSFNAreaConfiguration_r9__commonSF_AllocPeriod_r9_rf16;
@@ -220,9 +220,9 @@ static uint8_t rrc_M2AP_do_MBSFNAreaConfig(
 			  mbms_Session_1->logicalChannelIdentity_r9=m2ap_mbms_scheduling_information->mbms_area_config_list[i].pmch_config_list[j].mbms_session_list[k].lcid; //1;
 			  LOG_D(RRC,"lcid %lu %d\n",mbms_Session_1->logicalChannelIdentity_r9,m2ap_mbms_scheduling_information->mbms_area_config_list[i].pmch_config_list[j].mbms_session_list[k].lcid);
 			  LOG_D(RRC,"service_id %d\n",m2ap_mbms_scheduling_information->mbms_area_config_list[i].pmch_config_list[j].mbms_session_list[k].service_id);
-			  ASN_SEQUENCE_ADD(&pmch_Info_1->mbms_SessionInfoList_r9.list,mbms_Session_1);
+			  asn1cSeqAdd(&pmch_Info_1->mbms_SessionInfoList_r9.list,mbms_Session_1);
 		  }
-		  ASN_SEQUENCE_ADD(&(*mbsfnAreaConfiguration)->pmch_InfoList_r9.list,pmch_Info_1);
+		  asn1cSeqAdd(&(*mbsfnAreaConfiguration)->pmch_InfoList_r9.list,pmch_Info_1);
 	  }
   }
 
@@ -460,7 +460,7 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
           MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0] = m2ap_setup_resp->mcch_config_per_mbsfn[j].subframe_allocation_info << 2; // FDD: SF1
           MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused = 2;
           MBSFN_Area1->mcch_Config_r9.signallingMCS_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[j].mcs;
-          ASN_SEQUENCE_ADD(&MBSFNArea_list->list, MBSFN_Area1);
+          asn1cSeqAdd(&MBSFNArea_list->list, MBSFN_Area1);
         }
         break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib14_v1130: 
@@ -523,7 +523,7 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
               sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0] = (m2ap_mbms_scheduling_information->mbms_area_config_list[j].mbms_sf_config_list[l].subframe_allocation << 2);
             }
 
-            ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list, sib2_mbsfn_SubframeConfig1);
+            asn1cSeqAdd(&MBSFNSubframeConfigList->list, sib2_mbsfn_SubframeConfig1);
           }
         }
 
@@ -561,10 +561,10 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
       MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0] = m2ap_setup_resp->mcch_config_per_mbsfn[i].subframe_allocation_info << 2; // FDD: SF1
       MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused = 2;
       MBSFN_Area1->mcch_Config_r9.signallingMCS_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
-      ASN_SEQUENCE_ADD(&MBSFNArea_list->list, MBSFN_Area1);
+      asn1cSeqAdd(&MBSFNArea_list->list, MBSFN_Area1);
     }
 
-    ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
+    asn1cSeqAdd(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
   }
 
   RC.rrc[Mod_id]->carrier[CC_id].sib1_MBMS = &bcch_message_fembms->message.choice.c1.choice.systemInformationBlockType1_MBMS_r14;
@@ -664,7 +664,7 @@ static uint8_t rrc_M2AP_do_SIB1_MBMS_SIB13(
 //	
 //	schedulingInfo.si_Periodicity=LTE_SchedulingInfo__si_Periodicity_rf8;
 //	sib_type=LTE_SIB_Type_sibType13_v920;
-//	ASN_SEQUENCE_ADD(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
+//	asn1cSeqAdd(&(*sib1)->schedulingInfoList.list,&schedulingInfo);
 //    }
 //
 //    enc_rval = uper_encode_to_buffer(&asn_DEF_LTE_BCCH_DL_SCH_Message,
@@ -829,7 +829,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2(
 
 			}
 
-        		ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
+        		asn1cSeqAdd(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
 		}	
 	}
 
@@ -938,7 +938,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
     	sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.bits_unused= 2;
     	sib2_mbsfn_SubframeConfig1->subframeAllocation.choice.oneFrame.buf[0]=0x38<<2;
 
-        ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
+        asn1cSeqAdd(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
 
 
 	break;
@@ -979,10 +979,10 @@ static uint8_t rrc_M2AP_do_SIB23_SIB13(
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0] = m2ap_setup_resp->mcch_config_per_mbsfn[i].subframe_allocation_info << 2; // FDD: SF1
     MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused = 2;
     MBSFN_Area1->mcch_Config_r9.signallingMCS_r9 = m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
-    ASN_SEQUENCE_ADD(&MBSFNArea_list->list, MBSFN_Area1);
+    asn1cSeqAdd(&MBSFNArea_list->list, MBSFN_Area1);
   }
 
- ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
+ asn1cSeqAdd(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
 
  //xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message, (void *)bcch_message);
 
@@ -1125,7 +1125,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
  	   MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=m2ap_setup_resp->mcch_config_per_mbsfn[j].subframe_allocation_info<<2;  // FDD: SF1
  	   MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
  	   MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[j].mcs;
- 	   ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
+ 	   asn1cSeqAdd(&MBSFNArea_list->list,MBSFN_Area1);
  	}
 	break;
       case LTE_SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib14_v1130: 
@@ -1189,7 +1189,7 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
 
 			}
 
-        		ASN_SEQUENCE_ADD(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
+        		asn1cSeqAdd(&MBSFNSubframeConfigList->list,sib2_mbsfn_SubframeConfig1);
 		}	
 	}
 
@@ -1226,10 +1226,10 @@ static uint8_t rrc_M2AP_do_SIB23_SIB2_SIB13(
    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.buf[0]=m2ap_setup_resp->mcch_config_per_mbsfn[i].subframe_allocation_info<<2;  // FDD: SF1
    MBSFN_Area1->mcch_Config_r9.sf_AllocInfo_r9.bits_unused= 2;
    MBSFN_Area1->mcch_Config_r9.signallingMCS_r9= m2ap_setup_resp->mcch_config_per_mbsfn[i].mcs;
-   ASN_SEQUENCE_ADD(&MBSFNArea_list->list,MBSFN_Area1);
+   asn1cSeqAdd(&MBSFNArea_list->list,MBSFN_Area1);
    }
 
- ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
+ asn1cSeqAdd(&bcch_message->message.choice.c1.choice.systemInformation.criticalExtensions.choice.systemInformation_r8.sib_TypeAndInfo.list, sib13_part);
  }
 
   
