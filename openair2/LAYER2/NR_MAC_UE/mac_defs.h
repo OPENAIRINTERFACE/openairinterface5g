@@ -164,6 +164,11 @@ typedef enum {
     UE_PHY_HO_PRACH
 } NR_UE_L2_STATE_t;
 
+typedef enum {
+  RA_2STEP = 0,
+  RA_4STEP
+} nr_ra_type_e;
+
 // LTE structure, might need to be adapted for NR
 typedef struct {
   /// buffer status for each lcgid
@@ -372,7 +377,6 @@ typedef struct {
 
 } NR_PHY_meas_t;
 
-
 /*!\brief Top level UE MAC structure */
 typedef struct {
 
@@ -393,18 +397,15 @@ typedef struct {
   NR_RNTI_Value_t                 *cs_RNTI;
   NR_MIB_t                        *mib;
 
+  NR_UE_DL_BWP_t current_DL_BWP;
+  NR_UE_UL_BWP_t current_UL_BWP;
+
   NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP_UE];
   NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP_UE];
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
   frame_type_t frame_type;
-
-  /*BWP*/
-  // dedicated active DL BWP
-  NR_BWP_Id_t DL_BWP_Id;
-  // dedicated active UL BWP
-  NR_BWP_Id_t UL_BWP_Id;
 
   ///     Type0-PDCCH seach space
   fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;

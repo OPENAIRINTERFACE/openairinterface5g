@@ -263,7 +263,7 @@ int nr_process_mac_pdu(instance_t module_idP,
         // in sched_ctrl we set normalized PH wrt MCS and PRBs
         long *deltaMCS = ul_bwp->pusch_Config ? ul_bwp->pusch_Config->pusch_PowerControl->deltaMCS : NULL;
         sched_ctrl->ph = PH +
-                         compute_ph_factor(sched_pusch->mu,
+                         compute_ph_factor(ul_bwp->scs,
                                            sched_pusch->tb_size<<3,
                                            sched_pusch->rbSize,
                                            sched_pusch->nrOfLayers,
@@ -1758,7 +1758,6 @@ void pf_ul(module_id_t module_id,
     /* Calculate the current scheduling bytes */
     const int B = cmax(sched_ctrl->estimated_ul_buffer - sched_ctrl->sched_ul_bytes, 0);
     /* adjust rbSize and MCS according to PHR and BPRE */
-    sched_pusch->mu = scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing;
     if(sched_ctrl->pcmax!=0 ||
        sched_ctrl->ph!=0) // verify if the PHR related parameter have been initialized
       nr_ue_max_mcs_min_rb(current_BWP->scs, sched_ctrl->ph, sched_pusch, current_BWP, min_rb, B, &max_rbSize, &sched_pusch->mcs);
@@ -2163,7 +2162,7 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       if (!maxMIMO_Layers)
         maxMIMO_Layers = current_BWP->pusch_Config->maxRank;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
-      const int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      const int scc_bwpsize = current_BWP->initial_BWPSize;
       int bw_tbslbrm = get_ulbw_tbslbrm(scc_bwpsize, cg);
       pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(current_BWP->mcs_table,
                                                                            bw_tbslbrm,
@@ -2261,12 +2260,13 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     fill_dci_pdu_rel15(scc,
                        cg,
                        &UE->current_DL_BWP,
+                       current_BWP,
                        dci_pdu,
                        &uldci_payload,
                        current_BWP->dci_format,
                        rnti_types[0],
-                       pusch_pdu->bwp_size,
                        current_BWP->bwp_id,
+                       ss,
                        coreset,
                        nr_mac->cset0_bwp_size);
 

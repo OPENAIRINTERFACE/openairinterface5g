@@ -35,15 +35,6 @@
 
 /************** DEFINE ********************************************/
 
-#if 0
-
-/* these define are in file PHY/impl_defs_top.h" because of compilation problems due to multiple header files inclusions */
-#define NR_MAX_HARQ_PROCESSES                    (16)
-#define NR_MAX_ULSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* TS 38.214 6.1 UE procedure for receiving the physical uplink shared channel */
-#define NR_MAX_DLSCH_HARQ_PROCESSES              (NR_MAX_HARQ_PROCESSES)  /* TS 38.214 5.1 UE procedure for receiving the physical downlink shared channel */
-
-#endif
-
 #define NR_DEFAULT_DLSCH_HARQ_PROCESSES          (8)                      /* TS 38.214 5.1 */
 
 #define DL_ACKNACK_NO_SET                        (2)

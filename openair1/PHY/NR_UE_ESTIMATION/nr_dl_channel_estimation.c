@@ -1017,7 +1017,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   if(nb_rb_coreset==0) return;
 
 #ifdef DEBUG_PDCCH
-  printf(PHY, "pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
+  printf("pdcch_channel_estimation: first_carrier_offset %d, BWPStart %d, coreset_start_rb %d, coreset_nb_rb %d\n",
          first_carrier_offset, BWPStart, coreset_start_rb, nb_rb_coreset);
 #endif
 
@@ -1044,7 +1044,6 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   int dmrs_ref = 0;
   if (coreset->CoreSetType == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG)
     dmrs_ref = BWPStart;
-
   // generate pilot
   int pilot[(nb_rb_coreset + dmrs_ref) * 3] __attribute__((aligned(16)));
   nr_pdcch_dmrs_rx(ue,Ns,ue->nr_gold_pdcch[gNB_id][Ns][symbol], &pilot[0],2000,(nb_rb_coreset+dmrs_ref));

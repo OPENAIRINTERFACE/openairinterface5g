@@ -3130,16 +3130,45 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
   return nbits;
 }
 
+uint16_t get_rb_bwp_dci(nr_dci_format_t format,
+                        int ss_type,
+                        uint16_t cset0_bwp_size,
+                        uint16_t ul_bwp_size,
+                        uint16_t dl_bwp_size,
+                        uint16_t initial_ul_bwp_size,
+                        uint16_t initial_dl_bwp_size)
+{
+  uint16_t N_RB;
+  if (format == NR_UL_DCI_FORMAT_0_0 || format == NR_UL_DCI_FORMAT_0_1) {
+    if(format == NR_UL_DCI_FORMAT_0_0 && ss_type == NR_SearchSpace__searchSpaceType_PR_common)
+      N_RB = initial_ul_bwp_size;
+    else
+      N_RB = ul_bwp_size;
+  }
+  else {
+    if(format == NR_DL_DCI_FORMAT_1_0 && ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
+      N_RB = cset0_bwp_size ? cset0_bwp_size : initial_dl_bwp_size;
+    }
+    else
+      N_RB = dl_bwp_size;
+  }
+  return N_RB;
+}
+
 uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                      const NR_BWP_UplinkCommon_t *initialUplinkBWP,
+                     const NR_UE_DL_BWP_t *DL_BWP,
+                     const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
-                     uint16_t N_RB,
+                     int controlResourceSetId,
                      int bwp_id,
-                     NR_ControlResourceSetId_t coreset_id,
-                     uint16_t cset0_bwp_size) {
+                     int ss_type,
+                     uint16_t cset0_bwp_size,
+                     uint16_t alt_size)
+{
 
   uint16_t size = 0;
   uint16_t numRBG = 0;
@@ -3184,20 +3213,28 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
     srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
   }
 
-  int n_ul_bwp=1,n_dl_bwp=1;
+  uint16_t N_RB = cset0_bwp_size;
+  if (DL_BWP)
+    N_RB = get_rb_bwp_dci(format,
+                          ss_type,
+                          cset0_bwp_size,
+                          UL_BWP->BWPSize,
+                          DL_BWP->BWPSize,
+                          UL_BWP->initial_BWPSize,
+                          DL_BWP->initial_BWPSize);
+
+  int n_ul_bwp = 1,n_dl_bwp = 1;
   switch(format) {
-    /*Only sizes for 0_0 and 1_0 are correct at the moment*/
     case NR_UL_DCI_FORMAT_0_0:
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
       size += 20;
       dci_pdu->frequency_domain_assignment.nbits = (uint8_t)ceil(log2((N_RB * (N_RB + 1)) >>1)); // Freq domain assignment -- hopping scenario to be updated
       size += dci_pdu->frequency_domain_assignment.nbits;
-      int dci_10_size = nr_dci_size(initialDownlinkBWP,initialUplinkBWP,cg,dci_pdu,NR_DL_DCI_FORMAT_1_0, rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
-      if(dci_10_size >= size)
-        size += dci_10_size - size; // Padding to match 1_0 size
-      else {
-        dci_pdu->frequency_domain_assignment.nbits -= (size - dci_10_size);
-        size = dci_10_size;
+      if(alt_size >= size)
+        size += alt_size - size; // Padding to match 1_0 size
+      else if (ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
+        dci_pdu->frequency_domain_assignment.nbits -= (size - alt_size);
+        size = alt_size;
       }
       // UL/SUL indicator assumed to be 0
       break;
@@ -3231,17 +3268,16 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
           rbg_size_config = 1;
         else
           rbg_size_config = 0;
-        numRBG = getNRBG(NRRIV2BW(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                         NRRIV2PRBOFFSET(ubwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                         rbg_size_config);
+        numRBG = getNRBG(UL_BWP->BWPSize, UL_BWP->BWPStart, rbg_size_config);
         if (pusch_Config->resourceAllocation == 0)
           dci_pdu->frequency_domain_assignment.nbits = numRBG;
         else if (pusch_Config->resourceAllocation == 1)
-          dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+          dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
         else
-          dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
+          dci_pdu->frequency_domain_assignment.nbits = ((int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) > numRBG) ? (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) + 1 : numRBG + 1;
       }
-      else dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      else
+        dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
@@ -3357,14 +3393,11 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       // 3GPP TS 38.212 Section 7.3.1.0: DCI size alignment
       // Size of DCI format 1_0 is given by the size of CORESET 0 if CORESET 0 is configured for the cell and the size
       // of initial DL bandwidth part if CORESET 0 is not configured for the cell
-      if(cset0_bwp_size>0) {
-        N_RB = cset0_bwp_size;
-      }
-
       size = 28;
-      size += (uint8_t)ceil( log2( (N_RB*(N_RB+1))>>1 ) ); // Freq domain assignment
-
-      dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+      dci_pdu->frequency_domain_assignment.nbits = (uint8_t)ceil(log2((N_RB * (N_RB + 1)) >> 1)); // Freq domain assignment
+      size += dci_pdu->frequency_domain_assignment.nbits;
+      if(ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific && alt_size >= size)
+        size += alt_size - size; // Padding to match 0_0 size
       dci_pdu->time_domain_assignment.nbits = 4;
       dci_pdu->vrb_to_prb_mapping.nbits = 1;
       break;
@@ -3393,15 +3426,13 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       if (pdsch_Config) rbg_size_config = pdsch_Config->rbg_Size;
       else rbg_size_config = 0;
       
-      numRBG = getNRBG(NRRIV2BW(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                       NRRIV2PRBOFFSET(bwpc->genericParameters.locationAndBandwidth, MAX_BWP_SIZE),
-                       rbg_size_config);
+      numRBG = getNRBG(DL_BWP->BWPSize, DL_BWP->BWPStart, rbg_size_config);
       if (pdsch_Config && pdsch_Config->resourceAllocation == 0)
          dci_pdu->frequency_domain_assignment.nbits = numRBG;
       else if (pdsch_Config == NULL || pdsch_Config->resourceAllocation == 1)
-         dci_pdu->frequency_domain_assignment.nbits = (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) );
+         dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       else
-         dci_pdu->frequency_domain_assignment.nbits = ((int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )>numRBG) ? (int)ceil( log2( (N_RB*(N_RB+1))>>1 ) )+1 : numRBG+1;
+         dci_pdu->frequency_domain_assignment.nbits = ((int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) > numRBG) ? (int)ceil(log2((N_RB * (N_RB + 1)) >> 1)) + 1 : numRBG + 1;
       size += dci_pdu->frequency_domain_assignment.nbits;
       LOG_D(NR_MAC,"dci_pdu->frequency_domain_assignment.nbits %d (N_RB %d)\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       // Time domain assignment (see table 5.1.2.1.1-1 in 38.214
@@ -3478,7 +3509,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       LOG_D(NR_MAC,"dci_pdu->antenna_ports.nbits %d\n",dci_pdu->antenna_ports.nbits);
       // Tx Config Indication
       for (int i = 0; i < pdcch_Config->controlResourceSetToAddModList->list.count; i++) {
-        if (pdcch_Config->controlResourceSetToAddModList->list.array[i]->controlResourceSetId == coreset_id) {
+        if (pdcch_Config->controlResourceSetToAddModList->list.array[i]->controlResourceSetId == controlResourceSetId) {
           long *isTciEnable = pdcch_Config->controlResourceSetToAddModList->list.array[i]->tci_PresentInDCI;
           if (isTciEnable != NULL) {
             dci_pdu->transmission_configuration_indication.nbits = 3;

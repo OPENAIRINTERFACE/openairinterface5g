@@ -365,11 +365,6 @@ typedef enum {
 } pusch_dmrs_type_t;
 
 typedef enum {
-  pusch_len1 = 1,
-  pusch_len2 = 2
-} pusch_maxLength_t;
-
-typedef enum {
   txConfig_codebook = 1,
   txConfig_nonCodebook = 2
 } txConfig_t;

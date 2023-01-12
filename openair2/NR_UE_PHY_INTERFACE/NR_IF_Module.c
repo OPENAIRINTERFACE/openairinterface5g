@@ -638,41 +638,35 @@ static void copy_ul_tti_data_req_to_dl_info(nr_downlink_indication_t *dl_info, n
 
 static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_config_request_t *dl_config)
 {
+
   if (!dl_ind->dci_ind)
-  {
     return;
-  }
 
   AssertFatal(dl_config->number_pdus < sizeof(dl_config->dl_config_list) / sizeof(dl_config->dl_config_list[0]),
               "Too many dl_config pdus %d", dl_config->number_pdus);
-  for (int i = 0; i < dl_config->number_pdus; i++)
-  {
+  for (int i = 0; i < dl_config->number_pdus; i++) {
     LOG_D(PHY, "In %s: filling DCI with a total of %d total DL PDUs (dl_config %p) \n",
           __FUNCTION__, dl_config->number_pdus, dl_config);
     fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15_dci = &dl_config->dl_config_list[i].dci_config_pdu.dci_config_rel15;
     int num_dci_options = rel15_dci->num_dci_options;
     if (num_dci_options <= 0)
-    {
       LOG_D(NR_MAC, "num_dci_opts = %d for pdu[%d] in dl_config_list\n", rel15_dci->num_dci_options, i);
-    }
     AssertFatal(num_dci_options <= sizeof(rel15_dci->dci_length_options) / sizeof(rel15_dci->dci_length_options[0]),
                 "num_dci_options %d > dci_length_options array\n", num_dci_options);
     AssertFatal(num_dci_options <= sizeof(rel15_dci->dci_format_options) / sizeof(rel15_dci->dci_format_options[0]),
                 "num_dci_options %d > dci_format_options array\n", num_dci_options);
 
-    for (int j = 0; j < num_dci_options; j++)
-    {
+    for (int j = 0; j < num_dci_options; j++) {
       int num_dcis = dl_ind->dci_ind->number_of_dcis;
       AssertFatal(num_dcis <= sizeof(dl_ind->dci_ind->dci_list) / sizeof(dl_ind->dci_ind->dci_list[0]),
                   "dl_config->number_pdus %d > dci_ind->dci_list array\n", num_dcis);
-      for (int k = 0; k < num_dcis; k++)
-      {
+      for (int k = 0; k < num_dcis; k++) {
         LOG_T(NR_PHY, "Received len %d, length options[%d] %d, format assigned %d, format options[%d] %d\n",
                   dl_ind->dci_ind->dci_list[k].payloadSize, j, rel15_dci->dci_length_options[j],
                   dl_ind->dci_ind->dci_list[k].dci_format, j, rel15_dci->dci_format_options[j]);
-        if (rel15_dci->dci_length_options[j] == dl_ind->dci_ind->dci_list[k].payloadSize)
-        {
+        if (rel15_dci->dci_length_options[j] == dl_ind->dci_ind->dci_list[k].payloadSize) {
             dl_ind->dci_ind->dci_list[k].dci_format = rel15_dci->dci_format_options[j];
+            dl_ind->dci_ind->dci_list[k].ss_type = rel15_dci->dci_type_options[j];
             LOG_D(NR_PHY, "format assigned dl_ind->dci_ind->dci_list[k].dci_format %d\n",
                   dl_ind->dci_ind->dci_list[k].dci_format);
         }
