@@ -88,7 +88,7 @@ typedef struct {
   int tx_forward_nsamps; //166 for 20Mhz
 
   //! gpio bank to use
-  std::string gpio_bank;
+  char *gpio_bank;
   
   // --------------------------------
   // Debug and output control
@@ -271,13 +271,13 @@ static int sync_to_gps(openair0_device *device) {
 static int trx_usrp_start(openair0_device *device) {
   usrp_state_t *s = (usrp_state_t *)device->priv;
 
-  s->gpio_bank = "FP0"; //good for B210, X310 and N310
+  s->gpio_bank = (char *) "FP0"; //good for B210, X310 and N310
 
 #if UHD_VERSION>4000000
   if (device->type == USRP_X400_DEV) {
     // Set every pin on GPIO0 to be controlled by DB0_RF0
     std::vector<std::string> sxx{12, "DB0_RF0"};
-    s->gpio_bank = "GPIO0";
+    s->gpio_bank = (char *) "GPIO0";
     s->usrp->set_gpio_src(s->gpio_bank, sxx);
   }
 #endif  
@@ -1001,7 +1001,7 @@ extern "C" {
     int choffset = 0;
 
     if ( device->priv == NULL) {
-      s=(usrp_state_t *)calloc(sizeof(usrp_state_t),1);
+      s=(usrp_state_t *)calloc(1, sizeof(usrp_state_t));
       device->priv=s;
       AssertFatal( s!=NULL,"USRP device: memory allocation failure\n");
     } else {
