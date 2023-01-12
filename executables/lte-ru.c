@@ -742,7 +742,8 @@ void tx_rf(RU_t *ru,
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S) ) {
-    int siglen=fp->samples_per_tti,flags=1;
+    int siglen=fp->samples_per_tti;
+    radio_tx_burst_flag_t flags = TX_BURST_MIDDLE;
 
     if (SF_type == SF_S) {
       int txsymb = fp->dl_symbols_in_S_subframe+(ru->is_slave==0 ? 1 : 0);
@@ -757,13 +758,13 @@ void tx_rf(RU_t *ru,
       siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
                + (txsymb - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
                + ru->end_of_burst_delay;
-      flags=3; // end of burst
+      flags = TX_BURST_END;
     }
 
     if (fp->frame_type == TDD &&
         SF_type == SF_DL &&
         prevSF_type == SF_UL) {
-      flags = 2; // start of burst
+      flags = TX_BURST_START;
       sf_extension = ru->sf_extension;
     }
 
@@ -781,24 +782,24 @@ void tx_rf(RU_t *ru,
       LOG_E(PHY,"%d.%d late_control : %d\n",frame,subframe,late_control);
       switch (late_control) {
         case STATE_BURST_TERMINATE:
-          flags=10; // end of burst and no time spec
+          flags = TX_BURST_END_NO_TIME_SPEC;
           late_control=STATE_BURST_STOP_1;
           break;
 
         case STATE_BURST_STOP_1:
-          flags=0; // no send
+          flags = TX_BURST_INVALID;
           late_control=STATE_BURST_STOP_2;
           return;//no send
           break;
 
         case STATE_BURST_STOP_2:
-          flags=0; // no send
+          flags = TX_BURST_INVALID;
           late_control=STATE_BURST_RESTART;
           return;//no send
           break;
 
         case STATE_BURST_RESTART:
-          flags=2; // start burst
+          flags = TX_BURST_START;
           late_control=STATE_BURST_NORMAL;
           break;
 

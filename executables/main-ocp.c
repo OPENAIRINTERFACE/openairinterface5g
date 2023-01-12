@@ -695,7 +695,8 @@ void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
 
   if ((SF_type == SF_DL) ||
       (SF_type == SF_S)) {
-    int siglen=fp->samples_per_tti,flags=1;
+    int siglen=fp->samples_per_tti;
+    radio_tx_burst_flag_t flags = TX_BURST_MIDDLE;
 
     if (SF_type == SF_S) {
       /* end_of_burst_delay is used to stop TX only "after a while".
@@ -708,13 +709,13 @@ void ocp_tx_rf(RU_t *ru, L1_rxtx_proc_t *proc) {
       siglen = (fp->ofdm_symbol_size + fp->nb_prefix_samples0)
                + (fp->dl_symbols_in_S_subframe - 1) * (fp->ofdm_symbol_size + fp->nb_prefix_samples)
                + ru->end_of_burst_delay;
-      flags=3; // end of burst
+      flags = TX_BURST_END;
     }
 
     if (fp->frame_type == TDD &&
         SF_type == SF_DL &&
         prevSF_type == SF_UL) {
-      flags = 2; // start of burst
+      flags = TX_BURST_START;
       sf_extension = ru->sf_extension;
     }
 

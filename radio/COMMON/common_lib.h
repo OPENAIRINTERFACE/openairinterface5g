@@ -152,11 +152,13 @@ typedef enum {
 
 /*! \brief Radio Tx burst flags */
 typedef enum {
-  Invalid = 0,
-  MiddleOfBurst,
-  StartOfBurst,
-  EndOfBurst
-} radio_tx_flag_t;
+  TX_BURST_INVALID = 0,
+  TX_BURST_MIDDLE = 1,
+  TX_BURST_START = 2,
+  TX_BURST_END = 3,
+  TX_BURST_START_AND_END = 4,
+  TX_BURST_END_NO_TIME_SPEC = 10,
+} radio_tx_burst_flag_t;
 
 /*! \brief Structure used for initializing UDP read threads */
 typedef struct {

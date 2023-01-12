@@ -389,7 +389,7 @@ static int trx_usrp_write(openair0_device *device,
   usrp_state_t *s = (usrp_state_t *)device->priv;
   int nsamps2;  // aligned to upper 32 or 16 byte boundary
 
-  int flags_burst = flags&0xf;
+  radio_tx_burst_flag_t flags_burst = (radio_tx_burst_flag_t) (flags & 0xf);
   int flags_gpio = (flags>>4)&0x1fff; //MSB to enable sending GPIO command, 12 LSB carry GPIO values
 
   int end;
@@ -400,22 +400,22 @@ static int trx_usrp_write(openair0_device *device,
 
   bool first_packet_state=false,last_packet_state=false;
 
-    if (flags_burst == 2) { // start of burst
+    if (flags_burst == TX_BURST_START) {
       //      s->tx_md.start_of_burst = true;
       //      s->tx_md.end_of_burst = false;
       first_packet_state = true;
       last_packet_state  = false;
-    } else if (flags_burst == 3) { // end of burst
+    } else if (flags_burst == TX_BURST_END) {
       //s->tx_md.start_of_burst = false;
       //s->tx_md.end_of_burst = true;
       first_packet_state = false;
       last_packet_state  = true;
-    } else if (flags_burst == 4) { // start and end
+    } else if (flags_burst == TX_BURST_START_AND_END) {
     //  s->tx_md.start_of_burst = true;
     //  s->tx_md.end_of_burst = true;
       first_packet_state = true;
       last_packet_state  = true;
-    } else if (flags_burst==1) { // middle of burst
+    } else if (flags_burst == TX_BURST_MIDDLE) {
     //  s->tx_md.start_of_burst = false;
     //  s->tx_md.end_of_burst = false;
       first_packet_state = false;

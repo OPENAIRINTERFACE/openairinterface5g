@@ -164,9 +164,9 @@ trx_iris_write(openair0_device *device, openair0_timestamp timestamp, void **buf
         return nsamps;
     }
 
-    if (flags == 2 || flags == 1) { // start of burst
+    if (flags == TX_BURST_START || flags == TX_BURST_MIDDLE)
 
-    } else if (flags == 3 || flags == 4) {
+    } else if (flags == TX_BURST_END || flags == TX_BURST_START_AND_END) {
         flag |= SOAPY_SDR_END_BURST;
     }
 

@@ -733,7 +733,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
   int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
-  int flags=0,flags_burst=0,flags_gpio=0;
+  int flags=0,flags_gpio=0;
+  radio_tx_burst_flag_t flags_burst = TX_BURST_INVALID;
 
   if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx) {
     int slot_type = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
@@ -760,25 +761,21 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       }
 
       //+ ru->end_of_burst_delay;
-      flags_burst = 3; // end of burst
+      flags_burst = TX_BURST_END;
     } else if (slot_type == NR_DOWNLINK_SLOT) {
       int prevslot_type = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
       int nextslot_type = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
       if (prevslot_type == NR_UPLINK_SLOT) {
-        flags_burst = 2; // start of burst
+        flags_burst = TX_BURST_START;
         sf_extension = ru->sf_extension;
       } else if (nextslot_type == NR_UPLINK_SLOT) {
-        flags_burst = 3; // end of burst
+        flags_burst = TX_BURST_END;
       } else {
-        flags_burst = 1; // middle of burst
+        flags_burst = TX_BURST_MIDDLE;
       }
     }
   } else { // FDD
-    if (proc->first_tx == 1) {
-      flags_burst = 2; // start of burst
-    } else {
-      flags_burst = 1; // middle of burst
-    }
+    flags_burst = proc->first_tx == 1 ? TX_BURST_START : TX_BURST_MIDDLE;
   }
 
     if (fp->freq_range==nr_FR2) {
