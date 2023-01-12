@@ -24,13 +24,7 @@
 
 // returns the complex dot product of x and y
 
-#ifdef MAIN
-void print_ints(char *s,__m128i *x);
-void print_shorts(char *s,__m128i *x);
-void print_bytes(char *s,__m128i *x);
-#endif
 /*! \brief Complex number dot_product
-  WARNING: the OAI historical name is dot_product but it is not: it is sum(x*y) not, sum(x*conjugate(y))
 */
 
 c32_t dot_product(const c16_t *x,//! input vector
@@ -75,51 +69,39 @@ c32_t dot_product(const c16_t *x,//! input vector
 }
 
 #ifdef MAIN
-void print_bytes(char *s,__m128i *x)
-{
-
-  char *tempb = (char *)x;
-
-  printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d,%d\n",s,
-         tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7],
-         tempb[8],tempb[9],tempb[10],tempb[11],tempb[12],tempb[13],tempb[14],tempb[15]
-        );
-
-}
-
-void print_shorts(char *s,__m128i *x)
-{
-
-  int16_t *tempb = (int16_t *)x;
-
-  printf("%s  : %d,%d,%d,%d,%d,%d,%d,%d\n",s,
-         tempb[0],tempb[1],tempb[2],tempb[3],tempb[4],tempb[5],tempb[6],tempb[7]
-        );
-
-}
-
-void print_ints(char *s,__m128i *x)
-{
-
-  int32_t *tempb = (int32_t *)x;
-
-  printf("%s  : %d,%d,%d,%d\n",s,
-         tempb[0],tempb[1],tempb[2],tempb[3]
-        );
-
-}
+//gcc -DMAIN openair1/PHY/TOOLS/cdot_prod.c -Iopenair1 -I. -Iopenair2/COMMON -march=native -lm
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <fcntl.h>
+#include <math.h>
 
 void main(void)
 {
+  const int multiply_reduction=15;
+  const int arraySize=16;
+  const int signalAmplitude=3000;
 
-  int32_t result;
-
-  int16_t x[16*2] __attribute__((aligned(16))) = {1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13,1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13};
-  int16_t y[16*2] __attribute__((aligned(16))) = {1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13,1<<0,1<<1,1<<2,1<<3,1<<4,1<<5,1<<6,1<<7,1<<8,1<<9,1<<10,1<<11,1<<12,1<<13,1<<12,1<<13};
-  //  int16_t y[16*2] __attribute__((aligned(16))) = {0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15};
+  c32_t result={0};
+  cd_t resDouble={0};
+  c16_t x[arraySize] __attribute__((aligned(16)));
+  c16_t y[arraySize] __attribute__((aligned(16)));
+  int fd=open("/dev/urandom",0);
+  read(fd,x,sizeof(x));
+  read(fd,y,sizeof(y));
+  close(fd);
+  for (int i=0; i<arraySize; i++) {
+    x[i].r%=signalAmplitude;
+    x[i].i%=signalAmplitude;
+    y[i].r%=signalAmplitude;
+    y[i].i%=signalAmplitude;
+    resDouble.r+=x[i].r*(double)y[i].r+x[i].i*(double)y[i].i;
+    resDouble.i+=x[i].r*(double)y[i].i-x[i].i*(double)y[i].r;
+  }
+  resDouble.r/=pow(2,multiply_reduction);
+  resDouble.i/=pow(2,multiply_reduction);
 
   result = dot_product(x,y,8*2,15);
 
-  printf("result = %d, %d\n", ((int16_t*) &result)[0],  ((int16_t*) &result)[1] );
+  printf("result = %d (double: %f), %d (double %f)\n", result.r, resDouble.r,  result.i, resDouble.i);
 }
 #endif
