@@ -552,7 +552,7 @@ instance_t gtpv1Init(openAddr_t context) {
   return id;
 }
 
-void GtpuUpdateTunnelOutgoingTeid(instance_t instance, ue_id_t ue_id, ebi_t bearer_id, teid_t newOutgoingTeid) {
+void GtpuUpdateTunnelOutgoingAddressAndTeid(instance_t instance, ue_id_t ue_id, ebi_t bearer_id, in_addr_t newOutgoingAddr, teid_t newOutgoingTeid) {
   pthread_mutex_lock(&globGtp.gtp_lock);
   getInstRetVoid(compatInst(instance));
   getUeRetVoid(inst, ue_id);
@@ -565,8 +565,9 @@ void GtpuUpdateTunnelOutgoingTeid(instance_t instance, ue_id_t ue_id, ebi_t bear
     return;
   }
 
+  ptr2->second.outgoing_ip_addr = newOutgoingAddr;
   ptr2->second.teid_outgoing = newOutgoingTeid;
-  LOG_I(GTPU, "[%ld] Tunnel Outgoing TEID updated to %x \n", instance, ptr2->second.teid_outgoing);
+  LOG_I(GTPU, "[%ld] Tunnel Outgoing TEID updated to %x and address to %x\n", instance, ptr2->second.teid_outgoing, ptr2->second.outgoing_ip_addr);
   pthread_mutex_unlock(&globGtp.gtp_lock);
   return;
 }

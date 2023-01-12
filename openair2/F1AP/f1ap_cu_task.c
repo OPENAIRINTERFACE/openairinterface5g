@@ -41,12 +41,10 @@
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t CUuniqInstance=0;
 
-static instance_t cu_task_create_gtpu_instance_to_du(eth_params_t *IPaddrs) {
+static instance_t cu_task_create_gtpu_instance(eth_params_t *IPaddrs) {
   openAddr_t tmp= {0};
   strncpy(tmp.originHost, IPaddrs->my_addr, sizeof(tmp.originHost)-1);
-  strncpy(tmp.destinationHost, IPaddrs->remote_addr, sizeof(tmp.destinationHost)-1);
-  sprintf(tmp.originService, "%d",  IPaddrs->my_portd);
-  sprintf(tmp.destinationService, "%d",  IPaddrs->remote_portd);
+  sprintf(tmp.originService, "%d", IPaddrs->my_portd);
   return gtpv1Init(tmp);
 }
 
@@ -59,7 +57,7 @@ static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_as
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
   f1ap_cu_data->default_sctp_stream_id = 0;
-  getCxt(CUtype, instance)->gtpInst=cu_task_create_gtpu_instance_to_du(IPaddrs);
+  getCxt(CUtype, instance)->gtpInst=cu_task_create_gtpu_instance(IPaddrs);
   AssertFatal(getCxt(CUtype, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
   // Fixme: fully inconsistent instances management
   // dirty global var is a bad fix
