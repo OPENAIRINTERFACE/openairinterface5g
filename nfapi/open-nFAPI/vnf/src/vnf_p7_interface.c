@@ -186,7 +186,7 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			gNB->UL_INFO.frame     = slot_ind->sfn;
 			gNB->UL_INFO.slot      = slot_ind->slot;
 
-			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "gNB->UL_INFO.frame = %d and slot %d, prev_slot = %d, setup_time = %d\n",
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "gNB->UL_INFO.frame = %d and slot %d, prev_slot = %d\n",
 				    gNB->UL_INFO.frame, gNB->UL_INFO.slot, prev_slot);
 			if (setup_done && prev_slot != gNB->UL_INFO.slot) { //Give the VNF sufficient time to setup before starting scheduling  && prev_slot != gNB->UL_INFO.slot
 
