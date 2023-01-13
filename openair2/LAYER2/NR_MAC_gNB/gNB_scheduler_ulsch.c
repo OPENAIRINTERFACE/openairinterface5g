@@ -1440,7 +1440,13 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     if (rbStart + retInfo->rbSize > bwpSize) {
-      LOG_W(NR_MAC, "cannot allocate retransmission of RNTI %04x: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d\n", UE->rnti, rbStart, retInfo->rbSize, bwpSize);
+      LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL retransmission: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d) \n",
+            UE->rnti,
+            frame,
+            slot,
+            rbStart,
+            retInfo->rbSize,
+            bwpSize);
       return false;
     }
     LOG_D(NR_MAC, "%s(): retransmission keeping TDA %d and TBS %d\n", __func__, tda, retInfo->tb_size);
@@ -1472,7 +1478,12 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
                                  &new_tbs,
                                  &new_rbSize);
     if (!success || new_tbs != retInfo->tb_size) {
-      LOG_D(NR_MAC, "%s(): new TBsize %d of new TDA does not match old TBS %d\n", __func__, new_tbs, retInfo->tb_size);
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] allocation of UL retransmission failed: new TBsize %d of new TDA does not match old TBS %d \n",
+            UE->rnti,
+            frame,
+            slot,
+            new_tbs,
+            retInfo->tb_size);
       return false; /* the maximum TBsize we might have is smaller than what we need */
     }
     LOG_D(NR_MAC, "%s(): retransmission with TDA %d->%d and TBS %d -> %d\n", __func__, retInfo->time_domain_allocation, tda, retInfo->tb_size, new_tbs);
@@ -1494,7 +1505,10 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
                                &sched_ctrl->sched_pdcch,
                                false);
   if (CCEIndex<0) {
-    LOG_D(NR_MAC, "%4d.%2d no free CCE for retransmission UL DCI UE %04x\n", frame, slot, UE->rnti);
+    LOG_D(NR_MAC, "[UE %04x][%4d.%2d] no free CCE for retransmission UL DCI UE\n",
+          UE->rnti,
+          frame,
+          slot);
     return false;
   }
 
@@ -1594,7 +1608,10 @@ void pf_ul(module_id_t module_id,
       const int tda = get_ul_tda(nrmac, scc, sched_pusch->frame, sched_pusch->slot);
       bool r = allocate_ul_retransmission(nrmac, frame, slot, rballoc_mask, &n_rb_sched, UE, sched_pusch->ul_harq_pid, scc, tda);
       if (!r) {
-        LOG_D(NR_MAC, "%4d.%2d UL retransmission UE RNTI %04x can NOT be allocated\n", frame, slot, UE->rnti);
+        LOG_D(NR_MAC, "[UE %04x][%4d.%2d] UL retransmission could not be allocated\n",
+              UE->rnti,
+              frame,
+              slot);
         continue;
       }
       else LOG_D(NR_MAC,"%4d.%2d UL Retransmission UE RNTI %04x to be allocated, max_num_ue %d\n",frame,slot,UE->rnti,max_num_ue);
@@ -1608,7 +1625,10 @@ void pf_ul(module_id_t module_id,
      * if the UE disconnected in L2sim, in which case the gNB is not notified
      * (this can be considered a design flaw) */
     if (sched_ctrl->available_ul_harq.head < 0) {
-      LOG_D(NR_MAC, "RNTI %04x has no free UL HARQ process, skipping\n", UE->rnti);
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] has no free UL HARQ process, skipping\n",
+            UE->rnti,
+            frame,
+            slot);
       continue;
     }
 
@@ -1641,7 +1661,10 @@ void pf_ul(module_id_t module_id,
                                    &sched_ctrl->sched_pdcch,
                                    false);
       if (CCEIndex<0) {
-        LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x (BSR 0)\n", frame, slot, UE->rnti);
+        LOG_D(NR_MAC, "[UE %04x][%4d.%2d] no free CCE for UL DCI (BSR 0)\n",
+              UE->rnti,
+              frame,
+              slot);
         continue;
       }
 
@@ -1659,8 +1682,13 @@ void pf_ul(module_id_t module_id,
       while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
       if (rbStart + min_rb >= bwpSize) {
-        LOG_W(NR_MAC, "cannot allocate continuous UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d\n",
-              UE->rnti,rbStart,min_rb,bwpSize);
+        LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate continuous UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
+              UE->rnti,
+              frame,
+              slot,
+              rbStart,
+              min_rb,
+              bwpSize);
         continue;
       }
 
@@ -1698,8 +1726,14 @@ void pf_ul(module_id_t module_id,
     /* Calculate coefficient*/
     const uint32_t tbs = ul_pf_tbs[current_BWP->mcs_table][sched_pusch->mcs];
     float coeff_ue = (float) tbs / UE->ul_thr_ue;
-    LOG_D(NR_MAC,"rnti %04x b %d, ul_thr_ue %f, tbs %d, coeff_ue %f\n",
-          UE->rnti, b, UE->ul_thr_ue, tbs, coeff_ue);
+    LOG_D(NR_MAC, "[UE %04x][%4d.%2d] b %d, ul_thr_ue %f, tbs %d, coeff_ue %f\n",
+          UE->rnti,
+          frame,
+          slot,
+          b,
+          UE->ul_thr_ue,
+          tbs,
+          coeff_ue);
     UE_sched[curUE].coef=coeff_ue;
     UE_sched[curUE].UE=UE;
     curUE++;
@@ -1721,7 +1755,10 @@ void pf_ul(module_id_t module_id,
                                  false);
 
     if (CCEIndex<0) {
-      LOG_D(NR_MAC, "%4d.%2d no free CCE for UL DCI UE %04x\n", frame, slot, iterator->UE->rnti);
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] no free CCE for UL DCI\n",
+            iterator->UE->rnti,
+            frame,
+            slot);
       iterator++;
       continue;
     }
@@ -1750,7 +1787,13 @@ void pf_ul(module_id_t module_id,
       max_rbSize++;
 
     if (rbStart + min_rb >= bwpSize || max_rbSize < min_rb) {
-      LOG_D(NR_MAC, "cannot allocate UL data for RNTI %04x: no resources (rbStart %d, min_rb %d, bwpSize %d)\n", iterator->UE->rnti, rbStart, min_rb, bwpSize);
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
+            iterator->UE->rnti,
+            frame,
+            slot,
+            rbStart,
+            min_rb,
+            bwpSize);
       iterator++;
       continue;
     } else
