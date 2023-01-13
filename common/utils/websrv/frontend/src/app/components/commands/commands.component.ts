@@ -1,12 +1,44 @@
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file common/utils/websrv/frontend/src/app/components/commands/commands.component.ts
+ * \brief: implementation of web interface frontend for oai
+ * \commands web interface implementation (works with commands.component.html)
+ * \author:  Yacine  El Mghazli, Francois TABURET
+ * \date 2022
+ * \version 0.1
+ * \company NOKIA BellLabs France
+ * \email: yacine.el_mghazli@nokia-bell-labs.com  francois.taburet@nokia-bell-labs.com
+ * \note
+ * \warning
+ */
 import {Component} from "@angular/core";
+import {route, IArgType, IInfo} from "src/commondefs";
 import {ViewEncapsulation} from "@angular/core";
 import {UntypedFormArray} from "@angular/forms";
 import {BehaviorSubject, forkJoin, Observable, of, timer} from "rxjs";
 import {filter, map, switchMap, tap} from "rxjs/operators";
-import {CommandsApi, IArgType, IColumn, ICommand, ICommandOptions, IInfo, ILogLvl, IParam, IRow} from "src/app/api/commands.api";
+import {CommandsApi, IColumn, ICommand, ICommandOptions, ILogLvl, IParam, IRow} from "src/app/api/commands.api";
 import {HelpApi, HelpRequest, HelpResp} from "src/app/api/help.api";
 import {CmdCtrl} from "src/app/controls/cmd.control";
-import {InfoCtrl} from "src/app/controls/info.control";
 import {ModuleCtrl} from "src/app/controls/module.control";
 import {RowCtrl} from "src/app/controls/row.control";
 import {VarCtrl} from "src/app/controls/var.control";
@@ -29,7 +61,7 @@ const PREDEF_CMD = "show predef"
   logLvlValues = Object.values(ILogLvl);
 
   // softmodem
-  infos$: Observable<VarCtrl[]>;
+
   modules$: Observable<ModuleCtrl[]>;
 
   // module
@@ -42,7 +74,8 @@ const PREDEF_CMD = "show predef"
   displayedColumns: string[] = [];
   rows$: BehaviorSubject<RowCtrl[]> = new BehaviorSubject<RowCtrl[]>([]);
   columns: IColumn[] = [];
-
+  title_ptext: string =""; //used for possibly add a riminder of command parameters in the result page
+  
   constructor(
       public commandsApi: CommandsApi,
       public helpApi: HelpApi,
@@ -52,8 +85,6 @@ const PREDEF_CMD = "show predef"
 
   )
   {
-    this.infos$ = this.commandsApi.readInfos$().pipe(map((infos) => infos.map(info => new InfoCtrl(info))));
-
     this.modules$ = this.commandsApi.readModules$().pipe(
         map(imodules => imodules.map(imodule => new ModuleCtrl(imodule))), filter(controls => controls.length > 0), tap(controls => this.onModuleSelect(controls[0])));
   }
@@ -71,22 +102,13 @@ const PREDEF_CMD = "show predef"
   //   );
   // }
 
-  onInfoSubmit(control: InfoCtrl)
-  {
-    let info: IInfo = control.api();
-
-    if (info.type === IArgType.configfile) {
-      this.downloadService.getFile(info.value)
-    } else {
-      this.commandsApi.setInfo$(info).subscribe();
-    }
-  }
 
   onModuleSelect(module: ModuleCtrl)
   {
     this.selectedModule = module
     this.selectedCmd = undefined
-
+    this.title_ptext="";
+    
     this.cmds$ = this.commandsApi.readCommands$(module.name).pipe(
       map(icmds => icmds.map(icmd => new CmdCtrl(icmd))),
       map(cmds => {
@@ -134,8 +156,14 @@ const PREDEF_CMD = "show predef"
   private execCmd$(control: CmdCtrl)
   {
     let cmd = control!.api();
-    if (this.selectedCmd!.param)
-      this.selectedCmd!.param!.value = cmd.param!.value;
+    if (this.selectedCmd!.param) {
+      this.selectedCmd!.param![0].value = cmd.param![0].value;
+      this.title_ptext = cmd.param![0].value;
+      if( this.selectedCmd!.param!.length > 1) {
+		 this.selectedCmd!.param![1].value = cmd.param![1].value; 
+		 this.title_ptext = this.title_ptext + " " + cmd.param![1].value;
+	  }
+    }
     this.commandsApi.runCommand$(cmd, this.selectedModule!.name)
         .subscribe(
             resp => {
@@ -153,14 +181,7 @@ const PREDEF_CMD = "show predef"
                 // possibly load help..
                 for (let i = 0; i < this.columns.length; i = i + 1) {
                   if (this.columns[i].help) {
-                    this.helpApi.getHelp$({module : this.selectedModule!.name, command : control!.api().name.replace(" ", "_"), object : this.columns[i].name.replace(" ", "_")})
-                        .subscribe(
-                            response => {
-                              if (response.status == 201)
-                                this.hlp_cc[i] = response.body!.text;
-                            },
-                            err => { this.hlp_cc[i] = ""; },
-                        );
+					this.helpApi.getHelpText(this.selectedModule!.name,control!.api().name,this.columns[i].name).subscribe(resp => { this.hlp_cc[i] = resp; }, err => { this.hlp_cc[i] = ""; });
                   } else {
                     this.hlp_cc[i] = "";
                   }
@@ -201,7 +222,7 @@ const PREDEF_CMD = "show predef"
   onParamSubmit(control: RowCtrl)
   {
     if (this.selectedCmd!.param)
-      control.set_cmdparam(this.selectedCmd!.param);
+      control.set_cmdparam(this.selectedCmd!.param[0]);
     this.commandsApi.setCmdParams$(control.api(), this.selectedModule!.name).subscribe(() => this.execCmd$(new CmdCtrl(this.selectedCmd!)));
   }
 }

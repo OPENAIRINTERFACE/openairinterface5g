@@ -19,9 +19,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/websrv/frontend/src/app/controls/row.control.ts
+/*! \file common/utils/websrv/frontend/src/app/api/info.api.ts
  * \brief: implementation of web interface frontend for oai
- * \implement one row results for commands component
+ * \api's definitions for the info module, which provides global info about the connected oai modem
  * \author:  Yacine  El Mghazli, Francois TABURET
  * \date 2022
  * \version 0.1
@@ -30,56 +30,18 @@
  * \note
  * \warning
  */
-import {FormControl, UntypedFormArray, UntypedFormGroup} from "@angular/forms";
-import {IArgType} from "src/commondefs";
-import {IParam, IRow, IVariable} from "../api/commands.api";
+import {HttpClient} from "@angular/common/http";
+import {Injectable} from "@angular/core";
+import {environment} from "src/environments/environment";
+import {route, IInfo} from "src/commondefs";
 
-import {ParamCtrl} from "./param.control";
-
-enum RowFCN {
-  paramsFA = "params",
-}
-
-export class RowCtrl extends UntypedFormGroup {
-  cmdName: string;
-  rawIndex: number;
-  cmdparam?: IVariable;
-
-  constructor(row: IRow)
+@Injectable({
+  providedIn : "root",
+})
+export class InfoApi {
+  constructor(private httpClient: HttpClient)
   {
-    super({})
-
-        this.cmdName = row.cmdName;
-    this.rawIndex = row.rawIndex;
-    this.addControl(RowFCN.paramsFA, new UntypedFormArray(row.params.map(param => new ParamCtrl(param))));
   }
 
-  get paramsFA()
-  {
-    return this.get(RowFCN.paramsFA) as UntypedFormArray
-  }
-
-  set paramsFA(fa: UntypedFormArray)
-  {
-    this.setControl(RowFCN.paramsFA, fa);
-  }
-
-  set_cmdparam(cmdparam: IVariable)
-  {
-    this.cmdparam = cmdparam;
-  }
-
-  get paramsCtrls(): ParamCtrl[]{return this.paramsFA.controls as ParamCtrl[]}
-
-  api()
-  {
-    const doc: IRow = {
-      rawIndex : this.rawIndex,
-      cmdName : this.cmdName,
-      params : this.paramsCtrls.map(control => control.api()),
-      param : this.cmdparam
-    }
-
-    return doc
-  }
+  public readInfos$ = () => this.httpClient.get<IInfo[]>(environment.backend + route + "info/");
 }

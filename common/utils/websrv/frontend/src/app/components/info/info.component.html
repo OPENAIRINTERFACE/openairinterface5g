@@ -1,3 +1,4 @@
+<!--
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -19,9 +20,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/websrv/frontend/src/app/controls/row.control.ts
+/*! \file common/utils/websrv/frontend/src/app/components/info/info.component.html
  * \brief: implementation of web interface frontend for oai
- * \implement one row results for commands component
+ * \info component web interface implementation (works with info.component.ts)
  * \author:  Yacine  El Mghazli, Francois TABURET
  * \date 2022
  * \version 0.1
@@ -30,56 +31,28 @@
  * \note
  * \warning
  */
-import {FormControl, UntypedFormArray, UntypedFormGroup} from "@angular/forms";
-import {IArgType} from "src/commondefs";
-import {IParam, IRow, IVariable} from "../api/commands.api";
-
-import {ParamCtrl} from "./param.control";
-
-enum RowFCN {
-  paramsFA = "params",
-}
-
-export class RowCtrl extends UntypedFormGroup {
-  cmdName: string;
-  rawIndex: number;
-  cmdparam?: IVariable;
-
-  constructor(row: IRow)
-  {
-    super({})
-
-        this.cmdName = row.cmdName;
-    this.rawIndex = row.rawIndex;
-    this.addControl(RowFCN.paramsFA, new UntypedFormArray(row.params.map(param => new ParamCtrl(param))));
-  }
-
-  get paramsFA()
-  {
-    return this.get(RowFCN.paramsFA) as UntypedFormArray
-  }
-
-  set paramsFA(fa: UntypedFormArray)
-  {
-    this.setControl(RowFCN.paramsFA, fa);
-  }
-
-  set_cmdparam(cmdparam: IVariable)
-  {
-    this.cmdparam = cmdparam;
-  }
-
-  get paramsCtrls(): ParamCtrl[]{return this.paramsFA.controls as ParamCtrl[]}
-
-  api()
-  {
-    const doc: IRow = {
-      rawIndex : this.rawIndex,
-      cmdName : this.cmdName,
-      params : this.paramsCtrls.map(control => control.api()),
-      param : this.cmdparam
-    }
-
-    return doc
-  }
-}
+-->
+<div class="grid-container" > 
+  <mat-grid-list cols="1" rowHeight="15vh" >
+    <mat-grid-tile [colspan]="1" [rowspan]="6" >
+      <mat-card class="dashboard-card">	
+        <mat-card-header >
+          <mat-card-title>Connection info</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div *ngIf="infos$ | async as infos">
+            <div  class="infodiv" *ngFor="let info of infos">
+              <mat-form-field class="scrollablefield" >
+                <mat-label>{{ info.nameFC.value }}</mat-label>
+                <input matInput [formControl]="info.valueFC" [readonly]="!info.modifiableFC.value" />
+              </mat-form-field>
+              <button  mat-raised-button  color="primary"  (click)="onInfoSubmit(info)" *ngIf="info.modifiableFC.value" >
+                {{ info.btnTxtFC }}
+              </button>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+  </mat-grid-list>
+</div>

@@ -19,9 +19,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/websrv/frontend/src/app/controls/param.control.ts
+/*! \file common/utils/websrv/frontend/src/app/components/info/info.component.ts
  * \brief: implementation of web interface frontend for oai
- * \implement one parameter in a result row for commands component
+ * \info component web interface implementation (works with info.component.html)
  * \author:  Yacine  El Mghazli, Francois TABURET
  * \date 2022
  * \version 0.1
@@ -30,73 +30,47 @@
  * \note
  * \warning
  */
-import {UntypedFormControl, UntypedFormGroup} from "@angular/forms";
+import {Component} from "@angular/core";
 import {IArgType, IInfo} from "src/commondefs";
-import { IParam, IColumn,} from "../api/commands.api";
+import {ViewEncapsulation} from "@angular/core";
+import {UntypedFormArray} from "@angular/forms";
+import {Observable} from "rxjs";
+import {filter, map, switchMap, tap} from "rxjs/operators";
+import {InfoApi} from "src/app/api/info.api";
+import {InfoCtrl} from "src/app/controls/info.control";
+import {ModuleCtrl} from "src/app/controls/module.control";
+import {VarCtrl} from "src/app/controls/var.control";
+import {DialogService} from "src/app/services/dialog.service";
+import {DownloadService} from "src/app/services/download.service";
 
-enum ParamFCN {
-  value = "value",
-}
+    @Component({
+      selector : "app-info",
+      templateUrl : "./info.component.html",
+      styleUrls : [ "./info.component.scss" ],
+      encapsulation : ViewEncapsulation.None,
+    }) export class InfoComponent {
 
-export class ParamCtrl extends UntypedFormGroup {
-  col: IColumn
-  constructor(public param: IParam)
+  infos$: Observable<VarCtrl[]>;
+
+
+
+  constructor(
+      public infoApi: InfoApi,
+      public downloadService: DownloadService,
+
+  )
   {
-    super({})
+    this.infos$ = this.infoApi.readInfos$().pipe(map((infos) => infos.map(info => new InfoCtrl(info))));
+  }
 
-        this.col = param.col
 
-    let control: UntypedFormControl
-    switch (param.col.type)
-    {
-      case IArgType.boolean:
-        control = new UntypedFormControl((param.value === "true") ? true : false);
-        break;
+  onInfoSubmit(control: InfoCtrl)
+  {
+    let info: IInfo = control.api();
 
-      case IArgType.loglvl:
-        control = new UntypedFormControl(param.value);
-        break;
-
-      default:
-        control = new UntypedFormControl(param.value)
+    if (info.type === IArgType.configfile) {
+      this.downloadService.getFile(info.value)
     }
-
-    if (!param.col.modifiable)
-      control
-          .disable()
-
-              this.addControl(ParamFCN.value, control)
   }
 
-  get valueFC()
-  {
-    return this.get(ParamFCN.value) as UntypedFormControl
-  }
-
-  set valueFC(fc: UntypedFormControl)
-  {
-    this.setControl(ParamFCN.value, fc);
-  }
-
-  api()
-  {
-    let value: string
-
-    switch (this.col.type)
-    {
-      case IArgType.boolean:
-        value = String(this.valueFC.value);
-        break;
-
-      default:
-        value = this.valueFC.value
-    }
-
-    const doc: IParam = {
-      value : value,
-      col : this.col
-    }
-
-    return doc
-  }
 }
