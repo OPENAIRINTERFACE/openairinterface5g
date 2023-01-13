@@ -779,24 +779,19 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
   }
 
     if (fp->freq_range==nr_FR2) {
-      // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
-      int beam=0;
+      // currently we switch beams at the beginning of a slot and we take the beam index of the first symbol of this slot
+      // we only send the beam to the gpio if the beam is different from the previous slot
 
-      if (slot%10==0) {
-        if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
-          beam = ru->common.beam_id[0][slot*fp->symbols_per_slot];
+      if ( ru->common.beam_id) {
+        int prev_slot = (slot - 1 + fp->slots_per_frame) % fp->slots_per_frame;
+        const uint8_t *beam_ids = ru->common.beam_id[0];
+        int prev_beam = beam_ids[prev_slot * fp->symbols_per_slot];
+        int beam = beam_ids[slot * fp->symbols_per_slot];
+        if (prev_beam != beam) {
+          flags_gpio = beam | TX_GPIO_CHANGE; // enable change of gpio
+          LOG_D(HW, "slot %d, beam %d\n", slot, ru->common.beam_id[0][slot * fp->symbols_per_slot]);
         }
       }
-      LOG_D(HW,"slot %d, beam %d\n",slot,ru->common.beam_id[0][slot*fp->symbols_per_slot]);
-
-      /*
-      if (slot==0 || slot==40) beam=0|8;
-      if (slot==10 || slot==50) beam=1|8;
-      if (slot==20 || slot==60) beam=2|8;
-      if (slot==30 || slot==70) beam=3|8;
-      */
-
-      flags_gpio = beam | TX_GPIO_CHANGE; //enable change of gpio
     }
 
     const int flags = flags_burst | flags_gpio << 4;
