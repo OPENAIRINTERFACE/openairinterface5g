@@ -231,15 +231,15 @@ void handle_nr_srs(NR_UL_IND_t *UL_info) {
   const frame_t frame = UL_info->srs_ind.sfn;
   const sub_frame_t slot = UL_info->srs_ind.slot;
   const int num_srs = UL_info->srs_ind.number_of_pdus;
-  const nfapi_nr_srs_indication_pdu_t *srs_list = UL_info->srs_ind.pdu_list;
+  nfapi_nr_srs_indication_pdu_t *srs_list = UL_info->srs_ind.pdu_list;
 
   for (int i = 0; i < num_srs; i++) {
-    const nfapi_nr_srs_indication_pdu_t *srs_ind = &srs_list[i];
+    nfapi_nr_srs_indication_pdu_t *srs_ind = &srs_list[i];
     LOG_D(NR_PHY, "(%d.%d) UL_info->srs_ind.pdu_list[%d].rnti: 0x%04x\n", frame, slot, i, srs_ind->rnti);
     handle_nr_srs_measurements(module_id,
                                frame,
                                slot,
-                               &srs_list[i]);
+                               srs_ind);
   }
 
   UL_info->srs_ind.number_of_pdus = 0;

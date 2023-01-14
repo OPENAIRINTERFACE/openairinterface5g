@@ -1384,28 +1384,62 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
 
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
-                        const NR_UE_DL_BWP_t *current_BWP,
+                        const NR_UE_DL_BWP_t *current_DL_BWP,
+                        const NR_UE_UL_BWP_t *current_UL_BWP,
                         nfapi_nr_dl_dci_pdu_t *pdcch_dci_pdu,
                         dci_pdu_rel15_t *dci_pdu_rel15,
                         int dci_format,
                         int rnti_type,
-                        int N_RB,
                         int bwp_id,
+                        NR_SearchSpace_t *ss,
                         NR_ControlResourceSet_t *coreset,
-                        uint16_t cset0_bwp_size) {
-  uint8_t fsize = 0, pos = 0;
+                        uint16_t cset0_bwp_size)
+{
 
+  uint8_t fsize = 0, pos = 0;
   uint64_t *dci_pdu = (uint64_t *)pdcch_dci_pdu->Payload;
-  *dci_pdu=0;
-  NR_ControlResourceSetId_t coreset_id = coreset->controlResourceSetId;
+  *dci_pdu = 0;
+  uint16_t alt_size = 0;
+  uint16_t N_RB;
+  const int controlResourceSetId = *ss->controlResourceSetId;
+  if(current_DL_BWP) {
+    N_RB = get_rb_bwp_dci(dci_format,
+                          ss->searchSpaceType->present,
+                          cset0_bwp_size,
+                          current_UL_BWP->BWPSize,
+                          current_DL_BWP->BWPSize,
+                          current_UL_BWP->initial_BWPSize,
+                          current_DL_BWP->initial_BWPSize);
+
+    // computing alternative size for padding
+    dci_pdu_rel15_t temp_pdu;
+    if(dci_format == NR_DL_DCI_FORMAT_1_0)
+      alt_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
+                             scc->uplinkConfigCommon->initialUplinkBWP,
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type,
+                             controlResourceSetId, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+
+    if(dci_format == NR_UL_DCI_FORMAT_0_0)
+      alt_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
+                             scc->uplinkConfigCommon->initialUplinkBWP,
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type,
+                             controlResourceSetId, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+
+  }
+  else
+    N_RB = cset0_bwp_size;
+
   int dci_size = nr_dci_size(scc->downlinkConfigCommon->initialDownlinkBWP,
                              scc->uplinkConfigCommon->initialUplinkBWP,
-                             CellGroup, dci_pdu_rel15, dci_format,
-                             rnti_type, N_RB, bwp_id, coreset_id, cset0_bwp_size);
+                             current_DL_BWP, current_UL_BWP,
+                             CellGroup, dci_pdu_rel15, dci_format, rnti_type, controlResourceSetId,
+                             bwp_id, ss->searchSpaceType->present, cset0_bwp_size, alt_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
-    prepare_dci(CellGroup, current_BWP, coreset, dci_pdu_rel15, dci_format);
+    prepare_dci(CellGroup, current_DL_BWP, coreset, dci_pdu_rel15, dci_format);
 
   /// Payload generation
   switch (dci_format) {
@@ -2389,7 +2423,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     UL_BWP->tdaList = scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
 
   // setting generic parameters
-  NR_BWP_t dl_genericParameters = (DL_BWP->bwp_id>0 && dl_bwp) ?
+  NR_BWP_t dl_genericParameters = (DL_BWP->bwp_id > 0 && dl_bwp) ?
     dl_bwp->bwp_Common->genericParameters:
     scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters;
 
@@ -2397,8 +2431,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   DL_BWP->cyclicprefix = dl_genericParameters.cyclicPrefix;
   DL_BWP->BWPSize = NRRIV2BW(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   DL_BWP->BWPStart = NRRIV2PRBOFFSET(dl_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  DL_BWP->initial_BWPSize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  DL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  NR_BWP_t ul_genericParameters = (UL_BWP->bwp_id>0 && ul_bwp) ?
+  NR_BWP_t ul_genericParameters = (UL_BWP->bwp_id > 0 && ul_bwp) ?
     ul_bwp->bwp_Common->genericParameters:
     scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
 
@@ -2406,6 +2442,8 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->cyclicprefix = ul_genericParameters.cyclicPrefix;
   UL_BWP->BWPSize = NRRIV2BW(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->BWPStart = NRRIV2PRBOFFSET(ul_genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
   // Set downlink MCS table
   if (DL_BWP->pdsch_Config &&
@@ -3087,7 +3125,7 @@ void schedule_nr_bwp_switch(module_id_t module_id,
   }
 }
 
-void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid) {
+void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid, frame_t frameP) {
 
   if(gNB->UL_tti_req_ahead[CCid]) return;
 
@@ -3099,7 +3137,7 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
    * already "in the past" and thus we put frame 1 instead of 0! */
   for (int i = 0; i < n; ++i) {
     nfapi_nr_ul_tti_request_t *req = &gNB->UL_tti_req_ahead[CCid][i];
-    req->SFN = i < (gNB->if_inst->sl_ahead-1);
+    req->SFN = frameP + (i < (gNB->if_inst->sl_ahead-1));
     req->Slot = i;
   }
 }

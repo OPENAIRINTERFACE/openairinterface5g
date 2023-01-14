@@ -35,7 +35,7 @@
 # include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 
 //# if defined(ENABLE_ITTI)
-#   include "asn1_conversions.h"
+#   include "oai_asn1.h"
 #   include "intertask_interface.h"
 //#endif
 

@@ -22,6 +22,7 @@
 #include "platform_types.h"
 #include "fapi_nr_ue_constants.h"
 #include "PHY/impl_defs_nr.h"
+#include "common/utils/nr/nr_common.h"
 
 #define NFAPI_UE_MAX_NUM_CB 8
 #define NFAPI_MAX_NUM_UL_PDU 255
@@ -86,10 +87,12 @@ typedef struct {
 typedef struct {
   uint16_t rnti;
   uint8_t dci_format;
+  int ss_type;
   // n_CCE index of first CCE for PDCCH reception
   int n_CCE;
   // N_CCE is L, or number of CCEs for DCI
   int N_CCE;
+  int cset_start;
   uint8_t payloadSize;
   uint8_t payloadBits[16] __attribute__((aligned(16))); // will be cast as uint64
 } fapi_nr_dci_indication_pdu_t;
@@ -413,6 +416,7 @@ typedef struct {
   uint8_t num_dci_options;  // Num DCIs the UE actually needs to decode (1 or 2)
   uint8_t dci_length_options[2];
   uint8_t dci_format_options[2];
+  uint8_t dci_type_options[2];
 } fapi_nr_dl_config_dci_dl_pdu_rel15_t;
 
 typedef struct {

@@ -44,6 +44,11 @@ typedef enum {
 } pusch_dmrs_AdditionalPosition_t;
 
 typedef enum {
+  pusch_len1 = 1,
+  pusch_len2 = 2
+} pusch_maxLength_t;
+
+typedef enum {
   typeA = 0,
   typeB = 1
 } mappingType_t;
@@ -75,16 +80,27 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
                                       const uint8_t *nrOfLayers,
                                       uint32_t *val);
 
-uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDLBWP,
-                     const NR_BWP_UplinkCommon_t *initialULBWP,
+uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
+                     const NR_BWP_UplinkCommon_t *initialUplinkBWP,
+                     const NR_UE_DL_BWP_t *DL_BWP,
+                     const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
                      nr_dci_format_t format,
                      nr_rnti_type_t rnti_type,
-                     uint16_t N_RB,
+                     int controlResourceSetId,
                      int bwp_id,
-                     NR_ControlResourceSetId_t coreset_id,
-                     uint16_t cset0_bwp_size);
+                     int ss_type,
+                     uint16_t cset0_bwp_size,
+                     uint16_t alt_size);
+
+uint16_t get_rb_bwp_dci(nr_dci_format_t format,
+                        int ss_type,
+                        uint16_t cset0_bwp_size,
+                        uint16_t ul_bwp_size,
+                        uint16_t dl_bwp_size,
+                        uint16_t initial_ul_bwp_size,
+                        uint16_t initial_dl_bwp_size);
 
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,

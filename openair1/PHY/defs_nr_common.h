@@ -80,8 +80,6 @@
 #define NR_MAX_DCI_SIZE 1728 //16(L)*2(QPSK)*9(12 RE per REG - 3(DMRS))*6(REG per CCE)
 #define NR_MAX_DCI_SIZE_DWORD 54 // ceil(NR_MAX_DCI_SIZE/32)
 
-#define NR_MAX_NUM_BWP 4
-
 #define NR_MAX_PDCCH_AGG_LEVEL 16 // 3GPP TS 38.211 V15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
 #define NR_MAX_CSET_DURATION 3
 
@@ -158,11 +156,6 @@ typedef enum {
   MOD_QAM256
 }nr_mod_t;
 
-typedef enum {
-  RA_2STEP = 0,
-  RA_4STEP
-} nr_ra_type_e;
-
 typedef struct {
   /// Size of first RBG
   uint8_t start_size;
@@ -206,6 +199,7 @@ typedef struct {
   uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];
   uint8_t srs_generated_signal_bits;
   int32_t **srs_generated_signal;
+  nfapi_nr_srs_pdu_t srs_pdu;
 } nr_srs_info_t;
 
 typedef struct {

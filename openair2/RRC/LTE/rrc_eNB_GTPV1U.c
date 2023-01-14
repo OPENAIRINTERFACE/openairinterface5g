@@ -34,7 +34,7 @@
 # include "rrc_eNB_UE_context.h"
 
 
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "intertask_interface.h"
 
 

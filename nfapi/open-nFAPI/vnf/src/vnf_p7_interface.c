@@ -153,11 +153,11 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 	//struct timespec original_pselect_timeout;
 	struct timespec pselect_timeout;
 	pselect_timeout.tv_sec = 100; 
-	pselect_timeout.tv_nsec = 0; 
+	pselect_timeout.tv_nsec = 0;
 
     struct timespec ref_time;
 	clock_gettime(CLOCK_MONOTONIC, &ref_time);
-	uint8_t setup_time;
+	uint8_t setup_done;
 	while(vnf_p7->terminate == 0)
 	{	
 		fd_set rfds;
@@ -169,9 +169,14 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 		FD_SET(vnf_p7->socket, &rfds);
 		maxSock = vnf_p7->socket;
 
-		struct timespec curr_time;
-		clock_gettime(CLOCK_MONOTONIC, &curr_time);
-		setup_time = curr_time.tv_sec - ref_time.tv_sec;
+    if (setup_done == 0) {
+      struct timespec curr_time;
+      clock_gettime(CLOCK_MONOTONIC, &curr_time);
+      uint8_t setup_time = curr_time.tv_sec - ref_time.tv_sec;
+      if (setup_time > 3) {
+        setup_done = 1;
+      }
+    }
 
 		nfapi_nr_slot_indication_scf_t *slot_ind = get_queue(&gnb_slot_ind_queue);
 		NFAPI_TRACE(NFAPI_TRACE_DEBUG, "This is the slot_ind queue size %ld in %s():%d\n",
@@ -181,9 +186,9 @@ int nfapi_nr_vnf_p7_start(nfapi_vnf_p7_config_t* config)
 			gNB->UL_INFO.frame     = slot_ind->sfn;
 			gNB->UL_INFO.slot      = slot_ind->slot;
 
-			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "gNB->UL_INFO.frame = %d and slot %d, prev_slot = %d, setup_time = %d\n",
-				    gNB->UL_INFO.frame, gNB->UL_INFO.slot, prev_slot, setup_time);
-			if (setup_time > 3 && prev_slot != gNB->UL_INFO.slot) { //Give the VNF sufficient time to setup before starting scheduling  && prev_slot != gNB->UL_INFO.slot
+			NFAPI_TRACE(NFAPI_TRACE_DEBUG, "gNB->UL_INFO.frame = %d and slot %d, prev_slot = %d\n",
+				    gNB->UL_INFO.frame, gNB->UL_INFO.slot, prev_slot);
+			if (setup_done && prev_slot != gNB->UL_INFO.slot) { //Give the VNF sufficient time to setup before starting scheduling  && prev_slot != gNB->UL_INFO.slot
 
 				//Call the scheduler
 				gNB->UL_INFO.module_id = gNB->Mod_id;

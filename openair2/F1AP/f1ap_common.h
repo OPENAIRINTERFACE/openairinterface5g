@@ -33,6 +33,7 @@
 #define F1AP_COMMON_H_
 
 #include "common/openairinterface5g_limits.h"
+#include "oai_asn1.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3

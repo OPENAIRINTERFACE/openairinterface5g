@@ -98,7 +98,7 @@ int ngap_ue_context_release_complete(instance_t instance,
   ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_AMF_UE_NGAP_ID;
   asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseComplete_IEs_t));
@@ -106,7 +106,7 @@ int ngap_ue_context_release_complete(instance_t instance,
   ie->criticality = NGAP_Criticality_ignore;
   ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_RAN_UE_NGAP_ID;
   ie->value.choice.RAN_UE_NGAP_ID = ue_release_complete_p->gNB_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
@@ -183,7 +183,7 @@ int ngap_ue_context_release_req(instance_t instance,
   ie->criticality = NGAP_Criticality_reject;
   ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID;
   asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
@@ -191,7 +191,7 @@ int ngap_ue_context_release_req(instance_t instance,
   ie->criticality = NGAP_Criticality_reject;
   ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID;
   ie->value.choice.RAN_UE_NGAP_ID = ue_release_req_p->gNB_ue_ngap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* optional */
   if (ue_release_req_p->nb_of_pdusessions > 0) {
@@ -203,9 +203,9 @@ int ngap_ue_context_release_req(instance_t instance,
       NGAP_PDUSessionResourceItemCxtRelReq_t     *item;
       item = (NGAP_PDUSessionResourceItemCxtRelReq_t *)calloc(1,sizeof(NGAP_PDUSessionResourceItemCxtRelReq_t));
       item->pDUSessionID = ue_release_req_p->pdusessions[i].pdusession_id;
-      ASN_SEQUENCE_ADD(&ie->value.choice.PDUSessionResourceListCxtRelReq.list, item);
+      asn1cSeqAdd(&ie->value.choice.PDUSessionResourceListCxtRelReq.list, item);
     }
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* mandatory */
@@ -246,7 +246,7 @@ int ngap_ue_context_release_req(instance_t instance,
       break;
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
 
 

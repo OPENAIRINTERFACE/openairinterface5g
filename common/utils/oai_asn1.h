@@ -71,12 +71,11 @@ static inline uint16_t BIT_STRING_to_uint16(BIT_STRING_t *asn) {
  */
 static inline uint32_t BIT_STRING_to_uint32(BIT_STRING_t *asn) {
   uint32_t result = 0;
-  int index;
-  int shift;
+  size_t index;
 
   DevCheck ((asn->size > 0) && (asn->size <= 4), asn->size, 0, 0);
 
-  shift = ((asn->size - 1) * 8) - asn->bits_unused;
+  int shift = ((asn->size - 1) * 8) - asn->bits_unused;
   for (index = 0; index < (asn->size - 1); index++) {
     result |= asn->buf[index] << shift;
     shift -= 8;
@@ -94,7 +93,7 @@ static inline uint32_t BIT_STRING_to_uint32(BIT_STRING_t *asn) {
  */
 static inline uint64_t BIT_STRING_to_uint64(BIT_STRING_t *asn) {
   uint64_t result = 0;
-  int index;
+  size_t index;
   int shift;
 
   DevCheck ((asn->size > 0) && (asn->size <= 8), asn->size, 0, 0);
@@ -109,5 +108,14 @@ static inline uint64_t BIT_STRING_to_uint64(BIT_STRING_t *asn) {
 
   return result;
 }
+
+#define asn1cSeqAdd(VaR, PtR) if (ASN_SEQUENCE_ADD(VaR,PtR)!=0) AssertFatal(false, "ASN.1 encoding error " #VaR "\n")
+#define asn1cCallocOne(VaR, VaLue) \
+  VaR = calloc(1,sizeof(*VaR)); *VaR=VaLue
+#define asn1cCalloc(VaR, lOcPtr) \
+  typeof(VaR) lOcPtr = VaR = calloc(1,sizeof(*VaR))
+#define asn1cSequenceAdd(VaR, TyPe, lOcPtr) \
+  TyPe *lOcPtr= calloc(1,sizeof(TyPe)); \
+  asn1cSeqAdd(&VaR,lOcPtr)
 
 #endif

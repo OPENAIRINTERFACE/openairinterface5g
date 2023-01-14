@@ -24,7 +24,7 @@
 #include "pdcp.h"
 
 /* from nr rlc module */
-#include "asn1_utils.h"
+#include "nr_rlc_asn1_utils.h"
 #include "nr_rlc_ue_manager.h"
 #include "nr_rlc_entity.h"
 #include "nr_rlc_oai_api.h"

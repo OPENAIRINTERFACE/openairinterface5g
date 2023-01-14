@@ -731,8 +731,8 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
 
     uint16_t *vrb_map_UL = &RC.nrmac[module_idP]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
 
-    const int BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    const int BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+    const int BWPSize = ul_bwp->initial_BWPSize;
+    const int BWPStart = ul_bwp->initial_BWPStart;
 
     int rbStart = 0;
     for (int i = 0; (i < ra->msg3_nb_rb) && (rbStart <= (BWPSize - ra->msg3_nb_rb)); i++) {
@@ -830,17 +830,18 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t 
                  ra->Msg3_tda_id,
                  ra->msg3_TPC,
                  1, // Not toggling NDI in msg3 retransmissions
-                 &ra->UL_BWP);
+                 ul_bwp);
 
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
                        &ra->DL_BWP,
+                       ul_bwp,
                        dci_pdu,
                        &uldci_payload,
                        NR_UL_DCI_FORMAT_0_0,
                        NR_RNTI_TC,
-                       pusch_pdu->bwp_size,
                        ul_bwp->bwp_id,
+                       ss,
                        coreset,
                        nr_mac->cset0_bwp_size);
 
@@ -894,11 +895,13 @@ void nr_get_Msg3alloc(module_id_t module_id,
   uint8_t k2 = 0;
   if (frame_type == TDD) {
     int msg3_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
-    if (tdd->nrofUplinkSymbols < 3)
-      msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
-    else {
-      Msg3maxsymb = tdd->nrofUplinkSymbols;
-      Msg3start = 14 - tdd->nrofUplinkSymbols;
+    if (tdd->nrofUplinkSymbols != 0) {
+      if (tdd->nrofUplinkSymbols < 3)
+        msg3_slot++; // we can't trasmit msg3 in mixed slot if there are less than 3 symbols
+      else {
+        Msg3maxsymb = tdd->nrofUplinkSymbols;
+        Msg3start = 14 - tdd->nrofUplinkSymbols;
+      }
     }
     const int nb_periods_per_frame = get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
     const int nb_slots_per_period = ((1<<mu)*10)/nb_periods_per_frame;
@@ -953,9 +956,8 @@ void nr_get_Msg3alloc(module_id_t module_id,
   uint16_t *vrb_map_UL =
       &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[ra->Msg3_slot * MAX_BWP_SIZE];
 
-  int bwpSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-  int bwpStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-
+  int bwpSize = ul_bwp->initial_BWPSize;
+  int bwpStart = ul_bwp->initial_BWPStart;
   if (bwpSize != ul_bwp->BWPSize || bwpStart != ul_bwp->BWPStart) {
     int act_bwp_start = ul_bwp->BWPStart;
     int act_bwp_size  = ul_bwp->BWPSize;
@@ -1104,7 +1106,7 @@ void nr_add_msg3(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t 
   nfapi_nr_pusch_pdu_t *pusch_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].pusch_pdu;
   memset(pusch_pdu, 0, sizeof(nfapi_nr_pusch_pdu_t));
 
-  const int ibwp_size  = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  const int ibwp_size = ul_bwp->initial_BWPSize;
   const int scs = ul_bwp->scs;
   const int fh = (ul_bwp->pusch_Config && ul_bwp->pusch_Config->frequencyHopping) ? 1 : 0;
   const int startSymbolAndLength = ul_bwp->tdaList->list.array[ra->Msg3_tda_id]->startSymbolAndLength;
@@ -1151,9 +1153,9 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     long BWPStart = 0;
     long BWPSize = 0;
     NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config = NULL;
-    if(*ss->controlResourceSetId!=0) {
+    if(*ss->controlResourceSetId != 0) {
       BWPStart = dl_bwp->BWPStart;
-      BWPSize  = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      BWPSize  = dl_bwp->initial_BWPSize;
     } else {
       type0_PDCCH_CSS_config = &nr_mac->type0_PDCCH_CSS_config[ra->beam_id];
       BWPStart = type0_PDCCH_CSS_config->cset_start_rb;
@@ -1290,8 +1292,7 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
       pdsch_pdu_rel15->TBSize[0] = TBS;
     }
 
-    int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
@@ -1345,12 +1346,13 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
                        dl_bwp,
+                       &ra->UL_BWP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_RA,
-                       BWPSize,
                        dl_bwp->bwp_id,
+                       ss,
                        coreset,
                        nr_mac->cset0_bwp_size);
 
@@ -1676,8 +1678,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     int x_Overhead = 0;
     nr_get_tbs_dl(&dl_tti_pdsch_pdu->pdsch_pdu, x_Overhead, pdsch_pdu_rel15->numDmrsCdmGrpsNoData, tb_scaling);
 
-    int scc_bwpsize = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
-    int bw_tbslbrm = get_dlbw_tbslbrm(scc_bwpsize, ra->CellGroup);
+    int bw_tbslbrm = get_dlbw_tbslbrm(dl_bwp->initial_BWPSize, ra->CellGroup);
     pdsch_pdu_rel15->maintenance_parms_v3.tbSizeLbrmBytes = nr_compute_tbslbrm(mcsTableIdx,
                                                                                bw_tbslbrm,
                                                                                1);
@@ -1744,12 +1745,13 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     fill_dci_pdu_rel15(scc,
                        ra->CellGroup,
                        dl_bwp,
+                       &ra->UL_BWP,
                        &pdcch_pdu_rel15->dci_pdu[pdcch_pdu_rel15->numDlDci - 1],
                        &dci_payload,
                        NR_DL_DCI_FORMAT_1_0,
                        NR_RNTI_TC,
-                       pdsch_pdu_rel15->BWPSize,
                        dl_bwp->bwp_id,
+                       ss,
                        coreset,
                        nr_mac->cset0_bwp_size);
 

@@ -34,7 +34,7 @@
 #include "gnb_config.h"
 #include "common/ran_context.h"
 
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 #include "intertask_interface.h"
 #include "pdcp.h"
 #include "pdcp_primitives.h"

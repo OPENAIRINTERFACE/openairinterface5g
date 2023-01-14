@@ -30,7 +30,7 @@
 
 #include "intertask_interface.h"
 
-#include "asn1_conversions.h"
+#include "oai_asn1.h"
 
 #include "m3ap_common.h"
 #include "m3ap_MME_defs.h"
