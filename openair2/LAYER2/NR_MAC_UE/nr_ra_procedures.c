@@ -138,7 +138,8 @@ void init_RA(module_id_t mod_id,
              NR_PRACH_RESOURCES_t *prach_resources,
              NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon,
              NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
-             NR_RACH_ConfigDedicated_t *rach_ConfigDedicated) {
+             NR_RACH_ConfigDedicated_t *rach_ConfigDedicated)
+{
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
@@ -280,14 +281,13 @@ void init_RA(module_id_t mod_id,
 
 
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
-int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format){
+int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format)
+{
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc!=NULL) ?
-    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
-    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP.rach_ConfigCommon;
   NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
-  int prach_sequence_length = (mac->scc!=NULL)?(mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present - 1) : (mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup->prach_RootSequenceIndex.present-1);
+  int prach_sequence_length = nr_rach_ConfigCommon->prach_RootSequenceIndex.present - 1;
   uint8_t prachConfigIndex, mu;
 
   AssertFatal(CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
@@ -385,13 +385,14 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
 // - RA_PREAMBLE_POWER_RAMPING_STEP   dB
 // - POWER_OFFSET_2STEP_RA            dB
 // returns receivedTargerPower in dBm
-int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id){
+int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id)
+{
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   int8_t receivedTargerPower;
   int8_t delta_preamble;
 
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc != NULL) ? mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup: mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP.rach_ConfigCommon;
   long preambleReceivedTargetPower = nr_rach_ConfigCommon->rach_ConfigGeneric.preambleReceivedTargetPower;
   delta_preamble = nr_get_DELTA_PREAMBLE(mod_id, CC_id, prach_resources->prach_format);
 
@@ -402,7 +403,8 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
   return receivedTargerPower;
 }
 
-void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon){
+void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon)
+{
 
   // Determine the SSB to RACH mapping ratio
   // =======================================
@@ -489,14 +491,11 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   unsigned short int *seed = (unsigned short int*)&tmp;
 
   RA_config_t *ra = &mac->ra;
-  NR_RACH_ConfigCommon_t *setup;
-  if (mac->scc) setup = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  else          setup = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
-  NR_BWP_UplinkCommon_t *initialUplinkBWP = (mac->scc) ? mac->scc->uplinkConfigCommon->initialUplinkBWP : &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
-  if (initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble){
-    deltaPreamble_Msg3 = (*initialUplinkBWP->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble) * 2; // dB
+  if (mac->current_UL_BWP.msg3_DeltaPreamble){
+    deltaPreamble_Msg3 = (*mac->current_UL_BWP.msg3_DeltaPreamble) * 2; // dB
     LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
   }
 
@@ -661,9 +660,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
 
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc)?
-    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup : 
-    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP.rach_ConfigCommon;
 
   LOG_D(MAC, "In %s: getting PRACH resources frame (first_Msg3 %d)\n", __FUNCTION__, ra->first_Msg3);
 
@@ -701,12 +698,8 @@ void nr_Msg3_transmitted(module_id_t mod_id, uint8_t CC_id, frame_t frameP, slot
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = (mac->scc) ?
-    mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup:
-    mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
-  long mu = (mac->scc) ? 
-    mac->scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing :
-    mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+  NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP.rach_ConfigCommon;
+  long mu = mac->current_UL_BWP.scs;
   int subframes_per_slot = nr_slots_per_frame[mu]/10;
 
   // start contention resolution timer (cnt in slots)
@@ -934,9 +927,7 @@ void nr_get_RA_window(NR_UE_MAC_INST_t *mac){
 
   uint8_t mu, ra_ResponseWindow;
   RA_config_t *ra = &mac->ra;
-  NR_RACH_ConfigCommon_t *setup;
-  if (mac->scc) setup = mac->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
-  else          setup = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.rach_ConfigCommon->choice.setup;
+  NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
   AssertFatal(&setup->rach_ConfigGeneric != NULL, "In %s: FATAL! rach_ConfigGeneric is NULL...\n", __FUNCTION__);
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
   long scs = (mac->scc) ? 

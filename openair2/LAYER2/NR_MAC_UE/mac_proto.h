@@ -251,14 +251,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
-void get_bwp_info(NR_UE_MAC_INST_t *mac,
-                  int dl_bwp_id,
-                  int ul_bwp_id,
-                  NR_BWP_DownlinkDedicated_t **bwpd,
-                  NR_BWP_DownlinkCommon_t **bwpc,
-                  NR_BWP_UplinkDedicated_t **ubwpd,
-                  NR_BWP_UplinkCommon_t **ubwpc);
-
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
 
 int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,

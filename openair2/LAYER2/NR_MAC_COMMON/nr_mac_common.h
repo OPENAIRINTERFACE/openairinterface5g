@@ -99,9 +99,7 @@ NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *td
                                  int scs,
                                  int normal_CP);
 
-uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
-                     const NR_BWP_UplinkCommon_t *initialUplinkBWP,
-                     const NR_UE_DL_BWP_t *DL_BWP,
+uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
@@ -283,11 +281,8 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
 @param    rnti_type        rnti type
 @param    configuredGrant  indicates whether a configured grant was received or not
 @returns                   transformPrecoding value */
-uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
-                               const NR_PUSCH_Config_t *pusch_config,
-                               const NR_BWP_UplinkDedicated_t *ubwp,
-                               uint8_t *dci_format,
-                               int rnti_type,
+uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP,
+                               nr_dci_format_t dci_format,
                                uint8_t configuredGrant);
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,

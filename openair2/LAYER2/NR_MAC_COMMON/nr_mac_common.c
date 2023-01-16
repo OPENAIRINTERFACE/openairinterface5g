@@ -2777,38 +2777,23 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(const NR_BWP_UplinkCommon_t *initialUplinkBWP,
-                               const NR_PUSCH_Config_t *pusch_config,
-                               const NR_BWP_UplinkDedicated_t *ubwp,
-                               uint8_t *dci_format,
-                               int rnti_type,
-                               uint8_t configuredGrant){
+uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP,
+                               nr_dci_format_t dci_format,
+                               uint8_t configuredGrant)
+{
 
-  if (configuredGrant) {
-    if (ubwp->configuredGrantConfig) {
-      if (ubwp->configuredGrantConfig->choice.setup->transformPrecoder) {
-        return *ubwp->configuredGrantConfig->choice.setup->transformPrecoder;
-      }
-    }
-  }
+  if (configuredGrant &&
+      current_UL_BWP->configuredGrantConfig &&
+      current_UL_BWP->configuredGrantConfig->transformPrecoder)
+    return *current_UL_BWP->configuredGrantConfig->transformPrecoder;
 
-  if (rnti_type != NR_RNTI_RA && rnti_type != NR_RNTI_TC) {
-    if (*dci_format != NR_UL_DCI_FORMAT_0_0) {
-      if (pusch_config && pusch_config->transformPrecoder != NULL) {
-        return *pusch_config->transformPrecoder;
-      }
-    }
-  }
-
-  if (initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder == NULL) {
-    return 1; // Transformprecoding disabled
-  } else {
-    LOG_D(PHY, "MAC_COMMON: Transform Precodig enabled through msg3_transformPrecoder\n");
-    return 0; // Enabled
-  }
-
-  LOG_E(MAC, "In %s: could not fetch transform precoder status...\n", __FUNCTION__);
-  return -1;
+  if (dci_format == NR_UL_DCI_FORMAT_0_1 &&
+      current_UL_BWP &&
+      current_UL_BWP->pusch_Config &&
+      current_UL_BWP->pusch_Config->transformPrecoder)
+    return *current_UL_BWP->pusch_Config->transformPrecoder;
+  else
+    return current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder ? 0 : 1;
 }
 
 uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
@@ -3264,9 +3249,7 @@ uint16_t get_rb_bwp_dci(nr_dci_format_t format,
   return N_RB;
 }
 
-uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
-                     const NR_BWP_UplinkCommon_t *initialUplinkBWP,
-                     const NR_UE_DL_BWP_t *DL_BWP,
+uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CellGroupConfig_t *cg,
                      dci_pdu_rel15_t *dci_pdu,
@@ -3284,26 +3267,10 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
   long rbg_size_config;
   int num_entries = 0;
 
-  NR_UplinkConfig_t *uplinkConfig = NULL;
-  if (cg && cg->spCellConfig && cg->spCellConfig->spCellConfigDedicated) {
-    uplinkConfig = cg->spCellConfig->spCellConfigDedicated->uplinkConfig;
-  }
-
-  const NR_BWP_UplinkDedicated_t *ubwpd = NULL;
   NR_PDSCH_Config_t *pdsch_Config = DL_BWP ? DL_BWP->pdsch_Config : NULL;
   NR_PUSCH_Config_t *pusch_Config = UL_BWP ? UL_BWP->pusch_Config : NULL;
-  NR_PUCCH_Config_t *pucch_Config = NULL;
-  NR_SRS_Config_t *srs_config = NULL;
-  if(bwp_id > 0) {
-    AssertFatal(cg!=NULL,"Cellgroup is null and bwp_id!=0");
-    ubwpd = uplinkConfig ? uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_id-1]->bwp_Dedicated : NULL;
-    pucch_Config = (ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
-    srs_config = (ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup : NULL;
-  } else if (cg) {
-    ubwpd = uplinkConfig ? uplinkConfig->initialUplinkBWP : NULL;
-    pucch_Config = (ubwpd && ubwpd->pucch_Config) ? ubwpd->pucch_Config->choice.setup : NULL;
-    srs_config = (ubwpd && ubwpd->srs_Config) ? ubwpd->srs_Config->choice.setup: NULL;
-  }
+  NR_PUCCH_Config_t *pucch_Config = UL_BWP ? UL_BWP->pucch_Config : NULL;
+  NR_SRS_Config_t *srs_config = UL_BWP ? UL_BWP->srs_Config : NULL;
 
   uint16_t N_RB = cset0_bwp_size;
   if (DL_BWP)
@@ -3315,7 +3282,6 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
                           UL_BWP->initial_BWPSize,
                           DL_BWP->initial_BWPSize);
 
-  int n_ul_bwp = 1,n_dl_bwp = 1;
   switch(format) {
     case NR_UL_DCI_FORMAT_0_0:
       /// fixed: Format identifier 1, Hop flag 1, MCS 5, NDI 1, RV 2, HARQ PID 4, PUSCH TPC 2 Time Domain assgnmt 4 --20
@@ -3345,12 +3311,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         size += dci_pdu->ul_sul_indicator.nbits;
       }
       // BWP Indicator
-      n_ul_bwp = 0;
-      if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig &&
-          cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList)
-         n_ul_bwp = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
-      if (n_ul_bwp < 2)
-        dci_pdu->bwp_indicator.nbits = n_ul_bwp;
+      if (UL_BWP->n_ul_bwp < 2)
+        dci_pdu->bwp_indicator.nbits = UL_BWP->n_ul_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
@@ -3389,21 +3351,19 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         size += 1;
       }
       // 1st DAI
-      if (cg->physicalCellGroupConfig && cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
+      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic)
         dci_pdu->dai[0].nbits = 2;
       else
         dci_pdu->dai[0].nbits = 1;
       size += dci_pdu->dai[0].nbits;
       LOG_D(NR_MAC, "DAI1 nbits %d\n", dci_pdu->dai[0].nbits);
       // 2nd DAI
-      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig && cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup
-          && cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) { // TODO not sure about that
+      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) { // TODO not sure about that
         dci_pdu->dai[1].nbits = 2;
         size += dci_pdu->dai[1].nbits;
       }
       // SRS resource indicator
-      NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig = uplinkConfig && uplinkConfig->pusch_ServingCellConfig ? uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
-      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(pusch_servingcellconfig, pusch_Config, srs_config, NULL, NULL);
+      dci_pdu->srs_resource_indicator.nbits = compute_srs_resource_indicator(UL_BWP->pusch_servingcellconfig, pusch_Config, srs_config, NULL, NULL);
       size += dci_pdu->srs_resource_indicator.nbits;
       LOG_D(NR_MAC, "dci_pdu->srs_resource_indicator.nbits %d\n", dci_pdu->srs_resource_indicator.nbits);
       // Precoding info and number of layers
@@ -3411,7 +3371,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       size += dci_pdu->precoding_information.nbits;
       LOG_D(NR_MAC, "dci_pdu->precoding_informaiton.nbits=%d\n", dci_pdu->precoding_information.nbits);
       // Antenna ports
-      long transformPrecoder = get_transformPrecoding(initialUplinkBWP, pusch_Config, ubwpd, (uint8_t *)&format, rnti_type, 0);
+      long transformPrecoder = get_transformPrecoding(UL_BWP, format, 0);
       NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig = NULL;
       int xa = 0;
       int xb = 0;
@@ -3437,16 +3397,16 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CSI request
-      if (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig != NULL) {
-        if (cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize != NULL) {
-          dci_pdu->csi_request.nbits = *cg->spCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup->reportTriggerSize;
+      if (UL_BWP->csi_MeasConfig != NULL) {
+        if (UL_BWP->csi_MeasConfig->reportTriggerSize != NULL) {
+          dci_pdu->csi_request.nbits = *UL_BWP->csi_MeasConfig->reportTriggerSize;
           size += dci_pdu->csi_request.nbits;
         }
       }
       // CBGTI
-      if (cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig &&
-          cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-        int num = cg->spCellConfig->spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
+      if (UL_BWP->pusch_servingcellconfig &&
+          UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+        int num = UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
         dci_pdu->cbgti.nbits = 2 + (num<<1);
         size += dci_pdu->cbgti.nbits;
       }
@@ -3503,11 +3463,8 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       }
 
       // BWP Indicator
-      n_dl_bwp = 0;
-      if (cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList)
-         n_dl_bwp = cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count;
-      if (n_dl_bwp < 2)
-        dci_pdu->bwp_indicator.nbits = n_dl_bwp;
+      if (DL_BWP->n_dl_bwp < 2)
+        dci_pdu->bwp_indicator.nbits = DL_BWP->n_dl_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
       size += dci_pdu->bwp_indicator.nbits;
@@ -3570,8 +3527,7 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
       // HARQ PID
       size += 4;
       // DAI
-      if (cg->physicalCellGroupConfig &&
-          cg->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
+      if (DL_BWP->pdsch_HARQ_ACK_Codebook && *DL_BWP->pdsch_HARQ_ACK_Codebook == NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic) { // FIXME in case of more than one serving cell
         dci_pdu->dai[0].nbits = 2;
         size += dci_pdu->dai[0].nbits;
       }
@@ -3604,16 +3560,15 @@ uint16_t nr_dci_size(const NR_BWP_DownlinkCommon_t *initialDownlinkBWP,
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CBGTI
-      if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig &&
-          cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup &&
-          cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission != NULL) {
-        uint8_t maxCBGperTB = (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
+      if (DL_BWP->pdsch_servingcellconfig &&
+          DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+        uint8_t maxCBGperTB = (DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
         long *maxCWperDCI_rrc = pdsch_Config->maxNrofCodeWordsScheduledByDCI;
         uint8_t maxCW = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;
         dci_pdu->cbgti.nbits = maxCBGperTB * maxCW;
         size += dci_pdu->cbgti.nbits;
         // CBGFI
-        if (cg->spCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
+        if (DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup->codeBlockGroupFlushIndicator) {
           dci_pdu->cbgfi.nbits = 1;
           size += dci_pdu->cbgfi.nbits;
         }
