@@ -417,7 +417,7 @@ extern int oai_exit;
 void *udp_write_thread(void *arg) {
 
    udp_ctx_t *utx = (udp_ctx_t *)arg;
-   utx->resp = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_elt_t));
+   utx->resp = malloc(sizeof(*utx->resp));
    initNotifiedFIFO(utx->resp);
    LOG_D(PHY,"UDP write thread started on core %d\n",sched_getcpu()); 
    reset_meas(&utx->device->tx_fhaul);
