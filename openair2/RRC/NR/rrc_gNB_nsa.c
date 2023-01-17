@@ -396,7 +396,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_
                              get_softmodem_params()->sa ? ue_context_p->ue_context.rb_config->srb_ToAddModList : NULL,
                              ue_context_p->ue_context.rb_config->drb_ToAddModList,
                              ue_context_p->ue_context.rb_config->drb_ToReleaseList,
-                             (LTE_PMCH_InfoList_r9_t *)NULL,
                              ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %lx\n", __FUNCTION__, __LINE__, ctxt.rntiMaybeUEid);

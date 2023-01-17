@@ -48,8 +48,6 @@ extern int NB_UE_INST;
 extern void* bigphys_malloc(int);
 
 
-//CONSTANTS
-extern rlc_info_t Rlc_info_um,Rlc_info_am_config;
 //uint8_t RACH_TIME_ALLOC;
 extern uint16_t RACH_FREQ_ALLOC;
 //uint8_t NB_RACH;

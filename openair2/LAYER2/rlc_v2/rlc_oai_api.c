@@ -954,8 +954,7 @@ rlc_op_status_t rrc_rlc_config_req   (
   const srb_flag_t      srb_flagP,
   const MBMS_flag_t     mbms_flagP,
   const config_action_t actionP,
-  const rb_id_t         rb_idP,
-  const rlc_info_t      rlc_infoP)
+  const rb_id_t         rb_idP)
 {
   rlc_ue_t *ue;
   int      i;

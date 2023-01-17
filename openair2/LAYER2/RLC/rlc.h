@@ -38,12 +38,6 @@
 #    include "platform_types.h"
 #include "common/platform_constants.h"
 #    include "hashtable.h"
-#    include "rlc_am.h"
-#    include "rlc_um.h"
-#    include "rlc_tm.h"
-#    include "rlc_am_structs.h"
-#    include "rlc_tm_structs.h"
-#    include "rlc_um_structs.h"
 #    include "LTE_asn_constant.h"
 #    include "common/utils/LOG/log.h"
 #    include "mem_block.h"
@@ -54,11 +48,8 @@
 #    include "LTE_SRB-ToAddMod.h"
 #    include "LTE_SRB-ToAddModList.h"
 #    include "LTE_DRB-ToReleaseList.h"
+#    include "LTE_PMCH-InfoList-r9.h"
 
-#include "LTE_PMCH-InfoList-r9.h"
-
-typedef uint64_t hash_key_t;
-#define HASHTABLE_NOT_A_KEY_VALUE ((uint64_t)-1)
 
 //-----------------------------------------------------------------------------
 #define  RLC_OP_STATUS_OK                1
@@ -87,18 +78,6 @@ typedef enum rlc_mode_e {
   RLC_MODE_TM      = 4
 } rlc_mode_t;
 
-/*! \struct  rlc_info_t
-* \brief Structure containing RLC protocol configuration parameters.
-*/
-typedef volatile struct {
-  rlc_mode_t             rlc_mode;
-  union {
-    rlc_am_info_t              rlc_am_info; /*!< \sa rlc_am.h. */
-    rlc_tm_info_t              rlc_tm_info; /*!< \sa rlc_tm.h. */
-    rlc_um_info_t              rlc_um_info; /*!< \sa rlc_um.h. */
-  } rlc;
-} rlc_info_t;
-
 /*! \struct  mac_rlc_status_resp_t
 * \brief Primitive exchanged between RLC and MAC informing about the buffer occupancy of the RLC protocol instance.
 */
@@ -109,20 +88,6 @@ typedef  struct {
   sdu_size_t                   head_sdu_remaining_size_to_send;  /*!< \brief remaining size of sdu: could be the total size or the remaining size of already segmented sdu */
   bool                         head_sdu_is_segmented;     /*!< \brief 0 if head SDU has not been segmented, 1 if already segmented */
 } mac_rlc_status_resp_t;
-
-
-/*! \struct  mac_rlc_max_rx_header_size_t
-* \brief Usefull only for debug scenario where we connect 2 RLC protocol instances without the help of the MAC .
-*/
-typedef struct {
-  union {
-    struct rlc_am_rx_pdu_management dummy1;
-    struct rlc_tm_rx_pdu_management dummy2;
-    //struct rlc_um_rx_pdu_management dummy3;
-    struct mac_tb_ind dummy4;
-    struct mac_rx_tb_management dummy5;
-  } dummy;
-} mac_rlc_max_rx_header_size_t;
 
 
 
@@ -158,119 +123,6 @@ typedef void (rrc_data_conf_cb_t)(
   const rlc_tx_status_t statusP);
 
 
-/*! \struct  rlc_t
-* \brief Structure to be instanciated to allocate memory for RLC protocol instances.
-*/
-typedef struct rlc_union_s {
-  rlc_mode_t           mode;
-  union {
-    rlc_am_entity_t  am;
-    rlc_um_entity_t  um;
-    rlc_tm_entity_t  tm;
-  } rlc;
-} rlc_union_t;
-
-typedef struct rlc_mbms_s {
-  rb_id_t           rb_id;
-  module_id_t       instanciated_instance;
-  rlc_um_entity_t   um;
-} rlc_mbms_t;
-
-typedef struct rlc_mbms_id_s {
-  mbms_service_id_t       service_id;
-  mbms_session_id_t       session_id;
-} rlc_mbms_id_t;
-
-
-//rlc_mbms_t           rlc_mbms_array_ue[MAX_MOBILES_PER_ENB][maxServiceCount][maxSessionPerPMCH];   // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-//rlc_mbms_t           rlc_mbms_array_eNB[NUMBER_OF_eNB_MAX][maxServiceCount][maxSessionPerPMCH]; // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-extern rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_ue[MAX_MOBILES_PER_ENB][RLC_MAX_MBMS_LC];    // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-extern rlc_mbms_id_t        rlc_mbms_lcid2service_session_id_eNB[MAX_eNB][RLC_MAX_MBMS_LC];  // some constants from openair2/RRC/LTE/MESSAGES/asn1_constants.h
-
-#define rlc_mbms_enb_get_lcid_by_rb_id(Enb_mOD,rB_iD) rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD]
-;
-
-#define rlc_mbms_enb_set_lcid_by_rb_id(Enb_mOD,rB_iD,lOG_cH_iD) do { \
-    rlc_mbms_rbid2lcid_eNB[Enb_mOD][rB_iD] = lOG_cH_iD; \
-  } while (0);
-
-#define rlc_mbms_ue_get_lcid_by_rb_id(uE_mOD,rB_iD) rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD]
-
-#define rlc_mbms_ue_set_lcid_by_rb_id(uE_mOD,rB_iD,lOG_cH_iD) do { \
-    AssertFatal(rB_iD<NB_RB_MBMS_MAX, "INVALID RB ID %ld", rB_iD); \
-    rlc_mbms_rbid2lcid_ue[uE_mOD][rB_iD] = lOG_cH_iD; \
-  } while (0);
-
-extern logical_chan_id_t    rlc_mbms_rbid2lcid_ue [MAX_MOBILES_PER_ENB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-extern logical_chan_id_t    rlc_mbms_rbid2lcid_eNB[MAX_eNB][NB_RB_MBMS_MAX];              /*!< \brief Pairing logical channel identifier with radio bearer identifer. */
-
-
-#define RLC_COLL_KEY_VALUE(eNB_iD, rNTI, iS_eNB, rB_iD, iS_sRB) \
-  ((hash_key_t)eNB_iD             | \
-   (((hash_key_t)(rNTI))   << 8)  | \
-   (((hash_key_t)(iS_eNB)) << 24) | \
-   (((hash_key_t)(rB_iD))  << 25) | \
-   (((hash_key_t)(iS_sRB)) << 33) | \
-   (((hash_key_t)(0x05))   << 34))
-
-// index to the same RLC entity as RLC_COLL_KEY_VALUE(), but using LC_id instead
-// the hidden last key indicates if this is a hash-key with RB_id (0x05) or LC_id (0x0a)
-#define RLC_COLL_KEY_LCID_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, iS_sRB) \
-  ((hash_key_t)eNB_iD             | \
-   (((hash_key_t)(rNTI))   << 8)  | \
-   (((hash_key_t)(iS_eNB)) << 24) | \
-   (((hash_key_t)(lC_iD))  << 25) | \
-   (((hash_key_t)(iS_sRB)) << 33) | \
-   (((hash_key_t)(0x0a))   << 34))
-
-#define RLC_COLL_KEY_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
-  ((hash_key_t)eNB_iD             | \
-   (((hash_key_t)(rNTI))   << 8)  | \
-   (((hash_key_t)(iS_eNB)) << 24) | \
-   (((hash_key_t)(lC_iD))  << 25) | \
-   (((hash_key_t)(dEST_iD)) << 33) | \
-   (((hash_key_t)(0x05))   << 57))
-
-#define RLC_COLL_KEY_LCID_SOURCE_DEST_VALUE(eNB_iD, rNTI, iS_eNB, lC_iD, sOURCE_iD, dEST_iD, iS_sRB) \
-  ((hash_key_t)eNB_iD             | \
-   (((hash_key_t)(rNTI))   << 8)  | \
-   (((hash_key_t)(iS_eNB)) << 24) | \
-   (((hash_key_t)(lC_iD))  << 25) | \
-   (((hash_key_t)(dEST_iD)) << 33) | \
-   (((hash_key_t)(0x0a))   << 57))
-
-
-// service id max val is maxServiceCount = 16 (asn1_constants.h)
-
-#define RLC_COLL_KEY_MBMS_VALUE(eNB_iD, rNTI, iS_eNB, sERVICE_ID, sESSION_ID) \
-  ((hash_key_t)eNB_iD             | \
-   (((hash_key_t)(rNTI))       << 8)  | \
-   (((hash_key_t)(iS_eNB))     << 24) | \
-   (((hash_key_t)(sERVICE_ID)) << 32) | \
-   (((hash_key_t)(sESSION_ID)) << 37) | \
-   (((hash_key_t)(0x0000000000000001))  << 63))
-
-extern hash_table_t  *rlc_coll_p  __attribute__ ((aligned(32)));
-
-/*! \fn tbs_size_t mac_rlc_serialize_tb (char* bufferP, list_t transport_blocksP)
-* \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
-* \param[in]  bufferP                 Memory area where the transport blocks have to be serialized.
-* \param[in]  transport_blocksP       List of transport blocks.
-* \return     The amount of bytes that have been written due to serialization.
-*/
-tbs_size_t            mac_rlc_serialize_tb   (char *, list_t);
-
-/*! \fn struct mac_data_ind mac_rlc_deserialize_tb (char* bufferP, tb_size_t tb_sizeP, num_tb_t num_tbP, crc_t *crcsP)
-* \brief  Serialize a list of transport blocks coming from RLC in order to be processed by MAC.
-* \param[in]  bufferP       Memory area where the transport blocks are serialized.
-* \param[in]  tb_sizeP      Size of transport blocks.
-* \param[in]  num_tbP       Number of transport blocks.
-* \param[in]  crcsP         Array of CRC for each transport block.
-* \return     A mac_data_ind structure containing a list of transport blocks.
-*/
-struct mac_data_ind   mac_rlc_deserialize_tb (char *, tb_size_t, num_tb_t, crc_t *);
-
-
 //-----------------------------------------------------------------------------
 //   PUBLIC INTERFACE WITH RRC
 //-----------------------------------------------------------------------------
@@ -293,16 +145,6 @@ rlc_op_status_t rrc_rlc_config_asn1_req (
   const uint32_t,
   const uint32_t );
 
-
-/*! \fn void rb_free_rlc_union (void *rlcu_pP)
- * \brief  Free the rlc memory contained in the RLC embedded in the rlc_union_t
- *  struct pointed by of the rlcu_pP parameter. Free the rlc_union_t struct also.
- * \param[in]  rlcu_pP          Pointer on the rlc_union_t struct.
- */
-void
-rb_free_rlc_union (void *rlcu_pP);
-
-
 /*! \fn rlc_op_status_t rrc_rlc_remove_ue   (const protocol_ctxt_t* const ctxtP)
  * \brief  Remove all RLC protocol instances from all radio bearers allocated to a UE.
  * \param[in]  ctxtP              Running context.
@@ -310,31 +152,6 @@ rb_free_rlc_union (void *rlcu_pP);
 */
 rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t *const);
 
-
-/*! \fn rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP)
-* \brief  Remove a RLC protocol instance from a radio bearer.
-* \param[in]  ctxtP              Running context.
-* \param[in]  srb_flagP          Flag to indicate SRB (1) or DRB (0)
-* \param[in]  MBMS_flag          Flag to indicate whether this is an MBMS service (1) or not (0)
-* \param[in]  rb_idP             Radio bearer identifier.
-* \return     A status about the processing, OK or error code.
-*/
-rlc_op_status_t rrc_rlc_remove_rlc   (const protocol_ctxt_t *const, const srb_flag_t, const MBMS_flag_t, const  rb_id_t );
-
-/*! \fn rlc_union_t*  rrc_rlc_add_rlc   (const protocol_ctxt_t* const ctxtP, const srb_flag_t srb_flagP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, logical_chan_id_t chan_idP, rlc_mode_t rlc_modeP)
-* \brief  Add a RLC protocol instance to a radio bearer.
-* \param[in]  ctxtP              Running context.
-* \param[in]  srb_flagP          Flag to indicate SRB (1) or DRB (0)
-* \param[in]  MBMS_flag          Flag to indicate whether this is an MBMS service (1) or not (0)
-* \param[in]  rb_idP             Radio bearer identifier.
-* \param[in]  chan_idP           Logical channel identifier.
-* \param[in]  rlc_modeP          Mode of RLC (AM, UM, TM).
-* \return     A status about the processing, OK or error code.
-*/
-rlc_union_t  *rrc_rlc_add_rlc      (const protocol_ctxt_t *const, const srb_flag_t,  const  MBMS_flag_t MBMS_flagP, const  rb_id_t, logical_chan_id_t, rlc_mode_t
-                                    ,const uint32_t  sourceL2Id,
-                                    const uint32_t  destinationL2Id
-                                   );
 
 /*! \fn rlc_op_status_t rrc_rlc_config_req (
      const protocol_ctxt_t* const ctxtP,
@@ -352,13 +169,7 @@ rlc_union_t  *rrc_rlc_add_rlc      (const protocol_ctxt_t *const, const srb_flag
 * \param[in]  rlc_infoP        RLC configuration parameters issued from Radio Resource Manager.
 * \return     A status about the processing, OK or error code.
 */
-rlc_op_status_t rrc_rlc_config_req   (
-  const protocol_ctxt_t *const,
-  const srb_flag_t,
-  const MBMS_flag_t,
-  config_action_t,
-  const  rb_id_t,
-  rlc_info_t );
+rlc_op_status_t rrc_rlc_config_req(const protocol_ctxt_t *const, const srb_flag_t, const MBMS_flag_t, config_action_t, const rb_id_t);
 
 /*! \fn rlc_op_status_t rrc_rlc_data_req     (const protocol_ctxt_t* const ctxtP, const  MBMS_flag_t MBMS_flagP, const  rb_id_t rb_idP, mui_t muiP, confirm_t confirmP, sdu_size_t sdu_sizeP, char* sduP)
 * \brief  Function for RRC to send a SDU through a Signalling Radio Bearer.

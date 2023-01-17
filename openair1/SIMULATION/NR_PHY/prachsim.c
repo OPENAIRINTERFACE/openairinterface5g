@@ -59,7 +59,6 @@
 #define PRACH_WRITE_OUTPUT_DEBUG 1
 
 LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
-rlc_info_t Rlc_info_um,Rlc_info_am_config;
 
 char *uecap_file;
 PHY_VARS_gNB *gNB;
