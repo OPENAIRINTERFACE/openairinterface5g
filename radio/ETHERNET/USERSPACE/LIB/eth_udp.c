@@ -451,6 +451,11 @@ void *udp_read_thread(void *arg) {
                               buffer,sizeof(buffer),0,
                               (struct sockaddr *)&((eth_state_t*)device->priv)->dest_addrd,
                               (socklen_t *)&((eth_state_t*)device->priv)->addr_len);
+      /* if oai_exit is 1 here, don't access the array rxbase,
+       * it may have been freed(), so let's break at this point
+       */
+      if (oai_exit)
+        break;
       aid = *(uint16_t*)(&buffer[ECPRICOMMON_BYTES]);
       TS  = *(openair0_timestamp *)(&buffer[ECPRICOMMON_BYTES+ECPRIPCID_BYTES]);   
       // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
@@ -475,6 +480,11 @@ void *udp_read_thread(void *arg) {
     }
     sleep(1);
   }
+
+  /* let's unblock reader (maybe not the best way to do it) */
+  fhstate->first_read = 0;
+  fhstate->r[0] = 1;
+
   return(0);  
 }
 
