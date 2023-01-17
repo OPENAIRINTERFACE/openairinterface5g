@@ -549,8 +549,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
   NR_BWP_t ul_genericParameters = {0};
   NR_BWP_DownlinkCommon_t *bwp_dlcommon = NULL;
   NR_BWP_UplinkCommon_t *bwp_ulcommon = NULL;
-  DL_BWP->n_dl_bwp = 1;
-  UL_BWP->n_ul_bwp = 1;
+  DL_BWP->n_dl_bwp = 0;
+  UL_BWP->n_ul_bwp = 0;
 
   if(scc) {
     DL_BWP->bwp_id = 0;
@@ -616,13 +616,14 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         AssertFatal(bwp_downlink != NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n", DL_BWP->bwp_id);
         dl_genericParameters = bwp_downlink->bwp_Common->genericParameters;
         DL_BWP->pdsch_Config = bwp_downlink->bwp_Dedicated->pdsch_Config->choice.setup;
+        DL_BWP->tdaList = bwp_downlink->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       }
       else {
         dl_genericParameters = bwp_dlcommon->genericParameters;
         DL_BWP->pdsch_Config = spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup;
+        DL_BWP->tdaList = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       }
-      DL_BWP->tdaList = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-      UL_BWP->tdaList = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+
       UL_BWP->msg3_DeltaPreamble = bwp_ulcommon->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
 
       NR_BWP_Uplink_t *bwp_uplink = NULL;
@@ -637,6 +638,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         }
         AssertFatal(bwp_uplink != NULL,"Couldn't find ULBWP corresponding to BWP ID %ld\n",UL_BWP->bwp_id);
         ul_genericParameters = bwp_uplink->bwp_Common->genericParameters;
+        UL_BWP->tdaList = bwp_uplink->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
         UL_BWP->pusch_Config = bwp_uplink->bwp_Dedicated->pusch_Config->choice.setup;
         UL_BWP->pucch_Config = bwp_uplink->bwp_Dedicated->pucch_Config->choice.setup;
         UL_BWP->srs_Config = bwp_uplink->bwp_Dedicated->srs_Config->choice.setup;
@@ -647,6 +649,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
           UL_BWP->rach_ConfigCommon = bwp_uplink->bwp_Common->rach_ConfigCommon->choice.setup;
       }
       else {
+        UL_BWP->tdaList = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
         UL_BWP->pusch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup;
         UL_BWP->pucch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
         UL_BWP->srs_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;

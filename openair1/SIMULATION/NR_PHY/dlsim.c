@@ -253,7 +253,8 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
   AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
 
-  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(current_BWP, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+  sched_pdsch->tda_info = nr_get_pdsch_tda_info(tdalist, sched_pdsch->time_domain_allocation);
 
   sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
                                                current_BWP,

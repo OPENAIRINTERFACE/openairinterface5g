@@ -2080,8 +2080,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   NR_BWP_Uplink_t *ul_bwp = NULL;
   NR_BWP_DownlinkDedicated_t *bwpd = NULL;
   NR_BWP_UplinkDedicated_t *ubwpd = NULL;
-  DL_BWP->n_dl_bwp = 1;
-  UL_BWP->n_ul_bwp = 1;
+  // number of additional BWPs (excluding initial BWP)
+  DL_BWP->n_dl_bwp = 0;
+  UL_BWP->n_ul_bwp = 0;
   int old_dl_bwp_id = DL_BWP->bwp_id;
   int old_ul_bwp_id = UL_BWP->bwp_id;
 

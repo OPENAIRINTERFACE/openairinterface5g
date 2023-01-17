@@ -3315,6 +3315,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         dci_pdu->bwp_indicator.nbits = UL_BWP->n_ul_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
+      LOG_D(NR_MAC,"BWP indicator nbits %d, num UL BWPs %d\n", dci_pdu->bwp_indicator.nbits, UL_BWP->n_ul_bwp);
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       if (pusch_Config) {
@@ -3332,7 +3333,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       }
       else
         dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
+      LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n", dci_pdu->frequency_domain_assignment.nbits, N_RB);
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
       NR_PUSCH_TimeDomainResourceAllocationList_t *tdalistul = get_ul_tdalist(UL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
@@ -3341,7 +3342,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       else
         num_entries = 16; // num of entries in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
-      LOG_D(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n",dci_pdu->time_domain_assignment.nbits,pusch_Config);
+      LOG_D(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n", dci_pdu->time_domain_assignment.nbits, pusch_Config);
       size += dci_pdu->time_domain_assignment.nbits;
       // Frequency Hopping flag
       if (pusch_Config && 
