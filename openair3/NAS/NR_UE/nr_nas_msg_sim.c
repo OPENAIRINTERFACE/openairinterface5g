@@ -751,7 +751,7 @@ static void generatePduSessionEstablishRequest(int Mod_id, uicc_t * uicc, as_nas
   int dnnSize=strlen(uicc->dnnStr);
   mm_msg->uplink_nas_transport.dnn.value=calloc(1,dnnSize+1);
   mm_msg->uplink_nas_transport.dnn.length = dnnSize + 1;
-  mm_msg->uplink_nas_transport.dnn.value[0] = dnnSize + 1;
+  mm_msg->uplink_nas_transport.dnn.value[0] = dnnSize;
   memcpy(mm_msg->uplink_nas_transport.dnn.value+1,uicc->dnnStr, dnnSize);
   size += (1+1+dnnSize+1);
 
