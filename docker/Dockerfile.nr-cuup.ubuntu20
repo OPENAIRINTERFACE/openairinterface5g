@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Ubuntu18.04
+#   Valid for Ubuntu20.04
 #
 #---------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ FROM ran-build:latest AS gnb-build
 
 RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
-FROM ubuntu:bionic as oai-nr-cuup
+FROM ubuntu:focal as oai-nr-cuup
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe
 
