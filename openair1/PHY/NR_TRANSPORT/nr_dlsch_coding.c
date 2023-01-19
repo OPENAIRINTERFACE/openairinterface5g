@@ -167,7 +167,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch) {
   AssertFatal(dlsch!=NULL,"dlsch is null\n");
-  dlsch->rnti = 0;
   dlsch->active = 0;
 }
 
@@ -280,7 +279,8 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
 		      unsigned char * output,
                       time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
                       time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
-                      time_stats_t *dlsch_segmentation_stats) {
+                      time_stats_t *dlsch_segmentation_stats)
+{
   encoder_implemparams_t impp;
   impp.output=output;
   unsigned int crc=1;
@@ -289,29 +289,18 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
   unsigned char *a=harq->pdu;
-  if ( rel15->rnti != SI_RNTI)
+  if (rel15->rnti != SI_RNTI)
     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
-  NR_gNB_SCH_STATS_t *stats=NULL;
-  int first_free=-1;
+  NR_gNB_PHY_STATS_t *phy_stats = NULL;
+  if (rel15->rnti != 0xFFFF)
+    phy_stats = get_phy_stats(gNB, rel15->rnti);
 
-  for (int i=0; i<NUMBER_OF_NR_SCH_STATS_MAX; i++) {
-    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
-      first_free = i;
-      stats=&gNB->dlsch_stats[i];
-    }
-
-    if (gNB->dlsch_stats[i].rnti == rel15->rnti) {
-      stats=&gNB->dlsch_stats[i];
-      break;
-    }
-  }
-
-  if (stats) {
-    stats->rnti = rel15->rnti;
-    stats->total_bytes_tx += rel15->TBSize[0];
-    stats->current_RI   = rel15->nrOfLayers;
-    stats->current_Qm   = rel15->qamModOrder[0];
+  if (phy_stats) {
+    phy_stats->frame = frame;
+    phy_stats->dlsch_stats.total_bytes_tx += rel15->TBSize[0];
+    phy_stats->dlsch_stats.current_RI = rel15->nrOfLayers;
+    phy_stats->dlsch_stats.current_Qm = rel15->qamModOrder[0];
   }
 
   int max_bytes = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers*1056;

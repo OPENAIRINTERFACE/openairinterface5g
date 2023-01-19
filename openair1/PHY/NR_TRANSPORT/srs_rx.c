@@ -56,43 +56,25 @@ void free_gNB_srs(NR_gNB_SRS_t *srs)
   free_and_zero(srs);
 }
 
-int nr_find_srs(rnti_t rnti,
-                frame_t frame,
-                slot_t slot,
-                PHY_VARS_gNB *gNB) {
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-  int index = -1;
-
-  for (int i = 0; i < gNB->max_nb_srs; i++) {
-    AssertFatal(gNB->srs[i]!=NULL,"gNB->srs[%d] is null\n",i);
-    if ((gNB->srs[i]->active>0) &&
-        (gNB->srs[i]->srs_pdu.rnti==rnti) &&
-        (gNB->srs[i]->frame==frame) &&
-        (gNB->srs[i]->slot==slot)) return(i);
-    else if ((gNB->srs[i]->active == 0) && (index==-1)) index=i;
-  }
-
-  if (index==-1)
-    LOG_E(PHY,"SRS list is full\n");
-
-  return(index);
-}
-
 void nr_fill_srs(PHY_VARS_gNB *gNB,
                  frame_t frame,
                  slot_t slot,
-                 nfapi_nr_srs_pdu_t *srs_pdu) {
+                 nfapi_nr_srs_pdu_t *srs_pdu)
+{
 
-  int id = nr_find_srs(srs_pdu->rnti,frame,slot,gNB);
-  AssertFatal((id >= 0) && (id < gNB->max_nb_srs),
-              "invalid id found for srs !!! rnti %04x id %d\n",srs_pdu->rnti,id);
-
-  NR_gNB_SRS_t  *srs = gNB->srs[id];
-  srs->frame = frame;
-  srs->slot = slot;
-  srs->active = 1;
-  memcpy((void*)&srs->srs_pdu, (void*)srs_pdu, sizeof(nfapi_nr_srs_pdu_t));
+  bool found = false;
+  for (int i = 0; i < gNB->max_nb_srs; i++) {
+    if (gNB->srs[i]->active == 0) {
+      found = true;
+      NR_gNB_SRS_t  *srs = gNB->srs[i];
+      srs->frame = frame;
+      srs->slot = slot;
+      srs->active = 1;
+      memcpy((void*)&srs->srs_pdu, (void*)srs_pdu, sizeof(nfapi_nr_srs_pdu_t));
+      break;
+    }
+  }
+  AssertFatal(found, "SRS list is full\n");
 }
 
 int nr_get_srs_signal(PHY_VARS_gNB *gNB,

@@ -128,7 +128,9 @@ void tx_func(void *param) {
 
 }
 
-void rx_func(void *param) {
+void rx_func(void *param)
+{
+
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
@@ -173,46 +175,15 @@ void rx_func(void *param) {
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
-  /* hack to remove UEs */
-  extern int rnti_to_remove[10];
-  extern volatile int rnti_to_remove_count;
-  extern pthread_mutex_t rnti_to_remove_mutex;
-  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
-  int up_removed = 0;
-  int down_removed = 0;
-  int pucch_removed = 0;
-  for (int i = 0; i < rnti_to_remove_count; i++) {
-    LOG_W(NR_PHY, "to remove rnti 0x%04x\n", rnti_to_remove[i]);
-    void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
-    void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
-    int j;
-    for (j = 0; j < NUMBER_OF_NR_ULSCH_MAX; j++)
-      if (gNB->ulsch[j]->rnti == rnti_to_remove[i]) {
-        gNB->ulsch[j]->rnti = 0;
-        gNB->ulsch[j]->harq_mask = 0;
-        int h;
-        for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
-          gNB->ulsch[j]->harq_processes[h]->status = NR_SCH_IDLE;
-          gNB->ulsch[j]->harq_processes[h]->round  = 0;
-          gNB->ulsch[j]->harq_processes[h]->handled = 0;
-        }
-        up_removed++;
-      }
-
-    for (j = 0; j < gNB->max_nb_pucch; j++)
-      if (gNB->pucch[j]->active > 0 &&
-          gNB->pucch[j]->pucch_pdu.rnti == rnti_to_remove[i]) {
-        gNB->pucch[j]->active = 0;
-        gNB->pucch[j]->pucch_pdu.rnti = 0;
-        pucch_removed++;
-      }
+  // disactivate PHY stats if UE is inactive for more than 10 frames
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
+    if(stats->active && (frame_rx > (stats->frame + NUMBER_FRAMES_PHY_UE_INACTIVE) % 1024))
+      stats->active = false;
   }
-  if (rnti_to_remove_count) LOG_W(NR_PHY, "to remove rnti_to_remove_count=%d, up_removed=%d down_removed=%d pucch_removed=%d\n", rnti_to_remove_count, up_removed, down_removed, pucch_removed);
-  rnti_to_remove_count = 0;
-  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
 
   // RX processing
-  int rx_slot_type         = nr_slot_select(cfg,frame_rx,slot_rx);
+  int rx_slot_type = nr_slot_select(cfg,frame_rx,slot_rx);
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT

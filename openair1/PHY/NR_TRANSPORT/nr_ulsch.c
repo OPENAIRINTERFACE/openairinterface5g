@@ -34,57 +34,63 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 
-int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
+int16_t find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid, int frame)
+{
 
-  uint16_t i;
-  int16_t first_free_index=-1;
+  int16_t first_free_index = -1;
+  AssertFatal(gNB != NULL,"gNB is null\n");
 
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
-    AssertFatal(gNB->ulsch[i]!=NULL,"gNB->ulsch[%d] is null\n",i);
-    LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i]->harq_mask,gNB->ulsch[i]->rnti,first_free_index);
-    if ((gNB->ulsch[i]->harq_mask >0) &&
-        (gNB->ulsch[i]->rnti==rnti))       return i;
-    else if ((gNB->ulsch[i]->harq_mask == 0) && (first_free_index==-1)) first_free_index=i;
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
+    AssertFatal(ulsch != NULL, "gNB->ulsch[%d] is null\n", i);
+    if(!ulsch->active) {
+      if (first_free_index == -1)
+        first_free_index = i;
+    }
+    else {
+      // if there is already an active ULSCH for this RNTI and HARQ_PID
+      if ((ulsch->harq_pid == pid) && (ulsch->rnti == rnti))
+        return i;
+      // remove inactive ULSCH (from disconnected UEs)
+      else if ((frame > (ulsch->harq_process->frame + NUMBER_FRAMES_PHY_UE_INACTIVE) % 1024))
+        ulsch->active = false;
+    }
   }
-  if (type == SEARCH_EXIST) return -1;
-  if (first_free_index != -1)
-    gNB->ulsch[first_free_index]->rnti = 0;
   return first_free_index;
 }
 
 void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_pusch_pdu_t *ulsch_pdu) {
-
+                   nfapi_nr_pusch_pdu_t *ulsch_pdu)
+{
  
-  int ulsch_id = find_nr_ulsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
+  int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
+  int ulsch_id = find_nr_ulsch(gNB, ulsch_pdu->rnti, harq_pid, frame);
   AssertFatal((ulsch_id >= 0) && (ulsch_id < NUMBER_OF_NR_ULSCH_MAX),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
 
   NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id];
-  int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
-  ulsch->rnti = ulsch_pdu->rnti;
-  //ulsch->rnti_type;
-  ulsch->harq_mask |= 1<<harq_pid;
 
-  NR_UL_gNB_HARQ_t *harq = ulsch->harq_processes[harq_pid];
-  harq->frame=frame;
-  harq->slot=slot;
-  harq->handled = 0;
-  harq->status= NR_ACTIVE;
+  ulsch->rnti = ulsch_pdu->rnti;
+  ulsch->harq_pid = harq_pid;
+  ulsch->handled = 0;
+  ulsch->active = true;
+
+  NR_UL_gNB_HARQ_t *harq = ulsch->harq_process;
+  harq->frame = frame;
+  harq->slot = slot;
   harq->new_rx = ulsch_pdu->pusch_data.new_data_indicator;
-  LOG_D(PHY,"ULSCH ID %d RNTI %x HARQ PID %d new data indicator %d\n",ulsch_id, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
+  LOG_D(PHY,"%d.%d ULSCH ID %d RNTI %x HARQ PID %d new data indicator %d\n",
+        frame, slot, ulsch_id, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
   if (harq->new_rx)
     harq->round = 0;
   else
     harq->round++;
 
-  memcpy((void*)&ulsch->harq_processes[harq_pid]->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
+  memcpy((void*)&ulsch->harq_process->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
 
-  LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n",ulsch_id,harq_pid);
-
+  LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n", ulsch_id, harq_pid);
 }
 
 void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n_RNTI)
@@ -93,10 +99,10 @@ void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n
 }
 
 void nr_ulsch_layer_demapping(int16_t *llr_cw,
-				     uint8_t Nl,
-				     uint8_t mod_order,
-				     uint32_t length,
-				     int16_t **llr_layers) 
+                              uint8_t Nl,
+                              uint8_t mod_order,
+                              uint32_t length,
+                              int16_t **llr_layers)
 {
 
   switch (Nl) {
@@ -115,63 +121,51 @@ void nr_ulsch_layer_demapping(int16_t *llr_cw,
       }
       break;
   default:
-  AssertFatal(0, "Not supported number of layers %d\n", Nl);
+    AssertFatal(0, "Not supported number of layers %d\n", Nl);
   }
 }
 
-void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
+void dump_pusch_stats(FILE *fd, PHY_VARS_gNB *gNB)
+{
 
-  for (int i = 0;i < NUMBER_OF_NR_SCH_STATS_MAX;i++) {
-
-    if (gNB->ulsch_stats[i].rnti>0 && gNB->ulsch_stats[i].frame != gNB->ulsch_stats[i].dump_frame) {
-      gNB->ulsch_stats[i].dump_frame = gNB->ulsch_stats[i].frame; 
-      for (int aa=0;aa<gNB->frame_parms.nb_antennas_rx;aa++)
-          if (aa==0) fprintf(fd,"ULSCH RNTI %4x, %d.%d: ulsch_power[%d] %d,%d ulsch_noise_power[%d] %d.%d, sync_pos %d\n",
-                                     gNB->ulsch_stats[i].rnti,gNB->ulsch_stats[i].frame,gNB->ulsch_stats[i].dump_frame,
-                                     aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
-                                     aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10,
-                                     gNB->ulsch_stats[i].sync_pos);
-          else       fprintf(fd,"                  ulsch_power[%d] %d.%d, ulsch_noise_power[%d] %d.%d\n",
-                                     aa,gNB->ulsch_stats[i].power[aa]/10,gNB->ulsch_stats[i].power[aa]%10,
-                                     aa,gNB->ulsch_stats[i].noise_power[aa]/10,gNB->ulsch_stats[i].noise_power[aa]%10);
+  for (int i = 0;i < MAX_MOBILES_PER_GNB; i++) {
+    NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
+    if (stats->active && stats->frame != stats->ulsch_stats.dump_frame) {
+      stats->ulsch_stats.dump_frame = stats->frame;
+      for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)
+        if (aa==0)
+          fprintf(fd,"ULSCH RNTI %4x, %d: ulsch_power[%d] %d,%d ulsch_noise_power[%d] %d.%d, sync_pos %d\n",
+                  stats->rnti, stats->frame,
+                  aa, stats->ulsch_stats.power[aa]/10, stats->ulsch_stats.power[aa]%10,
+                  aa, stats->ulsch_stats.noise_power[aa]/10, stats->ulsch_stats.noise_power[aa]%10,
+                  stats->ulsch_stats.sync_pos);
+        else
+          fprintf(fd,"                  ulsch_power[%d] %d.%d, ulsch_noise_power[%d] %d.%d\n",
+                  aa, stats->ulsch_stats.power[aa]/10, stats->ulsch_stats.power[aa]%10,
+                  aa, stats->ulsch_stats.noise_power[aa]/10, stats->ulsch_stats.noise_power[aa]%10);
 
 
       fprintf(fd,"                 round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, DTX %d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
-	    gNB->ulsch_stats[i].round_trials[0],
-	    (double)gNB->ulsch_stats[i].round_trials[1]/gNB->ulsch_stats[i].round_trials[0],
-	    gNB->ulsch_stats[i].round_trials[1],
-	    (double)gNB->ulsch_stats[i].round_trials[2]/gNB->ulsch_stats[i].round_trials[0],
-	    gNB->ulsch_stats[i].round_trials[2],
-	    (double)gNB->ulsch_stats[i].round_trials[3]/gNB->ulsch_stats[i].round_trials[0],
-	    gNB->ulsch_stats[i].round_trials[3],
-            gNB->ulsch_stats[i].DTX,
-	    gNB->ulsch_stats[i].current_Qm,
-	    gNB->ulsch_stats[i].current_RI,
-	    gNB->ulsch_stats[i].total_bytes_rx,
-	    gNB->ulsch_stats[i].total_bytes_tx);
+              stats->ulsch_stats.round_trials[0],
+              (double)stats->ulsch_stats.round_trials[1]/stats->ulsch_stats.round_trials[0],
+              stats->ulsch_stats.round_trials[1],
+              (double)stats->ulsch_stats.round_trials[2]/stats->ulsch_stats.round_trials[0],
+              stats->ulsch_stats.round_trials[2],
+              (double)stats->ulsch_stats.round_trials[3]/stats->ulsch_stats.round_trials[0],
+              stats->ulsch_stats.round_trials[3],
+              stats->ulsch_stats.DTX,
+              stats->ulsch_stats.current_Qm,
+              stats->ulsch_stats.current_RI,
+              stats->ulsch_stats.total_bytes_rx,
+              stats->ulsch_stats.total_bytes_tx);
     }
- }
+  }
 }
 
-void clear_pusch_stats(PHY_VARS_gNB *gNB) {
-
-  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++)
-    memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
+void clear_pusch_stats(PHY_VARS_gNB *gNB)
+{
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++)
+    memset((void*)&gNB->phy_stats[i].ulsch_stats,0,sizeof(gNB->phy_stats[i].ulsch_stats));
 }
 
-NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch) {
-   NR_gNB_SCH_STATS_t *stats=NULL;
-   int first_free=-1;
-   for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
-       if (gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
-          first_free = i;
-          stats=&gNB->ulsch_stats[i];
-       }
-       if (gNB->ulsch_stats[i].rnti == ulsch->rnti) {
-           stats=&gNB->ulsch_stats[i];
-           break;
-       }
-   }
-   return(stats);
-}
 

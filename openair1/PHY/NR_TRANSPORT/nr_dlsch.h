@@ -52,8 +52,6 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch);
 
-void clean_gNB_ulsch(NR_gNB_ULSCH_t *ulsch);
-
 int16_t find_nr_dlsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
 
 NR_gNB_SCH_STATS_t *find_nr_dlsch_stats(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);

@@ -77,6 +77,28 @@ void init_ul_delay_table(NR_DL_FRAME_PARMS *fp)
   }
 }
 
+NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti)
+{
+   NR_gNB_PHY_STATS_t *stats;
+   int first_free = -1;
+   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+     stats = &gNB->phy_stats[i];
+     if (stats->active && stats->rnti == rnti)
+       return stats;
+     else if (!stats->active && first_free == -1)
+       first_free = i;
+   }
+   // new stats
+   AssertFatal(first_free >= 0, "PHY statistics list is full\n");
+   stats = &gNB->phy_stats[first_free];
+   stats->active = true;
+   stats->rnti = rnti;
+   memset((void*)&stats->dlsch_stats, 0, sizeof(stats->dlsch_stats));
+   memset((void*)&stats->ulsch_stats, 0, sizeof(stats->ulsch_stats));
+   memset((void*)&stats->uci_stats, 0, sizeof(stats->uci_stats));
+   return(stats);
+}
+
 int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
   if(gNB->frame_parms.nb_antennas_tx>1){

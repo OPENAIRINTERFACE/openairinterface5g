@@ -38,7 +38,7 @@
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
-void nr_est_timing_advance_pusch(const NR_DL_FRAME_PARMS *frame_parms, const int32_t *ul_ch_estimates_time, struct delay_s *delay)
+void nr_est_timing_advance_pusch(const NR_DL_FRAME_PARMS *frame_parms, const int32_t *ul_ch_estimates_time, NR_ULSCH_delay_t *delay)
 {
   int max_pos = delay->pusch_delay_max_pos;
   int max_val = delay->pusch_delay_max_val;
@@ -208,19 +208,20 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
 //
 // Todo:
 // - averaging IIR filter for RX power and noise
-void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers){
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers)
+{
 
   int rx_power_tot[NUMBER_OF_NR_ULSCH_MAX];
   int rx_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_RX];
   unsigned short rx_power_avg_dB[NUMBER_OF_NR_ULSCH_MAX];
   unsigned short rx_power_tot_dB[NUMBER_OF_NR_ULSCH_MAX];
 
-  double             rx_gain = openair0_cfg[0].rx_gain[0];
-  double      rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
+  double rx_gain = openair0_cfg[0].rx_gain[0];
+  double rx_gain_offset = openair0_cfg[0].rx_gain_offset[0];
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
-  NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
-  int              ch_offset = fp->ofdm_symbol_size * symbol;
-  int                N_RB_UL = gNB->ulsch[ulsch_id]->harq_processes[harq_pid]->ulsch_pdu.rb_size;
+  NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  int ch_offset = fp->ofdm_symbol_size * symbol;
+  int N_RB_UL = gNB->ulsch[ulsch_id]->harq_process->ulsch_pdu.rb_size;
 
   rx_power_tot[ulsch_id] = 0;
 

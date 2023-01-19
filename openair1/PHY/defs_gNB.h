@@ -97,9 +97,7 @@ typedef struct {
 } NR_gNB_CSIRS_t;
 
 typedef struct {
-  int frame;
   int dump_frame;
-  uint16_t rnti;
   int round_trials[8];
   int total_bytes_tx;
   int total_bytes_rx;
@@ -112,8 +110,6 @@ typedef struct {
 } NR_gNB_SCH_STATS_t;
 
 typedef struct {
-  int frame;
-  uint16_t rnti;
   int pucch0_sr_trials;
   int pucch0_sr_thres;
   int current_pucch0_sr_stat0;
@@ -133,6 +129,17 @@ typedef struct {
 } NR_gNB_UCI_STATS_t;
 
 typedef struct {
+  int frame;
+  uint16_t rnti;
+  bool active;
+  /// statistics for DLSCH measurement collection
+  NR_gNB_SCH_STATS_t dlsch_stats;
+  /// statistics for ULSCH measurement collection
+  NR_gNB_SCH_STATS_t ulsch_stats;
+  NR_gNB_UCI_STATS_t uci_stats;
+} NR_gNB_PHY_STATS_t;
+
+typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
@@ -141,12 +148,8 @@ typedef struct {
   int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t ***ue_spec_bf_weights;
-  /// Allocated RNTI (0 means DLSCH_t is not currently used)
-  uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
-  /// HARQ process mask, indicates which processes are currently active
-  uint16_t harq_mask;
   /// Number of soft channel bits
   uint32_t G;
 } NR_gNB_DLSCH_t;
@@ -192,11 +195,7 @@ typedef struct {
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   bool new_rx;
-  /// Status Flag indicating for this ULSCH (idle,active,disabled)
-  NR_SCH_status_t status;
-  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
-  uint8_t handled;
-    /////////////////////// ulsch decoding ///////////////////////
+  /////////////////////// ulsch decoding ///////////////////////
   /// Transport block size (This is A from 38.212 V15.4.0 section 5.1)
   uint32_t TBS;
   /// Pointer to the payload (38.212 V15.4.0 section 5.1)
@@ -227,18 +226,30 @@ typedef struct {
 
 
 typedef struct {
+  /// Time shift in number of samples estimated based on DMRS-PUSCH
+  int pusch_est_delay;
+  /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
+  int pusch_delay_max_pos;
+  /// Max value related to time shift estimation based on DMRS-PUSCH
+  int pusch_delay_max_val;
+} NR_ULSCH_delay_t;
+
+typedef struct {
   /// Pointers to 16 HARQ processes for the ULSCH
-  NR_UL_gNB_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
+  NR_UL_gNB_HARQ_t *harq_process;
   /// HARQ process mask, indicates which processes are currently active
-  uint16_t harq_mask;
+  int harq_pid;
   /// Allocated RNTI for this ULSCH
   uint16_t rnti;
-  /// RNTI type
-  uint8_t rnti_type;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
-  uint8_t last_iteration_cnt;  
+  uint8_t last_iteration_cnt;
+  /// Status Flag indicating for this ULSCH
+  bool active;
+  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
+  uint8_t handled;
+  NR_ULSCH_delay_t delay;
 } NR_gNB_ULSCH_t;
 
 typedef struct {
@@ -546,15 +557,6 @@ typedef struct {
   /// PRACH background noise level
   int            prach_I0;
 
-  struct delay_s {
-    /// Time shift in number of samples estimated based on DMRS-PUSCH
-    int pusch_est_delay;
-    /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
-    int pusch_delay_max_pos;
-    /// Max value related to time shift estimation based on DMRS-PUSCH
-    int pusch_delay_max_val;
-  } delay[NUMBER_OF_NR_ULSCH_MAX];
-
 } PHY_MEASUREMENTS_gNB;
 
 
@@ -615,11 +617,7 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_PUCCH_t     **pucch;
   NR_gNB_SRS_t       **srs;
   NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
-  /// statistics for DLSCH measurement collection
-  NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
-  /// statistics for ULSCH measurement collection
-  NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
-  NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
+  NR_gNB_PHY_STATS_t phy_stats[MAX_MOBILES_PER_GNB];
   t_nrPolar_params    **polarParams;
 
   /// SRS variables

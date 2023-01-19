@@ -38,6 +38,7 @@
 
 #define NR_PBCH_PDU_BITS 24
 
+NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti);
 
 int nr_generate_prs(uint32_t **nr_gold_prs,
                     c16_t *txdataF,
@@ -312,18 +313,8 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int slot,
                    nfapi_nr_pucch_pdu_t *pucch_pdu);
 
-int nr_find_pucch(uint16_t rnti,
-                  int frame,
-                  int slot,
-                  PHY_VARS_gNB *gNB);
-
 NR_gNB_SRS_t *new_gNB_srs(void);
 void free_gNB_srs(NR_gNB_SRS_t *srs);
-
-int nr_find_srs(rnti_t rnti,
-                frame_t frame,
-                slot_t slot,
-                PHY_VARS_gNB *gNB);
 
 void nr_fill_srs(PHY_VARS_gNB *gNB,
                  frame_t frame,
