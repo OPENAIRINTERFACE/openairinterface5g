@@ -36,7 +36,6 @@
   #include "RRC/LTE/rrc_defs.h"
 # include "enb_app.h"
 # include "openair2/LAYER2/MAC/mac_proto.h"
-#include <executables/split_headers.h> 
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 extern RAN_CONTEXT_t RC;
@@ -52,12 +51,13 @@ int create_tasks(uint32_t enb_nb) {
   AssertFatal(rc >= 0, "Create task for eNB APP failed\n");
   rrc_enb_init();
   itti_mark_task_ready(TASK_RRC_ENB);
-  if (get_softmodem_params()->emulate_l1 || (EPC_MODE_ENABLED && split73 != SPLIT73_DU)) {
+
+  if (get_softmodem_params()->emulate_l1 || EPC_MODE_ENABLED) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
   }
 
-  if (EPC_MODE_ENABLED && ! ( split73==SPLIT73_DU ) ) {
+  if (EPC_MODE_ENABLED) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
     rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);

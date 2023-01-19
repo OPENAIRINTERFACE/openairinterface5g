@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <platform_types.h>
-#include "backtrace.h"
 
 #define _Assert_Exit_							\
   if (getenv("gdbStacks")) {						\

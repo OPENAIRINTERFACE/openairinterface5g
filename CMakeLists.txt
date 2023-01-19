@@ -2185,39 +2185,6 @@ target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 
-add_executable(ocp-enb
-  ${OPENAIR_DIR}/executables/main-ocp.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${OPENAIR_DIR}/executables/main-fs6.c
-  ${OPENAIR_DIR}/executables/transport_split.c
-  ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
-  ${OPENAIR_DIR}/executables/create_tasks.c
-  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
-  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
-  ${OPENAIR_DIR}/radio/COMMON/record_player.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
-  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
-  ${OPENAIR_DIR}/common/utils/lte/ue_power.c
-  ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
-  ${PHY_INTERFACE_DIR}/queue_t.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
-  )
-add_dependencies(ocp-enb oai_iqplayer coding params_libconfig rfsimulator)
-
-target_link_libraries (ocp-enb
-  -Wl,--start-group
-  lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
-  PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI
-  -Wl,--end-group z dl)
-target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${LIB_LMS_LIBRARIES} ${T_LIB})
-
 add_executable(oairu
   ${OPENAIR_DIR}/executables/lte-ru.c
   ${OPENAIR_DIR}/executables/ru_control.c

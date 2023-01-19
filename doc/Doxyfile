@@ -2547,7 +2547,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/create_tasks.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/softmodem-common.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/rt_profiling.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../executables/split_headers.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/create_tasks.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/nr-uesoftmodem.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/nr-uesoftmodem.h \

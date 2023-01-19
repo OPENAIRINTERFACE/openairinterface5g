@@ -52,7 +52,6 @@
 #include "common/config/config_load_configmodule.h"
 #include "executables/thread-common.h"
 #include "executables/lte-softmodem.h"
-#include "executables/split_headers.h"
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 
@@ -91,14 +90,6 @@ static int cmpdouble(const void *p1, const void *p2) {
 }
 
 RAN_CONTEXT_t RC;
-int split73=0;
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-
 extern void fep_full(RU_t *ru, int subframe);
 extern void ru_fep_full_2thread(RU_t *ru, int subframe);
 //extern void eNB_fep_full(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc);
