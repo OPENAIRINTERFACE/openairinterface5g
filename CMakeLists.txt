@@ -55,30 +55,6 @@ check_option(${ASN1C_EXEC} -no-gen-JER ASN1C_EXEC)
 check_option(${ASN1C_EXEC} -no-gen-BER ASN1C_EXEC)
 check_option(${ASN1C_EXEC} -no-gen-OER ASN1C_EXEC)
 
-#uhd 4.0 and iris installs by default in /usr/local
-include_directories("/usr/local/include/")
-#use native cmake method as this package is not in pkg-config
-add_list2_option(RF_BOARD "None" "RF head type" "None" "OAI_USRP" "OAI_BLADERF" "OAI_LMSSDR" "OAI_SIMU")
-if (${RF_BOARD} STREQUAL "OAI_USRP")
-  find_package(Boost REQUIRED)
-
-elseif (${RF_BOARD} STREQUAL "OAI_IRIS")
-    include_directories("radio/IRIS/USERSPACE/LIB/")
-
-    set(HW_SOURCE ${HW_SOURCE}
-           radio/IRIS/USERSPACE/LIB/iris_lib.cpp)
-    LINK_DIRECTORIES("/usr/local/lib")
-    set(option_HW_lib "-lSoapySDR -rdynamic -ldl")
-
-elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
-    include_directories("radio/AW2SORI")
-    set(HW_SOURCE ${HW_SOURCE}
-	    ${OPENAIR_DIR}/radio/AW2SORI/ARCH/AW2SORI/oaiori.c)
-    LINK_DIRECTORIES("/usr/local/lib")
-    set(openair_HW_lib "-shared -fPIC -msse4 -g -ggdb -lori")
-
-endif (${RF_BOARD} STREQUAL "OAI_USRP")
-
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
@@ -459,101 +435,6 @@ target_link_libraries(params_libconfig PRIVATE ${libconfig_LIBRARIES})
 # shared library loader
 add_library(shlib_loader OBJECT common/utils/load_module_shlib.c)
 target_link_libraries(shlib_loader PRIVATE CONFIG_LIB)
-
-# include RF devices / transport protocols library modules
-######################################################################
-
-set(HWLIB_USRP_SOURCE
-  ${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/usrp_lib.cpp
-  )
-add_library(oai_usrpdevif MODULE ${HWLIB_USRP_SOURCE} )
-target_include_directories(oai_usrpdevif PRIVATE
-  "${OPENAIR_DIR}/radio/USRP/USERSPACE/LIB/"
-  ${Boost_INCLUDE_DIR}
-)
-target_link_libraries(oai_usrpdevif uhd)
-
-include_directories("${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/")
-set(HWLIB_BLADERF_SOURCE
-  ${OPENAIR_DIR}/radio/BLADERF/USERSPACE/LIB/bladerf_lib.c
-  )
-add_library(oai_bladerfdevif MODULE ${HWLIB_BLADERF_SOURCE} )
-target_link_libraries(oai_bladerfdevif bladeRF)
-
-include_directories("${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/")
-
-set(HWLIB_LMSSDR_SOURCE
-  ${OPENAIR_DIR}/radio/LMSSDR/USERSPACE/LIB/lms_lib.cpp
-  )
-add_library(oai_lmssdrdevif MODULE ${HWLIB_LMSSDR_SOURCE} )
-target_include_directories(oai_lmssdrdevif PRIVATE /usr/local/include/lime)
-target_link_libraries(oai_lmssdrdevif LimeSuite )
-
-
-include_directories("${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/")
-set(TPLIB_ETHERNET_SOURCE
-  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/ethernet_lib.c
-  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_udp.c
-  ${OPENAIR_DIR}/radio/ETHERNET/USERSPACE/LIB/eth_raw.c
-  )
-add_library(oai_eth_transpro MODULE ${TPLIB_ETHERNET_SOURCE} )
-
-include_directories("${OPENAIR_DIR}/radio/AW2SORI/")
-link_directories("/usr/local/lib")
-set(HWLIB_AW2SORI_SOURCE
-  ${OPENAIR_DIR}/radio/AW2SORI/oaiori.c
-  )
-add_library(aw2sori_transpro MODULE ${HWLIB_AW2SORI_SOURCE})
-target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
-target_link_libraries(aw2sori_transpro libori.so)
-
-include_directories("${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/")
-set(option_HWIRISLIB_lib "-l SoapySDR")
-set(HWLIB_IRIS_SOURCE
-  ${OPENAIR_DIR}/radio/IRIS/USERSPACE/LIB/iris_lib.cpp
-  )
-add_library(oai_irisdevif MODULE ${HWLIB_IRIS_SOURCE})
-target_include_directories(oai_irisdevif PRIVATE /usr/local/lib/SoapySDR/modules0.7/)
-target_link_libraries(oai_irisdevif SoapySDR)
-
-# Benetel 4G library
-######################################################################
-
-
-include_directories ("/usr/include/dpdk")
-
-set(HWLIB_BENETEL_4G_SOURCE
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/benetel.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/shared_buffers.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/low_dpdk.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/4g/dpdk_driver.c
-  )
-add_library(benetel_4g MODULE ${HWLIB_BENETEL_4G_SOURCE} )
-
-set_target_properties(benetel_4g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
-
-SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
-target_link_libraries(benetel_4g PRIVATE ${DPDK_LIBS})
-target_link_libraries(benetel_4g PRIVATE pthread dl rt m numa)
-
-# Benetel 5G library
-######################################################################
-
-set(HWLIB_BENETEL_5G_SOURCE
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/benetel.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/shared_buffers.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/low_dpdk.c
-  ${OPENAIR_DIR}/radio/ETHERNET/benetel/5g/dpdk_driver.c
-  )
-add_library(benetel_5g MODULE ${HWLIB_BENETEL_5G_SOURCE} )
-
-set_target_properties(benetel_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -I$ENV{RTE_SDK}/$ENV{RTE_TARGET}/include")
-
-SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
-target_link_libraries(benetel_5g PRIVATE ${DPDK_LIBS})
-target_link_libraries(benetel_5g PRIVATE pthread dl rt m numa)
 
 ##########################################################
 
@@ -1976,13 +1857,6 @@ include_directories("${NFAPI_DIR}/nfapi/inc")
 include_directories("${NFAPI_DIR}/sim_common/inc")
 include_directories("${NFAPI_DIR}/pnf_sim/inc")
 
-add_library(rfsimulator MODULE
-  ${OPENAIR_DIR}/radio/rfsimulator/simulator.c
-  ${OPENAIR_DIR}/radio/rfsimulator/apply_channelmod.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
-	)
-target_link_libraries(rfsimulator PRIVATE SIMU)
-
 add_library(oai_iqplayer MODULE
 	${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c
 	)
@@ -2039,11 +1913,6 @@ target_link_libraries(minimal_lib pthread dl ${T_LIB})
 add_executable(nfapi_test
   ${OPENAIR_DIR}/openair2/NR_PHY_INTERFACE/nfapi_5g_test.c
   )
-
-add_executable(replay_node
-  ${OPENAIR_DIR}/radio/rfsimulator/stored_node.c
-  )
-target_link_libraries (replay_node minimal_lib)
 
 add_executable(measurement_display
   ${OPENAIR_DIR}/common/utils/threadPool/measurement_display.c)
@@ -2583,3 +2452,4 @@ add_subdirectory(doc)
 add_subdirectory(openair1)
 add_subdirectory(openair2)
 add_subdirectory(openair3)
+add_subdirectory(radio)

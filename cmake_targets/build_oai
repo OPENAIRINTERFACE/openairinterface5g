@@ -282,19 +282,27 @@ function main() {
             case "$2" in
                 "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU" | "AW2SORI")
                     HW="OAI_"$2
+                    CMAKE_CMD="$CMAKE_CMD -DOAI_$2=ON"
                     ;;
                 "None")
                     HW="None"
                     ;;
                 *)
-                    echo_fatal "Unknown HW type $HW: exit..."
+                    echo_fatal "Unknown HW type $2: exit..."
             esac
-            echo_info "Setting hardware to: $HW"
-            #CMAKE_CMD="$CMAKE_CMD -DRF_BOARD=\"${HW}\""
-            CMAKE_CMD="$CMAKE_CMD -DRF_BOARD=${HW}"
             shift 2;;
        -t | --transport)
-	    TP=$2
+            case "$2" in
+              "Ethernet" | "benetel4g" | "benetel5g")
+                TP=$2
+                CMAKE_CMD="$CMAKE_CMD -DOAI_${2^^}=ON" # ^^ makes uppercase
+                ;;
+              "None")
+                HW="None"
+                ;;
+              *)
+                echo_fatal "Unknown TP type $2; exit..."
+            esac
             shift 2;;
        -P | --phy_simulators)
             SIMUS_PHY=1
@@ -435,26 +443,6 @@ function main() {
           echo_fatal "Did NOT find cov-build in PATH!"
       fi
   fi
-
-  ########################################################
-  # Check validity of HW and TP parameters for eNB / gNB #
-  ########################################################
-  # to be discussed
-  
-  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
-      if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
-	      echo_info "No local radio head and no transport protocol selected"
-      fi
-      if [ "$HW" = "None" ] ; then 
-	      echo_info "No radio head has been selected (HW set to $HW)"	
-      fi
-      if [ "$TP" = "None" ] ; then
-	      echo_info "No transport protocol has been selected (TP set to $TP)"	
-      fi
-  fi
-
-  echo_info "RF HW set to $HW" 
-  # If the user doesn't specify the Linux scheduler to use, we set a value
 
   #######################################################
   # Setting and printing OAI envs, we should check here #
