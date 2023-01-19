@@ -221,25 +221,6 @@ int get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
                                nr_dci_format_t dci_format,
                                uint8_t *pdsch_to_harq_feedback);
   
-void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-                                  nr_scs_e scs_common,
-                                  nr_scs_e pdcch_scs,
-                                  frequency_range_t freq_range,
-                                  uint8_t rmsi_pdcch_config,
-                                  uint8_t ssb_idx,
-                                  uint8_t k_ssb,
-                                  uint16_t sfn_ssb,
-                                  uint8_t n_ssb,
-                                  uint16_t nb_slots_per_frame,
-                                  uint16_t N_RB);
-/*
-int nr_is_dci_opportunity(nfapi_nr_search_space_t search_space,
-                          nfapi_nr_coreset_t coreset,
-                          uint16_t frame,
-                          uint16_t slot,
-                          nfapi_nr_config_request_scf_t cfg);
-*/
-
 int nr_get_pucch_resource(NR_ControlResourceSet_t *coreset,
                           NR_PUCCH_Config_t *pucch_Config,
                           int CCEIndex);
