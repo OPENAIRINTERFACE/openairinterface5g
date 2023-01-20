@@ -61,6 +61,7 @@
 		<eNB_Trace>yes</eNB_Trace>
 		<eNB_Stats>yes</eNB_Stats>
 		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
+		<cmd_prefix>numactl --cpunodebind=netdev:ens2f0np0 --membind=netdev:ens2f0np0</cmd_prefix>
 	</testCase>
 
 	<testCase id="000001">
