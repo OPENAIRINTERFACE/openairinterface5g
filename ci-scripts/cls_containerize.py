@@ -865,7 +865,6 @@ class Containerize():
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 
 		# Currently support only one
-		mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 15)
 		svcName = self.services[self.eNB_instance]
 		if svcName == '':
 			logging.warning('no service name given: starting all services in ci-docker-compose.yml!')

@@ -365,17 +365,6 @@ class RANManagement():
 		cwd = os.getcwd()
 		mySSH.copyout(lIpAddr,lUserName,lPassWord, cwd + "/active_net_interfaces.awk", "/tmp")
 		
-		#reboot USRP if requested in xml
-		if self.USRPIPAddress!='':
-			logging.debug('USRP '+ self.USRPIPAddress +': reboot request')
-			mySSH.open(lIpAddr, lUserName, lPassWord)
-			cmd2usrp='ssh root@'+self.USRPIPAddress+' reboot'
-			mySSH.command2(cmd2usrp,1)
-			mySSH.close()
-			logging.debug('Waiting for USRP to be ready')
-			time.sleep(120)
-
-
 		if (self.pStatus < 0):
 			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
 			HTML.CreateHtmlTabFooter(False)
@@ -437,16 +426,6 @@ class RANManagement():
 		result = re.search('^rru|^rcc|^du.band', str(config_file))
 		if result is not None:
 			rruCheck = True
-		# do not reset board twice in IF4.5 case
-		result = re.search('^rru|^enb|^du.band', str(config_file))
-		if result is not None:
-			mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
-			result = re.search('type: b200', mySSH.getBefore())
-			if result is not None:
-				logging.debug('Found a B2xx device --> resetting it')
-				mySSH.command('echo ' + lPassWord + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
-				# Reloading FGPA bin firmware
-				mySSH.command('echo ' + lPassWord + ' | sudo -S uhd_find_devices', '\$', 180)
 		# Make a copy and adapt to EPC / eNB IP addresses
 		mySSH.command('cp ' + full_config_file + ' ' + ci_full_config_file, '\$', 5)
 		localMmeIpAddr = EPC.MmeIPAddress
