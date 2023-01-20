@@ -417,7 +417,7 @@ extern int oai_exit;
 void *udp_write_thread(void *arg) {
 
    udp_ctx_t *utx = (udp_ctx_t *)arg;
-   utx->resp = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_elt_t));
+   utx->resp = malloc(sizeof(*utx->resp));
    initNotifiedFIFO(utx->resp);
    LOG_D(PHY,"UDP write thread started on core %d\n",sched_getcpu()); 
    reset_meas(&utx->device->tx_fhaul);
@@ -447,15 +447,29 @@ void *udp_read_thread(void *arg) {
   while (oai_exit == 0) {
     LOG_I(PHY,"UDP read thread %d, waiting for start sampling_rate_d %d, sampling_rate_n %d\n",u->thread_id,device->sampling_rate_ratio_n,device->sampling_rate_ratio_d);
     while (fhstate->active > 0) {
-      size_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[0],
-                              buffer,sizeof(buffer),0,
-                              (struct sockaddr *)&((eth_state_t*)device->priv)->dest_addrd,
-                              (socklen_t *)&((eth_state_t*)device->priv)->addr_len);
+      ssize_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[0],
+                               buffer,sizeof(buffer),0,
+                               (struct sockaddr *)&((eth_state_t*)device->priv)->dest_addrd,
+                               (socklen_t *)&((eth_state_t*)device->priv)->addr_len);
+      /* log and skip processing in case of error from recvfrom */
+      /* (to be refined if needed) */
+      if (count == 0) {
+        LOG_E(PHY, "recvfrom returned 0\n");
+        continue;
+      }
+      if (count < 0) {
+        LOG_E(PHY, "recvfrom failed (%s)\n", strerror(errno));
+        continue;
+      }
+      /* if oai_exit is 1 here, don't access the array rxbase,
+       * it may have been freed(), so let's break at this point
+       */
+      if (oai_exit)
+        break;
       aid = *(uint16_t*)(&buffer[ECPRICOMMON_BYTES]);
       TS  = *(openair0_timestamp *)(&buffer[ECPRICOMMON_BYTES+ECPRIPCID_BYTES]);   
       // convert TS to samples, /6 for AW2S @ 30.72 Ms/s, this is converted for other sample rates in OAI application
       TS = (device->sampling_rate_ratio_n*TS)/(device->sampling_rate_ratio_d*6);
-      if ((int)count <= 0)  continue;
       AssertFatal(aid < 8,"Cannot handle more than 8 antennas, got aid %d\n",aid);
       fhstate->r[aid]=1;
       if (aid==0 && first_read == 0) fhstate->TS0 = TS;
@@ -475,6 +489,11 @@ void *udp_read_thread(void *arg) {
     }
     sleep(1);
   }
+
+  /* let's unblock reader (maybe not the best way to do it) */
+  fhstate->first_read = 0;
+  fhstate->r[0] = 1;
+
   return(0);  
 }
 
