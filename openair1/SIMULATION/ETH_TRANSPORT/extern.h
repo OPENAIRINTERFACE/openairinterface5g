@@ -42,9 +42,6 @@ extern unsigned char emu_rx_status;
 //extern unsigned int Is_primary_master;
 
 #if !defined(ENABLE_NEW_MULTICAST)
-extern pthread_mutex_t emul_low_mutex;
-extern pthread_cond_t emul_low_cond;
-extern char emul_low_mutex_var;
 extern pthread_mutex_t Tx_mutex;
 extern pthread_cond_t Tx_cond;
 extern char Tx_mutex_var;

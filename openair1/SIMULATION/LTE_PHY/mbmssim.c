@@ -43,7 +43,6 @@
 #include "PHY/phy_vars.h"
 
 #include "SCHED/sched_eNB.h"
-#include "SCHED/sched_common_vars.h"
 #include "LAYER2/MAC/mac_vars.h"
 
 #include "OCG_vars.h"

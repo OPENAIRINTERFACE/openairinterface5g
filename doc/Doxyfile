@@ -2110,7 +2110,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/nfapi_lte_dummy.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/sched_eNB.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/phy_procedures_lte_common.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/sched_common_vars.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/phy_procedures_lte_eNb.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/sched_common_extern.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED/nfapi_nr_dummy.c \
@@ -2438,7 +2437,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/MODULATION/nr_modulation.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/MODULATION/slot_fep.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/MODULATION/ul_7_5_kHz.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/MODULATION/modulation_vars.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/MODULATION/slot_fep_ul.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/phy_extern.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/defs_UE.h \

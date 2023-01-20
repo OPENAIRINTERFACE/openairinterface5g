@@ -23,7 +23,7 @@
 #define RLC_AM_TIMER_STATUS_PROHIBIT_C 1
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 //-----------------------------------------------------------------------------
 #include "rlc_am.h"
 #include "LAYER2/MAC/mac_extern.h"

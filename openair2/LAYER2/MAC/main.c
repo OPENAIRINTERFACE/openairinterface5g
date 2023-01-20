@@ -249,20 +249,6 @@ int rlcmac_init_global_param(void)
     return 0;
 }
 
-
-void mac_top_cleanup(void)
-{
-
-    if (NB_UE_INST > 0) {
-	free(UE_mac_inst);
-    }
-
-    if (RC.nb_macrlc_inst > 0) {
-	free(RC.mac);
-    }
-
-}
-
 int l2_init_eNB(void)
 {
 

@@ -10024,40 +10024,6 @@ int main(int argc, char**argv)
   printf("\n\n49152-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   LOG_M("y49152.m","y49152",y,49152,1,1);
   LOG_M("x49152.m","x49152",x,49152,1,1);
-  /*
-  int dftsizes[33]={24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,768,864,900,960,972,1080,1152,1200};
-  void (*dft)(int16_t *x,int16_t *y,uint8_t scale)[33] = {dft24,dft36,dft48,dft60,dft72,dft96,dft108,dft120,dft144,dft180,dft192,dft216,dft240,dft288,dft300,dft324,dft360,dft384,dft432,dft480,dft540,dft576,dft600,dft648,dft720,dft768,dft864,dft900,dft960,dft972,dft1080,dft1152,dft1200};
-  for (int n=0;n<33;n++) {
-    // 4xN-point DFT
-    memset((void*)x,0,dftsizes[n]*8*sizeof(int16_t));
-    for (i=0;i<dftsizes[n]*8;i+=8) {
-      if ((taus() & 1)==0)
-	((int16_t*)x)[i]   = 364;
-      else
-	((int16_t*)x)[i]   = -364;
-      if ((taus() & 1)==0)
-	((int16_t*)x)[i+1] = 364;
-      else
-	((int16_t*)x)[i+1] = -364;
-    }
-    
-    reset_meas(&ts);
-    for (i=0; i<10000; i++) {
-      start_meas(&ts);
-      (dft[n])((int16_t *)x,(int16_t *)y,1);
-      stop_meas(&ts);
-    }
-    
-    printf("\n\n4x%d-point(%f cycles)\n",dftsizes[n],(double)ts.diff/(double)ts.trials);
-    char ystr[5],xstr[5],ystr2[5],xstr2[5];
-    sprintf(ystr,"y%d.m",dftsizes[n]);
-    sprintf(xstr,"x%d.m",dftsizes[n]);
-    sprintf(ystr2,"y%d",dftsizes[n]);
-    sprintf(xstr2,"x%d",dftsizes[n]);
-    LOG_M(ystr,ystr2,y,dftsizes[n]*4,1,1);
-    LOG_M(xstr,xstr2,x,dftsizes[n]*4,1,1);
-  }
-  */
 
   return(0);
 }

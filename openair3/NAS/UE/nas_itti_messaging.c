@@ -23,6 +23,7 @@
 
 #include "intertask_interface.h"
 #include "nas_itti_messaging.h"
+#include "common/ran_context.h"
 
 #   define TASK_ORIGIN  TASK_NAS_UE
 
@@ -94,10 +95,6 @@ int nas_itti_protected_msg(const char *buffer, const nas_message_t *msg, const i
   return 0;
 }
 #endif
-
-
-
-extern unsigned char NB_eNB_INST;
 
 int nas_itti_kenb_refresh_req(const Byte_t kenb[32], int user_id) {
   MessageDef *message_p;

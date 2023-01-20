@@ -42,6 +42,7 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "rrc_eNB_UE_context.h"
 #include "common/ran_context.h"
+#include "openair2/RRC/LTE/rrc_proto.h"
 
 extern RAN_CONTEXT_t RC;
 extern UE_MAC_INST *UE_mac_inst;
@@ -95,12 +96,7 @@ rrc_config_buffer(
 
 
 //-----------------------------------------------------------------------------
-long
-binary_search_int(
-  int elements[],
-  long numElem,
-  int value
-)
+long binary_search_int(const int elements[], long numElem, int value)
 //-----------------------------------------------------------------------------
 {
   long first, last, middle, search = -1;
@@ -141,12 +137,7 @@ binary_search_int(
    Used for RSRP and RSRQ measurement mapping. Can potentially be used for other things
 */
 //-----------------------------------------------------------------------------
-long
-binary_search_float(
-  float elements[],
-  long numElem,
-  float value
-)
+long binary_search_float(const float elements[], long numElem, float value)
 //-----------------------------------------------------------------------------
 {
   long first, last, middle;

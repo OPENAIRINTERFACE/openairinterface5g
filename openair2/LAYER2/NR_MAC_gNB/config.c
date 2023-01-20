@@ -31,7 +31,7 @@
  */
 
 #include "COMMON/platform_types.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "common/ran_context.h"
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"

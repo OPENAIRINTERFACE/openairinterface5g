@@ -68,7 +68,6 @@
 #include "SIMULATION/LTE_PHY/common_sim.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 
-#include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 
 #include <executables/softmodem-common.h>
@@ -372,6 +371,7 @@ nrUE_params_t *get_nrUE_params(void) {
 
 void do_nothing(void *args) {
 }
+int NB_UE_INST = 1;
 
 int main(int argc, char **argv)
 {
@@ -414,7 +414,6 @@ int main(int argc, char **argv)
 
   SCM_t channel_model = AWGN; // AWGN Rayleigh1 Rayleigh1_anticorr;
 
-  NB_UE_INST = 1;
   //double pbch_sinr;
   //int pbch_tx_ant;
   int N_RB_DL=106,mu=1;

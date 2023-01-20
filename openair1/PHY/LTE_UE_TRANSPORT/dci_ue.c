@@ -38,7 +38,7 @@
 #include "SCHED_UE/sched_UE.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include "PHY/sse_intrin.h"
-#include "PHY/LTE_TRANSPORT/transport_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "SCHED/sched_common.h"
 
@@ -2021,8 +2021,18 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
         }
 
 #ifdef DEBUG_DCI_DECODING
-        LOG_I(PHY,"[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x) candidate %d / %d \n",
-              *dci_cnt,crc,1<<L,sizeof_bits,dci_format_strings[dci_alloc[*dci_cnt-1].format],CCEind,*CCEmap,m,nb_candidates );
+        static const char dci_format_strings[15][13] = {"0", "1", "1A", "1B", "1C", "1D", "1E_2A_M10PRB", "2", "2A", "2B", "2C", "2D", "3"};
+        LOG_I(PHY,
+              "[DCI search] Found DCI %d rnti %x Aggregation %d length %d format %s in CCE %d (CCEmap %x) candidate %d / %d \n",
+              *dci_cnt,
+              crc,
+              1 << L,
+              sizeof_bits,
+              dci_format_strings[dci_alloc[*dci_cnt - 1].format],
+              CCEind,
+              *CCEmap,
+              m,
+              nb_candidates);
         dump_dci(frame_parms,&dci_alloc[*dci_cnt-1]);
 
 #endif

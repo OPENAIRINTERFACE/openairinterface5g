@@ -23,7 +23,7 @@
 #define RLC_AM_C 1
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 //-----------------------------------------------------------------------------
 
 #include "assertions.h"

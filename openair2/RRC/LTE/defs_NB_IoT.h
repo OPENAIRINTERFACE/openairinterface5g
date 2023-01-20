@@ -40,7 +40,7 @@
 
 #include "collection/tree.h"
 #include "rrc_types_NB_IoT.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "common/openairinterface5g_limits.h"
 

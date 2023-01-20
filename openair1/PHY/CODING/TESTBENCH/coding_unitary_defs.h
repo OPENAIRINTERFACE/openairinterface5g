@@ -22,7 +22,7 @@
 #ifndef __CODING_UNITARY_DEFS__h__
 #define __CODING_UNITARY_DEFS__h__
 int oai_exit=0;
-unsigned int NB_UE_INST = 1;
+const int NB_UE_INST = 1;
 #include "openair1/PHY/defs_UE.h"
 PHY_VARS_UE ***PHY_vars_UE_g;
 #include "common/ran_context.h"

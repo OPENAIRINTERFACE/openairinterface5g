@@ -33,7 +33,7 @@
 
 
 #include "COMMON/platform_types.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "SCHED_UE/sched_UE.h"
 #include "LTE_SystemInformationBlockType2.h"

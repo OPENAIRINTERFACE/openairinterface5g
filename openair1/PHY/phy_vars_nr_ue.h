@@ -52,9 +52,6 @@ unsigned short rev256[256],rev512[512],rev1024[1024],rev4096[4096],rev2048[2048]
 const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
 const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 
-
-#include "SIMULATION/ETH_TRANSPORT/vars.h"
-
 unsigned char NB_RU=0;
 
 

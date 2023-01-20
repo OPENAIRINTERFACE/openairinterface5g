@@ -69,7 +69,7 @@ extern double cpuf;
 #define FRAME_PERIOD    100000000ULL
 #define DAQ_PERIOD      66667ULL
 #define FIFO_PRIORITY   40
-
+#define NB_THREAD_INST 1
 typedef enum {
   pss=0,
   pbch=1,

@@ -34,6 +34,8 @@
 #include "COMMON/mac_rrc_primitives.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/RLC/rlc.h"
+#include "openair2/RRC/LTE/rrc_defs.h"
+#include "openair2/RRC/common.h"
 
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.
 
@@ -45,10 +47,7 @@ extern NR_LogicalChannelConfig_t NR_SRB1_logicalChannelConfig_defaultValue;
 extern NR_LogicalChannelConfig_t NR_SRB2_logicalChannelConfig_defaultValue;
 extern NR_LogicalChannelConfig_t NR_SRB3_logicalChannelConfig_defaultValue;
 
-
-extern unsigned char NB_INST;
-extern unsigned char NB_eNB_INST;
-extern uint16_t NB_UE_INST;
+extern int NB_UE_INST;
 extern void* bigphys_malloc(int);
 
 
@@ -60,15 +59,6 @@ extern uint16_t RACH_FREQ_ALLOC;
 extern LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
 extern MAC_MEAS_T BCCH_MEAS_TRIGGER,CCCH_MEAS_TRIGGER,DCCH_MEAS_TRIGGER,DTCH_MEAS_TRIGGER;
 extern MAC_AVG_T BCCH_MEAS_AVG,CCCH_MEAS_AVG,DCCH_MEAS_AVG, DTCH_MEAS_AVG;
-
-extern uint16_t T300[8];
-extern uint16_t T310[8];
-extern uint16_t N310[8];
-extern uint16_t N311[8];
-extern uint32_t T304[8];
-extern uint32_t timeToTrigger_ms[16];
-extern float RSRP_meas_mapping[98];
-extern float RSRQ_meas_mapping[35];
 
 extern UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 

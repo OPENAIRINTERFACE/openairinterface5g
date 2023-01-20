@@ -40,7 +40,7 @@
 #include "nr_rrc_types.h"
 
 #include "common/ngran_types.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "mac_rrc_dl.h"
 

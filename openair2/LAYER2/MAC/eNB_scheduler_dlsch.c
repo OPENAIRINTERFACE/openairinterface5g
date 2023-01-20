@@ -58,6 +58,7 @@
 #include <dlfcn.h>
 
 #include "T.h"
+#include "openair2/LAYER2/MAC/mac_extern.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 //#define DEBUG_eNB_SCHEDULER 1
@@ -65,26 +66,7 @@
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 
-
-//------------------------------------------------------------------------------
-void
-add_ue_dlsch_info(module_id_t module_idP,
-                  int CC_id,
-                  int UE_id,
-                  sub_frame_t subframeP,
-                  UE_DLSCH_STATUS status,
-                  rnti_t rnti)
-//------------------------------------------------------------------------------
-{
-  eNB_DLSCH_INFO *info = &eNB_dlsch_info[module_idP][CC_id][UE_id];
-  // LOG_D(MAC, "%s(module_idP:%d, CC_id:%d, UE_id:%d, subframeP:%d, status:%d) serving_num:%d rnti:%x\n", __FUNCTION__, module_idP, CC_id, UE_id, subframeP, status, eNB_dlsch_info[module_idP][CC_id][UE_id].serving_num, UE_RNTI(module_idP,UE_id));
-  info->rnti = rnti;
-  //  info->weight = weight;
-  info->subframe = subframeP;
-  info->status = status;
-  info->serving_num++;
-  return;
-}
+mac_rlc_am_muilist_t rlc_am_mui;
 
 //------------------------------------------------------------------------------
 int

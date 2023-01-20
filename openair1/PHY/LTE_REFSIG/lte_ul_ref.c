@@ -26,11 +26,9 @@
 #endif
 #include "lte_refsig.h"
 #include "PHY/defs_eNB.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
-uint16_t dftsizes[34] = {12,24,36,48,60,72,96,108,120,144,180,192,216,240,288,300,324,360,384,432,480,540,576,600,648,720,768,864,900,960,972,1080,1152,1200};
-
-uint16_t ref_primes[34] = {11,23,31,47,59,71,89,107,113,139,179,191,211,239,283,293,317,359,383,431,479,523,571,599,647,719,761,863,887,953,971,1069,1151,1193};
-
+const uint16_t ref_primes[34] = {11, 23, 31, 47, 59, 71, 89, 107, 113, 139, 179, 191, 211, 239, 283, 293, 317, 359, 383, 431, 479, 523, 571, 599, 647, 719, 761, 863, 887, 953, 971, 1069, 1151, 1193};
 
 int16_t *ul_ref_sigs[30][2][34];
 int16_t *ul_ref_sigs_rx[30][2][34]; //these contain the sequences in repeated format and quantized to QPSK ifdef IFFT_FPGA

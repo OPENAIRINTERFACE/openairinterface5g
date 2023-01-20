@@ -1065,24 +1065,6 @@ bytes_to_bsr_index(int32_t nbytes)
 
 //-----------------------------------------------------------------------------
 /*
- * Add ue info in eNB_ulsch_info[module_idP][CC_id][UE_id] struct
- */
-void
-add_ue_ulsch_info(module_id_t module_idP,
-                  int CC_id,
-                  int UE_id,
-                  sub_frame_t subframeP,
-                  UE_ULSCH_STATUS status)
-//-----------------------------------------------------------------------------
-{
-  eNB_ulsch_info[module_idP][CC_id][UE_id].rnti     = UE_RNTI(module_idP, UE_id);
-  eNB_ulsch_info[module_idP][CC_id][UE_id].subframe = subframeP;
-  eNB_ulsch_info[module_idP][CC_id][UE_id].status   = status;
-  eNB_ulsch_info[module_idP][CC_id][UE_id].serving_num++;
-}
-
-//-----------------------------------------------------------------------------
-/*
  * Parse MAC header from ULSCH
  */
 unsigned char *
@@ -1786,7 +1768,6 @@ schedule_ulsch_rnti(module_id_t   module_idP,
       ul_req_tmp_body->tl.tag = NFAPI_UL_CONFIG_REQUEST_BODY_TAG;
       mac->ul_handle++;
       ul_req_tmp->sfn_sf = sched_frame << 4 | sched_subframeP;
-      add_ue_ulsch_info(module_idP, CC_id, UE_id, subframeP, S_UL_SCHEDULED);
       LOG_D(MAC,
             "[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for "
             "next UE_id %d, format 0\n",
@@ -2284,11 +2265,6 @@ void schedule_ulsch_rnti_emtc(module_id_t   module_idP,
                                                  (frameP * 10) + subframeP);
             ul_req_tmp->number_of_pdus++;
             eNB->ul_handle++;
-            add_ue_ulsch_info(module_idP,
-                              CC_id,
-                              UE_id,
-                              subframeP,
-                              S_UL_SCHEDULED);
             LOG_D(MAC,"[eNB %d] CC_id %d Frame %d, subframeP %d: Generated ULSCH DCI for next UE_id %d, format 0\n",
                   module_idP,
                   CC_id,

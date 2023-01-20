@@ -45,7 +45,7 @@
 #include "otg_rx.h"
 #include "common/utils/LOG/log.h"
 #include <inttypes.h>
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/ngran_types.h"

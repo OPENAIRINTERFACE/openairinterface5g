@@ -55,8 +55,6 @@
 #include <openair1/PHY/phy_extern_ue.h>
 
 #include "PHY/phy_vars.h"
-#include "SCHED/sched_common_vars.h"
-#include "LAYER2/MAC/mac_vars.h"
 
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_proto.h"
@@ -107,6 +105,7 @@ uint16_t runtime_phy_tx[29][6]; // SISO [MCS 0-28][RBs 0-5 : 6, 15, 25, 50, 75, 
 
 
 int oai_exit = 0;
+int NB_UE_INST = 0;
 
 uint64_t                 downlink_frequency[MAX_NUM_CCs][4];
 int32_t                  uplink_frequency_offset[MAX_NUM_CCs][4];

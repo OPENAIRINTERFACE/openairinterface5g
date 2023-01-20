@@ -35,10 +35,10 @@ extern int16_t *s75e_kHz_7_5;
 extern int16_t *s100n_kHz_7_5;
 extern int16_t *s100e_kHz_7_5;
 
+static const short conjugate75[8] __attribute__((aligned(16))) = {-1, 1, -1, 1, -1, 1, -1, 1};
+static const short conjugate75_2[8] __attribute__((aligned(16))) = {1, -1, 1, -1, 1, -1, 1, -1};
+static const short negate[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1, -1, -1};
 
-extern short conjugate75[8];
-extern short conjugate75_2[8];
-extern short negate[8];
 #ifdef __cplusplus
 }
 #endif

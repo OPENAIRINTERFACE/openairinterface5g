@@ -39,7 +39,7 @@
 #include "UTIL/LOG/log.h"
 
 #include "multicast_link.h"
-
+#include "openair1/SIMULATION/ETH_TRANSPORT/extern.h"
 char rx_bufferP[BYPASS_RX_BUFFER_SIZE];
 unsigned int num_bytesP = 0;
 int      N_P = 0, N_R = 0;
@@ -57,6 +57,10 @@ mapping transport_names[] = {
   {"RELEASE TRANSPORT INFO", EMU_TRANSPORT_INFO_RELEASE},
   {NULL, -1}
 };
+static pthread_mutex_t emul_low_mutex;
+static pthread_mutex_t emul_low_mutex;
+static pthread_cond_t emul_low_cond;
+static char emul_low_mutex_var;
 
 void init_bypass (void)
 {
