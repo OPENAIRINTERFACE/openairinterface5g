@@ -36,7 +36,7 @@
 #    define __RLC_H__
 
 #    include "platform_types.h"
-#    include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #    include "hashtable.h"
 #    include "rlc_am.h"
 #    include "rlc_um.h"

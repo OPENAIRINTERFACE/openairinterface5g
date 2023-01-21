@@ -58,10 +58,36 @@ extern uint16_t frame_cnt;
 
 #include "common/ran_context.h"
 #include "SCHED/sched_common.h"
+#include "openair2/LAYER2/MAC/mac_extern.h"
+/*
+ * If the CQI is low, then scheduler will use a higher aggregation level and lower aggregation level otherwise
+ * this is also dependent to transmission mode, where an offset could be defined
+ */
+// the follwoing three tables are calibrated for TXMODE 1 and 2
+static const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE] = {
+    {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size= 37 bits
+    //{3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 41
+    {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 41
+    {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE = 43
+    {3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0} // 20_DCI0_CRC_SIZE = 44
+};
+
+static const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE] = {
+    {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size < 38 bits
+    {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE  < 43
+    {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE  < 47
+    {3, 3, 3, 3, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0} // 20_DCI0_CRC_SIZE  < 55
+};
+
+static const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE] = {
+    {3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0}, // 1.4_DCI0_CRC_Size= 47 bits
+    {3, 3, 3, 3, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0}, // 5_DCI0_CRC_SIZE = 55
+    {3, 3, 3, 3, 2, 2, 2, 1, 1, 1, 1, 0, 0, 0, 0, 0}, // 10_DCI0_CRC_SIZE = 59
+    {3, 3, 3, 3, 3, 2, 2, 2, 2, 2, 1, 1, 1, 1, 0, 0} // 20_DCI0_CRC_SIZE = 64
+};
 
 extern RAN_CONTEXT_t RC;
-
-
+eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES_PER_ENB]; // eNBxUE = 8x8
 //------------------------------------------------------------------------------
 int
 choose(int n,
@@ -1940,8 +1966,6 @@ narrowband_to_first_rb(COMMON_channels_t *cc,
 
   return 0;
 }
-
-//------------------------------------------------------------------------------
 void
 init_ue_sched_info(void)
 //------------------------------------------------------------------------------
@@ -1951,30 +1975,12 @@ init_ue_sched_info(void)
   for (i = 0; i < NUMBER_OF_eNB_MAX; i++) {
     for (k = 0; k < MAX_NUM_CCs; k++) {
       for (j = 0; j < MAX_MOBILES_PER_ENB; j++) {
-        // init DL
-        eNB_dlsch_info[i][k][j].weight = 0;
-        eNB_dlsch_info[i][k][j].subframe = 0;
-        eNB_dlsch_info[i][k][j].serving_num = 0;
         eNB_dlsch_info[i][k][j].status = S_DL_NONE;
-        // init UL
-        eNB_ulsch_info[i][k][j].subframe = 0;
-        eNB_ulsch_info[i][k][j].serving_num = 0;
-        eNB_ulsch_info[i][k][j].status = S_UL_NONE;
       }
     }
   }
 
   return;
-}
-
-//------------------------------------------------------------------------------
-unsigned char
-get_ue_weight(module_id_t module_idP,
-              int CC_idP,
-              int ue_idP)
-//------------------------------------------------------------------------------
-{
-  return (eNB_dlsch_info[module_idP][CC_idP][ue_idP].weight);
 }
 
 //------------------------------------------------------------------------------
@@ -2239,9 +2245,7 @@ add_new_ue(module_id_t mod_idP,
       UE_info->UE_sched_ctrl[UE_id].round[cc_idP][j] = 8;
       UE_info->UE_sched_ctrl[UE_id].round_UL[cc_idP][j] = 0;
     }
-
-    eNB_ulsch_info[mod_idP][cc_idP][UE_id].status = S_UL_WAITING;
-    eNB_dlsch_info[mod_idP][cc_idP][UE_id].status = S_DL_WAITING;
+    eNB_dlsch_info[mod_idP][cc_idP][UE_id].status = S_DL_NONE;
     LOG_D(MAC, "[eNB %d] Add UE_id %d on Primary CC_id %d: rnti %x\n",
           mod_idP,
           UE_id,
@@ -2317,13 +2321,7 @@ rrc_mac_remove_ue(module_id_t mod_idP,
   ue_stats->total_pdu_bytes_rx = 0;
   ue_stats->total_num_pdus_rx = 0;
   ue_stats->total_num_errors_rx = 0;
-  eNB_ulsch_info[mod_idP][pCC_id][UE_id].rnti = NOT_A_RNTI;
-  eNB_ulsch_info[mod_idP][pCC_id][UE_id].status = S_UL_NONE;
-  eNB_ulsch_info[mod_idP][pCC_id][UE_id].serving_num = 0;
-  eNB_dlsch_info[mod_idP][pCC_id][UE_id].rnti = NOT_A_RNTI;
   eNB_dlsch_info[mod_idP][pCC_id][UE_id].status = S_DL_NONE;
-  eNB_dlsch_info[mod_idP][pCC_id][UE_id].serving_num = 0;
-
   // check if this has an RA process active
   if (find_RA_id(mod_idP,
                  pCC_id,

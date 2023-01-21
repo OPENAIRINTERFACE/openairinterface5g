@@ -47,7 +47,6 @@
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "nr_unitary_defs.h"
 #include "OCG_vars.h"
-#include <openair2/LAYER2/MAC/mac_vars.h>
 #include <openair2/LAYER2/NR_MAC_COMMON/nr_mac_common.h>
 #include <openair2/RRC/LTE/rrc_vars.h>
 #include <executables/softmodem-common.h>
@@ -233,6 +232,7 @@ nrUE_params_t *get_nrUE_params(void) {
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
 
 void processSlotTX(void *arg) {}
+int NB_UE_INST = 1;
 
 int main(int argc, char **argv){
 
@@ -252,7 +252,6 @@ int main(int argc, char **argv){
   uint8_t config_period;
   int prachOccasion = 0;
   double DS_TDL = .03;
-  NB_UE_INST=1;
 
   //  int8_t interf1=-19,interf2=-19;
   //  uint8_t abstraction_flag=0,calibration_flag=0;

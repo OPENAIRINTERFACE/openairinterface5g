@@ -38,7 +38,7 @@
 #include <sys/types.h>
 #include <fcntl.h>
 #include <errno.h>
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 
 #include <sys/ioctl.h>
 #include <sys/socket.h>

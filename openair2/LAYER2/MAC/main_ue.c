@@ -59,13 +59,6 @@ void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char e
   }
 }
 
-void
-mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-                       uint16_t eNB_index) {
-  //  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frameP, eNB_index);
-}
-
-
 int
 mac_top_init_ue(int eMBMS_active, char *uecap_xer,
                 uint8_t cba_group_active, uint8_t HO_active) {

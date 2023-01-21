@@ -33,7 +33,6 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include "LAYER2/MAC/mac_vars.h"
 #include "PHY/types.h"
 #include "PHY/defs_common.h"
 #include "PHY/defs_eNB.h"
@@ -43,7 +42,6 @@
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/TOOLS/lte_phy_scope.h"
-#include "SCHED/sched_common_vars.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_UE/sched_UE.h"
 #include "SIMULATION/TOOLS/sim.h"

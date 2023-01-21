@@ -44,7 +44,7 @@
 
 /* Commmon */
 #include "radio/COMMON/common_lib.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "common/ran_context.h"
 #include "collection/linear_alloc.h"
 

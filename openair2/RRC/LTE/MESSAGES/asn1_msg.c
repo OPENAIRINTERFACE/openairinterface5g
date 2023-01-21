@@ -116,9 +116,6 @@ typedef struct xer_sprint_string_s {
   size_t string_index;
 } xer_sprint_string_t;
 
-extern unsigned char NB_eNB_INST;
-
-
 extern RAN_CONTEXT_t RC;
 
 uint16_t two_tier_hexagonal_cellIds[7] = {0,1,2,4,5,7,8};

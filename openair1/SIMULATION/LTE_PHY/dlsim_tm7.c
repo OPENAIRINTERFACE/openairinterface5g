@@ -51,9 +51,6 @@
 
 #include "unitary_defs.h"
 
-extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
-extern unsigned char offset_mumimo_llr_drange_fix;
-
 #include "PHY/TOOLS/lte_phy_scope.h"
 
 PHY_VARS_eNB *eNB;

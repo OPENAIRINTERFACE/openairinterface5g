@@ -39,7 +39,7 @@
 
 #include "local.h"
 #include "proto_extern.h"
-//#include "platform_constants.h"
+//#include "common/platform_constants.h"
 
 //#define NETLINK_DEBUG 1
 

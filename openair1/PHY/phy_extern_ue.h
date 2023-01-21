@@ -31,7 +31,7 @@ extern  char fmageren_name2[512];
 extern unsigned int RX_DMA_BUFFER[4][NB_ANTENNAS_RX];
 extern unsigned int TX_DMA_BUFFER[4][NB_ANTENNAS_TX];
 
-#include "PHY/LTE_TRANSPORT/transport_extern.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 
 extern int number_of_cards;
 
@@ -96,7 +96,6 @@ extern unsigned short Nb_41_60[8][4];
 extern unsigned short Nb_61_80[8][4];
 extern unsigned short Nb_81_110[8][4];
 
-extern uint16_t hundred_times_log10_NPRB[100];
 extern uint8_t alpha_lut[8];
 extern uint8_t max_turbo_iterations;
 #endif /*__PHY_EXTERN_H__ */

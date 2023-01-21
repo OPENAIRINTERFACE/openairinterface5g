@@ -32,7 +32,7 @@
 #        define __RLC_AM_STRUCTS_H__
 
 #        include "platform_types.h"
-#        include "platform_constants.h"
+#include "common/platform_constants.h"
 #        include "list.h"
 #        include "mem_block.h"
 #        include "rlc_am_constants.h"

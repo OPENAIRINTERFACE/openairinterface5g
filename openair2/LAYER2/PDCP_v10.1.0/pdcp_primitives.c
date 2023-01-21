@@ -28,7 +28,7 @@
 
 #include "common/utils/LOG/log.h"
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 

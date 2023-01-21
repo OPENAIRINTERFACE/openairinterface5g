@@ -28,8 +28,4 @@ void exit_function(const char* file, const char* function, const int line,const 
    exit(-1);
 }
 
-extern unsigned int dlsch_tbs25[27][25],TBStable[27][110];
 extern unsigned char offset_mumimo_llr_drange_fix;
-
-extern unsigned short dftsizes[34];
-extern short *ul_ref_sigs[30][2][34];

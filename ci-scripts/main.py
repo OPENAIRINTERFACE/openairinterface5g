@@ -287,6 +287,8 @@ def GetParametersFromXML(action):
 			#CiTestObj.air_interface = 'ocp-enb'
 			logging.error('OCP UE -- NOT SUPPORTED')
 
+		CiTestObj.cmd_prefix = test.findtext('cmd_prefix') or ""
+
 	elif action == 'Terminate_OAI_UE':
 		UE_instance=test.findtext('UE_instance')
 		if (UE_instance is None):

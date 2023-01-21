@@ -42,12 +42,9 @@
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
-#include "SCHED/sched_common_vars.h"
-#include "PHY/MODULATION/modulation_vars.h"
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 //#include "../../SIMU/USER/init_lte.h"
 
-#include "LAYER2/MAC/mac_vars.h"
 #include "RRC/LTE/rrc_vars.h"
 #include "PHY_INTERFACE/phy_interface_vars.h"
 #include "NR_IF_Module.h"
@@ -403,6 +400,7 @@ static void get_channel_model_mode() {
     init_bler_table("NR_AWGN_RESULTS_DIR");
 }
 
+int NB_UE_INST = 1;
 
 int main( int argc, char **argv ) {
   int set_exe_prio = 1;
@@ -469,8 +467,6 @@ int main( int argc, char **argv ) {
     }
   }
 
-  NB_UE_INST=1;
-  NB_INST=1;
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE **));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE *)*MAX_NUM_CCs);
   if (get_softmodem_params()->emulate_l1) {

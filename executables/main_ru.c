@@ -48,9 +48,7 @@
 #include "radio/COMMON/common_lib.h"
 #include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
 
-
 #include "PHY/phy_vars.h"
-#include "SCHED/sched_common_vars.h"
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

@@ -33,6 +33,7 @@
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
 #include "transport_proto_ue.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 //#define DEBUG_DRS
 

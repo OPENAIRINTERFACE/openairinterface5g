@@ -41,24 +41,6 @@ extern const uint8_t nr_slots_per_frame[5];
 
 extern dci_pdu_rel15_t *def_dci_pdu_rel15;
 
-/* extern const uint32_t BSR_TABLE[BSR_TABLE_SIZE];
-extern const uint32_t Extended_BSR_TABLE[BSR_TABLE_SIZE];
-extern const uint8_t cqi2fmt0_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-extern const uint8_t cqi2fmt1x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-extern const uint8_t cqi2fmt2x_agg[MAX_SUPPORTED_BW][CQI_VALUE_RANGE];
-extern UE_RRC_INST *UE_rrc_inst;
-extern const int cqi_to_mcs[16];
-extern uint32_t RRC_CONNECTION_FLAG;
-extern uint8_t rb_table[34];
-extern mac_rlc_am_muilist_t rlc_am_mui;
-extern SCHEDULER_MODES global_scheduler_mode;
-extern unsigned char NB_UE_INST;*/
-
-
-extern unsigned char NB_INST;
-extern unsigned char NB_eNB_INST;
-extern unsigned char NB_RN_INST;
-
 /* Scheduler */
 extern RAN_CONTEXT_t RC;
 extern uint8_t nfapi_mode;
@@ -67,7 +49,6 @@ extern SCHEDULER_MODES global_scheduler_mode;
 
 /*#if defined(PRE_SCD_THREAD)
 extern const int cqi_to_mcs[16];
-extern uint32_t RRC_CONNECTION_FLAG;
 extern uint8_t rb_table[34];
 
 #if defined(PRE_SCD_THREAD)

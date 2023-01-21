@@ -33,6 +33,7 @@
 #include "PHY/defs_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 unsigned char get_Qm(unsigned char I_MCS) {
   if (I_MCS < 10)

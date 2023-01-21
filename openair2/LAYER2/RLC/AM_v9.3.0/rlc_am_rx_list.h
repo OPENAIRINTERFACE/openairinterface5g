@@ -39,7 +39,7 @@
 #    include "UTIL/MEM/mem_block.h"
 //-----------------------------------------------------------------------------
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 //#include "PHY/defs.h"
 
 //-----------------------------------------------------------------------------

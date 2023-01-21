@@ -288,7 +288,7 @@ typedef enum {
     {CHANNELMOD_MODEL_DT_PNAME,    "delay spread for TDL models\n",    0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 }\
 }
 
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 
 typedef struct {
   channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
@@ -573,12 +573,6 @@ void do_DL_sig(sim_t *sim,
                uint8_t UE_id,
                int CC_id);
 
-void do_UL_sig(sim_t *sim,
-               uint16_t subframe,
-               uint8_t abstraction_flag,
-               LTE_DL_FRAME_PARMS *frame_parms,
-               uint32_t frame,
-               int ru_id,
-               uint8_t CC_id);
+void do_UL_sig(sim_t *sim, uint16_t subframe, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, int ru_id, uint8_t CC_id, int NB_UEs);
 
 #endif

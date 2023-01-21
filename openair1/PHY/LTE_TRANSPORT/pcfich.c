@@ -32,15 +32,10 @@
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 //#define DEBUG_PCFICH
-extern uint8_t pcfich_b[4][32];
-
-
-void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
-                       uint8_t subframe,
-                       uint8_t *b,
-                       uint8_t *bt)
+void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms, uint8_t subframe, const uint8_t *b, uint8_t *bt)
 {
   uint32_t i;
   uint8_t reset;

@@ -32,6 +32,7 @@
 #include "PHY/defs_eNB.h"
 #include "transport_eNB.h"
 #include "PHY/phy_extern.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 //#define DEBUG_SSS
 

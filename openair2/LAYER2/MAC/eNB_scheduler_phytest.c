@@ -324,11 +324,6 @@ void schedule_ulsch_phy_test(module_id_t module_idP,frame_t frameP,sub_frame_t s
 
     ul_req->number_of_pdus = 1;
     mac->ul_handle++;
-    add_ue_ulsch_info(module_idP,
-                      CC_id,
-                      UE_id,
-                      subframeP,
-                      S_UL_SCHEDULED);
     // increment first rb for next UE allocation
     first_rb[CC_id]+= nb_rb;
   } // loop of CC_id

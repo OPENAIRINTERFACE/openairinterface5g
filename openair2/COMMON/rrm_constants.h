@@ -31,7 +31,7 @@
  ***************************************************************************/
 #    ifndef __RRM_CONSTANTS_H__
 #        define __RRM_CONSTANTS_H__
-#        include "platform_constants.h"
+#include "common/platform_constants.h"
 
 /*#################################################
   CONSTANTS FOR L1/L2/L3 LAYERS

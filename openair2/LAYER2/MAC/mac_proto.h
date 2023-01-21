@@ -212,11 +212,6 @@ void mac_switch_node_function(module_id_t module_idP);
 
 int mac_init_global_param(void);
 
-void mac_top_cleanup(void);
-
-void mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-                            uint16_t eNB_index);
-
 void clear_nfapi_information(eNB_MAC_INST *eNB, int CC_idP,
                              frame_t frameP, sub_frame_t subframeP);
 
@@ -391,10 +386,6 @@ MCH_PDU *get_mch_sdu(module_id_t Mod_id, int CC_id, frame_t frame,
 void ue_mac_reset(module_id_t module_idP, uint8_t eNB_index);
 void ue_init_mac(module_id_t module_idP);
 void init_ue_sched_info(void);
-void add_ue_ulsch_info(module_id_t module_idP, int CC_id, int UE_id,
-                       sub_frame_t subframe, UE_ULSCH_STATUS status);
-void add_ue_dlsch_info(module_id_t module_idP, int CC_id, int UE_id,
-                       sub_frame_t subframe, UE_DLSCH_STATUS status, rnti_t rnti);
 int find_UE_id(module_id_t module_idP, rnti_t rnti);
 int find_RA_id(module_id_t mod_idP, int CC_idP, rnti_t rntiP);
 rnti_t UE_RNTI(module_id_t module_idP, int UE_id);
@@ -487,8 +478,6 @@ uint32_t req_new_ulsch(module_id_t module_idP);
 */
 uint32_t ue_get_SR(module_id_t module_idP, int CC_id, frame_t frameP,
                    uint8_t eNB_id, rnti_t rnti, sub_frame_t subframe);
-
-uint8_t get_ue_weight(module_id_t module_idP, int CC_id, int UE_id);
 
 // UE functions
 void mac_out_of_sync_ind(module_id_t module_idP, frame_t frameP,

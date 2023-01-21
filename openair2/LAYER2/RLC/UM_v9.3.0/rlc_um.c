@@ -24,7 +24,7 @@
 //-----------------------------------------------------------------------------
 //#include "rtos_header.h"
 #include "platform_types.h"
-#include "platform_constants.h"
+#include "common/platform_constants.h"
 //-----------------------------------------------------------------------------
 #if ENABLE_ITTI
   #include "intertask_interface.h"

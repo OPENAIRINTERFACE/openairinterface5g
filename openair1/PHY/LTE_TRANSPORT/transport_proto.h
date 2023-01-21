@@ -510,16 +510,6 @@ void dump_ulsch(PHY_VARS_eNB *phy_vars_eNB,int frame, int subframe, uint8_t UE_i
 void dump_ulsch_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
 void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame);
 
-
-
-
-
-void pcfich_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
-                       uint8_t subframe,
-                       uint8_t *b,
-                       uint8_t *bt);
-
-
 void generate_pcfich(uint8_t num_pdcch_symbols,
                      int16_t amp,
                      LTE_DL_FRAME_PARMS *frame_parms,

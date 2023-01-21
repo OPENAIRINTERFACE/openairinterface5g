@@ -36,7 +36,7 @@
 //-----------------------------------------------------------------------------
 //-----------------------------------------------------------------------------
 #include "RRC/LTE/rrc_defs.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "LTE_DRB-ToAddMod.h"
 #include "LTE_DRB-ToAddModList.h"

@@ -24,7 +24,7 @@
 
 #include "LAYER2/RLC/rlc.h"
 #include "COMMON/platform_types.h"
-#include "COMMON/platform_constants.h"
+#include "common/platform_constants.h"
 #include "openair2/RRC/LTE/rrc_defs.h"
 
 #include "LTE_RadioResourceConfigCommonSIB.h"
@@ -323,53 +323,6 @@ typedef struct {  //RRC_INTERFACE_FUNCTIONS
   uint8_t (*get_rrc_status)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t eNB_index);
   double (*rrc_get_estimated_ue_distance) (module_id_t Mod_id, uint8_t UE_id, uint8_t CC_id, uint8_t loc_type);
 } RRC_XFACE;
-
-
-typedef struct {
-  //MAC_INTERFACE_FUNCTIONS
-  unsigned int frame;
-  unsigned short Node_id[NB_MODULES_MAX];
-  char Is_cluster_head[NB_MODULES_MAX];
-  void (*macphy_exit)(const char *);          /*  Pointer function that stops the low-level scheduler due an exit condition */
-  unsigned short (*mac_config_req)(uint8_t,uint8_t,MAC_CONFIG_REQ *);
-  MAC_MEAS_REQ_ENTRY *(*mac_meas_req)(uint8_t,  MAC_MEAS_REQ *);
-  void (*mac_out_of_sync_ind)(uint8_t,uint32_t,unsigned short);
-  //RLC_INTERFACE_FUNCTIONS
-  void (*pdcp_run)(void);
-  void (*pdcp_data_req)(module_id_t, rb_id_t, sdu_size_t, char *);
-  signed int (*rrc_rlc_config_req)(unsigned int, unsigned int, unsigned int, unsigned int, rlc_info_t );
-  int (*rrc_mac_config_req)(uint8_t Mod_id,uint8_t eNB_flag,uint8_t UE_id,uint8_t eNB_index,
-                            LTE_RadioResourceConfigCommonSIB_t *radioResourceConfigCommon,
-                            struct LTE_PhysicalConfigDedicated *physicalConfigDedicated,
-                            LTE_MAC_MainConfig_t *mac_MainConfig,
-                            long logicalChannelIdentity,
-                            LTE_LogicalChannelConfig_t *logicalChannelConfig,
-                            LTE_MeasGapConfig_t *measGapConfig,
-                            LTE_TDD_Config_t *tdd_Config,
-                            uint8_t *SIwindowsize,
-                            uint16_t *SIperiod,
-                            MBMS_flag_t MBMS_Flag,
-                            struct LTE_MBSFN_SubframeConfigList *mbsfn_SubframeConfigList,
-                            LTE_MBSFN_AreaInfoList_r9_t *mbsfn_AreaInfoList,
-                            struct LTE_PMCH_InfoList_r9 *pmch_InfoList
-                           );
-  unsigned int (*mac_rlc_data_req)(module_id_t, unsigned int, const unsigned int,char *
-                                   ,uint32_t
-                                   ,uint32_t
-                                  );
-  void (*mac_rlc_data_ind)(module_id_t, logical_chan_id_t, char *, tb_size_t, num_tb_t, crc_t * );
-  mac_rlc_status_resp_t (*mac_rlc_status_ind)     (module_id_t enb_mod_idP, module_id_t ue_mod_idP, frame_t frameP, sub_frame_t subframeP, eNB_flag_t eNB_flagP, MBMS_flag_t MBMS_flagP,
-      logical_chan_id_t channel_idP, tb_size_t tb_sizeP
-      ,uint32_t sourceL2Id
-      ,uint32_t destinationL2Id
-                                                  );
-  signed int (*rrc_rlc_data_req)(module_id_t, rb_id_t, mui_t, confirm_t, sdu_size_t, char *);
-  void (*rrc_rlc_register_rrc) (void (*rrc_data_indP)(module_id_t, rb_id_t, sdu_size_t, char * ),
-                                void  (*rrc_data_confP) (module_id_t, rb_id_t, mui_t ) ) ;
-  void (*mrbch_phy_sync_failure) (uint8_t Mod_id, frame_t frame, uint8_t Free_ch_index);
-  void (*dl_phy_sync_success) (uint8_t Mod_id, frame_t frame, uint8_t eNB_index);
-} MAC_RLC_XFACE;
-
 
 //#define IDLE 0
 #define NEED_RADIO_CONFIG 3

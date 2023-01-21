@@ -33,7 +33,7 @@
 
 #        include <pthread.h>
 #        include "platform_types.h"
-#        include "platform_constants.h"
+#include "common/platform_constants.h"
 #        include "list.h"
 #        include "rlc_primitives.h"
 #        include "rlc_def.h"
