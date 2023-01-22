@@ -27,8 +27,8 @@ graph TD
 graph TD
     E[syncInFrame<br/>--shift first sample to start of frame] -->|UE_thread| F["trx_read_func (slot n)"]
     F --> |Tpool thread| G["processSlotTX (slot n+4)<br/>--PUSCH encode<br/>--PUCCH encode<br/>--trx_write_func"]
-    F --> |UE_thread| H["UE_processing (slot n)<br/>--PDCCH decode<br/>--PDSCH decode"]
-    G --> |Tpool thread| I(Merge)
-    H --> |UE_thread| I(Merge)
+    F --> |Tpool thread| J["UE_processing (slot n)<br/>--PDCCH decode<br/>--PDSCH decode"]
+    F --> |UE_thread| I(Merge)
+    G --> |Tpool thread| I
     I --> |Go to next slot<br/>UE_thread| F
 ```
