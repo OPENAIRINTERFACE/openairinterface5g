@@ -568,6 +568,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
                                    int **ul_ch_estimates_ext,
                                    int **ul_ch_mag,
                                    int **ul_ch_magb,
+                                   int **ul_ch_magc,
                                    int **rxdataF_comp,
                                    int ***rho,
                                    NR_DL_FRAME_PARMS *frame_parms,
@@ -625,8 +626,8 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
   unsigned short rb;
   unsigned char aatx,aarx;
-  __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128,*rho128;
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0};
+  __m128i *ul_ch128,*ul_ch128_2,*ul_ch_mag128,*ul_ch_mag128b,*ul_ch_mag128c,*rxdataF128,*rxdataF_comp128,*rho128;
+  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128c={0};
   QAM_amp128b = _mm_setzero_si128();
 
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
@@ -634,10 +635,17 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
+      QAM_amp128c = _mm_setzero_si128();
     } 
     else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
+      QAM_amp128c = _mm_setzero_si128();
+    }
+    else if (mod_order == 8) {
+      QAM_amp128  = _mm_set1_epi16(QAM256_n1); //
+      QAM_amp128b = _mm_set1_epi16(QAM256_n2);
+      QAM_amp128c = _mm_set1_epi16(QAM256_n3);
     }
 
     //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
@@ -646,6 +654,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
       ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       ul_ch_mag128      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
+      ul_ch_mag128c     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
       rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*(off+(nb_rb*12))];
       rxdataF_comp128   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aarx][symbol*(off+(nb_rb*12))];
 
@@ -668,37 +677,32 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
           ul_ch_mag128[0] = _mm_unpacklo_epi16(mmtmpD0,mmtmpD0);
           ul_ch_mag128b[0] = ul_ch_mag128[0];
-          ul_ch_mag128[0] = _mm_mulhi_epi16(ul_ch_mag128[0],QAM_amp128);
-          ul_ch_mag128[0] = _mm_slli_epi16(ul_ch_mag128[0],1);
-
-          ul_ch_mag128b[0] = _mm_mulhi_epi16(ul_ch_mag128b[0],QAM_amp128b);
-          ul_ch_mag128b[0] = _mm_slli_epi16(ul_ch_mag128b[0],1);
+          ul_ch_mag128c[0] = ul_ch_mag128[0];
+          ul_ch_mag128[0] = _mm_mulhrs_epi16(ul_ch_mag128[0],QAM_amp128);
+          ul_ch_mag128b[0] = _mm_mulhrs_epi16(ul_ch_mag128b[0],QAM_amp128b);
+          ul_ch_mag128c[0] = _mm_mulhrs_epi16(ul_ch_mag128c[0],QAM_amp128c);
           // print_ints("ch: = ",(int32_t*)&mmtmpD0);
           // print_shorts("QAM_amp:",(int16_t*)&QAM_amp128);
           // print_shorts("mag:",(int16_t*)&ul_ch_mag128[0]);
 
-          ul_ch_mag128[1] = _mm_unpackhi_epi16(mmtmpD0,mmtmpD0);
+          ul_ch_mag128[1]  = _mm_unpackhi_epi16(mmtmpD0,mmtmpD0);
           ul_ch_mag128b[1] = ul_ch_mag128[1];
-          ul_ch_mag128[1] = _mm_mulhi_epi16(ul_ch_mag128[1],QAM_amp128);
-          ul_ch_mag128[1] = _mm_slli_epi16(ul_ch_mag128[1],1);
-          
-          ul_ch_mag128b[1] = _mm_mulhi_epi16(ul_ch_mag128b[1],QAM_amp128b);
-          ul_ch_mag128b[1] = _mm_slli_epi16(ul_ch_mag128b[1],1);
+          ul_ch_mag128c[1] = ul_ch_mag128[1];
+          ul_ch_mag128[1]  = _mm_mulhrs_epi16(ul_ch_mag128[1],QAM_amp128);
+          ul_ch_mag128b[1] = _mm_mulhrs_epi16(ul_ch_mag128b[1],QAM_amp128b);
+          ul_ch_mag128c[1] = _mm_mulhrs_epi16(ul_ch_mag128c[1],QAM_amp128c);
 
           mmtmpD0 = _mm_madd_epi16(ul_ch128[2],ul_ch128[2]);
           mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
           mmtmpD1 = _mm_packs_epi32(mmtmpD0,mmtmpD0);
 
-          ul_ch_mag128[2] = _mm_unpacklo_epi16(mmtmpD1,mmtmpD1);
+          ul_ch_mag128[2]  = _mm_unpacklo_epi16(mmtmpD1,mmtmpD1);
           ul_ch_mag128b[2] = ul_ch_mag128[2];
+          ul_ch_mag128c[2] = ul_ch_mag128[2];
 
-          ul_ch_mag128[2] = _mm_mulhi_epi16(ul_ch_mag128[2],QAM_amp128);
-          ul_ch_mag128[2] = _mm_slli_epi16(ul_ch_mag128[2],1);
-
-
-          ul_ch_mag128b[2] = _mm_mulhi_epi16(ul_ch_mag128b[2],QAM_amp128b);
-          ul_ch_mag128b[2] = _mm_slli_epi16(ul_ch_mag128b[2],1);
-
+          ul_ch_mag128[2]  = _mm_mulhrs_epi16(ul_ch_mag128[2],QAM_amp128);
+          ul_ch_mag128b[2] = _mm_mulhrs_epi16(ul_ch_mag128b[2],QAM_amp128b);
+          ul_ch_mag128c[2] = _mm_mulhrs_epi16(ul_ch_mag128c[2],QAM_amp128c);
         }
 
         // Multiply received data by conjugated channel
@@ -709,6 +713,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
         ul_ch128 += 3;
         ul_ch_mag128 += 3;
         ul_ch_mag128b += 3;
+        ul_ch_mag128c += 3;
         rxdataF128 += 3;
         rxdataF_comp128 += 3;
       }
@@ -1075,6 +1080,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                 int32_t **rxdataF_comp,
                 int32_t **ul_ch_mag,
                 int32_t **ul_ch_magb,
+                int32_t **ul_ch_magc,
                 int32_t ***rho,                
                 uint8_t  nrOfLayers,
                 uint8_t symbol,
@@ -1082,7 +1088,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                 int length) {
   int n_rx = frame_parms->nb_antennas_rx;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *rxdataF_comp128[2],*ul_ch_mag128[2],*ul_ch_mag128b[2];
+  __m128i *rxdataF_comp128[2],*ul_ch_mag128[2],*ul_ch_mag128b[2],*ul_ch_mag128c[2];
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *rxdataF_comp128_0,*ul_ch_mag128_0,*ul_ch_mag128_0b;
   int16x8_t *rxdataF_comp128_1,*ul_ch_mag128_1,*ul_ch_mag128_1b;
@@ -1100,17 +1106,20 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
       rxdataF_comp128[0]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
       ul_ch_mag128[0]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
       ul_ch_mag128b[0]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
+      ul_ch_mag128c[0]     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
 
       for (int aa=1;aa < n_rx;aa++) {
         rxdataF_comp128[1]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128[1]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128b[1]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
+        ul_ch_mag128c[1]     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
       
         // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
         for (i=0; i<nb_rb_0*3; i++) {
             rxdataF_comp128[0][i] = _mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[1][i]);
             ul_ch_mag128[0][i]    = _mm_adds_epi16(ul_ch_mag128[0][i],ul_ch_mag128[1][i]);
             ul_ch_mag128b[0][i]   = _mm_adds_epi16(ul_ch_mag128b[0][i],ul_ch_mag128b[1][i]);
+            ul_ch_mag128c[0][i]   = _mm_adds_epi16(ul_ch_mag128c[0][i],ul_ch_mag128c[1][i]);
             //rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
         }
       }
@@ -2030,11 +2039,12 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       //--------------------- Channel Compensation ---------------
       //----------------------------------------------------------
       start_meas(&gNB->ulsch_channel_compensation_stats);
-      LOG_D(PHY, "Doing channel compensations log2_maxh %d, avgs %d (%d,%d)\n", pusch_vars->log2_maxh, avgs, avg[0], avg[1]);
+      LOG_D(PHY, "Doing channel compensations log2_maxh %d, avgs %d (%d,%d)\n" ,pusch_vars->log2_maxh, avgs,avg[0], avg[1]);
       nr_ulsch_channel_compensation(pusch_vars->rxdataF_ext,
                                     pusch_vars->ul_ch_estimates_ext,
                                     pusch_vars->ul_ch_mag0,
                                     pusch_vars->ul_ch_magb0,
+                                    pusch_vars->ul_ch_magc0,
                                     pusch_vars->rxdataF_comp,
                                     (rel15_ul->nrOfLayers > 1) ? pusch_vars->rho : NULL,
                                     frame_parms,
@@ -2052,6 +2062,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                              pusch_vars->rxdataF_comp,
                              pusch_vars->ul_ch_mag0,
                              pusch_vars->ul_ch_magb0,
+                             pusch_vars->ul_ch_magc0,
                              (rel15_ul->nrOfLayers > 1) ? pusch_vars->rho : NULL,
                              rel15_ul->nrOfLayers,
                              symbol,
@@ -2110,15 +2121,15 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*-----------------------------------------------------------------------------------------------------*/
       start_meas(&gNB->ulsch_llr_stats);
       for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
-        nr_ulsch_compute_llr(
-            &pusch_vars->rxdataF_comp[aatx * frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-            pusch_vars->ul_ch_mag0[aatx * frame_parms->nb_antennas_rx],
-            pusch_vars->ul_ch_magb0[aatx * frame_parms->nb_antennas_rx],
-            &pusch_vars->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
-            rel15_ul->rb_size,
-            pusch_vars->ul_valid_re_per_slot[symbol],
-            symbol,
-            rel15_ul->qam_mod_order);
+        nr_ulsch_compute_llr(&pusch_vars->rxdataF_comp[aatx*frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                             pusch_vars->ul_ch_mag0[aatx*frame_parms->nb_antennas_rx],
+                             pusch_vars->ul_ch_magb0[aatx*frame_parms->nb_antennas_rx],
+                             pusch_vars->ul_ch_magc0[aatx*frame_parms->nb_antennas_rx],
+                             &pusch_vars->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                             rel15_ul->rb_size,
+                             pusch_vars->ul_valid_re_per_slot[symbol],
+                             symbol,
+                             rel15_ul->qam_mod_order);
       }
       stop_meas(&gNB->ulsch_llr_stats);
       rxdataF_ext_offset += pusch_vars->ul_valid_re_per_slot[symbol];
