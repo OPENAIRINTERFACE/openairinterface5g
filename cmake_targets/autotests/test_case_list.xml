@@ -351,22 +351,24 @@
     </testCase>
 
     <testCase id="nr_ulsim.misc">
-      <desc>nr_ulsim Test cases. (Test1: MCS 9, 106 PRBs),
-                                 (Test2: MCS 16, 50 PRBs),
-                                 (Test3: MCS 28, 50 PRBs),
-                                 (Test4: MCS 9, 217 PRBs),
-                                 (Test5: MCS 9, 273 PRBs),
-                                 (Test6: PUSCH Type A, 2 DMRS Symbols),
-                                 (Test7: PUSCH Type A, 3 DMRS, 4 PTRS, 5 Interpolated Symbols),
-                                 (Test8: PUSCH Type B, 3 DMRS, 2 PTRS, 7 Interpolated Symbols),
-                                 (Test9: PUSCH Type B, 3 DMRS, 2 PTRS, 3 Interpolated Symbols),
-                                 (Test10: 25 PRBs, 15 kHz SCS),
-                                 (Test11: MCS 0, low SNR performance)
-                                 (Test12: MCS 28, 106 PRBs, Time shift 8)</desc>
+      <desc>nr_ulsim Test cases. (Test1: MCS 9 106 PRBs),
+                                 (Test2: MCS 16 50 PRBs),
+                                 (Test3: MCS 28 50 PRBs),
+                                 (Test4: MCS 27 50 PRBs 256QAM),
+                                 (Test5: MCS 9 217 PRBs),
+                                 (Test6: MCS 9 273 PRBs),
+                                 (Test7: PUSCH Type A, 2 DMRS Symbols),
+                                 (Test8: PUSCH Type A, 3 DMRS, 4 PTRS, 5 Interpolated Symbols),
+                                 (Test9: PUSCH Type B, 3 DMRS, 2 PTRS, 7 Interpolated Symbols),
+                                 (Test10: PUSCH Type B, 3 DMRS, 2 PTRS, 3 Interpolated Symbols),
+                                 (Test11: 25 PRBs, 15 kHz SCS),
+                                 (Test12: MCS 0, low SNR performance)
+                                 (Test13: MCS 28, 106 PRBs, Time shift 8)</desc>
       <main_exec>nr_ulsim</main_exec>
       <main_exec_args>-n100 -m9 -r106 -s5
                       -n100 -m16 -s10
                       -n100 -m28 -s20
+                      -n100 -m27 -s25 -q1
                       -n100 -m9 -R217 -r217 -s5
                       -n100 -m9 -R273 -r273 -s5
                       -n100 -s5 -U 0,1,1,1
@@ -376,7 +378,7 @@
                       -n100 -u0 -m0 -R25 -r25 -i 1,0
                       -n100 -m0 -S -0.6 -i 1,0
                       -n100 -m 28 -R106 -r106 -t90 -s24 -S24 -d 8</main_exec_args>
-      <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11 test12</tags>
+      <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11 test12 test 13</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

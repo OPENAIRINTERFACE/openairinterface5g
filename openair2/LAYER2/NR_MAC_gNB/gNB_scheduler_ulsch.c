@@ -1662,7 +1662,8 @@ void pf_ul(module_id_t module_id,
     }
 
     const NR_bler_options_t *bo = &nrmac->ul_bler;
-    const int max_mcs = bo->max_mcs; /* no per-user maximum MCS yet */
+    const int max_mcs_table = (current_BWP->mcs_table == 0 || current_BWP->mcs_table == 2) ? 28 : 27;
+    const int max_mcs = min(bo->max_mcs, max_mcs_table); /* no per-user maximum MCS yet */
     if (bo->harq_round_max == 1)
       sched_pusch->mcs = max_mcs;
     else
