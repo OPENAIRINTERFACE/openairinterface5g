@@ -51,9 +51,6 @@ int16_t find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid, int frame)
       // if there is already an active ULSCH for this RNTI and HARQ_PID
       if ((ulsch->harq_pid == pid) && (ulsch->rnti == rnti))
         return i;
-      // remove inactive ULSCH (from disconnected UEs)
-      else if ((frame > (ulsch->harq_process->frame + NUMBER_FRAMES_PHY_UE_INACTIVE) % 1024))
-        ulsch->active = false;
     }
   }
   return first_free_index;

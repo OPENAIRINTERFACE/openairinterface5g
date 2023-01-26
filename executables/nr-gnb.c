@@ -175,11 +175,17 @@ void rx_func(void *param)
 
   T(T_GNB_PHY_DL_TICK, T_INT(gNB->Mod_id), T_INT(frame_tx), T_INT(slot_tx));
 
-  // disactivate PHY stats if UE is inactive for more than 10 frames
+  // disactivate PHY stats if UE is inactive for a given number of frames
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
-    if(stats->active && (frame_rx > (stats->frame + NUMBER_FRAMES_PHY_UE_INACTIVE) % 1024))
+    if(stats->active && (((frame_rx - stats->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
       stats->active = false;
+  }
+  // disactivate ULSCH structure if it is inactive for a given number of frames
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
+    if (ulsch->active && (((frame_rx - ulsch->harq_process->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+      ulsch->active = false;
   }
 
   // RX processing
