@@ -66,6 +66,17 @@ int l1_north_init_gNB() {
   return(0);
 }
 
+void init_ul_delay_table(NR_DL_FRAME_PARMS *fp)
+{
+  for (int delay = -MAX_UL_DELAY_COMP; delay <= MAX_UL_DELAY_COMP; delay++) {
+    for (int k = 0; k < fp->ofdm_symbol_size; k++) {
+      double complex delay_cexp = cexp(I * (2.0 * M_PI * k * delay / fp->ofdm_symbol_size));
+      fp->ul_delay_table[MAX_UL_DELAY_COMP + delay][k].r = (int16_t)round(256 * creal(delay_cexp));
+      fp->ul_delay_table[MAX_UL_DELAY_COMP + delay][k].i = (int16_t)round(256 * cimag(delay_cexp));
+    }
+  }
+}
+
 int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
   if(gNB->frame_parms.nb_antennas_tx>1){
@@ -500,6 +511,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
     load_nrLDPClib_offload(); 
 
   init_codebook_gNB(gNB);
+  init_ul_delay_table(fp);
 
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
