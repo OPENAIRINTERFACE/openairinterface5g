@@ -1040,6 +1040,12 @@ int main(int argc, char **argv)
     double berStats[16] = {0};
 
     clear_pusch_stats(gNB);
+
+    uint64_t sum_pusch_delay = 0;
+    int min_pusch_delay = INT_MAX;
+    int max_pusch_delay = INT_MIN;
+    int delay_pusch_est_count = 0;
+
     for (trial = 0; trial < n_trials; trial++) {
 
       uint8_t round = 0;
@@ -1552,6 +1558,12 @@ int main(int argc, char **argv)
       roundStats += ((float)round);
       if (!crc_status)
         effRate += ((double)TBS) / (double)round;
+
+      sum_pusch_delay += gNB->measurements.delay[UE_id].pusch_est_delay;
+      min_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay < min_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : min_pusch_delay;
+      max_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay > max_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : max_pusch_delay;
+      delay_pusch_est_count++;
+
     } // trial loop
 
     roundStats/=((float)n_trials);
@@ -1581,6 +1593,12 @@ int main(int argc, char **argv)
       printf(",%e", berStats[r]);
     printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", roundStats,effRate,effTP,TBS);
 
+    printf("DMRS-PUSCH delay estimation: min %i, max %i, average %f\n",
+           min_pusch_delay >> 1, max_pusch_delay >> 1, (double)sum_pusch_delay / (2 * delay_pusch_est_count));
+
+    printf("*****************************************\n");
+    printf("\n");
+
     FILE *fd=fopen("nr_ulsim.log","w");
     if (fd == NULL) {
       printf("Problem with filename %s\n", "nr_ulsim.log");
@@ -1589,9 +1607,6 @@ int main(int argc, char **argv)
     dump_pusch_stats(fd,gNB);
     fclose(fd);
 
-    printf("*****************************************\n");
-    printf("\n");
-    
     if (print_perf==1) {
       printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
       printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");

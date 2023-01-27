@@ -172,6 +172,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 #endif
 
+  c16_t ul_ls_est[symbolSize];
+  memset(ul_ls_est, 0, sizeof(c16_t) * symbolSize);
+  memset(&gNB->measurements.delay[ul_id], 0, sizeof(gNB->measurements.delay[ul_id]));
+
   for (int aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
     c16_t *rxdataF = (c16_t *)&gNB->common_vars.rxdataF[aarx][symbol_offset];
     c16_t *ul_ch = &ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
@@ -193,21 +197,37 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       int pilot_cnt = 0;
       int delta = nr_pusch_dmrs_delta(pusch_dmrs_type1, p);
 
-      for (int n = 0; n < 3*nb_rb_pusch; n++) {
+      for (int n = 0; n < 3 * nb_rb_pusch; n++) {
         // LS estimation
         c32_t ch = {0};
 
         for (int k_line = 0; k_line <= 1; k_line++) {
           re_offset = (k0 + (n << 2) + (k_line << 1) + delta) % symbolSize;
-          ch=c32x16maddShift(*pil,
-                             rxdataF[soffset + re_offset],
-                             ch,
-                             16);
+          ch = c32x16maddShift(*pil, rxdataF[soffset + re_offset], ch, 16);
           pil++;
         }
 
-        c16_t ch16= {.r=(int16_t)ch.r, .i=(int16_t)ch.i};
+        c16_t ch16 = {.r = (int16_t)ch.r, .i = (int16_t)ch.i};
         *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
+
+        ul_ls_est[pilot_cnt << 1] = ch16;
+        ul_ls_est[(pilot_cnt + 1) << 1] = ch16;
+        pilot_cnt += 2;
+      }
+
+      freq2time(symbolSize,
+                (int16_t *) ul_ls_est,
+                (int16_t *) gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
+
+      nr_est_timing_advance_pusch(&gNB->frame_parms, gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx], &gNB->measurements.delay[ul_id]);
+      int delay = gNB->measurements.delay[ul_id].pusch_est_delay;
+
+#ifdef DEBUG_PUSCH
+      printf("Estimated delay = %i\n", delay >> 1);
+#endif
+
+      pilot_cnt = 0;
+      for (int n = 0; n < 3*nb_rb_pusch; n++) {
 
         // Channel interpolation
         for (int k_line = 0; k_line <= 1; k_line++) {
@@ -215,17 +235,17 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           re_offset = (k0 + (n << 2) + (k_line << 1)) % symbolSize;
           c16_t *rxF = &rxdataF[soffset + re_offset];
           printf("pilot %4u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d)\n",
-                 pilot_cnt, pil->r, pil->i, rxF->r, rxF->i, ch.r, ch.i);
+                 pilot_cnt, pil->r, pil->i, rxF->r, rxF->i, ul_ls_est[pilot_cnt << 1].r, ul_ls_est[pilot_cnt << 1].i);
 #endif
 
           if (pilot_cnt == 0) {
-            c16multaddVectRealComplex(filt16_ul_p0, &ch16, ul_ch, 16);
+            c16multaddVectRealComplex(filt16_ul_p0, &ul_ls_est[pilot_cnt << 1], ul_ch, 16);
           } else if (pilot_cnt == 1 || pilot_cnt == 2) {
-            c16multaddVectRealComplex(filt16_ul_p1p2, &ch16, ul_ch, 16);
+            c16multaddVectRealComplex(filt16_ul_p1p2, &ul_ls_est[pilot_cnt << 1], ul_ch, 16);
           } else if (pilot_cnt == (6 * nb_rb_pusch - 1)) {
-            c16multaddVectRealComplex(filt16_ul_last, &ch16, ul_ch, 16);
+            c16multaddVectRealComplex(filt16_ul_last, &ul_ls_est[pilot_cnt << 1], ul_ch, 16);
           } else {
-            c16multaddVectRealComplex(filt16_ul_middle, &ch16, ul_ch, 16);
+            c16multaddVectRealComplex(filt16_ul_middle, &ul_ls_est[pilot_cnt << 1], ul_ch, 16);
             if (pilot_cnt % 2 == 0) {
               ul_ch += 4;
             }
@@ -442,11 +462,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       printf("%d\n",idxP);
     }
 #endif
-
-    // Convert to time domain
-    freq2time(symbolSize,
-              (int16_t *) &ul_ch_estimates[aarx][symbol_offset],
-              (int16_t *) gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
   }
 
 #ifdef DEBUG_CH

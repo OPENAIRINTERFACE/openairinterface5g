@@ -401,8 +401,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   nfapi_nr_pusch_pdu_t *pusch_pdu = &harq_process->ulsch_pdu;
 
-  //  pdu->data                              = gNB->ulsch[ULSCH_id+1]->harq_processes[harq_pid]->b;
-  int sync_pos = nr_est_timing_advance_pusch(gNB, ULSCH_id); // estimate timing advance for MAC
+  // Get estimated timing advance for MAC
+  int sync_pos = gNB->measurements.delay[ULSCH_id].pusch_est_delay;
 
   // scale the 16 factor in N_TA calculation in 38.213 section 4.2 according to the used FFT size
   uint16_t bw_scaling = 16 * gNB->frame_parms.ofdm_symbol_size / 2048;
