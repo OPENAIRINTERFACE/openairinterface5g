@@ -14,7 +14,7 @@
 
 This page is only valid for an `Ubuntu18` host.
 
-**NOTE: this version (2022-01-27) has been updated  for the `v1.3.0` version of the `OAI 5G CN`.**
+**NOTE: this version (2023-01-27) has been updated  for the `v1.5.0` version of the `OAI 5G CN`.**
 
 **Table of Contents**
 
@@ -36,11 +36,12 @@ Password:
 Now pull images.
 
 ```bash
-$ docker pull mysql:5.7
-$ docker pull oaisoftwarealliance/oai-amf:develop
-$ docker pull oaisoftwarealliance/oai-nrf:develop
-$ docker pull oaisoftwarealliance/oai-smf:develop
-$ docker pull oaisoftwarealliance/oai-spgwu-tiny:develop
+$ docker pull mysql:8.0
+$ docker pull oaisoftwarealliance/oai-amf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-nrf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-smf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:v1.5.0
+$ docker pull oaisoftwarealliance/trf-gen-cn5g:latest
 
 $ docker pull oaisoftwarealliance/oai-gnb:develop
 $ docker pull oaisoftwarealliance/oai-nr-ue:develop
@@ -49,11 +50,6 @@ $ docker pull oaisoftwarealliance/oai-nr-ue:develop
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag oaisoftwarealliance/oai-amf:latest oai-amf:august-dev
-$ docker image tag oaisoftwarealliance/oai-nrf:latest oai-nrf:august-dev
-$ docker image tag oaisoftwarealliance/oai-smf:latest oai-smf:august-dev
-$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:august-dev
-
 $ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
 $ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
 ```
@@ -62,9 +58,9 @@ $ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
 $ docker logout
 ```
 
-**CAUTION: 2022/01/27 with the release `v1.3.0` of the `CN5G`, the previous version was not compatible any-more.**
+**CAUTION: 2023/01/27 with the release `v1.5.0` of the `CN5G`, the previous version was not compatible any-more.**
 
-**This new version is working only with the `v1.3.0` of the `CN5G`.**
+**This new version is working only with the `v1.5.0` of the `CN5G`.**
 
 # 2. Deploy containers #
 

@@ -2,28 +2,16 @@ version: '3.8'
 services:
     oai-nrf:
         container_name: "rfsim5g-oai-nrf"
-        image: oai-nrf:august-dev
+        image: oaisoftwarealliance/oai-nrf:v1.5.0
         environment:
             - NRF_INTERFACE_NAME_FOR_SBI=eth0
-            - NRF_INTERFACE_PORT_FOR_SBI=80
-            - NRF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
-            - NRF_API_VERSION=v1
-            - INSTANCE=0
-            - PID_DIRECTORY=/var/run
+            - TZ=Europe/Paris
         networks:
             public_net:
                 ipv4_address: 192.168.71.130
-        volumes:
-            - ../5g_rfsimulator/nrf-healthcheck.sh:/openair-nrf/bin/nrf-healthcheck.sh
-        healthcheck:
-            test: /bin/bash -c "/openair-nrf/bin/nrf-healthcheck.sh"
-            interval: 10s
-            timeout: 5s
-            retries: 5
-
     mysql:
         container_name: "rfsim5g-mysql"
-        image: mysql:5.7
+        image: mysql:8.0
         volumes:
             - ../5g_rfsimulator/oai_db.sql:/docker-entrypoint-initdb.d/oai_db.sql
             - ../5g_rfsimulator/mysql-healthcheck.sh:/tmp/mysql-healthcheck.sh
@@ -37,18 +25,15 @@ services:
             test: /bin/bash -c "/tmp/mysql-healthcheck.sh"
             interval: 10s
             timeout: 5s
-            retries: 5
+            retries: 30
         networks:
             public_net:
                 ipv4_address: 192.168.71.131
-
     oai-amf:
         container_name: "rfsim5g-oai-amf"
-        image: oai-amf:august-dev
+        image: oaisoftwarealliance/oai-amf:v1.5.0
         environment:
             - TZ=Europe/paris
-            - INSTANCE=0
-            - PID_DIRECTORY=/var/run
             - MCC=208
             - MNC=99
             - REGION_ID=128
@@ -64,134 +49,85 @@ services:
             - PLMN_SUPPORT_MCC=208
             - PLMN_SUPPORT_MNC=99
             - PLMN_SUPPORT_TAC=0x0001
+            # Only one slice is defined (1, 0xFFFFFF).
             - SST_0=1
-            - SD_0=0xffffff
-            - SST_1=1
-            - SD_1=1
             - AMF_INTERFACE_NAME_FOR_NGAP=eth0
             - AMF_INTERFACE_NAME_FOR_N11=eth0
+            # One single SMF instance
             - SMF_INSTANCE_ID_0=1
             - SMF_FQDN_0=oai-smf
-            - SMF_IPV4_ADDR_0=0.0.0.0
-            - SMF_HTTP_VERSION_0=v1
+            - SMF_IPV4_ADDR_0=192.168.71.133
             - SELECTED_0=true
-            - SMF_INSTANCE_ID_1=2
-            - SMF_FQDN_1=oai-smf
-            - SMF_IPV4_ADDR_1=0.0.0.0
-            - SMF_HTTP_VERSION_1=v1
-            - SELECTED_1=false
+            # mysql definition in AMF is mandatory in mini deployment.
             - MYSQL_SERVER=192.168.71.131
             - MYSQL_USER=root
             - MYSQL_PASS=linux
             - MYSQL_DB=oai_db
-            - OPERATOR_KEY=c42449363bbad02b66d16bc975d77cc1
+            # NF registration
             - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_PORT=80
+            - NRF_FQDN=oai-nrf
             - NF_REGISTRATION=yes
             - SMF_SELECTION=yes
             - USE_FQDN_DNS=yes
-            - NRF_API_VERSION=v1
-            - NRF_FQDN=oai-nrf
-            - EXTERNAL_AUSF=no
-            - AUSF_IPV4_ADDRESS=0.0.0.0
-            - AUSF_PORT=80
-            - AUSF_API_VERSION=v1
-            - AUSF_FQDN=localhost
+            - USE_HTTP2=no
         depends_on:
             - oai-nrf
             - mysql
-        volumes:
-            - ../5g_rfsimulator/amf-healthcheck.sh:/openair-amf/bin/amf-healthcheck.sh
-        healthcheck:
-            test: /bin/bash -c "/openair-amf/bin/amf-healthcheck.sh"
-            interval: 10s
-            timeout: 15s
-            retries: 5
         networks:
             public_net:
                 ipv4_address: 192.168.71.132
-
     oai-smf:
         container_name: "rfsim5g-oai-smf"
-        image: oai-smf:august-dev
+        image: oaisoftwarealliance/oai-smf:v1.5.0
         environment:
             - TZ=Europe/Paris
-            - INSTANCE=0
-            - PID_DIRECTORY=/var/run
             - SMF_INTERFACE_NAME_FOR_N4=eth0
             - SMF_INTERFACE_NAME_FOR_SBI=eth0
-            - SMF_INTERFACE_PORT_FOR_SBI=80
-            - SMF_INTERFACE_HTTP2_PORT_FOR_SBI=9090
-            - SMF_API_VERSION=v1
             - DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
             - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
-            - AMF_IPV4_ADDRESS=0.0.0.0
-            - AMF_PORT=80
-            - AMF_API_VERSION=v1
+            - AMF_IPV4_ADDRESS=192.168.71.132
             - AMF_FQDN=oai-amf
-            - UDM_IPV4_ADDRESS=127.0.0.1
-            - UDM_PORT=80
-            - UDM_API_VERSION=v1
-            - UDM_FQDN=localhost
             - UPF_IPV4_ADDRESS=192.168.71.134
             - UPF_FQDN_0=oai-spgwu
             - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_PORT=80
-            - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
             - REGISTER_NRF=yes
             - DISCOVER_UPF=yes
             - USE_FQDN_DNS=yes
+            - USE_LOCAL_SUBSCRIPTION_INFO=yes
+            - UE_MTU=1500
+            # Only one slice is defined (1, 0xFFFFFF)
             - DNN_NI0=oai
             - TYPE0=IPv4
             - DNN_RANGE0=12.1.1.2 - 12.1.1.127
             - NSSAI_SST0=1
-            - NSSAI_SD0=0xFFFFFF
             - SESSION_AMBR_UL0=200Mbps
             - SESSION_AMBR_DL0=400Mbps
-            - DNN_NI2=oai.ipv4
+            - DEFAULT_CSCF_IPV4_ADDRESS=127.0.0.1
+            - ENABLE_USAGE_REPORTING=no
         depends_on:
             - oai-nrf
             - oai-amf
-        volumes:
-            - ../5g_rfsimulator/smf-healthcheck.sh:/openair-smf/bin/smf-healthcheck.sh
-        healthcheck:
-            test: /bin/bash -c "/openair-smf/bin/smf-healthcheck.sh"
-            interval: 10s
-            timeout: 5s
-            retries: 5
         networks:
             public_net:
                 ipv4_address: 192.168.71.133
-
     oai-spgwu:
         container_name: "rfsim5g-oai-spgwu"
-        image: oai-spgwu-tiny:august-dev
+        image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.0
         environment:
             - TZ=Europe/Paris
-            - PID_DIRECTORY=/var/run
             - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
             - SGW_INTERFACE_NAME_FOR_SX=eth0
             - PGW_INTERFACE_NAME_FOR_SGI=eth0
             - NETWORK_UE_NAT_OPTION=yes
             - NETWORK_UE_IP=12.1.1.0/24
-            - SPGWC0_IP_ADDRESS=192.168.71.133
-            - BYPASS_UL_PFCP_RULES=no
-            - MCC=208
-            - MNC=99
-            - MNC03=099
-            - TAC=1
-            - GTP_EXTENSION_HEADER_PRESENT=yes
-            - GW_ID=1
-            - REALM=openairinterface.org
             - ENABLE_5G_FEATURES=yes
             - REGISTER_NRF=yes
             - USE_FQDN_NRF=yes
             - UPF_FQDN_5G=oai-spgwu
             - NRF_IPV4_ADDRESS=192.168.71.130
-            - NRF_PORT=80
-            - NRF_API_VERSION=v1
             - NRF_FQDN=oai-nrf
+            # Only one slice is defined (1, 0xFFFFFF)
             - NSSAI_SST_0=1
             - NSSAI_SD_0=0xffffff
             - DNN_0=oai
@@ -204,25 +140,16 @@ services:
         cap_drop:
             - ALL
         privileged: true
-        volumes:
-            - ../5g_rfsimulator/spgwu-healthcheck.sh:/openair-spgwu-tiny/bin/spgwu-healthcheck.sh
-        healthcheck:
-            test: /bin/bash -c "/openair-spgwu-tiny/bin/spgwu-healthcheck.sh"
-            interval: 10s
-            timeout: 5s
-            retries: 5
         networks:
             public_net:
                 ipv4_address: 192.168.71.134
             traffic_net:
                 ipv4_address: 192.168.72.134
-
     oai-ext-dn:
-        image: ubuntu:bionic
         privileged: true
         container_name: rfsim5g-oai-ext-dn
+        image: oaisoftwarealliance/trf-gen-cn5g:latest
         entrypoint: /bin/bash -c \
-              "apt update; apt install -y procps iptables iproute2 iperf iputils-ping;"\
               "iptables -t nat -A POSTROUTING -o eth0 -j MASQUERADE;"\
               "ip route add 12.1.1.0/24 via 192.168.72.134 dev eth0; sleep infinity"
         depends_on:
@@ -235,7 +162,6 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
-
     oai-gnb:
         image: oai-gnb:develop
         privileged: true
@@ -256,7 +182,6 @@ services:
             interval: 10s
             timeout: 5s
             retries: 5
-
     oai-nr-ue:
         image: oai-nr-ue:develop
         privileged: true

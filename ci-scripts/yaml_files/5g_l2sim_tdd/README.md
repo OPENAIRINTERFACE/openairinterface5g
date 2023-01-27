@@ -32,11 +32,12 @@ Password:
 Now pull images.
 
 ```bash
-$ docker pull mysql:5.7
-$ docker pull oaisoftwarealliance/oai-amf:develop
-$ docker pull oaisoftwarealliance/oai-nrf:develop
-$ docker pull oaisoftwarealliance/oai-smf:develop
-$ docker pull oaisoftwarealliance/oai-spgwu-tiny:develop
+$ docker pull mysql:8.0
+$ docker pull oaisoftwarealliance/oai-amf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-nrf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-smf:v1.5.0
+$ docker pull oaisoftwarealliance/oai-spgwu-tiny:v1.5.0
+$ docker pull oaisoftwarealliance/trf-gen-cn5g:latest
 
 $ docker pull oaisoftwarealliance/oai-gnb:develop
 $ docker pull oaisoftwarealliance/oai-nr-ue:develop
@@ -46,11 +47,6 @@ $ docker pull oaisoftwarealliance/proxy:latest
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag oaisoftwarealliance/oai-amf:latest oai-amf:august-dev
-$ docker image tag oaisoftwarealliance/oai-nrf:latest oai-nrf:august-dev
-$ docker image tag oaisoftwarealliance/oai-smf:latest oai-smf:august-dev
-$ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:august-dev
-
 $ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
 $ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
 $ docker image tag oaisoftwarealliance/proxy:latest oai-lte-multi-ue-proxy:latest
