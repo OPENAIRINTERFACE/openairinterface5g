@@ -1085,7 +1085,7 @@ typedef struct
 
 	// These TLVs are used by the VNF to configure the RF in the PNF
 	nfapi_uint16_tlv_t max_transmit_power;
-	nfapi_uint16_tlv_t earfcn;
+	nfapi_uint32_tlv_t earfcn;
 
 	nfapi_nmm_frequency_bands_t nmm_gsm_frequency_bands;
 	nfapi_nmm_frequency_bands_t nmm_umts_frequency_bands;
