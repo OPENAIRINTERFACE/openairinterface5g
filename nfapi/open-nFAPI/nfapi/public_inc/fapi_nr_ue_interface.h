@@ -87,7 +87,7 @@ typedef struct {
 typedef struct {
   uint16_t rnti;
   uint8_t dci_format;
-  uint8_t CoreSetType;
+  uint8_t coreset_type;
   int ss_type;
   // n_CCE index of first CCE for PDCCH reception
   int n_CCE;

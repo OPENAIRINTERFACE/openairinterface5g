@@ -140,7 +140,6 @@ void init_RA(module_id_t mod_id,
              NR_RACH_ConfigGeneric_t *rach_ConfigGeneric,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated)
 {
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
 
   RA_config_t *ra          = &mac->ra;
@@ -279,11 +278,9 @@ void init_RA(module_id_t mod_id,
   }
 }
 
-
 /* TS 38.321 subclause 7.3 - return DELTA_PREAMBLE values in dB */
 int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_format)
 {
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon = mac->current_UL_BWP.rach_ConfigCommon;
   NR_SubcarrierSpacing_t scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
@@ -387,7 +384,6 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
 // returns receivedTargerPower in dBm
 int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t mod_id, uint8_t CC_id)
 {
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   int8_t receivedTargerPower;
   int8_t delta_preamble;
@@ -405,7 +401,6 @@ int nr_get_Po_NOMINAL_PUSCH(NR_PRACH_RESOURCES_t *prach_resources, module_id_t m
 
 void ssb_rach_config(RA_config_t *ra, NR_PRACH_RESOURCES_t *prach_resources, NR_RACH_ConfigCommon_t *nr_rach_ConfigCommon)
 {
-
   // Determine the SSB to RACH mapping ratio
   // =======================================
 
@@ -494,7 +489,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
-  if (mac->current_UL_BWP.msg3_DeltaPreamble){
+  if (mac->current_UL_BWP.msg3_DeltaPreamble) {
     deltaPreamble_Msg3 = (*mac->current_UL_BWP.msg3_DeltaPreamble) * 2; // dB
     LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
   }

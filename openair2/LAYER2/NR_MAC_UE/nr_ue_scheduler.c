@@ -136,9 +136,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   return &mac->ul_config_request[index];
 }
 
-void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)
+void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)
 {
-
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_SRS_Config_t *srs_config = current_UL_BWP->srs_Config;
   NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
@@ -272,13 +271,12 @@ void ul_layers_config(NR_UE_MAC_INST_t * mac, nfapi_nr_ue_pusch_pdu_t *pusch_con
 // todo: this function shall be reviewed completely because of the many comments left by the author
 void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)
 {
-
   uint8_t rank = pusch_config_pdu->nrOfLayers;
 
   NR_PUSCH_Config_t *pusch_Config = mac->current_UL_BWP.pusch_Config;
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
-  long	transformPrecoder = get_transformPrecoding(&mac->current_UL_BWP, dci_format, 0);
+  long transformPrecoder = get_transformPrecoding(&mac->current_UL_BWP, dci_format, 0);
   long *max_length = NULL;
   long *dmrs_type = NULL;
   LOG_D(NR_MAC,"transformPrecoder %s\n",transformPrecoder==NR_PUSCH_Config__transformPrecoder_disabled?"disabled":"enabled");
@@ -451,13 +449,7 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
-                        NR_ul_tda_info_t *tda_info,
-                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
-                        dci_pdu_rel15_t *dci,
-                        RAR_grant_t *rar_grant,
-                        uint16_t rnti,
-                        uint8_t *dci_format)
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_ul_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format)
 {
 
   int f_alloc;
@@ -518,10 +510,11 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
     pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
 
-    l_prime_mask = get_l_prime(tda_info->nrOfSymbols, tda_info->mapping_type, add_pos, dmrslength, tda_info->startSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
+    l_prime_mask =
+        get_l_prime(tda_info->nrOfSymbols, tda_info->mapping_type, add_pos, dmrslength, tda_info->startSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
     LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, tda_info->mapping_type, l_prime_mask);
 
-    #ifdef DEBUG_MSG3
+#ifdef DEBUG_MSG3
     LOG_D(NR_MAC, "In %s BWP assignment (BWP (start %d, size %d) \n", __FUNCTION__, pusch_config_pdu->bwp_start, pusch_config_pdu->bwp_size);
     #endif
 
@@ -714,15 +707,13 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     }
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
-    if (current_UL_BWP->pusch_servingcellconfig &&
-        current_UL_BWP->pusch_servingcellconfig->xOverhead)
+    if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->xOverhead)
       N_PRB_oh = *current_UL_BWP->pusch_servingcellconfig->xOverhead;
     else
       N_PRB_oh = 0;
 
-    if (current_UL_BWP->pusch_servingcellconfig &&
-        current_UL_BWP->pusch_servingcellconfig->rateMatching) {
-      long *maxMIMO_Layers =  current_UL_BWP->pusch_servingcellconfig->ext1->maxMIMO_Layers;
+    if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->rateMatching) {
+      long *maxMIMO_Layers = current_UL_BWP->pusch_servingcellconfig->ext1->maxMIMO_Layers;
       if (!maxMIMO_Layers)
         maxMIMO_Layers = pusch_Config ? pusch_Config->maxRank : NULL;
       AssertFatal (maxMIMO_Layers != NULL,"Option with max MIMO layers not configured is not supported\n");
@@ -730,29 +721,30 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       pusch_config_pdu->tbslbrm = nr_compute_tbslbrm(pusch_config_pdu->mcs_table,
                                                      bw_tbslbrm,
                                                      *maxMIMO_Layers);
-    }
-    else
+    } else
       pusch_config_pdu->tbslbrm = 0;
 
     /* PTRS */
-    if (pusch_Config &&
-        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB &&
-        pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
+    if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS) {
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
         valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
-                                              pusch_config_pdu->rb_size, pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,&pusch_config_pdu->pusch_ptrs.ptrs_time_density,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,&pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
-                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power, pusch_config_pdu->nr_of_symbols);
+                                              pusch_config_pdu->rb_size,
+                                              pusch_config_pdu->mcs_index,
+                                              pusch_config_pdu->mcs_table,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_time_density,
+                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,
+                                              &pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
+                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power,
+                                              pusch_config_pdu->nr_of_symbols);
         if(valid_ptrs_setup==true) {
           pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
         }
         LOG_D(NR_MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
       }
     }
-
   }
 
   LOG_D(NR_MAC, "In %s: received UL grant (rb_start %d, rb_size %d, start_symbol_index %d, nr_of_symbols %d) for RNTI type %s \n",
@@ -1411,17 +1403,14 @@ int nr_get_sf_retxBSRTimer(uint8_t sf_offset) {
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
 // Note: Msg3 tx in the uplink symbols of mixed slot
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
-                          uint8_t is_Msg3,
-                          frame_t current_frame,
-                          int current_slot,
-                          frame_t *frame_tx,
-                          int *slot_tx,
-                          long k2){
-
+int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2)
+{
   AssertFatal(k2 >= DURATION_RX_TO_TX,
-              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). K2 set according to min_rxtxtime in config file.\n",
-              k2,DURATION_RX_TO_TX);
+              "Slot offset K2 (%ld) cannot be less than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
+              k2,
+              DURATION_RX_TO_TX,
+              DURATION_RX_TO_TX,
+              DURATION_RX_TO_TX);
 
   int delta = 0;
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
@@ -1450,8 +1439,11 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
     }
 
     AssertFatal((k2 + delta) >= DURATION_RX_TO_TX,
-                "Slot offset (%ld) for Msg3 cannot be less than DURATION_RX_TO_TX (%d)\n",
-                k2 + delta, DURATION_RX_TO_TX);
+                "Slot offset (%ld) for Msg3 cannot be less than DURATION_RX_TO_TX (%d). Please set min_rxtxtime at least to %d in gNB config file or gNBs.[0].min_rxtxtime=%d via command line.\n",
+                k2,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX,
+                DURATION_RX_TO_TX);
 
     *slot_tx = (current_slot + k2 + delta) % nr_slots_per_frame[mu];
     if (current_slot + k2 + delta > nr_slots_per_frame[mu]){
@@ -1463,7 +1455,7 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
   } else {
 
     if (k2 < 0) { // This can happen when a false DCI is received
-      LOG_W(PHY,"%d.%d. Received k2 %ld\n", current_frame, current_slot, k2);
+      LOG_W(PHY, "%d.%d. Received k2 %ld\n", current_frame, current_slot, k2);
       return -1;
     }
 
@@ -1473,10 +1465,9 @@ int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac,
 
   }
 
-  LOG_D(NR_MAC, "In %s: currently at [%d.%d] UL transmission in [%d.%d] (k2 %ld delta %d)\n", __FUNCTION__, current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
+  LOG_D(NR_MAC, "[%04d.%02d] UL transmission in [%04d.%02d] (k2 %ld delta %d)\n", current_frame, current_slot, *frame_tx, *slot_tx, k2, delta);
 
   return 0;
-
 }
 
 // Build the list of all the valid RACH occasions in the maximum association pattern period according to the PRACH config

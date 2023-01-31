@@ -277,11 +277,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         NR_ControlResourceSet_t *coreset,
                         uint16_t cset0_bwp_size);
 
-void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_DL_BWP_t *current_BWP,
-                 const NR_ControlResourceSet_t *coreset,
-                 dci_pdu_rel15_t *dci_pdu_rel15,
-                 nr_dci_format_t format);
+void prepare_dci(const NR_CellGroupConfig_t *CellGroup, const NR_UE_DL_BWP_t *current_BWP, const NR_ControlResourceSet_t *coreset, dci_pdu_rel15_t *dci_pdu_rel15, nr_dci_format_t format);
 
 void set_r_pucch_parms(int rsetindex,
                        int r_pucch,
@@ -307,8 +303,7 @@ long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
 
-NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList,
-                                    const int tda);
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList, const int tda);
 
 NR_tda_info_t nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
                                     const int tda);

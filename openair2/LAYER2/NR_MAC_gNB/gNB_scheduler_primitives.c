@@ -563,9 +563,8 @@ bool nr_find_nb_rb(uint16_t Qm,
   return *tbs >= bytes && *nb_rb <= nb_rb_max;
 }
 
-NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList,
-                                    const int tda) {
-
+NR_tda_info_t nr_get_pdsch_tda_info(const NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList, const int tda)
+{
   NR_tda_info_t tda_info = {0};
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   tda_info.mapping_type = tdaList->list.array[tda]->mappingType;
@@ -1077,13 +1076,8 @@ void set_r_pucch_parms(int rsetindex,
   *start_symbol_index = default_pucch_firstsymb[rsetindex];
 }
 
-void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_DL_BWP_t *current_BWP,
-                 const NR_ControlResourceSet_t *coreset,
-                 dci_pdu_rel15_t *dci_pdu_rel15,
-                 nr_dci_format_t format)
+void prepare_dci(const NR_CellGroupConfig_t *CellGroup, const NR_UE_DL_BWP_t *current_BWP, const NR_ControlResourceSet_t *coreset, dci_pdu_rel15_t *dci_pdu_rel15, nr_dci_format_t format)
 {
-
   AssertFatal(CellGroup!=NULL,"CellGroup shouldn't be null here\n");
 
   const NR_PDSCH_Config_t *pdsch_Config = current_BWP ? current_BWP->pdsch_Config : NULL;
@@ -1157,7 +1151,6 @@ void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
   }
 }
 
-
 void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         const NR_CellGroupConfig_t *CellGroup,
                         const NR_UE_DL_BWP_t *current_DL_BWP,
@@ -1189,22 +1182,16 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
     // computing alternative size for padding
     dci_pdu_rel15_t temp_pdu;
     if(dci_format == NR_DL_DCI_FORMAT_1_0)
-      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP,
-                             CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type,
-                             coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, &temp_pdu, NR_UL_DCI_FORMAT_0_0, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
 
     if(dci_format == NR_UL_DCI_FORMAT_0_0)
-      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP,
-                             CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type,
-                             coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
+      alt_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, &temp_pdu, NR_DL_DCI_FORMAT_1_0, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, 0);
 
   }
   else
     N_RB = cset0_bwp_size;
 
-  int dci_size = nr_dci_size(current_DL_BWP, current_UL_BWP,
-                             CellGroup, dci_pdu_rel15, dci_format, rnti_type, coreset,
-                             bwp_id, ss->searchSpaceType->present, cset0_bwp_size, alt_size);
+  int dci_size = nr_dci_size(current_DL_BWP, current_UL_BWP, CellGroup, dci_pdu_rel15, dci_format, rnti_type, coreset, bwp_id, ss->searchSpaceType->present, cset0_bwp_size, alt_size);
   pdcch_dci_pdu->PayloadSizeBits = dci_size;
   AssertFatal(dci_size <= 64, "DCI sizes above 64 bits not yet supported");
   if (dci_format == NR_DL_DCI_FORMAT_1_1 || dci_format == NR_UL_DCI_FORMAT_0_1)
@@ -2088,8 +2075,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
   int target_ss;
 
-  if(CellGroup &&
-     CellGroup->physicalCellGroupConfig)
+  if (CellGroup && CellGroup->physicalCellGroupConfig)
     DL_BWP->pdsch_HARQ_ACK_Codebook = &CellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook;
 
   if (CellGroup &&
@@ -2227,11 +2213,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   else
     UL_BWP->transform_precoding = *UL_BWP->pusch_Config->transformPrecoder;
 
-  if(UL_BWP->bwp_id > 0) {
+  if (UL_BWP->bwp_id > 0) {
     UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup;
     UL_BWP->rach_ConfigCommon = ul_bwp->bwp_Common->rach_ConfigCommon->choice.setup;
-  }
-  else {
+  } else {
     UL_BWP->pucch_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup;
     UL_BWP->rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
   }

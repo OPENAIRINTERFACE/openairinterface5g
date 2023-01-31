@@ -608,10 +608,7 @@ typedef struct NR_UE_UL_BWP {
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 
-typedef enum {
-  typeA = 0,
-  typeB = 1
-} mappingType_t;
+typedef enum { typeA = 0, typeB = 1 } mappingType_t;
 
 typedef struct NR_ul_tda_info {
   mappingType_t mapping_type;

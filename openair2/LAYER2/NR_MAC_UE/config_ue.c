@@ -564,15 +564,15 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
       ul_genericParameters = bwp_dlcommon->genericParameters;
 
     DL_BWP->pdsch_Config = NULL;
-    if(bwp_dlcommon->pdsch_ConfigCommon)
+    if (bwp_dlcommon->pdsch_ConfigCommon)
       DL_BWP->tdaList = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    if(bwp_ulcommon->pusch_ConfigCommon) {
+    if (bwp_ulcommon->pusch_ConfigCommon) {
       UL_BWP->tdaList = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
       UL_BWP->msg3_DeltaPreamble = bwp_ulcommon->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
     }
-    if(bwp_ulcommon->pucch_ConfigCommon)
+    if (bwp_ulcommon->pucch_ConfigCommon)
       UL_BWP->pucch_ConfigCommon = bwp_ulcommon->pucch_ConfigCommon->choice.setup;
-    if(bwp_ulcommon->rach_ConfigCommon)
+    if (bwp_ulcommon->rach_ConfigCommon)
       UL_BWP->rach_ConfigCommon = bwp_ulcommon->rach_ConfigCommon->choice.setup;
   }
 
@@ -583,11 +583,10 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
     }
     if (cell_group_config->spCellConfig &&
         cell_group_config->spCellConfig->spCellConfigDedicated) {
-
       struct NR_ServingCellConfig *spCellConfigDedicated = cell_group_config->spCellConfig->spCellConfigDedicated;
       UL_BWP->csi_MeasConfig = spCellConfigDedicated->csi_MeasConfig ? spCellConfigDedicated->csi_MeasConfig->choice.setup : NULL;
-      UL_BWP->pusch_servingcellconfig = spCellConfigDedicated->uplinkConfig && spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig ?
-                                        spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
+      UL_BWP->pusch_servingcellconfig =
+          spCellConfigDedicated->uplinkConfig && spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig ? spCellConfigDedicated->uplinkConfig->pusch_ServingCellConfig->choice.setup : NULL;
       DL_BWP->pdsch_servingcellconfig = spCellConfigDedicated->pdsch_ServingCellConfig ? spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup : NULL;
 
       if (spCellConfigDedicated->firstActiveDownlinkBWP_Id)
@@ -595,17 +594,17 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
       if (spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id)
         UL_BWP->bwp_id = *spCellConfigDedicated->uplinkConfig->firstActiveUplinkBWP_Id;
 
-      if(mac->scc) {
+      if (mac->scc) {
         bwp_dlcommon = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
         bwp_ulcommon = mac->scc->uplinkConfigCommon->initialUplinkBWP;
       }
-      if(mac->scc_SIB) {
+      if (mac->scc_SIB) {
         bwp_dlcommon = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
         bwp_ulcommon = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
       }
       NR_BWP_Downlink_t *bwp_downlink = NULL;
       const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = spCellConfigDedicated->downlinkBWP_ToAddModList;
-      if(bwpList)
+      if (bwpList)
         DL_BWP->n_dl_bwp = bwpList->list.count;
       if (bwpList && DL_BWP->bwp_id > 0) {
         for (int i = 0; i < bwpList->list.count; i++) {
@@ -643,9 +642,9 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         UL_BWP->pucch_Config = bwp_uplink->bwp_Dedicated->pucch_Config->choice.setup;
         UL_BWP->srs_Config = bwp_uplink->bwp_Dedicated->srs_Config->choice.setup;
         UL_BWP->configuredGrantConfig = bwp_uplink->bwp_Dedicated->configuredGrantConfig ? bwp_uplink->bwp_Dedicated->configuredGrantConfig->choice.setup : NULL;
-        if(bwp_uplink->bwp_Common->pucch_ConfigCommon)
+        if (bwp_uplink->bwp_Common->pucch_ConfigCommon)
           UL_BWP->pucch_ConfigCommon = bwp_uplink->bwp_Common->pucch_ConfigCommon->choice.setup;
-        if(bwp_uplink->bwp_Common->rach_ConfigCommon)
+        if (bwp_uplink->bwp_Common->rach_ConfigCommon)
           UL_BWP->rach_ConfigCommon = bwp_uplink->bwp_Common->rach_ConfigCommon->choice.setup;
       }
       else {
@@ -653,10 +652,10 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         UL_BWP->pusch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup;
         UL_BWP->pucch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
         UL_BWP->srs_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;
-        UL_BWP->configuredGrantConfig = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig ?
-                                        spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig->choice.setup : NULL;
+        UL_BWP->configuredGrantConfig =
+            spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig ? spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig->choice.setup : NULL;
         ul_genericParameters = bwp_ulcommon->genericParameters;
-        if(bwp_ulcommon->rach_ConfigCommon)
+        if (bwp_ulcommon->rach_ConfigCommon)
           UL_BWP->rach_ConfigCommon = bwp_ulcommon->rach_ConfigCommon->choice.setup;
       }
     }

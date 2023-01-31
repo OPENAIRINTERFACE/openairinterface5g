@@ -84,20 +84,11 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
                                       const uint8_t *nrOfLayers,
                                       uint32_t *val);
 
-NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP,
-                                                            int controlResourceSetId,
-                                                            int ss_type,
-                                                            nr_rnti_type_t rnti_type);
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type);
 
-NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP,
-                                                            int controlResourceSetId,
-                                                            int ss_type,
-                                                            nr_rnti_type_t rnti_type);
+NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type);
 
-NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist,
-                                 int tda_index,
-                                 int scs,
-                                 int normal_CP);
+NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist, int tda_index, int scs, bool normal_CP);
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
@@ -281,9 +272,7 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
 @param    rnti_type        rnti type
 @param    configuredGrant  indicates whether a configured grant was received or not
 @returns                   transformPrecoding value */
-uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP,
-                               nr_dci_format_t dci_format,
-                               uint8_t configuredGrant);
+uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant);
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
                                const int CC_idP,

@@ -419,73 +419,68 @@ const char table_38211_6_3_1_5_5[22][4][2] = {
     {{'1', '1'}, {'o', 'o'}, {'j', 'o'}, {'1', 'n'}}  // tpmi 21
 };
 
-const uint8_t table_6_1_2_1_1_2[16][4]={
-    {0,0,0,14},   // row index 1
-    {0,0,0,12},    // row index 2
-    {0,0,0,10},    // row index 3
-    {1,0,2,10},    // row index 4
-    {1,0,4,10},    // row index 5
-    {1,0,4,8},   // row index 6
-    {1,0,4,6},    // row index 7
-    {0,1,0,14},    // row index 8
-    {0,1,0,12},    // row index 9
-    {0,1,0,10},    // row index 10
-    {0,2,0,14},   // row index 11
-    {0,2,0,12},   // row index 12
-    {0,2,0,10},    // row index 13
-    {1,0,8,6},    // row index 14
-    {0,3,0,14},    // row index 15
-    {0,3,0,10}     // row index 16
+// Default PUSCH time domain resource allocation tables from 38.214
+const uint8_t table_6_1_2_1_1_2[16][4] = {
+    {0, 0, 0, 14}, // row index 1
+    {0, 0, 0, 12}, // row index 2
+    {0, 0, 0, 10}, // row index 3
+    {1, 0, 2, 10}, // row index 4
+    {1, 0, 4, 10}, // row index 5
+    {1, 0, 4, 8}, // row index 6
+    {1, 0, 4, 6}, // row index 7
+    {0, 1, 0, 14}, // row index 8
+    {0, 1, 0, 12}, // row index 9
+    {0, 1, 0, 10}, // row index 10
+    {0, 2, 0, 14}, // row index 11
+    {0, 2, 0, 12}, // row index 12
+    {0, 2, 0, 10}, // row index 13
+    {1, 0, 8, 6}, // row index 14
+    {0, 3, 0, 14}, // row index 15
+    {0, 3, 0, 10} // row index 16
 };
 
-const uint8_t table_6_1_2_1_1_3[16][4]={
-    {0,0,0,8},   // row index 1
-    {0,0,0,12},    // row index 2
-    {0,0,0,10},    // row index 3
-    {1,0,2,10},    // row index 4
-    {1,0,4,4},    // row index 5
-    {1,0,4,8},   // row index 6
-    {1,0,4,6},    // row index 7
-    {0,1,0,8},    // row index 8
-    {0,1,0,12},    // row index 9
-    {0,1,0,10},    // row index 10
-    {0,2,0,6},   // row index 11
-    {0,2,0,12},   // row index 12
-    {0,2,0,10},    // row index 13
-    {1,0,8,4},    // row index 14
-    {0,3,0,8},    // row index 15
-    {0,3,0,10}     // row index 16
+const uint8_t table_6_1_2_1_1_3[16][4] = {
+    {0, 0, 0, 8}, // row index 1
+    {0, 0, 0, 12}, // row index 2
+    {0, 0, 0, 10}, // row index 3
+    {1, 0, 2, 10}, // row index 4
+    {1, 0, 4, 4}, // row index 5
+    {1, 0, 4, 8}, // row index 6
+    {1, 0, 4, 6}, // row index 7
+    {0, 1, 0, 8}, // row index 8
+    {0, 1, 0, 12}, // row index 9
+    {0, 1, 0, 10}, // row index 10
+    {0, 2, 0, 6}, // row index 11
+    {0, 2, 0, 12}, // row index 12
+    {0, 2, 0, 10}, // row index 13
+    {1, 0, 8, 4}, // row index 14
+    {0, 3, 0, 8}, // row index 15
+    {0, 3, 0, 10} // row index 16
 };
 
-NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist,
-                                 int tda_index,
-                                 int scs,
-                                 int normal_CP)
+NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist, int tda_index, int scs, bool normal_CP)
 {
-
   NR_ul_tda_info_t tda_info = {0};
+  // Definition of value j in Table 6.1.2.1.1-4 of 38.214
   int j = scs == 0 ? 1 : scs;
-  if(tdalist) {
-    if(tda_index >= tdalist->list.count) {
-      LOG_E(MAC, "TDA index from DCI %d exceeds TDA list array size %d\n", tda_index, tdalist->list.count);
-      return tda_info;
-    }
+  if (tdalist) {
+    AssertFatal(tda_index < tdalist->list.count, "TDA index from DCI %d exceeds TDA list array size %d\n", tda_index, tdalist->list.count);
     NR_PUSCH_TimeDomainResourceAllocation_t *tda = tdalist->list.array[tda_index];
     tda_info.mapping_type = tda->mappingType;
+    // As described in 38.331, when the field is absent the UE applies the value 1 when PUSCH SCS is 15/30KHz
+    // 2 when PUSCH SCS is 60KHz and 3 when PUSCH SCS is 120KHz. This equates to the parameter j.
     tda_info.k2 = tda->k2 ? *tda->k2 : j;
     int S, L;
     SLIV2SL(tda->startSymbolAndLength, &S, &L);
     tda_info.startSymbolIndex = S;
     tda_info.nrOfSymbols = L;
-  }
-  else {
-    if(normal_CP) {
+  } else {
+    if (normal_CP) {
       tda_info.mapping_type = table_6_1_2_1_1_2[tda_index][0];
       tda_info.k2 = table_6_1_2_1_1_2[tda_index][1] + j;
       tda_info.startSymbolIndex = table_6_1_2_1_1_2[tda_index][2];
       tda_info.nrOfSymbols = table_6_1_2_1_1_2[tda_index][3];
-    }
-    else {
+    } else {
       tda_info.mapping_type = table_6_1_2_1_1_3[tda_index][0];
       tda_info.k2 = table_6_1_2_1_1_3[tda_index][1] + j;
       tda_info.startSymbolIndex = table_6_1_2_1_1_3[tda_index][2];
@@ -2777,20 +2772,12 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP,
-                               nr_dci_format_t dci_format,
-                               uint8_t configuredGrant)
+uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant)
 {
-
-  if (configuredGrant &&
-      current_UL_BWP->configuredGrantConfig &&
-      current_UL_BWP->configuredGrantConfig->transformPrecoder)
+  if (configuredGrant && current_UL_BWP->configuredGrantConfig && current_UL_BWP->configuredGrantConfig->transformPrecoder)
     return *current_UL_BWP->configuredGrantConfig->transformPrecoder;
 
-  if (dci_format == NR_UL_DCI_FORMAT_0_1 &&
-      current_UL_BWP &&
-      current_UL_BWP->pusch_Config &&
-      current_UL_BWP->pusch_Config->transformPrecoder)
+  if (dci_format == NR_UL_DCI_FORMAT_0_1 && current_UL_BWP && current_UL_BWP->pusch_Config && current_UL_BWP->pusch_Config->transformPrecoder)
     return *current_UL_BWP->pusch_Config->transformPrecoder;
   else
     return current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder ? 0 : 1;
@@ -3191,38 +3178,26 @@ uint8_t compute_precoding_information(NR_PUSCH_Config_t *pusch_Config,
   return nbits;
 }
 
-NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP,
-                                                            int controlResourceSetId,
-                                                            int ss_type,
-                                                            nr_rnti_type_t rnti_type)
+NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t *DL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type)
 {
-
-  if(!DL_BWP) return NULL;
+  if (!DL_BWP)
+    return NULL;
   // see table 5.1.2.1.1-1 in 38.214
-  if((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) &&
-     !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0) &&
-     (DL_BWP->pdsch_Config && DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList))
+  if ((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
+      && (DL_BWP->pdsch_Config && DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList))
     return DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
   else
     return DL_BWP->tdaList;
-
 }
 
-
-NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP,
-                                                            int controlResourceSetId,
-                                                            int ss_type,
-                                                            nr_rnti_type_t rnti_type)
+NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type)
 {
-
-  if((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) &&
-     !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0) &&
-     (UL_BWP->pusch_Config && UL_BWP->pusch_Config->pusch_TimeDomainAllocationList))
+  if ((rnti_type == NR_RNTI_CS || rnti_type == NR_RNTI_C || rnti_type == NR_RNTI_MCS_C) && !(ss_type == NR_SearchSpace__searchSpaceType_PR_common && controlResourceSetId == 0)
+      && (UL_BWP->pusch_Config && UL_BWP->pusch_Config->pusch_TimeDomainAllocationList))
     return UL_BWP->pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
   else
     return UL_BWP->tdaList;
 }
-
 
 uint16_t get_rb_bwp_dci(nr_dci_format_t format,
                         int ss_type,
@@ -3315,7 +3290,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         dci_pdu->bwp_indicator.nbits = UL_BWP->n_ul_bwp;
       else
         dci_pdu->bwp_indicator.nbits = 2;
-      LOG_D(NR_MAC,"BWP indicator nbits %d, num UL BWPs %d\n", dci_pdu->bwp_indicator.nbits, UL_BWP->n_ul_bwp);
+      LOG_D(NR_MAC, "BWP indicator nbits %d, num UL BWPs %d\n", dci_pdu->bwp_indicator.nbits, UL_BWP->n_ul_bwp);
       size += dci_pdu->bwp_indicator.nbits;
       // Freq domain assignment
       if (pusch_Config) {
@@ -3333,7 +3308,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       }
       else
         dci_pdu->frequency_domain_assignment.nbits = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
-      LOG_D(NR_MAC,"PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n", dci_pdu->frequency_domain_assignment.nbits, N_RB);
+      LOG_D(NR_MAC, "PUSCH Frequency Domain Assignment nbits %d, N_RB %d\n", dci_pdu->frequency_domain_assignment.nbits, N_RB);
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
       NR_PUSCH_TimeDomainResourceAllocationList_t *tdalistul = get_ul_tdalist(UL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
@@ -3342,7 +3317,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       else
         num_entries = 16; // num of entries in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
-      LOG_D(NR_MAC,"PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n", dci_pdu->time_domain_assignment.nbits, pusch_Config);
+      LOG_D(NR_MAC, "PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n", dci_pdu->time_domain_assignment.nbits, pusch_Config);
       size += dci_pdu->time_domain_assignment.nbits;
       // Frequency Hopping flag
       if (pusch_Config && 
@@ -3359,7 +3334,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->dai[0].nbits;
       LOG_D(NR_MAC, "DAI1 nbits %d\n", dci_pdu->dai[0].nbits);
       // 2nd DAI
-      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) { // TODO not sure about that
+      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
         dci_pdu->dai[1].nbits = 2;
         size += dci_pdu->dai[1].nbits;
       }
@@ -3405,8 +3380,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         }
       }
       // CBGTI
-      if (UL_BWP->pusch_servingcellconfig &&
-          UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+      if (UL_BWP->pusch_servingcellconfig && UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission != NULL) {
         int num = UL_BWP->pusch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock;
         dci_pdu->cbgti.nbits = 2 + (num<<1);
         size += dci_pdu->cbgti.nbits;
@@ -3453,7 +3427,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       break;
 
     case NR_DL_DCI_FORMAT_1_1:
-      LOG_D(NR_MAC,"DCI_FORMAT 1_1 : pdsch_Config %p, pucch_Config %p\n", pdsch_Config, pucch_Config);
+      LOG_D(NR_MAC, "DCI_FORMAT 1_1 : pdsch_Config %p, pucch_Config %p\n", pdsch_Config, pucch_Config);
       // General note: 0 bits condition is ignored as default nbits is 0.
       // Format identifier
       size = 1;
@@ -3561,8 +3535,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
         dci_pdu->srs_request.nbits = 3;
       size += dci_pdu->srs_request.nbits;
       // CBGTI
-      if (DL_BWP->pdsch_servingcellconfig &&
-          DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
+      if (DL_BWP->pdsch_servingcellconfig && DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission != NULL) {
         uint8_t maxCBGperTB = (DL_BWP->pdsch_servingcellconfig->codeBlockGroupTransmission->choice.setup->maxCodeBlockGroupsPerTransportBlock + 1) * 2;
         long *maxCWperDCI_rrc = pdsch_Config->maxNrofCodeWordsScheduledByDCI;
         uint8_t maxCW = (maxCWperDCI_rrc == NULL) ? 1 : *maxCWperDCI_rrc;

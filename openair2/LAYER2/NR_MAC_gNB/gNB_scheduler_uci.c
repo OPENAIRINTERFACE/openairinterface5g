@@ -1015,10 +1015,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
 }
 
-void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp,
-                          const int r_pucch,
-                          const int bwp_size,
-                          NR_sched_pucch_t *pucch)
+void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const int bwp_size, NR_sched_pucch_t *pucch)
 {
   if(r_pucch<0){
     const NR_PUCCH_Resource_t *resource = ul_bwp->pucch_Config->resourceToAddModList->list.array[0];
