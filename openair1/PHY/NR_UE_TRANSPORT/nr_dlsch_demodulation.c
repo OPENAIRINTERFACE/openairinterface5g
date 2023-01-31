@@ -2198,7 +2198,7 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size,
                            int length)
 {
   int *ch0r, *ch0c;
-  int32_t *** conjH_H_elements;
+  int32_t ***conjH_H_elements;
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
   int32_t determ_fin[12*nb_rb_0] __attribute__((aligned(32)));
 
@@ -2233,11 +2233,11 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size,
 
   //Compute the inverse and determinant of the H^*H matrix
   //Allocate the inverse matrix
-  int32_t ** inv_H_h_H;
-  inv_H_h_H = (int32_t **)malloc16_clear( n_tx*n_tx*sizeof(int32_t *) );
-  for (int rtx=0;rtx<n_tx;rtx++) {//row
-    for (int ctx=0;ctx<n_tx;ctx++) {//column
-      inv_H_h_H[ctx*n_tx+rtx] = (int32_t *)malloc16_clear( 12*nb_rb_0*sizeof(int32_t) );
+  int32_t **inv_H_h_H;
+  inv_H_h_H = (int32_t **)malloc16_clear(n_tx * n_tx * sizeof(int32_t *));
+  for (int rtx = 0; rtx < n_tx; rtx++) { // row
+    for (int ctx = 0; ctx < n_tx; ctx++) { // column
+      inv_H_h_H[ctx * n_tx + rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
     }
   }
   int fp_flag = 1;//0: float point calc 1: Fixed point calc
@@ -2253,10 +2253,10 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size,
   int32_t outtemp[12*nb_rb_0] __attribute__((aligned(32)));
   int32_t **rxdataF_zforcing;
   //Allocate rxdataF for zforcing out
-  rxdataF_zforcing        = (int32_t **)malloc16_clear( n_tx*sizeof(int32_t *) );
-   for (int rtx=0;rtx<n_tx;rtx++) {//row
-     rxdataF_zforcing[rtx] = (int32_t *)malloc16_clear( 12*nb_rb_0*sizeof(int32_t) );
-   }
+  rxdataF_zforcing = (int32_t **)malloc16_clear(n_tx * sizeof(int32_t *));
+  for (int rtx = 0; rtx < n_tx; rtx++) { // row
+    rxdataF_zforcing[rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
+  }
 
   for (int rtx=0;rtx<n_tx;rtx++) {//Output Layers row
     // loop over Layers rtx=0,...,N_Layers-1
@@ -2342,7 +2342,29 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size,
 
   _mm_empty();
   _m_empty();
-  return(0);
+
+  // Memory free
+  for (int aarx = 0; aarx < n_rx; aarx++) {
+    for (int rtx = 0; rtx < n_tx; rtx++) { // row
+      for (int ctx = 0; ctx < n_tx; ctx++) { // column
+        free(conjH_H_elements[aarx][ctx * n_tx + rtx]);
+      }
+    }
+    free(conjH_H_elements[aarx]);
+  }
+  free(conjH_H_elements);
+  for (int rtx = 0; rtx < n_tx; rtx++) { // row
+    for (int ctx = 0; ctx < n_tx; ctx++) { // column
+      free(inv_H_h_H[ctx * n_tx + rtx]);
+    }
+  }
+  free(inv_H_h_H);
+  for (int rtx = 0; rtx < n_tx; rtx++) { // row
+    free(rxdataF_zforcing[rtx]);
+  }
+  free(rxdataF_zforcing);
+
+  return 0;
 }
 
 static void nr_dlsch_layer_demapping(int16_t *llr_cw[2],
