@@ -656,11 +656,6 @@ add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)" 
 
 
 ##########################
-# ACCESS STRATUM LAYER2 OPTIONS
-##########################
-add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STRATUM (larger than common MTU)" ON)
-
-##########################
 # PDCP LAYER OPTIONS
 ##########################
 #add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
