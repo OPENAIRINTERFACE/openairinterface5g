@@ -1054,7 +1054,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
     rxF   = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
     dl_ch = (int16_t *)&pdcch_dl_ch_estimates[aarx][ch_offset];
 
-    memset(dl_ch, 0, sizeof(*dl_ch) * ue->frame_parms.ofdm_symbol_size);
+    memset(dl_ch,0,4*(ue->frame_parms.ofdm_symbol_size));
 
 #ifdef DEBUG_PDCCH
     printf("pdcch ch est pilot addr %p RB_DL %d\n",&pilot[dmrs_ref*3], ue->frame_parms.N_RB_DL);
@@ -1230,6 +1230,361 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 }
 
+void NFAPI_NR_DMRS_TYPE1_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
+                                       c16_t *rxF,
+                                       c16_t *pil,
+                                       c16_t *dl_ch,
+                                       unsigned short bwp_start_subcarrier,
+                                       unsigned short nb_rb_pdsch,
+                                       int8_t delta)
+{
+  int re_offset = bwp_start_subcarrier % frame_parms->ofdm_symbol_size;
+  c16_t *pil0 = pil;
+  c16_t *dl_ch0 = dl_ch;
+  c16_t ch = {0};
+
+  int16_t *fdcl = NULL;
+  int16_t *fdcr = NULL;
+  int16_t *fdclh = NULL;
+  int16_t *fdcrh = NULL;
+  switch (delta) {
+    case 0: // port 0,1
+      fdcl = filt8_dcl0; // left DC interpolation Filter (even RB)
+      fdcr = filt8_dcr0; // right DC interpolation Filter (even RB)
+      fdclh = filt8_dcl0_h; // left DC interpolation Filter (odd RB)
+      fdcrh = filt8_dcr0_h; // right DC interpolation Filter (odd RB)
+      break;
+
+    case 1: // port2,3
+      fdcl = filt8_dcl1;
+      fdcr = filt8_dcr1;
+      fdclh = filt8_dcl1_h;
+      fdcrh = filt8_dcr1_h;
+      break;
+
+    default:
+      AssertFatal(1 == 0, "pdsch_channel_estimation: Invalid delta %i\n", delta);
+      break;
+  }
+
+  for (int pilot_cnt = 0; pilot_cnt < 6 * nb_rb_pdsch; pilot_cnt++) {
+    if (pilot_cnt % 2 == 0) {
+      ch = c16mulShift(*pil, rxF[re_offset], 15);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+      ch = c16maddShift(*pil, rxF[re_offset], ch, 15);
+      ch = c16Shift(ch, 1);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+    }
+
+#ifdef DEBUG_PDSCH
+    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch.r, ch.i);
+#endif
+
+    if (pilot_cnt == 0) { // Treat first pilot
+      c16multaddVectRealComplex(filt16_dl_first, &ch, dl_ch, 16);
+    } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) { // Treat last pilot
+      c16multaddVectRealComplex(filt16_dl_last, &ch, dl_ch, 16);
+    } else { // Treat middle pilots
+      c16multaddVectRealComplex(filt16_dl_middle, &ch, dl_ch, 16);
+      if (pilot_cnt % 2 == 0) {
+      dl_ch += 4;
+      }
+    }
+  }
+
+  // check if PRB crosses DC and improve estimates around DC
+  if ((bwp_start_subcarrier < frame_parms->ofdm_symbol_size) && (bwp_start_subcarrier + nb_rb_pdsch * 12 >= frame_parms->ofdm_symbol_size)) {
+    dl_ch = dl_ch0;
+    uint16_t idxDC = 2 * (frame_parms->ofdm_symbol_size - bwp_start_subcarrier);
+    uint16_t idxPil = idxDC / 4;
+    re_offset = bwp_start_subcarrier % frame_parms->ofdm_symbol_size;
+    pil = pil0;
+    pil += (idxPil - 1);
+    dl_ch += (idxDC / 2 - 2);
+    dl_ch = memset(dl_ch, 0, sizeof(c16_t) * 5);
+    re_offset = (re_offset + idxDC / 2 - 2) % frame_parms->ofdm_symbol_size;
+    ch = c16mulShift(*pil, rxF[re_offset], 15);
+    pil++;
+    re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+    ch = c16maddShift(*pil, rxF[re_offset], ch, 15);
+    ch = c16Shift(ch, 1);
+
+    // for proper allignment of SIMD vectors
+    if ((frame_parms->N_RB_DL & 1) == 0) {
+      c16multaddVectRealComplex(fdcl, &ch, dl_ch - 2, 8);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+      ch = c16mulShift(*pil, rxF[re_offset], 15);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+      ch = c16maddShift(*pil, rxF[re_offset], ch, 15);
+      ch = c16Shift(ch, 1);
+      c16multaddVectRealComplex(fdcr, &ch, dl_ch - 2, 8);
+    } else {
+      c16multaddVectRealComplex(fdclh, &ch, dl_ch, 8);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+      ch = c16mulShift(*pil, rxF[re_offset], 15);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+      ch = c16maddShift(*pil, rxF[re_offset], ch, 15);
+      ch = c16Shift(ch, 1);
+      c16multaddVectRealComplex(fdcrh, &ch, dl_ch, 8);
+    }
+  }
+}
+
+void NFAPI_NR_DMRS_TYPE1_average_prb(NR_DL_FRAME_PARMS *frame_parms,
+                                     c16_t *rxF,
+                                     c16_t *pil,
+                                     c16_t *dl_ch,
+                                     unsigned short bwp_start_subcarrier,
+                                     unsigned short nb_rb_pdsch)
+{
+  int re_offset = bwp_start_subcarrier % frame_parms->ofdm_symbol_size;
+  c16_t ch = {0};
+  int P_average = 6;
+
+  c32_t ch32 = {0};
+  for (int p_av = 0; p_av < P_average; p_av++) {
+    ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+    pil++;
+    re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+  }
+  ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+  for (int i = 0; i < 2 * P_average; i++) {
+    dl_ch[i] = ch;
+  }
+  dl_ch += 2 * P_average;
+#else
+  c16multaddVectRealComplex(filt8_avlip0, &ch, dl_ch, 8);
+  dl_ch += 16;
+  c16multaddVectRealComplex(filt8_avlip1, &ch, dl_ch, 8);
+  dl_ch += 16;
+  c16multaddVectRealComplex(filt8_avlip2, &ch, dl_ch, 8);
+  dl_ch -= 24;
+#endif
+
+  for (int pilot_cnt = P_average; pilot_cnt < 6 * (nb_rb_pdsch - 1); pilot_cnt += P_average) {
+    ch32.r = 0;
+    ch32.i = 0;
+    for (int p_av = 0; p_av < P_average; p_av++) {
+      ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+      pil++;
+      re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+    }
+    ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+    for (int i = 0; i < 2 * P_average; i++) {
+      dl_ch[i] = ch;
+    }
+    dl_ch += 2 * P_average;
+#else
+    dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
+    dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
+    dl_ch += 4;
+    c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
+    dl_ch += 8;
+    c16multaddVectRealComplex(filt8_avlip4, &ch, dl_ch, 8);
+    dl_ch += 8;
+    c16multaddVectRealComplex(filt8_avlip5, &ch, dl_ch, 8);
+    dl_ch -= 8;
+#endif
+  }
+
+  ch32.r = 0;
+  ch32.i = 0;
+  for (int p_av = 0; p_av < P_average; p_av++) {
+    ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+    pil++;
+    re_offset = (re_offset + 2) % frame_parms->ofdm_symbol_size;
+  }
+  ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+  for (int i = 0; i < 2 * P_average; i++) {
+    dl_ch[i] = ch;
+  }
+  dl_ch += 2 * P_average;
+#else
+  dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
+  dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
+  dl_ch += 4;
+  c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
+  dl_ch += 8;
+  c16multaddVectRealComplex(filt8_avlip6, &ch, dl_ch, 8);
+#endif
+}
+
+void NFAPI_NR_DMRS_TYPE2_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
+                                       c16_t *rxF,
+                                       c16_t *pil,
+                                       c16_t *dl_ch,
+                                       unsigned short bwp_start_subcarrier,
+                                       unsigned short nb_rb_pdsch,
+                                       int8_t delta,
+                                       unsigned short p)
+{
+  int re_offset = bwp_start_subcarrier % frame_parms->ofdm_symbol_size;
+  c16_t *dl_ch0 = dl_ch;
+  c16_t ch = {0};
+  c16_t ch_l = {0};
+  c16_t ch_r = {0};
+
+  for (int pilot_cnt = 0; pilot_cnt < 4 * nb_rb_pdsch; pilot_cnt += 2) {
+    ch_l = c16mulShift(*pil, rxF[re_offset], 15);
+#ifdef DEBUG_PDSCH
+    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_l.r, ch_l.i);
+#endif
+    pil++;
+    re_offset = (re_offset + 1) % frame_parms->ofdm_symbol_size;
+    ch_r = c16mulShift(*pil, rxF[re_offset], 15);
+#ifdef DEBUG_PDSCH
+    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_r.r, ch_r.i);
+#endif
+    ch = c16addShift(ch_l, ch_r, 1);
+    if (pilot_cnt == 1) {
+      multadd_real_vector_complex_scalar(filt16_dl_first_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
+      dl_ch += 3;
+    } else if (pilot_cnt == (4 * nb_rb_pdsch - 1)) {
+      multadd_real_vector_complex_scalar(filt16_dl_last_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
+    } else {
+      multadd_real_vector_complex_scalar(filt16_dl_middle_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
+      dl_ch += 6;
+    }
+    pil++;
+    re_offset = (re_offset + 5) % frame_parms->ofdm_symbol_size;
+  }
+
+  // check if PRB crosses DC and improve estimates around DC
+  if ((bwp_start_subcarrier < frame_parms->ofdm_symbol_size) && (bwp_start_subcarrier + nb_rb_pdsch * 12 >= frame_parms->ofdm_symbol_size) && (p < 2)) {
+    dl_ch = dl_ch0;
+    uint16_t idxDC = 2 * (frame_parms->ofdm_symbol_size - bwp_start_subcarrier);
+    dl_ch += (idxDC / 2 - 4);
+    dl_ch = memset(dl_ch, 0, sizeof(c16_t) * 10);
+
+    dl_ch--;
+    ch_r = *dl_ch;
+    dl_ch += 11;
+    ch_l = *dl_ch;
+
+    // for proper allignment of SIMD vectors
+    if ((frame_parms->N_RB_DL & 1) == 0) {
+      dl_ch -= 10;
+      // Interpolate fdcrl1 with ch_r
+      c16multaddVectRealComplex(filt8_dcrl1, &ch_r, dl_ch, 8);
+      // Interpolate fdclh1 with ch_l
+      c16multaddVectRealComplex(filt8_dclh1, &ch_l, dl_ch, 8);
+      dl_ch += 8;
+      // Interpolate fdcrh1 with ch_r
+      c16multaddVectRealComplex(filt8_dcrh1, &ch_r, dl_ch, 8);
+      // Interpolate fdcll1 with ch_l
+      c16multaddVectRealComplex(filt8_dcll1, &ch_l, dl_ch, 8);
+    } else {
+      dl_ch -= 14;
+      // Interpolate fdcrl1 with ch_r
+      c16multaddVectRealComplex(filt8_dcrl2, &ch_r, dl_ch, 8);
+      // Interpolate fdclh1 with ch_l
+      c16multaddVectRealComplex(filt8_dclh2, &ch_l, dl_ch, 8);
+      dl_ch += 8;
+      // Interpolate fdcrh1 with ch_r
+      c16multaddVectRealComplex(filt8_dcrh2, &ch_r, dl_ch, 8);
+      // Interpolate fdcll1 with ch_l
+      c16multaddVectRealComplex(filt8_dcll2, &ch_l, dl_ch, 8);
+    }
+  }
+}
+
+void NFAPI_NR_DMRS_TYPE2_average_prb(NR_DL_FRAME_PARMS *frame_parms,
+                                     c16_t *rxF,
+                                     c16_t *pil,
+                                     c16_t *dl_ch,
+                                     unsigned short bwp_start_subcarrier,
+                                     unsigned short nb_rb_pdsch)
+{
+  int re_offset = bwp_start_subcarrier % frame_parms->ofdm_symbol_size;
+  c16_t ch = {0};
+  int P_average = 4;
+
+  c32_t ch32 = {0};
+  for (int p_av = 0; p_av < P_average; p_av++) {
+    ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+    pil++;
+    re_offset = (re_offset + 1) % frame_parms->ofdm_symbol_size;
+  }
+  ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+  for (int i = 0; i < 3 * P_average; i++) {
+    dl_ch[i] = ch;
+  }
+  dl_ch += 3 * P_average;
+#else
+  c16multaddVectRealComplex(filt8_avlip0, &ch, dl_ch, 8);
+  dl_ch += 8;
+  c16multaddVectRealComplex(filt8_avlip1, &ch, dl_ch, 8);
+  dl_ch += 8;
+  c16multaddVectRealComplex(filt8_avlip2, &ch, dl_ch, 8);
+  dl_ch -= 12;
+#endif
+
+  for (int pilot_cnt = P_average; pilot_cnt < 4 * (nb_rb_pdsch - 1); pilot_cnt += P_average) {
+    ch32.r = 0;
+    ch32.i = 0;
+    for (int p_av = 0; p_av < P_average; p_av++) {
+      ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+      pil++;
+      re_offset = (re_offset + 5) % frame_parms->ofdm_symbol_size;
+    }
+    ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+    for (int i = 0; i < 3 * P_average; i++) {
+      dl_ch[i] = ch;
+    }
+    dl_ch += 3 * P_average;
+#else
+    dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
+    dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
+    dl_ch += 4;
+    c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
+    dl_ch += 8;
+    c16multaddVectRealComplex(filt8_avlip4, &ch, dl_ch, 8);
+    dl_ch += 8;
+    c16multaddVectRealComplex(filt8_avlip5, &ch, dl_ch, 8);
+    dl_ch -= 8;
+#endif
+  }
+
+  ch32.r = 0;
+  ch32.i = 0;
+  for (int p_av = 0; p_av < P_average; p_av++) {
+    ch32 = c32x16maddShift(*pil, rxF[re_offset], ch32, 15);
+    pil++;
+    re_offset = (re_offset + 5) % frame_parms->ofdm_symbol_size;
+  }
+  ch = c16x32div(ch32, P_average);
+
+#if NO_INTERP
+  for (int i = 0; i < 3 * P_average; i++) {
+    dl_ch[i] = ch;
+  }
+  dl_ch += 3 * P_average;
+#else
+  dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
+  dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
+  dl_ch += 4;
+  c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
+  dl_ch += 8;
+  c16multaddVectRealComplex(filt8_avlip6, &ch, dl_ch, 8);
+#endif
+}
+
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 UE_nr_rxtx_proc_t *proc,
                                 bool is_SI,
@@ -1278,67 +1633,15 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   c16_t pilot[3280] __attribute__((aligned(16)));
   nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][0], (int32_t *)pilot, 1000 + p, 0, nb_rb_pdsch + rb_offset, config_type);
 
-  int16_t *fdcl = NULL;
-  int16_t *fdcr = NULL;
-  int16_t *fdclh = NULL;
-  int16_t *fdcrh = NULL;
   uint8_t nushift = 0;
-
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
-
     nushift = (p >> 1) & 1;
-
     if (p < 4)
       ue->frame_parms.nushift = nushift;
-
-    switch (delta) {
-      case 0: // port 0,1
-      fdcl = filt8_dcl0; // left DC interpolation Filter (even RB)
-      fdcr = filt8_dcr0; // right DC interpolation Filter (even RB)
-      fdclh = filt8_dcl0_h; // left DC interpolation Filter (odd RB)
-      fdcrh = filt8_dcr0_h; // right DC interpolation Filter (odd RB)
-      break;
-
-      case 1: // port2,3
-      fdcl = filt8_dcl1;
-      fdcr = filt8_dcr1;
-      fdclh = filt8_dcl1_h;
-      fdcrh = filt8_dcr1_h;
-      break;
-
-      default:
-      LOG_E(PHY, "pdsch_channel_estimation: nushift=%d -> ERROR\n", nushift);
-      return -1;
-      break;
-    }
-
   } else { // NFAPI_NR_DMRS_TYPE2
-
     nushift = delta;
-
     if (p < 6)
       ue->frame_parms.nushift = nushift;
-
-    switch (delta) {
-      case 0: // ports 0,1
-      fdcl = filt8_dcl1;
-      fdcr = filt8_dcr1;
-      fdclh = filt8_dcl1_h;
-      fdcrh = filt8_dcr1_h;
-      break;
-
-      case 2: // ports 2,3
-      fdcl = NULL;
-      fdcr = NULL;
-      fdclh = NULL;
-      fdcrh = NULL;
-      break;
-
-      default:
-      LOG_E(PHY, "pdsch_channel_estimation: nushift=%d -> ERROR\n", nushift);
-      return -1;
-      break;
-    }
   }
 
   for (int aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
@@ -1349,321 +1652,46 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
     printf("============================================\n");
 #endif
 
-    int re_offset = bwp_start_subcarrier % ue->frame_parms.ofdm_symbol_size;
-    c16_t *pil = &pilot[rb_offset * ((config_type == NFAPI_NR_DMRS_TYPE1) ? 6 : 4)];
-    c16_t *rxF = &rxdataF[aarx][(symbol_offset + re_offset + nushift)];
+    c16_t *rxF = &rxdataF[aarx][symbol_offset + nushift];
     c16_t *dl_ch = (c16_t *)&dl_ch_estimates[p * ue->frame_parms.nb_antennas_rx + aarx][ch_offset];
     memset(dl_ch, 0, sizeof(*dl_ch) * ue->frame_parms.ofdm_symbol_size);
-    c16_t ch = {0};
 
     if (config_type == NFAPI_NR_DMRS_TYPE1 && ue->chest_freq == 0) {
+      NFAPI_NR_DMRS_TYPE1_linear_interp(&ue->frame_parms,
+                                        rxF,
+                                        &pilot[6 * rb_offset],
+                                        dl_ch,
+                                        bwp_start_subcarrier,
+                                        nb_rb_pdsch,
+                                        delta);
 
-      for (int pilot_cnt = 0; pilot_cnt < 6 * nb_rb_pdsch; pilot_cnt++) {
-        if (pilot_cnt % 2 == 0) {
-          ch = c16mulShift(*pil, *rxF, 15);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-          ch = c16maddShift(*pil, *rxF, ch, 15);
-          ch = c16Shift(ch, 1);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        }
-
-#ifdef DEBUG_PDSCH
-      printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF->r, rxF->i, ch.r, ch.i);
-#endif
-
-        if (pilot_cnt == 0) { // Treat first pilot
-          c16multaddVectRealComplex(filt16_dl_first, &ch, dl_ch, 16);
-        } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) { // Treat last pilot
-          c16multaddVectRealComplex(filt16_dl_last, &ch, dl_ch, 16);
-        } else { // Treat middle pilots
-          c16multaddVectRealComplex(filt16_dl_middle, &ch, dl_ch, 16);
-          if (pilot_cnt % 2 == 0) {
-            dl_ch += 4;
-          }
-        }
-      }
-
-      // check if PRB crosses DC and improve estimates around DC
-      if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier + nb_rb_pdsch * 12 >= ue->frame_parms.ofdm_symbol_size)) {
-        dl_ch = (c16_t *)&dl_ch_estimates[aarx][ch_offset];
-        uint16_t idxDC = 2 * (ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
-        uint16_t idxPil = idxDC / 4;
-        re_offset = bwp_start_subcarrier % ue->frame_parms.ofdm_symbol_size;
-        pil = &pilot[rb_offset * ((config_type == NFAPI_NR_DMRS_TYPE1) ? 6 : 4)];
-        pil += (idxPil - 1);
-        dl_ch += (idxDC / 2 - 2);
-        dl_ch = memset(dl_ch, 0, sizeof(c16_t) * 5);
-        re_offset = (re_offset + idxDC / 2 - 2) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        ch = c16mulShift(*pil, *rxF, 15);
-        pil++;
-        re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        ch = c16maddShift(*pil, *rxF, ch, 15);
-        ch = c16Shift(ch, 1);
-
-        // for proper allignment of SIMD vectors
-        if ((ue->frame_parms.N_RB_DL & 1) == 0) {
-          c16multaddVectRealComplex(fdcl, &ch, dl_ch - 2, 8);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-          ch = c16mulShift(*pil, *rxF, 15);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-          ch = c16maddShift(*pil, *rxF, ch, 15);
-          ch = c16Shift(ch, 1);
-          c16multaddVectRealComplex(fdcr, &ch, dl_ch - 2, 8);
-        } else {
-          c16multaddVectRealComplex(fdclh, &ch, dl_ch, 8);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-          ch = c16mulShift(*pil, *rxF, 15);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-          ch = c16maddShift(*pil, *rxF, ch, 15);
-          ch = c16Shift(ch, 1);
-          c16multaddVectRealComplex(fdcrh, &ch, dl_ch, 8);
-        }
-      }
-
-    // pdsch_dmrs_type2  |dmrs_r,dmrs_l,0,0,0,0,dmrs_r,dmrs_l,0,0,0,0|
     } else if (config_type == NFAPI_NR_DMRS_TYPE2 && ue->chest_freq == 0) {
+      NFAPI_NR_DMRS_TYPE2_linear_interp(&ue->frame_parms,
+                                        rxF,
+                                        &pilot[4 * rb_offset],
+                                        dl_ch,
+                                        bwp_start_subcarrier,
+                                        nb_rb_pdsch,
+                                        delta,
+                                        p);
 
-      c16_t ch_l = {0};
-      c16_t ch_r = {0};
-      for (int pilot_cnt = 0; pilot_cnt < 4 * nb_rb_pdsch; pilot_cnt += 2) {
-        ch_l = c16mulShift(*pil, *rxF, 15);
-#ifdef DEBUG_PDSCH
-        printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF->r, rxF->i, ch_l.r, ch_l.i);
-#endif
-        pil++;
-        re_offset = (re_offset + 1) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        ch_r = c16mulShift(*pil, *rxF, 15);
-#ifdef DEBUG_PDSCH
-        printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF->r, rxF->i, ch_r.r, ch_r.i);
-#endif
-        ch = c16addShift(ch_l, ch_r, 1);
-        if (pilot_cnt == 1) {
-          multadd_real_vector_complex_scalar(filt16_dl_first_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
-          dl_ch += 3;
-        } else if (pilot_cnt == (4 * nb_rb_pdsch - 1)) {
-          multadd_real_vector_complex_scalar(filt16_dl_last_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
-        } else {
-          multadd_real_vector_complex_scalar(filt16_dl_middle_type2, (int16_t *)&ch, (int16_t *)dl_ch, 16);
-          dl_ch += 6;
-        }
-        pil++;
-        re_offset = (re_offset + 5) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-      }
-
-      // check if PRB crosses DC and improve estimates around DC
-      if ((bwp_start_subcarrier < ue->frame_parms.ofdm_symbol_size) && (bwp_start_subcarrier + nb_rb_pdsch * 12 >= ue->frame_parms.ofdm_symbol_size) && (p < 2)) {
-        dl_ch = (c16_t *)&dl_ch_estimates[p * ue->frame_parms.nb_antennas_rx + aarx][ch_offset];
-        uint16_t idxDC = 2 * (ue->frame_parms.ofdm_symbol_size - bwp_start_subcarrier);
-        dl_ch += (idxDC / 2 - 4);
-        dl_ch = memset(dl_ch, 0, sizeof(c16_t) * 10);
-
-        dl_ch--;
-        ch_r = *dl_ch;
-        dl_ch += 11;
-        ch_l = *dl_ch;
-
-        // for proper allignment of SIMD vectors
-        if ((ue->frame_parms.N_RB_DL & 1) == 0) {
-          dl_ch -= 10;
-          // Interpolate fdcrl1 with ch_r
-          c16multaddVectRealComplex(filt8_dcrl1, &ch_r, dl_ch, 8);
-          // Interpolate fdclh1 with ch_l
-          c16multaddVectRealComplex(filt8_dclh1, &ch_l, dl_ch, 8);
-          dl_ch += 8;
-          // Interpolate fdcrh1 with ch_r
-          c16multaddVectRealComplex(filt8_dcrh1, &ch_r, dl_ch, 8);
-          // Interpolate fdcll1 with ch_l
-          c16multaddVectRealComplex(filt8_dcll1, &ch_l, dl_ch, 8);
-        } else {
-          dl_ch -= 14;
-          // Interpolate fdcrl1 with ch_r
-          c16multaddVectRealComplex(filt8_dcrl2, &ch_r, dl_ch, 8);
-          // Interpolate fdclh1 with ch_l
-          c16multaddVectRealComplex(filt8_dclh2, &ch_l, dl_ch, 8);
-          dl_ch += 8;
-          // Interpolate fdcrh1 with ch_r
-          c16multaddVectRealComplex(filt8_dcrh2, &ch_r, dl_ch, 8);
-          // Interpolate fdcll1 with ch_l
-          c16multaddVectRealComplex(filt8_dcll2, &ch_l, dl_ch, 8);
-        }
-      }
-
-    // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 6 DMRS REs and use a common value for the whole PRB
     } else if (config_type == NFAPI_NR_DMRS_TYPE1) {
+      NFAPI_NR_DMRS_TYPE1_average_prb(&ue->frame_parms,
+                                      rxF,
+                                      &pilot[6 * rb_offset],
+                                      dl_ch,
+                                      bwp_start_subcarrier,
+                                      nb_rb_pdsch);
 
-      int P_average = 6;
-      c32_t ch32 = {0};
-      for (int p_av = 0; p_av < P_average; p_av++) {
-        ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-        pil++;
-        re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-      }
-      ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-      for (int i = 0; i < 2 * P_average; i++) {
-        dl_ch[i] = ch;
-      }
-      dl_ch += 2 * P_average;
-#else
-      c16multaddVectRealComplex(filt8_avlip0, &ch, dl_ch, 8);
-      dl_ch += 16;
-      c16multaddVectRealComplex(filt8_avlip1, &ch, dl_ch, 8);
-      dl_ch += 16;
-      c16multaddVectRealComplex(filt8_avlip2, &ch, dl_ch, 8);
-      dl_ch -= 24;
-#endif
-
-      for (int pilot_cnt = P_average; pilot_cnt < 6 * (nb_rb_pdsch - 1); pilot_cnt += P_average) {
-        ch32.r = 0;
-        ch32.i = 0;
-        for (int p_av = 0; p_av < P_average; p_av++) {
-          ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-          pil++;
-          re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        }
-        ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-        for (int i = 0; i < 2 * P_average; i++) {
-          dl_ch[i] = ch;
-        }
-        dl_ch += 2 * P_average;
-#else
-        dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
-        dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
-        dl_ch += 4;
-        c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
-        dl_ch += 8;
-        c16multaddVectRealComplex(filt8_avlip4, &ch, dl_ch, 8);
-        dl_ch += 8;
-        c16multaddVectRealComplex(filt8_avlip5, &ch, dl_ch, 8);
-        dl_ch -= 8;
-#endif
-      }
-
-      ch32.r = 0;
-      ch32.i = 0;
-      for (int p_av = 0; p_av < P_average; p_av++) {
-        ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-        pil++;
-        re_offset = (re_offset + 2) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-      }
-      ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-      for (int i = 0; i < 2 * P_average; i++) {
-        dl_ch[i] = ch;
-      }
-      dl_ch += 2 * P_average;
-#else
-      dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
-      dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
-      dl_ch += 4;
-      c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
-      dl_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip6, &ch, dl_ch, 8);
-#endif
-
-    // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 4 DMRS REs and use a common value for the whole PRB
     } else {
-
-      int P_average = 4;
-      c32_t ch32 = {0};
-      for (int p_av = 0; p_av < P_average; p_av++) {
-        ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-        pil++;
-        re_offset = (re_offset + 1) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-      }
-      ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-      for (int i = 0; i < 3 * P_average; i++) {
-        dl_ch[i] = ch;
-      }
-      dl_ch += 3 * P_average;
-#else
-      c16multaddVectRealComplex(filt8_avlip0, &ch, dl_ch, 8);
-      dl_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip1, &ch, dl_ch, 8);
-      dl_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip2, &ch, dl_ch, 8);
-      dl_ch -= 12;
-#endif
-
-      for (int pilot_cnt = P_average; pilot_cnt < 4 * (nb_rb_pdsch - 1); pilot_cnt += P_average) {
-        ch32.r = 0;
-        ch32.i = 0;
-        for (int p_av = 0; p_av < P_average; p_av++) {
-          ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-          pil++;
-          re_offset = (re_offset + 5) % ue->frame_parms.ofdm_symbol_size;
-          rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-        }
-        ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-        for (int i = 0; i < 3 * P_average; i++) {
-          dl_ch[i] = ch;
-        }
-        dl_ch += 3 * P_average;
-#else
-        dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
-        dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
-        dl_ch += 4;
-        c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
-        dl_ch += 8;
-        c16multaddVectRealComplex(filt8_avlip4, &ch, dl_ch, 8);
-        dl_ch += 8;
-        c16multaddVectRealComplex(filt8_avlip5, &ch, dl_ch, 8);
-        dl_ch -= 8;
-#endif
-      }
-
-      ch32.r = 0;
-      ch32.i = 0;
-      for (int p_av = 0; p_av < P_average; p_av++) {
-        ch32 = c32x16maddShift(*pil, *rxF, ch32, 15);
-        pil++;
-        re_offset = (re_offset + 5) % ue->frame_parms.ofdm_symbol_size;
-        rxF = &rxdataF[aarx][(symbol_offset + nushift + re_offset)];
-      }
-      ch = c16x32div(ch32, P_average);
-
-#if NO_INTERP
-      for (int i = 0; i < 3 * P_average; i++) {
-        dl_ch[i] = ch;
-      }
-      dl_ch += 3 * P_average;
-#else
-      dl_ch[3].r += (ch.r * 1365) >> 15; // 1/12*16384
-      dl_ch[3].i += (ch.i * 1365) >> 15; // 1/12*16384
-      dl_ch += 4;
-      c16multaddVectRealComplex(filt8_avlip3, &ch, dl_ch, 8);
-      dl_ch += 8;
-      c16multaddVectRealComplex(filt8_avlip6, &ch, dl_ch, 8);
-#endif
+      NFAPI_NR_DMRS_TYPE2_average_prb(&ue->frame_parms,
+                                      rxF,
+                                      &pilot[4 * rb_offset],
+                                      dl_ch,
+                                      bwp_start_subcarrier,
+                                      nb_rb_pdsch);
     }
+
 #ifdef DEBUG_PDSCH
     dl_ch = (c16_t *)&dl_ch_estimates[p * ue->frame_parms.nb_antennas_rx + aarx][ch_offset];
     for (uint16_t idxP = 0; idxP < ceil((float)nb_rb_pdsch * 12 / 8); idxP++) {
