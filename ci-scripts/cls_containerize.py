@@ -360,6 +360,7 @@ class Containerize():
 				if result is not None:
 					imageNames.append(('oai-enb', 'eNB'))
 					imageNames.append(('oai-gnb', 'gNB'))
+					imageNames.append(('oai-nr-cuup', 'nr-cuup'))
 					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 					if self.host == 'Red Hat':
@@ -680,7 +681,7 @@ class Containerize():
 		orgTag = 'develop'
 		if self.ranAllowMerge:
 			orgTag = 'ci-temp'
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			mySSH.command(f'docker image tag {image}:{orgTag} {tagToUse}', '\$', 5)
@@ -814,7 +815,7 @@ class Containerize():
 		else:
 			logging.debug('Removing test images locally')
 
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			cmd = f'docker rmi {self.ImageTagToUse(image)} || true'
 			if lIpAddr != 'none':
@@ -856,7 +857,7 @@ class Containerize():
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-		imagesList = ['oai-enb', 'oai-gnb']
+		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
 		for image in imagesList:
 			imageToUse = self.ImageTagToUse(image)
 			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
@@ -1066,7 +1067,7 @@ class Containerize():
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
 		subprocess.run(cmd, shell=True)
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
@@ -1190,7 +1191,7 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
 		logging.info(cmd)
 		subprocess.run(cmd, shell=True)
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
