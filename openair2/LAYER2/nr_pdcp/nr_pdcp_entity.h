@@ -102,9 +102,8 @@ typedef struct nr_pdcp_entity_t {
   /* configuration variables */
   int rb_id;
   int pdusession_id;
-  int has_sdap;
-  int has_sdapULheader;
-  int has_sdapDLheader;
+  bool has_sdap_rx;
+  bool has_sdap_tx;
   int sn_size;                  /* SN size, in bits */
   int t_reordering;             /* unit: ms, -1 for infinity */
   int discard_timer;            /* unit: ms, -1 for infinity */
@@ -169,8 +168,11 @@ typedef struct nr_pdcp_entity_t {
 
 nr_pdcp_entity_t *new_nr_pdcp_entity(
     nr_pdcp_entity_type_t type,
-    int is_gnb, int rb_id, int pdusession_id,int has_sdap,
-    int has_sdapULheader,int has_sdapDLheader,
+    int is_gnb,
+    int rb_id,
+    int pdusession_id,
+    bool has_sdap_rx,
+    bool has_sdap_tx,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
