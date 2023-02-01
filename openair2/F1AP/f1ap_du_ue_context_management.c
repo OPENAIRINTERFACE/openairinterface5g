@@ -1078,7 +1078,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
 
 static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, char *DUaddr, uint16_t DUport)
 {
-  openAddr_t tmp={0};
+  openAddr_t tmp = {0};
   strncpy(tmp.originHost, DUaddr, sizeof(tmp.originHost)-1);
   strncpy(tmp.destinationHost, CUaddr, sizeof(tmp.destinationHost)-1);
   sprintf(tmp.originService, "%d", DUport);

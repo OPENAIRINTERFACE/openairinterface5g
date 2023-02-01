@@ -5629,6 +5629,7 @@ rrc_eNB_generate_RRCConnectionSetup(
     case ngran_eNB_CU    :
     case ngran_ng_eNB_CU :
     case ngran_gNB_CU    :
+    case ngran_gNB_CUCP  :
       // create an ITTI message
       /* TODO: F1 IDs ar missing in RRC */
       message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, F1AP_DL_RRC_MESSAGE);

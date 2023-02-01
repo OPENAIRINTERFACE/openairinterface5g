@@ -41,6 +41,7 @@
 #include "s1ap_messages_types.h"
 #include "ngap_messages_types.h"
 #include "f1ap_messages_types.h"
+#include "e1ap_messages_types.h"
 
 #include "rrc_messages_types.h"
 #include "intertask_interface.h"
@@ -94,7 +95,6 @@ extern void NRRCconfig_RU(void);
 extern void RCconfig_nr_prs(void);
 extern void RCconfig_NR_L1(void);
 extern void RCconfig_nr_macrlc(void);
-extern int  RCconfig_nr_gtpu(void );
 extern void NRRCConfig(void);
 
 //void                          enb_config_display(void);
@@ -107,6 +107,8 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i);
 int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
 int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_update_t *gnb_cu_cfg_update);
 void nr_read_config_and_init(void);
+MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process);
+ngran_node_t get_node_type(void);
 
 #endif /* GNB_CONFIG_H_ */
 /** @} */

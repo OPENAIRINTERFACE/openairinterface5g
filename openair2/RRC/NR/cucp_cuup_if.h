@@ -16,14 +16,27 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
-#ifndef CREATE_NR_TASKS_H_
-#define CREATE_NR_TASKS_H_
+#ifndef CUCP_CUUP_IF_H
+#define CUCP_CUUP_IF_H
 
+#include <netinet/in.h>
+#include "platform_types.h"
 
-int create_gNB_tasks(uint32_t gnb_nb);
+struct e1ap_bearer_setup_req_s;
+struct e1ap_bearer_setup_resp_s;
+typedef void (*cucp_cuup_bearer_context_setup_func_t)(struct e1ap_bearer_setup_req_s *const req, instance_t instance);
 
-
-#endif /* CREATE_TASKS_H_ */
+struct gNB_RRC_INST_s;
+void cucp_cuup_message_transfer_direct_init(struct gNB_RRC_INST_s *rrc);
+void cucp_cuup_message_transfer_e1ap_init(struct gNB_RRC_INST_s *rrc);
+void fill_e1ap_bearer_setup_resp(struct e1ap_bearer_setup_resp_s *resp,
+                                 struct e1ap_bearer_setup_req_s *const req,
+                                 instance_t gtpInst,
+                                 ue_id_t ue_id,
+                                 int remote_port,
+                                 in_addr_t my_addr);
+void CU_update_UP_DL_tunnel(struct e1ap_bearer_setup_req_s *const req, instance_t instance, ue_id_t ue_id);
+#endif

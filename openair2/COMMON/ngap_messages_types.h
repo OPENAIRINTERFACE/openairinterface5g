@@ -274,9 +274,15 @@ typedef struct ngap_transport_layer_addr_s {
       dEST.length = sOURCE.length;                    \
   } while (0)
 
+typedef enum {
+  non_dynamic,
+  dynamic
+} fiveQI_type_t;
+
 typedef struct pdusession_level_qos_parameter_s {
   uint8_t  qfi;
   uint64_t fiveQI;
+  fiveQI_type_t fiveQI_type;
   ngap_allocation_retention_priority_t allocation_retention_priority;
 } pdusession_level_qos_parameter_t;
 
@@ -706,11 +712,20 @@ typedef struct ngap_pdusession_setup_req_s {
   /* gNB ue ngap id as initialized by NGAP layer */
   uint32_t  gNB_ue_ngap_id;
 
+  /* S-NSSAI */
+  ngap_allowed_NSSAI_t allowed_nssai[8];
+
   /* Number of pdusession to be setup in the list */
   uint8_t nb_pdusessions_tosetup;
 
   /* E RAB setup request */
   pdusession_t pdusession_setup_params[NGAP_MAX_PDUSESSION];
+
+  /* UE Uplink Aggregated Max Bitrates */
+  uint64_t ueAggMaxBitRateUplink;
+
+  /* UE Downlink Aggregated Max Bitrates */
+  uint64_t ueAggMaxBitRateDownlink;
 
 } ngap_pdusession_setup_req_t;
 

@@ -144,7 +144,9 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     
     // LTS: FIXME data model failure: we don't KNOW if we receive a 4G or a 5G cell
     // Furthermore, cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
-    if (RC.nrrrc && RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU)
+    if (RC.nrrrc &&
+        ( RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CU ||
+          RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type == ngran_gNB_CUCP) )
       f1ap_req(true, instance)->cell_type=CELL_MACRO_GNB;
     else
       f1ap_req(true, instance)->cell_type=CELL_MACRO_ENB;

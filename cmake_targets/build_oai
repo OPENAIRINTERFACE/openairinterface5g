@@ -531,7 +531,7 @@ function main() {
       execlist="$execlist ocp-enb"
   fi
   if [ "$gNB" = "1" ] ; then
-      execlist="$execlist nr-softmodem"
+      execlist="$execlist nr-softmodem nr-cuup"
   fi
   if [ "$RU" = "1" ] ; then
       execlist="$execlist oairu"

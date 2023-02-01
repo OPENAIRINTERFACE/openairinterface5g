@@ -102,6 +102,8 @@ int config_sync_var=-1;
 instance_t CUuniqInstance=0;
 instance_t DUuniqInstance=0;
 
+int get_node_type() {return -1;}
+
 RAN_CONTEXT_t RC;
 int oai_exit = 0;
 
