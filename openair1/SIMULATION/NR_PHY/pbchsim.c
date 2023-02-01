@@ -751,11 +751,12 @@ int main(int argc, char **argv)
 
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
-	const int estimateSz=7*2*sizeof(int)*frame_parms->ofdm_symbol_size;
-	__attribute__ ((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
-	__attribute__ ((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][estimateSz];
-        while (!((SSB_positions >> ssb_index) & 0x01)) ssb_index++;  // to select the first transmitted ssb
-	UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms,ssb_index);
+  const int estimateSz = frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
+  __attribute__((aligned(32))) struct complex16 dl_ch_estimates[frame_parms->nb_antennas_rx][estimateSz];
+  __attribute__((aligned(32))) struct complex16 dl_ch_estimates_time[frame_parms->nb_antennas_rx][frame_parms->ofdm_symbol_size];
+  while (!((SSB_positions >> ssb_index) & 0x01))
+    ssb_index++; // to select the first transmitted ssb
+  UE->symbol_offset = nr_get_ssb_start_symbol(frame_parms, ssb_index);
 
         int ssb_slot = (UE->symbol_offset/14)+(n_hf*(frame_parms->slots_per_frame>>1));
         proc.nr_slot_rx = ssb_slot;

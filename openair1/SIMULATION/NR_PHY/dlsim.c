@@ -1042,12 +1042,13 @@ int main(int argc, char **argv)
   memset(msgDataTx->ssb, 0, 64*sizeof(NR_gNB_SSB_t));
 
   // Buffers to store internal memory of slot process
-  UE->phy_sim_rxdataF = calloc(frame_parms->samples_per_slot_wCP*sizeof(int32_t), frame_parms->nb_antennas_rx);
-  UE->phy_sim_pdsch_llr = calloc((8*(3*8*8448))*sizeof(int16_t), 1); //Max length
-  UE->phy_sim_pdsch_rxdataF_ext = calloc(14*frame_parms->N_RB_DL*12*sizeof(int32_t), frame_parms->nb_antennas_rx);
-  UE->phy_sim_pdsch_rxdataF_comp = calloc(14*frame_parms->N_RB_DL*12*sizeof(int32_t), frame_parms->nb_antennas_rx);
-  UE->phy_sim_pdsch_dl_ch_estimates = calloc(14*frame_parms->ofdm_symbol_size*sizeof(int32_t), frame_parms->nb_antennas_rx);
-  UE->phy_sim_pdsch_dl_ch_estimates_ext = calloc(14*frame_parms->N_RB_DL*12*sizeof(int32_t), frame_parms->nb_antennas_rx);
+  int rx_size = (((14 * frame_parms->N_RB_DL * 12 * sizeof(int32_t)) + 15) >> 4) << 4;
+  UE->phy_sim_rxdataF = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, frame_parms->samples_per_slot_wCP * sizeof(int32_t));
+  UE->phy_sim_pdsch_llr = calloc(1, (8 * (3 * 8 * 8448)) * sizeof(int16_t)); // Max length
+  UE->phy_sim_pdsch_rxdataF_ext = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
+  UE->phy_sim_pdsch_rxdataF_comp = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
+  UE->phy_sim_pdsch_dl_ch_estimates = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
+  UE->phy_sim_pdsch_dl_ch_estimates_ext = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
