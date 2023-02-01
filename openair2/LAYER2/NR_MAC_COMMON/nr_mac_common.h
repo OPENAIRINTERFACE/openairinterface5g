@@ -61,7 +61,13 @@ uint64_t from_nrarfcn(int nr_bandP, uint8_t scs_index, uint32_t dl_nrarfcn);
 
 uint32_t to_nrarfcn(int nr_bandP, uint64_t dl_CarrierFreq, uint8_t scs_index, uint32_t bw);
 
-int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols,int startSymbol,mappingType_t mappingtype,int length);
+int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,
+                       int dci_format,
+                       int dmrs_TypeA_Position,
+                       int NrOfSymbols,
+                       int startSymbol,
+                       mappingType_t mappingtype,
+                       int length);
 
 int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slotP);
 
@@ -150,6 +156,8 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             frequency_range_t);
 
 int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
+
+uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type);
 
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 

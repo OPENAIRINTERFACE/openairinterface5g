@@ -268,7 +268,7 @@ NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
     dmrs.dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 
   dmrs.N_PRB_DMRS = dmrs.numDmrsCdmGrpsNoData * (dmrs.dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  dmrs.dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc->dmrs_TypeA_Position, tda_info->nrOfSymbols, tda_info->startSymbolIndex, tda_info->mapping_type, frontloaded_symb);
+  dmrs.dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, dci_format, scc->dmrs_TypeA_Position, tda_info->nrOfSymbols, tda_info->startSymbolIndex, tda_info->mapping_type, frontloaded_symb);
   dmrs.N_DMRS_SLOT = get_num_dmrs(dmrs.dl_dmrs_symb_pos);
   LOG_D(NR_MAC,"Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",dmrs.N_PRB_DMRS,dmrs.dl_dmrs_symb_pos,dmrs.N_DMRS_SLOT);
   return dmrs;
@@ -2445,17 +2445,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  // Set downlink MCS table
-  if (DL_BWP->pdsch_Config &&
-      DL_BWP->pdsch_Config->mcs_Table) {
-    if (*DL_BWP->pdsch_Config->mcs_Table == 0)
-      DL_BWP->mcsTableIdx = 1;
-    else
-      DL_BWP->mcsTableIdx = 2;
-  } else
-    DL_BWP->mcsTableIdx = 0;
-  LOG_D(NR_MAC,"DL MCS Table Index: %d\n",DL_BWP->mcsTableIdx);
-
   if (UL_BWP->pusch_Config == NULL || !UL_BWP->pusch_Config->transformPrecoder)
     UL_BWP->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
@@ -2539,14 +2528,17 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP->dci_format = NR_DL_DCI_FORMAT_1_0;
   }
 
-  // Set uplink MCS table
-  long *mcs_Table = NULL;
-  if (UL_BWP->pusch_Config)
-    mcs_Table = UL_BWP->transform_precoding ?
-                UL_BWP->pusch_Config->mcs_Table :
-                UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+  // Set MCS tables
+  long *dl_mcs_Table = DL_BWP->pdsch_Config ? DL_BWP->pdsch_Config->mcs_Table : NULL;
+  DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
-  UL_BWP->mcs_table = get_pusch_mcs_table(mcs_Table,
+  long *ul_mcs_Table = NULL;
+  if (UL_BWP->pusch_Config)
+    ul_mcs_Table = UL_BWP->transform_precoding ?
+                   UL_BWP->pusch_Config->mcs_Table :
+                   UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+
+  UL_BWP->mcs_table = get_pusch_mcs_table(ul_mcs_Table,
                                           UL_BWP->transform_precoding ? 0 : 1,
                                           UL_BWP->dci_format,
                                           NR_RNTI_C,
