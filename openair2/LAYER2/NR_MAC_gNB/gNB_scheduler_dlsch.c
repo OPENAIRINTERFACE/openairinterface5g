@@ -539,7 +539,9 @@ void pf_dl(module_id_t module_id,
            NR_UE_info_t **UE_list,
            int max_num_ue,
            int n_rb_sched,
-           uint16_t *rballoc_mask) {
+           uint16_t *rballoc_mask)
+{
+
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc=mac->common_channels[0].ServingCellConfigCommon;
   // UEs that could be scheduled
@@ -748,7 +750,8 @@ void pf_dl(module_id_t module_id,
   }
 }
 
-void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot) {
+void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
+{
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
   if (UE_info->list[0] == NULL)
@@ -791,12 +794,17 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 
   /* Retrieve amount of data to send for this UE */
   nr_store_dlsch_buffer(module_id, frame, slot);
+
+  int bw = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  int average_agg_level = 4; // TODO find a better estimation
+  int max_sched_ues = bw / (average_agg_level * NR_NB_REG_PER_CCE);
+
   /* proportional fair scheduling algorithm */
   pf_dl(module_id,
         frame,
         slot,
         UE_info->list,
-        MAX_MOBILES_PER_GNB,
+        max_sched_ues,
         n_rb_sched,
         rballoc_mask);
 }
