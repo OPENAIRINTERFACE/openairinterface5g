@@ -957,7 +957,6 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
     const NR_SRB_ToAddModList_t   * const srb2add_listP,
     const NR_DRB_ToAddModList_t   * const drb2add_listP,
     const NR_DRB_ToReleaseList_t  * const drb2release_listP,
-    const LTE_PMCH_InfoList_r9_t * const pmch_InfoList_r9_pP,
     struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
 {
   int rnti = ctxt_pP->rntiMaybeUEid;
@@ -970,11 +969,6 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt
     LOG_E(RLC, "%s: ctxt_pP not handled (%d %d %ld %d %d)\n", __FUNCTION__,
           ctxt_pP->enb_flag , ctxt_pP->module_id, ctxt_pP->instance,
           ctxt_pP->eNB_index,  ctxt_pP->brOption);
-    exit(1);
-  }
-
-  if (pmch_InfoList_r9_pP != NULL) {
-    LOG_E(RLC, "%s: pmch_InfoList_r9_pP not handled\n", __FUNCTION__);
     exit(1);
   }
 
@@ -1084,8 +1078,7 @@ rlc_op_status_t rrc_rlc_config_req   (
   const srb_flag_t      srb_flagP,
   const MBMS_flag_t     mbms_flagP,
   const config_action_t actionP,
-  const rb_id_t         rb_idP,
-  const rlc_info_t      rlc_infoP)
+  const rb_id_t         rb_idP)
 {
   nr_rlc_ue_t *ue;
   int      i;

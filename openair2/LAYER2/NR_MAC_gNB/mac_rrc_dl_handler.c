@@ -130,7 +130,6 @@ int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *
                              ue_context_p->ue_context.SRB_configList,
                              NULL,
                              NULL,
-                             NULL,
                              cellGroup->rlc_BearerToAddModList);
 
   return 0;

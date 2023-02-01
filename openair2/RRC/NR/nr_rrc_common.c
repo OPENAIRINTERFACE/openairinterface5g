@@ -63,20 +63,6 @@ int rrc_init_nr_global_param(void){
   DTCH_UL_LCHAN_DESC.max_transport_blocks = 20;
   DTCH_UL_LCHAN_DESC.Delay_class = 1;
 
-  Rlc_info_um.rlc_mode = RLC_MODE_UM;
-  Rlc_info_um.rlc.rlc_um_info.timer_reordering = 5;
-  Rlc_info_um.rlc.rlc_um_info.sn_field_length = 10;
-  Rlc_info_um.rlc.rlc_um_info.is_mXch = 0;
-  //Rlc_info_um.rlc.rlc_um_info.sdu_discard_mode=16;
-
-  Rlc_info_am_config.rlc_mode = RLC_MODE_AM;
-  Rlc_info_am_config.rlc.rlc_am_info.max_retx_threshold = 50;
-  Rlc_info_am_config.rlc.rlc_am_info.poll_pdu = 8;
-  Rlc_info_am_config.rlc.rlc_am_info.poll_byte = 1000;
-  Rlc_info_am_config.rlc.rlc_am_info.t_poll_retransmit = 15;
-  Rlc_info_am_config.rlc.rlc_am_info.t_reordering = 50;
-  Rlc_info_am_config.rlc.rlc_am_info.t_status_prohibit = 10;
-
   return 0;
 }
 

@@ -1109,7 +1109,6 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
       (NR_SRB_ToAddModList_t *) NULL,
       rbconfig->drb_ToAddModList,
       rbconfig->drb_ToReleaseList,
-      (LTE_PMCH_InfoList_r9_t *) NULL,
       Rlc_Bearer_ToAdd_list);
 
   LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE ID/RNTI %ld\n", __FUNCTION__, __LINE__, ctxt.rntiMaybeUEid);
