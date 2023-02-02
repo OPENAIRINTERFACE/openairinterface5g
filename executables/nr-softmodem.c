@@ -581,8 +581,10 @@ int main( int argc, char **argv ) {
     RCconfig_NR_L1();
 
   // don't create if node doesn't connect to RRC/S1/GTP
-  int ret=create_gNB_tasks(1);
-  AssertFatal(ret==0,"cannot create ITTI tasks\n");
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
+    int ret = create_gNB_tasks(1);
+    AssertFatal(ret == 0, "cannot create ITTI tasks\n");
+  }
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);

@@ -967,7 +967,7 @@ int pnf_p7_slot_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn, uint16_t sl
 			slot = shifted_slot;
 
 			//
-			// DJP - why does the shift not apply to pnf_p7->sfn_sf???
+			// why does the shift not apply to pnf_p7->sfn_sf???
 			//
 
 			pnf_p7->slot_shift = 0;
@@ -1219,7 +1219,7 @@ int pnf_p7_subframe_ind(pnf_p7_t* pnf_p7, uint16_t phy_id, uint16_t sfn_sf)
 			sfn_sf = shifted_sfn_sf;
 
                         //
-                        // DJP - why does the shift not apply to pnf_p7->sfn_sf???
+                        // why does the shift not apply to pnf_p7->sfn_sf???
                         //
 
 			pnf_p7->sfn_sf_shift = 0;
@@ -2908,7 +2908,7 @@ void pnf_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_time)
 			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, pnf_p7->rx_message_buffer_size,
                                                    MSG_DONTWAIT | MSG_TRUNC, (struct sockaddr*)&remote_addr, &remote_addr_size);
 
-		now_hr_time = pnf_get_current_time_hr(); //DJP - moved to here - get closer timestamp???
+		now_hr_time = pnf_get_current_time_hr(); //moved to here - get closer timestamp???
 
 			if(recvfrom_result > 0)
 			{
@@ -2975,7 +2975,7 @@ void pnf_nr_nfapi_p7_read_dispatch_message(pnf_p7_t* pnf_p7, uint32_t now_hr_tim
 			// read the segment
 			recvfrom_result = recvfrom(pnf_p7->p7_sock, pnf_p7->rx_message_buffer, header.message_length, MSG_DONTWAIT, (struct sockaddr*)&remote_addr, &remote_addr_size);
 
-		now_hr_time = pnf_get_current_time_hr(); //DJP - moved to here - get closer timestamp???
+		now_hr_time = pnf_get_current_time_hr(); //moved to here - get closer timestamp???
 
 			if(recvfrom_result > 0)
 			{
@@ -3060,7 +3060,7 @@ int pnf_p7_message_pump(pnf_p7_t* pnf_p7)
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = pnf_p7->_public.local_p7_port;
+	addr.sin_port = htons(pnf_p7->_public.local_p7_port);
 
 	if(pnf_p7->_public.local_p7_addr == 0)
 	{
@@ -3232,7 +3232,7 @@ int pnf_nr_p7_message_pump(pnf_p7_t* pnf_p7)
 	struct sockaddr_in addr;
 	memset(&addr, 0, sizeof(addr));
 	addr.sin_family = AF_INET;
-	addr.sin_port = pnf_p7->_public.local_p7_port;
+	addr.sin_port = htons(pnf_p7->_public.local_p7_port);
 
 	if(pnf_p7->_public.local_p7_addr == 0)
 	{
