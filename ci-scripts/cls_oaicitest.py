@@ -3179,7 +3179,7 @@ class OaiCiTest():
 				result = re.search('warning: discard PDU, sn out of window', str(line))
 				if result is not None:
 					nbPduDiscard += 1
-				result = re.search('--nfapi 5 --node-number 2 --sa', str(line))
+				result = re.search('--nfapi STANDALONE_PNF --node-number 2 --sa', str(line))
 				if result is not None:
 					frequency_found = True
 			result = re.search('Exiting OAI softmodem', str(line))

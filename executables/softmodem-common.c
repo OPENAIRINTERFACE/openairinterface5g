@@ -98,17 +98,25 @@ void get_common_options(uint32_t execmask) {
   uint32_t start_websrv = 0;
   uint32_t noS1 = 0, nokrnmod = 1, nonbiot = 0;
   uint32_t rfsim = 0, do_forms = 0;
+  int nfapi_index = 0;
   char *logmem_filename = NULL;
-  paramdef_t cmdline_params[] =CMDLINE_PARAMS_DESC ;
+  check_execmask(execmask);
+
+  paramdef_t cmdline_params[] = CMDLINE_PARAMS_DESC;
+  checkedparam_t cmdline_CheckParams[] = CMDLINE_PARAMS_CHECK_DESC;
+  int numparams = sizeof(cmdline_params) / sizeof(paramdef_t);
+  config_set_checkfunctions(cmdline_params, cmdline_CheckParams, numparams);
+  config_get(cmdline_params, sizeof(cmdline_params) / sizeof(paramdef_t), NULL);
+  nfapi_index = config_paramidx_fromname(cmdline_params, sizeof(cmdline_params) / sizeof(paramdef_t),"nfapi");
+  AssertFatal(nfapi_index != -1,"Index for nfapi config option not found!");
+  nfapi_mode = config_get_processedint(&cmdline_params[nfapi_index]);
+
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
-  check_execmask(execmask);
-  config_get( cmdline_params,sizeof(cmdline_params)/sizeof(paramdef_t),NULL);
-  
-  int numparams=sizeof(cmdline_logparams)/sizeof(paramdef_t);
-  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams,numparams);
-  config_get( cmdline_logparams,numparams,NULL);
-  
+  int numlogparams = sizeof(cmdline_logparams) / sizeof(paramdef_t);
+  config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams, numlogparams);
+  config_get(cmdline_logparams, numlogparams, NULL);
+
   if(config_isparamset(cmdline_logparams,config_paramidx_fromname(cmdline_logparams,numparams, CONFIG_FLOG_OPT))) {
     set_glog_onlinelog(online_log_messages);
   }

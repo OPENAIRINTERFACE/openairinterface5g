@@ -251,7 +251,7 @@ services:
             LOCAL_S_IF_NAME: 'lo:'
             REMOTE_S_ADDRESS: 127.0.0.1
             LOCAL_S_ADDRESS: 127.0.0.2
-            USE_ADDITIONAL_OPTIONS: --sa --nfapi 2 --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
+            USE_ADDITIONAL_OPTIONS: --sa --nfapi VNF --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
         depends_on:
             - oai-spgwu
             - oai-amf
@@ -295,7 +295,7 @@ services:
             NR_UE_NFAPI_IF_NAME: eno1
             GNB_IP_ADDRESS: 127.0.0.1
             NR_UE_IP_ADDRESS: 127.0.0.1
-            USE_ADDITIONAL_OPTIONS: --nokrnmod 1  --nfapi 5 --node-number 2 --sa --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
+            USE_ADDITIONAL_OPTIONS: --nokrnmod 1  --nfapi STANDALONE_PNF --node-number 2 --sa --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
         volumes:
             - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
         depends_on:
