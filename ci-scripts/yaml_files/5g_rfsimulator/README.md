@@ -47,13 +47,6 @@ $ docker pull oaisoftwarealliance/oai-gnb:develop
 $ docker pull oaisoftwarealliance/oai-nr-ue:develop
 ```
 
-And **re-tag** them for tutorials' docker-compose file to work.
-
-```bash
-$ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
-$ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
-```
-
 ```bash
 $ docker logout
 ```

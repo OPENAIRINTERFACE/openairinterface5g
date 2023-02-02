@@ -289,6 +289,7 @@ class Containerize():
 
 		self.deployedContainers = []
 		self.tsharkStarted = False
+		self.displayedNewTags = False
 		self.pingContName = ''
 		self.pingOptions = ''
 		self.pingLossThreshold = ''
@@ -1062,12 +1063,13 @@ class Containerize():
 			return
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
-		self.run_cmd_local_host(cmd)
+		self.run_cmd_local_host(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
-			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
-			self.run_cmd_local_host(cmd)
+			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			self.run_cmd_local_host(cmd, silent=self.displayedNewTags)
+		silent=self.displayedNewTags = True
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
 		try:
@@ -1197,12 +1199,13 @@ class Containerize():
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
-		self.run_cmd_local_host(cmd)
+		self.run_cmd_local_host(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
-			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
-			self.run_cmd_local_host(cmd)
+			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			self.run_cmd_local_host(cmd, silent=self.displayedNewTags)
+		silent=self.displayedNewTags = True
 
 		# check which containers are running for log recovery later
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml ps --all'

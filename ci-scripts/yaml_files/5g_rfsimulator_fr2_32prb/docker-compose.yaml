@@ -1,7 +1,7 @@
 version: '3.8'
 services:
     oai-gnb:
-        image: oai-gnb:develop
+        image: oaisoftwarealliance/oai-gnb:develop
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment:
@@ -21,7 +21,7 @@ services:
             retries: 5
 
     oai-nr-ue:
-        image: oai-nr-ue:develop
+        image: oaisoftwarealliance/oai-nr-ue:develop
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment:

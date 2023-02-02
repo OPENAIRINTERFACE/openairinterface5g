@@ -41,15 +41,13 @@ $ docker pull oaisoftwarealliance/trf-gen-cn5g:latest
 
 $ docker pull oaisoftwarealliance/oai-gnb:develop
 $ docker pull oaisoftwarealliance/oai-nr-ue:develop
-$ docker pull oaisoftwarealliance/proxy:latest
+$ docker pull oaisoftwarealliance/proxy:develop
 ```
 
 And **re-tag** them for tutorials' docker-compose file to work.
 
 ```bash
-$ docker image tag oaisoftwarealliance/oai-gnb:develop oai-gnb:develop
-$ docker image tag oaisoftwarealliance/oai-nr-ue:develop oai-nr-ue:develop
-$ docker image tag oaisoftwarealliance/proxy:latest oai-lte-multi-ue-proxy:latest
+$ docker image tag oaisoftwarealliance/proxy:develop oai-lte-multi-ue-proxy:latest
 ```
 
 ```bash

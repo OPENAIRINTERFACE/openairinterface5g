@@ -54,9 +54,6 @@ $ docker image tag oaisoftwarealliance/oai-spgwc:latest oai-spgwc:latest
 $ docker image tag oaisoftwarealliance/oai-hss:latest oai-hss:latest
 $ docker image tag oaisoftwarealliance/oai-spgwu-tiny:latest oai-spgwu-tiny:latest 
 $ docker image tag oaisoftwarealliance/magma-mme:latest magma-mme:latest
-
-$ docker image tag oaisoftwarealliance/oai-enb:develop oai-enb:develop
-$ docker image tag oaisoftwarealliance/oai-lte-ue:develop oai-lte-ue:develop
 ```
 
 ```bash
