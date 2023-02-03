@@ -75,7 +75,7 @@ class LocalCmd(Cmd):
 	def __init__(self, d = None):
 		self.cwd = d
 		if self.cwd is not None:
-			logging.debug(f'Working dir will be {self.cwd}')
+			logging.debug(f'Working dir is {self.cwd}')
 		self.cp = sp.CompletedProcess(args='', returncode=0, stdout='')
 
 	def run(self, line, timeout=300, silent=False, reportNonZero=True):
@@ -94,7 +94,11 @@ class LocalCmd(Cmd):
 		return ret
 
 	def command(self, commandline, expectedline=None, timeout=300, silent=False, resync=False):
-		self.run(commandline, timeout, silent)
+		line = [s for s in commandline.split(' ') if len(s) > 0]
+		if line[0] == 'cd':
+			self.cd(line[1], silent)
+		else:
+			self.run(line, timeout, silent)
 		return 0
 
 	def close(self):

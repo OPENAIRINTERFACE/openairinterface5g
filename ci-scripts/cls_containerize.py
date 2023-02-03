@@ -745,7 +745,7 @@ class Containerize():
 
 		cmd = 'docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr'
 		response = myCmd.run(cmd)
-		if re.search('Login Succeeded', response.stdout) is None:
+		if response.returncode != 0:
 			msg = 'Could not log into local registry'
 			logging.error(msg)
 			myCmd.close()
@@ -756,7 +756,7 @@ class Containerize():
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'docker pull {tagToUse}'
 			response = myCmd.run(cmd, timeout=120)
-			if re.search('Status: Downloaded newer image for |Status: Image is up to date for', response.stdout) is None:
+			if response.returncode != 0:
 				logging.debug(response)
 				msg = f'Could not pull {image} from local registry : {tagToUse}'
 				logging.error(msg)
@@ -766,7 +766,7 @@ class Containerize():
 
 		cmd = 'docker logout porcepix.sboai.cs.eurecom.fr'
 		response = myCmd.run(cmd)
-		if re.search('Removing login credentials', response.stdout) is None:
+		if response.returncode != 0:
 			msg = 'Could not log off from local registry'
 			logging.error(msg)
 			myCmd.close()
@@ -1053,15 +1053,15 @@ class Containerize():
 			return
 
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
-		myCmd.command(cmd, silent=self.displayedNewTags)
+		myCmd.run(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
-			myCmd.command(cmd, silent=self.displayedNewTags)
+			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
 
-		cmd = 'docker-compose -f docker-compose-ci.yml up -d ' + self.services[0]
+		cmd = f'docker-compose -f docker-compose-ci.yml up -d {self.services[0]}'
 		deployStatus = myCmd.run(cmd, timeout=100)
 		if deployStatus.returncode != 0:
 			myCmd.close()
@@ -1156,6 +1156,12 @@ class Containerize():
 			self.UndeployGenObject(HTML, RAN, UE)
 			self.exitStatus = 1
 
+	# pyshark livecapture launches 2 processes:
+	# * One using dumpcap -i lIfs -w - (ie redirecting the packets to STDOUT)
+	# * One using tshark -i - -w loFile (ie capturing from STDIN from previous process)
+	# but in fact the packets are read by the following loop before being in fact
+	# really written to loFile.
+	# So it is mandatory to keep the loop
 	def LaunchPySharkCapture(self, lIfs, lFilter, loFile):
 		capture = pyshark.LiveCapture(interface=lIfs, bpf_filter=lFilter, output_file=loFile, debug=False)
 		for packet in capture.sniff_continuously():
@@ -1197,12 +1203,12 @@ class Containerize():
 		myCmd = cls_cmd.LocalCmd(d = self.yamlPath[0])
 
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
-		myCmd.command(cmd, silent=self.displayedNewTags)
+		myCmd.run(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
-			myCmd.command(cmd, silent=self.displayedNewTags)
+			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
 
 		# check which containers are running for log recovery later
@@ -1223,10 +1229,9 @@ class Containerize():
 
 		anyLogs = False
 		logging.debug('Working dir is now . (ie ci-scripts)')
-		myCmd.cwd = '.'
-		myCmd.command(f'mkdir -p {logPath}')
-		logging.debug(f'Working dir is now {logPath}')
-		myCmd.cwd = logPath
+		myCmd2 = cls_cmd.LocalCmd()
+		myCmd2.run(f'mkdir -p {logPath}')
+		myCmd2.cd(logPath)
 		for state in deployStatusLogs.stdout.split('\n'):
 			res = re.search('Name|NAME|----------', state)
 			if res is not None:
@@ -1237,19 +1242,19 @@ class Containerize():
 			if res is not None:
 				anyLogs = True
 				cName = res.group('container_name')
-				cmd = 'docker logs ' + cName + ' > ' + cName + '.log 2>&1'
-				myCmd.run(cmd, timeout=30, reportNonZero=False)
+				cmd = f'docker logs {cName} > {cName}.log 2>&1'
+				myCmd2.run(cmd, timeout=30, reportNonZero=False)
 				if re.search('magma-mme', cName) is not None:
-					cmd = 'docker cp -L ' + cName + ':/var/log/mme.log ' + cName + '-full.log'
-					myCmd.run(cmd, timeout=30, reportNonZero=False)
+					cmd = f'docker cp -L {cName}:/var/log/mme.log {cName}-full.log'
+					myCmd2.run(cmd, timeout=30, reportNonZero=False)
 		fullStatus = True
 		if anyLogs:
 			# Analyzing log file(s)!
 			listOfPossibleRanContainers = ['enb', 'gnb', 'cu', 'du']
 			for container in listOfPossibleRanContainers:
 				filenames = './*-oai-' + container + '.log'
-				cmd = 'ls ' + filenames
-				lsStatus = myCmd.run(cmd, silent=True, reportNonZero=False)
+				cmd = f'ls {filenames}'
+				lsStatus = myCmd2.run(cmd, silent=True, reportNonZero=False)
 				if lsStatus.returncode != 0:
 					continue
 				filenames = str(lsStatus.stdout).strip()
@@ -1267,9 +1272,8 @@ class Containerize():
 			listOfPossibleUeContainers = ['lte-ue*', 'nr-ue*']
 			for container in listOfPossibleUeContainers:
 				filenames = './*-oai-' + container + '.log'
-				cmd = 'ls ' + filenames
-				containerStatus = True
-				lsStatus = myCmd.run(cmd, silent=True, reportNonZero=False)
+				cmd = f'ls {filenames}'
+				lsStatus = myCmd2.run(cmd, silent=True, reportNonZero=False)
 				if lsStatus.returncode != 0:
 					continue
 				filenames = str(lsStatus.stdout).strip()
@@ -1286,16 +1290,19 @@ class Containerize():
 			if self.tsharkStarted:
 				self.tsharkStarted = True
 				cmd = 'killall tshark'
-				myCmd.run(cmd, reportNonZero=False)
+				myCmd2.run(cmd, reportNonZero=False)
+				cmd = 'killall dumpcap'
+				myCmd2.run(cmd, reportNonZero=False)
+				time.sleep(5)
 				ymlPath = self.yamlPath[0].split('/')
 				# The working dir is still logPath
-				cmd = 'mv /tmp/capture_' + ymlPath[1] + '.pcap .'
-				myCmd.run(cmd, timeout=100, reportNonZero=False)
+				cmd = f'mv /tmp/capture_{ymlPath[1]}.pcap .'
+				myCmd2.run(cmd, timeout=100, reportNonZero=False)
 				self.tsharkStarted = False
+		myCmd2.close()
 
 		logging.debug('\u001B[1m Undeploying \u001B[0m')
 		logging.debug(f'Working dir is back {self.yamlPath[0]}')
-		myCmd.cwd = self.yamlPath[0]
 		cmd = 'docker-compose -f docker-compose-ci.yml down'
 		deployStatus = myCmd.run(cmd, timeout=100)
 		if deployStatus.returncode != 0:
@@ -1358,10 +1365,10 @@ class Containerize():
 		self.exitStatus = 0
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
-		cmd = 'mkdir -p ' + logPath
+		cmd = f'mkdir -p {logPath}'
 		myCmd.run(cmd, silent=True)
 
-		cmd = 'docker exec ' + self.pingContName + ' /bin/bash -c "ping ' + self.pingOptions + '" 2>&1 | tee ' + logPath + '/ping_' + HTML.testCase_id + '.log'
+		cmd = f'docker exec {self.pingContName} /bin/bash -c "ping {self.pingOptions}" 2>&1 | tee {logPath}/ping_{HTML.testCase_id}.log'
 		pingStatus = myCmd.run(cmd, timeout=100, reportNonZero=False)
 		myCmd.close()
 
@@ -1433,12 +1440,12 @@ class Containerize():
 
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
-		cmd = 'mkdir -p ' + logPath
+		cmd = f'mkdir -p {logPath}'
 		myCmd.run(cmd, silent=True)
 
 		# Start the server process
 		cmd = f'docker exec -d {self.svrContName} /bin/bash -c "nohup iperf {self.svrOptions} > /tmp/iperf_server.log 2>&1"'
-		myCmd.run(cmd, reportNonZero=False)
+		myCmd.run(cmd)
 		time.sleep(3)
 
 		# Start the client process
