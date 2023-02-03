@@ -722,11 +722,10 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
   return(0);
 }
 
-
 int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
                                int estimateSz,
-                               struct complex16 dl_ch_estimates [][estimateSz],
-                               struct complex16 dl_ch_estimates_time [][ue->frame_parms.ofdm_symbol_size],
+                               struct complex16 dl_ch_estimates[][estimateSz],
+                               struct complex16 dl_ch_estimates_time[][ue->frame_parms.ofdm_symbol_size],
                                UE_nr_rxtx_proc_t *proc,
                                unsigned char symbol,
                                int dmrss,

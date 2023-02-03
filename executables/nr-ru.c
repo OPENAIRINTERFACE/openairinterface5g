@@ -733,7 +733,8 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
     T_INT(0), T_BUFFER(&ru->common.txdata[0][fp->get_samples_slot_timestamp(slot,fp,0)], fp->samples_per_subframe * 4));
   int sf_extension = 0;
   int siglen=fp->get_samples_per_slot(slot,fp);
-  int flags = 0;
+  radio_tx_burst_flag_t flags_burst = TX_BURST_INVALID;
+  radio_tx_gpio_flag_t flags_gpio = 0;
 
   if (cfg->cell_config.frame_duplex_type.value == TDD && !get_softmodem_params()->continuous_tx) {
     int slot_type = nr_slot_select(cfg,frame,slot%fp->slots_per_frame);
@@ -760,49 +761,41 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       }
 
       //+ ru->end_of_burst_delay;
-      flags = 3; // end of burst
+      flags_burst = TX_BURST_END;
     } else if (slot_type == NR_DOWNLINK_SLOT) {
       int prevslot_type = nr_slot_select(cfg,frame,(slot+(fp->slots_per_frame-1))%fp->slots_per_frame);
       int nextslot_type = nr_slot_select(cfg,frame,(slot+1)%fp->slots_per_frame);
       if (prevslot_type == NR_UPLINK_SLOT) {
-        flags = 2; // start of burst
+        flags_burst = TX_BURST_START;
         sf_extension = ru->sf_extension;
       } else if (nextslot_type == NR_UPLINK_SLOT) {
-        flags = 3; // end of burst
+        flags_burst = TX_BURST_END;
       } else {
-        flags = 1; // middle of burst
+        flags_burst = TX_BURST_MIDDLE;
       }
     }
   } else { // FDD
-    if (proc->first_tx == 1) {
-      flags = 2; // start of burst
-    } else {
-      flags = 1; // middle of burst
-    }
+    flags_burst = proc->first_tx == 1 ? TX_BURST_START : TX_BURST_MIDDLE;
   }
 
-  if (flags) {
     if (fp->freq_range==nr_FR2) {
-      // the beam index is written in bits 8-10 of the flags
-      // bit 11 enables the gpio programming
-      // currently we switch beams every 10 slots (should = 1 TDD period in FR2) and we take the beam index of the first symbol of the first slot of this period
-      int beam=0;
+      // currently we switch beams at the beginning of a slot and we take the beam index of the first symbol of this slot
+      // we only send the beam to the gpio if the beam is different from the previous slot
 
-      if (slot%10==0) {
-        if ( ru->common.beam_id && (ru->common.beam_id[0][slot*fp->symbols_per_slot] < 8)) {
-          beam = ru->common.beam_id[0][slot*fp->symbols_per_slot] | 8;
+      if ( ru->common.beam_id) {
+        int prev_slot = (slot - 1 + fp->slots_per_frame) % fp->slots_per_frame;
+        const uint8_t *beam_ids = ru->common.beam_id[0];
+        int prev_beam = beam_ids[prev_slot * fp->symbols_per_slot];
+        int beam = beam_ids[slot * fp->symbols_per_slot];
+        if (prev_beam != beam) {
+          flags_gpio = beam | TX_GPIO_CHANGE; // enable change of gpio
+          LOG_D(HW, "slot %d, beam %d\n", slot, ru->common.beam_id[0][slot * fp->symbols_per_slot]);
         }
       }
-
-      /*
-      if (slot==0 || slot==40) beam=0|8;
-      if (slot==10 || slot==50) beam=1|8;
-      if (slot==20 || slot==60) beam=2|8;
-      if (slot==30 || slot==70) beam=3|8;
-      */
-      flags |= beam<<8;
-      LOG_D(HW,"slot %d, beam %d\n",slot,ru->common.beam_id[0][slot*fp->symbols_per_slot]);
     }
+
+    const int flags = flags_burst | flags_gpio << 4;
+
     if (proc->first_tx == 1) proc->first_tx = 0;
 
     VCD_SIGNAL_DUMPER_DUMP_VARIABLE_BY_NAME( VCD_SIGNAL_DUMPER_VARIABLES_TRX_WRITE_FLAGS, flags );
@@ -825,7 +818,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
 	  (long long unsigned int)(timestamp+ru->ts_offset-ru->openair0_cfg.tx_sample_advance-sf_extension),frame,slot,proc->frame_tx_unwrap,slot, flags, siglen+sf_extension, txs,10*log10((double)signal_energy(txp[0],siglen+sf_extension)));
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_TRX_WRITE, 0 );
       //AssertFatal(txs == 0,"trx write function error %d\n", txs);
-  }
+  
 }
 
 // this is for RU with local RF unit

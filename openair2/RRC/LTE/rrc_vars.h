@@ -78,7 +78,6 @@ LTE_LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {ul_Specific
                                                                     };
 
 //CONSTANTS
-rlc_info_t Rlc_info_um,Rlc_info_am_config;
 uint16_t RACH_FREQ_ALLOC;
 //uint8_t NB_RACH;
 LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;

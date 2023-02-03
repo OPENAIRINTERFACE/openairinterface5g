@@ -509,7 +509,7 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
     txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
              proc->nr_slot_tx, &UE->frame_parms, 0)];
 
-  radio_tx_flag_t flags = Invalid;
+  radio_tx_burst_flag_t flags = TX_BURST_INVALID;
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(0);
 
@@ -531,13 +531,13 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
     uint8_t first_tx_slot = tdd_period - num_UL_slots;
 
     if (slot_tx_usrp % tdd_period == first_tx_slot)
-      flags = StartOfBurst;
+      flags = TX_BURST_START;
     else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
-      flags = EndOfBurst;
+      flags = TX_BURST_END;
     else if (slot_tx_usrp % tdd_period > first_tx_slot)
-      flags = MiddleOfBurst;
+      flags = TX_BURST_MIDDLE;
   } else {
-    flags = MiddleOfBurst;
+    flags = TX_BURST_MIDDLE;
   }
 
   if (flags || IS_SOFTMODEM_RFSIM)

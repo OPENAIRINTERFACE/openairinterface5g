@@ -3645,7 +3645,14 @@ int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, sl
   else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
 }
 
-int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Position,int NrOfSymbols, int startSymbol, mappingType_t mappingtype, int length) {
+int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,
+                       int dci_format,
+                       int dmrs_TypeA_Position,
+                       int NrOfSymbols,
+                       int startSymbol,
+                       mappingType_t mappingtype,
+                       int length)
+{
 
   int dmrs_AdditionalPosition = 0;
   NR_DMRS_DownlinkConfig_t *dmrs_config = NULL;
@@ -3654,8 +3661,8 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 
   int l0 = 0; // type B
   if (mappingtype == typeA) {
-    if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0=2;
-    else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0=3;
+    if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2) l0 = 2;
+    else if (dmrs_TypeA_Position == NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3) l0 = 3;
     else AssertFatal(1==0,"Illegal dmrs_TypeA_Position %d\n",(int)dmrs_TypeA_Position);
   }
   // in case of DCI FORMAT 1_0 or dedicated pdsch config not received additionposition = pos2, len1 should be used
@@ -3664,7 +3671,8 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
 
   if (pdsch_Config != NULL) {
     if (mappingtype == typeA) { // Type A
-      if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
+      if (dci_format != NR_DL_DCI_FORMAT_1_0 &&
+          pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
         dmrs_config = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
     } else if (mappingtype == typeB) {
       if (pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB && pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->present == NR_SetupRelease_DMRS_DownlinkConfig_PR_setup)
@@ -3673,10 +3681,9 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
       AssertFatal(1==0,"Incorrect Mappingtype\n");
     }
 
-    AssertFatal(dmrs_config != NULL," DMRS configs not present in PDSCH DMRS Downlink config\n");
-
     // default values of additionalposition is pos2
-    if (dmrs_config->dmrs_AdditionalPosition != NULL) dmrs_AdditionalPosition = *dmrs_config->dmrs_AdditionalPosition;
+    if (dmrs_config && dmrs_config->dmrs_AdditionalPosition != NULL)
+      dmrs_AdditionalPosition = *dmrs_config->dmrs_AdditionalPosition;
   }
 
   uint8_t ld, row, column;
@@ -3727,12 +3734,36 @@ int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,int dmrs_TypeA_Posi
   return l_prime;
 }
 
+uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type)
+{
+
+  // Set downlink MCS table (Semi-persistent scheduling ignored for now)
+  uint8_t mcsTableIdx = 0; // default value
+  if (mcs_Table &&
+      *mcs_Table == NR_PDSCH_Config__mcs_Table_qam256 &&
+      dci_format == NR_DL_DCI_FORMAT_1_1 &&
+      rnti_type == NR_RNTI_C)
+    mcsTableIdx = 1;
+  else if (rnti_type != NR_RNTI_MCS_C &&
+           mcs_Table &&
+           *mcs_Table == NR_PDSCH_Config__mcs_Table_qam64LowSE &&
+           ss_type == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+    mcsTableIdx = 2;
+  else if (rnti_type == NR_RNTI_MCS_C)
+    mcsTableIdx = 2;
+
+  LOG_D(NR_MAC,"DL MCS Table Index: %d\n", mcsTableIdx);
+  return mcsTableIdx;
+
+}
+
 uint8_t get_pusch_mcs_table(long *mcs_Table,
                             int is_tp,
                             int dci_format,
                             int rnti_type,
                             int target_ss,
-                            bool config_grant) {
+                            bool config_grant)
+{
 
   // implementing 6.1.4.1 in 38.214
   if (mcs_Table != NULL) {

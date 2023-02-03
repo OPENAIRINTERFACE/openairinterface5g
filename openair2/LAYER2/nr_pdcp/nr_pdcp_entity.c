@@ -390,8 +390,11 @@ static void nr_pdcp_entity_get_stats(nr_pdcp_entity_t *entity,
 
 nr_pdcp_entity_t *new_nr_pdcp_entity(
     nr_pdcp_entity_type_t type,
-    int is_gnb, int rb_id, int pdusession_id,int has_sdap,
-    int has_sdapULheader, int has_sdapDLheader,
+    int is_gnb,
+    int rb_id,
+    int pdusession_id,
+    bool has_sdap_rx,
+    bool has_sdap_tx,
     void (*deliver_sdu)(void *deliver_sdu_data, struct nr_pdcp_entity_t *entity,
                         char *buf, int size),
     void *deliver_sdu_data,
@@ -432,9 +435,8 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
 
   ret->rb_id         = rb_id;
   ret->pdusession_id = pdusession_id;
-  ret->has_sdap      = has_sdap;
-  ret->has_sdapULheader = has_sdapULheader;
-  ret->has_sdapDLheader = has_sdapDLheader;
+  ret->has_sdap_rx   = has_sdap_rx;
+  ret->has_sdap_tx   = has_sdap_tx;
   ret->sn_size       = sn_size;
   ret->t_reordering  = t_reordering;
   ret->discard_timer = discard_timer;

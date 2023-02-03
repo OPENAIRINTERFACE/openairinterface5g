@@ -581,8 +581,10 @@ int main( int argc, char **argv ) {
     RCconfig_NR_L1();
 
   // don't create if node doesn't connect to RRC/S1/GTP
-  int ret=create_gNB_tasks(1);
-  AssertFatal(ret==0,"cannot create ITTI tasks\n");
+  if (NFAPI_MODE != NFAPI_MODE_PNF) {
+    int ret = create_gNB_tasks(1);
+    AssertFatal(ret == 0, "cannot create ITTI tasks\n");
+  }
 
   // init UE_PF_PO and mutex lock
   pthread_mutex_init(&ue_pf_po_mutex, NULL);
@@ -597,28 +599,6 @@ int main( int argc, char **argv ) {
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
   }
-
-  const char *nfapi_mode_str = "<UNKNOWN>";
-
-  switch(NFAPI_MODE) {
-    case 0:
-      nfapi_mode_str = "MONOLITHIC";
-      break;
-
-    case 1:
-      nfapi_mode_str = "PNF";
-      break;
-
-    case 2:
-      nfapi_mode_str = "VNF";
-      break;
-
-    default:
-      nfapi_mode_str = "<UNKNOWN NFAPI MODE>";
-      break;
-  }
-
-  printf("NFAPI MODE:%s\n", nfapi_mode_str);
 
   printf("START MAIN THREADS\n");
   // start the main threads

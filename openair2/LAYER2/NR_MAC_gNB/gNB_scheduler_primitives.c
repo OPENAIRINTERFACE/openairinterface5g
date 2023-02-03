@@ -268,7 +268,7 @@ NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
     dmrs.dmrsConfigType = NFAPI_NR_DMRS_TYPE1;
 
   dmrs.N_PRB_DMRS = dmrs.numDmrsCdmGrpsNoData * (dmrs.dmrsConfigType == NFAPI_NR_DMRS_TYPE1 ? 6 : 4);
-  dmrs.dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, scc->dmrs_TypeA_Position, tda_info->nrOfSymbols, tda_info->startSymbolIndex, tda_info->mapping_type, frontloaded_symb);
+  dmrs.dl_dmrs_symb_pos = fill_dmrs_mask(pdsch_Config, dci_format, scc->dmrs_TypeA_Position, tda_info->nrOfSymbols, tda_info->startSymbolIndex, tda_info->mapping_type, frontloaded_symb);
   dmrs.N_DMRS_SLOT = get_num_dmrs(dmrs.dl_dmrs_symb_pos);
   LOG_D(NR_MAC,"Filling dmrs info, ps->N_PRB_DMRS %d, ps->dl_dmrs_symb_pos %x, ps->N_DMRS_SLOT %d\n",dmrs.N_PRB_DMRS,dmrs.dl_dmrs_symb_pos,dmrs.N_DMRS_SLOT);
   return dmrs;
@@ -678,224 +678,6 @@ int get_mcs_from_bler(const NR_bler_options_t *bler_options,
   LOG_D(MAC, "frame %4d MCS %d -> %d (dtx %d, dretx %d, BLER wnd %.3f avg %.6f)\n",
         frame, old_mcs, new_mcs, dtx, dretx, bler_window, bler_stats->bler);
   return new_mcs;
-}
-
-void nr_configure_css_dci_initial(nfapi_nr_dl_tti_pdcch_pdu_rel15_t* pdcch_pdu,
-				  nr_scs_e scs_common,
-				  nr_scs_e pdcch_scs,
-				  frequency_range_t freq_range,
-				  uint8_t rmsi_pdcch_config,
-				  uint8_t ssb_idx,
-				  uint8_t k_ssb,
-				  uint16_t sfn_ssb,
-				  uint8_t n_ssb, /*slot index overlapping the corresponding SSB index*/
-				  uint16_t nb_slots_per_frame,
-				  uint16_t N_RB)
-{
-  //  uint8_t O, M;
-  //  uint8_t ss_idx = rmsi_pdcch_config&0xf;
-  //  uint8_t cset_idx = (rmsi_pdcch_config>>4)&0xf;
-  //  uint8_t mu = scs_common;
-  //  uint8_t O_scale=0, M_scale=0; // used to decide if the values of O and M need to be divided by 2
-
-  AssertFatal(1==0,"todo\n");
-  /*
-  /// Coreset params
-  switch(scs_common) {
-
-    case kHz15:
-
-      switch(pdcch_scs) {
-        case kHz15:
-          AssertFatal(cset_idx<15,"Coreset index %d reserved for scs kHz15/kHz15\n", cset_idx);
-          pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-          pdcch_pdu->n_rb = (cset_idx < 6)? 24 : (cset_idx < 12)? 48 : 96;
-          pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_15_15[cset_idx];
-          pdcch_pdu->rb_offset = nr_coreset_rb_offset_pdcch_type_0_scs_15_15[cset_idx];
-        break;
-
-        case kHz30:
-          AssertFatal(cset_idx<14,"Coreset index %d reserved for scs kHz15/kHz30\n", cset_idx);
-          pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-          pdcch_pdu->n_rb = (cset_idx < 8)? 24 : 48;
-          pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_15_30[cset_idx];
-          pdcch_pdu->rb_offset = nr_coreset_rb_offset_pdcch_type_0_scs_15_15[cset_idx];
-        break;
-
-        default:
-            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
-
-      }
-      break;
-
-    case kHz30:
-
-      if (N_RB < 106) { // Minimum 40Mhz bandwidth not satisfied
-        switch(pdcch_scs) {
-          case kHz15:
-            AssertFatal(cset_idx<9,"Coreset index %d reserved for scs kHz30/kHz15\n", cset_idx);
-            pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-            pdcch_pdu->n_rb = (cset_idx < 10)? 48 : 96;
-            pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_30_15_b40Mhz[cset_idx];
-            pdcch_pdu->rb_offset = nr_coreset_rb_offset_pdcch_type_0_scs_30_15_b40Mhz[cset_idx];
-          break;
-
-          case kHz30:
-            pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-            pdcch_pdu->n_rb = (cset_idx < 6)? 24 : 48;
-            pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_30_30_b40Mhz[cset_idx];
-            pdcch_pdu->rb_offset = nr_coreset_rb_offset_pdcch_type_0_scs_30_30_b40Mhz[cset_idx];
-          break;
-
-          default:
-            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
-        }
-      }
-
-      else { // above 40Mhz
-        switch(pdcch_scs) {
-          case kHz15:
-            AssertFatal(cset_idx<9,"Coreset index %d reserved for scs kHz30/kHz15\n", cset_idx);
-            pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-            pdcch_pdu->n_rb = (cset_idx < 3)? 48 : 96;
-            pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_30_15_a40Mhz[cset_idx];
-            pdcch_pdu->rb_offset = nr_coreset_rb_offset_pdcch_type_0_scs_30_15_a40Mhz[cset_idx];
-          break;
-
-          case kHz30:
-            AssertFatal(cset_idx<10,"Coreset index %d reserved for scs kHz30/kHz30\n", cset_idx);
-            pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-            pdcch_pdu->n_rb = (cset_idx < 4)? 24 : 48;
-            pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_30_30_a40Mhz[cset_idx];
-            pdcch_pdu->rb_offset =  nr_coreset_rb_offset_pdcch_type_0_scs_30_30_a40Mhz[cset_idx];
-          break;
-
-          default:
-            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
-        }
-      }
-      break;
-
-    case kHz120:
-      switch(pdcch_scs) {
-        case kHz60:
-          AssertFatal(cset_idx<12,"Coreset index %d reserved for scs kHz120/kHz60\n", cset_idx);
-          pdcch_pdu->mux_pattern = (cset_idx < 8)?NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1 : NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2;
-          pdcch_pdu->n_rb = (cset_idx < 6)? 48 : (cset_idx < 8)? 96 : (cset_idx < 10)? 48 : 96;
-          pdcch_pdu->n_symb = nr_coreset_nsymb_pdcch_type_0_scs_120_60[cset_idx];
-          pdcch_pdu->rb_offset = (nr_coreset_rb_offset_pdcch_type_0_scs_120_60[cset_idx]>0)?nr_coreset_rb_offset_pdcch_type_0_scs_120_60[cset_idx] :
-          (k_ssb == 0)? -41 : -42;
-        break;
-
-        case kHz120:
-          AssertFatal(cset_idx<8,"Coreset index %d reserved for scs kHz120/kHz120\n", cset_idx);
-          pdcch_pdu->mux_pattern = (cset_idx < 4)?NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1 : NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3;
-          pdcch_pdu->n_rb = (cset_idx < 2)? 24 : (cset_idx < 4)? 48 : (cset_idx < 6)? 24 : 48;
-          pdcch_pdu->n_symb = (cset_idx == 2)? 1 : 2;
-          pdcch_pdu->rb_offset = (nr_coreset_rb_offset_pdcch_type_0_scs_120_120[cset_idx]>0)? nr_coreset_rb_offset_pdcch_type_0_scs_120_120[cset_idx] :
-          (k_ssb == 0)? -20 : -21;
-        break;
-
-        default:
-            AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
-      }
-    break;
-
-    case kHz240:
-    switch(pdcch_scs) {
-      case kHz60:
-        AssertFatal(cset_idx<4,"Coreset index %d reserved for scs kHz240/kHz60\n", cset_idx);
-        pdcch_pdu->mux_pattern = NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1;
-        pdcch_pdu->n_rb = 96;
-        pdcch_pdu->n_symb = (cset_idx < 2)? 1 : 2;
-        pdcch_pdu->rb_offset = (cset_idx&1)? 16 : 0;
-      break;
-
-      case kHz120:
-        AssertFatal(cset_idx<8,"Coreset index %d reserved for scs kHz240/kHz120\n", cset_idx);
-        pdcch_pdu->mux_pattern = (cset_idx < 4)? NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1 : NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2;
-        pdcch_pdu->n_rb = (cset_idx < 4)? 48 : (cset_idx < 6)? 24 : 48;
-        pdcch_pdu->n_symb = ((cset_idx==2)||(cset_idx==3))? 2 : 1;
-        pdcch_pdu->rb_offset = (nr_coreset_rb_offset_pdcch_type_0_scs_240_120[cset_idx]>0)? nr_coreset_rb_offset_pdcch_type_0_scs_240_120[cset_idx] :
-        (k_ssb == 0)? -41 : -42;
-      break;
-
-      default:
-          AssertFatal(1==0,"Invalid scs_common/pdcch_scs combination %d/%d \n", scs_common, pdcch_scs);
-    }
-    break;
-
-  default:
-    AssertFatal(1==0,"Invalid common subcarrier spacing %d\n", scs_common);
-
-  }
-
-  /// Search space params
-  switch(pdcch_pdu->mux_pattern) {
-
-    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE1:
-      if (freq_range == nr_FR1) {
-        O = nr_ss_param_O_type_0_mux1_FR1[ss_idx];
-        pdcch_pdu->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR1[ss_idx];
-        M = nr_ss_param_M_type_0_mux1_FR1[ss_idx];
-        M_scale = nr_ss_scale_M_mux1_FR1[ss_idx];
-        pdcch_pdu->first_symbol = (ss_idx < 8)? ( (ssb_idx&1)? pdcch_pdu->n_symb : 0 ) : nr_ss_first_symb_idx_type_0_mux1_FR1[ss_idx - 8];
-      }
-
-      else {
-        AssertFatal(ss_idx<14 ,"Invalid search space index for multiplexing type 1 and FR2 %d\n", ss_idx);
-        O = nr_ss_param_O_type_0_mux1_FR2[ss_idx];
-        O_scale = nr_ss_scale_O_mux1_FR2[ss_idx];
-        pdcch_pdu->nb_ss_sets_per_slot = nr_ss_sets_per_slot_type_0_FR2[ss_idx];
-        M = nr_ss_param_M_type_0_mux1_FR2[ss_idx];
-        M_scale = nr_ss_scale_M_mux1_FR2[ss_idx];
-        pdcch_pdu->first_symbol = (ss_idx < 12)? ( (ss_idx&1)? 7 : 0 ) : 0;
-      }
-      pdcch_pdu->nb_slots = 2;
-      pdcch_pdu->sfn_mod2 = (CEILIDIV( (((O<<mu)>>O_scale) + ((ssb_idx*M)>>M_scale)), nb_slots_per_frame ) & 1)? 1 : 0;
-      pdcch_pdu->first_slot = (((O<<mu)>>O_scale) + ((ssb_idx*M)>>M_scale)) % nb_slots_per_frame;
-
-    break;
-
-    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE2:
-      AssertFatal( ((scs_common==kHz120)&&(pdcch_scs==kHz60)) || ((scs_common==kHz240)&&(pdcch_scs==kHz120)),
-      "Invalid scs_common/pdcch_scs combination %d/%d for Mux type 2\n", scs_common, pdcch_scs );
-      AssertFatal(ss_idx==0, "Search space index %d reserved for scs_common/pdcch_scs combination %d/%d", ss_idx, scs_common, pdcch_scs);
-
-      pdcch_pdu->nb_slots = 1;
-
-      if ((scs_common==kHz120)&&(pdcch_scs==kHz60)) {
-        pdcch_pdu->first_symbol = nr_ss_first_symb_idx_scs_120_60_mux2[ssb_idx&3];
-        // Missing in pdcch_pdu sfn_C and n_C here and in else case
-      }
-      else {
-        pdcch_pdu->first_symbol = ((ssb_idx&7)==4)?12 : ((ssb_idx&7)==4)?13 : nr_ss_first_symb_idx_scs_240_120_set1_mux2[ssb_idx&7]; //???
-      }
-
-    break;
-
-    case NFAPI_NR_SSB_AND_CSET_MUX_PATTERN_TYPE3:
-      AssertFatal( (scs_common==kHz120)&&(pdcch_scs==kHz120),
-      "Invalid scs_common/pdcch_scs combination %d/%d for Mux type 3\n", scs_common, pdcch_scs );
-      AssertFatal(ss_idx==0, "Search space index %d reserved for scs_common/pdcch_scs combination %d/%d", ss_idx, scs_common, pdcch_scs);
-
-      pdcch_pdu->first_symbol = nr_ss_first_symb_idx_scs_120_120_mux3[ssb_idx&3];
-
-    break;
-
-    default:
-      AssertFatal(1==0, "Invalid SSB and coreset multiplexing pattern %d\n", pdcch_pdu->mux_pattern);
-  }
-  pdcch_pdu->config_type = NFAPI_NR_CSET_CONFIG_MIB_SIB1;
-  pdcch_pdu->cr_mapping_type = NFAPI_NR_CCE_REG_MAPPING_INTERLEAVED;
-  pdcch_pdu->precoder_granularity = NFAPI_NR_CSET_SAME_AS_REG_BUNDLE;
-  pdcch_pdu->reg_bundle_size = 6;
-  pdcch_pdu->interleaver_size = 2;
-  // set initial banwidth part to full bandwidth
-  pdcch_pdu->n_RB_BWP = N_RB;
-
-  */
-
 }
 
 void config_uldci(const NR_SIB1_t *sib1,
@@ -2445,17 +2227,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  // Set downlink MCS table
-  if (DL_BWP->pdsch_Config &&
-      DL_BWP->pdsch_Config->mcs_Table) {
-    if (*DL_BWP->pdsch_Config->mcs_Table == 0)
-      DL_BWP->mcsTableIdx = 1;
-    else
-      DL_BWP->mcsTableIdx = 2;
-  } else
-    DL_BWP->mcsTableIdx = 0;
-  LOG_D(NR_MAC,"DL MCS Table Index: %d\n",DL_BWP->mcsTableIdx);
-
   if (UL_BWP->pusch_Config == NULL || !UL_BWP->pusch_Config->transformPrecoder)
     UL_BWP->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
   else
@@ -2539,14 +2310,17 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
     DL_BWP->dci_format = NR_DL_DCI_FORMAT_1_0;
   }
 
-  // Set uplink MCS table
-  long *mcs_Table = NULL;
-  if (UL_BWP->pusch_Config)
-    mcs_Table = UL_BWP->transform_precoding ?
-                UL_BWP->pusch_Config->mcs_Table :
-                UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+  // Set MCS tables
+  long *dl_mcs_Table = DL_BWP->pdsch_Config ? DL_BWP->pdsch_Config->mcs_Table : NULL;
+  DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
-  UL_BWP->mcs_table = get_pusch_mcs_table(mcs_Table,
+  long *ul_mcs_Table = NULL;
+  if (UL_BWP->pusch_Config)
+    ul_mcs_Table = UL_BWP->transform_precoding ?
+                   UL_BWP->pusch_Config->mcs_Table :
+                   UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+
+  UL_BWP->mcs_table = get_pusch_mcs_table(ul_mcs_Table,
                                           UL_BWP->transform_precoding ? 0 : 1,
                                           UL_BWP->dci_format,
                                           NR_RNTI_C,

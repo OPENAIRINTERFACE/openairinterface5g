@@ -1549,7 +1549,8 @@ void pf_ul(module_id_t module_id,
            NR_UE_info_t *UE_list[],
            int max_num_ue,
            int n_rb_sched,
-           uint16_t *rballoc_mask) {
+           uint16_t *rballoc_mask)
+{
 
   const int CC_id = 0;
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
@@ -1887,12 +1888,16 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   for (int i = 0; i < bwpSize; i++)
     rballoc_mask[i] = (i >= st && i <= e)*SL_to_bitmap(startSymbolIndex, nrOfSymbols);
 
+  int bw = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  int average_agg_level = 4; // TODO find a better estimation
+  int max_sched_ues = bw / (average_agg_level * NR_NB_REG_PER_CCE);
+
   /* proportional fair scheduling algorithm */
   pf_ul(module_id,
         frame,
         slot,
         nr_mac->UE_info.list,
-        2,
+        max_sched_ues,
         len,
         rballoc_mask);
   return true;
