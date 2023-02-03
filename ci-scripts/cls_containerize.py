@@ -65,7 +65,8 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
 	sshSession.command('cd ' + sourcePath, '\$', 5)
 	# Recent version of git (>2.20?) should handle missing .git extension # without problems
-	sshSession.command(f'git clone --filter=blob:none -n -b develop {ranRepository} .', '\$', 60)
+	baseBranch = re.sub('origin/', '', ranTargetBranch)
+	sshSession.command(f'git clone --filter=blob:none -n -b {baseBranch} {ranRepository} .', '\$', 60)
 	if sshSession.getBefore().count('error') > 0 or sshSession.getBefore().count('error') > 0:
 		sys.exit('error during clone')
 	sshSession.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
@@ -550,14 +551,17 @@ class Containerize():
 		oldRanCommidID = self.ranCommitID
 		oldRanRepository = self.ranRepository
 		oldRanAllowMerge = self.ranAllowMerge
+		oldRanTargetBranch = self.ranTargetBranch
 		self.ranCommitID = self.proxyCommit
 		self.ranRepository = 'https://github.com/EpiSci/oai-lte-5g-multi-ue-proxy.git'
 		self.ranAllowMerge = False
+		self.ranTargetBranch = 'master'
 		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 		# to prevent accidentally overwriting data that might be used later
 		self.ranCommitID = oldRanCommidID
 		self.ranRepository = oldRanRepository
 		self.ranAllowMerge = oldRanAllowMerge
+		self.ranTargetBranch = oldRanTargetBranch
 
 		# Let's remove any previous run artifacts if still there
 		mySSH.command(self.cli + ' image prune --force', '\$', 30)
@@ -574,6 +578,7 @@ class Containerize():
 			# Note: at this point, OAI images are flattened, but we cannot do this
 			# here, as the flatten script is not in the proxy repo
 			mySSH.command(self.cli + ' image inspect --format=\'Size = {{.Size}} bytes\' proxy:' + tag, '\$', 5)
+			mySSH.command(self.cli + ' image prune --force || true','\$', 15)
 			if mySSH.getBefore().count('o such image') != 0:
 				logging.error('\u001B[1m Build of L2sim proxy failed\u001B[0m')
 				mySSH.close()
@@ -1098,6 +1103,8 @@ class Containerize():
 					healthy += 1
 				if re.search('rfsim4g-db-init.*Exit 0', state) is not None or re.search('rfsim4g-db-init.*Exited \(0\)', state) is not None:
 					myCmd.run('docker rm -f rfsim4g-db-init', timeout=30, silent=True, reportNonZero=False)
+				if re.search('l2sim4g-db-init.*Exit 0', state) is not None or re.search('l2sim4g-db-init.*Exited \(0\)', state) is not None:
+					myCmd.run('docker rm -f l2sim4g-db-init', timeout=30, silent=True, reportNonZero=False)
 				if re.search('Restarting', state) is None:
 					containerStatus.append(state)
 				else:
