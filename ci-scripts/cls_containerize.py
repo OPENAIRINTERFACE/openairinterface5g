@@ -1185,12 +1185,22 @@ class Containerize():
 		else:
 			return
 		interfaces = []
+		iInterfaces = ''
 		for name in networkNames.stdout.split('\n'):
 			if re.search('rfsim', name) is not None or re.search('l2sim', name) is not None:
 				interfaces.append(name)
+				iInterfaces += f'-i {name} '
 		ymlPath = self.yamlPath[0].split('/')
 		output_file = f'/tmp/capture_{ymlPath[1]}.pcap'
 		self.tsharkStarted = True
+		# On old systems (ubuntu 18), pyshark live-capture is buggy.
+		# Going back to old method
+		if sys.version_info < (3, 7):
+			cmd = f'nohup tshark -f "{capture_filter}" {iInterfaces} -w {output_file} > /tmp/tshark.log 2>&1 &'
+			myCmd = cls_cmd.LocalCmd()
+			myCmd.run(cmd, timeout=5, reportNonZero=False)
+			myCmd.close()
+			return
 		x = threading.Thread(target = self.LaunchPySharkCapture, args = (interfaces,capture_filter,output_file,))
 		x.daemon = True
 		x.start()
