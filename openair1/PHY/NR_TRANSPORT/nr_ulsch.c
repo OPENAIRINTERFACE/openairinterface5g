@@ -40,7 +40,7 @@ int16_t find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid, int frame)
   int16_t first_free_index = -1;
   AssertFatal(gNB != NULL,"gNB is null\n");
 
-  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
+  for (int i = 0; i < gNB->max_nb_pusch; i++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
     AssertFatal(ulsch != NULL, "gNB->ulsch[%d] is null\n", i);
     if(!ulsch->active) {
@@ -64,7 +64,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
  
   int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
   int ulsch_id = find_nr_ulsch(gNB, ulsch_pdu->rnti, harq_pid, frame);
-  AssertFatal((ulsch_id >= 0) && (ulsch_id < NUMBER_OF_NR_ULSCH_MAX),
+  AssertFatal((ulsch_id >= 0) && (ulsch_id < gNB->max_nb_pusch),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
 
   NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id];

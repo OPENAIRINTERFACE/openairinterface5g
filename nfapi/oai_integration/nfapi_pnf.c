@@ -1220,8 +1220,8 @@ int pnf_phy_dl_tti_req(gNB_L1_rxtx_proc_t *proc, nfapi_pnf_p7_config_t *pnf_p7, 
       if (tx_data != NULL) {
         uint8_t *dlsch_sdu = (uint8_t *)tx_data->TLVs[0].value.direct;
         //NFAPI_TRACE(NFAPI_TRACE_INFO, "%s() DLSCH:pdu_index:%d handle_nfapi_dlsch_pdu(eNB, proc_rxtx, dlsch_pdu, transport_blocks:%d sdu:%p) eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols:%d\n", __FUNCTION__, rel8_pdu->pdu_index, rel8_pdu->transport_blocks, dlsch_sdu, eNB->pdcch_vars[proc->subframe_tx & 1].num_pdcch_symbols);
-        AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-          msgTx->num_pdsch_slot, NUMBER_OF_NR_DLSCH_MAX);
+        AssertFatal(msgTx->num_pdsch_slot < gNB->max_nb_pdsch,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+          msgTx->num_pdsch_slot, gNB->max_nb_pdsch);
         handle_nr_nfapi_pdsch_pdu(msgTx, pdsch_pdu, dlsch_sdu);
       } 
       else {

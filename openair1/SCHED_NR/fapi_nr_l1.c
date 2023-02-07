@@ -135,7 +135,6 @@ void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
 {
   
-  PHY_VARS_gNB *gNB;
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
   nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
@@ -148,7 +147,7 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
-  gNB = RC.gNB[Mod_id];
+  PHY_VARS_gNB *gNB = RC.gNB[Mod_id];
   start_meas(&gNB->schedule_response_stats);
 
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -204,8 +203,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-            AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-                        msgTx->num_pdsch_slot, NUMBER_OF_NR_DLSCH_MAX);
+            AssertFatal(msgTx->num_pdsch_slot < gNB->max_nb_pdsch,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+                        msgTx->num_pdsch_slot, gNB->max_nb_pdsch);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }
