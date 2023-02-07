@@ -1158,7 +1158,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
     p += snprintf(p, end - p, "Harq round stats for Downlink: %d", ue->dl_stats[0]);
     for (int round = 1; round < 16 && (round < 3 || ue->dl_stats[round] != 0); ++round)
       p += snprintf(p, end - p,"/%d", ue->dl_stats[round]);
-    LOG_I(NR_PHY,"%s/0\n", output);
+    LOG_I(NR_PHY,"%s\n", output);
 
     LOG_I(NR_PHY,"============================================\n");
   }
