@@ -1161,18 +1161,9 @@ class Containerize():
 	def CaptureOnDockerNetworks(self):
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
-			# Excluding any traffic from LTE-UE container (192.168.61.30)
-			# From the trf-gen, keeping only PING traffic
-			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
-		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
-			# Excluding any traffic from NR-UE containers (192.168.71.150 and 192.168.71.151)
-			# From the ext-dn, keeping only PING traffic
-			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not host 192.168.71.151 and not arp and not port 53 and not port 2152 and not port 2153)"'
-		elif re.search('5g_l2sim', self.yamlPath[0]) is not None:
-			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not arp and not port 53 and not port 2152 and not port 2153)"'
-		else:
-			return
+
+		# Allow only: control plane RAN (SCTP), HTTP of control in CN (port 80), PFCP traffic (port 8805), MySQL (port 3306)
+		cmd = 'sudo nohup tshark -f "sctp or port 80 or port 8805 or icmp or port 3306"'
 		for name in networkNames.split('\n'):
 			if re.search('rfsim', name) is not None or re.search('l2sim', name) is not None:
 				cmd += ' -i ' + name
