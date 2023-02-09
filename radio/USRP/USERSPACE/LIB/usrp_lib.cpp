@@ -320,21 +320,31 @@ static int trx_usrp_start(openair0_device *device) {
   return 0;
 }
 
-static void trx_usrp_send_end_of_burst(usrp_state_t *s) {
+static void trx_usrp_send_end_of_burst(usrp_state_t *s)
+{
   // if last packet sent was end of burst no need to do anything. otherwise send end of burst packet
   if (s->tx_md.end_of_burst)
     return;
-
   s->tx_md.end_of_burst = true;
   s->tx_md.start_of_burst = false;
   s->tx_md.has_time_spec = false;
+  s->tx_stream->send("", 0, s->tx_md);
+}
 
-  int32_t dummy = 0;
-  std::vector<const void *> buffs;
-  for (size_t ch = 0; ch < s->tx_stream->get_num_channels(); ch++)
-    buffs.push_back(&dummy); // same buffer for each channel
+static void trx_usrp_finish_rx(usrp_state_t *s)
+{
+  /* finish rx by sending STREAM_MODE_STOP_CONTINUOUS */
+  uhd::stream_cmd_t cmd(uhd::stream_cmd_t::STREAM_MODE_STOP_CONTINUOUS);
+  s->rx_stream->issue_stream_cmd(cmd);
 
-  s->tx_stream->send(buffs, 0, s->tx_md);
+  /* collect all remaining samples (not sure if needed) */
+  size_t samples;
+  uint8_t buf[1024];
+  std::vector<void *> buff_ptrs;
+  for (size_t i = 0; i < s->usrp->get_rx_num_channels(); i++) buff_ptrs.push_back(buf);
+  do {
+    samples = s->rx_stream->recv(buff_ptrs, sizeof(buf)/4, s->rx_md);
+  } while (samples > 0);
 }
 
 static void trx_usrp_write_reset(openair0_thread_t *wt);
@@ -355,10 +365,13 @@ static void trx_usrp_end(openair0_device *device) {
   if (usrp_tx_thread != 0)
     trx_usrp_write_reset(&device->write_thread);
 
+  /* finish tx and rx */
   trx_usrp_send_end_of_burst(s);
-  s->tx_stream->~tx_streamer();
-  s->rx_stream->~rx_streamer();
-  s->usrp->~multi_usrp();
+  trx_usrp_finish_rx(s);
+  /* set tx_stream, rx_stream, and usrp to NULL to clear/free them */
+  s->tx_stream = NULL;
+  s->rx_stream = NULL;
+  s->usrp = NULL;
   free(s);
   device->priv = NULL;
   device->trx_start_func = NULL;
@@ -1400,8 +1413,14 @@ extern "C" {
 
   // create tx & rx streamer
   uhd::stream_args_t stream_args_rx("sc16", "sc16");
+  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
+    LOG_I(HW,"setting rx channel %d\n",i+choffset);
+    stream_args_rx.channels.push_back(i+choffset);
+  }
+  s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
+
   int samples=openair0_cfg[0].sample_rate;
-  int max=s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps();
+  int max=s->rx_stream->get_max_num_samps();
   samples/=10000;
   LOG_I(HW,"RF board max packet size %u, size for 100µs jitter %d \n", max, samples);
 
@@ -1410,14 +1429,8 @@ extern "C" {
   }
 
   LOG_I(HW,"rx_max_num_samps %zu\n",
-        s->usrp->get_rx_stream(stream_args_rx)->get_max_num_samps());
+        s->rx_stream->get_max_num_samps());
 
-  for (int i = 0; i<openair0_cfg[0].rx_num_channels; i++) {
-    LOG_I(HW,"setting rx channel %d\n",i+choffset);
-    stream_args_rx.channels.push_back(i+choffset);
-  }
-
-  s->rx_stream = s->usrp->get_rx_stream(stream_args_rx);
   uhd::stream_args_t stream_args_tx("sc16", "sc16");
 
   for (int i = 0; i<openair0_cfg[0].tx_num_channels; i++)
