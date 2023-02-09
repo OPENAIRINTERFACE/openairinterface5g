@@ -40,7 +40,7 @@ int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type) {
   int16_t first_free_index=-1;
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
-  for (i=0; i<gNB->number_of_nr_ulsch_max; i++) {
+  for (i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
     AssertFatal(gNB->ulsch[i]!=NULL,"gNB->ulsch[%d] is null\n",i);
     LOG_D(PHY,"searching for rnti %x : ulsch_index %d=> harq_mask %x, rnti %x, first_free_index %d\n", rnti,i,gNB->ulsch[i]->harq_mask,gNB->ulsch[i]->rnti,first_free_index);
     if ((gNB->ulsch[i]->harq_mask >0) &&
@@ -60,7 +60,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 
  
   int ulsch_id = find_nr_ulsch(ulsch_pdu->rnti,gNB,SEARCH_EXIST_OR_FREE);
-  AssertFatal( (ulsch_id>=0) && (ulsch_id<gNB->number_of_nr_ulsch_max),
+  AssertFatal((ulsch_id >= 0) && (ulsch_id < NUMBER_OF_NR_ULSCH_MAX),
               "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
 
   NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id];
@@ -121,7 +121,7 @@ void nr_ulsch_layer_demapping(int16_t *llr_cw,
 
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++) {
+  for (int i = 0;i < NUMBER_OF_NR_SCH_STATS_MAX;i++) {
 
     if (gNB->ulsch_stats[i].rnti>0 && gNB->ulsch_stats[i].frame != gNB->ulsch_stats[i].dump_frame) {
       gNB->ulsch_stats[i].dump_frame = gNB->ulsch_stats[i].frame; 
@@ -155,14 +155,14 @@ void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
 void clear_pusch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<gNB->number_of_nr_ulsch_max;i++)
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++)
     memset((void*)&gNB->ulsch_stats[i],0,sizeof(gNB->ulsch_stats[i]));
 }
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch) {
    NR_gNB_SCH_STATS_t *stats=NULL;
    int first_free=-1;
-   for (int i=0;i<gNB->number_of_nr_ulsch_max;i++) {
+   for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
        if (gNB->ulsch_stats[i].rnti == 0 && first_free == -1) {
           first_free = i;
           stats=&gNB->ulsch_stats[i];

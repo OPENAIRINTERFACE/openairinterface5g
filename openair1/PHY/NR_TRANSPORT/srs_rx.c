@@ -64,7 +64,7 @@ int nr_find_srs(rnti_t rnti,
   AssertFatal(gNB!=NULL,"gNB is null\n");
   int index = -1;
 
-  for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
+  for (int i = 0; i < gNB->max_nb_srs; i++) {
     AssertFatal(gNB->srs[i]!=NULL,"gNB->srs[%d] is null\n",i);
     if ((gNB->srs[i]->active>0) &&
         (gNB->srs[i]->srs_pdu.rnti==rnti) &&
@@ -85,8 +85,8 @@ void nr_fill_srs(PHY_VARS_gNB *gNB,
                  nfapi_nr_srs_pdu_t *srs_pdu) {
 
   int id = nr_find_srs(srs_pdu->rnti,frame,slot,gNB);
-  AssertFatal( (id>=0) && (id<NUMBER_OF_NR_SRS_MAX),
-               "invalid id found for srs !!! rnti %04x id %d\n",srs_pdu->rnti,id);
+  AssertFatal((id >= 0) && (id < gNB->max_nb_srs),
+              "invalid id found for srs !!! rnti %04x id %d\n",srs_pdu->rnti,id);
 
   NR_gNB_SRS_t  *srs = gNB->srs[id];
   srs->frame = frame;
