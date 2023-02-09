@@ -45,6 +45,7 @@ So, RES can be either milenage res, or received response, so hash of milenage re
 
 typedef struct {
   char *imsiStr;
+  char *imeisvStr;
   char *keyStr;
   char *opcStr;
   char *amfStr;
@@ -73,4 +74,5 @@ uicc_t *checkUicc(int Mod_id);
 uicc_t *init_uicc(char *sectionName);
 void uicc_milenage_generate(uint8_t * autn, uicc_t *uicc);
 uicc_t * checkUicc(int Mod_id);
+uint8_t getImeisvDigit(int Mod_id,uint8_t i);
 #endif
