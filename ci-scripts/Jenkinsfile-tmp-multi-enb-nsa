@@ -376,19 +376,6 @@ pipeline {
             }
           }
         }
-        stage ("Result Update"){
-          when {
-            expression { params.DataBaseHost != "none" }
-          }
-          agent {label DataBaseHost}
-          steps {
-            script {
-              dir ('ci-scripts/ran_dashboard') {
-                sh "python3 Hdashboard.py testevent ${params.eNB_MR} "
-              }
-            }
-          }
-        }
       }
     }
   }
