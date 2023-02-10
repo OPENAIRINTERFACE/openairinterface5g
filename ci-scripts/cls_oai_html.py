@@ -106,7 +106,7 @@ class HTMLManagement():
 			self.htmlFile.write('  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>\n')
 			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
 			self.htmlFile.write('</head>\n')
-			self.htmlFile.write('<body><div class="container">\n')
+			self.htmlFile.write('<body><div class="container-fluid" style="margin-left:1em; margin-right:1em">\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
@@ -173,15 +173,6 @@ class HTMLManagement():
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
-			if (ADBIPAddress != 'none') and (ADBIPAddress != 'modules'):
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_Smartphones) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_CATM_Modules) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
-			elif (ADBIPAddress == 'modules'):
-				self.htmlUEConnected = 1
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 commercial module is connected to CI bench</h2>\n')
-			else:
-				self.htmlUEConnected = 1
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 OAI UE(s) is(are) connected to CI bench</h2>\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
@@ -215,11 +206,11 @@ class HTMLManagement():
 				self.htmlFile.write('  <div id="build-tab" class="tab-pane fade">\n')
 			self.htmlFile.write('  <table class="table" border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
-			self.htmlFile.write('        <th>Relative Time (s)</th>\n')
-			self.htmlFile.write('        <th>Test Id</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Relative Time (s)</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Test Id</th>\n')
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
-			self.htmlFile.write('        <th>Test Status</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Test Status</th>\n')
 
 			self.htmlFile.write('        <th>Info</th>\n')
 			self.htmlFile.write('      </tr>\n')
@@ -273,39 +264,6 @@ class HTMLManagement():
 			self.htmlFile.write('</div>\n')
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
-
-			machines = [ 'eNB', 'UE' ]
-			for machine in machines:
-				if machine == 'eNB':
-					idx = 0
-				else:
-					idx = 1
-				if self.OsVersion[idx] == '':
-					continue
-
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>OS Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>Kernel Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>UHD Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>USRP Board</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard[idx] + '</span></td>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>Nb CPUs</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Model Name</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Frequency</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('      </tr>\n')
 
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <th colspan="5" bgcolor = "#33CCFF">Final Status</th>\n')

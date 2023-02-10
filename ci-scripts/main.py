@@ -725,8 +725,6 @@ elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 
-	CiTestObj.RetrieveSystemVersion('eNB',HTML,RAN)
-	CiTestObj.RetrieveSystemVersion('UE',HTML,RAN)
 	HTML.CreateHtmlFooter(CiTestObj.finalStatus)
 elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
