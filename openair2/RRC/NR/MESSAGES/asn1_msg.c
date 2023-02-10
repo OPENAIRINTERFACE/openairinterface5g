@@ -241,12 +241,10 @@ uint8_t do_MIB_NR(gNB_RRC_INST *rrc,uint32_t frame) {
   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
   * the reverse allocation is in nr_ue_decode_mib()
   */
-  long cset0 = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero ?
-               *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero : 0;
-  long ss0 = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero ?
-             *scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero : 0;
-
+  const NR_PDCCH_ConfigCommon_t *pdcch_cc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  long cset0 = pdcch_cc->controlResourceSetZero ? *pdcch_cc->controlResourceSetZero : 0;
   mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = cset0;
+  long ss0 = pdcch_cc->searchSpaceZero ? *pdcch_cc->searchSpaceZero : 0;
   mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = ss0;
 
   switch (*scc->ssbSubcarrierSpacing) {

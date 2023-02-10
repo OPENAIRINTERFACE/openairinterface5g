@@ -348,13 +348,14 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
   }
 
   // fix SS0 and Coreset0
-  if((int)*scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero == -1) {
-    free(scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero);
-    scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero = NULL;
+  NR_PDCCH_ConfigCommon_t *pdcch_cc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  if((int)*pdcch_cc->searchSpaceZero == -1) {
+    free(pdcch_cc->searchSpaceZero);
+    pdcch_cc->searchSpaceZero = NULL;
   }
-  if((int)*scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero == -1) {
-    free(scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero);
-    scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero = NULL;
+  if((int)*pdcch_cc->controlResourceSetZero == -1) {
+    free(pdcch_cc->controlResourceSetZero);
+    pdcch_cc->controlResourceSetZero = NULL;
   }
 
   // fix UL absolute frequency
