@@ -794,11 +794,11 @@ void nr_dlsch_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
   llr2 = dlsch_llr;
 
 #if defined(__x86_64__) || defined(__i386__)
-  ch_mag = (__m128i*)&dl_ch_mag[(symbol*nb_rb*12)];
-  ch_magb = (__m128i*)&dl_ch_magb[(symbol*nb_rb*12)];
+  ch_mag = (__m128i *)dl_ch_mag;
+  ch_magb = (__m128i *)dl_ch_magb;
 #elif defined(__arm__) || defined(__aarch64__)
-  ch_mag = (int16x8_t*)&dl_ch_mag[(symbol*nb_rb*12)];
-  ch_magb = (int16x8_t*)&dl_ch_magb[(symbol*nb_rb*12)];
+  ch_mag = (int16x8_t *)dl_ch_mag;
+  ch_magb = (int16x8_t *)dl_ch_magb;
 #endif
 
 //  printf("nr_dlsch_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
@@ -931,9 +931,9 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
 
   llr2 = dlsch_llr;
 
-  ch_mag = (__m128i*)&dl_ch_mag[(symbol*nb_rb*12)];
-  ch_magb = (__m128i*)&dl_ch_magb[(symbol*nb_rb*12)];
-  ch_magr = (__m128i*)&dl_ch_magr[(symbol*nb_rb*12)];
+  ch_mag = (__m128i *)dl_ch_mag;
+  ch_magb = (__m128i *)dl_ch_magb;
+  ch_magr = (__m128i *)dl_ch_magr;
 
   len_mod4 =len&3;
   len2=len>>2;  // length in quad words (4 REs)
@@ -1017,46 +1017,6 @@ __m128i  G __attribute__ ((aligned(16)));
 __m128i  H __attribute__ ((aligned(16)));
 
 #endif
-
-int nr_dlsch_qpsk_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                        int **rxdataF_comp,
-                        int **rxdataF_comp_i,
-                        int **rho_i,
-                        short *dlsch_llr,
-                        unsigned char symbol,
-						uint32_t len,
-                        unsigned char first_symbol_flag,
-                        unsigned short nb_rb,
-                        uint16_t pbch_pss_sss_adjust,
-                        short **llr16p)
-{
-
-  int16_t *rxF=(int16_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
-  int16_t *rxF_i=(int16_t*)&rxdataF_comp_i[0][(symbol*nb_rb*12)];
-  int16_t *rho=(int16_t*)&rho_i[0][(symbol*nb_rb*12)];
-  int16_t *llr16;
-
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-
-  // printf("nr_dlsch_qpsk_qpsk_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-  //    printf("qpsk_qpsk: len %d, llr16 %p\n",len,llr16);
-  nr_qpsk_qpsk((short *)rxF,
-            (short *)rxF_i,
-            (short *)llr16,
-            (short *)rho,
-            len);
-
-  llr16 += (len<<1);
-  *llr16p = (short *)llr16;
-
-  return(0);
-}
 
 //__m128i ONE_OVER_SQRT_8 __attribute__((aligned(16)));
 
@@ -1249,62 +1209,6 @@ void nr_qpsk_qpsk(short *stream0_in,
   _mm_empty();
   _m_empty();
 #endif
-}
-
-int nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int32_t **rxdataF_comp_i,
-                         int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                         int32_t **rho_i,
-                         int16_t *dlsch_llr,
-                         uint8_t symbol,
-                         uint8_t first_symbol_flag,
-                         uint16_t nb_rb,
-                         uint16_t pbch_pss_sss_adjust,
-                         int16_t **llr16p)
-{
-
-  int16_t *rxF=(int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rxF_i=(int16_t*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rho=(int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *llr16;
-  int len;
-  uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_qpsk_qpsk_llr: llr is null, symbol %d\n",symbol);
-
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_gNB!=1)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  } else {
-    // symbol has no pilots
-    len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
-
-  nr_qpsk_qam16((short *)rxF,
-             (short *)rxF_i,
-             (short *)ch_mag_i,
-             (short *)llr16,
-             (short *)rho,
-             len);
-
-  llr16 += (len<<1);
-  *llr16p = (short *)llr16;
-
-  return(0);
 }
 
 /*
@@ -1533,61 +1437,6 @@ void nr_qpsk_qam16(int16_t *stream0_in,
 #endif
 }
 
-int nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int32_t **rxdataF_comp_i,
-                         int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                         int32_t **rho_i,
-                         int16_t *dlsch_llr,
-                         uint8_t symbol,
-                         uint8_t first_symbol_flag,
-                         uint16_t nb_rb,
-                         uint16_t pbch_pss_sss_adjust,
-                         int16_t **llr16p)
-{
-
-  int16_t *rxF=(int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rxF_i=(int16_t*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rho=(int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *llr16;
-  int len;
-  uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-
-
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_qpsk_qam64_llr: llr is null, symbol %d\n",symbol);
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_gNB!=1)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  } else {
-    // symbol has no pilots
-    len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
-
-  nr_qpsk_qam64((short *)rxF,
-             (short *)rxF_i,
-             (short *)ch_mag_i,
-             (short *)llr16,
-             (short *)rho,
-             len);
-
-  llr16 += (len<<1);
-  *llr16p = (short *)llr16;
-
-  return(0);
-}
 /*
 __m128i ONE_OVER_SQRT_2_42 __attribute__((aligned(16)));
 __m128i THREE_OVER_SQRT_2_42 __attribute__((aligned(16)));
@@ -2299,64 +2148,6 @@ void nr_qam16_qpsk(short *stream0_in,
 
 }
 
-int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                         int32_t **rxdataF_comp,
-                         int32_t **rxdataF_comp_i,
-                         int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                         int32_t **rho_i,
-                         int16_t *dlsch_llr,
-                         uint8_t symbol,
-                         uint8_t first_symbol_flag,
-                         uint16_t nb_rb,
-                         uint16_t pbch_pss_sss_adjust,
-                         int16_t **llr16p)
-{
-
-  int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rxF_i    = (int16_t*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag   = (int16_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rho      = (int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *llr16;
-  int len;
-  uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-
-  // first symbol has different structure due to more pilots
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_16qam_qpsk_llr: llr is null, symbol %d\n",symbol);
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_gNB!=1)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  } else {
-    // symbol has no pilots
-    len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
-
-  // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
-
-  nr_qam16_qpsk((short *)rxF,
-             (short *)rxF_i,
-             (short *)ch_mag,
-             (short *)llr16,
-             (short *)rho,
-             len);
-
-  llr16 += (len<<2);
-  *llr16p = (short *)llr16;
-
-  return(0);
-}
-
 void nr_qam16_qam16(short *stream0_in,
                  short *stream1_in,
                  short *ch_mag,
@@ -2849,54 +2640,6 @@ void nr_qam16_qam16(short *stream0_in,
   _mm_empty();
   _m_empty();
 #endif
-}
-
-int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                          int32_t **rxdataF_comp,
-                          int32_t **rxdataF_comp_i,
-                          int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int32_t **rho_i,
-                          int16_t *dlsch_llr,
-                          uint8_t symbol,
-						  uint32_t len,
-                          uint8_t first_symbol_flag,
-                          uint16_t nb_rb,
-                          uint16_t pbch_pss_sss_adjust,
-                          int16_t **llr16p)
-{
-
-  int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*nb_rb*12)];
-  int16_t *rxF_i    = (int16_t*)&rxdataF_comp_i[0][(symbol*nb_rb*12)];
-  int16_t *ch_mag   = (int16_t*)&dl_ch_mag[0][(symbol*nb_rb*12)];
-  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*nb_rb*12)];
-  int16_t *rho      = (int16_t*)&rho_i[0][(symbol*nb_rb*12)];
-  int16_t *llr16;
-
-  // first symbol has different structure due to more pilots
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_16qam_16qam_llr: llr is null, symbol %d\n",symbol);
-
-  // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
-
-  nr_qam16_qam16((short *)rxF,
-              (short *)rxF_i,
-              (short *)ch_mag,
-              (short *)ch_mag_i,
-              (short *)llr16,
-              (short *)rho,
-              len);
-
-  llr16 += (len<<2);
-  *llr16p = (short *)llr16;
-
-  return(0);
 }
 
 void nr_qam16_qam64(int16_t *stream0_in,
@@ -3468,69 +3211,6 @@ void nr_qam16_qam64(int16_t *stream0_in,
   _mm_empty();
   _m_empty();
 #endif
-}
-
-int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                          int32_t **rxdataF_comp,
-                          int32_t **rxdataF_comp_i,
-                          int32_t **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int32_t **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int32_t **rho_i,
-                          int16_t *dlsch_llr,
-                          uint8_t symbol,
-                          uint8_t first_symbol_flag,
-                          uint16_t nb_rb,
-                          uint16_t pbch_pss_sss_adjust,
-                          int16_t **llr16p)
-{
-
-  int16_t *rxF      = (int16_t*)&rxdataF_comp[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rxF_i    = (int16_t*)&rxdataF_comp_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag   = (int16_t*)&dl_ch_mag[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *rho      = (int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
-  int16_t *llr16;
-  int len;
-  uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
-
-  // first symbol has different structure due to more pilots
-  if (first_symbol_flag == 1) {
-    llr16 = (int16_t*)dlsch_llr;
-  } else {
-    llr16 = (int16_t*)(*llr16p);
-  }
-
-
-  AssertFatal(llr16!=NULL,"nr_dlsch_16qam_64qam_llr:llr is null, symbol %d\n",symbol);
-
-
-  if ((symbol_mod==0) || (symbol_mod==(4-frame_parms->Ncp))) {
-    // if symbol has pilots
-    if (frame_parms->nb_antenna_ports_gNB!=1)
-      // in 2 antenna ports we have 8 REs per symbol per RB
-      len = (nb_rb*8) - (2*pbch_pss_sss_adjust/3);
-    else
-      // for 1 antenna port we have 10 REs per symbol per RB
-      len = (nb_rb*10) - (5*pbch_pss_sss_adjust/6);
-  } else {
-    // symbol has no pilots
-    len = (nb_rb*12) - pbch_pss_sss_adjust;
-  }
-
-  // printf("symbol %d: qam16_llr, len %d (llr16 %p)\n",symbol,len,llr16);
-
-  nr_qam16_qam64((short *)rxF,
-              (short *)rxF_i,
-              (short *)ch_mag,
-              (short *)ch_mag_i,
-              (short *)llr16,
-              (short *)rho,
-              len);
-
-  llr16 += (len<<2);
-  *llr16p = (short *)llr16;
-
-  return(0);
 }
 
 //----------------------------------------------------------------------------------------------

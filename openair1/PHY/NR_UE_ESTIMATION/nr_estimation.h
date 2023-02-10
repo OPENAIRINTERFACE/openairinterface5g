@@ -91,7 +91,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short nb_rb_pdsch,
                                 uint32_t pdsch_est_size,
                                 int32_t dl_ch_estimates[][pdsch_est_size],
-                                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+                                int rxdataFsize,
+                                c16_t rxdataF[][rxdataFsize]);
 
 void nr_adjust_synch_ue(NR_DL_FRAME_PARMS *frame_parms,
                         PHY_VARS_NR_UE *ue,
@@ -123,10 +124,11 @@ void phy_adjust_gain_nr(PHY_VARS_NR_UE *ue,
                         uint8_t gNB_id);
 
 void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
+                              int nbRx,
                               c16_t ptrs_phase_per_slot[][14],
                               int32_t ptrs_re_per_slot[][14],
-                              uint32_t rx_size,
-                              int32_t rxdataF_comp[][rx_size],
+                              uint32_t rx_size_symbol,
+                              int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                               NR_DL_FRAME_PARMS *frame_parms,
                               NR_DL_UE_HARQ_t *dlsch0_harq,
                               NR_DL_UE_HARQ_t *dlsch1_harq,

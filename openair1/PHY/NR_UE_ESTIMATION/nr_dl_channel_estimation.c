@@ -1584,7 +1584,6 @@ void NFAPI_NR_DMRS_TYPE2_average_prb(NR_DL_FRAME_PARMS *frame_parms,
   c16multaddVectRealComplex(filt8_avlip6, &ch, dl_ch, 8);
 #endif
 }
-
 int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 UE_nr_rxtx_proc_t *proc,
                                 bool is_SI,
@@ -1598,7 +1597,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
                                 unsigned short nb_rb_pdsch,
                                 uint32_t pdsch_est_size,
                                 int32_t dl_ch_estimates[][pdsch_est_size],
-                                c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                                int rxdataFsize,
+                                c16_t rxdataF[][rxdataFsize])
 {
   int gNB_id = proc->gNB_id;
   int Ns = proc->nr_slot_rx;
@@ -1732,10 +1732,11 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
  *  3) Compensate signal with PTRS estimation for slot
  *********************************************************************/
 void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
+                              int nbRx,
                               c16_t ptrs_phase_per_slot[][14],
                               int32_t ptrs_re_per_slot[][14],
-                              uint32_t rx_size,
-                              int32_t rxdataF_comp[][rx_size],
+                              uint32_t rx_size_symbol,
+                              int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                               NR_DL_FRAME_PARMS *frame_parms,
                               NR_DL_UE_HARQ_t *dlsch0_harq,
                               NR_DL_UE_HARQ_t *dlsch1_harq,
@@ -1826,8 +1827,9 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
         nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
                                rnti,
                                nr_slot_rx,
-                               symbol,frame_parms->ofdm_symbol_size,
-                               (int16_t*)&rxdataF_comp[aarx][(symbol * nb_re_pdsch)],
+                               symbol,
+                               frame_parms->ofdm_symbol_size,
+                               (int16_t *)(rxdataF_comp[0][aarx] + symbol * nb_re_pdsch),
                                ue->nr_gold_pdsch[gNB_id][nr_slot_rx][symbol][0],
                                (int16_t*)&phase_per_symbol[symbol],
                                &ptrs_re_symbol[symbol]);
@@ -1848,9 +1850,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
       }
 #ifdef DEBUG_DL_PTRS
       LOG_M("ptrsEst.m","est",ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
-      LOG_M("rxdataF_bf_ptrs_comp.m","bf_ptrs_cmp",
-            &rxdataF_comp[aarx][(*startSymbIndex) * NR_NB_SC_PER_RB * (*nb_rb) ],
-            (*nb_rb) * NR_NB_SC_PER_RB * (*nbSymb),1,1);
+      LOG_M("rxdataF_bf_ptrs_comp.m", "bf_ptrs_cmp", rxdataF_comp[0][aarx] + (*startSymbIndex) * NR_NB_SC_PER_RB * (*nb_rb), (*nb_rb) * NR_NB_SC_PER_RB * (*nbSymb), 1, 1);
 #endif
       /*------------------------------------------------------------------------------------------------------- */
       /* 3) Compensated DMRS based estimated signal with PTRS estimation                                        */

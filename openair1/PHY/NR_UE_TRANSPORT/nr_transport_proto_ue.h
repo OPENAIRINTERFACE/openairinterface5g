@@ -101,30 +101,6 @@ void nr_qpsk_qam16(int16_t *stream0_in,
                 int16_t *rho01,
                 int32_t length);
 
-/** \brief This function perform LLR computation for dual-stream (QPSK/16QAM) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr*/
-int32_t nr_dlsch_qpsk_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                             int32_t **rxdataF_comp,
-                             int32_t **rxdataF_comp_i,
-                             int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                             int32_t **rho_i,
-                             int16_t *dlsch_llr,
-                             uint8_t symbol,
-                             uint8_t first_symbol_flag,
-                             uint16_t nb_rb,
-                             uint16_t pbch_pss_sss_adj,
-                             int16_t **llr128p);
-
-
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream QPSK/64QAM reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
@@ -139,30 +115,6 @@ void nr_qpsk_qam64(int16_t *stream0_in,
                 int16_t *rho01,
                 int32_t length);
 
-/** \brief This function perform LLR computation for dual-stream (QPSK/64QAM) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr128p pointer to pointer to symbol in dlsch_llr*/
-int32_t nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                             int32_t **rxdataF_comp,
-                             int32_t **rxdataF_comp_i,
-                             int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                             int32_t **rho_i,
-                             int16_t *dlsch_llr,
-                             uint8_t symbol,
-                             uint8_t first_symbol_flag,
-                             uint16_t nb_rb,
-                             uint16_t pbch_pss_sss_adj,
-                             int16_t **llr128p);
-
-
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/QPSK reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
     @param stream1_in Input from channel compensated (MR combined) stream 1
@@ -170,35 +122,7 @@ int32_t nr_dlsch_qpsk_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
     @param stream0_out Output from LLR unit for stream0
     @param rho01 Cross-correlation between channels (MR combined)
     @param length in complex channel outputs*/
-void nr_qam16_qpsk(short *stream0_in,
-                short *stream1_in,
-                short *ch_mag,
-                short *stream0_out,
-                short *rho01,
-                int length);
-/** \brief This function perform LLR computation for dual-stream (16QAM/QPSK) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int nr_dlsch_16qam_qpsk_llr(NR_DL_FRAME_PARMS *frame_parms,
-                         int **rxdataF_comp,
-                         int **rxdataF_comp_i,
-                         int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                         int **rho_i,
-                         short *dlsch_llr,
-                         unsigned char symbol,
-                         unsigned char first_symbol_flag,
-                         unsigned short nb_rb,
-                         uint16_t pbch_pss_sss_adjust,
-                         short **llr16p);
+void nr_qam16_qpsk(short *stream0_in, short *stream1_in, short *ch_mag, short *stream0_out, short *rho01, int length);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/16QAM reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -215,75 +139,6 @@ void nr_qam16_qam16(short *stream0_in,
                  short *stream0_out,
                  short *rho01,
                  int length);
-
-/** \brief This function perform LLR computation for dual-stream (16QAM/16QAM) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int nr_dlsch_16qam_16qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-						  uint32_t len,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
-                          uint16_t pbch_pss_sss_adjust,
-                          short **llr16p);
-
-/** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 16QAM/64QAM reception.
-    @param stream0_in Input from channel compensated (MR combined) stream 0
-    @param stream1_in Input from channel compensated (MR combined) stream 1
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
-    @param stream0_out Output from LLR unit for stream0
-    @param rho01 Cross-correlation between channels (MR combined)
-    @param length in complex channel outputs*/
-void nr_qam16_qam64(short *stream0_in,
-                 short *stream1_in,
-                 short *ch_mag,
-                 short *ch_mag_i,
-                 short *stream0_out,
-                 short *rho01,
-                 int length);
-
-/** \brief This function perform LLR computation for dual-stream (16QAM/64QAM) transmission.
-    @param frame_parms Frame descriptor structure
-    @param rxdataF_comp Compensated channel output
-    @param rxdataF_comp_i Compensated channel output for interference
-    @param ch_mag   Input from scaled channel magnitude square of h0'*g0
-    @param ch_mag_i Input from scaled channel magnitude square of h0'*g1
-    @param rho_i Correlation between channel of signal and inteference
-    @param dlsch_llr llr output
-    @param symbol OFDM symbol index in sub-frame
-    @param first_symbol_flag flag to indicate this is the first symbol of the dlsch
-    @param nb_rb number of RBs for this allocation
-    @param pbch_pss_sss_adj Number of channel bits taken by PBCH/PSS/SSS
-    @param llr16p pointer to pointer to symbol in dlsch_llr*/
-int nr_dlsch_16qam_64qam_llr(NR_DL_FRAME_PARMS *frame_parms,
-                          int **rxdataF_comp,
-                          int **rxdataF_comp_i,
-                          int **dl_ch_mag,   //|h_0|^2*(2/sqrt{10})
-                          int **dl_ch_mag_i, //|h_1|^2*(2/sqrt{10})
-                          int **rho_i,
-                          short *dlsch_llr,
-                          unsigned char symbol,
-                          unsigned char first_symbol_flag,
-                          unsigned short nb_rb,
-                          uint16_t pbch_pss_sss_adjust,
-                          short **llr16p);
 
 /** \brief This function computes the LLRs for ML (max-logsum approximation) dual-stream 64QAM/64QAM reception.
     @param stream0_in Input from channel compensated (MR combined) stream 0
@@ -518,121 +373,12 @@ void nr_dlsch_256qam_llr(NR_DL_FRAME_PARMS *frame_parms,
                      uint8_t first_symbol_flag,
                      uint16_t nb_rb);
 
-
-/** \fn dlsch_extract_rbs(int32_t **rxdataF,
-    int32_t **dl_ch_estimates,
-    int32_t **rxdataF_ext,
-    int32_t **dl_ch_estimates_ext,
-    unsigned char symbol
-    uint8_t pilots,
-    uint8_t config_type,
-    unsigned short start_rb,
-    unsigned short nb_rb_pdsch,
-    uint8_t n_dmrs_cdm_groups,
-    uint8_t Nl,
-    NR_DL_FRAME_PARMS *frame_parms,
-    uint16_t dlDmrsSymbPos)
-    \brief This function extracts the received resource blocks, both channel estimates and data symbols,
-    for the current allocation and for multiple layer antenna gNB transmission.
-    @param rxdataF Raw FFT output of received signal
-    @param dl_ch_estimates Channel estimates of current slot
-    @param rxdataF_ext FFT output for RBs in this allocation
-    @param dl_ch_estimates_ext Channel estimates for RBs in this allocation
-    @param Nl nb of antenna layers
-    @param symbol Symbol to extract
-    @param n_dmrs_cdm_groups
-    @param frame_parms Pointer to frame descriptor
-*/
-void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
-                          c16_t rxdataF[][rxdataF_sz],
-                          const uint32_t rx_size,
-                          const uint32_t pdsch_est_size,
-                          int32_t dl_ch_estimates[][pdsch_est_size],
-                          int32_t rxdataF_ext[][rx_size],
-                          int32_t dl_ch_estimates_ext[][rx_size],
-                          unsigned char symbol,
-                          uint8_t pilots,
-                          uint8_t config_type,
-                          unsigned short start_rb,
-                          unsigned short nb_rb_pdsch,
-                          uint8_t n_dmrs_cdm_groups,
-                          uint8_t Nl,
-                          NR_DL_FRAME_PARMS *frame_parms,
-                          uint16_t dlDmrsSymbPos,
-                          int chest_time_type);
-
-/** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
-    @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
-    @param dl_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
-    @param dl_ch_mag First Channel magnitudes (16QAM/64QAM)
-    @param dl_ch_magb Second weighted Channel magnitudes (64QAM)
-    @param rxdataF_comp Compensated received waveform
-    @param rho Cross-correlation between two spatial channels on each RX antenna
-    @param frame_parms Pointer to frame descriptor
-    @param symbol Symbol on which to operate
-    @param first_symbol_flag set to 1 on first DLSCH symbol
-    @param mod_order Modulation order of allocation
-    @param nb_rb Number of RBs in allocation
-    @param output_shift Rescaling for compensated output (should be energy-normalizing)
-    @param phy_measurements Pointer to UE PHY measurements
-*/
-void nr_dlsch_channel_compensation(uint32_t rx_size,
-                                   int32_t rxdataF_ext[][rx_size],
-                                   int32_t dl_ch_estimates_ext[][rx_size],
-                                   int32_t dl_ch_mag[][rx_size],
-                                   int32_t dl_ch_magb[][rx_size],
-                                   int32_t dl_ch_magr[][rx_size],
-                                   int32_t rxdataF_comp[][rx_size],
-                                   int ***rho,
-                                   NR_DL_FRAME_PARMS *frame_parms,
-                                   uint8_t nb_aatx,
-                                   unsigned char symbol,
-                                   int length,
-                                   uint8_t first_symbol_flag,
-                                   unsigned char mod_order,
-                                   unsigned short nb_rb,
-                                   unsigned char output_shift,
-                                   PHY_NR_MEASUREMENTS *measurements);
-
-void nr_dlsch_channel_compensation_core(int **rxdataF_ext,
-                                     int **dl_ch_estimates_ext,
-                                     int **dl_ch_mag,
-                                     int **dl_ch_magb,
-                                     int **rxdataF_comp,
-                                     int ***rho,
-                                     unsigned char n_tx,
-                                     unsigned char n_rx,
-                                     unsigned char mod_order,
-                                     unsigned char output_shift,
-                                     int length,
-                                     int start_point);
-
 void nr_dlsch_deinterleaving(uint8_t symbol,
                              uint8_t start_symbol,
                              uint16_t L,
                              uint16_t *llr,
                              uint16_t *llr_deint,
                              uint16_t nb_rb_pdsch);
-
-void nr_dlsch_channel_level_median(uint32_t rx_size,
-                                   int32_t dl_ch_estimates[][rx_size],
-                                   int32_t *median,
-                                   int n_tx,
-                                   int n_rx,
-                                   int length,
-                                   int start_point);
-
-void nr_dlsch_detection_mrc(uint32_t rx_size,
-                            int32_t rxdataF_comp[][rx_size],
-                            int ***rho,
-                            int32_t dl_ch_mag[][rx_size],
-                            int32_t dl_ch_magb[][rx_size],
-                            int32_t dl_ch_magr[][rx_size],
-                            short n_tx,
-                            short n_rx,
-                            unsigned char symbol,
-                            unsigned short nb_rb,
-                            int length);
 
 void nr_conjch0_mult_ch1(int *ch0,
                          int *ch1,
@@ -643,33 +389,6 @@ void nr_conjch0_mult_ch1(int *ch0,
 void nr_a_sum_b(__m128i *input_x,
                 __m128i *input_y,
                 unsigned short nb_rb);
-
-
-/** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
-    @param dl_ch_estimates_ext Channel estimates in allocated RBs
-    @param frame_parms Pointer to frame descriptor
-    @param avg Pointer to average signal strength
-    @param pilots_flag Flag to indicate pilots in symbol
-    @param nb_rb Number of allocated RBs
-*/
-void nr_dlsch_channel_level(uint32_t rx_size,
-                            int32_t dl_ch_estimates[][rx_size],
-			                      NR_DL_FRAME_PARMS *frame_parms,
-			                      uint8_t n_tx,
-			                      int32_t *avg,
-			                      uint8_t symbol,
-			                      uint32_t len,
-			                      unsigned short nb_rb);
-
-void nr_dlsch_scale_channel(uint32_t rx_size,
-                            int32_t dl_ch_estimates[][rx_size],
-			                      NR_DL_FRAME_PARMS *frame_parms,
-			                      uint8_t n_tx,
-			                      uint8_t n_rx,
-			                      uint8_t symbol,
-			                      uint8_t pilots,
-			                      uint32_t len,
-			                      unsigned short nb_rb);
 
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first
@@ -877,16 +596,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 uint32_t pdsch_est_size,
                 int32_t dl_ch_estimates[][pdsch_est_size],
                 int16_t *llr[2],
-                c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
-                int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT],
                 uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT],
-                uint32_t rx_size,
-                int32_t dl_ch_estimates_ext[][rx_size],
-                int32_t rxdataF_ext[][rx_size],
-                int32_t rxdataF_comp[][rx_size],
-                int32_t dl_ch_mag[][rx_size],
-                int32_t dl_ch_magb[][rx_size],
-                int32_t dl_ch_magr[][rx_size],
                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
                 uint32_t llr_offset[NR_SYMBOLS_PER_SLOT],
                 int32_t *log2_maxh);

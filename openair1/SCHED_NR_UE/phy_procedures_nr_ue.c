@@ -598,7 +598,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                                       pdsch_nb_rb,
                                       pdsch_est_size,
                                       pdsch_dl_ch_estimates,
-                                      rxdataF);
+                                      ue->frame_parms.samples_per_slot_wCP, rxdataF);
 #if 0
           ///LOG_M: the channel estimation
           int nr_frame_rx = proc->frame_rx;
@@ -635,34 +635,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       first_symbol_with_data++;
     }
 
-    c16_t ptrs_phase_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
-    memset(ptrs_phase_per_slot, 0, ue->frame_parms.nb_antennas_rx*NR_SYMBOLS_PER_SLOT*sizeof(c16_t));
-
-    int32_t ptrs_re_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
-    memset(ptrs_re_per_slot, 0, ue->frame_parms.nb_antennas_rx*NR_SYMBOLS_PER_SLOT*sizeof(c16_t));
-
     uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT] = {0};
     uint32_t llr_offset[NR_SYMBOLS_PER_SLOT] = {0};
-
-    const uint32_t rx_size = ((NR_SYMBOLS_PER_SLOT * dlsch[0].dlsch_config.number_rbs * NR_NB_SC_PER_RB + 15) >> 4) << 4;
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_estimates_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_estimates_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t rxdataF_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(rxdataF_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(rxdataF_comp, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_mag[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_mag, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_magb[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_magb, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_magr[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_magr, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
     int32_t log2_maxh = 0;
     start_meas(&ue->rx_pdsch_stats);
@@ -679,28 +653,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_llr_stats_parallelization[slot]);
       // process DLSCH received symbols in the slot
       // symbol by symbol processing (if data/DMRS are multiplexed is checked inside the function)
-      if (nr_rx_pdsch(ue,
-                      proc,
-                      dlsch,
-                      m,
-                      first_symbol_flag,
-                      harq_pid,
-                      pdsch_est_size,
-                      pdsch_dl_ch_estimates,
-                      llr,
-                      ptrs_phase_per_slot,
-                      ptrs_re_per_slot,
-                      dl_valid_re,
-                      rx_size,
-                      dl_ch_estimates_ext,
-                      rxdataF_ext,
-                      rxdataF_comp,
-                      dl_ch_mag,
-                      dl_ch_magb,
-                      dl_ch_magr,
-                      rxdataF,
-                      llr_offset,
-                      &log2_maxh) < 0)
+      if (nr_rx_pdsch(ue, proc, dlsch, m, first_symbol_flag, harq_pid, pdsch_est_size, pdsch_dl_ch_estimates, llr, dl_valid_re, rxdataF, llr_offset, &log2_maxh) < 0)
         return -1;
 
       stop_meas(&ue->dlsch_llr_stats_parallelization[slot]);
@@ -711,17 +664,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       }
     } // CRNTI active
     stop_meas(&ue->rx_pdsch_stats);
-
-    UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx*dlsch0->Nl, rx_size);
-
-    if (ue->phy_sim_pdsch_rxdataF_comp)
-      memcpy(ue->phy_sim_pdsch_rxdataF_comp, rxdataF_comp, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_rxdataF_ext)
-      memcpy(ue->phy_sim_pdsch_rxdataF_ext, rxdataF_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_dl_ch_estimates_ext)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates_ext, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_dl_ch_estimates)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
   }
   return 0;
 }
