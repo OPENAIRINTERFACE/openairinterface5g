@@ -617,7 +617,6 @@ check_install_oai_software() {
 	openssl \
         xxd
 
-    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
       if rpm -q epel-release > /dev/null; then
@@ -642,16 +641,15 @@ check_install_oai_software() {
       libgcrypt-devel \
       lksctp-tools \
       lksctp-tools-devel \
-      openssl-devel \
       libtasn1 \
       libtool \
       libxslt-devel \
       ninja-build \
       make \
       openssl \
+      openssl-devel \
       patch \
       readline-devel \
-      nettle-devel \
       gnutls-devel \
       lapack \
       lapack-devel \

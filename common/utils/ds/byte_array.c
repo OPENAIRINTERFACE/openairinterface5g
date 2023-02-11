@@ -19,18 +19,40 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_INTEGRITY_NIA2_H_
-#define _NR_PDCP_INTEGRITY_NIA2_H_
+#include "byte_array.h"
 
-#include <stdint.h>
+#include "common/utils/assertions.h"
+#include <string.h>
 
-void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
+byte_array_t copy_byte_array(byte_array_t src)
+{
+  byte_array_t dst = {0};
+  dst.buf = malloc(src.len);
+  DevAssert(dst.buf != NULL && "Memory exhausted");
+  memcpy(dst.buf, src.buf, src.len);
+  dst.len = src.len;
+  return dst;
+}
 
-void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
-                            unsigned char *out,
-                            unsigned char *buffer, int length,
-                            int bearer, int count, int direction);
+void free_byte_array(byte_array_t ba)
+{
+  free(ba.buf);
+}
 
-void nr_pdcp_integrity_nia2_free_integrity(void *integrity_context);
+bool eq_byte_array(const byte_array_t* m0, const byte_array_t* m1)
+{
+  if (m0 == m1)
+    return true;
 
-#endif /* _NR_PDCP_INTEGRITY_NIA2_H_ */
+  if (m0 == NULL || m1 == NULL)
+    return false;
+
+  if (m0->len != m1->len)
+    return false;
+
+  const int rc = memcmp(m0->buf, m1->buf, m0->len);
+  if (rc != 0)
+    return false;
+
+  return true;
+}

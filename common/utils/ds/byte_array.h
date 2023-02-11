@@ -19,18 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_INTEGRITY_NIA2_H_
-#define _NR_PDCP_INTEGRITY_NIA2_H_
+#ifndef BYTE_ARRAY_H_OAI
+#define BYTE_ARRAY_H_OAI
 
+#include <stdbool.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
+typedef struct {
+  size_t len;
+  uint8_t* buf;
+} byte_array_t;
 
-void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
-                            unsigned char *out,
-                            unsigned char *buffer, int length,
-                            int bearer, int count, int direction);
+typedef struct {
+  uint8_t buf[32];
+} byte_array_32_t;
 
-void nr_pdcp_integrity_nia2_free_integrity(void *integrity_context);
+byte_array_t copy_byte_array(byte_array_t src);
+void free_byte_array(byte_array_t ba);
+bool eq_byte_array(const byte_array_t* m0, const byte_array_t* m1);
 
-#endif /* _NR_PDCP_INTEGRITY_NIA2_H_ */
+#endif

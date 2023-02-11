@@ -19,18 +19,15 @@
  *      contact@openairinterface.org
  */
 
-#ifndef _NR_PDCP_INTEGRITY_NIA2_H_
-#define _NR_PDCP_INTEGRITY_NIA2_H_
+#ifndef AES_128_CTR_OAI_H
+#define AES_128_CTR_OAI_H
 
+#include "aes_128.h"
+#include "common/utils/ds/byte_array.h"
+#include <endian.h>
 #include <stdint.h>
+#include <stdlib.h>
 
-void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
+void aes_128_ctr(const aes_128_t* k_iv, byte_array_t msg, size_t len_out, uint8_t out[len_out]);
 
-void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
-                            unsigned char *out,
-                            unsigned char *buffer, int length,
-                            int bearer, int count, int direction);
-
-void nr_pdcp_integrity_nia2_free_integrity(void *integrity_context);
-
-#endif /* _NR_PDCP_INTEGRITY_NIA2_H_ */
+#endif
