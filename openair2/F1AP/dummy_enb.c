@@ -26,12 +26,6 @@
 #include "NR_ServingCellConfigCommon.h"
 #include "NR_MIB.h"
 
-void apply_macrlc_config(gNB_RRC_INST *rrc,
-                         rrc_gNB_ue_context_t         *const ue_context_pP,
-                         const protocol_ctxt_t        *const ctxt_pP ) {
-  abort();
-}
-
 bool sdap_data_req(protocol_ctxt_t *ctxt_p,
                    const ue_id_t ue_id,
                    const srb_flag_t srb_flag,

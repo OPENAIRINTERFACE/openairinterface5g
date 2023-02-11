@@ -166,7 +166,8 @@ static int f1ap_decode_unsuccessful_outcome(F1AP_F1AP_PDU_t *pdu) {
 int f1ap_decode_pdu(F1AP_F1AP_PDU_t *pdu, const uint8_t *const buffer, uint32_t length) {
   asn_dec_rval_t dec_ret;
   DevAssert(buffer != NULL);
-  dec_ret = aper_decode(NULL,
+  asn_codec_ctx_t st={.max_stack_size = 100 * 1000};
+  dec_ret = aper_decode(&st,
                         &asn_DEF_F1AP_F1AP_PDU,
                         (void **)&pdu,
                         buffer,

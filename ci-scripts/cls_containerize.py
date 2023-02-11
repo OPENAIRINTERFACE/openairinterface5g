@@ -360,6 +360,7 @@ class Containerize():
 				if result is not None:
 					imageNames.append(('oai-enb', 'eNB'))
 					imageNames.append(('oai-gnb', 'gNB'))
+					imageNames.append(('oai-nr-cuup', 'nr-cuup'))
 					imageNames.append(('oai-lte-ue', 'lteUE'))
 					imageNames.append(('oai-nr-ue', 'nrUE'))
 					if self.host == 'Red Hat':
@@ -680,7 +681,7 @@ class Containerize():
 		orgTag = 'develop'
 		if self.ranAllowMerge:
 			orgTag = 'ci-temp'
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			mySSH.command(f'docker image tag {image}:{orgTag} {tagToUse}', '\$', 5)
@@ -814,7 +815,7 @@ class Containerize():
 		else:
 			logging.debug('Removing test images locally')
 
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			cmd = f'docker rmi {self.ImageTagToUse(image)} || true'
 			if lIpAddr != 'none':
@@ -856,7 +857,7 @@ class Containerize():
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
-		imagesList = ['oai-enb', 'oai-gnb']
+		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
 		for image in imagesList:
 			imageToUse = self.ImageTagToUse(image)
 			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
@@ -1066,7 +1067,7 @@ class Containerize():
 
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
 		subprocess.run(cmd, shell=True)
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'
@@ -1160,18 +1161,9 @@ class Containerize():
 	def CaptureOnDockerNetworks(self):
 		cmd = 'cd ' + self.yamlPath[0] + ' && docker-compose -f docker-compose-ci.yml config | grep com.docker.network.bridge.name | sed -e "s@^.*name: @@"'
 		networkNames = subprocess.check_output(cmd, shell=True, stderr=subprocess.STDOUT, universal_newlines=True, timeout=10)
-		if re.search('4g.*rfsimulator', self.yamlPath[0]) is not None:
-			# Excluding any traffic from LTE-UE container (192.168.61.30)
-			# From the trf-gen, keeping only PING traffic
-			cmd = 'sudo nohup tshark -f "(host 192.168.61.11 and icmp) or (not host 192.168.61.11 and not host 192.168.61.30 and not arp and not port 53 and not port 2152)"'
-		elif re.search('5g.*rfsimulator', self.yamlPath[0]) is not None:
-			# Excluding any traffic from NR-UE containers (192.168.71.150 and 192.168.71.151)
-			# From the ext-dn, keeping only PING traffic
-			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not host 192.168.71.150 and not host 192.168.71.151 and not arp and not port 53 and not port 2152 and not port 2153)"'
-		elif re.search('5g_l2sim', self.yamlPath[0]) is not None:
-			cmd = 'sudo nohup tshark -f "(host 192.168.72.135 and icmp) or (not host 192.168.72.135 and not arp and not port 53 and not port 2152 and not port 2153)"'
-		else:
-			return
+
+		# Allow only: control plane RAN (SCTP), HTTP of control in CN (port 80), PFCP traffic (port 8805), MySQL (port 3306)
+		cmd = 'sudo nohup tshark -f "sctp or port 80 or port 8805 or icmp or port 3306"'
 		for name in networkNames.split('\n'):
 			if re.search('rfsim', name) is not None or re.search('l2sim', name) is not None:
 				cmd += ' -i ' + name
@@ -1190,7 +1182,7 @@ class Containerize():
 		cmd = 'cd ' + self.yamlPath[0] + ' && cp docker-compose.y*ml docker-compose-ci.yml'
 		logging.info(cmd)
 		subprocess.run(cmd, shell=True)
-		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru']
+		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
 			tagToUse = self.ImageTagToUse(image)
 			cmd = f'cd {self.yamlPath[0]} && sed -i -e "s@{image}:develop@{tagToUse}@" docker-compose-ci.yml'

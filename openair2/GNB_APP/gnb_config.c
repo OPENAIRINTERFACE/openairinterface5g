@@ -91,8 +91,6 @@
 extern uint16_t sf_ahead;
 int macrlc_has_f1 = 0;
 
-static ngran_node_t get_node_type(void);
-
 extern int config_check_band_frequencies(int ind, int16_t band, uint64_t downlink_frequency,
                                          int32_t uplink_frequency_offset, uint32_t  frame_type);
 
@@ -1154,7 +1152,8 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
     printf("NRRRC %d: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 
-    if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+    rrc->node_type = get_node_type();
+    if (NODE_IS_CU(rrc->node_type)) {
       paramdef_t SCTPParams[]  = GNBSCTPPARAMS_DESC;
       char aprefix[MAX_OPTNAME_SIZE*2 + 8];
       sprintf(aprefix,"%s.[%u].%s",GNB_CONFIG_STRING_GNB_LIST,i,GNB_CONFIG_STRING_SCTP_CONFIG);
@@ -1171,20 +1170,11 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       rrc->eth_params_s.my_portd                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTD_IDX].uptr);
       rrc->eth_params_s.remote_portd             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTD_IDX].uptr);
       rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
-      rrc->node_type                             = ngran_gNB_CU;
       rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
       rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
-    } else {
-      // set to ngran_gNB for now, it will get set to ngran_gNB_DU if macrlc entity which uses F1 is present
-      // Note: we will have to handle the case of ngran_ng_gNB_DU
-      if (macrlc_has_f1 == 0) {
-        rrc->node_type = ngran_gNB;
-        LOG_I(NR_RRC,"Setting node_type to ngran_gNB\n");
-      } else {
-        rrc->node_type = ngran_gNB_DU;
-        LOG_I(NR_RRC,"Setting node_type to ngran_gNB_DU\n");
-      }
     }
+
+   
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
 
@@ -1281,55 +1271,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
 
   config_security(rrc);
 }//End RCconfig_NRRRC function
-
-int RCconfig_nr_gtpu(void ) {
-
-  int               num_gnbs                      = 0;
-  char*             gnb_ipv4_address_for_NGU      = NULL;
-  uint32_t          gnb_port_for_NGU              = 0;
-  char*             gnb_ipv4_address_for_S1U      = NULL;
-  uint32_t          gnb_port_for_S1U              = 0;
-  char gtpupath[MAX_OPTNAME_SIZE*2 + 8];
-
-  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
-  paramdef_t NETParams[]  =  GNBNETPARAMS_DESC;
-  LOG_I(GTPU,"Configuring GTPu\n");
-
-/* get number of active eNodeBs */
-  config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL); 
-  num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
-  AssertFatal (num_gnbs >0,
-           "Failed to parse config file no active gNodeBs in %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
-
-  sprintf(gtpupath,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  config_get(NETParams,sizeof(NETParams)/sizeof(paramdef_t),gtpupath); 
-  char *cidr=NULL, *address = NULL;
-  int port;
-  if (NETParams[1].strptr != NULL) {
-    LOG_I(GTPU, "SA mode \n");
-    address = strtok_r(gnb_ipv4_address_for_NGU, "/", &cidr);
-    port=gnb_port_for_NGU;
-  } else { 
-    LOG_I(GTPU, "NSA mode \n");
-    address = strtok_r(gnb_ipv4_address_for_S1U, "/", &cidr);
-    port=gnb_port_for_S1U;
-  }
-
-  if (address) {
-    MessageDef *message;
-    message = itti_alloc_new_message(TASK_GNB_APP, 0, GTPV1U_REQ);
-    AssertFatal(message!=NULL,"");
-    IPV4_STR_ADDR_TO_INT_NWBO (address, GTPV1U_REQ(message).localAddr, "BAD IP ADDRESS FORMAT FOR gNB NG_U !\n" );
-    LOG_I(GTPU,"Configuring GTPu address : %s -> %x\n",address,GTPV1U_REQ(message).localAddr);
-    GTPV1U_REQ(message).localPort = port;
-    strcpy(GTPV1U_REQ(message).localAddrStr,address);
-    sprintf(GTPV1U_REQ(message).localPortStr,"%d", port);
-    itti_send_msg_to_task (TASK_GTPV1_U, 0, message); // data model is wrong: gtpu doesn't have enb_id (or module_id)
-  } else
-    LOG_E(GTPU,"invalid address for NGU or S1U\n");
-  
-return 0;
-}
 
 int RCconfig_NR_NG(MessageDef *msg_p, uint32_t i) {
 
@@ -1957,8 +1898,8 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
 
         NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-
-        asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
+        asn_codec_ctx_t st={100*1000};
+        asn_dec_rval_t dec_rval = uper_decode_complete( &st,
             &asn_DEF_NR_BCCH_DL_SCH_Message,
             (void **)&bcch_message,
             (const void *)rrc->carrier.SIB1,
@@ -2252,16 +2193,24 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
   return(ret);
 }
 
-static ngran_node_t get_node_type(void)
+ngran_node_t get_node_type(void)
 {
   paramdef_t        MacRLC_Params[] = MACRLCPARAMS_DESC;
   paramlist_def_t   MacRLC_ParamList = {CONFIG_STRING_MACRLC_LIST,NULL,0};
   paramdef_t        GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t   GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
+  paramdef_t        GNBE1Params[] = GNBE1PARAMS_DESC;
+  paramlist_def_t   GNBE1ParamList = {GNB_CONFIG_STRING_E1_PARAMETERS, NULL, 0};
 
+  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
+
+  if (GNBParamList.numelt == 0) // We have no valid configuration, let's return a default 
+    return ngran_gNB;
+  
   config_getlist( &MacRLC_ParamList,MacRLC_Params,sizeof(MacRLC_Params)/sizeof(paramdef_t), NULL);   
-  config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);  
-
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+  config_getlist( &GNBE1ParamList, GNBE1Params, sizeof(GNBE1Params)/sizeof(paramdef_t), aprefix);
   if ( MacRLC_ParamList.numelt > 0) {
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt; 
     for (int j = 0; j < RC.nb_nr_macrlc_inst; j++) {
@@ -2271,9 +2220,16 @@ static ngran_node_t get_node_type(void)
     }
   }
 
-  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0)
-    return ngran_gNB_CU;
-  else if (macrlc_has_f1 == 0)
+  if (strcmp(*(GNBParamList.paramarray[0][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "f1") == 0) {
+    if ( GNBE1ParamList.paramarray == NULL || GNBE1ParamList.numelt == 0 )
+      return ngran_gNB_CU;
+    else if (strcmp(*(GNBE1ParamList.paramarray[0][GNB_CONFIG_E1_CU_TYPE_IDX].strptr), "cp") == 0)
+      return ngran_gNB_CUCP;
+    else if (strcmp(*(GNBE1ParamList.paramarray[0][GNB_CONFIG_E1_CU_TYPE_IDX].strptr), "up") == 0)
+      return ngran_gNB_CUUP;
+    else
+      return ngran_gNB_CU;
+  } else if (macrlc_has_f1 == 0)
     return ngran_gNB;
   else
     return ngran_gNB_DU;
@@ -2309,9 +2265,7 @@ void nr_read_config_and_init(void) {
     RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
   }
 
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type) && RC.nrrrc[0]->node_type != ngran_gNB_CUCP) {
     pdcp_layer_init();
-//    nr_DRB_preconfiguration(0x1234);
-    rrc_init_nr_global_param();
   }
 }

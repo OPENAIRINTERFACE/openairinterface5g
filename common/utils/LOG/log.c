@@ -483,6 +483,7 @@ int logInit (void)
   register_log_component("SDAP","",SDAP);
   register_log_component("S1AP","",S1AP);
   register_log_component("F1AP","",F1AP);
+  register_log_component("E1AP","",E1AP);
   register_log_component("M2AP","",M2AP);
   register_log_component("M3AP","",M3AP);
   register_log_component("SCTP","",SCTP);

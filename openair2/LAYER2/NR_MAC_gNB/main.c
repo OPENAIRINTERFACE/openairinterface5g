@@ -249,13 +249,10 @@ void mac_top_init_gNB(ngran_node_t node_type)
     AssertFatal(rlc_module_init(1) == 0,"Could not initialize RLC layer\n");
 
     // These should be out of here later
-    pdcp_layer_init();
+    if (get_softmodem_params()->usim_test == 0 ) pdcp_layer_init();
 
     if(IS_SOFTMODEM_NOS1 && get_softmodem_params()->phy_test)
       nr_DRB_preconfiguration(0x1234);
-
-    rrc_init_nr_global_param();
-
 
   } else {
     RC.nrmac = NULL;

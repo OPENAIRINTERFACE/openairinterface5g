@@ -1123,12 +1123,13 @@ typedef struct srb1_params_s {
 /*                                            S1/X2 interface configuration parameters                                                                 */
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval             type           numelt     */
 /*--------------------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define NETPARAMS_DESC {  \
     {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1_MME,        NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
     {ENB_CONFIG_STRING_ENB_IPV4_ADDRESS_FOR_S1_MME,          NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
     {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,           NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
     {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
-    {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         uptr:NULL,           defintval:2152L,     TYPE_UINT,        0},      \
+    {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,      0,         u16ptr:NULL,         defuintval:GTPV1_U_PORT_NUMBER,     TYPE_UINT16,        0},      \
     {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_X2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
     {ENB_CONFIG_STRING_ENB_PORT_FOR_X2C,                     NULL,      0,         uptr:NULL,           defintval:0L,        TYPE_UINT,        0},      \
     {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_M2C,                NULL,      0,         strptr:NULL,         defstrval:NULL,      TYPE_STRING,      0},      \
@@ -1144,8 +1145,10 @@ typedef struct srb1_params_s {
 #define GTPUPARAMS_DESC { \
     {ENB_CONFIG_STRING_ENB_INTERFACE_NAME_FOR_S1U,           NULL,    0,            strptr:&enb_interface_name_for_S1U,      defstrval:"lo",                TYPE_STRING,   0},        \
     {ENB_CONFIG_STRING_ENB_IPV4_ADDR_FOR_S1U,                NULL,    0,            strptr:&enb_ipv4_address_for_S1U,        defstrval:"127.0.0.1",         TYPE_STRING,   0},        \
-    {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,    0,            uptr:&enb_port_for_S1U,                  defintval:2152,                TYPE_UINT,     0}         \
+    {ENB_CONFIG_STRING_ENB_PORT_FOR_S1U,                     NULL,    0,            u16ptr:&enb_port_for_S1U,                  defuintval:GTPV1_U_PORT_NUMBER,                TYPE_UINT16,     0}         \
   }
+// clang-format on
+
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
