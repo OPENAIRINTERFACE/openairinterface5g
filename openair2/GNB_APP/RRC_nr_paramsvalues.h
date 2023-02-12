@@ -39,7 +39,6 @@
 /*    cell configuration section name */
 #define GNB_CONFIG_STRING_GNB_LIST                              "gNBs"
 
-#define GNB_CONFIG_STRING_PDCCH_CONFIGSIB1                      "pdcch_ConfigSIB1"
 #define GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON               "servingCellConfigCommon"
 #define GNB_CONFIG_STRING_PHYSCELLID                            "physCellId"
 #define GNB_CONFIG_STRING_NTIMINGADVANCEOFFSET                  "n_TimingAdvanceOffset"
@@ -161,19 +160,6 @@
 #define GNB_CONFIG_STRING_FIRSTACTIVEULBWP_ID                            "firstActiveUplinkBWP-Id"
 
 /*--------------------------------------------------------------------------------------------------------------------*/
-/*                                            pdcch_ConfigSIB1 parameters                                             */
-/*--------------------------------------------------------------------------------------------------------------------*/
-#define CONTROL_RESOURCE_SET_ZERO                   "controlResourceSetZero"
-#define SEARCH_SPACE_ZERO                           "searchSpaceZero"
-
-#define PDCCH_CONFIGSIB1PARAMS_DESC(pdcch_ConfigSIB1) {                                                                                       \
-{CONTROL_RESOURCE_SET_ZERO,        NULL,     0,         i64ptr:&pdcch_ConfigSIB1->controlResourceSetZero,      defintval:0,     TYPE_INT64,        0},   \
-{SEARCH_SPACE_ZERO,                NULL,     0,         i64ptr:&pdcch_ConfigSIB1->searchSpaceZero,      defintval:0,     TYPE_INT64,        0}    \
-}
-
-#define CONTROL_RESOURCE_SET_ZERO_IDX                   0
-#define SEARCH_SPACE_ZERO_IDX                           1
-/*--------------------------------------------------------------------------------------------------------------------*/
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                     Serving Cell Config Common configuration parameters                                                                                                     */
@@ -201,8 +187,8 @@
 {GNB_CONFIG_STRING_DLCARRIERBANDWIDTH,NULL,0,i64ptr:&scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,defint64val:217,TYPE_INT64,0 /*10*/}, \
 {GNB_CONFIG_STRING_INITIALDLBWPLOCATIONANDBANDWIDTH,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth,defint64val:13036,TYPE_INT64,0/*11*/},\
 {GNB_CONFIG_STRING_INITIALDLBWPSUBCARRIERSPACING,NULL,0,i64ptr:&scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,defint64val:NR_SubcarrierSpacing_kHz30,TYPE_INT64,0/*12*/},\
-{GNB_CONFIG_STRING_INITIALDLBWPCONTROLRESOURCESETZERO,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero,defint64val:12,TYPE_INT64,0/*13*/},\
-{GNB_CONFIG_STRING_INITIALDLBWPSEARCHSPACEZERO,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero,defint64val:0,TYPE_INT64,0/*14*/},\
+{GNB_CONFIG_STRING_INITIALDLBWPCONTROLRESOURCESETZERO,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->controlResourceSetZero,defint64val:-1,TYPE_INT64,0/*13*/},\
+{GNB_CONFIG_STRING_INITIALDLBWPSEARCHSPACEZERO,NULL,0,i64ptr:scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->searchSpaceZero,defint64val:-1,TYPE_INT64,0/*14*/},\
 {GNB_CONFIG_STRING_ULFREQUENCYBAND,NULL,0,i64ptr:scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0],defint64val:-1,TYPE_INT64,0/*63*/},\
 {GNB_CONFIG_STRING_ULABSOLUEFREQUENCYPOINTA,NULL,0,i64ptr:scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA,defint64val:-1,TYPE_INT64,0/*64*/},\
 {GNB_CONFIG_STRING_ULOFFSETTOCARRIER,NULL,0,i64ptr:&scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->offsetToCarrier,defint64val:0,TYPE_INT64,0/*65*/},\

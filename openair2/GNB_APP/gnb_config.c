@@ -347,6 +347,17 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap) {
     }
   }
 
+  // fix SS0 and Coreset0
+  NR_PDCCH_ConfigCommon_t *pdcch_cc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  if((int)*pdcch_cc->searchSpaceZero == -1) {
+    free(pdcch_cc->searchSpaceZero);
+    pdcch_cc->searchSpaceZero = NULL;
+  }
+  if((int)*pdcch_cc->controlResourceSetZero == -1) {
+    free(pdcch_cc->controlResourceSetZero);
+    pdcch_cc->controlResourceSetZero = NULL;
+  }
+
   // fix UL absolute frequency
   if ((int)*scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA==-1) {
      free(scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA);
@@ -1101,17 +1112,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc) {
       }
     } else {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
-    }
-
-    // pdcch_ConfigSIB1
-    rrc->carrier.pdcch_ConfigSIB1 = calloc(1,sizeof(NR_PDCCH_ConfigSIB1_t));
-    paramdef_t pdcch_ConfigSIB1[] = PDCCH_CONFIGSIB1PARAMS_DESC(rrc->carrier.pdcch_ConfigSIB1);
-    paramlist_def_t pdcch_ConfigSIB1ParamList = {GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
-    config_getlist(&pdcch_ConfigSIB1ParamList, NULL, 0, aprefix);
-    if (pdcch_ConfigSIB1ParamList.numelt > 0) {
-        sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_PDCCH_CONFIGSIB1, 0);
-        config_get(pdcch_ConfigSIB1,sizeof(pdcch_ConfigSIB1)/sizeof(paramdef_t),aprefix);
     }
 
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
