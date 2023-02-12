@@ -563,7 +563,6 @@ int main(int argc, char **argv) {
   short *uncoded_ber_bit=NULL;
   int osf=1;
   frame_t frame_type = FDD;
-  char title[255];
   int numCCE=0;
   //int dci_length_bytes=0,dci_length=0;
   //double channel_bandwidth = 5.0, sampling_rate=7.68;
