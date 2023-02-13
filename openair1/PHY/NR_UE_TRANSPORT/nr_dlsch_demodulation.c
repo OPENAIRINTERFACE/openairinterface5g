@@ -1683,34 +1683,27 @@ void nr_dlsch_detection_mrc(uint32_t rx_size_symbol,
  * Compute the complex addition x=x+y
  *
  * */
-void nr_a_sum_b(__m128i *input_x,
-                __m128i *input_y,
-                unsigned short nb_rb)
+void nr_a_sum_b(c16_t *input_x, c16_t *input_y, unsigned short nb_rb)
 {
   unsigned short rb;
+  __m128i *x = (__m128i *)input_x;
+  __m128i *y = (__m128i *)input_y;
 
   for (rb=0; rb<nb_rb; rb++) {
+    x[0] = _mm_adds_epi16(x[0], y[0]);
+    x[1] = _mm_adds_epi16(x[1], y[1]);
+    x[2] = _mm_adds_epi16(x[2], y[2]);
 
-    input_x[0] = _mm_adds_epi16(input_x[0],input_y[0]);
-    input_x[1] = _mm_adds_epi16(input_x[1],input_y[1]);
-    input_x[2] = _mm_adds_epi16(input_x[2],input_y[2]);
-
-    input_x+=3;
-    input_y+=3;
+    x += 3;
+    y += 3;
   }
-  _mm_empty();
-  _m_empty();
 }
 
 /* Zero Forcing Rx function: nr_a_mult_b()
  * Compute the complex Multiplication c=a*b
  *
  * */
-void nr_a_mult_b(int *a,
-                 int *b,
-                 int32_t *c,
-                 unsigned short nb_rb,
-                 unsigned char output_shift0)
+void nr_a_mult_b(c16_t *a, c16_t *b, c16_t *c, unsigned short nb_rb, unsigned char output_shift0)
 {
   //This function is used to compute complex multiplications
   short nr_conjugate[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
@@ -1748,75 +1741,58 @@ void nr_a_mult_b(int *a,
     b_128+=1;
     c_128+=1;
   }
-  _mm_empty();
-  _m_empty();
 }
 
 /* Zero Forcing Rx function: nr_element_sign()
  * Compute b=sign*a
  *
  * */
-static inline void nr_element_sign(int32_t *a, // a
-                                   int32_t *b, // b
+static inline void nr_element_sign(c16_t *a, // a
+                                   c16_t *b, // b
                                    unsigned short nb_rb,
                                    int32_t sign)
 {
-  int16_t nr_sign[8]__attribute__((aligned(16))) = {-1,-1,-1,-1,-1,-1,-1,-1} ;
-  unsigned short rb;
+  const int16_t nr_sign[8] __attribute__((aligned(16))) = {-1, -1, -1, -1, -1, -1, -1, -1};
   __m128i *a_128,*b_128;
 
   a_128 = (__m128i *)a;
   b_128 = (__m128i *)b;
 
-  for (rb=0; rb<3*nb_rb; rb++) {
-
+  for (int rb = 0; rb < 3 * nb_rb; rb++) {
     if (sign < 0)
-      b_128[0] = _mm_sign_epi16(a_128[0],*(__m128i*)&nr_sign[0]);
+      b_128[rb] = _mm_sign_epi16(a_128[rb], ((__m128i *)nr_sign)[0]);
     else
-      b_128[0] = a_128[0];
+      b_128[rb] = a_128[rb];
 
 #ifdef DEBUG_DLSCH_DEMOD
-     printf("\n Out \n");
-     //print_ints("det_re_128:",(int32_t*)&det_re_128);
-     //print_ints("det_im_128:",(int32_t*)&det_im_128);
-     print_shorts("b:", (int16_t *)b_128);
+    print_shorts("b:", (int16_t *)b_128);
 #endif
-    a_128+=1;
-    b_128+=1;
   }
-  _mm_empty();
-  _m_empty();
 }
 
 /* Zero Forcing Rx function: nr_det_4x4()
  * Compute the matrix determinant for 4x4 Matrix
  *
  * */
-void nr_determin(int32_t **a44,//
-                 int32_t *ad_bc,//ad-bc
-                 int32_t size,
-                 unsigned short nb_rb,
-                 int32_t sign,
-                 int32_t shift0)
+static void nr_determin(int size,
+                        c16_t *a44[][size], //
+                        c16_t *ad_bc, // ad-bc
+                        unsigned short nb_rb,
+                        int32_t sign,
+                        int32_t shift0)
 {
-  int32_t outtemp[12*nb_rb] __attribute__((aligned(32)));
-  int32_t outtemp1[12*nb_rb] __attribute__((aligned(32)));
-  int32_t **sub_matrix;
   AssertFatal(size > 0, "");
 
   if(size==1) {
-    nr_element_sign(a44[0],//a
-                    ad_bc,//b
+    nr_element_sign(a44[0][0], // a
+                    ad_bc, // b
                     nb_rb,
                     sign);
   } else {
     int16_t k, rr[size - 1], cc[size - 1];
-    sub_matrix = (int32_t **)malloc16_clear((size - 1) * (size - 1) * sizeof(int32_t *));
-    for (int rtx = 0; rtx < (size - 1); rtx++) { // row
-      for (int ctx = 0; ctx < (size - 1); ctx++) { // column
-        sub_matrix[ctx * (size - 1) + rtx] = (int32_t *)malloc16_clear(12 * nb_rb * sizeof(int32_t));
-      }
-    }
+    c16_t outtemp[12 * nb_rb] __attribute__((aligned(32)));
+    c16_t outtemp1[12 * nb_rb] __attribute__((aligned(32)));
+    c16_t *sub_matrix[size - 1][size - 1];
     for (int rtx=0;rtx<size;rtx++) {//row calculation for determin
       int ctx=0;
       //find the submatrix row and column indices
@@ -1826,42 +1802,38 @@ void nr_determin(int32_t **a44,//
       k=0;
       for(int cctx=0;cctx<size;cctx++)
         if(cctx != ctx) cc[k++] = cctx;
-      //fill out the sub matrix corresponds to this element
-       for (int ridx=0;ridx<(size-1);ridx++)
-         for (int cidx=0;cidx<(size-1);cidx++)
-           sub_matrix[cidx*(size-1)+ridx]= (int32_t *)&a44[cc[cidx]*size+rr[ridx]][0];
+      // fill out the sub matrix corresponds to this element
 
-       nr_determin(sub_matrix,//a33
-                   outtemp,
-                   size-1,
-                   nb_rb,
-                   ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1)*sign,
-                   shift0);
-       nr_a_mult_b(a44[ctx*size+rtx],
-                   outtemp,
-                   rtx==0? ad_bc:outtemp1,
-                   nb_rb,
-                   shift0);
+      for (int ridx = 0; ridx < (size - 1); ridx++)
+        for (int cidx = 0; cidx < (size - 1); cidx++)
+          sub_matrix[cidx][ridx] = a44[cc[cidx]][rr[ridx]];
 
-       if (rtx != 0)
-         nr_a_sum_b((__m128i *)ad_bc,
-                    (__m128i *)outtemp1,
-                    nb_rb);
+      nr_determin(size - 1,
+                  sub_matrix, // a33
+                  outtemp,
+                  nb_rb,
+                  ((rtx & 1) == 1 ? -1 : 1) * ((ctx & 1) == 1 ? -1 : 1) * sign,
+                  shift0);
+      nr_a_mult_b(a44[ctx][rtx], outtemp, rtx == 0 ? ad_bc : outtemp1, nb_rb, shift0);
+
+      if (rtx != 0)
+        nr_a_sum_b(ad_bc, outtemp1, nb_rb);
     }
   }
 }
 
-double complex nr_determin_cpx(double complex *a44_cpx,//
-                               int32_t size,//size
-                               int32_t sign){
+static double complex nr_determin_cpx(int32_t size, // size
+                                      double complex a44_cpx[][size], //
+                                      int32_t sign)
+{
   double complex outtemp, outtemp1;
   //Allocate the submatrix elements
-  double complex sub_matrix[(size-1)*(size-1)];
-  int16_t k,rr[size-1],cc[size-1];
-
+  DevAssert(size > 0);
   if(size==1) {
-    return((double complex)a44_cpx[0]*sign);
+    return (a44_cpx[0][0] * sign);
   }else {
+    double complex sub_matrix[size - 1][size - 1];
+    int16_t k, rr[size - 1], cc[size - 1];
     outtemp1 = 0;
     for (int rtx=0;rtx<size;rtx++) {//row calculation for determin
       int ctx=0;
@@ -1875,12 +1847,12 @@ double complex nr_determin_cpx(double complex *a44_cpx,//
       //fill out the sub matrix corresponds to this element
        for (int ridx=0;ridx<(size-1);ridx++)
          for (int cidx=0;cidx<(size-1);cidx++)
-           sub_matrix[cidx*(size-1)+ridx]= a44_cpx[cc[cidx]*size+rr[ridx]];
+           sub_matrix[cidx][ridx] = a44_cpx[cc[cidx]][rr[ridx]];
 
-       outtemp = nr_determin_cpx(sub_matrix,//a33
-                             size-1,
-                             ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1)*sign);
-       outtemp1 += a44_cpx[ctx*size+rtx]*outtemp;
+       outtemp = nr_determin_cpx(size - 1,
+                                 sub_matrix, // a33
+                                 ((rtx & 1) == 1 ? -1 : 1) * ((ctx & 1) == 1 ? -1 : 1) * sign);
+       outtemp1 += a44_cpx[ctx][rtx] * outtemp;
     }
 
     return((double complex)outtemp1);
@@ -1891,30 +1863,30 @@ double complex nr_determin_cpx(double complex *a44_cpx,//
  * Compute the matrix inverse and determinant up to 4x4 Matrix
  *
  * */
-uint8_t nr_matrix_inverse(int32_t **a44,//Input matrix//conjH_H_elements[0]
-                          int32_t **inv_H_h_H,//Inverse
-                          int32_t *ad_bc,//determin
-                          int32_t size,
+uint8_t nr_matrix_inverse(int32_t size,
+                          c16_t *a44[][size], // Input matrix//conjH_H_elements[0]
+                          c16_t *inv_H_h_H[][size], // Inverse
+                          c16_t *ad_bc, // determin
                           unsigned short nb_rb,
-                          int32_t flag,//fixed point or floating flag
-                          int32_t shift0){
+                          int32_t flag, // fixed point or floating flag
+                          int32_t shift0)
+{
   DevAssert(size > 1);
   int16_t k,rr[size-1],cc[size-1];
 
   if(flag) {//fixed point SIMD calc.
     //Allocate the submatrix elements
-    int32_t **sub_matrix;
-    sub_matrix = (int32_t **)malloc16_clear( (size-1)*(size-1)*sizeof(int32_t *) );
-    for (int rtx=0;rtx<(size-1);rtx++) {//row
-      for (int ctx=0;ctx<(size-1);ctx++) {//column
-        sub_matrix[ctx*(size-1)+rtx] = (int32_t *)malloc16_clear( 12*nb_rb*sizeof(int32_t) );
-      }
-    }
+    c16_t sub_matrix_data[size - 1][size - 1][12 * nb_rb];
+    memset(sub_matrix_data, 0, sizeof(sub_matrix_data));
+    c16_t *sub_matrix[size - 1][size - 1];
+    for (int rtx = 0; rtx < (size - 1); rtx++)
+      for (int ctx = 0; ctx < (size - 1); ctx++)
+        sub_matrix[ctx][rtx] = sub_matrix_data[ctx][rtx];
 
     //Compute Matrix determinant
-    nr_determin(a44,//
-                ad_bc,//determinant
-                size,//size
+    nr_determin(size,
+                a44, //
+                ad_bc, // determinant
                 nb_rb,
                 +1,
                 shift0);
@@ -1941,39 +1913,36 @@ uint8_t nr_matrix_inverse(int32_t **a44,//Input matrix//conjH_H_elements[0]
         //fill out the sub matrix corresponds to this element
         for (int ridx=0;ridx<(size-1);ridx++)
           for (int cidx=0;cidx<(size-1);cidx++)
-            sub_matrix[cidx*(size-1)+ridx]= (int32_t *)&a44[cc[cidx]*size+rr[ridx]][0];
+            memcpy(sub_matrix[cidx][ridx], a44[cc[cidx]][rr[ridx]], sizeof(sub_matrix_data[cidx][ridx]));
 
-        nr_determin(sub_matrix,
-                    inv_H_h_H[rtx*size+ctx],//out transpose
-                    size-1,//size
+        nr_determin(size - 1, // size
+                    sub_matrix,
+                    inv_H_h_H[rtx][ctx], // out transpose
                     nb_rb,
-                    ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1),
+                    ((rtx & 1) == 1 ? -1 : 1) * ((ctx & 1) == 1 ? -1 : 1),
                     shift0);
-        //printf("H_h_H(r%d,c%d)=%d+j%d --> inv_H_h_H(%d,%d) = %d+j%d \n",rtx,ctx,((short *)a44[ctx*size+rtx])[0],((short *)a44[ctx*size+rtx])[1],ctx,rtx,((short *)inv_H_h_H[rtx*size+ctx])[0],((short *)inv_H_h_H[rtx*size+ctx])[1]);
       }
     }
-    _mm_empty();
-    _m_empty();
   }
   else {//floating point calc.
     //Allocate the submatrix elements
-    double complex sub_matrix_cpx[(size-1)*(size-1)];
+    double complex sub_matrix_cpx[size - 1][size - 1];
     //Convert the IQ samples (in Q15 format) to float complex
-    double complex a44_cpx[size*size];
-    double complex inv_H_h_H_cpx[size*size];
+    double complex a44_cpx[size][size];
+    double complex inv_H_h_H_cpx[size][size];
     double complex determin_cpx;
     for (int i=0; i<12*nb_rb; i++) {
 
       //Convert Q15 to floating point
       for (int rtx=0;rtx<size;rtx++) {//row
         for (int ctx=0;ctx<size;ctx++) {//column
-          a44_cpx[ctx*size+rtx]= ((double)((short *)a44[ctx*size+rtx])[(i<<1)])/(1<<(shift0-1)) + I*((double)((short *)a44[ctx*size+rtx])[(i<<1)+1])/(1<<(shift0-1));
+          a44_cpx[ctx][rtx] = ((double)(a44[ctx][rtx])[i].r) / (1 << (shift0 - 1)) + I * ((double)(a44[ctx][rtx])[i].i) / (1 << (shift0 - 1));
           //if (i<4) printf("a44_cpx(%d,%d)= ((FP %d))%lf+(FP %d)j%lf \n",ctx,rtx,((short *)a44[ctx*size+rtx])[(i<<1)],creal(a44_cpx[ctx*size+rtx]),((short *)a44[ctx*size+rtx])[(i<<1)+1],cimag(a44_cpx[ctx*size+rtx]));
         }
       }
       //Compute Matrix determinant (copy real value only)
-      determin_cpx = nr_determin_cpx(a44_cpx,//
-                                     size,//size
+      determin_cpx = nr_determin_cpx(size,
+                                     a44_cpx, //
                                      +1);
       //if (i<4) printf("order %d nr_det_cpx = %lf+j%lf \n",log2_approx(creal(determin_cpx)),creal(determin_cpx),cimag(determin_cpx));
 
@@ -1999,22 +1968,22 @@ uint8_t nr_matrix_inverse(int32_t **a44,//Input matrix//conjH_H_elements[0]
           //fill out the sub matrix corresponds to this element
           for (int ridx=0;ridx<(size-1);ridx++)
             for (int cidx=0;cidx<(size-1);cidx++)
-              sub_matrix_cpx[cidx*(size-1)+ridx]= a44_cpx[cc[cidx]*size+rr[ridx]];
+              sub_matrix_cpx[cidx][ridx] = a44_cpx[cc[cidx]][rr[ridx]];
 
-          inv_H_h_H_cpx[rtx*size+ctx] = nr_determin_cpx(sub_matrix_cpx,//
-                                                        size-1,//size
-                                                        ((rtx&1)==1?-1:1)*((ctx&1)==1?-1:1));
+          inv_H_h_H_cpx[rtx][ctx] = nr_determin_cpx(size - 1, // size,
+                                                    sub_matrix_cpx, //
+                                                    ((rtx & 1) == 1 ? -1 : 1) * ((ctx & 1) == 1 ? -1 : 1));
           //if (i==0) printf("H_h_H(r%d,c%d)=%lf+j%lf --> inv_H_h_H(%d,%d) = %lf+j%lf \n",rtx,ctx,creal(a44_cpx[ctx*size+rtx]),cimag(a44_cpx[ctx*size+rtx]),ctx,rtx,creal(inv_H_h_H_cpx[rtx*size+ctx]),cimag(inv_H_h_H_cpx[rtx*size+ctx]));
 
-          if (creal(inv_H_h_H_cpx[rtx*size+ctx])>0)
-            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))+0.5);//Convert to Q 18
+          if (creal(inv_H_h_H_cpx[rtx][ctx]) > 0)
+            inv_H_h_H[rtx][ctx][i].r = (short)((creal(inv_H_h_H_cpx[rtx][ctx]) * (1 << (shift0 - 1))) + 0.5); // Convert to Q 18
           else
-            ((short *) inv_H_h_H[rtx*size+ctx])[i<<1] = (short) ((creal(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))-0.5);//
+            inv_H_h_H[rtx][ctx][i].r = (short)((creal(inv_H_h_H_cpx[rtx][ctx]) * (1 << (shift0 - 1))) - 0.5); //
 
-          if (cimag(inv_H_h_H_cpx[rtx*size+ctx])>0)
-            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))+0.5);//
+          if (cimag(inv_H_h_H_cpx[rtx][ctx]) > 0)
+            inv_H_h_H[rtx][ctx][i].i = (short)((cimag(inv_H_h_H_cpx[rtx][ctx]) * (1 << (shift0 - 1))) + 0.5); //
           else
-            ((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1] = (short) ((cimag(inv_H_h_H_cpx[rtx*size+ctx])*(1<<(shift0-1)))-0.5);//
+            inv_H_h_H[rtx][ctx][i].i = (short)((cimag(inv_H_h_H_cpx[rtx][ctx]) * (1 << (shift0 - 1))) - 0.5); //
 
           //if (i<4) printf("inv_H_h_H_FP(%d,%d)= %d+j%d \n",ctx,rtx, ((short *) inv_H_h_H[rtx*size+ctx])[i<<1],((short *) inv_H_h_H[rtx*size+ctx])[(i<<1)+1]);
         }
@@ -2090,20 +2059,17 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size_symbol,
                            int length)
 {
   int *ch0r, *ch0c;
-  int32_t ***conjH_H_elements;
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
-  int32_t determ_fin[12*nb_rb_0] __attribute__((aligned(32)));
+  c16_t determ_fin[12 * nb_rb_0] __attribute__((aligned(32)));
 
   ///Allocate H^*H matrix elements and sub elements
-  conjH_H_elements = (int32_t ***)malloc16_clear(n_rx * sizeof(int32_t **));
-  for (int aarx = 0; aarx < n_rx; aarx++) {
-    conjH_H_elements[aarx] = (int32_t **)malloc16_clear(n_tx * n_tx * sizeof(int32_t *));
-    for (int rtx = 0; rtx < n_tx; rtx++) { // row
-      for (int ctx = 0; ctx < n_tx; ctx++) { // column
-        conjH_H_elements[aarx][ctx * n_tx + rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
-      }
-    }
-  }
+  c16_t conjH_H_elements_data[n_rx][n_tx][n_tx][12 * nb_rb_0];
+  memset(conjH_H_elements_data, 0, sizeof(conjH_H_elements_data));
+  c16_t *conjH_H_elements[n_rx][n_tx][n_tx];
+  for (int aarx = 0; aarx < n_rx; aarx++)
+    for (int rtx = 0; rtx < n_tx; rtx++)
+      for (int ctx = 0; ctx < n_tx; ctx++)
+        conjH_H_elements[aarx][rtx][ctx] = conjH_H_elements_data[aarx][rtx][ctx];
 
   //Compute H^*H matrix elements and sub elements:(1/2^log2_maxh)*conjH_H_elements
   for (int rtx=0;rtx<n_tx;rtx++) {//row
@@ -2113,65 +2079,60 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size_symbol,
         ch0c = (int *)dl_ch_estimates_ext[ctx*n_rx+aarx];
         nr_conjch0_mult_ch1(ch0r,
                             ch0c,
-                            conjH_H_elements[aarx][ctx*n_tx+rtx],
+                            (int32_t *)conjH_H_elements[aarx][ctx][rtx], // sic
                             nb_rb_0,
                             shift);
-        if (aarx !=0) nr_a_sum_b((__m128i *)conjH_H_elements[0][ctx*n_tx+rtx],
-                                 (__m128i *)conjH_H_elements[aarx][ctx*n_tx+rtx],
-                                 nb_rb_0);
+        if (aarx != 0)
+          nr_a_sum_b(conjH_H_elements[0][ctx][rtx], conjH_H_elements[aarx][ctx][rtx], nb_rb_0);
       }
     }
   }
 
   //Compute the inverse and determinant of the H^*H matrix
   //Allocate the inverse matrix
-  int32_t **inv_H_h_H;
-  inv_H_h_H = (int32_t **)malloc16_clear(n_tx * n_tx * sizeof(int32_t *));
-  for (int rtx = 0; rtx < n_tx; rtx++) { // row
-    for (int ctx = 0; ctx < n_tx; ctx++) { // column
-      inv_H_h_H[ctx * n_tx + rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
-    }
-  }
+  c16_t *inv_H_h_H[n_tx][n_tx];
+  c16_t inv_H_h_H_data[n_tx][n_tx][12 * nb_rb_0];
+  memset(inv_H_h_H_data, 0, sizeof(inv_H_h_H_data));
+  for (int rtx = 0; rtx < n_tx; rtx++)
+    for (int ctx = 0; ctx < n_tx; ctx++)
+      inv_H_h_H[ctx][rtx] = inv_H_h_H_data[ctx][rtx];
+
   int fp_flag = 1;//0: float point calc 1: Fixed point calc
-  nr_matrix_inverse(conjH_H_elements[0],//Input matrix
-                    inv_H_h_H,//Inverse
-                    determ_fin,//determin
-                    n_tx,//size
+  nr_matrix_inverse(n_tx,
+                    conjH_H_elements[0], // Input matrix
+                    inv_H_h_H, // Inverse
+                    determ_fin, // determin
                     nb_rb_0,
-                    fp_flag,//fixed point flag
-                    shift-(fp_flag==1?2:0));//the out put is Q15
+                    fp_flag, // fixed point flag
+                    shift - (fp_flag == 1 ? 2 : 0)); // the out put is Q15
 
   // multiply Matrix inversion pf H_h_H by the rx signal vector
-  int32_t outtemp[12*nb_rb_0] __attribute__((aligned(32)));
-  int32_t **rxdataF_zforcing;
+  c16_t outtemp[12 * nb_rb_0] __attribute__((aligned(32)));
   //Allocate rxdataF for zforcing out
-  rxdataF_zforcing = (int32_t **)malloc16_clear(n_tx * sizeof(int32_t *));
-  for (int rtx = 0; rtx < n_tx; rtx++) { // row
-    rxdataF_zforcing[rtx] = (int32_t *)malloc16_clear(12 * nb_rb_0 * sizeof(int32_t));
-  }
+  c16_t rxdataF_zforcing[n_tx][12 * nb_rb_0];
+  memset(rxdataF_zforcing, 0, sizeof(rxdataF_zforcing));
 
   for (int rtx=0;rtx<n_tx;rtx++) {//Output Layers row
     // loop over Layers rtx=0,...,N_Layers-1
-      for (int ctx=0;ctx<n_tx;ctx++) {//column multi
-        //printf("Computing r_%d c_%d\n",rtx,ctx);
-        //print_shorts(" H_h_H=",(int16_t*)&conjH_H_elements[ctx*n_tx+rtx][0][0]);
-        //print_shorts(" Inv_H_h_H=",(int16_t*)&inv_H_h_H[ctx*n_tx+rtx][0]);
-        nr_a_mult_b(inv_H_h_H[ctx * n_tx + rtx], (int *)(rxdataF_comp[ctx][0] + symbol * nb_rb * 12), outtemp, nb_rb_0, shift - (fp_flag == 1 ? 2 : 0));
-        nr_a_sum_b((__m128i *)rxdataF_zforcing[rtx],
-                   (__m128i *)outtemp,
-                   nb_rb_0);//a =a + b
-        }
+    for (int ctx = 0; ctx < n_tx; ctx++) { // column multi
+      // printf("Computing r_%d c_%d\n",rtx,ctx);
+      // print_shorts(" H_h_H=",(int16_t*)&conjH_H_elements[ctx*n_tx+rtx][0][0]);
+      // print_shorts(" Inv_H_h_H=",(int16_t*)&inv_H_h_H[ctx*n_tx+rtx][0]);
+      nr_a_mult_b(inv_H_h_H[ctx][rtx], (c16_t *)(rxdataF_comp[ctx][0] + symbol * nb_rb * 12), outtemp, nb_rb_0, shift - (fp_flag == 1 ? 2 : 0));
+      nr_a_sum_b(rxdataF_zforcing[rtx], outtemp,
+                 nb_rb_0); // a =a + b
+    }
 #ifdef DEBUG_DLSCH_DEMOD
     printf("Computing layer_%d \n",rtx);;
     print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][0]);
     print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][4]);
     print_shorts(" Rx signal:=",(int16_t*)&rxdataF_zforcing[rtx][8]);
 #endif
-    }
+  }
 
   //Copy zero_forcing out to output array
   for (int rtx=0;rtx<n_tx;rtx++)
-    nr_element_sign(rxdataF_zforcing[rtx], (int *)(rxdataF_comp[rtx][0] + symbol * nb_rb * 12), nb_rb_0, +1);
+    nr_element_sign(rxdataF_zforcing[rtx], (c16_t *)(rxdataF_comp[rtx][0] + symbol * nb_rb * 12), nb_rb_0, +1);
 
   //Update LLR thresholds with the Matrix determinant
   __m128i *dl_ch_mag128_0=NULL,*dl_ch_mag128b_0=NULL,*dl_ch_mag128r_0=NULL,*determ_fin_128;
@@ -2224,30 +2185,6 @@ uint8_t nr_zero_forcing_rx(uint32_t rx_size_symbol,
       dl_ch_mag128r_0 += 1;
     }
   }
-
-  _mm_empty();
-  _m_empty();
-
-  // Memory free
-  for (int aarx = 0; aarx < n_rx; aarx++) {
-    for (int rtx = 0; rtx < n_tx; rtx++) { // row
-      for (int ctx = 0; ctx < n_tx; ctx++) { // column
-        free(conjH_H_elements[aarx][ctx * n_tx + rtx]);
-      }
-    }
-    free(conjH_H_elements[aarx]);
-  }
-  free(conjH_H_elements);
-  for (int rtx = 0; rtx < n_tx; rtx++) { // row
-    for (int ctx = 0; ctx < n_tx; ctx++) { // column
-      free(inv_H_h_H[ctx * n_tx + rtx]);
-    }
-  }
-  free(inv_H_h_H);
-  for (int rtx = 0; rtx < n_tx; rtx++) { // row
-    free(rxdataF_zforcing[rtx]);
-  }
-  free(rxdataF_zforcing);
 
   return 0;
 }

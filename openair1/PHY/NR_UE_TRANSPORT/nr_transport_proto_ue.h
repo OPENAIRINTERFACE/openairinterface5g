@@ -386,10 +386,6 @@ void nr_conjch0_mult_ch1(int *ch0,
                          unsigned short nb_rb,
                          unsigned char output_shift0);
 
-void nr_a_sum_b(__m128i *input_x,
-                __m128i *input_y,
-                unsigned short nb_rb);
-
 /** \brief This is the top-level entry point for DLSCH decoding in UE.  It should be replicated on several
     threads (on multi-core machines) corresponding to different HARQ processes. The routine first
     computes the segmentation information, followed by rate dematching and sub-block deinterleaving the of the
