@@ -581,6 +581,16 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     __attribute__((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx * dlsch0->Nl][pdsch_est_size];
     memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t) * ue->frame_parms.nb_antennas_rx * dlsch0->Nl * pdsch_est_size);
 
+    c16_t ptrs_phase_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
+    memset(ptrs_phase_per_slot, 0, sizeof(ptrs_phase_per_slot));
+
+    int32_t ptrs_re_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
+    memset(ptrs_re_per_slot, 0, sizeof(ptrs_re_per_slot));
+
+    const uint32_t rx_size_symbol = dlsch[0].dlsch_config.number_rbs * NR_NB_SC_PER_RB;
+    __attribute__((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_tx][ue->frame_parms.nb_antennas_rx][rx_size_symbol * NR_SYMBOLS_PER_SLOT];
+    memset(rxdataF_comp, 0, sizeof(rxdataF_comp));
+
     for (m = s0; m < (s0 +s1); m++) {
       if (dlsch0->dlsch_config.dlDmrsSymbPos & (1 << m)) {
         for (uint8_t aatx=0; aatx<dlsch0->Nl; aatx++) {//for MIMO Config: it shall loop over no_layers
@@ -653,7 +663,25 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       start_meas(&ue->dlsch_llr_stats_parallelization[slot]);
       // process DLSCH received symbols in the slot
       // symbol by symbol processing (if data/DMRS are multiplexed is checked inside the function)
-      if (nr_rx_pdsch(ue, proc, dlsch, m, first_symbol_flag, harq_pid, pdsch_est_size, pdsch_dl_ch_estimates, llr, dl_valid_re, rxdataF, llr_offset, &log2_maxh) < 0)
+      if (nr_rx_pdsch(ue,
+                      proc,
+                      dlsch,
+                      m,
+                      first_symbol_flag,
+                      harq_pid,
+                      pdsch_est_size,
+                      pdsch_dl_ch_estimates,
+                      llr,
+                      dl_valid_re,
+                      rxdataF,
+                      llr_offset,
+                      &log2_maxh,
+                      rx_size_symbol,
+                      ue->frame_parms.nb_antennas_rx,
+                      rxdataF_comp,
+                      ptrs_phase_per_slot,
+                      ptrs_re_per_slot)
+          < 0)
         return -1;
 
       stop_meas(&ue->dlsch_llr_stats_parallelization[slot]);

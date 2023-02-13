@@ -599,7 +599,12 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT],
                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
                 uint32_t llr_offset[NR_SYMBOLS_PER_SLOT],
-                int32_t *log2_maxh);
+                int32_t *log2_maxhrx_size_symbol,
+                int rx_size_symbol,
+                int nbRx,
+                int32_t rxdataF_comp[][nbRx][rx_size_symbol],
+                c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
+                int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT]);
 
 int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t slot);
 
