@@ -22,32 +22,6 @@
 #include "rrc_gNB_radio_bearers.h"
 #include "oai_asn1.h"
 
-NR_SRB_ToAddMod_t *generateSRB2() {
-  NR_SRB_ToAddMod_t *SRB2_config = NULL;
-
-  SRB2_config = CALLOC(1, sizeof(*SRB2_config));
-  SRB2_config->srb_Identity = 2;
-
-  return SRB2_config;
-}
-
-NR_SRB_ToAddModList_t **generateSRB2_confList(gNB_RRC_UE_t *ue, 
-                                              NR_SRB_ToAddModList_t *SRB_configList, 
-                                              uint8_t xid) {
-  NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
-
-  SRB_configList2 = &ue->SRB_configList2[xid];
-  if (*SRB_configList2 == NULL) {
-    *SRB_configList2 = CALLOC(1, sizeof(**SRB_configList2));
-    memset(*SRB_configList2, 0, sizeof(**SRB_configList2));
-    NR_SRB_ToAddMod_t *SRB2_config = generateSRB2();
-    asn1cSeqAdd(&(*SRB_configList2)->list, SRB2_config);
-    asn1cSeqAdd(&SRB_configList->list, SRB2_config);
-  }
-
-  return SRB_configList2;
-}
-
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
                                uint8_t drb_id,
                                const pdu_session_param_t *pduSession,

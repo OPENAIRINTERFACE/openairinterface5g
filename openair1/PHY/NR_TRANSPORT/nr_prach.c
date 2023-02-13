@@ -39,20 +39,19 @@ extern uint16_t prach_root_sequence_map_abc[138];
 extern uint16_t nr_du[838];
 extern const char *prachfmt[];
 
-void init_prach_list(PHY_VARS_gNB *gNB) {
-
+void init_prach_list(PHY_VARS_gNB *gNB)
+{
   AssertFatal(gNB!=NULL,"gNB is null\n");
   for (int i=0; i<NUMBER_OF_NR_PRACH_MAX; i++){
-		gNB->prach_vars.list[i].frame = -1;
-		gNB->prach_vars.list[i].slot  = -1;
-	}
+    gNB->prach_vars.list[i].frame = -1;
+    gNB->prach_vars.list[i].slot  = -1;
+  }
 }
 
-void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id) {
-
+void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id)
+{
   gNB->prach_vars.list[prach_id].frame = -1;
-	gNB->prach_vars.list[prach_id].slot  = -1;
-
+  gNB->prach_vars.list[prach_id].slot  = -1;
 }
 
 int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame, int slot, find_type_t type) {

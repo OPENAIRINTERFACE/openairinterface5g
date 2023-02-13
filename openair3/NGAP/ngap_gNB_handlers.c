@@ -48,10 +48,7 @@
 #include "conversions.h"
 #include "NGAP_NonDynamic5QIDescriptor.h"
 
-static
-int ngap_gNB_handle_ng_setup_response(uint32_t               assoc_id,
-                                      uint32_t               stream,
-                                      NGAP_NGAP_PDU_t       *pdu);
+static int ngap_gNB_handle_ng_setup_response(uint32_t ssoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu);
 static
 int ngap_gNB_handle_ng_setup_failure(uint32_t               assoc_id,
                                      uint32_t               stream,
@@ -188,8 +185,7 @@ void ngap_handle_ng_setup_message(ngap_gNB_amf_data_t *amf_desc_p, int sctp_shut
 
       /* If there are no more associated AMF, inform gNB app */
       if (amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb == 0) {
-        MessageDef                 *message_p;
-        message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_DEREGISTERED_GNB_IND);
+        MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_DEREGISTERED_GNB_IND);
         NGAP_DEREGISTERED_GNB_IND(message_p).nb_amf = 0;
         itti_send_msg_to_task(TASK_GNB_APP, amf_desc_p->ngap_gNB_instance->instance, message_p);
       }
@@ -206,8 +202,7 @@ void ngap_handle_ng_setup_message(ngap_gNB_amf_data_t *amf_desc_p, int sctp_shut
 
     /* If there are no more pending messages, inform gNB app */
     if (amf_desc_p->ngap_gNB_instance->ngap_amf_pending_nb == 0) {
-      MessageDef                 *message_p;
-      message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_REGISTER_GNB_CNF);
+      MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_REGISTER_GNB_CNF);
       NGAP_REGISTER_GNB_CNF(message_p).nb_amf = amf_desc_p->ngap_gNB_instance->ngap_amf_associated_nb;
       itti_send_msg_to_task(TASK_GNB_APP, amf_desc_p->ngap_gNB_instance->instance, message_p);
     }
@@ -838,7 +833,6 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
-  MessageDef            *message_p        = NULL;
   NGAP_InitialContextSetupRequest_t    *container;
   NGAP_InitialContextSetupRequestIEs_t *ie;
   NGAP_RAN_UE_NGAP_ID_t    ran_ue_ngap_id;
@@ -890,20 +884,21 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   ue_desc_p->rx_stream = stream;
   ue_desc_p->amf_ue_ngap_id = amf_ue_ngap_id;
   
-  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_INITIAL_CONTEXT_SETUP_REQ);
-  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
+  MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_INITIAL_CONTEXT_SETUP_REQ);
+  ngap_initial_context_setup_req_t * msg=&NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p);
+  msg->ue_initial_id  = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
-  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
-  NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
+  msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
+  msg->amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
   /* id-UEAggregateMaximumBitRate */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_InitialContextSetupRequestIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_UEAggregateMaximumBitRate, false);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     asn_INTEGER2ulong(&(ie->value.choice.UEAggregateMaximumBitRate.uEAggregateMaximumBitRateUL),
-                      &(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_ambr.br_ul));
+                      &(msg->ue_ambr.br_ul));
     asn_INTEGER2ulong(&(ie->value.choice.UEAggregateMaximumBitRate.uEAggregateMaximumBitRateDL),
-                      &(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).ue_ambr.br_dl));
+                      &(msg->ue_ambr.br_dl));
   } else {
     NGAP_ERROR("could not found NGAP_ProtocolIE_ID_id_UEAggregateMaximumBitRate\n");
   }
@@ -914,12 +909,12 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_GUAMI, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    TBCD_TO_MCC_MNC(&ie->value.choice.GUAMI.pLMNIdentity, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mcc,
-                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mnc, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.mnc_len);
+    TBCD_TO_MCC_MNC(&ie->value.choice.GUAMI.pLMNIdentity, msg->guami.mcc,
+                    msg->guami.mnc, msg->guami.mnc_len);
     
-    OCTET_STRING_TO_INT8(&ie->value.choice.GUAMI.aMFRegionID, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.amf_region_id);
-    OCTET_STRING_TO_INT16(&ie->value.choice.GUAMI.aMFSetID, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.amf_set_id);
-    OCTET_STRING_TO_INT8(&ie->value.choice.GUAMI.aMFPointer, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).guami.amf_pointer);
+    OCTET_STRING_TO_INT8(&ie->value.choice.GUAMI.aMFRegionID, msg->guami.amf_region_id);
+    OCTET_STRING_TO_INT16(&ie->value.choice.GUAMI.aMFSetID, msg->guami.amf_set_id);
+    OCTET_STRING_TO_INT8(&ie->value.choice.GUAMI.aMFPointer, msg->guami.amf_pointer);
   } else {/* ie != NULL */
     return -1;
   }
@@ -928,7 +923,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtReq, false);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_of_pdusessions =
+    msg->nb_of_pdusessions =
       ie->value.choice.PDUSessionResourceSetupListCxtReq.list.count;
 
     for (i = 0; i < ie->value.choice.PDUSessionResourceSetupListCxtReq.list.count; i++) {
@@ -938,19 +933,19 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
       NGAP_PDUSessionResourceSetupRequestTransferIEs_t *pdusessionTransfer_ies = NULL;
         
       item_p = (NGAP_PDUSessionResourceSetupItemCxtReq_t *)ie->value.choice.PDUSessionResourceSetupListCxtReq.list.array[i];
-      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].pdusession_id = item_p->pDUSessionID;
+      msg->pdusession_param[i].pdusession_id = item_p->pDUSessionID;
 
       if (item_p->nAS_PDU != NULL) {
         /* Only copy NAS pdu if present */
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nas_pdu.length = item_p->nAS_PDU->size;
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nas_pdu.buffer =
+        msg->pdusession_param[i].nas_pdu.length = item_p->nAS_PDU->size;
+        msg->pdusession_param[i].nas_pdu.buffer =
           malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
-        memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nas_pdu.buffer,
+        memcpy(msg->pdusession_param[i].nas_pdu.buffer,
                item_p->nAS_PDU->buf, item_p->nAS_PDU->size);
         NGAP_DEBUG("Received NAS message with the PDUSESSION setup procedure\n");
       } else {
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nas_pdu.length = 0;
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nas_pdu.buffer = NULL;
+        msg->pdusession_param[i].nas_pdu.length = 0;
+        msg->pdusession_param[i].nas_pdu.buffer = NULL;
       }
 
 
@@ -979,14 +974,14 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
               gTPTunnel_p = pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
               
               /* Set the transport layer address */
-              memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.buffer,
+              memcpy(msg->pdusession_param[i].upf_addr.buffer,
                      gTPTunnel_p->transportLayerAddress.buf, gTPTunnel_p->transportLayerAddress.size);
               
-              NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.length =
+              msg->pdusession_param[i].upf_addr.length =
                 gTPTunnel_p->transportLayerAddress.size * 8 - gTPTunnel_p->transportLayerAddress.bits_unused;
               
               /* GTP tunnel endpoint ID */
-              OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].gtp_teid);
+              OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, msg->pdusession_param[i].gtp_teid);
             }
             
             break;
@@ -1001,7 +996,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
 
           /* mandatory PDUSessionType */
           case NGAP_ProtocolIE_ID_id_PDUSessionType:
-            NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
+            msg->pdusession_param[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
             break;
 
           /* optional SecurityIndication */
@@ -1021,25 +1016,25 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count > 0);
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count <= NGAP_maxnoofQosFlows);
 
-              NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
+              msg->pdusession_param[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
                 
               for(int qosIdx = 0; qosIdx < pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count; qosIdx++) {
                 qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.array[qosIdx];
                 
                 /* Set the QOS informations */
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                msg->pdusession_param[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
                 if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI){
                   if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI != NULL){
-                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].fiveQI =
+                    msg->pdusession_param[i].qos[qosIdx].fiveQI =
                         (uint64_t)qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI->fiveQI;
                   }
                 }
               
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.priority_level =
+                msg->pdusession_param[i].qos[qosIdx].allocation_retention_priority.priority_level =
                   qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
+                msg->pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
                   qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionCapability;
-                NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
+                msg->pdusession_param[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
                   qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionVulnerability;
               }
             }
@@ -1051,14 +1046,14 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
             break;
             
           default:
-            NGAP_ERROR("could not found protocolIEs id %ld\n", pdusessionTransfer_ies->id);
+            NGAP_ERROR("Not found protocolIEs id %ld\n", pdusessionTransfer_ies->id);
             return -1;
         }
       }
 
     } /* for i... */
   } else {/* ie != NULL */
-    NGAP_ERROR("could not found NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtReq\n");
+    NGAP_ERROR("Not found NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListCxtReq\n");
   }
   
   /* id-AllowedNSSAI */
@@ -1075,35 +1070,35 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     if (ie == NULL) {
         NGAP_WARN("AllowedNSSAI not present, forging 2 NSSAI\n");
 
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = 2;
+    	msg->nb_allowed_nssais = 2;
 
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sST = 01;
+    	msg->allowed_nssai[0].sST = 01;
 
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD_flag = 1;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[0] = 01;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[1] = 02;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[0].sD[2] = 03;
+    	msg->allowed_nssai[0].sD_flag = 1;
+    	msg->allowed_nssai[0].sD[0] = 01;
+    	msg->allowed_nssai[0].sD[1] = 02;
+    	msg->allowed_nssai[0].sD[2] = 03;
 
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sST = 01;
+    	msg->allowed_nssai[1].sST = 01;
  
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD_flag = 1;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[0] = 00;//11;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[1] = 00;//22;
-    	NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[1].sD[2] = 01;//33;
+    	msg->allowed_nssai[1].sD_flag = 1;
+    	msg->allowed_nssai[1].sD[0] = 00;//11;
+    	msg->allowed_nssai[1].sD[1] = 00;//22;
+    	msg->allowed_nssai[1].sD[2] = 01;//33;
     } else {
     NGAP_INFO("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
+    msg->nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
     
     for(i = 0; i < ie->value.choice.AllowedNSSAI.list.count; i++) {
       allow_nssai_item_p = ie->value.choice.AllowedNSSAI.list.array[i];
       
-      OCTET_STRING_TO_INT8(&allow_nssai_item_p->s_NSSAI.sST, NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sST);
+      OCTET_STRING_TO_INT8(&allow_nssai_item_p->s_NSSAI.sST, msg->allowed_nssai[i].sST);
 
       if(allow_nssai_item_p->s_NSSAI.sD != NULL) {
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD_flag = 1;
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[0] = allow_nssai_item_p->s_NSSAI.sD->buf[0];
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[1] = allow_nssai_item_p->s_NSSAI.sD->buf[1];
-        NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
+        msg->allowed_nssai[i].sD_flag = 1;
+        msg->allowed_nssai[i].sD[0] = allow_nssai_item_p->s_NSSAI.sD->buf[0];
+        msg->allowed_nssai[i].sD[1] = allow_nssai_item_p->s_NSSAI.sD->buf[1];
+        msg->allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
       }
     }
    }
@@ -1116,13 +1111,13 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_UESecurityCapabilities, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.nRencryption_algorithms =
+    msg->security_capabilities.nRencryption_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.nRencryptionAlgorithms);
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.nRintegrity_algorithms =
+    msg->security_capabilities.nRintegrity_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.nRintegrityProtectionAlgorithms);
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.eUTRAencryption_algorithms =
+    msg->security_capabilities.eUTRAencryption_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.eUTRAencryptionAlgorithms);
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_capabilities.eUTRAintegrity_algorithms =
+    msg->security_capabilities.eUTRAintegrity_algorithms =
       BIT_STRING_to_uint16(&ie->value.choice.UESecurityCapabilities.eUTRAintegrityProtectionAlgorithms);
   } else {/* ie != NULL */
     return -1;
@@ -1133,7 +1128,7 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
                              NGAP_ProtocolIE_ID_id_SecurityKey, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    memcpy(&NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).security_key,
+    memcpy(&msg->security_key,
            ie->value.choice.SecurityKey.buf, ie->value.choice.SecurityKey.size);
     
   } else {/* ie != NULL */
@@ -1148,11 +1143,11 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     NGAP_MobilityRestrictionList_t *mobility_rest_list_p = NULL;
     mobility_rest_list_p = &ie->value.choice.MobilityRestrictionList;
 
-    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction_flag   = 1;
+    msg->mobility_restriction_flag   = 1;
     TBCD_TO_MCC_MNC(&mobility_rest_list_p->servingPLMN, 
-                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mcc,
-                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mnc, 
-                    NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).mobility_restriction.serving_plmn.mnc_digit_length);
+                    msg->mobility_restriction.serving_plmn.mcc,
+                    msg->mobility_restriction.serving_plmn.mnc, 
+                    msg->mobility_restriction.serving_plmn.mnc_digit_length);
   } 
 
 
@@ -1162,10 +1157,10 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     if(ie->value.choice.NAS_PDU.size > 0) {
-      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu_flag   = 1;
-      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.length = ie->value.choice.NAS_PDU.size;
-      NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
-      memcpy(NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p).nas_pdu.buffer,
+      msg->nas_pdu_flag   = 1;
+      msg->nas_pdu.length = ie->value.choice.NAS_PDU.size;
+      msg->nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
+      memcpy(msg->nas_pdu.buffer,
              ie->value.choice.NAS_PDU.buf, ie->value.choice.NAS_PDU.size);
     }
   } 
@@ -1259,7 +1254,6 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   NGAP_RAN_UE_NGAP_ID_t         ran_ue_ngap_id;
   ngap_gNB_amf_data_t          *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t        *ue_desc_p        = NULL;
-  MessageDef                   *message_p        = NULL;
   NGAP_PDUSessionResourceSetupRequest_t     *container;
   NGAP_PDUSessionResourceSetupRequestIEs_t  *ie;
   DevAssert(pdu != NULL);
@@ -1313,17 +1307,26 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
               (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
   }
 
-  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_SETUP_REQ);
-  NGAP_PDUSESSION_SETUP_REQ(message_p).ue_initial_id   = ue_desc_p->ue_initial_id;
+  MessageDef * message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_SETUP_REQ);
+  ngap_pdusession_setup_req_t * msg=&NGAP_PDUSESSION_SETUP_REQ(message_p);
+  msg->ue_initial_id   = ue_desc_p->ue_initial_id;
   ue_desc_p->ue_initial_id = 0;
-  NGAP_PDUSESSION_SETUP_REQ(message_p).gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
-  NGAP_PDUSESSION_SETUP_REQ(message_p).amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
+  msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
+  msg->amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
+
+  /* UE Aggregated Maximum Bitrate */
+  NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceSetupRequestIEs_t, ie, container,
+                         NGAP_ProtocolIE_ID_id_UEAggregateMaximumBitRate, true);
+  asn_INTEGER2ulong(&(ie->value.choice.UEAggregateMaximumBitRate.uEAggregateMaximumBitRateUL),
+                    &msg->ueAggMaxBitRateUplink);
+  asn_INTEGER2ulong(&(ie->value.choice.UEAggregateMaximumBitRate.uEAggregateMaximumBitRateDL),
+                    &msg->ueAggMaxBitRateDownlink);
 
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceSetupRequestIEs_t, ie, container,
                          NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListSUReq, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_PDUSESSION_SETUP_REQ(message_p).nb_pdusessions_tosetup =
+    msg->nb_pdusessions_tosetup =
       ie->value.choice.PDUSessionResourceSetupListSUReq.list.count;
 
     for (int i = 0; i < ie->value.choice.PDUSessionResourceSetupListSUReq.list.count; i++) {
@@ -1332,20 +1335,29 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
       NGAP_PDUSessionResourceSetupRequestTransfer_t    *pdusessionTransfer_p   = NULL;
       NGAP_PDUSessionResourceSetupRequestTransferIEs_t *pdusessionTransfer_ies = NULL;
 
+      // PDU session ID
       item_p = (NGAP_PDUSessionResourceSetupItemSUReq_t *)ie->value.choice.PDUSessionResourceSetupListSUReq.list.array[i];
-      NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].pdusession_id = item_p->pDUSessionID;
+      msg->pdusession_setup_params[i].pdusession_id = item_p->pDUSessionID;
 
+      // S-NSSAI
+      OCTET_STRING_TO_INT8(&item_p->s_NSSAI.sST, msg->allowed_nssai[i].sST);
+      if(item_p->s_NSSAI.sD != NULL) {
+        msg->allowed_nssai[i].sD_flag = 1;
+        msg->allowed_nssai[i].sD[0] = item_p->s_NSSAI.sD->buf[0];
+        msg->allowed_nssai[i].sD[1] = item_p->s_NSSAI.sD->buf[1];
+        msg->allowed_nssai[i].sD[2] = item_p->s_NSSAI.sD->buf[2];
+      }
 
       // check for the NAS PDU
       if (item_p->pDUSessionNAS_PDU->size > 0 ) {
-        NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.length = item_p->pDUSessionNAS_PDU->size;
-        NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionNAS_PDU->size);
-        memcpy(NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.buffer,
+        msg->pdusession_setup_params[i].nas_pdu.length = item_p->pDUSessionNAS_PDU->size;
+        msg->pdusession_setup_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionNAS_PDU->size);
+        memcpy(msg->pdusession_setup_params[i].nas_pdu.buffer,
                item_p->pDUSessionNAS_PDU->buf, item_p->pDUSessionNAS_PDU->size);
-        // NGAP_INFO("received a NAS PDU with size %d (%02x.%02x)\n",NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.length, item_p->nAS_PDU.buf[0], item_p->nAS_PDU.buf[1]);
+        // NGAP_INFO("received a NAS PDU with size %d (%02x.%02x)\n",msg->pdusession_setup_params[i].nas_pdu.length, item_p->nAS_PDU.buf[0], item_p->nAS_PDU.buf[1]);
       } else {
-        NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.length = 0;
-        NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nas_pdu.buffer = NULL;
+        msg->pdusession_setup_params[i].nas_pdu.length = 0;
+        msg->pdusession_setup_params[i].nas_pdu.buffer = NULL;
         NGAP_WARN("NAS PDU is not provided, generate a PDUSESSION_SETUP Failure (TBD) back to AMF \n");
       }
 
@@ -1374,10 +1386,10 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
           	NGAP_GTPTunnel_t  *gTPTunnel_p;
               gTPTunnel_p = pdusessionTransfer_ies->value.choice.UPTransportLayerInformation.choice.gTPTunnel;
               /* The transport layer address for the IP packets */
-              OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].gtp_teid);
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.length =
+              OCTET_STRING_TO_INT32(&gTPTunnel_p->gTP_TEID, msg->pdusession_setup_params[i].gtp_teid);
+              msg->pdusession_setup_params[i].upf_addr.length =
               		gTPTunnel_p->transportLayerAddress.size * 8 - gTPTunnel_p->transportLayerAddress.bits_unused;
-              memcpy(NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.buffer ,
+              memcpy(msg->pdusession_setup_params[i].upf_addr.buffer ,
               		gTPTunnel_p->transportLayerAddress.buf, gTPTunnel_p->transportLayerAddress.size);
           }
             break;
@@ -1392,7 +1404,7 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
 
           /* mandatory PDUSessionType */
           case NGAP_ProtocolIE_ID_id_PDUSessionType:
-            NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
+            msg->pdusession_setup_params[i].upf_addr.pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
             break;
 
           /* optional SecurityIndication */
@@ -1412,24 +1424,28 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
             DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count > 0);
             DevAssert(pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count <= NGAP_maxnoofQosFlows);
 
-            NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
+            msg->pdusession_setup_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count;
 
             for(int qosIdx = 0; qosIdx < pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.count; qosIdx++){
               qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowSetupRequestList.list.array[qosIdx];
 
               /* Set the QOS informations */
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+              msg->pdusession_setup_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
               if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI){
+                msg->pdusession_setup_params[i].qos[qosIdx].fiveQI_type = non_dynamic;
                 if(qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI != NULL){
-                  NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].fiveQI = 
+                  msg->pdusession_setup_params[i].qos[qosIdx].fiveQI = 
                     (uint64_t)qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.choice.nonDynamic5QI->fiveQI;
                 }
+              } else if (qosFlowItem_p->qosFlowLevelQosParameters.qosCharacteristics.present == NGAP_QosCharacteristics_PR_dynamic5QI)
+              {
+                msg->pdusession_setup_params[i].qos[qosIdx].fiveQI_type = dynamic;
               }
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
+              msg->pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                 qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.priorityLevelARP;
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
+              msg->pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
                 qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionCapability;
-              NGAP_PDUSESSION_SETUP_REQ(message_p).pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
+              msg->pdusession_setup_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
                 qosFlowItem_p->qosFlowLevelQosParameters.allocationAndRetentionPriority.pre_emptionVulnerability;
             }
           }
@@ -1461,7 +1477,6 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
 
   ngap_gNB_amf_data_t   *amf_desc_p        = NULL;
   ngap_gNB_instance_t   *ngap_gNB_instance = NULL;
-  MessageDef            *message_p         = NULL;
   NGAP_Paging_t         *container;
   NGAP_PagingIEs_t      *ie;
   DevAssert(pdu != NULL);
@@ -1490,42 +1505,44 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
     return -1;
   }
 
-  message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PAGING_IND);
+   MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PAGING_IND);
+   ngap_paging_ind_t * msg=&NGAP_PAGING_IND(message_p);
+  
   /* convert NGAP_PagingIEs_t to ngap_paging_ind_t */
   /* id-UEIdentityIndexValue : convert UE Identity Index value */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_UEPagingIdentity, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    OCTET_STRING_TO_INT16(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFSetID, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id);
-    OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFPointer, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer);
-    OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->fiveG_TMSI, NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
+    OCTET_STRING_TO_INT16(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFSetID, msg->ue_paging_identity.s_tmsi.amf_set_id);
+    OCTET_STRING_TO_INT8(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->aMFPointer, msg->ue_paging_identity.s_tmsi.amf_pointer);
+    OCTET_STRING_TO_INT32(&ie->value.choice.UEPagingIdentity.choice.fiveG_S_TMSI->fiveG_TMSI, msg->ue_paging_identity.s_tmsi.m_tmsi);
 
     NGAP_DEBUG("[SCTP %d] Received Paging Identity amf_set_id %d, amf_pointer %d, m_tmsi %d\n",
                assoc_id,
-               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id,
-               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer,
-               NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi);
+               msg->ue_paging_identity.s_tmsi.amf_set_id,
+               msg->ue_paging_identity.s_tmsi.amf_pointer,
+               msg->ue_paging_identity.s_tmsi.m_tmsi);
   } else {
     return -1;
   }
 
 
-  NGAP_PAGING_IND(message_p).paging_drx = NGAP_PAGING_DRX_256;
+  msg->paging_drx = NGAP_PAGING_DRX_256;
   /* id-pagingDRX */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_PagingDRX, false);
 
   /* optional */
   if (ie) {
-    NGAP_PAGING_IND(message_p).paging_drx = ie->value.choice.PagingDRX;
+    msg->paging_drx = ie->value.choice.PagingDRX;
   } else {
-    NGAP_PAGING_IND(message_p).paging_drx = NGAP_PAGING_DRX_256;
+    msg->paging_drx = NGAP_PAGING_DRX_256;
   }
 
-  memset (&NGAP_PAGING_IND(message_p).plmn_identity[0], 0, sizeof(plmn_identity_t)*256);
-  memset (&NGAP_PAGING_IND(message_p).tac[0], 0, sizeof(int16_t)*256);
-  NGAP_PAGING_IND(message_p).tai_size = 0;
+  memset (&msg->plmn_identity[0], 0, sizeof(plmn_identity_t)*256);
+  memset (&msg->tac[0], 0, sizeof(int16_t)*256);
+  msg->tai_size = 0;
   /* id-TAIList */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PagingIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_TAIListForPaging, true);
@@ -1536,15 +1553,15 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
     for (int i = 0; i < ie->value.choice.TAIListForPaging.list.count; i++) {
       NGAP_TAIListForPagingItem_t *item_p;
       item_p = (NGAP_TAIListForPagingItem_t *)ie->value.choice.TAIListForPaging.list.array[i];
-      TBCD_TO_MCC_MNC(&(item_p->tAI.pLMNIdentity), NGAP_PAGING_IND(message_p).plmn_identity[i].mcc,
-                      NGAP_PAGING_IND(message_p).plmn_identity[i].mnc,
-                      NGAP_PAGING_IND(message_p).plmn_identity[i].mnc_digit_length);
-      OCTET_STRING_TO_INT16(&(item_p->tAI.tAC), NGAP_PAGING_IND(message_p).tac[i]);
-      NGAP_PAGING_IND(message_p).tai_size++;
+      TBCD_TO_MCC_MNC(&(item_p->tAI.pLMNIdentity), msg->plmn_identity[i].mcc,
+                      msg->plmn_identity[i].mnc,
+                      msg->plmn_identity[i].mnc_digit_length);
+      OCTET_STRING_TO_INT16(&(item_p->tAI.tAC), msg->tac[i]);
+      msg->tai_size++;
       NGAP_DEBUG("[SCTP %d] Received Paging: MCC %d, MNC %d, TAC %d\n", assoc_id,
-                 NGAP_PAGING_IND(message_p).plmn_identity[i].mcc,
-                 NGAP_PAGING_IND(message_p).plmn_identity[i].mnc,
-                 NGAP_PAGING_IND(message_p).tac[i]);
+                 msg->plmn_identity[i].mcc,
+                 msg->plmn_identity[i].mnc,
+                 msg->tac[i]);
     }
   } else {
     return -1;
@@ -1552,10 +1569,10 @@ int ngap_gNB_handle_paging(uint32_t               assoc_id,
 
   //paging parameter values
   NGAP_DEBUG("[SCTP %d] Received Paging parameters: Paging Identity amf_set_id %d amf_pointer %d m_tmsi %d paging_drx %d paging_priority %d\n",assoc_id,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_set_id,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.amf_pointer,
-             NGAP_PAGING_IND(message_p).ue_paging_identity.s_tmsi.m_tmsi,
-             NGAP_PAGING_IND(message_p).paging_drx, NGAP_PAGING_IND(message_p).paging_priority);
+             msg->ue_paging_identity.s_tmsi.amf_set_id,
+             msg->ue_paging_identity.s_tmsi.amf_pointer,
+             msg->ue_paging_identity.s_tmsi.m_tmsi,
+             msg->paging_drx, msg->paging_priority);
   /* send message to RRC */
   itti_send_msg_to_task(TASK_RRC_GNB, ngap_gNB_instance->instance, message_p);
 
@@ -1570,7 +1587,6 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   int i, nb_of_pdusessions_failed;
   ngap_gNB_amf_data_t           *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t         *ue_desc_p        = NULL;
-  MessageDef                    *message_p        = NULL;
   NGAP_PDUSessionResourceModifyRequest_t     *container;
   NGAP_PDUSessionResourceModifyRequestIEs_t  *ie;
   NGAP_RAN_UE_NGAP_ID_t         gnb_ue_ngap_id;
@@ -1617,8 +1633,9 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
   if (ue_desc_p->amf_ue_ngap_id != amf_ue_ngap_id) {
     NGAP_WARN("UE context amf_ue_ngap_id is different form that of the message (%ld != %ld)",
               (uint64_t)ue_desc_p->amf_ue_ngap_id, amf_ue_ngap_id);
-    message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_MODIFY_RESP);
-    NGAP_PDUSESSION_MODIFY_RESP (message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
+    MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_PDUSESSION_MODIFY_RESP);
+    ngap_pdusession_modify_resp_t* msg=&NGAP_PDUSESSION_MODIFY_RESP(message_p);
+    msg->gNB_ue_ngap_id = gnb_ue_ngap_id;
     NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
                                NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModReq, true);
 
@@ -1627,32 +1644,32 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         NGAP_PDUSessionResourceModifyItemModReq_t *item_p;
         item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[nb_of_pdusessions_failed];
         
-        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].pdusession_id = item_p->pDUSessionID;
-        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].cause = NGAP_Cause_PR_radioNetwork;
-        NGAP_PDUSESSION_MODIFY_RESP(message_p).pdusessions_failed[nb_of_pdusessions_failed].cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
+        msg->pdusessions_failed[nb_of_pdusessions_failed].pdusession_id = item_p->pDUSessionID;
+        msg->pdusessions_failed[nb_of_pdusessions_failed].cause = NGAP_Cause_PR_radioNetwork;
+        msg->pdusessions_failed[nb_of_pdusessions_failed].cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
       }
     } else {
       return -1;
     }
 
-    NGAP_PDUSESSION_MODIFY_RESP(message_p).nb_of_pdusessions_failed = nb_of_pdusessions_failed;
-    ngap_gNB_pdusession_modify_resp(amf_desc_p->ngap_gNB_instance->instance,
-                               &NGAP_PDUSESSION_MODIFY_RESP(message_p));
+    msg->nb_of_pdusessions_failed = nb_of_pdusessions_failed;
+    ngap_gNB_pdusession_modify_resp(amf_desc_p->ngap_gNB_instance->instance,msg);
     itti_free(TASK_RRC_GNB,message_p);
     message_p = NULL;
     return -1;
   }
 
-  message_p        = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_MODIFY_REQ);
-  NGAP_PDUSESSION_MODIFY_REQ(message_p).ue_initial_id  = ue_desc_p->ue_initial_id;
-  NGAP_PDUSESSION_MODIFY_REQ(message_p).amf_ue_ngap_id  = amf_ue_ngap_id;
-  NGAP_PDUSESSION_MODIFY_REQ(message_p).gNB_ue_ngap_id  = gnb_ue_ngap_id;
+  MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_MODIFY_REQ);
+  ngap_pdusession_modify_req_t * msg=&NGAP_PDUSESSION_MODIFY_REQ(message_p);
+  msg->ue_initial_id  = ue_desc_p->ue_initial_id;
+  msg->amf_ue_ngap_id  = amf_ue_ngap_id;
+  msg->gNB_ue_ngap_id  = gnb_ue_ngap_id;
   /* id-PDUSessionResourceModifyListModReq */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceModifyRequestIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_PDUSessionResourceModifyListModReq, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_PDUSESSION_MODIFY_REQ(message_p).nb_pdusessions_tomodify =
+    msg->nb_pdusessions_tomodify =
       ie->value.choice.PDUSessionResourceModifyListModReq.list.count;
 
     for (i = 0; i < ie->value.choice.PDUSessionResourceModifyListModReq.list.count; i++) {
@@ -1663,17 +1680,17 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         
       item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[i];
     
-      NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].pdusession_id = item_p->pDUSessionID;
+      msg->pdusession_modify_params[i].pdusession_id = item_p->pDUSessionID;
 
       // check for the NAS PDU
       if (item_p->nAS_PDU != NULL && item_p->nAS_PDU->size > 0 ) {
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.length = item_p->nAS_PDU->size;
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
-        memcpy(NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer,
+        msg->pdusession_modify_params[i].nas_pdu.length = item_p->nAS_PDU->size;
+        msg->pdusession_modify_params[i].nas_pdu.buffer = malloc(sizeof(uint8_t) * item_p->nAS_PDU->size);
+        memcpy(msg->pdusession_modify_params[i].nas_pdu.buffer,
                item_p->nAS_PDU->buf, item_p->nAS_PDU->size);
       } else {
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.length = 0;
-        NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nas_pdu.buffer = NULL;
+        msg->pdusession_modify_params[i].nas_pdu.length = 0;
+        msg->pdusession_modify_params[i].nas_pdu.buffer = NULL;
         continue;
       }
 
@@ -1718,25 +1735,25 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count > 0);
               DevAssert(pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count <= NGAP_maxnoofQosFlows);
 
-              NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count;
+              msg->pdusession_modify_params[i].nb_qos = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count;
                 
               for(int qosIdx = 0; qosIdx < pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.count; qosIdx++) {
                 qosFlowItem_p = pdusessionTransfer_ies->value.choice.QosFlowAddOrModifyRequestList.list.array[qosIdx];
                 
                 /* Set the QOS informations */
-                NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
+                msg->pdusession_modify_params[i].qos[qosIdx].qfi = (uint8_t)qosFlowItem_p->qosFlowIdentifier;
                 if(qosFlowItem_p->qosFlowLevelQosParameters) {
                   if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_nonDynamic5QI) {
-                    NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].fiveQI =
+                    msg->pdusession_modify_params[i].qos[qosIdx].fiveQI =
                       qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.choice.nonDynamic5QI->fiveQI;
                   } else if (qosFlowItem_p->qosFlowLevelQosParameters->qosCharacteristics.present == NGAP_QosCharacteristics_PR_dynamic5QI) {
                     // TODO
                   }
-                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
+                  msg->pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.priority_level =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.priorityLevelARP;
-                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
+                  msg->pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_capability =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.pre_emptionCapability;
-                  NGAP_PDUSESSION_MODIFY_REQ(message_p).pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
+                  msg->pdusession_modify_params[i].qos[qosIdx].allocation_retention_priority.pre_emp_vulnerability =
                     qosFlowItem_p->qosFlowLevelQosParameters->allocationAndRetentionPriority.pre_emptionVulnerability;
                 }
               }
@@ -1784,7 +1801,6 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
   int i;
   ngap_gNB_amf_data_t   *amf_desc_p       = NULL;
   ngap_gNB_ue_context_t *ue_desc_p        = NULL;
-  MessageDef            *message_p        = NULL;
   NGAP_PDUSessionResourceReleaseCommand_t     *container;
   NGAP_PDUSessionResourceReleaseCommandIEs_t  *ie;
   NGAP_RAN_UE_NGAP_ID_t           gnb_ue_ngap_id;
@@ -1841,22 +1857,24 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
 
   NGAP_DEBUG("[SCTP %d] Received pdu session release command for gNB_UE_NGAP_ID %lu amf_ue_ngap_id %lu\n",
              assoc_id, gnb_ue_ngap_id, amf_ue_ngap_id);
-  message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_RELEASE_COMMAND);
-  NGAP_PDUSESSION_RELEASE_COMMAND(message_p).gNB_ue_ngap_id = gnb_ue_ngap_id;
-  NGAP_PDUSESSION_RELEASE_COMMAND(message_p).amf_ue_ngap_id = amf_ue_ngap_id;
+  MessageDef * message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_RELEASE_COMMAND);
+  ngap_pdusession_release_command_t * msg=&NGAP_PDUSESSION_RELEASE_COMMAND(message_p);
+
+  msg->gNB_ue_ngap_id = gnb_ue_ngap_id;
+  msg->amf_ue_ngap_id = amf_ue_ngap_id;
   /* id-NAS-PDU */
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceReleaseCommandIEs_t, ie, container,
                              NGAP_ProtocolIE_ID_id_NAS_PDU, false);
 
   if(ie && ie->value.choice.NAS_PDU.size > 0) {
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.length = ie->value.choice.NAS_PDU.size;
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
-    memcpy(NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer,
+    msg->nas_pdu.length = ie->value.choice.NAS_PDU.size;
+    msg->nas_pdu.buffer = malloc(sizeof(uint8_t) * ie->value.choice.NAS_PDU.size);
+    memcpy(msg->nas_pdu.buffer,
            ie->value.choice.NAS_PDU.buf,
            ie->value.choice.NAS_PDU.size);
   } else {
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.length = 0;
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nas_pdu.buffer = NULL;
+    msg->nas_pdu.length = 0;
+    msg->nas_pdu.buffer = NULL;
   }
 
   /* id-PDUSessionResourceToReleaseListRelCmd */
@@ -1864,22 +1882,22 @@ int ngap_gNB_handle_pdusession_release_command(uint32_t               assoc_id,
                              NGAP_ProtocolIE_ID_id_PDUSessionResourceToReleaseListRelCmd, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    NGAP_PDUSESSION_RELEASE_COMMAND(message_p).nb_pdusessions_torelease = ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.count;
+    msg->nb_pdusessions_torelease = ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.count;
 
     for (i = 0; i < ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.count; i++) {
       NGAP_PDUSessionResourceToReleaseItemRelCmd_t *item_p;
       item_p = (NGAP_PDUSessionResourceToReleaseItemRelCmd_t *)ie->value.choice.PDUSessionResourceToReleaseListRelCmd.list.array[i];
     
-      NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].pdusession_id = item_p->pDUSessionID;
+      msg->pdusession_release_params[i].pdusession_id = item_p->pDUSessionID;
       if(item_p->pDUSessionResourceReleaseCommandTransfer.size > 0) {
-        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = item_p->pDUSessionResourceReleaseCommandTransfer.size;
-        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionResourceReleaseCommandTransfer.size);
-        memcpy(NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer,
+        msg->pdusession_release_params[i].transfer_length = item_p->pDUSessionResourceReleaseCommandTransfer.size;
+        msg->pdusession_release_params[i].transfer_buffer = malloc(sizeof(uint8_t) * item_p->pDUSessionResourceReleaseCommandTransfer.size);
+        memcpy(msg->pdusession_release_params[i].transfer_buffer,
                item_p->pDUSessionResourceReleaseCommandTransfer.buf,
                item_p->pDUSessionResourceReleaseCommandTransfer.size);
       }else {
-        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_length = 0;
-        NGAP_PDUSESSION_RELEASE_COMMAND(message_p).pdusession_release_params[i].transfer_buffer = NULL;
+        msg->pdusession_release_params[i].transfer_length = 0;
+        msg->pdusession_release_params[i].transfer_buffer = NULL;
         NGAP_ERROR("[NGAP] Received pdu session release command for pDUSessionResourceReleaseCommandTransfer is NULL!\n");
       }
       NGAP_DEBUG("[NGAP] Received pdu session release command for pDUSessionID id %ld\n", item_p->pDUSessionID);

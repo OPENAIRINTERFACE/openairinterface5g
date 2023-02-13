@@ -19,55 +19,50 @@
  *      contact@openairinterface.org
  */
 
+#include "openair3/SECU/aes_128_ctr.h"
+#include "common/utils/assertions.h"
+
 #include "nr_pdcp_security_nea2.h"
 
+#include <arpa/inet.h>
+#include <assert.h>
 #include <stdlib.h>
 #include <string.h>
-#include <nettle/nettle-meta.h>
-#include <nettle/aes.h>
-#include <nettle/ctr.h>
-
-#ifndef NETTLE_VERSION_MAJOR
-/* hack: include bignum.h, not version.h because version.h does not exist
- *       in old versions and bignum.h includes version.h (as of today).
- *       May completely fail to work... maybe we should skip support of old
- *       versions of nettle.
- */
-#include <nettle/bignum.h>
-#endif
 
 void *nr_pdcp_security_nea2_init(unsigned char *ciphering_key)
 {
-  void *ctx = calloc(1, nettle_aes128.context_size);
-  if (ctx == NULL) exit(1);
-
-#if !defined(NETTLE_VERSION_MAJOR) || NETTLE_VERSION_MAJOR < 3
-  nettle_aes128.set_encrypt_key(ctx, 16, ciphering_key);
-#else
-  nettle_aes128.set_encrypt_key(ctx, ciphering_key);
-#endif
-
-  return ctx;
+  // This is a hack, IMO init, cipher and free functions should be reduced to cipher.
+  // Test show a ~10% more processing time
+  return ciphering_key;
 }
 
-void nr_pdcp_security_nea2_cipher(void *security_context,
-                                  unsigned char *buffer, int length,
-                                  int bearer, int count, int direction)
+void nr_pdcp_security_nea2_cipher(void *security_context, unsigned char *buffer, int length, int bearer, int count, int direction)
 {
-  unsigned char t[16] = {0};
+  DevAssert(security_context != NULL);
+  DevAssert(buffer != NULL);
+  DevAssert(length > 0);
+  DevAssert(bearer > -1 && bearer < 32);
+  DevAssert(direction > -1 && direction < 2);
+  DevAssert(count > -1);
 
-  t[0] = (count >> 24) & 255;
-  t[1] = (count >> 16) & 255;
-  t[2] = (count >>  8) & 255;
-  t[3] = (count      ) & 255;
-  t[4] = ((bearer-1) << 3) | (direction << 2);
+  aes_128_t p = {0};
+  const uint8_t *ciphering_key = (uint8_t const *)security_context;
+  memcpy(p.key, ciphering_key, 16);
+  p.type = AES_INITIALIZATION_VECTOR_16;
+  p.iv16.d.count = ntohl(count);
+  p.iv16.d.bearer = bearer;
+  p.iv16.d.direction = direction;
 
-  nettle_ctr_crypt(security_context, nettle_aes128.encrypt,
-                   nettle_aes128.block_size, t,
-                   length, buffer, buffer);
+  uint8_t out[length];
+  memset(out, 0, length);
+
+  byte_array_t msg = {.buf =  buffer, .len = length};;
+  aes_128_ctr(&p, msg, length, out);
+
+  memcpy(buffer, out, length);
 }
 
 void nr_pdcp_security_nea2_free_security(void *security_context)
 {
-  free(security_context);
+  (void)security_context;
 }

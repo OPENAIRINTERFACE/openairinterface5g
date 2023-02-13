@@ -51,6 +51,9 @@
  * the GTP-U Extension Header. Inside the DL PDU SESSION INFORMATION frame.
  * TS 38.415 Fig. 5.5.2.1-1
  */
+
+extern instance_t *N3GTPUInst;
+
 typedef struct nr_sdap_dl_hdr_s {
   uint8_t QFI:6;
   uint8_t RQI:1;

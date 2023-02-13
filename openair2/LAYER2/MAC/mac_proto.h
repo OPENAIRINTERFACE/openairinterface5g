@@ -664,8 +664,6 @@ int remove_ue_list(UE_list_t *listP, int UE_id);
 void dump_ue_list(UE_list_t *listP);
 void init_ue_list(UE_list_t *listP);
 int UE_num_active_CC(UE_info_t *listP, int ue_idP);
-int UE_PCCID(module_id_t mod_idP, int ue_idP);
-rnti_t UE_RNTI(module_id_t mod_idP, int ue_idP);
 
 uint8_t find_rb_table_index(uint8_t average_rbs);
 

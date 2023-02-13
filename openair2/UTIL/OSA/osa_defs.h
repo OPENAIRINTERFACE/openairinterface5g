@@ -22,7 +22,7 @@
 /*!
  * \file secu_defs.h
  * \brief Openair security algorithms functions implementing 3GPP TS 33.401
- * \note HMAC computations are done by nettle/openssl library
+ * \note HMAC computations are done by openssl library
  * \author Sebastien ROUX
  * \date 2013
  * \version 0.1

@@ -582,6 +582,6 @@ void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
 
 void clear_pdsch_stats(PHY_VARS_gNB *gNB) {
 
-  for (int i=0;i<gNB->number_of_nr_dlsch_max;i++)
+  for (int i = 0;i < NUMBER_OF_NR_SCH_STATS_MAX; i++)
     memset((void*)&gNB->dlsch_stats[i],0,sizeof(gNB->dlsch_stats[i]));
 }

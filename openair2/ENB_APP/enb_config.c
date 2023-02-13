@@ -2015,7 +2015,7 @@ int RCconfig_gtpu(void ) {
   int               num_enbs                      = 0;
   char             *enb_interface_name_for_S1U    = NULL;
   char             *enb_ipv4_address_for_S1U      = NULL;
-  uint32_t          enb_port_for_S1U              = 0;
+  uint16_t enb_port_for_S1U = 0;
   char             *address                       = NULL;
   char             *cidr                          = NULL;
   char gtpupath[MAX_OPTNAME_SIZE*2 + 8];

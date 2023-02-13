@@ -79,6 +79,7 @@ typedef struct IttiMsgText_s {
 #include <openair2/COMMON/as_message.h>
 #include <openair2/RRC/LTE/rrc_types.h>
 #include <openair2/COMMON/rrc_messages_types.h>
+#include <openair2/COMMON/e1ap_messages_types.h>
 
 #include <openair3/NAS/COMMON/UTIL/OctetString.h>
 #include <openair3/NAS/COMMON/IES/AccessPointName.h>
@@ -409,7 +410,7 @@ typedef struct MessageHeader_s {
 } MessageHeader;
 
 typedef struct message_info_s {
-  int id;
+  MessagesIds id;
   message_priorities_t priority;
   /* Message payload size */
   MessageHeaderSize size;

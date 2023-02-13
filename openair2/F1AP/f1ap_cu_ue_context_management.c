@@ -510,6 +510,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
 
       /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
       for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
+        /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU */
         transport_layer_addr_t addr = { length: 32, buffer: { 0 } };
         f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
@@ -1009,7 +1010,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   f1ap_remove_ue(CUtype, instance, rnti);
   return 0;
 }
-//void CU_send_UE_CONTEXT_MODIFICATION_REQUEST(F1AP_UEContextModificationRequest_t *UEContextModificationRequest) {
+
 int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context_setup_t *f1ap_ue_context_modification_req) {
   F1AP_F1AP_PDU_t                        pdu= {0};
   F1AP_UEContextModificationRequest_t    *out;
@@ -1477,19 +1478,6 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
       /* 12.1.3 uLUPTNLInformation_ToBeSetup_List */
       for (int j = 0; j < f1ap_ue_context_modification_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context modification response from the DU */
-        transport_layer_addr_t addr = { length: 32, buffer: { 0 } };
-
-        f1ap_ue_context_modification_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
-                                                                                                      f1ap_ue_context_modification_req->rnti,
-                                                                                                      f1ap_ue_context_modification_req->drbs_to_be_setup[i].drb_id,
-                                                                                                      f1ap_ue_context_modification_req->drbs_to_be_setup[i].drb_id,
-                                                                                                      0xFFFF, // We will set the right value from DU answer
-                                                                                                      -1, // no qfi
-                                                                                                      addr,   // We will set the right value from DU answer
-                                                                                                      f1ap_ue_context_modification_req->drbs_to_be_setup[i].up_dl_tnl[0].port,
-                                                                                                      cu_f1u_data_req,
-                                                                                                      NULL);
-        /*  12.3.1 ULTunnels_ToBeSetup_Item */
         asn1cSequenceAdd(drbs_toBeSetupMod_item->uLUPTNLInformation_ToBeSetup_List.list,
                        F1AP_ULUPTNLInformation_ToBeSetup_Item_t, uLUPTNLInformation_ToBeSetup_Item);
         uLUPTNLInformation_ToBeSetup_Item->uLUPTNLInformation.present = F1AP_UPTransportLayerInformation_PR_gTPTunnel;

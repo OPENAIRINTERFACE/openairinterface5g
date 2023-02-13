@@ -134,7 +134,7 @@ int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
       int max_mimo_layers = (CSI_RS_antenna_ports<NR_MAX_NB_LAYERS) ? CSI_RS_antenna_ports : NR_MAX_NB_LAYERS;
 
-      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers* sizeof(int32_t **));
+      gNB->nr_mimo_precoding_matrix = (int32_t ***)malloc16(max_mimo_layers * sizeof(int32_t **));
       int32_t ***mat = gNB->nr_mimo_precoding_matrix;
       double complex res_code;
 
@@ -489,9 +489,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   while(gNB->configured == 0) usleep(10000);
 
-  gNB->number_of_nr_dlsch_max = NUMBER_OF_NR_DLSCH_MAX;
-  gNB->number_of_nr_ulsch_max = NUMBER_OF_NR_ULSCH_MAX;
-
   load_dftslib();
 
   crcTableInit();
@@ -607,14 +604,6 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   //PRS init
   nr_init_prs(gNB);
 
-  for (int id=0; id<NUMBER_OF_NR_SRS_MAX; id++) {
-    gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
-    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
-    for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
-      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
-    }
-  }
-
   generate_ul_reference_signal_sequences(SHRT_MAX);
 
   /* Generate low PAPR type 1 sequences for PUSCH DMRS, these are used if transform precoding is enabled.  */
@@ -622,6 +611,15 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
 
   /// Transport init necessary for NR synchro
   init_nr_transport(gNB);
+
+  gNB->nr_srs_info = (nr_srs_info_t **)malloc16_clear(gNB->max_nb_srs * sizeof(nr_srs_info_t*));
+  for (int id = 0; id < gNB->max_nb_srs; id++) {
+    gNB->nr_srs_info[id] = (nr_srs_info_t *)malloc16_clear(sizeof(nr_srs_info_t));
+    gNB->nr_srs_info[id]->srs_generated_signal = (int32_t**)malloc16_clear(MAX_NUM_NR_SRS_AP*sizeof(int32_t*));
+    for(int ap=0; ap<MAX_NUM_NR_SRS_AP; ap++) {
+      gNB->nr_srs_info[id]->srs_generated_signal[ap] = (int32_t*)malloc16_clear(fp->ofdm_symbol_size*MAX_NUM_NR_SRS_SYMBOLS*sizeof(int32_t));
+    }
+  }
 
   common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
   common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
@@ -653,7 +651,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   int nb_re_pusch = N_RB_UL * NR_NB_SC_PER_RB;
   int nb_re_pusch2 = nb_re_pusch + (nb_re_pusch&7);
 
-  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     pusch_vars[ULSCH_id] = (NR_gNB_PUSCH *)malloc16_clear( sizeof(NR_gNB_PUSCH) );
     pusch_vars[ULSCH_id]->rxdataF_ext           = (int32_t **)malloc16(Prx*sizeof(int32_t *) );
     pusch_vars[ULSCH_id]->ul_ch_estimates       = (int32_t **)malloc16(n_buf*sizeof(int32_t *) );
@@ -760,13 +758,14 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(nr_gold_csi_rs);
   free_and_zero(gNB->nr_csi_info);
 
-  for (int id = 0; id < NUMBER_OF_NR_SRS_MAX; id++) {
+  for (int id = 0; id < gNB->max_nb_srs; id++) {
     for(int i=0; i<MAX_NUM_NR_SRS_AP; i++) {
       free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal[i]);
     }
     free_and_zero(gNB->nr_srs_info[id]->srs_generated_signal);
     free_and_zero(gNB->nr_srs_info[id]);
   }
+  free_and_zero(gNB->nr_srs_info);
 
   free_ul_reference_signal_sequences();
   free_gnb_lowpapr_sequences();
@@ -804,7 +803,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   free_and_zero(prach_vars->prach_ifft);
 
   NR_gNB_PUSCH** pusch_vars = gNB->pusch_vars;
-  for (int ULSCH_id=0; ULSCH_id<gNB->number_of_nr_ulsch_max; ULSCH_id++) {
+  for (int ULSCH_id = 0; ULSCH_id < NUMBER_OF_NR_ULSCH_MAX; ULSCH_id++) {
     for (int i=0; i< max_ul_mimo_layers; i++)
       free_and_zero(pusch_vars[ULSCH_id]->llr_layers[i]);
     for (int i = 0; i < Prx; i++) {
@@ -982,8 +981,8 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
   msg->num_pdsch_slot = 0;
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n",i,gNB->number_of_nr_dlsch_max);
+  for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
     for (int j=0; j<num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
@@ -997,30 +996,62 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
   const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   const uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
-  for (int i=0; i<gNB->number_of_nr_dlsch_max; i++)
+  for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++)
     for (int j=0; j<num_cw; j++)
       free_gNB_dlsch(&msg->dlsch[i][j], grid_size, fp);
 }
 
-void init_nr_transport(PHY_VARS_gNB *gNB) {
+void init_nr_transport(PHY_VARS_gNB *gNB)
+{
+
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
+  const nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
   LOG_I(PHY, "Initialise nr transport\n");
 
-  for (int i=0; i<NUMBER_OF_NR_PUCCH_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n",i,NUMBER_OF_NR_PUCCH_MAX);
+  int nb_slots_per_period = cfg->cell_config.frame_duplex_type.value ?
+                            fp->slots_per_frame / get_nb_periods_per_frame(cfg->tdd_table.tdd_period.value) :
+                            fp->slots_per_frame;
+  int nb_ul_slots_period = 0;
+  if (cfg->cell_config.frame_duplex_type.value) {
+    for(int i=0; i<nb_slots_per_period; i++) {
+      for(int j=0; j<NR_NUMBER_OF_SYMBOLS_PER_SLOT; j++) {
+        if(cfg->tdd_table.max_tdd_periodicity_list[i].max_num_of_symbol_per_slot_list[j].slot_config.value == 1) { // UL symbol
+          nb_ul_slots_period++;
+          break;
+        }  
+      }
+    }
+  }
+  else
+    nb_ul_slots_period = fp->slots_per_frame;
+
+  int buffer_ul_slots; // the UL channels are scheduled sl_ahead before they are transmitted
+  int slot_ahead = gNB->if_inst ? gNB->if_inst->sl_ahead : 6;
+  if (slot_ahead > nb_slots_per_period)
+    buffer_ul_slots = nb_ul_slots_period + (slot_ahead - nb_slots_per_period);
+  else
+    buffer_ul_slots = (nb_ul_slots_period < slot_ahead) ? nb_ul_slots_period : slot_ahead;
+
+  gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * buffer_ul_slots;
+  gNB->max_nb_srs = buffer_ul_slots << 1; // assuming at most 2 SRS per slot
+
+  gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
+  for (int i = 0; i < gNB->max_nb_pucch; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
     gNB->pucch[i] = new_gNB_pucch();
-    AssertFatal(gNB->pucch[i]!=NULL,"Can't initialize pucch %d \n", i);
+    AssertFatal(gNB->pucch[i] != NULL,"Can't initialize pucch %d \n", i);
   }
 
-  for (int i=0; i<NUMBER_OF_NR_SRS_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n",i,NUMBER_OF_NR_SRS_MAX);
+  gNB->srs = (NR_gNB_SRS_t **) malloc16(gNB->max_nb_srs * sizeof(NR_gNB_SRS_t*));
+  for (int i = 0; i < gNB->max_nb_srs; i++) {
+    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
     gNB->srs[i] = new_gNB_srs();
     AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
   }
 
-  for (int i=0; i<gNB->number_of_nr_ulsch_max; i++) {
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n",i,gNB->number_of_nr_ulsch_max);
+    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
 
     gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
 
@@ -1039,12 +1070,14 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
 {
   const NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
 
-  for (int i = 0; i < NUMBER_OF_NR_PUCCH_MAX; i++)
+  for (int i = 0; i < gNB->max_nb_pucch; i++)
     free_gNB_pucch(gNB->pucch[i]);
+  free(gNB->pucch);
 
-  for (int i = 0; i < NUMBER_OF_NR_SRS_MAX; i++)
+  for (int i = 0; i < gNB->max_nb_srs; i++)
     free_gNB_srs(gNB->srs[i]);
+  free(gNB->srs);
 
-  for (int i=0; i<gNB->number_of_nr_ulsch_max; i++)
+  for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
 }

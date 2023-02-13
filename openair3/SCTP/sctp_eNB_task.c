@@ -617,10 +617,7 @@ sctp_handle_new_association_req(
 }
 
 //------------------------------------------------------------------------------
-static void sctp_send_data(
-    instance_t       instance,
-    task_id_t        task_id,
-    sctp_data_req_t *sctp_data_req_p)
+static void sctp_send_data(sctp_data_req_t *sctp_data_req_p)
 {
     struct sctp_cnx_list_elm_s *sctp_cnx = NULL;
 
@@ -660,10 +657,7 @@ static void sctp_send_data(
 }
 
 //------------------------------------------------------------------------------
-static int sctp_close_association(
-    const instance_t instance,
-    const task_id_t  requestor,
-    sctp_close_association_t     *close_association_p)
+static int sctp_close_association(sctp_close_association_t *close_association_p)
 {
 
     struct sctp_cnx_list_elm_s *sctp_cnx = NULL;
@@ -1152,10 +1146,8 @@ static void sctp_eNB_process_itti_msg()
         break;
 
         case SCTP_CLOSE_ASSOCIATION:
-            sctp_close_association(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                   ITTI_MSG_ORIGIN_ID(received_msg),
-                                   &received_msg->ittiMsg.sctp_close_association);
-            break;
+          sctp_close_association(&received_msg->ittiMsg.sctp_close_association);
+          break;
 
         case TERMINATE_MESSAGE:
             SCTP_WARN("*** Exiting SCTP thread\n");
@@ -1163,9 +1155,7 @@ static void sctp_eNB_process_itti_msg()
             break;
 
         case SCTP_DATA_REQ: {
-            sctp_send_data(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                           ITTI_MSG_ORIGIN_ID(received_msg),
-                           &received_msg->ittiMsg.sctp_data_req);
+          sctp_send_data(&received_msg->ittiMsg.sctp_data_req);
         }
         break;
 

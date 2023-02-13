@@ -49,21 +49,14 @@ extern UE_MAC_INST *UE_mac_inst;
 extern mui_t rrc_gNB_mui;
 
 //-----------------------------------------------------------------------------
-int rrc_init_nr_global_param(void){
-
+void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan)
+{
   rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
 
-  DCCH_LCHAN_DESC.transport_block_size = 4;
-  DCCH_LCHAN_DESC.max_transport_blocks = 16;
-  DCCH_LCHAN_DESC.Delay_class = 1;
-  DTCH_DL_LCHAN_DESC.transport_block_size = 52;
-  DTCH_DL_LCHAN_DESC.max_transport_blocks = 20;
-  DTCH_DL_LCHAN_DESC.Delay_class = 1;
-  DTCH_UL_LCHAN_DESC.transport_block_size = 52;
-  DTCH_UL_LCHAN_DESC.max_transport_blocks = 20;
-  DTCH_UL_LCHAN_DESC.Delay_class = 1;
-
-  return 0;
+  chan->transport_block_size = 4;
+  chan->max_transport_blocks = 16;
+  chan->Delay_class = 1;
+  return;
 }
 
 //-----------------------------------------------------------------------------
