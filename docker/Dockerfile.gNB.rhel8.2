@@ -29,8 +29,6 @@ FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/gnb_parameters.yaml && \
-    cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb
@@ -57,9 +55,8 @@ RUN yum repolist --disablerepo=* && \
 
 WORKDIR /opt/oai-gnb/bin
 COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/nr-softmodem \
-    /oai-ran/docker/scripts/entrypoint.sh \
-    ./
+    /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
+COPY ./docker/scripts/gnb_entrypoint.sh ./entrypoint.sh
 
 COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
@@ -108,10 +105,6 @@ COPY --from=gnb-base /usr/local/share/uhd/rfnoc/ .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
     ldconfig
-
-# Copy the relevant configuration files for gNB
-WORKDIR /opt/oai-gnb/etc
-COPY --from=gnb-build /oai-ran/docker/etc .
 
 WORKDIR /opt/oai-gnb
 #EXPOSE 2152/udp  # S1U, GTP/UDP
