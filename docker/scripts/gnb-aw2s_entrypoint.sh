@@ -3,6 +3,7 @@
 set -uo pipefail
 
 PREFIX=/opt/oai-gnb-aw2s
+CONFIGFILE=$PREFIX/etc/gnb.conf
 
 if [[ -v USE_VOLUMED_CONF ]]; then
   cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf
@@ -12,9 +13,14 @@ else
   exit 1
 fi
 
+if [ ! -f $CONFIGFILE ]; then
+  echo "No configuration file found: please mount at $CONFIGFILE"
+  exit 255
+fi
+
 echo "=================================="
 echo "== Configuration file:"
-cat $PREFIX/etc/enb.conf
+cat $CONFIGFILE
 
 # enable printing of stack traces on assert
 export gdbStacks=1

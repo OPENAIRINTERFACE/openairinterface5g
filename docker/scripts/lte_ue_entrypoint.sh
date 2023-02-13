@@ -3,6 +3,16 @@
 set -uo pipefail
 
 PREFIX=/opt/oai-lte-ue
+CONFIGFILE=$PREFIX/etc/ue_usim.conf
+
+if [ ! -f $CONFIGFILE ]; then
+  echo "No configuration file found: please mount at $CONFIGFILE"
+  exit 255
+fi
+
+echo "=================================="
+echo "== Configuration file:"
+cat $CONFIGFILE
 
 # Based another env var, pick one template to use
 if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
@@ -39,7 +49,7 @@ done
 #now generate USIM files
 # At this point all operations will be run from $PREFIX!
 cd $PREFIX
-$PREFIX/bin/conf2uedata -c $PREFIX/etc/ue_usim.conf -o $PREFIX
+$PREFIX/bin/conf2uedata -c $CONFIGFILE -o $PREFIX
 
 # Load the USRP binaries
 echo "=================================="
