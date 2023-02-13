@@ -66,8 +66,8 @@ class EPCManagement():
 		self.mmeConfFile = 'mme.conf'
 		self.yamlPath = ''
 		self.isMagmaUsed = False
-		self.cfgDeploy = '--type start-mini --fqdn yes --scenario 1 --capture /tmp/oai-cn5g-v1.5.pcap' #from xml, 'mini' is default normal for docker-network.py
-		self.cfgUnDeploy = '--type stop-mini --fqdn yes --scenario 1' #from xml, 'mini' is default normal for docker-network.py
+		self.cfgDeploy = '--type start-mini --scenario 1 --capture /tmp/oai-cn5g-v1.5.pcap' #from xml, 'mini' is default normal for docker-network.py
+		self.cfgUnDeploy = '--type stop-mini --scenario 1' #from xml, 'mini' is default normal for docker-network.py
 
 
 #-----------------------------------------------------------
@@ -259,12 +259,12 @@ class EPCManagement():
 				dFile = 'docker-compose-mini-nrf-asue.yaml'
 			else:
 				dFile = 'docker-compose-mini-nrf.yaml'
-			mySSH.command('docker-compose -p 5gcn -f ' + dFile + ' ps -a', '\$', 60)
+			mySSH.command('docker-compose -f ' + dFile + ' ps -a', '\$', 60)
 			if mySSH.getBefore().count('Up (healthy)') != 6:
 				logging.error('Not all container healthy')
 			else:
 				logging.debug('OK --> all containers are healthy')
-			mySSH.command('docker-compose -p 5gcn -f ' + dFile + ' config | grep --colour=never image', '\$', 10)
+			mySSH.command('docker-compose -f ' + dFile + ' config | grep --colour=never image', '\$', 10)
 			listOfImages = mySSH.getBefore()
 			for imageLine in listOfImages.split('\\r\\n'):
 				res1 = re.search('image: (?P<name>[a-zA-Z0-9\-/]+):(?P<tag>[a-zA-Z0-9\-]+)', str(imageLine))

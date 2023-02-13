@@ -32,7 +32,7 @@
 	<testCase id="060000">
 		<class>Terminate_5GCN</class>
 		<desc>Terminate 5G Core</desc>
-		<args>--type stop-mini-as-ue --fqdn yes --scenario 1</args>
+		<args>--type stop-mini-as-ue --scenario 1</args>
 	</testCase>
 
 </testCaseList>
