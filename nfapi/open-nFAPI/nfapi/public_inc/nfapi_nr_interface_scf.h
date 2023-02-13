@@ -932,6 +932,8 @@ typedef struct
 
 typedef struct
 {
+  uint16_t bwp_size;                // Needed for SCF222 10.02
+  uint16_t bwp_start;               // Needed for SCF222 10.02
   uint8_t subcarrier_spacing;       // subcarrierSpacing [3GPP TS 38.211, sec 4.2], Value:0->4
   uint8_t cyclic_prefix;            // Cyclic prefix type [3GPP TS 38.211, sec 4.2], 0: Normal; 1: Extended
   uint16_t start_rb;                // PRB where this CSI resource starts related to common resource block #0 (CRB#0). Only multiples of 4 are allowed. [3GPP TS 38.331, sec 6.3.2 parameter CSIFrequencyOccupation], Value: 0 ->274

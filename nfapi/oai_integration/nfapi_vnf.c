@@ -1070,6 +1070,7 @@ int phy_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) {
       rx_ind->pdu_list[j].rnti = ind->pdu_list[j].rnti;
       rx_ind->pdu_list[j].timing_advance = ind->pdu_list[j].timing_advance;
       rx_ind->pdu_list[j].ul_cqi = ind->pdu_list[j].ul_cqi;
+      rx_ind->pdu_list[j].rssi = ind->pdu_list[j].rssi;
     }
     if (!put_queue(&gnb_rx_ind_queue, rx_ind))
     {
