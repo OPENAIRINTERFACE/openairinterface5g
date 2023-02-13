@@ -51,6 +51,7 @@ import constants as CONST
 import sshconnection
 
 import cls_module_ue
+import cls_cmd
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
@@ -744,30 +745,18 @@ class OaiCiTest():
 		statusQueue.put(message)
 		lock.release()
 
-	def Ping_common(self, lock, UE_IPAddress, device_id, statusQueue,EPC, Module_UE,RAN):
+	def Ping_common(self, lock, statusQueue,EPC, ue, RAN):
 		try:
-			SSH = sshconnection.SSHConnection()
 			# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 			# But for OAI-Rel14-CUPS, we launch from python executor
 			ping_status = 0
-			launchFromEpc = True
-			launchFromModule = False
-			launchFromASUE = False
+			launchFromEpc = False
+			ping_log_file = f'ping_{self.testCase_id}_{ue.getName()}.log'
 			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
 				launchFromEpc = False
-			#if module, ping from module to EPC
-			if self.ue_id!='':
-				if (re.match('amarisoft', self.ue_id, re.IGNORECASE)):
-					launchFromEpc = False
-					launchFromASUE = True
-				else:
-					launchFromEpc = False
-					launchFromModule = True
-			#no ping args for ASUE
-			if self.ping_args!='':
-				ping_time = re.findall("-c (\d+)",str(self.ping_args))
-
+			ping_time = re.findall("-c *(\d+)",str(self.ping_args))
 			if launchFromEpc:
+				SSH = sshconnection.SSHConnection()
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
 				SSH.command('cd scripts', '\$', 5)
@@ -776,93 +765,59 @@ class OaiCiTest():
 				if (re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE)) or (re.match('OAICN5G', EPC.Type, re.IGNORECASE)):
 					launchFromTrfContainer = True
 				if launchFromTrfContainer:
-					ping_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "ping ' + self.ping_args + ' ' + UE_IPAddress + '" 2>&1 | tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)				
+					ping_status = SSH.command(f'docker exec -it prod-trf-gen /bin/bash -c "ping {self.ping_args} {ue.getIP()}" 2>&1 | tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
 				else:
-					ping_status = SSH.command('stdbuf -o0 ping ' + self.ping_args + ' ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee ping_' + self.testCase_id + '_' + device_id + '.log', '\$', int(ping_time[0])*1.5)
-				ping_log_file='ping_' + self.testCase_id + '_' + device_id + '.log'
+					ping_status = SSH.command(f'stdbuf -o0 ping {self.ping_args} {ue.getIP()} 2>&1 | stdbuf -o0 tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
 				#copy the ping log file to have it locally for analysis (ping stats)
-				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')				
+				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/{ping_log_file}', '.')				
+				SSH.close()
 			else:
-				if (launchFromModule == False) and (launchFromASUE == False):
-					#ping log file is on the python executor
-					cmd = 'ping ' + self.ping_args + ' ' + UE_IPAddress + ' > ping_' + self.testCase_id + '_' + device_id + '.log 2>&1'
-					message = cmd + '\n'
-					logging.debug(cmd)
-					ret = subprocess.run(cmd, shell=True)
-					ping_status = ret.returncode
-					#copy the ping log file to an other folder for log collection (source and desti				elif (launchfromModule == True) and (launchfromASUE == False): #launch from Modulenation are EPC)
-					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'ping_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-                	#copy the ping log file to have it locally for analysis (ping stats)
-					logging.debug(EPC.SourceCodePath + 'ping_' + self.testCase_id + '_' + device_id + '.log')
-					SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath  +'/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '.')
-
-					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-					#cat is executed on EPC
-					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/ping_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-					ping_log_file='/scripts/ping_' + self.testCase_id + '_' + device_id + '.log'
-
-				elif (launchFromModule == True) and (launchFromASUE == False): #launch from Module
-					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					#target address is different depending on EPC type
-					if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
-						Target = EPC.MmeIPAddress
-					elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
-						Target = EPC.MmeIPAddress
-					else:
-						Target = EPC.IPAddress
-					#ping from module NIC rather than IP address to make sure round trip is over the air	
-					cmd = 'ping -I ' + Module_UE.UENetwork  + ' ' + self.ping_args + ' ' +  Target  + ' > ping_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1'
-					SSH.command(cmd,'\$',int(ping_time[0])*1.5)
-
-					#copy the ping log file to have it locally for analysis (ping stats)
-					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'ping_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
-
-					#cat is executed locally 
-					SSH.command('cat ping_' + self.testCase_id + '_' + self.ue_id + '.log', '\$', 5)
-					ping_log_file='ping_' + self.testCase_id + '_' + self.ue_id + '.log'
-
-				elif (launchFromASUE == True): 
-					#ping was already executed when running scenario
-					#we only need to retrieve ping log file, whose location is in the ci_ueinfra.yaml
-					logging.debug("Get logs from AS server : " + Module_UE.Ping + ", " + Module_UE.UELog)
-					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, Module_UE.Ping, '.')
-					SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, Module_UE.UELog, '.')
-					logging.debug("Ping analysis from Amarisoft scenario")
-					path,ping_log_file = os.path.split(Module_UE.Ping)
-					SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-					SSH.command('cat ' + Module_UE.Ping, '\$', 5)
-
+				#target address is different depending on EPC type
+				if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+					Target = EPC.MmeIPAddress
+				elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
+					Target = EPC.MmeIPAddress
 				else:
-					ping_status=-1
+					Target = EPC.IPAddress
+				#ping from module NIC rather than IP address to make sure round trip is over the air	
+				interface = f'-I {ue.getIFName()}' if ue.getIFName() else ''
+				ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {self.ping_args} {Target} &> /tmp/{ping_log_file}'
+				cmd = cls_cmd.getConnection(ue.getHost())
+				response = cmd.run(ping_cmd, timeout=int(ping_time[0])*1.5)
+				if response.returncode != 0:
+					ping_status = -1
+				else:
+					#copy the ping log file to have it locally for analysis (ping stats)
+					cmd.copyin(src=f'/tmp/{ping_log_file}', tgt=ping_log_file)
+
+				cmd.close()
 
 			# TIMEOUT CASE
 			if ping_status < 0:
-				message = 'Ping with UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT!'
+				message = 'Ping with UE (' + str(ue.getIP()) + ') crashed due to TIMEOUT!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				SSH.close()
-				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+				self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
 				return
 			#search is done on cat result
-			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', SSH.getBefore())
+			with open(ping_log_file, 'r') as f:
+				ping_output = "".join(f.readlines())
+			result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', ping_output)
 			if result is None:
 				message = 'Packet Loss Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				SSH.close()
-				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+				self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
 				return
 			packetloss = result.group('packetloss')
 			if float(packetloss) == 100:
 				message = 'Packet Loss is 100%'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				SSH.close()
-				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+				self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
 				return
-			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', SSH.getBefore())
+			result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', ping_output)
 			if result is None:
 				message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
 				logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-				SSH.close()
-				self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
+				self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
 				return
 			rtt_min = result.group('rtt_min')
 			rtt_avg = result.group('rtt_avg')
@@ -873,7 +828,7 @@ class OaiCiTest():
 			max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
 
 			lock.acquire()
-			logging.debug('\u001B[1;37;44m ping result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug('\u001B[1;37;44m ping result (' + ue.getIP() + ') \u001B[0m')
 			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
@@ -882,22 +837,21 @@ class OaiCiTest():
 			#adding extra ping stats from local file
 			#ping_log_file variable is defined above in this function, depending on device/ue
 			ping_stat_msg=''
-			if launchFromASUE == False : #skip in case of AS UE (for the moment)
-				logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-				ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
+			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
+			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 
-				if (ping_stat!=-1) and (len(ping_stat)!=0):
-					ping_stat_msg+='Ping stats before removing largest value : \n'
-					ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
-					ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
-					ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
-					ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
-					ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
-					ping_stat_msg+='Ping stats after removing largest value : \n'
-					ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
-					ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
-					ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
-					ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
+			if (ping_stat!=-1) and (len(ping_stat)!=0):
+				ping_stat_msg+='Ping stats before removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
+				ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
+				ping_stat_msg+='Ping stats after removing largest value : \n'
+				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
+				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
 
 			#building html message
 			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n'  + ping_stat_msg
@@ -926,11 +880,10 @@ class OaiCiTest():
 				statusQueue.put(0)
 			else:
 				statusQueue.put(-1)
-			statusQueue.put(device_id)
-			statusQueue.put(UE_IPAddress)
+			statusQueue.put(ue.getName())
+			statusQueue.put(ue.getIP())
 			statusQueue.put(qMsg)
 			lock.release()
-			SSH.close()
 		except:
 			logging.debug('exit from Ping_Common except')
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1049,31 +1002,23 @@ class OaiCiTest():
 			return
 
 		if self.ue_id == "":
-			logging.error("no module ID!!!")
-			exit(1)
+			raise Exception("no module names in self.ue_id provided")
+		ues = []
+		for ue_name in self.ue_id.split(' '):
+			ue = cls_module_ue.Module_UE(ue_name.strip())
+			if not ue.getIP():
+				logging.error("no IP addresses returned")
+				HTML.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
+			ues.append(ue)
+		logging.debug(ues)
 
-		self.UEIPAddresses = []
-		ue = cls_module_ue.Module_UE(self.ue_id)
-		ip = ue.getIP()
-		if ip is None:
-			logging.error("no IP addresses returned")
-			html_queue = SimpleQueue()
-			HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
-		self.UEIPAddresses.append(ip)
-
-		logging.debug(self.UEIPAddresses)
 		multi_jobs = []
 		i = 0
 		lock = Lock()
 		status_queue = SimpleQueue()
-		for UE_IPAddress in self.UEIPAddresses:
-			if self.ue_id=="":
-				device_id = self.UEDevices[i]
-			else:
-				device_id = Module_UE.ID + "-" + Module_UE.Kind 
-				logging.debug(device_id)
-			p = Process(target = self.Ping_common, args = (lock,UE_IPAddress,device_id,status_queue,EPC,Module_UE,RAN,))
+		for ue in ues:
+			p = Process(target = self.Ping_common, args = (lock,status_queue,EPC,ue,RAN,))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
