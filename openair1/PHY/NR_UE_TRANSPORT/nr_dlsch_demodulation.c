@@ -1876,12 +1876,7 @@ uint8_t nr_matrix_inverse(int32_t size,
 
   if(flag) {//fixed point SIMD calc.
     //Allocate the submatrix elements
-    c16_t sub_matrix_data[size - 1][size - 1][12 * nb_rb];
-    memset(sub_matrix_data, 0, sizeof(sub_matrix_data));
     c16_t *sub_matrix[size - 1][size - 1];
-    for (int rtx = 0; rtx < (size - 1); rtx++)
-      for (int ctx = 0; ctx < (size - 1); ctx++)
-        sub_matrix[ctx][rtx] = sub_matrix_data[ctx][rtx];
 
     //Compute Matrix determinant
     nr_determin(size,
@@ -1913,7 +1908,8 @@ uint8_t nr_matrix_inverse(int32_t size,
         //fill out the sub matrix corresponds to this element
         for (int ridx=0;ridx<(size-1);ridx++)
           for (int cidx=0;cidx<(size-1);cidx++)
-            memcpy(sub_matrix[cidx][ridx], a44[cc[cidx]][rr[ridx]], sizeof(sub_matrix_data[cidx][ridx]));
+            // To verify
+            sub_matrix[cidx][ridx]=a44[cc[cidx]][rr[ridx]];
 
         nr_determin(size - 1, // size
                     sub_matrix,

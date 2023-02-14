@@ -1862,10 +1862,11 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
 #ifdef DEBUG_DL_PTRS
           printf("[PHY][DL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[i].r,phase_per_symbol[i].i);
 #endif
-          rotate_cpx_vector((c16_t*)&rxdataF_comp[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+          rotate_cpx_vector((c16_t *)&rxdataF_comp[0][aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
                             &phase_per_symbol[i],
-                            (c16_t*)&rxdataF_comp[aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
-                            ((*nb_rb) * NR_NB_SC_PER_RB), 15);
+                            (c16_t *)&rxdataF_comp[0][aarx][(i * (*nb_rb) * NR_NB_SC_PER_RB)],
+                            ((*nb_rb) * NR_NB_SC_PER_RB),
+                            15);
         }// if not DMRS Symbol
       }// symbol loop
     }// last symbol check

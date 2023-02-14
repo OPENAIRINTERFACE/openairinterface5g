@@ -518,9 +518,8 @@ int nr_csi_rs_ri_estimation(const PHY_VARS_NR_UE *ue,
 
             // construct Hh x H elements
             if(ant_rx_conjch == ant_rx_ch) {
-              nr_a_sum_b((__m128i *)&csi_rs_estimated_A_MF[port_tx_conjch][port_tx_ch][k_offset],
-                         (__m128i *)&csi_rs_estimated_conjch_ch[ant_rx_conjch][port_tx_conjch][ant_rx_ch][port_tx_ch][k_offset],
-                         1);
+              nr_a_sum_b(
+                  (c16_t *)&csi_rs_estimated_A_MF[port_tx_conjch][port_tx_ch][k_offset], (c16_t *)&csi_rs_estimated_conjch_ch[ant_rx_conjch][port_tx_conjch][ant_rx_ch][port_tx_ch][k_offset], 1);
             }
           }
         }
