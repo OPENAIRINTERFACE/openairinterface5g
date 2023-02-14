@@ -24,11 +24,33 @@
 #ifndef __E1AP_H_
 #define __E1AP_H_
 
-#include <common/utils/LOG/log.h>
-#include "common/openairinterface5g_limits.h"
-#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
+#include "openair2/COMMON/e1ap_messages_types.h"
+#include "e1ap_asnc.h"
+#include "openair2/E1AP/e1ap_common.h"
 
-#include <E1AP_Cause.h>
-#include <E1AP_InitiatingMessage.h>
-#include <E1AP_E1AP-PDU.h>
+int e1apCUCP_handle_SETUP_REQUEST(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUUP_handle_SETUP_RESPONSE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUUP_handle_SETUP_FAILURE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUCP_handle_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+void e1apCUUP_send_BEARER_CONTEXT_SETUP_RESPONSE(e1ap_upcp_inst_t *inst, e1ap_bearer_setup_resp_t *const resp);
+
+int e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *pdu);
+
+int e1apCUUP_send_BEARER_CONTEXT_RELEASE_COMPLETE(e1ap_upcp_inst_t *inst, e1ap_bearer_release_cmd_t *const cmd);
+
+void *E1AP_CUUP_task(void *arg);
+
+void *E1AP_CUCP_task(void *arg);
 #endif

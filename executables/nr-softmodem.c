@@ -68,7 +68,6 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include <openair2/GNB_APP/gnb_app.h>
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "PHY/TOOLS/nr_phy_scope.h"
-#include "stats.h"
 #include "nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "executables/thread-common.h"
@@ -78,6 +77,9 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "gnb_paramdef.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "gnb_config.h"
+#include "openair2/E1AP/e1ap_common.h"
+#include "openair2/E1AP/e1ap_api.h"
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -289,16 +291,60 @@ void exit_function(const char *file, const char *function, const int line, const
 
 
 
-int create_gNB_tasks(uint32_t gnb_nb) {
+static int create_gNB_tasks(void) {
+  uint32_t                        gnb_nb = RC.nb_nr_inst; 
+  uint32_t                        gnb_id_start = 0;
+  uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
+  LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
+
+  RCconfig_NR_L1();
+  RCconfig_nr_prs();
+
+  if (RC.nb_nr_macrlc_inst>0) RCconfig_nr_macrlc();
+
+  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
+
+  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
+
+  AssertFatal (gnb_nb <= RC.nb_nr_inst,
+               "Number of gNB is greater than gNB defined in configuration file (%d/%d)!",
+               gnb_nb, RC.nb_nr_inst);
+
+  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
+
+  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
+  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
+  ngran_node_t node_type = get_node_type();
+  for (int gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
+    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)calloc(1,sizeof(gNB_RRC_INST));
+    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
+    configure_nr_rrc(gnb_id);
+  }
+
+  if (RC.nb_nr_inst > 0 &&
+      !get_softmodem_params()->nsa &&
+      !(node_type == ngran_gNB_DU))  {
+    // we start pdcp in both cuup (for drb) and cucp (for srb)
+    init_pdcp();
+  }
+
+  if (is_x2ap_enabled() ) { //&& !NODE_IS_DU(node_type)
+	  LOG_I(X2AP, "X2AP enabled \n");
+	  __attribute__((unused)) uint32_t x2_register_gnb_pending = gNB_app_register_x2 (gnb_id_start, gnb_id_end);
+  }
+
+  /* For the CU case the gNB registration with the AMF might have to take place after the F1 setup, as the PLMN info
+     * can originate from the DU. Add check on whether x2ap is enabled to account for ENDC NSA scenario.*/
+  if ((get_softmodem_params()->sa || is_x2ap_enabled()) &&
+      !NODE_IS_DU(node_type)) {
+    /* Try to register each gNB */
+    //registered_gnb = 0;
+    __attribute__((unused)) uint32_t register_gnb_pending = gNB_app_register (gnb_id_start, gnb_id_end);
+  }
 
   if (gnb_nb > 0) {
-    /* Last task to create, others task must be ready before its start */
-    /*if (itti_create_task (TASK_GNB_APP, gNB_app_task, NULL) < 0) {
-      LOG_E(GNB_APP, "Create task for gNB APP failed\n");
-      return -1;
-    }*/
     if(itti_create_task(TASK_SCTP, sctp_eNB_task, NULL) < 0) {
       LOG_E(SCTP, "Create task for SCTP failed\n");
       return -1;
@@ -313,7 +359,8 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     }
   }
 
-  if (get_softmodem_params()->sa) {
+  if (get_softmodem_params()->sa &&
+      !NODE_IS_DU(node_type)) {
 
     char*             gnb_ipv4_address_for_NGU      = NULL;
     uint32_t          gnb_port_for_NGU              = 0;
@@ -326,9 +373,10 @@ int create_gNB_tasks(uint32_t gnb_nb) {
     
     for(int i = GNB_INTERFACE_NAME_FOR_NG_AMF_IDX; i <= GNB_IPV4_ADDRESS_FOR_NG_AMF_IDX; i++) {
       if( NETParams[i].strptr == NULL) {
-	LOG_E(NGAP, "No AMF configuration in the file.\n");
+        LOG_E(NGAP, "No AMF configuration in the file.\n");
+        exit(1);
       } else {
-	LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
+        LOG_D(NGAP, "Configuration in the file: %s.\n",*NETParams[i].strptr);
       }
     }
     
@@ -346,15 +394,26 @@ int create_gNB_tasks(uint32_t gnb_nb) {
       return -1;
     }
 
-    LOG_I(NR_RRC,"Creating NR RRC gNB Task\n");
-
+    LOG_I(NR_RRC, "Creating NR RRC gNB Task, that will also create TASKS\n");
     if (itti_create_task (TASK_RRC_GNB, rrc_gnb_task, NULL) < 0) {
       LOG_E(NR_RRC, "Create task for NR RRC gNB failed\n");
       return -1;
     }
 
-    //Use check on x2ap to consider the NSA scenario and check for SA scenario
-    if(is_x2ap_enabled() || get_softmodem_params()->sa) {
+    // If CU
+    if (node_type == ngran_gNB_CU || node_type == ngran_gNB) {
+      MessageDef *msg = RCconfig_NR_CU_E1(false);
+      instance_t inst = 0;
+      createE1inst(UPtype, inst, &E1AP_SETUP_REQ(msg));
+      cuup_init_n3(inst);
+      itti_free(TASK_UNKNOWN, msg);
+      getCxtE1(inst)->same_process = true;
+      ;
+      RC.nrrrc[gnb_id_start]->e1_inst = inst; // stupid instance !!!*/
+    }
+
+    //Use check on x2ap to consider the NSA scenario 
+    if((is_x2ap_enabled() || get_softmodem_params()->sa) && (node_type != ngran_gNB_CUCP)) {
       if (itti_create_task (TASK_GTPV1_U, &gtpv1uTask, NULL) < 0) {
         LOG_E(GTPU, "Create task for GTPV1U failed\n");
         return -1;
@@ -504,7 +563,7 @@ void init_pdcp(void) {
     LINK_ENB_PDCP_TO_GTPV1U_BIT;
   
   if (!get_softmodem_params()->nsa) {
-    if (!NODE_IS_DU(RC.nrrrc[0]->node_type)) {
+    if (!NODE_IS_DU(get_node_type())) {
       pdcp_layer_init();
       nr_pdcp_module_init(pdcp_initmask, 0);
     }
@@ -582,7 +641,7 @@ int main( int argc, char **argv ) {
 
   // don't create if node doesn't connect to RRC/S1/GTP
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    int ret = create_gNB_tasks(1);
+    int ret = create_gNB_tasks();
     AssertFatal(ret == 0, "cannot create ITTI tasks\n");
   }
 

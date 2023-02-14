@@ -102,12 +102,12 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 
 
 void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
-             int frame,int slot,
-			       nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
+                               int frame,int slot,
+                               nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
 
   int found = 0;
 
-  for (int id=0; id<NUMBER_OF_NR_CSIRS_MAX; id++) {
+  for (int id = 0; id < NR_SYMBOLS_PER_SLOT; id++) {
     NR_gNB_CSIRS_t *csirs = &msgTx->csirs_pdu[id];
     if (csirs->active == 0) {
       LOG_D(PHY,"Frame %d Slot %d CSI_RS with ID %d is now active\n",frame,slot,id);
@@ -203,8 +203,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-            AssertFatal(msgTx->num_pdsch_slot < gNB->number_of_nr_dlsch_max,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-                        msgTx->num_pdsch_slot,gNB->number_of_nr_dlsch_max);
+            AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,"Number of PDSCH PDUs %d exceeded the limit %d\n",
+                        msgTx->num_pdsch_slot, NUMBER_OF_NR_DLSCH_MAX);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }

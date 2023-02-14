@@ -285,6 +285,10 @@ function main() {
        --UE-gen-nvram)
             gen_nvram_path=$(readlink -f "$2")
             shift 2;;
+       --UE-ip)
+            UE_ip=1
+            echo_info "Will compile UE"
+            shift;;
        -w | --hardware)
             # Use OAI_USRP as the key word USRP is used inside UHD driver           
             case "$2" in
@@ -531,7 +535,7 @@ function main() {
       execlist="$execlist ocp-enb"
   fi
   if [ "$gNB" = "1" ] ; then
-      execlist="$execlist nr-softmodem"
+      execlist="$execlist nr-softmodem nr-cuup"
   fi
   if [ "$RU" = "1" ] ; then
       execlist="$execlist oairu"
@@ -588,7 +592,7 @@ function main() {
 
     echo_info "Compiling UE specific part"
 
-    if [ $IS_CONTAINER -eq 0 ]
+    if [ $UE_ip -eq 1 ]
     then
       echo_info "Building ue_ip module"
       compilations $BUILD_DIR ue_ip

@@ -1,7 +1,6 @@
 OAISIM Security Algorithms v0.1
 
 Dependencies:
-- nettle >= 2.5
 - openssl >= 1.0.1
 
 Compilation:

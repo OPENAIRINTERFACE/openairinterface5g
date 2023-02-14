@@ -53,8 +53,7 @@ extern void* bigphys_malloc(int);
 
 //uint8_t RACH_TIME_ALLOC;
 extern uint16_t RACH_FREQ_ALLOC;
-//uint8_t NB_RACH;
-extern LCHAN_DESC BCCH_LCHAN_DESC,CCCH_LCHAN_DESC,DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
+// uint8_t NB_RACH;
 extern MAC_MEAS_T BCCH_MEAS_TRIGGER,CCCH_MEAS_TRIGGER,DCCH_MEAS_TRIGGER,DTCH_MEAS_TRIGGER;
 extern MAC_AVG_T BCCH_MEAS_AVG,CCCH_MEAS_AVG,DCCH_MEAS_AVG, DTCH_MEAS_AVG;
 
@@ -63,7 +62,6 @@ extern UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 extern pthread_mutex_t ue_pf_po_mutex;
 
 extern uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2];
-char openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration);
 
 #endif
 

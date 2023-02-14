@@ -76,8 +76,6 @@ const char *__asan_default_options()
   return "detect_leaks=0";
 }
 
-LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
-
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -96,22 +94,6 @@ nfapi_ue_release_request_body_t release_rntis;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
-teid_t newGtpuCreateTunnel(instance_t instance,
-                           ue_id_t ue_id,
-                           int incoming_bearer_id,
-                           int outgoing_bearer_id,
-                           teid_t outgoing_teid,
-                           int qfi,
-                           transport_layer_addr_t remoteAddr,
-                           int port,
-                           gtpCallback callBack,
-                           gtpCallbackSDAP callBackSDAP) {
-  return 0;
-}
-
-int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
-  return 0;
-}
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
@@ -148,59 +130,6 @@ rrc_data_ind(
 {
 }
 
-
-int
-gtpv1u_create_s1u_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
-) {
-  return 0;
-}
-
-int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
-  return 0;
-}
-
-int gtpv1u_delete_ngu_tunnel( const instance_t instance,
-			      gtpv1u_gnb_delete_tunnel_req_t *req) {
-  return 0;
-}
-
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-) {
-  return 0;
-}
-
-int
-gtpv1u_create_ngu_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
-  return 0;
-}
-
-int
-gtpv1u_update_ngu_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  const ue_id_t                                  prior_ue_id
-){
-  return 0;
-}
-
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-){
-  return 0;
-}
 
 // Dummy function to avoid linking error at compilation of nr-ulsim
 int is_x2ap_enabled(void)
@@ -318,7 +247,6 @@ int main(int argc, char **argv)
   int ldpc_offload_flag = 0;
   uint8_t max_rounds = 4;
   int chest_type[2] = {0};
-
   int enable_ptrs = 0;
   int modify_dmrs = 0;
   /* L_PTRS = ptrs_arg[0], K_PTRS = ptrs_arg[1] */

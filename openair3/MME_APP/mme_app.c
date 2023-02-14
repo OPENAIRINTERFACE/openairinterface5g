@@ -40,7 +40,8 @@
 
 # include "intertask_interface.h"
 #   include "s1ap_eNB.h"
-#include "sctp_eNB_task.h"
+#   include "sctp_eNB_task.h"
+#   include "openair3/ocp-gtpu/gtp_itf.h"
 
 #   include "x2ap_eNB.h"
 #   include "x2ap_messages_types.h"

@@ -63,6 +63,7 @@ Description Defines the security mode control EMM procedure executed by the
 
 # include "assertions.h"
 #include "secu_defs.h"
+#include "kdf.h"
 #include "SecurityModeControl.h"
 
 #if  defined(NAS_BUILT_IN_UE)
@@ -484,7 +485,9 @@ static int _security_kenb(const OctetString *kasme, OctetString *kenb,
   input[5] = 0;
   input[6] = 4;
 
-  kdf(kasme->value, 32, input, 7, kenb->value, 32);
+  byte_array_t data = {.len = 7, .buf = input};
+  kdf(kasme->value, data, 32, kenb->value);
+
   kenb->length = 32;
   return (RETURNok);
 }
@@ -536,8 +539,12 @@ static int _security_kdf(const OctetString *kasme, OctetString *key,
   input[5] = 0x00;
   input[6] = 0x01;
 
+  assert(kasme->length == 32);
+  byte_array_t data = {.len = 7, .buf=input};
   /* Compute the derived key */
-  kdf(kasme->value, kasme->length, input, 7, output, 32);
+  kdf(kasme->value, data, 32, output);
+
+
   memcpy(key->value, &output[31 - key->length + 1], key->length);
   return (RETURNok);
 }

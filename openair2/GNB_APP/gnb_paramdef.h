@@ -34,6 +34,7 @@
 #define __GNB_APP_GNB_PARAMDEF__H__
 
 #include "common/config/config_paramdesc.h"
+#include "common/ngran_types.h"
 #include "RRC_nr_paramsvalues.h"
 
 
@@ -369,6 +370,27 @@ typedef enum {
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 
+/* E1 configuration section */
+#define GNB_CONFIG_STRING_E1_PARAMETERS                   "E1_INTERFACE"
+
+#define GNB_CONFIG_E1_CU_TYPE_IDX                         0
+#define GNB_CONFIG_E1_IPV4_ADDRESS_CUCP                   1
+#define GNB_CONFIG_E1_IPV4_ADDRESS_CUUP 2
+#define GNB_CONFIG_E1_CN_SUPPORT 3
+
+#define GNB_CONFIG_STRING_E1_CU_TYPE                      "type"
+#define GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUCP "ipv4_cucp"
+#define GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUUP "ipv4_cuup"
+#define GNB_CONFIG_STRING_E1_CN_SUPPORT                   "cn_support"
+
+// clang-format off
+#define GNBE1PARAMS_DESC { \
+  {GNB_CONFIG_STRING_E1_CU_TYPE,           NULL, 0, strptr:NULL, defstrval:NULL, TYPE_STRING, 0}, \
+  {GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUCP, NULL, 0, strptr:NULL, defstrval:NULL, TYPE_STRING, 0}, \
+  {GNB_CONFIG_STRING_E1_IPV4_ADDRESS_CUUP, NULL, 0, strptr:NULL, defstrval:NULL, TYPE_STRING, 0}, \
+  {GNB_CONFIG_STRING_E1_CN_SUPPORT,        NULL, 0, uptr  :NULL, defintval:1L,   TYPE_UINT,   0} \
+  }
+// clang-format on
 /* L1 configuration section names   */
 #define CONFIG_STRING_L1_LIST                              "L1s"
 #define CONFIG_STRING_L1_CONFIG                            "l1_config"

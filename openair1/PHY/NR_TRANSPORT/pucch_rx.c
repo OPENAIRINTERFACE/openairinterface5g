@@ -70,20 +70,21 @@ void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
 int nr_find_pucch(uint16_t rnti,
                   int frame,
                   int slot,
-                  PHY_VARS_gNB *gNB) {
+                  PHY_VARS_gNB *gNB)
+{
 
   AssertFatal(gNB!=NULL,"gNB is null\n");
   int index = -1;
 
-  for (int i = 0; i < NUMBER_OF_NR_PUCCH_MAX; i++) {
+  for (int i = 0; i < gNB->max_nb_pucch; i++) {
     AssertFatal(gNB->pucch[i] != NULL,"gNB->pucch[%d] is null\n",i);
     if ((gNB->pucch[i]->active > 0) &&
         (gNB->pucch[i]->pucch_pdu.rnti == rnti) &&
         (gNB->pucch[i]->frame == frame) &&
         (gNB->pucch[i]->slot == slot))
-      return(i);
+      return i;
     else if ((gNB->pucch[i]->active == 0) && (index == -1))
-      index=i;
+      index = i;
   }
 
   if (index==-1)
@@ -95,11 +96,13 @@ int nr_find_pucch(uint16_t rnti,
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
-                   nfapi_nr_pucch_pdu_t *pucch_pdu) {
+                   nfapi_nr_pucch_pdu_t *pucch_pdu)
+{
+
   if (NFAPI_MODE == NFAPI_MODE_PNF)
     gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
   int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
-  AssertFatal((id >= 0) && (id < NUMBER_OF_NR_PUCCH_MAX),
+  AssertFatal((id >= 0) && (id < gNB->max_nb_pucch),
               "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
 
   NR_gNB_PUCCH_t  *pucch = gNB->pucch[id];

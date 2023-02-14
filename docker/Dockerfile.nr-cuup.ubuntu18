@@ -1,0 +1,63 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for Ubuntu18.04
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest as gnb-base
+
+FROM ran-build:latest AS gnb-build
+
+RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+
+FROM ubuntu:bionic as oai-nr-cuup
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        libsctp1 \
+        libconfig9 \
+        openssl && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/oai-gnb/bin
+COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/nr-cuup \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
+
+COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /usr/local/lib/
+
+# Create directory for configuration files
+WORKDIR /opt/oai-gnb/etc
+
+WORKDIR /opt/oai-gnb
+ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
+CMD ["/opt/oai-gnb/bin/nr-cuup", "-O", "/opt/oai-gnb/etc/gnb.conf"]

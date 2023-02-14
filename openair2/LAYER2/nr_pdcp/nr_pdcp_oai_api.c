@@ -38,6 +38,8 @@
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
+#include "nr_pdcp_e1_api.h"
+#include "gnb_config.h"
 #include "executables/softmodem-common.h"
 
 #define TODO do { \
@@ -56,9 +58,10 @@ static int      nr_pdcp_current_time_last_subframe;
 hash_table_t  *pdcp_coll_p;
 static uint64_t pdcp_optmask;
 
-ngran_node_t node_type = ngran_gNB;
 uint8_t first_dcch = 0;
 uint8_t proto_agent_flag = 0;
+
+static ngran_node_t node_type;
 
 /****************************************************************************/
 /* rlc_data_req queue - begin                                               */
@@ -524,6 +527,10 @@ int pdcp_fifo_flush_sdus(const protocol_ctxt_t *const ctxt_pP)
   return 0;
 }
 
+static void set_node_type() {
+  node_type = get_node_type();
+}
+
 void pdcp_layer_init(void)
 {
   /* hack: be sure to initialize only once */
@@ -539,7 +546,9 @@ void pdcp_layer_init(void)
 
   nr_pdcp_ue_manager = new_nr_pdcp_ue_manager(1);
 
-  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
+  set_node_type();
+
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(node_type))) {
     init_nr_rlc_data_req_queue();
   }
 
@@ -667,7 +676,7 @@ rb_found:
   ctxt.brOption = 0;
 
   ctxt.rntiMaybeUEid = ue->rntiMaybeUEid;
-  if (RC.nrrrc != NULL && NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+  if (NODE_IS_CU(node_type)) {
     MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
 							  GTPV1U_TUNNEL_DATA_REQ,
 							  sizeof(gtpv1u_tunnel_data_req_t)
@@ -688,7 +697,6 @@ rb_found:
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
-    
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
@@ -764,7 +772,7 @@ srb_found:
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
-  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(RC.nrrrc[0]->node_type))) {
+  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(node_type))) {
     if (entity->is_gnb) {
       f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF, .rrc_container = (uint8_t *)buf, .rrc_container_length = size, .rnti = ue->rntiMaybeUEid, .srb_id = DCCH};
       gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -1056,35 +1064,30 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
   drb_ToAddMod->reestablishPDCP = NULL;
   drb_ToAddMod->recoverPDCP = NULL;
   drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
-  drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
-  drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
-  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_infinity;
-  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
-  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
-  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-  drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-  drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
+  asn1cCalloc(drb_ToAddMod->pdcp_Config->drb, drb);
+  asn1cCallocOne(drb->discardTimer, NR_PDCP_Config__drb__discardTimer_infinity);
+  asn1cCallocOne(drb->pdcp_SN_SizeUL, NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits);
+  asn1cCallocOne(drb->pdcp_SN_SizeDL, NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits);
+  drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  drb->headerCompression.choice.notUsed = 0;
 
-  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
-  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
-  drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
+  drb->integrityProtection = NULL;
+  drb->statusReportRequired = NULL;
+  drb->outOfOrderDelivery = NULL;
   drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
 
-  drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
-  *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms0;
+  asn1cCallocOne(drb_ToAddMod->pdcp_Config->t_Reordering, NR_PDCP_Config__t_Reordering_ms0);
   drb_ToAddMod->pdcp_Config->ext1 = NULL;
 
   asn1cSeqAdd(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
 
   rbconfig->drb_ToReleaseList = NULL;
 
-  rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
-  rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
-  rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
-  *rbconfig->securityConfig->keyToUse = NR_SecurityConfig__keyToUse_master;
+  asn1cCalloc(rbconfig->securityConfig, secConf);
+  asn1cCalloc(secConf->securityAlgorithmConfig, secConfAlgo);
+  secConfAlgo->cipheringAlgorithm = NR_CipheringAlgorithm_nea0;
+  secConfAlgo->integrityProtAlgorithm = NULL;
+  asn1cCallocOne(secConf->keyToUse, NR_SecurityConfig__keyToUse_master);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
@@ -1108,11 +1111,7 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
 
   nr_pdcp_add_drbs(ctxt.enb_flag, ctxt.rntiMaybeUEid, rbconfig->drb_ToAddModList, 0, NULL, NULL, Rlc_Bearer_ToAdd_list);
 
-  nr_rrc_rlc_config_asn1_req (&ctxt,
-      (NR_SRB_ToAddModList_t *) NULL,
-      rbconfig->drb_ToAddModList,
-      rbconfig->drb_ToReleaseList,
-      Rlc_Bearer_ToAdd_list);
+  nr_rrc_rlc_config_asn1_req(&ctxt, (NR_SRB_ToAddModList_t *)NULL, rbconfig->drb_ToAddModList, rbconfig->drb_ToReleaseList, Rlc_Bearer_ToAdd_list);
 
   LOG_D(PDCP, "%s:%d: done RRC PDCP/RLC ASN1 request for UE ID/RNTI %ld\n", __FUNCTION__, __LINE__, ctxt.rntiMaybeUEid);
 }

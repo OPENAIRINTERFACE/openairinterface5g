@@ -35,6 +35,8 @@ typedef struct {
 
 static nr_sdap_entity_info sdap_info;
 
+instance_t *N3GTPUInst = NULL;
+
 nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager(void);
 
 void nr_pdcp_submit_sdap_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu)
@@ -216,7 +218,8 @@ static void nr_sdap_rx_entity(nr_sdap_entity_t *entity,
     req->ue_id         = ue_id;
     req->bearer_id     = pdusession_id;
     LOG_D(SDAP, "%s()  sending message to gtp size %d\n", __func__,  size-offset);
-    itti_send_msg_to_task(TASK_GTPV1_U, INSTANCE_DEFAULT, message_p);
+    // very very dirty hack gloabl var N3GTPUInst
+    itti_send_msg_to_task(TASK_GTPV1_U, *N3GTPUInst, message_p);
   } else { //nrUE
     /*
      * TS 37.324 5.2 Data transfer

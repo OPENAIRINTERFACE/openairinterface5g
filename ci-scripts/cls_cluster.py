@@ -230,6 +230,14 @@ class Cluster:
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_PROJECT_FAIL)
 			return False
 
+		# delete old images by Sagar Arora <sagar.arora@openairinterface.org>:
+		# 1. retrieve all images and their timestamp
+		# 2. awk retrieves those whose timestamp is older than 4 weeks
+		# 3. issue delete command on corresponding istags (the images are dangling and will be cleaned by the registry)
+		delete_cmd = "oc get istag -o go-template --template '{{range .items}}{{.metadata.name}} {{.metadata.creationTimestamp}}{{\"\\n\"}}{{end}}' | awk '$2 <= \"'$(date -d '-4weeks' -Ins --utc | sed 's/+0000/Z/')'\" { print $1 }' | xargs --no-run-if-empty oc delete istag"
+		response = self.cmd.run(delete_cmd)
+		logging.debug(f"deleted images:\n{response.stdout}")
+
 		self._recreate_entitlements()
 
 		status = True # flag to abandon compiling if any image fails
