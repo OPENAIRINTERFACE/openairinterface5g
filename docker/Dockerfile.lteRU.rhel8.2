@@ -86,7 +86,7 @@ COPY --from=ru-base \
 
 # Copying from the ran-build image the USRP needed packages
 COPY --from=ru-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=ru-base /usr/local/lib64/libuhd.so.3.15.0 /usr/local/lib64
+COPY --from=ru-base /usr/local/lib64/libuhd.so.4.4.0 /usr/local/lib64
 COPY --from=ru-base /usr/local/lib64/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
 
 WORKDIR /usr/local/share/uhd/rfnoc
