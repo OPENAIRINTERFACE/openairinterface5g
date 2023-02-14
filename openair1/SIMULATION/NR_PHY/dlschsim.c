@@ -430,7 +430,6 @@ int main(int argc, char **argv)
 	uint16_t length_dmrs = 1;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
-	dlsch->rnti = 1;
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],

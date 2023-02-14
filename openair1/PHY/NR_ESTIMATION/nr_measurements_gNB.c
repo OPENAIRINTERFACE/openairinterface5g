@@ -212,7 +212,6 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 {
 
   int rx_power_tot = 0;
-  int rx_power[NB_ANTENNAS_RX];
   unsigned short rx_power_avg_dB;
   unsigned short rx_power_tot_dB;
 
@@ -223,6 +222,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   int ch_offset = fp->ofdm_symbol_size * symbol;
   int N_RB_UL = gNB->ulsch[ulsch_id]->harq_process->ulsch_pdu.rb_size;
 
+  int rx_power[fp->nb_antennas_rx];
   for (int aarx = 0; aarx < fp->nb_antennas_rx; aarx++){
 
     rx_power[aarx] = 0;

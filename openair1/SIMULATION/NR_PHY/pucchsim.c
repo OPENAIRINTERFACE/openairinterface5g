@@ -623,7 +623,7 @@ int main(int argc, char **argv)
       if(format==0){
         nfapi_nr_uci_pucch_pdu_format_0_1_t uci_pdu;
         nfapi_nr_pucch_pdu_t pucch_pdu;
-        gNB->uci_stats[0].rnti          = 0x1234;
+        gNB->phy_stats[0].rnti          = 0x1234;
         pucch_pdu.rnti                  = 0x1234;
         pucch_pdu.subcarrier_spacing    = 1;
         pucch_pdu.group_hop_flag        = PUCCH_GroupHopping&1;

@@ -729,10 +729,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
     pusch_vars[ULSCH_id]->llr = (int16_t *)malloc16_clear( (8*((3*8*6144)+12))*sizeof(int16_t) ); // [hna] 6144 is LTE and (8*((3*8*6144)+12)) is not clear
     pusch_vars[ULSCH_id]->ul_valid_re_per_slot  = (int16_t *)malloc16_clear( sizeof(int16_t)*fp->symbols_per_slot);
   } //ulsch_id
-/*
-  for (ulsch_id=0; ulsch_id<NUMBER_OF_UE_MAX; ulsch_id++)
-    gNB->UE_stats_ptr[ulsch_id] = &gNB->UE_stats[ulsch_id];
-*/
+
+  gNB->pusch_vars = pusch_vars;
   return (0);
 }
 
@@ -877,6 +875,7 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars[ULSCH_id]->llr);
     free_and_zero(pusch_vars[ULSCH_id]);
   } //ULSCH_id
+  free(gNB->pusch_vars);
 }
 
 //Adding nr_schedule_handler
@@ -1042,6 +1041,7 @@ void reset_DLSCH_struct(const PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
     }
     free(msg->dlsch[i]);
   }
+  free(msg->dlsch);
 }
 
 void init_nr_transport(PHY_VARS_gNB *gNB)
@@ -1075,8 +1075,8 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
   else
     buffer_ul_slots = (nb_ul_slots_period < slot_ahead) ? nb_ul_slots_period : slot_ahead;
 
-  gNB->max_nb_pucch = MAX_MOBILES_PER_GNB * buffer_ul_slots;
-  gNB->max_nb_pusch = MAX_MOBILES_PER_GNB * buffer_ul_slots;
+  gNB->max_nb_pucch = buffer_ul_slots ? MAX_MOBILES_PER_GNB * buffer_ul_slots : 1;
+  gNB->max_nb_pusch = buffer_ul_slots ? MAX_MOBILES_PER_GNB * buffer_ul_slots : 1;
   gNB->max_nb_srs = buffer_ul_slots << 1; // assuming at most 2 SRS per slot
 
   gNB->measurements.ulsch_measurements = (ULSCH_MEASUREMENTS_gNB *) malloc16(gNB->max_nb_pusch * sizeof(ULSCH_MEASUREMENTS_gNB));
@@ -1125,4 +1125,6 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
   for (int i = 0; i < gNB->max_nb_pusch; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
   free(gNB->ulsch);
+
+  free(gNB->measurements.ulsch_measurements);
 }

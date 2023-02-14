@@ -178,13 +178,13 @@ void rx_func(void *param)
   // disactivate PHY stats if UE is inactive for a given number of frames
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
-    if(stats->active && (((frame_rx - stats->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+    if(stats->active && (((frame_tx - stats->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
       stats->active = false;
   }
   // disactivate ULSCH structure if it is inactive for a given number of frames
   for (int i = 0; i < gNB->max_nb_pusch; i++) {
     NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
-    if (ulsch->active && (((frame_rx - ulsch->harq_process->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+    if (ulsch->active && (((frame_tx - ulsch->harq_process->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
       ulsch->active = false;
   }
 

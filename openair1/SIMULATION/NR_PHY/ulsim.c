@@ -754,7 +754,7 @@ int main(int argc, char **argv)
 
   NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
 
-  //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_processes[harq_pid]->ulsch_pdu;
+  //nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_process->ulsch_pdu;
   nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
   memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
@@ -1477,7 +1477,7 @@ int main(int argc, char **argv)
 
       for (i = 0; i < TBS; i++) {
       
-        estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+        estimated_output_bit[i] = (ulsch_gNB->harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
         test_input_bit[i] = (UE->ul_harq_processes[harq_pid].b[i / 8] & (1 << (i & 7))) >> (i & 7);
       
         if (estimated_output_bit[i] != test_input_bit[i]) {
@@ -1489,12 +1489,12 @@ int main(int argc, char **argv)
       if (n_trials == 1) {
         for (int r = 0; r < UE->ul_harq_processes[harq_pid].C; r++)
           for (int i = 0; i < UE->ul_harq_processes[harq_pid].K >> 3; i++) {
-            if ((UE->ul_harq_processes[harq_pid].c[r][i] ^ ulsch_gNB->harq_processes[harq_pid]->c[r][i]) != 0)
+            if ((UE->ul_harq_processes[harq_pid].c[r][i] ^ ulsch_gNB->harq_process->c[r][i]) != 0)
               printf("************");
             /*printf("r %d: in[%d] %x, out[%d] %x (%x)\n",r,
               i,UE->ul_harq_processes[harq_pid].c[r][i],
-              i,ulsch_gNB->harq_processes[harq_pid]->c[r][i],
-              UE->ul_harq_processes[harq_pid].c[r][i]^ulsch_gNB->harq_processes[harq_pid]->c[r][i]);*/
+              i,ulsch_gNB->harq_process->c[r][i],
+              UE->ul_harq_processes[harq_pid].c[r][i]^ulsch_gNB->harq_process->c[r][i]);*/
           }
       }
       if (errors_decoding > 0 && error_flag == 0) {
