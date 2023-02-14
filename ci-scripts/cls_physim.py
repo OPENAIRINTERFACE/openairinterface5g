@@ -81,11 +81,7 @@ class PhySim:
 		#once parsed move the local logfile to its folder for tidiness
 		os.system('mv '+self.__runLogFile+' '+ self.__runLogPath+'/.')
 
-		#updating the HTML with results
-		html_cell = '<pre style="background-color:white">' + info  + '</pre>'
-		html_queue=SimpleQueue()
-		html_queue.put(html_cell)
-		HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', 1, html_queue)
+		HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', [info])
 		return HTML
 
 	def __CheckResults_LDPCt1Test(self,HTML,CONST,testcase_id):
@@ -131,8 +127,7 @@ class PhySim:
 		if ret != 0:
 			error_msg = f'could not recover test result file {filename}'
 			logging.error(error_msg)
-			html_queue.put(f'<pre style="background-color:white">{error_msg}</pre>')
-			HTML.CreateHtmlTestRowQueue("could not recover results", 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue("could not recover results", 'KO', [error_msg])
 			self.exitStatus = 1
 			return HTML
 
@@ -145,13 +140,11 @@ class PhySim:
 
 		#updating the HTML with results
 		if PUSCH_OK:
-			html_queue.put('<pre style="background-color:white">succeeded</pre>')
-			HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.runargs, 'OK', 1, ["succeeded"])
 		else:
 			error_msg = 'error: no "PUSCH test OK"'
 			logging.error(error_msg)
-			html_queue.put(f'<pre style="background-color:white">{error_msg}</pre>')
-			HTML.CreateHtmlTestRowQueue(self.runargs, 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.runargs, 'KO', 1, [error_msg])
 			self.exitStatus = 1
 		return HTML
 

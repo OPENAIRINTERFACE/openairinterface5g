@@ -780,22 +780,17 @@ class OaiCiTest():
 					logging.debug('    RSRP = ' + str(-140+nRSRP) + ' dBm')
 		SSH.close()
 		SSH.disablePicocomClosure()
-		html_queue = SimpleQueue()
 		self.checkDevTTYisUnlocked()
 		if attach_status:
-			html_cell = '<pre style="background-color:white">CAT-M module Attachment Completed in ' + str(attach_cnt+4) + ' seconds'
+			message = 'CAT-M module Attachment Completed in ' + str(attach_cnt+4) + ' seconds'
 			if (nRSRQ is not None) and (nRSRP is not None):
-				html_cell += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
-				html_cell += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm</pre>'
-			else:
-				html_cell += '</pre>'
-			html_queue.put(html_cell)
-			HTML.CreateHtmlTestRowQueue('N/A', 'OK', 1, html_queue)
+				message += '\n   RSRQ = ' + str(-20+(nRSRQ/2)) + ' dB'
+				message += '\n   RSRP = ' + str(-140+nRSRP) + ' dBm'
+			HTML.CreateHtmlTestRowQueue('N/A', 'OK', [message])
 		else:
 			logging.error('\u001B[1m CAT-M module Attachment Failed\u001B[0m')
-			html_cell = '<pre style="background-color:white">CAT-M module Attachment Failed</pre>'
-			html_queue.put(html_cell)
-			HTML.CreateHtmlTestRowQueue('N/A', 'KO', 1, html_queue)
+			message = 'CAT-M module Attachment Failed'
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', [message])
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 	def PingCatM(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
@@ -886,12 +881,11 @@ class OaiCiTest():
 					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
 			lock.release()
 			SSH.close()
-			html_cell = '<pre style="background-color:white">CAT-M module\nIP Address  : ' + moduleIPAddr + '\n' + qMsg + '</pre>'
-			statusQueue.put(html_cell)
+			message = 'CAT-M module\nIP Address  : ' + moduleIPAddr + '\n' + qMsg
 			if (packetLossOK):
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', 1, statusQueue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', [message])
 			else:
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', 1, statusQueue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', [message])
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
@@ -1017,7 +1011,7 @@ class OaiCiTest():
 				return
 			else:
 				attach_status = True
-				html_queue = SimpleQueue()
+				message = ''
 				while (not status_queue.empty()):
 					count = status_queue.get()
 					if (count < 0):
@@ -1025,23 +1019,22 @@ class OaiCiTest():
 					device_id = status_queue.get()
 					message = status_queue.get()
 					if (count < 0):
-						html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
+						message = 'UE (' + device_id + ')\n' + message
 					else:
-						html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds</pre>'
-					html_queue.put(html_cell)
+						message = 'UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds'
 				if (attach_status):
 					cnt = 0
 					while cnt < len(self.UEDevices):
 						if self.UEDevicesStatus[cnt] == CONST.UE_STATUS_ATTACHING:
 							self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
 						cnt += 1
-					HTML.CreateHtmlTestRowQueue('N/A', 'OK', len(self.UEDevices), html_queue)
+					HTML.CreateHtmlTestRowQueue('N/A', 'OK', [message])
 					result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
 					if result is not None:
 						logging.debug('Waiting 5 seconds to fill up record file')
 						time.sleep(5)
 				else:
-					HTML.CreateHtmlTestRowQueue('N/A', 'KO', len(self.UEDevices), html_queue)
+					HTML.CreateHtmlTestRowQueue('N/A', 'KO', [message])
 					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 		else: #if an ID is specified, it is a module from the yaml infrastructure file
@@ -1418,19 +1411,17 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 		else:
 			check_status = True
-			html_queue = SimpleQueue()
+			messages = []
 			while (not status_queue.empty()):
 				count = status_queue.get()
 				if (count < 0):
 					check_status = False
 				device_id = status_queue.get()
-				message = status_queue.get()
-				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\n' + message + '</pre>'
-				html_queue.put(html_cell)
+				messages.append(f'UE ({device_id})\n{status_queue.get()}')
 			if check_status and passStatus:
-				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', messages)
 			else:
-				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', messages)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 	def GetAllUEIPAddresses(self):
@@ -1694,10 +1685,8 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def PingNoS1_wrong_exit(self, qMsg,HTML):
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">OAI UE ping result\n' + qMsg + '</pre>'
-		html_queue.put(html_cell)
-		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+		message = 'OAI UE ping result\n{qMsg}'
+		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', [message])
 
 	def PingNoS1(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
 		SSH=sshconnection.SSHConnection()
@@ -1773,14 +1762,11 @@ class OaiCiTest():
 					qMsg += '\nPacket Loss is not 0%'
 					logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
 			SSH.close()
-			html_queue = SimpleQueue()
-			ip_addr = 'TBD'
-			html_cell = '<pre style="background-color:white">OAI UE ping result\n' + qMsg + '</pre>'
-			html_queue.put(html_cell)
+			message = f'OAI UE ping result\n{qMsg}'
 			if packetLossOK:
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', [message])
 			else:
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', [message])
 
 			# copying on the EPC server for logCollection
 			if ping_from_eNB is not None:
@@ -1857,7 +1843,7 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 		else:
 			ping_status = True
-			html_queue = SimpleQueue()
+			messages = []
 			while (not status_queue.empty()):
 				count = status_queue.get()
 				if (count < 0):
@@ -1865,12 +1851,11 @@ class OaiCiTest():
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
 				message = status_queue.get()
-				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
-				html_queue.put(html_cell)
+				messages.append(f'UE ({device_id})\nIP Address  : {ip_addr}\n{message}')
 			if (ping_status):
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', messages)
 			else:
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', messages)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 	def Iperf_ComputeTime(self):
@@ -2909,7 +2894,7 @@ class OaiCiTest():
 			iperf_status = False
 		else:
 			iperf_status = True
-		html_queue = SimpleQueue()
+		messages = []
 		while (not status_queue.empty()):
 			count = status_queue.get()
 			if (count < 0):
@@ -2919,14 +2904,13 @@ class OaiCiTest():
 			device_id = status_queue.get()
 			ip_addr = status_queue.get()
 			message = status_queue.get()
-			html_cell = '<pre style="background-color:white">UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
-			html_queue.put(html_cell)
+			messages.append(f'UE ({device_id})\nIP Address  : {ip_addr}\n{message}')
 		if (iperf_noperf and iperf_status):
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
+			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', messages)
 		elif (iperf_status):
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
+			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', messages)
 		else:
-			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
+			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 	def Iperf(self,HTML,RAN,EPC,COTS_UE, InfraUE,CONTAINERS):
@@ -3001,7 +2985,7 @@ class OaiCiTest():
 		else:
 			iperf_status = True
 			iperf_noperf = False
-			html_queue = SimpleQueue()
+			messages = []
 			while (not status_queue.empty()):
 				count = status_queue.get()
 				if (count < 0):
@@ -3010,15 +2994,14 @@ class OaiCiTest():
 					iperf_noperf = True
 				device_id = status_queue.get()
 				ip_addr = status_queue.get()
-				message = status_queue.get()
-				html_cell = '<pre style="background-color:white">UE (' + device_id + ')\nIP Address  : ' + ip_addr + '\n' + message + '</pre>'
-				html_queue.put(html_cell)
+				msg = status_queue.get()
+				messages.append(f'UE ({device_id})\nIP Address  : {ip_addr}\n{msg}')
 			if (iperf_noperf and iperf_status):
-				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'PERF NOT MET', messages)
 			elif (iperf_status):
-				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', messages)
 			else:
-				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', len(self.UEDevices), html_queue)
+				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):

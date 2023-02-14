@@ -717,7 +717,6 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 		terminate_ue_flag = False
 		CiTestObj.GetAllUEDevices(terminate_ue_flag)
 		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
-		HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
 		HTML.htmlNb_Smartphones=len(CiTestObj.UEDevices)
 		HTML.htmlNb_CATM_Modules=len(CiTestObj.CatMDevices)
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
@@ -824,7 +823,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 		CiTestObj.UEDevices.append('COTS-Module')
 	else:
 		CiTestObj.UEDevices.append('OAI-UE')
-	HTML.SethtmlUEConnected(len(CiTestObj.UEDevices) + len(CiTestObj.CatMDevices))
 	HTML.CreateHtmlTabHeader()
 
 	# On CI bench w/ containers, we need to validate if IP routes are set
