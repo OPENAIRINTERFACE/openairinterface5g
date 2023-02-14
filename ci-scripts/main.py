@@ -218,46 +218,8 @@ def GetParametersFromXML(action):
 		else :
 			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
-	elif action == 'Initialize_UE':
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-
-	elif action == 'Detach_UE':
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-
-	elif action == 'Attach_UE':
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-		nbMaxUEtoAttach = test.findtext('nbMaxUEtoAttach')
-		if (nbMaxUEtoAttach is None):
-			CiTestObj.nbMaxUEtoAttach = -1
-		else:
-			CiTestObj.nbMaxUEtoAttach = int(nbMaxUEtoAttach)
-
-	elif action == 'Terminate_UE':
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-
-
-	elif action == 'CheckStatusUE':
-		expectedNBUE = test.findtext('expectedNbOfConnectedUEs')
-		if (expectedNBUE is None):
-			CiTestObj.expectedNbOfConnectedUEs = -1
-		else:
-			CiTestObj.expectedNbOfConnectedUEs = int(expectedNBUE)
+	elif action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Terminate_UE' or action == 'CheckStatusUE' or action == 'DataEnable_UE' or action == 'DataDisable_UE':
+		CiTestObj.ue_ids = test.findtext('id').split(' ')
 
 	elif action == 'Build_OAI_UE':
 		CiTestObj.Build_OAI_UE_args = test.findtext('Build_OAI_UE_args')
@@ -307,16 +269,8 @@ def GetParametersFromXML(action):
 	elif action == 'Ping':
 		CiTestObj.ping_args = test.findtext('ping_args')
 		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold')
-		if (ping_rttavg_threshold is None):
-			CiTestObj.ping_rttavg_threshold = ""
-		else:
-			CiTestObj.ping_rttavg_threshold = ping_rttavg_threshold
+		CiTestObj.ue_ids = test.findtext('id').split(' ')
+		ping_rttavg_threshold = test.findtext('ping_rttavg_threshold') or ''
 
 	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
@@ -832,19 +786,19 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, CONTAINERS)
+					CiTestObj.InitializeUE(HTML)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,CONTAINERS)
+					CiTestObj.AttachUE(HTML, RAN, EPC, CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,CONTAINERS)
+					CiTestObj.DetachUE(HTML)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
-				elif action == 'CheckStatusUE': # still used?
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,CONTAINERS)
+				elif action == 'CheckStatusUE':
+					CiTestObj.CheckStatusUE(HTML)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':

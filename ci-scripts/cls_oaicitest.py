@@ -44,6 +44,7 @@ import datetime
 import signal
 import statistics as stat
 from multiprocessing import Process, Lock, SimpleQueue
+import concurrent.futures
 
 #import our libs
 import helpreadme as HELP
@@ -183,7 +184,7 @@ class OaiCiTest():
 		self.Initialize_OAI_UE_args = ''
 		self.clean_repository = True
 		self.air_interface=''
-		self.ue_id = '' #used for module identification
+		self.ue_ids = []
 		self.cmd_prefix = '' # prefix before {lte,nr}-uesoftmodem
 
 
@@ -292,9 +293,14 @@ class OaiCiTest():
 			self.ConditionalExit()
 
 
-	def InitializeUE(self,HTML,RAN,EPC, CONTAINERS):
-		ue = cls_module_ue.Module_UE(self.ue_id)
-		ue.initialize()
+	def InitializeUE(self, HTML):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.initialize) for ue in ues]
+			[f.result() for f in futures]
+		messages = [f'UE {ue.getName()}: initialized' for ue in ues]
+		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
+
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,CONTAINERS):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -506,22 +512,28 @@ class OaiCiTest():
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
 			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 
-	def AttachUE(self,HTML,RAN,EPC,CONTAINERS):
-		ue = cls_module_ue.Module_UE(self.ue_id)
-		connected = ue.attach()
-		if connected:
-			HTML.CreateHtmlTestRow(f"{ue.getIP()}", 'OK', CONST.ALL_PROCESSES_OK)
-			ue.checkMTU()
+	def AttachUE(self, HTML, RAN, EPC, CONTAINERS):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.attach) for ue in ues]
+			attached = [f.result() for f in futures]
+			futures = [executor.submit(ue.checkMTU) for ue in ues]
+			mtus = [f.result() for f in futures]
+			messages = [f"UE {ue.getName()}: {ue.getIP()}" for ue in ues]
+		if all(attached) and all(mtus):
+			HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
 		else:
-			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
+			logging.error(f'error attaching or wrong MTU: attached {attached}, mtus {mtus}')
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not retrieve UE IP address(es) or MTU(s) wrong!"])
+			self.AutoTerminateUEandeNB(HTML, RAN, EPC, CONTAINERS)
 
-	def DetachUE(self,HTML,RAN,EPC,CONTAINERS):
-		ue = cls_module_ue.Module_UE(self.ue_id)
-		ue.detach()
-		HTML.CreateHtmlTestRow('NA', 'OK', CONST.ALL_PROCESSES_OK)
-				
-							
+	def DetachUE(self, HTML):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.detach) for ue in ues]
+			[f.result() for f in futures]
+			messages = [f"UE {ue.getName()}: detached" for ue in ues]
+		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 
 	def RebootUE_common(self, device_id):
 		try:
@@ -584,158 +596,39 @@ class OaiCiTest():
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def DataDisableUE_common(self, device_id, idx):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
-			# disable data service
-			if self.ADBCentralized:
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data disable"', '\$', 60)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data disable"\'', '\$', 60)
-			logging.debug('\u001B[1mUE (' + device_id + ') Disabled Data Service\u001B[0m')
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def DataDisableUE(self,HTML):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		multi_jobs = []
-		i = 0
-		for device_id in self.UEDevices:
-			p = Process(target = self.DataDisableUE_common, args = (device_id,i,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			i += 1
-		for job in multi_jobs:
-			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-
-	def DataEnableUE_common(self, device_id, idx):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
-			# enable data service
-			if self.ADBCentralized:
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
-			logging.debug('\u001B[1mUE (' + device_id + ') Enabled Data Service\u001B[0m')
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def DataEnableUE(self,HTML):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		multi_jobs = []
-		i = 0
-		for device_id in self.UEDevices:
-			p = Process(target = self.DataEnableUE_common, args = (device_id,i,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			i += 1
-		for job in multi_jobs:
-			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-
-	def CheckUEStatus_common(self, lock, device_id, statusQueue, idx):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
-			if self.ADBCentralized:
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry"', '\$', 15)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\'', '\$', 60)
-			result = re.search('mServiceState=(?P<serviceState>[0-9]+)', SSH.getBefore())
-			serviceState = 'Service State: UNKNOWN'
-			if result is not None:
-				lServiceState = int(result.group('serviceState'))
-				if lServiceState == 3:
-					serviceState = 'Service State: RADIO_POWERED_OFF'
-				if lServiceState == 1:
-					serviceState = 'Service State: OUT_OF_SERVICE'
-				if lServiceState == 0:
-					serviceState = 'Service State: IN_SERVICE'
-				if lServiceState == 2:
-					serviceState = 'Service State: EMERGENCY_ONLY'
-			result = re.search('mDataConnectionState=(?P<dataConnectionState>[0-9]+)', SSH.getBefore())
-			dataConnectionState = 'Data State:    UNKNOWN'
-			if result is not None:
-				lDataConnectionState = int(result.group('dataConnectionState'))
-				if lDataConnectionState == 0:
-					dataConnectionState = 'Data State:    DISCONNECTED'
-				if lDataConnectionState == 1:
-					dataConnectionState = 'Data State:    CONNECTING'
-				if lDataConnectionState == 2:
-					dataConnectionState = 'Data State:    CONNECTED'
-				if lDataConnectionState == 3:
-					dataConnectionState = 'Data State:    SUSPENDED'
-			result = re.search('mDataConnectionReason=(?P<dataConnectionReason>[0-9a-zA-Z_]+)', SSH.getBefore())
-			time.sleep(1)
-			SSH.close()
-			dataConnectionReason = 'Data Reason:   UNKNOWN'
-			if result is not None:
-				dataConnectionReason = 'Data Reason:   ' + result.group('dataConnectionReason')
-			lock.acquire()
-			logging.debug('\u001B[1;37;44m Status Check (' + str(device_id) + ') \u001B[0m')
-			logging.debug('\u001B[1;34m    ' + serviceState + '\u001B[0m')
-			logging.debug('\u001B[1;34m    ' + dataConnectionState + '\u001B[0m')
-			logging.debug('\u001B[1;34m    ' + dataConnectionReason + '\u001B[0m')
-			statusQueue.put(0)
-			statusQueue.put(device_id)
-			qMsg = serviceState + '\n' + dataConnectionState + '\n' + dataConnectionReason
-			statusQueue.put(qMsg)
-			lock.release()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def CheckStatusUE(self,HTML,RAN,EPC,CONTAINERS):
-		raise Exception("not implemented")
-		check_eNB = True
-		check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			HTML.CreateHtmlTabFooter(False)
-			self.ConditionalExit()
-		multi_jobs = []
-		lock = Lock()
-		status_queue = SimpleQueue()
-		i = 0
-		for device_id in self.UEDevices:
-			p = Process(target = self.CheckUEStatus_common, args = (lock,device_id,status_queue,i,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			i += 1
-		for job in multi_jobs:
-			job.join()
-		passStatus = True
-		htmlOptions = 'N/A'
-
-		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
+	def DataDisableUE(self, HTML):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.dataDisable) for ue in ues]
+			status = [f.result() for f in futures]
+		if all(status):
+			messages = [f"UE {ue.getName()}: data disabled" for ue in ues]
+			HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 		else:
-			check_status = True
-			messages = []
-			while (not status_queue.empty()):
-				count = status_queue.get()
-				if (count < 0):
-					check_status = False
-				device_id = status_queue.get()
-				messages.append(f'UE ({device_id})\n{status_queue.get()}')
-			if check_status and passStatus:
-				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', messages)
-			else:
-				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', messages)
-				self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
+			logging.error(f'error enabling data: {status}')
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not disable UE data!"])
+
+	def DataEnableUE(self, HTML):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		logging.debug(f'disabling data for UEs {ues}')
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.dataEnable) for ue in ues]
+			status = [f.result() for f in futures]
+		if all(status):
+			messages = [f"UE {ue.getName()}: data enabled" for ue in ues]
+			HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
+		else:
+			logging.error(f'error enabling data: {status}')
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', ["Could not enable UE data!"])
+
+	def CheckStatusUE(self,HTML):
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		logging.debug(f'checking status of UEs {ues}')
+		messages = []
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.check) for ue in ues]
+			messages = [f.result() for f in futures]
+		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 
 	def ping_iperf_wrong_exit(self, lock, UE_IPAddress, device_id, statusQueue, message):
 		lock.acquire()
@@ -1001,11 +894,11 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 			return
 
-		if self.ue_id == "":
-			raise Exception("no module names in self.ue_id provided")
+		if self.ue_ids == []:
+			raise Exception("no module names in self.ue_ids provided")
 		ues = []
-		for ue_name in self.ue_id.split(' '):
-			ue = cls_module_ue.Module_UE(ue_name.strip())
+		for ue_id in self.ue_ids:
+			ue = cls_module_ue.Module_UE(ue_id)
 			if not ue.getIP():
 				logging.error("no IP addresses returned")
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices), html_queue)
@@ -2032,11 +1925,9 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 			return
 
-		if self.ue_id == "":
-			raise Exception("no module names in self.ue_id provided")
 		ues = []
-		for ue_name in self.ue_id.split(' '):
-			ue = cls_module_ue.Module_UE(ue_name.strip())
+		for ue_name in self.ue_ids:
+			ue = cls_module_ue.Module_UE(ue_name)
 			if not ue.getIP():
 				logging.error("no IP addresses returned")
 				HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
@@ -2462,12 +2353,13 @@ class OaiCiTest():
 		return global_status
 
 	def TerminateUE(self, HTML):
-		ue = cls_module_ue.Module_UE(self.ue_id)
-		archive_destination = ue.terminate()
-		if archive_destination:
-			HTML.CreateHtmlTestRow(f'QLog at: {archive_destination}', 'OK', CONST.ALL_PROCESSES_OK)
-		else:
-			HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(ue.terminate) for ue in ues]
+			archives = [f.result() for f in futures]
+		archive_info = [f'Log at: {a}' if a else 'No log available' for a in archives]
+		messages = [f"UE {ue.getName()}: {log}" for (ue, log) in zip(ues, archive_info)]
+		HTML.CreateHtmlTestRowQueue(f'N/A', 'OK', messages)
 
 	def TerminateOAIUE(self,HTML,RAN,EPC,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
