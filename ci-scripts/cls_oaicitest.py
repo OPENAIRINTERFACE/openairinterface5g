@@ -1396,6 +1396,8 @@ class OaiCiTest():
 		lock.release()
 
 	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
+		if device_id != 'OAI-UE':
+			raise Exception(f"in Iperf_common(): unhandled device_id {device_id}")
 		SSH = sshconnection.SSHConnection()
 		udpIperf = True
 		result = re.search('-u', str(self.iperf_args))
@@ -1457,12 +1459,8 @@ class OaiCiTest():
 		time.sleep(0.5)
 
 		# Launch iperf client on UE
-		if (device_id == 'OAI-UE'):
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
-		else:
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			SSH.command('cd ' + EPC.SourceCodePath+ '/scripts', '\$', 5)
+		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
 		iperf_time = self.Iperf_ComputeTime()
 		time.sleep(0.5)
 
@@ -1474,17 +1472,7 @@ class OaiCiTest():
 		time.sleep(0.5)
 
 		SSH.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-		if (device_id == 'OAI-UE'):
-			iperf_status = SSH.command('iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + ' -B ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-		else:
-			if self.ADBCentralized:
-				iperf_status = SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '" 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-			else:
-				iperf_status = SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + '"\' 2>&1 > iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-				SSH.command('fromdos -o iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-				SSH.command('cat iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			# Copying locally iperf client for artifacting
-			SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath+ '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
+		iperf_status = SSH.command('iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + ' -B ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
 		# TIMEOUT Case
 		if iperf_status < 0:
 			SSH.close()
@@ -1527,16 +1515,14 @@ class OaiCiTest():
 			# Copying all the time the iperf server for artifacting
 			if launchFromEpc:
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-		# in case of OAI-UE 
-		if (device_id == 'OAI-UE'):
-			SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+		SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
+		SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 
 
-	def Iperf_Module(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC, Module_UE, RAN):
+	def Iperf_Module(self, lock, statusQueue, EPC, ue, RAN):
 		SSH = sshconnection.SSHConnection()
-		server_filename = 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-		client_filename = 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
+		server_filename = f'iperf_server_{self.testCase_id}_{ue.getName()}.log'
+		client_filename = f'iperf_client_{self.testCase_id}_{ue.getName()}.log'
 		if (re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE)) or (re.match('OAICN5G', EPC.Type, re.IGNORECASE)):
 			#retrieve trf-gen container IP address
 			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
@@ -1549,21 +1535,19 @@ class OaiCiTest():
 			SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf3"', '\$', 5)
 			SSH.close()
 			#kill iperf processes on UE side before (in case there are still some remaining)
-			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-			cmd = 'killall --signal=SIGKILL iperf'
-			SSH.command(cmd,'\$',5)
-			cmd = 'killall --signal=SIGKILL iperf3'
-			SSH.command(cmd,'\$',5)
-			SSH.close()
+			cmd = cls_cmd.RemoteCmd(ue.host)
+			cmd.run('killall --signal=SIGKILL iperf')
+			cmd.run('killall --signal=SIGKILL iperf3')
+			cmd.close()
 
 			iperf_time = self.Iperf_ComputeTime()
 			if self.iperf_direction=="DL":
 				logging.debug("Iperf for Module in DL mode detected")
 				##server side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm ' + server_filename
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup iperf -s -B ' + UE_IPAddress + ' -u -i 1 > ' + server_filename + ' 2>&1 &'
+				cmd = 'echo $USER; nohup iperf -s -B ' + ue.getIP() + ' -u -i 1 > ' + server_filename + ' 2>&1 &'
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				##client side EPC
@@ -1571,17 +1555,17 @@ class OaiCiTest():
 				#remove old client file in EPC.SourceCodePath
 				cmd = 'rm ' + EPC.SourceCodePath + '/' + client_filename 
 				SSH.command(cmd,'\$',5)
-				iperf_cmd = 'bin/iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' > ' + client_filename + ' 2>&1'
+				iperf_cmd = 'bin/iperf -c ' + ue.getIP() + ' ' + self.iperf_args + ' > ' + client_filename + ' 2>&1'
 				cmd = 'docker exec -w /iperf-2.0.13 -it prod-trf-gen /bin/bash -c \"' + iperf_cmd + '\"' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
 				SSH.command('docker cp prod-trf-gen:/iperf-2.0.13/'+ client_filename + ' ' + EPC.SourceCodePath, '\$', 5)
 				SSH.close()
 
 				#copy the 2 resulting files locally (python executor)
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, server_filename, '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", server_filename, '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + client_filename, '.')
 				#send for analysis
-				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,server_filename,1)	
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, self.iperf_args,server_filename,1)	
 
 			elif self.iperf_direction=="UL":
 				logging.debug("Iperf for Module in UL mode detected")
@@ -1594,10 +1578,10 @@ class OaiCiTest():
 				SSH.close()
 
 				#client side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm '+ client_filename
 				SSH.command(cmd,'\$',5)
-				SSH.command('iperf -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
+				SSH.command('iperf -B ' + ue.getIP() + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#once client is done, retrieve the server file from container to EPC Host
@@ -1606,10 +1590,10 @@ class OaiCiTest():
 				SSH.close()
 
 				#copy the 2 resulting files locally 
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, client_filename, '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", client_filename, '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + server_filename, '.')
 				#send for analysis
-				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,server_filename,1)
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, self.iperf_args,server_filename,1)
 
 			elif self.iperf_direction=="BIDIR":
 				logging.debug("Iperf for Module in BIDIR mode detected")
@@ -1622,10 +1606,10 @@ class OaiCiTest():
 				SSH.close()
 
 				#client side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm '+ client_filename
 				SSH.command(cmd,'\$',5)
-				SSH.command('iperf3 -B ' + UE_IPAddress + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
+				SSH.command('iperf3 -B ' + ue.getIP() + ' -c ' +  trf_gen_IP + ' '  + self.iperf_args + ' > ' + client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#once client is done, retrieve the server file from container to EPC Host
@@ -1638,11 +1622,11 @@ class OaiCiTest():
 				SSH.close()
 
 				#copy the 2 resulting files locally 
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, client_filename, '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", client_filename, '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/' + server_filename, '.')
 
 				#send for analysis
-				self.Iperf_analyzeV2BIDIR(lock, UE_IPAddress, device_id, statusQueue, server_filename, client_filename)
+				self.Iperf_analyzeV2BIDIR(lock, ue.getIP(), ue.getName(), statusQueue, server_filename, client_filename)
 
 			else :
 				logging.debug("Incorrect or missing IPERF direction in XML")
@@ -1650,7 +1634,7 @@ class OaiCiTest():
 		else: 		#default is ltebox
 
 			#kill iperf processes before (in case there are still some remaining)
-			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
 			cmd = 'killall --signal=SIGKILL iperf3'
@@ -1669,25 +1653,25 @@ class OaiCiTest():
 			if self.iperf_direction=="DL":
 				logging.debug("Iperf for Module in DL mode detected")
 				#server side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm iperf_server_' +  self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + UE_IPAddress + ' -u -i 1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1 &' 
+				cmd = 'echo $USER; nohup /opt/iperf-2.0.10/iperf -s -B ' + ue.getIP() + ' -u -i 1 > iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1 &' 
 				SSH.command(cmd,'\$',5)
 				SSH.close()
 				#client side EPC
 				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
 				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
-				cmd = 'iperf -c ' + UE_IPAddress + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1' 
+				cmd = 'iperf -c ' + ue.getIP() + ' ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1' 
 				SSH.command(cmd,'\$',int(iperf_time)*5.0)
 				SSH.close()
 				#copy the 2 resulting files locally
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 				#send for analysis
 				filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)	
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, self.iperf_args,filename,1)	
 
 			elif self.iperf_direction=="UL":
 				logging.debug("Iperf for Module in UL mode detected")
@@ -1700,18 +1684,18 @@ class OaiCiTest():
 				SSH.close()
 
 				#client side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log'
 				SSH.command(cmd,'\$',5)
 				SSH.command('/opt/iperf-2.0.10/iperf -c 192.172.0.1 ' + self.iperf_args + ' > iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#copy the 2 resulting files locally
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", 'iperf_client_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log', '.')
 				#send for analysis
 				filename='iperf_server_' + self.testCase_id + '_' + self.ue_id + '.log'
-				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, self.iperf_args,filename,1)
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, self.iperf_args,filename,1)
 			elif self.iperf_direction=="BIDIR":
 				logging.debug("Iperf for Module in BIDIR mode detected")
 
@@ -1725,23 +1709,23 @@ class OaiCiTest():
 				SSH.close()
 
 				#client side UE
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+				SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 				cmd = 'rm ' + client_filename
 				SSH.command(cmd,'\$',5)
 				SSH.command('iperf3 -c 192.172.0.1 ' + self.iperf_args + ' > '+client_filename + ' 2>&1', '\$', int(iperf_time)*5.0)
 				SSH.close()
 
 				#copy the 2 resulting files locally
-				SSH.copyin(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword, client_filename, '.')
+				SSH.copyin(ue.getHost(), "oaicicd", "DOESNOTMATTER", client_filename, '.')
 				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, server_filename, '.')
 				#send for analysis
-				self.Iperf_analyzeV2BIDIR(lock, UE_IPAddress, device_id, statusQueue, server_filename, client_filename)
+				self.Iperf_analyzeV2BIDIR(lock, ue.getIP(), ue.getName(), statusQueue, server_filename, client_filename)
 			else :
 				logging.debug("Incorrect or missing IPERF direction in XML")
 
 
 			#kill iperf processes after to be clean
-			SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
+			SSH.open(ue.getHost(), "oaicicd", "DOESNOTMATTER")
 			cmd = 'killall --signal=SIGKILL iperf'
 			SSH.command(cmd,'\$',5)
 			cmd = 'killall --signal=SIGKILL iperf3'
@@ -1761,6 +1745,8 @@ class OaiCiTest():
 			SSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, client_filename, RAN.eNBSourceCodePath + '/cmake_targets/')
 
 	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
+		if device_id != 'OAI-UE':
+			raise Exception(f"in Iperf_common(): unhandled device_id {device_id}")
 		try:
 			SSH = sshconnection.SSHConnection()
 			# Single-UE profile -- iperf only on one UE
@@ -1770,50 +1756,15 @@ class OaiCiTest():
 			udpIperf = True
 
 			self.ueIperfVersion = '2.0.5'
-			if (device_id != 'OAI-UE'):
-				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				# if by chance ADB server and EPC are on the same remote host, at least log collection will take care of it
-				SSH.command('if [ ! -d ' + EPC.SourceCodePath + '/scripts ]; then mkdir -p ' + EPC.SourceCodePath + '/scripts ; fi', '\$', 5)
-				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-				# Checking if iperf / iperf3 are installed
-				if self.ADBCentralized:
-					SSH.command('adb -s ' + device_id + ' shell "ls /data/local/tmp"', '\$', 5)
-				else:
-					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ls /data/local/tmp"\'', '\$', 60)
-				# DEBUG: disabling iperf3 usage for the moment
-				result = re.search('iperf4', SSH.getBefore())
-				if result is None:
-					result = re.search('iperf', SSH.getBefore())
-					if result is None:
-						message = 'Neither iperf nor iperf3 installed on UE!'
-						logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-						SSH.close()
-						self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
-						return
-					else:
-						if self.ADBCentralized:
-							SSH.command('adb -s ' + device_id + ' shell "/data/local/tmp/iperf --version"', '\$', 5)
-						else:
-							SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf --version"\'', '\$', 60)
-						result = re.search('iperf version 2.0.5', SSH.getBefore())
-						if result is not None:
-							self.ueIperfVersion = '2.0.5'
-						result = re.search('iperf version 2.0.10', SSH.getBefore())
-						if result is not None:
-							self.ueIperfVersion = '2.0.10'
-				else:
-					useIperf3 = True
-				SSH.close()
-			else:
-				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-				SSH.command('iperf --version', '\$', 5)
-				result = re.search('iperf version 2.0.5', SSH.getBefore())
-				if result is not None:
-					self.ueIperfVersion = '2.0.5'
-				result = re.search('iperf version 2.0.10', SSH.getBefore())
-				if result is not None:
-					self.ueIperfVersion = '2.0.10'
-				SSH.close()
+			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			SSH.command('iperf --version', '\$', 5)
+			result = re.search('iperf version 2.0.5', SSH.getBefore())
+			if result is not None:
+				self.ueIperfVersion = '2.0.5'
+			result = re.search('iperf version 2.0.10', SSH.getBefore())
+			if result is not None:
+				self.ueIperfVersion = '2.0.10'
+			SSH.close()
 			# in case of iperf, UL has its own function
 			if (not useIperf3):
 				result = re.search('-R', str(self.iperf_args))
@@ -1822,33 +1773,15 @@ class OaiCiTest():
 					return
 
 			# Launch the IPERF server on the UE side for DL
-			if (device_id == 'OAI-UE'):
-				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-				SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
-				SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-				result = re.search('-u', str(self.iperf_args))
-				if result is None:
-					SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
-					udpIperf = False
-				else:
-					SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
+			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
+			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
+			result = re.search('-u', str(self.iperf_args))
+			if result is None:
+				SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
+				udpIperf = False
 			else:
-				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-				if self.ADBCentralized:
-					if (useIperf3):
-						SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/iperf3 -s &', '\$', 5)
-					else:
-						SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-						result = re.search('-u', str(self.iperf_args))
-						if result is None:
-							SSH.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
-							udpIperf = False
-						else:
-							SSH.command('echo $USER; nohup adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 5)
-				else:
-					SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-					SSH.command('echo $USER; nohup ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "/data/local/tmp/iperf -u -s -i 1" \' 2>&1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.ADBUserName, 60)
+				SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
 
 			time.sleep(0.5)
 			SSH.close()
@@ -1933,32 +1866,15 @@ class OaiCiTest():
 			SSH.close()
 
 			# Kill the IPERF server that runs in background
-			if (device_id == 'OAI-UE'):
-				SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-				SSH.command('killall iperf', '\$', 5)
-			else:
-				SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-				if self.ADBCentralized:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell ps | grep --color=never iperf | grep -v grep', '\$', 5)
-				else:
-					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps" | grep --color=never iperf | grep -v grep\'', '\$', 60)
-				result = re.search('shell +(?P<pid>\d+)', SSH.getBefore())
-				if result is not None:
-					pid_iperf = result.group('pid')
-					if self.ADBCentralized:
-						SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell kill -KILL ' + pid_iperf, '\$', 5)
-					else:
-						SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"\'', '\$', 60)
+			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
+			SSH.command('killall iperf', '\$', 5)
 			SSH.close()
 			# if the client report is absent, try to analyze the server log file
 			if (clientStatus == -1):
 				time.sleep(1)
 				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
 					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				if (device_id == 'OAI-UE'):
-					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-				else:
-					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 				# fromdos has to be called on the python executor not on ADB server
 				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log > /dev/null 2>&1'
 				try:
@@ -1975,19 +1891,15 @@ class OaiCiTest():
 			else:
 				# Copying all the time the iperf server for artifacting
 				time.sleep(1)
-				if (device_id == 'OAI-UE'):
-					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-				else:
-					SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, EPC.SourceCodePath + '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
 
 			# in case of OAI UE: 
-			if (device_id == 'OAI-UE'):
-				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-					if not launchFromEpc:
-						SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-				else:
-					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+			if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
+				if not launchFromEpc:
 					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
+			else:
+				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
+				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
@@ -2120,21 +2032,17 @@ class OaiCiTest():
 			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			return
 
-		# TODO take out
-		if self.ue_id=="":#is not a module, follow legacy code
-			ueIpStatus = self.GetAllUEIPAddresses()
-			if (ueIpStatus < 0):
-				HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
+		if self.ue_id == "":
+			raise Exception("no module names in self.ue_id provided")
+		ues = []
+		for ue_name in self.ue_id.split(' '):
+			ue = cls_module_ue.Module_UE(ue_name.strip())
+			if not ue.getIP():
+				logging.error("no IP addresses returned")
+				HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
 				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
-				return
-		else: #is a module
-			self.UEIPAddresses=[]
-			Module_UE = cls_module_ue.Module_UE(self.ue_id)
-			ip = Module_UE.getIP()
-			self.UEIPAddresses.append(ip)
-
-
-
+			ues.append(ue)
+		logging.debug(ues)
 
 		self.dummyIperfVersion = '2.0.10'
 		#cmd = 'iperf --version'
@@ -2149,18 +2057,13 @@ class OaiCiTest():
 
 		multi_jobs = []
 		i = 0
-		ue_num = len(self.UEIPAddresses)
 		lock = Lock()
 		status_queue = SimpleQueue()
-		logging.debug(self.UEIPAddresses)
-		for UE_IPAddress in self.UEIPAddresses:
-			device_id = self.UEDevices[i]
-        	#special quick and dirty treatment for modules, iperf to be restructured
-			if self.ue_id!="": #is module
-				device_id = Module_UE.ID + "-" + Module_UE.Kind
-				p = Process(target = self.Iperf_Module ,args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, Module_UE, RAN, ))
-			else: #legacy code
-				p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
+		for ue in ues:
+			#if self.ue_id!="": #is module
+			p = Process(target = self.Iperf_Module ,args = (lock, status_queue, EPC, ue, RAN, ))
+			#else: #legacy code
+			#	p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
