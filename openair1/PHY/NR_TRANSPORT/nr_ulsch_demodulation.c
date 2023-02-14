@@ -1471,16 +1471,17 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
  *
  *
  * */
-uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
-                                   int **ul_ch_mag,
-                                   int **ul_ch_magb,                                   
-                                   int **ul_ch_estimates_ext,
-                                   unsigned short nb_rb,
-                                   unsigned char n_rx,
-                                   unsigned char mod_order,
-                                   int shift,
-                                   unsigned char symbol,
-                                   int length)
+uint8_t nr_ulsch_zero_forcing_rx_2layers(NR_DL_FRAME_PARMS *frame_parms,
+                                         int **rxdataF_comp,
+                                         int **ul_ch_mag,
+                                         int **ul_ch_magb,
+                                         int **ul_ch_estimates_ext,
+                                         unsigned short nb_rb,
+                                         unsigned char n_rx,
+                                         unsigned char mod_order,
+                                         int shift,
+                                         unsigned char symbol,
+                                         int length)
 {
   int *ch00, *ch01, *ch10, *ch11;
   int *ch20, *ch30, *ch21, *ch31;
@@ -1722,10 +1723,10 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
      *
      *
      **************************************************************************/
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*ul_ch_mag128_0=NULL,*ul_ch_mag128b_0=NULL,*determ_fin_128;//*dl_ch_mag128_1,*dl_ch_mag128b_1,*dl_ch_mag128r_1
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
-  __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
-  __m128i QAM_amp128={0},QAM_amp128b={0};
+  __m128i *rxdataF_comp128_0, *rxdataF_comp128_1, *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *determ_fin_128;
+  __m128i mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
+  __m128i *after_mf_a_128, *after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
+  __m128i QAM_amp128 = {0}, QAM_amp128b = {0};
 
   determ_fin_128      = (__m128i *)&determ_fin[0];
 
@@ -1744,45 +1745,47 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
     } else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //4/sqrt{42}
       QAM_amp128b = _mm_set1_epi16(QAM64_n2); //2/sqrt{42}
-    } 
-    ul_ch_mag128_0      = (__m128i *)&ul_ch_mag[0][symbol*(off+nb_rb*12)];
-    ul_ch_mag128b_0     = (__m128i *)&ul_ch_magb[0][symbol*(off+nb_rb*12)];
+    }
+    ul_ch_mag128_0 = (__m128i *)&ul_ch_mag[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_0 = (__m128i *)&ul_ch_magb[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128_1 = (__m128i *)&ul_ch_mag[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_1 = (__m128i *)&ul_ch_magb[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
   }
 
-  for (int rb=0; rb<3*nb_rb_0; rb++) {
-    if (mod_order>2) {
-      int sum_det =0;
-      for (int k=0; k<4;k++) {
-        sum_det += ((((int *)&determ_fin_128[0])[k])>>2);
-        //printf("det_%d = %d\n",k,sum_det);
-        }
+  for (int rb = 0; rb < 3 * nb_rb_0; rb++) {
 
-      mmtmpD2 = _mm_slli_epi32(determ_fin_128[0],5);
-      mmtmpD2 = _mm_srai_epi32(mmtmpD2,log2_approx(sum_det));
-      mmtmpD2 = _mm_slli_epi32(mmtmpD2,5);
+    // Magnitude computation
+    if (mod_order > 2) {
 
-      mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2,mmtmpD2);
+      int sum_det = 0;
+      for (int k = 0; k < 4; k++) {
+        sum_det += ((((int *)&determ_fin_128[0])[k]) >> 2);
+      }
 
-      mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2,mmtmpD2);
+      mmtmpD2 = _mm_slli_epi32(determ_fin_128[0], 5);
+      mmtmpD2 = _mm_srai_epi32(mmtmpD2, log2_approx(sum_det));
+      mmtmpD2 = _mm_slli_epi32(mmtmpD2, 5);
+      mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = _mm_packs_epi32(mmtmpD3, mmtmpD2);
 
-      mmtmpD2 = _mm_packs_epi32(mmtmpD3,mmtmpD2);
-
+      // Layer 0
       ul_ch_mag128_0[0] = mmtmpD2;
       ul_ch_mag128b_0[0] = mmtmpD2;
+      ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0], QAM_amp128);
+      ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0], 1);
+      ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0], QAM_amp128b);
+      ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0], 1);
 
-      ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0],QAM_amp128);
-      ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0],1);
-
-      ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0],QAM_amp128b);
-      ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0],1);
-
-      //print_shorts("mag layer 1:",(int16_t*)&dl_ch_mag128_0[0]);
-      //print_shorts("mag layer 2:",(int16_t*)&dl_ch_mag128_1[0]);
-      //print_shorts("magb layer 1:",(int16_t*)&dl_ch_mag128b_0[0]);
-      //print_shorts("magb layer 2:",(int16_t*)&dl_ch_mag128b_1[0]);
-      //print_shorts("magr layer 1:",(int16_t*)&dl_ch_mag128r_0[0]);
-      //print_shorts("magr layer 2:",(int16_t*)&dl_ch_mag128r_1[0]);
+      // Layer 1
+      ul_ch_mag128_1[0] = mmtmpD2;
+      ul_ch_mag128b_1[0] = mmtmpD2;
+      ul_ch_mag128_1[0] = _mm_mulhi_epi16(ul_ch_mag128_1[0], QAM_amp128);
+      ul_ch_mag128_1[0] = _mm_slli_epi16(ul_ch_mag128_1[0], 1);
+      ul_ch_mag128b_1[0] = _mm_mulhi_epi16(ul_ch_mag128b_1[0], QAM_amp128b);
+      ul_ch_mag128b_1[0] = _mm_slli_epi16(ul_ch_mag128b_1[0], 1);
     }
+
     // multiply by channel Inv
     //rxdataF_zf128_0 = rxdataF_comp128_0*d - b*rxdataF_comp128_1
     //rxdataF_zf128_1 = rxdataF_comp128_1*a - c*rxdataF_comp128_0
@@ -1801,12 +1804,7 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
                                determ_fin_128[0]);
 
     rxdataF_comp128_0[0] = mmtmpD0;
-    if (mod_order > 2) {
-      // We need to check why it is a shift of 3
-      rxdataF_comp128_1[0] = simde_mm_srai_epi16(mmtmpD1, 3);
-    } else {
-      rxdataF_comp128_1[0] = mmtmpD1;
-    }
+    rxdataF_comp128_1[0] = mmtmpD1;
 
 #ifdef DEBUG_DLSCH_DEMOD
     printf("\n Rx signal after ZF l%d rb%d\n",symbol,rb);
@@ -1815,7 +1813,9 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
 #endif
     determ_fin_128 += 1;
     ul_ch_mag128_0 += 1;
-    ul_ch_mag128b_0 += 1;    
+    ul_ch_mag128_1 += 1;
+    ul_ch_mag128b_0 += 1;
+    ul_ch_mag128b_1 += 1;
     rxdataF_comp128_0 += 1;
     rxdataF_comp128_1 += 1;
     after_mf_a_128 += 1;
@@ -2028,7 +2028,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
       //Apply zero forcing for 2 Tx layers
       if (rel15_ul->nrOfLayers == 2) {
-        nr_ulsch_zero_forcing_rx_2layers(gNB->pusch_vars[ulsch_id]->rxdataF_comp,
+        nr_ulsch_zero_forcing_rx_2layers(frame_parms,
+                                         gNB->pusch_vars[ulsch_id]->rxdataF_comp,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,
