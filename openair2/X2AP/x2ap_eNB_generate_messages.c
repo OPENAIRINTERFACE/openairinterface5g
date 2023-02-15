@@ -1241,7 +1241,7 @@ int x2ap_gNB_generate_ENDC_x2_setup_request(
   ie_GNB_ENDC = (X2AP_En_gNB_ENDCX2SetupReqIEs_t *)calloc(1, sizeof(X2AP_En_gNB_ENDCX2SetupReqIEs_t));
   ie_GNB_ENDC->id = X2AP_ProtocolIE_ID_id_Globalen_gNB_ID;
   ie_GNB_ENDC->criticality = X2AP_Criticality_reject;
-  ie_GNB_ENDC->value.present = X2AP_En_gNB_ENDCX2SetupReqAckIEs__value_PR_GlobalGNB_ID;
+  ie_GNB_ENDC->value.present = X2AP_En_gNB_ENDCX2SetupReqIEs__value_PR_GlobalGNB_ID;
   ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.present = X2AP_GNB_ID_PR_gNB_ID;
   INT32_TO_OCTET_STRING(instance_p->eNB_id,
                                &ie_GNB_ENDC->value.choice.GlobalGNB_ID.gNB_ID.choice.gNB_ID);

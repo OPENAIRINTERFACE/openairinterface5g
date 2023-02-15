@@ -78,39 +78,39 @@
 /*   optname                                            helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define MACRLCPARAMS_DESC { \
-{CONFIG_STRING_MACRLC_CC,                                NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE,            NULL,     0,          strptr:NULL,         defstrval:"local_L1",      TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME,                   NULL,     0,          strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS,                   NULL,     0,          strptr:NULL,         defstrval:"127.0.0.1",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS,                  NULL,     0,          uptr:NULL,           defstrval:"127.0.0.2",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_PORTC,                     NULL,     0,          uptr:NULL,           defintval:50010,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50010,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_LOCAL_N_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_N_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50011,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE,            NULL,     0,          strptr:NULL,         defstrval:"local_RRC",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME,                   NULL,     0,          strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS,                   NULL,     0,          uptr:NULL,           defstrval:"127.0.0.1",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS,                  NULL,     0,          uptr:NULL,           defstrval:"127.0.0.2",     TYPE_STRING,   0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_PORTC,                     NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          uptr:NULL,           defintval:50020,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          uptr:NULL,           defintval:50021,           TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          uptr:NULL,           defintval:10,              TYPE_UINT,     0},        \
-{CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:200,             TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          iptr:NULL,           defintval:150,             TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD, "SNR threshold to decide whether a PRB will be blacklisted or not", 0, iptr:NULL, defintval:10, TYPE_INT, 0}, \
-{CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          iptr:NULL,           defintval:10,              TYPE_INT,      0},        \
-{CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
-{CONFIG_STRING_MACRLC_DL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase DL MCS",   0, dblptr:NULL,  defdblval:0.05,  TYPE_DOUBLE,  0},        \
-{CONFIG_STRING_MACRLC_DL_MAX_MCS,             "Maximum DL MCS that should be used", 0, u8ptr:NULL,  defintval:28,  TYPE_UINT8,  0},      \
-{CONFIG_STRING_MACRLC_UL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease UL MCS",   0, dblptr:NULL,  defdblval:0.15,  TYPE_DOUBLE,  0},        \
-{CONFIG_STRING_MACRLC_UL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase UL MCS",   0, dblptr:NULL,  defdblval:0.05,  TYPE_DOUBLE,  0},        \
-{CONFIG_STRING_MACRLC_UL_MAX_MCS,             "Maximum UL MCS that should be used", 0, u8ptr:NULL,  defintval:9,   TYPE_UINT8,  0},      \
-{CONFIG_STRING_MACRLC_DL_HARQ_ROUND_MAX,         "Maximum number of DL HARQ rounds", 0, u8ptr:NULL, defintval:4, TYPE_UINT8, 0}, \
-{CONFIG_STRING_MACRLC_UL_HARQ_ROUND_MAX,         "Maximum number of UL HARQ rounds", 0, u8ptr:NULL, defintval:4, TYPE_UINT8, 0}, \
-{CONFIG_STRING_MACRLC_MIN_GRANT_PRB,         "Minimal Periodic ULSCH Grant PRBs", 0, u8ptr:NULL, defintval:5, TYPE_UINT8, 0}, \
-{CONFIG_STRING_MACRLC_MIN_GRANT_MCS,         "Minimal Periodic ULSCH Grant MCS", 0, u8ptr:NULL, defintval:9, TYPE_UINT8, 0}, \
+{CONFIG_STRING_MACRLC_CC,                                NULL,     0,          .uptr=NULL,           .defintval=50011,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_TRANSPORT_N_PREFERENCE,            NULL,     0,          .strptr=NULL,         .defstrval="local_L1",      TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_N_IF_NAME,                   NULL,     0,          .strptr=NULL,         .defstrval="lo",            TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_N_ADDRESS,                   NULL,     0,          .strptr=NULL,         .defstrval="127.0.0.1",     TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_REMOTE_N_ADDRESS,                  NULL,     0,          .uptr=NULL,           .defstrval="127.0.0.2",     TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_N_PORTC,                     NULL,     0,          .uptr=NULL,           .defintval=50010,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_REMOTE_N_PORTC,                    NULL,     0,          .uptr=NULL,           .defintval=50010,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_LOCAL_N_PORTD,                     NULL,     0,          .uptr=NULL,           .defintval=50011,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_REMOTE_N_PORTD,                    NULL,     0,          .uptr=NULL,           .defintval=50011,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_TRANSPORT_S_PREFERENCE,            NULL,     0,          .strptr=NULL,         .defstrval="local_RRC",     TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_S_IF_NAME,                   NULL,     0,          .strptr=NULL,         .defstrval="lo",            TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_S_ADDRESS,                   NULL,     0,          .uptr=NULL,           .defstrval="127.0.0.1",     TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_REMOTE_S_ADDRESS,                  NULL,     0,          .uptr=NULL,           .defstrval="127.0.0.2",     TYPE_STRING,   0},        \
+{CONFIG_STRING_MACRLC_LOCAL_S_PORTC,                     NULL,     0,          .uptr=NULL,           .defintval=50020,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_REMOTE_S_PORTC,                    NULL,     0,          .uptr=NULL,           .defintval=50020,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_LOCAL_S_PORTD,                     NULL,     0,          .uptr=NULL,           .defintval=50021,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_REMOTE_S_PORTD,                    NULL,     0,          .uptr=NULL,           .defintval=50021,           TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_ULSCH_MAX_FRAME_INACTIVITY,        NULL,     0,          .uptr=NULL,           .defintval=10,              TYPE_UINT,     0},        \
+{CONFIG_STRING_MACRLC_PUSCHTARGETSNRX10,                 NULL,     0,          .iptr=NULL,           .defintval=200,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_PUCCHTARGETSNRX10,                 NULL,     0,          .iptr=NULL,           .defintval=150,             TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_UL_PRBBLACK_SNR_THRESHOLD, "SNR threshold to decide whether a PRB will be blacklisted or not", 0, .iptr=NULL, .defintval=10, TYPE_INT, 0}, \
+{CONFIG_STRING_MACRLC_PUCCHFAILURETHRES,                 NULL,     0,          .iptr=NULL,           .defintval=10,              TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_PUSCHFAILURETHRES,                 NULL,     0,          .iptr=NULL,           .defintval=10,              TYPE_INT,      0},        \
+{CONFIG_STRING_MACRLC_DL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease DL MCS", 0, .dblptr=NULL, .defdblval=0.15,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_DL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase DL MCS", 0, .dblptr=NULL, .defdblval=0.05,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_DL_MAX_MCS,             "Maximum DL MCS that should be used", 0, .u8ptr=NULL, .defintval=28,  TYPE_UINT8,  0},      \
+{CONFIG_STRING_MACRLC_UL_BLER_TARGET_UPPER,   "Upper threshold of BLER to decrease UL MCS",   0, .dblptr=NULL, .defdblval=0.15,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_UL_BLER_TARGET_LOWER,   "Lower threshold of BLER to increase UL MCS",   0, .dblptr=NULL, .defdblval=0.05,  TYPE_DOUBLE,  0},        \
+{CONFIG_STRING_MACRLC_UL_MAX_MCS,             "Maximum UL MCS that should be used", 0, .u8ptr=NULL,  .defintval=9,   TYPE_UINT8,  0},      \
+{CONFIG_STRING_MACRLC_DL_HARQ_ROUND_MAX,         "Maximum number of DL HARQ rounds", 0, .u8ptr=NULL, .defintval=4, TYPE_UINT8, 0}, \
+{CONFIG_STRING_MACRLC_UL_HARQ_ROUND_MAX,         "Maximum number of UL HARQ rounds", 0, .u8ptr=NULL, .defintval=4, TYPE_UINT8, 0}, \
+{CONFIG_STRING_MACRLC_MIN_GRANT_PRB,         "Minimal Periodic ULSCH Grant PRBs", 0, .u8ptr=NULL, .defintval=5, TYPE_UINT8, 0}, \
+{CONFIG_STRING_MACRLC_MIN_GRANT_MCS,         "Minimal Periodic ULSCH Grant MCS", 0, .u8ptr=NULL, .defintval=9, TYPE_UINT8, 0}, \
 }
 #define MACRLC_CC_IDX                                          0
 #define MACRLC_TRANSPORT_N_PREFERENCE_IDX                      1

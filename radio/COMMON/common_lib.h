@@ -605,7 +605,7 @@ extern "C"
 /*   optname                     helpstr                paramflags                      XXXptr                  defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define DEVICE_PARAMS_DESC {\
-    { CONFIG_DEVICEOPT_NAME,      CONFIG_HLP_DEVICE,          0,                strptr:&devname,                 defstrval:NULL,         TYPE_STRING,     0}\
+    { CONFIG_DEVICEOPT_NAME,      CONFIG_HLP_DEVICE,          0,               .strptr=&devname,                .defstrval=NULL,         TYPE_STRING,     0}\
 }
 
 

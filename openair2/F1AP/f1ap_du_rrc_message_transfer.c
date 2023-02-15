@@ -407,7 +407,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie6);
   ie6->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie6->criticality               = F1AP_Criticality_ignore;
-  ie6->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
+  ie6->value.present             = F1AP_InitialULRRCMessageTransferIEs__value_PR_TransactionID;
   ie6->value.choice.TransactionID = F1AP_get_next_transaction_identifier(f1ap_req(false, instanceP)->gNB_DU_id, f1ap_req(false, instanceP)->gNB_DU_id);
 
   /* encode */

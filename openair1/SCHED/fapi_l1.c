@@ -860,7 +860,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, void *arg) {
         //      handle_nfapi_mch_dl_pdu(eNB,dl_config_pdu);
 	//AssertFatal(1==0,"OK\n");
         nfapi_dl_config_mch_pdu_rel8_t *mch_pdu_rel8 = &dl_config_pdu->mch_pdu.mch_pdu_rel8;
-	uint16_t pdu_index = mch_pdu_rel8->pdu_index;
+	int16_t pdu_index = mch_pdu_rel8->pdu_index;
 	uint16_t tx_pdus = TX_req->tx_request_body.number_of_pdus;
 	uint16_t invalid_pdu = pdu_index == -1;
 	uint8_t *sdu = invalid_pdu ? NULL : pdu_index >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pdu_index].segments[0].segment_data;
@@ -884,7 +884,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, void *arg) {
 
       case NFAPI_DL_CONFIG_DLSCH_PDU_TYPE: {
         nfapi_dl_config_dlsch_pdu_rel8_t *dlsch_pdu_rel8 = &dl_config_pdu->dlsch_pdu.dlsch_pdu_rel8;
-        uint16_t pdu_index = dlsch_pdu_rel8->pdu_index;
+        int16_t pdu_index = dlsch_pdu_rel8->pdu_index;
         uint16_t tx_pdus = TX_req->tx_request_body.number_of_pdus;
         uint16_t invalid_pdu = pdu_index == -1;
         uint8_t *sdu = invalid_pdu ? NULL : pdu_index >= tx_pdus ? NULL : TX_req->tx_request_body.tx_pdu_list[pdu_index].segments[0].segment_data;

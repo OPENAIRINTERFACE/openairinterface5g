@@ -1247,7 +1247,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
     /* procedureCriticality */
     if (0) {
       ie11->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
-      ie11->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+      *ie11->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
     }
 
     /* optional */

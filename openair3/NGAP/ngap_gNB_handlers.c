@@ -1645,7 +1645,7 @@ int ngap_gNB_handle_pdusession_modify_request(uint32_t               assoc_id,
         item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[nb_of_pdusessions_failed];
         
         msg->pdusessions_failed[nb_of_pdusessions_failed].pdusession_id = item_p->pDUSessionID;
-        msg->pdusessions_failed[nb_of_pdusessions_failed].cause = NGAP_Cause_PR_radioNetwork;
+        msg->pdusessions_failed[nb_of_pdusessions_failed].cause = NGAP_CAUSE_RADIO_NETWORK;
         msg->pdusessions_failed[nb_of_pdusessions_failed].cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
       }
     } else {

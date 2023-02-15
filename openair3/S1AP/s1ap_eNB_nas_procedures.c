@@ -700,7 +700,7 @@ int s1ap_eNB_initial_ctxt_resp(
             item->criticality = S1AP_Criticality_ignore;
             item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
             item->value.choice.E_RABItem.e_RAB_ID = initial_ctxt_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = initial_ctxt_resp_p->e_rabs_failed[i].cause;
+            item->value.choice.E_RABItem.cause.present = (S1AP_Cause_PR) initial_ctxt_resp_p->e_rabs_failed[i].cause;
 
             switch(item->value.choice.E_RABItem.cause.present) {
             case S1AP_Cause_PR_radioNetwork:
@@ -947,7 +947,7 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
             item->criticality = S1AP_Criticality_ignore;
             item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
             item->value.choice.E_RABItem.e_RAB_ID = e_rab_setup_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_setup_resp_p->e_rabs_failed[i].cause;
+            item->value.choice.E_RABItem.cause.present = (S1AP_Cause_PR) e_rab_setup_resp_p->e_rabs_failed[i].cause;
 
             switch(item->value.choice.E_RABItem.cause.present) {
             case S1AP_Cause_PR_radioNetwork:
@@ -1107,7 +1107,7 @@ int s1ap_eNB_e_rab_modify_resp(instance_t instance,
             item->criticality = S1AP_Criticality_ignore;
             item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
             item->value.choice.E_RABItem.e_RAB_ID = e_rab_modify_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_modify_resp_p->e_rabs_failed[i].cause;
+            item->value.choice.E_RABItem.cause.present = (S1AP_Cause_PR) e_rab_modify_resp_p->e_rabs_failed[i].cause;
 
             switch(item->value.choice.E_RABItem.cause.present) {
             case S1AP_Cause_PR_radioNetwork:
@@ -1249,7 +1249,7 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
             item->criticality = S1AP_Criticality_ignore;
             item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
             item->value.choice.E_RABItem.e_RAB_ID = e_rab_release_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_release_resp_p->e_rabs_failed[i].cause;
+            item->value.choice.E_RABItem.cause.present = (S1AP_Cause_PR) e_rab_release_resp_p->e_rabs_failed[i].cause;
 
             switch(item->value.choice.E_RABItem.cause.present) {
             case S1AP_Cause_PR_radioNetwork:

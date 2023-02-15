@@ -140,8 +140,8 @@ void send_T_messages_txt(void *forwarder) {
     T_LOCAL_size = 0;
     T_HEADER(T_ID(-1));
     T_PUT_buffer(1, ((T_buffer) {
-addr:
-(src), length:
+.addr=
+(src), .length=
       (send_size)
     }));
     forward(forwarder, buf, T_LOCAL_size);

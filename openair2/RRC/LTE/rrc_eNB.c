@@ -1604,7 +1604,7 @@ rrc_eNB_process_RRCConnectionReestablishmentComplete(
     ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.maxReportCells = 2;
     ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportInterval = LTE_ReportInterval_ms120;
     ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.reportAmount = LTE_ReportConfigEUTRA__reportAmount_infinity;
-    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 0.5; // FIXME ...hysteresis is of type long!
+    ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.hysteresis = 1; // The actual value is field value * 0.5 dB
     ReportConfig_A3->reportConfig.choice.reportConfigEUTRA.triggerType.choice.event.timeToTrigger =
       LTE_TimeToTrigger_ms40;
     asn1cSeqAdd(&ReportConfig_list->list, ReportConfig_A3);
@@ -3260,7 +3260,7 @@ rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
   //   uint8_t sCellIndexToAdd;
   //   sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
   //  if (RC.rrc[enb_mod_idP]->sCell_config[ue_mod_idP][sCellIndexToAdd] ) {
-  if (ue_context_pP->ue_context.sCell_config != NULL) {
+  if (&ue_context_pP->ue_context.sCell_config[sCellIndexToAdd] != NULL) {
     ue_context_pP->ue_context.sCell_config[sCellIndexToAdd].cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
   } else {
     LOG_E(RRC,"Scell not configured!\n");

@@ -592,9 +592,9 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING, 0);
 
-    if ((harq_process->processedSegments == (harq_process->C))) {
+    if (harq_process->processedSegments == (harq_process->C)) {
       LOG_D(PHY, "[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n", phy_vars_gNB->Mod_id, harq_process->slot, harq_process->TBS);
-      harq_process->status = SCH_IDLE;
+      harq_process->status = NR_SCH_IDLE;
       harq_process->round = 0;
       ulsch->harq_mask &= ~(1 << harq_pid);
 

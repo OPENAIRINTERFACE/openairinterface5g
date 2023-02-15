@@ -126,8 +126,8 @@ static paramdef_t Config_Params[] = {
     /*                                            config parameters for config module                                           */
     /*   optname              helpstr           paramflags         XXXptr                defXXXval            type       numelt */
     /*--------------------------------------------------------------------------------------------------------------------------*/
-    {CONFIGP_DEBUGFLAGS, config_helpstr, 0, uptr : NULL, defintval : 0, TYPE_MASK, 0},
-    {CONFIGP_TMPDIR, CONFIG_HELP_TMPDIR, PARAMFLAG_NOFREE, strptr : NULL, defstrval : "/tmp", TYPE_STRING, 0},
+    {CONFIGP_DEBUGFLAGS, config_helpstr, 0, .uptr = NULL, .defintval = 0, TYPE_MASK, 0},
+    {CONFIGP_TMPDIR, CONFIG_HELP_TMPDIR, PARAMFLAG_NOFREE, .strptr = NULL, .defstrval = "/tmp", TYPE_STRING, 0},
 };
 
 #else

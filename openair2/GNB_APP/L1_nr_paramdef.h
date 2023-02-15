@@ -58,22 +58,22 @@
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define L1PARAMS_DESC { \
-{CONFIG_STRING_L1_CC,                                NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE,            NULL,      0,         strptr:NULL,         defstrval:"local_mac",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_IF_NAME,                   NULL,      0,         strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_ADDRESS,                   NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_REMOTE_N_ADDRESS,                  NULL,      0,         strptr:NULL,         defstrval:"127.0.0.2",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTC,                     NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_THREAD_POOL_SIZE, "thread_pool_size paramter removed, please use --thread-pool",      0,         uptr:NULL,           defintval:2022,               TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         uptr:NULL,           defuintval:8,              TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         uptr:NULL,           defintval:100,             TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:150,             TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_SRS_DTX_THRESHOLD,                 NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_MAX_LDPC_ITERATIONS,               NULL,      0,         uptr:NULL,           defintval:5,               TYPE_UINT,     0},          \
+{CONFIG_STRING_L1_CC,                                NULL,      0,         .uptr=NULL,           .defintval=1,               TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE,            NULL,      0,         .strptr=NULL,         .defstrval="local_mac",     TYPE_STRING,   0},         \
+{CONFIG_STRING_L1_LOCAL_N_IF_NAME,                   NULL,      0,         .strptr=NULL,         .defstrval="lo",            TYPE_STRING,   0},         \
+{CONFIG_STRING_L1_LOCAL_N_ADDRESS,                   NULL,      0,         .strptr=NULL,         .defstrval="127.0.0.1",     TYPE_STRING,   0},         \
+{CONFIG_STRING_L1_REMOTE_N_ADDRESS,                  NULL,      0,         .strptr=NULL,         .defstrval="127.0.0.2",     TYPE_STRING,   0},         \
+{CONFIG_STRING_L1_LOCAL_N_PORTC,                     NULL,      0,         .uptr=NULL,           .defintval=50030,           TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         .uptr=NULL,           .defintval=50030,           TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         .uptr=NULL,           .defintval=50031,           TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         .uptr=NULL,           .defintval=50031,           TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_THREAD_POOL_SIZE, "thread_pool_size paramter removed, please use --thread-pool", 0, .uptr=NULL, .defintval=2022, TYPE_UINT, 0},       \
+{CONFIG_STRING_L1_OFDM_OFFSET_DIVISOR,               NULL,      0,         .uptr=NULL,           .defuintval=8,              TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PUCCH0_DTX_THRESHOLD,              NULL,      0,         .uptr=NULL,           .defintval=100,             TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         .uptr=NULL,           .defintval=150,             TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         .uptr=NULL,           .defintval=50,              TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_SRS_DTX_THRESHOLD,                 NULL,      0,         .uptr=NULL,           .defintval=50,              TYPE_UINT,     0},         \
+{CONFIG_STRING_L1_MAX_LDPC_ITERATIONS,               NULL,      0,         .uptr=NULL,           .defintval=5,               TYPE_UINT,     0},         \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1

@@ -96,22 +96,22 @@
 /*   optname                                         helpstr                  paramflags    XXXptr              defXXXval                  type           numelt  */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define PRS_PARAMS_DESC { \
-{CONFIG_STRING_GNB_ID,                        HELP_STRING_GNB_ID,                    0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_NUM_PRS_RESOURCES,             HELP_STRING_NUM_PRS_RESOURCES,         0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD_LIST,  HELP_STRING_PRS_RESOURCE_SET_PERIOD_LIST, 0,   uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_SYMBOL_START_LIST,         HELP_STRING_PRS_SYMBOL_START_LIST,     0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_NUM_SYMBOLS_LIST,          HELP_STRING_PRS_NUM_SYMBOLS_LIST,      0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_NUM_RB,                    HELP_STRING_PRS_NUM_RB,                0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_RB_OFFSET,                 HELP_STRING_PRS_RB_OFFSET,             0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_COMB_SIZE,                 HELP_STRING_PRS_COMB_SIZE,             0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_RE_OFFSET_LIST,            HELP_STRING_PRS_RE_OFFSET_LIST,        0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_RESOURCE_OFFSET_LIST,      HELP_STRING_PRS_RESOURCE_OFFSET_LIST,  0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_RESOURCE_REPETITION,       HELP_STRING_PRS_RESOURCE_REPETITION,   0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_RESOURCE_TIME_GAP,         HELP_STRING_PRS_RESOURCE_TIME_GAP,     0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0},  \
-{CONFIG_STRING_PRS_ID_LIST,                   HELP_STRING_PRS_ID_LIST,               0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_MUTING_PATTERN1_LIST,      HELP_STRING_PRS_MUTING_PATTERN1_LIST,  0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_MUTING_PATTERN2_LIST,      HELP_STRING_PRS_MUTING_PATTERN2_LIST,  0,      uptr:NULL,         defintarrayval:0,          TYPE_UINTARRAY,  0},  \
-{CONFIG_STRING_PRS_MUTING_BIT_REPETITION,     HELP_STRING_PRS_MUTING_BIT_REPETITION, 0,      uptr:NULL,         defuintval:0,              TYPE_UINT,       0}   \
+{CONFIG_STRING_GNB_ID,                        HELP_STRING_GNB_ID,                    0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_NUM_PRS_RESOURCES,             HELP_STRING_NUM_PRS_RESOURCES,         0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_RESOURCE_SET_PERIOD_LIST,  HELP_STRING_PRS_RESOURCE_SET_PERIOD_LIST, 0,   .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_SYMBOL_START_LIST,         HELP_STRING_PRS_SYMBOL_START_LIST,     0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_NUM_SYMBOLS_LIST,          HELP_STRING_PRS_NUM_SYMBOLS_LIST,      0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_NUM_RB,                    HELP_STRING_PRS_NUM_RB,                0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_RB_OFFSET,                 HELP_STRING_PRS_RB_OFFSET,             0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_COMB_SIZE,                 HELP_STRING_PRS_COMB_SIZE,             0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_RE_OFFSET_LIST,            HELP_STRING_PRS_RE_OFFSET_LIST,        0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_RESOURCE_OFFSET_LIST,      HELP_STRING_PRS_RESOURCE_OFFSET_LIST,  0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_RESOURCE_REPETITION,       HELP_STRING_PRS_RESOURCE_REPETITION,   0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_RESOURCE_TIME_GAP,         HELP_STRING_PRS_RESOURCE_TIME_GAP,     0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0},  \
+{CONFIG_STRING_PRS_ID_LIST,                   HELP_STRING_PRS_ID_LIST,               0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_MUTING_PATTERN1_LIST,      HELP_STRING_PRS_MUTING_PATTERN1_LIST,  0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_MUTING_PATTERN2_LIST,      HELP_STRING_PRS_MUTING_PATTERN2_LIST,  0,      .uptr=NULL,         .defintarrayval=0,          TYPE_UINTARRAY,  0},  \
+{CONFIG_STRING_PRS_MUTING_BIT_REPETITION,     HELP_STRING_PRS_MUTING_BIT_REPETITION, 0,      .uptr=NULL,         .defuintval=0,              TYPE_UINT,       0}   \
 }
 
 #define PRS_GNB_ID                                   0

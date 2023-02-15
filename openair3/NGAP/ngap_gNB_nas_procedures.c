@@ -751,7 +751,7 @@ int ngap_gNB_initial_ctxt_resp(
 
         /* cause */
 
-        pdusessionUnTransfer_p->cause.present = initial_ctxt_resp_p->pdusessions_failed[i].cause;
+        pdusessionUnTransfer_p->cause.present = (NGAP_Cause_PR) initial_ctxt_resp_p->pdusessions_failed[i].cause;
         switch(pdusessionUnTransfer_p->cause.present) {
           case NGAP_Cause_PR_radioNetwork:
               pdusessionUnTransfer_p->cause.choice.radioNetwork = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
@@ -1047,7 +1047,7 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
       item->pDUSessionID = pdusession_setup_resp_p->pdusessions_failed[i].pdusession_id;
 
       /* cause */
-      pdusessionUnTransfer_p->cause.present = pdusession_setup_resp_p->pdusessions_failed[i].cause;
+      pdusessionUnTransfer_p->cause.present = (NGAP_Cause_PR) pdusession_setup_resp_p->pdusessions_failed[i].cause;
       switch(pdusessionUnTransfer_p->cause.present) {
         case NGAP_Cause_PR_radioNetwork:
             pdusessionUnTransfer_p->cause.choice.radioNetwork = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
@@ -1230,7 +1230,7 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
       item->pDUSessionID = pdusession_modify_resp_p->pdusessions_failed[i].pdusession_id;
 
       pdusessionTransfer_p = (NGAP_PDUSessionResourceModifyUnsuccessfulTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyUnsuccessfulTransfer_t));
-      pdusessionTransfer_p->cause.present = pdusession_modify_resp_p->pdusessions_failed[i].cause;
+      pdusessionTransfer_p->cause.present = (NGAP_Cause_PR) pdusession_modify_resp_p->pdusessions_failed[i].cause;
       
       switch(pdusessionTransfer_p->cause.present) {
       case NGAP_Cause_PR_radioNetwork:

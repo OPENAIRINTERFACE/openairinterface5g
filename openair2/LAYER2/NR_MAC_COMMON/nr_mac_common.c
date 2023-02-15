@@ -681,11 +681,12 @@ uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config)
 }
 
 //38.211 Table 6.3.3.2-1
+// delta_f_RA_PRACH = 1 in the first 3 lines needs to be converted to 1.25
 int16_t table_6_3_3_2_1[16][5] = {
 //Length_RA, delta_f_RA_PRACH, delta_f_PUSCH, N_RA_RB, kbar
-{ 839,        1.25,             15,            6,      7},
-{ 839,        1.25,             30,            3,      1},
-{ 839,        1.25,             60,            2,    133},
+{ 839,           1,             15,            6,      7},
+{ 839,           1,             30,            3,      1},
+{ 839,           1,             60,            2,    133},
 { 839,           5,             15,           24,     12},
 { 839,           5,             30,           12,     10},
 { 839,           5,             60,            6,      7},
@@ -705,45 +706,43 @@ int16_t table_6_3_3_2_1[16][5] = {
  * 38.211 Table 6.3.3.2-1 */
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
 	
-	int8_t index = 0;
-	switch(delta_f_RA_PRACH) {
-			case 0 : index = 6;
-		          if (delta_f_PUSCH == 0)
-			          index += 0;
-		          else if(delta_f_PUSCH == 1)
-			          index += 1;
-		          else
-			          index += 2;
-							break;
-
-		case 1 : index = 9;
-		         if (delta_f_PUSCH == 0)
-			         index += 0;
-		         else if(delta_f_PUSCH == 1)
-		           index += 1;
-		         else
-			          index += 2;
-	           break;
-
-		case 2 : index = 11;
-		         if (delta_f_PUSCH == 2)
-			         index += 0;
-		         else
-			         index += 1;
-		         break;		
-		
-		case 3: index = 13;
-		          if (delta_f_PUSCH == 2)
-			          index += 0;
-		          else
-			          index += 1;
-		          break;
-
-		default : index = 10;/*30khz prach scs and 30khz pusch scs*/
-				
-	}
-  
-	return table_6_3_3_2_1[index][3];
+  int8_t index = 0;
+  switch(delta_f_RA_PRACH) {
+    case 0 :
+      index = 6;
+      if (delta_f_PUSCH == 0)
+        index += 0;
+      else if(delta_f_PUSCH == 1)
+        index += 1;
+      else
+        index += 2;
+      break;
+    case 1 :
+      index = 9;
+      if (delta_f_PUSCH == 0)
+        index += 0;
+      else if(delta_f_PUSCH == 1)
+        index += 1;
+      else
+        index += 2;
+      break;
+    case 2 :
+      index = 11;
+      if (delta_f_PUSCH == 2)
+        index += 0;
+      else
+        index += 1;
+      break;		
+    case 3:
+      index = 13;
+      if (delta_f_PUSCH == 2)
+        index += 0;
+      else
+        index += 1;
+      break;
+    default : index = 10;/*30khz prach scs and 30khz pusch scs*/
+  }
+  return table_6_3_3_2_1[index][3];
 }	
 // Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
 // the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
