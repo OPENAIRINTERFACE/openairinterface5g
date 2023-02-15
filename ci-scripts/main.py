@@ -307,7 +307,7 @@ def GetParametersFromXML(action):
 			#CiTestObj.air_interface = 'ocp-enb'
 			logging.error('OCP UE -- NOT SUPPORTED')
 
-	elif (action == 'Ping') or (action == 'Ping_CatM_module'):
+	elif action == 'Ping':
 		CiTestObj.ping_args = test.findtext('ping_args')
 		CiTestObj.ping_packetloss_threshold = test.findtext('ping_packetloss_threshold')
 		ue_id = test.findtext('id')
@@ -713,12 +713,6 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if foundCount != HTML.nbTestXMLfiles:
 		HTML.nbTestXMLfiles=foundCount
 	
-	if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
-		terminate_ue_flag = False
-		CiTestObj.GetAllUEDevices(terminate_ue_flag)
-		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
-		HTML.htmlNb_Smartphones=len(CiTestObj.UEDevices)
-		HTML.htmlNb_CATM_Modules=len(CiTestObj.CatMDevices)
 	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
@@ -816,7 +810,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
 		terminate_ue_flag = False
 		CiTestObj.GetAllUEDevices(terminate_ue_flag)
-		CiTestObj.GetAllCatMDevices(terminate_ue_flag)
 	elif (CiTestObj.ADBIPAddress == 'modules'):
 		CiTestObj.UEDevices.append('COTS-Module')
 	else:
@@ -911,16 +904,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
 					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				elif action == 'Initialize_CatM_module':
-					CiTestObj.InitializeCatM(HTML)
-				elif action == 'Terminate_CatM_module':
-					CiTestObj.TerminateCatM(HTML)
-				elif action == 'Attach_CatM_module':
-					CiTestObj.AttachCatM(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				elif action == 'Detach_CatM_module':
-					CiTestObj.TerminateCatM(HTML)
-				elif action == 'Ping_CatM_module':
-					CiTestObj.PingCatM(HTML,RAN,EPC,COTS_UE,EPC,InfraUE,CONTAINERS)
 				elif action == 'Ping':
 					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
 				elif action == 'Iperf':
