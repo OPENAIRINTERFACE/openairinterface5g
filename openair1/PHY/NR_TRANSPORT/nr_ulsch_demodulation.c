@@ -1332,13 +1332,14 @@ __m128i nr_ulsch_comp_muli_sum(__m128i input_x,
     //printf("det_%d = %d log2 =%d \n",k,(((int *)&det[0])[k]),log2_approx(((int *)&det[0])[k]));
     }
 
-  xy_re_128 = _mm_slli_epi32(xy_re_128,5);
-  xy_re_128 = _mm_srai_epi32(xy_re_128,log2_approx(sum_det));
-  xy_re_128 = _mm_slli_epi32(xy_re_128,5);
-
-  xy_im_128 = _mm_slli_epi32(xy_im_128,5);
-  xy_im_128 = _mm_srai_epi32(xy_im_128,log2_approx(sum_det));
-  xy_im_128 = _mm_slli_epi32(xy_im_128,5);
+  int b = log2_approx(sum_det) - 8;
+  if (b > 0) {
+    xy_re_128 = _mm_srai_epi32(xy_re_128, b);
+    xy_im_128 = _mm_srai_epi32(xy_im_128, b);
+  } else {
+    xy_re_128 = _mm_slli_epi32(xy_re_128, -b);
+    xy_im_128 = _mm_slli_epi32(xy_im_128, -b);
+  }
 
   tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack lo:",&tmp_z0[0]);
@@ -1762,9 +1763,12 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(NR_DL_FRAME_PARMS *frame_parms,
         sum_det += ((((int *)&determ_fin_128[0])[k]) >> 2);
       }
 
-      mmtmpD2 = _mm_slli_epi32(determ_fin_128[0], 5);
-      mmtmpD2 = _mm_srai_epi32(mmtmpD2, log2_approx(sum_det));
-      mmtmpD2 = _mm_slli_epi32(mmtmpD2, 5);
+      int b = log2_approx(sum_det) - 8;
+      if (b > 0) {
+        mmtmpD2 = _mm_srai_epi32(determ_fin_128[0], b);
+      } else {
+        mmtmpD2 = _mm_slli_epi32(determ_fin_128[0], -b);
+      }
       mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2, mmtmpD2);
       mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2, mmtmpD2);
       mmtmpD2 = _mm_packs_epi32(mmtmpD3, mmtmpD2);
