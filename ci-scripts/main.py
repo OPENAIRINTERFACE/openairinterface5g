@@ -43,7 +43,6 @@ import cls_physim               #class PhySim for physical simulators build and 
 import cls_cots_ue              #class CotsUe for Airplane mode control
 import cls_containerize         #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis #class for static code analysis
-import cls_ci_ueinfra		        #class defining the multi Ue infrastrucure
 import cls_physim1          #class PhySim for physical simulators deploy and run
 import cls_cluster              # class for building/deploying on cluster
 
@@ -222,7 +221,6 @@ def GetParametersFromXML(action):
 
 	elif action == 'Initialize_UE':
 		ue_id = test.findtext('id')
-		CiTestObj.ue_trace=test.findtext('UE_Trace')#temporary variable, to be passed to Module_UE in Initialize_UE call
 		if (ue_id is None):
 			CiTestObj.ue_id = ""
 		else:
@@ -544,22 +542,6 @@ with open(yaml_file,'r') as f:
     #from YAML scalar values to Python dictionary format$
     xml_class_list = yaml.load(f,Loader=yaml.FullLoader)
 
-
-
-#loading UE infrastructure from yaml
-ue_infra_file='ci_ueinfra.yaml'
-if (os.path.isfile(ue_infra_file)):
-	yaml_file=ue_infra_file
-elif (os.path.isfile('ci-scripts/'+ue_infra_file)):
-	yaml_file='ci-scripts/'+ue_infra_file
-else:
-	logging.error("UE infrastructure yaml file cannot be found")
-	sys.exit("UE infrastructure file cannot be found")
-InfraUE=cls_ci_ueinfra.InfraUE() #initialize UE infrastructure class
-InfraUE.Get_UE_Infra(yaml_file) #read the UE infra, filename is hardcoded and unique for the moment but should be passed as parameter from the test suite
-
-
-
 mode = ''
 
 CiTestObj = cls_oaicitest.OaiCiTest()
@@ -621,13 +603,13 @@ elif re.match('^TerminateUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE,InfraUE,CiTestObj.ue_trace)
+	CiTestObj.TerminateUE(HTML,COTS_UE)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -859,15 +841,15 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					continue
 				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
-				if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-					if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
+				#if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
+#					if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
 						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
-						terminate_ue_flag = True 
+#						terminate_ue_flag = True 
 						# Now we stop properly the test-suite --> clean reporting
-						status = CiTestObj.GetAllUEDevices(terminate_ue_flag)
-						if not status:
-							RAN.prematureExit = True
-							break
+#						status = CiTestObj.GetAllUEDevices(terminate_ue_flag)
+#						if not status:
+#							RAN.prematureExit = True
+#							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB(HTML)
 				elif action == 'WaitEndBuild_eNB':
@@ -885,29 +867,29 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, InfraUE, CiTestObj.ue_trace, CONTAINERS)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, CONTAINERS)
 				elif action == 'Terminate_UE':
-					CiTestObj.TerminateUE(HTML,COTS_UE, InfraUE, CiTestObj.ue_trace)
+					CiTestObj.TerminateUE(HTML)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
-				elif action == 'CheckStatusUE':
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+				elif action == 'CheckStatusUE': # still used?
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
+					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, CONTAINERS)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS)
+					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, CONTAINERS)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':

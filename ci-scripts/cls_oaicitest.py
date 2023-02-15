@@ -51,7 +51,6 @@ import constants as CONST
 import sshconnection
 
 import cls_module_ue
-import cls_ci_ueinfra		#class defining the multi Ue infrastrucure
 
 logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
@@ -170,7 +169,6 @@ class OaiCiTest():
 		self.UEDevicesOffCmd = []
 		self.UEDevicesOnCmd = []
 		self.UEDevicesRebootCmd = []
-		self.UEIPAddresses = []
 		self.idle_sleep_time = 0
 		self.x2_ho_options = 'network'
 		self.x2NbENBs = 0
@@ -188,9 +186,7 @@ class OaiCiTest():
 		self.Initialize_OAI_UE_args = ''
 		self.clean_repository = True
 		self.air_interface=''
-		self.expectedNbOfConnectedUEs = 0
 		self.ue_id = '' #used for module identification
-		self.ue_trace ='' #used to enable QLog trace for Module UE, passed to Module UE object at InitializeUE()
 		self.cmd_prefix = '' # prefix before {lte,nr}-uesoftmodem
 
 
@@ -298,139 +294,12 @@ class OaiCiTest():
 			HTML.CreateHtmlTabFooter(False)
 			self.ConditionalExit()
 
-	def InitializeUE_common(self, device_id, idx,COTS_UE):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			if not self.ADBCentralized:
-				# Reboot UE
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesRebootCmd[idx], '\$', 60)
-				# Wait
-				#time.sleep(60)
-				# Put in LTE-Mode only
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode 11"\'', '\$', 60)
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode1 11"\'', '\$', 60)
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode2 11"\'', '\$', 60)
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "settings put global preferred_network_mode3 11"\'', '\$', 60)
-				# enable data service
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
-				# we need to do radio on/off cycle to make sure of above changes
-				# airplane mode off // radio on
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
-				#time.sleep(10)
-				# airplane mode on // radio off
-				#SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
 
-				# normal procedure without reboot
-				# enable data service
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "svc data enable"\'', '\$', 60)
-				# airplane mode on // radio off
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
-				SSH.close()
-				return
+	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, CONTAINERS):
+		ue = cls_module_ue.Module_UE(self.ue_id)
+		ue.initialize()
 
-			#RH quick add-on to integrate cots control defined by yaml
-			#if device_id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
-			#otherwise we use the legacy procedure
-			logging.debug('Device id ' + str(device_id) + ', in COTS UE dict : ' + str(COTS_UE.Check_Exists(device_id)))
-			if COTS_UE.Check_Exists(device_id):
-				#switch device to Airplane mode ON (ie Radio OFF) 
-				COTS_UE.Set_Airplane(device_id, 'ON')
-			else:
-				# enable data service
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
-
-				# The following commands are deprecated since we no longer work on Android 7+
-				# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell settings put global airplane_mode_on 1', '\$', 10)
-				# SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell am broadcast -a android.intent.action.AIRPLANE_MODE --ez state true', '\$', 60)
-				# a dedicated script has to be installed inside the UE
-				# airplane mode on means call /data/local/tmp/off
-				if device_id == '84B7N16418004022':
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
-				else:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
-				#airplane mode off means call /data/local/tmp/on
-				logging.debug('\u001B[1mUE (' + device_id + ') Initialize Completed\u001B[0m')
-				SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def InitializeUE(self,HTML,RAN,EPC, COTS_UE, InfraUE,ue_trace,CONTAINERS):
-		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
-			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-				HELP.GenericHelp(CONST.Version)
-				sys.exit('Insufficient Parameter')
-			multi_jobs = []
-			i = 0
-			for device_id in self.UEDevices:
-				p = Process(target = self.InitializeUE_common, args = (device_id,i,COTS_UE,))
-				p.daemon = True
-				p.start()
-				multi_jobs.append(p)
-				i += 1
-			for job in multi_jobs:
-				job.join()
-			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		else: #if an ID is specified, it is a UE from the yaml infrastructure file
-			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
-			logging.debug("Detected UE Kind : " + ue_kind)
-
-			#case it is a quectel module (only 1 at a time supported at the moment)
-			if ue_kind == 'quectel':
-				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-				Module_UE.ue_trace=ue_trace
-				is_module=Module_UE.CheckCMProcess(EPC.Type)
-				if is_module:
-					Module_UE.EnableTrace()
-					time.sleep(5)
-
-					# Looping attach / detach / wait to be successful at least once
-					cnt = 0
-					status = -1
-					while cnt < 4:
-						Module_UE.Command("wup")
-						logging.debug("Waiting for IP address to be assigned")
-						time.sleep(5)
-						logging.debug("Retrieve IP address")
-						status=Module_UE.GetModuleIPAddress()
-						if status==0:
-							cnt = 10
-						else:
-							cnt += 1
-							Module_UE.Command("detach")
-							time.sleep(20)
-
-					if cnt == 10 and status == 0:
-						HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-						logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
-						#execute additional commands from yaml file after UE attach
-						SSH = sshconnection.SSHConnection()
-						SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-						if hasattr(Module_UE,'StartCommands'):
-							for startcommand in Module_UE.StartCommands:
-								cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
-								SSH.command(cmd,'\$',5)
-						SSH.close()
-						#check that the MTU is as expected / requested
-						Module_UE.CheckModuleMTU()
-					else: #status==-1 failed to retrieve IP address
-						HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-						return
-
-			#case it is a amarisoft ue (only 1 at a time supported at the moment)
-			elif ue_kind == 'amarisoft':
-				AS_UE = cls_amarisoft_ue.AS_UE(InfraUE.ci_ue_infra[self.ue_id])
-				HTML.CreateHtmlTestRow(AS_UE.Config, 'OK', CONST.ALL_PROCESSES_OK)
-				AS_UE.RunScenario()
-				AS_UE.WaitEndScenario()
-				AS_UE.KillASUE()
-
-			else:
-				logging.debug("Incorrect UE Kind was detected")								
-
-
-	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
+	def InitializeOAIUE(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -643,250 +512,22 @@ class OaiCiTest():
 				HTML.htmlUEFailureMsg='nr-uesoftmodem did NOT synced'
 				HTML.CreateHtmlTestRow(self.air_interface + ' ' +  self.Initialize_OAI_UE_args, 'KO', CONST.OAI_UE_PROCESS_COULD_NOT_SYNC, 'OAI UE')
 			logging.error('\033[91mInitialize OAI UE Failed! \033[0m')
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
-	def AttachUE_common(self, device_id, statusQueue, lock, idx,COTS_UE):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			if self.ADBCentralized:
-				#RH quick add on to integrate cots control defined by yaml
-				#if device Id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
-				#otherwise we use the legacy procedure 
-				if COTS_UE.Check_Exists(device_id):
-					#switch device to Airplane mode OFF (ie Radio ON)
-					COTS_UE.Set_Airplane(device_id, 'OFF')
-				elif device_id == '84B7N16418004022':
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
-				else:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
-			else:
-				# airplane mode off // radio on
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
-			time.sleep(2)
-			max_count = 45
-			count = max_count
-			while count > 0:
-				if self.ADBCentralized:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry" | grep -m 1 mDataConnectionState', '\$', 15)
-				else:
-					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "dumpsys telephony.registry"\' | grep -m 1 mDataConnectionState', '\$', 60)
-				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
-				if result is None:
-					logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
-					lock.acquire()
-					statusQueue.put(-1)
-					statusQueue.put(device_id)
-					statusQueue.put('mDataConnectionState Not Found!')
-					lock.release()
-					break
-				mDataConnectionState = int(result.group('state'))
-				if mDataConnectionState == 2:
-					logging.debug('\u001B[1mUE (' + device_id + ') Attach Completed\u001B[0m')
-					lock.acquire()
-					statusQueue.put(max_count - count)
-					statusQueue.put(device_id)
-					statusQueue.put('Attach Completed')
-					lock.release()
-					break
-				count = count - 1
-				if count == 15 or count == 30:
-					logging.debug('\u001B[1;30;43m Retry UE (' + device_id + ') Flight Mode Off \u001B[0m')
-					if self.ADBCentralized:
-					#RH quick add on to intgrate cots control defined by yaml
-					#if device id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
-					#otherwise we use the legacy procedure
-						if COTS_UE.Check_Exists(device_id):
-							#switch device to Airplane mode ON  (ie Radio OFF)
-							COTS_UE.Set_Airplane(device_id, 'ON')
-						elif device_id == '84B7N16418004022':
-							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
-						else:
-							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
-					else:
-						SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
-					time.sleep(0.5)
-					if self.ADBCentralized:
-					#RH quick add on to integrate cots control defined by yaml
-					#if device id exists in yaml dictionary, we execute the new procedre defined incots_ue class
-					#otherwise we use the legacy procedure
-						if COTS_UE.Check_Exists(device_id):
-							#switch device to Airplane mode OFF (ie Radio ON)
-							COTS_UE.Set_Airplane(device_id, 'OFF')
-						elif device_id == '84B7N16418004022':
-							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/on"', '\$', 60)
-						else:
-							SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/on', '\$', 60)
-					else:
-						SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOnCmd[idx], '\$', 60)
-					time.sleep(0.5)
-				logging.debug('\u001B[1mWait UE (' + device_id + ') a second until mDataConnectionState=2 (' + str(max_count-count) + ' times)\u001B[0m')
-				time.sleep(1)
-			if count == 0:
-				logging.debug('\u001B[1;37;41m UE (' + device_id + ') Attach Failed \u001B[0m')
-				lock.acquire()
-				statusQueue.put(-1)
-				statusQueue.put(device_id)
-				statusQueue.put('Attach Failed')
-				lock.release()
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
+	def AttachUE(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
+		ue = cls_module_ue.Module_UE(self.ue_id)
+		connected = ue.attach()
+		if connected:
+			HTML.CreateHtmlTestRow(f"{ue.getIP()}", 'OK', CONST.ALL_PROCESSES_OK)
+			ue.checkMTU()
+		else:
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
-	def AttachUE(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
-		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
-			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-				HELP.GenericHelp(CONST.Version)
-				sys.exit('Insufficient Parameter')
-			check_eNB = True
-			check_OAI_UE = False
-			pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-			if (pStatus < 0):
-				HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				return
-			multi_jobs = []
-			status_queue = SimpleQueue()
-			lock = Lock()
-			nb_ue_to_connect = 0
-			for device_id in self.UEDevices:
-				if (self.nbMaxUEtoAttach == -1) or (nb_ue_to_connect < self.nbMaxUEtoAttach):
-					self.UEDevicesStatus[nb_ue_to_connect] = CONST.UE_STATUS_ATTACHING
-					p = Process(target = self.AttachUE_common, args = (device_id, status_queue, lock,nb_ue_to_connect,COTS_UE,))
-					p.daemon = True
-					p.start()
-					multi_jobs.append(p)
-				nb_ue_to_connect = nb_ue_to_connect + 1
-			for job in multi_jobs:
-				job.join()
-
-			if (status_queue.empty()):
-				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ALL_PROCESSES_OK)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				return
-			else:
-				attach_status = True
-				message = ''
-				while (not status_queue.empty()):
-					count = status_queue.get()
-					if (count < 0):
-						attach_status = False
-					device_id = status_queue.get()
-					message = status_queue.get()
-					if (count < 0):
-						message = 'UE (' + device_id + ')\n' + message
-					else:
-						message = 'UE (' + device_id + ')\n' + message + ' in ' + str(count + 2) + ' seconds'
-				if (attach_status):
-					cnt = 0
-					while cnt < len(self.UEDevices):
-						if self.UEDevicesStatus[cnt] == CONST.UE_STATUS_ATTACHING:
-							self.UEDevicesStatus[cnt] = CONST.UE_STATUS_ATTACHED
-						cnt += 1
-					HTML.CreateHtmlTestRowQueue('N/A', 'OK', [message])
-					result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
-					if result is not None:
-						logging.debug('Waiting 5 seconds to fill up record file')
-						time.sleep(5)
-				else:
-					HTML.CreateHtmlTestRowQueue('N/A', 'KO', [message])
-					self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-
-		else: #if an ID is specified, it is a module from the yaml infrastructure file
-			#Attention, as opposed to InitializeUE, the connect manager process is not checked as it is supposed to be active already
-			#only 1- module wakeup, 2- check IP address
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			status = -1
-			cnt = 0
-			while cnt < 4:
-				Module_UE.Command("wup")
-				logging.debug("Waiting for IP address to be assigned")
-				time.sleep(5)
-				logging.debug("Retrieve IP address")
-				status=Module_UE.GetModuleIPAddress()
-				if status==0:
-					cnt = 10
-				else:
-					cnt += 1
-					Module_UE.Command("detach")
-					time.sleep(20)
-
-			if cnt == 10 and status == 0:
-				HTML.CreateHtmlTestRow(Module_UE.UEIPAddress, 'OK', CONST.ALL_PROCESSES_OK)	
-				logging.debug('UE IP addresss : '+ Module_UE.UEIPAddress)
-				#execute additional commands from yaml file after UE attach
-				SSH = sshconnection.SSHConnection()
-				SSH.open(Module_UE.HostIPAddress, Module_UE.HostUsername, Module_UE.HostPassword)
-				if hasattr(Module_UE,'StartCommands'):
-					for startcommand in Module_UE.StartCommands:
-						cmd = 'echo ' + Module_UE.HostPassword + ' | ' + startcommand
-						SSH.command(cmd,'\$',5)
-				SSH.close()
-				#check that the MTU is as expected / requested
-				Module_UE.CheckModuleMTU()
-			else: #status==-1 failed to retrieve IP address
-				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				return					
-
-	def DetachUE_common(self, device_id, idx,COTS_UE):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			if self.ADBCentralized:
-				#RH quick add on to  integrate cots control defined by yaml
-				#if device id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
-				#otherwise we use the legacy procedure
-				if COTS_UE.Check_Exists(device_id):
-					#switch device to Airplane mode ON (ie Radio OFF)
-					COTS_UE.Set_Airplane(device_id,'ON')
-				elif device_id == '84B7N16418004022':
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
-				else:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
-			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def DetachUE(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
-		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
-			if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-				HELP.GenericHelp(CONST.Version)
-				sys.exit('Insufficient Parameter')
-			check_eNB = True
-			check_OAI_UE = False
-			pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-			if (pStatus < 0):
-				HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				return
-			multi_jobs = []
-			cnt = 0
-			for device_id in self.UEDevices:
-				self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHING
-				p = Process(target = self.DetachUE_common, args = (device_id,cnt,COTS_UE,))
-				p.daemon = True
-				p.start()
-				multi_jobs.append(p)
-				cnt += 1
-			for job in multi_jobs:
-				job.join()
-			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-			result = re.search('T_stdout', str(RAN.Initialize_eNB_args))
-			if result is not None:
-				logging.debug('Waiting 5 seconds to fill up record file')
-				time.sleep(5)
-			cnt = 0
-			while cnt < len(self.UEDevices):
-				self.UEDevicesStatus[cnt] = CONST.UE_STATUS_DETACHED
-				cnt += 1
-		else:#if an ID is specified, it is a module from the yaml infrastructure file
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.Command("detach")
-			HTML.CreateHtmlTestRow('NA', 'OK', CONST.ALL_PROCESSES_OK)	
+	def DetachUE(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
+		ue = cls_module_ue.Module_UE(self.ue_id)
+		ue.detach()
+		HTML.CreateHtmlTestRow('NA', 'OK', CONST.ALL_PROCESSES_OK)
 				
 							
 
@@ -1112,7 +753,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def CheckStatusUE(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
+	def CheckStatusUE(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
 		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
@@ -1140,7 +781,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(htmlOptions, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 		else:
 			check_status = True
 			messages = []
@@ -1154,68 +795,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'OK', messages)
 			else:
 				HTML.CreateHtmlTestRowQueue(htmlOptions, 'KO', messages)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-
-	def GetAllUEIPAddresses(self):
-		SSH = sshconnection.SSHConnection()
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		ue_ip_status = 0
-		self.UEIPAddresses = []
-		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
-			if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
-				HELP.GenericHelp(CONST.Version)
-				sys.exit('Insufficient Parameter')
-
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('ifconfig oaitun_ue1', '\$', 4)
-			result = re.search('inet addr:(?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)|inet (?P<ueipaddress2>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', SSH.getBefore())
-			if result is not None:
-				if result.group('ueipaddress') is not None:
-					UE_IPAddress = result.group('ueipaddress')
-				else:
-					UE_IPAddress = result.group('ueipaddress2')
-				logging.debug('\u001B[1mUE (' + self.UEDevices[0] + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
-				self.UEIPAddresses.append(UE_IPAddress)
-			else:
-				logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
-				ue_ip_status -= 1
-			SSH.close()
-			return ue_ip_status
-		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		idx = 0
-		for device_id in self.UEDevices:
-			if self.UEDevicesStatus[idx] != CONST.UE_STATUS_ATTACHED:
-				idx += 1
-				continue
-			count = 0
-			while count < 4:
-				if self.ADBCentralized:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "ip addr show | grep rmnet"', '\$', 15)
-				else:
-					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ip addr show | grep rmnet"\'', '\$', 60)
-				result = re.search('inet (?P<ueipaddress>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)\/[0-9]+[0-9a-zA-Z\.\s]+', SSH.getBefore())
-				if result is None:
-					logging.debug('\u001B[1;37;41m UE IP Address Not Found! \u001B[0m')
-					time.sleep(1)
-					count += 1
-				else:
-					count = 10
-			if count < 9:
-				ue_ip_status -= 1
-				continue
-			UE_IPAddress = result.group('ueipaddress')
-			logging.debug('\u001B[1mUE (' + device_id + ') IP Address is ' + UE_IPAddress + '\u001B[0m')
-			for ueipaddress in self.UEIPAddresses:
-				if ueipaddress == UE_IPAddress:
-					logging.debug('\u001B[1mUE (' + device_id + ') IP Address ' + UE_IPAddress + ': has already been allocated to another device !' + '\u001B[0m')
-					ue_ip_status -= 1
-					continue
-			self.UEIPAddresses.append(UE_IPAddress)
-			idx += 1
-		SSH.close()
-		return ue_ip_status
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
 	def ping_iperf_wrong_exit(self, lock, UE_IPAddress, device_id, statusQueue, message):
 		lock.acquire()
@@ -1420,14 +1000,14 @@ class OaiCiTest():
 		message = 'OAI UE ping result\n{qMsg}'
 		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', [message])
 
-	def PingNoS1(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
+	def PingNoS1(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
 		SSH=sshconnection.SSHConnection()
 		check_eNB = True
 		check_OAI_UE = True
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
@@ -1510,10 +1090,10 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def Ping(self,HTML,RAN,EPC,COTS_UE, InfraUE, CONTAINERS):
+	def Ping(self,HTML,RAN,EPC,COTS_UE, CONTAINERS):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
-			self.PingNoS1(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+			self.PingNoS1(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 			return
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
@@ -1526,30 +1106,22 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			return
 
-		if self.ue_id=="":
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra['dummy']) #RH, temporary, we need a dummy Module_UE object to pass to Ping_common
-			ueIpStatus = self.GetAllUEIPAddresses()
-			if (ueIpStatus < 0):
-				HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
-				return
-		else: #if an ID is specified, it is a UE from the yaml infrastructure file
-			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
-			logging.debug("Detected UE Kind : " + ue_kind)
+		if self.ue_id == "":
+			logging.error("no module ID!!!")
+			exit(1)
 
-			if ue_kind == 'quectel':
-				self.UEIPAddresses=[]
-				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-				Module_UE.GetModuleIPAddress()
-				self.UEIPAddresses.append(Module_UE.UEIPAddress)
-			elif ue_kind == 'amarisoft':
-				self.UEIPAddresses=['AS UE IP']
-				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			else:
-				logging.debug("Incorrect UE Kind was detected")	
+		self.UEIPAddresses = []
+		ue = cls_module_ue.Module_UE(self.ue_id)
+		ip = ue.getIP()
+		if ip is None:
+			logging.error("no IP addresses returned")
+			html_queue = SimpleQueue()
+			HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', len(self.UEDevices), html_queue)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
+		self.UEIPAddresses.append(ip)
 
 		logging.debug(self.UEIPAddresses)
 		multi_jobs = []
@@ -1572,7 +1144,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 		else:
 			ping_status = True
 			messages = []
@@ -1588,7 +1160,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', messages)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', messages)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
@@ -2535,7 +2107,7 @@ class OaiCiTest():
 		except:
 			os.kill(os.getppid(),signal.SIGUSR1)
 
-	def IperfNoS1(self,HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS):
+	def IperfNoS1(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
 		if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -2545,7 +2117,7 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
@@ -2643,12 +2215,12 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', messages)
 		else:
 			HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
-	def Iperf(self,HTML,RAN,EPC,COTS_UE, InfraUE,CONTAINERS):
+	def Iperf(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
 		result = re.search('noS1', str(RAN.Initialize_eNB_args))
 		if result is not None:
-			self.IperfNoS1(HTML,RAN,EPC,COTS_UE,InfraUE,CONTAINERS)
+			self.IperfNoS1(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 			return
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
 			HELP.GenericHelp(CONST.Version)
@@ -2661,20 +2233,21 @@ class OaiCiTest():
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 		if (pStatus < 0):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			return
 
+		# TODO take out
 		if self.ue_id=="":#is not a module, follow legacy code
 			ueIpStatus = self.GetAllUEIPAddresses()
 			if (ueIpStatus < 0):
 				HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.UE_IP_ADDRESS_ISSUE)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 				return
 		else: #is a module
 			self.UEIPAddresses=[]
-			Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-			Module_UE.GetModuleIPAddress()
-			self.UEIPAddresses.append(Module_UE.UEIPAddress)
+			Module_UE = cls_module_ue.Module_UE(self.ue_id)
+			ip = Module_UE.getIP()
+			self.UEIPAddresses.append(ip)
 
 
 
@@ -2713,7 +2286,7 @@ class OaiCiTest():
 
 		if (status_queue.empty()):
 			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 		else:
 			iperf_status = True
 			iperf_noperf = False
@@ -2734,7 +2307,7 @@ class OaiCiTest():
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'OK', messages)
 			else:
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
-				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+				self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 
 	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):
 		multi_jobs = []
@@ -3101,77 +2674,15 @@ class OaiCiTest():
 				global_status = CONST.OAI_UE_PROCESS_COULD_NOT_SYNC
 		return global_status
 
+	def TerminateUE(self, HTML):
+		ue = cls_module_ue.Module_UE(self.ue_id)
+		archive_destination = ue.terminate()
+		if archive_destination:
+			HTML.CreateHtmlTestRow(f'QLog at: {archive_destination}', 'OK', CONST.ALL_PROCESSES_OK)
+		else:
+			HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def TerminateUE_common(self, device_id, idx,COTS_UE):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			# back in airplane mode on (ie radio off)
-			if self.ADBCentralized:
-				#RH quick add on to intgrate cots control defined by yaml
-				#if device Id exists in yaml dictionary, we execute the new procedure defined in cots_ue class
-				#otherwise we use the legacy procedure 
-				if COTS_UE.Check_Exists(device_id):
-					#switch device to Airplane mode ON (ie Radio OFF)
-					COTS_UE.Set_Airplane(device_id, 'ON')
-				elif device_id == '84B7N16418004022':
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "su - root -c /data/local/tmp/off"', '\$', 60)
-				else:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell /data/local/tmp/off', '\$', 60)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' ' + self.UEDevicesOffCmd[idx], '\$', 60)
-			logging.debug('\u001B[1mUE (' + device_id + ') Detach Completed\u001B[0m')
-
-			if self.ADBCentralized:
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"', '\$', 5)
-			else:
-				SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "ps | grep --color=never iperf | grep -v grep"\'', '\$', 60)
-			result = re.search('shell +(?P<pid>\d+)', SSH.getBefore())
-			if result is not None:
-				pid_iperf = result.group('pid')
-				if self.ADBCentralized:
-					SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"', '\$', 5)
-				else:
-					SSH.command('ssh ' + self.UEDevicesRemoteUser[idx] + '@' + self.UEDevicesRemoteServer[idx] + ' \'adb -s ' + device_id + ' shell "kill -KILL ' + pid_iperf + '"\'', '\$', 60)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def TerminateUE(self,HTML,COTS_UE,InfraUE,ue_trace):
-		if self.ue_id=='':#no ID specified, then it is a COTS controlled by ADB
-			terminate_ue_flag = False
-			self.GetAllUEDevices(terminate_ue_flag)
-			multi_jobs = []
-			i = 0
-			for device_id in self.UEDevices:
-				p = Process(target= self.TerminateUE_common, args = (device_id,i,COTS_UE,))
-				p.daemon = True
-				p.start()
-				multi_jobs.append(p)
-				i += 1
-			for job in multi_jobs:
-				job.join()
-			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-		else: #if an ID is specified, it is a module from the yaml infrastructure file
-			ue_kind = InfraUE.ci_ue_infra[self.ue_id]['Kind']
-			logging.debug("Detected UE Kind : " + ue_kind)
-			if ue_kind == 'quectel':
-				Module_UE = cls_module_ue.Module_UE(InfraUE.ci_ue_infra[self.ue_id])
-				Module_UE.ue_trace=ue_trace
-				Module_UE.Command("detach")
-				Module_UE.DisableTrace()
-				Module_UE.DisableCM()
-				archive_destination=Module_UE.LogCollect()
-				if Module_UE.ue_trace=='yes':
-					HTML.CreateHtmlTestRow('QLog at : '+archive_destination, 'OK', CONST.ALL_PROCESSES_OK)
-				else:
-					HTML.CreateHtmlTestRow('QLog trace is disabled', 'OK', CONST.ALL_PROCESSES_OK)
-			elif ue_kind == 'amarisoft':
-				HTML.CreateHtmlTestRow('AS UE is already terminated', 'OK', CONST.ALL_PROCESSES_OK)
-			else:
-				logging.debug("Incorrect UE Kind was detected")
-
-	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS):
+	def TerminateOAIUE(self,HTML,RAN,COTS_UE,EPC,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
 		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
@@ -3212,11 +2723,11 @@ class OaiCiTest():
 					# Not an error then
 					if (logStatus != CONST.OAI_UE_PROCESS_COULD_NOT_SYNC) or (ueAction != 'Sniffing'):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 				else:
 					if (logStatus == CONST.OAI_UE_PROCESS_COULD_NOT_SYNC):
 						self.Initialize_OAI_UE_args = ''
-						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+						self.AutoTerminateUEandeNB(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 			else:
 				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
@@ -3225,21 +2736,21 @@ class OaiCiTest():
 		else:
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS):
+	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,CONTAINERS):
 		if (self.ADBIPAddress != 'none'):
 			self.testCase_id = 'AUTO-KILL-UE'
 			HTML.testCase_id = self.testCase_id
 			self.desc = 'Automatic Termination of UE'
 			HTML.desc = self.desc
 			self.ShowTestID()
-			self.TerminateUE(HTML,COTS_UE,InfraUE,self.ue_trace)
+			self.TerminateUE(HTML,COTS_UE)
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-OAI-UE'
 			HTML.testCase_id = self.testCase_id
 			self.desc = 'Automatic Termination of OAI-UE'
 			HTML.desc = self.desc
 			self.ShowTestID()
-			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,InfraUE,CONTAINERS)
+			self.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,CONTAINERS)
 		if (RAN.Initialize_eNB_args != ''):
 			self.testCase_id = 'AUTO-KILL-RAN'
 			HTML.testCase_id = self.testCase_id
@@ -3290,7 +2801,14 @@ class OaiCiTest():
 					CONTAINERS.eNB_instance=instance
 					CONTAINERS.UndeployObject(HTML,RAN)
 		RAN.prematureExit=True
-
+	def GetAllUEDevices(self,terminate_ue_flag):
+		SSH = sshconnection.SSHConnection()
+		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+		SSH.command('adb devices', '\$', 15)
+		self.UEDevices = re.findall('\r\n([A-Za-z0-9]+)\tdevice',SSH.getBefore())
+		msg = "UEDevices found by GetAllUEDevices : " + " ".join(self.UEDevices)
+		logging.debug(msg)
+		SSH.close()
 
 	def IdleSleep(self,HTML):
 		time.sleep(self.idle_sleep_time)
