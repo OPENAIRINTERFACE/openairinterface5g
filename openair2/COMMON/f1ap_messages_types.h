@@ -358,11 +358,11 @@ typedef struct cu_to_du_rrc_information_s {
 
 typedef struct du_to_du_rrc_information_s {
   uint8_t * cellGroupConfig;
-  uint8_t   cellGroupConfig_length;
+  uint32_t  cellGroupConfig_length;
   uint8_t * measGapConfig;
-  uint8_t   measGapConfig_length;
+  uint32_t  measGapConfig_length;
   uint8_t * requestedP_MaxFR1;
-  uint8_t   requestedP_MaxFR1_length;
+  uint32_t  requestedP_MaxFR1_length;
 }du_to_cu_rrc_information_t;
 
 typedef enum QoS_information_e {
