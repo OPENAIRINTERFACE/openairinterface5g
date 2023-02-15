@@ -37,9 +37,6 @@ RUN /bin/sh oaienv && \
     cd cmake_targets/ran_build/build && \
     ninja aw2sori_transpro
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/gnb_parameters.yaml && \
-    cp /oai-ran/docker/scripts/gnb-aw2s_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
-
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-gnb-aw2s
 ENV DEBIAN_FRONTEND=noninteractive
@@ -48,31 +45,22 @@ ENV TZ=Europe
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
-        software-properties-common \
         procps \
         libsctp1 \
         tzdata \
-        libnettle6 \
         libblas3 \
         libatlas3-base \
         libconfig9 \
         openssl \
         net-tools \
         iproute2 \
-        iputils-ping \
-        python \
-        python3 \
-        python3-six \
-        python3-requests \
-        libusb-1.0-0 && \
+        iputils-ping  && \
     rm -rf /var/lib/apt/lists/*
 
 COPY ./libori.so /usr/local/lib/
 
 WORKDIR /opt/oai-gnb-aw2s/bin
-COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/nr-softmodem \
-    ./
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
 COPY ./docker/scripts/gnb-aw2s_entrypoint.sh /opt/oai-gnb-aw2s/bin/entrypoint.sh
 
 COPY --from=gnb-build \
@@ -94,17 +82,7 @@ RUN /bin/bash -c "ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/lib
     /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so" && \
     ldconfig
 
-# Copy the relevant configuration files for gNB
-WORKDIR /opt/oai-gnb-aw2s/etc
-COPY --from=gnb-build /oai-ran/docker/etc .
-
 WORKDIR /opt/oai-gnb-aw2s
-#EXPOSE 2152/udp  # S1U, GTP/UDP
-#EXPOSE 22100/tcp # ?
-#EXPOSE 36412/udp # S1C, SCTP/UDP
-#EXPOSE 36422/udp # X2C, SCTP/UDP
-#EXPOSE 50000/udp # IF5 / ORI (control)
-#EXPOSE 50001/udp # IF5 / ECPRI (data)
 
 ENTRYPOINT ["/opt/oai-gnb-aw2s/bin/entrypoint.sh"]
 CMD ["/opt/oai-gnb-aw2s/bin/nr-softmodem", "-O", "/opt/oai-gnb-aw2s/etc/gnb.conf"]
