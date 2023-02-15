@@ -30,6 +30,7 @@
  040000
  000002
  010000
+ 010001
  050000
  050001
  000001
@@ -38,6 +39,7 @@
  070001
  000001
  010002
+ 010011
  000001
  080001
  080000
@@ -54,6 +56,16 @@
 	<testCase id="010002">
 		<class>Detach_UE</class>
 		<desc>Detach UE</desc>
+		<id>idefix</id>
+	</testCase>
+ <testCase id="010001">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+		<id>idefix</id>
+	</testCase>
+ <testCase id="010011">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
 		<id>idefix</id>
 	</testCase>
 
