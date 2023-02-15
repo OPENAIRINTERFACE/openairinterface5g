@@ -185,7 +185,7 @@ def AnalyzeIperf(cliOptions, clientReport, serverReport):
 			reportLine = clientReportLines[l+1]
 			logging.debug(f'found server report: "{reportLine}"')
 
-	statusTemplate = '(?:|\[ *\d+\].*) +0\.0-\s*(?P<duration>[0-9\.]+) +sec +[0-9\.]+ [kKMG]Bytes +(?P<bitrate>[0-9\.]+) (?P<magnitude>[kKMG])bits\/sec +(?P<jitter>[0-9\.]+) ms +(\d+\/ ..\d+) +(\((?P<packetloss>[0-9\.]+)%\))'
+	statusTemplate = '(?:|\[ *\d+\].*) +0\.0-\s*(?P<duration>[0-9\.]+) +sec +[0-9\.]+ [kKMG]Bytes +(?P<bitrate>[0-9\.]+) (?P<magnitude>[kKMG])bits\/sec +(?P<jitter>[0-9\.]+) ms +(\d+\/ *\d+) +(\((?P<packetloss>[0-9\.]+)%\))'
 	# if we do not find a server report in the client logs, check the server logs
 	# and use the last line which is typically close/identical to server report
 	if reportLine is None:
