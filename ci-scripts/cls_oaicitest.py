@@ -652,56 +652,6 @@ class OaiCiTest():
 			job.join()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
-	def GetAllUEDevices(self, terminate_ue_flag):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		SSH = sshconnection.SSHConnection()
-		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		if self.ADBCentralized:
-			SSH.command('adb devices', '\$', 15)
-			self.UEDevices = re.findall('\r\n([A-Za-z0-9]+)\tdevice',SSH.getBefore())
-			#report number and id of devices found
-			msg = "UEDevices found by GetAllUEDevices : " + " ".join(self.UEDevices)
-			logging.debug(msg)
-			SSH.close()
-		else:
-			if (os.path.isfile('./phones_list.txt')):
-				os.remove('./phones_list.txt')
-			SSH.command('ls /etc/*/phones*.txt', '\$', 5)
-			result = re.search('/etc/ci/phones_list.txt', SSH.getBefore())
-			SSH.close()
-			if (result is not None) and (len(self.UEDevices) == 0):
-				SSH.copyin(self.ADBIPAddress, self.ADBUserName, self.ADBPassword, '/etc/ci/phones_list.txt', '.')
-				if (os.path.isfile('./phones_list.txt')):
-					phone_list_file = open('./phones_list.txt', 'r')
-					for line in phone_list_file.readlines():
-						line = line.strip()
-						result = re.search('^#', line)
-						if result is not None:
-							continue
-						comma_split = line.split(",")
-						self.UEDevices.append(comma_split[0])
-						self.UEDevicesRemoteServer.append(comma_split[1])
-						self.UEDevicesRemoteUser.append(comma_split[2])
-						self.UEDevicesOffCmd.append(comma_split[3])
-						self.UEDevicesOnCmd.append(comma_split[4])
-						self.UEDevicesRebootCmd.append(comma_split[5])
-					phone_list_file.close()
-
-		# better handling of the case when no UE detected
-		# Sys-exit is now dealt by the calling function
-		if terminate_ue_flag == True:
-			if len(self.UEDevices) == 0:
-				logging.debug('\u001B[1;37;41m UE Not Found! \u001B[0m')
-				return False
-		if len(self.UEDevicesStatus) == 0:
-			cnt = 0
-			while cnt < len(self.UEDevices):
-				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
-				cnt += 1
-		return True
-
 	def CheckUEStatus_common(self, lock, device_id, statusQueue, idx):
 		try:
 			SSH = sshconnection.SSHConnection()
@@ -2801,14 +2751,6 @@ class OaiCiTest():
 					CONTAINERS.eNB_instance=instance
 					CONTAINERS.UndeployObject(HTML,RAN)
 		RAN.prematureExit=True
-	def GetAllUEDevices(self,terminate_ue_flag):
-		SSH = sshconnection.SSHConnection()
-		SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-		SSH.command('adb devices', '\$', 15)
-		self.UEDevices = re.findall('\r\n([A-Za-z0-9]+)\tdevice',SSH.getBefore())
-		msg = "UEDevices found by GetAllUEDevices : " + " ".join(self.UEDevices)
-		logging.debug(msg)
-		SSH.close()
 
 	def IdleSleep(self,HTML):
 		time.sleep(self.idle_sleep_time)

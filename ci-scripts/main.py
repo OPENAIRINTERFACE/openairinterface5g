@@ -789,13 +789,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 
 	signal.signal(signal.SIGUSR1, receive_signal)
 
-	if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
-		terminate_ue_flag = False
-		CiTestObj.GetAllUEDevices(terminate_ue_flag)
-	elif (CiTestObj.ADBIPAddress == 'modules'):
-		CiTestObj.UEDevices.append('COTS-Module')
-	else:
-		CiTestObj.UEDevices.append('OAI-UE')
 	HTML.CreateHtmlTabHeader()
 
 	# On CI bench w/ containers, we need to validate if IP routes are set
