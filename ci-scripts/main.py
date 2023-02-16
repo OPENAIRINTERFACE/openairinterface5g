@@ -40,7 +40,6 @@ import constants as CONST
 
 import cls_oaicitest            #main class for OAI CI test framework
 import cls_physim               #class PhySim for physical simulators build and test
-import cls_cots_ue              #class CotsUe for Airplane mode control
 import cls_containerize         #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis #class for static code analysis
 import cls_physim1          #class PhySim for physical simulators deploy and run
@@ -574,15 +573,6 @@ py_param_file_present, py_params, mode = args_parse.ArgsParse(sys.argv,CiTestObj
 if py_param_file_present == True:
 	AssignParams(py_params)
 
-
-#-----------------------------------------------------------
-# COTS UE instanciation
-#-----------------------------------------------------------
-#COTS_UE instanciation and ADB server init
-#ue id and ue mode are retrieved from xml
-COTS_UE=cls_cots_ue.CotsUe(CiTestObj.ADBIPAddress, CiTestObj.ADBUserName,CiTestObj.ADBPassword)
-
-
 #-----------------------------------------------------------
 # mode amd XML class (action) analysis
 #-----------------------------------------------------------
@@ -603,7 +593,7 @@ elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 		HELP.GenericHelp(CONST.Version)
 		sys.exit('Insufficient Parameter')
 	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,CONTAINERS)
+	CiTestObj.TerminateOAIUE(HTML,RAN,EPC,CONTAINERS)
 elif re.match('^TerminateHSS$', mode, re.IGNORECASE):
 	if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 		HELP.GenericHelp(CONST.Version)
@@ -842,29 +832,29 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Terminate_eNB':
 					RAN.TerminateeNB(HTML, EPC)
 				elif action == 'Initialize_UE':
-					CiTestObj.InitializeUE(HTML,RAN, EPC, COTS_UE, CONTAINERS)
+					CiTestObj.InitializeUE(HTML,RAN, EPC, CONTAINERS)
 				elif action == 'Terminate_UE':
 					CiTestObj.TerminateUE(HTML)
 				elif action == 'Attach_UE':
-					CiTestObj.AttachUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
+					CiTestObj.AttachUE(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Detach_UE':
-					CiTestObj.DetachUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
+					CiTestObj.DetachUE(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'DataDisable_UE':
 					CiTestObj.DataDisableUE(HTML)
 				elif action == 'DataEnable_UE':
 					CiTestObj.DataEnableUE(HTML)
 				elif action == 'CheckStatusUE': # still used?
-					CiTestObj.CheckStatusUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
+					CiTestObj.CheckStatusUE(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Build_OAI_UE':
 					CiTestObj.BuildOAIUE(HTML)
 				elif action == 'Initialize_OAI_UE':
-					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,COTS_UE,CONTAINERS)
+					CiTestObj.InitializeOAIUE(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Terminate_OAI_UE':
-					CiTestObj.TerminateOAIUE(HTML,RAN,COTS_UE,EPC,CONTAINERS)
+					CiTestObj.TerminateOAIUE(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Ping':
-					CiTestObj.Ping(HTML,RAN,EPC,COTS_UE, CONTAINERS)
+					CiTestObj.Ping(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Iperf':
-					CiTestObj.Iperf(HTML,RAN,EPC,COTS_UE, CONTAINERS)
+					CiTestObj.Iperf(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Reboot_UE':
 					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
