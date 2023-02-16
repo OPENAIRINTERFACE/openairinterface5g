@@ -102,12 +102,6 @@
 		<desc>Detach UE</desc>
 	</testCase>
 
-
-	<testCase id="040701">
-		<class>Reboot_UE</class>
-		<desc>Reboot UE</desc>
-	</testCase>
-
 	<!-- EPC class command references -->
 
         <testCase id="050101">

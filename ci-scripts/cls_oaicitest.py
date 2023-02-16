@@ -313,11 +313,6 @@ class OaiCiTest():
 			if result is None:
 				check_eNB = True
 				check_OAI_UE = False
-				pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-				if (pStatus < 0):
-					HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'KO', pStatus)
-					HTML.CreateHtmlTabFooter(False)
-					self.ConditionalExit()
 			UE_prefix = ''
 		else:
 			UE_prefix = 'NR '
@@ -535,67 +530,6 @@ class OaiCiTest():
 			messages = [f"UE {ue.getName()}: detached" for ue in ues]
 		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 
-	def RebootUE_common(self, device_id):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
-			previousmDataConnectionStates = []
-			# Save mDataConnectionState
-			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
-			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
-			result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
-			if result is None:
-				logging.debug('\u001B[1;37;41m mDataConnectionState Not Found! \u001B[0m')
-				sys.exit(1)
-			previousmDataConnectionStates.append(int(result.group('state')))
-			# Reboot UE
-			SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell reboot', '\$', 10)
-			time.sleep(60)
-			previousmDataConnectionState = previousmDataConnectionStates.pop(0)
-			count = 180
-			while count > 0:
-				count = count - 1
-				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell dumpsys telephony.registry | grep mDataConnectionState', '\$', 15)
-				result = re.search('mDataConnectionState.*=(?P<state>[0-9\-]+)', SSH.getBefore())
-				if result is None:
-					mDataConnectionState = None
-				else:
-					mDataConnectionState = int(result.group('state'))
-					logging.debug('mDataConnectionState = ' + result.group('state'))
-				if mDataConnectionState is None or (previousmDataConnectionState == 2 and mDataConnectionState != 2):
-					logging.debug('\u001B[1mWait UE (' + device_id + ') a second until reboot completion (' + str(180-count) + ' times)\u001B[0m')
-					time.sleep(1)
-				else:
-					logging.debug('\u001B[1mUE (' + device_id + ') Reboot Completed\u001B[0m')
-					break
-			if count == 0:
-				logging.debug('\u001B[1;37;41m UE (' + device_id + ') Reboot Failed \u001B[0m')
-				sys.exit(1)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
-	def RebootUE(self,HTML,RAN,EPC):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
-		check_eNB = True
-		check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow('N/A', 'KO', pStatus)
-			HTML.CreateHtmlTabFooter(False)
-			self.ConditionalExit()
-		multi_jobs = []
-		for device_id in self.UEDevices:
-			p = Process(target = self.RebootUE_common, args = (device_id,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-		for job in multi_jobs:
-			job.join()
-		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
-
 	def DataDisableUE(self, HTML):
 		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
 		with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -790,11 +724,6 @@ class OaiCiTest():
 		SSH=sshconnection.SSHConnection()
 		check_eNB = True
 		check_OAI_UE = True
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
-			return
 		ping_from_eNB = re.search('oaitun_enb1', str(self.ping_args))
 		if ping_from_eNB is not None:
 			if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '':
@@ -889,11 +818,6 @@ class OaiCiTest():
 			check_OAI_UE = True
 		else:
 			check_OAI_UE = False
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow(self.ping_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
-			return
 
 		if self.ue_ids == []:
 			raise Exception("no module names in self.ue_ids provided")
@@ -1290,130 +1214,6 @@ class OaiCiTest():
 		statusQueue.put(msg)
 		lock.release()
 
-	def Iperf_UL_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
-		if device_id != 'OAI-UE':
-			raise Exception(f"in Iperf_common(): unhandled device_id {device_id}")
-		SSH = sshconnection.SSHConnection()
-		udpIperf = True
-		result = re.search('-u', str(self.iperf_args))
-		if result is None:
-			udpIperf = False
-		ipnumbers = UE_IPAddress.split('.')
-		if (len(ipnumbers) == 4):
-			ipnumbers[3] = '1'
-		EPC_Iperf_UE_IPAddress = ipnumbers[0] + '.' + ipnumbers[1] + '.' + ipnumbers[2] + '.' + ipnumbers[3]
-
-		# Launch iperf server on EPC side (true for ltebox and old open-air-cn0
-		# But for OAI-Rel14-CUPS, we launch from python executor and we are using its IP address as iperf client address
-		launchFromEpc = True
-		if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
-			launchFromEpc = False
-			cmd = 'hostname -I'
-			ret = subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
-			if ret.stdout is not None:
-				EPC_Iperf_UE_IPAddress = ret.stdout.strip()
-		# When using a docker-based deployment, IPERF client shall be launched from trf container
-		launchFromTrfContainer = False
-		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
-			launchFromTrfContainer = True
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('docker inspect --format="TRF_IP_ADDR = {{range .NetworkSettings.Networks}}{{.IPAddress}}{{end}}" prod-trf-gen', '\$', 5)
-			result = re.search('TRF_IP_ADDR = (?P<trf_ip_addr>[0-9\.]+)', SSH.getBefore())
-			if result is not None:
-				EPC_Iperf_UE_IPAddress = result.group('trf_ip_addr')
-			SSH.close()
-		port = 5001 + idx
-		udpOptions = ''
-		if udpIperf:
-			udpOptions = '-u '
-		if launchFromEpc:
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			if launchFromTrfContainer:
-				if self.ueIperfVersion == self.dummyIperfVersion:
-					prefix = ''
-				else:
-					prefix = ''
-					if self.ueIperfVersion == '2.0.5':
-						prefix = '/iperf-2.0.5/bin/'
-				SSH.command('docker exec -d prod-trf-gen /bin/bash -c "nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &"', '\$', 5)
-			else:
-				SSH.command('echo $USER; nohup iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', EPC.UserName, 5)
-			SSH.close()
-		else:
-			if self.ueIperfVersion == self.dummyIperfVersion:
-				prefix = ''
-			else:
-				prefix = ''
-				if self.ueIperfVersion == '2.0.5':
-					prefix = '/opt/iperf-2.0.5/bin/'
-			cmd = 'nohup ' + prefix + 'iperf ' + udpOptions + '-s -i 1 -p ' + str(port) + ' > iperf_server_' + self.testCase_id + '_' + device_id + '.log 2>&1 &'
-			logging.debug(cmd)
-			subprocess.run(cmd, shell=True, stdout=subprocess.PIPE, encoding='utf-8')
-		time.sleep(0.5)
-
-		# Launch iperf client on UE
-		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
-		iperf_time = self.Iperf_ComputeTime()
-		time.sleep(0.5)
-
-		if udpIperf:
-			modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
-		else:
-			modified_options = str(self.iperf_args)
-		modified_options = modified_options.replace('-R','')
-		time.sleep(0.5)
-
-		SSH.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-		iperf_status = SSH.command('iperf -c ' + EPC_Iperf_UE_IPAddress + ' ' + modified_options + ' -p ' + str(port) + ' -B ' + UE_IPAddress + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-		# TIMEOUT Case
-		if iperf_status < 0:
-			SSH.close()
-			message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-			SSH.close()
-			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
-			return
-		clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options,EPC,SSH)
-		SSH.close()
-
-		# Kill iperf server on EPC side
-		if launchFromEpc:
-			SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-			if launchFromTrfContainer:
-				SSH.command('docker exec -it prod-trf-gen /bin/bash -c "killall --signal SIGKILL iperf"', '\$', 5)
-			else:
-				SSH.command('killall --signal SIGKILL iperf', '\$', 5)
-			SSH.close()
-		else:
-			cmd = 'killall --signal SIGKILL iperf'
-			logging.debug(cmd)
-			subprocess.run(cmd, shell=True)
-			time.sleep(1)
-			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-		# in case of failure, retrieve server log
-		if (clientStatus == -1) or (clientStatus == -2):
-			if launchFromEpc:
-				time.sleep(1)
-				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				if launchFromTrfContainer:
-					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-					SSH.command('docker cp prod-trf-gen:/iperf-2.0.5/iperf_server_' + self.testCase_id + '_' + device_id + '.log ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-					SSH.close()
-				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-			filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
-			self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options,filename,0)
-		else:
-			# Copying all the time the iperf server for artifacting
-			if launchFromEpc:
-				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath+ '/scripts/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-		SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-		SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-
-
 	def Iperf_Module(self, lock, statusQueue, EPC, ue, RAN, idx, ue_num):
 		SSH = sshconnection.SSHConnection()
 		server_filename = f'iperf_server_{self.testCase_id}_{ue.getName()}.log'
@@ -1513,165 +1313,6 @@ class OaiCiTest():
 		else :
 			raise Exception("Incorrect or missing IPERF direction in XML")
 
-	def Iperf_common(self, lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC):
-		if device_id != 'OAI-UE':
-			raise Exception(f"in Iperf_common(): unhandled device_id {device_id}")
-		try:
-			SSH = sshconnection.SSHConnection()
-			# Single-UE profile -- iperf only on one UE
-			if self.iperf_profile == 'single-ue' and idx != 0:
-				return
-			useIperf3 = False
-			udpIperf = True
-
-			self.ueIperfVersion = '2.0.5'
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('iperf --version', '\$', 5)
-			result = re.search('iperf version 2.0.5', SSH.getBefore())
-			if result is not None:
-				self.ueIperfVersion = '2.0.5'
-			result = re.search('iperf version 2.0.10', SSH.getBefore())
-			if result is not None:
-				self.ueIperfVersion = '2.0.10'
-			SSH.close()
-			# in case of iperf, UL has its own function
-			if (not useIperf3):
-				result = re.search('-R', str(self.iperf_args))
-				if result is not None:
-					self.Iperf_UL_common(lock, UE_IPAddress, device_id, idx, ue_num, statusQueue,EPC)
-					return
-
-			# Launch the IPERF server on the UE side for DL
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
-			SSH.command('rm -f iperf_server_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			result = re.search('-u', str(self.iperf_args))
-			if result is None:
-				SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
-				udpIperf = False
-			else:
-				SSH.command('echo $USER; nohup iperf -B ' + UE_IPAddress + ' -u -s -i 1 > iperf_server_' + self.testCase_id + '_' + device_id + '.log &', self.UEUserName, 5)
-
-			time.sleep(0.5)
-			SSH.close()
-
-			# Launch the IPERF client on the EPC side for DL (true for ltebox and old open-air-cn
-			# But for OAI-Rel14-CUPS, we launch from python executor
-			launchFromEpc = True
-			launchFromModule = False
-			if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
-				launchFromEpc = False
-			#if module
-			if self.ue_id!='' and self.iperf :
-				launchFromEpc = False
-				launchfromModule = True
-			# When using a docker-based deployment, IPERF client shall be launched from trf container
-			launchFromTrfContainer = False
-			if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
-				launchFromTrfContainer = True
-			if launchFromEpc:
-				SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-				SSH.command('cd ' + EPC.SourceCodePath + '/scripts', '\$', 5)
-			iperf_time = self.Iperf_ComputeTime()
-			time.sleep(0.5)
-
-			if udpIperf:
-				modified_options = self.Iperf_ComputeModifiedBW(idx, ue_num)
-			else:
-				modified_options = str(self.iperf_args)
-			time.sleep(0.5)
-
-			if launchFromEpc:
-				SSH.command('rm -f iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-			else:
-				if (os.path.isfile('iperf_' + self.testCase_id + '_' + device_id + '.log')):
-					os.remove('iperf_' + self.testCase_id + '_' + device_id + '.log')
-			if (useIperf3):
-				SSH.command('stdbuf -o0 iperf3 -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-				# Copying the iperf client locally for artifacting
-				SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-
-				clientStatus = 0
-				self.Iperf_analyzeV3Output(lock, UE_IPAddress, device_id, statusQueue,SSH)
-			else:
-				if launchFromEpc:
-					if launchFromTrfContainer:
-						if self.ueIperfVersion == self.dummyIperfVersion:
-							prefix = ''
-						else:
-							prefix = ''
-							if self.ueIperfVersion == '2.0.5':
-								prefix = '/iperf-2.0.5/bin/'
-						iperf_status = SSH.command('docker exec -it prod-trf-gen /bin/bash -c "' + prefix + 'iperf -c ' + UE_IPAddress + ' ' + modified_options + '" 2>&1 | tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-					else:
-						iperf_status = SSH.command('stdbuf -o0 iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 | stdbuf -o0 tee iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', int(iperf_time)*5.0)
-					# Copying the iperf client locally for artifacting
-					SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '.')
-				else:
-					if self.ueIperfVersion == self.dummyIperfVersion:
-						prefix = ''
-					else:
-						prefix = ''
-						if self.ueIperfVersion == '2.0.5':
-							prefix = '/opt/iperf-2.0.5/bin/'
-					cmd = prefix + 'iperf -c ' + UE_IPAddress + ' ' + modified_options + ' 2>&1 > iperf_' + self.testCase_id + '_' + device_id + '.log'
-					message = cmd + '\n'
-					logging.debug(cmd)
-					ret = subprocess.run(cmd, shell=True)
-					iperf_status = ret.returncode
-					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')					
-					SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-					SSH.command('cat ' + EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log', '\$', 5)
-				if iperf_status < 0:
-					if launchFromEpc:
-						SSH.close()
-					message = 'iperf on UE (' + str(UE_IPAddress) + ') crashed due to TIMEOUT !'
-					logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-					self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, message)
-					return
-				logging.debug('Into Iperf_analyzeV2Output client')
-				clientStatus = self.Iperf_analyzeV2Output(lock, UE_IPAddress, device_id, statusQueue, modified_options, EPC,SSH)
-				logging.debug('Iperf_analyzeV2Output clientStatus returned value = ' + str(clientStatus))
-			SSH.close()
-
-			# Kill the IPERF server that runs in background
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('killall iperf', '\$', 5)
-			SSH.close()
-			# if the client report is absent, try to analyze the server log file
-			if (clientStatus == -1):
-				time.sleep(1)
-				if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-					os.remove('iperf_server_' + self.testCase_id + '_' + device_id + '.log')
-				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-				# fromdos has to be called on the python executor not on ADB server
-				cmd = 'fromdos -o iperf_server_' + self.testCase_id + '_' + device_id + '.log > /dev/null 2>&1'
-				try:
-					subprocess.run(cmd, shell=True)
-				except:
-					pass
-				cmd = 'dos2unix -o iperf_server_' + self.testCase_id + '_' + device_id + '.log > /dev/null 2>&1'
-				try:
-					subprocess.run(cmd, shell=True)
-				except:
-					pass
-				filename='iperf_server_' + self.testCase_id + '_' + device_id + '.log'
-				self.Iperf_analyzeV2Server(lock, UE_IPAddress, device_id, statusQueue, modified_options,filename,0)
-			else:
-				# Copying all the time the iperf server for artifacting
-				time.sleep(1)
-				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-
-			# in case of OAI UE: 
-			if (os.path.isfile('iperf_server_' + self.testCase_id + '_' + device_id + '.log')):
-				if not launchFromEpc:
-					SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-			else:
-				SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/iperf_server_' + self.testCase_id + '_' + device_id + '.log', '.')
-				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_' + device_id + '.log', EPC.SourceCodePath + '/scripts')
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
 	def IperfNoS1(self,HTML,RAN,EPC,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
 		if RAN.eNBIPAddress == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '':
@@ -1679,11 +1320,6 @@ class OaiCiTest():
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
 		check_OAI_UE = True
-		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
-		if (pStatus < 0):
-			HTML.CreateHtmlTestRow(self.iperf_args, 'KO', pStatus)
-			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
-			return
 		server_on_enb = re.search('-R', str(self.iperf_args))
 		if server_on_enb is not None:
 			iServerIPAddr = RAN.eNBIPAddress
@@ -1821,7 +1457,6 @@ class OaiCiTest():
 		status_queue = SimpleQueue()
 		for ue in ues:
 			p = Process(target = self.Iperf_Module ,args = (lock, status_queue, EPC, ue, RAN, i, ue_num))
-                        #p = Process(target = self.Iperf_common, args = (lock, UE_IPAddress, device_id, i, ue_num, status_queue, EPC, ))
 			p.daemon = True
 			p.start()
 			multi_jobs.append(p)
@@ -1853,103 +1488,6 @@ class OaiCiTest():
 			else:
 				HTML.CreateHtmlTestRowQueue(self.iperf_args, 'KO', messages)
 				self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
-
-	def CheckProcessExist(self, check_eNB, check_OAI_UE,RAN,EPC):
-		multi_jobs = []
-		status_queue = SimpleQueue()
-		# in noS1 config, no need to check status from EPC
-		# in gNB also currently no need to check
-		result = re.search('noS1|band78', str(RAN.Initialize_eNB_args))
-		if result is None:
-			p = Process(target = EPC.CheckHSSProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			p = Process(target = EPC.CheckMMEProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			p = Process(target = EPC.CheckSPGWProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-		else:
-			if (check_eNB == False) and (check_OAI_UE == False):
-				return 0
-		if check_eNB:
-			p = Process(target = RAN.CheckeNBProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-		if check_OAI_UE:
-			p = Process(target = self.CheckOAIUEProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-		for job in multi_jobs:
-			job.join()
-
-		if (status_queue.empty()):
-			return -15
-		else:
-			result = 0
-			while (not status_queue.empty()):
-				status = status_queue.get()
-				if (status < 0):
-					result = status
-			if result == CONST.ENB_PROCESS_FAILED:
-				fileCheck = re.search('enb_', str(RAN.eNBLogFiles[0]))
-				if fileCheck is not None:
-					SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/' + RAN.eNBLogFiles[0], '.')
-					logStatus = RAN.AnalyzeLogFile_eNB(RAN.eNBLogFiles[0],HTML, RAN.ran_checkers)
-					if logStatus < 0:
-						result = logStatus
-					RAN.eNBLogFiles[0]=''
-			return result
-
-	def CheckOAIUEProcessExist(self, initialize_OAI_UE_flag,HTML,RAN):
-		multi_jobs = []
-		status_queue = SimpleQueue()
-		if initialize_OAI_UE_flag == False:
-			p = Process(target = self.CheckOAIUEProcess, args = (status_queue,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-		for job in multi_jobs:
-			job.join()
-
-		if (status_queue.empty()):
-			return -15
-		else:
-			result = 0
-			while (not status_queue.empty()):
-				status = status_queue.get()
-				if (status < 0):
-					result = status
-			if result == CONST.OAI_UE_PROCESS_FAILED:
-				fileCheck = re.search('ue_', str(self.UELogFile))
-				if fileCheck is not None:
-					SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
-					logStatus = self.AnalyzeLogFile_UE(self.UELogFile,HTML,RAN)
-					if logStatus < 0:
-						result = logStatus
-			return result
-
-	def CheckOAIUEProcess(self, status_queue):
-		try:
-			SSH = sshconnection.SSHConnection()
-			SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-			SSH.command('stdbuf -o0 ps -aux | grep --color=never ' + self.air_interface + ' | grep -v grep', '\$', 5)
-			result = re.search(self.air_interface, SSH.getBefore())
-			if result is None:
-				logging.debug('\u001B[1;37;41m OAI UE Process Not Found! \u001B[0m')
-				status_queue.put(CONST.OAI_UE_PROCESS_FAILED)
-			else:
-				status_queue.put(CONST.OAI_UE_PROCESS_OK)
-			SSH.close()
-		except:
-			os.kill(os.getppid(),signal.SIGUSR1)
-
 
 	def AnalyzeLogFile_UE(self, UElogFile,HTML,RAN):
 		if (not os.path.isfile('./' + UElogFile)):

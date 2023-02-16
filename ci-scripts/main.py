@@ -761,9 +761,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					logging.info(f"Executing custom command")
 					RAN.CustomCommand(HTML)
 				elif action == 'Initialize_eNB':
-					check_eNB = False
-					check_OAI_UE = False
-					RAN.pStatus=CiTestObj.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
 					RAN.InitializeeNB(HTML, EPC)
 					if RAN.prematureExit:
 						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
@@ -793,8 +790,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					CiTestObj.Ping(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Iperf':
 					CiTestObj.Iperf(HTML,RAN,EPC,CONTAINERS)
-				elif action == 'Reboot_UE':
-					CiTestObj.RebootUE(HTML,RAN,EPC)
 				elif action == 'Initialize_HSS':
 					EPC.InitializeHSS(HTML)
 				elif action == 'Terminate_HSS':
