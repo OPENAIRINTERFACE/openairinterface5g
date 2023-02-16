@@ -92,7 +92,27 @@ typedef struct {
   uint8_t  digitp:4;
 } Imei5GSMobileIdentity_t;
 
-typedef Imei5GSMobileIdentity_t Imeisv5GSMobileIdentity_t;
+typedef struct {
+  uint8_t  digittac01:4;
+  uint8_t  oddeven:1;
+  uint8_t  typeofidentity:3;
+  uint8_t  digittac02:4;
+  uint8_t  digittac03:4;
+  uint8_t  digittac04:4;
+  uint8_t  digittac05:4;
+  uint8_t  digittac06:4;
+  uint8_t  digittac07:4;
+  uint8_t  digittac08:4;
+  uint8_t  digit09:4;
+  uint8_t  digit10:4;
+  uint8_t  digit11:4;
+  uint8_t  digit12:4;
+  uint8_t  digit13:4;
+  uint8_t  digit14:4;
+  uint8_t  digitsv1:4;
+  uint8_t  digitsv2:4;
+  uint8_t  spare:4;
+} Imeisv5GSMobileIdentity_t;
 
 
 typedef struct {

@@ -25,6 +25,8 @@
  * \email yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
  * \date 2020
  * \version 0.1
+ *
+ * 2023.01.27 Vladimir Dorovskikh 16 digits IMEISV
  */
 
 
@@ -533,6 +535,31 @@ int nas_itti_kgnb_refresh_req(const uint8_t kgnb[32], int instance) {
   return itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
 }
 
+static int addImeisv(int Mod_id,MM_msg *mm_msg)
+{
+  int i=0;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.typeofidentity = FGS_MOBILE_IDENTITY_IMEISV;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac01 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac02 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac03 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac04 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac05 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac06 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac07 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digittac08 = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit09    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit10    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit11    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit12    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit13    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit14    = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitsv1   = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitsv2   = getImeisvDigit(Mod_id,i++);
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.spare  = 0x0f;
+  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.oddeven = 1;
+  return 19;
+}
+
 static void generateSecurityModeComplete(int Mod_id,as_nas_info_t *initialNasMsg)
 {
   int size = sizeof(mm_msg_header_t);
@@ -562,12 +589,7 @@ static void generateSecurityModeComplete(int Mod_id,as_nas_info_t *initialNasMsg
   mm_msg->fgs_security_mode_complete.messagetype           = FGS_SECURITY_MODE_COMPLETE;
   size += 1;
 
-  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.typeofidentity = FGS_MOBILE_IDENTITY_IMEISV;
-  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digit1  = 1;
-  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitp1 = 1;
-  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.digitp  = 1;
-  mm_msg->fgs_security_mode_complete.fgsmobileidentity.imeisv.oddeven = 0;
-  size += 5;
+  size += addImeisv(Mod_id, mm_msg);
 
   mm_msg->fgs_security_mode_complete.fgsnasmessagecontainer.nasmessagecontainercontents.value  = registration_request_buf;
   mm_msg->fgs_security_mode_complete.fgsnasmessagecontainer.nasmessagecontainercontents.length = registration_request_len;
