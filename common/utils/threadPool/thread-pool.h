@@ -291,7 +291,8 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
     msg->returnTime=rdtsc_oai();
 
   if (t->traceFd > 0)
-    if(write(t->traceFd, msg, sizeof(*msg)));
+    if(write(t->traceFd, msg, sizeof(*msg)))
+      {};
 
   return msg;
 }
@@ -306,7 +307,8 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
     msg->returnTime=rdtsc_oai();
 
   if (t->traceFd)
-    if(write(t->traceFd, msg, sizeof(*msg)));
+    if(write(t->traceFd, msg, sizeof(*msg)))
+      {};
 
   return msg;
 }
