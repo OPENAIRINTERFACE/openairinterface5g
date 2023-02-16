@@ -598,12 +598,6 @@ if re.match('^TerminateeNB$', mode, re.IGNORECASE):
 	RAN.eNB_serverId[0]='0'
 	RAN.eNBSourceCodePath='/tmp/'
 	RAN.TerminateeNB(HTML, EPC)
-elif re.match('^TerminateUE$', mode, re.IGNORECASE):
-	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		HELP.GenericHelp(CONST.Version)
-		sys.exit('Insufficient Parameter')
-	signal.signal(signal.SIGUSR1, receive_signal)
-	CiTestObj.TerminateUE(HTML,COTS_UE)
 elif re.match('^TerminateOAIUE$', mode, re.IGNORECASE):
 	if CiTestObj.UEIPAddress == '' or CiTestObj.UEUserName == '' or CiTestObj.UEPassword == '':
 		HELP.GenericHelp(CONST.Version)
@@ -673,9 +667,6 @@ elif re.match('^LogCollectOAIUE$', mode, re.IGNORECASE):
 		sys.exit('Insufficient Parameter')
 	CiTestObj.LogCollectOAIUE()
 elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
-	if (CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == ''):
-		HELP.GenericHelp(CONST.Version)
-		sys.exit('Insufficient Parameter')
 	count = 0
 	foundCount = 0
 	while (count < HTML.nbTestXMLfiles):
@@ -695,7 +686,7 @@ elif re.match('^InitiateHtml$', mode, re.IGNORECASE):
 	if foundCount != HTML.nbTestXMLfiles:
 		HTML.nbTestXMLfiles=foundCount
 	
-	HTML.CreateHtmlHeader(CiTestObj.ADBIPAddress)
+	HTML.CreateHtmlHeader()
 elif re.match('^FinalizeHtml$', mode, re.IGNORECASE):
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	logging.info('\u001B[1m  Creating HTML footer \u001B[0m')
@@ -707,7 +698,7 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 	logging.info('\u001B[1m  Starting Scenario: ' + CiTestObj.testXMLfiles[0] + '\u001B[0m')
 	logging.info('\u001B[1m----------------------------------------\u001B[0m')
 	if re.match('^TesteNB$', mode, re.IGNORECASE):
-		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '' or CiTestObj.ADBIPAddress == '' or CiTestObj.ADBUserName == '' or CiTestObj.ADBPassword == '':
+		if RAN.eNBIPAddress == '' or RAN.ranRepository == '' or RAN.ranBranch == '' or RAN.eNBUserName == '' or RAN.eNBPassword == '' or RAN.eNBSourceCodePath == '' or EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.Type == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or EPC.Type == '':
 				HELP.EPCSrvHelp(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath, EPC.Type)
@@ -834,15 +825,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					continue
 				CiTestObj.ShowTestID()
 				GetParametersFromXML(action)
-				#if action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Ping' or action == 'Iperf' or action == 'Reboot_UE' or action == 'DataDisable_UE' or action == 'DataEnable_UE' or action == 'CheckStatusUE':
-#					if (CiTestObj.ADBIPAddress != 'none') and (CiTestObj.ADBIPAddress != 'modules'):
-						#in these cases, having no devices is critical, GetAllUEDevices function has to manage it as a critical error, reason why terminate_ue_flag is set to True
-#						terminate_ue_flag = True 
-						# Now we stop properly the test-suite --> clean reporting
-#						status = CiTestObj.GetAllUEDevices(terminate_ue_flag)
-#						if not status:
-#							RAN.prematureExit = True
-#							break
 				if action == 'Build_eNB':
 					RAN.BuildeNB(HTML)
 				elif action == 'WaitEndBuild_eNB':

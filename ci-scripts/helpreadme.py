@@ -41,7 +41,7 @@ def GenericHelp(vers):
 	print('  --mode=[Mode]')
 	print('      TesteNB')
 	print('      InitiateHtml, FinalizeHtml')
-	print('      TerminateeNB, TerminateUE, TerminateHSS, TerminateMME, TerminateSPGW')
+	print('      TerminateeNB, TerminateHSS, TerminateMME, TerminateSPGW')
 	print('      LogCollectBuild, LogCollecteNB, LogCollectHSS, LogCollectMME, LogCollectSPGW, LogCollectPing, LogCollectIperf')
 
 def GitSrvHelp(repository,branch,commit,mergeallow,targetbranch):
@@ -69,11 +69,6 @@ def EPCSrvHelp(ipaddr, username, password, sourcepath, epctype):
 	print('  --EPCPassword=[EPC\'s Login Password]                    -- ' + password)
 	print('  --EPCSourceCodePath=[EPC\'s Source Code Path]            -- ' + sourcepath)
 	print('  --EPCType=[EPC\'s Type: OAI or ltebox or OAI-Rel14-CUPS] -- ' + epctype)
-
-def ADBSrvHelp(ipaddr, username, password):
-	print('  --ADBIPAddress=[ADB\'s IP Address]                       -- ' + ipaddr)
-	print('  --ADBUserName=[ADB\'s Login User Name]                   -- ' + username)
-	print('  --ADBPassword=[ADB\'s Login Password]                    -- ' + password)
 
 def XmlHelp(filename):
 	print('  --XMLTestFile=[XML Test File to be run]                  -- ' + filename)

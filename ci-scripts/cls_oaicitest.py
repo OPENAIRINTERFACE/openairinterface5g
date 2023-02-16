@@ -142,10 +142,6 @@ class OaiCiTest():
 		self.ranTargetBranch = ''
 
 		self.FailReportCnt = 0
-		self.ADBIPAddress = ''
-		self.ADBUserName = ''
-		self.ADBPassword = ''
-		self.ADBCentralized = True
 		self.testCase_id = ''
 		self.testXMLfiles = []
 		self.testUnstable = False
@@ -496,11 +492,6 @@ class OaiCiTest():
 		if fullSyncStatus and gotSyncStatus and tunnelInterfaceStatus:
 			HTML.CreateHtmlTestRow(self.air_interface + ' ' + self.Initialize_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK, 'OAI UE')
 			logging.debug('\u001B[1m Initialize OAI UE Completed\u001B[0m')
-			if (self.ADBIPAddress != 'none'):
-				self.UEDevices = []
-				self.UEDevices.append('OAI-UE')
-				self.UEDevicesStatus = []
-				self.UEDevicesStatus.append(CONST.UE_STATUS_DETACHED)
 		else:
 			if self.air_interface == 'lte-uesoftmodem':
 				if RAN.eNBmbmsEnables[0]:
@@ -595,7 +586,7 @@ class OaiCiTest():
 	def DataDisableUE_common(self, device_id, idx):
 		try:
 			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
 			# disable data service
 			if self.ADBCentralized:
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data disable"', '\$', 60)
@@ -625,7 +616,7 @@ class OaiCiTest():
 	def DataEnableUE_common(self, device_id, idx):
 		try:
 			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
 			# enable data service
 			if self.ADBCentralized:
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "svc data enable"', '\$', 60)
@@ -655,7 +646,7 @@ class OaiCiTest():
 	def CheckUEStatus_common(self, lock, device_id, statusQueue, idx):
 		try:
 			SSH = sshconnection.SSHConnection()
-			SSH.open(self.ADBIPAddress, self.ADBUserName, self.ADBPassword)
+			SSH.open("self.ADBIPAddress", "self.ADBUserName", "self.ADBPassword")
 			if self.ADBCentralized:
 				SSH.command('stdbuf -o0 adb -s ' + device_id + ' shell "dumpsys telephony.registry"', '\$', 15)
 			else:
@@ -704,9 +695,7 @@ class OaiCiTest():
 			os.kill(os.getppid(),signal.SIGUSR1)
 
 	def CheckStatusUE(self,HTML,RAN,EPC,COTS_UE,CONTAINERS):
-		if self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
-			HELP.GenericHelp(CONST.Version)
-			sys.exit('Insufficient Parameter')
+		raise Exception("not implemented")
 		check_eNB = True
 		check_OAI_UE = False
 		pStatus = self.CheckProcessExist(check_eNB, check_OAI_UE,RAN,EPC)
@@ -2172,7 +2161,7 @@ class OaiCiTest():
 		if result is not None:
 			self.IperfNoS1(HTML,RAN,EPC,COTS_UE,CONTAINERS)
 			return
-		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '' or self.ADBIPAddress == '' or self.ADBUserName == '' or self.ADBPassword == '':
+		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		check_eNB = True
@@ -2687,13 +2676,6 @@ class OaiCiTest():
 			HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 
 	def AutoTerminateUEandeNB(self,HTML,RAN,COTS_UE,EPC,CONTAINERS):
-		if (self.ADBIPAddress != 'none'):
-			self.testCase_id = 'AUTO-KILL-UE'
-			HTML.testCase_id = self.testCase_id
-			self.desc = 'Automatic Termination of UE'
-			HTML.desc = self.desc
-			self.ShowTestID()
-			self.TerminateUE(HTML,COTS_UE)
 		if (self.Initialize_OAI_UE_args != ''):
 			self.testCase_id = 'AUTO-KILL-OAI-UE'
 			HTML.testCase_id = self.testCase_id

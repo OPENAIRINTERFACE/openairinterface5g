@@ -91,7 +91,7 @@ class HTMLManagement():
 #-----------------------------------------------------------
 
 
-	def CreateHtmlHeader(self, ADBIPAddress):
+	def CreateHtmlHeader(self):
 		if (not self.htmlHeaderCreated):
 			logging.info('\u001B[1m----------------------------------------\u001B[0m')
 			logging.info('\u001B[1m  Creating HTML header \u001B[0m')

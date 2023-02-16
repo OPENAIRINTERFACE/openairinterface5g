@@ -12,12 +12,6 @@ steps:
   - TesteNB,xml_files/fr1_nsa_base_next.xml #ue toggle, nodes initialize, ue toggle, ping, nodes terminate
   - TesteNB,xml_files/fr1_epc_closure.xml
 
-
-ADB: #on Caracal
-  ADBIPAddress : 172.21.16.132
-  ADBUserName : oaici
-  ADBPassword : KkexF6CErOi1fNuebCPsuIVK
-
 RAN:
     - eNBIPAddress : 192.168.18.199 #eNB on Minimassive
       eNBUserName : oaicicd
