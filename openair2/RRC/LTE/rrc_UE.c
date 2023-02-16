@@ -1603,7 +1603,7 @@ rrc_ue_process_securityModeCommand(
             securityModeCommand->criticalExtensions.choice.c1.present);
 
     ul_dcch_msg.message.choice.c1.choice.securityModeComplete.rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
-    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = LTE_SecurityModeCommand__criticalExtensions_PR_c1;
+    ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.present = LTE_SecurityModeComplete__criticalExtensions_PR_securityModeComplete_r8;
     ul_dcch_msg.message.choice.c1.choice.securityModeComplete.criticalExtensions.choice.securityModeComplete_r8.nonCriticalExtension =NULL;
     LOG_I(RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (eNB %d), rrc_TransactionIdentifier: %ld\n",
           ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, eNB_index, securityModeCommand->rrc_TransactionIdentifier);
@@ -1947,9 +1947,10 @@ rrc_ue_process_rrcConnectionReconfiguration(
                 uint32_t SecondaryCellGroup_size;
                 uint8_t trans_id;
                 uint8_t padding[3];
-                uint8_t buffer[total_size];
+                uint8_t *buffer;
           } msg;
 
+	  msg.buffer = calloc(total_size, sizeof(uint8_t));
           msg.RadioBearer_size = nr_RadioBearer->size;
           msg.SecondaryCellGroup_size = nr_SecondaryCellGroup->size;
           msg.trans_id = rrcConnectionReconfiguration->rrc_TransactionIdentifier;

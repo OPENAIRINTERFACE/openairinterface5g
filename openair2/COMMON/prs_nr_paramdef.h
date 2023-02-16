@@ -48,7 +48,7 @@
 /*   optname                                         helpstr            paramflags    XXXptr              defXXXval                type        numelt */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define PRS_GLOBAL_PARAMS_DESC { \
-{CONFIG_STRING_ACTIVE_GNBs,                   HELP_STRING_ACTIVE_GNBs,      0,        uptr:NULL,         defuintval:0,           TYPE_UINT,     0}    \
+{CONFIG_STRING_ACTIVE_GNBs,                   HELP_STRING_ACTIVE_GNBs,      0,        .uptr=NULL,         .defuintval=0,           TYPE_UINT,     0}    \
 }
 
 #define PRS_ACTIVE_GNBS_IDX                          0

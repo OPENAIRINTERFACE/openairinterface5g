@@ -340,8 +340,6 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
 
   case 30720:
     // 20, 25, 30 MHz @ 30.72 Ms/s
-    Ncp = Ncp;
-    dftlen = dftlen;
     break;
 
   case 46080:
