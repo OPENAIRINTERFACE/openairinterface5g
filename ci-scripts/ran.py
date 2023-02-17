@@ -38,6 +38,7 @@ import os
 import time
 from multiprocessing import Process, Lock, SimpleQueue
 import yaml
+import cls_cmd
 
 
 #-----------------------------------------------------------
@@ -96,6 +97,8 @@ class RANManagement():
 		#checkers from xml
 		self.ran_checkers={}
 		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
+		self.node = ''
+		self.command = ''
 
 
 #-----------------------------------------------------------
@@ -258,6 +261,21 @@ class RANManagement():
 				time.sleep(30)
 		mySSH.close()
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)], HTML)
+
+	def CustomCommand(self, HTML):
+		if self.node == '' or self.node == "localhost":
+			cmd = cls_cmd.LocalCmd()
+		else:
+			cmd = cls_cmd.RemoteCmd(self.node)
+		ret = cmd.run(self.command)
+		cmd.close()
+		logging.debug(f'CustomCommand: {self.command} returnCode: {ret.returncode} output: {ret.stdout}')
+		html_queue = SimpleQueue()
+		status = 'OK'
+		if ret.returncode != 0:
+			html_queue.put(ret.stdout)
+			status = 'Warning'
+		HTML.CreateHtmlTestRow(self.command, status, 1, html_queue)
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId, HTML):
 		HTML.testCase_id=testcaseId

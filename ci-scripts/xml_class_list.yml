@@ -51,3 +51,4 @@
   - Push_Local_Registry
   - Pull_Local_Registry
   - Clean_Test_Server_Images
+  - Custom_Command
