@@ -523,7 +523,15 @@ check_install_soapy () {
     install_soapy_from_source
     #fi
     install_soapy_iris_from_source
+}
 
+# for ubuntu 18 we need a special repository to install cmake >= 3.12
+add_cmake_repo () {
+  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | sudo tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+  echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | sudo tee /etc/apt/sources.list.d/kitware.list >/dev/null
+  $SUDO apt-get update
+  $SUDO rm /usr/share/keyrings/kitware-archive-keyring.gpg
+  $SUDO apt-get install kitware-archive-keyring
 }
 
 check_install_additional_tools (){
@@ -578,6 +586,7 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu18.04")
+            add_cmake_repo
             specific_packages="libgcrypt11-dev guile-2.0-dev"
             ;;
         "ubuntu20.04")
