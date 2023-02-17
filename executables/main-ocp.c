@@ -104,8 +104,12 @@ void exit_function(const char *file, const char *function, const int line, const
 
   close_log_mem();
   oai_exit = 1;
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 // Fixme: there are many mistakes in the datamodel and in redondant variables

@@ -500,6 +500,11 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
     LOG_D(MAC, "In %s: deltaPreamble_Msg3 set to %ld\n", __FUNCTION__, deltaPreamble_Msg3);
   }
 
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    tmp = 1;
+  }
+  
   if (!setup->groupBconfigured) {
     noGroupB = 1;
     LOG_D(MAC, "In %s:%d: preambles group B is not configured...\n", __FUNCTION__, __LINE__);
@@ -1050,6 +1055,11 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   long long tmp = rdtsc_oai();
   unsigned short int *seed = (unsigned short int*)&tmp;
 
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    tmp = 1;
+  }
+  
   ra->first_Msg3 = 1;
   ra->ra_PreambleIndex = -1;
   ra->ra_state = RA_UE_IDLE;

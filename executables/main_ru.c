@@ -103,11 +103,15 @@ void exit_function(const char *file, const char *function, const int line, const
     ru_m.ifdevice.trx_end_func(&ru_m.ifdevice);
     ru_m.ifdevice.trx_end_func = NULL;
   }
- 
+
   pthread_mutex_destroy(ru_m.ru_mutex);
-  pthread_cond_destroy(ru_m.ru_cond); 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  pthread_cond_destroy(ru_m.ru_cond);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 

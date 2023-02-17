@@ -55,7 +55,7 @@ CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
 BUILD_ECLIPSE=0
 NR="False"
-OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope"
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope oai_iqplayer"
 ulfiusdep=$(basename ./`find /usr/lib* -name libulfius.so`)
 jssondep=$(basename ./`find /usr/lib* -name libjansson.so`)
 if [ "$ulfiusdep" == "libulfius.so" -a "$jssondep" == "libjansson.so" ] ; then
