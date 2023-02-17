@@ -26,6 +26,7 @@
 
 #include "security_types.h"
 #include "secu_defs.h"
+#include "kdf.h"
 
 #define SECU_DEBUG 1
 /*!
@@ -79,7 +80,9 @@ int derive_key_nas(algorithm_type_dist_t nas_alg_type, uint8_t nas_enc_alg_id,
   printf("\n");
 #endif
 
-  kdf(kasme, 32, s, 7, out, 32);
+  //kdf(kasme, 32, s, 7, out, 32);
+  byte_array_t data = {.len = 7, .buf = s};
+  kdf(kasme, data, 32, out);
 
   memcpy(knas, &out[31-16+1], 16);
 

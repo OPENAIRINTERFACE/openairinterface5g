@@ -101,7 +101,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
   uint8_t                   xid
 );
 
-int
+void
 rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(
     MessageDef *msg_p,
     const char *msg_name,
@@ -187,6 +187,13 @@ nr_rrc_pdcp_config_security(
     const protocol_ctxt_t  *const ctxt_pP,
     rrc_gNB_ue_context_t   *const ue_context_pP,
     const uint8_t          send_security_mode_command
+);
+
+struct rrc_gNB_ue_context_s *
+rrc_gNB_get_ue_context_from_ngap_ids(
+    const instance_t  instanceP,
+    const uint16_t    ue_initial_idP,
+    const uint32_t    gNB_ue_ngap_idP
 );
 
 int

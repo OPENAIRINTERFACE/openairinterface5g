@@ -86,48 +86,7 @@ set(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} -msse4.2 -std=gnu99 -Wall -Wstrict-prototype
 set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -ggdb -DMALLOC_CHECK_=3")
 set(CMAKE_C_FLAGS_RELWITHDEBINFO "${CMAKE_C_FLAGS_RELWITHDEBINFO} -ggdb -DMALLOC_CHECK_=3 -O2")
 
-##This is to detect nettle version changes between Ubuntu 14.04/16.04
-#set ( nettle_cmd "nettle-hash" )
-#set ( nettle_arg "-V" )
-#execute_process(COMMAND  ${nettle_cmd} ${nettle_arg}   RESULT_VARIABLE rv OUTPUT_VARIABLE ov ERROR_VARIABLE ev)
-#
-#string(REGEX MATCH "[+-]?[0-9]+([.][0-9]+)?" nv ${ov})
-#
-#message("NETTLE_VERSION = ${nv}")
-#
-## we need to remove decimal as floating point arithematic does not work properly with C preprocessor
-#STRING(REGEX REPLACE "[.]" "" nv ${nv})
-#
-#if ("${nv}" STREQUAL "")
-#  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-#endif()
-#
-#set (NETTLE_VERSION "${nv}")
-#add_definitions("-DNETTLE_VERSION=${NETTLE_VERSION}")
-
 include(FindPkgConfig)
-
-pkg_search_module(NETTLE nettle)
-if(NOT ${NETTLE_FOUND})
-  message( FATAL_ERROR "PACKAGE nettle not found: some targets will fail. Run build_oai -I again!")
-else()
-  include_directories(${NETTLE_INCLUDE_DIRS})
-endif()
-
-message ("NETTLE VERSION_INSTALLED  = ${NETTLE_VERSION}")
-
-string(REGEX REPLACE "([0-9]+).*" "\\1" NETTLE_VERSION_MAJOR ${NETTLE_VERSION})
-string(REGEX REPLACE "[0-9]+\\.([0-9]+).*" "\\1" NETTLE_VERSION_MINOR ${NETTLE_VERSION})
-message ("NETTLE_VERSION_MAJOR = ${NETTLE_VERSION_MAJOR}")
-message ("NETTLE_VERSION_MINOR = ${NETTLE_VERSION_MINOR}")
-
-if ("${NETTLE_VERSION_MAJOR}" STREQUAL "" OR "${NETTLE_VERSION_MINOR}" STREQUAL "")
-  message( FATAL_ERROR "The nettle version not detected properly. Try to run build_oai -I again" )
-endif()
-
-add_definitions("-DNETTLE_VERSION_MAJOR=${NETTLE_VERSION_MAJOR}")
-add_definitions("-DNETTLE_VERSION_MINOR=${NETTLE_VERSION_MINOR}")
-
 
 pkg_search_module(OPENSSL openssl REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIRS})
@@ -159,6 +118,9 @@ add_boolean_option(NAS_MME                 False "NAS_UE and NAS_MME are incompa
 # SECU LIB
 ################################################################################
 set(secu_cn_SRC
+  ${OPENAIR3_DIR}/SECU/aes_128_ctr.c
+  ${OPENAIR3_DIR}/SECU/aes_128_cbc_cmac.c
+  ${OPENAIR3_DIR}/SECU/sha_256_hmac.c 
   ${OPENAIR3_DIR}/SECU/kdf.c
   ${OPENAIR3_DIR}/SECU/rijndael.c
   ${OPENAIR3_DIR}/SECU/snow3g.c
@@ -719,7 +681,6 @@ target_link_libraries (at_nas_ue
                        -Wl,-whole-archive 
                        api_network api_user api_usim emm esm ies util secu_cn
                        -Wl,-no-whole-archive
-                       ${NETTLE_LIBRARIES} 
                        ${OPENSSL_LIBRARIES} 
                        ${CMAKE_THREAD_LIBS_INIT} m )
 

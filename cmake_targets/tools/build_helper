@@ -32,8 +32,8 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
-  centos) OS_BASEDISTRO="centos"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  centos) OS_BASEDISTRO="centos"; INSTALLER="yum"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
   ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
@@ -90,7 +90,6 @@ echo_info()    { cecho "$*" $blue         ;}
 # If we can't check the distribution, it returns "Unknown"
 # This function return always true as exit code by design
 # Examples:
-#   ubuntu16.04
 #   debian8.5
 get_distribution_release() {
     if [[ ! -z "$OS_DISTRO$OS_RELEASE" ]]; then
@@ -107,9 +106,9 @@ check_supported_distribution() {
         "ubuntu21.04") return 0 ;;
         "ubuntu20.04") return 0 ;;
         "ubuntu18.04") return 0 ;;
-        "ubuntu16.04") return 0 ;;
-        "fedora35")    return 0 ;;
+        "debian11")    return 0 ;;
         "fedora36")    return 0 ;;
+        "fedora37")    return 0 ;;
         "rhel7")       return 0 ;;
         "rhel7.6")     return 0 ;;
         "rhel7.7")     return 0 ;;
@@ -306,7 +305,8 @@ install_usrp_uhd_driver_from_source(){
 }
 
 check_install_usrp_uhd_driver(){
-    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    if [[ "$OS_BASEDISTRO" == "debian" ]]; then
+        boost_libs_ubuntu="libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev libboost-test-dev libboost-regex-dev"
         #first we remove old installation
         $SUDO apt-get remove uhd -y || true
         $SUDO apt-get remove uhd-host -y || true
@@ -323,8 +323,8 @@ check_install_usrp_uhd_driver(){
         fi
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
-        if [[ -v BUILD_UHD_FROM_SOURCE ]]; then
-            $SUDO apt-get install -y libboost-all-dev libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools ninja-build
+        if [[ -v BUILD_UHD_FROM_SOURCE ]] || [[ "$OS_DISTRO" == "debian" ]]; then
+            $SUDO apt-get install -y $boost_libs_ubuntu libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools ninja-build
             install_usrp_uhd_driver_from_source
             return
         fi
@@ -346,22 +346,20 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y install python-tk libboost-all-dev libusb-1.0-0-dev
+        $SUDO apt-get -y install python-tk  $boost_libs_ubuntu libusb-1.0-0-dev
         case "$(get_distribution_release)" in
-          "ubuntu16.04")
-            $SUDO apt-get -y install libuhd-dev libuhd3.15.0 uhd-host
-            ;;
           "ubuntu18.04" | "ubuntu20.04" | "ubuntu22.04")
             $SUDO apt-get -y install libuhd-dev libuhd4.2.0 uhd-host
             ;;
         esac
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
+        boost_libs_fedora="boost-chrono boost-date-time boost-filesystem boost-program-options boost-thread boost-test boost-regex boost-devel"
         if [ $IS_CONTAINER -eq 0 ]
         then
-            $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils $CMAKE
-            $SUDO -H pip install requests
+            $SUDO $INSTALLER -y install python3 $boost_libs_fedora libusb-devel libusbx-devel  python3-mako python3-docutils python3-pip $CMAKE
+            $SUDO pip3 install requests
         else
-            $SUDO $INSTALLER -y install boost boost-devel $CMAKE
+            $SUDO $INSTALLER -y install $boost_libs_fedora $CMAKE
             $SUDO pip3 install mako requests
         fi
         if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
@@ -419,6 +417,8 @@ install_bladerf_driver_from_source(){
     $SUDO ldconfig
     echo "Downloading FPGA and firmware images"
     cd /tmp/bladeRF
+    #wget has been removed from default dependencies, so we must be sure that's installed
+    $SUDO $INSTALLER -y install wget
     wget --tries=3 --retry-connrefused https://www.nuand.com/fx3/bladeRF_fw_latest.img
     wget --tries=3 --retry-connrefused https://www.nuand.com/fpga/hostedx40-latest.rbf
     sudo mkdir -p /usr/share/Nuand/bladeRF
@@ -529,110 +529,42 @@ check_install_soapy () {
 check_install_additional_tools (){
   $SUDO $INSTALLER update -y
   local optional_packages=""
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+  if [[ "$OS_BASEDISTRO" == "debian" ]]; then
     case "$(get_distribution_release)" in
-        "ubuntu16.04"| "ubuntu18.04")
-            optional_packages="python-dev python-pexpect python-numpy python-scipy python-matplotlib ctags"
+        "ubuntu18.04")
+            optional_packages="python-dev python-pip python-pyroute2 python python-numpy python-scipy python-matplotlib ctags"
             ;;
-        "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04" )
-            optional_packages="python3 python3-pip python3-dev python3-scipy python3-matplotlib universal-ctags"
+        "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04" | "debian11" )
+            optional_packages="python3 python3-pip python3-dev python3-scipy python3-matplotlib python3-pyroute2 universal-ctags"
             ;;
     esac
     PACKAGE_LIST="\
-	check \
-	dialog \
-	dkms \
-	gawk \
-	libboost-all-dev \
+	doxygen \
 	libpthread-stubs0-dev \
-	openvpn \
-	pkg-config \
-	sshfs \
-	swig  \
 	tshark \
 	uml-utilities \
-	unzip  \
-	valgrind  \
-	vlan	  \
-        ntpdate \
         iperf3 \
-        android-tools-adb \
-	wvdial \
-        sshpass \
-        bc \
-        ntp"
+        libforms-bin \
+        libforms-dev \
+        xmlstarlet"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
     PACKAGE_LIST="\
-      check \
-      dialog \
-      dkms \
-      gawk \
-      boost-devel \
-      openvpn \
-      pkgconfig \
-      pexpect \
-      sshfs \
-      swig  \
-      wireshark \
-      unzip  \
-      valgrind  \
-      vconfig	  \
+      doxygen \
       ctags \
-      ntpdate \
       iperf3 \
-      wvdial \
-      numpy \
-      sshpass \
-      python2-paramiko \
-      python-pyroute2 \
-      python-netifaces \
-      scipy \
-      python-matplotlib"
+      xforms \
+      xforms-devel \
+      xmlstarlet"
   elif [[ "$OS_DISTRO" == "fedora" ]]; then
     PACKAGE_LIST=" \
-      check \
-      dialog \
-      dkms \
-      gawk \
-      boost-devel \
-      openvpn \
-      pkgconfig \
-      python-pexpect \
-      sshfs \
-      swig  \
-      wireshark \
-      unzip  \
-      valgrind  \
-      vconfig	  \
+      doxygen \
       ctags \
-      ntpsec \
       iperf3 \
-      wvdial \
-      python-numpy \
-      sshpass \
-      python-paramiko \
-      python-pyroute2 \
-      python-netifaces \
-      python-scipy \
-      python-matplotlib"
+      xforms \
+      xforms-devel \
+      xmlstarlet"
   fi
     $SUDO $INSTALLER install -y $PACKAGE_LIST $optional_packages
-
-  #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO -H pip install paramiko
-    $SUDO -H pip install pyroute2 colorama
-    log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
-    echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
-    (
-    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
-    wget --tries=3 --retry-connrefused -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
-    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
-    cd /tmp/netifaces-0.10.4
-    $SUDO python setup.py install
-    cd -
-    ) >& $log_netiface
-  fi
 }
 
 check_install_oai_software() {
@@ -642,167 +574,88 @@ check_install_oai_software() {
         exit 1
     fi
     $SUDO $INSTALLER update -y
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    local LAPACK_LIBNAME="liblapack.so"
-    local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
+  if [[ "$OS_BASEDISTRO" == "debian" ]]; then
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "ubuntu16.04")
-            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev iptables-dev libgcrypt11-dev python-pip pydb python guile-2.0-dev"
-            ;;
         "ubuntu18.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev iptables-dev libgcrypt11-dev python-pip pydb python guile-2.0-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            specific_packages="libgcrypt11-dev guile-2.0-dev"
             ;;
         "ubuntu20.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            specific_packages="guile-2.0-dev"
             ;;
          "ubuntu21.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python guile-2.0-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            specific_packages="guile-2.0-dev"
             ;;
          "ubuntu22.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev python2 guile-2.2-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            specific_packages="guile-2.2-dev"
+            ;;
+         "debian11")
+            specific_packages="guile-2.2-dev libz-dev"
             ;;
     esac
     $SUDO apt-get install -y \
     $specific_packages \
-	autoconf  \
 	automake  \
-	bison  \
 	build-essential \
 	$CMAKE \
-	cmake-curses-gui  \
-	curl \
         ninja-build \
-	doxygen \
-	doxygen-gui \
-	texlive-latex-base \
-	ethtool \
-	flex  \
-        g++ \
-        gcc \
-	gdb  \
+	pkg-config \
 	git \
-	graphviz \
-	gtkwave \
-	iperf \
-	iptables \
 	libatlas-base-dev \
 	libblas-dev \
 	liblapack-dev \
 	liblapacke-dev \
-	libffi-dev \
-	libforms-bin \
-	libforms-dev \
-	libgmp-dev \
-	libgtk-3-dev \
-	libidn2-0-dev  \
-	libidn11-dev \
-	libmysqlclient-dev  \
-	libpython2.7-dev \
-        libreadline-dev \
-	libsctp1  \
+	libreadline-dev \
+	libgnutls28-dev \
+	libconfig-dev \
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-	libusb-1.0-0-dev \
-	libxml2 \
-	libxml2-dev  \
 	libxslt1-dev \
-	octave-signal \
-	openssh-client \
-	openssh-server \
+	libtasn1-6-dev \
+	patch \
 	openssl \
-	subversion \
-	xmlstarlet \
-	wget \
-	libxpm-dev \
-        libboost-all-dev
+        xxd
 
-    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
-
-    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
     if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
       if rpm -q epel-release > /dev/null; then
         echo "EPEL repos already present. Good."
       else
         echo "EPEL repos not present. Installing them."
-        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb vim-common
     fi
 
     $SUDO $INSTALLER install -y \
-      autoconf \
       automake \
-      bc \
-      bison \
       $CMAKE \
-      doxygen \
-      ethtool \
-      flex \
-      g++ \
       gcc \
-      gdb \
+      gcc-c++ \
       git \
-      graphviz \
-      gtkwave \
       guile-devel \
-      iperf \
-      iproute \
-      iptables \
-      iptables-devel \
       atlas-devel \
-      blas-devel \
+      pkgconfig \
       libconfig-devel \
       libffi-devel \
-      xforms \
-      xforms-devel \
       libgcrypt-devel \
-      gmp-devel \
-      gtk3-devel \
-      libidn2-devel  \
-      libidn-devel \
-      mariadb-devel \
       lksctp-tools \
       lksctp-tools-devel \
-      openssl-devel \
       libtasn1 \
       libtool \
-      libusb-devel \
-      libxml2 \
-      libxml2-devel \
       libxslt-devel \
       ninja-build \
       make \
-      openssh-clients \
-      openssh-server \
       openssl \
+      openssl-devel \
       patch \
-      psmisc \
-      python \
       readline-devel \
-      subversion \
-      xmlstarlet \
-      python-pip \
-      wget \
-      kernel-headers \
-      kernel-devel \
-      nettle-devel \
       gnutls-devel \
-      libXpm-devel \
       lapack \
       lapack-devel \
       blas \
-      blas-devel
+      blas-devel \
+      vim-common
   fi
 
     install_asn1c_from_source $1

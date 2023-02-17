@@ -81,8 +81,6 @@ const char *__asan_default_options()
   return "detect_leaks=0";
 }
 
-LCHAN_DESC DCCH_LCHAN_DESC,DTCH_DL_LCHAN_DESC,DTCH_UL_LCHAN_DESC;
-
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -100,22 +98,6 @@ nfapi_ue_release_request_body_t release_rntis;
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
-teid_t newGtpuCreateTunnel(instance_t instance,
-                           ue_id_t ue_id,
-                           int incoming_bearer_id,
-                           int outgoing_bearer_id,
-                           teid_t outgoing_teid,
-                           int qfi,
-                           transport_layer_addr_t remoteAddr,
-                           int port,
-                           gtpCallback callBack,
-                           gtpCallbackSDAP callBackSDAP) {
-  return 0;
-}
-
-int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
-  return 0;
-}
 
 // dummy functions
 int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
@@ -156,59 +138,6 @@ rrc_data_ind(
   const uint8_t   *const       buffer_pP
 )
 {
-}
-
-int
-gtpv1u_create_s1u_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_enb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP
-) {
-  return 0;
-}
-
-int
-rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_enb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-) {
-  return 0;
-}
-
-int
-gtpv1u_create_ngu_tunnel(
-  const instance_t instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *  const create_tunnel_req_pP,
-        gtpv1u_gnb_create_tunnel_resp_t * const create_tunnel_resp_pP){
-  return 0;
-}
-
-int
-gtpv1u_update_ngu_tunnel(
-  const instance_t                              instanceP,
-  const gtpv1u_gnb_create_tunnel_req_t *const  create_tunnel_req_pP,
-  const ue_id_t                                 prior_ue_id
-){
-  return 0;
-}
-
-int gtpv1u_delete_s1u_tunnel(const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
-  return 0;
-}
-
-int gtpv1u_delete_ngu_tunnel( const instance_t instance,
-			      gtpv1u_gnb_delete_tunnel_req_t *req) {
-  return 0;
-}
-
-int
-nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-  const protocol_ctxt_t *const ctxt_pP,
-  const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
-  uint8_t                         *inde_list
-){
-  return 0;
 }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,

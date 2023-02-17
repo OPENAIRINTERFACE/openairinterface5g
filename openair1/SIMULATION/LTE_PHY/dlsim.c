@@ -49,7 +49,6 @@
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
-#include "PHY/TOOLS/lte_phy_scope.h"
 #include "SCHED/sched_eNB.h"
 #include "SCHED_UE/sched_UE.h"
 #include "SIMULATION/TOOLS/sim.h"
@@ -493,7 +492,6 @@ int test_perf=0;
 int n_frames;
 int n_ch_rlz = 1;
 int rx_sample_offset = 0;
-int xforms=0;
 int dump_table=0;
 int loglvl=OAILOG_INFO;
 int mcs1=0,mcs2=0,mcs_i=0,dual_stream_UE = 0,awgn_flag=0;
@@ -565,8 +563,6 @@ int main(int argc, char **argv) {
   short *uncoded_ber_bit=NULL;
   int osf=1;
   frame_t frame_type = FDD;
-  FD_lte_phy_scope_ue *form_ue = NULL;
-  char title[255];
   int numCCE=0;
   //int dci_length_bytes=0,dci_length=0;
   //double channel_bandwidth = 5.0, sampling_rate=7.68;
@@ -679,7 +675,6 @@ int main(int argc, char **argv) {
     { "uEdual", "Enables the Interference Aware Receiver for TM5 (default is normal receiver)",0, iptr:NULL,  defintval:0, TYPE_INT, 0 },
     { "xTransmission","Transmission mode (1,2,6,7 for the moment)",0, iptr:NULL,  defintval:25, TYPE_INT, 0 },
     { "yn_tx_phy","Number of TX antennas used in eNB",0, iptr:NULL,  defintval:25, TYPE_INT, 0 },
-    { "XForms", "Display the soft scope", PARAMFLAG_BOOL, iptr:&xforms,  defintval:0, TYPE_INT, 0 },
     { "Yperfect_ce","Perfect CE", PARAMFLAG_BOOL, iptr:&perfect_ce,  defintval:0, TYPE_INT, 0 },
     { "Zdump", "dump table",PARAMFLAG_BOOL,  iptr:&dump_table, defintval:0, TYPE_INT, 0 },
     { "Loglvl", "log level",0, iptr:&loglvl,  defintval:OAILOG_INFO, TYPE_INT, 0 },
@@ -952,24 +947,6 @@ int main(int argc, char **argv) {
     AssertFatal(NB_RB <= N_RB_DL,"illegal NB_RB %d\n",NB_RB);
   }
 
-  if (xforms==1) {
-    fl_initialize (&argc, argv, NULL, 0, 0);
-    form_ue = create_lte_phy_scope_ue();
-    sprintf (title, "LTE PHY SCOPE eNB");
-    fl_show_form (form_ue->lte_phy_scope_ue, FL_PLACE_HOTSPOT, FL_FULLBORDER, title);
-
-    if (!dual_stream_UE==0) {
-      if (UE) {
-        UE->use_ia_receiver = 1;
-        fl_set_button(form_ue->button_0,1);
-        fl_set_object_label(form_ue->button_0, "IA Receiver ON");
-        fl_set_object_color(form_ue->button_0, FL_GREEN, FL_GREEN);
-      } else {
-        printf("UE  is NULL\n");
-        exit(-1);
-      }
-    }
-  }
 
   if (transmission_mode==5) {
     n_users = 2;
@@ -1792,13 +1769,6 @@ int main(int argc, char **argv) {
             //      UE->dlsch[UE->current_thread_id[subframe]][0][0]->harq_processes[0]->round++;
           }
 
-          if (xforms==1) {
-            phy_scope_UE(form_ue,
-                         UE,
-                         eNB_id,
-                         0,// UE_id
-                         subframe);
-          }
 
           UE->proc.proc_rxtx[UE->current_thread_id[subframe]].frame_rx++;
         }  //round

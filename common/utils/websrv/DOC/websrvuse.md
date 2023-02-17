@@ -15,9 +15,6 @@ OPENAIR_DIR    = /usr/local/oai/oai-develop/openairinterface5g
 FreeDiameter prefix not found, install freeDiameter if EPC, HSS
 3. building the compilation directives ...
 running cmake ../../..
-NETTLE VERSION_INSTALLED  = 3.5.1
-NETTLE_VERSION_MAJOR = 3
-NETTLE_VERSION_MINOR = 5
 cuda include /usr/include
 cuda library 
 -- CMAKE_BUILD_TYPE is RelWithDebInfo
@@ -61,9 +58,6 @@ Call Stack (most recent call first):
      FreeDiameter prefix not found, install freeDiameter if EPC, HSS
   3. building the compilation directives ...
      running cmake ../../..
-     NETTLE VERSION_INSTALLED  = 3.5.1
-     NETTLE_VERSION_MAJOR = 3
-     NETTLE_VERSION_MINOR = 5
      cuda include /usr/include
      cuda library 
      -- CMAKE_BUILD_TYPE is RelWithDebInfo

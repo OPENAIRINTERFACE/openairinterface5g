@@ -22,7 +22,9 @@
 #ifndef _NR_PDCP_INTEGRITY_NIA2_H_
 #define _NR_PDCP_INTEGRITY_NIA2_H_
 
-void *nr_pdcp_integrity_nia2_init(unsigned char *integrity_key);
+#include <stdint.h>
+
+void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16]);
 
 void nr_pdcp_integrity_nia2_integrity(void *integrity_context,
                             unsigned char *out,

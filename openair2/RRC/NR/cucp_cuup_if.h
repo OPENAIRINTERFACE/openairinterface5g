@@ -1,4 +1,3 @@
-#!/bin/groovy
 /*
  * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
  * contributor license agreements.  See the NOTICE file distributed with
@@ -17,32 +16,27 @@
  * limitations under the License.
  *-------------------------------------------------------------------------------
  * For more information about the OpenAirInterface (OAI) Software Alliance:
- *      contact@openairinterface.org
+ *      conmnc_digit_lengtht@openairinterface.org
  */
 
-// Template Jenkins Declarative Pipeline script to run Test w/ RF HW
+#ifndef CUCP_CUUP_IF_H
+#define CUCP_CUUP_IF_H
 
-// Location of the python executor node shall be in the same subnet as the others servers
-def pythonExecutor = params.pythonExecutor
+#include <netinet/in.h>
+#include "platform_types.h"
 
+struct e1ap_bearer_setup_req_s;
+struct e1ap_bearer_setup_resp_s;
+typedef void (*cucp_cuup_bearer_context_setup_func_t)(struct e1ap_bearer_setup_req_s *const req, instance_t instance);
 
-pipeline {
-    agent {
-        label pythonExecutor
-    }
-    stages {
-        stage ("gDashboard") {
-            steps {
-                script { 
-                    dir ("ci-scripts/ran_dashboard") {    
-                              //retrieve MR data from gitlab / mySQL db, build HTML pages and load them to AWS S3 bucket (configured as static web page hosting)            
-                              //deprecated method : sh returnStdout: true, script: 'python3 ran_dashboard.py'
-                              sh returnStdout: true, script: 'python3 Hdashboard.py'
-                             }
-                }                                  
-            }   
-        }
-    }
-}
-
-
+struct gNB_RRC_INST_s;
+void cucp_cuup_message_transfer_direct_init(struct gNB_RRC_INST_s *rrc);
+void cucp_cuup_message_transfer_e1ap_init(struct gNB_RRC_INST_s *rrc);
+void fill_e1ap_bearer_setup_resp(struct e1ap_bearer_setup_resp_s *resp,
+                                 struct e1ap_bearer_setup_req_s *const req,
+                                 instance_t gtpInst,
+                                 ue_id_t ue_id,
+                                 int remote_port,
+                                 in_addr_t my_addr);
+void CU_update_UP_DL_tunnel(struct e1ap_bearer_setup_req_s *const req, instance_t instance, ue_id_t ue_id);
+#endif

@@ -44,7 +44,6 @@ RUN apt-get update && \
         tzdata \
         procps \
         libsctp1 \
-        libnettle6 \
         libblas3 \
         libatlas3-base \
         libconfig9 \

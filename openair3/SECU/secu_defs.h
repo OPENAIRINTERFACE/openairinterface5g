@@ -24,6 +24,7 @@
 
 #include "security_types.h"
 #include <stdbool.h>
+#include <stdint.h>
 
 #define EIA0_ALG_ID     0x00
 #define EIA1_128_ALG_ID 0x01
@@ -35,13 +36,6 @@
 
 #define SECU_DIRECTION_UPLINK   0
 #define SECU_DIRECTION_DOWNLINK 1
-
-void kdf(const uint8_t *key,
-         uint16_t key_len,
-         uint8_t *s,
-         uint16_t s_len,
-         uint8_t *out,
-         uint16_t out_len);
 
 int derive_keNB(const uint8_t kasme[32], const uint32_t nas_count, uint8_t *keNB);
 

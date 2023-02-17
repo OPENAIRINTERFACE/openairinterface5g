@@ -43,6 +43,7 @@
 #include "common/platform_constants.h"
 #include "COMMON/platform_types.h"
 #include "mac_rrc_dl.h"
+#include "cucp_cuup_if.h"
 
 //#include "COMMON/mac_rrc_primitives.h"
 
@@ -416,7 +417,7 @@ typedef struct rrc_gNB_ue_context_s {
   // another key for protocol layers but should not be used as a key for RB tree
   uid_t          local_uid;
 
-  /* UE id for initial connection to S1AP */
+  /* UE id for initial connection to NGAP */
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;
 
@@ -448,7 +449,6 @@ typedef struct {
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_ServingCellConfig_t                    *servingcellconfig;
-  NR_PDCCH_ConfigSIB1_t                     *pdcch_ConfigSIB1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   NR_SRB_INFO                               SI;
   int                                       p_gNB;
@@ -476,6 +476,11 @@ typedef struct nr_mac_rrc_dl_if_s {
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
 } nr_mac_rrc_dl_if_t;
 
+typedef struct cucp_cuup_if_s {
+  cucp_cuup_bearer_context_setup_func_t bearer_context_setup;
+  cucp_cuup_bearer_context_setup_func_t bearer_context_mod;
+} cucp_cuup_if_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -498,6 +503,9 @@ typedef struct gNB_RRC_INST_s {
 
   // RRC configuration
   gNB_RrcConfigurationReq configuration;
+
+  // gNB N3 GTPU instance
+  instance_t e1_inst;
 
   // other PLMN parameters
   /// Mobile country code
@@ -527,6 +535,8 @@ typedef struct gNB_RRC_INST_s {
   nr_security_configuration_t security;
 
   nr_mac_rrc_dl_if_t mac_rrc;
+  cucp_cuup_if_t cucp_cuup;
+
 } gNB_RRC_INST;
 
 #include "nr_rrc_proto.h" //should be put here otherwise compilation error
