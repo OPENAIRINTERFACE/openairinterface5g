@@ -105,7 +105,6 @@ void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
                                int frame,int slot,
                                nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu)
 {
-
   int found = 0;
 
   for (int id = 0; id < NR_SYMBOLS_PER_SLOT; id++) {

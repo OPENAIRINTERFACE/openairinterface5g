@@ -93,9 +93,9 @@ NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti)
    stats = &gNB->phy_stats[first_free];
    stats->active = true;
    stats->rnti = rnti;
-   memset((void*)&stats->dlsch_stats, 0, sizeof(stats->dlsch_stats));
-   memset((void*)&stats->ulsch_stats, 0, sizeof(stats->ulsch_stats));
-   memset((void*)&stats->uci_stats, 0, sizeof(stats->uci_stats));
+   memset(&stats->dlsch_stats, 0, sizeof(stats->dlsch_stats));
+   memset(&stats->ulsch_stats, 0, sizeof(stats->ulsch_stats));
+   memset(&stats->uci_stats, 0, sizeof(stats->uci_stats));
    return(stats);
 }
 
@@ -1016,10 +1016,10 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg)
   uint16_t grid_size = cfg->carrier_config.dl_grid_size[fp->numerology_index].value;
   msg->num_pdsch_slot = 0;
 
-  msg->dlsch = (NR_gNB_DLSCH_t ***)malloc16(gNB->max_nb_pdsch * sizeof(NR_gNB_DLSCH_t **));
+  msg->dlsch = malloc16(gNB->max_nb_pdsch * sizeof(NR_gNB_DLSCH_t **));
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < gNB->max_nb_pdsch; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, gNB->max_nb_pdsch);
+    LOG_D(PHY, "Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, gNB->max_nb_pdsch);
     msg->dlsch[i] = (NR_gNB_DLSCH_t **)malloc16(num_cw * sizeof(NR_gNB_DLSCH_t *));
     for (int j = 0; j < num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
@@ -1079,8 +1079,6 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
   gNB->max_nb_pusch = buffer_ul_slots ? MAX_MOBILES_PER_GNB * buffer_ul_slots : 1;
   gNB->max_nb_srs = buffer_ul_slots << 1; // assuming at most 2 SRS per slot
 
-  gNB->measurements.ulsch_measurements = (ULSCH_MEASUREMENTS_gNB *) malloc16(gNB->max_nb_pusch * sizeof(ULSCH_MEASUREMENTS_gNB));
-
   gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
   for (int i = 0; i < gNB->max_nb_pucch; i++) {
     LOG_D(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
@@ -1097,7 +1095,7 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
 
   gNB->ulsch = (NR_gNB_ULSCH_t **) malloc16(gNB->max_nb_pusch * sizeof(NR_gNB_ULSCH_t*));
   for (int i = 0; i < gNB->max_nb_pusch; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, gNB->max_nb_pusch);
+    LOG_D(PHY, "Allocating Transport Channel Buffers for ULSCH %d/%d\n", i, gNB->max_nb_pusch);
     gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
     if (!gNB->ulsch[i]) {
       LOG_E(PHY,"Can't get gNB ulsch structures\n");
@@ -1125,6 +1123,4 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
   for (int i = 0; i < gNB->max_nb_pusch; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
   free(gNB->ulsch);
-
-  free(gNB->measurements.ulsch_measurements);
 }

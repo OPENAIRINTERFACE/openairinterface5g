@@ -224,6 +224,32 @@ typedef struct {
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 
+typedef struct {
+  //! estimated received spatial signal power (linear)
+  unsigned int   rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  //! estimated received spatial signal power (dB)
+  unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  //! estimated rssi (dBm)
+  int rx_rssi_dBm;
+  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int rx_correlation[2];
+  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+  int rx_correlation_dB[2];
+  /// Wideband CQI (= SINR)
+  int wideband_cqi[MAX_NUM_RU_PER_gNB];
+  /// Wideband CQI in dB (= SINR dB)
+  int wideband_cqi_dB[MAX_NUM_RU_PER_gNB];
+  /// Wideband CQI (sum of all RX antennas, in dB)
+  char wideband_cqi_tot;
+  /// Subband CQI per RX antenna and RB (= SINR)
+  int subband_cqi[MAX_NUM_RU_PER_gNB][275];
+  /// Total Subband CQI and RB (= SINR)
+  int subband_cqi_tot[275];
+  /// Subband CQI in dB and RB (= SINR dB)
+  int subband_cqi_dB[MAX_NUM_RU_PER_gNB][275];
+  /// Total Subband CQI and RB
+  int subband_cqi_tot_dB[275];
+} ulsch_measurements_gNB;
 
 typedef struct {
   /// Time shift in number of samples estimated based on DMRS-PUSCH
@@ -250,6 +276,7 @@ typedef struct {
   /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
   uint8_t handled;
   NR_ULSCH_delay_t delay;
+  ulsch_measurements_gNB ulsch_measurements;
 } NR_gNB_ULSCH_t;
 
 typedef struct {
@@ -504,33 +531,6 @@ typedef struct gNB_L1_proc_t_s {
 } gNB_L1_proc_t;
 
 typedef struct {
-  //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
-  //! estimated received spatial signal power (dB)
-  unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
-  //! estimated rssi (dBm)
-  int rx_rssi_dBm;
-  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int rx_correlation[2];
-  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int rx_correlation_dB[2];
-  /// Wideband CQI (= SINR)
-  int wideband_cqi[MAX_NUM_RU_PER_gNB];
-  /// Wideband CQI in dB (= SINR dB)
-  int wideband_cqi_dB[MAX_NUM_RU_PER_gNB];
-  /// Wideband CQI (sum of all RX antennas, in dB)
-  char wideband_cqi_tot;
-  /// Subband CQI per RX antenna and RB (= SINR)
-  int subband_cqi[MAX_NUM_RU_PER_gNB][275];
-  /// Total Subband CQI and RB (= SINR)
-  int subband_cqi_tot[275];
-  /// Subband CQI in dB and RB (= SINR dB)
-  int subband_cqi_dB[MAX_NUM_RU_PER_gNB][275];
-  /// Total Subband CQI and RB
-  int subband_cqi_tot_dB[275];
-} ULSCH_MEASUREMENTS_gNB;
-
-typedef struct {
   // common measurements
   //! estimated noise power (linear)
   unsigned int   n0_power[MAX_NUM_RU_PER_gNB];
@@ -552,9 +552,6 @@ typedef struct {
   int n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
   int n0_subband_power_tot_dBm[275];
-
-  // gNB measurements (per user)
-  ULSCH_MEASUREMENTS_gNB *ulsch_measurements;
 
   /// PRACH background noise level
   int            prach_I0;

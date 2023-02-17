@@ -57,10 +57,9 @@
 
 NR_gNB_PUCCH_t *new_gNB_pucch(void)
 {
-  NR_gNB_PUCCH_t *pucch;
-  pucch = (NR_gNB_PUCCH_t *)malloc16(sizeof(NR_gNB_PUCCH_t));
-  pucch->active = 0;
-  return (pucch);
+  NR_gNB_PUCCH_t *pucch = malloc16(sizeof(*pucch));
+  memset(pucch, 0, sizeof(*pucch));
+  return pucch;
 }
 
 void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)

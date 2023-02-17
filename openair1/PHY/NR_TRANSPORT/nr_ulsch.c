@@ -85,7 +85,7 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   else
     harq->round++;
 
-  memcpy((void*)&ulsch->harq_process->ulsch_pdu, (void*)ulsch_pdu, sizeof(nfapi_nr_pusch_pdu_t));
+  memcpy(&ulsch->harq_process->ulsch_pdu, ulsch_pdu, sizeof(ulsch->harq_process->ulsch_pdu));
 
   LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n", ulsch_id, harq_pid);
 }
@@ -141,15 +141,15 @@ void dump_pusch_stats(FILE *fd, PHY_VARS_gNB *gNB)
                   aa, stats->ulsch_stats.power[aa]/10, stats->ulsch_stats.power[aa]%10,
                   aa, stats->ulsch_stats.noise_power[aa]/10, stats->ulsch_stats.noise_power[aa]%10);
 
-
+      int *rt = stats->ulsch_stats.round_trials;
       fprintf(fd,"                 round_trials %d(%1.1e):%d(%1.1e):%d(%1.1e):%d, DTX %d, current_Qm %d, current_RI %d, total_bytes RX/SCHED %d/%d\n",
-              stats->ulsch_stats.round_trials[0],
-              (double)stats->ulsch_stats.round_trials[1]/stats->ulsch_stats.round_trials[0],
-              stats->ulsch_stats.round_trials[1],
-              (double)stats->ulsch_stats.round_trials[2]/stats->ulsch_stats.round_trials[0],
-              stats->ulsch_stats.round_trials[2],
-              (double)stats->ulsch_stats.round_trials[3]/stats->ulsch_stats.round_trials[0],
-              stats->ulsch_stats.round_trials[3],
+              rt[0],
+              (double)rt[1]/rt[0],
+              rt[1],
+              (double)rt[2]/rt[0],
+              rt[2],
+              (double)rt[3]/rt[0],
+              rt[3],
               stats->ulsch_stats.DTX,
               stats->ulsch_stats.current_Qm,
               stats->ulsch_stats.current_RI,
