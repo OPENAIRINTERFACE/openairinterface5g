@@ -34,5 +34,4 @@
 		<class>Initialize_5GCN</class>
 		<desc>Initialize 5G Core</desc>
 	</testCase>
-
 </testCaseList>

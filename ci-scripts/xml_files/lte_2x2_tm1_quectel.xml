@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  010002
  030000
  000002
@@ -39,9 +40,21 @@
  000001
  010002
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
-
+        <testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>To reset cpupower</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+        <testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>To reset cpupower</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -E</command>
+        </testCase>
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>

@@ -29,6 +29,18 @@
 290101 000001 290109
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
+  <testCase id="100000">
+	  <class>Custom_Command</class>
+	  <desc>To reset cpupower</desc>
+	  <node>caracal</node>
+	  <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id="200000">
+	  <class>Custom_Command</class>
+	  <desc>To reset cpupower</desc>
+	  <node>caracal</node>
+	  <command>sudo cpupower idle-set -E</command>
+  </testCase>
 
   <testCase id="290101">
     <class>Initialize_eNB</class>

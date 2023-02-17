@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  040000
  000002
  010000
@@ -35,6 +36,7 @@
  000001
  010002
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -49,7 +51,18 @@
 		<class>Terminate_OAI_UE</class>
 		<desc>Terminate OAI UE</desc>
 	</testCase>
-
+        <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+        </testCase>
+        <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -E</command>
+        </testCase>
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>

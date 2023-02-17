@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  010002
  300000
  040000
@@ -44,6 +45,7 @@
  000001
  010002
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -60,6 +62,18 @@
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
+        <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+       </testCase>
+       <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -E</command>
+       </testCase>
        <testCase id="300000">
             <class>Custom_Command</class>
             <desc>To reboot USRP</desc>
