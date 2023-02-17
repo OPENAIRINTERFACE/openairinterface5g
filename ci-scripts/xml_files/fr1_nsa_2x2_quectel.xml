@@ -27,6 +27,7 @@
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  010002
+ 100000
  030000
  040000
  000002
@@ -84,7 +85,12 @@
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
 		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
-
+	<testCase id = "100000">
+		<class>Custom_Command</class>
+		<desc>To reboot USRP</desc>
+		<node>asterix</node>
+		<command>ssh root@172.21.19.14 reboot ; sleep 45</command>
+        </testCase>
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>

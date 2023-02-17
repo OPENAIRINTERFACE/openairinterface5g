@@ -25,7 +25,7 @@
 	<htmlTabName>CN5G-Start</htmlTabName>
 	<htmlTabIcon>log-in</htmlTabIcon>
 	<TestCaseRequestedList>
- 000100
+000100
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>

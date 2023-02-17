@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  111110
  111111
  000001
@@ -69,7 +70,12 @@
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
 	</testCase>
-
+        <testCase id = "100000">
+		<class>Custom_Command</class>
+		<desc>To reset USRP</desc>
+		<node>nepes</node>
+		<command>sudo -S b2xx_fx3_utils --reset-device</command>
+        </testCase>
 
 	<testCase id="010002">
 		<class>Terminate_UE</class>

@@ -27,6 +27,7 @@
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  010002
+ 300000
  040000
  000002
  010000
@@ -59,7 +60,12 @@
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
-
+       <testCase id="300000">
+            <class>Custom_Command</class>
+            <desc>To reboot USRP</desc>
+            <node>asterix</node>
+            <command>ssh root@172.21.19.14 reboot ; sleep 45</command>
+       </testCase>
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>

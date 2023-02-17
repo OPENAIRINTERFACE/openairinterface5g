@@ -25,7 +25,8 @@
 	<htmlTabName>CN5G-Start</htmlTabName>
 	<htmlTabIcon>log-in</htmlTabIcon>
 	<TestCaseRequestedList>
- 000100
+100000
+000100
 	</TestCaseRequestedList>
 	<TestCaseExclusionList>
 	</TestCaseExclusionList>
@@ -34,6 +35,12 @@
 		<class>Initialize_5GCN</class>
 		<desc>Initialize 5G Core</desc>
 		<args>--type start-mini-as-ue --fqdn yes --scenario 1 --capture /tmp/oai-cn5g-v1.3.pcap</args>
+	</testCase>
+	<testCase id = "100000">
+		<class>Custom_Command</class>
+		<desc>To reboot USRP</desc>
+		<node>asterix</node>
+                <command>ssh root@172.21.19.14 reboot ; sleep 45</command>
 	</testCase>
 
 </testCaseList>

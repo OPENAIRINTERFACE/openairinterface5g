@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  010002
  030000
  040000
@@ -51,6 +52,12 @@
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
 		<UE_Trace>yes</UE_Trace>
+	</testCase>
+	<testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>To reset USRP</desc>
+		<node>obelix</node>
+		<command>sudo -S b2xx_fx3_utils --reset-device</command>
 	</testCase>
 
 	<testCase id="010002">
