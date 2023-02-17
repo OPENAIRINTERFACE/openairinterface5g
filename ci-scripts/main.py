@@ -274,34 +274,18 @@ def GetParametersFromXML(action):
 
 	elif action == 'Iperf':
 		CiTestObj.iperf_args = test.findtext('iperf_args')
-		ue_id = test.findtext('id')
-		if (ue_id is None):
-			CiTestObj.ue_id = ""
-		else:
-			CiTestObj.ue_id = ue_id
-		CiTestObj.iperf_direction = test.findtext('direction')#used for modules only
+		CiTestObj.ue_ids = test.findtext('id').split(' ')
+		CiTestObj.iperf_direction = test.findtext('direction')
 		CiTestObj.iperf_packetloss_threshold = test.findtext('iperf_packetloss_threshold')
-		iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold')
-		if (iperf_bitrate_threshold is None):
-			CiTestObj.iperf_bitrate_threshold = "90" #if no threshold is specified, default will be 90%
-		else:
-			CiTestObj.iperf_bitrate_threshold = iperf_bitrate_threshold
-
-
-		CiTestObj.iperf_profile = test.findtext('iperf_profile')
-		if (CiTestObj.iperf_profile is None):
+		CiTestObj.iperf_bitrate_threshold = test.findtext('iperf_bitrate_threshold') or '90'
+		CiTestObj.iperf_profile = test.findtext('iperf_profile') or 'balanced'
+		if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
+			logging.error(f'test-case has wrong profile {CiTestObj.iperf_profile}, forcing balanced')
 			CiTestObj.iperf_profile = 'balanced'
-		else:
-			if CiTestObj.iperf_profile != 'balanced' and CiTestObj.iperf_profile != 'unbalanced' and CiTestObj.iperf_profile != 'single-ue':
-				logging.error('test-case has wrong profile ' + CiTestObj.iperf_profile)
-				CiTestObj.iperf_profile = 'balanced'
-		CiTestObj.iperf_options = test.findtext('iperf_options')
-		if (CiTestObj.iperf_options is None):
+		CiTestObj.iperf_options = test.findtext('iperf_options') or 'check'
+		if CiTestObj.iperf_options != 'check' and CiTestObj.iperf_options != 'sink':
+			logging.error('test-case has wrong option ' + CiTestObj.iperf_options)
 			CiTestObj.iperf_options = 'check'
-		else:
-			if CiTestObj.iperf_options != 'check' and CiTestObj.iperf_options != 'sink':
-				logging.error('test-case has wrong option ' + CiTestObj.iperf_options)
-				CiTestObj.iperf_options = 'check'
 
 	elif action == 'IdleSleep':
 		string_field = test.findtext('idle_sleep_time_in_sec')
