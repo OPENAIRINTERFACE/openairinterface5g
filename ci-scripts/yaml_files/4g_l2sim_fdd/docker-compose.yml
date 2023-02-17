@@ -180,7 +180,7 @@ services:
             retries: 5
 
     oai_enb:
-        image: oai-enb:develop
+        image: oaisoftwarealliance/oai-enb:develop
         privileged: true
         container_name: l2sim4g-oai-enb
         network_mode: "host"
@@ -230,7 +230,7 @@ services:
             retries: 5
 
     oai_ue1:
-        image: oai-lte-ue:develop
+        image: oaisoftwarealliance/oai-lte-ue:develop
         privileged: true
         container_name: l2sim4g-oai-lte-ue1
         network_mode: "host"
@@ -258,7 +258,7 @@ services:
             retries: 5
 
     oai_ue2:
-        image: oai-lte-ue:develop
+        image: oaisoftwarealliance/oai-lte-ue:develop
         privileged: true
         container_name: l2sim4g-oai-lte-ue2
         network_mode: "host"

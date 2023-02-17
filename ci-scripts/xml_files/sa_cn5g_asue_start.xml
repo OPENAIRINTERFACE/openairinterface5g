@@ -33,7 +33,7 @@
 	<testCase id="000100">
 		<class>Initialize_5GCN</class>
 		<desc>Initialize 5G Core</desc>
-		<args>--type start-mini-as-ue --fqdn yes --scenario 1 --capture /tmp/oai-cn5g-v1.3.pcap</args>
+		<args>--type start-mini-as-ue --scenario 1 --capture /tmp/oai-cn5g-v1.5.pcap</args>
 	</testCase>
 
 </testCaseList>

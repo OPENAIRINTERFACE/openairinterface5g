@@ -70,6 +70,7 @@ import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
+	stream=sys.stdout,
 	format="[%(asctime)s] %(levelname)8s: %(message)s"
 )
 
