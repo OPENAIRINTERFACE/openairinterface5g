@@ -631,6 +631,7 @@ class OaiCiTest():
 		HTML.CreateHtmlTestRowQueue('NA', 'OK', messages)
 
 	def ping_iperf_wrong_exit(self, lock, UE_IPAddress, device_id, statusQueue, message):
+		logging.error(f"ue {device_id} {UE_IPAddress}: {message}")
 		lock.acquire()
 		statusQueue.put(-1)
 		statusQueue.put(device_id)
