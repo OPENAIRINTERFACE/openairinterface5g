@@ -140,29 +140,6 @@ set (OPENAIR_BIN_DIR ${CMAKE_CURRENT_BINARY_DIR}${CMAKE_FILES_DIRECTORY})
 
 project (OpenAirInterface)
 
-##############################################
-# Base CUDA setting
-##############################################
-find_package(CUDA)
-if (CUDA_FOUND)
-    message ("cuda include ${CUDA_INCLUDE_DIRS}")
-    message ("cuda library ${CUDA_LIBRARY_DIRS}")
-
-    add_definitions("-L/usr/local/cuda/lib64")
-
-    SET(CUDA_NVCC_FLAGS
-      "${CUDA_NVCC_FLAGS};-arch=sm_60;")
-
-    # Disable warnings for CUDA
-    SET(CUDA_NVCC_FLAGS "${CUDA_NVCC_FLAGS};-lpthread;-w;-O3;--default-stream;per-thread;-I/usr/local/cuda/inc;-L/usr/local/cuda/lib -lcutil;-rdc=true;-lcudadevrt")
-    SET(CUDA_VERBOSE_BUILD ON)
-
-    SET(CUDA_SEPARABLE_COMPILATION ON)
-
-else (CUDA_FOUND)
-   message ("No CUDA tool installed")
-endif ()
-
 ####################################################
 # compilation flags
 #############################################
@@ -1026,15 +1003,25 @@ add_library(ldpc_cl MODULE ${PHY_LDPC_CL_SRC} )
 target_link_libraries(ldpc_cl OpenCL)
 add_dependencies(ldpc_cl nrLDPC_decoder_kernels_CL)
 
-if (CUDA_FOUND)
-  cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC} )
+
+##############################################
+# Base CUDA setting
+##############################################
+
+add_boolean_option(BUILD_CUDA False "Build support for CUDA")
+if (ENABLE_LDPC_CUDA)
+  find_package(CUDA REQUIRED)
+  SET(CUDA_NVCC_FLAG "${CUDA_NVCC_FLAGS};-arch=sm_60;")
+  SET(CUDA_VERBOSE_BUILD ON)
+  cuda_add_library(ldpc_cuda MODULE ${PHY_LDPC_CUDA_SRC})
   set_target_properties(ldpc_cuda PROPERTIES CUDA_SEPARABLE_COMPILATION ON)
-#  CUDA_ADD_CUFFT_TO_TARGET(ldpc_cuda)
-endif (CUDA_FOUND)
+  if (NOT CUDA_FOUND)
+    message(FATAL_ERROR "no CUDA found")
+  endif()
+endif()
 
 add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
 target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
-
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
 target_link_libraries(coding PRIVATE asn1_nr_rrc asn1_lte_rrc)
@@ -2444,10 +2431,10 @@ target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-if (CUDA_FOUND)
-   add_dependencies( nr-uesoftmodem ldpc_cuda)
-   add_dependencies( nr-softmodem ldpc_cuda)
-endif (CUDA_FOUND)
+if (ENABLE_LDPC_CUDA)
+   add_dependencies(nr-uesoftmodem ldpc_cuda)
+   add_dependencies(nr-softmodem ldpc_cuda)
+endif()
 
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-uesoftmodem PRIVATE
@@ -2516,9 +2503,9 @@ add_executable(ldpctest
    )
 
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
-if (CUDA_FOUND)
-   add_dependencies( ldpctest ldpc_cuda)
-endif (CUDA_FOUND)
+if (ENABLE_LDPC_CUDA)
+  add_dependencies(ldpctest ldpc_cuda)
+endif()
 target_link_libraries(ldpctest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
