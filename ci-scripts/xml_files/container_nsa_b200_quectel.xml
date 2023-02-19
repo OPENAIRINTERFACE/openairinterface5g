@@ -26,6 +26,9 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 200000
+ 100000
+ 500000
  111110
  111111
  000001
@@ -47,6 +50,8 @@
  000001
  030202
  030201
+ 300000
+ 600000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -69,7 +74,36 @@
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
 	</testCase>
-
+        <testCase id = "100000">
+		<class>Custom_Command</class>
+		<desc>To reset USRP</desc>
+		<node>nepes</node>
+		<command>sudo -S b2xx_fx3_utils --reset-device</command>
+        </testCase>
+       <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - nepes</desc>
+            <node>nepes</node>
+            <command>sudo cpupower idle-set -D 0</command>
+       </testCase>
+       <testCase id="300000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - nepes</desc>
+            <node>nepes</node>
+            <command>sudo cpupower idle-set -E</command>
+       </testCase>
+       <testCase id="500000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - obelix</desc>
+            <node>obelix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+       </testCase>
+       <testCase id="600000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - obelix</desc>
+            <node>obelix</node>
+            <command>sudo cpupower idle-set -E</command>
+       </testCase>
 
 	<testCase id="010002">
 		<class>Terminate_UE</class>

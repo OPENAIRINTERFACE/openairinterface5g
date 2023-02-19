@@ -26,6 +26,7 @@
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
+    100000
     111111
     010002
     030101
@@ -39,6 +40,7 @@
     010002
     000001
     030201
+    200000
   </TestCaseRequestedList>
     <!--
  070002
@@ -66,7 +68,18 @@
     <desc>Terminate Quectel</desc>
     <id>idefix</id>
   </testCase>
-
+  <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - nepes</desc>
+            <node>nepes</node>
+            <command>sudo cpupower idle-set -D 0</command>
+   </testCase>
+   <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - nepes</desc>
+            <node>nepes</node>
+            <command>sudo cpupower idle-set -E</command>
+  </testCase>
   <testCase id="030101">
     <class>Deploy_Object</class>
     <desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>

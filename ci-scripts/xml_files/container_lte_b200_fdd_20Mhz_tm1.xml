@@ -27,12 +27,14 @@ Replaces xml_files/enb_usrp210_band7_test_10mhz_tm1.xml
     <htmlTabName>Test-FDD-20MHz-TM1</htmlTabName>
     <htmlTabIcon>tasks</htmlTabIcon>
     <TestCaseRequestedList>
+100000
 111110
 040101
 030121
 000001
 040301 040521 040623 040624 040625 040662 040401 040201
 030201
+200000
     </TestCaseRequestedList>
     <TestCaseExclusionList></TestCaseExclusionList>
 
@@ -41,6 +43,18 @@ Replaces xml_files/enb_usrp210_band7_test_10mhz_tm1.xml
         <desc>Pull Images from Local Registry</desc>
         <test_svr_id>0</test_svr_id>
         <images_to_pull>oai-enb</images_to_pull>
+    </testCase>
+    <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>hutch</node>
+            <command>sudo cpupower idle-set -D 0</command>
+    </testCase>
+    <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>hutch</node>
+            <command>sudo cpupower idle-set -E</command>
     </testCase>
 
     <testCase id="030121">

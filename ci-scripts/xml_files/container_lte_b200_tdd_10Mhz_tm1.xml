@@ -27,11 +27,13 @@ Replaces xml_files/enb_usrp210_band40_test_10mhz_tm1.xml
     <htmlTabName>Test-TDD-10MHz-TM1</htmlTabName>
     <htmlTabIcon>tasks</htmlTabIcon>
     <TestCaseRequestedList>
+100000
 111110
 040101
 030114
 040301 040511 040612 040611 040613 040614 040615 040652 040651 040653 040654 040655 040401 040201
 030201
+200000
     </TestCaseRequestedList>
     <TestCaseExclusionList></TestCaseExclusionList>
 
@@ -41,7 +43,18 @@ Replaces xml_files/enb_usrp210_band40_test_10mhz_tm1.xml
         <test_svr_id>0</test_svr_id>
         <images_to_pull>oai-enb</images_to_pull>
     </testCase>
-
+    <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>starsky</node>
+            <command>sudo cpupower idle-set -D 0</command>
+    </testCase>
+    <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>starsky</node>
+            <command>sudo cpupower idle-set -E</command>
+    </testCase>
     <testCase id="030114">
         <class>Deploy_Object</class>
         <desc>Deploy eNB (TDD/Band40/10MHz/B200) in a container</desc>
