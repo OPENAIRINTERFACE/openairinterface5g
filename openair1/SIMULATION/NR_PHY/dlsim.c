@@ -328,7 +328,7 @@ int main(int argc, char **argv)
   //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   UE_nr_rxtx_proc_t UE_proc;
-  NR_Sched_Rsp_t Sched_INFO;
+  NR_Sched_Rsp_t *Sched_INFO;
   gNB_MAC_INST *gNB_mac;
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
@@ -994,28 +994,33 @@ int main(int argc, char **argv)
       round = 0;
       UE_harq_process->DLround = round;
       UE_harq_process->first_rx = 1;
-        
+
+      Sched_INFO = malloc(sizeof(*Sched_INFO));
+      if (Sched_INFO == NULL) {
+        LOG_E(PHY, "out of memory\n");
+        exit(1);
+      }
+      memset(Sched_INFO, 0, sizeof(*Sched_INFO));
+      Sched_INFO->sched_response_id = -1;
+
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
         round_trials[round]++;
 
-        clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
+        clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req, &Sched_INFO->UL_dci_req);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].round = round;
 
-        nr_schedule_ue_spec(0, frame, slot);
-        Sched_INFO.module_id = 0;
-        Sched_INFO.CC_id     = 0;
-        Sched_INFO.frame     = frame;
-        Sched_INFO.slot      = slot;
-        Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[0];
-        Sched_INFO.UL_dci_req  = NULL;
-        Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
+        nr_schedule_ue_spec(0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req);
+        Sched_INFO->module_id = 0;
+        Sched_INFO->CC_id = 0;
+        Sched_INFO->frame = frame;
+        Sched_INFO->slot = slot;
+        Sched_INFO->UL_dci_req.numPdus = 0;
         pushNotifiedFIFO(&gNB->L1_tx_free,msgL1Tx);
-        nr_schedule_response(&Sched_INFO);
+        nr_schedule_response(Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */
-        nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[Sched_INFO.CC_id].dl_tti_request_body;
+        nfapi_nr_dl_tti_request_body_t *dl_req = &Sched_INFO->DL_req.dl_tti_request_body;
         nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[1];
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
         pdu_bit_map = pdsch_pdu_rel15->pduBitmap;

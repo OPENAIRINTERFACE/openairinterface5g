@@ -67,6 +67,17 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
+void inc_ref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+void deref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+
 uint64_t get_softmodem_optmask(void) {return 0;}
 static softmodem_params_t softmodem_params;
 softmodem_params_t *get_softmodem_params(void) {
