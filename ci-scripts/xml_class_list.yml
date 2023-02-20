@@ -2,6 +2,7 @@
   - Build_Cluster_Image
   - Build_PhySim
   - Run_LDPCTest
+  - Run_LDPCt1Test
   - Run_NRulsimTest
   - Build_eNB
   - WaitEndBuild_eNB
