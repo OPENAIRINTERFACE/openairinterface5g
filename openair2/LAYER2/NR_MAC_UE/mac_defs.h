@@ -336,7 +336,6 @@ typedef struct {
   bool ack_received;
   uint8_t  pucch_resource_indicator;
   uint16_t feedback_to_ul;
-  int is_common;
   frame_t dl_frame;
   int dl_slot;
   uint8_t ack;
@@ -356,19 +355,18 @@ typedef struct {
 } RAR_grant_t;
 
 typedef struct {
-  int n_HARQ_ACK;
+  NR_PUCCH_Resource_t *pucch_resource;
   uint32_t ack_payload;
   uint8_t sr_payload;
   uint32_t csi_part1_payload;
   uint32_t csi_part2_payload;
-  int resource_indicator;
-  int resource_set_id;
-  int is_common;
-  int initial_pucch_id;
-  NR_PUCCH_Resource_t *pucch_resource;
+  int n_sr;
+  int n_csi;
+  int n_harq;
   int n_CCE;
   int N_CCE;
-  int8_t delta_pucch;
+  int delta_pucch;
+  int initial_pucch_id;
 } PUCCH_sched_t;
 
 typedef struct {

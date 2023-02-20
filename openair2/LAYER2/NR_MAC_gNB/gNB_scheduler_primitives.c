@@ -968,9 +968,13 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
             pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
             pucch_pdu->data_scrambling_id = pusch_id!= NULL ? *pusch_id : *scc->physCellId;
             pucch_pdu->dmrs_scrambling_id = id0!= NULL ? *id0 : *scc->physCellId;
-            pucch_pdu->prb_size = compute_pucch_prb_size(2,pucchres->format.choice.format2->nrofPRBs,
-                                                         O_uci+O_sr,O_csi,pucch_Config->format2->choice.setup->maxCodeRate,
-                                                         2,pucchres->format.choice.format2->nrofSymbols,8);
+            pucch_pdu->prb_size = compute_pucch_prb_size(2,
+                                                         pucchres->format.choice.format2->nrofPRBs,
+                                                         O_uci + O_sr,
+                                                         pucch_Config->format2->choice.setup->maxCodeRate,
+                                                         2,
+                                                         pucchres->format.choice.format2->nrofSymbols,
+                                                         8);
             pucch_pdu->bit_len_csi_part1 = O_csi;
             break;
           case NR_PUCCH_Resource__format_PR_format3 :
@@ -996,9 +1000,13 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
               else
                 f3_dmrs_symbols = 2<<pucch_pdu->add_dmrs_flag;
             }
-            pucch_pdu->prb_size = compute_pucch_prb_size(3,pucchres->format.choice.format3->nrofPRBs,
-                                                         O_uci+O_sr,O_csi,pucch_Config->format3->choice.setup->maxCodeRate,
-                                                         2-pucch_pdu->pi_2bpsk,pucchres->format.choice.format3->nrofSymbols-f3_dmrs_symbols,12);
+            pucch_pdu->prb_size = compute_pucch_prb_size(3,
+                                                         pucchres->format.choice.format3->nrofPRBs,
+                                                         O_uci + O_sr,
+                                                         pucch_Config->format3->choice.setup->maxCodeRate,
+                                                         2 - pucch_pdu->pi_2bpsk,
+                                                         pucchres->format.choice.format3->nrofSymbols - f3_dmrs_symbols,
+                                                         12);
             pucch_pdu->bit_len_csi_part1 = O_csi;
             break;
           case NR_PUCCH_Resource__format_PR_format4 :
