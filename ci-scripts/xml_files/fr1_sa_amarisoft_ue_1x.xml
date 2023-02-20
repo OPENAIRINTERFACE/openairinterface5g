@@ -26,12 +26,14 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  040000
  000001
  010000
  000002
  050000
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -40,6 +42,18 @@
 		<desc>Run AS UE Scenario</desc>
 		<id>amarisoft_ue_1</id>
 	</testCase>
+        <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+        </testCase>
+        <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -E</command>
+        </testCase>
 
 
 	<testCase id="040000">

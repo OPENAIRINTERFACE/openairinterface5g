@@ -144,7 +144,7 @@ cd cmake_targets
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets
-./build_oai -w USRP --ninja --nrUE --gNB --build-lib all -c
+./build_oai -w USRP --ninja --nrUE --gNB --build-lib "telnetsrv nrscope" -c
 ```
 
 # 4. Run OAI CN5G and OAI gNB

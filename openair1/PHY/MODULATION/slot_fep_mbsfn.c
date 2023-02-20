@@ -107,17 +107,13 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
     memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aa][frame_parms->ofdm_symbol_size*l],0,frame_parms->ofdm_symbol_size*sizeof(int));
 
     if (l==0) {
-#if UE_TIMING_TRACE
-      start_meas(&ue->rx_dft_stats);
-#endif
+      start_UE_TIMING(ue->rx_dft_stats);
       dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                               nb_prefix_samples0 +
                                               subframe_offset -
                                               SOFFSET) % frame_length_samples],
           (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
-#if UE_TIMING_TRACE
-      stop_meas(&ue->rx_dft_stats);
-#endif
+      stop_UE_TIMING(ue->rx_dft_stats);
     } else {
       if ((sample_offset +
            (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
@@ -128,18 +124,14 @@ int slot_fep_mbsfn(PHY_VARS_UE *ue,
                (short *)&common_vars->rxdata[aa][0],
                frame_parms->ofdm_symbol_size*sizeof(int));
 
-#if UE_TIMING_TRACE
-      start_meas(&ue->rx_dft_stats);
-#endif
+      start_UE_TIMING(ue->rx_dft_stats);
       dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                               (frame_parms->ofdm_symbol_size+nb_prefix_samples0+nb_prefix_samples) +
                                               (frame_parms->ofdm_symbol_size+nb_prefix_samples)*(l-1) +
                                               subframe_offset-
                                               SOFFSET) % frame_length_samples],
           (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aa][frame_parms->ofdm_symbol_size*l],1);
-#if UE_TIMING_TRACE
-      stop_meas(&ue->rx_dft_stats);
-#endif
+      stop_UE_TIMING(ue->rx_dft_stats);
     }
   }
 
@@ -262,17 +254,13 @@ int slot_fep_mbsfn_khz_1dot25(PHY_VARS_UE *ue,
 
   for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
     memset(&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aa][0],0,ofdm_symbol_size*sizeof(int));
-#if UE_TIMING_TRACE
-    start_meas(&ue->rx_dft_stats);
-#endif
+    start_UE_TIMING(ue->rx_dft_stats);
     dft(dftsizeidx,(int16_t *)&common_vars->rxdata[aa][(sample_offset +
                                             nb_prefix_samples +
                                             subframe_offset -
                                             SOFFSET) % frame_length_samples],
         (int16_t *)&common_vars->common_vars_rx_data_per_thread[ue->current_thread_id[subframe]].rxdataF[aa][0],1);
-#if UE_TIMING_TRACE
-    stop_meas(&ue->rx_dft_stats);
-#endif
+    stop_UE_TIMING(ue->rx_dft_stats);
   }
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {

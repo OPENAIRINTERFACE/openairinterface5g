@@ -453,17 +453,6 @@ class OaiCiTest():
 			UE_prefix = 'NR '
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-		# b2xx_fx3_utils reset procedure
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 180)
-		result = re.search('type: b200', SSH.getBefore())
-		if result is not None:
-			logging.debug('Found a B2xx device --> resetting it')
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S b2xx_fx3_utils --reset-device', '\$', 10)
-			# Reloading FGPA bin firmware
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S uhd_find_devices', '\$', 180)
-		result = re.search('type: n3xx', str(SSH.getBefore()))
-		if result is not None:
-			logging.debug('Found a N3xx device --> resetting it')
 		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		SSH.command('source oaienv', '\$', 5)

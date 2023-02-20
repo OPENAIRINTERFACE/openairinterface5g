@@ -744,9 +744,7 @@ int main(int argc, char **argv) {
 
   if(get_thread_worker_conf() == WORKER_ENABLE) {
     extern void init_fep_thread(RU_t *, pthread_attr_t *);
-    extern void init_td_thread(PHY_VARS_eNB *);
-    init_fep_thread(ru,NULL);
-    init_td_thread(eNB);
+    init_fep_thread(ru, NULL);
   }
 
   // Create transport channel structures for 2 transport blocks (MIMO)
@@ -1379,13 +1377,12 @@ int main(int argc, char **argv) {
         printStatIndent2(&eNB->ulsch_deinterleaving_stats,"sub-block interleaving" );
         printStatIndent2(&eNB->ulsch_demultiplexing_stats,"sub-block demultiplexing" );
         printStatIndent2(&eNB->ulsch_rate_unmatching_stats,"sub-block rate-matching" );
-        printf("    |__ turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
-               eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ?
-               eNB->ulsch[0]->harq_processes[harq_pid]->Kminus :
-               eNB->ulsch[0]->harq_processes[harq_pid]->Kplus,
-               eNB->ulsch_tc_intl1_stats.trials/(double)eNB->ulsch_tc_init_stats.trials,
-               (double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials*timeBase,
-               (int)((double)eNB->ulsch_turbo_decoding_stats.diff/eNB->ulsch_turbo_decoding_stats.trials),
+        printf("    |__ harqID: %d turbo_decoder(%d bits), avg iterations: %.1f       %.2f us (%d cycles, %d trials)\n",
+               harq_pid,
+               eNB->ulsch[0]->harq_processes[harq_pid]->Cminus ? eNB->ulsch[0]->harq_processes[harq_pid]->Kminus : eNB->ulsch[0]->harq_processes[harq_pid]->Kplus,
+               eNB->ulsch_tc_intl1_stats.trials / (double)eNB->ulsch_tc_init_stats.trials,
+               (double)eNB->ulsch_turbo_decoding_stats.diff / eNB->ulsch_turbo_decoding_stats.trials * timeBase,
+               (int)((double)eNB->ulsch_turbo_decoding_stats.diff / eNB->ulsch_turbo_decoding_stats.trials),
                eNB->ulsch_turbo_decoding_stats.trials);
         printStatIndent3(&eNB->ulsch_tc_init_stats,"init");
         printStatIndent3(&eNB->ulsch_tc_alpha_stats,"alpha");

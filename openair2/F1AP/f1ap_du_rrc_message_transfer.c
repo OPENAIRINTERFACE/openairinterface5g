@@ -353,12 +353,9 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                   if (mac_MainConfig->drx_Config == NULL) {
                     LOG_W(F1AP, "drx_Configuration parameter is NULL, cannot configure local UE parameters or CDRX is deactivated\n");
                   } else {
-                    MessageDef *message_p = NULL;
+                    rrc_mac_drx_config_req_t req = {.rnti = ctxt.rntiMaybeUEid, .drx_Configuration = mac_MainConfig->drx_Config};
                     /* Send DRX configuration to MAC task to configure timers of local UE context */
-                    message_p = itti_alloc_new_message(TASK_DU_F1, 0, RRC_MAC_DRX_CONFIG_REQ);
-                    RRC_MAC_DRX_CONFIG_REQ(message_p).rnti = ctxt.rntiMaybeUEid;
-                    RRC_MAC_DRX_CONFIG_REQ(message_p).drx_Configuration = mac_MainConfig->drx_Config;
-                    itti_send_msg_to_task(TASK_MAC_ENB, ctxt.instance, message_p);
+                    eNB_Config_Local_DRX(instance, &req);
                     LOG_D(F1AP, "DRX configured in MAC Main Configuration for RRC Connection Reconfiguration\n");
                   }
 

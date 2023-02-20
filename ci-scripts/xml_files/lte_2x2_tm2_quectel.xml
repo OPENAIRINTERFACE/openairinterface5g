@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  010002
  030001
  000002
@@ -39,6 +40,7 @@
  000001
  010002
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -49,6 +51,18 @@
 		<UE_Trace>yes</UE_Trace>
 	</testCase>
 
+        <testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>To reset cpupower</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+        <testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>To reset cpupower</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -E</command>
+        </testCase>
 
 	<testCase id="010002">
 		<class>Terminate_UE</class>

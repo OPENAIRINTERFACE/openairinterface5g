@@ -990,13 +990,6 @@ int main(int argc, char **argv) {
 
   eNB->mac_enabled=1;
 
-  if(get_thread_worker_conf() == WORKER_ENABLE) {
-    extern void init_td_thread(PHY_VARS_eNB *);
-    extern void init_te_thread(PHY_VARS_eNB *);
-    init_td_thread(eNB);
-    init_te_thread(eNB);
-  }
-
   // callback functions required for phy_procedures_tx
   //  eNB_id_i = UE->n_connected_eNB;
   printf("Setting mcs1 = %d\n",mcs1);

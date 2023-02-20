@@ -2462,7 +2462,6 @@ do_RRCConnectionSetup(
   struct LTE_SRB_ToAddMod__rlc_Config *SRB1_rlc_config = NULL;
   struct LTE_SRB_ToAddMod__logicalChannelConfig *SRB1_lchan_config = NULL;
   struct LTE_LogicalChannelConfig__ul_SpecificParameters *SRB1_ul_SpecificParameters = NULL;
-  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated2 = NULL;
   LTE_DL_CCCH_Message_t dl_ccch_msg;
   LTE_RRCConnectionSetup_t *rrcConnectionSetup = NULL;
   LTE_DL_FRAME_PARMS *frame_parms = &RC.eNB[ctxt_pP->module_id][CC_id]->frame_parms;
@@ -2509,7 +2508,7 @@ do_RRCConnectionSetup(
   SRB1_ul_SpecificParameters->logicalChannelGroup = logicalchannelgroup;
   asn1cSeqAdd(&(*SRB_configList)->list,SRB1_config);
   // PhysicalConfigDedicated
-  physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
+  LTE_PhysicalConfigDedicated_t *physicalConfigDedicated2 = CALLOC(1,sizeof(*physicalConfigDedicated2));
   *physicalConfigDedicated = physicalConfigDedicated2;
   physicalConfigDedicated2->pdsch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pdsch_ConfigDedicated));
   physicalConfigDedicated2->pucch_ConfigDedicated         = CALLOC(1,sizeof(*physicalConfigDedicated2->pucch_ConfigDedicated));

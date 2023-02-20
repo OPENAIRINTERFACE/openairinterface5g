@@ -156,10 +156,6 @@ void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *
 
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
-extern void reset_opp_meas(void);
-extern void print_opp_meas(void);
-
-
 RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mask,pthread_mutex_t *ru_mutex,pthread_cond_t *ru_cond);
 
 int transmission_mode=1;
@@ -452,10 +448,6 @@ int main ( int argc, char **argv )
   set_taus_seed (0);
   printf("configuring for RAU/RRU\n");
 
-  if (opp_enabled ==1) {
-    reset_opp_meas();
-  }
-
   cpuf=get_cpu_freq_GHz();
   printf("ITTI init, useMME: %i\n",EPC_MODE_ENABLED);
   itti_init(TASK_MAX, tasks_info);
@@ -490,6 +482,7 @@ int main ( int argc, char **argv )
       MessageDef *msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, RRC_CONFIGURATION_REQ);
       RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
+      rrc_enb_process_itti_msg(NULL);
     }
     node_type = RC.rrc[0]->node_type;
   }
@@ -605,10 +598,11 @@ int main ( int argc, char **argv )
     sync_var=0;
     pthread_cond_broadcast(&sync_cond);
     pthread_mutex_unlock(&sync_mutex);
-    config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
   }
 
   create_tasks_mbms(1);
+  sleep(1);
+  config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   // wait for end of program
   LOG_UI(ENB_APP,"TYPE <CTRL-C> TO TERMINATE\n");

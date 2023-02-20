@@ -26,7 +26,10 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
+ 700000
  010002
+ 300000
  030000
  040000
  000002
@@ -42,6 +45,8 @@
  010002
  080001
  080000
+ 200000
+ 800000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -51,6 +56,30 @@
 		<id>nrmodule2_quectel</id>
 		<UE_Trace>yes</UE_Trace>
 	</testCase>
+        <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - obelix</desc>
+            <node>obelix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+        </testCase>
+        <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - obelix</desc>
+            <node>obelix</node>
+            <command>sudo cpupower idle-set -E</command>
+        </testCase>
+        <testCase id="700000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - asterix</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+        </testCase>
+        <testCase id="800000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower - asterix</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -E</command>
+        </testCase>
 
 
 	<testCase id="010002">
@@ -84,7 +113,12 @@
 		<rt_stats_cfg>datalog_rt_stats.2x2.yaml</rt_stats_cfg>
 		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 	</testCase>
-
+	<testCase id = "300000">
+		<class>Custom_Command</class>
+		<desc>To reboot USRP</desc>
+		<node>asterix</node>
+		<command>ssh root@172.21.19.14 reboot ; sleep 45</command>
+        </testCase>
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>

@@ -74,23 +74,22 @@ class Cmd(metaclass=abc.ABCMeta):
 class LocalCmd(Cmd):
 	def __init__(self, d = None):
 		self.cwd = d
+		if self.cwd is not None:
+			logging.debug(f'Working dir is {self.cwd}')
 		self.cp = sp.CompletedProcess(args='', returncode=0, stdout='')
 
 	def run(self, line, timeout=300, silent=False, reportNonZero=True):
-		if type(line) is str:
-			line = [s for s in line.split(' ') if len(s) > 0]
 		if not silent:
-			logging.debug(' '.join(line))
+			logging.info(line)
 		try:
-			ret = sp.run(line, cwd=self.cwd, stdout=sp.PIPE, stderr=sp.STDOUT, timeout=timeout)
+			ret = sp.run(line, shell=True, cwd=self.cwd, stdout=sp.PIPE, stderr=sp.STDOUT, timeout=timeout)
 		except Exception as e:
 			ret = sp.CompletedProcess(args=line, returncode=255, stdout=f'Exception: {str(e)}'.encode('utf-8'))
 		if ret.stdout is None:
 			ret.stdout = b''
 		ret.stdout = ret.stdout.decode('utf-8').strip()
 		if reportNonZero and ret.returncode != 0:
-			cmd = ' '.join(ret.args)
-			logging.warning(f'command "{cmd}" returned non-zero returncode {ret.returncode}: output:\n{ret.stdout}')
+			logging.warning(f'command "{ret.args}" returned non-zero returncode {ret.returncode}: output:\n{ret.stdout}')
 		self.cp = ret
 		return ret
 

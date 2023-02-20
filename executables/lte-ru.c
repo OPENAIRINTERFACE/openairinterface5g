@@ -1472,11 +1472,11 @@ static void *ru_stats_thread(void *param) {
     sleep(1);
 
     if (opp_enabled) {
-      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx",NULL,NULL);
+      if (ru->feprx) print_meas(&ru->ofdm_demod_stats,"feprx_ru",NULL,NULL);
 
-      if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm",NULL,NULL);
+      if (ru->feptx_ofdm) print_meas(&ru->ofdm_mod_stats,"feptx_ofdm_ru",NULL,NULL);
 
-      if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul",NULL,NULL);
+      if (ru->fh_north_asynch_in) print_meas(&ru->rx_fhaul,"rx_fhaul_ru",NULL,NULL);
 
       if (ru->fh_north_out) {
         print_meas(&ru->tx_fhaul,"tx_fhaul",NULL,NULL);
@@ -2335,17 +2335,8 @@ void init_RU_proc(RU_t *ru) {
     init_feptx_thread(ru, NULL);
   }
 
-  if (opp_enabled == 1) pthread_create(&ru->ru_stats_thread,NULL,ru_stats_thread,(void *)ru);
-/*
-  if (ru->function == eNodeB_3GPP) {
-    usleep(10000);
-    LOG_I(PHY, "Signaling main thread that RU %d (is_slave %d,send_dmrs %d) is ready in state %s\n",ru->idx,ru->is_slave,ru->generate_dmrs_sync,ru_states[ru->state]);
-    AssertFatal((ret=pthread_mutex_lock(ru->ru_mutex))==0,"mutex_lock returns %d\n",ret);
-    *ru->ru_mask &= ~(1<<ru->idx);
-    pthread_cond_signal(ru->ru_cond);
-    AssertFatal((ret=pthread_mutex_unlock(ru->ru_mutex))==0,"mutex_unlock returns %d\n",ret);
-  }
-  */
+  if (opp_enabled == 1)
+    pthread_create(&ru->ru_stats_thread, NULL, ru_stats_thread, (void *)ru);
 }
 
 

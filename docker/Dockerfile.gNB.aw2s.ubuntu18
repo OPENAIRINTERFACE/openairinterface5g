@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for Ubuntu18.04
 #
 #---------------------------------------------------------------------
 
@@ -29,7 +29,7 @@ FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
 
-COPY ./libori.so /usr/local/lib
+COPY ./libori.so /usr/local/lib/
 
 # build AW2S fronthaul lib
 WORKDIR /oai-ran
@@ -38,24 +38,26 @@ RUN /bin/sh oaienv && \
     ninja aw2sori_transpro
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb-aw2s
-ENV TZ=Europe/Paris
+FROM ubuntu:bionic as oai-gnb-aw2s
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe
 
-RUN yum repolist --disablerepo=* && \
-    yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
-        procps-ng \
-        libXpm \
-        libX11 \
-        atlas \
-        lksctp-tools \
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        procps \
+        libsctp1 \
         tzdata \
+        libblas3 \
+        libatlas3-base \
+        libconfig9 \
+        openssl \
         net-tools \
-        iputils && \
-    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
-    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
+        iproute2 \
+        iputils-ping  && \
+    rm -rf /var/lib/apt/lists/*
 
-COPY ./libori.so /usr/local/lib
+COPY ./libori.so /usr/local/lib/
 
 WORKDIR /opt/oai-gnb-aw2s/bin
 COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
@@ -75,15 +77,9 @@ COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
 
-COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
-    /lib64/libforms.so.2 \
-    /lib64/libblas.so.3 \
-    /lib64/liblapack.so.3 \
-    /lib64/liblapacke.so.3 \
-    /lib64/
 
-RUN ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so && \
+RUN /bin/bash -c "ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so" && \
     ldconfig
 
 WORKDIR /opt/oai-gnb-aw2s

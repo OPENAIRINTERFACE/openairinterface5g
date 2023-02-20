@@ -241,10 +241,6 @@ void clean_eNb_dlsch(LTE_eNB_DLSCH_t *dlsch) {
   }
 }
 
-void *te_thread(void *param) {
-  return(NULL);
-}
-
 static void TPencode(void * arg) {
   turboEncode_t * rdata=(turboEncode_t *) arg;
   unsigned char harq_pid = rdata->harq_pid;

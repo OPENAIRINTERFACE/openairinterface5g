@@ -53,11 +53,8 @@ int create_tasks(uint32_t enb_nb) {
   LOG_I(ENB_APP, "Creating ENB_APP eNB Task\n");
   rc = itti_create_task (TASK_ENB_APP, eNB_app_task, NULL);
   AssertFatal(rc >= 0, "Create task for eNB APP failed\n");
-
-  LOG_I(RRC,"Creating RRC eNB Task\n");
-  rc = itti_create_task (TASK_RRC_ENB, rrc_enb_task, NULL);
-  AssertFatal(rc >= 0, "Create task for RRC eNB failed\n");
-
+  rrc_enb_init();
+  itti_mark_task_ready(TASK_RRC_ENB);
   if (get_softmodem_params()->emulate_l1 || (EPC_MODE_ENABLED && split73 != SPLIT73_DU)) {
     rc = itti_create_task(TASK_SCTP, sctp_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
@@ -87,12 +84,6 @@ int create_tasks(uint32_t enb_nb) {
     AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
     rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
     AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
-  }
-
-  if (!NODE_IS_CU(type)) {
-    LOG_I(MAC,"Creating MAC eNB Task\n");
-    rc = itti_create_task(TASK_MAC_ENB, mac_enb_task, NULL);
-    AssertFatal(rc >= 0, "Create task for MAC eNB failed\n");
   }
 
   return 0;
