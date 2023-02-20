@@ -65,6 +65,8 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 	sshSession.command('mkdir -p ' + sourcePath, '\$', 5)
 	sshSession.command('cd ' + sourcePath, '\$', 5)
 	# Recent version of git (>2.20?) should handle missing .git extension # without problems
+	if ranTargetBranch == 'null':
+		ranTargetBranch = 'develop'
 	baseBranch = re.sub('origin/', '', ranTargetBranch)
 	sshSession.command(f'git clone --filter=blob:none -n -b {baseBranch} {ranRepository} .', '\$', 60)
 	if sshSession.getBefore().count('error') > 0 or sshSession.getBefore().count('error') > 0:
