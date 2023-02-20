@@ -101,13 +101,14 @@ NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)
   ulsch->harq_pid = -1;
   ulsch->active = false;
 
-  ulsch->harq_process = malloc16_clear(sizeof(ulsch->harq_process));
-  ulsch->harq_process->b = malloc16_clear(ulsch_bytes);
-  ulsch->harq_process->c = malloc16_clear(a_segments*sizeof(uint8_t *));
-  ulsch->harq_process->d = malloc16_clear(a_segments*sizeof(int16_t *));
+  NR_UL_gNB_HARQ_t *harq = malloc16_clear(sizeof(harq));
+  ulsch->harq_process = harq;
+  harq->b = malloc16_clear(ulsch_bytes * sizeof(*harq->b));
+  harq->c = malloc16_clear(a_segments * sizeof(*harq->c));
+  harq->d = malloc16_clear(a_segments * sizeof(*harq->d));
   for (int r = 0; r < a_segments; r++) {
-    ulsch->harq_process->c[r] = malloc16_clear(8448*sizeof(uint8_t));
-    ulsch->harq_process->d[r] = malloc16_clear((68*384)*sizeof(int16_t));
+    harq->c[r] = malloc16_clear(8448 * sizeof(*harq->c[r]));
+    harq->d[r] = malloc16_clear(68 * 384 * sizeof(*harq->d[r]));
   }
   return(ulsch);
 }
@@ -538,20 +539,20 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING, 0);
 
-    if (harq_process->processedSegments == (harq_process->C)) {
-      LOG_D(PHY, "[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n", phy_vars_gNB->Mod_id, harq_process->slot, harq_process->TBS);
+    if (harq_process->processedSegments == harq_process->C) {
+      LOG_D(PHY, "[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n", phy_vars_gNB->Mod_id, ulsch->slot, harq_process->TBS);
       ulsch->active = false;
       harq_process->round = 0;
 
       LOG_D(PHY, "ULSCH received ok \n");
-      nr_fill_indication(phy_vars_gNB, harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 0, 0);
+      nr_fill_indication(phy_vars_gNB, ulsch->frame, ulsch->slot, ULSCH_id, harq_pid, 0, 0);
 
     } else {
       LOG_D(PHY,
             "[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d)\n",
             phy_vars_gNB->Mod_id,
-            harq_process->frame,
-            harq_process->slot,
+            ulsch->frame,
+            ulsch->slot,
             harq_pid,
             ulsch->active,
             harq_process->round,
@@ -559,7 +560,7 @@ uint32_t nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
       ulsch->handled = 1;
       no_iteration_ldpc = ulsch->max_ldpc_iterations + 1;
       LOG_D(PHY, "ULSCH %d in error\n", ULSCH_id);
-      nr_fill_indication(phy_vars_gNB, harq_process->frame, harq_process->slot, ULSCH_id, harq_pid, 1, 0);
+      nr_fill_indication(phy_vars_gNB, ulsch->frame, ulsch->slot, ULSCH_id, harq_pid, 1, 0);
     }
     ulsch->last_iteration_cnt = no_iteration_ldpc;
   }

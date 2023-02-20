@@ -208,7 +208,7 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
 //
 // Todo:
 // - averaging IIR filter for RX power and noise
-void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq_pid, unsigned char symbol, uint8_t nrOfLayers)
+void nr_gnb_measurements(PHY_VARS_gNB *gNB, NR_gNB_ULSCH_t *ulsch, NR_gNB_PUSCH *pusch_vars, unsigned char symbol, uint8_t nrOfLayers)
 {
 
   int rx_power_tot = 0;
@@ -220,8 +220,8 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   NR_DL_FRAME_PARMS *fp = &gNB->frame_parms;
   int ch_offset = fp->ofdm_symbol_size * symbol;
-  int N_RB_UL = gNB->ulsch[ulsch_id]->harq_process->ulsch_pdu.rb_size;
-  ulsch_measurements_gNB *ulsch_measurements = &gNB->ulsch[ulsch_id]->ulsch_measurements;
+  int N_RB_UL = ulsch->harq_process->ulsch_pdu.rb_size;
+  ulsch_measurements_gNB *ulsch_measurements = &ulsch->ulsch_measurements;
 
   int rx_power[fp->nb_antennas_rx];
   for (int aarx = 0; aarx < fp->nb_antennas_rx; aarx++){
@@ -230,7 +230,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
 
     for (int aatx = 0; aatx < nrOfLayers; aatx++){
 
-      ulsch_measurements->rx_spatial_power[aatx][aarx] = (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx*fp->nb_antennas_rx+aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
+      ulsch_measurements->rx_spatial_power[aatx][aarx] = (signal_energy_nodc(&pusch_vars->ul_ch_estimates[aatx*fp->nb_antennas_rx+aarx][ch_offset], N_RB_UL * NR_NB_SC_PER_RB));
 
       if (ulsch_measurements->rx_spatial_power[aatx][aarx] < 0) {
         ulsch_measurements->rx_spatial_power[aatx][aarx] = 0;
@@ -240,7 +240,7 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
       rx_power[aarx] += ulsch_measurements->rx_spatial_power[aatx][aarx];
 
     }
-    LOG_D(PHY, "[ULSCH ID %d] RX power in antenna %d = %d\n", ulsch_id, aarx, rx_power[aarx]);
+    LOG_D(PHY, "[RNTI %04x] RX power in antenna %d = %d\n", ulsch->rnti, aarx, rx_power[aarx]);
 
     rx_power_tot += rx_power[aarx];
 
@@ -252,13 +252,12 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB, uint8_t ulsch_id, unsigned char harq
   ulsch_measurements->wideband_cqi_tot = dB_fixed2(rx_power_tot, meas->n0_power_tot);
   ulsch_measurements->rx_rssi_dBm = rx_power_avg_dB + 30 - 10 * log10(pow(2, 30)) - (rx_gain - rx_gain_offset) - dB_fixed(fp->ofdm_symbol_size);
 
-  LOG_D(PHY, "[ULSCH %d] RSSI %d dBm/RE, RSSI (digital) %d dB (N_RB_UL %d), WBand CQI tot %d dB, N0 Power tot %d, RX Power tot %d\n",
-    ulsch_id,
+  LOG_D(PHY, "[RNTI %04x] RSSI %d dBm/RE, RSSI (digital) %d dB (N_RB_UL %d), WBand CQI tot %d dB, N0 Power tot %d, RX Power tot %d\n",
+    ulsch->rnti,
     ulsch_measurements->rx_rssi_dBm,
     rx_power_avg_dB,
     N_RB_UL,
     ulsch_measurements->wideband_cqi_tot,
     meas->n0_power_tot,
     rx_power_tot);
-
 }

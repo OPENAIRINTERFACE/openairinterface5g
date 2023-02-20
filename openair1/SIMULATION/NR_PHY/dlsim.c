@@ -951,8 +951,6 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tparity);
     reset_meas(&gNB->toutput);
 
-    clear_pdsch_stats(gNB);
-
     uint32_t errors_scrambling[16] = {0};
     int n_errors[16] = {0};
     int round_trials[16] = {0};

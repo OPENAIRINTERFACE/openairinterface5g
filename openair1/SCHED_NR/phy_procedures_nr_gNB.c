@@ -244,16 +244,16 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
     if (decodeSuccess && !gNB->pusch_vars[rdata->ulsch_id]->DTX) {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (rnti %x, pid %d, ndi %d, status %d, round %d, TBS %d, Max interation (all seg) %d)\n",
-            gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot, ulsch->rnti, rdata->harq_pid, pusch_pdu->pusch_data.new_data_indicator,
+            gNB->Mod_id, ulsch->frame, ulsch->slot, ulsch->rnti, rdata->harq_pid, pusch_pdu->pusch_data.new_data_indicator,
             ulsch->active, ulsch_harq->round, ulsch_harq->TBS, rdata->decodeIterations);
       ulsch->active = false;
       ulsch_harq->round = 0;
       LOG_D(PHY, "ULSCH received ok \n");
-      nr_fill_indication(gNB, ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
+      nr_fill_indication(gNB, ulsch->frame, ulsch->slot, rdata->ulsch_id, rdata->harq_pid, 0,0);
       //dumpsig=1;
     } else {
       LOG_D(PHY,"[gNB %d] ULSCH: Setting NAK for SFN/SF %d/%d (pid %d, ndi %d, status %d, round %d, RV %d, prb_start %d, prb_size %d, TBS %d) r %d\n",
-            gNB->Mod_id, ulsch_harq->frame, ulsch_harq->slot,
+            gNB->Mod_id, ulsch->frame, ulsch->slot,
             rdata->harq_pid, pusch_pdu->pusch_data.new_data_indicator, ulsch->active,
             ulsch_harq->round,
             ulsch_harq->ulsch_pdu.pusch_data.rv_index,
@@ -263,7 +263,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
             r);
       ulsch->handled = 1;
       LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
-      nr_fill_indication(gNB,ulsch_harq->frame, ulsch_harq->slot, rdata->ulsch_id, rdata->harq_pid, 1,0);
+      nr_fill_indication(gNB, ulsch->frame, ulsch->slot, rdata->ulsch_id, rdata->harq_pid, 1,0);
 //      dumpsig=1;
     }
 /*
@@ -558,8 +558,8 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
     NR_UL_gNB_HARQ_t *ulsch_harq = ulsch->harq_process;
     AssertFatal(ulsch_harq != NULL,"harq_pid %d is not allocated\n",harq_pid);
     if ((ulsch->active == true) &&
-        (ulsch_harq->frame == frame_rx) &&
-        (ulsch_harq->slot == slot_rx) &&
+        (ulsch->frame == frame_rx) &&
+        (ulsch->slot == slot_rx) &&
         (ulsch->handled == 0)) {
       uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
       uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;
@@ -779,8 +779,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
     AssertFatal(ulsch_harq != NULL, "harq_pid %d is not allocated\n", ulsch->harq_pid);
 
     if ((ulsch->active == true) &&
-        (ulsch_harq->frame == frame_rx) &&
-        (ulsch_harq->slot == slot_rx) &&
+        (ulsch->frame == frame_rx) &&
+        (ulsch->slot == slot_rx) &&
         (ulsch->handled == 0)) {
 
       LOG_D(PHY, "PUSCH ID %d with RNTI %x detection started in frame %d slot %d\n",

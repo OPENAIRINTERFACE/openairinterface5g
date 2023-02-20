@@ -580,9 +580,3 @@ void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
     }
   }
 }
-
-void clear_pdsch_stats(PHY_VARS_gNB *gNB)
-{
-  for (int i = 0; i < MAX_MOBILES_PER_GNB;i++)
-    memset((void*)&gNB->phy_stats[i].dlsch_stats,0,sizeof(gNB->phy_stats[i].dlsch_stats));
-}

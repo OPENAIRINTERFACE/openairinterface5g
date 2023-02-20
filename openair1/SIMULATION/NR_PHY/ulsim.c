@@ -986,8 +986,6 @@ int main(int argc, char **argv)
     double blerStats[16] = {0};
     double berStats[16] = {0};
 
-    clear_pusch_stats(gNB);
-
     uint64_t sum_pusch_delay = 0;
     int min_pusch_delay = INT_MAX;
     int max_pusch_delay = INT_MIN;
@@ -1506,9 +1504,9 @@ int main(int argc, char **argv)
       if (!crc_status)
         effRate += ((double)TBS) / (double)round;
 
-      sum_pusch_delay += gNB->measurements.delay[UE_id].pusch_est_delay;
-      min_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay < min_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : min_pusch_delay;
-      max_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay > max_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : max_pusch_delay;
+      sum_pusch_delay += ulsch_gNB->delay.pusch_est_delay;
+      min_pusch_delay = ulsch_gNB->delay.pusch_est_delay < min_pusch_delay ? ulsch_gNB->delay.pusch_est_delay : min_pusch_delay;
+      max_pusch_delay = ulsch_gNB->delay.pusch_est_delay > max_pusch_delay ? ulsch_gNB->delay.pusch_est_delay : max_pusch_delay;
       delay_pusch_est_count++;
 
     } // trial loop

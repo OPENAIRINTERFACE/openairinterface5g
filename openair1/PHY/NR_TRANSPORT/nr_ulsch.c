@@ -34,14 +34,15 @@
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
 #include "PHY/NR_TRANSPORT/nr_ulsch.h"
 
-int16_t find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid, int frame)
+NR_gNB_ULSCH_t *find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid)
 {
 
   int16_t first_free_index = -1;
   AssertFatal(gNB != NULL,"gNB is null\n");
+  NR_gNB_ULSCH_t  *ulsch = NULL;
 
   for (int i = 0; i < gNB->max_nb_pusch; i++) {
-    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
+    ulsch = gNB->ulsch[i];
     AssertFatal(ulsch != NULL, "gNB->ulsch[%d] is null\n", i);
     if(!ulsch->active) {
       if (first_free_index == -1)
@@ -50,10 +51,13 @@ int16_t find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid, int frame)
     else {
       // if there is already an active ULSCH for this RNTI and HARQ_PID
       if ((ulsch->harq_pid == pid) && (ulsch->rnti == rnti))
-        return i;
+        return ulsch;
     }
   }
-  return first_free_index;
+  if (first_free_index != -1)
+    ulsch = gNB->ulsch[first_free_index];
+
+  return ulsch;
 }
 
 void nr_fill_ulsch(PHY_VARS_gNB *gNB,
@@ -63,23 +67,20 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 {
  
   int harq_pid = ulsch_pdu->pusch_data.harq_process_id;
-  int ulsch_id = find_nr_ulsch(gNB, ulsch_pdu->rnti, harq_pid, frame);
-  AssertFatal((ulsch_id >= 0) && (ulsch_id < gNB->max_nb_pusch),
-              "illegal or no ulsch_id found!!! rnti %04x ulsch_id %d\n",ulsch_pdu->rnti,ulsch_id);
-
-  NR_gNB_ULSCH_t  *ulsch = gNB->ulsch[ulsch_id];
+  NR_gNB_ULSCH_t *ulsch = find_nr_ulsch(gNB, ulsch_pdu->rnti, harq_pid);
+  AssertFatal(ulsch, "No ulsch_id found for rnti %04x\n", ulsch_pdu->rnti);
 
   ulsch->rnti = ulsch_pdu->rnti;
   ulsch->harq_pid = harq_pid;
   ulsch->handled = 0;
   ulsch->active = true;
+  ulsch->frame = frame;
+  ulsch->slot = slot;
 
   NR_UL_gNB_HARQ_t *harq = ulsch->harq_process;
-  harq->frame = frame;
-  harq->slot = slot;
   harq->new_rx = ulsch_pdu->pusch_data.new_data_indicator;
-  LOG_D(PHY,"%d.%d ULSCH ID %d RNTI %x HARQ PID %d new data indicator %d\n",
-        frame, slot, ulsch_id, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
+  LOG_D(PHY,"%d.%d RNTI %x HARQ PID %d new data indicator %d\n",
+        frame, slot, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
   if (harq->new_rx)
     harq->round = 0;
   else
@@ -87,7 +88,19 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
 
   memcpy(&ulsch->harq_process->ulsch_pdu, ulsch_pdu, sizeof(ulsch->harq_process->ulsch_pdu));
 
-  LOG_D(PHY,"Initializing nFAPI for ULSCH, UE %d, harq_pid %d\n", ulsch_id, harq_pid);
+  LOG_D(PHY,"Initializing nFAPI for ULSCH, harq_pid %d\n", harq_pid);
+}
+
+void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame)
+{
+  // disactivate ULSCH structure after a given number of frames
+  // no activity on this structure for NUMBER_FRAMES_PHY_UE_INACTIVE
+  // assuming UE disconnected or some other error occurred
+  for (int i = 0; i < gNB->max_nb_pusch; i++) {
+    NR_gNB_ULSCH_t *ulsch = gNB->ulsch[i];
+    if (ulsch->active && (((frame - ulsch->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+      ulsch->active = false;
+  }
 }
 
 void nr_ulsch_unscrambling(int16_t* llr, uint32_t size, uint32_t Nid, uint32_t n_RNTI)
@@ -157,12 +170,6 @@ void dump_pusch_stats(FILE *fd, PHY_VARS_gNB *gNB)
               stats->ulsch_stats.total_bytes_tx);
     }
   }
-}
-
-void clear_pusch_stats(PHY_VARS_gNB *gNB)
-{
-  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++)
-    memset((void*)&gNB->phy_stats[i].ulsch_stats,0,sizeof(gNB->phy_stats[i].ulsch_stats));
 }
 
 

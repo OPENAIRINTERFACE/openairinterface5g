@@ -188,10 +188,6 @@ typedef struct {
 typedef struct {
   /// Nfapi ULSCH PDU
   nfapi_nr_pusch_pdu_t ulsch_pdu;
-  /// Frame where current HARQ round was sent
-  uint32_t frame;
-  /// Slot where current HARQ round was sent
-  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   bool new_rx;
@@ -261,6 +257,8 @@ typedef struct {
 } NR_ULSCH_delay_t;
 
 typedef struct {
+  uint32_t frame;
+  uint32_t slot;
   /// Pointers to 16 HARQ processes for the ULSCH
   NR_UL_gNB_HARQ_t *harq_process;
   /// HARQ process mask, indicates which processes are currently active

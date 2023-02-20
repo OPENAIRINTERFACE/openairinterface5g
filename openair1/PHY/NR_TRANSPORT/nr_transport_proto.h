@@ -270,6 +270,9 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           uint8_t  symbol,
                           uint8_t  mod_order);
 
+void reset_active_stats(PHY_VARS_gNB *gNB, int frame);
+void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame);
+
 void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,

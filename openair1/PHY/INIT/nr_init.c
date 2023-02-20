@@ -99,6 +99,16 @@ NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti)
    return(stats);
 }
 
+void reset_active_stats(PHY_VARS_gNB *gNB, int frame)
+{
+  // disactivate PHY stats if UE is inactive for a given number of frames
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
+    if(stats->active && (((frame - stats->frame + 1024) % 1024) > NUMBER_FRAMES_PHY_UE_INACTIVE))
+      stats->active = false;
+  }
+}
+
 int init_codebook_gNB(PHY_VARS_gNB *gNB) {
 
   if(gNB->frame_parms.nb_antennas_tx>1){
