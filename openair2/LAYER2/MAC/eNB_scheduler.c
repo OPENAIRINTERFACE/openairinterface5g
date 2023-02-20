@@ -470,7 +470,7 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
       if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-        MessageDef *m = itti_alloc_new_message(TASK_MAC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
+        MessageDef *m = itti_alloc_new_message(TASK_PHY_ENB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
         F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
         F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure

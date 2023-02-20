@@ -1025,10 +1025,6 @@ uint8_t ul_subframe2_k_phich(COMMON_channels_t *cc, sub_frame_t ul_subframe);
 
 unsigned char ul_ACK_subframe2M(LTE_TDD_Config_t *tdd_Config,unsigned char subframe);
 
-int to_rbg(int dl_Bandwidth);
-
-int to_prb(int dl_Bandwidth);
-
 uint8_t get_Msg3harqpid(COMMON_channels_t *cc,
                         frame_t frame, sub_frame_t current_subframe);
 

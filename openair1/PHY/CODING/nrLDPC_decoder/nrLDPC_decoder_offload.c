@@ -1434,7 +1434,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
         argv_re[1] = "-l";
         argv_re[2] = "31";
         argv_re[3] = "-w";
-        argv_re[4] = "81:00.0";
+        argv_re[4] = "b0:00.0";
         argv_re[5] = "--file-prefix=b6";
         argv_re[6] = "--";
 	

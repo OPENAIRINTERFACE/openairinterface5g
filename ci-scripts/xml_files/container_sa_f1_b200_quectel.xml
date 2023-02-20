@@ -26,6 +26,7 @@
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
+    100000
     110002
     130101
     130102
@@ -37,6 +38,7 @@
     110002
     100001
     130201
+    200000
   </TestCaseRequestedList>
     <!--
  070001
@@ -77,7 +79,18 @@
     <eNB_serverId>0</eNB_serverId>
     <services>gnb_du_tdd</services>
   </testCase>
-
+  <testCase id="100000">
+    <class>Custom_Command</class>
+    <desc>To reset cpupower</desc>
+    <node>nepes</node>
+    <command>sudo cpupower idle-set -D 0</command>
+    </testCase>
+    <testCase id="200000">
+      <class>Custom_Command</class>
+      <desc>To reset cpupower</desc>
+      <node>nepes</node>
+      <command>sudo cpupower idle-set -E</command>
+    </testCase>
   <testCase id="100001">
     <class>IdleSleep</class>
     <desc>Sleep</desc>

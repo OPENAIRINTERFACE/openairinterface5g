@@ -155,7 +155,8 @@ void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
                             uint8_t is_dmrs_symbol,                           
                             uint32_t len,
                             uint8_t nrOfLayers,
-                            uint16_t nb_rb);
+                            uint16_t nb_rb,
+                            int shift_ch_ext);
 
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param ul_ch_estimates_ext Channel estimates in allocated RBs

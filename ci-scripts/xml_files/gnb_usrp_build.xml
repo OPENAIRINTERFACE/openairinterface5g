@@ -26,6 +26,7 @@
 	<htmlTabIcon>wrench</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+100000
 010101
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
@@ -34,8 +35,15 @@
 		<mode>TesteNB</mode>	
 		<class>Build_eNB</class>
 		<desc>Build gNB (USRP)</desc>
-		<Build_eNB_args>--gNB -w USRP --ninja -c -P</Build_eNB_args>
+		<Build_eNB_args>--gNB -w USRP --ninja -c -P --build-lib "ldpc_cuda"</Build_eNB_args>
 		<forced_workspace_cleanup>True</forced_workspace_cleanup>
 	</testCase>
+
+	<testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>To reboot USRP</desc>
+		<node>caracal</node>
+		<command>ssh root@192.168.20.2 reboot</command>
+        </testCase>
 
 </testCaseList>

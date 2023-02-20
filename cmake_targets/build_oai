@@ -55,7 +55,7 @@ CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
 BUILD_ECLIPSE=0
 NR="False"
-OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope oai_iqplayer"
+OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope ldpc_cuda ldpc_t1 oai_iqplayer"
 ulfiusdep=$(basename ./`find /usr/lib* -name libulfius.so`)
 jssondep=$(basename ./`find /usr/lib* -name libjansson.so`)
 if [ "$ulfiusdep" == "libulfius.so" -a "$jssondep" == "libjansson.so" ] ; then
@@ -392,13 +392,16 @@ function main() {
                   if [ "$alib" = "$oklib" ] ; then
                     BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
                     echo_info "Enabling build of lib${alib}.so" 
-                    fi   
-                  done
-                done
-	          if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
-                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES" 
+		  fi
+	        done
+	      done
+	      if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES"
               fi
             fi
+	    for oklib in $BUILD_OPTLIB ; do
+	      CMAKE_CMD="$CMAKE_CMD -DENABLE_${oklib^^}=ON"
+	    done
             shift 2;;		
         --noavx512)
             CMAKE_CMD="$CMAKE_CMD -DAVX512=OFF"

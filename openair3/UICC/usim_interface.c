@@ -27,10 +27,12 @@
 extern uint16_t NB_UE_INST;
 
 #define UICC_SECTION    "uicc"
+#define IMEISV_STR_MAX_LENGTH 16
 #define UICC_CONFIG_HELP_OPTIONS     " list of comma separated options to interface a simulated (real UICC to be developped). Available options: \n"\
   "        imsi: user imsi\n"\
   "        key:  cyphering key\n"\
-  "        opc:  cyphering OPc\n"
+  "        opc:  cyphering OPc\n"\
+  "        imiesv: string with IMEISV value\n"
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            configuration parameters for the rfsimulator device                                                                              */
 /*   optname                     helpstr                     paramflags           XXXptr                               defXXXval                          type         numelt  */
@@ -45,6 +47,7 @@ extern uint16_t NB_UE_INST;
       {"dnn",              "UE dnn (apn)\n",       0,         strptr:&uicc->dnnStr,               defstrval:"oai",     TYPE_STRING,    0 }, \
       {"nssai_sst",            "UE nssai\n",           0,         iptr:&uicc->nssai_sst,             defintval:1,    TYPE_INT,    0 }, \
       {"nssai_sd",            "UE nssai\n",           0,         iptr:&uicc->nssai_sd,            defintval:0xffffff,  TYPE_INT,       0 }, \
+    {"imeisv",             "IMEISV\n",          0,         strptr:&uicc->imeisvStr,              defstrval:"6754567890123413",           TYPE_STRING,    0 }, \
   };
 
 static uicc_t** uiccArray=NULL;
@@ -74,8 +77,8 @@ uicc_t *init_uicc(char *sectionName) {
   int ret = config_get( uicc_params,sizeof(uicc_params)/sizeof(paramdef_t),sectionName);
   AssertFatal(ret >= 0, "configuration couldn't be performed for uicc name: %s", sectionName);
   LOG_I(SIM,
-        "UICC simulation: IMSI=%s, Ki=%s, OPc=%s, DNN=%s, SST=0x%02x, SD=0x%06x\n",
-        uicc->imsiStr, uicc->keyStr, uicc->opcStr,
+        "UICC simulation: IMSI=%s, IMEISV=%s, Ki=%s, OPc=%s, DNN=%s, SST=0x%02x, SD=0x%06x\n",
+        uicc->imsiStr, uicc->imeisvStr, uicc->keyStr, uicc->opcStr,
         uicc->dnnStr, uicc->nssai_sst, uicc->nssai_sd);
   to_hex(uicc->keyStr,uicc->key, sizeof(uicc->key) );
   to_hex(uicc->opcStr,uicc->opc, sizeof(uicc->opc) );
@@ -111,4 +114,23 @@ uicc_t * checkUicc(int Mod_id) {
     uiccArray[Mod_id]=(void*)init_uicc(uiccName);
   }
   return (uicc_t*) uiccArray[Mod_id];  
+}
+
+uint8_t getImeisvDigit(int Mod_id,uint8_t i)
+{
+  uicc_t * uicc=checkUicc(Mod_id);
+  uint8_t r = 0;
+  uint8_t l = strlen(uicc->imeisvStr);
+  if (l > IMEISV_STR_MAX_LENGTH) {
+    l=IMEISV_STR_MAX_LENGTH;
+  }
+  if((uicc->imeisvStr!=NULL) && (i<l))
+  {
+    char c = uicc->imeisvStr[i];
+    if (isdigit(c))
+    {
+      r=c-'0';
+    }
+  }
+  return (0x0f & r);
 }

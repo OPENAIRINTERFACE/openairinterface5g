@@ -26,6 +26,7 @@
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
+ 100000
  010002
  042000
  000002
@@ -41,6 +42,7 @@
  000001
  010002
  080000
+ 200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
@@ -72,7 +74,18 @@
 		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
 		<cmd_prefix>numactl --cpunodebind=netdev:ens2f0np0 --membind=netdev:ens2f0np0</cmd_prefix>
 	</testCase>
-
+        <testCase id="100000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -D 0</command>
+        </testCase>
+        <testCase id="200000">
+            <class>Custom_Command</class>
+            <desc>To reset cpupower</desc>
+            <node>asterix</node>
+            <command>sudo cpupower idle-set -E</command>
+        </testCase>
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>

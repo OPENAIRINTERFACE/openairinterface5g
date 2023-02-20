@@ -106,10 +106,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char symbol,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
-                                nfapi_nr_pusch_pdu_t *pusch_pdu) {
-  c16_t pilot[3280] __attribute__((aligned(16)));
-  int16_t *fdcl, *fdcr, *fdclh, *fdcrh;
+                                nfapi_nr_pusch_pdu_t *pusch_pdu,
+                                int *max_ch) {
 
+  c16_t pilot[3280] __attribute__((aligned(16)));
   const int chest_freq = gNB->chest_freq;
 
 #ifdef DEBUG_CH
@@ -136,31 +136,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         Ns,
         k0,
         symbol);
-
-  switch (nushift) {
-    case 0:
-      fdcl = filt8_dcl0;
-      fdcr = filt8_dcr0;
-      fdclh = filt8_dcl0_h;
-      fdcrh = filt8_dcr0_h;
-      break;
-
-    case 1:
-      fdcl = filt8_dcl1;
-      fdcr = filt8_dcr1;
-      fdclh = filt8_dcl1_h;
-      fdcrh = filt8_dcr1_h;
-      break;
-
-    default:
-#ifdef DEBUG_CH
-      if (debug_ch_est)
-        fclose(debug_ch_est);
-
-#endif
-      return(-1);
-      break;
-  }
 
   //------------------generate DMRS------------------//
 
@@ -232,6 +207,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         }
 
         c16_t ch16= {.r=(int16_t)ch.r, .i=(int16_t)ch.i};
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
 
         // Channel interpolation
         for (int k_line = 0; k_line <= 1; k_line++) {
@@ -259,39 +235,6 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         }
       }
 
-      // check if PRB crosses DC and improve estimates around DC
-      if ((bwp_start_subcarrier < symbolSize) && (bwp_start_subcarrier+nb_rb_pusch*12 >= symbolSize)) {
-        ul_ch = &ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
-        const uint16_t idxDC = symbolSize - bwp_start_subcarrier;
-        re_offset = k0;
-        pil = pilot + idxDC / 2 - 1;
-        ul_ch += idxDC - 2 ;
-        ul_ch = memset(ul_ch, 0, sizeof(*ul_ch)*5);
-        re_offset = (re_offset + idxDC - 2) % symbolSize;
-        const c16_t ch=c16mulShift(*pil,
-                                   rxdataF[soffset+nushift+re_offset],
-                                   15);
-
-        // for proper alignment of SIMD vectors
-        if((gNB->frame_parms.N_RB_UL&1)==0) {
-          c16multaddVectRealComplex(fdcl, &ch, ul_ch-2, 8);
-          pil += 2;
-          re_offset = (re_offset+4) % symbolSize;
-          const c16_t ch_tmp=c16mulShift(*pil,
-                                         rxdataF[nushift+re_offset],
-                                         15);
-          c16multaddVectRealComplex(fdcr, &ch_tmp, ul_ch-2, 8);
-        } else {
-          c16multaddVectRealComplex(fdclh, &ch, ul_ch, 8);
-          pil += 2;
-          re_offset = (re_offset+4) % symbolSize;
-          const c16_t ch_tmp=c16mulShift(*pil,
-                                         rxdataF[soffset+nushift+re_offset],
-                                         15);
-          c16multaddVectRealComplex(fdcrh, &ch_tmp, ul_ch, 8);
-        }
-      }
-
 #ifdef DEBUG_PUSCH
       ul_ch = &ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
 
@@ -304,8 +247,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
         printf("\n");
       }
-
 #endif
+
     } else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && chest_freq == 0) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
       LOG_D(PHY,"PUSCH estimation DMRS type 2, Freq-domain interpolation");
       c16_t *pil   = pilot;
@@ -332,6 +275,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         multadd_real_four_symbols_vector_complex_scalar(filt8_ml2,
                                                       &ch_l,
                                                       ul_ch);
+        *max_ch = max(*max_ch, max(abs(ch_l.r), abs(ch_l.i)));
+
         re_offset = (re_offset+5)%symbolSize;
         ch_r=c16mulShift(*pil,
                          rxdataF[soffset+nushift+re_offset],
@@ -339,6 +284,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         multadd_real_four_symbols_vector_complex_scalar(filt8_mr2,
                                                         &ch_r,
                                                         ul_ch);
+        *max_ch = max(*max_ch, max(abs(ch_r.r), abs(ch_r.i)));
+
         //for (int re_idx = 0; re_idx < 8; re_idx += 2)
         //printf("ul_ch = %d + j*%d\n", ul_ch[re_idx], ul_ch[re_idx+1]);
         ul_ch += 4;
@@ -391,6 +338,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       for (int pilot_cnt=6; pilot_cnt<6*(nb_rb_pusch-1); pilot_cnt += 6) {
         ch=c32x16cumulVectVectWithSteps(pilot, &pil_offset, 1, rxF, &re_offset, 2, symbolSize, 6);
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
 
 #if NO_INTERP
       for (c16_t *end=ul_ch+12; ul_ch<end; ul_ch++)
@@ -484,6 +432,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         re_offset = (re_offset+5) % symbolSize;
 
         ch=c16x32div(ch0, 4);
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
 
 #if NO_INTERP
         for (c16_t *end=ul_ch+12; ul_ch<end; ul_ch++)
@@ -540,8 +489,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
       printf("%d\n",idxP);
     }
-
 #endif
+
     // Convert to time domain
     freq2time(symbolSize,
               (int16_t *) &ul_ch_estimates[aarx][symbol_offset],

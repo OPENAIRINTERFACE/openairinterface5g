@@ -70,6 +70,7 @@ import subprocess
 from multiprocessing import Process, Lock, SimpleQueue
 logging.basicConfig(
 	level=logging.DEBUG,
+	stream=sys.stdout,
 	format="[%(asctime)s] %(levelname)8s: %(message)s"
 )
 
@@ -498,6 +499,9 @@ def GetParametersFromXML(action):
 		string_field = test.findtext('test_svr_id')
 		if (string_field is not None):
 			CONTAINERS.testSvrId = string_field
+	elif action == 'Custom_Command':
+		RAN.node = test.findtext('node')
+		RAN.command = test.findtext('command')
 
 	else:
 		logging.warning(f"unknown action {action} from option-parsing point-of-view")
@@ -879,6 +883,9 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 					RAN.BuildeNB(HTML)
 				elif action == 'WaitEndBuild_eNB':
 					RAN.WaitBuildeNBisFinished(HTML)
+				elif action == 'Custom_Command':
+					logging.info(f"Executing custom command")
+					RAN.CustomCommand(HTML)
 				elif action == 'Initialize_eNB':
 					check_eNB = False
 					check_OAI_UE = False

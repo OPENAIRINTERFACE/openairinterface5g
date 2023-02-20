@@ -37,6 +37,7 @@
 \param symbol symbol within slot
 \param bwp_start_subcarrier, first allocated subcarrier
 \param nb_rb_pusch, number of allocated RBs for this UE
+\param max_ch maximum value of estimated channel
 */
 
 int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
@@ -45,7 +46,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 unsigned char symbol,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
-                                nfapi_nr_pusch_pdu_t *pusch_pdu);
+                                nfapi_nr_pusch_pdu_t *pusch_pdu,
+                                int *max_ch);
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 

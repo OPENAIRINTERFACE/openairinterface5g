@@ -56,6 +56,7 @@ extern eNB_UE_STATS pre_scd_eNB_UE_stats[MAX_NUM_CCs][NUMBER_OF_UE_MAX];
 
 extern mac_rlc_am_muilist_t rlc_am_mui;
 extern SCHEDULER_MODES global_scheduler_mode;
+void lte_dump_mac_stats(eNB_MAC_INST *mac, FILE *fd);
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;

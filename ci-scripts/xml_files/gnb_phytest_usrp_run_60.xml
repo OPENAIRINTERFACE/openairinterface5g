@@ -26,9 +26,21 @@
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
-190101 000001 190109
+100000 190101 000001 190109 200000
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
+  <testCase id = "100000">
+	  <class>Custom_Command</class>
+	  <desc>To reset cpupower</desc>
+	  <node>caracal</node>
+	  <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id = "200000">
+	  <class>Custom_Command</class>
+	  <desc>To reset cpupower</desc>
+	  <node>caracal</node>
+	  <command>sudo cpupower idle-set -E</command>
+  </testCase>
 
   <testCase id="190101">
     <class>Initialize_eNB</class>
