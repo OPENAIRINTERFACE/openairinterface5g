@@ -1027,27 +1027,20 @@ void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]) {
 }
 
 void init_pdcp(void) {
-  if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
-    pdcp_layer_init();
-    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+  pdcp_layer_init();
+  uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                           (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
 
-    if (IS_SOFTMODEM_NOS1)
-      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+  if (IS_SOFTMODEM_NOS1)
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
 
-    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
+  pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
-    if ( split73!=SPLIT73_DU)
-      pdcp_module_init(pdcp_initmask, 0);
+  if ( split73!=SPLIT73_DU)
+    pdcp_module_init(pdcp_initmask, 0);
 
-    if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-      //pdcp_set_rlc_data_req_func(proto_agent_send_rlc_data_req);
-    } else {
-      pdcp_set_rlc_data_req_func(rlc_data_req);
-      pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
-    }
-  } else {
-    //pdcp_set_pdcp_data_ind_func(proto_agent_send_pdcp_data_ind);
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
   }
 }
 
@@ -1074,7 +1067,6 @@ int main ( int argc, char **argv ) {
   //mtrace();
   int i;
   int CC_id = 0;
-  int node_type = ngran_eNB;
   sf_ahead=4; // Bell Labs
   AssertFatal(load_configmodule(argc,argv,0), "[SOFTMODEM] Error, configuration module init failed\n");
   logInit();
@@ -1137,8 +1129,7 @@ int main ( int argc, char **argv ) {
   if (RC.nb_inst > 0) {
     /* Start the agent. If it is turned off in the configuration, it won't start */
 
-    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
-     * for monolithic/F1 modes */
+    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks */
     init_pdcp();
     AssertFatal(create_tasks(1)==0,"cannot create ITTI tasks\n");
 
@@ -1147,11 +1138,9 @@ int main ( int argc, char **argv ) {
       RRC_CONFIGURATION_REQ(msg_p) = RC.rrc[enb_id]->configuration;
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
     }
-
-    node_type = RC.rrc[0]->node_type;
   }
 
-  if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
+  if (RC.nb_inst > 0) {
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
@@ -1163,7 +1152,7 @@ int main ( int argc, char **argv ) {
   }
 
   /* start threads if only L1 or not a CU */
-  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
+  if (RC.nb_inst == 0 || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // init UE_PF_PO and mutex lock
     pthread_mutex_init(&ue_pf_po_mutex, NULL);
     memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
@@ -1265,7 +1254,7 @@ int main ( int argc, char **argv ) {
   LOG_I(ENB_APP,"oai_exit=%d\n",oai_exit);
   // stop threads
 
-  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
+  if (RC.nb_inst == 0) {
     if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 

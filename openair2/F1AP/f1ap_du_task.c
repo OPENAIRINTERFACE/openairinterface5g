@@ -150,14 +150,7 @@ void *F1AP_DU_task(void *arg) {
       } break;
 
       case F1AP_UL_RRC_MESSAGE: // to rrc
-        if (RC.nrrrc && RC.nrrrc[0]->node_type == ngran_gNB_DU) {
-          DU_send_UL_NR_RRC_MESSAGE_TRANSFER(myInstance,
-                                             &F1AP_UL_RRC_MESSAGE(msg));
-        } else {
-          DU_send_UL_RRC_MESSAGE_TRANSFER(myInstance,
-                                          &F1AP_UL_RRC_MESSAGE(msg));
-        }
-
+        DU_send_UL_NR_RRC_MESSAGE_TRANSFER(myInstance, &F1AP_UL_RRC_MESSAGE(msg));
         break;
 
       case F1AP_UE_CONTEXT_SETUP_RESP:

@@ -101,7 +101,7 @@ typedef struct ru_config_s {
 } ru_config_t;
 
 extern void RCconfig_L1(void);
-extern void RCconfig_macrlc(int macrlc_has_f1[MAX_MAC_INST]);
+extern void RCconfig_macrlc(void);
 extern void UE_config_stub_pnf(void);
 extern int  RCconfig_gtpu(void );
 extern void RCConfig(void);
@@ -109,7 +109,7 @@ extern void RCConfig(void);
 void                          enb_config_display(void);
 void                          ru_config_display(void);
 
-int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc, int macrlc_has_f1);
+int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc);
 int RCconfig_S1(MessageDef *msg_p, uint32_t i);
 
 void read_config_and_init(void);
@@ -118,9 +118,6 @@ int RCconfig_M2(MessageDef *msg_p, uint32_t i);
 
 void fill_SL_configuration(RrcConfigurationReq *RRCcfg, ccparams_sidelink_t *SLconfig, int cell_idx, int cc_idx, char *config_fname);
 void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCconfig, int cell_idx, int cc_idx, char *config_fname, char *brparamspath);
-
-int RCconfig_DU_F1(MessageDef *msg_p, uint32_t i);
-void handle_f1ap_setup_resp(f1ap_setup_resp_t *resp);
 
 #endif /* ENB_CONFIG_H_ */
 /** @} */

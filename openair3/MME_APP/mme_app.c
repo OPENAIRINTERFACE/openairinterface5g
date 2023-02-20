@@ -85,17 +85,7 @@ extern RAN_CONTEXT_t RC;
 //        LOG_I(ENB_APP,"[MCE %d] MCE_app_register via M3AP for instance %d\n", mce_id, ENB_MODULE_ID_TO_INSTANCE(mce_id));
 //        itti_send_msg_to_task (TASK_M3AP, ENB_MODULE_ID_TO_INSTANCE(mce_id), msg_p);
 //
-//      //if (NODE_IS_DU(node_type)) { // F1AP registration
-//      //  // configure F1AP here for F1C
-//      //  LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-//      //  msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, F1AP_SETUP_REQ);
-//      //  RCconfig_DU_F1(msg_p, enb_id);
-//
-//      //  LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-//      //  itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-//      //  // configure GTPu here for F1U
-//      //}
-//      //else { // S1AP registration
+//      //{ // S1AP registration
 //      //  /* note:  there is an implicit relationship between the data structure and the message name */
 //      //  msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, S1AP_REGISTER_ENB_REQ);
 //      //  RCconfig_S1(msg_p, enb_id);
@@ -313,12 +303,9 @@ void *MME_app_task(void *args_p) {
       break;
 
    // case M3AP_SETUP_RESP:
-   //   //AssertFatal(NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received F1AP_REGISTER_ENB_CNF in CU/MCE\n");
 
    //   //LOG_I(MME_APP, "Received %s: associated ngran_MCE_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-   //         //F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
    //   
-   //   //handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
    //   handle_m3ap_setup_resp(&M3AP_SETUP_RESP(msg_p));
 
    //   DevAssert(register_mce_pending > 0);

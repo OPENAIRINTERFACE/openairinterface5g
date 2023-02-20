@@ -85,7 +85,8 @@ extern RAN_CONTEXT_t RC;
 //}
 //*****end M2AP ****/
 
-static uint32_t eNB_app_register_m2(uint32_t enb_id_start, uint32_t enb_id_end) {
+static uint32_t eNB_app_register_m2(uint32_t enb_id_start, uint32_t enb_id_end)
+{
   uint32_t         enb_id;
   MessageDef      *msg_p;
   uint32_t         register_enb_m2_pending = 0;
@@ -142,38 +143,27 @@ static uint32_t eNB_app_handle_m2ap_mbms_session_update_req(instance_t instance)
 
 /*------------------------------------------------------------------------------*/
 
-static uint32_t eNB_app_register(ngran_node_t node_type,uint32_t enb_id_start, uint32_t enb_id_end) {
+static uint32_t eNB_app_register(uint32_t enb_id_start, uint32_t enb_id_end)
+{
   uint32_t         enb_id;
   MessageDef      *msg_p;
   uint32_t         register_enb_pending = 0;
 
   for (enb_id = enb_id_start; (enb_id < enb_id_end) ; enb_id++) {
-    {
-      if (NODE_IS_DU(node_type)) { // F1AP registration
-        // configure F1AP here for F1C
-        LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-        msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, F1AP_SETUP_REQ);
-        RCconfig_DU_F1(msg_p, enb_id);
+    // S1AP registration
+    /* note:  there is an implicit relationship between the data structure and the message name */
+    msg_p = itti_alloc_new_message(TASK_ENB_APP, 0, S1AP_REGISTER_ENB_REQ);
+    RCconfig_S1(msg_p, enb_id);
 
-        LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-        itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-        // configure GTPu here for F1U
-      }
-      else { // S1AP registration
-        /* note:  there is an implicit relationship between the data structure and the message name */
-        msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, S1AP_REGISTER_ENB_REQ);
-        RCconfig_S1(msg_p, enb_id);
+    if (enb_id == 0)
+      RCconfig_gtpu();
 
-        if (enb_id == 0) RCconfig_gtpu();
+    LOG_I(ENB_APP, "default drx %d\n", ((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
 
-        LOG_I(ENB_APP,"default drx %d\n",((S1AP_REGISTER_ENB_REQ(msg_p)).default_drx));
+    LOG_I(ENB_APP, "[eNB %d] eNB_app_register via S1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
+    itti_send_msg_to_task(TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
 
-        LOG_I(ENB_APP,"[eNB %d] eNB_app_register via S1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-        itti_send_msg_to_task (TASK_S1AP, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-      }
-
-      register_enb_pending++;
-    }
+    register_enb_pending++;
   }
 
   return register_enb_pending;
@@ -220,19 +210,18 @@ void *eNB_app_task(void *args_p) {
   itti_mark_task_ready (TASK_ENB_APP);
 
   /* Try to register each eNB */
-  // This assumes that node_type of all RRC instances is the same
   if (EPC_MODE_ENABLED) {
-    register_enb_pending = eNB_app_register(RC.rrc[0]->node_type, enb_id_start, enb_id_end);
+    register_enb_pending = eNB_app_register(enb_id_start, enb_id_end);
   }
 
     /* Try to register each eNB with each other */
-  if (is_x2ap_enabled() && !NODE_IS_DU(RC.rrc[0]->node_type)) {
+  if (is_x2ap_enabled()) {
     x2_register_enb_pending = eNB_app_register_x2 (enb_id_start, enb_id_end);
   }
 
   /* Try to register each eNB with MCE each other */
-  if (is_m2ap_eNB_enabled() /*&& !NODE_IS_DU(RC.rrc[0]->node_type)*/) {
-    //eNB_app_register_MBMS_STA(RC.rrc[0]->node_type, enb_id_start, enb_id_end);
+  if (is_m2ap_eNB_enabled()) {
+    //eNB_app_register_MBMS_STA(enb_id_start, enb_id_end);
     m2_register_enb_pending = eNB_app_register_m2 (enb_id_start, enb_id_end);
 
     //if (timer_setup (5, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
@@ -259,7 +248,6 @@ void *eNB_app_task(void *args_p) {
       break;
 
     case S1AP_REGISTER_ENB_CNF:
-      AssertFatal(!NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received S1AP_REGISTER_ENB_CNF\n");
         if (EPC_MODE_ENABLED) {
           LOG_I(ENB_APP, "[eNB %ld] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
                 S1AP_REGISTER_ENB_CNF(msg_p).nb_mme);
@@ -288,55 +276,11 @@ void *eNB_app_task(void *args_p) {
                 sleep(ENB_REGISTER_RETRY_DELAY);
                 /* Restart the registration process */
                 registered_enb = 0;
-                register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);
+                register_enb_pending = eNB_app_register(enb_id_start, enb_id_end);
               }
             }
           }
         } /* if (EPC_MODE_ENABLED) */
-
-      break;
-
-    case F1AP_SETUP_RESP:
-      AssertFatal(NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received F1AP_REGISTER_ENB_CNF in CU/eNB\n");
-
-      LOG_I(ENB_APP, "Received %s: associated ngran_eNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-	    F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
-      
-      handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
-
-      DevAssert(register_enb_pending > 0);
-      register_enb_pending--;
-
-      /* Check if at least eNB is registered with one MME */
-      if (F1AP_SETUP_RESP(msg_p).num_cells_to_activate > 0) {
-        registered_enb++;
-      }
-
-      /* Check if all register eNB requests have been processed */
-      if (register_enb_pending == 0) {
-        if (registered_enb == enb_nb) {
-          /* If all eNB cells are registered, start L2L1 task */
-          MessageDef *msg_init_p;
-
-          msg_init_p = itti_alloc_new_message (TASK_ENB_APP, 0, INITIALIZE_MESSAGE);
-          itti_send_msg_to_task (TASK_L2L1, INSTANCE_DEFAULT, msg_init_p);
-
-        } else {
-          LOG_W(ENB_APP, " %d eNB not associated with a MME, retrying registration in %d seconds ...\n",
-                enb_nb - registered_enb,  ENB_REGISTER_RETRY_DELAY);
-
-          /* Restart the eNB registration process in ENB_REGISTER_RETRY_DELAY seconds */
-          if (timer_setup (ENB_REGISTER_RETRY_DELAY, 0, TASK_ENB_APP, INSTANCE_DEFAULT, TIMER_ONE_SHOT,
-                           NULL, &enb_register_retry_timer_id) < 0) {
-            LOG_E(ENB_APP, " Can not start eNB register retry timer, use \"sleep\" instead!\n");
-
-            sleep(ENB_REGISTER_RETRY_DELAY);
-            /* Restart the registration process */
-            registered_enb = 0;
-            register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);//, enb_properties_p);
-          }
-        }
-      }
 
       break;
 
@@ -356,7 +300,7 @@ void *eNB_app_task(void *args_p) {
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == enb_register_retry_timer_id) {
         /* Restart the registration process */
         registered_enb = 0;
-        register_enb_pending = eNB_app_register (RC.rrc[0]->node_type, enb_id_start, enb_id_end);
+        register_enb_pending = eNB_app_register(enb_id_start, enb_id_end);
       }
 
       if (TIMER_HAS_EXPIRED (msg_p).timer_id == x2_enb_register_retry_timer_id) {
@@ -459,20 +403,6 @@ void *eNB_app_task(void *args_p) {
 
     case M2AP_SETUP_RESP:
      LOG_I(ENB_APP,"M2AP_SETUP_RESP RESPONSE received\n");
-     // AssertFatal(NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received F1AP_REGISTER_ENB_CNF in CU/eNB\n");
-
-     // LOG_I(ENB_APP, "Received %s: associated ngran_eNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-     //       F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
-     //
-     // handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
-
-     // DevAssert(register_enb_pending > 0);
-     // register_enb_pending--;
-
-     // /* Check if at least eNB is registered with one MME */
-     // if (F1AP_SETUP_RESP(msg_p).num_cells_to_activate > 0) {
-     //   registered_enb++;
-     // }
 
      // /* Check if all register eNB requests have been processed */
      // if (register_enb_pending == 0) {
@@ -495,7 +425,7 @@ void *eNB_app_task(void *args_p) {
      //       sleep(ENB_REGISTER_RETRY_DELAY);
      //       /* Restart the registration process */
      //       registered_enb = 0;
-     //       register_enb_pending = eNB_app_register (RC.rrc[0]->node_type,enb_id_start, enb_id_end);//, enb_properties_p);
+     //       register_enb_pending = eNB_app_register(enb_id_start, enb_id_end);//, enb_properties_p);
      //     }
      //   }
      // }

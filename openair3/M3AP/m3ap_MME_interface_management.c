@@ -93,7 +93,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStartRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -343,7 +343,7 @@ int MME_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m3ap_session_stop_re
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStopRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -352,7 +352,7 @@ int MME_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m3ap_session_stop_re
   ie->id                        = M3AP_ProtocolIE_ID_id_MCE_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStopRequest_IEs__value_PR_MCE_MBMS_M3AP_ID;
-  //ie->value.choice.MCE_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M3AP_ID = 0;
 
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
@@ -857,7 +857,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -866,7 +866,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
   ie->id                        = M3AP_ProtocolIE_ID_id_MCE_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MCE_MBMS_M3AP_ID;
-  //ie->value.choice.MCE_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M3AP_ID = 0;
 
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
