@@ -33,7 +33,6 @@
 
 // [from gNB coding]
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/lte_interleaver_inline.h"

@@ -831,7 +831,6 @@ target_link_libraries(SCHED_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/fapi_nr_l1.c
-  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_gNB.c
   ${OPENAIR1_DIR}/SCHED_NR/nr_prach_procedures.c
   ${OPENAIR1_DIR}/SCHED_NR/phy_frame_config_nr.c
@@ -859,7 +858,6 @@ target_link_libraries(SCHED_UE_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set(SCHED_SRC_NR_UE
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
-  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/fapi_nr_ue_l1.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_frame_config_nr_ue.c
   ${OPENAIR1_DIR}/SCHED_NR_UE/harq_nr.c
@@ -2574,7 +2572,6 @@ target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${OPENAIR1_DIR}/SCHED_NR/phy_procedures_nr_common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c

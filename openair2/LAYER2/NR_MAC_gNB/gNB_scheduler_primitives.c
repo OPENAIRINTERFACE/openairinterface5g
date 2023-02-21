@@ -47,7 +47,6 @@
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-#include "RRC/LTE/rrc_extern.h"
 #include "RRC/NR/nr_rrc_extern.h"
 #include "RRC/NR/rrc_gNB_UE_context.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -56,11 +55,6 @@
 #include "intertask_interface.h"
 
 #include "T.h"
-#include "NR_PDCCH-ConfigCommon.h"
-#include "NR_ControlResourceSet.h"
-#include "NR_SearchSpace.h"
-
-#include "nfapi_nr_interface.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
@@ -2493,7 +2487,7 @@ void reset_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
     add_tail_nr_list(&sched_ctrl->available_dl_harq, harq);
   }
 
-  for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+  for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
     sched_ctrl->harq_processes[i].feedback_slot = -1;
     sched_ctrl->harq_processes[i].round = 0;
     sched_ctrl->harq_processes[i].is_waiting = false;
@@ -2512,7 +2506,7 @@ void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
     add_tail_nr_list(&sched_ctrl->available_ul_harq, harq);
   }
 
-  for (int i = 0; i < NR_MAX_NB_HARQ_PROCESSES; i++) {
+  for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++) {
     sched_ctrl->ul_harq_processes[i].feedback_slot = -1;
     sched_ctrl->ul_harq_processes[i].round = 0;
     sched_ctrl->ul_harq_processes[i].is_waiting = false;

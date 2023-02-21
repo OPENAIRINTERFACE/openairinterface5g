@@ -40,6 +40,13 @@
 #define MAX_BWP_SIZE 275
 #define NR_MAX_NUM_BWP 4
 #define NR_MAX_HARQ_PROCESSES 16
+#define NR_NB_REG_PER_CCE 6
+#define NR_NB_SC_PER_RB 12
+
+typedef enum {
+  nr_FR1 = 0,
+  nr_FR2
+} nr_frequency_range_e;
 
 typedef struct nr_bandentry_s {
   int16_t band;

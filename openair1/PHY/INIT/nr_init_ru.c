@@ -21,10 +21,6 @@
 
 #include "phy_init.h"
 #include "SCHED/sched_common.h"
-/*#include "RadioResourceConfigCommonSIB.h"
-#include "RadioResourceConfigDedicated.h"
-#include "TDD-Config.h"
-#include "MBSFN-SubframeConfigList.h"*/
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
 #include <math.h>

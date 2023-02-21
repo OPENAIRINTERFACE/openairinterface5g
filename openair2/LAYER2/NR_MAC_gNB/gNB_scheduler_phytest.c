@@ -35,20 +35,6 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 #include "executables/softmodem-common.h"
 #include "common/utils/nr/nr_common.h"
-#include "NR_SCS-SpecificCarrier.h"
-#include "NR_TDD-UL-DL-ConfigCommon.h"
-#include "NR_FrequencyInfoUL.h"
-#include "NR_RACH-ConfigGeneric.h"
-#include "NR_RACH-ConfigCommon.h"
-#include "NR_PUSCH-TimeDomainResourceAllocation.h"
-#include "NR_PUSCH-ConfigCommon.h"
-#include "NR_PUCCH-ConfigCommon.h"
-#include "NR_PDSCH-TimeDomainResourceAllocation.h"
-#include "NR_PDSCH-ConfigCommon.h"
-#include "NR_RateMatchPattern.h"
-#include "NR_RateMatchPatternLTE-CRS.h"
-#include "NR_SearchSpace.h"
-#include "NR_ControlResourceSet.h"
 
 //#define UL_HARQ_PRINT
 extern RAN_CONTEXT_t RC;

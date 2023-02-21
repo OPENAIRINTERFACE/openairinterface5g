@@ -2097,7 +2097,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../nfapi/open-nFAPI/sim_common/inc/vendor_ext.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/nr_prach_procedures.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/phy_procedures_nr_common.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/phy_procedures_nr_gNB.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/fapi_nr_l1.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/nr_ru_procedures.c \
