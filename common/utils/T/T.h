@@ -571,11 +571,13 @@ extern int *T_active;
 /*   optname                     helpstr                paramflags           XXXptr           defXXXval                         type       numelt  */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define TTRACER_DEFAULT_PORTNUM 2021
+// clang-format off
 #define CMDLINE_TTRACEPARAMS_DESC {  \
     {"T_port",                     CONFIG_HLP_TPORT,      0,                .iptr=&T_port,        .defintval=TTRACER_DEFAULT_PORTNUM, TYPE_INT,   0},\
     {"T_nowait",                   CONFIG_HLP_NOTWAIT,    PARAMFLAG_BOOL,   .iptr=&T_nowait,      .defintval=0,                       TYPE_INT,   0},\
     {"T_stdout",                   CONFIG_HLP_STDOUT,     0,                .iptr=&T_stdout,      .defintval=1,                       TYPE_INT,   0},\
   }
+// clang-format on
 
 void T_init(int remote_port, int wait_for_tracer);
 void T_Config_Init(void);
