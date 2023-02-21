@@ -1484,6 +1484,7 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
                               int **rxdataF_comp,
                               int **ul_ch_mag,
                               int **ul_ch_magb,
+                              int **ul_ch_magc,
                               int **ul_ch_estimates_ext,
                               unsigned short nb_rb,
                               unsigned char n_rx,
@@ -1747,33 +1748,41 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
      *
      *
      **************************************************************************/
-  __m128i *rxdataF_comp128_0, *rxdataF_comp128_1, *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *determ_fin_128;
+  __m128i *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128c_0 = NULL; // Layer 0
+  __m128i *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *ul_ch_mag128c_1 = NULL; // Layer 1
   __m128i mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
-  __m128i *after_mf_a_128, *after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
-  __m128i QAM_amp128 = {0}, QAM_amp128b = {0};
+  __m128i QAM_amp128 = {0}, QAM_amp128b = {0}, QAM_amp128c = {0};
 
-  determ_fin_128      = (__m128i *)&determ_fin[0];
+  __m128i *determ_fin_128 = (__m128i *)&determ_fin[0];
 
-  rxdataF_comp128_0   = (__m128i *)&rxdataF_comp[0][symbol*(off+nb_rb*12)];//aatx=0 @ aarx =0
-  rxdataF_comp128_1   = (__m128i *)&rxdataF_comp[n_rx][symbol*(off+nb_rb*12)];//aatx=1 @ aarx =0
+  __m128i *rxdataF_comp128_0 = (__m128i *)&rxdataF_comp[0][symbol * (off + nb_rb * 12)]; // aatx=0 @ aarx =0
+  __m128i *rxdataF_comp128_1 = (__m128i *)&rxdataF_comp[n_rx][symbol * (off + nb_rb * 12)]; // aatx=1 @ aarx =0
 
-  after_mf_a_128 = (__m128i *)af_mf_00;
-  after_mf_b_128 = (__m128i *)af_mf_01;
-  after_mf_c_128 = (__m128i *)af_mf_10;
-  after_mf_d_128 = (__m128i *)af_mf_11;
+  __m128i *after_mf_a_128 = (__m128i *)af_mf_00;
+  __m128i *after_mf_b_128 = (__m128i *)af_mf_01;
+  __m128i *after_mf_c_128 = (__m128i *)af_mf_10;
+  __m128i *after_mf_d_128 = (__m128i *)af_mf_11;
 
-  if (mod_order>2) {
+  if (mod_order > 2) {
     if (mod_order == 4) {
-      QAM_amp128 = _mm_set1_epi16(QAM16_n1);  //2/sqrt(10)
+      QAM_amp128 = _mm_set1_epi16(QAM16_n1); // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
+      QAM_amp128c = _mm_setzero_si128();
     } else if (mod_order == 6) {
-      QAM_amp128  = _mm_set1_epi16(QAM64_n1); //4/sqrt{42}
-      QAM_amp128b = _mm_set1_epi16(QAM64_n2); //2/sqrt{42}
+      QAM_amp128 = _mm_set1_epi16(QAM64_n1); // 4/sqrt{42}
+      QAM_amp128b = _mm_set1_epi16(QAM64_n2); // 2/sqrt{42}
+      QAM_amp128c = _mm_setzero_si128();
+    } else if (mod_order == 8) {
+      QAM_amp128 = _mm_set1_epi16(QAM256_n1);
+      QAM_amp128b = _mm_set1_epi16(QAM256_n2);
+      QAM_amp128c = _mm_set1_epi16(QAM256_n3);
     }
     ul_ch_mag128_0 = (__m128i *)&ul_ch_mag[0][symbol * (off + nb_rb * 12)];
     ul_ch_mag128b_0 = (__m128i *)&ul_ch_magb[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128c_0 = (__m128i *)&ul_ch_magc[0][symbol * (off + nb_rb * 12)];
     ul_ch_mag128_1 = (__m128i *)&ul_ch_mag[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
     ul_ch_mag128b_1 = (__m128i *)&ul_ch_magb[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128c_1 = (__m128i *)&ul_ch_magc[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
   }
 
   for (int rb = 0; rb < 3 * nb_rb_0; rb++) {
@@ -1799,18 +1808,24 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
       // Layer 0
       ul_ch_mag128_0[0] = mmtmpD2;
       ul_ch_mag128b_0[0] = mmtmpD2;
+      ul_ch_mag128c_0[0] = mmtmpD2;
       ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0], QAM_amp128);
       ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0], 1);
       ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0], QAM_amp128b);
       ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0], 1);
+      ul_ch_mag128c_0[0] = _mm_mulhi_epi16(ul_ch_mag128c_0[0], QAM_amp128c);
+      ul_ch_mag128c_0[0] = _mm_slli_epi16(ul_ch_mag128c_0[0], 1);
 
       // Layer 1
       ul_ch_mag128_1[0] = mmtmpD2;
       ul_ch_mag128b_1[0] = mmtmpD2;
+      ul_ch_mag128c_1[0] = mmtmpD2;
       ul_ch_mag128_1[0] = _mm_mulhi_epi16(ul_ch_mag128_1[0], QAM_amp128);
       ul_ch_mag128_1[0] = _mm_slli_epi16(ul_ch_mag128_1[0], 1);
       ul_ch_mag128b_1[0] = _mm_mulhi_epi16(ul_ch_mag128b_1[0], QAM_amp128b);
       ul_ch_mag128b_1[0] = _mm_slli_epi16(ul_ch_mag128b_1[0], 1);
+      ul_ch_mag128c_1[0] = _mm_mulhi_epi16(ul_ch_mag128c_1[0], QAM_amp128c);
+      ul_ch_mag128c_1[0] = _mm_slli_epi16(ul_ch_mag128c_1[0], 1);
     }
 
     // multiply by channel Inv
@@ -1843,6 +1858,8 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
     ul_ch_mag128_1 += 1;
     ul_ch_mag128b_0 += 1;
     ul_ch_mag128b_1 += 1;
+    ul_ch_mag128c_0 += 1;
+    ul_ch_mag128c_1 += 1;
     rxdataF_comp128_0 += 1;
     rxdataF_comp128_1 += 1;
     after_mf_a_128 += 1;
@@ -2075,6 +2092,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                               pusch_vars->rxdataF_comp,
                               pusch_vars->ul_ch_mag0,
                               pusch_vars->ul_ch_magb0,
+                              pusch_vars->ul_ch_magc0,
                               pusch_vars->ul_ch_estimates_ext,
                               rel15_ul->rb_size,
                               frame_parms->nb_antennas_rx,
