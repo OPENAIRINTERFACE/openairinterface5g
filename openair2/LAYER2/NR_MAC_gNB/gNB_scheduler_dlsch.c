@@ -383,7 +383,8 @@ bool allocate_dl_retransmission(module_id_t module_id,
                                 uint16_t *rballoc_mask,
                                 int *n_rb_sched,
                                 NR_UE_info_t *UE,
-                                int current_harq_pid) {
+                                int current_harq_pid)
+{
 
   int CC_id = 0;
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
@@ -411,24 +412,19 @@ bool allocate_dl_retransmission(module_id_t module_id,
   /* Check first whether the old TDA can be reused
   * this helps allocate retransmission when TDA changes (e.g. new nrOfSymbols > old nrOfSymbols) */
   NR_tda_info_t temp_tda = nr_get_pdsch_tda_info(dl_bwp, tda);
-  const uint16_t temp_bitmap = SL_to_bitmap(temp_tda.startSymbolIndex, temp_tda.nrOfSymbols);
-  NR_tda_info_t *old_tda = &retInfo->tda_info;
-  const uint16_t old_bitmap = SL_to_bitmap(old_tda->startSymbolIndex, old_tda->nrOfSymbols);
-  bool reuse_old_tda = (old_bitmap & temp_bitmap) == old_bitmap;
+  bool reuse_old_tda = (retInfo->tda_info.startSymbolIndex == temp_tda.startSymbolIndex) && (retInfo->tda_info.nrOfSymbols <= temp_tda.nrOfSymbols);
   LOG_D(NR_MAC, "[UE %x] %s old TDA, %s number of layers\n",
-    UE->rnti,
-    reuse_old_tda ? "reuse" : "do not reuse",
-    layers == retInfo->nrOfLayers ? "same" : "different");
+        UE->rnti,
+        reuse_old_tda ? "reuse" : "do not reuse",
+        layers == retInfo->nrOfLayers ? "same" : "different");
 
-  if ((reuse_old_tda || tda == retInfo->time_domain_allocation) &&
-      layers == retInfo->nrOfLayers) {
-
+  if (reuse_old_tda && layers == retInfo->nrOfLayers) {
     /* Check that there are enough resources for retransmission */
     while (rbSize < retInfo->rbSize) {
       rbStart += rbSize; /* last iteration rbSize was not enough, skip it */
       rbSize = 0;
 
-      const uint16_t slbitmap = reuse_old_tda ? old_bitmap : temp_bitmap;
+      const uint16_t slbitmap = SL_to_bitmap(retInfo->tda_info.startSymbolIndex, retInfo->tda_info.nrOfSymbols);
       while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
 
