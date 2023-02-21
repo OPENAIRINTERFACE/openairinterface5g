@@ -1963,6 +1963,7 @@ rrc_ue_process_rrcConnectionReconfiguration(
                       sizeof(msg));
 
           nsa_sendmsg_to_nrue(&msg, sizeof(msg), RRC_CONFIG_COMPLETE_REQ);
+          free(msg.buffer);
           LOG_A(RRC, "Sent RRC_CONFIG_COMPLETE_REQ to the NR UE\n");
       }
 

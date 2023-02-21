@@ -213,7 +213,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 			msi_pos++;
 		   mbms_mch_i=0;
 
-		   if(subframeP==0){
+		   if (subframeP==0) {
 		   	x=0;
 		   	mbms_mch_i=0;
 		   }
@@ -459,7 +459,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
             	     	  module_idP, CC_id, frameP, subframeP, i, j,
             	     	  cc->mbsfn_SubframeConfig[j]->subframeAllocation.choice.oneFrame.buf[0],
             	     	  msi_pos);
-	 	         if(subframeP==1){
+	 	         if (subframeP==1) {
 		        	x=0;
 		        	mbms_mch_i=0;
 	      	     	LOG_D(MAC,"MSP, frameP %d subframeP %d msi_pos(%d) mbms_mch_i %d\n",frameP, subframeP, msi_pos,mbms_mch_i);
@@ -708,7 +708,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     uint16_t msi_control_element[29], *msi_ptr;
     // MSI buffer pointer
     char *buffer_pointer=NULL;
-    if (msi_flag == 1 && cc->mbms_SessionList[mbms_mch_i]) {
+    if (msi_flag == 1 && cc->mbms_SessionList) {
       // Create MSI here
       msi_ptr = &msi_control_element[0];
 
@@ -868,7 +868,7 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
 
     // there is MTCHs, loop if there are more than 1
     // BAd race condition: all this struct is filled by another thread, no mutex or any code to make it coherent
-    if (mtch_flag == 1 && cc->mbms_SessionList[0] && cc->mbms_SessionList[0]->list.array[0]) {
+    if (mtch_flag == 1 && cc->mbms_SessionList && cc->mbms_SessionList[0] && cc->mbms_SessionList[0]->list.array[0]) {
       // Calculate TBS
       // get MTCH data from RLC (like for DTCH)
       LOG_D(MAC, "[eNB %d] CC_id %d Frame %d subframeP %d: Schedule MTCH (area %d, sfAlloc %d)\n", module_idP, CC_id, frameP, subframeP, i, j);

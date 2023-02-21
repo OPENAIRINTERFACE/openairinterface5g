@@ -3245,69 +3245,6 @@ void rrc_eNB_generate_defaultRRCConnectionReconfiguration(const protocol_ctxt_t 
 }
 
 //-----------------------------------------------------------------------------
-int
-rrc_eNB_generate_RRCConnectionReconfiguration_SCell(
-  const protocol_ctxt_t *const ctxt_pP,
-  rrc_eNB_ue_context_t *const ue_context_pP,
-  uint32_t dl_CarrierFreq_r10
-)
-//-----------------------------------------------------------------------------
-{
-  uint8_t size;
-  uint8_t buffer[100];
-  uint8_t sCellIndexToAdd = 0; //one SCell so far
-
-  //   uint8_t sCellIndexToAdd;
-  //   sCellIndexToAdd = rrc_find_free_SCell_index(enb_mod_idP, ue_mod_idP, 1);
-  //  if (RC.rrc[enb_mod_idP]->sCell_config[ue_mod_idP][sCellIndexToAdd] ) {
-  if (&ue_context_pP->ue_context.sCell_config[sCellIndexToAdd] != NULL) {
-    ue_context_pP->ue_context.sCell_config[sCellIndexToAdd].cellIdentification_r10->dl_CarrierFreq_r10 = dl_CarrierFreq_r10;
-  } else {
-    LOG_E(RRC,"Scell not configured!\n");
-    return(-1);
-  }
-
-  size = do_RRCConnectionReconfiguration(ctxt_pP,
-                                         buffer,
-                                         sizeof(buffer),
-                                         rrc_eNB_get_next_transaction_identifier(ctxt_pP->module_id),//Transaction_id,
-                                         (LTE_SRB_ToAddModList_t *)NULL,
-                                         (LTE_DRB_ToAddModList_t *)NULL,
-                                         (LTE_DRB_ToReleaseList_t *)NULL,
-                                         (struct LTE_SPS_Config *)NULL,
-                                         (struct LTE_PhysicalConfigDedicated *)NULL,
-                                         (LTE_MeasObjectToAddModList_t *)NULL,
-                                         (LTE_ReportConfigToAddModList_t *)NULL,
-                                         (LTE_QuantityConfig_t *)NULL,
-                                         (LTE_MeasIdToAddModList_t *)NULL,
-                                         (LTE_MAC_MainConfig_t *)NULL,
-                                         (LTE_MeasGapConfig_t *)NULL,
-                                         (LTE_MobilityControlInfo_t *)NULL,
-                                         (LTE_SecurityConfigHO_t *)NULL,
-                                         (struct LTE_MeasConfig__speedStatePars *)NULL,
-                                         (LTE_RSRP_Range_t *)NULL,
-                                         (LTE_C_RNTI_t *)NULL,
-                                         (struct LTE_RRCConnectionReconfiguration_r8_IEs__dedicatedInfoNASList *)NULL,
-                                         (LTE_SL_CommConfig_r12_t *)NULL,
-                                         (LTE_SL_DiscConfig_r12_t *)NULL,
-                                         ue_context_pP->ue_context.sCell_config
-                                        );
-  LOG_I(RRC,"[eNB %d] Frame %d, Logical Channel DL-DCCH, Generate LTE_RRCConnectionReconfiguration (bytes %d, UE id %x)\n",
-        ctxt_pP->module_id,ctxt_pP->frame, size, ue_context_pP->ue_context.rnti);
-  rrc_data_req(
-    ctxt_pP,
-    DCCH,
-    rrc_eNB_mui++,
-    SDU_CONFIRM_NO,
-    size,
-    buffer,
-    PDCP_TRANSMISSION_MODE_CONTROL);
-  return(0);
-}
-
-
-
-//-----------------------------------------------------------------------------
 /**
  * @fn    :encode_CG_ConfigInfo
  * @param   :enc_buf to store the encoded bits
