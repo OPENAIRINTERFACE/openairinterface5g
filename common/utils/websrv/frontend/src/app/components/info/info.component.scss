@@ -1,0 +1,15 @@
+.infodiv {
+  height: 45px;
+  width: 80vw;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 auto;
+  padding: 10px 0;
+}
+
+
+.mat-card {
+  height: 95%;
+  overflow-y: auto;
+  overflow-x: scroll;
+}

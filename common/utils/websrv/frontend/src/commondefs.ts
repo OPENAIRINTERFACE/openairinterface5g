@@ -19,9 +19,9 @@
  *      contact@openairinterface.org
  */
 
-/*! \file common/utils/websrv/frontend/src/app/controls/row.control.ts
+/*! \file common/utils/websrv/frontend/src/commondefs.ts
  * \brief: implementation of web interface frontend for oai
- * \implement one row results for commands component
+ * \definitions of constants, enums and interfaces common to the whole frontend  
  * \author:  Yacine  El Mghazli, Francois TABURET
  * \date 2022
  * \version 0.1
@@ -30,56 +30,22 @@
  * \note
  * \warning
  */
-import {FormControl, UntypedFormArray, UntypedFormGroup} from "@angular/forms";
-import {IArgType} from "src/commondefs";
-import {IParam, IRow, IVariable} from "../api/commands.api";
-
-import {ParamCtrl} from "./param.control";
-
-enum RowFCN {
-  paramsFA = "params",
+export enum IArgType {
+  boolean = "boolean",
+  list = "list",
+  loglvl = "loglvl",
+  range = "range",
+  number = "number",
+  string = "string",
+  configfile = "configfile",
+  simuTypes = "simuTypes",
 }
 
-export class RowCtrl extends UntypedFormGroup {
-  cmdName: string;
-  rawIndex: number;
-  cmdparam?: IVariable;
-
-  constructor(row: IRow)
-  {
-    super({})
-
-        this.cmdName = row.cmdName;
-    this.rawIndex = row.rawIndex;
-    this.addControl(RowFCN.paramsFA, new UntypedFormArray(row.params.map(param => new ParamCtrl(param))));
-  }
-
-  get paramsFA()
-  {
-    return this.get(RowFCN.paramsFA) as UntypedFormArray
-  }
-
-  set paramsFA(fa: UntypedFormArray)
-  {
-    this.setControl(RowFCN.paramsFA, fa);
-  }
-
-  set_cmdparam(cmdparam: IVariable)
-  {
-    this.cmdparam = cmdparam;
-  }
-
-  get paramsCtrls(): ParamCtrl[]{return this.paramsFA.controls as ParamCtrl[]}
-
-  api()
-  {
-    const doc: IRow = {
-      rawIndex : this.rawIndex,
-      cmdName : this.cmdName,
-      params : this.paramsCtrls.map(control => control.api()),
-      param : this.cmdparam
-    }
-
-    return doc
-  }
+export interface IInfo {
+  name: string;
+  value: string;
+  type: IArgType;
+  modifiable: boolean; // set command ?
 }
+
+export const route = "oaisoftmodem/";

@@ -54,7 +54,7 @@ int get_modchannel_index(char *buf, int debug, void *vdata, telnet_printfunc_t p
 int get_channel_params(char *buf, int debug, void *tdata, telnet_printfunc_t prnt);
 int get_currentchannels_type(char *buf, int debug, void *vdata, telnet_printfunc_t prnt);
 
-#define HELP_WEBIF_MODIFCHAN_STRING "Current channel index? <chanidx>"
+#define HELP_WEBIF_MODIFCHAN_STRING "<channel index>"
 static telnetshell_cmddef_t channelmod_cmdarray[] = {
     {"help", "", channelmod_print_help, {NULL}, 0, NULL},
     {"show", "<predef,current>", channelmod_show_cmd, {NULL}, TELNETSRV_CMDFLAG_TELNETONLY, NULL},

@@ -1,28 +1,40 @@
-<div class="grid-container" > 
-  <mat-grid-list cols="2" rowHeight="15vh" >
-    <mat-grid-tile [colspan]="1" [rowspan]="2" >
-      <mat-card class="dashboard-card">
-        <mat-card-header >
-          <mat-card-title>Connection info</mat-card-title>
-        </mat-card-header>
-        <mat-card-content class="dashboard-card-content">
-          <div *ngIf="infos$ | async as infos">
-            <div  class="spaceddiv" *ngFor="let info of infos">
-              <mat-form-field class="scrollablefield" >
-                <mat-label>{{ info.nameFC.value }}</mat-label>
-                <input matInput [formControl]="info.valueFC" [readonly]="!info.modifiableFC.value" />
-              </mat-form-field>
-              <button mat-raised-button color="primary" [disabled]="!info.modifiableFC.value"
-                (click)="onInfoSubmit(info)">
-                {{ info.btnTxtFC }}
-              </button>
-            </div>
-          </div>
-        </mat-card-content>
-      </mat-card>
-    </mat-grid-tile>
+<!--
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
 
-    <mat-grid-tile [colspan]="1" [rowspan]="2">
+/*! \file common/utils/websrv/frontend/src/app/components/commands/commands.component.html
+ * \brief: implementation of web interface frontend for oai
+ * \commands web interface implementation (works with commands.component.ts)
+ * \author:  Yacine  El Mghazli, Francois TABURET
+ * \date 2022
+ * \version 0.1
+ * \company NOKIA BellLabs France
+ * \email: yacine.el_mghazli@nokia-bell-labs.com  francois.taburet@nokia-bell-labs.com
+ * \note
+ * \warning
+ */
+-->
+<div class="grid-container" > 
+  <mat-grid-list cols="2" rowHeight="12vh" >
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
       <mat-card class="dashboard-card">
         <mat-card-header>
           <mat-card-title>Softmodem commands</mat-card-title>
@@ -49,7 +61,7 @@
       </mat-card>
     </mat-grid-tile>
 
-    <mat-grid-tile *ngIf="vars$ | async as vars" [colspan]="1" [rowspan]="4">
+    <mat-grid-tile *ngIf="vars$ | async as vars" [colspan]="1" [rowspan]="8">
       <mat-card *ngIf="vars.length" class="dashboard-card">
         <mat-card-header>
           <mat-card-title>{{ selectedModule!.name }} variables</mat-card-title>
@@ -69,10 +81,10 @@
       </mat-card>
     </mat-grid-tile>
 
-   <mat-grid-tile *ngIf="(rows$ | async)?.length" [colspan]="1" [rowspan]="4">
+   <mat-grid-tile *ngIf="(rows$ | async)?.length" [colspan]="1" [rowspan]="8">
       <mat-card class="dashboard-card">
         <mat-card-header>
-          <mat-card-title>{{ selectedModule!.name }} {{ selectedCmd!.name }}  {{ selectedCmd!.param?.value}}</mat-card-title>
+          <mat-card-title>{{ selectedModule!.name }} {{ selectedCmd!.name }}  {{ title_ptext }}</mat-card-title>
         </mat-card-header>
         <mat-card-content class="dashboard-card-content">
            <div >
