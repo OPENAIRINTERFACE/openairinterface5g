@@ -30,7 +30,7 @@ FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-base
 ARG NEEDED_GIT_PROXY
 ENV TZ=Europe/Paris
 ENV BUILD_UHD_FROM_SOURCE=True
-ENV UHD_VERSION=3.15.0.0
+ENV UHD_VERSION=4.4.0.0
 
 # Copy the entitlements
 COPY ./etc-pki-entitlement /etc/pki/entitlement

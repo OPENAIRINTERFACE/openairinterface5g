@@ -274,6 +274,7 @@ install_usrp_uhd_driver_from_source(){
             # - 4.2.0.0
             # - 4.2.0.1
             # - 4.3.0.0-rc1
+            # - 4.4.0.0
             git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
             ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
         fi
@@ -349,7 +350,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y install python-tk  $boost_libs_ubuntu libusb-1.0-0-dev
         case "$(get_distribution_release)" in
           "ubuntu18.04" | "ubuntu20.04" | "ubuntu22.04")
-            $SUDO apt-get -y install libuhd-dev libuhd4.2.0 uhd-host
+            $SUDO apt-get -y install libuhd-dev libuhd4.4.0 uhd-host
             ;;
         esac
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then

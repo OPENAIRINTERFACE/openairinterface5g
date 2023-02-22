@@ -168,7 +168,7 @@ services:
             retries: 5
 
     trf_gen:
-        image: trf-gen:production
+        image: oaisoftwarealliance/trf-gen-cn5g:focal
         privileged: true
         container_name: prod-trf-gen
         networks:
