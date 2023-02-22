@@ -47,7 +47,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                int *max_ch);
+                                int *max_ch,
+                                uint32_t *nvar);
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
 

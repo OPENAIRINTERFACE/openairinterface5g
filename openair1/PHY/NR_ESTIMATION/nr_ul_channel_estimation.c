@@ -120,7 +120,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 int ul_id,
                                 unsigned short bwp_start_subcarrier,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
-                                int *max_ch) {
+                                int *max_ch,
+                                uint32_t *nvar) {
 
   c16_t pilot[3280] __attribute__((aligned(32)));
   const int chest_freq = gNB->chest_freq;
@@ -186,6 +187,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 #endif
 
+  int nest_count = 0;
+  uint64_t noise_amp2 = 0;
   c16_t ul_ls_est[symbolSize] __attribute__((aligned(32)));
   memset(ul_ls_est, 0, sizeof(c16_t) * symbolSize);
   NR_ULSCH_delay_t *delay = &gNB->ulsch[ul_id].delay;
@@ -284,12 +287,16 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
           int k = pilot_cnt << 1;
           ul_ch[k] = c16mulShift(ul_ch[k], ul_inv_delay_table[k], 8);
           ul_ch[k + 1] = c16mulShift(ul_ch[k + 1], ul_inv_delay_table[k + 1], 8);
+          noise_amp2 += c16amp2(c16sub(ul_ls_est[k], ul_ch[k]));
+          noise_amp2 += c16amp2(c16sub(ul_ls_est[k + 1], ul_ch[k + 1]));
+
 #ifdef DEBUG_PUSCH
           re_offset = (k0 + (n << 2) + (k_line << 1)) % symbolSize;
           c16_t *rxF = &rxdataF[soffset + re_offset];
           printf("ch -> (%4d,%4d), ch_inter -> (%4d,%4d)\n", ul_ls_est[k].r, ul_ls_est[k].i, ul_ch[k].r, ul_ch[k].i);
 #endif
           pilot_cnt++;
+          nest_count += 2;
         }
       }
 
@@ -307,6 +314,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, &ch, &ul_ls_est[n]);
         ul_ls_est[n + 4] = ch;
         ul_ls_est[n + 5] = ch;
+        noise_amp2 += c16amp2(c16sub(ch0, ch));
+        nest_count++;
       }
 
       // Delay compensation
@@ -501,7 +510,12 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_CH
   fclose(debug_ch_est);
 #endif
-  return(0);
+
+  if (nvar && nest_count > 0) {
+    *nvar = (uint32_t)(noise_amp2 / nest_count);
+  }
+
+  return 0;
 }
 
 
