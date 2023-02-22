@@ -35,20 +35,6 @@
 
 #include "PHY/defs_gNB.h"
 
-void nr_get_time_domain_allocation_type(nfapi_nr_config_request_t config,
-                                        nfapi_nr_dl_tti_pdcch_pdu dci_pdu,
-                                        nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu);
-
-void nr_check_time_alloc(uint8_t S, uint8_t L,nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15,nfapi_nr_config_request_t *cfg);
-
-uint16_t get_RIV(uint16_t rb_start, uint16_t L, uint16_t N_RB);
-
-uint8_t nr_get_S(uint8_t row_idx, uint8_t CP, uint8_t time_alloc_type, uint8_t dmrs_typeA_position);
-
-void nr_get_rbg_parms(NR_BWP_PARMS* bwp, uint8_t config_type);
-
-void nr_get_rbg_list(uint32_t bitmap, uint8_t n_rbg, uint8_t* rbg_list);
-
 void nr_pdsch_codeword_scrambling(uint8_t *in,
                                   uint32_t size,
                                   uint8_t q,

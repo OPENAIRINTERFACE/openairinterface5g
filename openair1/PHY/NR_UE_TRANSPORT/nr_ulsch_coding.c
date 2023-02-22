@@ -31,7 +31,6 @@
 */
 
 #include "PHY/defs_UE.h"
-#include "PHY/phy_extern_ue.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/CODING/coding_defs.h"
 #include "PHY/CODING/coding_extern.h"
@@ -39,7 +38,6 @@
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include <openair2/UTIL/OPT/opt.h>
 
 //#define DEBUG_ULSCH_CODING
 

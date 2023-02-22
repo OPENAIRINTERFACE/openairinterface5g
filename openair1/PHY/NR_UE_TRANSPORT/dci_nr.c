@@ -59,7 +59,6 @@ char nr_dci_format_string[8][30] = {
 
 //#define DEBUG_DCI_DECODING 1
 
-//#define NR_LTE_PDCCH_DCI_SWITCH
 //#define NR_PDCCH_DCI_DEBUG            // activates NR_PDCCH_DCI_DEBUG logs
 #ifdef NR_PDCCH_DCI_DEBUG
 #define LOG_DDD(a, ...) printf("<-NR_PDCCH_DCI_DEBUG (%s)-> " a, __func__, ##__VA_ARGS__ )

@@ -32,7 +32,6 @@
 
 #include "PHY/types.h"
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "nr_ul_estimation.h"
 
 #define I0_SKIP_DC 1

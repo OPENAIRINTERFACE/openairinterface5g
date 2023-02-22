@@ -29,6 +29,8 @@
 *
 ************************************************************************/
 
+#include "PHY/defs_gNB.h"
+
 #ifndef PHY_FRAME_CONFIG_NR_H
 #define PHY_FRAME_CONFIG_NR_H
 

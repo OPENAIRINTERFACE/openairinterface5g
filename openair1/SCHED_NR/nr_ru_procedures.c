@@ -34,7 +34,6 @@
 #include "sched_nr.h"
 #include "PHY/MODULATION/modulation_common.h"
 #include "PHY/MODULATION/nr_modulation.h"
-#include "PHY/LTE_TRANSPORT/if4_tools.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"

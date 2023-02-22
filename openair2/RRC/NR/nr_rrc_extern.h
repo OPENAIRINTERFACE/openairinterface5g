@@ -32,9 +32,7 @@
 #define __OPENAIR_NR_RRC_EXTERN_H__
 #include "nr_rrc_defs.h"
 #include "COMMON/mac_rrc_primitives.h"
-#include "LAYER2/MAC/mac.h"
 #include "LAYER2/RLC/rlc.h"
-#include "openair2/RRC/LTE/rrc_defs.h"
 #include "openair2/RRC/common.h"
 
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1 - The physical layer imposes a limit to the maximum size a SIB can take. The maximum SIB1 or SI message size is 2976 bits.

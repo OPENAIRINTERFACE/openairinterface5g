@@ -43,7 +43,6 @@
 #include "OCG_extern.h"
 
 #include "RRC/LTE/rrc_extern.h"
-#include "RRC/NR/nr_rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 
 //#include "LAYER2/MAC/pre_processor.c"
