@@ -7916,7 +7916,7 @@ void *rrc_enb_process_itti_msg(void *notUsed) {
         else
           failure_cause = "UE not in handover";
 
-          LOG_W(RRC, "[eNB %ld] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n", instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
+        LOG_W(RRC, "[eNB %ld] cannot process (%s) X2 HANDOVER CANCEL for rnti %x, cause %s, ignoring\n", instance, failure_cause, X2AP_HANDOVER_CANCEL(msg_p).rnti, cause);
       }
 
       break;
