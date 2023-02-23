@@ -40,7 +40,6 @@
 #include "PHY/impl_defs_top.h"
 #include "PHY/defs_eNB.h"
 #include "s1ap_messages_types.h"
-#include "f1ap_messages_types.h"
 #include "LTE_SystemInformationBlockType2.h"
 #include "rrc_messages_types.h"
 #include "RRC/LTE/rrc_defs.h"

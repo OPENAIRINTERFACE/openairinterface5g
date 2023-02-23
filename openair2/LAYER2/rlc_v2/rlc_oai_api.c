@@ -412,37 +412,6 @@ rb_found:
     T(T_ENB_RLC_UL,
       T_INT(0 /*ctxt_pP->module_id*/),
       T_INT(ue->rnti), T_INT(rb_id), T_INT(size));
-
-    const ngran_node_t type = RC.rrc[0 /*ctxt_pP->module_id*/]->node_type;
-    AssertFatal(!NODE_IS_CU(type),
-                "Can't be CU, bad node type %d\n", type);
-
-    if (NODE_IS_DU(type)) {
-      if (is_srb == 1) {
-	MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE, sizeof(*msg) + size);
-	F1AP_UL_RRC_MESSAGE(msg).rrc_container = (uint8_t*)(msg+1);
-	memcpy(F1AP_UL_RRC_MESSAGE(msg).rrc_container, buf, size);
-	F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
-	F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
-	F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
-	itti_send_msg_to_task(TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(0 /*ctxt_pP->module_id*/), msg);
-	return;
-      }  else {
-	// Fixme: very dirty workaround of incomplete F1-U implementation
-	instance_t DUuniqInstance=0;
-	MessageDef *msg = itti_alloc_new_message_sized(TASK_RLC_ENB, 0, GTPV1U_TUNNEL_DATA_REQ, sizeof(gtpv1u_tunnel_data_req_t) + size);
-	gtpv1u_tunnel_data_req_t *req=&GTPV1U_TUNNEL_DATA_REQ(msg);
-	req->buffer=(uint8_t*)(req+1);
-	memcpy(req->buffer,buf,size);
-	req->length=size;
-	req->offset=0;
-	req->ue_id=ue->rnti;
-	req->bearer_id=rb_id+4;
-	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
-	itti_send_msg_to_task(TASK_GTPV1_U, DUuniqInstance, msg);      
-	return;
-      }
-    }
   }
   
   memblock = get_free_mem_block(size, __func__);

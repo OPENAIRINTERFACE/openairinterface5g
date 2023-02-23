@@ -1609,7 +1609,7 @@ __attribute__((unused)) static int fl_vmode;
 #define fl_get_form_vclass(a) fl_vmode
 #define fl_get_gc() fl_state[fl_vmode].gc[0]
 
-__attribute__((unused)) static FL_State fl_state[];
+//__attribute__((unused)) static FL_State fl_state[];
 
 __attribute__((unused)) static char *fl_ul_magic_char;
 

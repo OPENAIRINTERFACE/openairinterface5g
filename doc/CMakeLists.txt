@@ -1,4 +1,4 @@
-add_boolean_option(GENERATE_DOXYGEN False "Generate source code doc using doxygen")
+add_boolean_option(GENERATE_DOXYGEN False "Generate source code doc using doxygen" OFF)
 
 if(GENERATE_DOXYGEN)
   find_package(Doxygen REQUIRED)

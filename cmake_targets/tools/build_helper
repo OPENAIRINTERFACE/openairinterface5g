@@ -274,6 +274,7 @@ install_usrp_uhd_driver_from_source(){
             # - 4.2.0.0
             # - 4.2.0.1
             # - 4.3.0.0-rc1
+            # - 4.4.0.0
             git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
             ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
         fi
@@ -349,7 +350,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get -y install python-tk  $boost_libs_ubuntu libusb-1.0-0-dev
         case "$(get_distribution_release)" in
           "ubuntu18.04" | "ubuntu20.04" | "ubuntu22.04")
-            $SUDO apt-get -y install libuhd-dev libuhd4.2.0 uhd-host
+            $SUDO apt-get -y install libuhd-dev libuhd4.4.0 uhd-host
             ;;
         esac
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
@@ -523,7 +524,16 @@ check_install_soapy () {
     install_soapy_from_source
     #fi
     install_soapy_iris_from_source
+}
 
+# for ubuntu 18 we need a special repository (https://apt.kitware.com/) to install cmake >= 3.12
+add_cmake_repo () {
+  $SUDO $INSTALLER -y install wget
+  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | $SUDO tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+  echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | $SUDO tee /etc/apt/sources.list.d/kitware.list >/dev/null
+  $SUDO $INSTALLER -y update
+  $SUDO rm /usr/share/keyrings/kitware-archive-keyring.gpg
+  $SUDO $INSTALLER -y install kitware-archive-keyring
 }
 
 check_install_additional_tools (){
@@ -578,6 +588,7 @@ check_install_oai_software() {
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
         "ubuntu18.04")
+            add_cmake_repo
             specific_packages="libgcrypt11-dev guile-2.0-dev"
             ;;
         "ubuntu20.04")

@@ -34,8 +34,6 @@
     #include "lteRALenb.h"
   #endif
   #include "RRC/LTE/rrc_defs.h"
-# include "f1ap_cu_task.h"
-# include "f1ap_du_task.h"
 # include "enb_app.h"
 # include "openair2/LAYER2/MAC/mac_proto.h"
 #include <executables/split_headers.h> 
@@ -45,7 +43,6 @@ extern RAN_CONTEXT_t RC;
 
 int create_tasks(uint32_t enb_nb) {
   LOG_D(ENB_APP, "%s(enb_nb:%d\n", __FUNCTION__, enb_nb);
-  ngran_node_t type = RC.rrc[0]->node_type;
   int rc;
 
   if (enb_nb == 0) return 0;
@@ -60,7 +57,7 @@ int create_tasks(uint32_t enb_nb) {
     AssertFatal(rc >= 0, "Create task for SCTP failed\n");
   }
 
-  if (EPC_MODE_ENABLED && !NODE_IS_DU(type) && ! ( split73==SPLIT73_DU ) ) {
+  if (EPC_MODE_ENABLED && ! ( split73==SPLIT73_DU ) ) {
     rc = itti_create_task(TASK_S1AP, s1ap_eNB_task, NULL);
     AssertFatal(rc >= 0, "Create task for S1AP failed\n");
     rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
@@ -72,18 +69,6 @@ int create_tasks(uint32_t enb_nb) {
       AssertFatal(rc >= 0, "Create task for X2AP failed\n");
   } else {
       LOG_I(X2AP, "X2AP is disabled.\n");
-  }
-
-  if (NODE_IS_CU(type)) {
-    rc = itti_create_task(TASK_CU_F1, F1AP_CU_task, NULL);
-    AssertFatal(rc >= 0, "Create task for CU F1AP failed\n");
-  }
-
-  if (NODE_IS_DU(type)) {
-    rc = itti_create_task(TASK_DU_F1, F1AP_DU_task, NULL);
-    AssertFatal(rc >= 0, "Create task for DU F1AP failed\n");
-    rc = itti_create_task(TASK_GTPV1_U, gtpv1uTask, NULL);
-    AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   }
 
   return 0;

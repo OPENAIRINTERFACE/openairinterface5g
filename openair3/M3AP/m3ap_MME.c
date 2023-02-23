@@ -111,9 +111,7 @@ void m3ap_MME_handle_sctp_association_resp(instance_t instance, sctp_new_associa
               sctp_new_association_resp->ulp_cnx_id);
 
     if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN)
-      //proto_agent_stop(instance);
-      //f1ap_handle_setup_message(instance, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
-    return; // exit -1 for debugging
+      return;
   }
 
    // go to an init func

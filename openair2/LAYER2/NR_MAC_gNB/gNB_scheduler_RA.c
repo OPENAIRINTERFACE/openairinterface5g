@@ -51,7 +51,6 @@ extern uint16_t sl_ahead;
 
 uint8_t DELTA[4]= {2,3,4,6};
 
-#define MAX_NUMBER_OF_SSB 64		
 float ssb_per_rach_occasion[8] = {0.125,0.25,0.5,1,2,4,8};
 
 int16_t ssb_index_from_prach(module_id_t module_idP,

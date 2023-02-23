@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Ubuntu18.04
+#   Valid for Ubuntu20.04
 #
 #---------------------------------------------------------------------
 
@@ -34,7 +34,7 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/lte_ue_paramet
     cp /oai-ran/docker/scripts/lte_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
-FROM ubuntu:bionic as oai-lte-ue
+FROM ubuntu:focal as oai-lte-ue
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
 
@@ -81,17 +81,18 @@ COPY --from=lte-ue-build \
 
 # Now we are copying from builder-image the UHD files.
 COPY --from=lte-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=lte-ue-base /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
+COPY --from=lte-ue-base /usr/local/lib/libuhd.so.4.4.0 /usr/local/lib
 COPY --from=lte-ue-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ue/bin
 
 COPY --from=lte-ue-base \
-    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 \
+    /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.71.0 \
     /usr/lib/x86_64-linux-gnu/
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \

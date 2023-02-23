@@ -35,7 +35,6 @@
 #include "fapi_nr_ue_interface.h"
 #include "fapi_nr_ue_l1.h"
 #include "harq_nr.h"
-//#include "PHY/phy_vars_nr_ue.h"
 #include "openair2/NR_UE_PHY_INTERFACE/NR_IF_Module.h"
 #include "PHY/defs_nr_UE.h"
 #include "PHY/impl_defs_nr.h"

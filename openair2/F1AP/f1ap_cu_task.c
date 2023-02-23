@@ -123,12 +123,7 @@ void *F1AP_CU_task(void *arg) {
   eth_params_t *IPaddrs;
 
   // Hardcoded instance id!
-  if (RC.nrrrc &&
-      (RC.nrrrc[0]->node_type == ngran_gNB_CU ||
-       RC.nrrrc[0]->node_type == ngran_gNB_CUCP ) )
-    IPaddrs=&RC.nrrrc[0]->eth_params_s;
-  else
-    IPaddrs=&RC.rrc[0]->eth_params_s;
+  IPaddrs = &RC.nrrrc[0]->eth_params_s;
 
   cu_task_send_sctp_init_req(0, IPaddrs->my_addr);
 
