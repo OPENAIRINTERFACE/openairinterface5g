@@ -43,7 +43,7 @@ import cls_physim               #class PhySim for physical simulators build and 
 import cls_cots_ue              #class CotsUe for Airplane mode control
 import cls_containerize         #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis #class for static code analysis
-import cls_ci_ueinfra			#class defining the multi Ue infrastrucure
+import cls_ci_ueinfra		        #class defining the multi Ue infrastrucure
 import cls_physim1          #class PhySim for physical simulators deploy and run
 import cls_cluster              # class for building/deploying on cluster
 
@@ -472,7 +472,7 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.cliOptions = string_field
 
-	elif action == 'Run_LDPCTest' or action == 'Run_NRulsimTest':
+	elif action == 'Run_LDPCTest' or action == 'Run_NRulsimTest' or action == 'Run_LDPCt1Test':
 		ldpc.runargs = test.findtext('physim_run_args')
 
 	elif action == 'LicenceAndFormattingCheck':
@@ -961,6 +961,10 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'Run_LDPCTest':
 					HTML=ldpc.Run_LDPCTest(HTML,CONST,id)
+					if ldpc.exitStatus==1:
+						RAN.prematureExit = True
+				elif action == 'Run_LDPCt1Test':
+					HTML=ldpc.Run_LDPCt1Test(HTML,CONST,id)
 					if ldpc.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'Run_NRulsimTest':

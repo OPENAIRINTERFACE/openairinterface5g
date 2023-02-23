@@ -24,31 +24,79 @@
 	<htmlTabName>Test T1 Offload</htmlTabName>
 	<htmlTabIcon>tasks</htmlTabIcon>
 	<repeatCount>1</repeatCount>
-	<TestCaseRequestedList>000001 000002 000003 000004</TestCaseRequestedList>
+	<TestCaseRequestedList>000111 000112 000121 000122 000131 000132 000211 000212 000221 000222 000231 000232</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
-	<testCase id="000001">
-		<class>Run_NRulsimTest</class>
-		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r50 -R106 -o</physim_run_args>
+	<testCase id="000111">
+		<class>Run_LDPCt1Test</class>
+		<desc>Run nr_ulsim with CPU</desc>
+		<physim_run_args>-n100 -s30 -m5 -r106 -R106 -C10 -P</physim_run_args>
 	</testCase>
 
-	<testCase id="000002">
-		<class>Run_NRulsimTest</class>
-		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r106 -R106 -o</physim_run_args>
+	<testCase id="000112">
+		<class>Run_LDPCt1Test</class>
+		<desc>Run nr_ulsim with T1 LDPC offload</desc>
+		<physim_run_args>-n100 -s30 -m5 -r106 -R106 -o -P</physim_run_args>
 	</testCase>
 
-	<testCase id="000003">
-		<class>Run_NRulsimTest</class>
-		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m16 -r106 -R106 -o</physim_run_args>
+	<testCase id="000121">
+		<class>Run_LDPCt1Test</class>
+		<desc>Run nr_ulsim with CPU</desc>
+		<physim_run_args>-n100 -s30 -m15 -r106 -R106 -C10 -P</physim_run_args>
 	</testCase>
 
-	<testCase id="000004">
-		<class>Run_NRulsimTest</class>
-		<desc>Run T1 Offload nr_ulsim</desc>
-		<physim_run_args>-n2 -s30 -m9 -r273 -R273 -o</physim_run_args>
+	<testCase id="000122">
+		<class>Run_LDPCt1Test</class>
+		<desc>Run nr_ulsim with T1 LDPC offload</desc>
+		<physim_run_args>-n100 -s30 -m15 -r106 -R106 -o -P</physim_run_args>
 	</testCase>
+
+	<testCase id="000131">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with CPU</desc>
+                <physim_run_args>-n100 -s30 -m25 -r106 -R106 -C10 -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000132">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with T1 LDPC offload</desc>
+                <physim_run_args>-n100 -s30 -m25 -r106 -R106 -o -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000211">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with CPU</desc>
+                <physim_run_args>-n100 -s30 -m5 -r273 -R273 -C10 -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000212">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with T1 LDPC offload</desc>
+                <physim_run_args>-n100 -s30 -m5 -r273 -R273 -o -P</physim_run_args>
+	</testCase>
+
+	<testCase id="000221">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with CPU</desc>
+                <physim_run_args>-n100 -s30 -m15 -r273 -R273 -C10 -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000222">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with T1 LDPC offload</desc>
+                <physim_run_args>-n100 -s30 -m15 -r273 -R273 -o -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000231">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with CPU</desc>
+                <physim_run_args>-n100 -s30 -m25 -r273 -R273 -C10 -P</physim_run_args>
+        </testCase>
+
+        <testCase id="000232">
+                <class>Run_LDPCt1Test</class>
+                <desc>Run nr_ulsim with T1 LDPC offload</desc>
+                <physim_run_args>-n100 -s30 -m25 -r273 -R273 -o -P</physim_run_args>
+        </testCase>
 
 </testCaseList>
