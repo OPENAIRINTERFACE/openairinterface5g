@@ -468,25 +468,9 @@ check_ul_failure(module_id_t module_idP, int CC_id, int UE_id,
     // check threshold
     if (UE_info->UE_sched_ctrl[UE_id].ul_failure_timer > 4000) {
       // note: probably ul_failure_timer should be less than UE radio link failure time(see T310/N310/N311)
-      if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-        MessageDef *m = itti_alloc_new_message(TASK_PHY_ENB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
-        F1AP_UE_CONTEXT_RELEASE_REQ(m).rnti = rnti;
-        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause = F1AP_CAUSE_RADIO_NETWORK;
-        F1AP_UE_CONTEXT_RELEASE_REQ(m).cause_value = 1; // 1 = F1AP_CauseRadioNetwork_rl_failure
-        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container = NULL;
-        F1AP_UE_CONTEXT_RELEASE_REQ(m).rrc_container_length = 0;
-        itti_send_msg_to_task(TASK_DU_F1, module_idP, m);
-      } else {
-        // inform RRC of failure and clear timer
-        LOG_I(MAC, "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n",
-              UE_id,
-              rnti);
-        mac_eNB_rrc_ul_failure(module_idP,
-                               CC_id,
-                               frameP,
-                               subframeP,
-                               rnti);
-      }
+      // inform RRC of failure and clear timer
+      LOG_I(MAC, "UE %d rnti %x: UL Failure after repeated PDCCH orders: Triggering RRC \n", UE_id, rnti);
+      mac_eNB_rrc_ul_failure(module_idP, CC_id, frameP, subframeP, rnti);
 
       UE_info->UE_sched_ctrl[UE_id].ul_failure_timer = 0;
       UE_info->UE_sched_ctrl[UE_id].ul_out_of_sync   = 1;
@@ -973,14 +957,12 @@ eNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   } // end for loop on UE_id
 
 #if (!defined(PRE_SCD_THREAD))
-  if (!NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-    void rlc_tick(int, int);
-    PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
-    rlc_tick(frameP, subframeP);
-    pdcp_run(&ctxt);
-    pdcp_mbms_run(&ctxt);
-    rrc_rx_tx(&ctxt, CC_id);
-  }
+  void rlc_tick(int, int);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_YES, NOT_A_RNTI, frameP, subframeP, module_idP);
+  rlc_tick(frameP, subframeP);
+  pdcp_run(&ctxt);
+  pdcp_mbms_run(&ctxt);
+  rrc_rx_tx(&ctxt, CC_id);
 #endif
 
   int do_fembms_si=0;

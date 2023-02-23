@@ -47,7 +47,6 @@
 
 #include "intertask_interface.h"
 
-#include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -302,28 +301,6 @@ mac_rrc_data_ind(
 )
 //--------------------------------------------------------------------------
 {
-  if (NODE_IS_DU(RC.rrc[module_idP]->node_type)) {
-    LOG_W(RRC,"[DU %d][RAPROC] Received SDU for CCCH on SRB %ld length %d for UE id %d RNTI %x \n",
-          module_idP, srb_idP, sdu_lenP, UE_id, rntiP);
-    /* do ITTI message */
-    DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(
-      module_idP,
-      CC_id,
-      UE_id,
-      rntiP,
-      sduP,
-      sdu_lenP,
-      NULL,
-      0);
-    struct rrc_eNB_ue_context_s *ue_context_p = rrc_eNB_allocate_new_UE_context(RC.rrc[module_idP]);
-    ue_context_p->ue_id_rnti                    = rntiP;
-    ue_context_p->ue_context.rnti               = rntiP;
-    ue_context_p->ue_context.random_ue_identity = rntiP;
-    ue_context_p->ue_context.Srb0.Active        = 1;
-    RB_INSERT(rrc_ue_tree_s, &RC.rrc[module_idP]->rrc_ue_head, ue_context_p);
-    return(0);
-  }
-
   //SRB_INFO *Srb_info;
   protocol_ctxt_t ctxt;
   sdu_size_t      sdu_size = 0;

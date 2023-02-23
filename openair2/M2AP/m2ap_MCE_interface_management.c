@@ -75,7 +75,7 @@ int MCE_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
   ie->id                        = M2AP_ProtocolIE_ID_id_MCE_MBMS_M2AP_ID;
   ie->criticality               = M2AP_Criticality_reject;
   ie->value.present             = M2AP_SessionStartRequest_Ies__value_PR_MCE_MBMS_M2AP_ID;
-  //ie->value.choice.MCE_MBMS_M2AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M2AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -140,7 +140,7 @@ int MCE_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	 // ie->id                        = M2AP_ProtocolIE_ID_id_TNL_Information_1; 
 	 // ie->criticality               = M2AP_Criticality_reject;
 	 // ie->value.present             = M2AP_SessionStartRequest_Ies__value_PR_TNL_Information_1;
-	 // //asn_int642INTEGER(&ie->value.choice.MBMS_Session_ID, f1ap_du_data->MBMS_Session_ID); //?
+	 // //asn_int642INTEGER(&ie->value.choice.MBMS_Session_ID, 0);
 	 // asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
    
@@ -258,7 +258,7 @@ int MCE_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m2ap_session_stop_re
   ie->id                        = M2AP_ProtocolIE_ID_id_MCE_MBMS_M2AP_ID;
   ie->criticality               = M2AP_Criticality_reject;
   ie->value.present             = M2AP_SessionStopRequest_Ies__value_PR_MCE_MBMS_M2AP_ID;
-  ie->value.choice.MCE_MBMS_M2AP_ID = 0; /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  ie->value.choice.MCE_MBMS_M2AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
@@ -267,7 +267,7 @@ int MCE_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m2ap_session_stop_re
   ie->id                        = M2AP_ProtocolIE_ID_id_ENB_MBMS_M2AP_ID;
   ie->criticality               = M2AP_Criticality_reject;
   ie->value.present             = M2AP_SessionStopRequest_Ies__value_PR_ENB_MBMS_M2AP_ID;
-  ie->value.choice.ENB_MBMS_M2AP_ID = 0;/*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  ie->value.choice.ENB_MBMS_M2AP_ID = 0;
 
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
@@ -1437,7 +1437,7 @@ int MCE_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance,  module_id_t d
   ie->id                        = M2AP_ProtocolIE_ID_id_MBSFN_Area_ID;
   ie->criticality               = M2AP_Criticality_reject;
   ie->value.present             = M2AP_MbmsServiceCountingRequest_Ies__value_PR_MBSFN_Area_ID;
-  //ie->value.choice.MCE_MBMS_M2AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M2AP_ID = 0;
   asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */

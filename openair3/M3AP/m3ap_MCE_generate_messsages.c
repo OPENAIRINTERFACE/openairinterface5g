@@ -92,7 +92,7 @@ int m2ap_eNB_generate_m2_setup_request(
   //ie->id                        = M2AP_ProtocolIE_ID_id_gNB_eNB_ID;
   //ie->criticality               = M2AP_Criticality_reject;
   //ie->value.present             = M2AP_M2SetupRequestIEs__value_PR_GNB_eNB_ID;
-  //asn_int642INTEGER(&ie->value.choice.GNB_eNB_ID, f1ap_du_data->gNB_eNB_id);
+  //asn_int642INTEGER(&ie->value.choice.GNB_eNB_ID, 0);
   //asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* optional */

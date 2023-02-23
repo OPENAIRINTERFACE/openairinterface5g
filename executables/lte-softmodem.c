@@ -170,6 +170,24 @@ double cpuf;
 
 int oaisim_flag=0;
 
+/* hardcoded into gtp_itf.cpp */
+bool sdap_data_req(protocol_ctxt_t *ctxt_p,
+                   const ue_id_t ue_id,
+                   const srb_flag_t srb_flag,
+                   const rb_id_t rb_id,
+                   const mui_t mui,
+                   const confirm_t confirm,
+                   const sdu_size_t sdu_buffer_size,
+                   unsigned char *const sdu_buffer,
+                   const pdcp_transmission_mode_t pt_mode,
+                   const uint32_t *sourceL2Id,
+                   const uint32_t *destinationL2Id,
+                   const uint8_t qfi,
+                   const bool rqi,
+                   const int pdusession_id)
+{
+  abort();
+}
 
 /* forward declarations */
 void set_default_frame_parms(LTE_DL_FRAME_PARMS *frame_parms[MAX_NUM_CCs]);
@@ -383,26 +401,21 @@ void terminate_task(module_id_t mod_id, task_id_t from, task_id_t to) {
 extern void  free_transport(PHY_VARS_eNB *);
 extern void  phy_free_RU(RU_t *);
 
-static void init_pdcp(void) {
-  if (!NODE_IS_DU(RC.rrc[0]->node_type)) {
-    pdcp_layer_init();
-    uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
-                             (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
+static void init_pdcp(void)
+{
+  pdcp_layer_init();
+  uint32_t pdcp_initmask = (IS_SOFTMODEM_NOS1) ?
+                           (PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT) : LINK_ENB_PDCP_TO_GTPV1U_BIT;
 
-    if (IS_SOFTMODEM_NOS1)
-      pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
+  if (IS_SOFTMODEM_NOS1)
+    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT  ;
 
-    pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
+  pdcp_initmask = pdcp_initmask | ENB_NAS_USE_TUN_W_MBMS_BIT;
 
-    pdcp_module_init(pdcp_initmask, 0);
+  pdcp_module_init(pdcp_initmask, 0);
 
-    if (NODE_IS_CU(RC.rrc[0]->node_type)) {
-      pdcp_set_rlc_data_req_func(cu_send_to_du);
-    } else {
-      pdcp_set_rlc_data_req_func(rlc_data_req);
-      pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
-    }
-  }
+  pdcp_set_rlc_data_req_func(rlc_data_req);
+  pdcp_set_pdcp_data_ind_func(pdcp_data_ind);
 }
 
 static  void wait_nfapi_init(char *thread_name) {
@@ -420,7 +433,6 @@ int main ( int argc, char **argv )
 {
   int CC_id = 0;
   int ru_id;
-  int node_type = ngran_eNB;
 
   start_background_system();
 
@@ -469,8 +481,7 @@ int main ( int argc, char **argv )
   }
 
   if (RC.nb_inst > 0) {
-    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks
-     * for monolithic/F1 modes */
+    /* initializes PDCP and sets correct RLC Request/PDCP Indication callbacks */
    init_pdcp();
     
     if (create_tasks(1) < 0) {
@@ -484,10 +495,9 @@ int main ( int argc, char **argv )
       itti_send_msg_to_task (TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
       rrc_enb_process_itti_msg(NULL);
     }
-    node_type = RC.rrc[0]->node_type;
   }
 
-  if (RC.nb_inst > 0 && NODE_IS_CU(node_type)) {
+  if (RC.nb_inst > 0) {
     protocol_ctxt_t ctxt;
     ctxt.module_id = 0 ;
     ctxt.instance = 0;
@@ -498,54 +508,49 @@ int main ( int argc, char **argv )
     pdcp_run(&ctxt);
   }
 
-  /* start threads if only L1 or not a CU */
-  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type) || NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
-    // init UE_PF_PO and mutex lock
-    pthread_mutex_init(&ue_pf_po_mutex, NULL);
-    memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
-    mlockall(MCL_CURRENT | MCL_FUTURE);
+  // init UE_PF_PO and mutex lock
+  pthread_mutex_init(&ue_pf_po_mutex, NULL);
+  memset (&UE_PF_PO[0][0], 0, sizeof(UE_PF_PO_t)*MAX_MOBILES_PER_ENB*MAX_NUM_CCs);
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+  pthread_cond_init(&sync_cond,NULL);
+  pthread_mutex_init(&sync_mutex, NULL);
+
+  rt_sleep_ns(10*100000000ULL);
+
+  if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
+    LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
     pthread_cond_init(&sync_cond,NULL);
     pthread_mutex_init(&sync_mutex, NULL);
+  }
 
-    rt_sleep_ns(10*100000000ULL);
-
-    if (NFAPI_MODE!=NFAPI_MONOLITHIC) {
-      LOG_I(ENB_APP,"NFAPI*** - mutex and cond created - will block shortly for completion of PNF connection\n");
-      pthread_cond_init(&sync_cond,NULL);
-      pthread_mutex_init(&sync_mutex, NULL);
-    }
-
-    if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
+  if (NFAPI_MODE==NFAPI_MODE_VNF) {// VNF
 #if defined(PRE_SCD_THREAD)
-      init_ru_vnf();  // ru pointer is necessary for pre_scd.
+    init_ru_vnf();  // ru pointer is necessary for pre_scd.
 #endif
-      wait_nfapi_init("main?");
-    }
+    wait_nfapi_init("main?");
+  }
 
-    LOG_I(ENB_APP,"START MAIN THREADS\n");
-    // start the main threads
-    number_of_cards = 1;
-    printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
+  LOG_I(ENB_APP,"START MAIN THREADS\n");
+  // start the main threads
+  number_of_cards = 1;
+  printf("RC.nb_L1_inst:%d\n", RC.nb_L1_inst);
 
-    if (RC.nb_L1_inst > 0) {
-      printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
-      init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
-    }
-    for (int x=0; x < RC.nb_L1_inst; x++) 
-      for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
-        L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
-        L1_rxtx_proc_t *L1proctx= &RC.eNB[x][CC_id]->proc.L1_proc_tx;
-        L1proc->threadPool = (tpool_t *)malloc(sizeof(tpool_t));
-        L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-        if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
-         initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
-        else
-          initTpool("n", L1proc->threadPool, true);
-        initNotifiedFIFO(L1proc->respDecode);
-        L1proctx->threadPool = L1proc->threadPool;
-    }
-
-
+  if (RC.nb_L1_inst > 0) {
+    printf("Initializing eNB threads single_thread_flag:%d wait_for_sync:%d\n", get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
+    init_eNB(get_softmodem_params()->single_thread_flag,get_softmodem_params()->wait_for_sync);
+  }
+  for (int x=0; x < RC.nb_L1_inst; x++)
+    for (int CC_id=0; CC_id<RC.nb_L1_CC[x]; CC_id++) {
+      L1_rxtx_proc_t *L1proc= &RC.eNB[x][CC_id]->proc.L1_proc;
+      L1_rxtx_proc_t *L1proctx= &RC.eNB[x][CC_id]->proc.L1_proc_tx;
+      L1proc->threadPool = (tpool_t *)malloc(sizeof(tpool_t));
+      L1proc->respDecode=(notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
+      if ( strlen(get_softmodem_params()->threadPoolConfig) > 0 )
+       initTpool(get_softmodem_params()->threadPoolConfig, L1proc->threadPool, true);
+      else
+        initTpool("n", L1proc->threadPool, true);
+      initNotifiedFIFO(L1proc->respDecode);
+      L1proctx->threadPool = L1proc->threadPool;
   }
 
   printf("wait_eNBs()\n");
@@ -627,7 +632,7 @@ int main ( int argc, char **argv )
   // stop threads
 
   #if 0 //Disable clean up because this tends to crash (and unnecessary)
-  if (RC.nb_inst == 0 || !NODE_IS_CU(node_type)) {
+  if (RC.nb_inst == 0) {
     if(IS_SOFTMODEM_DOSCOPE)
       end_forms();
 

@@ -67,7 +67,7 @@ static m2ap_setup_req_t * m2ap_setup_req_local = NULL;
 
 /*------------------------------------------------------------------------------*/
 
-static uint32_t MCE_app_register(ngran_node_t node_type,uint32_t mce_id_start, uint32_t mce_id_end) {
+static uint32_t MCE_app_register(uint32_t mce_id_start, uint32_t mce_id_end) {
   uint32_t         mce_id;
   MessageDef      *msg_p;
   uint32_t         register_mce_pending = 0;
@@ -87,17 +87,7 @@ static uint32_t MCE_app_register(ngran_node_t node_type,uint32_t mce_id_start, u
         LOG_I(ENB_APP,"[MCE %d] MCE_app_register via M3AP for instance %d\n", mce_id, ENB_MODULE_ID_TO_INSTANCE(mce_id));
         itti_send_msg_to_task (TASK_M3AP, ENB_MODULE_ID_TO_INSTANCE(mce_id), msg_p);
 
-      //if (NODE_IS_DU(node_type)) { // F1AP registration
-      //  // configure F1AP here for F1C
-      //  LOG_I(ENB_APP,"ngran_eNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-      //  msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, F1AP_SETUP_REQ);
-      //  RCconfig_DU_F1(msg_p, enb_id);
-
-      //  LOG_I(ENB_APP,"[eNB %d] eNB_app_register via F1AP for instance %d\n", enb_id, ENB_MODULE_ID_TO_INSTANCE(enb_id));
-      //  itti_send_msg_to_task (TASK_DU_F1, ENB_MODULE_ID_TO_INSTANCE(enb_id), msg_p);
-      //  // configure GTPu here for F1U
-      //}
-      //else { // S1AP registration
+      //{ // S1AP registration
       //  /* note:  there is an implicit relationship between the data structure and the message name */
       //  msg_p = itti_alloc_new_message (TASK_ENB_APP, 0, S1AP_REGISTER_ENB_REQ);
       //  RCconfig_S1(msg_p, enb_id);
@@ -340,39 +330,37 @@ void *MCE_app_task(void *args_p) {
   itti_mark_task_ready (TASK_MCE_APP);
 
   /* Try to register each MCE */
-  // This assumes that node_type of all RRC instances is the same
   if ( EPC_MODE_ENABLED && RC.rrc == NULL )
 	  LOG_E(RRC, "inconsistent global variables\n");
   if (EPC_MODE_ENABLED && RC.rrc ) {
-    register_mce_pending = MCE_app_register(RC.rrc[0]->node_type, mce_id_start, mce_id_end);
+    register_mce_pending = MCE_app_register(mce_id_start, mce_id_end);
   }
 
     /* Try to register each MCE with each other */
- // if (is_x2ap_enabled() && !NODE_IS_DU(RC.rrc[0]->node_type)) {
+ // if (is_x2ap_enabled()) {
  //   x2_register_enb_pending = MCE_app_register_x2 (enb_id_start, enb_id_end);
  // }
  // MCE_app_send_MME_APP2(0);
 
+  if (is_m2ap_MCE_enabled()) {
+    RCconfig_MCE();
 
- if (is_m2ap_MCE_enabled() /*&& !NODE_IS_DU(RC.rrc[0]->node_type)*/) {
-  RCconfig_MCE();
+    if (!m2ap_mbms_scheduling_information_local)
+      m2ap_mbms_scheduling_information_local = (m2ap_mbms_scheduling_information_t *)calloc(1, sizeof(m2ap_mbms_scheduling_information_t));
+    if (m2ap_mbms_scheduling_information_local)
+      RCconfig_m2_scheduling(m2ap_mbms_scheduling_information_local, 0);
 
-  if(!m2ap_mbms_scheduling_information_local)
-	m2ap_mbms_scheduling_information_local = (m2ap_mbms_scheduling_information_t*)calloc(1,sizeof(m2ap_mbms_scheduling_information_t));
-  if(m2ap_mbms_scheduling_information_local)
-  	RCconfig_m2_scheduling(m2ap_mbms_scheduling_information_local,0);
-
-  if(!m2ap_setup_resp_local)
-	m2ap_setup_resp_local = (m2ap_setup_resp_t*)calloc(1,sizeof(m2ap_setup_resp_t));
-  if(m2ap_setup_resp_local)
-	RCconfig_m2_mcch(m2ap_setup_resp_local,0);
- }
+    if (!m2ap_setup_resp_local)
+      m2ap_setup_resp_local = (m2ap_setup_resp_t *)calloc(1, sizeof(m2ap_setup_resp_t));
+    if (m2ap_setup_resp_local)
+      RCconfig_m2_mcch(m2ap_setup_resp_local, 0);
+  }
 
  // /* Try to register each MCE with MCE each other */
- if (is_m3ap_MCE_enabled() /*&& !NODE_IS_DU(RC.rrc[0]->node_type)*/) {
-   	///*m3_register_mce_pending =*/ 
-	MCE_app_register_m3 (mce_id_start, mce_id_end);
-   }
+  if (is_m3ap_MCE_enabled()) {
+    ///*m3_register_mce_pending =*/
+    MCE_app_register_m3(mce_id_start, mce_id_end);
+  }
 
   do {
     // Wait for a message
@@ -390,7 +378,6 @@ void *MCE_app_task(void *args_p) {
       break;
 
     case M3AP_REGISTER_MCE_CNF:
-      //AssertFatal(!NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received S1AP_REGISTER_ENB_CNF\n");
           LOG_I(MCE_APP, "[MCE %ld] Received %s: associated MME %d\n", instance, ITTI_MSG_NAME (msg_p),
                 M3AP_REGISTER_MCE_CNF(msg_p).nb_mme);
           DevAssert(register_mce_pending > 0);
@@ -451,12 +438,7 @@ void *MCE_app_task(void *args_p) {
 
    case M3AP_SETUP_RESP:
       LOG_I(MCE_APP, "Received M3AP_SETUP_RESP message %s\n", ITTI_MSG_NAME (msg_p));
-   //   //AssertFatal(NODE_IS_DU(RC.rrc[0]->node_type), "Should not have received F1AP_REGISTER_ENB_CNF in CU/MCE\n");
 
-   //   //LOG_I(MCE_APP, "Received %s: associated ngran_MCE_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-   //         //F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
-   //   
-   //   //handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
    //   handle_m3ap_setup_resp(&M3AP_SETUP_RESP(msg_p));
 
    //   DevAssert(register_mce_pending > 0);
