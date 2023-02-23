@@ -906,7 +906,7 @@ void release_UE_in_freeList(module_id_t mod_id) {
     rnti_t rnti = eNB_MAC->UE_free_ctrl[ue_num].rnti;
     if (rnti == 0)
       continue;
-      protocol_ctxt_t  ctxt;
+    protocol_ctxt_t  ctxt;
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0, mod_id);
 
       for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
