@@ -595,7 +595,7 @@ function main() {
 
     echo_info "Compiling UE specific part"
 
-    if [ $UE_ip -eq 1 ]
+    if [ "$UE_ip" = 1 ]
     then
       echo_info "Building ue_ip module"
       compilations $BUILD_DIR ue_ip

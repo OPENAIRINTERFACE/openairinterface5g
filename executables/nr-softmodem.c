@@ -288,7 +288,7 @@ void exit_function(const char *file, const char *function, const int line, const
   if (assert) {
     abort();
   } else {
-    sleep(1); // allow lte-softmodem threads to exit first
+    sleep(1); // allow nr-softmodem threads to exit first
     exit(EXIT_SUCCESS);
   }
 }

@@ -40,6 +40,12 @@ RRC_release_list_t rrc_release_info;
 
 void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
 {
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow other threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 nfapi_mode_t nfapi_mod = -1;

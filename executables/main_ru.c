@@ -86,7 +86,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
 void nfapi_setmode(nfapi_mode_t nfapi_mode) { return; }
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert) {
 
   if (s != NULL) {
     printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);

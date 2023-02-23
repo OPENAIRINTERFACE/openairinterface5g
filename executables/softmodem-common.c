@@ -215,7 +215,7 @@ void signal_handler(int sig) {
       softmodem_printresources(sig,(telnet_printfunc_t)printf);
     if (sig != SOFTMODEM_RTSIGNAL) {
       printf("Linux signal %s...\n",strsignal(sig));
-      exit_function(__FILE__, __FUNCTION__, __LINE__, "softmodem starting exit procedure\n", EXIT_NORMAL);
+      exit_function(__FILE__, __FUNCTION__, __LINE__, "softmodem starting exit procedure\n", OAI_EXIT_NORMAL);
     }
   }
 }
