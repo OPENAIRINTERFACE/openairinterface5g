@@ -223,7 +223,7 @@ class RANManagement():
 			HTML.CreateHtmlTestRow(self.Build_eNB_args, 'OK', CONST.ALL_PROCESSES_OK)
 			self.backgroundBuildTestId[int(self.eNB_instance)] = self.testCase_id
 			return
-		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'Bypassing the Tests|build have failed', 1500)
+		mySSH.command('stdbuf -o0 ./build_oai ' + self.Build_eNB_args + ' 2>&1 | stdbuf -o0 tee compile_oai_enb.log', 'BUILD SHOULD BE SUCCESSFUL|build have failed', 900)
 		mySSH.close()
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.testCase_id, HTML)
 
