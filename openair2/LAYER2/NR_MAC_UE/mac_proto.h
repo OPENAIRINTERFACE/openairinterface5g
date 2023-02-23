@@ -253,14 +253,6 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
 
-int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-                                                      NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
-                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                                                      int *mapping_type,
-                                                      uint8_t time_domain_ind,
-                                                      int default_abc,
-                                                      bool use_default);
-
 uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       int cc_id,
                       frame_t frameP,
@@ -474,6 +466,6 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_ul_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format);
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format);
 #endif
 /** @}*/

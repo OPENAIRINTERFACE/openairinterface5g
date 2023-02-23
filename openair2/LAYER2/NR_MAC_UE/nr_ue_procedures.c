@@ -192,7 +192,8 @@ NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_I
   return bwp_Common;
 }
 
-int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti){
+int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
+{
 
     RA_config_t *ra = &mac->ra;
     int rnti_type;
@@ -410,63 +411,6 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
   return 0;
 }
 
-int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-                                                      NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
-                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                                                      int *mapping_type,
-                                                      uint8_t time_domain_ind,
-                                                      int default_abc,
-                                                      bool use_default)
-{
-  int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
-
-//  uint8_t k_offset=0;
-  int sliv_S=0;
-  int sliv_L=0;
-
-  /*
-   * TS 38.214 subclause 5.1.2.1 Resource allocation in time domain (downlink)
-   */
-  if(dlsch_config_pdu != NULL){
-    if (pdsch_TimeDomainAllocationList && use_default==false) {
-
-      if (time_domain_ind >= pdsch_TimeDomainAllocationList->list.count) {
-        LOG_E(MAC, "time_domain_ind %d >= pdsch->TimeDomainAllocationList->list.count %d\n",
-              time_domain_ind, pdsch_TimeDomainAllocationList->list.count);
-        dlsch_config_pdu->start_symbol   = 0;
-        dlsch_config_pdu->number_symbols = 0;
-        return -1;
-      }
-
-      int startSymbolAndLength = pdsch_TimeDomainAllocationList->list.array[time_domain_ind]->startSymbolAndLength;
-      int S,L;
-      SLIV2SL(startSymbolAndLength,&S,&L);
-      dlsch_config_pdu->start_symbol=S;
-      dlsch_config_pdu->number_symbols=L;
-
-      LOG_D(MAC,"SLIV = %i\n", startSymbolAndLength);
-      LOG_D(MAC,"start_symbol = %i\n", dlsch_config_pdu->start_symbol);
-      LOG_D(MAC,"number_symbols = %i\n", dlsch_config_pdu->number_symbols);
-
-    }
-    else {// Default configuration from tables
-
-      bool is_typeA;
-      get_info_from_tda_tables(default_abc,
-                               time_domain_ind,
-                               dmrs_typeA_pos,
-                               1, // normal CP
-                               &is_typeA,
-                               &sliv_S,
-                               &sliv_L);
-      *mapping_type = is_typeA? typeA : typeB;
-      dlsch_config_pdu->number_symbols = sliv_L;
-      dlsch_config_pdu->start_symbol = sliv_S;
-    }
-  }
-  return 0;
-}
-
 int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_index, frame_t frame, int slot, fapi_nr_dci_indication_pdu_t *dci) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
@@ -500,13 +444,10 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
   uint8_t is_Msg3 = 0;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-  int default_abc = 1;
+  int mux_pattern = 1;
 
   LOG_D(MAC, "In %s: Processing received DCI format %s\n", __FUNCTION__, dci_formats[dci_format]);
-  NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-  NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-  bool normal_CP = current_UL_BWP->cyclicprefix ? false : true;
-  NR_ul_tda_info_t tda_info = {0};
+  NR_tda_info_t tda_info = {0};
   NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
 
   switch(dci_format){
@@ -532,8 +473,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SUL_IND_0_0
 
     // Schedule PUSCH
-    pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
-    tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, dci->time_domain_assignment.val, current_UL_BWP->scs, normal_CP);
+    tda_info = get_ul_tda_info(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti), dci->time_domain_assignment.val);
     if (tda_info.nrOfSymbols == 0)
       ret = -1;
     else
@@ -597,8 +537,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SRS_RESOURCE_IND
 
     // Schedule PUSCH
-    pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
-    tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, dci->time_domain_assignment.val, current_UL_BWP->scs, normal_CP);
+    tda_info = get_ul_tda_info(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti), dci->time_domain_assignment.val);
     if (tda_info.nrOfSymbols == 0)
       ret = -1;
     else
@@ -696,7 +635,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     if(rnti == SI_RNTI) {
       NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config = mac->type0_PDCCH_CSS_config;
-      default_abc = type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
+      mux_pattern = type0_PDCCH_CSS_config.type0_pdcch_ss_mux_pattern;
       dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH;
       dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
       if (pdsch_config) pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
@@ -720,19 +659,18 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
-    int mappingtype;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    pdsch_TimeDomainAllocationList = get_dl_tdalist(current_DL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pdsch_TimeDomainAllocationList, dlsch_config_pdu_1_0, &mappingtype, dci->time_domain_assignment.val, default_abc, rnti == SI_RNTI) < 0) {
-      LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
-      return -1;
-    }
-    if (pdsch_TimeDomainAllocationList)
-      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+    int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
+    // TODO need to differentiate SI_RNTI between SIB1 and other SIB
+    NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
+                                             dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, rnti == SI_RNTI);
+
+    dlsch_config_pdu_1_0->number_symbols = tda_info.nrOfSymbols;
+    dlsch_config_pdu_1_0->start_symbol = tda_info.startSymbolIndex;
 
     struct NR_DMRS_DownlinkConfig *dl_dmrs_config = NULL;
     if (pdsch_config)
-      dl_dmrs_config = (mappingtype == typeA) ? pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup : pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+      dl_dmrs_config = (tda_info.mapping_type == typeA) ? pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup : pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
 
     dlsch_config_pdu_1_0->nscid = 0;
     if(dl_dmrs_config && dl_dmrs_config->scramblingID0)
@@ -746,7 +684,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                                          (get_softmodem_params()->nsa) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
-                                                         mappingtype,
+                                                         tda_info.mapping_type,
                                                          1);
 
     dlsch_config_pdu_1_0->dmrsConfigType = (dl_dmrs_config != NULL) ?
@@ -930,17 +868,14 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    int mappingtype;
+    int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
+    NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
+                                             dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, false);
 
-    pdsch_TimeDomainAllocationList = get_dl_tdalist(current_DL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti));
-    if (nr_ue_process_dci_time_dom_resource_assignment(mac, pdsch_TimeDomainAllocationList, dlsch_config_pdu_1_1, &mappingtype, dci->time_domain_assignment.val, 0, false) < 0) {
-      LOG_W(MAC, "[%d.%d] Invalid time_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
-      return -1;
-    }
-    if(pdsch_TimeDomainAllocationList)
-      mappingtype = pdsch_TimeDomainAllocationList->list.array[dci->time_domain_assignment.val]->mappingType;
+    dlsch_config_pdu_1_1->number_symbols = tda_info.nrOfSymbols;
+    dlsch_config_pdu_1_1->start_symbol = tda_info.startSymbolIndex;
 
-    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = (mappingtype == typeA) ?
+    struct NR_DMRS_DownlinkConfig *dl_dmrs_config = (tda_info.mapping_type == typeA) ?
                                                     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
                                                     pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
 
@@ -1127,7 +1062,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                                                          mac->scc? mac->scc->dmrs_TypeA_Position:mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_1->number_symbols,
                                                          dlsch_config_pdu_1_1->start_symbol,
-                                                         mappingtype,
+                                                         tda_info.mapping_type,
                                                          dlsch_config_pdu_1_1->n_front_load_symb);
 
     /* TCI */
@@ -3741,9 +3676,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 
     // Schedule Msg3
     NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-    bool normal_CP = current_UL_BWP->cyclicprefix ? false : true;
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = get_ul_tdalist(current_UL_BWP, *ra->ss->controlResourceSetId, ra->ss->searchSpaceType->present, NR_RNTI_RA);
-    NR_ul_tda_info_t tda_info = get_ul_tda_info(pusch_TimeDomainAllocationList, rar_grant.Msg3_t_alloc, current_UL_BWP->scs, normal_CP);
+    NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP, *ra->ss->controlResourceSetId, ra->ss->searchSpaceType->present, NR_RNTI_RA, rar_grant.Msg3_t_alloc);
     if (tda_info.nrOfSymbols == 0) {
       LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");
       return -1;

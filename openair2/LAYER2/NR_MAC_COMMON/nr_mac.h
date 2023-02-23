@@ -574,7 +574,7 @@ typedef struct NR_UE_DL_BWP {
   uint16_t BWPStart;
   uint16_t initial_BWPSize;
   uint16_t initial_BWPStart;
-  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList;
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_PDSCH_Config_t *pdsch_Config;
   NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig;
   long *pdsch_HARQ_ACK_Codebook;
@@ -593,7 +593,7 @@ typedef struct NR_UE_UL_BWP {
   uint16_t initial_BWPStart;
   NR_RACH_ConfigCommon_t *rach_ConfigCommon;
   NR_PUSCH_ServingCellConfig_t *pusch_servingcellconfig;
-  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList;
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList_Common;
   NR_ConfiguredGrantConfig_t *configuredGrantConfig;
   NR_PUSCH_Config_t *pusch_Config;
   NR_PUCCH_Config_t *pucch_Config;
@@ -608,14 +608,23 @@ typedef struct NR_UE_UL_BWP {
   int max_fb_time;
 } NR_UE_UL_BWP_t;
 
-typedef enum { typeA = 0, typeB = 1 } mappingType_t;
+typedef enum {
+  defaultA = 0,
+  defaultB = 1,
+  defaultC = 2
+} default_table_type_t;
 
-typedef struct NR_ul_tda_info {
+typedef enum {
+  typeA = 0,
+  typeB = 1
+} mappingType_t;
+
+typedef struct NR_tda_info {
   mappingType_t mapping_type;
   int startSymbolIndex;
   int nrOfSymbols;
   long k2;
-} NR_ul_tda_info_t;
+} NR_tda_info_t;
 
 #endif /*__LAYER2_MAC_H__ */
 

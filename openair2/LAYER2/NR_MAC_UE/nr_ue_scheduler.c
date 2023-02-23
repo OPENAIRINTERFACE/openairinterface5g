@@ -449,7 +449,7 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_ul_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format)
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format)
 {
 
   int f_alloc;

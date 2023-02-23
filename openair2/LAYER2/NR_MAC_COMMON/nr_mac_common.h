@@ -88,7 +88,10 @@ NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t
 
 NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type);
 
-NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist, int tda_index, int scs, bool normal_CP);
+NR_tda_info_t get_ul_tda_info(const NR_UE_UL_BWP_t *ul_bwp, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type, int tda_index);
+
+NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda_index, int dmrs_typeA_pos,
+                              int mux_pattern, nr_rnti_type_t rnti_type, int coresetid, bool sib1);
 
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
@@ -219,13 +222,12 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
 uint16_t get_ssb_start_symbol(const long band, NR_SubcarrierSpacing_t scs, int i_ssb);
 
-void get_info_from_tda_tables(int default_abc,
-                              int tda,
-                              int dmrs_TypeA_Position,
-                              int normal_CP,
-                              bool *is_mapping_typeA,
-                              int *startSymbolIndex,
-                              int *nrOfSymbols);
+NR_tda_info_t get_info_from_tda_tables(default_table_type_t table_type,
+                                       int tda,
+                                       int dmrs_TypeA_Position,
+                                       int normal_CP);
+
+default_table_type_t get_default_table_type(int mux_pattern);
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);
 void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config);

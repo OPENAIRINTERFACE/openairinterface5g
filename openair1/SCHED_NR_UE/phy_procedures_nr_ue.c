@@ -938,7 +938,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
     NR_PDSCH_Config_t *pdsch_Config = mac->current_DL_BWP.pdsch_Config;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = mac->current_DL_BWP.tdaList;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = mac->current_DL_BWP.tdaList_Common;
     long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
     NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig = NULL;

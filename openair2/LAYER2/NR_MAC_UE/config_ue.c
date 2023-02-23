@@ -565,9 +565,9 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
 
     DL_BWP->pdsch_Config = NULL;
     if (bwp_dlcommon->pdsch_ConfigCommon)
-      DL_BWP->tdaList = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+      DL_BWP->tdaList_Common = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
     if (bwp_ulcommon->pusch_ConfigCommon) {
-      UL_BWP->tdaList = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+      UL_BWP->tdaList_Common = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
       UL_BWP->msg3_DeltaPreamble = bwp_ulcommon->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
     }
     if (bwp_ulcommon->pucch_ConfigCommon)
@@ -598,10 +598,13 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         bwp_dlcommon = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
         bwp_ulcommon = mac->scc->uplinkConfigCommon->initialUplinkBWP;
       }
-      if (mac->scc_SIB) {
+      else if (mac->scc_SIB) {
         bwp_dlcommon = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
         bwp_ulcommon = &mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP;
       }
+      else
+        AssertFatal(false, "Either SCC or SCC SIB should be non-NULL\n");
+
       NR_BWP_Downlink_t *bwp_downlink = NULL;
       const struct NR_ServingCellConfig__downlinkBWP_ToAddModList *bwpList = spCellConfigDedicated->downlinkBWP_ToAddModList;
       if (bwpList)
@@ -615,12 +618,12 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         AssertFatal(bwp_downlink != NULL,"Couldn't find DLBWP corresponding to BWP ID %ld\n", DL_BWP->bwp_id);
         dl_genericParameters = bwp_downlink->bwp_Common->genericParameters;
         DL_BWP->pdsch_Config = bwp_downlink->bwp_Dedicated->pdsch_Config->choice.setup;
-        DL_BWP->tdaList = bwp_downlink->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        DL_BWP->tdaList_Common = bwp_downlink->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       }
       else {
         dl_genericParameters = bwp_dlcommon->genericParameters;
         DL_BWP->pdsch_Config = spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup;
-        DL_BWP->tdaList = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        DL_BWP->tdaList_Common = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
       }
 
       UL_BWP->msg3_DeltaPreamble = bwp_ulcommon->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
@@ -637,7 +640,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         }
         AssertFatal(bwp_uplink != NULL,"Couldn't find ULBWP corresponding to BWP ID %ld\n",UL_BWP->bwp_id);
         ul_genericParameters = bwp_uplink->bwp_Common->genericParameters;
-        UL_BWP->tdaList = bwp_uplink->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        UL_BWP->tdaList_Common = bwp_uplink->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
         UL_BWP->pusch_Config = bwp_uplink->bwp_Dedicated->pusch_Config->choice.setup;
         UL_BWP->pucch_Config = bwp_uplink->bwp_Dedicated->pucch_Config->choice.setup;
         UL_BWP->srs_Config = bwp_uplink->bwp_Dedicated->srs_Config->choice.setup;
@@ -648,7 +651,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
           UL_BWP->rach_ConfigCommon = bwp_uplink->bwp_Common->rach_ConfigCommon->choice.setup;
       }
       else {
-        UL_BWP->tdaList = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
+        UL_BWP->tdaList_Common = bwp_ulcommon->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
         UL_BWP->pusch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pusch_Config->choice.setup;
         UL_BWP->pucch_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->pucch_Config->choice.setup;
         UL_BWP->srs_Config = spCellConfigDedicated->uplinkConfig->initialUplinkBWP->srs_Config->choice.setup;

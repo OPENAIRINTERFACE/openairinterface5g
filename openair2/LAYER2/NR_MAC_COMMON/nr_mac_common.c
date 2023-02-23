@@ -458,10 +458,13 @@ const uint8_t table_6_1_2_1_1_3[16][4] = {
     {0, 3, 0, 10} // row index 16
 };
 
-NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist, int tda_index, int scs, bool normal_CP)
+NR_tda_info_t get_ul_tda_info(const NR_UE_UL_BWP_t *ul_bwp, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type, int tda_index)
 {
-  NR_ul_tda_info_t tda_info = {0};
+  NR_tda_info_t tda_info = {0};
+  NR_PUSCH_TimeDomainResourceAllocationList_t *tdalist = get_ul_tdalist(ul_bwp, controlResourceSetId, ss_type, rnti_type);
   // Definition of value j in Table 6.1.2.1.1-4 of 38.214
+  int scs = ul_bwp->scs;
+  AssertFatal(scs >= 0 &&  scs < 5, "Subcarrier spacing indicatior %d invalid value\n", scs);
   int j = scs == 0 ? 1 : scs;
   if (tdalist) {
     AssertFatal(tda_index < tdalist->list.count, "TDA index from DCI %d exceeds TDA list array size %d\n", tda_index, tdalist->list.count);
@@ -475,6 +478,7 @@ NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *td
     tda_info.startSymbolIndex = S;
     tda_info.nrOfSymbols = L;
   } else {
+    bool normal_CP = ul_bwp->cyclicprefix ? false : true;
     if (normal_CP) {
       tda_info.mapping_type = table_6_1_2_1_1_2[tda_index][0];
       tda_info.k2 = table_6_1_2_1_1_2[tda_index][1] + j;
@@ -490,78 +494,154 @@ NR_ul_tda_info_t get_ul_tda_info(NR_PUSCH_TimeDomainResourceAllocationList_t *td
   return tda_info;
 }
 
-void get_info_from_tda_tables(int default_abc,
-                              int tda,
-                              int dmrs_TypeA_Position,
-                              int normal_CP,
-                              bool *is_mapping_typeA,
-                              int *startSymbolIndex,
-                              int *nrOfSymbols) {
+NR_tda_info_t get_info_from_tda_tables(default_table_type_t table_type,
+                                       int tda,
+                                       int dmrs_TypeA_Position,
+                                       int normal_CP)
+{
+  NR_tda_info_t tda_info = {0};
+  bool is_mapping_typeA;
   int k0 = 0;
-  switch(default_abc){
-    case 1:
+  switch(table_type){
+    case defaultA:
       if (normal_CP){
         if (dmrs_TypeA_Position){
-          *is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][0];
           k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][1];
-          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][2];
-          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][3];
+          tda_info.startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][2];
+          tda_info.nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos3[tda][3];
         }
         else{
-          *is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
+          is_mapping_typeA = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][0];
           k0 = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][1];
-          *startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][2];
-          *nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][3];
+          tda_info.startSymbolIndex = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][2];
+          tda_info.nrOfSymbols = table_5_1_2_1_1_2_time_dom_res_alloc_A_dmrs_typeA_pos2[tda][3];
         }
       }
       else{
         if (dmrs_TypeA_Position){
-          *is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][0];
           k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][1];
-          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][2];
-          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][3];
+          tda_info.startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][2];
+          tda_info.nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos3[tda][3];
         }
         else{
-          *is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
+          is_mapping_typeA = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][0];
           k0 = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][1];
-          *startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][2];
-          *nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][3];
+          tda_info.startSymbolIndex = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][2];
+          tda_info.nrOfSymbols = table_5_1_2_1_1_3_time_dom_res_alloc_A_extCP_dmrs_typeA_pos2[tda][3];
         }
       }
       break;
-    case 2:
+    case defaultB:
       if (dmrs_TypeA_Position){
-        *is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][0];
         k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][1];
-        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][2];
-        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][3];
+        tda_info.startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][2];
+        tda_info.nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos3[tda][3];
       }
       else{
-        *is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
+        is_mapping_typeA = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][0];
         k0 = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][1];
-        *startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][2];
-        *nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][3];
+        tda_info.startSymbolIndex = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][2];
+        tda_info.nrOfSymbols = table_5_1_2_1_1_4_time_dom_res_alloc_B_dmrs_typeA_pos2[tda][3];
       }
       break;
-    case 3:
+    case defaultC:
       if (dmrs_TypeA_Position){
-        *is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][0];
         k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][1];
-        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][2];
-        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][3];
+        tda_info.startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][2];
+        tda_info.nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos3[tda][3];
       }
       else{
-        *is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
+        is_mapping_typeA = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][0];
         k0 = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][1];
-        *startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][2];
-        *nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][3];
+        tda_info.startSymbolIndex = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][2];
+        tda_info.nrOfSymbols = table_5_1_2_1_1_5_time_dom_res_alloc_C_dmrs_typeA_pos2[tda][3];
       }
       break;
     default:
-     AssertFatal(1==0,"Invalid default time domaing allocation type\n");
+     AssertFatal(1 == 0, "Invalid default time domaing allocation type\n");
   }
-  AssertFatal(k0==0,"Only k0 = 0 is supported\n");
+  AssertFatal(k0 == 0, "Only k0 = 0 is supported\n");
+  tda_info.mapping_type = is_mapping_typeA ? typeA : typeB;
+  return tda_info;
 }
+
+default_table_type_t get_default_table_type(int mux_pattern)
+{
+  switch (mux_pattern) {
+    case 1:
+      return defaultA;
+    case 2:
+      return defaultB;
+    case 3:
+      return defaultC;
+    default :
+      AssertFatal(1 == 0, "Invalid multiplexing type %d\n", mux_pattern);
+  }
+}
+
+NR_tda_info_t set_tda_info_from_list(NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist, int tda_index)
+{
+  NR_tda_info_t tda_info = {0};
+  AssertFatal(tda_index < tdalist->list.count, "TDA index from DCI %d exceeds TDA list array size %d\n", tda_index, tdalist->list.count);
+  NR_PDSCH_TimeDomainResourceAllocation_t *tda = tdalist->list.array[tda_index];
+  tda_info.mapping_type = tda->mappingType;
+  int S, L;
+  SLIV2SL(tda->startSymbolAndLength, &S, &L);
+  tda_info.startSymbolIndex = S;
+  tda_info.nrOfSymbols = L;
+  return tda_info;
+}
+
+NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda_index, int dmrs_typeA_pos,
+                              int mux_pattern, nr_rnti_type_t rnti_type, int coresetid, bool sib1)
+{
+  NR_tda_info_t tda_info;
+  bool normal_CP = dl_BWP->cyclicprefix ? false : true;
+  // implements Table 5.1.2.1.1-1 of 38.214
+  NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(dl_BWP, coresetid, ss_type, rnti_type);
+  switch (rnti_type) {
+    case NR_RNTI_SI:
+      if(sib1) {
+        default_table_type_t table_type = get_default_table_type(mux_pattern);
+        tda_info = get_info_from_tda_tables(table_type, tda_index, dmrs_typeA_pos, normal_CP);
+      }
+      else {
+        if(tdalist)
+          tda_info = set_tda_info_from_list(tdalist, tda_index);
+        else {
+          default_table_type_t table_type = get_default_table_type(mux_pattern);
+          tda_info = get_info_from_tda_tables(table_type, tda_index, dmrs_typeA_pos, normal_CP);
+        }
+      }
+      break;
+    case NR_RNTI_P:
+      if(tdalist)
+        tda_info = set_tda_info_from_list(tdalist, tda_index);
+      else {
+        default_table_type_t table_type = get_default_table_type(mux_pattern);
+        tda_info = get_info_from_tda_tables(table_type, tda_index, dmrs_typeA_pos, normal_CP);
+      }
+      break;
+    case NR_RNTI_C:
+    case NR_RNTI_CS:
+    case NR_RNTI_MCS_C:
+    case NR_RNTI_RA:
+    case NR_RNTI_TC:
+      if(tdalist)
+        tda_info = set_tda_info_from_list(tdalist, tda_index);
+      else
+        tda_info = get_info_from_tda_tables(defaultA, tda_index, dmrs_typeA_pos, normal_CP);
+      break;
+    default :
+      AssertFatal(1 == 0, "Invalid RNTI type\n");
+  }
+  return tda_info;
+}
+
 
 const char *prachfmt[]={"0","1","2","3", "A1","A2","A3","B1","B4","C0","C2","A1/B1","A2/B2","A3/B3"};
 
@@ -3187,7 +3267,7 @@ NR_PDSCH_TimeDomainResourceAllocationList_t *get_dl_tdalist(const NR_UE_DL_BWP_t
       && (DL_BWP->pdsch_Config && DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList))
     return DL_BWP->pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
   else
-    return DL_BWP->tdaList;
+    return DL_BWP->tdaList_Common;
 }
 
 NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t *UL_BWP, int controlResourceSetId, int ss_type, nr_rnti_type_t rnti_type)
@@ -3196,7 +3276,7 @@ NR_PUSCH_TimeDomainResourceAllocationList_t *get_ul_tdalist(const NR_UE_UL_BWP_t
       && (UL_BWP->pusch_Config && UL_BWP->pusch_Config->pusch_TimeDomainAllocationList))
     return UL_BWP->pusch_Config->pusch_TimeDomainAllocationList->choice.setup;
   else
-    return UL_BWP->tdaList;
+    return UL_BWP->tdaList_Common;
 }
 
 uint16_t get_rb_bwp_dci(nr_dci_format_t format,
@@ -3312,10 +3392,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->frequency_domain_assignment.nbits;
       // Time domain assignment
       NR_PUSCH_TimeDomainResourceAllocationList_t *tdalistul = get_ul_tdalist(UL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
-      if (tdalistul)
-        num_entries = tdalistul->list.count;
-      else
-        num_entries = 16; // num of entries in default table
+      num_entries = tdalistul ?  tdalistul->list.count : 16; // 16 in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       LOG_D(NR_MAC, "PUSCH Time Domain Allocation nbits %d, pusch_Config %p\n", dci_pdu->time_domain_assignment.nbits, pusch_Config);
       size += dci_pdu->time_domain_assignment.nbits;
@@ -3457,10 +3534,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       size += dci_pdu->frequency_domain_assignment.nbits;
       LOG_D(NR_MAC,"dci_pdu->frequency_domain_assignment.nbits %d (N_RB %d)\n",dci_pdu->frequency_domain_assignment.nbits,N_RB);
       NR_PDSCH_TimeDomainResourceAllocationList_t *tdalist = get_dl_tdalist(DL_BWP, coreset->controlResourceSetId, ss_type, rnti_type);
-      if (tdalist)
-        num_entries = tdalist->list.count;
-      else
-        num_entries = 16; // num of entries in default table
+      num_entries = tdalist ?  tdalist->list.count : 16; // 16 in default table
       dci_pdu->time_domain_assignment.nbits = (int)ceil(log2(num_entries));
       LOG_D(NR_MAC,"pdsch tda.nbits= %d\n",dci_pdu->time_domain_assignment.nbits);
       size += dci_pdu->time_domain_assignment.nbits;
