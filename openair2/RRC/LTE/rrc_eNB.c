@@ -908,81 +908,71 @@ void release_UE_in_freeList(module_id_t mod_id) {
       continue;
     protocol_ctxt_t  ctxt;
     PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, mod_id, ENB_FLAG_YES, rnti, 0, 0, mod_id);
-    
-    for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
-      eNB_PHY = RC.eNB[mod_id][CC_id];
-      int id;
-      // clean ULSCH entries for rnti
+
+      for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+        eNB_PHY = RC.eNB[mod_id][CC_id];
+        int id;
+        // clean ULSCH entries for rnti
       id = find_ulsch(rnti, eNB_PHY, eNB_MAC->UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
-      
+
       if (id >= 0)
         clean_eNb_ulsch(eNB_PHY->ulsch[id]);
-      
-      // clean DLSCH entries for rnti
+
+        // clean DLSCH entries for rnti
       id = find_dlsch(rnti, eNB_PHY, eNB_MAC->UE_free_ctrl[ue_num].raFlag ? SEARCH_EXIST_RA : SEARCH_EXIST);
-      
+
       if (id >= 0)
         clean_eNb_dlsch(eNB_PHY->dlsch[id][0]);
 
-      // clean UCI entries for rnti
+        // clean UCI entries for rnti
       for (int i = 0; i < NUMBER_OF_UCI_MAX; i++) {
         if (eNB_PHY->uci_vars[i].rnti == rnti) {
           LOG_I(MAC, "clean eNb uci_vars[%d] UE %x \n", i, rnti);
           memset(&eNB_PHY->uci_vars[i], 0, sizeof(LTE_eNB_UCI));
-	}
-      }
-      
-      for(int j = 0; j < 10; j++) {
-	nfapi_ul_config_request_body_t *ul_req_tmp  = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
-	
+          }
+        }
+
+        for(int j = 0; j < 10; j++) {
+          nfapi_ul_config_request_body_t *ul_req_tmp  = &eNB_MAC->UL_req_tmp[CC_id][j].ul_config_request_body;
+
         if (ul_req_tmp) {
-	  int pdu_number = ul_req_tmp->number_of_pdus;
-	  
+            int pdu_number = ul_req_tmp->number_of_pdus;
+
           for (int pdu_index = pdu_number - 1; pdu_index >= 0; pdu_index--) {
             nfapi_ul_config_request_pdu_t *pdu = ul_req_tmp->ul_config_pdu_list + pdu_index;
             if (pdu->ulsch_pdu.ulsch_pdu_rel8.rnti == rnti || pdu->uci_harq_pdu.ue_information.ue_information_rel8.rnti == rnti || pdu->uci_cqi_pdu.ue_information.ue_information_rel8.rnti == rnti
                 || pdu->uci_sr_pdu.ue_information.ue_information_rel8.rnti == rnti || pdu->srs_pdu.srs_pdu_rel8.rnti == rnti) {
-	      LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
-	      
+                LOG_I(RRC, "remove UE %x from ul_config_pdu_list %d/%d\n", rnti, pdu_index, pdu_number);
+
               // Very inefficient memory management, but simple
               if (pdu_index < pdu_number - 1) {
                 memcpy(pdu, pdu + 1, (pdu_number - 1 - pdu_index) * sizeof(nfapi_ul_config_request_pdu_t));
-	      }
-	      
-	      ul_req_tmp->number_of_pdus--;
-	    }
-	  }
-	}
-      }
-    }
+                }
 
-    if (!NODE_IS_CU(RC.rrc[mod_id]->node_type)) {
+                ul_req_tmp->number_of_pdus--;
+              }
+            }
+          }
+        }
+      }
+
       if (!eNB_MAC->UE_free_ctrl[ue_num].raFlag)
-	rrc_mac_remove_ue(mod_id,rnti);
+        rrc_mac_remove_ue(mod_id, rnti);
       rrc_rlc_remove_ue(&ctxt);
       pdcp_remove_UE(&ctxt);
-    } else {
-      MessageDef *m = itti_alloc_new_message(TASK_RRC_ENB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
-      F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = rnti;
-      F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
-      F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-      F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = NULL;
-      F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = 0;
-      itti_send_msg_to_task(TASK_CU_F1, mod_id, m);
-    }
-    
-    if(eNB_MAC->UE_free_ctrl[ue_num].removeContextFlg) {
-      struct rrc_eNB_ue_context_s *ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[mod_id],rnti);
-      if(ue_context_pP) {
-	LOG_I(PHY, "remove RNTI %04x\n", rnti);
-	rrc_eNB_remove_ue_context(&ctxt,RC.rrc[mod_id],
-				  (struct rrc_eNB_ue_context_s *) ue_context_pP);
+
+      if(eNB_MAC->UE_free_ctrl[ue_num].removeContextFlg) {
+	struct rrc_eNB_ue_context_s *ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[mod_id],rnti);
+        if(ue_context_pP) {
+          LOG_I(PHY, "remove RNTI %04x\n", rnti);
+          rrc_eNB_remove_ue_context(&ctxt,RC.rrc[mod_id],
+                                    (struct rrc_eNB_ue_context_s *) ue_context_pP);
+        }
       }
+
+      LOG_I(RRC, "[release_UE_in_freeList] remove UE %x from freeList ra context: %d\n", rnti, eNB_MAC->UE_free_ctrl[ue_num].raFlag);
+      eNB_MAC->UE_free_ctrl[ue_num].rnti = 0;
     }
-    
-    LOG_I(RRC, "[release_UE_in_freeList] remove UE %x from freeList ra context: %d\n", rnti, eNB_MAC->UE_free_ctrl[ue_num].raFlag);
-    eNB_MAC->UE_free_ctrl[ue_num].rnti = 0;
-  }
   pthread_mutex_unlock(&lock_ue_freelist);
 }
 
