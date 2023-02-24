@@ -378,7 +378,7 @@
                       -n100 -u0 -m0 -R25 -r25 -i 1,0
                       -n100 -m0 -S -0.6 -i 1,0
                       -n100 -m 28 -R106 -r106 -t90 -s24 -S24 -d 8</main_exec_args>
-      <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11 test12 test 13</tags>
+      <tags>test1 test2 test3 test4 test5 test6 test7 test8 test9 test10 test11 test12 test13</tags>
       <search_expr_true>PUSCH test OK</search_expr_true>
       <search_expr_false>segmentation fault|assertion|exiting|fatal</search_expr_false>
       <nruns>3</nruns>

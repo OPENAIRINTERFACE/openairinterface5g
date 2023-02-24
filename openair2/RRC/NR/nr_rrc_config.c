@@ -983,7 +983,7 @@ static void set_ul_mcs_table(const NR_UE_NR_Capability_t *cap,
        *pusch_Config->transformPrecoder == NR_PUSCH_Config__transformPrecoder_disabled) {
       if(pusch_Config->mcs_Table == NULL)
         pusch_Config->mcs_Table = calloc(1, sizeof(*pusch_Config->mcs_Table));
-      *pusch_Config->mcs_Table = NR_PDSCH_Config__mcs_Table_qam256;
+      *pusch_Config->mcs_Table = NR_PUSCH_Config__mcs_Table_qam256;
     }
     else {
       if(pusch_Config->mcs_TableTransformPrecoder == NULL)
@@ -1311,7 +1311,7 @@ static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
      bwp_loop < servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count) {
     pusch_Config = servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[bwp_loop]->bwp_Dedicated->pusch_Config->choice.setup;
   }
-  ubwp->bwp_Dedicated->pusch_Config = config_pusch(pusch_Config, scc, uecap);
+  ubwp->bwp_Dedicated->pusch_Config = config_pusch(pusch_Config, scc, configuration->force_256qam_off ? NULL : uecap);
 
   long maxMIMO_Layers = servingcellconfigdedicated &&
                                 servingcellconfigdedicated->uplinkConfig
@@ -2445,12 +2445,13 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
       set_dl_mcs_table(scs, configuration->force_256qam_off ? NULL : uecap, bwp->bwp_Dedicated, scc);
     }
   }
-  if (configuration->do_SRS && UL_BWP_list) {
+  if (UL_BWP_list) {
     for (int i = 0; i < UL_BWP_list->list.count; i++) {
       NR_BWP_Uplink_t *ul_bwp = UL_BWP_list->list.array[i];
       int bwp_size = NRRIV2BW(ul_bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
       if (ul_bwp->bwp_Dedicated->pusch_Config) {
         NR_PUSCH_Config_t *pusch_Config = ul_bwp->bwp_Dedicated->pusch_Config->choice.setup;
+        set_ul_mcs_table(configuration->force_256qam_off ? NULL : uecap, scc, pusch_Config);
         if (pusch_Config->maxRank == NULL) {
           pusch_Config->maxRank = calloc(1, sizeof(*pusch_Config->maxRank));
         }
