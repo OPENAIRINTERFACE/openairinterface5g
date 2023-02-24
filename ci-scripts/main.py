@@ -179,12 +179,10 @@ def GetParametersFromXML(action):
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
-		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte']):
 			RAN.air_interface[RAN.eNB_instance] = 'lte-softmodem'
-		elif (air_interface.lower() in ['nr','lte']):
+		else:
 			RAN.air_interface[RAN.eNB_instance] = air_interface.lower() +'-softmodem'
-		else :
-			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
 		cmd_prefix = test.findtext('cmd_prefix')
 		if cmd_prefix is not None: RAN.cmd_prefix = cmd_prefix
@@ -211,12 +209,10 @@ def GetParametersFromXML(action):
 
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
-		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte']):
 			RAN.air_interface[RAN.eNB_instance] = 'lte-softmodem'
-		elif (air_interface.lower() in ['nr','lte']):
+		else:
 			RAN.air_interface[RAN.eNB_instance] = air_interface.lower() +'-softmodem'
-		else :
-			RAN.air_interface[RAN.eNB_instance] = 'ocp-enb'
 
 	elif action == 'Initialize_UE' or action == 'Attach_UE' or action == 'Detach_UE' or action == 'Terminate_UE' or action == 'CheckStatusUE' or action == 'DataEnable_UE' or action == 'DataDisable_UE':
 		CiTestObj.ue_ids = test.findtext('id').split(' ')
@@ -239,12 +235,11 @@ def GetParametersFromXML(action):
 			
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
-		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte']):
 			CiTestObj.air_interface = 'lte-uesoftmodem'
 		elif (air_interface.lower() in ['nr','lte']):
 			CiTestObj.air_interface = air_interface.lower() +'-uesoftmodem'
 		else :
-			#CiTestObj.air_interface = 'ocp-enb'
 			logging.error('OCP UE -- NOT SUPPORTED')
 
 		CiTestObj.cmd_prefix = test.findtext('cmd_prefix') or ""
@@ -258,13 +253,10 @@ def GetParametersFromXML(action):
 		
 		#local variable air_interface
 		air_interface = test.findtext('air_interface')		
-		if (air_interface is None) or (air_interface.lower() not in ['nr','lte','ocp']):
+		if (air_interface is None) or (air_interface.lower() not in ['nr','lte']):
 			CiTestObj.air_interface = 'lte-uesoftmodem'
-		elif (air_interface.lower() in ['nr','lte']):
+		else:
 			CiTestObj.air_interface = air_interface.lower() +'-uesoftmodem'
-		else :
-			#CiTestObj.air_interface = 'ocp-enb'
-			logging.error('OCP UE -- NOT SUPPORTED')
 
 	elif action == 'Ping':
 		CiTestObj.ping_args = test.findtext('ping_args')

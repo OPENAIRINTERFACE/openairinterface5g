@@ -93,8 +93,6 @@ Options:
    enable cmake debugging messages
 --eNB
   Makes the LTE softmodem
---eNBocp
-  Makes the OCP LTE softmodem
 --gNB
   Makes the NR softmodem
 --RU
@@ -247,10 +245,6 @@ function main() {
        --eNB)
             eNB=1
             echo_info "Will compile eNB"
-            shift;;
-       --eNBocp)
-            eNBocp=1
-            echo_info "Will compile OCP eNB"
             shift;;
       --gNB)
             gNB=1
@@ -451,7 +445,7 @@ function main() {
   ########################################################
   # to be discussed
   
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$gNB" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$gNB" = "1" ] ; then
       if [ "$HW" = "None" -a  "$TP" = "None" ] ; then
 	      echo_info "No local radio head and no transport protocol selected"
       fi
@@ -525,9 +519,6 @@ function main() {
   execlist=""
   if [ "$eNB" = "1" ] ; then
       execlist="$execlist lte-softmodem"
-  fi
-  if [ "$eNBocp" = "1" ] ; then
-      execlist="$execlist ocp-enb"
   fi
   if [ "$gNB" = "1" ] ; then
       execlist="$execlist nr-softmodem nr-cuup"
@@ -654,7 +645,7 @@ function main() {
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
-  if [ "$eNB" = "1" -o "$eNBocp" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" ] ; then
+  if [ "$eNB" = "1" -o "$UE" = "1" -o "$gNB" = "1" -o "$RU" = "1"  -o "$nrUE" = "1" ] ; then
 
       # build RF device libraries
       if [ "$HW" != "None" ] ; then

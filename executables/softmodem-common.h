@@ -108,7 +108,6 @@ extern "C"
 /*   optname                 helpstr                  paramflags      XXXptr                              defXXXval              type         numelt   */
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define RF_CONFIG_FILE      softmodem_params.rf_config_file
-#define SPLIT73             softmodem_params.split73
 #define TP_CONFIG           softmodem_params.threadPoolConfig
 #define PHY_TEST            softmodem_params.phy_test
 #define DO_RA               softmodem_params.do_ra
@@ -138,7 +137,6 @@ extern "C"
 extern int usrp_tx_thread;
 #define CMDLINE_PARAMS_DESC {  \
     {"rf-config-file",       CONFIG_HLP_RFCFGF,       0,              strptr:&RF_CONFIG_FILE,    defstrval:NULL,        TYPE_STRING, 0},\
-    {"split73",              CONFIG_HLP_SPLIT73,      0,              strptr:&SPLIT73,           defstrval:NULL,        TYPE_STRING, 0},       \
     {"thread-pool",          CONFIG_HLP_TPOOL,        0,              strptr:&TP_CONFIG,         defstrval:"-1,-1,-1,-1,-1,-1,-1,-1",         TYPE_STRING, 0},     \
     {"phy-test",             CONFIG_HLP_PHYTST,       PARAMFLAG_BOOL, iptr:&PHY_TEST,                     defintval:0,           TYPE_INT,    0},                     \
     {"do-ra",                CONFIG_HLP_DORA,         PARAMFLAG_BOOL, iptr:&DO_RA,                        defintval:0,           TYPE_INT,    0},                     \
@@ -179,7 +177,6 @@ extern int usrp_tx_thread;
 
 
 #define CMDLINE_PARAMS_CHECK_DESC {         \
-    { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
     { .s5 = { NULL } },                     \
@@ -292,7 +289,6 @@ typedef struct {
   uint64_t       optmask;
   //THREAD_STRUCT  thread_struct;
   char           *rf_config_file;
-  char           *split73;
   char           *threadPoolConfig;
   int            phy_test;
   int            do_ra;
