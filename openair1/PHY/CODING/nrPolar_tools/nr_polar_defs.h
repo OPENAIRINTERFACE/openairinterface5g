@@ -300,6 +300,7 @@ void nr_sort_asc_int16_1D_array_ind(int32_t *matrix,
 
 void nr_free_double_2D_array(double **input, uint16_t xlen);
 
+#ifndef __cplusplus
 void updateLLR(uint8_t listSize,
 	       uint16_t row,
 	       uint16_t col,
@@ -327,7 +328,7 @@ void updatePathMetric2(double *pathMetric,
 		       int ylen,
 		       int zlen,
 		       double llr[xlen][ylen][zlen]);
-
+#endif
 //Also nr_polar_rate_matcher
 static inline void nr_polar_interleaver(uint8_t *input,
                                         uint8_t *output,

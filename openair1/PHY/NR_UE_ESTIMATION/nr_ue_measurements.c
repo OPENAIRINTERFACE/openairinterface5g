@@ -141,8 +141,8 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++) {
 
     ue->measurements.rx_power_avg_dB[gNB_id] = dB_fixed( ue->measurements.rx_power_avg[gNB_id]);
-    ue->measurements.wideband_cqi_tot[gNB_id] = dB_fixed2(ue->measurements.rx_power_tot[gNB_id], ue->measurements.n0_power_tot);
-    ue->measurements.wideband_cqi_avg[gNB_id] = dB_fixed2(ue->measurements.rx_power_avg[gNB_id], ue->measurements.n0_power_avg);
+    ue->measurements.wideband_cqi_tot[gNB_id] = ue->measurements.rx_power_tot_dB[gNB_id] - ue->measurements.n0_power_tot_dB;
+    ue->measurements.wideband_cqi_avg[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] - dB_fixed(ue->measurements.n0_power_avg);
     ue->measurements.rx_rssi_dBm[gNB_id] = ue->measurements.rx_power_avg_dB[gNB_id] + 30 - 10*log10(pow(2, 30)) - ((int)openair0_cfg[0].rx_gain[0] - (int)openair0_cfg[0].rx_gain_offset[0]) - dB_fixed(ue->frame_parms.ofdm_symbol_size);
 
     LOG_D(PHY, "[gNB %d] Slot %d, RSSI %d dB (%d dBm/RE), WBandCQI %d dB, rxPwrAvg %d, n0PwrAvg %d\n",
@@ -185,9 +185,6 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
   uint8_t l_sss = (symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
 
-  if (ssb_offset>= ue->frame_parms.ofdm_symbol_size)
-    ssb_offset -= ue->frame_parms.ofdm_symbol_size;
-
   uint32_t rsrp = 0;
 
   LOG_D(PHY, "In %s: [UE %d] slot %d l_sss %d ssb_offset %d\n", __FUNCTION__, ue->Mod_id, slot, l_sss, ssb_offset);
@@ -195,15 +192,17 @@ void nr_ue_ssb_rsrp_measurements(PHY_VARS_NR_UE *ue,
 
   for (int aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
 
-    int16_t *rxF_sss = (int16_t *)&rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
+    int16_t *rxF_sss = (int16_t *)&rxdataF[aarx][l_sss*ue->frame_parms.ofdm_symbol_size];
 
     for(int k = k_start; k < k_end; k++){
 
+      int re = (ssb_offset + k) % ue->frame_parms.ofdm_symbol_size;
+
 #ifdef DEBUG_MEAS_UE
-      LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+      LOG_I(PHY, "In %s rxF_sss %d %d\n", __FUNCTION__, rxF_sss[re*2], rxF_sss[re*2 + 1]);
 #endif
 
-      rsrp += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
+      rsrp += (((int32_t)rxF_sss[re*2]*rxF_sss[re*2]) + ((int32_t)rxF_sss[re*2 + 1]*rxF_sss[re*2 + 1]));
       nb_re++;
 
     }
@@ -232,11 +231,11 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
 
   uint8_t k;
   int slot = proc->nr_slot_rx;
-  int aarx, nb_nulls;
+  int aarx;
   int16_t *rxF_sss;
-  uint8_t k_left = 48;
-  uint8_t k_right = 183;
-  uint8_t k_length = 8;
+  const uint8_t k_left = 48;
+  const uint8_t k_right = 183;
+  const uint8_t k_length = 8;
   uint8_t l_sss = (ue->symbol_offset + 2) % ue->frame_parms.symbols_per_slot;
   unsigned int ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   double rx_gain = openair0_cfg[0].rx_gain[0];
@@ -248,41 +247,42 @@ void nr_ue_rrc_measurements(PHY_VARS_NR_UE *ue,
 
   for (aarx = 0; aarx<ue->frame_parms.nb_antennas_rx; aarx++) {
 
-    nb_nulls = 0;
     ue->measurements.n0_power[aarx] = 0;
-    rxF_sss = (int16_t *)&rxdataF[aarx][(l_sss*ue->frame_parms.ofdm_symbol_size) + ssb_offset];
+    rxF_sss = (int16_t *)&rxdataF[aarx][l_sss*ue->frame_parms.ofdm_symbol_size];
 
     //-ve spectrum from SSS
     for(k = k_left; k < k_left + k_length; k++){
 
+      int re = (ssb_offset + k) % ue->frame_parms.ofdm_symbol_size;
+
       #ifdef DEBUG_MEAS_RRC
-      LOG_I(PHY, "In %s -rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+      LOG_I(PHY, "In %s -rxF_sss %d %d\n", __FUNCTION__, rxF_sss[re*2], rxF_sss[re*2 + 1]);
       #endif
 
-      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
-      nb_nulls++;
+      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[re*2]*rxF_sss[re*2]) + ((int32_t)rxF_sss[re*2 + 1]*rxF_sss[re*2 + 1]));
 
     }
 
     //+ve spectrum from SSS
     for(k = k_right; k < k_right + k_length; k++){
 
+      int re = (ssb_offset + k) % ue->frame_parms.ofdm_symbol_size;
+
       #ifdef DEBUG_MEAS_RRC
-      LOG_I(PHY, "In %s +rxF_sss %d %d\n", __FUNCTION__, rxF_sss[k*2], rxF_sss[k*2 + 1]);
+      LOG_I(PHY, "In %s +rxF_sss %d %d\n", __FUNCTION__, rxF_sss[re*2], rxF_sss[re*2 + 1]);
       #endif
 
-      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[k*2]*rxF_sss[k*2]) + ((int32_t)rxF_sss[k*2 + 1]*rxF_sss[k*2 + 1]));
-      nb_nulls++;
+      ue->measurements.n0_power[aarx] += (((int32_t)rxF_sss[re*2]*rxF_sss[re*2]) + ((int32_t)rxF_sss[re*2 + 1]*rxF_sss[re*2 + 1]));
 
     }
 
-    ue->measurements.n0_power[aarx] /= nb_nulls;
+    ue->measurements.n0_power[aarx] /= 2*k_length;
     ue->measurements.n0_power_dB[aarx] = (unsigned short) dB_fixed(ue->measurements.n0_power[aarx]);
     ue->measurements.n0_power_tot += ue->measurements.n0_power[aarx];
 
   }
 
-  ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot/aarx);
+  ue->measurements.n0_power_tot_dB = (unsigned short) dB_fixed(ue->measurements.n0_power_tot);
 
   #ifdef DEBUG_MEAS_RRC
   const int psd_awgn = -174;

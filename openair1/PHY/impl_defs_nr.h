@@ -139,7 +139,7 @@ typedef struct TDD_UL_DL_configCommon_s {
   struct TDD_UL_DL_configCommon_s *p_next;
 } TDD_UL_DL_configCommon_t;
 
-typedef struct {
+typedef struct TDD_UL_DL_SlotConfig_s {
   /// \ Identifies a slot within a dl-UL-TransmissionPeriodicity (given in tdd-UL-DL-configurationCommon)
   uint16_t slotIndex;
   /// \ The direction (downlink or uplink) for the symbols in this slot. "allDownlink" indicates that all symbols in this slot are used
@@ -154,7 +154,7 @@ typedef struct {
   /// Corresponds to L1 parameter 'number-of-UL-symbols-dedicated' (see 38.211, section FFS_Section)
   uint16_t nrofUplinkSymbols;
   /// \ for setting a sequence
-  struct TDD_UL_DL_SlotConfig_t *p_next_TDD_UL_DL_SlotConfig;
+  struct TDD_UL_DL_SlotConfig_s *p_next_TDD_UL_DL_SlotConfig;
 } TDD_UL_DL_SlotConfig_t;
 
 /***********************************************************************

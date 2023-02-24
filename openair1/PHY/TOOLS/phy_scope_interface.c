@@ -52,3 +52,44 @@ int end_forms(void) {
 
   return -1;
 }
+
+void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
+  // Local static copy of the scope data bufs
+  // The active data buf is alterned to avoid interference between the Scope thread (display) and the Rx thread (data input)
+  // Index of "2" could be set to the number of Rx threads + 1
+  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][2] = {0};
+  static int  copyDataBufsIdx[UEdataTypeNumberOfItems] = {0};
+
+  scopeData_t *tmp = (scopeData_t *)ue->scopeData;
+
+  if (tmp) {
+    // Begin of critical zone between UE Rx threads that might copy new data at the same time: might require a mutex
+    int newCopyDataIdx = (copyDataBufsIdx[type]==0)?1:0;
+    copyDataBufsIdx[type] = newCopyDataIdx;
+    // End of critical zone between UE Rx threads
+
+    // New data will be copied in a different buffer than the live one
+    scopeGraphData_t *copyData = copyDataBufs[type][newCopyDataIdx];
+
+    if (copyData == NULL || copyData->dataSize < elementSz*colSz*lineSz) {
+      scopeGraphData_t *ptr = (scopeGraphData_t*) realloc(copyData, sizeof(scopeGraphData_t) + elementSz*colSz*lineSz);
+
+      if (!ptr) {
+        LOG_E(PHY,"can't realloc\n");
+        return;
+      } else {
+        copyData = ptr;
+      }
+    }
+
+    copyData->dataSize = elementSz*colSz*lineSz;
+    copyData->elementSz = elementSz;
+    copyData->colSz = colSz;
+    copyData->lineSz = lineSz;
+    memcpy(copyData+1, dataIn,  elementSz*colSz*lineSz);
+    copyDataBufs[type][newCopyDataIdx] = copyData;
+
+    // The new data just copied in the local static buffer becomes live now
+    ((scopeGraphData_t **)tmp->liveData)[type] = copyData;
+  }
+}
