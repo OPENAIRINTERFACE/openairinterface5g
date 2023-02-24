@@ -113,7 +113,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
   create_tunnel_req.pdusession_id[0] = pdu->param.pdusession_id;
   create_tunnel_req.incoming_rb_id[0] = i + 1;
   create_tunnel_req.outgoing_qfi[0] = req->pduSession[i].DRBnGRanList[0].qosFlows[0].id;
-  memcpy(&create_tunnel_req.dst_addr[0].buffer, &pdu->param.upf_addr.buffer, sizeof(uint8_t) * 20);
+  memcpy(&create_tunnel_req.dst_addr[0].buffer, &pdu->param.upf_addr.buffer, sizeof(create_tunnel_req.dst_addr[0].buffer));
   create_tunnel_req.dst_addr[0].length = pdu->param.upf_addr.length;
   create_tunnel_req.outgoing_teid[0] = pdu->param.gtp_teid;
 
