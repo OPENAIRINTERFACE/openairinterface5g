@@ -28,25 +28,19 @@
   <TestCaseRequestedList>
     100000
     111111
-    010002
-    030101
-    000001
     010000
-    000001
+    030101
+    010001
     050000
     050001
-    070001
     070000
+    070001
+    070002
+    010010
     010002
-    000001
     030201
     200000
   </TestCaseRequestedList>
-    <!--
- 070002
- 050002
- 050003
-    -->
   <TestCaseExclusionList></TestCaseExclusionList>
 
   <testCase id="111111">
@@ -56,30 +50,40 @@
     <images_to_pull>oai-gnb</images_to_pull>
   </testCase>
 
+  <testCase id="100000">
+    <class>Custom_Command</class>
+    <desc>Disable Sleep States</desc>
+    <node>nepes</node>
+    <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id="200000">
+    <class>Custom_Command</class>
+    <desc>Enable Sleep States</desc>
+    <node>nepes</node>
+    <command>sudo cpupower idle-set -E</command>
+  </testCase>
+
   <testCase id="010000">
     <class>Initialize_UE</class>
     <desc>Initialize Quectel</desc>
     <id>idefix</id>
   </testCase>
-
-
   <testCase id="010002">
     <class>Terminate_UE</class>
     <desc>Terminate Quectel</desc>
     <id>idefix</id>
   </testCase>
-  <testCase id="100000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - nepes</desc>
-            <node>nepes</node>
-            <command>sudo cpupower idle-set -D 0</command>
-   </testCase>
-   <testCase id="200000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - nepes</desc>
-            <node>nepes</node>
-            <command>sudo cpupower idle-set -E</command>
+  <testCase id="010001">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>idefix</id>
   </testCase>
+  <testCase id="010010">
+    <class>Detach_UE</class>
+    <desc>Detach UE</desc>
+    <id>idefix</id>
+  </testCase>
+
   <testCase id="030101">
     <class>Deploy_Object</class>
     <desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>
@@ -119,28 +123,10 @@
     <ping_rttavg_threshold>15</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="050002">
-    <class>Ping</class>
-    <desc>Ping: 20pings in 20sec</desc>
-    <id>idefix</id>
-    <ping_args>-c 20</ping_args>
-    <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
-  </testCase>
-
-  <testCase id="050003">
-    <class>Ping</class>
-    <desc>Ping: 100pings in 20sec</desc>
-    <id>idefix</id>
-    <ping_args>-c 100 -i 0.2</ping_args>
-    <ping_packetloss_threshold>1</ping_packetloss_threshold>
-    <ping_rttavg_threshold>15</ping_rttavg_threshold>
-  </testCase>
-
   <testCase id="070000">
     <class>Iperf</class>
     <desc>iperf (DL/30Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 30M -t 30 -i 1 -fm -l1400</iperf_args>
+    <iperf_args>-u -b 30M -t 30 -i 1 -fm</iperf_args>
     <direction>DL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
@@ -151,7 +137,7 @@
   <testCase id="070001">
     <class>Iperf</class>
     <desc>iperf (UL/8Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 8M -t 30 -i 1 -fm -l1400</iperf_args>
+    <iperf_args>-u -b 8M -t 30 -i 1 -fm</iperf_args>
     <direction>UL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>1</iperf_packetloss_threshold>

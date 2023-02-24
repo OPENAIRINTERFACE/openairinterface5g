@@ -27,48 +27,53 @@
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  100000
- 010002
+ 010000 
  030000
- 000002
- 010000
- 000001
+ 010001
  050000
  050001
- 000002
  070000
  070001
- 000001
+ 010011
  010002
  080000
  200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
-        <testCase id="100000">
+
+	<testCase id="100000">
 		<class>Custom_Command</class>
-		<desc>To reset cpupower</desc>
+		<desc>Disable Sleep States</desc>
 		<node>obelix</node>
 		<command>sudo cpupower idle-set -D 0</command>
 	</testCase>
-        <testCase id="200000">
+	<testCase id="200000">
 		<class>Custom_Command</class>
-		<desc>To reset cpupower</desc>
+		<desc>Enable Sleep States</desc>
 		<node>obelix</node>
 		<command>sudo cpupower idle-set -E</command>
-        </testCase>
+	</testCase>
+
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>nrmodule2_quectel</id>
-		<UE_Trace>yes</UE_Trace>
 	</testCase>
-
-
 	<testCase id="010002">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
-
+	<testCase id="010001">
+		<class>Attach_UE</class>
+		<desc>Attach Quectel</desc>
+		<id>nrmodule2_quectel</id>
+	</testCase>
+	<testCase id="010011">
+		<class>Detach_UE</class>
+		<desc>Detach Quectel</desc>
+		<id>nrmodule2_quectel</id>
+	</testCase>
 
 	<testCase id="030000">
 		<class>Initialize_eNB</class>

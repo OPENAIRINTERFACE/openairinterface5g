@@ -44,16 +44,16 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1_rrc_inactivity_no_flexran.xm
         <images_to_pull>oai-enb</images_to_pull>
     </testCase>
     <testCase id="100000">
-	    <class>Custom_Command</class>
-	    <desc>To reset cpupower</desc>
-	    <node>hutch</node>
-	    <command>sudo cpupower idle-set -D 0</command>
+        <class>Custom_Command</class>
+        <desc>Disable Sleep States</desc>
+        <node>hutch</node>
+        <command>sudo cpupower idle-set -D 0</command>
     </testCase>
     <testCase id="200000">
-	    <class>Custom_Command</class>
-	    <desc>To reset cpupower</desc>
-	    <node>hutch</node>
-	    <command>sudo cpupower idle-set -E</command>
+        <class>Custom_Command</class>
+        <desc>Enable Sleep States</desc>
+        <node>hutch</node>
+        <command>sudo cpupower idle-set -E</command>
     </testCase>
 
     <testCase id="030102">
@@ -75,21 +75,22 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1_rrc_inactivity_no_flexran.xm
     <testCase id="040101">
         <class>Initialize_UE</class>
         <desc>Initialize UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
-
     <testCase id="040201">
         <class>Terminate_UE</class>
         <desc>Terminate UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
-
     <testCase id="040301">
         <class>Attach_UE</class>
         <desc>Attach UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
-
     <testCase id="040401">
         <class>Detach_UE</class>
         <desc>Detach UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="000001">
@@ -108,34 +109,40 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1_rrc_inactivity_no_flexran.xm
         <class>CheckStatusUE</class>
         <desc>Check UE(s) status before attachment</desc>
         <expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="000011">
         <class>CheckStatusUE</class>
         <desc>Check UE(s) status before data disabling</desc>
         <expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="000012">
         <class>CheckStatusUE</class>
         <desc>Check UE(s) status after data disabling</desc>
         <expectedNbOfConnectedUEs>0</expectedNbOfConnectedUEs>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="000013">
         <class>CheckStatusUE</class>
         <desc>Check UE(s) status after data re-enabling</desc>
         <expectedNbOfConnectedUEs>2</expectedNbOfConnectedUEs>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="040302">
         <class>DataDisable_UE</class>
         <desc>Disabling Data Service on UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="040303">
         <class>DataEnable_UE</class>
         <desc>Enabling Data Service on UE</desc>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="040502">
@@ -143,6 +150,7 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1_rrc_inactivity_no_flexran.xm
         <desc>ping (5MHz - 20 sec)</desc>
         <ping_args>-c 20</ping_args>
         <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
     <testCase id="040503">
@@ -150,6 +158,7 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1_rrc_inactivity_no_flexran.xm
         <desc>ping (5MHz - 20 sec)</desc>
         <ping_args>-c 20</ping_args>
         <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        <id>adb_ue_1 adb_ue_2</id>
     </testCase>
 
 </testCaseList>

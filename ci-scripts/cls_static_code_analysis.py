@@ -357,63 +357,43 @@ class StaticCodeAnalysis():
 				if nbFilesNotFormatted == 0:
 					HTML.CreateHtmlTestRow('File(s) Format', 'OK', CONST.ALL_PROCESSES_OK)
 				else:
-					html_queue = SimpleQueue()
-					html_cell = '<pre style="background-color:white">\n'
-					html_cell += 'Number of files not following OAI Rules: ' + str(nbFilesNotFormatted) + '\n'
+					html_cell = f'Number of files not following OAI Rules: {nbFilesNotFormatted}\n'
 					for nFile in listFilesNotFormatted:
 						html_cell += str(nFile).strip() + '\n'
-					html_cell += '</pre>'
-					html_queue.put(html_cell)
-					HTML.CreateHtmlTestRowQueue('File(s) Format', 'KO', 1, html_queue)
+					HTML.CreateHtmlTestRowQueue('File(s) Format', 'KO', [html_cell])
 					del(html_cell)
-					del(html_queue)
 
 				logging.debug('header files not respecting the circular dependency protection: ' + str(len(circularHeaderDependencyFiles)))
 				if len(circularHeaderDependencyFiles) == 0:
 					HTML.CreateHtmlTestRow('Header Circular Dependency', 'OK', CONST.ALL_PROCESSES_OK)
 				else:
-					html_queue = SimpleQueue()
-					html_cell = '<pre style="background-color:white">\n'
-					html_cell += 'Number of files not respecting: ' + str(len(circularHeaderDependencyFiles)) + '\n'
+					html_cell = f'Number of files not respecting: {len(circularHeaderDependencyFiles)}\n'
 					for nFile in circularHeaderDependencyFiles:
 						html_cell += str(nFile).strip() + '\n'
-					html_cell += '</pre>'
-					html_queue.put(html_cell)
-					HTML.CreateHtmlTestRowQueue('Header Circular Dependency', 'KO', 1, html_queue)
+					HTML.CreateHtmlTestRowQueue('Header Circular Dependency', 'KO', [html_cell])
 					del(html_cell)
-					del(html_queue)
 					finalStatus = -1
 
 				logging.debug('files with a GNU GPL license: ' + str(len(gnuGplLicenceFiles)))
 				if len(gnuGplLicenceFiles) == 0:
 					HTML.CreateHtmlTestRow('Files w/ GNU GPL License', 'OK', CONST.ALL_PROCESSES_OK)
 				else:
-					html_queue = SimpleQueue()
-					html_cell = '<pre style="background-color:white">\n'
-					html_cell += 'Number of files not respecting: ' + str(len(gnuGplLicenceFiles)) + '\n'
+					html_cell = f'Number of files not respecting: {len(gnuGplLicenceFiles)}\n'
 					for nFile in gnuGplLicenceFiles:
 						html_cell += str(nFile).strip() + '\n'
-					html_cell += '</pre>'
-					html_queue.put(html_cell)
-					HTML.CreateHtmlTestRowQueue('Files w/ GNU GPL License', 'KO', 1, html_queue)
+					HTML.CreateHtmlTestRowQueue('Files w/ GNU GPL License', 'KO', html_queue)
 					del(html_cell)
-					del(html_queue)
 					finalStatus = -1
 
 				logging.debug('files with a suspect license: ' + str(len(suspectLicenceFiles)))
 				if len(suspectLicenceFiles) == 0:
 					HTML.CreateHtmlTestRow('Files with suspect license', 'OK', CONST.ALL_PROCESSES_OK)
 				else:
-					html_queue = SimpleQueue()
-					html_cell = '<pre style="background-color:white">\n'
-					html_cell += 'Number of files not respecting: ' + str(len(suspectLicenceFiles)) + '\n'
+					html_cell = f'Number of files not respecting: {len(suspectLicenceFiles)}\n'
 					for nFile in suspectLicenceFiles:
 						html_cell += str(nFile).strip() + '\n'
-					html_cell += '</pre>'
-					html_queue.put(html_cell)
-					HTML.CreateHtmlTestRowQueue('Files with suspect license', 'KO', 1, html_queue)
+					HTML.CreateHtmlTestRowQueue('Files with suspect license', 'KO', [html_cell])
 					del(html_cell)
-					del(html_queue)
 					finalStatus = -1
 
 			else:

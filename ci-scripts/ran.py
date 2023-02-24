@@ -365,11 +365,6 @@ class RANManagement():
 		cwd = os.getcwd()
 		mySSH.copyout(lIpAddr,lUserName,lPassWord, cwd + "/active_net_interfaces.awk", "/tmp")
 		
-		if (self.pStatus < 0):
-			HTML.CreateHtmlTestRow(self.air_interface[self.eNB_instance] + ' ' + self.Initialize_eNB_args, 'KO', self.pStatus)
-			HTML.CreateHtmlTabFooter(False)
-			sys.exit(1)
-
 		#Get pcap on enb and/or gnb if enabled in the xml 
 		if self.eNB_Trace=='yes':
 			if ((self.air_interface[self.eNB_instance] == 'lte-softmodem') or (self.air_interface[self.eNB_instance] == 'ocp-enb')):

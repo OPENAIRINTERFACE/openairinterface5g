@@ -227,23 +227,13 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM,CLUST
             matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
             EPC.ContainerPrefix=matchReg.group(1)
         elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.ADBIPAddress = matchReg.group(1)
+            print("ignoring --ADBIPAddress parameter")
         elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.ADBUserName = matchReg.group(1)
+            print("ignoring --ADBUserName parameter")
         elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE)
-            if re.match('centralized', matchReg.group(1), re.IGNORECASE) or re.match('distributed', matchReg.group(1), re.IGNORECASE):
-                if re.match('distributed', matchReg.group(1), re.IGNORECASE):
-                    CiTestObj.ADBCentralized = False
-                else:
-                    CiTestObj.ADBCentralized = True
-            else:
-                sys.exit('Invalid ADB Type: ' + matchReg.group(1) + ' -- (should be centralized or distributed)')
+            print("ignoring --ADBType parameter")
         elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
-            matchReg = re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE)
-            CiTestObj.ADBPassword = matchReg.group(1)
+            print("ignoring --ADBPassword parameter")
         elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
             CiTestObj.testXMLfiles.append(matchReg.group(1))
