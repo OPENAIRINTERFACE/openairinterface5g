@@ -249,69 +249,21 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 #endif
 
-    } else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && chest_freq == 0) { //pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
-      LOG_D(PHY,"PUSCH estimation DMRS type 2, Freq-domain interpolation");
-      c16_t *pil   = pilot;
-      int re_offset = k0;
-      // Treat first DMRS specially (left edge)
-      *ul_ch=c16mulShift(*pil,
-                         rxdataF[soffset+nushift+re_offset],
-                         15);
-      pil++;
-      ul_ch++;
-      re_offset = (re_offset + 1)%symbolSize;
-      ch_offset++;
-
-      // TO verify: used after the loop, likely a piece of code is missing for ch_r
-      c16_t ch_r;
-      for (int re_cnt = 1; re_cnt < (nb_rb_pusch*NR_NB_SC_PER_RB) - 5; re_cnt += 6) {
-        c16_t ch_l=c16mulShift(*pil,
-                               rxdataF[soffset+nushift+re_offset],
-                               15);
-        *ul_ch = ch_l;
+    } else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type2 && chest_freq == 0) { // pusch_dmrs_type2  |p_r,p_l,d,d,d,d,p_r,p_l,d,d,d,d|
+      LOG_D(PHY, "PUSCH estimation DMRS type 2, Freq-domain interpolation\n");
+      c16_t *pil = pilot;
+      c16_t *rx = &rxdataF[soffset + nushift];
+      for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n += 6) {
+        c16_t ch0 = c16mulShift(*pil, rx[(k0 + n) % symbolSize], 15);
         pil++;
-        ul_ch++;
-        ch_offset++;
-        multadd_real_four_symbols_vector_complex_scalar(filt8_ml2,
-                                                      &ch_l,
-                                                      ul_ch);
-        *max_ch = max(*max_ch, max(abs(ch_l.r), abs(ch_l.i)));
-
-        re_offset = (re_offset+5)%symbolSize;
-        ch_r=c16mulShift(*pil,
-                         rxdataF[soffset+nushift+re_offset],
-                         15);
-        multadd_real_four_symbols_vector_complex_scalar(filt8_mr2,
-                                                        &ch_r,
-                                                        ul_ch);
-        *max_ch = max(*max_ch, max(abs(ch_r.r), abs(ch_r.i)));
-
-        //for (int re_idx = 0; re_idx < 8; re_idx += 2)
-        //printf("ul_ch = %d + j*%d\n", ul_ch[re_idx], ul_ch[re_idx+1]);
-        ul_ch += 4;
-        ch_offset += 4;
-        *ul_ch = ch_r;
+        c16_t ch1 = c16mulShift(*pil, rx[(k0 + n + 1) % symbolSize], 15);
         pil++;
-        ul_ch++;
-        ch_offset++;
-        re_offset = (re_offset + 1)%symbolSize;
+        c16_t ch = c16addShift(ch0, ch1, 1);
+        *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
+        multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, &ch, &ul_ch[n]);
+        ul_ch[n + 4] = ch;
+        ul_ch[n + 5] = ch;
       }
-
-      // Treat last pilot specially (right edge)
-      c16_t ch_l=c16mulShift(*pil,
-                             rxdataF[soffset+nushift+re_offset],
-                             15);
-      *ul_ch = ch_l;
-      ul_ch++;
-      ch_offset++;
-      multadd_real_four_symbols_vector_complex_scalar(filt8_rr1,
-                                                      &ch_l,
-                                                      ul_ch);
-      multadd_real_four_symbols_vector_complex_scalar(filt8_rr2,
-                                                      &ch_r,
-                                                      ul_ch);
-      __m128i *ul_ch_128 = (__m128i *)&ul_ch_estimates[p*gNB->frame_parms.nb_antennas_rx+aarx][ch_offset];
-      ul_ch_128[0] = _mm_slli_epi16 (ul_ch_128[0], 2);
     }
 
     else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) { // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 6 DMRS REs and use a common value for the whole PRB
