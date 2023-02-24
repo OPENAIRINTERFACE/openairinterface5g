@@ -32,7 +32,6 @@
 import sys
 import time
 import serial
-import subprocess as sp
 
 class qtel_ctl:
 	#---------------
