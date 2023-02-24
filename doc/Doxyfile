@@ -1003,7 +1003,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_task.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_interface_management.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_ue_context_management.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/dummy_enb.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_rrc_message_transfer.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_warning_message_transmission.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_task.h \
@@ -2097,7 +2096,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../nfapi/open-nFAPI/nfapi/public_inc/fapi_nr_ue_interface.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../nfapi/open-nFAPI/sim_common/inc/vendor_ext.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/nr_prach_procedures.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/phy_procedures_nr_common.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/phy_procedures_nr_gNB.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/fapi_nr_l1.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/SCHED_NR/nr_ru_procedures.c \

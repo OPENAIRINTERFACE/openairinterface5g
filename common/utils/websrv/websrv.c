@@ -253,7 +253,7 @@ int websrv_callback_set_moduleparams(const struct _u_request *request, struct _u
         } // for	*cmd
       } // json_unpack_ex(jsbody OK
     } // user_data
-  } // sbody
+  } // jsbody not null
   websrv_printf_end(httpstatus, websrvparams.dbglvl);
   return U_CALLBACK_COMPLETE;
 }
@@ -432,40 +432,62 @@ int websrv_callback_set_softmodemvar(const struct _u_request *request, struct _u
 int websrv_processwebfunc(struct _u_response *response, cmdparser_t *modulestruct, telnetshell_cmddef_t *cmd, json_t *jparams)
 {
   LOG_I(UTIL, "[websrv] : executing command %s %s\n", modulestruct->module, cmd->cmdname);
+  if ((cmd->cmdflags & TELNETSRV_CMDFLAG_NEEDPARAM) && jparams == NULL) {
+	  LOG_W(UTIL, "No parameters sent by frontend for %s %s\n", modulestruct->module, cmd->cmdname);
+	  return 500;
+  }
   int http_status = 200;
+  char *pname[2], *pvalue[2];
+  size_t np =0;
+  if (jparams != NULL) {
+     int b[2];
+     char *ptype[2];
+     json_error_t jerror;
+     np = json_array_size(jparams);
+     int jrt;
+     switch(np) {
+	   case 1:
+	     jrt=json_unpack_ex(jparams, &jerror, 0, "[{s:s,s:s,s:s,s,b}]", "name", &pname[0], "value", &pvalue[0], "type", &ptype[0], "modifiable", &b);
+	   break;
+	   case 2:
+	     jrt=json_unpack_ex(jparams, &jerror, 0, "[{s:s,s:s,s:s,s,b},{s:s,s:s,s:s,s,b}]", 
+	                                          "name", &pname[0], "value", &pvalue[0], "type", &ptype[0], "modifiable", &b[0],
+	                                          "name", &pname[1], "value", &pvalue[1], "type", &ptype[1], "modifiable", &b[1]);	   
+	   break;
+	   default:
+	     http_status=500;	   
+	   break;
+//     json_unpack_ex(jparams, &jerror, 0, "[{s:s,s:s,s:s,s,b}]", "name", &pname, "value", &pvalue, "type", &ptype, "modifiable", &b);
+
+	  }
+    if (jrt <0 || http_status != 200) {
+         LOG_I(UTIL, "[websrv], couldn't unpack jparams, module %s, command %s: %s\n", modulestruct->module, cmd->cmdname, jerror.text);
+         websrv_printjson((char *)__FUNCTION__, jparams, websrvparams.dbglvl);
+         return 500;  
+    }	  
+  }
+
   if (cmd->cmdflags & TELNETSRV_CMDFLAG_GETWEBTBLDATA) {
     webdatadef_t wdata;
     memset(&wdata, 0, sizeof(wdata));
-    if (cmd->cmdflags & TELNETSRV_CMDFLAG_NEEDPARAM) {
-      if (jparams == NULL) {
-        LOG_W(UTIL, "No parameters sent by frontend for %s %s\n", modulestruct->module, cmd->cmdname);
-      } else {
-        int b;
-        char *pname, *pvalue, *ptype;
-        json_error_t jerror;
-        json_unpack_ex(jparams, &jerror, 0, "{s:s,s:s,s:s,s,b}", "name", &pname, "value", &pvalue, "type", &ptype, "modifiable", &b);
-        if (pvalue == NULL || pname == NULL || ptype == NULL) {
-          LOG_I(UTIL, "[websrv], couldn't unpack jparams, module %s, command %s: %s\n", modulestruct->module, cmd->cmdname, jerror.text);
-          websrv_printjson((char *)__FUNCTION__, jparams, websrvparams.dbglvl);
-          http_status = 500;
-        } else {
-          snprintf(wdata.columns[0].coltitle, sizeof(wdata.columns[0].coltitle) - 1, "%s", pname);
-          wdata.numcols = 1;
-          wdata.lines[0].val[0] = pvalue;
-          wdata.numlines = 1;
-        }
-      }
+    wdata.numlines = 1;
+    for (int i=0; i<np; i++) {
+      snprintf(wdata.columns[i].coltitle, sizeof(wdata.columns[i].coltitle) - 1, "%s", pname[i]);
+      wdata.numcols = np;
+      wdata.lines[0].val[i] = pvalue[i];
     }
     cmd->webfunc_getdata(cmd->cmdname, websrvparams.dbglvl, (webdatadef_t *)&wdata, NULL);
     websrv_gettbldata_response(response, &wdata, modulestruct->module, cmd->cmdname);
   } else {
     char *sptr = index(cmd->cmdname, ' ');
+    char cmdbuff[TELNET_CMD_MAXSIZE*3]; //cmd + 2 parameters
+    snprintf(cmdbuff,sizeof(cmdbuff)-1, "%s%s%s %s",(sptr == NULL) ? "" : sptr,(sptr == NULL) ? "" : " ",(np>0) ? pvalue[0] : "",(np>1) ? pvalue[1] : "");
     if (cmd->qptr != NULL) {
       websrv_printf_start(response, 16384, true);
-      telnet_pushcmd(cmd, (sptr == NULL) ? cmd->cmdname : sptr, websrv_async_printf);
+      telnet_pushcmd(cmd, cmdbuff, websrv_async_printf);
     } else {
       websrv_printf_start(response, 16384, false);
-      cmd->cmdfunc((sptr == NULL) ? cmd->cmdname : sptr, websrvparams.dbglvl, websrv_printf);
+      cmd->cmdfunc(cmdbuff, websrvparams.dbglvl, websrv_printf);
     }
     websrv_printf_end(http_status, websrvparams.dbglvl);
   }
@@ -598,21 +620,35 @@ int websrv_callback_get_softmodemcmd(const struct _u_request *request, struct _u
       snprintf(confstr, sizeof(confstr), "Confirm %s ?", modulestruct->cmd[j].cmdname);
       acmd = json_pack("{s:s,s:s}", "name", modulestruct->cmd[j].cmdname, "confirm", confstr);
     } else if (modulestruct->cmd[j].cmdflags & TELNETSRV_CMDFLAG_NEEDPARAM) {
-      char *pname = NULL;
-      char *question = NULL;
+      char *question[] = {NULL,NULL};
       char *helpcp = NULL;
+      json_t *jQ1=NULL, *jQ2=NULL;
+      json_t *jQs = json_array();
       if (modulestruct->cmd[j].helpstr != NULL) {
-        char *tokptr;
         helpcp = strdup(modulestruct->cmd[j].helpstr);
-        question = strtok_r(helpcp, "<[", &tokptr);
-        pname = (question != NULL) ? strtok_r(helpcp, ">]", &tokptr) : NULL;
+        int ns=sscanf(helpcp,"<%m[^<>]> <%m[^<>]>",&question[0],&question[1]);
+        if (ns == 0) {
+		  LOG_W(UTIL, "[websrv] Cannot find parameters for command %s %s\n", modulestruct->module, modulestruct->cmd[j].cmdname);
+		  continue;		
+		}  
+        jQ1=json_pack("{s:s,s:s,s:s}", "display",question[0], "pname", "P0", "type", "string");
+        json_array_append_new(jQs, jQ1);
+        if (ns >1) {
+            jQ2=json_pack("{s:s,s:s,s:s}","display", (question[1] == NULL) ? "" : question[1], "pname",  "P1" , "type", "string");
+            json_array_append_new(jQs, jQ2);
+	    }
       }
-      acmd = json_pack(
-          "{s:s,s:{s:s,s:s,s:s}}", "name", modulestruct->cmd[j].cmdname, "question", "display", (question == NULL) ? "" : question, "pname", (pname == NULL) ? "Px" : pname, "type", "string");
+      acmd = json_pack("{s:s,s:o}", "name", modulestruct->cmd[j].cmdname, "question", jQs);
       free(helpcp);
+      free(question[0]);
+      free(question[1]);
     } else {
       acmd = json_pack("{s:s}", "name", modulestruct->cmd[j].cmdname);
     }
+    if ( acmd == NULL) {
+		LOG_W(UTIL, "[websrv] interface for command %s %s cannot be built\n", modulestruct->module, modulestruct->cmd[j].cmdname);
+		continue;
+	}
     json_t *jopts = json_array();
     if (modulestruct->cmd[j].cmdflags & TELNETSRV_CMDFLAG_AUTOUPDATE) {
       json_array_append_new(jopts, json_string("update"));
@@ -806,7 +842,6 @@ void *websrv_autoinit()
   websrvparams.instance.max_post_body_size = 1024;
 
   // 1: build the first page, when receiving the "oaisoftmodem" url
-  //  ulfius_add_endpoint_by_val(&(websrvparams.instance), "GET", "oaisoftmodem", "variables", 0, &websrv_callback_get_softmodemstatus, NULL);
   ulfius_add_endpoint_by_val(&(websrvparams.instance), "GET", "oaisoftmodem", "commands", 1, &websrv_callback_get_softmodemmodules, NULL);
 
   // 2 default_endpoint declaration, it tries to open the file with the url name as specified in the request.It looks for the file
@@ -817,7 +852,7 @@ void *websrv_autoinit()
       websrv_callback_get_softmodemstatus, websrv_callback_okset_softmodem_cmdvar, websrv_callback_set_softmodemvar};
   char *http_methods[3] = {"GET", "OPTIONS", "POST"};
 
-  websrv_add_endpoint(http_methods, 3, "oaisoftmodem", "variables", callback_functions_var, NULL);
+  websrv_add_endpoint(http_methods, 3, "oaisoftmodem", "info", callback_functions_var, NULL);
 
   for (int i = 0; telnetparams->CmdParsers[i].cmd != NULL; i++) {
     register_module_endpoints(&(telnetparams->CmdParsers[i]));

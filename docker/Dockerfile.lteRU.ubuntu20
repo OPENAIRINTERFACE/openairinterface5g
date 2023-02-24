@@ -21,33 +21,31 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Ubuntu 18.04
+#   Valid for Ubuntu 20.04
 #
 #---------------------------------------------------------------------
 
-FROM ran-base:latest AS nr-ue-base
+FROM ran-base:latest as ru-base
 
-FROM ran-build:latest AS nr-ue-build
+FROM ran-build:latest AS ru-build
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_parameters.yaml && \
-    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters.yaml && \
+    cp /oai-ran/docker/scripts/lte_ru_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
-FROM ubuntu:bionic as oai-nr-ue
+FROM ubuntu:focal as oai-lte-ru
 ENV DEBIAN_FRONTEND=noninteractive
 ENV TZ=Europe/Paris
 
 RUN apt-get update && \
     DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
     DEBIAN_FRONTEND=noninteractive apt-get install --yes \
-        software-properties-common \
-        libsctp1 \
-        procps \
         tzdata \
-        liblapacke \
+        procps \
+        software-properties-common \
+        libblas3 \
         libatlas3-base \
         libconfig9 \
-        openssl \
         net-tools \
         gdb \
         python \
@@ -56,55 +54,46 @@ RUN apt-get update && \
         python3-requests \
         libusb-1.0-0 \
         iputils-ping \
-        iproute2 \
-        iperf && \
+        iproute2 && \
     rm -rf /var/lib/apt/lists/*
 
-WORKDIR /opt/oai-nr-ue/bin
-COPY --from=nr-ue-build \
-    /oai-ran/cmake_targets/ran_build/build/nr-uesoftmodem \
+WORKDIR /opt/oai-lte-ru/bin
+COPY --from=ru-build \
+    /oai-ran/cmake_targets/ran_build/build/oairu \
     /oai-ran/docker/scripts/entrypoint.sh \
     ./
 
-WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build \
-    /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
-    /oai-ran/docker/etc/nr-ue.nfapi.conf \
-    ./
-
-COPY --from=nr-ue-build \
+COPY --from=ru-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
     /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
     /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
-    /oai-ran/cmake_targets/ran_build/build/libcoding.so \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
-    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
-    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_5Gue.so \
     /usr/local/lib/
 
 # Now we are copying from builder-image the UHD files.
-COPY --from=nr-ue-base /usr/local/bin/uhd_find_devices /usr/local/bin
-COPY --from=nr-ue-base /usr/local/lib/libuhd.so.3.15.0 /usr/local/lib
-COPY --from=nr-ue-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-nr-ue/bin
+COPY --from=ru-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=ru-base /usr/local/lib/libuhd.so.4.4.0 /usr/local/lib
+COPY --from=ru-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
 
-COPY --from=nr-ue-base \
-    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.65.1 \
-    /usr/lib/x86_64-linux-gnu/libboost_program_options.so.1.65.1 \
+COPY --from=ru-base \
+    /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0 \
     /usr/lib/x86_64-linux-gnu/
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
     ldconfig
 
-WORKDIR /opt/oai-nr-ue
-CMD ["/opt/oai-nr-ue/bin/nr-uesoftmodem", "-O", "/opt/oai-nr-ue/etc/nr-ue.conf"]
-ENTRYPOINT ["/opt/oai-nr-ue/bin/entrypoint.sh"]
+# Copy the relevant configuration files for RRU
+WORKDIR /opt/oai-lte-ru/etc
+COPY --from=ru-build /oai-ran/docker/etc/rru* ./
+
+WORKDIR /opt/oai-lte-ru
+
+ENTRYPOINT ["/opt/oai-lte-ru/bin/entrypoint.sh"]
+CMD ["/opt/oai-lte-ru/bin/oairu", "-O", "/opt/oai-lte-ru/etc/rru.conf"]

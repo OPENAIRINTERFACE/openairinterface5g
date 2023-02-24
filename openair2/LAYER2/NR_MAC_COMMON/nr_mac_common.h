@@ -36,6 +36,9 @@
 #include "nr_mac.h"
 #include "common/utils/nr/nr_common.h"
 
+#define NB_SRS_PERIOD         (18)
+static const uint16_t srs_period[NB_SRS_PERIOD] = { 0, 1, 2, 4, 5, 8, 10, 16, 20, 32, 40, 64, 80, 160, 320, 640, 1280, 2560};
+
 typedef enum {
   pusch_dmrs_pos0 = 0,
   pusch_dmrs_pos1 = 1,

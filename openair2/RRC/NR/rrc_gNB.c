@@ -60,8 +60,6 @@
 
 #include "NR_CellGroupConfig.h"
 #include "NR_MeasResults.h"
-#include "LTE_UECapabilityInformation.h"
-#include "LTE_UL-DCCH-Message.h"
 #include "NR_UL-CCCH-Message.h"
 #include "NR_RRCSetupRequest-IEs.h"
 #include "NR_RRCSetupComplete-IEs.h"
@@ -69,7 +67,6 @@
 #include "NR_MIB.h"
 
 #include "rlc.h"
-#include "rrc_eNB_UE_context.h"
 #include "platform_types.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -82,7 +79,6 @@
 
 #include "UTIL/OSA/osa_defs.h"
 
-#include "rrc_eNB_S1AP.h"
 #include "rrc_gNB_NGAP.h"
 
 #include "rrc_gNB_GTPV1U.h"

@@ -742,7 +742,6 @@ typedef struct {
 
 typedef struct eNB_RRC_INST_s {
   /// southbound midhaul configuration
-  ngran_node_t                    node_type;
   eth_params_t                    eth_params_s;
   char                            *node_name;
   uint32_t                        node_id;

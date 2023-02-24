@@ -1,20 +1,19 @@
+back-end and front-end are both built when the build of the `websrv` optional library is requested.  When cmake configuration has been completed, with websrv enabled,font-end and back-end can be built separatly, using respectively `make frontend` or `make websrv` from the build repository.
 
+When all dependencies are met, you can build the web server interface components using the build_oai script with the `--build-lib all` option . As the web interface is an optional component, if it's dependencies are not found it won't stop the build. Web interface components (back-end or front-end) which cannot be built are just skipped. If you specifically ask for the webserver build (  `--build-lib websrv`)  the build will fail if dependencies check failed.
 
-When all dependencies are met, you can build the all the web server interface components using the build_oai script with the `--build-lib all` option . As the web interface is an optional component, if it's dependencies are not found it won't stop the build. Web interface components (back-end or front-end) which cannot be built are just skipped.
-
-###### build example when missing back-end dependencies 
+###### build example when missing dependencies 
 
 ```
-./build_oai --build-lib all --nrUE
-  websrv optional build not included in build-lib option  as dependencies requirements not met 
-Enabling build of all optional shared libraries (telnetsrv enbscope uescope nrscope)
-Will compile NR UE
+./build_oai --build-lib all
+Enabling build of all optional shared libraries (telnetsrv enbscope uescope nrscope websrv websrvfront)
 RF HW set to None
-2. Setting the OAI PATHS ...
-OPENAIR_DIR    = /usr/local/oai/oai-develop/openairinterface5g
+OPENAIR_DIR    = /usr/local/oai/websrv3/openairinterface5g
 FreeDiameter prefix not found, install freeDiameter if EPC, HSS
-3. building the compilation directives ...
-running cmake ../../..
+running cmake -DENABLE_WEBSRV=ON -DENABLE_TELNETSRV=ON ../../..
+NETTLE VERSION_INSTALLED  = 3.5.1
+NETTLE_VERSION_MAJOR = 3
+NETTLE_VERSION_MINOR = 5
 cuda include /usr/include
 cuda library 
 -- CMAKE_BUILD_TYPE is RelWithDebInfo
@@ -22,86 +21,80 @@ cuda library
 -- AVX512 intrinsics are OFF
 -- AVX2 intrinsics are ON
 -- No T1 Offload support detected
-calling protoc_call=/usr/local/oai/oai-develop/openairinterface5g/cmake_targets/tools/generate_protobuf FSPT_C_DIR=/usr/local/oai/oai-develop/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2 FSPT_MSG_DIR=/usr/local/oai/oai-develop/openairinterface5g/targets/COMMON/MESSAGES/V2 FSPT_MSG_FILES=/usr/local/oai/oai-develop/openairinterface5g/targets/COMMON/MESSAGES/V2/flexsplit.proto
-[libprotobuf WARNING google/protobuf/compiler/parser.cc:546] No syntax specified for the proto file: flexsplit.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
-fspt c dir is : /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2
 gcc -Wall -I. -I.. -I../itti -I../../../openair2/COMMON -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
 ./_check_vcd || (rm -f ./_check_vcd ./T_IDs.h ./T_messages.txt.h && false)
 rm -f ./_check_vcd
-Add enb specific telnet functions in libtelnetsrv_enb.so
-No specific telnet functions for gnb
-No specific telnet functions for 4Gue
-Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
-CMake Warning at common/utils/websrv/websrv_CMakeLists.txt:12 (message):
+-- Add enb specific telnet functions in libtelnetsrv_enb.so
+-- No specific telnet functions for gnb
+-- No specific telnet functions for 4Gue
+-- Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
+CMake Error at common/utils/websrv/CMakeLists.txt:3 (message):
   ulfius library (https://github.com/babelouest/ulfius) not found, install
   libulfius-dev (ubuntu) if you need to build websrv back-end
-Call Stack (most recent call first):
-  CMakeLists.txt:3189 (include)
 
 
--- websrv backend build skipped, dependencies not found
-..........
-.............
-
+-- Configuring incomplete, errors occurred!
+See also "/usr/local/oai/websrv3/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeOutput.log".
+See also "/usr/local/oai/websrv3/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/CMakeError.log".
+build have failed
 ```
 
-######  build example when missing back-end dependencies 
-
-```
-  ./build_oai --build-lib all --nrUE
-  Enabling build of all optional shared libraries (telnetsrv enbscope uescope nrscope websrv)
-  Will compile NR UE
-  RF HW set to None
-  
-  2. Setting the OAI PATHS ...
-     OPENAIR_DIR    = /usr/local/oai/oai-develop/openairinterface5g
-     FreeDiameter prefix not found, install freeDiameter if EPC, HSS
-  3. building the compilation directives ...
-     running cmake ../../..
-     cuda include /usr/include
-     cuda library 
-     -- CMAKE_BUILD_TYPE is RelWithDebInfo
-     -- CPUARCH x86_64
-     -- AVX512 intrinsics are OFF
-     -- AVX2 intrinsics are ON
-     -- No T1 Offload support detected
-     calling protoc_call=/usr/local/oai/oai-develop/openairinterface5g/cmake_targets/tools/generate_protobuf FSPT_C_DIR=/usr/local/oai/oai-develop/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2 FSPT_MSG_DIR=/usr/local/oai/oai-develop/openairinterface5g/targets/COMMON/MESSAGES/V2 FSPT_MSG_FILES=/usr/local/oai/oai-develop/openairinterface5g/targets/COMMON/MESSAGES/V2/flexsplit.proto
-     [libprotobuf WARNING google/protobuf/compiler/parser.cc:546] No syntax specified for the proto file: flexsplit.proto. Please use 'syntax = "proto2";' or 'syntax = "proto3";' to specify a syntax version. (Defaulted to proto2 syntax.)
-     fspt c dir is : /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/ran_build/build/CMakeFiles/FSPT_V2
-     gcc -Wall -I. -I.. -I../itti -I../../../openair2/COMMON -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
-     ./_check_vcd || (rm -f ./_check_vcd ./T_IDs.h ./T_messages.txt.h && false)
-     rm -f ./_check_vcd
-     Add enb specific telnet functions in libtelnetsrv_enb.so
-     No specific telnet functions for gnb
-     No specific telnet functions for 4Gue
-     Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
-     -- websrv backend can be built
-     -- websrv frontend can be built
-     -- Configuring done
-     -- Generating done
-     -- Build files have been written to: /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/ran_build/build
-............
-.............
-Log file for compilation is being written to: /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/log/websrv.txt
+######  build example (build-lib all) when dependencies are met
+``` 
+ ./build_oai --build-lib all
+Enabling build of all optional shared libraries (telnetsrv enbscope uescope nrscope websrv websrvfront)
+RF HW set to None
+OPENAIR_DIR    = /usr/local/oai/websrv3/openairinterface5g
+FreeDiameter prefix not found, install freeDiameter if EPC, HSS
+running cmake -DENABLE_WEBSRV=ON -DENABLE_TELNETSRV=ON ../../..
+NETTLE VERSION_INSTALLED  = 3.5.1
+NETTLE_VERSION_MAJOR = 3
+NETTLE_VERSION_MINOR = 5
+cuda include /usr/include
+cuda library 
+-- CMAKE_BUILD_TYPE is RelWithDebInfo
+-- CPUARCH x86_64
+-- AVX512 intrinsics are OFF
+-- AVX2 intrinsics are ON
+-- No T1 Offload support detected
+gcc -Wall -I. -I.. -I../itti -I../../../openair2/COMMON -Itracer -o _check_vcd check_vcd.c tracer/database.c tracer/utils.c -lm -pthread
+./_check_vcd || (rm -f ./_check_vcd ./T_IDs.h ./T_messages.txt.h && false)
+rm -f ./_check_vcd
+-- Add enb specific telnet functions in libtelnetsrv_enb.so
+-- No specific telnet functions for gnb
+-- No specific telnet functions for 4Gue
+-- Add 5Gue specific telnet functions in libtelnetsrv_5Gue.so
+-- found libulfius for websrv
+-- found libjansson for websrv
+-- found npm for websrv
+-- Configuring webserver backend
+-- Configuring webserver frontend
+-- No Doxygen documentation requested
+-- Configuring done
+-- Generating done
+-- Build files have been written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/ran_build/build
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/telnetsrv.txt
+telnetsrv compiled
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/enbscope.txt
+enbscope compiled
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/uescope.txt
+uescope compiled
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/nrscope.txt
+nrscope compiled
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/websrv.txt
 websrv compiled
-Build of websrv frontend enabled
-Log file for compilation is being written to: /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/log/websrvfront.txt
+Log file for compilation is being written to: /usr/local/oai/websrv3/openairinterface5g/cmake_targets/log/websrvfront.txt
 websrvfront compiled
-Compiling rfsimulator
-Log file for compilation is being written to: /usr/local/oai/oai-develop/openairinterface5g/cmake_targets/log/rfsimulator.txt  
-.............
-..............
+BUILD SHOULD BE SUCCESSFUL 
 ```
 
-  
+# building and installing the front-end after cmake has been configured
 
-# building and installing the front-end
-
-Before building the front-end you need to install the npm node.js installer:
+Before building the front-end you need to install the npm node.js installer, otherwise the make target won't exist:
 
 `apt-get install npm` for ubuntu or `dnf install npm`for fedora
 
-then to build and install the frontend:
+then configure cmake to be able to build and install the frontend without using the build_oai script:
 
 ``` bash
 cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
@@ -143,7 +136,8 @@ Built target websrvfront
 
 
 
-# Building and installing  the web server back-end
+# Building and installing  the web server back-end after cmake has been configured
+
 The back-end has two dependencies:
 
 1. the [ulfius library](https://github.com/babelouest/ulfius) and the corresponding include files which are provided by the ubuntu libulfius-dev package: `sudo apt-get install -y libulfius-dev`
@@ -151,7 +145,7 @@ The back-end has two dependencies:
 
 Dependencies can also be installed on fedora distribution, the jansson package is `jansson-devel`, ulfius has to be installed as explained [here](https://github.com/babelouest/ulfius/blob/master/INSTALL.md#pre-compiled-packages). 
 
-By default the embedded web server back-end , which is implemented in a shared library, is not built. It can be built after compiling the softmodem executable using the `build_oai` script:
+The websrv targets won't be available till cmake has been successfully configured with the websrv option enabled
 
 ```bash
  cd \<oai repository\>/openairinterface5g
@@ -159,7 +153,11 @@ By default the embedded web server back-end , which is implemented in a shared l
  cd cmake_targets
  ./build_oai  --build-lib websrv
 ```
-
+or, without the help of the  `build_oai` script:
+```bash
+ cd \<oai repository\>/openairinterface5g/cmake_targets/ran_build/build
+ make websrv
+```
 This will create the `libwebsrv.so`  file in the `targets/bin` and `cmake_targets/ran_build/build` sub directories of the oai repository.
 
 When starting the softmodem, you must specify the **_\-\-websrv_** option to load and start the web server. The web server is loaded via the [oai shared library loader](loader).
@@ -203,4 +201,8 @@ The interface should be intuitive enough, keeping in mind the following restrict
 
 Some front-end  objects, which usage are less intuitive  provide a tooltip to help interface usage.
 
+## some webserver screenshots
+![main page](/usr/local/oai/websrv3/openairinterface5g/common/utils/websrv/DOC/main.png  "main page")
+![Configuring logs](/usr/local/oai/websrv3/openairinterface5g/common/utils/websrv/DOC/logscfg.png  "Configuring logs")
+![scope interface](/usr/local/oai/websrv3/openairinterface5g/common/utils/websrv/DOC/scope.png  "scope interface")
 [oai web serverinterface  home](websrv.md)

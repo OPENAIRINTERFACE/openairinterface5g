@@ -85,7 +85,7 @@ Options:
 -d | --build-dir
    Sets build directory (will be <oai-root>/cmake_targets/<build-dir>/build)
 -I | --install-external-packages
-   Installs required packages such as LibXML, asn1.1 compiler, freediameter, ...
+   Installs required packages such as LibXML, asn1.1 compiler, ...
    This option will require root password
 --install-optional-packages
    Install useful but not mandatory packages such as valgrind
@@ -392,16 +392,16 @@ function main() {
                   if [ "$alib" = "$oklib" ] ; then
                     BUILD_OPTLIB="$BUILD_OPTLIB $alib" 
                     echo_info "Enabling build of lib${alib}.so" 
-		  fi
-	        done
-	      done
-	      if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
+                  fi
+                done
+              done
+              if [ "${BUILD_OPTLIB## }" != "$2" ] ; then
                 echo_fatal "Unknown optional library in $2, valid libraries are $OPTIONAL_LIBRARIES"
               fi
             fi
-	    for oklib in $BUILD_OPTLIB ; do
-	      CMAKE_CMD="$CMAKE_CMD -DENABLE_${oklib^^}=ON"
-	    done
+            for oklib in $BUILD_OPTLIB ; do
+              CMAKE_CMD="$CMAKE_CMD -DENABLE_${oklib^^}=ON"
+            done            
             shift 2;;		
         --noavx512)
             CMAKE_CMD="$CMAKE_CMD -DAVX512=OFF"
@@ -475,8 +475,6 @@ function main() {
   #######################################################
   # Setting and printing OAI envs, we should check here #
   #######################################################
-
-  echo_info "2. Setting the OAI PATHS ..."
 
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
@@ -553,8 +551,6 @@ function main() {
   if [[ "$execlist" == "" && "$SIMUS_PHY" != "1" && "$HW" == "None" ]]; then
     SKIP_SHARED_LIB_FLAG="True"
   fi
-
-  echo_info "3. building the compilation directives ..."
 
   DIR=$OPENAIR_DIR/cmake_targets
 
@@ -658,27 +654,9 @@ function main() {
   if [ ! -z "$BUILD_OPTLIB" ] ; then 
      for oklib in $BUILD_OPTLIB ; do
          compilations $BUILD_DIR $oklib
-         if [ "$oklib" == "websrv" ] ; then
-           BUILD_WEBSRVFRONT=1
-           echo_info "Build of websrv frontend enabled"
-           fi
      done
   fi
-  
-  ############################################
-  # Optional targets (others than libraries) #
-  ############################################  
-  if [ "$BUILD_WEBSRVFRONT" = "1" ] ; then
-    npmv=`command npm -v`
-    npms=$?
-    nodev=`command node -v`
-    nodes=$?
-    if [ "$npms" == "0" -a "$nodes" == "0" ] ; then
-      compilations $BUILD_DIR websrvfront
-    else
-      echo_warning "build of websrv front-end skipped, dependencies not met : " $npmv " " $nodev
-    fi
-  fi
+
   ####################################################
   # Build RF device and transport protocol libraries #
   ####################################################
@@ -767,7 +745,6 @@ function main() {
   # Auto-tests #
   ##############
   if [ "$OAI_TEST" = "1" ] ; then
-    echo_info "10. Running OAI pre commit tests (pre-ci) ..."
     echo_error "These scripts ASSUME that user is in /etc/sudoers and can execute commands without PASSWORD prompt"
     echo_error "Add the following lines in /etc/sudoers file to make your __user_name__ sudo without password prompt"
     echo_error " __your_user_name__ ALL = (ALL:ALL) NOPASSWD: ALL"
@@ -787,7 +764,6 @@ function main() {
     fi
     wait
   else
-    echo_info "10. Bypassing the Tests ..."
     echo_success "BUILD SHOULD BE SUCCESSFUL"
   fi
 

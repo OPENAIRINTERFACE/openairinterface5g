@@ -45,8 +45,6 @@
 #include "mac_rrc_dl.h"
 #include "cucp_cuup_if.h"
 
-//#include "COMMON/mac_rrc_primitives.h"
-
 #include "NR_SIB1.h"
 #include "NR_RRCReconfigurationComplete.h"
 #include "NR_RRCReconfiguration.h"
@@ -57,11 +55,7 @@
 #include "NR_PLMN-IdentityInfo.h"
 #include "NR_MCC-MNC-Digit.h"
 #include "NR_NG-5G-S-TMSI.h"
-//#include "MCCH-Message.h"
-//#include "MBSFNAreaConfiguration-r9.h"
-//#include "SCellToAddMod-r10.h"
-//#include "AS-Config.h"
-//#include "AS-Context.h"
+
 #include "NR_UE-NR-Capability.h"
 #include "NR_UE-MRDC-Capability.h"
 #include "NR_MeasResults.h"

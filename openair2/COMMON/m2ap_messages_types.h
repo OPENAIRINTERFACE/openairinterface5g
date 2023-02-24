@@ -269,24 +269,14 @@ typedef struct m2ap_setup_resp_s {
   uint8_t num_mcch_config_per_mbsfn;
 
 
-//  /// string holding gNB_CU_name
-//  char     *gNB_CU_name;
-//  /// number of DU cells to activate
-//  uint16_t num_cells_to_activate; //0< num_cells_to_activate <= 512;
-//  /// mcc of DU cells
-//  //uint16_t mcc[M2AP_MAX_NB_CELLS];
   uint16_t mcc;//[M2AP_MAX_NB_CELLS];
-  /// mnc of DU cells
-  //uint16_t mnc[M2AP_MAX_NB_CELLS];
   uint16_t mnc;//[M2AP_MAX_NB_CELLS];
-  /// mnc digit length of DU cells
-  //uint8_t mnc_digit_length[M2AP_MAX_NB_CELLS];
   uint8_t mnc_digit_length;//[M2AP_MAX_NB_CELLS];
   // NR Global Cell Id
 //  uint64_t nr_cellid[M2AP_MAX_NB_CELLS];
 //  /// NRPCI
 //  uint16_t nrpci[M2AP_MAX_NB_CELLS];
-//  /// num SI messages per DU cell
+//  /// num SI messages
 //  uint8_t num_SI[M2AP_MAX_NB_CELLS];
 //  /// SI message containers (up to 21 messages per cell)
 //  uint8_t *SI_container[M2AP_MAX_NB_CELLS][21];

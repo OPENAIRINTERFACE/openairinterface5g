@@ -138,35 +138,6 @@ extern int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
 
-bool cu_f1u_data_req(
-  protocol_ctxt_t  *ctxt_pP,
-  const srb_flag_t srb_flagP,
-  const rb_id_t rb_id,
-  const mui_t muiP,
-  const confirm_t confirmP,
-  const sdu_size_t sdu_buffer_size,
-  unsigned char *const sdu_buffer,
-  const pdcp_transmission_mode_t mode,
-  const uint32_t *const sourceL2Id,
-  const uint32_t *const destinationL2Id
-  ) {
-  mem_block_t *memblock = get_free_mem_block(sdu_buffer_size, __func__);
-  if (memblock == NULL) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  memcpy(memblock->data,sdu_buffer, sdu_buffer_size);
-  // weird rb id management in 4G, not fully understand (looks bad design)
-  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
-  // but it would be much simpler to use absolute numbering
-  // instead of this "srb flag" associated to these +/-4
-  int ret=pdcp_data_ind(ctxt_pP,srb_flagP, false, rb_id-4, sdu_buffer_size, memblock, NULL, NULL);
-  if (!ret) {
-    LOG_E(RLC, "%s:%d:%s: ERROR: pdcp_data_ind failed\n", __FILE__, __LINE__, __FUNCTION__);
-    /* what to do in case of failure? for the moment: nothing */
-  }
-  return ret;
-}
 void *pdcp_stats_thread(void *param) {
 
    FILE *fd;
@@ -202,31 +173,6 @@ void *pdcp_stats_thread(void *param) {
 
 uint64_t get_pdcp_optmask(void) {
   return pdcp_params.optmask;
-}
-
-rlc_op_status_t cu_send_to_du(const protocol_ctxt_t *const ctxt,
-			       const srb_flag_t srb_flag, const MBMS_flag_t MBMS_flag,
-			       const rb_id_t rb_id, const mui_t mui,
-			       confirm_t confirm, sdu_size_t size, mem_block_t *sdu,
-                               const uint32_t *const sourceID, const uint32_t *const destID) {
-  MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0, GTPV1U_TUNNEL_DATA_REQ,
-                                                        sizeof(gtpv1u_tunnel_data_req_t) +
-                                                        size + GTPU_HEADER_OVERHEAD_MAX );
-  AssertFatal(message_p != NULL, "OUT OF MEMORY");
-  gtpv1u_tunnel_data_req_t *req=&GTPV1U_TUNNEL_DATA_REQ(message_p);
-  req->buffer        = (uint8_t*)(req+1);
-  memcpy(req->buffer + GTPU_HEADER_OVERHEAD_MAX,
-	 sdu->data,
-	 size );
-  req->length        = size;
-  req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-  req->ue_id = ctxt->rntiMaybeUEid;
-  req->bearer_id = rb_id+4;
-  LOG_D(PDCP, "%s() (drb %ld) sending message to gtp size %d\n",
-	__func__, rb_id, size);
-  extern instance_t CUuniqInstance;
-  itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
-  return true;
 }
 
 //-----------------------------------------------------------------------------
@@ -326,7 +272,7 @@ bool pdcp_data_req(protocol_ctxt_t  *ctxt_pP,
         LOG_UI(PDCP, "Before rlc_data_req 1, srb_flagP: %d, rb_idP: %ld \n", srb_flagP, rb_idP);
       }
 
-      rlc_status = pdcp_params.send_rlc_data_req_func(ctxt_pP, srb_flagP, NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)?MBMS_FLAG_NO:MBMS_FLAG_YES, rb_idP, muiP,
+      rlc_status = pdcp_params.send_rlc_data_req_func(ctxt_pP, srb_flagP, MBMS_FLAG_YES, rb_idP, muiP,
                    confirmP, sdu_buffer_sizeP, pdcp_pdu_p,NULL,NULL);
     } else {
       rlc_status = RLC_OP_STATUS_OUT_OF_RESSOURCES;
@@ -488,98 +434,73 @@ bool pdcp_data_req(protocol_ctxt_t  *ctxt_pP,
                 "[MSG] PDCP DL %s PDU on rb_id %ld\n",(srb_flagP)? "CONTROL" : "DATA", rb_idP);
 
     if ((pdcp_pdu_p!=NULL) && (srb_flagP == 0) && (ctxt_pP->enb_flag == 1)) {
-      LOG_D(PDCP, "pdcp data req on drb %ld, size %d, rnti %lx, node_type %d \n", rb_idP, pdcp_pdu_size, ctxt_pP->rntiMaybeUEid, RC.rrc ? RC.rrc[ctxt_pP->module_id]->node_type : -1);
+      LOG_D(PDCP, "pdcp data req on drb %ld, size %d, rnti %lx\n", rb_idP, pdcp_pdu_size, ctxt_pP->rntiMaybeUEid);
 
-      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_DU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-        LOG_E(PDCP, "Can't be DU, bad node type %d \n", RC.rrc[ctxt_pP->module_id]->node_type);
-        ret = false;
-      } else {
-        rlc_status = pdcp_params.send_rlc_data_req_func(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
-                     confirmP, pdcp_pdu_size, pdcp_pdu_p,sourceL2Id,
-                     destinationL2Id);
-        ret = false;
-        switch (rlc_status) {
-          case RLC_OP_STATUS_OK:
-            LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
-            ret=true;
-            break;
+      rlc_status = pdcp_params.send_rlc_data_req_func(ctxt_pP, srb_flagP, MBMS_FLAG_NO, rb_idP, muiP,
+                   confirmP, pdcp_pdu_size, pdcp_pdu_p,sourceL2Id,
+                   destinationL2Id);
+      ret = false;
+      switch (rlc_status) {
+        case RLC_OP_STATUS_OK:
+          LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+          ret=true;
+          break;
 
-          case RLC_OP_STATUS_BAD_PARAMETER:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-            break;
+        case RLC_OP_STATUS_BAD_PARAMETER:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+          break;
 
-          case RLC_OP_STATUS_INTERNAL_ERROR:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-            break;
+        case RLC_OP_STATUS_INTERNAL_ERROR:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+          break;
 
-          case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-            break;
+        case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+          break;
 
-          default:
-            LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-            break;
-        } // switch case
-      } /* end if node_type is not DU */
+        default:
+          LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+          break;
+      } // switch case
     } else { // SRB
-      if (ctxt_pP->enb_flag == ENB_FLAG_YES && NODE_IS_CU(RC.rrc[ctxt_pP->module_id]->node_type)) {
-        // DL transfer
-        MessageDef                            *message_p;
-        // Note: the acyual task must be TASK_PDCP_ENB, but this task is not created
-        message_p = itti_alloc_new_message (TASK_PDCP_ENB, 0, F1AP_DL_RRC_MESSAGE);
-        F1AP_DL_RRC_MESSAGE (message_p).rrc_container =  &pdcp_pdu_p->data[0] ;
-        F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = pdcp_pdu_size;
-        F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id  = 0;
-        F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id  = 0;
-        F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id  = 0xFFFFFFFF; // unknown
-        F1AP_DL_RRC_MESSAGE(message_p).rnti = ctxt_pP->rntiMaybeUEid;
-        F1AP_DL_RRC_MESSAGE (message_p).srb_id = rb_idP;
-        F1AP_DL_RRC_MESSAGE (message_p).execute_duplication      = 1;
-        F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc      = 0;
-        itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
-        //CU_send_DL_RRC_MESSAGE_TRANSFER(ctxt_pP->module_id, message_p);
-        LOG_I(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
-        ret=true;
-      } else {
-        rlc_status = rlc_data_req(ctxt_pP
-                                  , srb_flagP
-                                  , MBMS_FLAG_NO
-                                  , rb_idP
-                                  , muiP
-                                  , confirmP
-                                  , pdcp_pdu_size
-                                  , pdcp_pdu_p
-                                  ,NULL
-                                  ,NULL
-                                 );
+      rlc_status = rlc_data_req(ctxt_pP
+                                , srb_flagP
+                                , MBMS_FLAG_NO
+                                , rb_idP
+                                , muiP
+                                , confirmP
+                                , pdcp_pdu_size
+                                , pdcp_pdu_p
+                                ,NULL
+                                ,NULL
+                               );
 
-        switch (rlc_status) {
-          case RLC_OP_STATUS_OK:
-            LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
-            ret=true;
-            break;
+      switch (rlc_status) {
+        case RLC_OP_STATUS_OK:
+          LOG_D(PDCP, "Data sending request over RLC succeeded!\n");
+          ret=true;
+          break;
 
-          case RLC_OP_STATUS_BAD_PARAMETER:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
-            ret= false;
-            break;
+        case RLC_OP_STATUS_BAD_PARAMETER:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Bad Parameter' reason!\n");
+          ret= false;
+          break;
 
-          case RLC_OP_STATUS_INTERNAL_ERROR:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
-            ret= false;
-            break;
+        case RLC_OP_STATUS_INTERNAL_ERROR:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Internal Error' reason!\n");
+          ret= false;
+          break;
 
-          case RLC_OP_STATUS_OUT_OF_RESSOURCES:
-            LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
-            ret= false;
-            break;
+        case RLC_OP_STATUS_OUT_OF_RESSOURCES:
+          LOG_W(PDCP, "Data sending request over RLC failed with 'Out of Resources' reason!\n");
+          ret= false;
+          break;
 
-          default:
-            LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
-            ret= false;
-            break;
-        } // switch case
-      }
+        default:
+          LOG_W(PDCP, "RLC returned an unknown status code after PDCP placed the order to send some data (Status Code:%d)\n", rlc_status);
+          ret= false;
+          break;
+      } // switch case
     }
   }
 

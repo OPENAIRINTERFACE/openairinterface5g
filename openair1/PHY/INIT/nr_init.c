@@ -23,7 +23,6 @@
 #include "common/utils/nr/nr_common.h"
 #include "common/ran_context.h"
 #include "PHY/defs_gNB.h"
-#include "PHY/phy_extern.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "PHY/INIT/phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"

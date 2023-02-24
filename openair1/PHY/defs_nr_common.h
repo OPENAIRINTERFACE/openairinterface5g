@@ -45,9 +45,6 @@
 #define MAX_NUM_SUBCARRIER_SPACING 5
 #define NR_MAX_OFDM_SYMBOL_SIZE 4096
 
-#define NR_NB_SC_PER_RB 12
-#define NR_NB_REG_PER_CCE 6
-
 #define NR_SYMBOLS_PER_SLOT 14
 
 #define ONE_OVER_SQRT2_Q15 23170
@@ -81,14 +78,9 @@
 #define NR_MAX_DCI_SIZE_DWORD 54 // ceil(NR_MAX_DCI_SIZE/32)
 
 #define NR_MAX_PDCCH_AGG_LEVEL 16 // 3GPP TS 38.211 V15.8 Section 7.3.2 Table 7.3.2.1-1: Supported PDCCH aggregation levels
-#define NR_MAX_CSET_DURATION 3
-
-#define NR_MAX_NB_RBG 18
 
 #define NR_MAX_NB_LAYERS 4 // 8
 #define NR_MAX_NB_PORTS 32
-
-#define NR_MAX_NB_HARQ_PROCESSES 16
 
 #define NR_MAX_PDSCH_TBS 3824
 
@@ -96,28 +88,12 @@
 
 #define MAX_NUM_NR_ULSCH_SEGMENTS_PER_LAYER 34
 
-#define MAX_NUM_NR_CHANNEL_BITS (4*14*273*12*8)  // 14 symbols, 273 RB
 #define MAX_NUM_NR_RE (4*14*273*12)
 
 #define MAX_NUM_NR_SRS_SYMBOLS 4
 #define MAX_NUM_NR_SRS_AP 4
 
-#define NR_RX_NB_TH 1
-#define NR_NB_TH_SLOT 2
-
 #define NR_NB_NSCID 2
-
-extern const uint8_t nr_rv_round_map[4]; 
-
-static inline
-uint8_t nr_rv_to_round(uint8_t rv)
-{
-  for (uint8_t round = 0; round < 4; round++) {
-    if (nr_rv_round_map[round] == rv)
-      return round;
-  }
-  return 0;
-}
 
 typedef enum {
   NR_MU_0=0,
@@ -127,14 +103,6 @@ typedef enum {
   NR_MU_4,
 } nr_numerology_index_e;
 
-typedef enum {
-  kHz15=0,
-  kHz30,
-  kHz60,
-  kHz120,
-  kHz240
-} nr_scs_e;
-
 typedef enum{
   nr_ssb_type_A = 0,
   nr_ssb_type_B,
@@ -142,58 +110,6 @@ typedef enum{
   nr_ssb_type_D,
   nr_ssb_type_E
 } nr_ssb_type_e;
-
-typedef enum {
-  nr_FR1 = 0,
-  nr_FR2
-} nr_frequency_range_e;
-
-typedef enum {
-  MOD_BPSK=0,
-  MOD_QPSK,
-  MOD_QAM16,
-  MOD_QAM64,
-  MOD_QAM256
-}nr_mod_t;
-
-typedef struct {
-  /// Size of first RBG
-  uint8_t start_size;
-  /// Nominal size
-  uint8_t P;
-  /// Size of last RBG
-  uint8_t end_size;
-  /// Number of RBG
-  uint8_t N_RBG;
-}nr_rbg_parms_t;
-
-typedef struct {
-  /// Size of first PRG
-  uint8_t start_size;
-  /// Nominal size
-  uint8_t P_prime;
-  /// Size of last PRG
-  uint8_t end_size;
-  /// Number of PRG
-  uint8_t N_PRG;
-} nr_prg_parms_t;
-
-typedef struct NR_BWP_PARMS {
-  /// BWP ID
-  uint8_t bwp_id;
-  /// Subcarrier spacing
-  nr_scs_e scs;
-  /// Freq domain location -- 1st CRB index
-  uint8_t location;
-  /// Bandwidth in PRB
-  uint16_t N_RB;
-  /// Cyclic prefix
-  uint8_t cyclic_prefix;
-  /// RBG params
-  nr_rbg_parms_t rbg_parms;
-  /// PRG params
-  nr_prg_parms_t prg_parms;
-} NR_BWP_PARMS;
 
 typedef struct {
   uint8_t k_0_p[MAX_NUM_NR_SRS_AP][MAX_NUM_NR_SRS_SYMBOLS];

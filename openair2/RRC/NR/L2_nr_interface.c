@@ -28,7 +28,6 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
-#include <f1ap_du_rrc_message_transfer.h>
 #include "platform_types.h"
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
@@ -44,7 +43,6 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
-#include <openair2/F1AP/f1ap_du_rrc_message_transfer.h>
 
 
 extern RAN_CONTEXT_t RC;
@@ -101,7 +99,7 @@ nr_rrc_data_req(
   /* Hack: only trigger PDCP if in CU, otherwise it is triggered by RU threads
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
-  if (ctxt_pP->enb_flag && NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type))
+  if (ctxt_pP->enb_flag)
     pdcp_run(ctxt_pP);
 
   return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
