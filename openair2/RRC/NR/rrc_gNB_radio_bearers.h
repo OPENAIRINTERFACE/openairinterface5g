@@ -35,14 +35,10 @@
 #define GBR_FLOW                (1)
 #define NONGBR_FLOW             (0)
 
-NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue,
-                               uint8_t drb_id,
-                               const pdu_session_param_t *pduSession,
-                               bool enable_sdap,
-                               int do_drb_integrity,
-                               int do_drb_ciphering);
+NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue, uint8_t drb_id, pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering);
 
-uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr);
+uint8_t next_available_drb(gNB_RRC_UE_t *ue, pdu_session_param_t *pdusession, bool is_gbr);
+
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 
 #endif

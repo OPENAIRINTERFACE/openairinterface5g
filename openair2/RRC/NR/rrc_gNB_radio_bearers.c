@@ -22,12 +22,8 @@
 #include "rrc_gNB_radio_bearers.h"
 #include "oai_asn1.h"
 
-NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
-                               uint8_t drb_id,
-                               const pdu_session_param_t *pduSession,
-                               bool enable_sdap,
-                               int do_drb_integrity,
-                               int do_drb_ciphering) {
+NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering)
+{
   NR_DRB_ToAddMod_t *DRB_config  = NULL;
   NR_SDAP_Config_t  *SDAP_config = NULL;
 
@@ -38,10 +34,8 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   
   /* SDAP Configuration */
   SDAP_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
-  memset(SDAP_config, 0, sizeof(NR_SDAP_Config_t));
   SDAP_config->mappedQoS_FlowsToAdd = calloc(1, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
-  memset(SDAP_config->mappedQoS_FlowsToAdd, 0, sizeof(struct NR_SDAP_Config__mappedQoS_FlowsToAdd));
-  
+
   SDAP_config->pdu_Session = pduSession->param.pdusession_id;
   
   if (enable_sdap) {
@@ -61,9 +55,9 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
     asn1cSeqAdd(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
 
     if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
-      ue->pduSession[pduSession->param.pdusession_id].param.used_drbs[drb_id-1] = DRB_ACTIVE_NONGBR;
+      pduSession->param.used_drbs[drb_id - 1] = DRB_ACTIVE_NONGBR;
     else
-      ue->pduSession[pduSession->param.pdusession_id].param.used_drbs[drb_id-1] = DRB_ACTIVE;
+      pduSession->param.used_drbs[drb_id - 1] = DRB_ACTIVE;
   }
   
   SDAP_config->mappedQoS_FlowsToRelease = NULL;
@@ -110,12 +104,13 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue,
   return DRB_config;
 }
 
-uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr) {
+uint8_t next_available_drb(gNB_RRC_UE_t *ue, pdu_session_param_t *pdusession, bool is_gbr)
+{
   uint8_t drb_id;
 
   if(!is_gbr) { /* Find if Non-GBR DRB exists in the same PDU Session */
     for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
-      if(ue->pduSession[pdusession_id].param.used_drbs[drb_id] == DRB_ACTIVE_NONGBR)
+      if (pdusession->param.used_drbs[drb_id] == DRB_ACTIVE_NONGBR)
         return drb_id+1;
   }
   /* GBR Flow  or a Non-GBR DRB does not exist in the same PDU Session, find an available DRB */
@@ -128,6 +123,7 @@ uint8_t next_available_drb(gNB_RRC_UE_t *ue, uint8_t pdusession_id, bool is_gbr)
 }
 
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id) {
+  DevAssert(drb_id > 0);
   if(ue->DRB_active[drb_id-1] == DRB_ACTIVE)
     return true;
   return false;

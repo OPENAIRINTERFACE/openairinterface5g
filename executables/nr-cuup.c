@@ -103,7 +103,7 @@ rlc_op_status_t nr_rrc_rlc_config_asn1_req(const protocol_ctxt_t *const ctxt_pP,
   return 0;
 }
 
-int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_pP, const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP)
+int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_pP, const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_p, int offset)
 {
   abort();
   return 0;
