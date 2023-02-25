@@ -38,11 +38,6 @@ EPCSourceCodePath : s
 EPCType : t
 EPCContainerPrefix : u
 
-ADBIPAddress : v
-ADBUserName : w
-ADBType : x
-ADBPassword : y
-
 XMLTestFile : z
 
 UEIPAddress : qqq

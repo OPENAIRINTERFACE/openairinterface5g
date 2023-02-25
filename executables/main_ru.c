@@ -56,7 +56,6 @@
 #include "openair2/ENB_APP/enb_paramdef.h"
 #include "system.h"
 
-#include <executables/split_headers.h>
 #include <executables/softmodem-common.h>
 #include <executables/thread-common.h>
 

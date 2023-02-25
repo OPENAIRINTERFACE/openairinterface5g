@@ -551,6 +551,7 @@ check_install_additional_tools (){
     PACKAGE_LIST="\
 	doxygen \
 	libpthread-stubs0-dev \
+	libqt5charts5-dev \
 	tshark \
 	uml-utilities \
         iperf3 \

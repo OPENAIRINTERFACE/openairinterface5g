@@ -298,6 +298,9 @@ typedef struct gNB_RRC_UE_s {
   NR_RRCReconfiguration_t            *reconfig;
   NR_RadioBearerConfig_t             *rb_config;
 
+  /* Pointer to save spCellConfig during RRC Reestablishment procedures */
+  NR_SpCellConfig_t                  *spCellConfigReestablishment;
+
   ImsiMobileIdentity_t               imsi;
 
   /* KgNB as derived from KASME received from EPC */
@@ -320,7 +323,7 @@ typedef struct gNB_RRC_UE_s {
   uint16_t                           ng_5G_S_TMSI_Part2;
   NR_EstablishmentCause_t            establishment_cause;
 
-  /* Information from UE RRC ConnectionReestablishmentRequest */
+  /* Information from UE RRCReestablishmentRequest */
   NR_ReestablishmentCause_t          reestablishment_cause;
 
   /* UE id for initial connection to S1AP */
@@ -342,9 +345,7 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            nb_of_modify_e_rabs;
   uint8_t                            nb_of_failed_e_rabs;
   nr_e_rab_param_t                   modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  /* Total number of pdu session already setup in the list */
-  uint8_t                            setup_pdu_sessions;
-  /* Number of pdu session to be setup in the list */
+  /* Number of pdu session managed for the ue */
   uint8_t                            nb_of_pdusessions;
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_pdusessions;
@@ -475,6 +476,11 @@ typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_setup_func_t bearer_context_mod;
 } cucp_cuup_if_t;
 
+typedef struct nr_reestablish_rnti_map_s {
+  ue_id_t ue_id;
+  rnti_t c_rnti;
+} nr_reestablish_rnti_map_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -527,6 +533,8 @@ typedef struct gNB_RRC_INST_s {
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;
+
+  nr_reestablish_rnti_map_t nr_reestablish_rnti_map[MAX_MOBILES_PER_GNB];
 
   nr_mac_rrc_dl_if_t mac_rrc;
   cucp_cuup_if_t cucp_cuup;

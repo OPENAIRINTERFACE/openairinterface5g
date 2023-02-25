@@ -32,7 +32,6 @@
 #include <nr_pdcp/nr_pdcp.h>
 #include <softmodem-common.h>
 #include <nr-softmodem.h>
-#include <split_headers.h>
 
 #include "gnb_app.h"
 #include "assertions.h"

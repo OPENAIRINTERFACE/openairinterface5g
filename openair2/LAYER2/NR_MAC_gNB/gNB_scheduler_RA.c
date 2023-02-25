@@ -625,11 +625,12 @@ void nr_initiate_ra_proc(module_id_t module_idP,
     int loop = 0;
     if (ra->rnti == 0) { // This condition allows for the usage of a preconfigured rnti for the CFRA
       do {
-        ra->rnti = (taus() % 65518) + 1;
+        // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
+        ra->rnti = (taus() % 0xffef) + 1;
         loop++;
       } while (loop != 100
                && !((find_nr_UE(&nr_mac->UE_info, ra->rnti) == NULL) && (find_nr_RA_id(module_idP, CC_id, ra->rnti) == -1)
-                    && ra->rnti >= 1 && ra->rnti <= 65519));
+                    && ra->rnti >= 0x1 && ra->rnti <= 0xffef));
       if (loop == 100) {
         LOG_E(NR_MAC, "%s:%d:%s: [RAPROC] initialisation random access aborted\n", __FILE__, __LINE__, __FUNCTION__);
         abort();

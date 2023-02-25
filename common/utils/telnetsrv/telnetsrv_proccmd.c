@@ -504,7 +504,6 @@ int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt)
 {
    if (debug > 0)
        prnt("process module received %s\n",buf);
-   end_configmodule();
    exit_fun("telnet server received exit command\n");
    return 0;
 }

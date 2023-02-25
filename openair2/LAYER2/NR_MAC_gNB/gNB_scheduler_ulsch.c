@@ -699,11 +699,9 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           continue;
         }
 
-
-	NR_UE_info_t* UE = add_new_nr_ue(gNB_mac, ra->rnti, ra->CellGroup);
+        NR_UE_info_t *UE = add_new_nr_ue(gNB_mac, ra->rnti, ra->CellGroup);
         if (!UE) {
           LOG_W(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state,ra->rnti,current_rnti);
-
           nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           return;

@@ -41,7 +41,6 @@
 #include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface.h"
 #include "transport_proto.h"
-#include <executables/split_headers.h>
 
 extern int oai_exit;
 
@@ -321,12 +320,6 @@ int ulsch_decoding_data(PHY_VARS_eNB *eNB, L1_rxtx_proc_t *proc,
     else
       E = ulsch_harq->Qm * ((GpmodC==0?0:1) + (Gp/ulsch_harq->C));
     
-    if ( split73 == SPLIT73_DU ) {
-      sendFs6Ul(eNB, UE_id, harq_pid, r, ulsch_harq->eUL+r_offset, E*sizeof(int16_t), r_offset);
-      r_offset += E;
-      continue;
-    }
-
     union turboReqUnion id= {.s={ulsch->rnti,proc->frame_rx,proc->subframe_rx,0,0}};
     notifiedFIFO_elt_t *req=newNotifiedFIFO_elt(sizeof(turboDecode_t),
                                                 id.p,

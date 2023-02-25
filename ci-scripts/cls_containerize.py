@@ -927,24 +927,21 @@ class Containerize():
 			mySSH.copyin(lIpAddr, lUserName, lPassWord, logfilename, '.')
 		mySSH.close()
 
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">\n'
+		message = ''
 		if usedImage != '':
-			html_cell += f'Used Image = {usedImage} :\n'
-			html_cell += imageInfo
+			message += f'Used Image = {usedImage} :\n'
+			message += imageInfo
 		else:
-			html_cell += 'Could not retrieve used image info!\n'
+			message += 'Could not retrieve used image info!\n'
 		if status:
-			html_cell += '\nHealthy deployment!\n'
+			message += '\nHealthy deployment!\n'
 		else:
-			html_cell += '\nUnhealthy deployment! -- Check logs for reason!\n'
-		html_cell += '</pre>'
-		html_queue.put(html_cell)
+			message += '\nUnhealthy deployment! -- Check logs for reason!\n'
 		if status:
-			HTML.CreateHtmlTestRowQueue('N/A', 'OK', CONST.ENB_PROCESS_OK, html_queue)
+			HTML.CreateHtmlTestRowQueue('N/A', 'OK', [message])
 		else:
 			self.exitStatus = 1
-			HTML.CreateHtmlTestRowQueue('N/A', 'KO', CONST.ENB_PROCESS_OK, html_queue)
+			HTML.CreateHtmlTestRowQueue('N/A', 'KO', [message])
 
 
 	def UndeployObject(self, HTML, RAN):
@@ -1116,37 +1113,30 @@ class Containerize():
 			else:
 				time.sleep(10)
 
-		imagesInfo = ''
+		html_cell = ''
 		for newCont in newContainers:
 			if newCont == 'rfsim4g-db-init':
 				continue
 			cmd = 'docker inspect -f "{{.Config.Image}}" ' + newCont
 			imageInspect = myCmd.run(cmd, timeout=30, silent=True)
 			imageName = str(imageInspect.stdout).strip()
-			cmd = 'docker image inspect --format "{{.RepoTags}}\t{{.Size}} bytes\t{{.Created}}\t{{.Id}}" ' + imageName
+			cmd = 'docker image inspect --format \'{{.RepoTags}}\t{{.Size}} bytes\t{{index (split .Created ".") 0}}\n{{.Id}}\' ' + imageName
 			imageInspect = myCmd.run(cmd, 30, silent=True)
-			imagesInfo += imageInspect.stdout.strip()
+			html_cell += imageInspect.stdout + '\n'
 		myCmd.close()
 
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">\n'
-		for imageInfo in imagesInfo.split('\n'):
-			html_cell += imageInfo[:-11] + '\n'
-		html_cell += '\n'
 		for cState in containerStatus:
 			html_cell += cState + '\n'
-		html_cell += '</pre>'
-		html_queue.put(html_cell)
 		if count == 100 and healthy == self.nb_healthy[0]:
 			if self.tsharkStarted == False:
 				logging.debug('Starting tshark on public network')
 				self.CaptureOnDockerNetworks()
-			HTML.CreateHtmlTestRowQueue('n/a', 'OK', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue('n/a', 'OK', [html_cell])
 			for cState in containerStatus:
 				logging.debug(cState)
 			logging.info('\u001B[1m Deploying OAI Object(s) PASS\u001B[0m')
 		else:
-			HTML.CreateHtmlTestRowQueue('Could not deploy in time', 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue('Could not deploy in time', 'KO', [html_cell])
 			for cState in containerStatus:
 				logging.debug(cState)
 			logging.error('\u001B[1m Deploying OAI Object(s) FAILED\u001B[0m')
@@ -1357,10 +1347,7 @@ class Containerize():
 				message += statLine + '\n'
 		myCmd.close()
 
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">\n' + message + '</pre>'
-		html_queue.put(html_cell)
-		HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
+		HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', [message])
 
 	def PingFromContainer(self, HTML, RAN, UE):
 		myCmd = cls_cmd.LocalCmd()
@@ -1419,14 +1406,11 @@ class Containerize():
 			logging.info('\u001B[1m Ping Test PASS\u001B[0m')
 
 	def PingExit(self, HTML, RAN, UE, status, message):
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
-		html_queue.put(html_cell)
 		if status:
-			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', [message])
 		else:
 			logging.error('\u001B[1;37;41m ping test FAIL -- ' + message + ' \u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'KO', [message])
 			# Automatic undeployment
 			logging.warning('----------------------------------------')
 			logging.warning('\u001B[1m Starting Automatic undeployment \u001B[0m')
@@ -1475,14 +1459,12 @@ class Containerize():
 		self.IperfExit(HTML, RAN, UE, iperfStatus, msg)
 
 	def IperfExit(self, HTML, RAN, UE, status, message):
-		html_queue = SimpleQueue()
-		html_cell = '<pre style="background-color:white">UE\n' + message + '</pre>'
-		html_queue.put(html_cell)
+		html_cell = f'UE\n{message}'
 		if status:
-			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'OK', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'OK', [html_cell])
 		else:
 			logging.error('\u001B[1m Iperf Test FAIL -- ' + message + ' \u001B[0m')
-			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', 1, html_queue)
+			HTML.CreateHtmlTestRowQueue(self.cliOptions, 'KO', [html_cell])
 			# Automatic undeployment
 			logging.warning('----------------------------------------')
 			logging.warning('\u001B[1m Starting Automatic undeployment \u001B[0m')

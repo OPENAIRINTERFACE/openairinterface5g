@@ -56,7 +56,6 @@
 #include "unitary_defs.h"
 #include "dummy_functions.c"
 #include "executables/thread-common.h"
-#include "executables/split_headers.h"
 #include "common/ran_context.h"
 void feptx_ofdm(RU_t *ru, int frame, int subframe);
 void feptx_prec(RU_t *ru, int frame, int subframe);
@@ -92,14 +91,6 @@ static int cmpdouble(const void *p1, const void *p2) {
 RAN_CONTEXT_t RC;
 
 int emulate_rf = 0;
-int split73=0;
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask, uint16_t rnti, int32_t stat) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-
 void handler(int sig) {
   void *array[10];
   size_t size;

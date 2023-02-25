@@ -890,7 +890,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/config_userapi.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/oai_asn1.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_meas.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../common/utils/backtrace.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_stat.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/load_module_shlib.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/utils/time_meas.c \
@@ -2218,11 +2217,13 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_ESTIMATION/lte_dl_bf_channel_estimation.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_ESTIMATION/lte_sync_timefreq.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_ESTIMATION/filt16_32.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_scope.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/cdot_prod.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_scope.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/phy_scope_interface.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/phy_scope_interface.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_scope.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_scope.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_qt_scope.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/nr_phy_qt_scope.cpp \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/file_output.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/dfts_load.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/TOOLS/alaw_lut.h \
@@ -2547,7 +2548,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/create_tasks.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/softmodem-common.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/rt_profiling.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../executables/split_headers.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/create_tasks.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/nr-uesoftmodem.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../executables/nr-uesoftmodem.h \

@@ -33,7 +33,6 @@ import sys
 import time
 import serial
 
-
 class qtel_ctl:
 	#---------------
 	#private methods
@@ -75,12 +74,15 @@ class qtel_ctl:
         self.__set_modem_state(self.modem,'0')
 
 
-
-
 if __name__ == "__main__":
     #argv[1] : usb port
     #argv[2] : qtel command (see function pointers dict "wup", "detach" etc ...)
-    command = sys.argv[2]
-    Module=qtel_ctl(sys.argv[1])
+	if len(sys.argv) >= 3:
+		command = sys.argv[2]
+		print(command)
+		Module=qtel_ctl(sys.argv[1])
     #calling the function to be applied
-    Module.cmd_dict[command]()
+		Module.cmd_dict[command]()
+		print(Module.cmd_dict[command])
+	else:
+		print("To many arguments")

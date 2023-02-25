@@ -1042,6 +1042,7 @@ STATICFORXSCOPE OAI_phy_scope_t *create_phy_scope_nrue(int ID)
   // LLR of PDCCH
   fdui->graph[5] = nrUEcommonGraph(uePcchLLR,
                                    FL_POINTS_XYPLOT, 0, curY, 500, 100, "PDCCH Log-Likelihood Ratios (LLR, mag)", FL_CYAN );
+  fl_set_xyplot_xgrid(fdui->graph[5].graph,FL_GRID_MAJOR);
   fdui->graph[5].chartid = SCOPEMSG_DATAID_LLR; // tells websrv frontend to use LLR chart for displaying
   fdui->graph[5].datasetid = 1; // tells websrv frontend to use dataset index 1 in LLR chart
   // I/Q PDCCH comp
@@ -1054,6 +1055,7 @@ STATICFORXSCOPE OAI_phy_scope_t *create_phy_scope_nrue(int ID)
   // LLR of PDSCH
   fdui->graph[7] = nrUEcommonGraph(uePdschLLR,
                                    FL_POINTS_XYPLOT, 0, curY, 500, 200, "PDSCH Log-Likelihood Ratios (LLR, mag)", FL_YELLOW );
+  fl_set_xyplot_xgrid(fdui->graph[7].graph,FL_GRID_MAJOR);
   fdui->graph[7].chartid = SCOPEMSG_DATAID_LLR; // tells websrv frontend to use LLR chart for displaying
   fdui->graph[7].datasetid = 2; // tells websrv frontend to use dataset index 2 in LLR chart
   // I/Q PDSCH comp
@@ -1138,49 +1140,6 @@ static void *nrUEscopeThread(void *arg) {
 #endif
 
 pthread_mutex_t UEcopyDataMutex;
-
-void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
-  // Local static copy of the scope data bufs
-  // The active data buf is alterned to avoid interference between the Scope thread (display) and the Rx thread (data input)
-  // Index of "2" could be set to the number of Rx threads + 1
-  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][3] = {0};
-  static int  copyDataBufsIdx[UEdataTypeNumberOfItems] = {0};
-
-  scopeData_t *tmp=(scopeData_t *)ue->scopeData;
-
-  if (tmp) {
-    // Begin of critical zone between UE Rx threads that might copy new data at the same time:
-    pthread_mutex_lock(&UEcopyDataMutex);
-    int newCopyDataIdx = (copyDataBufsIdx[type]<2)?copyDataBufsIdx[type]+1:0;
-    copyDataBufsIdx[type] = newCopyDataIdx;
-    pthread_mutex_unlock(&UEcopyDataMutex);
-    // End of critical zone between UE Rx threads
-
-    // New data will be copied in a different buffer than the live one
-    scopeGraphData_t *copyData= copyDataBufs[type][newCopyDataIdx];
-
-    if (copyData == NULL || copyData->dataSize < elementSz*colSz*lineSz) {
-      scopeGraphData_t *ptr=realloc(copyData, sizeof(scopeGraphData_t) + elementSz*colSz*lineSz);
-
-      if (!ptr) {
-        LOG_E(PHY,"can't realloc\n");
-        return;
-      } else {
-        copyData=ptr;
-      }
-    }
-
-    copyData->dataSize=elementSz*colSz*lineSz;
-    copyData->elementSz=elementSz;
-    copyData->colSz=colSz;
-    copyData->lineSz=lineSz;
-    memcpy(copyData+1, dataIn,  elementSz*colSz*lineSz);
-    copyDataBufs[type][newCopyDataIdx] = copyData;
-
-    // The new data just copied in the local static buffer becomes live now
-    ((scopeGraphData_t **)tmp->liveData)[type]=copyData;
-  }
-}
 
 STATICFORXSCOPE void nrUEinitScope(PHY_VARS_NR_UE *ue)
 {

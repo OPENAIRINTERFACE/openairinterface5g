@@ -39,10 +39,6 @@ def main():
            '--ranAllowMerge=' + params['ranAllowMerge'] + ' ' + \
            '--ranTargetBranch=' + params['ranTargetBranch'] + ' ' + \
            \
-           '--ADBIPAddress=' + params['ADB']['ADBIPAddress'] + ' ' + \
-           '--ADBUserName=' + params['ADB']['ADBUserName'] + ' ' + \
-           '--ADBPassword=' + params['ADB']['ADBPassword'] + ' ' + \
-           \
            '--UEIPAddress=' + params['UE']['UEIPAddress'] + ' ' + \
            '--UEUserName=' + params['UE']['UEUserName'] + ' ' + \
            '--UEPassword=' + params['UE']['UEPassword'] + ' ' + \

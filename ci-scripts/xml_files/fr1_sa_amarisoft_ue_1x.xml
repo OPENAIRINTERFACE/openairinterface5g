@@ -27,34 +27,62 @@
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  100000
- 040000
- 000001
  010000
- 000002
+ 040000
+ 010001
+ 010002
  050000
+ 010100
+ 010200
+ 011111
  080000
  200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
 
+	<testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>Disable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+	<testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>Enable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -E</command>
+	</testCase>
+
 	<testCase id="010000">
 		<class>Initialize_UE</class>
-		<desc>Run AS UE Scenario</desc>
+		<desc>Initialize AS-UE Scenario</desc>
+		<id>amarisoft_ue</id>
+	</testCase>
+	<testCase id="010001">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
 		<id>amarisoft_ue_1</id>
 	</testCase>
-        <testCase id="100000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower</desc>
-            <node>asterix</node>
-            <command>sudo cpupower idle-set -D 0</command>
-        </testCase>
-        <testCase id="200000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower</desc>
-            <node>asterix</node>
-            <command>sudo cpupower idle-set -E</command>
-        </testCase>
-
+	<testCase id="010002">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+		<id>amarisoft_ue_2</id>
+	</testCase>
+	<testCase id="010100">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+		<id>amarisoft_ue_1</id>
+	</testCase>
+	<testCase id="010200">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
+		<id>amarisoft_ue_2</id>
+	</testCase>
+	<testCase id="011111">
+		<class>Terminate_UE</class>
+		<desc>Terminate UE</desc>
+		<id>amarisoft_ue</id>
+	</testCase>
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
@@ -73,20 +101,14 @@
 	<testCase id="050000">
 		<class>Ping</class>
 		<desc>Ping Log Analysis</desc>
-		<id>amarisoft_ue_1</id>
+		<id>amarisoft_ue_1 amarisoft_ue_2</id>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
 	</testCase>
 
 	<testCase id="000001">
 		<class>IdleSleep</class>
 		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>60</idle_sleep_time_in_sec>
-	</testCase>
-
-	<testCase id="000002">
-		<class>IdleSleep</class>
-		<desc>Sleep</desc>
-		<idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
 	</testCase>
 
 

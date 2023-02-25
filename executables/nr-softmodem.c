@@ -153,18 +153,7 @@ int otg_enabled;
 uint32_t timing_advance = 0;
 uint64_t num_missed_slots=0; // counter for the number of missed slots
 
-#include <executables/split_headers.h>
 #include <SIMULATION/ETH_TRANSPORT/proto.h>
-
-int split73=0;
-void sendFs6Ul(PHY_VARS_eNB *eNB, int UE_id, int harq_pid, int segmentID, int16_t *data, int dataLen, int r_offset) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-void sendFs6Ulharq(enum pckType type, int UEid, PHY_VARS_eNB *eNB, LTE_eNB_UCI *uci, int frame, int subframe, uint8_t *harq_ack, uint8_t tdd_mapping_mode, uint16_t tdd_multiplexing_mask,
-                   uint16_t rnti, int32_t stat) {
-  AssertFatal(false, "Must not be called in this context\n");
-}
-
 
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);
@@ -709,6 +698,15 @@ int main( int argc, char **argv ) {
       p.gNB=RC.gNB[0];
       p.ru=RC.ru[0];
       load_softscope("nr",&p);
+    }
+
+    if(IS_SOFTMODEM_DOSCOPE_QT) {
+      scopeParms_t p;
+      p.argc = &argc;
+      p.argv = argv;
+      p.gNB  = RC.gNB[0];
+      p.ru   = RC.ru[0];
+      load_softscope("nrqt", &p);
     }
 
     if (NFAPI_MODE != NFAPI_MODE_PNF && NFAPI_MODE != NFAPI_MODE_VNF) {

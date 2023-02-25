@@ -119,8 +119,7 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
                                    uint8_t               *const buffer,
                                    const uint8_t                Transaction_id);
 
-uint8_t do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size,
-                         uint8_t Transaction_id);
+int do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size, uint8_t Transaction_id);
 
 int16_t do_RRCReconfiguration(
     const protocol_ctxt_t        *const ctxt_pP,
@@ -174,22 +173,18 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer,
 
 uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti);
 
-uint8_t
-do_RRCReestablishment(
-  const protocol_ctxt_t     *const ctxt_pP,
-  rrc_gNB_ue_context_t      *const ue_context_pP,
-  int                              CC_id,
-  uint8_t                   *const buffer,
-  size_t                           buffer_size,
-  //const uint8_t                    transmission_mode,
-  const uint8_t                    Transaction_id,
-  NR_SRB_ToAddModList_t               **SRB_configList
-);
+int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
+                              rrc_gNB_ue_context_t *const ue_context_pP,
+                              int CC_id,
+                              uint8_t *const buffer,
+                              size_t buffer_size,
+                              const uint8_t Transaction_id,
+                              NR_SRB_ToAddModList_t **SRB_configList,
+                              const uint8_t *masterCellGroup_from_DU,
+                              NR_ServingCellConfigCommon_t *scc,
+                              rrc_gNB_carrier_data_t *carrier);
 
-uint8_t 
-do_RRCReestablishmentComplete(
-    uint8_t *buffer, size_t buffer_size,
-    int64_t rrc_TransactionIdentifier);
+int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_TransactionIdentifier);
 
 NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf);
 uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi);

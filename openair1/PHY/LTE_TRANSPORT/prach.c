@@ -39,7 +39,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "prach_extern.h"
 #include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
-#include <executables/split_headers.h>
 #include "common/utils/lte/prach_utils.h"
 
 void rx_prach0(PHY_VARS_eNB *eNB,

@@ -108,20 +108,17 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
   gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
   gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp={0};
 
-  for (int i=0; i < ue_context_p->ue_context.nb_of_pdusessions; i++) {
-    pdu_session_param_t *pdu = ue_context_p->ue_context.pduSession + i;
-    create_tunnel_req.pdusession_id[i] = pdu->param.pdusession_id;
-    create_tunnel_req.incoming_rb_id[i] = i + 1;
-    create_tunnel_req.outgoing_qfi[i] = req->pduSession[i].DRBnGRanList[0].qosFlows[0].id;
-    memcpy(&create_tunnel_req.dst_addr[i].buffer,
-           &pdu->param.upf_addr.buffer,
-           sizeof(uint8_t)*20);
-    create_tunnel_req.dst_addr[i].length = pdu->param.upf_addr.length;
-    create_tunnel_req.outgoing_teid[i] = pdu->param.gtp_teid;
-  }
-  create_tunnel_req.num_tunnels = ue_context_p->ue_context.nb_of_pdusessions;
-  create_tunnel_req.ue_id       = ue_context_p->ue_context.rnti;
+  int i = ue_context_p->ue_context.nb_of_pdusessions - 1;
+  pdu_session_param_t *pdu = ue_context_p->ue_context.pduSession + i;
+  create_tunnel_req.pdusession_id[0] = pdu->param.pdusession_id;
+  create_tunnel_req.incoming_rb_id[0] = i + 1;
+  create_tunnel_req.outgoing_qfi[0] = req->pduSession[i].DRBnGRanList[0].qosFlows[0].id;
+  memcpy(&create_tunnel_req.dst_addr[0].buffer, &pdu->param.upf_addr.buffer, sizeof(create_tunnel_req.dst_addr[0].buffer));
+  create_tunnel_req.dst_addr[0].length = pdu->param.upf_addr.length;
+  create_tunnel_req.outgoing_teid[0] = pdu->param.gtp_teid;
 
+  create_tunnel_req.num_tunnels = 1;
+  create_tunnel_req.ue_id = ue_context_p->ue_context.rnti;
   int ret = gtpv1u_create_ngu_tunnel(getCxtE1(instance)->gtpInstN3, &create_tunnel_req, &create_tunnel_resp);
 
   if (ret != 0) {
@@ -130,8 +127,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
     return ret;
   }
 
-  nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(ctxt_p,
-                                               &create_tunnel_resp);
+  nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(ctxt_p, &create_tunnel_resp, i);
 
   uint8_t *kRRCenc = NULL;
   uint8_t *kRRCint = NULL;
@@ -164,7 +160,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
                    kRRCenc,
                    kRRCint);
                    
-  nr_pdcp_add_drbs(ctxt_p->enb_flag, ctxt_p->rntiMaybeUEid,
+  nr_pdcp_add_drbs(ctxt_p->enb_flag, ctxt_p->rntiMaybeUEid, 0,
                    DRB_configList,
                    (ue_context_p->ue_context.integrity_algorithm << 4)
                    | ue_context_p->ue_context.ciphering_algorithm,
