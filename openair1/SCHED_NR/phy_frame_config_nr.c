@@ -187,7 +187,7 @@ void add_tdd_dedicated_configuration_nr(NR_DL_FRAME_PARMS *frame_parms, int slot
   if (next == 0) {
     frame_parms->p_TDD_UL_DL_ConfigDedicated = p_TDD_UL_DL_ConfigDedicated;
   } else {
-    p_previous_TDD_UL_DL_ConfigDedicated->p_next_TDD_UL_DL_SlotConfig = (struct TDD_UL_DL_SlotConfig_t *)p_TDD_UL_DL_ConfigDedicated;
+    p_previous_TDD_UL_DL_ConfigDedicated->p_next_TDD_UL_DL_SlotConfig = (TDD_UL_DL_SlotConfig_t *)p_TDD_UL_DL_ConfigDedicated;
   }
 
   p_TDD_UL_DL_ConfigDedicated->slotIndex = slotIndex;

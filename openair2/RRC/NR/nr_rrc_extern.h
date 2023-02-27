@@ -59,8 +59,4 @@ extern UE_PF_PO_t UE_PF_PO[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB];
 
 extern pthread_mutex_t ue_pf_po_mutex;
 
-extern uint16_t reestablish_rnti_map[MAX_MOBILES_PER_ENB][2];
-
 #endif
-
-

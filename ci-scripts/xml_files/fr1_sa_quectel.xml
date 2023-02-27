@@ -27,59 +27,61 @@
 	<repeatCount>1</repeatCount>
 	<TestCaseRequestedList>
  100000
- 010002
  300000
- 040000
- 000002
  010000
- 000001
+ 040000
+ 010010
  050000
- 000001
  050001
- 000001
  070000
- 000001
  070001
- 000001
  070002
- 000001
- 010002
+ 010001
  080000
+ 020000
  200000
 	</TestCaseRequestedList>
 	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>Disable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+	<testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>Enable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -E</command>
+	</testCase>
+	<testCase id="300000">
+		<class>Custom_Command</class>
+		<desc>Reboot USRP</desc>
+		<node>asterix</node>
+		<command>ssh root@172.21.19.14 reboot ; sleep 45</command>
+	</testCase>
 
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>nrmodule2_quectel</id>
-		<UE_Trace>yes</UE_Trace>
 	</testCase>
-
-
-	<testCase id="010002">
+	<testCase id="010010">
+		<class>Attach_UE</class>
+		<desc>Attach Quectel UE</desc>
+		<id>nrmodule2_quectel</id>
+	</testCase>
+	<testCase id="010001">
+		<class>Detach_UE</class>
+		<desc>Detach Quectel UE</desc>
+		<id>nrmodule2_quectel</id>
+	</testCase>
+	<testCase id="020000">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
-        <testCase id="100000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower</desc>
-            <node>asterix</node>
-            <command>sudo cpupower idle-set -D 0</command>
-       </testCase>
-       <testCase id="200000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower</desc>
-            <node>asterix</node>
-            <command>sudo cpupower idle-set -E</command>
-       </testCase>
-       <testCase id="300000">
-            <class>Custom_Command</class>
-            <desc>To reboot USRP</desc>
-            <node>asterix</node>
-            <command>ssh root@172.21.19.14 reboot ; sleep 45</command>
-       </testCase>
 
 	<testCase id="040000">
 		<class>Initialize_eNB</class>

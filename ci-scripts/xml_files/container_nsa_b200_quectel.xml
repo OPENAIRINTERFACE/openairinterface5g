@@ -31,14 +31,10 @@
  500000
  111110
  111111
- 000001
- 010002
- 030101
- 000001
- 030102
- 000001
  010000
- 000001
+ 030101
+ 030102
+ 010001
  050000
  050001
  070001
@@ -46,8 +42,8 @@
  070002
  050002
  050003
+ 010010
  010002
- 000001
  030202
  030201
  300000
@@ -69,45 +65,56 @@
 		<images_to_pull>oai-gnb</images_to_pull>
 	</testCase>
 
+	<testCase id = "100000">
+		<class>Custom_Command</class>
+		<desc>Reset USRP</desc>
+		<node>nepes</node>
+		<command>sudo -S b2xx_fx3_utils --reset-device</command>
+  </testCase>
+
+	<testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>Disable Sleep States (nepes)</desc>
+		<node>nepes</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+	<testCase id="300000">
+		<class>Custom_Command</class>
+		<desc>Enable Sleep States (nepes)</desc>
+		<node>nepes</node>
+		<command>sudo cpupower idle-set -E</command>
+	</testCase>
+	<testCase id="500000">
+		<class>Custom_Command</class>
+		<desc>Disable Sleep States (obelix)</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+	<testCase id="600000">
+		<class>Custom_Command</class>
+		<desc>Enable Sleep States (obelix)</desc>
+		<node>obelix</node>
+		<command>sudo cpupower idle-set -E</command>
+	</testCase>
+
 	<testCase id="010000">
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>idefix</id>
 	</testCase>
-        <testCase id = "100000">
-		<class>Custom_Command</class>
-		<desc>To reset USRP</desc>
-		<node>nepes</node>
-		<command>sudo -S b2xx_fx3_utils --reset-device</command>
-        </testCase>
-       <testCase id="200000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - nepes</desc>
-            <node>nepes</node>
-            <command>sudo cpupower idle-set -D 0</command>
-       </testCase>
-       <testCase id="300000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - nepes</desc>
-            <node>nepes</node>
-            <command>sudo cpupower idle-set -E</command>
-       </testCase>
-       <testCase id="500000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - obelix</desc>
-            <node>obelix</node>
-            <command>sudo cpupower idle-set -D 0</command>
-       </testCase>
-       <testCase id="600000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - obelix</desc>
-            <node>obelix</node>
-            <command>sudo cpupower idle-set -E</command>
-       </testCase>
-
 	<testCase id="010002">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
+		<id>idefix</id>
+	</testCase>
+	<testCase id="010001">
+		<class>Attach_UE</class>
+		<desc>Attach UE</desc>
+		<id>idefix</id>
+  </testCase>
+	<testCase id= "010010">
+		<class>Detach_UE</class>
+		<desc>Detach UE</desc>
 		<id>idefix</id>
 	</testCase>
 

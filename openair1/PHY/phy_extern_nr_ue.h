@@ -27,7 +27,7 @@
 
 #ifdef XFORMS
   #include "PHY/TOOLS/nr_phy_scope.h"
-  extern char do_forms;
+  extern uint32_t do_forms;
 #endif
 
 extern char* namepointer_chMag ;

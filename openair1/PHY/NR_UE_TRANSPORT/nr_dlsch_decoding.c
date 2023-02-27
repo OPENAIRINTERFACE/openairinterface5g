@@ -44,6 +44,7 @@
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/CODING/nrLDPC_extern.h"
 #include "common/utils/nr/nr_common.h"
+#include "openair1/PHY/TOOLS/phy_scope_interface.h"
 
 //#define ENABLE_PHY_PAYLOAD_DEBUG 1
 
@@ -53,9 +54,15 @@
 static uint64_t nb_total_decod =0;
 static uint64_t nb_error_decod =0;
 
+static extended_kpi_ue kpiStructure = {0};
+
 notifiedFIFO_t freeBlocks_dl;
 notifiedFIFO_elt_t *msgToPush_dl;
 int nbDlProcessing =0;
+
+extended_kpi_ue* getKPIUE(void) {
+  return &kpiStructure;
+}
 
 void nr_ue_dlsch_init(NR_UE_DLSCH_t *dlsch_list, int num_dlsch, uint8_t max_ldpc_iterations) {
   for (int i=0; i < num_dlsch; i++) {
@@ -99,6 +106,11 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
 
   // if all segments are done
   if (last) {
+    kpiStructure.nb_total++;
+    kpiStructure.blockSize = dlsch->dlsch_config.TBS;
+    kpiStructure.dl_mcs = dlsch->dlsch_config.mcs;
+    kpiStructure.nofRBs = dlsch->dlsch_config.number_rbs;
+
     if (decodeSuccess) {
       //LOG_D(PHY,"[UE %d] DLSCH: Setting ACK for nr_slot_rx %d TBS %d mcs %d nb_rb %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id,nr_slot_rx,harq_process->TBS,harq_process->mcs,harq_process->nb_rb, harq_process->round);
@@ -114,6 +126,7 @@ bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue, notifiedFIFO_elt_t *req, bool
       dlsch->last_iteration_cnt = rdata->decodeIterations;
       LOG_D(PHY, "DLSCH received ok \n");
     } else {
+      kpiStructure.nb_nack++;
       //LOG_D(PHY,"[UE %d] DLSCH: Setting NAK for SFN/SF %d/%d (pid %d, status %d, round %d, TBS %d, mcs %d) Kr %d r %d harq_process->round %d\n",
       //      phy_vars_ue->Mod_id, frame, nr_slot_rx, harq_pid,harq_process->status, harq_process->round,harq_process->TBS,harq_process->mcs,Kr,r,harq_process->round);
       harq_process->ack = 0;

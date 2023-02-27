@@ -84,16 +84,6 @@ class HTMLManagement():
 		self.CpuModel = ['', '']
 		self.CpuMHz = ['', '']
 
-#-----------------------------------------------------------
-# Setters and Getters
-#-----------------------------------------------------------
-
-	def SethtmlUEConnected(self, nbUEs):
-		if nbUEs > 0:
-			self.htmlUEConnected = nbUEs
-		else:
-			self.htmlUEConnected = 1
-
 
 
 #-----------------------------------------------------------
@@ -101,7 +91,7 @@ class HTMLManagement():
 #-----------------------------------------------------------
 
 
-	def CreateHtmlHeader(self, ADBIPAddress):
+	def CreateHtmlHeader(self):
 		if (not self.htmlHeaderCreated):
 			logging.info('\u001B[1m----------------------------------------\u001B[0m')
 			logging.info('\u001B[1m  Creating HTML header \u001B[0m')
@@ -116,7 +106,7 @@ class HTMLManagement():
 			self.htmlFile.write('  <script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>\n')
 			self.htmlFile.write('  <title>Test Results for TEMPLATE_JOB_NAME job build #TEMPLATE_BUILD_ID</title>\n')
 			self.htmlFile.write('</head>\n')
-			self.htmlFile.write('<body><div class="container">\n')
+			self.htmlFile.write('<body><div class="container-fluid" style="margin-left:1em; margin-right:1em">\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <table style="border-collapse: collapse; border: none;">\n')
 			self.htmlFile.write('    <tr style="border-collapse: collapse; border: none;">\n')
@@ -183,15 +173,6 @@ class HTMLManagement():
 				self.htmlFile.write('     </tr>\n')
 			self.htmlFile.write('  </table>\n')
 
-			if (ADBIPAddress != 'none') and (ADBIPAddress != 'modules'):
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_Smartphones) + ' UE(s) is(are) connected to ADB bench server</h2>\n')
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> ' + str(self.htmlNb_CATM_Modules) + ' CAT-M UE(s) is(are) connected to bench server</h2>\n')
-			elif (ADBIPAddress == 'modules'):
-				self.htmlUEConnected = 1
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 commercial module is connected to CI bench</h2>\n')
-			else:
-				self.htmlUEConnected = 1
-				self.htmlFile.write('  <h2><span class="glyphicon glyphicon-phone"></span> <span class="glyphicon glyphicon-menu-right"></span> 1 OAI UE(s) is(are) connected to CI bench</h2>\n')
 			self.htmlFile.write('  <br>\n')
 			self.htmlFile.write('  <ul class="nav nav-pills">\n')
 			count = 0
@@ -225,16 +206,13 @@ class HTMLManagement():
 				self.htmlFile.write('  <div id="build-tab" class="tab-pane fade">\n')
 			self.htmlFile.write('  <table class="table" border = "1">\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
-			self.htmlFile.write('        <th>Relative Time (s)</th>\n')
-			self.htmlFile.write('        <th>Test Id</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Relative Time (s)</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Test Id</th>\n')
 			self.htmlFile.write('        <th>Test Desc</th>\n')
 			self.htmlFile.write('        <th>Test Options</th>\n')
-			self.htmlFile.write('        <th>Test Status</th>\n')
+			self.htmlFile.write('        <th style="width:5%">Test Status</th>\n')
 
-			i = 0
-			while (i < self.htmlUEConnected):
-				self.htmlFile.write('        <th>UE' + str(i) + ' Status</th>\n')
-				i += 1
+			self.htmlFile.write('        <th>Info</th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.close()
 		self.htmlHeaderCreated = True
@@ -247,14 +225,14 @@ class HTMLManagement():
 					testOkEvenIfUnstable = True
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan=3>Final Tab Status</th>\n')
+			self.htmlFile.write('        <th bgcolor = "#33CCFF" colspan="3">Final Tab Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th bgcolor = "green" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')
+				self.htmlFile.write('        <th bgcolor = "green" colspan="3"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span> </font></th>\n')
 			else:
 				if testOkEvenIfUnstable:
-					self.htmlFile.write('        <th bgcolor = "orange" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">KNOWN UNSTABLE SCENARIO <span class="glyphicon glyphicon-exclamation-sign"></span> </font></th>\n')
+					self.htmlFile.write('        <th bgcolor = "orange" colspan="3"><font color="white">KNOWN UNSTABLE SCENARIO <span class="glyphicon glyphicon-exclamation-sign"></span> </font></th>\n')
 				else:
-					self.htmlFile.write('        <th bgcolor = "red" colspan=' + str(2 + self.htmlUEConnected) + '><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+					self.htmlFile.write('        <th bgcolor = "red" colspan="3"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  </div>\n')
@@ -287,45 +265,12 @@ class HTMLManagement():
 			self.htmlFile.write('  <p></p>\n')
 			self.htmlFile.write('  <table class="table table-condensed">\n')
 
-			machines = [ 'eNB', 'UE' ]
-			for machine in machines:
-				if machine == 'eNB':
-					idx = 0
-				else:
-					idx = 1
-				if self.OsVersion[idx] == '':
-					continue
-
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <th colspan=8>' + str(machine) + ' Server Characteristics</th>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>OS Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.OsVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>Kernel Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.KernelVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>UHD Version</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UhdVersion[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>USRP Board</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.UsrpBoard[idx] + '</span></td>\n')
-				self.htmlFile.write('      </tr>\n')
-				self.htmlFile.write('      <tr>\n')
-				self.htmlFile.write('        <td>Nb CPUs</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuNb[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Model Name</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuModel[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td>CPU Frequency</td>\n')
-				self.htmlFile.write('        <td><span class="label label-default">' + self.CpuMHz[idx] + '</span></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('        <td></td>\n')
-				self.htmlFile.write('      </tr>\n')
-
 			self.htmlFile.write('      <tr>\n')
-			self.htmlFile.write('        <th colspan=5 bgcolor = "#33CCFF">Final Status</th>\n')
+			self.htmlFile.write('        <th colspan="5" bgcolor = "#33CCFF">Final Status</th>\n')
 			if passStatus:
-				self.htmlFile.write('        <th colspan=3 bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
+				self.htmlFile.write('        <th colspan="3" bgcolor="green"><font color="white">PASS <span class="glyphicon glyphicon-ok"></span></font></th>\n')
 			else:
-				self.htmlFile.write('        <th colspan=3 bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
+				self.htmlFile.write('        <th colspan="3" bgcolor="red"><font color="white">FAIL <span class="glyphicon glyphicon-remove"></span> </font></th>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('  </table>\n')
 			self.htmlFile.write('  <p></p>\n')
@@ -338,7 +283,7 @@ class HTMLManagement():
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile = open('test_results.html', 'a')
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- Try Run #' + str(cntnumfails) + ' ---- </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> ---- Try Run #' + str(cntnumfails) + ' ---- </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.close()
 
@@ -404,7 +349,7 @@ class HTMLManagement():
 				result = re.search('showed|Reestablishment|Could not copy eNB logfile', self.htmleNBFailureMsg)
 				if result is not None:
 					cellBgColor = 'orange'
-			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
+			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan="1"><pre style="background-color:' + cellBgColor + '">' + self.htmleNBFailureMsg + '</pre></td>\n')
 			self.htmleNBFailureMsg = ''
 		elif (len(str(self.htmlUEFailureMsg)) > 2):
 			cellBgColor = 'white'
@@ -415,13 +360,10 @@ class HTMLManagement():
 				result = re.search('showed|Could not copy UE logfile|oaitun_ue1 interface is either NOT mounted or NOT configured', self.htmlUEFailureMsg)
 				if result is not None:
 					cellBgColor = 'orange'
-			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan=' + str(self.htmlUEConnected) + '><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
+			self.htmlFile.write('        <td bgcolor = "' + cellBgColor + '" colspan="1"><pre style="background-color:' + cellBgColor + '">' + self.htmlUEFailureMsg + '</pre></td>\n')
 			self.htmlUEFailureMsg = ''
 		else:
-			i = 0
-			while (i < self.htmlUEConnected):
-				self.htmlFile.write('        <td>-</td>\n')
-				i += 1
+			self.htmlFile.write('        <td>-</td>\n')
 		self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
@@ -432,7 +374,7 @@ class HTMLManagement():
 		self.htmlFile = open('test_results.html', 'a')
 		if bool(collectInfo) == False:
 			self.htmlFile.write('      <tr bgcolor = "red" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ----IMAGES BUILDING FAILED - Unable to recover the image logs ---- </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> ----IMAGES BUILDING FAILED - Unable to recover the image logs ---- </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 		else:
 			for image in collectInfo:
@@ -444,13 +386,13 @@ class HTMLManagement():
 					self.htmlFile.write('      <tr bgcolor = "red" >\n')
 				else:
 					self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-				self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + image  + ' IMAGE STATUS ----> Size ' + allImagesSize[image] + ' </b></td>\n')
+				self.htmlFile.write('        <td colspan="6"><b> ---- ' + image  + ' IMAGE STATUS ----> Size ' + allImagesSize[image] + ' </b></td>\n')
 				self.htmlFile.write('      </tr>\n')
 				self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
 				self.htmlFile.write('        <th colspan="2">Element</th>\n')
 				self.htmlFile.write('        <th>Nb Errors</th>\n')
 				self.htmlFile.write('        <th>Nb Warnings</th>\n')
-				self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>Status</th>\n')
+				self.htmlFile.write('        <th colspan="2">Status</th>\n')
 				self.htmlFile.write('      </tr>\n')
 
 				for fil in files:
@@ -469,11 +411,11 @@ class HTMLManagement():
 					else:
 						self.htmlFile.write('        <td bgcolor = "orange" >' + str(parameters['warnings'])  + '</td>\n')
 					if (parameters['errors'] == 0) and (parameters['warnings'] == 0):
-						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" ><font color="white">OK </font></th>\n')
+						self.htmlFile.write('        <th colspan="2" bgcolor = "green" ><font color="white">OK </font></th>\n')
 					elif (parameters['errors'] == 0):
-						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "orange" ><font color="white">OK </font></th>\n')
+						self.htmlFile.write('        <th colspan="2" bgcolor = "orange" ><font color="white">OK </font></th>\n')
 					else:
-						self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" > NOT OK  </th>\n')
+						self.htmlFile.write('        <th colspan="2" bgcolor = "red" > NOT OK  </th>\n')
 					self.htmlFile.write('      </tr>\n')
 		self.htmlFile.close()
 
@@ -485,12 +427,12 @@ class HTMLManagement():
 		
         # TabHeader 
 		self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-		self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- ' + DataLog['Title'] + ' ---- </b></td>\n')
+		self.htmlFile.write('        <td colspan="6"><b> ---- ' + DataLog['Title'] + ' ---- </b></td>\n')
 		self.htmlFile.write('      </tr>\n')
 		self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
 		self.htmlFile.write('        <th colspan="3">'+ DataLog['ColNames'][0] +'</th>\n')
 		self.htmlFile.write('        <th colspan="2">' + DataLog['ColNames'][1] + '</th>\n')
-		self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>'+ DataLog['ColNames'][2] +'</th>\n')
+		self.htmlFile.write('        <th colspan="2">'+ DataLog['ColNames'][2] +'</th>\n')
 		self.htmlFile.write('      </tr>\n')
 
 		for k in DataLog['Data']:
@@ -506,7 +448,7 @@ class HTMLManagement():
 		self.htmlFile.close()
 
 
-	def CreateHtmlTestRowQueue(self, options, status, ue_status, ue_queue):
+	def CreateHtmlTestRowQueue(self, options, status, infoList):
 		if ((not self.htmlFooterCreated) and (self.htmlHeaderCreated)):
 			self.htmlFile = open('test_results.html', 'a')
 			currentTime = int(round(time.time() * 1000)) - self.startTime
@@ -517,25 +459,20 @@ class HTMLManagement():
 			self.htmlFile.write('        <td>' + self.desc  + '</td>\n')
 			self.htmlFile.write('        <td>' + str(options)  + '</td>\n')
 			if (str(status) == 'OK'):
-				self.htmlFile.write('        <td bgcolor = "lightgreen" >' + str(status)  + '</td>\n')
+				self.htmlFile.write(f'        <td bgcolor = "lightgreen" >{status}</td>\n')
 			elif (str(status) == 'KO'):
-				self.htmlFile.write('        <td bgcolor = "lightcoral" >' + str(status)  + '</td>\n')
+				self.htmlFile.write(f'        <td bgcolor = "lightcoral" >{status}</td>\n')
 			else:
 				addOrangeBK = True
-				self.htmlFile.write('        <td bgcolor = "orange" >' + str(status)  + '</td>\n')
-			i = 0
-			while (i < self.htmlUEConnected):
-				if (i < ue_status):
-					if (not ue_queue.empty()):
-						if (addOrangeBK):
-							self.htmlFile.write('        <td bgcolor = "orange" >' + str(ue_queue.get()).replace('white', 'orange') + '</td>\n')
-						else:
-							self.htmlFile.write('        <td>' + str(ue_queue.get()) + '</td>\n')
-					else:
-						self.htmlFile.write('        <td>-</td>\n')
-				else:
-					self.htmlFile.write('        <td>-</td>\n')
-				i += 1
+				self.htmlFile.write(f'        <td bgcolor = "orange" >{status}</td>\n')
+			if (addOrangeBK):
+				self.htmlFile.write('        <td bgcolor = "orange" >')
+			else:
+				self.htmlFile.write('        <td>')
+			for i in infoList:
+				self.htmlFile.write(f'         <pre>{i}</pre>')
+
+			self.htmlFile.write('                </td>')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.close()
 
@@ -546,80 +483,80 @@ class HTMLManagement():
 		vId = 0
 		for version in CCR.versions:
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> Results for cppcheck v ' + version + ' </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> Results for cppcheck v ' + version + ' </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> NB ERRORS</b></td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> NB ERRORS</b></td>\n')
 			if CCR.nbErrors[vId] == 0:
 				myColor = 'lightgreen'
 			elif CCR.nbErrors[vId] < 20:
 				myColor = 'orange'
 			else:
 				myColor = 'lightcoral'
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + ' bgcolor = "' + myColor + '"><b>' + str(CCR.nbErrors[vId]) + '</b></td>\n')
+			self.htmlFile.write('        <td colspan="3" bgcolor = "' + myColor + '"><b>' + str(CCR.nbErrors[vId]) + '</b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> NB WARNINGS</b></td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> NB WARNINGS</b></td>\n')
 			if CCR.nbWarnings[vId] == 0:
 				myColor = 'lightgreen'
 			elif CCR.nbWarnings[vId] < 20:
 				myColor = 'orange'
 			else:
 				myColor = 'lightcoral'
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + ' bgcolor = "' + myColor + '"><b>' + str(CCR.nbWarnings[vId]) + '</b></td>\n')
+			self.htmlFile.write('        <td colspan="3" bgcolor = "' + myColor + '"><b>' + str(CCR.nbWarnings[vId]) + '</b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '> ----------------- </td>\n')
+			self.htmlFile.write('        <td colspan="6"> ----------------- </td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Memory leak</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbMemLeaks[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Memory leak</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbMemLeaks[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Possible null pointer deference</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbNullPtrs[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Possible null pointer deference</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbNullPtrs[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Uninitialized variable</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbUninitVars[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Uninitialized variable</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbUninitVars[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Undefined behaviour shifting</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbTooManyBitsShift[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Undefined behaviour shifting</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbTooManyBitsShift[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Signed integer overflow</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbIntegerOverflow[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Signed integer overflow</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbIntegerOverflow[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '> </td>\n')
+			self.htmlFile.write('        <td colspan="6"> </td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Printf formatting issues</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbInvalidPrintf[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Printf formatting issues</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbInvalidPrintf[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Modulo result is predetermined</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbModuloAlways[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Modulo result is predetermined</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbModuloAlways[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Opposite Condition -> dead code</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbOppoInnerCondition[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Opposite Condition -> dead code</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbOppoInnerCondition[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr>\n')
 			self.htmlFile.write('        <td></td>\n')
-			self.htmlFile.write('        <td colspan=2 bgcolor = "lightcyan" ><b> Wrong Scanf Nb Args</b></td>\n')
-			self.htmlFile.write('        <td colspan=' + str(2+self.htmlUEConnected) + '>' + str(CCR.nbWrongScanfArg[vId]) + '</td>\n')
+			self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" ><b> Wrong Scanf Nb Args</b></td>\n')
+			self.htmlFile.write('        <td colspan="3">' + str(CCR.nbWrongScanfArg[vId]) + '</td>\n')
 			self.htmlFile.write('      </tr>\n')
 			vId += 1
 
@@ -629,12 +566,12 @@ class HTMLManagement():
 		self.htmlFile = open('test_results.html', 'a')
 		if bool(testResult) == False and bool(testSummary) == False:
 			self.htmlFile.write('      <tr bgcolor = "red" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ----PHYSIM TESTING FAILED - Unable to recover the test logs ---- </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> ----PHYSIM TESTING FAILED - Unable to recover the test logs ---- </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 		else:
 		# Tab header
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- PHYSIM TEST SUMMARY---- </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> ---- PHYSIM TEST SUMMARY---- </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
 			self.htmlFile.write('        <th colspan="2">LogFile Name</th>\n')
@@ -652,27 +589,27 @@ class HTMLManagement():
 			self.htmlFile.write('        <td gcolor = "lightcyan" >' + str(testSummary['Nbpass']) + ' </td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr bgcolor = "#F0F0F0" >\n')
-			self.htmlFile.write('        <td colspan=' + str(5+self.htmlUEConnected) + '><b> ---- PHYSIM TEST DETAIL INFO---- </b></td>\n')
+			self.htmlFile.write('        <td colspan="6"><b> ---- PHYSIM TEST DETAIL INFO---- </b></td>\n')
 			self.htmlFile.write('      </tr>\n')
 			self.htmlFile.write('      <tr bgcolor = "#33CCFF" >\n')
 			self.htmlFile.write('        <th colspan="2">Test Name</th>\n')
 			self.htmlFile.write('        <th colspan="2">Test Description</th>\n')
-			self.htmlFile.write('        <th colspan=' + str(1+self.htmlUEConnected) + '>Result</th>\n')
+			self.htmlFile.write('        <th colspan="2">Result</th>\n')
 			self.htmlFile.write('      </tr>\n')
 			y = ''
 			for key, value in testResult.items():
 				x = key.split(".")
 				if x[0] != y:
 					self.htmlFile.write('      <tr bgcolor = "lightgreen" >\n')
-					self.htmlFile.write('        <td style="text-align: center;" colspan=' + str(5+self.htmlUEConnected) + '><b>"' + x[0] + '" series </b></td>\n')
+					self.htmlFile.write('        <td style="text-align: center;" colspan="6"><b>"' + x[0] + '" series </b></td>\n')
 					self.htmlFile.write('      </tr>\n')
 					y = x[0]
 				self.htmlFile.write('      <tr>\n')
 				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + key  + ' </td>\n')
 				self.htmlFile.write('        <td colspan="2" bgcolor = "lightcyan" >' + value[0]  + '</td>\n')
 				if 'PASS' in value:
-					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "green" >' + value[1]  + '</td>\n')
+					self.htmlFile.write('        <td colspan="2" bgcolor = "green" >' + value[1]  + '</td>\n')
 				else:
-					self.htmlFile.write('        <td colspan=' + str(1+self.htmlUEConnected) + ' bgcolor = "red" >' + value[1]  + '</td>\n')
+					self.htmlFile.write('        <td colspan="2" bgcolor = "red" >' + value[1]  + '</td>\n')
 
 		self.htmlFile.close()

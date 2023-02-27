@@ -102,34 +102,6 @@
 		<desc>Detach UE</desc>
 	</testCase>
 
-
-	<testCase id="040701">
-		<class>Reboot_UE</class>
-		<desc>Reboot UE</desc>
-	</testCase>
-
-	<!-- CAT-M UE class command references -->
-
-	<testCase id="040102">
-		<class>Initialize_CatM_module</class>
-		<desc>Initialize CAT-M Module</desc>
-	</testCase>
-
-	<testCase id="040202">
-		<class>Terminate_CatM_module</class>
-		<desc>Terminate CAT-M Module</desc>
-	</testCase>
-
-	<testCase id="040302">
-		<class>Attach_CatM_module</class>
-		<desc>Attach CAT-M Module</desc>
-	</testCase>
-
-	<testCase id="040402">
-		<class>Detach_CatM_module</class>
-		<desc>Detach CAT-M Module</desc>
-	</testCase>
-
 	<!-- EPC class command references -->
 
         <testCase id="050101">

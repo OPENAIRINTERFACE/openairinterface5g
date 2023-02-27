@@ -24,8 +24,9 @@
 
 #include <openssl/hmac.h>
 
-#if OPENSSL_VERSION_MAJOR >= 3
-// code for version 3.0 or greater
+#if OPENSSL_VERSION_NUMBER >= 0x30000000L
+
+/* code for version 3.0 or greater */
 
 #include <openssl/core_names.h>
 
@@ -72,8 +73,11 @@ void sha_256_hmac(const uint8_t key[32], byte_array_t data, size_t len, uint8_t 
   EVP_MAC_free(mac);
   OSSL_LIB_CTX_free(library_context);
 }
-#else
-// code for 1.1.x or lower
+
+#elif OPENSSL_VERSION_NUMBER >= 0x10100000L
+
+/* code for version >= 1.1.0 and < 3.0.0 */
+
 void sha_256_hmac(const uint8_t key[32], byte_array_t data, size_t len, uint8_t out[len])
 {
   DevAssert(key != NULL);
@@ -90,6 +94,29 @@ void sha_256_hmac(const uint8_t key[32], byte_array_t data, size_t len, uint8_t 
   HMAC_Final(ctx, out, (uint32_t*)&len);
 
   HMAC_CTX_free(ctx);
+}
+
+#else
+
+/* code for version lower than 1.1.0 */
+
+void sha_256_hmac(const uint8_t key[32], byte_array_t data, size_t len, uint8_t out[len])
+{
+  DevAssert(key != NULL);
+  DevAssert(data.buf != NULL);
+  DevAssert(data.len != 0);
+  DevAssert(len != 0);
+
+  HMAC_CTX ctx;
+  HMAC_CTX_init(&ctx);
+
+  HMAC_Init_ex(&ctx, key, 32, EVP_sha256(), NULL);
+
+  HMAC_Update(&ctx, data.buf, data.len);
+
+  HMAC_Final(&ctx, out, (uint32_t*)&len);
+
+  HMAC_CTX_cleanup(&ctx);
 }
 
 #endif

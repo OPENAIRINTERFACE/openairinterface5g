@@ -138,16 +138,16 @@ typedef struct f1ap_setup_req_s {
     struct fdd_s {
       uint32_t ul_nr_arfcn;
       uint8_t ul_scs;
-      uint8_t ul_nrb;
+      uint16_t ul_nrb;
 
       uint32_t dl_nr_arfcn;
       uint8_t dl_scs;
-      uint8_t dl_nrb;
+      uint16_t dl_nrb;
 
       uint32_t sul_active;
       uint32_t sul_nr_arfcn;
       uint8_t sul_scs;
-      uint8_t sul_nrb;
+      uint16_t sul_nrb;
 
       uint8_t ul_num_frequency_bands;
       uint16_t ul_nr_band[32];
@@ -163,12 +163,12 @@ typedef struct f1ap_setup_req_s {
 
       uint32_t nr_arfcn;
       uint8_t scs;
-      uint8_t nrb;
+      uint16_t nrb;
 
       uint32_t sul_active;
       uint32_t sul_nr_arfcn;
       uint8_t sul_scs;
-      uint8_t sul_nrb;
+      uint16_t sul_nrb;
 
       uint8_t num_frequency_bands;
       uint16_t nr_band[32];

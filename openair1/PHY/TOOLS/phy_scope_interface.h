@@ -35,6 +35,14 @@
 #include <openair1/PHY/defs_nr_UE.h>
 
 typedef struct {
+  uint32_t nb_total;
+  uint32_t nb_nack;
+  uint32_t blockSize;   // block size, to be used for throughput calculation
+  uint16_t nofRBs;
+  uint8_t  dl_mcs;
+} extended_kpi_ue;
+
+typedef struct {
   int *argc;
   char **argv;
   RU_t *ru;
@@ -63,8 +71,19 @@ typedef struct scopeData_s {
   void (*copyData)(PHY_VARS_NR_UE *,enum UEdataType, void *data, int elementSz, int colSz, int lineSz);
 } scopeData_t;
 
+typedef struct {
+  int dataSize;
+  int elementSz;
+  int colSz;
+  int lineSz;
+} scopeGraphData_t;
+
 int load_softscope(char *exectype, void *initarg);
 int end_forms(void) ;
+void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz);
 
 #define UEscopeCopy(ue, type, ...) if(ue->scopeData) ((scopeData_t*)ue->scopeData)->copyData(ue, type, ##__VA_ARGS__);
+
+extended_kpi_ue* getKPIUE();
+
 #endif

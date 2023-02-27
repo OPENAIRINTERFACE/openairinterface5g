@@ -28,7 +28,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <platform_types.h>
-#include "backtrace.h"
 
 #define OAI_EXIT_NORMAL 0
 #define OAI_EXIT_ASSERT 1

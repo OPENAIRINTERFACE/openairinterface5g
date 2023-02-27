@@ -2062,6 +2062,7 @@ nr_rrc_ue_establish_srb2(
        // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
+                      0,
                       radioBearerConfig->drb_ToAddModList,
                       NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
                       kUPenc,
@@ -2596,12 +2597,11 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 )
 //-----------------------------------------------------------------------------
 {
-    uint32_t length;
-    uint8_t buffer[100];
-    length = do_RRCReestablishmentComplete(buffer, sizeof(buffer),
+    uint8_t buffer[RRC_BUFFER_SIZE] = {0};
+    int size = do_RRCReestablishmentComplete(buffer, RRC_BUFFER_SIZE,
                                            rrcReestablishment->rrc_TransactionIdentifier);
     LOG_I(NR_RRC,"[UE %d][RAPROC] Frame %d : Logical Channel UL-DCCH (SRB1), Generating RRCReestablishmentComplete (bytes%d, gNB %d)\n",
-          ctxt_pP->module_id,ctxt_pP->frame, length, gNB_index);
+          ctxt_pP->module_id,ctxt_pP->frame, size, gNB_index);
 }
 
 void *recv_msgs_from_lte_ue(void *args_p)

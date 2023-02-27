@@ -20,7 +20,6 @@
   - CheckStatusUE
   - Ping
   - Iperf
-  - Reboot_UE
   - Deploy_EPC
   - Undeploy_EPC
   - Initialize_HSS
@@ -31,11 +30,6 @@
   - Terminate_SPGW
   - Initialize_5GCN
   - Terminate_5GCN
-  - Initialize_CatM_module
-  - Terminate_CatM_module
-  - Attach_CatM_module
-  - Detach_CatM_module
-  - Ping_CatM_module
   - IdleSleep
   - Perform_X2_Handover
   - Build_Image

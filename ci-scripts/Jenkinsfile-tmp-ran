@@ -89,10 +89,6 @@ pipeline {
         string(name: 'EPC_Type', defaultValue: 'ltebox', description: 'EPC type: OAI or ltebox')
         credentials(name: 'EPC_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for EPC')
         string(name: 'EPC_SourceCodePath', defaultValue: '/tmp/CI-enb', description: 'Full path of EPC source code')
-
-        //ADB server parameters
-        string(name: 'ADB_IPAddress', defaultValue: '192.168.XX.XX', description: 'IP Address of ADB server')
-        credentials(name: 'ADB_Credentials', defaultValue: 'XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX', credentialType: "Username with password", required: true, description: 'Credentials for ADB')
     }
     */
 
@@ -171,13 +167,6 @@ pipeline {
                         allParametersPresent = false
                     }
 
-                    if (params.ADB_IPAddress == null) {
-                        allParametersPresent = false
-                    }
-                    if (params.ADB_Credentials == null) {
-                        allParametersPresent = false
-                    }
-
                     if (allParametersPresent) {
                         echo "All parameters are present"
                         if (eNB_AllowMergeRequestProcess) {
@@ -217,14 +206,13 @@ pipeline {
                         withCredentials([
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password'],
                             [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.EPC_Credentials}", usernameVariable: 'EPC_Username', passwordVariable: 'EPC_Password'],
-                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
                         ]) {
-                            sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} ${mainPythonAllXmlFiles}"
+                            sh "python3 main.py --mode=InitiateHtml --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} ${mainPythonAllXmlFiles}"
                             String[] myXmlTestSuite = testXMLFile.split("\\r?\\n")
                             for (xmlFile in myXmlTestSuite) {
                             if (fileExists(xmlFile)) {
                                 try {
-                                    sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password} --XMLTestFile=${xmlFile}"
+                                    sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --XMLTestFile=${xmlFile}"
                                 } catch (Exception e) {
                                     currentBuild.result = 'FAILURE'
                                     buildStageStatus = false
@@ -239,27 +227,6 @@ pipeline {
         }
         stage ("Terminate") {
             parallel {
-                stage('Terminate UE') {
-                    // Bypassing this stage if there are no abd server defined
-                    when {
-                      expression { params.ADB_IPAddress != "none" }
-                    }
-                    steps {
-                        echo '\u2705 \u001B[32mTerminate UE\u001B[0m'
-                        withCredentials([
-                            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
-                        ]) {
-                            sh "python3 ci-scripts/main.py --mode=TerminateUE --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
-                        }
-                    }
-                    post {
-                        success {
-                            script {
-                                termStatusArray[termUE] = true
-                            }
-                        }
-                    }
-                }
                 stage('Terminate eNB') {
                     steps {
                         echo '\u2705 \u001B[32mTerminate eNB\u001B[0m'
@@ -517,13 +484,6 @@ pipeline {
         // Making sure that we really shutdown every thing before leaving
         failure {
             script {
-                if ((!termStatusArray[termUE]) && (params.ADB_IPAddress != "none")) {
-                    withCredentials([
-                        [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.ADB_Credentials}", usernameVariable: 'ADB_Username', passwordVariable: 'ADB_Password']
-                    ]) {
-                        sh "python3 ci-scripts/main.py --mode=TerminateUE --ADBIPAddress=${params.ADB_IPAddress} --ADBUserName=${ADB_Username} --ADBPassword=${ADB_Password}"
-                    }
-                }
                 if (!termStatusArray[termENB]) {
                     withCredentials([
                         [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.eNB_Credentials}", usernameVariable: 'eNB_Username', passwordVariable: 'eNB_Password']

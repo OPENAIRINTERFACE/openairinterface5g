@@ -60,53 +60,47 @@
 		<class>Initialize_UE</class>
 		<desc>Initialize Quectel</desc>
 		<id>nrmodule2_quectel</id>
-		<UE_Trace>yes</UE_Trace>
 	</testCase>
-
-
 	<testCase id="010002">
 		<class>Terminate_UE</class>
 		<desc>Terminate Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
-
 	<testCase id="010003">
 		<class>Attach_UE</class>
 		<desc>Attach Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>
-
 	<testCase id="010004">
 		<class>Detach_UE</class>
 		<desc>Detach Quectel</desc>
 		<id>nrmodule2_quectel</id>
 	</testCase>	
 
-        <testCase id="100000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - asterix</desc>
-            <node>asterix</node>
-            <command>sudo cpupower idle-set -D 0</command>
-        </testCase>
-        <testCase id="200000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - asterix</desc>
-	    <node>asterix</node>
-            <command>sudo cpupower idle-set -E</command>
-        </testCase>
-        <testCase id="300000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - obelix</desc>
-            <node>obelix</node>
-            <command>sudo cpupower idle-set -D 0</command>
-        </testCase>
-        <testCase id="400000">
-            <class>Custom_Command</class>
-            <desc>To reset cpupower - obelix</desc>
-	    <node>obelix</node>
-            <command>sudo cpupower idle-set -E</command>
-        </testCase>
-
+  <testCase id="100000">
+    <class>Custom_Command</class>
+    <desc>Disable Sleep States (asterix)</desc>
+    <node>asterix</node>
+    <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id="200000">
+    <class>Custom_Command</class>
+    <desc>Enable Sleep States (asterix)</desc>
+    <node>asterix</node>
+    <command>sudo cpupower idle-set -E</command>
+  </testCase>
+  <testCase id="300000">
+    <class>Custom_Command</class>
+    <desc>Disable Sleep States (obelix)</desc>
+    <node>obelix</node>
+    <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id="400000">
+    <class>Custom_Command</class>
+    <desc>Enable Sleep States (obelix)</desc>
+    <node>obelix</node>
+    <command>sudo cpupower idle-set -E</command>
+  </testCase>
 
 	<testCase id="031000">
 		<class>Initialize_eNB</class>

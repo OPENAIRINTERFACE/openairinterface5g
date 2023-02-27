@@ -300,11 +300,7 @@ add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace" ON)
 add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace" ON)
 
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
-add_library(ITTI
-  ${OCP_ITTI}/intertask_interface.cpp
-  ${OPENAIR_DIR}/common/utils/backtrace.c
-  )
-
+add_library(ITTI ${OCP_ITTI}/intertask_interface.cpp)
 target_link_libraries(ITTI PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 # asn1c skeletons have hardcoded this flag to make customized debug logs
@@ -487,6 +483,7 @@ add_library(CONFIG_LIB
   ${CONFIG_ROOTDIR}/config_userapi.c
   ${CONFIG_ROOTDIR}/config_cmdline.c
 )
+target_link_libraries(CONFIG_LIB PRIVATE dl UTIL)
 add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
 target_link_libraries(params_libconfig config)
 # shared library loader
@@ -783,7 +780,6 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/threadPool/thread-pool.c
   ${OPENAIR_DIR}/common/utils/utils.c
   ${OPENAIR_DIR}/common/utils/system.c
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
@@ -1005,7 +1001,7 @@ add_dependencies(ldpc_cl nrLDPC_decoder_kernels_CL)
 # Base CUDA setting
 ##############################################
 
-add_boolean_option(BUILD_CUDA False "Build support for CUDA" OFF)
+add_boolean_option(ENABLE_LDPC_CUDA OFF "Build support for CUDA" OFF)
 if (ENABLE_LDPC_CUDA)
   find_package(CUDA REQUIRED)
   SET(CUDA_NVCC_FLAG "${CUDA_NVCC_FLAGS};-arch=sm_60;")
@@ -2040,6 +2036,19 @@ add_library(SIMU STATIC ${SIMUSRC} )
 target_include_directories(SIMU PUBLIC ${OPENAIR1_DIR}/SIMULATION/TOOLS ${OPENAIR1_DIR}/SIMULATION/RF)
 target_link_libraries(SIMU PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
+# Qt-based scope
+add_boolean_option(ENABLE_NRQTSCOPE OFF "Build the Qt-Scope" OFF)
+if (ENABLE_NRQTSCOPE)
+  find_package(Qt5 REQUIRED COMPONENTS Widgets Charts)
+  message ("Qt5 Widgets and Charts found for nrqtscope")
+  set(QTSCOPE_SOURCE_NR ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.cpp)
+  # Creates rules for calling the Meta-Object Compiler (moc) on the given source files
+  qt5_wrap_cpp(QTSCOPE_SOURCE_NR ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.h)
+  add_library(nrqtscope MODULE ${QTSCOPE_SOURCE_NR})
+  target_link_libraries(nrqtscope PRIVATE Qt5::Widgets Qt5::Charts)
+  target_link_libraries(nrqtscope PRIVATE asn1_nr_rrc asn1_lte_rrc)
+endif()
+
 add_library(SIMU_ETH
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
 ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
@@ -2116,7 +2125,6 @@ add_definitions(-DASN1_MINIMUM_VERSION=924)
 # add executables for operation
 #################################
 add_library(minimal_lib
-  ${OPENAIR_DIR}/common/utils/backtrace.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
   ${OPENAIR_DIR}/common/utils/minimal_stub.c
   ${T_SOURCE}
@@ -2175,48 +2183,14 @@ target_link_libraries(lte-softmodem PRIVATE
   -Wl,--start-group
   lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI SIMU
+  ${NAS_UE_LIB} ITTI SIMU
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-softmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS})
-target_link_libraries(lte-softmodem PRIVATE ${LIB_LMS_LIBRARIES})
+target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp)
 target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
-
-add_executable(ocp-enb
-  ${OPENAIR_DIR}/executables/main-ocp.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${OPENAIR_DIR}/executables/main-fs6.c
-  ${OPENAIR_DIR}/executables/transport_split.c
-  ${OPENAIR2_DIR}/ENB_APP/NB_IoT_interface.c
-  ${OPENAIR_DIR}/executables/create_tasks.c
-  ${OPENAIR_DIR}/executables/create_tasks_mbms.c
-  ${OPENAIR_DIR}/radio/COMMON/common_lib.c
-  ${OPENAIR_DIR}/radio/COMMON/record_player.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
-  ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
-  ${OPENAIR_DIR}/common/utils/lte/ue_power.c
-  ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
-  ${PHY_INTERFACE_DIR}/queue_t.c
-  ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
-  )
-add_dependencies(ocp-enb oai_iqplayer coding params_libconfig rfsimulator)
-
-target_link_libraries (ocp-enb
-  -Wl,--start-group
-  lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
-  PHY_COMMON PHY PHY_RU L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB MISC_NFAPI_LTE_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI
-  -Wl,--end-group z dl)
-target_link_libraries (ocp-enb ${LIBXML2_LIBRARIES} pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${LIB_LMS_LIBRARIES} ${T_LIB})
 
 add_executable(oairu
   ${OPENAIR_DIR}/executables/lte-ru.c
@@ -2236,7 +2210,7 @@ target_link_libraries(oairu PRIVATE
   PHY_COMMON PHY_RU UTIL
   -Wl,--end-group z dl)
 
-target_link_libraries(oairu PRIVATE pthread m CONFIG_LIB rt ${CMAKE_DL_LIBS} ${T_LIB})
+target_link_libraries(oairu PRIVATE pthread m CONFIG_LIB rt ${T_LIB})
 target_link_libraries(oairu PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 # force the generation of ASN.1 so that we don't need to wait during the build
@@ -2275,12 +2249,11 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   lte_rrc nr_rrc s1ap x2ap m2ap m3ap
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${RAL_LIB} ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
+  ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
-target_link_libraries(lte-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
+target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${ATLAS_LIBRARIES})
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2317,14 +2290,13 @@ add_executable(nr-softmodem
 target_link_libraries(nr-softmodem PRIVATE
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
-  ITTI ${RAL_LIB} ${NAS_UE_LIB} lte_rrc nr_rrc
+  ITTI ${NAS_UE_LIB} lte_rrc nr_rrc
   ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU
   x2ap f1ap m2ap m3ap e1ap
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
-target_link_libraries(nr-softmodem PRIVATE ${LIB_LMS_LIBRARIES})
+target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${ATLAS_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2385,12 +2357,11 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   nr_rrc SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB
-  ${RAL_LIB} ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU
+  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
-target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${CMAKE_DL_LIBS} ${ATLAS_LIBRARIES})
-target_link_libraries(nr-uesoftmodem PRIVATE ${LIB_LMS_LIBRARIES})
+target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
@@ -2533,7 +2504,6 @@ target_link_libraries(nr_dlsim PRIVATE
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
 target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
-target_compile_definitions(nr_dlsim PUBLIC -DPHYSICAL_SIMULATOR)
 
 add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c
@@ -2585,7 +2555,6 @@ target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
-target_compile_definitions(nr_ulsim PUBLIC -DPHYSICAL_SIMULATOR)
 target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)

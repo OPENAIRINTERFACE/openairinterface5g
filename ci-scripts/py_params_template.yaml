@@ -69,13 +69,6 @@ EPC:
     EPCType : t
     EPCContainerPrefix : u
 
-ADB:
-  ADBIPAddress : v
-  ADBUserName : w
-  ADBType : x
-  ADBPassword : y
-
-
 UE:
   UE_inst_0:
     name : UE_1 

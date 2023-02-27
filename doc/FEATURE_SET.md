@@ -357,6 +357,7 @@ The following features are valid for the gNB and the 5G-NR UE.
   - RRCSetupRequest/RRCSetup/RRCSetupComplete
   - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
   - RRC Reconfiguration/Reconfiguration complete
+  - RRC Reestablishment/Reestablishment complete
   - Paging
   - Support for master cell group configuration
   - Interface with NGAP for the interactions with the AMF
