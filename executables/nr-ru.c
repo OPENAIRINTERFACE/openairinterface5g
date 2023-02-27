@@ -46,7 +46,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "SCHED_NR/sched_nr.h"
 
 #include "common/utils/LOG/log.h"

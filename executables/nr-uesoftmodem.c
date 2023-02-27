@@ -63,7 +63,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "intertask_interface.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "system.h"
 #include <openair2/RRC/NR_UE/rrc_proto.h>
 #include <openair2/LAYER2/NR_MAC_UE/mac_defs.h>

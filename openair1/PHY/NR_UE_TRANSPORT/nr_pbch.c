@@ -34,7 +34,7 @@
 #include "PHY/phy_extern_nr_ue.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "openair1/SCHED_NR_UE/defs.h"
 #include <openair1/PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h>
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
