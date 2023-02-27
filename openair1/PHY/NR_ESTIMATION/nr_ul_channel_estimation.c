@@ -302,10 +302,21 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         pil++;
         c16_t ch = c16addShift(ch0, ch1, 1);
         *max_ch = max(*max_ch, max(abs(ch.r), abs(ch.i)));
-        multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, &ch, &ul_ch[n]);
-        ul_ch[n + 4] = ch;
-        ul_ch[n + 5] = ch;
+        multadd_real_four_symbols_vector_complex_scalar(filt8_rep4, &ch, &ul_ls_est[n]);
+        ul_ls_est[n + 4] = ch;
+        ul_ls_est[n + 5] = ch;
       }
+
+      // Delay compensation
+      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
+      nr_est_timing_advance_pusch(&gNB->frame_parms, gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx], &gNB->measurements.delay[ul_id]);
+      int delay = gNB->measurements.delay[ul_id].pusch_est_delay;
+      int delay_idx = get_delay_idx(-delay);
+      c16_t *ul_delay_table = gNB->frame_parms.ul_delay_table[delay_idx];
+      for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n++) {
+        ul_ch[n] = c16mulShift(ul_ls_est[n], ul_delay_table[n % 6], 8);
+      }
+
     }
 
     else if (pusch_pdu->dmrs_config_type == pusch_dmrs_type1) { // this is case without frequency-domain linear interpolation, just take average of LS channel estimates of 6 DMRS REs and use a common value for the whole PRB
