@@ -85,15 +85,6 @@
 // CBA constant
 #define NUM_MAX_CBA_GROUP 4
 
-#ifndef __cplusplus
-#ifndef NULL
-#define NULL 0
-#endif
-#ifndef null
-#define null 0
-#endif
-#endif
-
 #define printk printf
 
 #define UNUSED_VARIABLE(vARIABLE) (void)(vARIABLE)
