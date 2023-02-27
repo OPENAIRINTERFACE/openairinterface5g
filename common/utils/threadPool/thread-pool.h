@@ -292,7 +292,7 @@ static inline notifiedFIFO_elt_t *pullTpool(notifiedFIFO_t *responseFifo, tpool_
 
   if (t->traceFd > 0) {
     ssize_t b = write(t->traceFd, msg, sizeof(*msg));
-    AssertFatal(b > 0, "error in write(): %d, %s\n", errno, strerror(errno));
+    AssertFatal(b == sizeof(*msg), "error in write(): %d, %s\n", errno, strerror(errno));
   }
 
   return msg;
@@ -309,7 +309,7 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
 
   if (t->traceFd > 0) {
     ssize_t b = write(t->traceFd, msg, sizeof(*msg));
-    AssertFatal(b > 0, "error in write(): %d, %s\n", errno, strerror(errno));
+    AssertFatal(b == sizeof(*msg), "error in write(): %d, %s\n", errno, strerror(errno));
   }
 
   return msg;

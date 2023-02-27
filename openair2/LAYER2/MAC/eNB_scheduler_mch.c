@@ -140,10 +140,11 @@ schedule_MBMS_NFAPI(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     mac_rlc_status_resp_t rlc_status;
     int num_mtch=0;
     int msi_length=0, i, k;
-    int8_t j = -1;
+
     unsigned char sdu_lcids[11], num_sdus = 0, offset = 0;
     uint16_t sdu_lengths[11], sdu_length_total = 0;
     unsigned char mch_buffer[MAX_DLSCH_PAYLOAD_BYTES];	// check the max value, this is for dlsch only
+    int16_t j = -1;
 
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
 
@@ -1124,7 +1125,8 @@ schedule_MBMS(module_id_t module_idP, uint8_t CC_id, frame_t frameP,
     unsigned char sdu_lcids[11], num_sdus = 0, offset = 0;
     uint16_t sdu_lengths[11], sdu_length_total = 0;
     unsigned char mch_buffer[MAX_DLSCH_PAYLOAD_BYTES];	// check the max value, this is for dlsch only
-    int8_t j = -1;
+    int16_t j = -1;
+
     COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
 
     cc->MCH_pdu.Pdu_size = 0;

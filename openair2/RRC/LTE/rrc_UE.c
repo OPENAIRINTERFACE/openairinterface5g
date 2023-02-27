@@ -1950,7 +1950,8 @@ rrc_ue_process_rrcConnectionReconfiguration(
                 uint8_t *buffer;
           } msg;
 
-	  msg.buffer = calloc(total_size, sizeof(uint8_t));
+          msg.buffer = calloc(total_size, sizeof(*msg.buffer));
+          AssertFatal(msg.buffer != NULL, "Error in memory allocation\n");
           msg.RadioBearer_size = nr_RadioBearer->size;
           msg.SecondaryCellGroup_size = nr_SecondaryCellGroup->size;
           msg.trans_id = rrcConnectionReconfiguration->rrc_TransactionIdentifier;
