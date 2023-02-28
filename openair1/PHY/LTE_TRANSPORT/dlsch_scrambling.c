@@ -163,8 +163,7 @@ void dlsch_scrambling(LTE_DL_FRAME_PARMS *frame_parms,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_ENB_DLSCH_SCRAMBLING, VCD_FUNCTION_OUT);
 }
 
-
-
+uint8_t scrambling_lut[65536*16] __attribute__((aligned(32)));
 void init_scrambling_lut(void) {
   uint32_t s;
   int i=0,j;
@@ -215,6 +214,7 @@ void dlsch_unscrambling(LTE_DL_FRAME_PARMS *frame_parms,
   }
 }
 
+int16_t unscrambling_lut[65536*16] __attribute__((aligned(32)));
 void init_unscrambling_lut(void) {
   uint32_t s;
   int i=0,j;
