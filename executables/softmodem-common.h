@@ -160,7 +160,7 @@ extern int usrp_tx_thread;
     {"worker-config",        CONFIG_HLP_WORKER_CMD,   0,              strptr:&worker_config,     defstrval:NULL,        TYPE_STRING, 0},                     \
     {"noS1",                 CONFIG_HLP_NOS1,         PARAMFLAG_BOOL, uptr:&noS1,                         defintval:0,           TYPE_UINT,   0},                     \
     {"rfsim",                CONFIG_HLP_RFSIM,        PARAMFLAG_BOOL, uptr:&rfsim,                        defintval:0,           TYPE_UINT,   0},                     \
-    {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:0,           TYPE_UINT,   0},                     \
+    {"nokrnmod",             CONFIG_HLP_NOKRNMOD,     PARAMFLAG_BOOL, uptr:&nokrnmod,                     defintval:1,           TYPE_UINT,   0},                     \
     {"nbiot-disable",        CONFIG_HLP_DISABLNBIOT,  PARAMFLAG_BOOL, uptr:&nonbiot,                      defuintval:0,          TYPE_UINT,   0},                     \
     {"chest-freq",           CONFIG_HLP_CHESTFREQ,    0,              iptr:&CHEST_FREQ,                   defintval:0,           TYPE_INT,    0},                     \
     {"chest-time",           CONFIG_HLP_CHESTTIME,    0,              iptr:&CHEST_TIME,                   defintval:0,           TYPE_INT,    0},                     \

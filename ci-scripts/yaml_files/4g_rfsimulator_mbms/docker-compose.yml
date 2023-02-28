@@ -43,7 +43,7 @@ services:
             OPC: 'e734f8734007d6c5ce7a0508809e7e9c'
             MSISDN: '33611123456'
             HPLMN: 20893
-            USE_ADDITIONAL_OPTIONS: -C 2680000000 -r 25 --ue-rxgain 140 --ue-txgain 120 --nokrnmod 1 --rfsim --noS1 --log_config.global_log_options level,nocolor,time --noS1
+            USE_ADDITIONAL_OPTIONS: -C 2680000000 -r 25 --ue-rxgain 140 --ue-txgain 120 --rfsim --noS1 --log_config.global_log_options level,nocolor,time --noS1
         healthcheck:
             test: /bin/bash -c "pgrep lte-uesoftmodem"
             interval: 10s
