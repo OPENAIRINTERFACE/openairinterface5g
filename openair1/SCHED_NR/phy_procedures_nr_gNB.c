@@ -38,12 +38,11 @@
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "NR_SRS-ResourceSet.h"
 
 #include "assertions.h"
 
 #include <time.h>
-
-#include "intertask_interface.h"
 
 //#define DEBUG_RXDATA
 //#define SRS_IND_DEBUG

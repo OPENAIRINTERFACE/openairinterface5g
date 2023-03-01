@@ -806,6 +806,7 @@ void rr_ul_unset(void **data) {
     free(*data);
   *data = NULL;
 }
+#define MAX(a, b) (((a)>(b))?(a):(b))
 int rr_ul_run(module_id_t Mod_id,
               int CC_id,
               int frame,

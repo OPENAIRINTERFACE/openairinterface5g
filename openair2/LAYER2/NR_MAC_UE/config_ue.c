@@ -37,6 +37,7 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "common/utils/nr/nr_common.h"
 #include "executables/softmodem-common.h"
+#include "SCHED_NR/phy_frame_config_nr.h"
 
 void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                           int mu,

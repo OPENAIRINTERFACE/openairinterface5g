@@ -46,8 +46,6 @@
 
 #include <time.h>
 
-#include "intertask_interface.h"
-
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;
 

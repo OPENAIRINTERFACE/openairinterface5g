@@ -33,6 +33,7 @@
 #include "NR_MAC_gNB/mac_proto.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
 #include "assertions.h"
+#include "pdcp.h"
 
 #include "LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "RRC/NR/nr_rrc_defs.h"

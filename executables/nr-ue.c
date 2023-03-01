@@ -33,6 +33,7 @@
 #include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "radio/COMMON/common_lib.h"
+#include "pdcp.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE

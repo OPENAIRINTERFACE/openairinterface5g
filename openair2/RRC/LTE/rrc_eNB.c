@@ -65,6 +65,12 @@
 #include "LTE_SystemInformationBlockType1-MBMS-r14.h"
 #include "LTE_NonMBSFN-SubframeConfig-r14.h"
 
+#include "NR_UE-CapabilityRAT-ContainerList.h"
+#include "NR_UE-CapabilityRAT-Container.h"
+#include "NR_CG-ConfigInfo.h"
+#include "NR_CG-Config.h"
+#include "NR_RadioBearerConfig.c"
+
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "x2ap_eNB.h"
 

@@ -59,6 +59,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
+#include "pdcp.h"
 
 #include "intertask_interface.h"
 

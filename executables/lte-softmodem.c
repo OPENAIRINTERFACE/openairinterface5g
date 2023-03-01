@@ -77,6 +77,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "create_tasks.h"
 
+#include "pdcp.h"
 
 #include "PHY/INIT/phy_init.h"
 

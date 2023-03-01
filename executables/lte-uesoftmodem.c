@@ -39,6 +39,7 @@
 #include "assertions.h"
 
 #include "PHY/types.h"
+#include "pdcp.h"
 
 #include "PHY/defs_UE.h"
 #include "common/ran_context.h"

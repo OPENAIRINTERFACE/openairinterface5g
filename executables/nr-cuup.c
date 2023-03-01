@@ -28,6 +28,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/GNB_APP/gnb_config.h"
+#include "pdcp.h"
 
 RAN_CONTEXT_t RC;
 THREAD_STRUCT thread_struct;
@@ -36,7 +37,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 int asn1_xer_print;
 int oai_exit = 0;
 instance_t CUuniqInstance = 0;
-RRC_release_list_t rrc_release_info;
 
 void exit_function(const char *file, const char *function, const int line, const char *s)
 {

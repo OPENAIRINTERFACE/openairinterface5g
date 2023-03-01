@@ -51,6 +51,7 @@
 /* RRC */
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
+#include "NR_BCCH-DL-SCH-Message.h"
 
 /* PHY */
 #include "time_meas.h"
@@ -63,6 +64,7 @@
 /* MAC */
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
+#include "LAYER2/MAC/mac.h"
 #include "NR_TAG.h"
 
 #include <openair3/UICC/usim_interface.h>

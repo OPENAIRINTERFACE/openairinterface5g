@@ -63,6 +63,10 @@
 #include "LTE_TDD-Config.h"
 #include "LTE_UECapabilityEnquiry.h"
 #include "LTE_UE-CapabilityRequest.h"
+
+#include "NR_RAT-Type.h"
+#include "NR_UE-CapabilityRAT-Container.h"
+
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #if ENABLE_RAL

@@ -54,6 +54,7 @@
 #include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
+#include "pdcp.h"
 
 //#include "L1_paramdef.h"
 #include "prs_nr_paramdef.h"
