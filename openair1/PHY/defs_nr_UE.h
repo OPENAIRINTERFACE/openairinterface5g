@@ -32,6 +32,10 @@
 #ifndef __PHY_DEFS_NR_UE__H__
 #define __PHY_DEFS_NR_UE__H__
 
+#ifdef __cplusplus
+#include <atomic>
+#define _Atomic(X) std::atomic< X >
+#endif
 
 #include "defs_nr_common.h"
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"

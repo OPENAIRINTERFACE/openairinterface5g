@@ -1137,8 +1137,6 @@ static void *nrUEscopeThread(void *arg) {
 }
 #endif
 
-pthread_mutex_t UEcopyDataMutex;
-
 STATICFORXSCOPE void nrUEinitScope(PHY_VARS_NR_UE *ue)
 {
   AssertFatal(ue->scopeData=malloc(sizeof(scopeData_t)),"");
@@ -1148,8 +1146,8 @@ STATICFORXSCOPE void nrUEinitScope(PHY_VARS_NR_UE *ue)
 #ifndef WEBSRVSCOPE
   pthread_t forms_thread;
   threadCreate(&forms_thread, nrUEscopeThread, ue, "scope", -1, OAI_PRIORITY_RT_LOW);
+  UEcopyDataMutexInit();
 #endif
-  pthread_mutex_init(&UEcopyDataMutex, NULL);
 }
 
 void nrscope_autoinit(void *dataptr) {

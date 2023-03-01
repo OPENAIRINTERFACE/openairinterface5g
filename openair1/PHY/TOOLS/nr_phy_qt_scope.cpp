@@ -1147,6 +1147,7 @@ void nrUEinitQtScope(PHY_VARS_NR_UE *ue)
 
   scope->liveData = calloc(sizeof(scopeGraphData_t *), UEdataTypeNumberOfItems);
   scope->copyData = UEcopyData;
+  UEcopyDataMutexInit();
 
   ue->scopeData = scope;
 

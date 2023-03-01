@@ -31,15 +31,21 @@
  */
 #ifndef __PHY_SCOPE_INTERFACE_H__
 #define __PHY_SCOPE_INTERFACE_H__
+
+#ifdef __cplusplus
+#include <atomic>
+#define _Atomic(X) std::atomic< X >
+#endif
+
 #include <openair1/PHY/defs_gNB.h>
 #include <openair1/PHY/defs_nr_UE.h>
 
 typedef struct {
-  uint32_t nb_total;
-  uint32_t nb_nack;
-  uint32_t blockSize;   // block size, to be used for throughput calculation
-  uint16_t nofRBs;
-  uint8_t  dl_mcs;
+  _Atomic(uint32_t) nb_total;
+  _Atomic(uint32_t) nb_nack;
+  _Atomic(uint32_t) blockSize;   // block size, to be used for throughput calculation
+  _Atomic(uint16_t) nofRBs;
+  _Atomic(uint8_t ) dl_mcs;
 } extended_kpi_ue;
 
 typedef struct {
@@ -80,6 +86,7 @@ typedef struct {
 
 int load_softscope(char *exectype, void *initarg);
 int end_forms(void) ;
+int UEcopyDataMutexInit(void);
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz);
 
 #define UEscopeCopy(ue, type, ...) if(ue->scopeData) ((scopeData_t*)ue->scopeData)->copyData(ue, type, ##__VA_ARGS__);

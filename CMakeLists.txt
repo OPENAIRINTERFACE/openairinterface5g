@@ -2016,7 +2016,9 @@ add_boolean_option(ENABLE_NRQTSCOPE OFF "Build the Qt-Scope" OFF)
 if (ENABLE_NRQTSCOPE)
   find_package(Qt5 REQUIRED COMPONENTS Widgets Charts)
   message ("Qt5 Widgets and Charts found for nrqtscope")
-  set(QTSCOPE_SOURCE_NR ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.cpp)
+  set(QTSCOPE_SOURCE_NR
+    ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.cpp
+    ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c)
   # Creates rules for calling the Meta-Object Compiler (moc) on the given source files
   qt5_wrap_cpp(QTSCOPE_SOURCE_NR ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.h)
   add_library(nrqtscope MODULE ${QTSCOPE_SOURCE_NR})
