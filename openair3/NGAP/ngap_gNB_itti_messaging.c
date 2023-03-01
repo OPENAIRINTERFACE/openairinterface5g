@@ -49,11 +49,7 @@ void ngap_gNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }
 
-void ngap_gNB_itti_send_nas_downlink_ind(instance_t instance,
-    uint16_t ue_initial_id,
-    uint32_t gNB_ue_ngap_id,
-    uint8_t *nas_pdu,
-    uint32_t nas_pdu_length)
+void ngap_gNB_itti_send_nas_downlink_ind(instance_t instance, uint32_t gNB_ue_ngap_id, uint8_t *nas_pdu, uint32_t nas_pdu_length)
 {
   MessageDef          *message_p;
   ngap_downlink_nas_t *ngap_downlink_nas;
@@ -62,7 +58,6 @@ void ngap_gNB_itti_send_nas_downlink_ind(instance_t instance,
 
   ngap_downlink_nas = &message_p->ittiMsg.ngap_downlink_nas;
 
-  ngap_downlink_nas->ue_initial_id  = ue_initial_id;
   ngap_downlink_nas->gNB_ue_ngap_id = gNB_ue_ngap_id;
   ngap_downlink_nas->nas_pdu.buffer = malloc(sizeof(uint8_t) * nas_pdu_length);
   memcpy(ngap_downlink_nas->nas_pdu.buffer, nas_pdu, nas_pdu_length);

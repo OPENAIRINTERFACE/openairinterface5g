@@ -267,9 +267,12 @@ typedef struct pdu_session_param_s {
   pdusession_t param;
   uint8_t status;
   uint8_t xid; // transaction_id
-  ngap_Cause_t cause;
+  NGAP_Cause_PR cause;
   uint8_t cause_value;
-} __attribute__ ((__packed__)) pdu_session_param_t;
+  ngap_pdu_t nas_pdu;
+  ngap_pdu_t pdusessionTransfer;
+
+} rrc_pdu_session_param_t;
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
@@ -281,8 +284,7 @@ typedef struct gNB_RRC_UE_s {
   uint8_t                            DRB_active[NGAP_MAX_DRBS_PER_UE];
 
   NR_SRB_INFO                       SI;
-  NR_SRB_INFO_TABLE_ENTRY           Srb1;
-  NR_SRB_INFO_TABLE_ENTRY           Srb2;
+  NR_SRB_INFO_TABLE_ENTRY Srb[maxSRBs]; // 3gpp max is 3 SRBs, number 1..3, we waste the entry 0 for code simplicity
   NR_MeasConfig_t                   *measConfig;
   NR_HANDOVER_INFO                  *handover_info;
   NR_MeasResults_t                  *measResults;
@@ -350,11 +352,11 @@ typedef struct gNB_RRC_UE_s {
   /* Number of e_rab to be modified in the list */
   uint8_t                            nb_of_modify_pdusessions;
   uint8_t                            nb_of_failed_pdusessions;
-  pdu_session_param_t                modify_pdusession[NR_NB_RB_MAX];
+  rrc_pdu_session_param_t modify_pdusession[NR_NB_RB_MAX];
   /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   nr_e_rab_param_t                   e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  pdu_session_param_t                pduSession[NGAP_MAX_PDU_SESSION];
+  rrc_pdu_session_param_t pduSession[NGAP_MAX_PDU_SESSION];
   //release e_rabs
   uint8_t                            nb_release_of_e_rabs;
   e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
@@ -395,8 +397,7 @@ typedef struct gNB_RRC_UE_s {
   struct NR_PhysicalCellGroupConfig                     *physicalCellGroupConfig;
 
   /* Nas Pdu */
-  uint8_t                        nas_pdu_flag;
-  ngap_nas_pdu_t                 nas_pdu;
+  ngap_pdu_t nas_pdu;
 
 } gNB_RRC_UE_t;
 
@@ -492,12 +493,7 @@ typedef struct gNB_RRC_INST_s {
   rrc_gNB_carrier_data_t                              carrier;
   uid_allocator_t                                     uid_allocator;
   RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
-  int                                                 Nb_ue;
-  hash_table_t                                        *initial_id2_s1ap_ids; // key is    content is rrc_ue_s1ap_ids_t
-  hash_table_t                                        *s1ap_id2_s1ap_ids   ; // key is    content is rrc_ue_s1ap_ids_t
-  hash_table_t                                        *initial_id2_ngap_ids;
-  hash_table_t                                        *ngap_id2_ngap_ids   ;
-
+  int Nb_ue;
   /// NR cell id
   uint64_t nr_cellid;
 

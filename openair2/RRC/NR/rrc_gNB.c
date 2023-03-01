@@ -248,10 +248,6 @@ static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_Rrc
   rrc_gNB_CU_DU_init(rrc);
   uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
-  rrc->initial_id2_s1ap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  rrc->s1ap_id2_s1ap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  rrc->initial_id2_ngap_ids = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
-  rrc->ngap_id2_ngap_ids    = hashtable_create (NUMBER_OF_UE_MAX * 2, NULL, NULL);
   rrc->configuration = *configuration;
   rrc->carrier.servingcellconfigcommon = configuration->scc;
   rrc->carrier.servingcellconfig = configuration->scd;
@@ -512,9 +508,9 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
 {
   LOG_A(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-  ue_context_pP->ue_context.Srb1.Active = 1;
-  ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
-  ue_context_pP->ue_context.Srb2.Active = 0;
+  ue_context_pP->ue_context.Srb[1].Active = 1;
+  ue_context_pP->ue_context.Srb[1].Srb_info.Srb_id = 1;
+  ue_context_pP->ue_context.Srb[2].Active = 0;
   ue_context_pP->ue_context.StatusRrc = NR_RRC_CONNECTED;
 
   if (get_softmodem_params()->sa) {
@@ -553,7 +549,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
           i, ue_context_pP->ue_context.pduSession[i].status, "PDU_SESSION_STATUS_DONE");
   }
 
-  if (ue_context_pP->ue_context.nas_pdu_flag == 1) {
+  if (ue_context_pP->ue_context.nas_pdu.length) {
     dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
     OCTET_STRING_fromBuf(dedicatedNAS_Message,
                           (char *)ue_context_pP->ue_context.nas_pdu.buffer,
@@ -1281,15 +1277,12 @@ rrc_gNB_process_RRCReconfigurationComplete(
   if (SRB_configList != NULL) {
     for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
       if (SRB_configList->list.array[i]->srb_Identity == 1) {
-        ue_context_pP->ue_context.Srb1.Active = 1;
-        ue_context_pP->ue_context.Srb1.Srb_info.Srb_id = 1;
+        ue_context_pP->ue_context.Srb[1].Active = 1;
+        ue_context_pP->ue_context.Srb[1].Srb_info.Srb_id = 1;
       } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
-        ue_context_pP->ue_context.Srb2.Active = 1;
-        ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
-        LOG_I(NR_RRC,"[gNB %d] Frame %d CC %d: SRB2 is now active\n",
-              ctxt_pP->module_id,
-              ctxt_pP->frame,
-              ue_context_pP->ue_context.primaryCC_id);
+        ue_context_pP->ue_context.Srb[2].Active = 1;
+        ue_context_pP->ue_context.Srb[2].Srb_info.Srb_id = 2;
+        LOG_I(NR_RRC, "[gNB %d] Frame      %d CC %d : SRB2 is now active\n", ctxt_pP->module_id, ctxt_pP->frame, ue_context_pP->ue_context.primaryCC_id);
       } else {
         LOG_W(NR_RRC,"[gNB %d] Frame %d CC %d: invalid SRB identity %ld\n",
               ctxt_pP->module_id,
@@ -1554,33 +1547,17 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
     }
   }
 
-  ue_context_pP->ue_context.Srb1.Active = 1;
-  //ue_context_pP->ue_context.Srb2.Srb_info.Srb_id = 2;
+  ue_context_pP->ue_context.Srb[1].Active = 1;
+  // ue_context_pP->ue_context.Srb[2].Srb_info.Srb_id = 2;
 
   if (get_softmodem_params()->sa) {
     hashtable_rc_t    h_rc;
-    int               j;
-    rrc_ue_ngap_ids_t *rrc_ue_ngap_ids_p = NULL;
+    int j;
     uint16_t ue_initial_id = ue_context_pP->ue_context.ue_initial_id;
     uint32_t gNB_ue_ngap_id = ue_context_pP->ue_context.gNB_ue_ngap_id;
     gNB_RRC_INST *rrc_instance_p = RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(ctxt_pP->instance)];
 
-    if (gNB_ue_ngap_id > 0) {
-      h_rc = hashtable_get(rrc_instance_p->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_id, (void **)&rrc_ue_ngap_ids_p);
-
-      if  (h_rc == HASH_TABLE_OK) {
-        rrc_ue_ngap_ids_p->ue_rnti = ctxt_pP->rntiMaybeUEid;
-      }
-    }
-
-    if (ue_initial_id != 0) {
-      h_rc = hashtable_get(rrc_instance_p->initial_id2_ngap_ids, (hash_key_t)ue_initial_id, (void **)&rrc_ue_ngap_ids_p);
-
-      if  (h_rc == HASH_TABLE_OK) {
-        rrc_ue_ngap_ids_p->ue_rnti = ctxt_pP->rntiMaybeUEid;
-      }
-    }
-
+    AssertFatal(false, "rework identity mapping \n");
     gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
     /* Save e RAB information for later */
 
@@ -1608,23 +1585,25 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
 
     if ( ret != 0 ) {
       LOG_E(NR_RRC,"gtpv1u_update_ngu_tunnel failed,start to release UE %x\n",reestablish_rnti);
-
+      AssertFatal(false, "\n");
+      /*
       // update s1u tunnel failed,reset rnti?
       if (gNB_ue_ngap_id > 0) {
-        h_rc = hashtable_get(rrc_instance_p->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_id, (void **)&rrc_ue_ngap_ids_p);
+      h_rc = hashtable_get(rrc_instance_p->ngap_id2_ngap_ids, (hash_key_t)gNB_ue_ngap_id, (void **)&rrc_ue_ngap_ids_p);
 
-        if (h_rc == HASH_TABLE_OK ) {
-        	rrc_ue_ngap_ids_p->ue_rnti = reestablish_rnti;
-        }
+      if (h_rc == HASH_TABLE_OK ) {
+      rrc_ue_ngap_ids_p->ue_rnti = reestablish_rnti;
+      }
       }
 
       if (ue_initial_id != 0) {
         h_rc = hashtable_get(rrc_instance_p->initial_id2_ngap_ids, (hash_key_t)ue_initial_id, (void **)&rrc_ue_ngap_ids_p);
 
-        if (h_rc == HASH_TABLE_OK ) {
+if (h_rc == HASH_TABLE_OK ) {
           rrc_ue_ngap_ids_p->ue_rnti = reestablish_rnti;
         }
       }
+      */
 
       ue_context_pP->ue_context.ue_release_timer_s1 = 1;
       ue_context_pP->ue_context.ue_release_timer_thres_s1 = 100;
@@ -1637,8 +1616,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   }
 
   /* Update RNTI in ue_context */
-  LOG_I(NR_RRC, "Updating UEid from %04x to %lx\n", ue_context_pP->ue_context.rnti, ctxt_pP->rntiMaybeUEid);
-  ue_context_pP->ue_id_rnti = ctxt_pP->rntiMaybeUEid; // here ue_id_rnti is just a key, may be something else
   ue_context_pP->ue_context.rnti = ctxt_pP->rntiMaybeUEid;
 
   if (get_softmodem_params()->sa) {
@@ -2101,19 +2078,19 @@ int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
           //LG COMMENT Idx = (ue_mod_idP * NB_RB_MAX) + DCCH;
           Idx = DCCH;
           // SRB1
-          ue_context_p->ue_context.Srb1.Active = 1;
-          ue_context_p->ue_context.Srb1.Srb_info.Srb_id = Idx;
-          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[0]);
-          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb1.Srb_info.Lchan_desc[1]);
+          ue_context_p->ue_context.Srb[1].Active = 1;
+          ue_context_p->ue_context.Srb[1].Srb_info.Srb_id = Idx;
+          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb[1].Srb_info.Lchan_desc[0]);
+          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb[1].Srb_info.Lchan_desc[1]);
           // SRB2: set  it to go through SRB1 with id 1 (DCCH)
-          ue_context_p->ue_context.Srb2.Active = 1;
-          ue_context_p->ue_context.Srb2.Srb_info.Srb_id = Idx;
-          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[0]);
-          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb2.Srb_info.Lchan_desc[1]);
+          ue_context_p->ue_context.Srb[2].Active = 1;
+          ue_context_p->ue_context.Srb[2].Srb_info.Srb_id = Idx;
+          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb[2].Srb_info.Lchan_desc[0]);
+          rrc_init_nr_srb_param(&ue_context_p->ue_context.Srb[2].Srb_info.Lchan_desc[1]);
 
-        rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, du_to_cu_rrc_container, gnb_rrc_inst->carrier.servingcellconfigcommon, 0);
+          rrc_gNB_generate_RRCReestablishment(ctxt_pP, ue_context_p, du_to_cu_rrc_container, gnb_rrc_inst->carrier.servingcellconfigcommon, 0);
 
-        LOG_I(NR_RRC, "CALLING RLC CONFIG SRB1 (rbid %d)\n", Idx);
+          LOG_I(NR_RRC, "CALLING RLC CONFIG SRB1 (rbid %d)\n", Idx);
       } break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
@@ -2839,7 +2816,8 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
   rrc_remove_nsa_user(rrc, m->rnti);
 }
 
-static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_t instance) {
+static int rrc_process_DU_DL(MessageDef *msg_p, instance_t instance)
+{
   NRDuDlReq_t * req=&NRDuDlReq(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
@@ -2896,19 +2874,18 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
 	    if (SRB_configList != NULL) {
 	      for (i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
 		if (SRB_configList->list.array[i]->srb_Identity == 1 ) {
-		  ue_context_p->ue_context.Srb1.Active=1;
-		} else if (SRB_configList->list.array[i]->srb_Identity == 2 )  {
-		  ue_context_p->ue_context.Srb2.Active=1;
-		  ue_context_p->ue_context.Srb2.Srb_info.Srb_id=2;
-		  LOG_I(F1AP, "[DU %d] SRB2 is now active\n",ctxt.module_id);
-		} else {
-		  LOG_W(F1AP, "[DU %d] invalide SRB identity %ld\n",ctxt.module_id,
-			SRB_configList->list.array[i]->srb_Identity);
-		}
-	      }
-	    }
-	    
-	    if (DRB_configList != NULL) {
+      ue_context_p->ue_context.Srb[1].Active = 1;
+    } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
+      ue_context_p->ue_context.Srb[2].Active = 1;
+      ue_context_p->ue_context.Srb[2].Srb_info.Srb_id = 2;
+      LOG_I(F1AP, "[DU %d] SRB2 is now active\n", ctxt.module_id);
+    } else {
+      LOG_W(F1AP, "[DU %d] invalide SRB identity %ld\n", ctxt.module_id, SRB_configList->list.array[i]->srb_Identity);
+    }
+        }
+      }
+
+      if (DRB_configList != NULL) {
 	      for (i = 0; i < DRB_configList->list.count; i++) {  // num max DRB (11-3-8)
 		if (DRB_configList->list.array[i]) {
 		  drb_id = (int)DRB_configList->list.array[i]->drb_Identity;
@@ -3028,8 +3005,8 @@ static int  rrc_process_DU_DL(MessageDef *msg_p, const char *msg_name, instance_
 return 0;
 }
 
-static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
-
+static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_t instance)
+{
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
@@ -3257,8 +3234,8 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, const cha
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
 
-static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, const char *msg_name, instance_t instance){
-
+static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, instance_t instance)
+{
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
@@ -3407,8 +3384,8 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, co
   itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
 }
 
-static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
-
+static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance_t instance)
+{
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
@@ -3460,11 +3437,10 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, const ch
 
   free(cellGroupConfig->rlc_BearerToAddModList);
   free(cellGroupConfig);
-
 }
 
-static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, const char *msg_name, instance_t instance){
-
+static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, instance_t instance)
+{
   f1ap_ue_context_setup_t *resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
@@ -3845,8 +3821,7 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance) {
   // Find the UE context from UE ID and send ITTI message to F1AP to send UE context modification message to DU
 
-  uint16_t ue_initial_id = 0; // Making an invalid UE initial ID
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, ue_initial_id, resp->gNB_cu_cp_ue_id);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_from_ngap_ids(instance, resp->gNB_cu_cp_ue_id);
   protocol_ctxt_t ctxt = {0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0, 0);
 
@@ -3930,8 +3905,7 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 void *rrc_gnb_task(void *args_p) {
-  MessageDef                         *msg_p;
-  const char                         *msg_name_p;
+  MessageDef *msg_p;
   instance_t                         instance;
   int                                result;
   //SRB_INFO                           *srb_info_p;
@@ -3948,9 +3922,9 @@ void *rrc_gnb_task(void *args_p) {
   while (1) {
     // Wait for a message
     itti_receive_msg(TASK_RRC_GNB, &msg_p);
-    msg_name_p = ITTI_MSG_NAME(msg_p);
+    const char *msg_name_p = ITTI_MSG_NAME(msg_p);
     instance = ITTI_MSG_DESTINATION_INSTANCE(msg_p);
-
+    LOG_D(NR_RRC, "Received Msg %s\n", msg_name_p);
     switch (ITTI_MSG_ID(msg_p)) {
       case TERMINATE_MESSAGE:
         LOG_W(NR_RRC, " *** Exiting NR_RRC thread\n");
@@ -4000,53 +3974,50 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case NGAP_DOWNLINK_NAS:
-        rrc_gNB_process_NGAP_DOWNLINK_NAS(msg_p, msg_name_p, instance, &rrc_gNB_mui);
+        rrc_gNB_process_NGAP_DOWNLINK_NAS(msg_p, instance, &rrc_gNB_mui);
         break;
 
       case NGAP_PDUSESSION_SETUP_REQ:
-        rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(msg_p, instance);
         break;
 
       case NGAP_PDUSESSION_MODIFY_REQ:
-        rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_PDUSESSION_MODIFY_REQ(msg_p, instance);
         break;
 
       case NGAP_PDUSESSION_RELEASE_COMMAND:
-        rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(msg_p, instance);
         break;
 
       /* Messages from gNB app */
       case NRRRC_CONFIGURATION_REQ:
-        LOG_I(NR_RRC, "[gNB %ld] Received %s : %p\n", instance, msg_name_p,&NRRRC_CONFIGURATION_REQ(msg_p));
         openair_rrc_gNB_configuration(GNB_INSTANCE_TO_MODULE_ID(instance), &NRRRC_CONFIGURATION_REQ(msg_p));
         break;
 
       /* Messages from F1AP task */
       case F1AP_SETUP_REQ:
-        AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type),
-                    "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
-        LOG_I(NR_RRC,"[gNB %ld] Received %s : %p\n", instance, msg_name_p, &F1AP_SETUP_REQ(msg_p));
+        AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type), "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
         rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
         break;
 	
       case NR_DU_RRC_DL_INDICATION:
-        rrc_process_DU_DL(msg_p, msg_name_p, instance);
+        rrc_process_DU_DL(msg_p, instance);
         break;
       
       case F1AP_UE_CONTEXT_SETUP_REQ:
-        rrc_DU_process_ue_context_setup_request(msg_p, msg_name_p, instance);
+        rrc_DU_process_ue_context_setup_request(msg_p, instance);
         break;
 
       case F1AP_UE_CONTEXT_SETUP_RESP:
-        rrc_CU_process_ue_context_setup_response(msg_p, msg_name_p, instance);
+        rrc_CU_process_ue_context_setup_response(msg_p, instance);
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_RESP:
-        rrc_CU_process_ue_context_modification_response(msg_p, msg_name_p, instance);
+        rrc_CU_process_ue_context_modification_response(msg_p, instance);
         break;
 
       case F1AP_UE_CONTEXT_MODIFICATION_REQ:
-        rrc_DU_process_ue_context_modification_request(msg_p, msg_name_p, instance);
+        rrc_DU_process_ue_context_modification_request(msg_p, instance);
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_CMD:
@@ -4065,7 +4036,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case NGAP_INITIAL_CONTEXT_SETUP_REQ:
-        rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(msg_p, instance);
         break;
 
       case X2AP_ENDC_SGNB_RELEASE_REQUEST:
@@ -4078,24 +4049,22 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case NGAP_UE_CONTEXT_RELEASE_REQ:
-        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ(msg_p, instance);
         break;
 
       case NGAP_UE_CONTEXT_RELEASE_COMMAND:
-        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(msg_p, msg_name_p, instance);
+        rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(msg_p, instance);
         break;
 
       case E1AP_SETUP_REQ:
-        LOG_I(NR_RRC, "Received E1AP_SETUP_REQ for instance %d\n", (int)instance);
         rrc_gNB_process_e1_setup_req(&E1AP_SETUP_REQ(msg_p), instance);
         break;
 
       case E1AP_BEARER_CONTEXT_SETUP_RESP:
-        LOG_I(NR_RRC, "Received E1AP_BEARER_CONTEXT_SETUP_RESP for instance %d\n", (int)instance);
         rrc_gNB_process_e1_bearer_context_setup_resp(&E1AP_BEARER_CONTEXT_SETUP_RESP(msg_p), instance);
 
       case NGAP_PAGING_IND:
-        rrc_gNB_process_PAGING_IND(msg_p, msg_name_p, instance);
+        rrc_gNB_process_PAGING_IND(msg_p, instance);
         break;
 
       default:
@@ -4138,8 +4107,8 @@ rrc_gNB_generate_SecurityModeCommand(
     case ngran_gNB_CU:
     case ngran_gNB_CUCP:
       // create an ITTI message
-      memcpy(ue_context_pP->ue_context.Srb1.Srb_info.Tx_buffer.Payload, buffer, size);
-      ue_context_pP->ue_context.Srb1.Srb_info.Tx_buffer.payload_size = size;
+      memcpy(ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.Payload, buffer, size);
+      ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.payload_size = size;
 
       LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
       nr_rrc_data_req(ctxt_pP,
