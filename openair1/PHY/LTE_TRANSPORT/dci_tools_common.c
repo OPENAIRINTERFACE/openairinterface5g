@@ -353,7 +353,7 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
 
       for (i=16; i>0; i--) {
 	if ((rb_alloc&(1<<i)) != 0)
-	  rb_alloc2[(3*(16-i))>>5] |= (7<<((3*(16-i))%32));
+    rb_alloc2[(3 * (16 - i)) >> 5] |= (7U << ((3 * (16 - i)) % 32));
       }
 
       // bit mask across

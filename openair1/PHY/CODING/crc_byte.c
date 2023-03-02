@@ -95,11 +95,11 @@ crc table initialization
 static unsigned int        crc24aTable[256];
 static unsigned int        crc24bTable[256];
 static unsigned int        crc24cTable[256];
-static unsigned short      crc16Table[256];
-static unsigned short      crc12Table[256];
-static unsigned short      crc11Table[256];
-static unsigned char       crc8Table[256];
-static unsigned char       crc6Table[256];
+static unsigned int crc16Table[256];
+static unsigned int crc12Table[256];
+static unsigned int crc11Table[256];
+static unsigned int crc8Table[256];
+static unsigned int crc6Table[256];
 
 #if USE_INTEL_CRC
 static DECLARE_ALIGNED(struct crc_pclmulqdq_ctx lte_crc24a_pclmulqdq, 16) = {
@@ -131,11 +131,11 @@ void crcTableInit (void)
     crc24aTable[c] = crcbit (&c, 1, poly24a);
     crc24bTable[c] = crcbit (&c, 1, poly24b);
     crc24cTable[c] = crcbit (&c, 1, poly24c);
-    crc16Table[c] = (unsigned short) (crcbit (&c, 1, poly16) >> 16);
-    crc12Table[c] = (unsigned short) (crcbit (&c, 1, poly12) >> 16);
-    crc11Table[c] = (unsigned short) (crcbit (&c, 1, poly11) >> 16);
-    crc8Table[c] = (unsigned char) (crcbit (&c, 1, poly8) >> 24);
-    crc6Table[c] = (unsigned char) (crcbit (&c, 1, poly6) >> 24);
+    crc16Table[c] = crcbit(&c, 1, poly16) >> 16;
+    crc12Table[c] = crcbit(&c, 1, poly12) >> 16;
+    crc11Table[c] = crcbit(&c, 1, poly11) >> 16;
+    crc8Table[c] = crcbit(&c, 1, poly8) >> 24;
+    crc6Table[c] = crcbit(&c, 1, poly6) >> 24;
   } while (++c);
 #if USE_INTEL_CRC
     crc_xmm_be_le_swap128 = _mm_setr_epi32(0x0c0d0e0f, 0x08090a0b,

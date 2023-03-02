@@ -408,42 +408,64 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
             __m128i *txl = (__m128i *)&tx_layers[nl][m << 1];
             __m128i amp64 = _mm_set1_epi16(amp);
-            DevAssert(upper_limit % 4 == 0);
-            for (int i = 0; i < (upper_limit >> 2); i++) {
+            int i;
+            for (i = 0; i < (upper_limit >> 2); i++) {
               const __m128i txL = _mm_loadu_si128(txl + i);
               _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
               if ((i&1) > 0)
-                  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                         m, l, start_sc+(i>>1), txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1)],
-                         txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1) + 1]);
+                printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+                       m,
+                       l,
+                       start_sc + (i >> 1),
+                       txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc + (i >> 1)) << 1)],
+                       txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc + (i >> 1)) << 1) + 1]);
 #endif
               /* handle this, mute RE */
               /*else {
                 txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) ] = 0;
                 txdataF_precoding[anl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
-              }*/
-            } // RE loop, first part
+                }*/
+            }
+            if (i * 4 != upper_limit) {
+              c16_t *txFc = (c16_t *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc) << 1)];
+              c16_t *txlc = (c16_t *)&tx_layers[nl][m << 1];
+              for (i = (upper_limit >> 2) << 2; i < upper_limit; i++) {
+                txFc[i].r = ((txlc[i].r * amp) >> 14) + 1;
+                txFc[i].i = ((txlc[i].i * amp) >> 14) + 1;
+              }
+            }
             m+=upper_limit;
             if (remaining_re > 0) {
               txF = (__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size) << 1)];
               txl = (__m128i *)&tx_layers[nl][m << 1];
-              DevAssert(remaining_re % 4 == 0);
-              for (int i = 0; i < (remaining_re >> 2); i++) {
+              int i;
+              for (i = 0; i < (remaining_re >> 2); i++) {
                 const __m128i txL = _mm_loadu_si128(txl + i);
                 _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
-                 if ((i&1) > 0)
-                   printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                          m, l, i>>1, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) ],
-                          txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) + 1]);
+                if ((i & 1) > 0)
+                  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+                         m,
+                         l,
+                         i >> 1,
+                         txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + (i >> 1)) << 1)],
+                         txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + (i >> 1)) << 1) + 1]);
 #endif
-                 /* handle this, mute RE */
-                 /*else {
-                   txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = 0;
-                   txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
-                 }*/
+                /* handle this, mute RE */
+                /*else {
+                  txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = 0;
+                  txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
+                  }*/
               } // RE loop, second part
+              if (i * 4 != remaining_re) {
+                c16_t *txFc = (c16_t *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size) << 1)];
+                c16_t *txlc = (c16_t *)&tx_layers[nl][m << 1];
+                for (i = (remaining_re >> 2) << 2; i < remaining_re; i++) {
+                  txFc[i].r = ((txlc[i].r * amp) >> 14) + 1;
+                  txFc[i].i = ((txlc[i].i * amp) >> 14) + 1;
+                }
+              }
             } // 
             m+=remaining_re;
           } // N_RB_DL even
