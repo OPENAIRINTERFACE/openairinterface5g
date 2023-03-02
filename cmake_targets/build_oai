@@ -462,17 +462,6 @@ function main() {
 
   cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
 
-  # for conf files copy in this bash script
-  if [ -d /usr/lib/freeDiameter ]; then
-    export FREEDIAMETER_PREFIX=/usr
-  else
-    if [ -d /usr/local/lib/freeDiameter ]; then
-      export FREEDIAMETER_PREFIX=/usr/local
-    else
-      echo_warning "FreeDiameter prefix not found, install freeDiameter if EPC, HSS"
-    fi
-  fi
-
   if [ "$CLEAN_ALL" = "1" ] ; then
     clean_all_files
     echo_info "Erased all previously producted files"
