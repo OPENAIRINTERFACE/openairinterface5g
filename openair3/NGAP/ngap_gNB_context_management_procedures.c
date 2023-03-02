@@ -70,8 +70,7 @@ int ngap_ue_context_release_complete(instance_t instance,
 
   if ((ue_context_p = ngap_get_ue_context(ue_release_complete_p->gNB_ue_ngap_id)) == NULL) {
     /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-    NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %u\n",
-              ue_release_complete_p->gNB_ue_ngap_id);
+    NGAP_ERROR("Failed to find ue context associated with gNB ue ngap id: %u\n", ue_release_complete_p->gNB_ue_ngap_id);
     return -1;
   }
 

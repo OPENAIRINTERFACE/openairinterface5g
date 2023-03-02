@@ -22,6 +22,20 @@
 #include "rrc_gNB_radio_bearers.h"
 #include "oai_asn1.h"
 
+rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create)
+{
+  int j;
+  for (j = 0; j < ue->nb_of_pdusessions; j++)
+    if (id == ue->pduSession[j].param.pdusession_id)
+      break;
+  if (j == ue->nb_of_pdusessions && create)
+    ue->nb_of_pdusessions++;
+  else
+    return NULL;
+  AssertFatal(ue->nb_of_pdusessions < NGAP_MAX_PDU_SESSION, "");
+  return ue->pduSession + j;
+}
+
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, rrc_pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering)
 {
   NR_DRB_ToAddMod_t *DRB_config = CALLOC(1, sizeof(*DRB_config));
@@ -49,8 +63,6 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, rrc_pdu_session
   {
     asn1cSequenceAdd(sdapFlows->list, NR_QFI_t, qfi);
     *qfi = pduSession->param.qos[qos_flow_index].qfi;
-    asn1cSeqAdd(&SDAP_config->mappedQoS_FlowsToAdd->list, qfi);
-
     if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
       pduSession->param.used_drbs[drb_id - 1] = DRB_ACTIVE_NONGBR;
     else

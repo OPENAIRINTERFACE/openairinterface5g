@@ -269,9 +269,6 @@ typedef struct pdu_session_param_s {
   uint8_t xid; // transaction_id
   NGAP_Cause_PR cause;
   uint8_t cause_value;
-  ngap_pdu_t nas_pdu;
-  ngap_pdu_t pdusessionTransfer;
-
 } rrc_pdu_session_param_t;
 
 typedef struct gNB_RRC_UE_s {
@@ -334,7 +331,7 @@ typedef struct gNB_RRC_UE_s {
   /* Information from S1AP initial_context_setup_req */
   uint32_t                           gNB_ue_s1ap_id :24;
   uint32_t                           gNB_ue_ngap_id;
-  uint64_t                           amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
   nr_rrc_guami_t                     ue_guami;
 
   ngap_security_capabilities_t       security_capabilities;
@@ -404,15 +401,6 @@ typedef struct gNB_RRC_UE_s {
 typedef struct rrc_gNB_ue_context_s {
   /* Tree related data */
   RB_ENTRY(rrc_gNB_ue_context_s) entries;
-
-  /* Uniquely identifies the UE between MME and eNB within the eNB.
-   * This id is encoded on 24bits.
-   */
-  ue_id_t         ue_id_rnti;
-
-  // another key for protocol layers but should not be used as a key for RB tree
-  uid_t          local_uid;
-
   /* UE id for initial connection to NGAP */
   struct gNB_RRC_UE_s   ue_context;
 } rrc_gNB_ue_context_t;

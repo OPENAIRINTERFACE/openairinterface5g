@@ -43,7 +43,7 @@
 /* Tree of UE ordered by gNB_ue_ngap_id's
  * NO INSTANCE, the 32 bits id is large enough to handle all UEs, regardless the cell, gNB, ...
  */
-static RB_HEAD(ngap_ue_map, ngap_gNB_ue_context_s) ngap_ue_head = RB_INITIALIZER(root);
+static RB_HEAD(ngap_ue_map, ngap_gNB_ue_context_s) ngap_ue_head = RB_INITIALIZER(&ngap_ue_head);
 
 /* Generate the tree management functions prototypes */
 RB_PROTOTYPE(ngap_ue_map, ngap_gNB_ue_context_s, entries, ngap_gNB_compare_gNB_ue_ngap_id);
@@ -67,7 +67,7 @@ RB_GENERATE(ngap_ue_map, ngap_gNB_ue_context_s, entries,
 
 void ngap_store_ue_context(struct ngap_gNB_ue_context_s *ue_desc_p)
 {
-  if (!RB_INSERT(ngap_ue_map, &ngap_ue_head, ue_desc_p))
+  if (RB_INSERT(ngap_ue_map, &ngap_ue_head, ue_desc_p))
     LOG_E(NGAP, "Bug in UE uniq number allocation %u, we try to add a existing UE\n", ue_desc_p->gNB_ue_ngap_id);
   return;
 }

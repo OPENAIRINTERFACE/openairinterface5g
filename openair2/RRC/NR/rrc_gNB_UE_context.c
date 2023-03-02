@@ -38,15 +38,14 @@
 
 
 //------------------------------------------------------------------------------
-int rrc_gNB_compare_ue_rnti_id(
-  struct rrc_gNB_ue_context_s *c1_pP, struct rrc_gNB_ue_context_s *c2_pP)
+int rrc_gNB_compare_ue_rnti_id(rrc_gNB_ue_context_t *c1_pP, rrc_gNB_ue_context_t *c2_pP)
 //------------------------------------------------------------------------------
 {
-  if (c1_pP->ue_id_rnti > c2_pP->ue_id_rnti) {
+  if (c1_pP->ue_context.gNB_ue_ngap_id > c2_pP->ue_context.gNB_ue_ngap_id) {
     return 1;
   }
 
-  if (c1_pP->ue_id_rnti < c2_pP->ue_id_rnti) {
+  if (c1_pP->ue_context.gNB_ue_ngap_id < c2_pP->ue_context.gNB_ue_ngap_id) {
     return -1;
   }
 
@@ -60,22 +59,16 @@ RB_GENERATE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
 
 
 //------------------------------------------------------------------------------
-struct rrc_gNB_ue_context_s *
-rrc_gNB_allocate_new_UE_context(
-  gNB_RRC_INST *rrc_instance_pP
-)
+rrc_gNB_ue_context_t *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP)
 //------------------------------------------------------------------------------
 {
-  struct rrc_gNB_ue_context_s *new_p;
-  new_p = (struct rrc_gNB_ue_context_s * )malloc(sizeof(struct rrc_gNB_ue_context_s));
+  rrc_gNB_ue_context_t *new_p = calloc(1, sizeof(*new_p));
 
   if (new_p == NULL) {
     LOG_E(RRC, "Cannot allocate new ue context\n");
     return NULL;
   }
-
-  memset(new_p, 0, sizeof(struct rrc_gNB_ue_context_s));
-  new_p->local_uid = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
+  new_p->ue_context.gNB_ue_ngap_id = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
 
   for(int i = 0; i < NB_RB_MAX; i++) {
     new_p->ue_context.e_rab[i].xid = -1;
@@ -89,35 +82,26 @@ rrc_gNB_allocate_new_UE_context(
 
 
 //------------------------------------------------------------------------------
-struct rrc_gNB_ue_context_s *
-rrc_gNB_get_ue_context(
-  gNB_RRC_INST *rrc_instance_pP,
-  rnti_t rntiP)
+rrc_gNB_ue_context_t *rrc_gNB_get_ue_context(gNB_RRC_INST *rrc_instance_pP, rnti_t rntiP)
 //------------------------------------------------------------------------------
 {
-  rrc_gNB_ue_context_t temp;
-  memset(&temp, 0, sizeof(struct rrc_gNB_ue_context_s));
+  rrc_gNB_ue_context_t temp = {0};
   /* gNB ue rrc id = 24 bits wide */
-  temp.ue_id_rnti = rntiP;
-  struct rrc_gNB_ue_context_s   *ue_context_p = NULL;
-  ue_context_p = RB_FIND(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
+  temp.ue_context.rnti = rntiP;
+  rrc_gNB_ue_context_t *ue_context_p = RB_FIND(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
 
-  if ( ue_context_p != NULL) {
+  if (ue_context_p != NULL)
     return ue_context_p;
-  } else {
-    RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(rrc_instance_pP->rrc_ue_head)) {
-      if (ue_context_p->ue_context.rnti == rntiP) {
-        return ue_context_p;
-      }
-    }
-    return NULL;
+
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &(rrc_instance_pP->rrc_ue_head))
+  {
+    if (ue_context_p->ue_context.rnti == rntiP)
+      return ue_context_p;
   }
+  return NULL;
 }
 
-void rrc_gNB_free_mem_UE_context(
-  const protocol_ctxt_t               *const ctxt_pP,
-  struct rrc_gNB_ue_context_s         *const ue_context_pP
-)
+void rrc_gNB_free_mem_UE_context(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
 
@@ -133,10 +117,7 @@ void rrc_gNB_free_mem_UE_context(
 }
 
 //------------------------------------------------------------------------------
-void rrc_gNB_remove_ue_context(
-  const protocol_ctxt_t       *const ctxt_pP,
-  gNB_RRC_INST                *rrc_instance_pP,
-  struct rrc_gNB_ue_context_s *ue_context_pP)
+void rrc_gNB_remove_ue_context(const protocol_ctxt_t *const ctxt_pP, gNB_RRC_INST *rrc_instance_pP, rrc_gNB_ue_context_t *ue_context_pP)
 //------------------------------------------------------------------------------
 {
   if (rrc_instance_pP == NULL) {
@@ -153,7 +134,7 @@ void rrc_gNB_remove_ue_context(
 
   RB_REMOVE(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
   rrc_gNB_free_mem_UE_context(ctxt_pP, ue_context_pP);
-  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->local_uid);
+  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.gNB_ue_ngap_id);
   free(ue_context_pP);
   rrc_instance_pP->Nb_ue --;
   LOG_I(RRC,
@@ -163,14 +144,10 @@ void rrc_gNB_remove_ue_context(
 
 //-----------------------------------------------------------------------------
 // return the ue context if there is already an UE with ue_identityP, NULL otherwise
-struct rrc_gNB_ue_context_s *
-rrc_gNB_ue_context_random_exist(
-  gNB_RRC_INST                *rrc_instance_pP,
-  const uint64_t               ue_identityP
-)
+rrc_gNB_ue_context_t *rrc_gNB_ue_context_random_exist(gNB_RRC_INST *rrc_instance_pP, const uint64_t ue_identityP)
 //-----------------------------------------------------------------------------
 {
-  struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head) {
     if (ue_context_p->ue_context.random_ue_identity == ue_identityP)
       return ue_context_p;
@@ -180,63 +157,40 @@ rrc_gNB_ue_context_random_exist(
 
 //-----------------------------------------------------------------------------
 // return the ue context if there is already an UE with the same S-TMSI, NULL otherwise
-struct rrc_gNB_ue_context_s *
-rrc_gNB_ue_context_5g_s_tmsi_exist(
-    gNB_RRC_INST                *rrc_instance_pP,
-    const uint64_t              s_TMSI
-)
+rrc_gNB_ue_context_t *rrc_gNB_ue_context_5g_s_tmsi_exist(gNB_RRC_INST *rrc_instance_pP, const uint64_t s_TMSI)
 //-----------------------------------------------------------------------------
 {
-    struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-    RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head) {
-        LOG_I(NR_RRC,"Checking for UE 5G S-TMSI %ld: RNTI %04x\n",
-              s_TMSI, ue_context_p->ue_context.rnti);
+  rrc_gNB_ue_context_t *ue_context_p = NULL;
+  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head)
+  {
+    LOG_I(NR_RRC, "Checking for UE 5G S-TMSI %ld: RNTI %04x\n", s_TMSI, ue_context_p->ue_context.rnti);
 
-        if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 == s_TMSI) {
-            return ue_context_p;
-        }
+    if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 == s_TMSI) {
+      return ue_context_p;
     }
+  }
     return NULL;
 }
 
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
-struct rrc_gNB_ue_context_s *
-rrc_gNB_get_next_free_ue_context(
-  const protocol_ctxt_t       *const ctxt_pP,
-  gNB_RRC_INST                *rrc_instance_pP,
-  const uint64_t               ue_identityP
-)
+rrc_gNB_ue_context_t *rrc_gNB_get_next_free_ue_context(const protocol_ctxt_t *const ctxt_pP, gNB_RRC_INST *rrc_instance_pP, const uint64_t ue_identityP)
 //-----------------------------------------------------------------------------
 {
-  struct rrc_gNB_ue_context_s        *ue_context_p = NULL;
-  ue_context_p = rrc_gNB_get_ue_context(rrc_instance_pP, ctxt_pP->rntiMaybeUEid);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc_instance_pP, ctxt_pP->rntiMaybeUEid);
 
-  if (ue_context_p == NULL) {
-    ue_context_p = rrc_gNB_allocate_new_UE_context(rrc_instance_pP);
-
-    if (ue_context_p == NULL) {
-      LOG_E(NR_RRC,
-            PROTOCOL_NR_RRC_CTXT_UE_FMT" Cannot create new UE context, no memory\n",
-            PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-      return NULL;
-    }
-
-    ue_context_p->ue_id_rnti = ctxt_pP->rntiMaybeUEid; // here ue_id_rnti is just a key, may be something else
-    ue_context_p->ue_context.rnti = ctxt_pP->rntiMaybeUEid; // yes duplicate, 1 may be removed
-    ue_context_p->ue_context.random_ue_identity = ue_identityP;
-    RB_INSERT(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_p);
-    LOG_D(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_UE_FMT" Created new UE context uid %u\n",
-          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-          ue_context_p->local_uid);
+  if (ue_context_p) {
+    LOG_E(NR_RRC, " Cannot create new UE context, already exist rnti: %lx\n", ctxt_pP->rntiMaybeUEid);
     return ue_context_p;
-  } else {
-    LOG_E(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_UE_FMT" Cannot create new UE context, already exist\n",
-          PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-    return NULL;
   }
 
-  return(ue_context_p);
+  ue_context_p = rrc_gNB_allocate_new_UE_context(rrc_instance_pP);
+  if (ue_context_p == NULL)
+    return NULL;
+
+  ue_context_p->ue_context.rnti = ctxt_pP->rntiMaybeUEid;
+  ue_context_p->ue_context.random_ue_identity = ue_identityP;
+  RB_INSERT(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_p);
+  LOG_D(NR_RRC, " Created new UE context rnti: %lx, random ue id %lx, local uid %u\n", ctxt_pP->rntiMaybeUEid, ue_identityP, ue_context_p->ue_context.gNB_ue_ngap_id);
+  return ue_context_p;
 }

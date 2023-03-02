@@ -64,11 +64,11 @@ void rrc_gNB_generate_SgNBAdditionRequestAcknowledge(
      rrc_gNB_ue_context_t   *const ue_context_pP
      );
 
-struct rrc_gNB_ue_context_s *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP);
+rrc_gNB_ue_context_t *rrc_gNB_allocate_new_UE_context(gNB_RRC_INST *rrc_instance_pP);
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc,NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t * cg_config_info);
 
-void rrc_add_nsa_user(gNB_RRC_INST *rrc,struct rrc_gNB_ue_context_s *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m);
+void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m);
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
@@ -217,9 +217,5 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       uint8_t *const kUPint,
                       struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list);
 
-int rrc_gNB_generate_pcch_msg(uint32_t tmsi,
-                              uint8_t paging_drx,
-                              instance_t instance,
-                              uint8_t CC_id);
-
+int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id);
 #endif

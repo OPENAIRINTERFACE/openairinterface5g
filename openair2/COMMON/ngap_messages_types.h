@@ -300,7 +300,7 @@ typedef enum pdusession_qosflow_mapping_ind_e{
 typedef struct pdusession_associate_qosflow_s{
   uint8_t                           qfi;
   pdusession_qosflow_mapping_ind_t  qos_flow_mapping_ind;
-}pdusession_associate_qosflow_t;
+} pdusession_associate_qosflow_t;
 
 typedef struct pdusession_setup_s {
   /* Unique pdusession_id for the UE. */
@@ -318,22 +318,6 @@ typedef struct pdusession_setup_s {
   /* qos flow list(1 ~ 64) */
   pdusession_associate_qosflow_t associated_qos_flows[QOSFLOW_MAX_VALUE];
 } pdusession_setup_t;
-
-typedef struct pdusession_admitted_tobe_added_s {
-  /* Unique pdusession_id for the UE. */
-  uint8_t pdusession_id;
-
-  /* Unique drb_ID for the UE. */
-  uint8_t drb_ID;
-
-  /* The transport layer address for the IP packets */
-  ngap_transport_layer_addr_t gnb_addr;
-
-  /* S-GW Tunnel endpoint identifier */
-  uint32_t gtp_teid;
-} pdusession_admitted_tobe_added_t;
-
-
 
 typedef struct pdusession_tobeswitched_s {
   /* Unique pdusession_id for the UE. */
@@ -610,7 +594,7 @@ typedef struct ngap_initial_context_setup_req_s {
   /* UE id for initial connection to NGAP */
   uint32_t gNB_ue_ngap_id;
 
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* UE aggregate maximum bitrate */
   ngap_ambr_t ue_ambr;
@@ -665,14 +649,22 @@ typedef struct ngap_paging_ind_s {
   ngap_paging_priority_t paging_priority;
 } ngap_paging_ind_t;
 
+typedef struct {
+  /* Unique pdusession_id for the UE. */
+  int pdusession_id;
+  ngap_pdu_t nas_pdu;
+  ngap_pdu_t pdusessionTransfer;
+} pdusession_setup_req_t;
+
 typedef struct ngap_pdusession_setup_req_s {
   /* UE id for initial connection to NGAP */
   uint32_t gNB_ue_ngap_id;
 
   /* AMF UE id  */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* S-NSSAI */
+  // Fixme: illogical, nssai is part of each pdu session
   ngap_allowed_NSSAI_t allowed_nssai[8];
 
   /* Number of pdusession to be setup in the list */
@@ -712,7 +704,7 @@ typedef struct ngap_path_switch_req_s {
   pdusession_setup_t pdusessions_tobeswitched[NGAP_MAX_PDUSESSION];
 
   /* AMF UE id  */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   ngap_guami_t ue_guami;
 
@@ -730,7 +722,7 @@ typedef struct ngap_path_switch_req_ack_s {
   uint32_t  gNB_ue_ngap_id;
 
   /* AMF UE id  */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* UE aggregate maximum bitrate */
   ngap_ambr_t ue_ambr;
@@ -758,7 +750,7 @@ typedef struct ngap_pdusession_modification_ind_s {
   uint32_t  gNB_ue_ngap_id;
 
   /* AMF UE id  */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* Number of pdusession setup-ed in the list */
   uint8_t       nb_of_pdusessions_tobemodified;
@@ -802,7 +794,7 @@ typedef struct ngap_ue_release_req_s {
 
 typedef struct ngap_pdusession_modify_req_s {
   /* AMF UE id  */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* gNB ue ngap id as initialized by NGAP layer */
   uint32_t  gNB_ue_ngap_id;
@@ -830,7 +822,7 @@ typedef struct ngap_pdusession_modify_resp_s {
 
 typedef struct ngap_pdusession_release_command_s {
   /* AMF UE id  */
-  uint64_t                       amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* gNB ue ngap id as initialized by NGAP layer */
   uint32_t                       gNB_ue_ngap_id;
@@ -848,7 +840,7 @@ typedef struct ngap_pdusession_release_command_s {
 
 typedef struct ngap_pdusession_release_resp_s {
   /* AMF UE id  */
-  uint64_t             amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* gNB ue ngap id as initialized by NGAP layer */
   uint32_t             gNB_ue_ngap_id;

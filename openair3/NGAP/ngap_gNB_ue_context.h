@@ -58,8 +58,7 @@ typedef struct ngap_gNB_ue_context_s {
    */
   uint32_t gNB_ue_ngap_id;
 
-  /* Uniquely identifies the UE within AMF. Encoded on 32 bits. */
-  uint64_t amf_ue_ngap_id:40;
+  uint64_t amf_ue_ngap_id;
 
   /* Stream used for this particular UE */
   int32_t tx_stream;

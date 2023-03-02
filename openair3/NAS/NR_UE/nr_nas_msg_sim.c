@@ -859,6 +859,7 @@ void *nas_nrue_task(void *args_p)
       instance = msg_p->ittiMsgHeader.originInstance;
       Mod_id = instance ;
       uicc_t *uicc=checkUicc(Mod_id);
+      LOG_I(NAS, "[UE %d] Received %s\n", Mod_id, ITTI_MSG_NAME(msg_p));
 
       if (instance == INSTANCE_DEFAULT) {
         printf("%s:%d: FATAL: instance is INSTANCE_DEFAULT, should not happen.\n",
@@ -867,84 +868,83 @@ void *nas_nrue_task(void *args_p)
       }
 
       switch (ITTI_MSG_ID(msg_p)) {
-      case INITIALIZE_MESSAGE:
-        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
+        case INITIALIZE_MESSAGE:
 
-        break;
+          break;
 
-      case TERMINATE_MESSAGE:
-        itti_exit_task ();
-        break;
+        case TERMINATE_MESSAGE:
+          itti_exit_task();
+          break;
 
-      case MESSAGE_TEST:
-        LOG_I(NAS, "[UE %d] Received %s\n", Mod_id,  ITTI_MSG_NAME (msg_p));
-        break;
+        case MESSAGE_TEST:
+          break;
 
-      case NAS_CELL_SELECTION_CNF:
-        LOG_I(NAS, "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
-              NAS_CELL_SELECTION_CNF (msg_p).errCode, NAS_CELL_SELECTION_CNF (msg_p).cellID, NAS_CELL_SELECTION_CNF (msg_p).tac);
-        // as_stmsi_t s_tmsi={0, 0};
-        // as_nas_info_t nas_info;
-        // plmn_t plmnID={0, 0, 0, 0};
-        // generateRegistrationRequest(&nas_info);
-        // nr_nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, nas_info.data, nas_info.length, 0);
-        break;
+        case NAS_CELL_SELECTION_CNF:
+          LOG_I(NAS,
+                "[UE %d] Received %s: errCode %u, cellID %u, tac %u\n",
+                Mod_id,
+                ITTI_MSG_NAME(msg_p),
+                NAS_CELL_SELECTION_CNF(msg_p).errCode,
+                NAS_CELL_SELECTION_CNF(msg_p).cellID,
+                NAS_CELL_SELECTION_CNF(msg_p).tac);
+          // as_stmsi_t s_tmsi={0, 0};
+          // as_nas_info_t nas_info;
+          // plmn_t plmnID={0, 0, 0, 0};
+          // generateRegistrationRequest(&nas_info);
+          // nr_nas_itti_nas_establish_req(0, AS_TYPE_ORIGINATING_SIGNAL, s_tmsi, plmnID, nas_info.data, nas_info.length, 0);
+          break;
 
-      case NAS_CELL_SELECTION_IND:
-        LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
-              NAS_CELL_SELECTION_IND (msg_p).cellID, NAS_CELL_SELECTION_IND (msg_p).tac);
+        case NAS_CELL_SELECTION_IND:
+          LOG_I(NAS, "[UE %d] Received %s: cellID %u, tac %u\n", Mod_id, ITTI_MSG_NAME(msg_p), NAS_CELL_SELECTION_IND(msg_p).cellID, NAS_CELL_SELECTION_IND(msg_p).tac);
 
-        /* TODO not processed by NAS currently */
-        break;
+          /* TODO not processed by NAS currently */
+          break;
 
-      case NAS_PAGING_IND:
-        LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
-              NAS_PAGING_IND (msg_p).cause);
+        case NAS_PAGING_IND:
+          LOG_I(NAS, "[UE %d] Received %s: cause %u\n", Mod_id, ITTI_MSG_NAME(msg_p), NAS_PAGING_IND(msg_p).cause);
 
-        /* TODO not processed by NAS currently */
-        break;
+          /* TODO not processed by NAS currently */
+          break;
 
-      case NAS_CONN_ESTABLI_CNF:
-      {
-        LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id,  ITTI_MSG_NAME (msg_p),
-              NAS_CONN_ESTABLI_CNF (msg_p).errCode, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+        case NAS_CONN_ESTABLI_CNF: {
+          LOG_I(NAS, "[UE %d] Received %s: errCode %u, length %u\n", Mod_id, ITTI_MSG_NAME(msg_p), NAS_CONN_ESTABLI_CNF(msg_p).errCode, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
 
-        pdu_buffer = NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.data;
-        msg_type = get_msg_type(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
+          pdu_buffer = NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.data;
+          msg_type = get_msg_type(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
 
-        if(msg_type == REGISTRATION_ACCEPT){
-          LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
+          if (msg_type == REGISTRATION_ACCEPT) {
+            LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
 
-          as_nas_info_t initialNasMsg;
-          memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
-          generateRegistrationComplete(Mod_id,&initialNasMsg, NULL);
-          if(initialNasMsg.length > 0){
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
-            NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)initialNasMsg.data;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
-            itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
-            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+            as_nas_info_t initialNasMsg;
+            memset(&initialNasMsg, 0, sizeof(as_nas_info_t));
+            generateRegistrationComplete(Mod_id, &initialNasMsg, NULL);
+            if (initialNasMsg.length > 0) {
+              MessageDef *message_p;
+              message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+              NAS_UPLINK_DATA_REQ(message_p).UEid = Mod_id;
+              NAS_UPLINK_DATA_REQ(message_p).nasMsg.data = (uint8_t *)initialNasMsg.data;
+              NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = initialNasMsg.length;
+              itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(RegistrationComplete)\n");
+            }
+
+            as_nas_info_t pduEstablishMsg;
+            memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
+            generatePduSessionEstablishRequest(Mod_id, uicc, &pduEstablishMsg);
+            if (pduEstablishMsg.length > 0) {
+              MessageDef *message_p;
+              message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
+              NAS_UPLINK_DATA_REQ(message_p).UEid = Mod_id;
+              NAS_UPLINK_DATA_REQ(message_p).nasMsg.data = (uint8_t *)pduEstablishMsg.data;
+              NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
+              itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
+              LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
+            }
+          } else if (msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC) {
+            capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length);
           }
 
-          as_nas_info_t pduEstablishMsg;
-          memset(&pduEstablishMsg, 0, sizeof(as_nas_info_t));
-          generatePduSessionEstablishRequest(Mod_id, uicc, &pduEstablishMsg);
-          if(pduEstablishMsg.length > 0){
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message(TASK_NAS_NRUE, 0, NAS_UPLINK_DATA_REQ);
-            NAS_UPLINK_DATA_REQ(message_p).UEid          = Mod_id;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.data   = (uint8_t *)pduEstablishMsg.data;
-            NAS_UPLINK_DATA_REQ(message_p).nasMsg.length = pduEstablishMsg.length;
-            itti_send_msg_to_task(TASK_RRC_NRUE, instance, message_p);
-            LOG_I(NAS, "Send NAS_UPLINK_DATA_REQ message(PduSessionEstablishRequest)\n");
-          }
-        } else if(msg_type == FGS_PDU_SESSION_ESTABLISHMENT_ACC){
-          capture_pdu_session_establishment_accept_msg(pdu_buffer, NAS_CONN_ESTABLI_CNF (msg_p).nasMsg.length);
-        }
-
-        break;
+          break;
       }
 
       case NAS_CONN_RELEASE_IND:

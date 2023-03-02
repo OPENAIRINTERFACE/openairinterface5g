@@ -39,4 +39,6 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue, uint8_t drb_id, rrc_pdu_ses
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession, bool is_gbr);
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 
+rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create);
+
 #endif

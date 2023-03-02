@@ -785,13 +785,8 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
     //DevAssert(ie->value.choice.AllowedNSSAI.list.count > 0);
     //DevAssert(ie->value.choice.AllowedNSSAI.list.count <= NGAP_maxnoofAllowedS_NSSAIs);
 
-    if (ie == NULL) {
-        NGAP_WARN("AllowedNSSAI not present, forging 2 NSSAI\n");
+    AssertFatal(ie, "AllowedNSSAI not present, forging 2 NSSAI\n");
 
-    	msg->nb_allowed_nssais = 2;
-      msg->allowed_nssai[0] = (ngap_allowed_NSSAI_t){.sST = 01, .sD_flag = 1, .sD = {1, 2, 3}};
-      msg->allowed_nssai[1] = (ngap_allowed_NSSAI_t){.sST = 01, .sD_flag = 1, .sD = {0, 0, 1}};
-    } else {
     NGAP_INFO("AllowedNSSAI.list.count %d\n", ie->value.choice.AllowedNSSAI.list.count);
     msg->nb_allowed_nssais = ie->value.choice.AllowedNSSAI.list.count;
     
@@ -802,11 +797,8 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
 
       if(allow_nssai_item_p->s_NSSAI.sD != NULL) {
         msg->allowed_nssai[i].sD_flag = 1;
-        msg->allowed_nssai[i].sD[0] = allow_nssai_item_p->s_NSSAI.sD->buf[0];
-        msg->allowed_nssai[i].sD[1] = allow_nssai_item_p->s_NSSAI.sD->buf[1];
-        msg->allowed_nssai[i].sD[2] = allow_nssai_item_p->s_NSSAI.sD->buf[2];
+        memcpy(msg->allowed_nssai[i].sD, allow_nssai_item_p->s_NSSAI.sD, sizeof(msg->allowed_nssai[i].sD));
       }
-    }
     }
 
   /* id-UESecurityCapabilities */
@@ -981,25 +973,24 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   NGAP_FIND_PROTOCOLIE_BY_ID(NGAP_PDUSessionResourceSetupRequestIEs_t, ie, container,
                          NGAP_ProtocolIE_ID_id_PDUSessionResourceSetupListSUReq, true);
 
-    msg->nb_pdusessions_tosetup =
-      ie->value.choice.PDUSessionResourceSetupListSUReq.list.count;
+  msg->nb_pdusessions_tosetup = ie->value.choice.PDUSessionResourceSetupListSUReq.list.count;
 
-    for (int i = 0; i < ie->value.choice.PDUSessionResourceSetupListSUReq.list.count; i++) {
-      NGAP_PDUSessionResourceSetupItemSUReq_t *item_p = ie->value.choice.PDUSessionResourceSetupListSUReq.list.array[i];
-      msg->pdusession_setup_params[i].pdusession_id = item_p->pDUSessionID;
+  for (int i = 0; i < ie->value.choice.PDUSessionResourceSetupListSUReq.list.count; i++) {
+    NGAP_PDUSessionResourceSetupItemSUReq_t *item_p = ie->value.choice.PDUSessionResourceSetupListSUReq.list.array[i];
+    msg->pdusession_setup_params[i].pdusession_id = item_p->pDUSessionID;
 
-      // S-NSSAI
-      OCTET_STRING_TO_INT8(&item_p->s_NSSAI.sST, msg->allowed_nssai[i].sST);
-      if(item_p->s_NSSAI.sD != NULL) {
-        msg->allowed_nssai[i].sD_flag = 1;
-        msg->allowed_nssai[i].sD[0] = item_p->s_NSSAI.sD->buf[0];
-        msg->allowed_nssai[i].sD[1] = item_p->s_NSSAI.sD->buf[1];
-        msg->allowed_nssai[i].sD[2] = item_p->s_NSSAI.sD->buf[2];
-      }
-
-      allocCopy(&msg->pdusession_setup_params[i].nas_pdu, *item_p->pDUSessionNAS_PDU);
-      allocCopy(&msg->pdusession_setup_params[i].pdusessionTransfer, item_p->pDUSessionResourceSetupRequestTransfer);
+    // S-NSSAI
+    OCTET_STRING_TO_INT8(&item_p->s_NSSAI.sST, msg->allowed_nssai[i].sST);
+    if (item_p->s_NSSAI.sD != NULL) {
+      msg->allowed_nssai[i].sD_flag = 1;
+      msg->allowed_nssai[i].sD[0] = item_p->s_NSSAI.sD->buf[0];
+      msg->allowed_nssai[i].sD[1] = item_p->s_NSSAI.sD->buf[1];
+      msg->allowed_nssai[i].sD[2] = item_p->s_NSSAI.sD->buf[2];
     }
+
+    allocCopy(&msg->pdusession_setup_params[i].nas_pdu, *item_p->pDUSessionNAS_PDU);
+    allocCopy(&msg->pdusession_setup_params[i].pdusessionTransfer, item_p->pDUSessionResourceSetupRequestTransfer);
+  }
     itti_send_msg_to_task(TASK_RRC_GNB, ue_desc_p->gNB_instance->instance, message_p);
 
   return 0;

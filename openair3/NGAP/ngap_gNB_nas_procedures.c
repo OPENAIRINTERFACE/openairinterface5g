@@ -169,7 +169,7 @@ int ngap_gNB_handle_nas_first_req(instance_t instance, ngap_nas_first_req_t *UEf
   /* The gNB should allocate a unique gNB UE NGAP ID for this UE. The value
    * will be used for the duration of the connectivity.
    */
-  struct ngap_gNB_ue_context_s *ue_desc_p = calloc(1, sizeof(ue_desc_p));
+  struct ngap_gNB_ue_context_s *ue_desc_p = calloc(1, sizeof(*ue_desc_p));
   DevAssert(ue_desc_p != NULL);
   /* Keep a reference to the selected AMF */
   ue_desc_p->amf_ref       = amf_desc_p;
@@ -639,12 +639,6 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
         asn1cSequenceAdd(pdusessionTransfer.dLQosFlowPerTNLInformation.associatedQosFlowList.list, NGAP_AssociatedQosFlowItem_t, ass_qos_item_p);
         /* qosFlowIdentifier */
         ass_qos_item_p->qosFlowIdentifier = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qfi;
-
-        /* qosFlowMappingIndication */
-        // if(initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind != QOSFLOW_MAPPING_INDICATION_NON) {
-        //   ass_qos_item_p->qosFlowMappingIndication = malloc(sizeof(*ass_qos_item_p->qosFlowMappingIndication));
-        //   *ass_qos_item_p->qosFlowMappingIndication = initial_ctxt_resp_p->pdusessions[i].associated_qos_flows[j].qos_flow_mapping_ind;
-        //  }
       }
 
       void *pdusessionTransfer_buffer;
@@ -741,7 +735,6 @@ int ngap_gNB_ue_capabilities(instance_t instance, ngap_ue_cap_info_ind_t *ue_cap
 {
   ngap_gNB_instance_t          *ngap_gNB_instance_p;
   struct ngap_gNB_ue_context_s *ue_context_p;
-  NGAP_NGAP_PDU_t pdu;
   uint8_t  *buffer;
   uint32_t length;
   /* Retrieve the NGAP gNB instance associated with Mod_id */
@@ -768,7 +761,7 @@ int ngap_gNB_ue_capabilities(instance_t instance, ngap_ue_cap_info_ind_t *ue_cap
   }
 
   /* Prepare the NGAP message to encode */
-  memset(&pdu, 0, sizeof(pdu));
+  NGAP_NGAP_PDU_t pdu = {0};
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
   asn1cCalloc(pdu.choice.initiatingMessage, head);
   head->procedureCode = NGAP_ProcedureCode_id_UERadioCapabilityInfoIndication;
@@ -781,7 +774,7 @@ int ngap_gNB_ue_capabilities(instance_t instance, ngap_ue_cap_info_ind_t *ue_cap
     ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_AMF_UE_NGAP_ID;
-    // ie->value.choice.AMF_UE_NGAP_ID = ue_context_p->amf_ue_ngap_id;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
   }
   /* mandatory */
   {
@@ -789,7 +782,7 @@ int ngap_gNB_ue_capabilities(instance_t instance, ngap_ue_cap_info_ind_t *ue_cap
     ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_UERadioCapabilityInfoIndicationIEs__value_PR_RAN_UE_NGAP_ID;
-    ie->value.choice.RAN_UE_NGAP_ID = ue_cap_info_ind_p->gNB_ue_ngap_id;
+    ie->value.choice.RAN_UE_NGAP_ID = (int64_t)ue_cap_info_ind_p->gNB_ue_ngap_id;
   }
   /* mandatory */
   {

@@ -60,6 +60,7 @@ static inline int ngap_gNB_encode_initiating(NGAP_NGAP_PDU_t *pdu, uint8_t **buf
   }
 
   asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_NGAP_PDU, pdu);
+  AssertFatal(res.result.encoded > 0, "failed to encode NGAP msg\n");
   *buffer = res.buffer;
   *len = res.result.encoded;
   return 0;
@@ -78,11 +79,12 @@ static inline int ngap_gNB_encode_successfull_outcome(NGAP_NGAP_PDU_t *pdu, uint
     if (pdu->choice.successfulOutcome->procedureCode == tmp[i])
       break;
   if (i == sizeofArray(tmp)) {
-    NGAP_WARN("Unknown procedure ID (%d) for successfull outcome message\n", (int)pdu->choice.successfulOutcome->procedureCode);
+    NGAP_WARN("Unknown procedure ID (%ld) for successfull outcome message\n", pdu->choice.successfulOutcome->procedureCode);
     return -1;
   }
 
   asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_NGAP_PDU, pdu);
+  AssertFatal(res.result.encoded > 0, "failed to encode NGAP msg\n");
   *buffer = res.buffer;
   *len = res.result.encoded;
   return 0;
@@ -98,6 +100,7 @@ static inline int ngap_gNB_encode_unsuccessfull_outcome(NGAP_NGAP_PDU_t *pdu, ui
   }
 
   asn_encode_to_new_buffer_result_t res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_NGAP_PDU, pdu);
+  AssertFatal(res.result.encoded > 0, "failed to encode NGAP msg\n");
   *buffer = res.buffer;
   *len = res.result.encoded;
   return 0;
@@ -129,7 +132,6 @@ int ngap_gNB_encode_pdu(NGAP_NGAP_PDU_t *pdu, uint8_t **buffer, uint32_t *len)
       NGAP_DEBUG("Unknown message outcome (%d) or not implemented", (int)pdu->present);
       return -1;
   }
-
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_NGAP_PDU, pdu);
   return ret;
 }

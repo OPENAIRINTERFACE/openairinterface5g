@@ -435,14 +435,9 @@ nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap
   if(is_defaultDRB) {
     sdap_entity->default_drb = drb_identity;
     LOG_I(SDAP, "Default DRB for the created SDAP entity: %ld \n", sdap_entity->default_drb);
-
-    if(mappedQFIs2AddCount) {
-      LOG_D(SDAP, "RRC updating mapping rules\n");
-      for (int i = 0; i < mappedQFIs2AddCount; i++)
-      {
-        sdap_entity->qfi2drb_map_update(sdap_entity, mapped_qfi_2_add[i], sdap_entity->default_drb, has_sdap_rx, has_sdap_tx);
-      }
-    }
+    LOG_D(SDAP, "RRC updating mapping rules: %d\n", mappedQFIs2AddCount);
+    for (int i = 0; i < mappedQFIs2AddCount; i++)
+      sdap_entity->qfi2drb_map_update(sdap_entity, mapped_qfi_2_add[i], sdap_entity->default_drb, has_sdap_rx, has_sdap_tx);
   }
 
   sdap_entity->next_entity = sdap_info.sdap_entity_llist;
