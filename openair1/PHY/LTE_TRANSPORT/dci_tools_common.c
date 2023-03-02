@@ -372,9 +372,9 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
     if (ra_header==0) {
       for (i=0; i<25; i++) {
 	if ((rb_alloc&(1<<(24-i))) != 0)
-	  rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
+    rb_alloc2[(4 * i) >> 5] |= (0xfU << ((4 * i) % 32));
 
-	//  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
+  //  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
       }
     }
     else {

@@ -1372,16 +1372,11 @@ int main(int argc, char **argv)
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, int8_t *ptrs_arg)
 {
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
-  int *ptrsFreqDenst = calloc(2, sizeof(long));
-  ptrsFreqDenst[0]= 25;
-  ptrsFreqDenst[1]= 115;
-  int *ptrsTimeDenst = calloc(3, sizeof(long));
-  ptrsTimeDenst[0]= 2;
-  ptrsTimeDenst[1]= 4;
-  ptrsTimeDenst[2]= 10;
+  long ptrsFreqDenst[] = {25, 115};
+  long ptrsTimeDenst[] = {2, 4, 10};
 
-  int epre_Ratio = 0;
-  int reOffset = 0;
+  long epre_Ratio = 0;
+  long reOffset = 0;
 
   if(ptrs_arg[0] ==0) {
     ptrsTimeDenst[2]= *mcsIndex -1;

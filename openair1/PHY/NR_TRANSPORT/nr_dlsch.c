@@ -404,13 +404,14 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
             }
           }
           else {
-            __m64 *txF=(__m64*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size+start_sc)<<1)];
+            __m128i *txF = (__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc) << 1)];
 
-            __m64 *txl = (__m64*)&tx_layers[nl][m<<1];
-            __m64 amp64=_mm_set1_pi16(amp);
-            for (int i=0; i<(upper_limit>>1); i++) {
-
-              txF[i] = _mm_mulhrs_pi16(amp64,txl[i]);
+            __m128i *txl = (__m128i *)&tx_layers[nl][m << 1];
+            __m128i amp64 = _mm_set1_epi16(amp);
+            DevAssert(upper_limit % 4 == 0);
+            for (int i = 0; i < (upper_limit >> 2); i++) {
+              const __m128i txL = _mm_loadu_si128(txl + i);
+              _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
               if ((i&1) > 0)
                   printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
@@ -422,13 +423,15 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                 txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) ] = 0;
                 txdataF_precoding[anl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
               }*/
-            } //RE loop, first part
+            } // RE loop, first part
             m+=upper_limit;
             if (remaining_re > 0) {
-               txF = (__m64*)&txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size)<<1)];
-               txl = (__m64*)&tx_layers[nl][m<<1];
-               for (int i=0; i<(remaining_re>>1); i++) {
-                 txF[i] = _mm_mulhrs_pi16(amp64,txl[i]);
+              txF = (__m128i *)&txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size) << 1)];
+              txl = (__m128i *)&tx_layers[nl][m << 1];
+              DevAssert(remaining_re % 4 == 0);
+              for (int i = 0; i < (remaining_re >> 2); i++) {
+                const __m128i txL = _mm_loadu_si128(txl + i);
+                _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
                  if ((i&1) > 0)
                    printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
@@ -440,7 +443,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                    txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = 0;
                    txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = 0;
                  }*/
-               } //RE loop, second part
+              } // RE loop, second part
             } // 
             m+=remaining_re;
           } // N_RB_DL even
