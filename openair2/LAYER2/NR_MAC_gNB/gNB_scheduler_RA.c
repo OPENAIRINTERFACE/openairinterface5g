@@ -1573,6 +1573,7 @@ void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
     if(harq->round==0 && ra->msg3_dcch_dtch) {
       mac_remove_nr_ue(nr_mac, tc_rnti);
     }
+    UE->mac_stats.dl.rounds[harq->round]++;
 
     NR_sched_pucch_t *pucch = &sched_ctrl->sched_pucch[alloc];
     harq->feedback_slot = pucch->ul_slot;
