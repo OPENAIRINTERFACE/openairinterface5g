@@ -821,7 +821,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
 
         case ngran_gNB:
         {
-          // rrc_mac_config_req_gNB
           /* Transfer data to PDCP */
           nr_rrc_data_req (
               &ctxt,

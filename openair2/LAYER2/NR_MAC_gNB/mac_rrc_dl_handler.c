@@ -101,20 +101,8 @@ int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *
   AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
 
   /* there might be a memory leak for the cell group if we call this multiple
-   * times. Also, the first parameters of rrc_mac_config_req_gNB() are only
-   * relevant when setting the scc, which we don't do (and cannot do) here. */
-  rrc_pdsch_AntennaPorts_t pap = {0};
-  rrc_mac_config_req_gNB(module_id,
-                         pap, /* only when scc != NULL */
-                         0, /* only when scc != NULL */
-                         0, /* only when scc != NULL */
-                         0, /* only when scc != NULL */
-                         NULL, /* scc */
-                         NULL, /* mib */
-                         NULL, /* sib1 */
-                         0, /* add_ue */
-                         dl_rrc->rnti,
-                         cellGroup);
+   * times. */
+  nr_mac_update_cellgroup(RC.nrmac[module_id], dl_rrc->rnti, cellGroup);
 
   /* TODO: drop the RRC context */
   gNB_RRC_INST *rrc = RC.nrrrc[module_id];
