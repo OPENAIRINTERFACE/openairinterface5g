@@ -91,6 +91,14 @@ class ValueProvider {
   virtual float getValue() = 0;
 };
 
+class ValueProviderUE : public ValueProvider {
+ public:
+  /// This pure virtual function is meant to provide the graph values to be plotted
+  virtual scopeGraphData_t *getPlotValue() {
+    return nullptr;
+  }
+};
+
 /// An editable GUI field for a dialog box to set certain KPI configurations
 class ConfigBoxFloat : public QLineEdit {
   Q_OBJECT
@@ -206,7 +214,6 @@ class CIRPlot : public QChart {
   /// \param event Pointer to the timer event
   virtual void timerEvent(QTimerEvent *event) override;
 
- private:
   /// Pointer to the CIR data
   complex16 *data;
 
@@ -221,6 +228,21 @@ class CIRPlot : public QChart {
 
   /// Vertical axis of the chart
   QValueAxis *axisY;
+};
+
+class CIRPlotUE : public CIRPlot {
+  Q_OBJECT
+
+ public:
+  CIRPlotUE(complex16 *data, int len, ValueProviderUE *valueProvider) : CIRPlot(data, len), valueProvider(valueProvider) {}
+
+ protected:
+  /// This function is triggered when the own timer expires. It updates the plotted CIR
+  /// \param event Pointer to the timer event
+  virtual void timerEvent(QTimerEvent *event) override;
+
+ private:
+  ValueProviderUE *valueProvider;
 };
 
 /// Chart class for plotting LLRs
@@ -238,7 +260,6 @@ class LLRPlot : public QChart {
   /// \param event Pointer to the timer event
   virtual void timerEvent(QTimerEvent *event) override;
 
- private:
   /// Pointer to the LLR data
   int16_t *data;
 
@@ -253,6 +274,21 @@ class LLRPlot : public QChart {
 
   /// Vertical axis of the chart
   QValueAxis *axisY;
+};
+
+class LLRPlotUE : public LLRPlot {
+  Q_OBJECT
+
+ public:
+  LLRPlotUE(int16_t *data, int len, ValueProviderUE *valueProvider) : LLRPlot(data, len), valueProvider(valueProvider) {}
+
+ protected:
+  /// This function is triggered when the own timer expires. It updates the plotted I/Q constellation diagram
+  /// \param event Pointer to the timer event
+  virtual void timerEvent(QTimerEvent *event) override;
+
+ private:
+  ValueProviderUE *valueProvider;
 };
 
 /// Chart class for plotting the I/Q constellation diagram
@@ -270,7 +306,6 @@ class IQPlot : public QChart {
   /// \param event Pointer to the timer event
   virtual void timerEvent(QTimerEvent *event) override;
 
- private:
   /// Pointer to the I/Q data
   complex16 *data;
 
@@ -285,6 +320,22 @@ class IQPlot : public QChart {
 
   /// Vertical axis of the chart
   QValueAxis *axisY;
+};
+
+class IQPlotUE : public IQPlot {
+  Q_OBJECT
+
+ public:
+  IQPlotUE(complex16 *data, int len, ValueProviderUE *valueProvider) : IQPlot(data, len), valueProvider(valueProvider) {}
+
+ protected:
+  /// This function is triggered when the own timer expires. It updates the plotted I/Q constellation diagram
+  /// \param event Pointer to the timer event
+  virtual void timerEvent(QTimerEvent *event) override;
+
+ private:
+  /// Pointer to an instance of a class that implements the ValueProvider interface
+  ValueProviderUE *valueProvider;
 };
 
 /// Generic class for plotting KPI values with min., max. and average bars
@@ -422,7 +473,7 @@ class PainterWidgetGnb : public QWidget, public ValueProvider {
 };
 
 /// Widget showing one selectable UE KPI
-class PainterWidgetUE : public QWidget, public ValueProvider {
+class PainterWidgetUE : public QWidget, public ValueProviderUE {
   Q_OBJECT
 
  public:
@@ -434,6 +485,8 @@ class PainterWidgetUE : public QWidget, public ValueProvider {
 
   /// This function provides the current KPI value to be plotted
   virtual float getValue() override;
+
+  virtual scopeGraphData_t *getPlotValue() override;
 
  protected:
   /// This function is called to change the widget size
