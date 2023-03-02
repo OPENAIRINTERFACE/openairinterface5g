@@ -36,7 +36,7 @@ int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
   /* dispatch message to dl_rrc_message_rrcSetup() and others, similar to as is
    * done in the DU (should be the same here) */
 
-  LOG_I(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
+  LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
 
   if (dl_rrc->srb_id == CCCH) { // SRB 0
 
@@ -59,7 +59,7 @@ int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
       AssertFatal(0, "rrcReject not implemented yet\n");
       break;
     case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
-      LOG_I(NR_MAC, "DL-CCCH/SRB0, received rrcSetup for RNTI %04x\n", dl_rrc->rnti);
+      LOG_D(NR_MAC, "DL-CCCH/SRB0, received rrcSetup for RNTI %04x\n", dl_rrc->rnti);
       return dl_rrc_message_rrcSetup(module_id, dl_rrc, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
       break;
     case NR_DL_CCCH_MessageType__c1_PR_spare2:
