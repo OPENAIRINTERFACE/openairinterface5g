@@ -1895,7 +1895,8 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   /* Change vrb_map_UL to rballoc_mask: check which symbols per RB (in
    * vrb_map_UL) overlap with the "default" tda and exclude those RBs.
    * Calculate largest contiguous RBs */
-  uint16_t *vrb_map_UL = &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[sched_slot * MAX_BWP_SIZE];
+  const int index = ul_buffer_index(sched_frame, sched_slot, mu, nr_mac->vrb_map_UL_size);
+  uint16_t *vrb_map_UL = &nr_mac->common_channels[CC_id].vrb_map_UL[index * MAX_BWP_SIZE];
 
   const uint16_t bwpSize = current_BWP->BWPSize;
   const uint16_t bwpStart = current_BWP->BWPStart;
@@ -1982,12 +1983,12 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     LOG_D(NR_MAC, "Current slot %d is NOT DL slot, cannot schedule DCI0 for UL data\n", slot);
     return;
   }
-  bool do_sched = RC.nrmac[module_id]->pre_processor_ul(module_id, frame, slot);
+  bool do_sched = nr_mac->pre_processor_ul(module_id, frame, slot);
   if (!do_sched)
     return;
 
   const int CC_id = 0;
-  nfapi_nr_ul_dci_request_t *ul_dci_req = &RC.nrmac[module_id]->UL_dci_req[CC_id];
+  nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
   ul_dci_req->SFN = frame;
   ul_dci_req->Slot = slot;
   /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
@@ -1996,9 +1997,9 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   nfapi_nr_dl_tti_pdcch_pdu_rel15_t *pdcch_pdu_coreset[MAX_NUM_CORESET] = {0};
 
 
-  NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
-  NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
-  const NR_SIB1_t *sib1 = RC.nrmac[module_id]->common_channels[0].sib1 ? RC.nrmac[module_id]->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
+  NR_ServingCellConfigCommon_t *scc = nr_mac->common_channels[0].ServingCellConfigCommon;
+  NR_UEs_t *UE_info = &nr_mac->UE_info;
+  const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   UE_iterator( UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
@@ -2105,7 +2106,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
           sched_ctrl->tpc0);
 
     /* PUSCH in a later slot, but corresponding DCI now! */
-    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][sched_pusch->slot];
+    const int index = ul_buffer_index(sched_pusch->frame, sched_pusch->slot, current_BWP->scs, nr_mac->UL_tti_req_ahead_size);
+    nfapi_nr_ul_tti_request_t *future_ul_tti_req = &nr_mac->UL_tti_req_ahead[0][index];
     if (future_ul_tti_req->SFN != sched_pusch->frame || future_ul_tti_req->Slot != sched_pusch->slot)
       LOG_W(MAC,
             "%d.%d future UL_tti_req's frame.slot %d.%d does not match PUSCH %d.%d\n",
