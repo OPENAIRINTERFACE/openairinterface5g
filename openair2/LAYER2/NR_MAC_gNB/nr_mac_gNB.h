@@ -334,12 +334,6 @@ typedef struct NR_sched_pucch {
   int start_symb;
 } NR_sched_pucch_t;
 
-typedef struct NR_tda_info {
-  mappingType_t mapping_type;
-  int startSymbolIndex;
-  int nrOfSymbols;
-} NR_tda_info_t;
-
 typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
   uint8_t num_dmrs_symb;

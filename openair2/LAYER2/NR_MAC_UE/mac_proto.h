@@ -251,28 +251,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
-void get_bwp_info(NR_UE_MAC_INST_t *mac,
-                  int dl_bwp_id,
-                  int ul_bwp_id,
-                  NR_BWP_DownlinkDedicated_t **bwpd,
-                  NR_BWP_DownlinkCommon_t **bwpc,
-                  NR_BWP_UplinkDedicated_t **ubwpd,
-                  NR_BWP_UplinkCommon_t **ubwpc);
-
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
-
-NR_PUSCH_TimeDomainResourceAllocationList_t *choose_ul_tda_list(const NR_PUSCH_Config_t *pusch_Config,NR_PUSCH_ConfigCommon_t *pusch_ConfigCommon);
-NR_PDSCH_TimeDomainResourceAllocationList_t *choose_dl_tda_list(NR_PDSCH_Config_t *pdsch_Config,NR_PDSCH_ConfigCommon_t *pdsch_ConfigCommon);
-
-int8_t nr_ue_process_dci_time_dom_resource_assignment(NR_UE_MAC_INST_t *mac,
-                                                      NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList,
-                                                      NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList,
-                                                      nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
-                                                      fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                                                      int *mappingtype,
-                                                      uint8_t time_domain_ind,
-                                                      int default_abc,
-                                                      bool use_default);
 
 uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       int cc_id,
@@ -475,7 +454,7 @@ int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm);
 // - in which ULSCH should be scheduled. K2 is configured in RRC configuration.  
 // PUSCH Msg3 scheduler:
 // - scheduled by RAR UL grant according to 8.3 of TS 38.213
-int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, uint8_t tda_id);
+int nr_ue_pusch_scheduler(NR_UE_MAC_INST_t *mac, uint8_t is_Msg3, frame_t current_frame, int current_slot, frame_t *frame_tx, int *slot_tx, long k2);
 
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 
@@ -487,11 +466,6 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
-                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
-                        dci_pdu_rel15_t *dci,
-                        RAR_grant_t *rar_grant,
-                        uint16_t rnti,
-                        uint8_t *dci_format);
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format);
 #endif
 /** @}*/

@@ -1015,14 +1015,10 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
 }
 
-void set_pucch_allocation(const NR_PUCCH_Config_t *pucch_Config,
-                          const NR_ServingCellConfigCommon_t *scc,
-                          const int r_pucch,
-                          const int bwp_size,
-                          NR_sched_pucch_t *pucch)
+void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const int bwp_size, NR_sched_pucch_t *pucch)
 {
   if(r_pucch<0){
-    const NR_PUCCH_Resource_t *resource = pucch_Config->resourceToAddModList->list.array[0];
+    const NR_PUCCH_Resource_t *resource = ul_bwp->pucch_Config->resourceToAddModList->list.array[0];
     DevAssert(resource->format.present == NR_PUCCH_Resource__format_PR_format0);
     pucch->second_hop_prb = resource->secondHopPRB!= NULL ?  *resource->secondHopPRB : 0;
     pucch->nr_of_symb = resource->format.choice.format0->nrofSymbols;
@@ -1030,7 +1026,7 @@ void set_pucch_allocation(const NR_PUCCH_Config_t *pucch_Config,
     pucch->prb_start = resource->startingPRB;
   }
   else{
-    int rsetindex = *scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup->pucch_ResourceCommon;
+    int rsetindex = *ul_bwp->pucch_ConfigCommon->pucch_ResourceCommon;
     set_r_pucch_parms(rsetindex,
                       r_pucch,
                       bwp_size,
@@ -1155,7 +1151,7 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
     }
     else { // unoccupied occasion
       // checking if in ul_slot the resources potentially to be assigned to this PUCCH are available
-      set_pucch_allocation(pucch_Config, scc, r_pucch, bwp_size, curr_pucch);
+      set_pucch_allocation(ul_bwp, r_pucch, bwp_size, curr_pucch);
       uint16_t *vrb_map_UL = &mac->common_channels[CC_id].vrb_map_UL[pucch_slot * MAX_BWP_SIZE];
       bool ret = test_pucch0_vrb_occupation(curr_pucch,
                                             vrb_map_UL,
@@ -1249,7 +1245,7 @@ void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
         uint16_t *vrb_map_UL = &nrmac->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
         const int bwp_start = ul_bwp->BWPStart;
         const int bwp_size = ul_bwp->BWPSize;
-        set_pucch_allocation(pucch_Config, scc, -1, bwp_size, curr_pucch);
+        set_pucch_allocation(ul_bwp, -1, bwp_size, curr_pucch);
         bool ret = test_pucch0_vrb_occupation(curr_pucch,
                                               vrb_map_UL,
                                               bwp_start,
