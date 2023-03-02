@@ -300,10 +300,6 @@ function main() {
             SIMUS_PHY=1
             echo_info "Will compile dlsim, ulsim, ..."
             shift;;
-       -S | --core_simulators)
-            SIMUS_CORE=1
-            echo_info "Will compile security unitary tests"
-            shift;;
        -s | --check)
             OAI_TEST=1
             echo_info "Will run auto-tests"
@@ -620,17 +616,6 @@ function main() {
       compilations $BUILD_DIR $f
     done
     compilations $BUILD_DIR coding
-  fi
-
-  ###################
-  # Core simulators #
-  ###################
-  if [ "$SIMUS_CORE" = "1" ] ; then
-    echo_info "Compiling security unitary tests simulators"
-    simlist="secu_knas_encrypt_eia1 secu_kenb aes128_ctr_encrypt aes128_ctr_decrypt secu_knas_encrypt_eea2 secu_knas secu_knas_encrypt_eea1 kdf aes128_cmac_encrypt secu_knas_encrypt_eia2"
-    for f in $simlist ; do
-      compilations $BUILD_DIR test_$f
-    done
   fi
   
   ######################
