@@ -141,12 +141,11 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
 
 
 //Compute Total active SSBs and RO available
-void find_SSB_and_RO_available(module_id_t module_idP) {
-
-  gNB_MAC_INST *gNB = RC.nrmac[module_idP];
-  NR_COMMON_channels_t *cc = &gNB->common_channels[0];
+void find_SSB_and_RO_available(gNB_MAC_INST *nrmac)
+{
+  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
-  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[module_idP]->config[0];
+  nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
 
   uint8_t config_index = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.prach_ConfigurationIndex;
   uint8_t mu,N_dur=0,N_t_slot=0,start_symbol=0,N_RA_slot = 0;

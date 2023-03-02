@@ -160,10 +160,10 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
-  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
-  RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
+  nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
+  nrmac->common_channels[0].ServingCellConfigCommon = scc;
 
   // Carrier configuration
 
@@ -233,7 +233,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   frequency_range_t frequency_range = band<100?FR1:FR2;
 
   frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-  RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
+  nrmac->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
@@ -351,8 +351,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
-  RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
-  RC.nrmac[Mod_idP]->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
+  nrmac->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
+  nrmac->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -434,7 +434,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
       LOG_E(NR_MAC,"TDD configuration can not be done\n");
     else {
       LOG_I(NR_MAC,"TDD has been properly configurated\n");
-      RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
+      nrmac->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
     }
   }
 
@@ -486,7 +486,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
 
     int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
     RC.nrmac[Mod_idP]->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
-    config_common(Mod_idP,
+    config_common(RC.nrmac[Mod_idP],
                   num_pdsch_antenna_ports,
                   pusch_AntennaPorts,
 		  scc);
@@ -507,7 +507,7 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
     }
 
     RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
-    find_SSB_and_RO_available(Mod_idP);
+    find_SSB_and_RO_available(RC.nrmac[Mod_idP]);
 
     const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
 
@@ -538,8 +538,8 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       RC.nrmac[Mod_idP]->pre_processor_dl = nr_preprocessor_phytest;
       RC.nrmac[Mod_idP]->pre_processor_ul = nr_ul_preprocessor_phytest;
     } else {
-      RC.nrmac[Mod_idP]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(Mod_idP, 0);
-      RC.nrmac[Mod_idP]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(Mod_idP, 0);
+      RC.nrmac[Mod_idP]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(0);
+      RC.nrmac[Mod_idP]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(0);
     }
 
     if (get_softmodem_params()->sa > 0) {
