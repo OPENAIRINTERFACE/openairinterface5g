@@ -401,7 +401,7 @@ int main(int argc, char **argv)
     srand(time(NULL));   // Initialization, should only be called once.
     actual_payload = rand();      // Returns a pseudo-random integer between 0 and RAND_MAX.
   }
-  actual_payload &= ((1<<nr_bit)-1);
+  actual_payload &= nr_bit < 64 ? (1UL << nr_bit) - 1: 0xffffffffffffffff;
 
   printf("Transmitted payload is %ld, do_DTX = %d\n",actual_payload,do_DTX);
 

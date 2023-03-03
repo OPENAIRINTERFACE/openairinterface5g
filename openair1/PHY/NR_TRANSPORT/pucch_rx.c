@@ -1774,7 +1774,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     }
     bit_left = pucch_pdu->bit_len_csi_part1-((csi_part1_bytes-1)<<3);
     uci_pdu->csi_part1.csi_part1_payload[i] = decodedPayload[0] & ((1<<bit_left)-1);
-    decodedPayload[0] >>= pucch_pdu->bit_len_csi_part1;
+    decodedPayload[0] = pucch_pdu->bit_len_csi_part1 < 64 ? decodedPayload[0] >> pucch_pdu->bit_len_csi_part1 : 0;
   }
   
   if (pucch_pdu->bit_len_csi_part2>0) {
