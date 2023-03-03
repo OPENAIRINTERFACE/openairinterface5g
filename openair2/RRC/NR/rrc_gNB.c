@@ -1673,6 +1673,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   ue_context_pP->ue_context.masterCellGroup->spCellConfig = ue_context_pP->ue_context.spCellConfigReestablishment;
   ue_context_pP->ue_context.spCellConfigReestablishment = NULL;
   cellGroupConfig->spCellConfig = ue_context_pP->ue_context.masterCellGroup->spCellConfig;
+  cellGroupConfig->physicalCellGroupConfig = ue_context_pP->ue_context.masterCellGroup->physicalCellGroupConfig;
 
   fill_mastercellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
 
