@@ -145,7 +145,7 @@ void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
   NR_SRS_Config_t *srs_config = current_UL_BWP->srs_Config;
   NR_PUSCH_Config_t *pusch_Config = current_UL_BWP->pusch_Config;
 
-  int transformPrecoder = pusch_config_pdu->transform_precoding;
+  long transformPrecoder = pusch_config_pdu->transform_precoding;
 
   /* PRECOD_NBR_LAYERS */
   // 0 bits if the higher layer parameter txConfig = nonCodeBook
@@ -239,34 +239,6 @@ void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
       }
     }
   }
-
-  /*-------------------- Changed to enable Transform precoding in RF SIM------------------------------------------------*/
-
- /*if (pusch_config_pdu->transformPrecoder == transformPrecoder_enabled) {
-
-    pusch_config_dedicated->transform_precoder = transformPrecoder_enabled;
-
-    if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL) {
-
-      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup;
-
-      if (NR_DMRS_ulconfig->dmrs_Type == NULL)
-        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.dmrs_type = 1;
-      if (NR_DMRS_ulconfig->maxLength == NULL)
-        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_a.max_length = 1;
-
-    } else if(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL) {
-
-      NR_DMRS_UplinkConfig_t *NR_DMRS_ulconfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-
-      if (NR_DMRS_ulconfig->dmrs_Type == NULL)
-        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.dmrs_type = 1;
-      if (NR_DMRS_ulconfig->maxLength == NULL)
-        pusch_config_dedicated->dmrs_ul_for_pusch_mapping_type_b.max_length = 1;
-
-    }
-  } else
-    pusch_config_dedicated->transformPrecoder = ttransformPrecoder_disabled;*/
 }
 
 // todo: this function shall be reviewed completely because of the many comments left by the author
@@ -277,11 +249,11 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
   NR_PUSCH_Config_t *pusch_Config = mac->current_UL_BWP.pusch_Config;
   AssertFatal(pusch_Config!=NULL,"pusch_Config shouldn't be null\n");
 
-  long transformPrecoder = get_transformPrecoding(&mac->current_UL_BWP, dci_format, 0);
+  long transformPrecoder = pusch_config_pdu->transform_precoding;
+  LOG_D(NR_MAC,"transformPrecoder %s\n", transformPrecoder==NR_PUSCH_Config__transformPrecoder_disabled ? "disabled" : "enabled");
+
   long *max_length = NULL;
   long *dmrs_type = NULL;
-  LOG_D(NR_MAC,"transformPrecoder %s\n",transformPrecoder==NR_PUSCH_Config__transformPrecoder_disabled?"disabled":"enabled");
-
   if (pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA) {
     max_length = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->maxLength;
     dmrs_type = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->dmrs_Type;
@@ -450,7 +422,13 @@ void ul_ports_config(NR_UE_MAC_INST_t *mac, int *n_front_load_symb, nfapi_nr_ue_
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format)
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        NR_tda_info_t *tda_info,
+                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                        dci_pdu_rel15_t *dci,
+                        RAR_grant_t *rar_grant,
+                        uint16_t rnti,
+                        const nr_dci_format_t *dci_format)
 {
 
   int f_alloc;
@@ -569,9 +547,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr
     }
 
     /* Transform precoding */
-    if (rnti_type != NR_RNTI_CS || (rnti_type == NR_RNTI_CS && dci->ndi == 1)) {
-      pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
-    }
+    pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
 
     /*DCI format-related configuration*/
     if (*dci_format == NR_UL_DCI_FORMAT_0_0) {

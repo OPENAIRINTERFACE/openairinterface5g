@@ -527,7 +527,7 @@ bool multiple_2_3_5(int rb)
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
-                   int transform_precoding,
+                   long transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
@@ -2289,15 +2289,7 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
   // 0 precoding enabled 1 precoding disabled
-  long *transform_precoding;
-  if (UL_BWP->dci_format == NR_UL_DCI_FORMAT_0_0 ||
-      UL_BWP->pusch_Config == NULL || UL_BWP->pusch_Config->transformPrecoder == NULL)
-    transform_precoding = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
-  else
-    transform_precoding = UL_BWP->pusch_Config->transformPrecoder;
-
-  UL_BWP->transform_precoding = (transform_precoding == NULL || *transform_precoding == 1);
-
+  UL_BWP->transform_precoding = get_transformPrecoding(UL_BWP, UL_BWP->dci_format, 0);
   // Set uplink MCS table
   long *mcs_Table = NULL;
   if (UL_BWP->pusch_Config)

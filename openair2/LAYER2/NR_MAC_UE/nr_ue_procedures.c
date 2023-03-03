@@ -431,8 +431,8 @@ int nr_ue_process_dci_indication_pdu(module_id_t module_id,int cc_id, int gNB_in
 int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, frame_t frame, int slot, dci_pdu_rel15_t *dci, fapi_nr_dci_indication_pdu_t *dci_ind) {
 
   uint16_t rnti = dci_ind->rnti;
-  uint8_t dci_format = dci_ind->dci_format;
   int coreset_type = dci_ind->coreset_type == NFAPI_NR_CSET_CONFIG_PDCCH_CONFIG; // 0 for coreset0, 1 otherwise
+  nr_dci_format_t dci_format = dci_ind->dci_format;
   int ret = 0;
   int pucch_res_set_cnt = 0, valid = 0;
   frame_t frame_tx = 0;
@@ -2388,7 +2388,7 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
 }
 
 static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                                   uint8_t dci_format,
+                                   nr_dci_format_t dci_format,
                                    uint8_t dci_size,
                                    uint16_t rnti,
                                    int ss_type,
@@ -2852,8 +2852,8 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
     break;
 
   case NR_DL_DCI_FORMAT_1_1:
-  switch(rnti_type)
-    {
+    switch(rnti_type)
+      {
       case NR_RNTI_C:
         //Identifier for DCI formats
         pos++;
@@ -3053,9 +3053,12 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         break;
       }
     break;
-       }
-    
-    return 0;
+
+  default: // other DCI formats
+    break;
+  }
+
+  return 0;
 }
 
 ///////////////////////////////////
