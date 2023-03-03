@@ -190,7 +190,7 @@ void tableNor(unsigned long seed)
   return;
 }
 
-double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double variance)
+double __attribute__ ((no_sanitize("address", "undefined"))) gaussZiggurat(double mean, double variance)
 {
   if (!tableNordDone) {
     // let's make reasonnable constant tables
