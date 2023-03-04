@@ -411,7 +411,9 @@ bool allocate_dl_retransmission(module_id_t module_id,
 
   /* Check first whether the old TDA can be reused
   * this helps allocate retransmission when TDA changes (e.g. new nrOfSymbols > old nrOfSymbols) */
-  NR_tda_info_t temp_tda = nr_get_pdsch_tda_info(dl_bwp, tda);
+  NR_tda_info_t temp_tda = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, tda,
+                                           scc->dmrs_TypeA_Position, 1, NR_RNTI_C, coresetid, false);
+
   bool reuse_old_tda = (retInfo->tda_info.startSymbolIndex == temp_tda.startSymbolIndex) && (retInfo->tda_info.nrOfSymbols <= temp_tda.nrOfSymbols);
   LOG_D(NR_MAC, "[UE %x] %s old TDA, %s number of layers\n",
         UE->rnti,
@@ -729,7 +731,9 @@ void pf_dl(module_id_t module_id,
     sched_pdsch->time_domain_allocation = get_dl_tda(mac, scc, slot);
     AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
 
-    sched_pdsch->tda_info = nr_get_pdsch_tda_info(dl_bwp, sched_pdsch->time_domain_allocation);
+    sched_pdsch->tda_info = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
+                                            scc->dmrs_TypeA_Position, 1, NR_RNTI_C, coresetid, false);
+
     NR_tda_info_t *tda_info = &sched_pdsch->tda_info;
 
     const uint16_t slbitmap = SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols);
@@ -798,12 +802,11 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
   const int tda = get_dl_tda(RC.nrmac[module_id], scc, slot);
   int startSymbolIndex, nrOfSymbols;
-  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = current_BWP->tdaList;
+  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
+  const struct NR_PDSCH_TimeDomainResourceAllocationList *tdaList = get_dl_tdalist(current_BWP, coresetid, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
   AssertFatal(tda < tdaList->list.count, "time_domain_allocation %d>=%d\n", tda, tdaList->list.count);
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
-
-  const int coresetid = sched_ctrl->coreset->controlResourceSetId;
 
   const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : current_BWP->BWPSize;
   const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : current_BWP->BWPStart;

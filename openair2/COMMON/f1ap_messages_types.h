@@ -356,7 +356,7 @@ typedef struct cu_to_du_rrc_information_s {
   uint32_t   measConfig_length;
 }cu_to_du_rrc_information_t;
 
-typedef struct du_to_du_rrc_information_s {
+typedef struct du_to_cu_rrc_information_s {
   uint8_t * cellGroupConfig;
   uint32_t  cellGroupConfig_length;
   uint8_t * measGapConfig;

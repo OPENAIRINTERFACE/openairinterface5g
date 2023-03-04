@@ -137,7 +137,7 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
 
 }
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int CC_id, NR_UE_info_t *UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource)
+void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int CC_id, NR_UE_info_t *UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource, int buffer_index)
 {
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -190,15 +190,17 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int 
     srs_pdu->beamforming.prg_size = 1;
   }
 
-  uint16_t *vrb_map_UL = &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[slot * MAX_BWP_SIZE];
+  uint16_t *vrb_map_UL = &RC.nrmac[module_id]->common_channels[CC_id].vrb_map_UL[buffer_index * MAX_BWP_SIZE];
   uint64_t mask = SL_to_bitmap(13 - srs_pdu->time_start_position, srs_pdu->num_symbols);
   for (int i = 0; i < srs_pdu->bwp_size; ++i)
     vrb_map_UL[i + srs_pdu->bwp_start] |= mask;
 }
 
-void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource) {
+void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, int frame, int slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource)
+{
 
-  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][slot];
+  int index = ul_buffer_index(frame, slot, UE->current_UL_BWP.scs, RC.nrmac[module_id]->UL_tti_req_ahead_size);
+  nfapi_nr_ul_tti_request_t *future_ul_tti_req = &RC.nrmac[module_id]->UL_tti_req_ahead[0][index];
   AssertFatal(future_ul_tti_req->n_pdus <
               sizeof(future_ul_tti_req->pdus_list) / sizeof(future_ul_tti_req->pdus_list[0]),
               "Invalid future_ul_tti_req->n_pdus %d\n", future_ul_tti_req->n_pdus);
@@ -207,8 +209,8 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, sub_frame_t s
   nfapi_nr_srs_pdu_t *srs_pdu = &future_ul_tti_req->pdus_list[future_ul_tti_req->n_pdus].srs_pdu;
   memset(srs_pdu, 0, sizeof(nfapi_nr_srs_pdu_t));
   future_ul_tti_req->n_pdus += 1;
-
-  nr_configure_srs(srs_pdu, slot, module_id, CC_id, UE, srs_resource_set, srs_resource);
+  index = ul_buffer_index(frame, slot, UE->current_UL_BWP.scs, RC.nrmac[module_id]->vrb_map_UL_size);
+  nr_configure_srs(srs_pdu, slot, module_id, CC_id, UE, srs_resource_set, srs_resource, index);
 }
 
 /*******************************************************************
@@ -274,11 +276,12 @@ void nr_schedule_srs(int module_id, frame_t frame, int slot)
         continue;
       }
 
-      const int num_tda = current_BWP->tdaList->list.count;
+      NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList = get_ul_tdalist(current_BWP, sched_ctrl->coreset->controlResourceSetId, sched_ctrl->search_space->searchSpaceType->present, NR_RNTI_C);
+      const int num_tda = tdaList->list.count;
       int max_k2 = 0;
       // avoid last one in the list (for msg3)
       for (int i = 0; i < num_tda - 1; i++) {
-        int k2 = get_K2(current_BWP->tdaList, i, current_BWP->scs);
+        int k2 = get_K2(tdaList, i, current_BWP->scs);
         max_k2 = k2 > max_k2 ? k2 : max_k2;
       }
 
@@ -293,7 +296,7 @@ void nr_schedule_srs(int module_id, frame_t frame, int slot)
       // Check if UE will transmit the SRS in this frame
       if ((sched_frame * n_slots_frame + sched_slot - offset) % period == 0) {
         LOG_D(NR_MAC," %d.%d Scheduling SRS reception for %d.%d\n", frame, slot, sched_frame, sched_slot);
-        nr_fill_nfapi_srs(module_id, CC_id, UE, sched_slot, srs_resource_set, srs_resource);
+        nr_fill_nfapi_srs(module_id, CC_id, UE, sched_frame, sched_slot, srs_resource_set, srs_resource);
         sched_ctrl->sched_srs.frame = sched_frame;
         sched_ctrl->sched_srs.slot = sched_slot;
         sched_ctrl->sched_srs.srs_scheduled = true;

@@ -97,6 +97,20 @@ extern "C" {
 #define squaredMod(a) ((a).r*(a).r + (a).i*(a).i)
 #define csum(res, i1, i2) (res).r = (i1).r + (i2).r ; (res).i = (i1).i + (i2).i
 
+  __attribute__((always_inline)) inline c16_t c16Shift(const c16_t a, const int Shift) {
+    return (c16_t) {
+        .r = (int16_t)(a.r >> Shift),
+        .i = (int16_t)(a.i >> Shift)
+    };
+  }
+
+  __attribute__((always_inline)) inline c16_t c16addShift(const c16_t a, const c16_t b, const int Shift) {
+    return (c16_t) {
+        .r = (int16_t)((a.r + b.r) >> Shift),
+        .i = (int16_t)((a.i + b.i) >> Shift)
+    };
+  }
+
   __attribute__((always_inline)) inline c16_t c16mulShift(const c16_t a, const c16_t b, const int Shift) {
     return (c16_t) {
       .r = (int16_t)((a.r * b.r - a.i * b.i) >> Shift),

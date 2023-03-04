@@ -256,9 +256,10 @@ void nr_dlsim_preprocessor(module_id_t module_id,
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
   sched_pdsch->time_domain_allocation = get_dl_tda(RC.nrmac[module_id], scc, slot);
-  AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
+  AssertFatal(sched_pdsch->time_domain_allocation >= 0,"Unable to find PDSCH time domain allocation in list\n");
 
-  sched_pdsch->tda_info = nr_get_pdsch_tda_info(current_BWP, sched_pdsch->time_domain_allocation);
+  sched_pdsch->tda_info = get_dl_tda_info(current_BWP, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
+                                          NR_MIB__dmrs_TypeA_Position_pos2, 1, NR_RNTI_C, sched_ctrl->coreset->controlResourceSetId, false);
 
   sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
                                                current_BWP,
@@ -309,6 +310,7 @@ int NB_UE_INST = 1;
 
 int main(int argc, char **argv)
 {
+  setbuf(stdout, NULL);
   char c;
   int i,aa;//,l;
   double sigma2, sigma2_dB=10, SNR, snr0=-2.0, snr1=2.0;
@@ -1219,9 +1221,11 @@ int main(int argc, char **argv)
         uint8_t  nb_symb_sch = rel15->NrOfSymbols;
 
         available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, rel15->nrOfLayers);
-        if(pdu_bit_map & 0x1) {
-          available_bits-= (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2);
-          printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n",available_bits, (ptrsSymbPerSlot * ptrsRePerSymb *rel15->nrOfLayers* 2) );
+        if (pdu_bit_map & 0x1) {
+          available_bits -= (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2);
+          if (trial == 0 && round == 0) {
+            printf("[DLSIM][PTRS] Available bits are: %5u, removed PTRS bits are: %5u \n", available_bits, (ptrsSymbPerSlot * ptrsRePerSymb * rel15->nrOfLayers * 2));
+          }
         }
 
         for (i = 0; i < available_bits; i++) {
