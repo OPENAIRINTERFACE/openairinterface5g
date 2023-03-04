@@ -658,7 +658,12 @@ int trx_usrp_write_init(openair0_device *device){
   printf("end of tx write thread\n");
   pthread_mutex_init(&write_thread->mutex_write, NULL);
   pthread_cond_init(&write_thread->cond_write, NULL);
-  pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
+  threadCreate(&write_thread->pthread_write,
+               trx_usrp_write_thread,
+               (void *)device,
+               (char*)"trx_usrp_write_thread",
+               -1,
+               OAI_PRIORITY_RT_MAX);
 
   return(0);
 }
