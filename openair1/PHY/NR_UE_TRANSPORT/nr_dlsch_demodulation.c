@@ -1773,7 +1773,6 @@ static inline void nr_element_sign(c16_t *a, // a
  * Compute the matrix determinant for 4x4 Matrix
  *
  * */
-<<<<<<< HEAD
 static void nr_determin(int size,
                         c16_t *a44[][size], //
                         c16_t *ad_bc, // ad-bc

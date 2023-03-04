@@ -200,7 +200,7 @@ double __attribute__ ((no_sanitize("address", "undefined"))) gaussZiggurat(doubl
   }
   hz = SHR3;
   iz = hz & 127;
-  return abs(hz) < kn[iz] ? hz * wn[iz] : nfix();
+  return hz != INT32_MIN && abs(hz) < kn[iz] ? hz * wn[iz] : nfix();
 }
 
 #ifdef MAIN
