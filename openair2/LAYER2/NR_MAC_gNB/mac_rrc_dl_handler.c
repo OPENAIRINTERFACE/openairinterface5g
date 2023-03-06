@@ -29,95 +29,10 @@
 #include "NR_DL-CCCH-Message.h"
 #include "NR_CellGroupConfig.h"
 
-int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc, NR_RRCSetup_t *rrcSetup);
-
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
-  /* dispatch message to dl_rrc_message_rrcSetup() and others, similar to as is
-   * done in the DU (should be the same here) */
+  LOG_I(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
 
-  LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
-
-  if (dl_rrc->srb_id == CCCH) { // SRB 0
-
-    NR_DL_CCCH_Message_t *dl_ccch_msg = NULL;
-    asn_dec_rval_t dec_rval = uper_decode(NULL,
-                                          &asn_DEF_NR_DL_CCCH_Message,
-                                          (void **) &dl_ccch_msg,
-                                          dl_rrc->rrc_container,
-                                          dl_rrc->rrc_container_length,
-                                          0,
-                                          0);
-    AssertFatal(dec_rval.code == RC_OK, "could not decode F1AP message\n");
-
-    switch (dl_ccch_msg->message.choice.c1->present) {
-    case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
-      LOG_W(NR_MAC, "Received NOTHING on DL-CCCH-Message\n");
-      break;
-    case NR_DL_CCCH_MessageType__c1_PR_rrcReject:
-      LOG_D(NR_MAC, "DL-CCCH/SRB0, received rrcReject for RNTI %04x\n", dl_rrc->rnti);
-      AssertFatal(0, "rrcReject not implemented yet\n");
-      break;
-    case NR_DL_CCCH_MessageType__c1_PR_rrcSetup:
-      LOG_D(NR_MAC, "DL-CCCH/SRB0, received rrcSetup for RNTI %04x\n", dl_rrc->rnti);
-      return dl_rrc_message_rrcSetup(module_id, dl_rrc, dl_ccch_msg->message.choice.c1->choice.rrcSetup);
-      break;
-    case NR_DL_CCCH_MessageType__c1_PR_spare2:
-      LOG_W(NR_MAC, "DL-CCCH/SRB0, received spare2\n");
-      break;
-    case NR_DL_CCCH_MessageType__c1_PR_spare1:
-      LOG_W(NR_MAC, "DL-CCCH/SRB0, received spare1\n");
-      break;
-    default:
-      AssertFatal(0 == 1, "Unknown DL-CCCH/SRB0 message %d\n", dl_ccch_msg->message.choice.c1->present);
-      break;
-    }
-    return 0;
-  } else if (dl_rrc->srb_id == DCCH) { // SRB 1
-    nr_rlc_srb_recv_sdu(dl_rrc->rnti, DCCH, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-    return 0;
-  } else if (dl_rrc->srb_id == DCCH1) { // SRB 2
-    nr_rlc_srb_recv_sdu(dl_rrc->rnti, DCCH1, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-    return 0;
-  }
-
-  return -1; /* not handled yet */
-}
-
-int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc, NR_RRCSetup_t *rrcSetup)
-{
-  DevAssert(rrcSetup != NULL);
-
-  NR_RRCSetup_IEs_t *rrcSetup_ies = rrcSetup->criticalExtensions.choice.rrcSetup;
-  AssertFatal(rrcSetup_ies->masterCellGroup.buf != NULL,"masterCellGroup is NULL\n");
-  NR_CellGroupConfig_t *cellGroup = NULL;
-  asn_dec_rval_t dec_rval = uper_decode(NULL,
-                                        &asn_DEF_NR_CellGroupConfig,
-                                        (void **)&cellGroup,
-                                        rrcSetup_ies->masterCellGroup.buf,
-                                        rrcSetup_ies->masterCellGroup.size,
-                                        0,
-                                        0);
-  AssertFatal(dec_rval.code == RC_OK, "could not decode masterCellGroup\n");
-
-  /* there might be a memory leak for the cell group if we call this multiple
-   * times. */
-  nr_mac_update_cellgroup(RC.nrmac[module_id], dl_rrc->rnti, cellGroup);
-
-  /* TODO: drop the RRC context */
-  gNB_RRC_INST *rrc = RC.nrrrc[module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, dl_rrc->rnti);
-  gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
-  ue_p->SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
-  ue_p->masterCellGroup = cellGroup;
-
-  nr_rlc_srb_recv_sdu(dl_rrc->rnti, CCCH, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-
-  /* the cellGroup sent to CU specifies there is SRB1, so create it */
-  DevAssert(cellGroup->rlc_BearerToAddModList->list.count == 1);
-  const NR_RLC_BearerConfig_t *bearer = cellGroup->rlc_BearerToAddModList->list.array[0];
-  DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
-  nr_rlc_add_srb(dl_rrc->rnti, DCCH, bearer);
-
+  nr_rlc_srb_recv_sdu(dl_rrc->rnti, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
   return 0;
 }
