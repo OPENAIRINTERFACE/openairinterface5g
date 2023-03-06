@@ -88,7 +88,7 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
   rrc_gNB_ue_context_t      *ue_context_pP
 );
 
-void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(const module_id_t gnb_mod_idP, const rrc_gNB_ue_context_t *const ue_context_pP, const NGAP_Cause_PR causeP, const long cause_valueP);
+void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(const module_id_t gnb_mod_idP, const rrc_gNB_ue_context_t *const ue_context_pP, const ngap_Cause_t causeP, const long cause_valueP);
 
 int rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_REQ(MessageDef *msg_p, instance_t instance);
 

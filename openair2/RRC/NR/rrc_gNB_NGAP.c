@@ -54,7 +54,6 @@
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "NR_UERadioAccessCapabilityInformation.h"
 #include "NR_UE-CapabilityRAT-ContainerList.h"
-#include "NGAP_Cause.h"
 #include "NGAP_CauseRadioNetwork.h"
 #include "f1ap_messages_types.h"
 #include "openair2/E1AP/e1ap_asnc.h"
@@ -1105,7 +1104,7 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
 }
 
 //------------------------------------------------------------------------------
-void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(const module_id_t gnb_mod_idP, const rrc_gNB_ue_context_t *const ue_context_pP, const NGAP_Cause_PR causeP, const long cause_valueP)
+void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(const module_id_t gnb_mod_idP, const rrc_gNB_ue_context_t *const ue_context_pP, const ngap_Cause_t causeP, const long cause_valueP)
 //------------------------------------------------------------------------------
 {
   if (ue_context_pP == NULL) {

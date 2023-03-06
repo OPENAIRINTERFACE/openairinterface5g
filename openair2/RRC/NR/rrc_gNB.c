@@ -524,16 +524,12 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
 static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP)
 //-----------------------------------------------------------------------------
 {
-  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList
-                               *dedicatedNAS_MessageList = NULL;
-  NR_DedicatedNAS_Message_t    *dedicatedNAS_Message = NULL;
-
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
 
   /******************** Radio Bearer Config ********************/
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
-  dedicatedNAS_MessageList = CALLOC(1, sizeof(struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList));
+  struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList = CALLOC(1, sizeof(*dedicatedNAS_MessageList));
 
   /* Add all NAS PDUs to the list */
   for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {

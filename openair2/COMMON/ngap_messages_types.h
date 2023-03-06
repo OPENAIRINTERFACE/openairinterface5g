@@ -31,7 +31,6 @@
 #define NGAP_MESSAGES_TYPES_H_
 #include "common/ngran_types.h"
 #include "LTE_asn_constant.h"
-#include "NGAP_Cause.h"
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 
@@ -410,8 +409,7 @@ typedef struct pdusession_failed_s {
   /* Unique pdusession_id for the UE. */
   uint8_t pdusession_id;
   /* Cause of the failure */
-  //     cause_t cause;
-  NGAP_Cause_PR cause;
+  ngap_Cause_t cause;
   uint8_t cause_value;
 } pdusession_failed_t;
 
@@ -788,7 +786,7 @@ typedef struct ngap_ue_release_req_s {
   uint8_t              nb_of_pdusessions;
   /* list of pdusession resource by RRC layers */
   pdusession_release_t pdusessions[NGAP_MAX_PDUSESSION];
-  NGAP_Cause_PR cause;
+  ngap_Cause_t cause;
   long                 cause_value;
 } ngap_ue_release_req_t, ngap_ue_release_resp_t;
 
