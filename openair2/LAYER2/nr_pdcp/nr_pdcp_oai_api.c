@@ -772,33 +772,20 @@ srb_found:
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
   //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
   //printf("\n");
-  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(node_type))) {
-    if (entity->is_gnb) {
-      f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF, .rrc_container = (uint8_t *)buf, .rrc_container_length = size, .rnti = ue->rntiMaybeUEid, .srb_id = DCCH};
-      gNB_RRC_INST *rrc = RC.nrrrc[0];
-      rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
-    } else { // UE
-      mem_block_t *memblock;
-      protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .frame = 0, .subframe = 0, .eNB_index = 0, .brOption = 0, .rntiMaybeUEid = ue->rntiMaybeUEid};
-      memblock = get_free_mem_block(size, __FUNCTION__);
-      memcpy(memblock->data, buf, size);
-      enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
-    }
-  } else {
-    MessageDef  *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
-    uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
-    memcpy (message_buffer, buf, size);
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = message_buffer;
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-    F1AP_DL_RRC_MESSAGE(message_p).rnti = ue->rntiMaybeUEid;
-    F1AP_DL_RRC_MESSAGE (message_p).srb_id               = srb_id;
-    F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-    F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-    itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
-    LOG_D(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
+  if (entity->is_gnb) {
+    f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF,
+                                    .rrc_container = (uint8_t *)buf,
+                                    .rrc_container_length = size,
+                                    .rnti = ue->rntiMaybeUEid,
+                                    .srb_id = srb_id};
+    gNB_RRC_INST *rrc = RC.nrrrc[0];
+    rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
+  } else { // UE
+    mem_block_t *memblock;
+    protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .frame = 0, .subframe = 0, .eNB_index = 0, .brOption = 0, .rntiMaybeUEid = ue->rntiMaybeUEid};
+    memblock = get_free_mem_block(size, __FUNCTION__);
+    memcpy(memblock->data, buf, size);
+    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
   }
 }
 
