@@ -556,6 +556,7 @@ void *trx_usrp_write_thread(void * arg){
   signed char        last_packet;
   int                flags_gpio;
 
+  printf("trx_usrp_write_thread started on cpu %d\n",sched_getcpu());
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
     while (write_thread->count_write == 0) {
@@ -658,7 +659,35 @@ int trx_usrp_write_init(openair0_device *device){
   printf("end of tx write thread\n");
   pthread_mutex_init(&write_thread->mutex_write, NULL);
   pthread_cond_init(&write_thread->cond_write, NULL);
-  pthread_create(&write_thread->pthread_write,NULL,trx_usrp_write_thread,(void *)device);
+  struct sched_param sparam={0};
+  sparam.sched_priority = sched_get_priority_max(SCHED_RR);
+  pthread_attr_t attr;
+  int ret=pthread_attr_init(&attr);
+  if (ret!=0) { 
+    printf("error initializing USRP tx-thread attribute ret %d, errno: %d\n",ret,errno);
+    exit(-1);
+  }
+  else printf("USRP tx-thread attribute initialized\n");
+  ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+  if (ret!=0) { 
+    printf("error setting USRP tx-thread inheritance ret %d, errno: %d\n",ret,errno);
+    exit(-1);
+  }
+  else printf("USRP tx-thread inheritance set\n");
+  ret=pthread_attr_setschedpolicy(&attr, SCHED_RR);
+  if (ret!=0) { 
+    printf("error setting USRP tx-thread scheduling policy ret %d, errno: %d\n",ret,errno);
+    exit(-1);
+  }
+  else printf("USRP tx-thread scheduling policy set to SCHED_RR\n");
+  ret = pthread_attr_setschedparam(&attr, &sparam);
+  if (ret!=0) { 
+    printf("error setting USRP tx-thread priority ret %d, errno: %d\n",ret,errno);
+    exit(-1);
+  }
+  else printf("USRP tx-thread priority set to %d\n",sparam.sched_priority);
+
+  pthread_create(&write_thread->pthread_write,&attr,trx_usrp_write_thread,(void *)device);
 
   return(0);
 }

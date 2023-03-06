@@ -1083,7 +1083,7 @@ void *ru_thread( void *param ) {
   ru_thread_status = 0;
   // set default return value
   sprintf(threadname,"ru_thread %u",ru->idx);
-  LOG_I(PHY,"Starting RU %d (%s,%s),\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing]);
+  LOG_I(PHY,"Starting RU %d (%s,%s) on core %d\n",ru->idx,NB_functions[ru->function],NB_timing[ru->if_timing],sched_getcpu());
   memcpy((void *)&ru->config,(void *)&RC.gNB[0]->gNB_config,sizeof(ru->config));
 
   if(emulate_rf) {
@@ -1342,7 +1342,7 @@ void init_RU_proc(RU_t *ru) {
 
   pthread_mutex_init( &proc->mutex_emulateRF,NULL);
   pthread_cond_init( &proc->cond_emulateRF, NULL);
-  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "ru_thread", ru->tpcores[0], OAI_PRIORITY_RT_MAX );
+  threadCreate( &proc->pthread_FH, ru_thread, (void *)ru, "ru_thread", -1 /*ru->tpcores[0]*/, OAI_PRIORITY_RT_MAX );
 
   if(emulate_rf)
     threadCreate( &proc->pthread_emulateRF, emulatedRF_thread, (void *)proc, "emulateRF", -1, OAI_PRIORITY_RT );
