@@ -61,11 +61,11 @@ void nr_rlc_activate_avg_time_to_tx(
 
 void nr_rlc_srb_recv_sdu(const int rnti, const logical_chan_id_t channel_id, unsigned char *buf, int size);
 
-void nr_rlc_activate_srb0(int rnti, int module_id, int cc_id, int uid,
+struct gNB_MAC_INST_s;
+void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
                           void (*send_initial_ul_rrc_message)(
-                                    module_id_t        module_id,
-                                     int                CC_id,
-                                     int                rnti,
-                                     int                uid,
-                                     const uint8_t      *sdu,
-                                     sdu_size_t         sdu_len));
+                                     struct gNB_MAC_INST_s *mac,
+                                     int                    rnti,
+                                     const uint8_t         *sdu,
+                                     sdu_size_t             sdu_len,
+                                     void                  *rawUE));

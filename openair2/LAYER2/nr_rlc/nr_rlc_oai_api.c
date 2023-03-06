@@ -951,34 +951,31 @@ rlc_op_status_t rrc_rlc_config_asn1_req (const protocol_ctxt_t   * const ctxt_pP
 }
 
 struct srb0_data {
-  int module_id;
-  int CC_id;
+  struct gNB_MAC_INST_s *mac;
   int rnti;
-  int uid;
-  void (*send_initial_ul_rrc_message)(module_id_t        module_id,
-                                      int                CC_id,
-                                      int                rnti,
-                                      int                uid,
-                                      const uint8_t      *sdu,
-                                      sdu_size_t         sdu_len);
+  void *rawUE;
+  void (*send_initial_ul_rrc_message)(struct gNB_MAC_INST_s *mac,
+                                      int                    rnti,
+                                      const uint8_t         *sdu,
+                                      sdu_size_t             sdu_len,
+                                      void                  *rawUE);
 };
 
 void deliver_sdu_srb0(void *deliver_sdu_data, struct nr_rlc_entity_t *entity,
                       char *buf, int size)
 {
   struct srb0_data *s0 = (struct srb0_data *)deliver_sdu_data;
-  s0->send_initial_ul_rrc_message(s0->module_id, s0->CC_id, s0->rnti, s0->uid,
-                                  (unsigned char *)buf, size);
+  s0->send_initial_ul_rrc_message(s0->mac, s0->rnti, (unsigned char *)buf,
+                                  size, s0->rawUE);
 }
 
-void nr_rlc_activate_srb0(int rnti, int module_id, int cc_id, int uid,
+void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
                           void (*send_initial_ul_rrc_message)(
-                                    module_id_t        module_id,
-                                     int                CC_id,
-                                     int                rnti,
-                                     int                uid,
-                                     const uint8_t      *sdu,
-                                     sdu_size_t         sdu_len))
+                                     struct gNB_MAC_INST_s *mac,
+                                     int                    rnti,
+                                     const uint8_t         *sdu,
+                                     sdu_size_t             sdu_len,
+                                     void                  *rawUE))
 {
   nr_rlc_entity_t            *nr_rlc_tm;
   nr_rlc_ue_t                *ue;
@@ -987,10 +984,9 @@ void nr_rlc_activate_srb0(int rnti, int module_id, int cc_id, int uid,
   srb0_data = calloc(1, sizeof(struct srb0_data));
   AssertFatal(srb0_data != NULL, "out of memory\n");
 
-  srb0_data->module_id = module_id;
-  srb0_data->CC_id     = cc_id;
+  srb0_data->mac = mac;
   srb0_data->rnti      = rnti;
-  srb0_data->uid       = uid;
+  srb0_data->rawUE     = rawUE;
   srb0_data->send_initial_ul_rrc_message = send_initial_ul_rrc_message;
 
   nr_rlc_manager_lock(nr_rlc_ue_manager);
