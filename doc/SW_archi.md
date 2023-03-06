@@ -315,7 +315,7 @@ Still on DL (gNB side), PDCP push incoming data into RLC by calling: rlc_data_re
 For UL, the low layer push data into rlc by: mac_rlc_data_ind()  
 Then, rlc push it to pdcp by calling pdcp_data_ind() from a complex rlc internal call back (deliver_sdu())  
 
-When adding a UE, external code have to call nr_rrc_rlc_config_asn1_req(), to remove it: rrc_rlc_remove_ue()  
+When adding a UE, external code have to call `add_rlc_srb()` and/or `add_rlc_drb()`, to remove it: `rrc_rlc_remove_ue()`
 Inside UE, channels called drd or srb can be created: ??? and deleted: rrc_rlc_config_req()
 
 nr_rlc_tick() must be called periodically to manage the internal timers 

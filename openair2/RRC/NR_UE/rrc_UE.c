@@ -54,6 +54,7 @@
 
 #include "intertask_interface.h"
 
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr-uesoftmodem.h"
 #include "executables/softmodem-common.h"
 #include "plmn_data.h"
@@ -177,6 +178,46 @@ static int nr_rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_NR_t subS
   }
 
   return (0);
+}
+
+static void nr_rrc_addmod_srbs(int rnti,
+                               const NR_SRB_ToAddModList_t *srb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (srb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < srb_list->list.count; i++) {
+    const NR_SRB_ToAddMod_t* srb = srb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity
+          && srb->srb_Identity == bearer->servedRadioBearer->choice.srb_Identity) {
+        nr_rlc_add_srb(rnti, srb->srb_Identity, bearer);
+      }
+    }
+  }
+}
+
+static void nr_rrc_addmod_drbs(int rnti,
+                               const NR_DRB_ToAddModList_t *drb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (drb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < drb_list->list.count; i++) {
+    const NR_DRB_ToAddMod_t *drb = drb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity
+          && drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity) {
+        nr_rlc_add_drb(rnti, drb->drb_Identity, bearer);
+      }
+    }
+  }
 }
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
@@ -1947,35 +1988,31 @@ nr_rrc_ue_establish_srb2(
      }
    }
 
+   NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
    if (radioBearerConfig->srb_ToAddModList != NULL) {
      if (radioBearerConfig->securityConfig != NULL) {
        if (*radioBearerConfig->securityConfig->keyToUse == NR_SecurityConfig__keyToUse_master) {
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm = radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
-	      NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm = *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
+	      ue_rrc->cipheringAlgorithm = radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
+	      ue_rrc->integrityProtAlgorithm = *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
        }
      }
 
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
-     nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
+     nr_derive_key_rrc_enc(ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, &kRRCenc);
+     nr_derive_key_rrc_int(ue_rrc->integrityProtAlgorithm, ue_rrc->kgnb, &kRRCint);
 
      // Refresh SRBs
      nr_pdcp_add_srbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
                       radioBearerConfig->srb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kRRCenc,
                       kRRCint);
      // Refresh SRBs
-      nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                                  radioBearerConfig->srb_ToAddModList,
-                                  NULL,
-                                  NULL,
-                                  NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
-                                  );
+     nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid,
+                        radioBearerConfig->srb_ToAddModList,
+                        ue_rrc->cell_group_config->rlc_BearerToAddModList);
 
      for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
        SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -2054,22 +2091,24 @@ nr_rrc_ue_establish_srb2(
      uint8_t *kUPenc = NULL;
      uint8_t *kUPint = NULL;
 
-     nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
-     nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
+     NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
+     nr_derive_key_up_enc(ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, &kUPenc);
+     nr_derive_key_up_int(ue_rrc->integrityProtAlgorithm, ue_rrc->kgnb, &kUPint);
 
-       // Refresh DRBs
+     // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
                       0,
                       radioBearerConfig->drb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kUPenc,
                       kUPint,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+                      ue_rrc->cell_group_config->rlc_BearerToAddModList);
      // Refresh DRBs
-     nr_rrc_rlc_config_asn1_req(ctxt_pP, NULL, radioBearerConfig->drb_ToAddModList, NULL, NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+     nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid,
+                        radioBearerConfig->drb_ToAddModList,
+                        ue_rrc->cell_group_config->rlc_BearerToAddModList);
+
    } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {

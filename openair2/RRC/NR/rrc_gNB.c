@@ -139,6 +139,47 @@ bool DURecvCb(protocol_ctxt_t  *ctxt_pP,
   return true;
 }
 
+static void nr_rrc_addmod_srbs(int rnti,
+                               const NR_SRB_ToAddModList_t *srb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (srb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < srb_list->list.count; i++) {
+    const NR_SRB_ToAddMod_t* srb = srb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity
+          && srb->srb_Identity == bearer->servedRadioBearer->choice.srb_Identity) {
+        nr_rlc_add_srb(rnti, srb->srb_Identity, bearer);
+      }
+    }
+  }
+}
+
+static void nr_rrc_addmod_drbs(int rnti,
+                               const NR_DRB_ToAddModList_t *drb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (drb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < drb_list->list.count; i++) {
+    const NR_DRB_ToAddMod_t *drb = drb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity
+          && drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity) {
+        nr_rlc_add_drb(rnti, drb->drb_Identity, bearer);
+      }
+    }
+  }
+}
+
+
 static void openair_nr_rrc_on(gNB_RRC_INST *rrc)
 {
   NR_SRB_INFO *si = &rrc->carrier.SI;
@@ -301,22 +342,17 @@ static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const u
   NR_CellGroupConfig_t *cgc = get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL;
   nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, cgc);
 
-  nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                             ue_context_pP->ue_context.SRB_configList,
-                             ue_context_pP->ue_context.DRB_configList,
-                             NULL,
-                             get_softmodem_params()->sa ? cgc->rlc_BearerToAddModList : NULL);
+  nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid, ue_context_pP->ue_context.SRB_configList, cgc->rlc_BearerToAddModList);
+  nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid, ue_context_pP->ue_context.DRB_configList, cgc->rlc_BearerToAddModList);
 }
 
 void apply_macrlc_config_reest(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP, ue_id_t ue_id)
 {
   nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_id, ue_context_pP->ue_context.masterCellGroup);
 
-  nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                             ue_context_pP->ue_context.SRB_configList,
-                             NULL,
-                             NULL,
-                             get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList : NULL);
+  nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid,
+                     ue_context_pP->ue_context.SRB_configList,
+                     ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList);
 }
 
 //-----------------------------------------------------------------------------
@@ -1089,12 +1125,11 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
 
   /* Refresh SRBs/DRBs */
   if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    LOG_D(NR_RRC, "Configuring RLC DRBs/SRBs for UE %04x\n", ue_p->rnti);
-    nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                               SRB_configList, // NULL,
-                               DRB_configList,
-                               DRB_Release_configList2,
-                               get_softmodem_params()->sa ? ue_p->masterCellGroup->rlc_BearerToAddModList : NULL);
+    LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %04x\n",ue_context_pP->ue_context.rnti);
+    const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list =
+        ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList;
+    nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid, SRB_configList, bearer_list);
+    nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid, DRB_configList, bearer_list);
   }
 
   /* Set the SRB active in UE context */

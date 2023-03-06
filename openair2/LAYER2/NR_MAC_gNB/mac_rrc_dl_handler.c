@@ -113,12 +113,11 @@ int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *
 
   nr_rlc_srb_recv_sdu(dl_rrc->rnti, CCCH, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
 
-  protocol_ctxt_t ctxt = {.module_id = module_id, .rntiMaybeUEid = dl_rrc->rnti};
-  nr_rrc_rlc_config_asn1_req(&ctxt,
-                             ue_context_p->ue_context.SRB_configList,
-                             NULL,
-                             NULL,
-                             cellGroup->rlc_BearerToAddModList);
+  /* the cellGroup sent to CU specifies there is SRB1, so create it */
+  DevAssert(cellGroup->rlc_BearerToAddModList->list.count == 1);
+  const NR_RLC_BearerConfig_t *bearer = cellGroup->rlc_BearerToAddModList->list.array[0];
+  DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
+  nr_rlc_add_srb(dl_rrc->rnti, DCCH, bearer);
 
   return 0;
 }
