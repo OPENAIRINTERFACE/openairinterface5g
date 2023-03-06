@@ -334,12 +334,6 @@ typedef struct NR_sched_pucch {
   int start_symb;
 } NR_sched_pucch_t;
 
-typedef struct NR_tda_info {
-  mappingType_t mapping_type;
-  int startSymbolIndex;
-  int nrOfSymbols;
-} NR_tda_info_t;
-
 typedef struct NR_pusch_dmrs {
   uint8_t N_PRB_DMRS;
   uint8_t num_dmrs_symb;
@@ -739,6 +733,8 @@ typedef struct gNB_MAC_INST_s {
   /// NFAPI UL TTI Request Structure for future TTIs, dynamically allocated
   /// because length depends on number of slots
   nfapi_nr_ul_tti_request_t        *UL_tti_req_ahead[NFAPI_CC_MAX];
+  int UL_tti_req_ahead_size;
+  int vrb_map_UL_size;
   /// NFAPI HI/DCI0 Config Request Structure
   nfapi_nr_ul_dci_request_t         UL_dci_req[NFAPI_CC_MAX];
   /// NFAPI DL PDU structure

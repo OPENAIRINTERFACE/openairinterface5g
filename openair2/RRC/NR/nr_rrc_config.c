@@ -760,15 +760,12 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing)
 {
   pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
-  const int n_slots_frame = slotsperframe[subcarrierSpacing];
   long *delay[8];
   for (int i = 0; i < 8; i++) {
     int curr_delay = i + min_feedback_time;
-    if (curr_delay <= n_slots_frame) {
-      delay[i] = calloc(1,sizeof(*delay[i]));
-      *delay[i] = curr_delay;
-      asn1cSeqAdd(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
-    }
+    delay[i] = calloc(1,sizeof(*delay[i]));
+    *delay[i] = curr_delay;
+    asn1cSeqAdd(&pucch_Config->dl_DataToUL_ACK->list,delay[i]);
   }
 }
 

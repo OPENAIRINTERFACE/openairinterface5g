@@ -577,9 +577,19 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
           ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
-    const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot*ue->frame_parms.ofdm_symbol_size+15)/16)*16;
-    __attribute__ ((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][pdsch_est_size];
-    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t)*ue->frame_parms.nb_antennas_rx*dlsch0->Nl*pdsch_est_size);
+    const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot * ue->frame_parms.ofdm_symbol_size + 15) / 16) * 16;
+    __attribute__((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx * dlsch0->Nl][pdsch_est_size];
+    memset(pdsch_dl_ch_estimates, 0, sizeof(int32_t) * ue->frame_parms.nb_antennas_rx * dlsch0->Nl * pdsch_est_size);
+
+    c16_t ptrs_phase_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
+    memset(ptrs_phase_per_slot, 0, sizeof(ptrs_phase_per_slot));
+
+    int32_t ptrs_re_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
+    memset(ptrs_re_per_slot, 0, sizeof(ptrs_re_per_slot));
+
+    const uint32_t rx_size_symbol = dlsch[0].dlsch_config.number_rbs * NR_NB_SC_PER_RB;
+    __attribute__((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_tx][ue->frame_parms.nb_antennas_rx][rx_size_symbol * NR_SYMBOLS_PER_SLOT];
+    memset(rxdataF_comp, 0, sizeof(rxdataF_comp));
 
     for (m = s0; m < (s0 +s1); m++) {
       if (dlsch0->dlsch_config.dlDmrsSymbPos & (1 << m)) {
@@ -598,7 +608,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                                       pdsch_nb_rb,
                                       pdsch_est_size,
                                       pdsch_dl_ch_estimates,
-                                      rxdataF);
+                                      ue->frame_parms.samples_per_slot_wCP, rxdataF);
 #if 0
           ///LOG_M: the channel estimation
           int nr_frame_rx = proc->frame_rx;
@@ -635,34 +645,8 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       first_symbol_with_data++;
     }
 
-    c16_t ptrs_phase_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
-    memset(ptrs_phase_per_slot, 0, ue->frame_parms.nb_antennas_rx*NR_SYMBOLS_PER_SLOT*sizeof(c16_t));
-
-    int32_t ptrs_re_per_slot[ue->frame_parms.nb_antennas_rx][NR_SYMBOLS_PER_SLOT];
-    memset(ptrs_re_per_slot, 0, ue->frame_parms.nb_antennas_rx*NR_SYMBOLS_PER_SLOT*sizeof(c16_t));
-
     uint32_t dl_valid_re[NR_SYMBOLS_PER_SLOT] = {0};
     uint32_t llr_offset[NR_SYMBOLS_PER_SLOT] = {0};
-
-    const uint32_t rx_size = ((NR_SYMBOLS_PER_SLOT * dlsch[0].dlsch_config.number_rbs * NR_NB_SC_PER_RB + 15) >> 4) << 4;
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_estimates_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_estimates_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t rxdataF_ext[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(rxdataF_ext, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t rxdataF_comp[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(rxdataF_comp, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_mag[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_mag, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_magb[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_magb, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
-
-    __attribute__ ((aligned(32))) int32_t dl_ch_magr[ue->frame_parms.nb_antennas_rx*dlsch0->Nl][rx_size];
-    memset(dl_ch_magr, 0, ue->frame_parms.nb_antennas_rx*dlsch0->Nl*rx_size*sizeof(int32_t));
 
     int32_t log2_maxh = 0;
     start_meas(&ue->rx_pdsch_stats);
@@ -688,19 +672,16 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                       pdsch_est_size,
                       pdsch_dl_ch_estimates,
                       llr,
-                      ptrs_phase_per_slot,
-                      ptrs_re_per_slot,
                       dl_valid_re,
-                      rx_size,
-                      dl_ch_estimates_ext,
-                      rxdataF_ext,
-                      rxdataF_comp,
-                      dl_ch_mag,
-                      dl_ch_magb,
-                      dl_ch_magr,
                       rxdataF,
                       llr_offset,
-                      &log2_maxh) < 0)
+                      &log2_maxh,
+                      rx_size_symbol,
+                      ue->frame_parms.nb_antennas_rx,
+                      rxdataF_comp,
+                      ptrs_phase_per_slot,
+                      ptrs_re_per_slot)
+          < 0)
         return -1;
 
       stop_meas(&ue->dlsch_llr_stats_parallelization[slot]);
@@ -711,17 +692,6 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
       }
     } // CRNTI active
     stop_meas(&ue->rx_pdsch_stats);
-
-    UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(struct complex16), ue->frame_parms.nb_antennas_rx*dlsch0->Nl, rx_size);
-
-    if (ue->phy_sim_pdsch_rxdataF_comp)
-      memcpy(ue->phy_sim_pdsch_rxdataF_comp, rxdataF_comp, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_rxdataF_ext)
-      memcpy(ue->phy_sim_pdsch_rxdataF_ext, rxdataF_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_dl_ch_estimates_ext)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates_ext, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
-    if (ue->phy_sim_pdsch_dl_ch_estimates)
-      memcpy(ue->phy_sim_pdsch_dl_ch_estimates, dl_ch_estimates_ext, sizeof(int32_t)*rx_size*ue->frame_parms.nb_antennas_rx*dlsch0->Nl);
   }
   return 0;
 }
@@ -909,7 +879,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     const double N_TA_max = Ta_max * bw_scaling * tc_factor;
 
     NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    NR_BWP_Id_t dl_bwp = mac->current_DL_BWP.bwp_id;
     NR_BWP_Id_t ul_bwp = mac->current_UL_BWP.bwp_id;
 
     NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
@@ -938,17 +907,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
     }
     long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
-    NR_PDSCH_Config_t *pdsch_Config = NULL;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = NULL;
-    if(dl_bwp){
-      pdsch_Config = (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup) ? mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup : NULL;
-      if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Dedicated->pdsch_Config->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = pdsch_Config->pdsch_TimeDomainAllocationList->choice.setup;
-      else if (mac->DLbwp[dl_bwp-1] && mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList)
-        pdsch_TimeDomainAllocationList = mac->DLbwp[dl_bwp-1]->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
-    }
-    else if (mac->scc_SIB && mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup)
-      pdsch_TimeDomainAllocationList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+    NR_PDSCH_Config_t *pdsch_Config = mac->current_DL_BWP.pdsch_Config;
+    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = mac->current_DL_BWP.tdaList_Common;
     long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
 
     NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig = NULL;

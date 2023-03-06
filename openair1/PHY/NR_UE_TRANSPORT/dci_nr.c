@@ -935,6 +935,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
           dci_ind->dci_list[dci_ind->number_of_dcis].N_CCE = L;
           dci_ind->dci_list[dci_ind->number_of_dcis].dci_format = rel15->dci_format_options[k];
           dci_ind->dci_list[dci_ind->number_of_dcis].ss_type = rel15->dci_type_options[k];
+          dci_ind->dci_list[dci_ind->number_of_dcis].coreset_type = rel15->coreset.CoreSetType;
           int n_rb, rb_offset;
           get_coreset_rballoc(rel15->coreset.frequency_domain_resource, &n_rb, &rb_offset);
           dci_ind->dci_list[dci_ind->number_of_dcis].cset_start = rel15->BWPStart + rb_offset;

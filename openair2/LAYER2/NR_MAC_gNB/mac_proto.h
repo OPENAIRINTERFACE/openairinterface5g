@@ -277,11 +277,7 @@ void fill_dci_pdu_rel15(const NR_ServingCellConfigCommon_t *scc,
                         NR_ControlResourceSet_t *coreset,
                         uint16_t cset0_bwp_size);
 
-void prepare_dci(const NR_CellGroupConfig_t *CellGroup,
-                 const NR_UE_DL_BWP_t *dl_bwp,
-                 const NR_ControlResourceSet_t *coreset,
-                 dci_pdu_rel15_t *dci_pdu_rel15,
-                 nr_dci_format_t format);
+void prepare_dci(const NR_CellGroupConfig_t *CellGroup, const NR_UE_DL_BWP_t *current_BWP, const NR_ControlResourceSet_t *coreset, dci_pdu_rel15_t *dci_pdu_rel15, nr_dci_format_t format);
 
 void set_r_pucch_parms(int rsetindex,
                        int r_pucch,
@@ -306,12 +302,6 @@ NR_SearchSpace_t *get_searchspace(NR_ServingCellConfigCommon_t *scc,
 long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu);
-
-NR_tda_info_t nr_get_pdsch_tda_info(const NR_UE_DL_BWP_t *dl_bwp,
-                                    const int tda);
-
-NR_tda_info_t nr_get_pusch_tda_info(const NR_UE_UL_BWP_t *ul_bwp,
-                                    const int tda);
 
 NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
                                    const NR_UE_UL_BWP_t *ul_bwp,
@@ -482,7 +472,9 @@ int get_mcs_from_bler(const NR_bler_options_t *bler_options,
                       int max_mcs,
                       frame_t frame);
 
-void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid, frame_t frameP);
+int ul_buffer_index(int frame, int slot, int scs, int size);
+
+void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCommon_t *scc, int n, int CCid, frame_t frameP, int slotP, int scs);
 
 void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t frameP, sub_frame_t slotP);
 
