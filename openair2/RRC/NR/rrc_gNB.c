@@ -549,30 +549,14 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
     }
   }
 
-  LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n", ctxt_pP->module_id, ctxt_pP->frame, size, ue_p->rnti);
-  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
-    case ngran_gNB_CU:
-    case ngran_gNB_CUCP:
-    case ngran_gNB:
-      nr_rrc_data_req(ctxt_pP,
-                  DCCH,
-                  rrc_gNB_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
-      // rrc_pdcp_config_asn1_req
+  LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %x)\n",
+          ctxt_pP->module_id,
+          ctxt_pP->frame,
+          size,
+          ue_context_pP->ue_context.rnti);
+  AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-      break;
-
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      AssertFatal(1==0,"nothing to do for DU\n");
-      break;
-
-  default :
-    LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
-  }
+  nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
@@ -3816,48 +3800,13 @@ rrc_gNB_generate_SecurityModeCommand(
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Security Mode Command\n");
   LOG_I(NR_RRC, "UE %04x Logical Channel DL-DCCH, Generate SecurityModeCommand (bytes %d)\n", ue_p->rnti, size);
 
-  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
-    case ngran_gNB_CU:
-    case ngran_gNB_CUCP:
-      // create an ITTI message
-      memcpy(ue_p->Srb[1].Srb_info.Tx_buffer.Payload, buffer, size);
-      ue_p->Srb[1].Srb_info.Tx_buffer.payload_size = size;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-      LOG_I(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
-      nr_rrc_data_req(ctxt_pP,
-                  DCCH,
-                  rrc_gNB_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
-      break;
+  memcpy(ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.Payload, buffer, size);
+  ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.payload_size = size;
 
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      AssertFatal(1==0,"nothing to do for DU\n");
-      break;
-
-    case ngran_gNB:
-      LOG_D(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (securityModeCommand to UE MUI %d) --->[PDCP][RB %02d]\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size,
-        rrc_gNB_mui,
-        DCCH);
-  LOG_D(NR_RRC,"calling rrc_data_req :securityModeCommand\n");
-  nr_rrc_data_req(ctxt_pP,
-                  DCCH,
-                  rrc_gNB_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
-      break;
-
-    default :
-        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
-  }
+  nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 void
@@ -3879,44 +3828,11 @@ rrc_gNB_generate_UECapabilityEnquiry(
         PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate NR UECapabilityEnquiry (bytes %d)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
-  switch (RC.nrrrc[ctxt_pP->module_id]->node_type) {
-    case ngran_gNB_CU:
-    case ngran_gNB_CUCP:
-      nr_rrc_data_req(
-        ctxt_pP,
-        DCCH,
-        rrc_gNB_mui++,
-        SDU_CONFIRM_NO,
-        size,
-        buffer,
-        PDCP_TRANSMISSION_MODE_CONTROL);
-      break;
 
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      AssertFatal(1==0,"nothing to do for DU\n");
-      break;
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-    case ngran_gNB:
-      // rrc_mac_config_req_gNB
-      LOG_D(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (NR UECapabilityEnquiry MUI %d) --->[PDCP][RB %02d]\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size,
-        rrc_gNB_mui,
-        DCCH);
-  nr_rrc_data_req(ctxt_pP,
-                  DCCH,
-                  rrc_gNB_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
-  break;
-
-    default :
-        LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt_pP->module_id]->node_type);
-  }
+  nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
 }
 
 //-----------------------------------------------------------------------------
@@ -3950,6 +3866,12 @@ rrc_gNB_generate_RRCRelease(
         rrc_gNB_mui,
         DCCH);
 
+  nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
+
+  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
+  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
+
+  // Use this in monolithic as well to free UE correctly
   if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
     memcpy (message_buffer, buffer, size);
@@ -3960,17 +3882,6 @@ rrc_gNB_generate_RRCRelease(
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = message_buffer;
     F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
     itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
-  } else {
-    nr_rrc_data_req(ctxt_pP,
-                 DCCH,
-                 rrc_gNB_mui++,
-                 SDU_CONFIRM_NO,
-                 size,
-                 buffer,
-                 PDCP_TRANSMISSION_MODE_CONTROL);
-
-    rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_p->gNB_ue_ngap_id);
-    ue_p->ue_release_timer_rrc = 1;
   }
 }
 

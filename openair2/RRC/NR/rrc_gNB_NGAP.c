@@ -622,29 +622,11 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
   /*
    * switch UL or DL NAS message without RRC piggybacked to SRB2 if active.
    */
-  switch (RC.nrrrc[ctxt.module_id]->node_type) {
-    case ngran_gNB_CU:
-    case ngran_gNB_CUCP:
-    case ngran_gNB: {
-      long srb_id;
-      if (UE->Srb[2].Active)
-        srb_id = UE->Srb[2].Srb_info.Srb_id;
-      else
-        srb_id = UE->Srb[1].Srb_info.Srb_id;
-      AssertFatal(srb_id > 0 && srb_id < maxSRBs, "");
-      /* Transfer data to PDCP */
-      nr_rrc_data_req(&ctxt, srb_id, (*rrc_gNB_mui)++, SDU_CONFIRM_NO, length, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
-      free(buffer); // nr_rrc_data_req do a second malloc and copy
-    } break;
-
-    case ngran_gNB_DU:
-      // nothing to do for DU
-      break;
-
-    default:
-      LOG_W(NR_RRC, "Unknown node type %d\n", RC.nrrrc[ctxt.module_id]->node_type);
-  }
-  return (0);
+  AssertFatal(!NODE_IS_DU(RC.nrrrc[ctxt.module_id]->node_type), "illegal node type DU: receiving NGAP messages at this node\n");
+  /* Transfer data to PDCP */
+  rb_id_t srb_id = UE->Srb[2].Active ? UE->Srb[2].Srb_info.Srb_id : UE->Srb[1].Srb_info.Srb_id;
+  nr_rrc_data_req(&ctxt, srb_id, (*rrc_gNB_mui)++, SDU_CONFIRM_NO, length, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
+  return 0;
 }
 
 //------------------------------------------------------------------------------
