@@ -164,17 +164,15 @@ rrc_gNB_ue_context_t *rrc_gNB_ue_context_5g_s_tmsi_exist(gNB_RRC_INST *rrc_insta
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head)
   {
     LOG_I(NR_RRC, "Checking for UE 5G S-TMSI %ld: RNTI %04x\n", s_TMSI, ue_context_p->ue_context.rnti);
-
-    if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 == s_TMSI) {
+    if (ue_context_p->ue_context.ng_5G_S_TMSI_Part1 == s_TMSI)
       return ue_context_p;
-    }
   }
     return NULL;
 }
 
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, ctxt_pP->rnti not found in collection
-rrc_gNB_ue_context_t *rrc_gNB_get_next_free_ue_context(const protocol_ctxt_t *const ctxt_pP, gNB_RRC_INST *rrc_instance_pP, const uint64_t ue_identityP)
+rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(const protocol_ctxt_t *const ctxt_pP, gNB_RRC_INST *rrc_instance_pP, const uint64_t ue_identityP)
 //-----------------------------------------------------------------------------
 {
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc_instance_pP, ctxt_pP->rntiMaybeUEid);

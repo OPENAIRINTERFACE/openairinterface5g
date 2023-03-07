@@ -714,7 +714,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
             tmp->pdusession_id,
             tmp->gtp_teid);
       pdu_sessions_done++;
-    } else {
+    } else if (session->status != PDU_SESSION_STATUS_ESTABLISHED) {
       session->status = PDU_SESSION_STATUS_FAILED;
       resp->pdusessions_failed[pdu_sessions_failed].pdusession_id = session->param.pdusession_id;
       pdu_sessions_failed++;
@@ -772,6 +772,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   for (int i = 0; i < msg->nb_pdusessions_tosetup; i++) {
     rrc_pdu_session_param_t *pduSession = find_pduSession(UE, msg->pdusession_setup_params[i].pdusession_id, true);
     pdusession_t *session = &pduSession->param;
+    LOG_I(NR_RRC, "Adding pdusession %d, total nb of sessions %d\n", session->pdusession_id, UE->nb_of_pdusessions);
     session->pdusession_id = msg->pdusession_setup_params[i].pdusession_id;
     session->nas_pdu = msg->pdusession_setup_params[i].nas_pdu;
     session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
@@ -1091,10 +1092,7 @@ rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(
   resp->nb_of_pdusessions_failed = pdu_sessions_failed;
 
   if (pdu_sessions_done > 0 || pdu_sessions_failed > 0) {
-    LOG_D(NR_RRC,
-          "NGAP_PDUSESSION_MODIFY_RESP: sending the message: nb_of_pdusessions %d, total pdu session %d\n",
-          ue_context_pP->ue_context.nb_of_modify_pdusessions,
-          ue_context_pP->ue_context.nb_of_pdusessions);
+    LOG_D(NR_RRC, "NGAP_PDUSESSION_MODIFY_RESP: sending the message: nb_of_pdusessions %d, total pdu session %d\n", UE->nb_of_modify_pdusessions, UE->nb_of_pdusessions);
     itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
   } else {
     itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
