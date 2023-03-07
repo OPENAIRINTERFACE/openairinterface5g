@@ -53,6 +53,9 @@
 #define CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD               "pusch_dtx_threshold"
 #define CONFIG_STRING_L1_SRS_DTX_THRESHOLD                 "srs_dtx_threshold"
 #define CONFIG_STRING_L1_MAX_LDPC_ITERATIONS               "max_ldpc_iterations"
+#define CONFIG_STRING_L1_RX_THREAD_CORE                    "L1_rx_thread_core"
+#define CONFIG_STRING_L1_TX_THREAD_CORE                    "L1_tx_thread_core"
+
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            L1 configuration parameters                                                                             */
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
@@ -74,6 +77,8 @@
 {CONFIG_STRING_L1_PUSCH_DTX_THRESHOLD,               NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_SRS_DTX_THRESHOLD,                 NULL,      0,         uptr:NULL,           defintval:50,              TYPE_UINT,     0},         \
 {CONFIG_STRING_L1_MAX_LDPC_ITERATIONS,               NULL,      0,         uptr:NULL,           defintval:5,               TYPE_UINT,     0},          \
+{CONFIG_STRING_L1_RX_THREAD_CORE,                 NULL,      0,         uptr:NULL,           defintval:-1,               TYPE_UINT,     0},          \
+{CONFIG_STRING_L1_TX_THREAD_CORE,                 NULL,      0,         uptr:NULL,           defintval:-1,               TYPE_UINT,     0},          \
 }
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
@@ -91,6 +96,8 @@
 #define L1_PUSCH_DTX_THRESHOLD                             13
 #define L1_SRS_DTX_THRESHOLD                               14
 #define L1_MAX_LDPC_ITERATIONS                             15
+#define L1_RX_THREAD_CORE                                  16
+#define L1_TX_THREAD_CORE                                  17
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
 #endif
