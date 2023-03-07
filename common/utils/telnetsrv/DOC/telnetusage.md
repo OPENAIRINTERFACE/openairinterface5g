@@ -8,7 +8,7 @@ By default the embedded telnet server, which is implemented in a shared library,
  ./build_oai  --build-lib telnetsrv
 ```
 
-This will create the `libtelnetsrv.so` and `libtelnetsrv_<app> file in the `cmake_targets/ran_build/build` subdirectory of the oai repository. <app> can be "enb", "gnb", "4GUE", "5GUE", or "ci", each library containing functions specific to a given executable.
+This will create the `libtelnetsrv.so` and `libtelnetsrv_<app>` file in the `cmake_targets/ran_build/build` subdirectory of the oai repository. `<app>` can be "enb", "gnb", "4GUE", "5GUE", or "ci", each library containing functions specific to a given executable.
 
 When starting the softmodem, you must specify the **_\-\-telnetsrv_** option to load and start the telnet server. The telnet server is loaded via the [oai shared library loader](loader).
 
@@ -36,5 +36,6 @@ The telnet server is using the [oai configuration module](Config/Rtusage). Telne
 | `loopdelay` | `integer` | 5000 | delay (in ms) between 2 loop command iterations  | Y |
 | `histfile` | `character string` | "oaitelnet.history" | file used for command history persistency | Y |
 | `histfsize` | `integer` | 50 | maximum number of commands saved in the history | Y |
+| complete |
 
 [oai telnet server home](telnetsrv.md)
