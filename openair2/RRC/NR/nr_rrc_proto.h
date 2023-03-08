@@ -163,12 +163,6 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                const int                    dl_bwp_id,
                                const int                    ul_bwp_id);
 
-int nr_rrc_gNB_decode_ccch(protocol_ctxt_t    *const ctxt_pP,
-                           const uint8_t      *buffer,
-                           int                buffer_length,
-                           const uint8_t      *du_to_cu_rrc_container,
-                           int                du_to_cu_rrc_container_length);
-
 void
 rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     const protocol_ctxt_t   *const ctxt_pP,

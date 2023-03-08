@@ -60,7 +60,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   }
 
   // decode and store capabilities
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_allocate_new_UE_context(rrc);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_allocate_new_ue_context(rrc);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   if (ueCapabilityRAT_Container_nr != NULL) {
@@ -409,5 +409,5 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   }
   gtpv1u_delete_s1u_tunnel(rrc->module_id,  &tmp);
   /* remove context */
-  rrc_gNB_remove_ue_context(&ctxt, rrc, ue_context);
+  rrc_gNB_remove_ue_context(rrc, ue_context);
 }

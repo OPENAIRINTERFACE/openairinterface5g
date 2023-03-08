@@ -678,12 +678,8 @@ int ngap_gNB_handle_error_indication(uint32_t         assoc_id,
   return 0;
 }
 
-
-static
-int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
-    uint32_t               stream,
-    NGAP_NGAP_PDU_t       *pdu) {
-
+static int ngap_gNB_handle_initial_context_request(uint32_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu)
+{
   int i;
   ngap_gNB_amf_data_t *amf_desc_p = NULL;
   NGAP_InitialContextSetupRequest_t    *container;
@@ -732,8 +728,6 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
   MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_INITIAL_CONTEXT_SETUP_REQ);
   ngap_initial_context_setup_req_t * msg=&NGAP_INITIAL_CONTEXT_SETUP_REQ(message_p);
   memset(msg, 0, sizeof(*msg));
-  msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
-  ue_desc_p->gNB_ue_ngap_id = 0;
   msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
   msg->amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
   /* id-UEAggregateMaximumBitRate */
@@ -841,7 +835,6 @@ int ngap_gNB_handle_initial_context_request(uint32_t   assoc_id,
 
   return 0;
 }
-
 
 static
 int ngap_gNB_handle_ue_context_release_command(uint32_t   assoc_id,
@@ -957,8 +950,6 @@ int ngap_gNB_handle_pdusession_setup_request(uint32_t         assoc_id,
   MessageDef * message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_SETUP_REQ);
   ngap_pdusession_setup_req_t * msg=&NGAP_PDUSESSION_SETUP_REQ(message_p);
   memset(msg, 0, sizeof(*msg));
-  msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
-  ue_desc_p->gNB_ue_ngap_id = 0;
   msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
   msg->amf_ue_ngap_id = ue_desc_p->amf_ue_ngap_id;
 
@@ -1158,7 +1149,6 @@ static int ngap_gNB_handle_pdusession_modify_request(uint32_t assoc_id, uint32_t
   MessageDef *message_p = itti_alloc_new_message(TASK_NGAP, 0, NGAP_PDUSESSION_MODIFY_REQ);
   ngap_pdusession_modify_req_t * msg=&NGAP_PDUSESSION_MODIFY_REQ(message_p);
   memset(msg, 0, sizeof(*msg));
-  msg->gNB_ue_ngap_id = ue_desc_p->gNB_ue_ngap_id;
   msg->amf_ue_ngap_id  = amf_ue_ngap_id;
   msg->gNB_ue_ngap_id = gnb_ue_ngap_id;
 
