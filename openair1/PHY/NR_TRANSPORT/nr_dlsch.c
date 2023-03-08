@@ -535,58 +535,52 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx, int frame, int slot)
             }
           }
           else { // non-unitary Precoding
-            if(frame_parms->nb_antennas_tx == 1){ // no precoding matrix defined
-              memcpy(&txdataF[ant][txdataF_offset_per_symbol + subCarrier],
-                     &txdataF_precoding[ant][l_symbol][subCarrier],
-                     re_cnt * sizeof(**txdataF));
+            AssertFatal(frame_parms->nb_antennas_tx > 1, "No precoding can be done with a single antenna port\n");
+            //get the precoding matrix weights:
+            nfapi_nr_pm_pdu_t *pmi_pdu = &gNB->gNB_config.pmi_list.pmi_pdu[pmi - 1]; // pmi 0 is identity matrix
+            AssertFatal(pmi == pmi_pdu->pm_idx, "PMI %d doesn't match to the one in precoding matrix %d\n",
+                        pmi, pmi_pdu->pm_idx);
+            AssertFatal(ant < pmi_pdu->num_ant_ports, "Antenna port index %d exceeds precoding matrix AP size %d\n",
+                        ant, pmi_pdu->num_ant_ports);
+            AssertFatal(rel15->nrOfLayers == pmi_pdu->numLayers, "Number of layers %d doesn't match to the one in precoding matrix %d\n",
+                        rel15->nrOfLayers, pmi_pdu->numLayers);
+            if((subCarrier + re_cnt) < frame_parms->ofdm_symbol_size){ // within ofdm_symbol_size, use SIMDe
+              nr_layer_precoder_simd(rel15->nrOfLayers,
+                                     NR_SYMBOLS_PER_SLOT,
+                                     frame_parms->ofdm_symbol_size,
+                                     txdataF_precoding,
+                                     ant,
+                                     pmi_pdu,
+                                     l_symbol,
+                                     subCarrier,
+                                     re_cnt,
+                                     &txdataF[ant][txdataF_offset_per_symbol]);
               subCarrier += re_cnt;
-              if (subCarrier >= frame_parms->ofdm_symbol_size) {
-                 subCarrier -= frame_parms->ofdm_symbol_size;
-              }
             }
-            else { // precoding with more than 1 tx
-              //get the precoding matrix weights:
-              c16_t **mat = (c16_t**)gNB->nr_mimo_precoding_matrix[rel15->nrOfLayers - 1];
-              //i_row =0,...,dl_antenna_port
-              //j_col =0,...,nrOfLayers
-              //mat[pmi][i_rows*2+j_col]
-              c16_t *W_prec = &mat[pmi][ant * rel15->nrOfLayers];
-              if((subCarrier + re_cnt) < frame_parms->ofdm_symbol_size){ // within ofdm_symbol_size, use SIMDe
-                nr_layer_precoder_simd(rel15->nrOfLayers,
-                                      NR_SYMBOLS_PER_SLOT,
-                                      frame_parms->ofdm_symbol_size,
-                                      txdataF_precoding,
-                                      W_prec,
-                                      l_symbol,
-                                      subCarrier,
-                                      re_cnt,
-                                      &txdataF[ant][txdataF_offset_per_symbol]);
-                subCarrier += re_cnt;
-              }
-              else{ // crossing ofdm_symbol_size, use simple arithmetic operations
-                for (int i = 0; i < re_cnt; i++) {
-                  txdataF[ant][txdataF_offset_per_symbol + subCarrier] =
-                      nr_layer_precoder_cm(rel15->nrOfLayers,
-                                           NR_SYMBOLS_PER_SLOT,
-                                           frame_parms->ofdm_symbol_size,
-                                           txdataF_precoding,
-                                           W_prec,
-                                           l_symbol,
-                                           subCarrier);
+            else{ // crossing ofdm_symbol_size, use simple arithmetic operations
+              for (int i = 0; i < re_cnt; i++) {
+                txdataF[ant][txdataF_offset_per_symbol + subCarrier] =
+                    nr_layer_precoder_cm(rel15->nrOfLayers,
+                                         NR_SYMBOLS_PER_SLOT,
+                                         frame_parms->ofdm_symbol_size,
+                                         txdataF_precoding,
+                                         ant,
+                                         pmi_pdu,
+                                         l_symbol,
+                                         subCarrier);
 #ifdef DEBUG_DLSCH_MAPPING
-                  printf("antenna %d\t l %d \t subCarrier %d \t txdataF: %d %d\n",
-                        ant,
-                        symbol,
-                        subCarrier,
-                        txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].r,
-                        txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].i);
+                printf("antenna %d\t l %d \t subCarrier %d \t txdataF: %d %d\n",
+                       ant,
+                       symbol,
+                       subCarrier,
+                       txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].r,
+                       txdataF[ant][l_symbol * frame_parms->ofdm_symbol_size + subCarrier + txdataF_offset].i);
 #endif
-                  if (++subCarrier >= frame_parms->ofdm_symbol_size) {
-                    subCarrier -= frame_parms->ofdm_symbol_size;
-                  }
+                if (++subCarrier >= frame_parms->ofdm_symbol_size) {
+                  subCarrier -= frame_parms->ofdm_symbol_size;
                 }
-              } // else{ // crossing ofdm_symbol_size, use simple arithmetic operations
-            } // else { // precoding with more than 1 tx
+              }
+            } // else{ // crossing ofdm_symbol_size, use simple arithmetic operations
           } // else { // non-unitary Precoding
 
           rb += rb_step;
