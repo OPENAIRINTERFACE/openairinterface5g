@@ -153,7 +153,7 @@ void *L1_rx_thread(void *arg) {
   }
   return NULL;
 }
-
+/* to be added for URLLC, requires MAC scheduling to be split from UL indication 
 void *L1_tx_thread(void *arg) {
   PHY_VARS_gNB *gNB = (PHY_VARS_gNB*)arg;
 
@@ -165,6 +165,7 @@ void *L1_tx_thread(void *arg) {
   }
   return NULL;
 }
+*/
 void rx_func(void *param) {
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
