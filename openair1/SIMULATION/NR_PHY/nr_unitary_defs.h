@@ -35,7 +35,7 @@
 
 int oai_exit=0;
 
-void exit_function(const char* file, const char* function, const int line, const char *s) {
+void exit_function(const char* file, const char* function, const int line, const char *s, const int assert) {
   const char * msg= s==NULL ? "no comment": s;
   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
   exit(-1);

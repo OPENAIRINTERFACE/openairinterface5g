@@ -541,7 +541,7 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
 
 #ifdef DEBUG_SSS_NR
 
-        printf("(phase,Nid1) (%d,%d), metric_phase %d tot_metric %d, phase_max %d \n",phase, Nid1, metric, *tot_metric, *phase_max);
+	LOG_D(PHY,"(phase,Nid1) (%d,%d), metric_phase %d tot_metric %d, phase_max %d \n",phase, Nid1, metric, *tot_metric, *phase_max);
 
 #endif
       }
@@ -554,7 +554,7 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
   if (*tot_metric > SSS_METRIC_FLOOR_NR) {	
     Nid2 = GET_NID2(frame_parms->Nid_cell);
     Nid1 = GET_NID1(frame_parms->Nid_cell);
-    printf("Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);
+    LOG_D(PHY,"Nid2 %d Nid1 %d tot_metric %d, phase_max %d \n", Nid2, Nid1, *tot_metric, *phase_max);
   }
   //#endif
 
@@ -564,7 +564,7 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
   int re = 0;
   int im = 0;
   if (Nid1 == N_ID_1_NUMBER) {
-    LOG_I(PHY,"Failled to detect SSS after PSS\n");
+    LOG_I(PHY,"Failed to detect SSS after PSS\n");
     return -1;
   }
   d = (int16_t *)&d_sss[Nid2][Nid1];

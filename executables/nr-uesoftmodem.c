@@ -213,7 +213,8 @@ int create_tasks_nrue(uint32_t ue_nb) {
   return 0;
 }
 
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
   int CC_id;
 
   if (s != NULL) {
@@ -229,8 +230,12 @@ void exit_function(const char *file, const char *function, const int line, const
     }
   }
 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 uint64_t get_nrUE_optmask(void) {

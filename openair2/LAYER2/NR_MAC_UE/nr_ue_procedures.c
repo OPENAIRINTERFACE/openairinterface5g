@@ -3236,12 +3236,14 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
                 module_idP, frameP, pduP[1], pduP[2], pduP[3], pduP[4], pduP[5], pduP[6]);
 
           bool ra_success = true;
-          for(int i = 0; i<mac_len; i++) {
-            if(ra->cont_res_id[i] != pduP[i+1]) {
-              ra_success = false;
-              break;
-            }
-          }
+	  if (!IS_SOFTMODEM_IQPLAYER) { // Control is bypassed when replaying IQs (BMC)
+	    for(int i = 0; i<mac_len; i++) {
+	      if(ra->cont_res_id[i] != pduP[i+1]) {
+		ra_success = false;
+		break;
+	      }
+	    }
+	  }
 
           if ( (ra->RA_active == 1) && ra_success) {
             nr_ra_succeeded(module_idP, frameP, slot);
