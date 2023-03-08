@@ -993,7 +993,7 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
     for (int j=0; j<num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
@@ -1048,21 +1048,21 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
 
   gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
   for (int i = 0; i < gNB->max_nb_pucch; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
     gNB->pucch[i] = new_gNB_pucch();
     AssertFatal(gNB->pucch[i] != NULL,"Can't initialize pucch %d \n", i);
   }
 
   gNB->srs = (NR_gNB_SRS_t **) malloc16(gNB->max_nb_srs * sizeof(NR_gNB_SRS_t*));
   for (int i = 0; i < gNB->max_nb_srs; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
     gNB->srs[i] = new_gNB_srs();
     AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
   }
 
   for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
 
     gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
 
