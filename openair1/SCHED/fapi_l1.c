@@ -1014,7 +1014,7 @@ void schedule_response(Sched_Rsp_t *Sched_INFO, void *arg) {
         UL_req->ul_config_request_body.number_of_pdus=0;
         number_ul_pdu=0;
       }else if (RC.mac[Mod_id]->scheduler_mode == SCHED_MODE_FAIR_RR) {
-        if(ulsch_pdu_num <= RC.rrc[Mod_id]->configuration.radioresourceconfig[CC_id].ue_multiple_max){
+        if(ulsch_pdu_num <= fp->ue_multiple_max){
           UL_req->sfn_sf = frame << 4 | subframe;
           oai_nfapi_ul_config_req(UL_req);
           UL_req->ul_config_request_body.number_of_pdus=0;

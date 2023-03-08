@@ -32,6 +32,7 @@
 #include "common/utils/LOG/log.h"
 #include "openair2/F1AP/f1ap_common.h"
 #include "e1ap_default_values.h"
+#include "gtp_itf.h"
 
 #define E1AP_NUM_MSG_HANDLERS 14
 typedef int (*e1ap_message_processing_t)(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *message_p);

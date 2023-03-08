@@ -30,6 +30,7 @@
 #ifndef RRC_ENB_GTPV1U_H_
 #define RRC_ENB_GTPV1U_H_
 
+#include "rrc_defs.h"
 
 /*! \fn rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t* const ctxt_pP, const gtpv1u_enb_create_tunnel_resp_t * const create_tunnel_resp_pP)
  *\brief Process GTPV1U_ENB_CREATE_TUNNEL_RESP message received from GTPV1U, retrieve the enb teid created.

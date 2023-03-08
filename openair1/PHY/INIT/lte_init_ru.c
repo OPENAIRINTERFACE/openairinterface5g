@@ -20,6 +20,7 @@
  */
 
 #include "phy_init.h"
+#include "PHY/phy_extern.h"
 #include "SCHED/sched_eNB.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 //#include "SIMULATION/TOOLS/sim.h"
@@ -32,8 +33,6 @@
 #include <math.h>
 
 void init_7_5KHz(void);
-
-extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 int phy_init_RU(RU_t *ru) {
   LTE_DL_FRAME_PARMS *fp = ru->frame_parms;

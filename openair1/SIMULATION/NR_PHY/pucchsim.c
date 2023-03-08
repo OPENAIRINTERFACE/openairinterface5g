@@ -38,7 +38,7 @@
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
@@ -46,8 +46,8 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "executables/nr-uesoftmodem.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 THREAD_STRUCT thread_struct;
 PHY_VARS_gNB *gNB;
@@ -66,7 +66,12 @@ const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
 // needed for some functions
 PHY_VARS_NR_UE * PHY_vars_UE_g[1][1]={{NULL}};
 
+uint64_t get_softmodem_optmask(void) {return 0;}
+softmodem_params_t *get_softmodem_params(void) {return 0;}
+
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+NR_IF_Module_t *NR_IF_Module_init(int Mod_id) { return (NULL); }
+nfapi_mode_t nfapi_getmode(void) { return NFAPI_MODE_UNKNOWN; }
 
 nrUE_params_t nrUE_params={0};
 

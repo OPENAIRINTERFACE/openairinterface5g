@@ -207,8 +207,13 @@ check_errors() {
 }
 
 compilations() {
-  cd $OPENAIR_DIR/cmake_targets/$1/build
-  echo_info "Log file for compilation is being written to: $dlog/$2.txt"
+  local dir=$1
+  shift 1
+  local logfile=$1
+  shift 1
+  local targets=$@
+  cd $OPENAIR_DIR/cmake_targets/$dir/build
+  echo_info "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
     if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
@@ -217,28 +222,27 @@ compilations() {
         COV_SCAN_PREFIX=""
     fi
     if [ "$MAKE_CMD" != "" ]; then
-       $MAKE_CMD $2
+       $MAKE_CMD $targets
     else 
     if [ "$VERBOSE_COMPILE" == "1" ]; then
-       $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
+       $COV_SCAN_PREFIX make -j`nproc` $targets VERBOSE=$VERBOSE_COMPILE
     else
-       $COV_SCAN_PREFIX make -j`nproc` $2
+       $COV_SCAN_PREFIX make -j`nproc` $targets
     fi
     fi
     ret=$?
-  } > $dlog/$2.txt 2>&1
-  set -e
+  } > $dlog/$logfile 2>&1
   if [ "$VERBOSE_CI" == "1" ]; then
-     echo_info "====== Start of log for $2.txt ======"
-     cat $dlog/$2.txt
-     echo_info "====== End of log for $2.txt ======"
+     echo_info "====== Start of log for $logfile ======"
+     cat $dlog/$logfile
+     echo_info "====== End of log for $logfile ======"
   fi
-  check_warnings "$dlog/$2.txt"
+  check_warnings "$dlog/$logfile"
   if [[ $ret -eq 0 ]]; then
-     echo_success "$2 compiled"
+     echo_success "$targets compiled"
   else
-     check_errors "$dlog/$2.txt"
-     echo_error "$2 compilation failed"
+     check_errors "$dlog/$logfile"
+     echo_error "compilation of $targets failed"
      exit 1
   fi
 }

@@ -35,6 +35,7 @@
 #include "PHY/defs_UE.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 
@@ -61,8 +62,6 @@ int16_t get_hundred_times_delta_IF(PHY_VARS_UE *ue,uint8_t eNB_id,uint8_t harq_p
 }
 
 
-
-uint8_t alpha_lut[8] = {0,40,50,60,70,80,90,100};
 
 void pusch_power_cntl(PHY_VARS_UE *ue,UE_rxtx_proc_t *proc,uint8_t eNB_id,uint8_t j, uint8_t abstraction_flag) {
   uint8_t harq_pid = subframe2harq_pid(&ue->frame_parms,

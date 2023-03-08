@@ -40,8 +40,6 @@
 
 #include "T.h"
 
-//extern char* namepointer_chMag ;
-//eren
 //extern int **ulchmag_eren;
 //eren
 
@@ -1044,7 +1042,6 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
               L1_rxtx_proc_t *proc,
               uint8_t UE_id) {
   LTE_eNB_ULSCH_t **ulsch = eNB->ulsch;
-  // flagMag = 0;
   LTE_eNB_COMMON *common_vars = &eNB->common_vars;
   LTE_eNB_PUSCH *pusch_vars = eNB->pusch_vars[UE_id];
   LTE_DL_FRAME_PARMS *frame_parms = &eNB->frame_parms;

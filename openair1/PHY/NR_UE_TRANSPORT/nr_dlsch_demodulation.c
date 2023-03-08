@@ -29,7 +29,7 @@
  * \warning
  */
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_extern_nr_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/sse_intrin.h"

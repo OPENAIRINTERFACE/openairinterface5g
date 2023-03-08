@@ -30,7 +30,7 @@
 #include <unistd.h>
 #include <fcntl.h>
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/impl_defs_nr.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/defs_gNB.h"

@@ -22,16 +22,8 @@
 #ifndef __PHY_VARS_NR_UE_H__
 #define __PHY_VARS_NR_UE_H__
 
-#include "PHY/types.h"
 #include "PHY/defs_nr_UE.h"
 
-#include "common/ran_context.h"
-
 PHY_VARS_NR_UE ***PHY_vars_UE_g;
-
-const short conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
-const short conjugate2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1};
-
-const char ru_if_types[MAX_RU_IF_TYPES][20]={"local RF","IF5 RRU","IF5 Mobipass","IF4p5 RRU","IF1pp RRU"};
 
 #endif

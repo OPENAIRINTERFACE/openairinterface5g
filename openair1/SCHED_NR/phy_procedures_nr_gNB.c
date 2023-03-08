@@ -31,19 +31,18 @@
 #include "fapi_nr_l1.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
 #include "T.h"
 #include "executables/nr-softmodem.h"
 #include "executables/softmodem-common.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "NR_SRS-ResourceSet.h"
 
 #include "assertions.h"
 
 #include <time.h>
-
-#include "intertask_interface.h"
 
 //#define DEBUG_RXDATA
 //#define SRS_IND_DEBUG
