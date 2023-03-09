@@ -1246,6 +1246,7 @@ rrc_gNB_process_RRCReconfigurationComplete(
     for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
       nr_reestablish_rnti_map_t *nr_reestablish_rnti_map = &(RC.nrrrc[ctxt_pP->module_id])->nr_reestablish_rnti_map[i];
       if (nr_reestablish_rnti_map->ue_id == ctxt_pP->rntiMaybeUEid) {
+        ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
         reestablish_ue_id = nr_reestablish_rnti_map[i].c_rnti;
         LOG_D(NR_RRC, "Removing reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n", i, nr_reestablish_rnti_map->ue_id, nr_reestablish_rnti_map->c_rnti);
         // clear current C-RNTI from map
@@ -2682,6 +2683,8 @@ rrc_gNB_decode_dcch(
 
           gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
           mac_remove_nr_ue(nrmac, reestablish_rnti);
+
+          ue_context_p->ue_context.ue_reestablishment_counter++;
         }
 
         // ue_context_p->ue_context.ue_release_timer = 0;
