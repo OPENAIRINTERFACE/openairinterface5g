@@ -618,7 +618,6 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-	libxslt1-dev \
 	libtasn1-6-dev \
 	patch \
 	openssl \
@@ -649,7 +648,6 @@ check_install_oai_software() {
       lksctp-tools-devel \
       libtasn1 \
       libtool \
-      libxslt-devel \
       ninja-build \
       make \
       openssl \
