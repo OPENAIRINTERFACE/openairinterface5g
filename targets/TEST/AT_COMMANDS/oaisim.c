@@ -36,7 +36,6 @@
 #include "UTIL/LOG/log_extern.h"
 #include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "UTIL/OCG/OCG.h"
 #include "UTIL/AT_COMMANDS/parser.h"
 
 mapping level_names[] = {

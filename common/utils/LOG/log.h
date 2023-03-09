@@ -197,7 +197,6 @@ typedef enum {
   MAC,
   EMU,
   SIM,
-  OCG,
   OMG,
   OPT,
   OTG,

@@ -986,9 +986,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/ringbuffer_queue.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/message_queue.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/link_manager.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG_extern.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG_vars.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list2.c \
