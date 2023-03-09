@@ -547,7 +547,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
       RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
       for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
         cc->ra[n].cfra = false;
-        cc->ra[n].msg3_dcch_dtch = false;
         cc->ra[n].rnti = 0;
         cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
         cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
@@ -613,7 +612,6 @@ int rrc_mac_config_req_gNB(module_id_t Mod_idP,
         for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
           ra->preambles.preamble_list[i] = i;
       }
-      ra->msg3_dcch_dtch = false;
       LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
     } else { // CellGroup has been updated
       NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info, rnti);
