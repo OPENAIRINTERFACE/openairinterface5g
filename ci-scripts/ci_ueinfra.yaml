@@ -22,15 +22,15 @@ nrmodule2_quectel:
 
 adb_ue_1:
   Host: nano
-  InitScript: /home/oaicicd/ci_ctl_adb.sh initialize 5200a933fee93521
-  TermScript: /home/oaicicd/ci_ctl_adb.sh terminate 5200a933fee93521
-  AttachScript: /home/oaicicd/ci_ctl_adb.sh attach 5200a933fee93521
-  DetachScript: /home/oaicicd/ci_ctl_adb.sh detach 5200a933fee93521
-  CheckStatusScript: /home/oaicicd/ci_ctl_adb.sh check 5200a933fee93521
-  DataEnableScript: adb -s 5200a933fee93521 shell "svc data enable"
-  DataDisableScript: adb -s 5200a933fee93521 shell "svc data disable"
-  UENetworkScript: adb -s 5200a933fee93521 shell "ip address show | grep rmnet"
-  CmdPrefix: adb -s 5200a933fee93521 shell
+  InitScript: /home/oaicicd/ci_ctl_adb.sh initialize R3CM40LZPHT
+  TermScript: /home/oaicicd/ci_ctl_adb.sh terminate R3CM40LZPHT
+  AttachScript: /home/oaicicd/ci_ctl_adb.sh attach R3CM40LZPHT
+  DetachScript: /home/oaicicd/ci_ctl_adb.sh detach R3CM40LZPHT
+  CheckStatusScript: /home/oaicicd/ci_ctl_adb.sh check R3CM40LZPHT
+  DataEnableScript: adb -s R3CM40LZPHT shell "svc data enable"
+  DataDisableScript: adb -s R3CM40LZPHT shell "svc data disable"
+  UENetworkScript: adb -s R3CM40LZPHT shell "ip address show | grep rmnet_data0"
+  CmdPrefix: adb -s R3CM40LZPHT shell
   MTU: 1500
   LogStore: /media/usb-drive/ci_adb_1-logs
 adb_ue_2:
