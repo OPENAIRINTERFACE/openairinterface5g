@@ -245,7 +245,6 @@ static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_Rrc
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
   rrc->module_id = gnb_mod_idP;
-  rrc->Nb_ue = 0;
   rrc_gNB_CU_DU_init(rrc);
   uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
@@ -556,7 +555,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
                                    NULL,
                                    ue_p->masterCellGroup);
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
-  LOG_W(RRC, "do_RRCReconfiguration(): size %d\n", size);
+  LOG_W(NR_RRC, "do_RRCReconfiguration(): size %d\n", size);
 
   if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
@@ -1467,7 +1466,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
 
   /* Update RNTI in ue_context */
   LOG_I(NR_RRC, "Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
-  ue_p->rnti = ctxt_pP->rntiMaybeUEid;
+  rrc_gNB_update_ue_context_rnti(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], ue_p->gNB_ue_ngap_id);
 
   if (get_softmodem_params()->sa) {
     uint8_t send_security_mode_command = false;
@@ -1710,8 +1709,10 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
               LOG_I(NR_RRC, " 5G-S-TMSI-Part1 exists, old rnti %04x => %04x\n", UE->rnti, rnti);
 
               // TODO: MAC structures should not be accessed directly from the RRC! An implementation using the F1 interface should be developed.
-              gNB_MAC_INST *nrmac = RC.nrmac[module_id]; // why MAC instances match RRC instances ?
-              mac_remove_nr_ue(nrmac, UE->rnti);
+              if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+                gNB_MAC_INST *nrmac = RC.nrmac[module_id]; // why MAC instances match RRC instances ?
+                mac_remove_nr_ue(nrmac, UE->rnti);
+              }
 
               /* replace rnti in the context */
               UE->rnti = rnti;
@@ -1794,7 +1795,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
 
         rnti_t c_rnti = rrcReestablishmentRequest.ue_Identity.c_RNTI;
         LOG_I(NR_RRC, "c_RNTI: %04x\n", c_rnti);
-        rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, c_rnti);
+        rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, c_rnti);
         gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
         if (ue_context_p == NULL) {
           LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC establishment\n");
@@ -2417,7 +2418,7 @@ rrc_gNB_decode_dcch(
           if (nr_reestablish_rnti_map->ue_id == ctxt_pP->rntiMaybeUEid) {
           LOG_I(NR_RRC, "Removing nr_reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n", i, nr_reestablish_rnti_map->ue_id, nr_reestablish_rnti_map->c_rnti);
           reestablish_rnti = nr_reestablish_rnti_map->c_rnti;
-          ue_context_p = rrc_gNB_get_ue_context(gnb_rrc_inst, reestablish_rnti);
+          ue_context_p = rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, reestablish_rnti);
           break;
           }
         }
@@ -2443,8 +2444,10 @@ rrc_gNB_decode_dcch(
         if (ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->criticalExtensions.present == NR_RRCReestablishmentComplete__criticalExtensions_PR_rrcReestablishmentComplete) {
           rrc_gNB_process_RRCReestablishmentComplete(ctxt_pP, reestablish_rnti, ue_context_p, ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->rrc_TransactionIdentifier);
 
-          gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
-          mac_remove_nr_ue(nrmac, reestablish_rnti);
+          if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+            gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
+            mac_remove_nr_ue(nrmac, reestablish_rnti);
+          }
         }
 
         // UE->ue_release_timer = 0;
@@ -2599,8 +2602,8 @@ static int rrc_process_DU_DL(MessageDef *msg_p, instance_t instance)
 {
   NRDuDlReq_t * req=&NRDuDlReq(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rntiMaybeUEid);
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   if (req->srb_id == 0) {
@@ -2788,10 +2791,9 @@ return 0;
 static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-  protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-  gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rntiMaybeUEid);
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
+  gNB_MAC_INST *mac = RC.nrmac[instance];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   MessageDef *message_p;
   message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_RESP);
@@ -2837,8 +2839,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_
           }
 
           if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
-            LOG_E(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" Failed to decode nr UE capabilities (%zu bytes)\n",
-            PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),dec_rval.consumed);
+            LOG_E(NR_RRC, "UE %04x Failed to decode nr UE capabilities (%zu bytes)\n", req->rnti, dec_rval.consumed);
             ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->UE_Capability_nr);
             UE->UE_Capability_nr = 0;
           }
@@ -2870,8 +2871,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_
           }
 
           if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
-            LOG_E(NR_RRC,PROTOCOL_NR_RRC_CTXT_FMT" Failed to decode nr UE capabilities (%zu bytes)\n",
-              PROTOCOL_NR_RRC_CTXT_UE_ARGS(&ctxt),dec_rval.consumed);
+            LOG_E(NR_RRC, "UE %04x Failed to decode nr UE capabilities (%zu bytes)\n", req->rnti, dec_rval.consumed);
             ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability, UE->UE_Capability_MRDC);
             UE->UE_Capability_MRDC = 0;
           }
@@ -2948,7 +2948,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_
     // FIXME: fill_mastercellGroupConfig() won't fill the right priorities or
     // bearer IDs for the DRBs
     fill_mastercellGroupConfig(cellGroupConfig, UE->masterCellGroup, rrc->um_on_default_drb, SRB2_config ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
-
+  protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   apply_macrlc_config(rrc, ue_context_p, &ctxt);
   
   if(req->rrc_container_length > 0){
@@ -2964,7 +2964,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_
 
   /* Fill the UE context setup response ITTI message to send to F1AP */
   resp->gNB_CU_ue_id = req->gNB_CU_ue_id;
-  resp->rnti = ctxt.rntiMaybeUEid;
+  resp->rnti = req->rnti;
   if(DRB_configList){ 
     if(DRB_configList->list.count > 0){
       resp->drbs_to_be_setup = calloc(1,DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
@@ -3012,7 +3012,7 @@ static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_
   }
   resp->du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded+7)>>3;
   free(cellGroupConfig);
-  itti_send_msg_to_task (TASK_DU_F1, ctxt.module_id, message_p);
+  itti_send_msg_to_task(TASK_DU_F1, instance, message_p);
 }
 
 static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, instance_t instance)
@@ -3021,7 +3021,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, in
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rntiMaybeUEid);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   MessageDef *message_p;
   message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_RESP);
@@ -3164,7 +3164,7 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rntiMaybeUEid);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
@@ -3217,7 +3217,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   f1ap_ue_context_setup_t *resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt.rntiMaybeUEid);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   e1ap_bearer_setup_req_t req = {0};
@@ -3450,7 +3450,6 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
   {
     gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
     ctxt_pP->rntiMaybeUEid = UE->rnti;
-    gNB_MAC_INST *nrmac=RC.nrmac[ctxt_pP->module_id]; //WHAT A BEAUTIFULL RACE CONDITION !!!
 
     if (UE->ul_failure_timer > 0) {
       UE->ul_failure_timer++;
@@ -3466,18 +3465,20 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
                    NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
         }
 
-        // Remove here the MAC and RRC context when RRC is not connected or gNB is not connected to CN5G
-        if (UE->StatusRrc < NR_RRC_CONNECTED || UE->gNB_ue_ngap_id == 0) {
+        // Remove here the MAC and RRC context when RRC is not connected
+        if (UE->StatusRrc < NR_RRC_CONNECTED) {
           if (!NODE_IS_CU(rrc->node_type)) {
-            mac_remove_nr_ue(nrmac, ctxt_pP->rntiMaybeUEid);
+            gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
+            mac_remove_nr_ue(nrmac, UE->rnti);
             rrc_rlc_remove_ue(ctxt_pP);
             pdcp_remove_UE(ctxt_pP);
 
             /* remove RRC UE Context */
-            ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt_pP->rntiMaybeUEid);
+            ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, UE->rnti);
             if (ue_context_p) {
+              LOG_I(NR_RRC, "remove UE %04x \n", UE->rnti);
               rrc_gNB_remove_ue_context(rrc, ue_context_p);
-              LOG_I(NR_RRC, "remove UE %lx \n", ctxt_pP->rntiMaybeUEid);
+              break; // We must not access this UE context
             }
           }
           // In case of CU trigger UE context release command towards the DU
@@ -3485,7 +3486,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
             MessageDef *message_p;
             message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
             f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
-            rel_cmd->rnti = ctxt_pP->rntiMaybeUEid;
+            rel_cmd->rnti = UE->rnti;
             rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
             rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
             itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
@@ -3502,18 +3503,18 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
       if (UE->ue_release_timer_rrc >= UE->ue_release_timer_thres_rrc) {
         LOG_I(NR_RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n", UE->rnti);
         UE->ue_release_timer_rrc = 0;
-        mac_remove_nr_ue(nrmac, ctxt_pP->rntiMaybeUEid);
+        if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+          gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
+          mac_remove_nr_ue(nrmac, UE->rnti);
+        }
         rrc_rlc_remove_ue(ctxt_pP);
         pdcp_remove_UE(ctxt_pP);
-        newGtpuDeleteAllTunnels(ctxt_pP->instance, ctxt_pP->rntiMaybeUEid);
+        newGtpuDeleteAllTunnels(ctxt_pP->instance, UE->rnti);
 
         /* remove RRC UE Context */
-        ue_context_p = rrc_gNB_get_ue_context(rrc, ctxt_pP->rntiMaybeUEid);
-        if (ue_context_p) {
-          rrc_gNB_remove_ue_context(rrc, ue_context_p);
-          LOG_I(NR_RRC, "remove UE %lx \n", ctxt_pP->rntiMaybeUEid);
-        }
+        LOG_I(NR_RRC, "remove UE %04x \n", UE->rnti);
 
+        rrc_gNB_remove_ue_context(rrc, ue_context_p);
         break; // break RB_FOREACH
       }
     }

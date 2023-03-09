@@ -1611,7 +1611,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
                                F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
     f1ap_ue_context_modification_resp->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
-    LOG_D(F1AP, "f1ap_ue_context_setup_resp->gNB_DU_ue_id is: %d \n", f1ap_ue_context_modification_resp->gNB_DU_ue_id);
+    LOG_D(F1AP, "f1ap_ue_context_modification_resp->gNB_DU_ue_id is: %d \n", f1ap_ue_context_modification_resp->gNB_DU_ue_id);
 
     f1ap_ue_context_modification_resp->rnti =
           f1ap_get_rnti_by_du_id(CUtype, instance, f1ap_ue_context_modification_resp->gNB_DU_ue_id);

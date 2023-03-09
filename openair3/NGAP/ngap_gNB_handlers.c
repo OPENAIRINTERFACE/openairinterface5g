@@ -53,8 +53,8 @@ static void allocCopy(ngap_pdu_t *out, OCTET_STRING_t in)
   if (in.size) {
     out->buffer = malloc(in.size);
     memcpy(out->buffer, in.buf, in.size);
-    out->length = in.size;
   }
+  out->length = in.size;
 }
 
 char *ngap_direction2String(int ngap_dir) {

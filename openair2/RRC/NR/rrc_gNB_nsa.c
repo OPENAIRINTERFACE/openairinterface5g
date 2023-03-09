@@ -145,7 +145,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   }
 
   // NR RRCReconfiguration
-  AssertFatal(rrc->Nb_ue < MAX_NR_RRC_UE_CONTEXTS,"cannot add another UE\n");
   UE->reconfig = calloc(1, sizeof(NR_RRCReconfiguration_t));
   UE->secondaryCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
   memset((void *)UE->reconfig, 0, sizeof(NR_RRCReconfiguration_t));
@@ -237,8 +236,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.gNB_ue_ngap_id);
-
-  ue_context_p->ue_context.rnti = UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
+  rrc_gNB_update_ue_context_rnti(UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, rrc, UE->gNB_ue_ngap_id);
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
   // int CG_Config_size = generate_CG_Config(rrc,CG_Config,UE->reconfig,UE->rb_config);
@@ -328,7 +326,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
     itti_send_msg_to_task(TASK_X2AP, ENB_MODULE_ID_TO_INSTANCE(0), msg); //Check right id instead of hardcoding
   }
 
-  rrc->Nb_ue++;
   // configure MAC and RLC
   if (NODE_IS_DU(rrc->node_type)) {
     rrc_mac_config_req_gNB(rrc->module_id,
@@ -384,7 +381,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   LOG_D(RRC, "calling rrc_remove_nsa_user rnti %d\n", rnti);
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rnti, 0, 0, rrc->module_id);
 
-  ue_context = rrc_gNB_get_ue_context(rrc, rnti);
+  ue_context = rrc_gNB_get_ue_context_by_rnti(rrc, rnti);
   if (ue_context == NULL) {
     LOG_W(RRC, "rrc_remove_nsa_user: rnti %d not found\n", rnti);
     return;

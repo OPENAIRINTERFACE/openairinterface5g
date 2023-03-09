@@ -54,8 +54,8 @@ static void allocCopy(OCTET_STRING_t *out, ngap_pdu_t in)
   if (in.length) {
     out->buf = malloc(in.length);
     memcpy(out->buf, in.buffer, in.length);
-    out->size = in.length;
   }
+  out->size = in.length;
 }
 
 static void allocAddrCopy(BIT_STRING_t *out, ngap_transport_layer_addr_t in)

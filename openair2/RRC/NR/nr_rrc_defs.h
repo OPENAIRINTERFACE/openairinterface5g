@@ -480,8 +480,7 @@ typedef struct gNB_RRC_INST_s {
   eth_params_t                                        eth_params_s;
   rrc_gNB_carrier_data_t                              carrier;
   uid_allocator_t                                     uid_allocator;
-  RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s)     rrc_ue_head; // ue_context tree key search by rnti
-  int Nb_ue;
+  RB_HEAD(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s) rrc_ue_head; // ue_context tree key search by rnti
   /// NR cell id
   uint64_t nr_cellid;
 
