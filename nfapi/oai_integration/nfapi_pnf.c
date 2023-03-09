@@ -52,6 +52,7 @@
 #include "common/utils/LOG/log.h"
 
 #include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair1/SCHED_NR/fapi_nr_l1.h"

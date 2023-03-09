@@ -54,6 +54,7 @@
 #include "executables/lte-softmodem.h"
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
+#include "openair1/PHY/LTE_TRANSPORT/dlsch_tbs.h"
 
 const char *__asan_default_options()
 {
@@ -69,10 +70,8 @@ channel_desc_t *eNB2UE[NUMBER_OF_eNB_MAX][NUMBER_OF_UE_MAX];
 channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
-//double sinr_bler_map[MCS_COUNT][2][16];
 
 extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
-//extern  char* namepointer_chMag ;
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 
@@ -1005,14 +1004,11 @@ int main(int argc, char **argv) {
           if (abstx) {
             if (trials==0 && round==0 && SNR==snr0) { //generate a new channel
               hold_channel = 0;
-              flagMag=0;
             } else {
               hold_channel = 1;
-              flagMag = 1;
             }
           } else {
             hold_channel = 0;
-            flagMag=1;
           }
 
           ///////////////////////////////////////

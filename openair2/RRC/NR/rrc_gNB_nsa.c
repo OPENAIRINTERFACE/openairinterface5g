@@ -43,6 +43,7 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
 #include <openair2/RRC/NR/nr_rrc_proto.h>
+#include "pdcp.h"
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t  *cg_config_info) {
   struct rrc_gNB_ue_context_s        *ue_context_p = NULL;

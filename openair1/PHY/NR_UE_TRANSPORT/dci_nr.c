@@ -38,7 +38,7 @@
 #include "executables/softmodem-common.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_dci_defs.h"
-#include "PHY/phy_extern_nr_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/CODING/coding_extern.h"
 #include "PHY/sse_intrin.h"
 #include "common/utils/nr/nr_common.h"

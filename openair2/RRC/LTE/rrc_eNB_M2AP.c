@@ -35,6 +35,7 @@
 #   include "oai_asn1.h"
 #   include "intertask_interface.h"
 # include "common/ran_context.h"
+#include "pdcp.h"
 
 extern RAN_CONTEXT_t RC;
 

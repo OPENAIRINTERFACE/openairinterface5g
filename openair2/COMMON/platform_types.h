@@ -281,12 +281,12 @@ typedef struct protocol_ctxt_s {
 
 #define CHECK_CTXT_ARGS(CTXT_Pp)
 
-#define exit_fun(msg) exit_function(__FILE__,__FUNCTION__,__LINE__,msg)
+#define exit_fun(msg) exit_function(__FILE__, __FUNCTION__, __LINE__, "exit_fun", OAI_EXIT_NORMAL)
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-void exit_function(const char *file, const char *function, const int line, const char *s);
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert);
 #ifdef __cplusplus
 }
 #endif

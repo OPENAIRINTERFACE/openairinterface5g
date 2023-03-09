@@ -33,6 +33,7 @@
 #ifndef __NR_IF_MODULE__H__
 #define __NR_IF_MODULE__H__
 
+#include <pthread.h>
 #include <stdint.h>
 #include "nfapi_nr_interface.h"
 #include "nfapi_nr_interface_scf.h"

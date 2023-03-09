@@ -24,7 +24,7 @@
 #include <openair1/PHY/impl_defs_top.h>
 #include "executables/nr-uesoftmodem.h"
 #include "PHY/phy_extern_nr_ue.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "NR_MAC_UE/mac_proto.h"
 #include "RRC/NR_UE/rrc_proto.h"
 #include "SCHED_NR_UE/phy_frame_config_nr.h"
@@ -33,6 +33,7 @@
 #include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/refsig_defs_ue.h"
 #include "radio/COMMON/common_lib.h"
+#include "pdcp.h"
 
 /*
  *  NR SLOT PROCESSING SEQUENCE
@@ -687,21 +688,33 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
 
     LOG_I(PHY,"Resynchronizing RX by %d samples (mode = %d)\n",UE->rx_offset,UE->mode);
 
-    *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
-    for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
-      int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
-      // we write before read because gNB waits for UE to write and both executions halt
-      // this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
-      if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
-      AssertFatal(unitTransfer ==
-                  UE->rfdevice.trx_read_func(&UE->rfdevice,
-                                             timestamp,
-                                             (void **)UE->common_vars.rxdata,
-                                             unitTransfer,
-                                             UE->frame_parms.nb_antennas_rx),"");
-      *timestamp += unitTransfer; // this does not affect the read but needed for RFSIM write
+    if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+      // Resynchonize by slot (will work with numerology 1 only)
+      for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe/2 ) {
+	int unitTransfer=size>UE->frame_parms.samples_per_subframe/2 ? UE->frame_parms.samples_per_subframe/2 : size ;
+	AssertFatal(unitTransfer ==
+		    UE->rfdevice.trx_read_func(&UE->rfdevice,
+					       timestamp,
+					       (void **)UE->common_vars.rxdata,
+					       unitTransfer,
+					       UE->frame_parms.nb_antennas_rx),"");
+      }
+    } else {
+      *timestamp += UE->frame_parms.get_samples_per_slot(1,&UE->frame_parms);
+      for ( int size=UE->rx_offset ; size > 0 ; size -= UE->frame_parms.samples_per_subframe ) {
+	int unitTransfer=size>UE->frame_parms.samples_per_subframe ? UE->frame_parms.samples_per_subframe : size ;
+	// we write before read because gNB waits for UE to write and both executions halt
+	// this happens here as the read size is samples_per_subframe which is very much larger than samp_per_slot
+	if (IS_SOFTMODEM_RFSIM) dummyWrite(UE,*timestamp, unitTransfer);
+	AssertFatal(unitTransfer ==
+		    UE->rfdevice.trx_read_func(&UE->rfdevice,
+					       timestamp,
+					       (void **)UE->common_vars.rxdata,
+					       unitTransfer,
+					       UE->frame_parms.nb_antennas_rx),"");
+	*timestamp += unitTransfer; // this does not affect the read but needed for RFSIM write
+      }
     }
-
 }
 
 int computeSamplesShift(PHY_VARS_NR_UE *UE) {
@@ -773,6 +786,11 @@ void *UE_thread(void *arg) {
         syncRunning=false;
         syncData_t *tmp=(syncData_t *)NotifiedFifoData(res);
         if (UE->is_synchronized) {
+	  LOG_I(PHY,"UE synchronized decoded_frame_rx=%d UE->init_sync_frame=%d trashed_frames=%d\n",
+		decoded_frame_rx,
+		UE->init_sync_frame,
+		trashed_frames);
+
           decoded_frame_rx=(((mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused)<<4) | tmp->proc.decoded_frame_rx);
           // shift the frame index with all the frames we trashed meanwhile we perform the synch search
           decoded_frame_rx=(decoded_frame_rx + UE->init_sync_frame + trashed_frames) % MAX_FRAME_NUMBER;
@@ -780,8 +798,16 @@ void *UE_thread(void *arg) {
         delNotifiedFIFO_elt(res);
         start_rx_stream=0;
       } else {
-        readFrame(UE, &timestamp, true);
-        trashed_frames+=2;
+	if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+	  // For IQ recorder/player we force synchronization to happen in 280 ms
+	  while (trashed_frames != 28) {
+	    readFrame(UE, &timestamp, true);
+	    trashed_frames+=2;
+	  }
+	} else {
+	  readFrame(UE, &timestamp, true);
+	  trashed_frames+=2;
+	}
         continue;
       }
     }

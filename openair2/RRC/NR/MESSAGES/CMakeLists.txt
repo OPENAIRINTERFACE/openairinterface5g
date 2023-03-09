@@ -14,8 +14,23 @@ add_custom_command(OUTPUT ${nr_rrc_source} ${nr_rrc_headers}
   COMMENT "Generating NR RRC source file from ${CMAKE_CURRENT_SOURCE_DIR}/${NR_RRC_GRAMMAR}"
 )
 
+# Many other targets include NR RRC ASN.1 headers, without actually needing the
+# actual library (asn1_nr_rrc). Therefore, below we create the INTERFACE
+# library asn1_nr_rrc_hdrs that only contains these headers. To actually wait
+# that the headers are created in add_custom_command, we use an intermediary
+# add_custom_target which create a target that waits for the headers, and make
+# a dependency from asn1_nr_rrc_hdrs to gen_nr_rrc_hdrs, which is the
+# recommended way, see https://gitlab.kitware.com/cmake/cmake/-/issues/17366.
+# In newer cmake version (e.g., 3.20), it is also possible to have
+# ${nr_rrc_headers} directly in the add_library(asn1_nr_rrc_hdrs) statement,
+# without the need for asn1_lte_rrc_hdrs
+add_custom_target(gen_nr_rrc_hdrs DEPENDS ${nr_rrc_headers})
+add_library(asn1_nr_rrc_hdrs INTERFACE)
+add_dependencies(asn1_nr_rrc_hdrs gen_nr_rrc_hdrs)
+target_include_directories(asn1_nr_rrc_hdrs INTERFACE "${CMAKE_CURRENT_BINARY_DIR}")
+
 add_library(asn1_nr_rrc ${nr_rrc_source})
-target_include_directories(asn1_nr_rrc PUBLIC "${CMAKE_CURRENT_BINARY_DIR}")
+target_link_libraries(asn1_nr_rrc PUBLIC asn1_nr_rrc_hdrs)
 target_compile_options(asn1_nr_rrc
                          PRIVATE -DASN_DISABLE_OER_SUPPORT -w
                          PUBLIC -DNR_RRC_VERSION=${NR_RRC_RELEASE})

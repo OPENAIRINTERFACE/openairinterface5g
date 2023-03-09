@@ -35,6 +35,7 @@
 #include "LAYER2/MAC/mac.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "transport_proto_ue.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 
 #include "assertions.h"
 

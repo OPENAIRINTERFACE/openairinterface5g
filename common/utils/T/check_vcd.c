@@ -19,7 +19,19 @@
 #define ENABLE_USE_CPU_EXECUTION_TIME
 #include "../LOG/vcd_signal_dumper.c"
 
-void err(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+/*
+ * Dummy needed by assertions.h
+ */
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
+  if (assert) {
+    abort();
+  } else {
+    exit(EXIT_SUCCESS);
+  }
+}
+
+void err(char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void err(char *fmt, ...)
 {
   va_list ap;
