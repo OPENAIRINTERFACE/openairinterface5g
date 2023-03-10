@@ -312,11 +312,11 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
     mu = 4;
     break;
 
-    case NR_SubcarrierSpacing_spare3:
+    case NR_SubcarrierSpacing_kHz480_v1700:
     mu = 5;
     break;
 
-    case NR_SubcarrierSpacing_spare2:
+    case NR_SubcarrierSpacing_kHz960_v1700:
     mu = 6;
     break;
 
