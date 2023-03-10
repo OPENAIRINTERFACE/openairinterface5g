@@ -1944,7 +1944,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   return true;
 }
 
-nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
 {
   /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
    * This would include the number of DMRS symbols, which in turn depends on

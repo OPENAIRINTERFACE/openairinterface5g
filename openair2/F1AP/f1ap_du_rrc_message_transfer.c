@@ -169,9 +169,8 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
   F1AP_ULRRCMessageTransferIEs_t *ie;
   uint8_t *buffer = NULL;
   uint32_t len;
-  LOG_I(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
+  LOG_D(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
         instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
-  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, msg->rrc_container_length);
   //for (int i = 0;i < msg->rrc_container_length; i++)
   //  printf("%02x ", msg->rrc_container[i]);
   //printf("\n");
@@ -232,9 +231,6 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
 
     if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0))
       LOG_E(F1AP, " Failed to decode UL-DCCH (%zu bytes)\n",dec_rval.consumed);
-    else
-      LOG_I(F1AP, "Received message: present %d and c1 present %d\n",
-            ul_dcch_msg->message.present, ul_dcch_msg->message.choice.c1.present);
 
     if (ul_dcch_msg->message.present == LTE_UL_DCCH_MessageType_PR_c1) {
       switch (ul_dcch_msg->message.choice.c1.present) {
@@ -248,7 +244,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionReconfigurationComplete:
-          LOG_I(F1AP, "[MSG] RRC UL rrcConnectionReconfigurationComplete\n");
+          LOG_D(F1AP, "[MSG] RRC UL rrcConnectionReconfigurationComplete\n");
           /* CDRX: activated when RRC Connection Reconfiguration Complete is received */
           int UE_id_mac = find_UE_id(instance, rnti);
 
@@ -262,7 +258,7 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           if (UE_scheduling_control->cdrx_waiting_ack == true) {
             UE_scheduling_control->cdrx_waiting_ack = false;
             UE_scheduling_control->cdrx_configured = true; // Set to TRUE when RRC Connection Reconfiguration Complete is received
-            LOG_I(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
+            LOG_D(F1AP, "CDRX configuration activated after RRC Connection Reconfiguration Complete reception\n");
           }
 
           /* End of CDRX processing */
@@ -272,33 +268,33 @@ int DU_send_UL_RRC_MESSAGE_TRANSFER(instance_t instance,
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_rrcConnectionSetupComplete:
-          LOG_I(F1AP, "[MSG] RRC UL rrcConnectionSetupComplete \n");
+          LOG_D(F1AP, "[MSG] RRC UL rrcConnectionSetupComplete \n");
 
           if(!ue_context_p) {
             LOG_E(F1AP, "Did not find the UE context associated with UE RNTOI %x, ue_context_p is NULL\n", rnti);
           } else {
-            LOG_I(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
+            LOG_D(F1AP, "Processing RRCConnectionSetupComplete UE %x\n", rnti);
             ue_context_p->ue_context.StatusRrc = RRC_CONNECTED;
           }
 
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_securityModeComplete:
-          LOG_I(F1AP, "[MSG] RRC securityModeComplete \n");
+          LOG_D(F1AP, "[MSG] RRC securityModeComplete \n");
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_securityModeFailure:
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_ueCapabilityInformation:
-          LOG_I(F1AP, "[MSG] RRC ueCapabilityInformation \n");
+          LOG_D(F1AP, "[MSG] RRC ueCapabilityInformation \n");
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_ulHandoverPreparationTransfer:
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
-          LOG_I(F1AP,"[MSG] RRC UL Information Transfer \n");
+          LOG_D(F1AP,"[MSG] RRC UL Information Transfer \n");
           break;
 
         case LTE_UL_DCCH_MessageType__c1_PR_counterCheckResponse:
@@ -428,9 +424,8 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
   F1AP_ULRRCMessageTransfer_t    *out;
   uint8_t *buffer = NULL;
   uint32_t len;
-  LOG_I(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
+  LOG_D(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
         instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
-  //LOG_I(F1AP, "%s() RRCContainer size %d: ", __func__, msg->rrc_container_length);
   //for (int i = 0;i < msg->rrc_container_length; i++)
   //  printf("%02x ", msg->rrc_container[i]);
   //printf("\n");

@@ -107,7 +107,7 @@ void *F1AP_DU_task(void *arg) {
     MessageDef *msg = NULL;
     itti_receive_msg(TASK_DU_F1, &msg);
     instance_t myInstance=ITTI_MSG_DESTINATION_INSTANCE(msg);
-    LOG_I(F1AP, "DU Task Received %s for instance %ld\n",
+    LOG_D(F1AP, "DU Task Received %s for instance %ld\n",
           ITTI_MSG_NAME(msg),myInstance);
     switch (ITTI_MSG_ID(msg)) {
       case F1AP_SETUP_REQ: {

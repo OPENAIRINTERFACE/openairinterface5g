@@ -129,7 +129,7 @@ void *F1AP_CU_task(void *arg) {
 
   while (1) {
     itti_receive_msg(TASK_CU_F1, &received_msg);
-    LOG_I(F1AP, "CU Task Received %s for instance %ld\n",
+    LOG_D(F1AP, "CU Task Received %s for instance %ld\n",
           ITTI_MSG_NAME(received_msg), ITTI_MSG_DESTINATION_INSTANCE(received_msg));
     switch (ITTI_MSG_ID(received_msg)) {
       case SCTP_NEW_ASSOCIATION_IND:
