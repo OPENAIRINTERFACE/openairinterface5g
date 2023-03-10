@@ -540,7 +540,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
     for (int n = 0; n < NR_NB_RA_PROC_MAX; n++) {
       NR_RA_t *ra = &cc->ra[n];
       ra->cfra = false;
-      ra->msg3_dcch_dtch = false;
       ra->rnti = 0;
       ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
       ra->preambles.preamble_list = malloc(MAX_NUM_NR_PRACH_PREAMBLES * sizeof(*ra->preambles.preamble_list));
@@ -630,7 +629,6 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
       }
     }
   }
-  ra->msg3_dcch_dtch = false;
   LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
   return true;
 }

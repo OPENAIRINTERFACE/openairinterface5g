@@ -2021,8 +2021,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
                       NR_RA_t *ra,
-                      NR_UE_info_t *UE) {
-
+                      NR_UE_info_t *UE,
+                      int dl_bwp_switch,
+                      int ul_bwp_switch)
+{
   AssertFatal((ra != NULL && UE == NULL) || (ra == NULL && UE != NULL), "RA and UE structures are mutually exlusive in BWP configuration\n");
 
   NR_CellGroupConfig_t *CellGroup;
@@ -2067,23 +2069,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
-    if(UE && UE->Msg3_dcch_dtch) {
-      // switching to initial BWP
-      DL_BWP->bwp_id = 0;
-      UL_BWP->bwp_id = 0;
-      UE->Msg3_dcch_dtch = false;
-
-      // Schedule BWP switching to the first active BWP (previous active BWP before RA with Msg3 carrying DCCH or DTCH message)
-      if (servingCellConfig->firstActiveDownlinkBWP_Id) {
-        sched_ctrl->next_dl_bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
-      } else {
-        sched_ctrl->next_dl_bwp_id = 0;
-      }
-      if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id) {
-        sched_ctrl->next_ul_bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
-      } else {
-        sched_ctrl->next_ul_bwp_id = 0;
-      }
+    if(dl_bwp_switch >= 0 && ul_bwp_switch >= 0) {
+      AssertFatal(dl_bwp_switch == ul_bwp_switch, "Different UL and DL BWP not supported\n");
+      DL_BWP->bwp_id = dl_bwp_switch;
+      UL_BWP->bwp_id = ul_bwp_switch;
     }
     else {
       // (re)configuring BWP
@@ -2335,7 +2324,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   memset(dl_bwp, 0, sizeof(*dl_bwp));
   NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   memset(ul_bwp, 0, sizeof(*ul_bwp));
-  configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
+  configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE, -1, -1);
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->sched_pdsch.time_domain_allocation = -1;
@@ -2811,7 +2800,7 @@ void nr_mac_update_timers(module_id_t module_id,
         process_CellGroup(cg,&UE->UE_sched_ctrl);
         NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
-        configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE);
+        configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE, -1, -1);
 
         if (get_softmodem_params()->sa) {
           // add all available DL HARQ processes for this UE in SA
