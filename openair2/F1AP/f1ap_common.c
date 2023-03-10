@@ -32,15 +32,14 @@
 
 #include "f1ap_common.h"
 
-static f1ap_cudu_inst_t *f1_du_inst[NUMBER_OF_eNB_MAX]= {0};
-static f1ap_cudu_inst_t *f1_cu_inst[NUMBER_OF_eNB_MAX]= {0};
+static f1ap_cudu_inst_t *f1_du_inst[NUMBER_OF_gNB_MAX]= {0};
+static f1ap_cudu_inst_t *f1_cu_inst[NUMBER_OF_gNB_MAX]= {0};
 
-uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP) {
-  static uint8_t transaction_identifier[NUMBER_OF_eNB_MAX];
-  transaction_identifier[enb_mod_idP+cu_mod_idP] =
-    (transaction_identifier[enb_mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
-  //LOG_T(F1AP,"generated xid is %d\n",transaction_identifier[enb_mod_idP+cu_mod_idP]);
-  return transaction_identifier[enb_mod_idP+cu_mod_idP];
+uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_mod_idP) {
+  static uint8_t transaction_identifier[NUMBER_OF_gNB_MAX];
+  transaction_identifier[mod_idP+cu_mod_idP] =
+    (transaction_identifier[mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
+  return transaction_identifier[mod_idP+cu_mod_idP];
 }
 
 f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP) {
@@ -72,7 +71,7 @@ int f1ap_add_ue(F1_t isCu,
                 rnti_t               rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       f1_inst->f1ap_ue[i].f1ap_uid = i;
       LOG_I(F1AP, "Updating the index of UE with RNTI %x and du_ue_f1ap_id %ld\n", f1_inst->f1ap_ue[i].rnti, f1_inst->f1ap_ue[i].du_ue_f1ap_id);
@@ -81,7 +80,7 @@ int f1ap_add_ue(F1_t isCu,
   }
 
   // We didn't find the rnti
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == 0 ) {
       f1_inst->f1ap_ue[i].rnti = rntiP;
       f1_inst->f1ap_ue[i].f1ap_uid = i;
@@ -101,7 +100,7 @@ int f1ap_remove_ue(F1_t isCu, instance_t instanceP,
                    rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       f1_inst->f1ap_ue[i].rnti = 0;
       break;
@@ -116,7 +115,7 @@ int f1ap_get_du_ue_f1ap_id(F1_t isCu, instance_t instanceP,
                            rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       return f1_inst->f1ap_ue[i].du_ue_f1ap_id;
     }
@@ -129,7 +128,7 @@ int f1ap_get_cu_ue_f1ap_id(F1_t isCu, instance_t instanceP,
                            rnti_t            rntiP) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].rnti == rntiP) {
       return f1_inst->f1ap_ue[i].cu_ue_f1ap_id;
     }
@@ -142,7 +141,7 @@ int f1ap_get_rnti_by_du_id(F1_t isCu, instance_t instanceP,
                            instance_t       du_ue_f1ap_id ) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
       return f1_inst->f1ap_ue[i].rnti;
     }
@@ -155,7 +154,7 @@ int f1ap_get_rnti_by_cu_id(F1_t isCu, instance_t instanceP,
                            instance_t       cu_ue_f1ap_id ) {
   f1ap_cudu_inst_t *f1_inst=getCxt(isCu, instanceP);
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].cu_ue_f1ap_id == cu_ue_f1ap_id) {
       return f1_inst->f1ap_ue[i].rnti;
     }
@@ -170,14 +169,14 @@ int f1ap_du_add_cu_ue_id(instance_t instanceP,
   f1ap_cudu_inst_t *f1_inst=getCxt(DUtype, instanceP);
   instance_t f1ap_uid=-1;
 
-  for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     if (f1_inst->f1ap_ue[i].du_ue_f1ap_id == du_ue_f1ap_id) {
       f1ap_uid=i;
       break;
     }
   }
 
-  if (f1ap_uid < 0 || f1ap_uid >= MAX_MOBILES_PER_ENB)
+  if (f1ap_uid < 0 || f1ap_uid >= MAX_MOBILES_PER_GNB)
     return -1;
 
   f1_inst->f1ap_ue[f1ap_uid].cu_ue_f1ap_id = cu_ue_f1ap_id;

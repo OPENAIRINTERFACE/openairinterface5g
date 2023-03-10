@@ -404,7 +404,7 @@ int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
                         const uint8_t *const data, const uint32_t data_length);
 
 typedef struct f1ap_cudu_ue_inst_s {
-  // used for eNB stats generation
+  // used for NB stats generation
   rnti_t      rnti;
   instance_t f1ap_uid;
   instance_t du_ue_f1ap_id;
@@ -419,7 +419,7 @@ typedef struct f1ap_cudu_inst_s {
   instance_t gtpInst;
   uint64_t gNB_DU_id;
   uint16_t num_ues;
-  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
+  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_GNB];
 } f1ap_cudu_inst_t;
 
 typedef enum {
@@ -429,7 +429,7 @@ typedef enum {
 
 static const int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
 
-uint8_t F1AP_get_next_transaction_identifier(instance_t enb_mod_idP, instance_t cu_mod_idP);
+uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_mod_idP);
 
 f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP);
 
@@ -464,8 +464,6 @@ int f1ap_assoc_id(F1_t isCu, instance_t instanceP);
 static inline f1ap_setup_req_t *f1ap_req(F1_t isCu, instance_t instanceP) {
   return &getCxt(isCu, instanceP)->setupReq;
 }
-
-#define TASK_F1APP f1ap_req(false, instance)->cell_type==CELL_MACRO_GNB?TASK_GNB_APP:TASK_ENB_APP
 
 //lts: C struct type is not homogeneous, so we need macros instead of functions
 #define addnRCGI(nRCGi, servedCelL) \

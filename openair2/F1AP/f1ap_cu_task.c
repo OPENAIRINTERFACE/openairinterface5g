@@ -92,8 +92,8 @@ static void cu_task_handle_sctp_data_ind(instance_t instance, sctp_data_ind_t *s
 }
 
 static void cu_task_send_sctp_init_req(instance_t instance, char *my_addr) {
-  // 1. get the itti msg, and retrive the enb_id from the message
-  // 2. use RC.rrc[enb_id] to fill the sctp_init_t with the ip, port
+  // 1. get the itti msg, and retrive the nb_id from the message
+  // 2. use RC.rrc[nb_id] to fill the sctp_init_t with the ip, port
   // 3. creat an itti message to init
   LOG_I(F1AP, "F1AP_CU_SCTP_REQ(create socket)\n");
   MessageDef  *message_p = NULL;

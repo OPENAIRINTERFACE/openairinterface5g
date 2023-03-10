@@ -37,7 +37,6 @@
 #include "f1ap_du_ue_context_management.h"
 
 #include "rrc_extern.h"
-#include "rrc_eNB_UE_context.h"
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
