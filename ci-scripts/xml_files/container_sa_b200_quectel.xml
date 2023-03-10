@@ -39,6 +39,7 @@
     060001
     000002
     060002
+    050000
     010010
     010002
     030201
@@ -161,14 +162,14 @@
     <class>Custom_Command</class>
     <desc>Trigger Reestablishment</desc>
     <node>nepes</node>
-    <command>echo ci force_reestab | nc -N 192.168.71.140 9090 | grep -E 'force-remove UE RNTI [0-9a-f]{4} from RLC to trigger reestablishment'</command>
+    <command>echo ci force_reestab | nc -N 192.168.68.194 9090 | grep -E 'force-remove UE RNTI [0-9a-f]{4} from RLC to trigger reestablishment'</command>
     <command_fail>yes</command_fail>
   </testCase>
   <testCase id="060002">
     <class>Custom_Command</class>
     <desc>Verify Reestablishment</desc>
     <node>nepes</node>
-    <command>echo ci get_reestab_count | nc -N 192.168.71.140 9090 | grep -E 'UE RNTI [0-9a-f]{4} reestab 1 reconf_after_reestab 1'</command>
+    <command>echo ci get_reestab_count | nc -N 192.168.68.194 9090 | grep -E 'UE RNTI [0-9a-f]{4} reestab 1 reconf_after_reestab 1'</command>
     <command_fail>yes</command_fail>
   </testCase>
 
