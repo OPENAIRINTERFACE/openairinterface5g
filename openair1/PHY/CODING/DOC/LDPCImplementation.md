@@ -81,7 +81,7 @@ At runtime, to successfully use hardware acceleration via OpenCL, you need to in
 -----------------------------------------------------------------
 ```
 
-`./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa -O libconfig:/usr/local/oai/conf/nrue_sim.conf:dbgl5  --nokrnmod --loader.ldpc.shlibversion _cl --log_config.hw_log_level info`
+`./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa -O libconfig:/usr/local/oai/conf/nrue_sim.conf:dbgl5 --loader.ldpc.shlibversion _cl --log_config.hw_log_level info`
 
 ```
 ............................................................

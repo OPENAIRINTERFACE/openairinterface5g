@@ -245,7 +245,7 @@ Run OAI nrUE
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001 --uicc0.nssai_sd 1
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001 --uicc0.nssai_sd 1
 ```
 
 ### 5.2.2 Testing with OAI nrUE with RFsimulator
@@ -258,7 +258,7 @@ Run OAI nrUE with RFsimulator
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --rfsim --sa --uicc0.imsi 001010000000001 --uicc0.nssai_sd 1
+sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001 --uicc0.nssai_sd 1
 ```
 
 ### 5.2.3 Ping test
