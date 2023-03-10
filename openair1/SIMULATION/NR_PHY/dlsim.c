@@ -852,6 +852,7 @@ int main(int argc, char **argv)
   UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
+  UE_mac->state = UE_CONNECTED;
 
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;

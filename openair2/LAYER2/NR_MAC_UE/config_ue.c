@@ -684,6 +684,7 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
                             NRRIV2PRBOFFSET(mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = mac->scc ? NRRIV2PRBOFFSET(mac->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE) :
                             NRRIV2PRBOFFSET(mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+
 }
 
 
@@ -732,6 +733,7 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
     build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
     if (!get_softmodem_params()->emulate_l1)
       mac->if_module->phy_config_request(&mac->phy_config);
+    mac->phy_config_request_sent = true;
   }
   if(scell_group_config != NULL ){
     mac->cg = scell_group_config;

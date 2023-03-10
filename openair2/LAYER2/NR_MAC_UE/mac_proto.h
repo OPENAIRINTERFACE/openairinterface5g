@@ -120,7 +120,8 @@ NR_UE_MAC_INST_t *get_mac_inst(
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
    \param dl_info     DL indication
    \param ul_info     UL indication*/
-NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
+void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info);
+void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info);
 
 /**\brief fill nr_scheduled_response struct instance
    @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill

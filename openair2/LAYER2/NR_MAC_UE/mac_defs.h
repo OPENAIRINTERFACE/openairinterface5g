@@ -159,10 +159,11 @@
 
 /*!\brief UE layer 2 status */
 typedef enum {
-    UE_CONNECTION_OK = 0,
-    UE_CONNECTION_LOST,
-    UE_PHY_RESYNCH,
-    UE_PHY_HO_PRACH
+  UE_NOT_SYNC = 0,
+  UE_SYNC,
+  UE_PERFORMING_RA,
+  UE_WAIT_TX_ACK_MSG4,
+  UE_CONNECTED
 } NR_UE_L2_STATE_t;
 
 typedef enum {
@@ -380,7 +381,7 @@ typedef struct {
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
-
+  NR_UE_L2_STATE_t state;
   NR_ServingCellConfigCommon_t    *scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB;
   NR_CellGroupConfig_t            *cg;
@@ -406,6 +407,7 @@ typedef struct {
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
+  bool phy_config_request_sent;
   frame_type_t frame_type;
 
   ///     Type0-PDCCH seach space
