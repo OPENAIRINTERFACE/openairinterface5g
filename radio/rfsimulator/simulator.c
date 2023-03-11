@@ -84,7 +84,8 @@
     {"modelname",              "<channel model name>\n",              simOpt,  strptr:&modelname,                    defstrval:"AWGN",                TYPE_STRING,    0 },\
     {"ploss",                  "<channel path loss in dB>\n",         simOpt,  dblptr:&(rfsimulator->chan_pathloss),   defdblval:0,                     TYPE_DOUBLE,    0 },\
     {"forgetfact",             "<channel forget factor ((0 to 1)>\n", simOpt,  dblptr:&(rfsimulator->chan_forgetfact), defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {"offset",                 "<channel offset in samps>\n",         simOpt,  iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 }\
+    {"offset",                 "<channel offset in samps>\n",         simOpt,  iptr:&(rfsimulator->chan_offset),       defintval:0,                     TYPE_INT,       0 },\
+    {"wait_timeout",           "<wait timeout if no UE connected>\n", simOpt,  iptr:&(rfsimulator->wait_timeout),      defintval:1,                     TYPE_INT,       0 },\
   };
 
 static void getset_currentchannels_type(char *buf, int debug, webdatadef_t *tdata, telnet_printfunc_t prnt);
@@ -141,6 +142,7 @@ typedef struct {
   float  noise_power_dB;
   void *telnetcmd_qid;
   poll_telnetcmdq_func_t poll_telnetcmdq;
+  int wait_timeout;
 } rfsimulator_state_t;
 
 
@@ -817,7 +819,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
     if ( t->nextRxTstamp == 0)
       LOG_W(HW,"No connected device, generating void samples...\n");
 
-    if (!flushInput(t, 1,  nsamps)) {
+    if (!flushInput(t, t->wait_timeout,  nsamps)) {
       for (int x=0; x < nbAnt; x++)
         memset(samplesVoid[x],0,sampleToByte(nsamps,1));
 
