@@ -461,7 +461,7 @@ class OaiCiTest():
 					doInterfaceCheck = True
 			# For the moment, only in explicit noS1 without kernel module (ie w/ tunnel interface)
 			if self.air_interface == 'nr-uesoftmodem':
-				result = re.search('--noS1 --nokrnmod 1', str(self.Initialize_OAI_UE_args))
+				result = re.search('--noS1', str(self.Initialize_OAI_UE_args))
 				if result is not None:
 					doInterfaceCheck = True
 			if doInterfaceCheck:

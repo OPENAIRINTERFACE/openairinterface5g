@@ -831,7 +831,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 						memset(&resp, 0, sizeof(resp));
 						resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 						resp.header.phy_id = req.header.phy_id;
-						resp.error_code = NFAPI_MSG_INVALID_STATE;
+						resp.error_code = NFAPI_NR_START_MSG_INVALID_STATE;
 						nfapi_nr_pnf_start_resp(config, &resp);
 					}
 				}
@@ -841,7 +841,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 					memset(&resp, 0, sizeof(resp));
 					resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 					resp.header.phy_id = req.header.phy_id;
-					resp.error_code = NFAPI_MSG_INVALID_CONFIG;
+					resp.error_code = NFAPI_NR_START_MSG_INVALID_STATE;
 					nfapi_nr_pnf_start_resp(config, &resp);
 				}
 			}
@@ -851,7 +851,7 @@ void pnf_nr_handle_start_request(pnf_t* pnf, void *pRecvMsg, int recvMsgLen)
 				memset(&resp, 0, sizeof(resp));
 				resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
 				resp.header.phy_id = req.header.phy_id;
-				resp.error_code = NFAPI_MSG_INVALID_STATE;
+				resp.error_code = NFAPI_NR_START_MSG_INVALID_STATE;
 				nfapi_nr_pnf_start_resp(config, &resp);
 			}
 		}
@@ -2309,7 +2309,7 @@ int pnf_message_pump(pnf_t* pnf)
 	}
 
 	// Drop back to idle if we have lost connection
-	pnf->_public.state = NFAPI_PNF_PHY_IDLE;
+	pnf->_public.state = NFAPI_PNF_IDLE;
 
 
 	// close the connection and socket
@@ -2370,7 +2370,7 @@ int pnf_nr_message_pump(pnf_t* pnf)
 	}
 
 	// Drop back to idle if we have lost connection
-	pnf->_public.state = NFAPI_PNF_PHY_IDLE;
+	pnf->_public.state = NFAPI_PNF_IDLE;
 
 
 	// close the connection and socket

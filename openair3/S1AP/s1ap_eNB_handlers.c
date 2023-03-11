@@ -349,7 +349,7 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
     timer_kind = timer_kind | S1AP_MMEIND;
     timer_kind = timer_kind | S1_SETREQ_WAIT;
     
-    if( s1ap_timer_setup(interval_sec, 0, TASK_S1AP, instance_p->instance, timer_kind, S1AP_TIMER_ONE_SHOT,
+    if( s1ap_timer_setup(interval_sec, 0, TASK_S1AP, instance_p->instance, timer_kind, TIMER_ONE_SHOT,
       NULL, &mme_desc_p->timer_id) < 0 ) {
       S1AP_ERROR("Timer Start NG(S1 Setup Request) : MME=%d\n",mme_desc_p->cnx_id);
       s1ap_eNB_snd_s1_setup_request( instance_p, mme_desc_p );
@@ -1445,7 +1445,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
         item_p = &(((S1AP_E_RABToBeModifiedItemBearerModReqIEs_t *)
                     ie->value.choice.E_RABToBeModifiedListBearerModReq.list.array[nb_of_e_rabs_failed])->value.choice.E_RABToBeModifiedItemBearerModReq);
         S1AP_E_RAB_MODIFY_RESP(message_p).e_rabs_failed[nb_of_e_rabs_failed].e_rab_id = item_p->e_RAB_ID;
-        S1AP_E_RAB_MODIFY_RESP(message_p).e_rabs_failed[nb_of_e_rabs_failed].cause = S1AP_Cause_PR_radioNetwork;
+        S1AP_E_RAB_MODIFY_RESP(message_p).e_rabs_failed[nb_of_e_rabs_failed].cause = S1AP_CAUSE_RADIO_NETWORK;
         S1AP_E_RAB_MODIFY_RESP(message_p).e_rabs_failed[nb_of_e_rabs_failed].cause_value = S1AP_CauseRadioNetwork_unknown_mme_ue_s1ap_id;
       }
     } else {
@@ -1981,7 +1981,7 @@ static int s1ap_eNB_snd_s1_setup_request(
   timer_kind = timer_kind | S1AP_MMEIND;
   timer_kind = timer_kind | S1_SETRSP_WAIT;
   
-  if( s1ap_timer_setup(instance_p->s1_setuprsp_wait_timer, 0, TASK_S1AP, instance_p->instance, timer_kind, S1AP_TIMER_ONE_SHOT,
+  if( s1ap_timer_setup(instance_p->s1_setuprsp_wait_timer, 0, TASK_S1AP, instance_p->instance, timer_kind, TIMER_ONE_SHOT,
     NULL, &s1ap_mme_data_p->timer_id) < 0 )
   {
     S1AP_ERROR("Timer Start NG(S1 Setup Response) : MME=%d\n",s1ap_mme_data_p->cnx_id);

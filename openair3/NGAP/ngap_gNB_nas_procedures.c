@@ -743,51 +743,53 @@ int ngap_gNB_initial_ctxt_resp(
     ie->value.present = NGAP_InitialContextSetupResponseIEs__value_PR_PDUSessionResourceFailedToSetupListCxtRes;
 
     for (i = 0; i < initial_ctxt_resp_p->nb_of_pdusessions_failed; i++) {
-        NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t *item= calloc(1, sizeof *item);
-        NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = calloc(1, sizeof *pdusessionUnTransfer_p);
+      NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t *item = calloc(1, sizeof *item);
+      NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t *pdusessionUnTransfer_p = calloc(1, sizeof *pdusessionUnTransfer_p);
     
-        /* pDUSessionID */
-        item->pDUSessionID = initial_ctxt_resp_p->pdusessions_failed[i].pdusession_id;
+      /* pDUSessionID */
+      item->pDUSessionID = initial_ctxt_resp_p->pdusessions_failed[i].pdusession_id;
 
-        /* cause */
+      /* cause */
+      switch(initial_ctxt_resp_p->pdusessions_failed[i].cause) {
+        case NGAP_CAUSE_RADIO_NETWORK:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_radioNetwork;
+          pdusessionUnTransfer_p->cause.choice.radioNetwork = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        pdusessionUnTransfer_p->cause.present = initial_ctxt_resp_p->pdusessions_failed[i].cause;
-        switch(pdusessionUnTransfer_p->cause.present) {
-          case NGAP_Cause_PR_radioNetwork:
-              pdusessionUnTransfer_p->cause.choice.radioNetwork = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
-              break;
+        case NGAP_CAUSE_TRANSPORT:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_transport;
+          pdusessionUnTransfer_p->cause.choice.transport = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-          case NGAP_Cause_PR_transport:
-              pdusessionUnTransfer_p->cause.choice.transport = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
-              break;
+        case NGAP_CAUSE_NAS:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_nas;
+          pdusessionUnTransfer_p->cause.choice.nas = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-          case NGAP_Cause_PR_nas:
-              pdusessionUnTransfer_p->cause.choice.nas = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
-              break;
+        case NGAP_CAUSE_PROTOCOL:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_protocol;
+          pdusessionUnTransfer_p->cause.choice.protocol = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-          case NGAP_Cause_PR_protocol:
-              pdusessionUnTransfer_p->cause.choice.protocol = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
-              break;
+        case NGAP_CAUSE_MISC:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_misc;
+          pdusessionUnTransfer_p->cause.choice.misc = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-          case NGAP_Cause_PR_misc:
-              pdusessionUnTransfer_p->cause.choice.misc = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
-              break;
-
-          case NGAP_Cause_PR_NOTHING:
+        case NGAP_CAUSE_NOTHING:
           default:
-              break;
-        }
+          break;
+      }
 
-        NGAP_DEBUG("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
+      NGAP_DEBUG("initial context setup response: failed pdusession ID %ld\n", item->pDUSessionID);
 
-        memset(&res, 0, sizeof(res));
-        res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
-        item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
-        item->pDUSessionResourceSetupUnsuccessfulTransfer.size = res.result.encoded;
+      memset(&res, 0, sizeof(res));
+      res = asn_encode_to_new_buffer(NULL, ATS_ALIGNED_CANONICAL_PER, &asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
+      item->pDUSessionResourceSetupUnsuccessfulTransfer.buf = res.buffer;
+      item->pDUSessionResourceSetupUnsuccessfulTransfer.size = res.result.encoded;
 
-        ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
-    
-        asn1cSeqAdd(&ie->value.choice.PDUSessionResourceFailedToSetupListCxtRes.list, item);
+      ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupUnsuccessfulTransfer, pdusessionUnTransfer_p);
+      asn1cSeqAdd(&ie->value.choice.PDUSessionResourceFailedToSetupListCxtRes.list, item);
     }
 
     asn1cSeqAdd(&out->protocolIEs.list, ie);
@@ -1047,31 +1049,35 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance,
       item->pDUSessionID = pdusession_setup_resp_p->pdusessions_failed[i].pdusession_id;
 
       /* cause */
-      pdusessionUnTransfer_p->cause.present = pdusession_setup_resp_p->pdusessions_failed[i].cause;
-      switch(pdusessionUnTransfer_p->cause.present) {
-        case NGAP_Cause_PR_radioNetwork:
-            pdusessionUnTransfer_p->cause.choice.radioNetwork = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-            break;
+      switch(pdusession_setup_resp_p->pdusessions_failed[i].cause) {
+        case NGAP_CAUSE_RADIO_NETWORK:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_radioNetwork;
+          pdusessionUnTransfer_p->cause.choice.radioNetwork = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        case NGAP_Cause_PR_transport:
-            pdusessionUnTransfer_p->cause.choice.transport = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-            break;
+        case NGAP_CAUSE_TRANSPORT:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_transport;
+          pdusessionUnTransfer_p->cause.choice.transport = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        case NGAP_Cause_PR_nas:
-            pdusessionUnTransfer_p->cause.choice.nas = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-            break;
+        case NGAP_CAUSE_NAS:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_nas;
+          pdusessionUnTransfer_p->cause.choice.nas = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        case NGAP_Cause_PR_protocol:
-            pdusessionUnTransfer_p->cause.choice.protocol = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-            break;
+        case NGAP_CAUSE_PROTOCOL:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_protocol;
+          pdusessionUnTransfer_p->cause.choice.protocol = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        case NGAP_Cause_PR_misc:
-            pdusessionUnTransfer_p->cause.choice.misc = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
-            break;
+        case NGAP_CAUSE_MISC:
+          pdusessionUnTransfer_p->cause.present = NGAP_Cause_PR_misc;
+          pdusessionUnTransfer_p->cause.choice.misc = pdusession_setup_resp_p->pdusessions_failed[i].cause_value;
+          break;
 
-        case NGAP_Cause_PR_NOTHING:
-        default:
-            break;
+        case NGAP_CAUSE_NOTHING:
+          default:
+          break;
       }
 
       NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
@@ -1230,30 +1236,34 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance,
       item->pDUSessionID = pdusession_modify_resp_p->pdusessions_failed[i].pdusession_id;
 
       pdusessionTransfer_p = (NGAP_PDUSessionResourceModifyUnsuccessfulTransfer_t *)calloc(1, sizeof(NGAP_PDUSessionResourceModifyUnsuccessfulTransfer_t));
-      pdusessionTransfer_p->cause.present = pdusession_modify_resp_p->pdusessions_failed[i].cause;
       
-      switch(pdusessionTransfer_p->cause.present) {
-      case NGAP_Cause_PR_radioNetwork:
-          pdusessionTransfer_p->cause.choice.radioNetwork  = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+      switch(pdusession_modify_resp_p->pdusessions_failed[i].cause) {
+      case NGAP_CAUSE_RADIO_NETWORK:
+        pdusessionTransfer_p->cause.present = NGAP_Cause_PR_radioNetwork;
+        pdusessionTransfer_p->cause.choice.radioNetwork = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
+        break;
 
-      case NGAP_Cause_PR_transport:
-          pdusessionTransfer_p->cause.choice.transport     = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+      case NGAP_CAUSE_TRANSPORT:
+        pdusessionTransfer_p->cause.present = NGAP_Cause_PR_transport;
+        pdusessionTransfer_p->cause.choice.transport = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
+        break;
 
-      case NGAP_Cause_PR_nas:
-          pdusessionTransfer_p->cause.choice.nas           = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+      case NGAP_CAUSE_NAS:
+        pdusessionTransfer_p->cause.present = NGAP_Cause_PR_nas;
+        pdusessionTransfer_p->cause.choice.nas = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
+        break;
 
-      case NGAP_Cause_PR_protocol:
-          pdusessionTransfer_p->cause.choice.protocol      = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+      case NGAP_CAUSE_PROTOCOL:
+        pdusessionTransfer_p->cause.present = NGAP_Cause_PR_protocol;
+        pdusessionTransfer_p->cause.choice.protocol = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
+        break;
 
-      case NGAP_Cause_PR_misc:
-          pdusessionTransfer_p->cause.choice.misc          = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+      case NGAP_CAUSE_MISC:
+        pdusessionTransfer_p->cause.present = NGAP_Cause_PR_misc;
+        pdusessionTransfer_p->cause.choice.misc = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
+        break;
 
-      case NGAP_Cause_PR_NOTHING:
+      case NGAP_CAUSE_NOTHING:
       default:
           break;
       }

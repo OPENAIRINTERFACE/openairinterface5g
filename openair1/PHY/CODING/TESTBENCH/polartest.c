@@ -33,7 +33,7 @@ int main(int argc, char *argv[])
   uint8_t aggregation_level = 8, decoderListSize = 8, logFlag = 0;
   uint16_t rnti=0;
 
-  while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:p:hqgFL:k:")) != -1)
+  while ((arguments = getopt (argc, argv, "s:d:f:m:i:l:a:p:hqgFL:k:")) != -1) {
     switch (arguments) {
     case 's':
     	SNRstart = atof(optarg);
@@ -105,14 +105,14 @@ int main(int argc, char *argv[])
       exit(-1);
       break;
     }
-
+  }
   //Initiate timing. (Results depend on CPU Frequency. Therefore, might change due to performance variances during simulation.)
-    time_stats_t timeEncoder,timeDecoder;
-    opp_enabled=1;
-    reset_meas(&timeEncoder);
-    reset_meas(&timeDecoder);
-    randominit(0);
-    crcTableInit();
+  time_stats_t timeEncoder,timeDecoder;
+  opp_enabled=1;
+  reset_meas(&timeEncoder);
+  reset_meas(&timeDecoder);
+  randominit(0);
+  crcTableInit();
 
   if (polarMessageType == 0) { //PBCH
     aggregation_level = NR_POLAR_PBCH_AGGREGATION_LEVEL;
@@ -132,31 +132,31 @@ int main(int argc, char *argv[])
   /*folderName=getenv("HOME");
     strcat(folderName,"/Desktop/polartestResults");*/
 
-if (logFlag){
-	time (&currentTime);
+  if (logFlag){
+    time (&currentTime);
 #ifdef DEBUG_POLAR_TIMING
-  sprintf(fileName,"%s/TIMING_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
+    sprintf(fileName,"%s/TIMING_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
 #else
-  sprintf(fileName,"%s/_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
+    sprintf(fileName,"%s/_ListSize_%d_Payload_%d_Itr_%d", folderName, decoderListSize, testLength, iterations);
 #endif
-  strftime(currentTimeInfo, 25, "_%Y-%m-%d-%H-%M-%S.csv", localtime(&currentTime));
-  strcat(fileName,currentTimeInfo);
-  //Create "~/Desktop/polartestResults" folder if it doesn't already exist.
-  /*struct stat folder = {0};
+    strftime(currentTimeInfo, 25, "_%Y-%m-%d-%H-%M-%S.csv", localtime(&currentTime));
+    strcat(fileName,currentTimeInfo);
+    //Create "~/Desktop/polartestResults" folder if it doesn't already exist.
+    /*struct stat folder = {0};
     if (stat(folderName, &folder) == -1) mkdir(folderName, S_IRWXU | S_IRWXG | S_IRWXO);*/
-  logFile = fopen(fileName, "w");
+    logFile = fopen(fileName, "w");
 
-  if (logFile==NULL) {
-    fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
-    exit(-1);
-  }
+    if (logFile==NULL) {
+      fprintf(stderr,"[polartest.c] Problem creating file %s with fopen\n",fileName);
+      exit(-1);
+    }
 
 #ifdef DEBUG_POLAR_TIMING
-  fprintf(logFile,",timeEncoderCRCByte[us],timeEncoderCRCBit[us],timeEncoderInterleaver[us],timeEncoderBitInsertion[us],timeEncoder1[us],timeEncoder2[us],timeEncoderRateMatching[us],timeEncoderByte2Bit[us]\n");
+    fprintf(logFile,",timeEncoderCRCByte[us],timeEncoderCRCBit[us],timeEncoderInterleaver[us],timeEncoderBitInsertion[us],timeEncoder1[us],timeEncoder2[us],timeEncoderRateMatching[us],timeEncoderByte2Bit[us]\n");
 #else
-  fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
+    fprintf(logFile,",SNR,nBitError,blockErrorState,t_encoder[us],t_decoder[us]\n");
 #endif
-}
+  }
 
   const uint8_t testArrayLength = ceil(testLength / 32.0);
   const uint8_t coderArrayLength = ceil(coderLength / 32.0);

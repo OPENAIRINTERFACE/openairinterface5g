@@ -76,12 +76,14 @@ loader_data_t loader_data;
 
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                       LOADER parameters                                                                                                  */
-/*   optname               helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   check func*/
+/*   optname      helpstr   paramflags           XXXptr	                           defXXXval	              type       numelt   check func*/
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define LOADER_PARAMS_DESC { \
-{"shlibpath",                NULL,    PARAMFLAG_NOFREE, strptr:&loader_data.shlibpath, defstrval:DEFAULT_PATH,      TYPE_STRING, 0,    NULL},\
-{"maxshlibs",                NULL,    0,                uptr:&(loader_data.maxshlibs),defintval:DEFAULT_MAXSHLIBS, TYPE_UINT32, 0,   NULL}\
+// clang-format off
+#define LOADER_PARAMS_DESC {                                                                                                      \
+  {"shlibpath", NULL, PARAMFLAG_NOFREE, .strptr = &loader_data.shlibpath, .defstrval = DEFAULT_PATH,      TYPE_STRING, 0, NULL }, \
+  {"maxshlibs", NULL, 0,                .uptr = &(loader_data.maxshlibs), .defintval = DEFAULT_MAXSHLIBS, TYPE_UINT32, 0, NULL }, \
 }
+// clang-format on
 
 /*-------------------------------------------------------------------------------------------------------------*/
 #else  /* LOAD_MODULE_SHLIB_MAIN */

@@ -322,8 +322,6 @@ void rx_nr_prach_ru(RU_t *ru,
 
   case 30720:
     // 20, 25, 30 MHz @ 30.72 Ms/s
-    Ncp = Ncp;
-    dftlen = dftlen;
     break;
 
   case 46080:
@@ -354,7 +352,7 @@ void rx_nr_prach_ru(RU_t *ru,
     AssertFatal(1==0,"sample rate %f MHz not supported for numerology %d\n", fp->samples_per_subframe / 1000.0, mu);
   }
 
-  const idft_size_idx_t dftsize = get_dft(dftlen);
+  const dft_size_idx_t dftsize = get_dft(dftlen);
 
   // Do forward transform
   if (LOG_DEBUGFLAG(PRACH)) {

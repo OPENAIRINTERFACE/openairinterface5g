@@ -149,17 +149,16 @@ void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_conf
   pusch_config_pdu->transform_precoding = transformPrecoder;
 
   /* PRECOD_NBR_LAYERS */
-  if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook));
   // 0 bits if the higher layer parameter txConfig = nonCodeBook
 
-  if ((*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook)){
+  if (*pusch_Config->txConfig == NR_PUSCH_Config__txConfig_codebook){
 
     // The UE shall transmit PUSCH using the same antenna port(s) as the SRS port(s) in the SRS resource indicated by the DCI format 0_1
     // 38.214  Section 6.1.1
 
     uint8_t n_antenna_port = get_pusch_nb_antenna_ports(pusch_Config, srs_config, dci->srs_resource_indicator);
 
-    if (n_antenna_port == 1); // 1 antenna port and the higher layer parameter txConfig = codebook 0 bits
+    // 1 antenna port and the higher layer parameter txConfig = codebook 0 bits
 
     if (n_antenna_port == 4) { // 4 antenna port and the higher layer parameter txConfig = codebook
 

@@ -195,9 +195,11 @@ static inline void merge_meas(time_stats_t *dst_ts, const time_stats_t *src_ts)
 
 #define CPUMEASUR_SECTION "cpumeasur"
 
+// clang-format off
 #define CPUMEASUR_PARAMS_DESC { \
-    {"max_cpumeasur",     "Max number of cpu measur entries",      0,       uptr:&max_cpumeasur,           defintval:100,         TYPE_UINT,   0},\
-  }
+  {"max_cpumeasur",     "Max number of cpu measur entries",      0,       .uptr=&max_cpumeasur,           .defintval=100,         TYPE_UINT,   0}, \
+}
+// clang-format on
 
 void init_meas(void);
 time_stats_t *register_meas(char *name);

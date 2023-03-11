@@ -505,7 +505,7 @@ typedef struct prach_association_pattern {
 typedef struct ssb_info {
   bool transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
   prach_occasion_info_t *mapped_ro[MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN]; // List of mapped RACH Occasions to this SSB index
-  uint16_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
+  uint32_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
 } ssb_info_t;
 
 // List of all the possible SSBs and their details

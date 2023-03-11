@@ -2685,7 +2685,7 @@ allocate_prbs_sub(int nb_rb,
           break;
 
         case 25:
-          if ((check == N_RBG - 1)) {
+          if (check == N_RBG - 1) {
             nb_rb--;
           } else {
             nb_rb -= 2;
@@ -2694,7 +2694,7 @@ allocate_prbs_sub(int nb_rb,
           break;
 
         case 50:
-          if ((check == N_RBG - 1)) {
+          if (check == N_RBG - 1) {
             nb_rb -= 2;
           } else {
             nb_rb -= 3;

@@ -33,23 +33,13 @@
 #ifndef __PHY_IMPL_DEFS_NB_IOT__H__
 #define __PHY_IMPL_DEFS_NB_IOT__H__
 
+#include <asn_SEQUENCE_OF.h>
 #include "types_NB_IoT.h"
 //#include "defs.h"
 
 typedef enum {TDD_NB_IoT=1,FDD_NB_IoT=0} NB_IoT_frame_type_t;
 typedef enum {EXTENDED_NB_IoT=1,NORMAL_NB_IoT=0} NB_IoT_prefix_type_t;
 typedef enum {SF_DL_NB_IoT, SF_UL_NB_IoT, SF_S_NB_IoT} NB_IoT_subframe_t;
-
-#define	A_SEQUENCE_OF(type)	A_SET_OF(type)
-
-#define	A_SET_OF(type)					\
-	struct {					\
-		type **array;				\
-		int count;	/* Meaningful size */	\
-		int size;	/* Allocated size */	\
-		void (*free)(type *);			\
-	}
-
 
 /////////////////////////
   /// Union for \ref TPC_PDCCH_CONFIG::tpc_Index.

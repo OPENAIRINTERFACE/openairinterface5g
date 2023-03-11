@@ -38,9 +38,6 @@
 #include <string.h>
 
 #include "rrc_extern.h"
-#include "rrc_eNB_UE_context.h"
-#include "rrc_eNB_S1AP.h"
-#include "rrc_eNB_GTPV1U.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "pdcp.h"
@@ -512,7 +509,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
       for (int j = 0; j < f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl_length; j++) {
         /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU */
-        transport_layer_addr_t addr = { length: 32, buffer: { 0 } };
+        transport_layer_addr_t addr = { .length= 32, .buffer= { 0 } };
         f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
                                                                                                f1ap_ue_context_setup_req->rnti,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
@@ -827,16 +824,7 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
 
   if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
     AssertFatal(false,"must be devlopped\n");
-  } else {
-    struct rrc_eNB_ue_context_s *ue_context_pP;
-    ue_context_pP = rrc_eNB_get_ue_context(RC.rrc[instance], rnti);
-    rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ(
-      instance,
-      ue_context_pP,
-      S1AP_CAUSE_RADIO_NETWORK,
-      21); // send cause 21: connection with ue lost
-  }
-
+  } 
   return 0;
 }
 
@@ -957,7 +945,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   }
 
   protocol_ctxt_t ctxt;
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, ENB_FLAG_YES, rnti, 0, 0, instance);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, GNB_FLAG_YES, rnti, 0, 0, instance);
 
   struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], rnti);
 

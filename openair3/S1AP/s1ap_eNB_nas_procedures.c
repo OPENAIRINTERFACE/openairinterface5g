@@ -687,52 +687,56 @@ int s1ap_eNB_initial_ctxt_resp(
 
     /* optional */
     if (initial_ctxt_resp_p->nb_of_e_rabs_failed) {
-        ie = (S1AP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(S1AP_InitialContextSetupResponseIEs_t));
-        ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToSetupListCtxtSURes;
-        ie->criticality = S1AP_Criticality_ignore;
-        ie->value.present = S1AP_InitialContextSetupResponseIEs__value_PR_E_RABList;
+      ie = (S1AP_InitialContextSetupResponseIEs_t *)calloc(1, sizeof(S1AP_InitialContextSetupResponseIEs_t));
+      ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToSetupListCtxtSURes;
+      ie->criticality = S1AP_Criticality_ignore;
+      ie->value.present = S1AP_InitialContextSetupResponseIEs__value_PR_E_RABList;
 
-        for (i = 0; i < initial_ctxt_resp_p->nb_of_e_rabs_failed; i++) {
-            S1AP_E_RABItemIEs_t *item;
-            /* mandatory */
-            item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
-            item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
-            item->criticality = S1AP_Criticality_ignore;
-            item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
-            item->value.choice.E_RABItem.e_RAB_ID = initial_ctxt_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = initial_ctxt_resp_p->e_rabs_failed[i].cause;
+      for (i = 0; i < initial_ctxt_resp_p->nb_of_e_rabs_failed; i++) {
+        S1AP_E_RABItemIEs_t *item;
+        /* mandatory */
+        item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
+        item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
+        item->criticality = S1AP_Criticality_ignore;
+        item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
+        item->value.choice.E_RABItem.e_RAB_ID = initial_ctxt_resp_p->e_rabs_failed[i].e_rab_id;
 
-            switch(item->value.choice.E_RABItem.cause.present) {
-            case S1AP_Cause_PR_radioNetwork:
-                item->value.choice.E_RABItem.cause.choice.radioNetwork = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
-                break;
+        switch(initial_ctxt_resp_p->e_rabs_failed[i].cause) {
+          case S1AP_CAUSE_RADIO_NETWORK:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_radioNetwork;
+            item->value.choice.E_RABItem.cause.choice.radioNetwork = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_transport:
-                item->value.choice.E_RABItem.cause.choice.transport = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_TRANSPORT:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_transport;
+            item->value.choice.E_RABItem.cause.choice.transport = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_nas:
-                item->value.choice.E_RABItem.cause.choice.nas = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_NAS:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_nas;
+            item->value.choice.E_RABItem.cause.choice.nas = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_protocol:
-                item->value.choice.E_RABItem.cause.choice.protocol = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_PROTOCOL:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_protocol;
+            item->value.choice.E_RABItem.cause.choice.protocol = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_misc:
-                item->value.choice.E_RABItem.cause.choice.misc = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_MISC:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_misc;
+            item->value.choice.E_RABItem.cause.choice.misc = initial_ctxt_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_NOTHING:
+          case S1AP_Cause_PR_NOTHING:
             default:
-                break;
-            }
-
-            S1AP_DEBUG("initial context setup response: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
-            asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+            break;
         }
 
-        asn1cSeqAdd(&out->protocolIEs.list, ie);
+        S1AP_DEBUG("initial context setup response: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+        asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+      }
+
+      asn1cSeqAdd(&out->protocolIEs.list, ie);
     }
 
     /* optional */
@@ -935,51 +939,55 @@ int s1ap_eNB_e_rab_setup_resp(instance_t instance,
 
     /* optional */
     if (e_rab_setup_resp_p->nb_of_e_rabs_failed > 0) {
-        ie = (S1AP_E_RABSetupResponseIEs_t *)calloc(1, sizeof(S1AP_E_RABSetupResponseIEs_t));
-        ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToSetupListBearerSURes;
-        ie->criticality = S1AP_Criticality_ignore;
-        ie->value.present = S1AP_E_RABSetupResponseIEs__value_PR_E_RABList;
+      ie = (S1AP_E_RABSetupResponseIEs_t *)calloc(1, sizeof(S1AP_E_RABSetupResponseIEs_t));
+      ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToSetupListBearerSURes;
+      ie->criticality = S1AP_Criticality_ignore;
+      ie->value.present = S1AP_E_RABSetupResponseIEs__value_PR_E_RABList;
 
-        for (i = 0; i < e_rab_setup_resp_p->nb_of_e_rabs_failed; i++) {
-            S1AP_E_RABItemIEs_t *item;
-            item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
-            item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
-            item->criticality = S1AP_Criticality_ignore;
-            item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
-            item->value.choice.E_RABItem.e_RAB_ID = e_rab_setup_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_setup_resp_p->e_rabs_failed[i].cause;
+      for (i = 0; i < e_rab_setup_resp_p->nb_of_e_rabs_failed; i++) {
+        S1AP_E_RABItemIEs_t *item;
+        item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
+        item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
+        item->criticality = S1AP_Criticality_ignore;
+        item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
+        item->value.choice.E_RABItem.e_RAB_ID = e_rab_setup_resp_p->e_rabs_failed[i].e_rab_id;
 
-            switch(item->value.choice.E_RABItem.cause.present) {
-            case S1AP_Cause_PR_radioNetwork:
-                item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
-                break;
+        switch(e_rab_setup_resp_p->e_rabs_failed[i].cause) {
+          case S1AP_CAUSE_RADIO_NETWORK:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_radioNetwork;
+            item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_transport:
-                item->value.choice.E_RABItem.cause.choice.transport = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_TRANSPORT:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_transport;
+            item->value.choice.E_RABItem.cause.choice.transport = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_nas:
-                item->value.choice.E_RABItem.cause.choice.nas = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_NAS:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_nas;
+            item->value.choice.E_RABItem.cause.choice.nas = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_protocol:
-                item->value.choice.E_RABItem.cause.choice.protocol = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_PROTOCOL:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_protocol;
+            item->value.choice.E_RABItem.cause.choice.protocol = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_misc:
-                item->value.choice.E_RABItem.cause.choice.misc = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_MISC:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_misc;
+            item->value.choice.E_RABItem.cause.choice.misc = e_rab_setup_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_NOTHING:
+          case S1AP_Cause_PR_NOTHING:
             default:
-                break;
-            }
-
-            S1AP_DEBUG("e_rab_setup_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
-            asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+            break;
         }
 
-        asn1cSeqAdd(&out->protocolIEs.list, ie);
+        S1AP_DEBUG("e_rab_setup_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+        asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+      }
+
+      asn1cSeqAdd(&out->protocolIEs.list, ie);
     }
 
     /* optional */
@@ -1095,51 +1103,54 @@ int s1ap_eNB_e_rab_modify_resp(instance_t instance,
 
     /* optional */
     if (e_rab_modify_resp_p->nb_of_e_rabs_failed > 0) {
-        ie = (S1AP_E_RABModifyResponseIEs_t *)calloc(1, sizeof(S1AP_E_RABModifyResponseIEs_t));
-        ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToModifyList;
-        ie->criticality = S1AP_Criticality_ignore;
-        ie->value.present = S1AP_E_RABModifyResponseIEs__value_PR_E_RABList;
+      ie = (S1AP_E_RABModifyResponseIEs_t *)calloc(1, sizeof(S1AP_E_RABModifyResponseIEs_t));
+      ie->id = S1AP_ProtocolIE_ID_id_E_RABFailedToModifyList;
+      ie->criticality = S1AP_Criticality_ignore;
+      ie->value.present = S1AP_E_RABModifyResponseIEs__value_PR_E_RABList;
 
-        for (i = 0; i < e_rab_modify_resp_p->nb_of_e_rabs_failed; i++) {
-            S1AP_E_RABItemIEs_t *item;
-            item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
-            item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
-            item->criticality = S1AP_Criticality_ignore;
-            item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
-            item->value.choice.E_RABItem.e_RAB_ID = e_rab_modify_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_modify_resp_p->e_rabs_failed[i].cause;
+      for (i = 0; i < e_rab_modify_resp_p->nb_of_e_rabs_failed; i++) {
+        S1AP_E_RABItemIEs_t *item;
+        item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
+        item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
+        item->criticality = S1AP_Criticality_ignore;
+        item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
+        item->value.choice.E_RABItem.e_RAB_ID = e_rab_modify_resp_p->e_rabs_failed[i].e_rab_id;
 
-            switch(item->value.choice.E_RABItem.cause.present) {
-            case S1AP_Cause_PR_radioNetwork:
-                item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
-                break;
+        switch(e_rab_modify_resp_p->e_rabs_failed[i].cause) {
+          case S1AP_CAUSE_RADIO_NETWORK:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_radioNetwork;
+            item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_transport:
-                item->value.choice.E_RABItem.cause.choice.transport = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_TRANSPORT:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_transport;
+            item->value.choice.E_RABItem.cause.choice.transport = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_nas:
-                item->value.choice.E_RABItem.cause.choice.nas = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_NAS:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_nas;
+            item->value.choice.E_RABItem.cause.choice.nas = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_protocol:
-                item->value.choice.E_RABItem.cause.choice.protocol = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_PROTOCOL:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_protocol;
+            item->value.choice.E_RABItem.cause.choice.protocol = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_misc:
-                item->value.choice.E_RABItem.cause.choice.misc = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          case S1AP_CAUSE_MISC:
+            item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_misc;
+            item->value.choice.E_RABItem.cause.choice.misc = e_rab_modify_resp_p->e_rabs_failed[i].cause_value;
+            break;
 
-            case S1AP_Cause_PR_NOTHING:
+          case S1AP_Cause_PR_NOTHING:
             default:
-                break;
-            }
-
-            S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
-            asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+            break;
         }
 
-        asn1cSeqAdd(&out->protocolIEs.list, ie);
+        S1AP_DEBUG("e_rab_modify_resp: failed e_rab ID %ld\n", item->value.choice.E_RABItem.e_RAB_ID);
+        asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+      }
+      asn1cSeqAdd(&out->protocolIEs.list, ie);
     }
 
     /* optional */
@@ -1243,47 +1254,46 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
         ie->value.present = S1AP_E_RABReleaseResponseIEs__value_PR_E_RABList;
 
         for (i = 0; i < e_rab_release_resp_p->nb_of_e_rabs_failed; i++) {
-            S1AP_E_RABItemIEs_t *item;
-            item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
-            item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
-            item->criticality = S1AP_Criticality_ignore;
-            item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
-            item->value.choice.E_RABItem.e_RAB_ID = e_rab_release_resp_p->e_rabs_failed[i].e_rab_id;
-            item->value.choice.E_RABItem.cause.present = e_rab_release_resp_p->e_rabs_failed[i].cause;
+          S1AP_E_RABItemIEs_t *item;
+          item = (S1AP_E_RABItemIEs_t *)calloc(1, sizeof(S1AP_E_RABItemIEs_t));
+          item->id = S1AP_ProtocolIE_ID_id_E_RABItem;
+          item->criticality = S1AP_Criticality_ignore;
+          item->value.present = S1AP_E_RABItemIEs__value_PR_E_RABItem;
+          item->value.choice.E_RABItem.e_RAB_ID = e_rab_release_resp_p->e_rabs_failed[i].e_rab_id;
 
-            switch(item->value.choice.E_RABItem.cause.present) {
-            case S1AP_Cause_PR_radioNetwork:
-                item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
-                break;
+          switch(e_rab_release_resp_p->e_rabs_failed[i].cause) {
+            case S1AP_CAUSE_RADIO_NETWORK:
+              item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_radioNetwork;
+              item->value.choice.E_RABItem.cause.choice.radioNetwork = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+              break;
 
-            case S1AP_Cause_PR_transport:
-                item->value.choice.E_RABItem.cause.choice.transport = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
-                break;
+            case S1AP_CAUSE_TRANSPORT:
+              item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_transport;
+              item->value.choice.E_RABItem.cause.choice.transport = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+              break;
 
-            case S1AP_Cause_PR_nas:
-                item->value.choice.E_RABItem.cause.choice.nas = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
-                break;
+            case S1AP_CAUSE_NAS:
+              item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_nas;
+              item->value.choice.E_RABItem.cause.choice.nas = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+              break;
 
-            case S1AP_Cause_PR_protocol:
-                item->value.choice.E_RABItem.cause.choice.protocol = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
-                break;
+            case S1AP_CAUSE_PROTOCOL:
+              item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_protocol;
+              item->value.choice.E_RABItem.cause.choice.protocol = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+              break;
 
-            case S1AP_Cause_PR_misc:
-                item->value.choice.E_RABItem.cause.choice.misc = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
-                break;
-
+            case S1AP_CAUSE_MISC:
+              item->value.choice.E_RABItem.cause.present = S1AP_Cause_PR_misc;
+              item->value.choice.E_RABItem.cause.choice.misc = e_rab_release_resp_p->e_rabs_failed[i].cause_value;
+              break;
             case S1AP_Cause_PR_NOTHING:
             default:
-                break;
-            }
-
-            asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
+              break;
+          }
+          asn1cSeqAdd(&ie->value.choice.E_RABList.list, item);
         }
-
         asn1cSeqAdd(&out->protocolIEs.list, ie);
     }
-
-
 
     if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
         S1AP_ERROR("Failed to encode release response\n");

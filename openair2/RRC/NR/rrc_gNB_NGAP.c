@@ -618,7 +618,7 @@ rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(
       ue_context_pP->ue_context.pduSession[pdusession].status = PDU_SESSION_STATUS_FAILED;
       NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[pdusession].pdusession_id = ue_context_pP->ue_context.pduSession[pdusession].param.pdusession_id;
       // TODO add cause when it will be integrated
-      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[pdusession].cause = NGAP_Cause_PR_radioNetwork;
+      NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[pdusession].cause = NGAP_CAUSE_RADIO_NETWORK;
       NGAP_INITIAL_CONTEXT_SETUP_RESP (msg_p).pdusessions_failed[pdusession].cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
     }
   }
@@ -821,7 +821,6 @@ rrc_gNB_process_NGAP_DOWNLINK_NAS(
 
         case ngran_gNB:
         {
-          // rrc_mac_config_req_gNB
           /* Transfer data to PDCP */
           nr_rrc_data_req (
               &ctxt,
