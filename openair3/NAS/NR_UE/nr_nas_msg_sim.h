@@ -36,6 +36,7 @@
 #include "FGSIdentityResponse.h"
 #include "FGSAuthenticationResponse.h"
 #include "FGSNASSecurityModeComplete.h"
+#include "FGSDeregistrationRequestUEOriginating.h"
 #include "RegistrationComplete.h"
 #include "as_message.h"
 #include "FGSUplinkNasTransport.h"
@@ -50,6 +51,7 @@
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
 #define REGISTRATION_ACCEPT                                0b01000010 /* 66 = 0x42 */
 #define REGISTRATION_COMPLETE                              0b01000011 /* 67 = 0x43 */
+#define FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING          0b01000101
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
 #define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
 #define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
@@ -117,6 +119,7 @@ typedef union {
   registration_request_msg               registration_request;
   fgs_identiy_response_msg               fgs_identity_response;
   fgs_authentication_response_msg        fgs_auth_response;
+  fgs_deregistration_request_ue_originating_msg fgs_deregistration_request_ue_originating;
   fgs_security_mode_complete_msg         fgs_security_mode_complete;
   registration_complete_msg              registration_complete;
   fgs_uplink_nas_transport_msg           uplink_nas_transport;

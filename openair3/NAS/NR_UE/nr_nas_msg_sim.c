@@ -43,6 +43,7 @@
 #include "PduSessionEstablishRequest.h"
 #include "PduSessionEstablishmentAccept.h"
 #include "RegistrationAccept.h"
+#include "FGSDeregistrationRequestUEOriginating.h"
 #include "intertask_interface.h"
 #include "openair2/RRC/NAS/nas_config.h"
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
@@ -183,6 +184,9 @@ int mm_msg_encode(MM_msg *mm_msg, uint8_t *buffer, uint32_t len) {
       break;
     case FGS_UPLINK_NAS_TRANSPORT:
       encode_result = encode_fgs_uplink_nas_transport(&mm_msg->uplink_nas_transport, buffer, len);
+      break;
+    case FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING:
+      encode_result = encode_fgs_deregistration_request_ue_originating(&mm_msg->fgs_deregistration_request_ue_originating, buffer, len);
       break;
     default:
       LOG_TRACE(ERROR, "EMM-MSG   - Unexpected message type: 0x%x",
@@ -721,6 +725,53 @@ void decodeDownlinkNASTransport(as_nas_info_t *initialNasMsg, uint8_t * pdu_buff
   }
 }
 
+static void generateDeregistrationRequest(nr_ue_nas_t *nas, as_nas_info_t *initialNasMsg, const nas_deregistration_req_t *req)
+{
+  fgs_nas_message_t nas_msg = {0};
+  fgs_nas_message_security_protected_t *sp_msg;
+  sp_msg = &nas_msg.security_protected;
+  sp_msg->header.protocol_discriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  sp_msg->header.security_header_type = INTEGRITY_PROTECTED_AND_CIPHERED;
+  sp_msg->header.message_authentication_code = 0;
+  sp_msg->header.sequence_number = 2;
+  int size = sizeof(fgs_nas_message_security_header_t);
+
+  fgs_deregistration_request_ue_originating_msg *dereg_req = &sp_msg->plain.mm_msg.fgs_deregistration_request_ue_originating;
+  dereg_req->protocoldiscriminator = FGS_MOBILITY_MANAGEMENT_MESSAGE;
+  size += 1;
+  dereg_req->securityheadertype = INTEGRITY_PROTECTED_AND_CIPHERED_WITH_NEW_SECU_CTX;
+  size += 1;
+  dereg_req->messagetype = FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING;
+  size += 1;
+  dereg_req->deregistrationtype.switchoff = NORMAL_DEREGISTRATION;
+  dereg_req->deregistrationtype.reregistration_required = REREGISTRATION_NOT_REQUIRED;
+  dereg_req->deregistrationtype.access_type = TGPP_ACCESS;
+  dereg_req->naskeysetidentifier.naskeysetidentifier = 1;
+  size += 1;
+  size += fill_guti(&dereg_req->fgsmobileidentity, nas->guti);
+
+  // encode the message
+  initialNasMsg->data = calloc(size, sizeof(Byte_t));
+  int security_header_len = nas_protected_security_header_encode((char *)(initialNasMsg->data), &nas_msg.header, size);
+
+  initialNasMsg->length = security_header_len + mm_msg_encode(&sp_msg->plain.mm_msg, (uint8_t *)(initialNasMsg->data + security_header_len), size - security_header_len);
+
+  nas_stream_cipher_t stream_cipher = {
+    .key = nas->security.knas_int,
+    .key_length = 16,
+    .count = nas->security.mm_counter++,
+    .bearer = 1,
+    .direction = 0,
+    .message = (unsigned char *)(initialNasMsg->data + 6),
+    .blength = (initialNasMsg->length - 6) << 3, /* length in bits */
+  };
+  uint8_t mac[4];
+  nas_stream_encrypt_eia2(&stream_cipher, mac);
+
+  for(int i = 0; i < 4; i++)
+    initialNasMsg->data[2 + i] = mac[i];
+}
+
 static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *initialNasMsg)
 {
   //wait send RegistrationComplete
@@ -957,6 +1008,15 @@ void *nas_nrue_task(void *args_p)
         LOG_I(NAS, "[UE %ld] Received %s: UEid %u, errCode %u\n", instance, ITTI_MSG_NAME (msg_p),
               NAS_UPLINK_DATA_CNF (msg_p).UEid, NAS_UPLINK_DATA_CNF (msg_p).errCode);
 
+        break;
+
+      case NAS_DEREGISTRATION_REQ: {
+          LOG_I(NAS, "[UE %ld] Received %s\n", instance, ITTI_MSG_NAME(msg_p));
+          nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
+          as_nas_info_t initialNasMsg = {0};
+          generateDeregistrationRequest(nas, &initialNasMsg, req);
+          send_nas_uplink_data_req(instance, &initialNasMsg);
+        }
         break;
 
       case NAS_DOWNLINK_DATA_IND:

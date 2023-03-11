@@ -397,6 +397,12 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
+static void trigger_deregistration(int signal)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_UE_SIM, 0, NAS_DEREGISTRATION_REQ);
+  itti_send_msg_to_task(TASK_NAS_NRUE, 0, msg);
+}
+
 static void get_channel_model_mode() {
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   config_get(GNBParams, sizeof(GNBParams)/sizeof(paramdef_t), NULL);
@@ -553,6 +559,7 @@ int main( int argc, char **argv ) {
   sleep(2);
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
+  signal(SIGUSR2, trigger_deregistration);
   // wait for end of program
   printf("Entering ITTI signals handler\n");
   printf("TYPE <CTRL-C> TO TERMINATE\n");

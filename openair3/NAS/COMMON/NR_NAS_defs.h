@@ -364,6 +364,12 @@ typedef struct  __attribute__((packed)) {
 
 } securityModeCommand_t;
 
+typedef struct __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd: 8;
+  Security_header_t sh: 8;
+  SGSmobilitymanagementmessages_t mt: 8;
+} deregistrationRequestUEOriginating_t;
+
 typedef struct {
   uicc_t *uicc;
 } nr_user_nas_t;
