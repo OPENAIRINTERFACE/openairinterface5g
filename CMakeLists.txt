@@ -1895,6 +1895,7 @@ set(libnrnas_emm_msg_OBJS
   ${NAS_SRC}COMMON/EMM/MSG/FGSUplinkNasTransport.c
   ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishRequest.c
   ${NAS_SRC}COMMON/ESM/MSG/PduSessionEstablishmentAccept.c
+  ${NAS_SRC}COMMON/EMM/MSG/FGSDeregistrationRequestUEOriginating.c
   )
 
 set(libnrnas_ies_OBJS
