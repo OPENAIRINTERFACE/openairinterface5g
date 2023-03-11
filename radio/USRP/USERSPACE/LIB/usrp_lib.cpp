@@ -1077,18 +1077,28 @@ extern "C" {
       return -1;
     }
 
-    LOG_I(HW,"Found USRP %s\n", device_adds[0].get("type").c_str());
+    std::string type_str, product_str;
+    if (args.find("addr0") != std::string::npos) {
+      type_str = "type0";
+      product_str = "product0";
+    }
+    else {
+      type_str = "type";
+      product_str = "product";
+    }
+    
+    LOG_I(HW,"Found USRP %s\n", device_adds[0].get(type_str).c_str());
     double usrp_master_clock;
 
-    if (device_adds[0].get("type") == "b200") {
+    if (device_adds[0].get(type_str) == "b200") {
       device->type = USRP_B200_DEV;
       usrp_master_clock = 30.72e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
       args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
     }
 
-    if (device_adds[0].get("type") == "n3xx") {
-      const std::string product = device_adds[0].get("product");
+    if (device_adds[0].get(type_str) == "n3xx") {
+      const std::string product = device_adds[0].get(product_str);
       printf("Found USRP %s\n", product.c_str());
       device->type=USRP_N300_DEV;
       if (product == "n320")
@@ -1101,7 +1111,7 @@ extern "C" {
         LOG_W(HW,"Can't set kernel parameters for N3x0\n");
     }
 
-    if (device_adds[0].get("type") == "x300") {
+    if (device_adds[0].get(type_str) == "x300") {
       printf("Found USRP x300\n");
       device->type=USRP_X300_DEV;
       usrp_master_clock = 184.32e6;
@@ -1112,7 +1122,7 @@ extern "C" {
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
     }
 
-    if (device_adds[0].get("type") == "x4xx") {
+    if (device_adds[0].get(type_str) == "x4xx") {
       printf("Found USRP x400\n");
       device->type = USRP_X400_DEV;
       usrp_master_clock = 245.76e6;
