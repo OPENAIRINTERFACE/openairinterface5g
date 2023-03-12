@@ -23,6 +23,7 @@
 
 #include <QApplication>
 #include <QtWidgets>
+#include <QMessageBox>
 #include <QPainter>
 #include <QtGui>
 #include <QLineEdit>
@@ -69,6 +70,23 @@ float Limits_KPI_ue[2][2] = {
     {0.0, 0.8}, // DL BLER
     {0.2, 10} // Throughput in Mbs
 };
+
+// Holds status of active plots
+bool currentActivePlots[static_cast<int>(PlotTypeGnb::config)];
+
+LLRPlotGnb *puschLlr;
+IQPlotGnb  *puschIq;
+
+void scopeUpdaterGnb(enum PlotTypeGnbIf plotType, int numElt)
+{
+  if (plotType == puschLLR && currentActivePlots[static_cast<int>(PlotTypeGnb::puschLLR)]) {
+    puschLlr->len = numElt;
+    puschLlr->newData->updateScope();
+  } else if (plotType == puschIQ && currentActivePlots[static_cast<int>(PlotTypeGnb::puschIQ)]) {
+    puschIq->len = numElt;
+    puschIq->newData->updateScope();
+  }
+}
 
 /* This class creates the window when choosing the option 'Configs' to configure the threshold values. */
 ConfigBoxFloat::ConfigBoxFloat(float *valuePtr, QWidget *parent) : QLineEdit(parent), valuePtr(valuePtr)
@@ -372,6 +390,61 @@ LLRPlot::LLRPlot(int16_t *data, int len) : data(data), len(len)
   startTimer(1000);
 }
 
+LLRPlotGnb::LLRPlotGnb(int16_t *data, int len, PlotTypeGnb plotType) : data(data)
+{
+  this->len = len;
+  this->plotType = plotType;
+  NewDataHere *newData = new NewDataHere();
+  this->newData = newData;
+  puschLlr = this;
+  connect(newData, &NewDataHere::updateScope, this, &LLRPlotGnb::updatePlot);
+  this->legend()->hide();
+
+  // add new series to the chart
+  this->series = new QScatterSeries();
+  this->series->setMarkerSize(3);
+  this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+  this->series->setColor(Qt::blue);
+  this->series->setPen(Qt::NoPen);
+  this->addSeries(series);
+
+  // add new X axis
+  this->axisX = new QValueAxis();
+  this->axisX->setLabelFormat("%d");
+  this->axisX->setRange(0, len);
+  this->addAxis(this->axisX, Qt::AlignBottom);
+  this->series->attachAxis(this->axisX);
+
+  // add new Y axis
+  this->axisY = new QValueAxis();
+  this->addAxis(this->axisY, Qt::AlignLeft);
+  this->series->attachAxis(this->axisY);
+}
+
+LLRPlotGnb::~LLRPlotGnb()
+{
+  currentActivePlots[static_cast<int>(this->plotType)] = false;
+  puschLlr = nullptr;
+}
+
+void LLRPlotGnb::updatePlot()
+{
+  if (!this->isVisible())
+    return;
+
+  QVector<QPointF> points(this->len);
+  int maxY = this->axisY->max();
+
+  for (int i = 0; i < this->len; i++) {
+    points[i] = QPointF(i, this->data[i]);
+    maxY = std::max(maxY, abs(this->data[i]));
+  }
+
+  this->axisX->setRange(0, len);
+  this->axisY->setRange(-maxY, maxY);
+  this->series->replace(points);
+}
+
 void LLRPlot::timerEvent(QTimerEvent *event)
 {
   if (!this->isVisible())
@@ -409,6 +482,62 @@ void LLRPlotUE::timerEvent(QTimerEvent *event)
     this->axisY->setRange(-maxY, maxY);
     this->series->replace(points);
   }
+}
+
+IQPlotGnb::IQPlotGnb(complex16 *data, int len, PlotTypeGnb plotType) : data(data)
+{
+  this->len = len;
+  this->plotType = plotType;
+  NewDataHere *newData = new NewDataHere();
+  this->newData = newData;
+  puschIq = this;
+  connect(newData, &NewDataHere::updateScope, this, &IQPlotGnb::updatePlot);
+  this->legend()->hide();
+
+  // add new series to the chart
+  this->series = new QScatterSeries();
+  this->series->setMarkerSize(3);
+  this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
+  this->series->setColor(Qt::blue);
+  this->series->setPen(Qt::NoPen);
+  this->addSeries(series);
+
+  // add new X axis
+  this->axisX = new QValueAxis();
+  this->addAxis(this->axisX, Qt::AlignBottom);
+  this->series->attachAxis(this->axisX);
+
+  // add new Y axis
+  this->axisY = new QValueAxis();
+  this->addAxis(this->axisY, Qt::AlignLeft);
+  this->series->attachAxis(this->axisY);
+}
+
+IQPlotGnb::~IQPlotGnb()
+{
+  currentActivePlots[static_cast<int>(this->plotType)] = false;
+  puschIq = nullptr;
+}
+
+void IQPlotGnb::updatePlot()
+{
+  if (!this->isVisible())
+    return;
+
+  QVector<QPointF> points(this->len);
+  int maxX = this->axisX->max();
+  int maxY = this->axisY->max();
+
+  for (int i = 0; i < this->len; i++) {
+    points[i] = QPointF(this->data[i].r, this->data[i].i);
+
+    maxX = std::max(maxX, abs(this->data[i].r));
+    maxY = std::max(maxY, abs(this->data[i].i));
+  }
+
+  this->axisX->setRange(-maxX, maxX);
+  this->axisY->setRange(-maxY, maxY);
+  this->series->replace(points);
 }
 
 IQPlot::IQPlot(complex16 *data, int len) : data(data), len(len)
@@ -742,6 +871,15 @@ void PainterWidgetGnb::makeConnections(int type)
     return;
   }
 
+  if (currentActivePlots[static_cast<int>(plotType)]) {
+    QMessageBox::information(
+      this,
+      tr("gNB Scope"),
+      tr("Plot already exists."));
+    return;
+  }
+
+  const PlotTypeGnb prevPlotType = this->plotType;
   this->plotType = plotType;
   this->chartView->hide();
   QChart *prevChart = this->chartView->chart();
@@ -767,76 +905,76 @@ void PainterWidgetGnb::makeConnections(int type)
 
   QChart *newChart = nullptr;
 
-  switch (plotType) {
-    case PlotTypeGnb::empty: {
-      newChart = new QChart();
-      break;
-    }
-    case PlotTypeGnb::CIR: {
-      newChart = new CIRPlot((complex16 *)p->gNB->pusch_vars[0].ul_ch_estimates_time[0], frame_parms->ofdm_symbol_size);
-      break;
-    }
+  if (plotType == PlotTypeGnb::empty) {
+    newChart = new QChart();
+    currentActivePlots[static_cast<int>(prevPlotType)] = false;
+  } else {
+    switch (plotType) {
+      case PlotTypeGnb::CIR: {
+        newChart = new CIRPlot((complex16 *)p->gNB->pusch_vars[0].ul_ch_estimates_time[0], frame_parms->ofdm_symbol_size);
+        break;
+      }
 
-    case PlotTypeGnb::puschLLR: {
-      int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
-      int Qm = 2;
-      int coded_bits_per_codeword = num_re * Qm;
-      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, coded_bits_per_codeword);
-      break;
-    }
-    case PlotTypeGnb::puschIQ: {
-      int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
-      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], num_re);
-      break;
-    }
-    case PlotTypeGnb::puschSNR: {
-      newChart = new KPIPlot(this);
-      break;
-    }
-    case PlotTypeGnb::puschBLER: {
-      newChart = new KPIPlot(this, Limits_KPI_gNB[0]);
-      break;
-    }
-    case PlotTypeGnb::puschMCS: {
-      newChart = new KPIPlot(this);
-      break;
-    }
-    case PlotTypeGnb::puschRETX: {
-      newChart = new RTXPlot(targetUE->mac_stats.ul.rounds);
-      break;
-    }
-    case PlotTypeGnb::puschThroughput: {
-      newChart = new KPIPlot(this, Limits_KPI_gNB[1]);
-      break;
-    }
+      case PlotTypeGnb::puschLLR: {
+        int init_coded_bits_per_codeword = 100;
+        newChart = new LLRPlotGnb((int16_t *)p->gNB->pusch_vars[0].llr, init_coded_bits_per_codeword, plotType);
+        break;
+      }
+      case PlotTypeGnb::puschIQ: {
+        int init_num_re = 100;
+        newChart = new IQPlotGnb((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], init_num_re, plotType);
+        break;
+      }
+      case PlotTypeGnb::puschSNR: {
+        newChart = new KPIPlot(this);
+        break;
+      }
+      case PlotTypeGnb::puschBLER: {
+        newChart = new KPIPlot(this, Limits_KPI_gNB[0]);
+        break;
+      }
+      case PlotTypeGnb::puschMCS: {
+        newChart = new KPIPlot(this);
+        break;
+      }
+      case PlotTypeGnb::puschRETX: {
+        newChart = new RTXPlot(targetUE->mac_stats.ul.rounds);
+        break;
+      }
+      case PlotTypeGnb::puschThroughput: {
+        newChart = new KPIPlot(this, Limits_KPI_gNB[1]);
+        break;
+      }
 
-    case PlotTypeGnb::pdschSNR: {
-      newChart = new KPIPlot(this);
-      break;
-    }
-    case PlotTypeGnb::pdschBLER: {
-      newChart = new KPIPlot(this, Limits_KPI_gNB[2]);
-      break;
-    }
-    case PlotTypeGnb::pdschMCS: {
-      newChart = new KPIPlot(this);
-      break;
-    }
-    case PlotTypeGnb::pdschRETX: {
-      newChart = new RTXPlot(targetUE->mac_stats.dl.rounds);
-      break;
-    }
-    case PlotTypeGnb::pdschThroughput: {
-      newChart = new KPIPlot(this, Limits_KPI_gNB[3]);
-      break;
-    }
-    case PlotTypeGnb::pdschRBs: {
-      newChart = new KPIPlot(this);
-      break;
-    }
+      case PlotTypeGnb::pdschSNR: {
+        newChart = new KPIPlot(this);
+        break;
+      }
+      case PlotTypeGnb::pdschBLER: {
+        newChart = new KPIPlot(this, Limits_KPI_gNB[2]);
+        break;
+      }
+      case PlotTypeGnb::pdschMCS: {
+        newChart = new KPIPlot(this);
+        break;
+      }
+      case PlotTypeGnb::pdschRETX: {
+        newChart = new RTXPlot(targetUE->mac_stats.dl.rounds);
+        break;
+      }
+      case PlotTypeGnb::pdschThroughput: {
+        newChart = new KPIPlot(this, Limits_KPI_gNB[3]);
+        break;
+      }
+      case PlotTypeGnb::pdschRBs: {
+        newChart = new KPIPlot(this);
+        break;
+      }
 
-    default:
-      break;
+      default:
+        break;
+    }
+    currentActivePlots[static_cast<int>(plotType)] = true;
   }
 
   this->chartView->setChart(newChart);
@@ -1240,6 +1378,7 @@ void nrgNBinitQtScope(scopeParms_t *p)
   scope->argc = p->argc;
   scope->argv = p->argv;
   scope->ru = p->ru;
+  scope->scopeUpdater = scopeUpdaterGnb;
   scope->copyData = copyData;
   copyDataMutexInit(scope);
 

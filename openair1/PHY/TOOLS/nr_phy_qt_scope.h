@@ -245,6 +245,51 @@ class CIRPlotUE : public CIRPlot {
   ValueProviderUE *valueProvider;
 };
 
+/// New data signal emiter
+class NewDataHere : public QObject {
+  Q_OBJECT
+
+ signals:
+  void updateScope();
+};
+
+/// Chart class for plotting LLRs
+class LLRPlotGnb : public QChart {
+  Q_OBJECT
+
+ public:
+  /// Constructor
+  /// \param data Pointer to the LLR data
+  /// \param len Length of the LLR data
+  LLRPlotGnb(int16_t *data, int len, PlotTypeGnb plotType);
+  ~LLRPlotGnb();
+
+ public slots:
+  void updatePlot();
+
+ public:
+  /// Length of the LLR data
+  int len;
+
+  NewDataHere *newData;
+
+ private:
+  /// Pointer to the LLR data
+  int16_t *data;
+
+  /// Scatter series used to plot the LLR in the chart
+  QScatterSeries *series;
+
+  /// Horizontal axis of the chart
+  QValueAxis *axisX;
+
+  /// Vertical axis of the chart
+  QValueAxis *axisY;
+
+  /// Currently plotted KPI type
+  PlotTypeGnb plotType;
+};
+
 /// Chart class for plotting LLRs
 class LLRPlot : public QChart {
   Q_OBJECT
@@ -289,6 +334,42 @@ class LLRPlotUE : public LLRPlot {
 
  private:
   ValueProviderUE *valueProvider;
+};
+
+/// Chart class for plotting the I/Q constellation diagram
+class IQPlotGnb : public QChart {
+  Q_OBJECT
+
+ public:
+  /// Constructor
+  /// \param data Pointer to the complex I/Q data
+  /// \param len Length of the I/Q data
+  IQPlotGnb(complex16 *data, int len, PlotTypeGnb plotType);
+  ~IQPlotGnb();
+
+  /// Length of the I/Q data
+  int len;
+
+  NewDataHere *newData;
+
+ public slots:
+  void updatePlot();
+
+ private:
+  /// Pointer to the I/Q data
+  complex16 *data;
+
+  /// Scatter series used to plot the I/Q constellation diagram
+  QScatterSeries *series;
+
+  /// Horizontal axis of the chart
+  QValueAxis *axisX;
+
+  /// Vertical axis of the chart
+  QValueAxis *axisY;
+
+  /// Currently plotted KPI type
+  PlotTypeGnb plotType;
 };
 
 /// Chart class for plotting the I/Q constellation diagram
