@@ -79,10 +79,10 @@ IQPlotGnb  *puschIq;
 
 void scopeUpdaterGnb(enum PlotTypeGnbIf plotType, int numElt)
 {
-  if (plotType == puschLLR && currentActivePlots[static_cast<int>(PlotTypeGnb::puschLLR)]) {
+  if (plotType == puschLLRe && currentActivePlots[static_cast<int>(PlotTypeGnb::puschLLR)]) {
     puschLlr->len = numElt;
     puschLlr->newData->updateScope();
-  } else if (plotType == puschIQ && currentActivePlots[static_cast<int>(PlotTypeGnb::puschIQ)]) {
+  } else if (plotType == puschIQe && currentActivePlots[static_cast<int>(PlotTypeGnb::puschIQ)]) {
     puschIq->len = numElt;
     puschIq->newData->updateScope();
   }

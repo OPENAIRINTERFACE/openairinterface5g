@@ -2219,7 +2219,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   } // symbol loop
   if (!(frame % 128)) {
     int num_llr = num_re_total*rel15_ul->qam_mod_order;
-    GnbScopeUpdate(gNB, puschLLR, num_llr);
-    GnbScopeUpdate(gNB, puschIQ, num_re_total);
+    GnbScopeUpdate(gNB, puschLLRe, num_llr);
+    GnbScopeUpdate(gNB, puschIQe, num_re_total);
   }
 }
