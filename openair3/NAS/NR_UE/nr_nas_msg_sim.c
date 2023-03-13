@@ -42,6 +42,7 @@
 #include "kdf.h"
 #include "PduSessionEstablishRequest.h"
 #include "PduSessionEstablishmentAccept.h"
+#include "RegistrationAccept.h"
 #include "intertask_interface.h"
 #include "openair2/RRC/NAS/nas_config.h"
 #include <openair3/NAS/COMMON/NR_NAS_defs.h>
@@ -613,6 +614,30 @@ static void generateSecurityModeComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
   }
 }
 
+static void decodeRegistrationAccept(uint8_t *buf, int len, nr_ue_nas_t *nas)
+{
+  registration_accept_msg reg_acc = {0};
+  /* it seems there is no 5G corresponding emm_msg_decode() function, so here
+   * we just jump to the right decision */
+  buf += 7; /* skip security header */
+  buf += 2; /* skip prot discriminator, security header, half octet */
+  AssertFatal(*buf == 0x42, "this is not a NAS Registration Accept\n");
+  buf++;
+  int decoded = decode_registration_accept(&reg_acc, buf, len);
+  AssertFatal(decoded > 0, "could not decode registration accept\n");
+  if (reg_acc.guti) {
+     AssertFatal(reg_acc.guti->guti.typeofidentity == FGS_MOBILE_IDENTITY_5G_GUTI,
+                 "registration accept 5GS Mobile Identity is not GUTI, but %d\n",
+                 reg_acc.guti->guti.typeofidentity);
+     nas->guti = malloc(sizeof(nas->guti));
+     AssertFatal(nas->guti, "out of memory\n");
+     *nas->guti = reg_acc.guti->guti;
+     free(reg_acc.guti); /* no proper memory management for NAS decoded messages */
+  } else {
+    LOG_W(NAS, "no GUTI in registration accept\n");
+  }
+}
+
 static void generateRegistrationComplete(nr_ue_nas_t *nas, as_nas_info_t *initialNasMsg, SORTransparentContainer *sortransparentcontainer)
 {
   //wait send RRCReconfigurationComplete and InitialContextSetupResponse
@@ -909,6 +934,7 @@ void *nas_nrue_task(void *args_p)
 
           if (msg_type == REGISTRATION_ACCEPT) {
             LOG_I(NAS, "[UE] Received REGISTRATION ACCEPT message\n");
+            decodeRegistrationAccept(pdu_buffer, NAS_CONN_ESTABLI_CNF(msg_p).nasMsg.length, nas);
 
             as_nas_info_t initialNasMsg;
             memset(&initialNasMsg, 0, sizeof(as_nas_info_t));

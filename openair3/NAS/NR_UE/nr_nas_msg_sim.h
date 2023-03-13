@@ -84,6 +84,7 @@ typedef struct {
 typedef struct {
   uicc_t *uicc;
   ue_sa_security_key_t security;
+  Guti5GSMobileIdentity_t *guti;
 } nr_ue_nas_t;
 
 typedef enum fgs_protocol_discriminator_e {
