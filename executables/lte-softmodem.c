@@ -614,7 +614,7 @@ int main ( int argc, char **argv )
   //getchar();
   if(IS_SOFTMODEM_DOSCOPE)
      load_softscope("enb",NULL);
-  itti_wait_tasks_end();
+  itti_wait_tasks_end(NULL);
 
 #if USING_GPROF
   // Save the gprof data now (rather than via atexit) in case we crash while shutting down
