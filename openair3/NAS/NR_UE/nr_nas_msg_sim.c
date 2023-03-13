@@ -1001,7 +1001,7 @@ void *nas_nrue_task(void *args_p)
       case NAS_CONN_RELEASE_IND:
         LOG_I(NAS, "[UE %ld] Received %s: cause %u\n", instance, ITTI_MSG_NAME (msg_p),
               NAS_CONN_RELEASE_IND (msg_p).cause);
-
+        itti_wait_tasks_unblock(); /* will unblock ITTI to stop nr-uesoftmodem */
         break;
 
       case NAS_UPLINK_DATA_CNF:
@@ -1051,6 +1051,9 @@ void *nas_nrue_task(void *args_p)
           case FGS_DOWNLINK_NAS_TRANSPORT:
             decodeDownlinkNASTransport(&initialNasMsg, pdu_buffer);
             break;
+          case FGS_DEREGISTRATION_ACCEPT:
+            LOG_I(NAS, "received deregistration accept\n");
+            break;
 	case FGS_PDU_SESSION_ESTABLISHMENT_ACC:
 	  {
 	    uint8_t offset = 0;
@@ -1082,7 +1085,7 @@ void *nas_nrue_task(void *args_p)
 	  }
 	  break;
           default:
-              LOG_W(NR_RRC,"unknow message type %d\n",msg_type);
+              LOG_W(NR_RRC,"unknown message type %d\n",msg_type);
               break;
         }
 
