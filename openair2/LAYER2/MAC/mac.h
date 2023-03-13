@@ -162,6 +162,8 @@
 
 #define U_PLANE_INACTIVITY_VALUE 0   /* defined 10ms order (zero means infinity) */
 
+static const int cqi_to_mcs[16]= {0, 0, 1, 2, 4, 6, 8, 11, 13, 16, 18, 20, 23, 25, 27, 28};
+
 /*
  * eNB part
  */

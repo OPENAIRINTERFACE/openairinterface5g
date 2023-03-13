@@ -32,7 +32,7 @@
 
 
 #include "PHY/defs_UE.h"
-#include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 

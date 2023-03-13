@@ -43,6 +43,7 @@
 #include "rrc_eNB_GTPV1U.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+#include "pdcp.h"
 
 static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
   asn1cCalloc(toFill, tmp);

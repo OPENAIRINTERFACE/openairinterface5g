@@ -482,8 +482,14 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   long deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0;
   // Random seed generation
-  long long tmp = rdtsc_oai();
-  unsigned short int *seed = (unsigned short int*)&tmp;
+  unsigned int seed;
+
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    seed = 1;
+  } else {
+    seed=(unsigned int) (rdtsc_oai() && ~0);
+  }
 
   RA_config_t *ra = &mac->ra;
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
@@ -580,28 +586,28 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
     if(ra->ra_PreambleIndex < 0 || ra->ra_PreambleIndex > 63) {
       if (noGroupB) {
         // use Group A preamble
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % ra->cb_preambles_per_ssb);
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % ra->cb_preambles_per_ssb);
         ra->RA_usedGroupA = 1;
       } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
         // Group B is configured and RA preamble Group A is used
         // - todo add condition on CCCH_sdu_size for initiation by CCCH
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % sizeOfRA_PreamblesGroupA);
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % sizeOfRA_PreamblesGroupA);
         ra->RA_usedGroupA = 1;
       } else {
         // Group B preamble is configured and used
         // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
         // the remaining belong to RA Preambles Group B
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r((unsigned int *)seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r(&seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
         ra->RA_usedGroupA = 0;
       }
     }
   } else { // Msg3 is being retransmitted
     if (ra->RA_usedGroupA && noGroupB) {
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % ra->cb_preambles_per_ssb);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % ra->cb_preambles_per_ssb);
     } else if (ra->RA_usedGroupA && !noGroupB){
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % sizeOfRA_PreamblesGroupA);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % sizeOfRA_PreamblesGroupA);
     } else {
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r((unsigned int *)seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r(&seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
     }
   }
 }
@@ -1033,9 +1039,15 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   // Random seed generation
-  long long tmp = rdtsc_oai();
-  unsigned short int *seed = (unsigned short int*)&tmp;
+  unsigned int seed;
 
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    seed = 1;
+  } else {
+    seed=(unsigned int) (rdtsc_oai() && ~0);
+  }
+  
   ra->first_Msg3 = 1;
   ra->ra_PreambleIndex = -1;
   ra->ra_state = RA_UE_IDLE;
@@ -1047,7 +1059,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     LOG_D(MAC, "In %s: [UE %d][%d.%d] Maximum number of RACH attempts (%d) reached, selecting backoff time...\n",
           __FUNCTION__, mod_id, frame, slot, ra->preambleTransMax);
 
-    ra->RA_backoff_cnt = rand_r((unsigned int *)seed) % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+    ra->RA_backoff_cnt = rand_r(&seed) % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
     prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
     prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);

@@ -29,7 +29,7 @@
  * \warning
  */
 #include "PHY/defs_nr_UE.h"
-#include "PHY/phy_extern_nr_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "nr_transport_proto_ue.h"
 #include "PHY/sse_intrin.h"
@@ -197,7 +197,7 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
                                    int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                                    int ***rho,
                                    NR_DL_FRAME_PARMS *frame_parms,
-                                   uint8_t nb_aatx,
+                                   uint8_t n_layers,
                                    unsigned char symbol,
                                    int length,
                                    uint8_t first_symbol_flag,
@@ -263,17 +263,18 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
                 int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT])
 {
-  const int matrixSz = ue->frame_parms.nb_antennas_rx * ue->frame_parms.nb_antennas_tx;
+  const int nl = dlsch[0].Nl;
+  const int matrixSz = ue->frame_parms.nb_antennas_rx * nl;
   __attribute__((aligned(32))) int32_t dl_ch_estimates_ext[matrixSz][rx_size_symbol];
   memset(dl_ch_estimates_ext, 0, sizeof(dl_ch_estimates_ext));
 
-  __attribute__((aligned(32))) int32_t dl_ch_mag[ue->frame_parms.nb_antennas_tx][ue->frame_parms.nb_antennas_rx][rx_size_symbol];
+  __attribute__((aligned(32))) int32_t dl_ch_mag[nl][ue->frame_parms.nb_antennas_rx][rx_size_symbol];
   memset(dl_ch_mag, 0, sizeof(dl_ch_mag));
 
-  __attribute__((aligned(32))) int32_t dl_ch_magb[ue->frame_parms.nb_antennas_tx][nbRx][rx_size_symbol];
+  __attribute__((aligned(32))) int32_t dl_ch_magb[nl][nbRx][rx_size_symbol];
   memset(dl_ch_magb, 0, sizeof(dl_ch_magb));
 
-  __attribute__((aligned(32))) int32_t dl_ch_magr[ue->frame_parms.nb_antennas_tx][nbRx][rx_size_symbol];
+  __attribute__((aligned(32))) int32_t dl_ch_magr[nl][nbRx][rx_size_symbol];
   memset(dl_ch_magr, 0, sizeof(dl_ch_magr));
   NR_UE_COMMON *common_vars  = &ue->common_vars;
   NR_DL_FRAME_PARMS *frame_parms    = &ue->frame_parms;
@@ -405,7 +406,6 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
   const int n_rx = frame_parms->nb_antennas_rx;
-  const int nl = dlsch[0].Nl;
 
   start_meas(&ue->generic_stat_bis[slot]);
   {
@@ -425,7 +425,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                          start_rb + dlsch[0].dlsch_config.BWPStart,
                          nb_rb_pdsch,
                          dlsch[0].dlsch_config.n_dmrs_cdm_groups,
-                         dlsch[0].Nl,
+                         nl,
                          frame_parms,
                          dlsch[0].dlsch_config.dlDmrsSymbPos,
                          ue->chest_time);
@@ -465,7 +465,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
         //LOG_I(PHY, "avgs Power per SC is %d\n", avgs);
         median[(aatx*n_rx)+aarx] = avg[(aatx*n_rx)+aarx];
       }
-    if (dlsch[0].Nl > 1) {
+    if (nl > 1) {
       nr_dlsch_channel_level_median(rx_size_symbol, dl_ch_estimates_ext, median, nl, n_rx, nb_re_pdsch);
       for (aatx = 0; aatx < nl; aatx++) {
         for (aarx = 0; aarx < n_rx; aarx++) {
@@ -743,7 +743,7 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
                                    int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                                    int ***rho,
                                    NR_DL_FRAME_PARMS *frame_parms,
-                                   uint8_t nb_aatx,
+                                   uint8_t n_layers,
                                    unsigned char symbol,
                                    int length,
                                    uint8_t first_symbol_flag,
@@ -756,12 +756,12 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
 #if defined(__i386) || defined(__x86_64)
 
   unsigned short rb;
-  unsigned char aatx,aarx,atx;
+  unsigned char aarx,atx;
   __m128i *dl_ch128,*dl_ch128_2,*dl_ch_mag128,*dl_ch_mag128b,*dl_ch_mag128r,*rxdataF128,*rxdataF_comp128,*rho128;
   __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3,QAM_amp128={0},QAM_amp128b={0},QAM_amp128r={0};
 
-  uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
-  for (aatx=0; aatx<nb_aatx; aatx++) {
+  uint32_t nb_rb_0 = length / 12 + ((length % 12) ? 1 : 0);
+  for (int l = 0; l < n_layers; l++) {
     if (mod_order == 4) {
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
@@ -780,12 +780,12 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      dl_ch128          = (__m128i *)dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx];
-      dl_ch_mag128 = (__m128i *)dl_ch_mag[aatx][aarx];
-      dl_ch_mag128b = (__m128i *)dl_ch_magb[aatx][aarx];
-      dl_ch_mag128r = (__m128i *)dl_ch_magr[aatx][aarx];
+      dl_ch128          = (__m128i *)dl_ch_estimates_ext[(l * frame_parms->nb_antennas_rx) + aarx];
+      dl_ch_mag128 = (__m128i *)dl_ch_mag[l][aarx];
+      dl_ch_mag128b = (__m128i *)dl_ch_magb[l][aarx];
+      dl_ch_mag128r = (__m128i *)dl_ch_magr[l][aarx];
       rxdataF128        = (__m128i *)rxdataF_ext[aarx];
-      rxdataF_comp128 = (__m128i *)(rxdataF_comp[aatx][aarx] + symbol * nb_rb * 12);
+      rxdataF_comp128 = (__m128i *)(rxdataF_comp[l][aarx] + symbol * nb_rb * 12);
 
       for (rb=0; rb<nb_rb_0; rb++) {
         if (mod_order>2) {
@@ -868,12 +868,12 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
         rxdataF_comp128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
 
 #ifdef DEBUG_DLSCH_DEMOD
-        printf("%%arx%d atx%d rb_index %d symbol %d shift %d\n",aarx,aatx,rb,symbol,output_shift);
+        printf("%%arx%d atx%d rb_index %d symbol %d shift %d\n",aarx,l,rb,symbol,output_shift);
         printf("rx_%d(%d,:)",aarx+1,rb+1);
         print_shorts("  ",(int16_t *)&rxdataF128[0]);
-        printf("ch_%d%d(%d,:)",aarx+1,aatx+1,rb+1);
+        printf("ch_%d%d(%d,:)",aarx+1,l+1,rb+1);
         print_shorts("  ",(int16_t *)&dl_ch128[0]);
-        printf("rx_comp_%d%d(%d,:)",aarx+1,aatx+1,rb+1);
+        printf("rx_comp_%d%d(%d,:)",aarx+1,l+1,rb+1);
         print_shorts("  ",(int16_t *)&rxdataF_comp128[0]);
 #endif
 
@@ -929,22 +929,22 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
   if (rho) {
     //we compute the Tx correlation matrix for each Rx antenna
     //As an example the 2x2 MIMO case requires
-    //rho[aarx][nb_aatx*nb_aatx] = [cov(H_aarx_0,H_aarx_0) cov(H_aarx_0,H_aarx_1)
+    //rho[aarx][nl*nl] = [cov(H_aarx_0,H_aarx_0) cov(H_aarx_0,H_aarx_1)
     //                              cov(H_aarx_1,H_aarx_0) cov(H_aarx_1,H_aarx_1)], aarx=0,...,nb_antennas_rx-1
 
-    //int avg_rho_re[frame_parms->nb_antennas_rx][nb_aatx*nb_aatx];
-    //int avg_rho_im[frame_parms->nb_antennas_rx][nb_aatx*nb_aatx];
+    //int avg_rho_re[frame_parms->nb_antennas_rx][nl*nl];
+    //int avg_rho_im[frame_parms->nb_antennas_rx][nl*nl];
 
     for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
 
-      for (aatx=0; aatx<nb_aatx; aatx++) {
+      for (int l = 0; l < n_layers; l++) {
 
-        for (atx=0; atx<nb_aatx; atx++) {
-          //avg_rho_re[aarx][aatx*nb_aatx+atx] = 0;
-          //avg_rho_im[aarx][aatx*nb_aatx+atx] = 0;
-          rho128        = (__m128i *)&rho[aarx][aatx*nb_aatx+atx][symbol*nb_rb*12];
-          dl_ch128      = (__m128i *)dl_ch_estimates_ext[aatx*frame_parms->nb_antennas_rx+aarx];
-          dl_ch128_2    = (__m128i *)dl_ch_estimates_ext[atx*frame_parms->nb_antennas_rx+aarx];
+        for (atx = 0; atx < n_layers; atx++) {
+          //avg_rho_re[aarx][l*n_layers+atx] = 0;
+          //avg_rho_im[aarx][l*n_layers+atx] = 0;
+          rho128        = (__m128i *)&rho[aarx][l * n_layers + atx][symbol * nb_rb * 12];
+          dl_ch128      = (__m128i *)dl_ch_estimates_ext[l * frame_parms->nb_antennas_rx + aarx];
+          dl_ch128_2    = (__m128i *)dl_ch_estimates_ext[atx * frame_parms->nb_antennas_rx + aarx];
 
           for (rb=0; rb<nb_rb_0; rb++) {
             // multiply by conjugated channel
@@ -970,11 +970,11 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
             //print_shorts("ch:",dl_ch128);
             //print_shorts("pack:",rho128);
 
-            /*avg_rho_re[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[0])[0]+
+            /*avg_rho_re[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[0])[0]+
               ((int16_t*)&rho128[0])[2] +
               ((int16_t*)&rho128[0])[4] +
               ((int16_t*)&rho128[0])[6])/16;*/
-            /*avg_rho_im[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[0])[1]+
+            /*avg_rho_im[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[0])[1]+
               ((int16_t*)&rho128[0])[3] +
               ((int16_t*)&rho128[0])[5] +
               ((int16_t*)&rho128[0])[7])/16;*/
@@ -997,11 +997,11 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
             //print_shorts("pack:",rho128+1);
 
             // multiply by conjugated channel
-            /*avg_rho_re[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[1])[0]+
+            /*avg_rho_re[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[1])[0]+
               ((int16_t*)&rho128[1])[2] +
               ((int16_t*)&rho128[1])[4] +
               ((int16_t*)&rho128[1])[6])/16;*/
-            /*avg_rho_im[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[1])[1]+
+            /*avg_rho_im[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[1])[1]+
               ((int16_t*)&rho128[1])[3] +
               ((int16_t*)&rho128[1])[5] +
               ((int16_t*)&rho128[1])[7])/16;*/
@@ -1023,11 +1023,11 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
             //print_shorts("ch:",dl_ch128+2);
             //print_shorts("pack:",rho128+2);
 
-            /*avg_rho_re[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[2])[0]+
+            /*avg_rho_re[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[2])[0]+
               ((int16_t*)&rho128[2])[2] +
               ((int16_t*)&rho128[2])[4] +
               ((int16_t*)&rho128[2])[6])/16;*/
-            /*avg_rho_im[aarx][aatx*nb_aatx+atx] +=(((int16_t*)&rho128[2])[1]+
+            /*avg_rho_im[aarx][l*n_layers+atx] +=(((int16_t*)&rho128[2])[1]+
               ((int16_t*)&rho128[2])[3] +
               ((int16_t*)&rho128[2])[5] +
               ((int16_t*)&rho128[2])[7])/16;*/
@@ -1038,12 +1038,12 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
           }
           if (first_symbol_flag==1) {
             //rho_nm = H_arx_n.conj(H_arx_m)
-            //rho_rx_corr[arx][nm] = |H_arx_n|^2.|H_arx_m|^2 &rho[aarx][aatx*nb_aatx+atx][symbol*nb_rb*12]
-            measurements->rx_correlation[0][aarx][aatx*nb_aatx+atx] = signal_energy(&rho[aarx][aatx*nb_aatx+atx][symbol*nb_rb*12],length);
-            //avg_rho_re[aarx][aatx*nb_aatx+atx] = 16*avg_rho_re[aarx][aatx*nb_aatx+atx]/length;
-            //avg_rho_im[aarx][aatx*nb_aatx+atx] = 16*avg_rho_im[aarx][aatx*nb_aatx+atx]/length;
-            //printf("rho[rx]%d tx%d tx%d = Re: %d Im: %d\n",aarx, aatx,atx, avg_rho_re[aarx][aatx*nb_aatx+atx], avg_rho_im[aarx][aatx*nb_aatx+atx]);
-            //printf("rho_corr[rx]%d tx%d tx%d = %d ...\n",aarx, aatx,atx, measurements->rx_correlation[0][aarx][aatx*nb_aatx+atx]);
+            //rho_rx_corr[arx][nm] = |H_arx_n|^2.|H_arx_m|^2 &rho[aarx][l*n_layers+atx][symbol*nb_rb*12]
+            measurements->rx_correlation[0][aarx][l * n_layers + atx] = signal_energy(&rho[aarx][l * n_layers + atx][symbol * nb_rb * 12],length);
+            //avg_rho_re[aarx][l*n_layers+atx] = 16*avg_rho_re[aarx][l*n_layers+atx]/length;
+            //avg_rho_im[aarx][l*n_layers+atx] = 16*avg_rho_im[aarx][l*n_layers+atx]/length;
+            //printf("rho[rx]%d tx%d tx%d = Re: %d Im: %d\n",aarx, l,atx, avg_rho_re[aarx][l*n_layers+atx], avg_rho_im[aarx][l*n_layers+atx]);
+            //printf("rho_corr[rx]%d tx%d tx%d = %d ...\n",aarx, l,atx, measurements->rx_correlation[0][aarx][l*n_layers+atx]);
           }
         }
       }
@@ -1055,7 +1055,6 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
 #elif defined(__arm__) || defined(__aarch64__)
 
   unsigned short rb;
-  unsigned char aatx,aarx,symbol_mod;
 
   int16x4_t *dl_ch128,*dl_ch128_2,*rxdataF128;
   int32x4_t mmtmpD0,mmtmpD1,mmtmpD0b,mmtmpD1b;
@@ -1066,11 +1065,11 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
   int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
   int32x4_t output_shift128 = vmovq_n_s32(-(int32_t)output_shift);
 
-  symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
+  unsigned char symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
   uint32_t nb_rb_0 = length/12 + ((length%12)?1:0);
 
-  for (aatx=0; aatx<frame_parms->nb_antenna_ports_gNB; aatx++) {
+  for (int l = 0; l < n_layers; l++) {
     if (mod_order == 4) {
       QAM_amp128  = vmovq_n_s16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = vmovq_n_s16(0);
@@ -1080,12 +1079,12 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
     }
     //    printf("comp: rxdataF_comp %p, symbol %d\n",rxdataF_comp[0],symbol);
 
-    for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-      dl_ch128          = (int16x4_t*)dl_ch_estimates_ext[(aatx<<1)+aarx];
-      dl_ch_mag128 = (int16x8_t *)dl_ch_mag[aatx][aarx];
-      dl_ch_mag128b = (int16x8_t *)dl_ch_magb[aatx][aarx];
+    for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
+      dl_ch128          = (int16x4_t*)dl_ch_estimates_ext[(l << 1) + aarx];
+      dl_ch_mag128 = (int16x8_t *)dl_ch_mag[l][aarx];
+      dl_ch_mag128b = (int16x8_t *)dl_ch_magb[l][aarx];
       rxdataF128 = (int16x4_t *)rxdataF_ext[aarx];
-      rxdataF_comp128 = (int16x4x2_t *)(rxdataF_comp[aatx][aarx] + symbol * nb_rb * 12);
+      rxdataF_comp128 = (int16x4x2_t *)(rxdataF_comp[l][aarx] + symbol * nb_rb * 12);
 
       for (rb=0; rb<nb_rb_0; rb++) {
   if (mod_order>2) {
@@ -1238,13 +1237,13 @@ void nr_dlsch_channel_compensation(uint32_t rx_size_symbol,
 
 void nr_dlsch_scale_channel(uint32_t rx_size_symbol,
                             int32_t dl_ch_estimates_ext[][rx_size_symbol],
-			                      NR_DL_FRAME_PARMS *frame_parms,
-			                      uint8_t n_tx,
-			                      uint8_t n_rx,
-			                      uint8_t symbol,
-			                      uint8_t pilots,
-			                      uint32_t len,
-			                      unsigned short nb_rb)
+                            NR_DL_FRAME_PARMS *frame_parms,
+                            uint8_t n_tx,
+                            uint8_t n_rx,
+                            uint8_t symbol,
+                            uint8_t pilots,
+                            uint32_t len,
+                            unsigned short nb_rb)
 {
 
 #if defined(__x86_64__)||defined(__i386__)
@@ -1530,13 +1529,13 @@ static void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
     c16_t *rxF_ext = rxdataF_ext[aarx];
     c16_t *rxF = &rxdataF[aarx][symbol * frame_parms->ofdm_symbol_size];
 
-    for (unsigned char aatx = 0; aatx < Nl; aatx++) {
+    for (unsigned char l = 0; l < Nl; l++) {
 
-      int32_t *dl_ch0     = &dl_ch_estimates[(aatx*frame_parms->nb_antennas_rx)+aarx][validDmrsEst * frame_parms->ofdm_symbol_size];
-      int32_t *dl_ch0_ext = dl_ch_estimates_ext[(aatx*frame_parms->nb_antennas_rx)+aarx];
+      int32_t *dl_ch0 = &dl_ch_estimates[(l * frame_parms->nb_antennas_rx) + aarx][validDmrsEst * frame_parms->ofdm_symbol_size];
+      int32_t *dl_ch0_ext = dl_ch_estimates_ext[(l * frame_parms->nb_antennas_rx) + aarx];
 
       if (pilots == 0) { //data symbol only
-        if (aatx == 0) {
+        if (l == 0) {
           if (start_re + nb_rb_pdsch * NR_NB_SC_PER_RB <= frame_parms->ofdm_symbol_size) {
             memcpy(rxF_ext, &rxF[start_re], nb_rb_pdsch * NR_NB_SC_PER_RB * sizeof(int32_t));
           } else {
@@ -1550,7 +1549,7 @@ static void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
       }
       else if (config_type == NFAPI_NR_DMRS_TYPE1){
         if (n_dmrs_cdm_groups == 1) { //data is multiplexed
-          if (aatx == 0) {
+          if (l == 0) {
             unsigned short k = start_re;
             for (unsigned short j = 0; j < 6*nb_rb_pdsch; j += 3) {
               rxF_ext[j]   = rxF[k+1];
@@ -1571,7 +1570,7 @@ static void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
       }
       else {//NFAPI_NR_DMRS_TYPE2
         if (n_dmrs_cdm_groups == 1) { //data is multiplexed
-          if (aatx == 0) {
+          if (l == 0) {
             unsigned short k = start_re;
             for (unsigned short j = 0; j < 8*nb_rb_pdsch; j += 4) {
               rxF_ext[j]   = rxF[k+2];
@@ -1592,7 +1591,7 @@ static void nr_dlsch_extract_rbs(uint32_t rxdataF_sz,
           }
         }
         else if (n_dmrs_cdm_groups == 2) { //data is multiplexed
-          if (aatx == 0) {
+          if (l == 0) {
             unsigned short k = start_re;
             for (unsigned short j = 0; j < 4*nb_rb_pdsch; j += 2) {
               rxF_ext[j]   = rxF[k+4];

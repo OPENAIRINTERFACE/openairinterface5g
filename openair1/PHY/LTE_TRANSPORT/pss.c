@@ -48,7 +48,7 @@ int generate_pss(int32_t **txdataF,
   unsigned int Nsymb;
   unsigned short k,m,aa,a;
   uint8_t Nid2;
-  short *primary_sync;
+  const short *primary_sync;
   Nid2 = frame_parms->Nid_cell % 3;
 
   switch (Nid2) {

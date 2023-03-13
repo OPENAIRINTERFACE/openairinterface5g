@@ -545,6 +545,16 @@ typedef struct {
   int            subband_cqi_tot_dB[NUMBER_OF_NR_ULSCH_MAX][275];
   /// PRACH background noise level
   int            prach_I0;
+
+  struct delay_s {
+    /// Time shift in number of samples estimated based on DMRS-PUSCH
+    int pusch_est_delay;
+    /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
+    int pusch_delay_max_pos;
+    /// Max value related to time shift estimation based on DMRS-PUSCH
+    int pusch_delay_max_val;
+  } delay[NUMBER_OF_NR_ULSCH_MAX];
+
 } PHY_MEASUREMENTS_gNB;
 
 

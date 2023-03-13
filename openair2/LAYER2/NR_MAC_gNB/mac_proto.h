@@ -33,6 +33,8 @@
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
+#include "common/ngran_types.h"
+#include "rrc_messages_types.h"
 
 void set_cset_offset(uint16_t);
 

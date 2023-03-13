@@ -51,6 +51,7 @@
 #include "PHY/defs_common.h"
 #include "PHY/types.h"
 #include "PHY/INIT/phy_init.h"
+#include "PHY/phy_extern.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/LTE_TRANSPORT/if4_tools.h"
@@ -104,13 +105,6 @@ int connect_rau(RU_t *ru);
 void wait_eNBs(void);
 
 const char ru_states[6][9] = {"RU_IDLE","RU_CONFIG","RU_READY","RU_RUN","RU_ERROR","RU_SYNC"};
-
-extern const char NB_functions[7][20];
-extern const char NB_timing[2][20];
-
-
-extern const char ru_if_types[MAX_RU_IF_TYPES][20];
-
 
 #if defined(PRE_SCD_THREAD)
 #include "common/ran_context.h"

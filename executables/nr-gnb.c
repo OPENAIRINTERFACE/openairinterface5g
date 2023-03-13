@@ -42,7 +42,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 
 #include "PHY/defs_gNB.h"
 #include "SCHED/sched_eNB.h"

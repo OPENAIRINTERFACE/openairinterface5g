@@ -59,10 +59,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
+#include "pdcp.h"
 
 #include "intertask_interface.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "system.h"
 #include <openair2/RRC/NR_UE/rrc_proto.h>
 #include <openair2/LAYER2/NR_MAC_UE/mac_defs.h>
@@ -213,7 +214,8 @@ int create_tasks_nrue(uint32_t ue_nb) {
   return 0;
 }
 
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
   int CC_id;
 
   if (s != NULL) {
@@ -229,8 +231,12 @@ void exit_function(const char *file, const char *function, const int line, const
     }
   }
 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 uint64_t get_nrUE_optmask(void) {

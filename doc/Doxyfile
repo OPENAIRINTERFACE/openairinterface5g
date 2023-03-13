@@ -2244,7 +2244,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/defs_L1_NB_IoT.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/phy_extern_ue.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/defs_gNB.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/primary_synch.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/lte_dl_cell_spec.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/defs_NB_IoT.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/lte_refsig.h \

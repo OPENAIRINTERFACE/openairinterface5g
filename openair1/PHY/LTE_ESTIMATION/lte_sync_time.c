@@ -28,7 +28,7 @@
 //#include <string.h>
 #include <math.h>
 #include "PHY/defs_UE.h"
-#include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 
 // Note: this is for prototype of generate_drs_pusch (OTA synchronization of RRUs)

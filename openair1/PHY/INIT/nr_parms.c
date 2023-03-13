@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "phy_init.h"
+#include "nr_phy_init.h"
 #include "common/utils/nr/nr_common.h"
 #include "common/utils/LOG/log.h"
 
