@@ -22,6 +22,8 @@
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
+#include <stdbool.h>
+#include <signal.h>
 
 #include "T.h"
 #include "assertions.h"
@@ -397,10 +399,25 @@ void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
 }
 
-static void trigger_deregistration(int signal)
+static bool stop_immediately = false;
+static void trigger_stop(int sig)
 {
-  MessageDef *msg = itti_alloc_new_message(TASK_RRC_UE_SIM, 0, NAS_DEREGISTRATION_REQ);
-  itti_send_msg_to_task(TASK_NAS_NRUE, 0, msg);
+  if (!oai_exit)
+    itti_wait_tasks_unblock();
+}
+static void trigger_deregistration(int sig)
+{
+  if (!stop_immediately) {
+    MessageDef *msg = itti_alloc_new_message(TASK_RRC_UE_SIM, 0, NAS_DEREGISTRATION_REQ);
+    itti_send_msg_to_task(TASK_NAS_NRUE, 0, msg);
+    stop_immediately = true;
+    static const char m[] = "Press ^C again to trigger immediate shutdown\n";
+    __attribute__((unused)) int unused = write(STDOUT_FILENO, m, sizeof(m) - 1);
+    signal(SIGALRM, trigger_stop);
+    alarm(5);
+  } else {
+    itti_wait_tasks_unblock();
+  }
 }
 
 static void get_channel_model_mode() {
@@ -559,11 +576,10 @@ int main( int argc, char **argv ) {
   sleep(2);
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
-  signal(SIGUSR2, trigger_deregistration);
   // wait for end of program
   printf("Entering ITTI signals handler\n");
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  itti_wait_tasks_end(NULL);
+  itti_wait_tasks_end(trigger_deregistration);
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);
