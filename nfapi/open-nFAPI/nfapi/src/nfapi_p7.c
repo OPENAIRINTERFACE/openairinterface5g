@@ -7721,7 +7721,7 @@ static int check_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBufLen
   return retLen;
 }
 
-static int check_nr_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBufLen)
+static int check_nr_unpack_length(nfapi_nr_phy_msg_type_e msgId, uint32_t unpackedBufLen)
 {
 	int retLen = 0;
 
@@ -7780,21 +7780,6 @@ static int check_nr_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBuf
 		case NFAPI_NR_PHY_MSG_TYPE_UL_NODE_SYNC:
 			if (unpackedBufLen >= sizeof(nfapi_nr_ul_node_sync_t))
 				retLen = sizeof(nfapi_nr_ul_node_sync_t);
-			break;
-
-		case NFAPI_TIMING_INFO:
-			if (unpackedBufLen >= sizeof(nfapi_timing_info_t))
-				retLen = sizeof(nfapi_timing_info_t);
-			break;
-
-		case NFAPI_UE_RELEASE_REQUEST:
-			if (unpackedBufLen >= sizeof(nfapi_ue_release_request_t))
-				retLen = sizeof(nfapi_ue_release_request_t);
-			break;
-
-		case NFAPI_UE_RELEASE_RESPONSE:
-			if (unpackedBufLen >= sizeof(nfapi_ue_release_response_t))
-				retLen = sizeof(nfapi_ue_release_response_t);
 			break;
 
 		default:
@@ -8148,7 +8133,7 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 				return -1;
 			break;
 		case NFAPI_UE_RELEASE_REQUEST:
-			if (check_nr_unpack_length(NFAPI_UE_RELEASE_REQUEST, unpackedBufLen))
+			if (check_unpack_length(NFAPI_UE_RELEASE_REQUEST, unpackedBufLen))
 				result = unpack_ue_release_request(&pReadPackedMessage,  end, pMessageHeader, config);
 			else
 				return -1;
@@ -8228,14 +8213,14 @@ int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 			break;
 
 		case NFAPI_TIMING_INFO:
-			if (check_nr_unpack_length(NFAPI_TIMING_INFO, unpackedBufLen))
+			if (check_unpack_length(NFAPI_TIMING_INFO, unpackedBufLen))
 				result = unpack_nr_timing_info(&pReadPackedMessage, end, pMessageHeader, config);
 			else
 				return -1;
 			break;
 
 		case NFAPI_UE_RELEASE_RESPONSE:
-			if (check_nr_unpack_length(NFAPI_UE_RELEASE_RESPONSE, unpackedBufLen))
+			if (check_unpack_length(NFAPI_UE_RELEASE_RESPONSE, unpackedBufLen))
 				result = unpack_ue_release_resp(&pReadPackedMessage,  end, pMessageHeader, config);
 			else
 				return -1;

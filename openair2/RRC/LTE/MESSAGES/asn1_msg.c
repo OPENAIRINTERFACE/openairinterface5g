@@ -4378,7 +4378,7 @@ uint8_t do_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t 
   ul_dcch_msg.message.present           = LTE_UL_DCCH_MessageType_PR_c1;
   ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_ulInformationTransfer;
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.present = LTE_ULInformationTransfer__criticalExtensions_PR_c1;
-  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.present = LTE_DLInformationTransfer__criticalExtensions__c1_PR_dlInformationTransfer_r8;
+  ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.present = LTE_ULInformationTransfer__criticalExtensions__c1_PR_ulInformationTransfer_r8;
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.present =
     LTE_ULInformationTransfer_r8_IEs__dedicatedInfoType_PR_dedicatedInfoNAS;
   ul_dcch_msg.message.choice.c1.choice.ulInformationTransfer.criticalExtensions.choice.c1.choice.ulInformationTransfer_r8.dedicatedInfoType.choice.dedicatedInfoNAS.size = pdu_length;

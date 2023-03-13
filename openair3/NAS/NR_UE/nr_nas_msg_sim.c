@@ -991,7 +991,7 @@ void *nas_nrue_task(void *args_p)
 	    uint8_t offset = 0;
 	    uint8_t *payload_container = pdu_buffer;
 	    offset += SECURITY_PROTECTED_5GS_NAS_MESSAGE_HEADER_LENGTH;
-	    uint16_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
+	    uint32_t payload_container_length = htons(((dl_nas_transport_t *)(pdu_buffer + offset))->payload_container_length);
 	    if ((payload_container_length >= PAYLOAD_CONTAINER_LENGTH_MIN) &&
 		(payload_container_length <= PAYLOAD_CONTAINER_LENGTH_MAX))
 	      offset += (PLAIN_5GS_NAS_MESSAGE_HEADER_LENGTH + 3);

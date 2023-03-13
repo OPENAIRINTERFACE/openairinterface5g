@@ -73,21 +73,25 @@ typedef guint8   gboolean;
 /*                                            command line parameters for LOG utility                                                          */
 /*   optname                helpstr                 paramflags    XXXptr                  defXXXval                       type        numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define OPT_PARAMS_DESC {  \
-    {"type" ,               CONFIG_HLP_TYPEMON,     0,            strptr:&in_type,        defstrval:"none",               TYPE_STRING,    0},   \
-    {"ip" ,                 CONFIG_HLP_L2MONIP,     0,            strptr:&in_ip,  defstrval:"127.0.0.1",          TYPE_STRING,    0},   \
-    {"path" ,               CONFIG_HLP_L2MONPATH,   0,            strptr:&in_path,defstrval:"/tmp/oai_opt.pcap",  TYPE_STRING,    0},   \
-  }
+  {"type" ,               CONFIG_HLP_TYPEMON,     0,           .strptr=&in_type,        .defstrval="none",               TYPE_STRING,    0},   \
+  {"ip" ,                 CONFIG_HLP_L2MONIP,     0,           .strptr=&in_ip,          .defstrval="127.0.0.1",          TYPE_STRING,    0},   \
+  {"path" ,               CONFIG_HLP_L2MONPATH,   0,           .strptr=&in_path,        .defstrval="/tmp/oai_opt.pcap",  TYPE_STRING,    0},   \
+}
+// clang-format on
 
 #define OPTTYPE_IDX 0
 /* check function for opt parameters */
 #define OPTTYPE_OKSTRINGS {"none","pcap","wireshark"}
 #define OPTTYPE_VALUES    {OPT_NONE,OPT_PCAP,OPT_WIRESHARK}
+// clang-format off
 #define OPTPARAMS_CHECK_DESC { \
-    { .s3a= { config_checkstr_assign_integer,  OPTTYPE_OKSTRINGS,OPTTYPE_VALUES ,3}} ,\
-    { .s5= {NULL }} ,                   \
-    { .s5= {NULL }} ,                   \
-  }
+  { .s3a= { config_checkstr_assign_integer,  OPTTYPE_OKSTRINGS,OPTTYPE_VALUES ,3}} ,\
+  { .s5= {NULL }} ,                   \
+  { .s5= {NULL }} ,                   \
+}
+// clang-format on
 
 typedef enum trace_mode_e {
   OPT_WIRESHARK,

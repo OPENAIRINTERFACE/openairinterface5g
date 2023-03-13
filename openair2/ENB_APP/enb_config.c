@@ -2590,10 +2590,10 @@ int RCconfig_X2(MessageDef *msg_p, uint32_t i) {
               int t_dc_prep = 0;
               int t_dc_overall = 0;
               paramdef_t p[] = {
-                { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
-                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 },
-                { "t_dc_prep", "t_dc_prep", 0, iptr:&t_dc_prep, defintval:0, TYPE_INT, 0 },
-                { "t_dc_overall", "t_dc_overall", 0, iptr:&t_dc_overall, defintval:0, TYPE_INT, 0 }
+                { "t_reloc_prep", "t_reloc_prep", 0, .iptr=&t_reloc_prep, .defintval=0, TYPE_INT, 0 },
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, .iptr=&tx2_reloc_overall, .defintval=0, TYPE_INT, 0 },
+                { "t_dc_prep", "t_dc_prep", 0, .iptr=&t_dc_prep, .defintval=0, TYPE_INT, 0 },
+                { "t_dc_overall", "t_dc_overall", 0, .iptr=&t_dc_overall, .defintval=0, TYPE_INT, 0 }
               };
               config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
 

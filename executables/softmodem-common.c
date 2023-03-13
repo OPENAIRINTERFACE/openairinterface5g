@@ -145,7 +145,6 @@ void get_common_options(uint32_t execmask) {
   }
 
   if (nokrnmod) {
-    printf("nokrnmod bit enabled \n");
     set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
   }
 

@@ -121,14 +121,16 @@ static char config_helpstr [] = "\n lte-softmodem -O [config mode]<:dbgl[debugfl
 #define CONFIGP_DEBUGFLAGS "debugflags"
 #define CONFIGP_TMPDIR "tmpdir"
 
+// clang-format off
 static paramdef_t Config_Params[] = {
-    /*--------------------------------------------------------------------------------------------------------------------------*/
-    /*                                            config parameters for config module                                           */
-    /*   optname              helpstr           paramflags         XXXptr                defXXXval            type       numelt */
-    /*--------------------------------------------------------------------------------------------------------------------------*/
-    {CONFIGP_DEBUGFLAGS, config_helpstr, 0, uptr : NULL, defintval : 0, TYPE_MASK, 0},
-    {CONFIGP_TMPDIR, CONFIG_HELP_TMPDIR, PARAMFLAG_NOFREE, strptr : NULL, defstrval : "/tmp", TYPE_STRING, 0},
+  /*--------------------------------------------------------------------------------------------------------------------------*/
+  /*                                            config parameters for config module                                           */
+  /* optname           helpstr             paramflags        XXXptr          defXXXval            type         numelt         */
+  /*--------------------------------------------------------------------------------------------------------------------------*/
+  {CONFIGP_DEBUGFLAGS, config_helpstr,     0,                .uptr = NULL,   .defintval = 0,      TYPE_MASK,   0},
+  {CONFIGP_TMPDIR,     CONFIG_HELP_TMPDIR, PARAMFLAG_NOFREE, .strptr = NULL, .defstrval = "/tmp", TYPE_STRING, 0},
 };
+// clang-format on
 
 #else
 extern configmodule_interface_t *cfgptr;

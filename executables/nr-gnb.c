@@ -192,7 +192,7 @@ void rx_func(void *param) {
         gNB->ulsch[j]->harq_mask = 0;
         int h;
         for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
-          gNB->ulsch[j]->harq_processes[h]->status = SCH_IDLE;
+          gNB->ulsch[j]->harq_processes[h]->status = NR_SCH_IDLE;
           gNB->ulsch[j]->harq_processes[h]->round  = 0;
           gNB->ulsch[j]->harq_processes[h]->handled = 0;
         }

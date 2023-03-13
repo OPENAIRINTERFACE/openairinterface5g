@@ -15,23 +15,25 @@
 /*                                            command line parameters common to eNodeB and UE                                                                           */
 /*   optname                helpstr                 paramflags        XXXptr                              defXXXval                   type         numelt               */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define CMDLINE_PARAMS_DESC_GNB {  \
-    {"single-thread-disable", CONFIG_HLP_NOSNGLT,     PARAMFLAG_BOOL,   iptr:&single_thread_flag,           defintval:1,                   TYPE_INT,    0},        \
-    {"A" ,                    CONFIG_HLP_TADV,        0,                uptr:&timing_advance,               defintval:0,                   TYPE_UINT,   0},        \
-    {"E" ,                    CONFIG_HLP_TQFS,        PARAMFLAG_BOOL,   i8ptr:&threequarter_fs,             defintval:0,                   TYPE_INT8,   0},        \
-    {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,0,               uptr:&target_dl_mcs,                defintval:0,                   TYPE_UINT,   0},        \
-    {"l" ,                    CONFIG_HLP_DLNL_PHYTEST,0,                uptr:&target_dl_Nl,                 defintval:0,                   TYPE_UINT,   0},        \
-    {"L" ,                    CONFIG_HLP_ULNL_PHYTEST,0,                uptr:&target_ul_Nl,                 defintval:0,                   TYPE_UINT,   0},        \
-    {"t" ,                    CONFIG_HLP_ULMCS_PHYTEST,0,               uptr:&target_ul_mcs,                defintval:0,                   TYPE_UINT,   0},        \
-    {"M" ,                    CONFIG_HLP_DLBW_PHYTEST,0,                uptr:&target_dl_bw,                 defintval:0,                   TYPE_UINT,   0},        \
-    {"T" ,                    CONFIG_HLP_ULBW_PHYTEST,0,                uptr:&target_ul_bw,                 defintval:0,                   TYPE_UINT,   0},        \
-    {"D" ,                    CONFIG_HLP_DLBM_PHYTEST,0,                u64ptr:&dlsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
-    {"U" ,                    CONFIG_HLP_ULBM_PHYTEST,0,                u64ptr:&ulsch_slot_bitmap,          defintval:0,                   TYPE_UINT64, 0},        \
-    {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD, 0,                iptr:&usrp_tx_thread,               defstrval:0,                   TYPE_INT,    0},        \
-    {"ldpc-offload-enable",   CONFIG_HLP_LDPC_OFFLOAD, 0,               iptr:&ldpc_offload_flag,            defstrval:0,                   TYPE_INT,    0},        \
-    {"uecap_file",            CONFIG_HLP_UECAP_FILE,  0,                strptr:&uecap_file,                 defstrval:"./uecap_ports1.xml",TYPE_STRING, 0},        \
-    {"s" ,                    CONFIG_HLP_SNR,         0,                dblptr:&snr_dB,                     defdblval:25,                  TYPE_DOUBLE, 0},        \
-  }
+// clang-format off
+#define CMDLINE_PARAMS_DESC_GNB { \
+  {"single-thread-disable", CONFIG_HLP_NOSNGLT,        PARAMFLAG_BOOL,   .iptr=&single_thread_flag,           .defintval=1,                     TYPE_INT,    0},        \
+  {"A" ,                    CONFIG_HLP_TADV,           0,                .uptr=&timing_advance,               .defintval=0,                     TYPE_UINT,   0},        \
+  {"E" ,                    CONFIG_HLP_TQFS,           PARAMFLAG_BOOL,   .i8ptr=&threequarter_fs,             .defintval=0,                     TYPE_INT8,   0},        \
+  {"m" ,                    CONFIG_HLP_DLMCS_PHYTEST,  0,                .uptr=&target_dl_mcs,                .defintval=0,                     TYPE_UINT,   0},        \
+  {"l" ,                    CONFIG_HLP_DLNL_PHYTEST,   0,                .uptr=&target_dl_Nl,                 .defintval=0,                     TYPE_UINT,   0},        \
+  {"L" ,                    CONFIG_HLP_ULNL_PHYTEST,   0,                .uptr=&target_ul_Nl,                 .defintval=0,                     TYPE_UINT,   0},        \
+  {"t" ,                    CONFIG_HLP_ULMCS_PHYTEST,  0,                .uptr=&target_ul_mcs,                .defintval=0,                     TYPE_UINT,   0},        \
+  {"M" ,                    CONFIG_HLP_DLBW_PHYTEST,   0,                .uptr=&target_dl_bw,                 .defintval=0,                     TYPE_UINT,   0},        \
+  {"T" ,                    CONFIG_HLP_ULBW_PHYTEST,   0,                .uptr=&target_ul_bw,                 .defintval=0,                     TYPE_UINT,   0},        \
+  {"D" ,                    CONFIG_HLP_DLBM_PHYTEST,   0,                .u64ptr=&dlsch_slot_bitmap,          .defintval=0,                     TYPE_UINT64, 0},        \
+  {"U" ,                    CONFIG_HLP_ULBM_PHYTEST,   0,                .u64ptr=&ulsch_slot_bitmap,          .defintval=0,                     TYPE_UINT64, 0},        \
+  {"usrp-tx-thread-config", CONFIG_HLP_USRP_THREAD,    0,                .iptr=&usrp_tx_thread,               .defstrval=0,                     TYPE_INT,    0},        \
+  {"ldpc-offload-enable",   CONFIG_HLP_LDPC_OFFLOAD,   0,                .iptr=&ldpc_offload_flag,            .defstrval=0,                     TYPE_INT,    0},        \
+  {"uecap_file",            CONFIG_HLP_UECAP_FILE,     0,                .strptr=&uecap_file,                 .defstrval="./uecap_ports1.xml",  TYPE_STRING, 0},        \
+  {"s" ,                    CONFIG_HLP_SNR,            0,                .dblptr=&snr_dB,                     .defdblval=25,                    TYPE_DOUBLE, 0},        \
+}
+// clang-format on
 
 extern uint32_t target_dl_mcs;
 extern uint32_t target_dl_Nl;

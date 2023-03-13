@@ -207,7 +207,7 @@ the gNB can be launched in 2 modes:
 - To launch the OAI UE (valid in `monolithic` gNB and `CU/DU split` gNB):
  ```bash
 sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 \
-    --rfsim --sa --nokrnmod -O <PATH_TO_UE_CONF_FILE>
+    --rfsim --sa -O <PATH_TO_UE_CONF_FILE>
 ```
 
 If you get the following error:

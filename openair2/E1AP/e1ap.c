@@ -255,7 +255,7 @@ static void fill_SETUP_FAILURE(long transac_id, E1AP_E1AP_PDU_t *pdu)
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_GNB_CU_UP_E1SetupFailureIEs_t, ieC1);
   ieC1->id                         = E1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality                = E1AP_Criticality_reject;
-  ieC1->value.present              = E1AP_GNB_CU_UP_E1SetupResponseIEs__value_PR_TransactionID;
+  ieC1->value.present              = E1AP_GNB_CU_UP_E1SetupFailureIEs__value_PR_TransactionID;
   ieC1->value.choice.TransactionID = transac_id;
   /* mandatory */
   /* c2. cause (integer value) */

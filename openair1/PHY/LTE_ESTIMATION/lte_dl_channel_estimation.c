@@ -555,7 +555,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
                                            32767-ue->ch_est_alpha,
                                            dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),0,ue->frame_parms.ofdm_symbol_size);
       } else { // high_speed_flag == 1
-        if ((symbol == 0)) {
+        if (symbol == 0) {
           //      printf("Interpolating %d->0\n",4-ue->frame_parms.Ncp);
           //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
           if(((Ns>>1)!=0) || ( ((Ns>>1)==0) && interpolateS11S12)) {

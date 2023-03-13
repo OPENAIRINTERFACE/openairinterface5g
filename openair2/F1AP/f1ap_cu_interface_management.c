@@ -257,11 +257,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
   
   if (req->num_cells_available > 0) {
-    if (f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);
-    } else {
-      itti_send_msg_to_task(TASK_RRC_ENB, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
-    }
   } else {
     CU_send_F1_SETUP_FAILURE(instance);
     itti_free(TASK_CU_F1,message_p);

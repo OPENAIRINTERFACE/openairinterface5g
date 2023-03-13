@@ -998,7 +998,7 @@ static int Gtpv1uHandleGpdu(int h,
   //Minimum length of GTP-U header if non of the optional fields are present
   unsigned int offset = sizeof(Gtpv1uMsgHeaderT);
 
-  uint8_t qfi = -1;
+  int8_t qfi = -1;
   bool rqi = false;
   uint32_t NR_PDCP_PDU_SN = 0;
 
@@ -1232,7 +1232,7 @@ void *gtpv1uTask(void *args)  {
     itti_receive_msg(TASK_GTPV1_U, &message_p);
 
     if (message_p != NULL ) {
-      openAddr_t addr= {0};
+      openAddr_t addr= {{0}};
       const instance_t myInstance = ITTI_MSG_DESTINATION_INSTANCE(message_p);
       const int msgType = ITTI_MSG_ID(message_p);
       LOG_D(GTPU, "GTP-U received %s for instance %ld\n", messages_info[msgType].name, myInstance);

@@ -1963,7 +1963,7 @@ void fill_dci0(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_proc_t *proc,
   if(frame_parms->frame_type == TDD) {
     UE_id = find_ulsch(pdu->dci_pdu_rel8.rnti, eNB,SEARCH_EXIST_OR_FREE);
 
-    if(UE_id >=0 -1 || UE_id < NUMBER_OF_ULSCH_MAX) {
+    if(UE_id >=0 || UE_id < NUMBER_OF_ULSCH_MAX) {
       eNB->ulsch[UE_id]->harq_processes[pdu->dci_pdu_rel8.harq_pid]->V_UL_DAI = dai +1;
     }
   }

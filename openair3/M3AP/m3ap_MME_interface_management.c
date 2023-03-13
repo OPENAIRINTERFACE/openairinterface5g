@@ -658,7 +658,7 @@ int MME_send_M3_SETUP_RESPONSE(instance_t instance, /*uint32_t assoc_id,*/
     ie = (M3AP_M3SetupResponseIEs_t *)calloc(1, sizeof(M3AP_M3SetupResponseIEs_t));
     ie->id                        = M3AP_ProtocolIE_ID_id_CriticalityDiagnostics;
     ie->criticality               = M3AP_Criticality_ignore;
-    ie->value.present             = M3AP_M3SetupFailureIEs__value_PR_CriticalityDiagnostics;
+    ie->value.present             = M3AP_M3SetupResponseIEs__value_PR_CriticalityDiagnostics;
     ie->value.choice.CriticalityDiagnostics.procedureCode = (M3AP_ProcedureCode_t *)calloc(1, sizeof(M3AP_ProcedureCode_t));
     *ie->value.choice.CriticalityDiagnostics.procedureCode = M3AP_ProcedureCode_id_m3Setup;
     ie->value.choice.CriticalityDiagnostics.triggeringMessage = (M3AP_TriggeringMessage_t *)calloc(1, sizeof(M3AP_TriggeringMessage_t));

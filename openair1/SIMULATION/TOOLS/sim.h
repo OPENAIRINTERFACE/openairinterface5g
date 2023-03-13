@@ -262,12 +262,14 @@ typedef enum {
 #define CHANNELMOD_MODELLIST_PARANAME "modellist"
 
 #define CHANNELMOD_HELP_MODELLIST "<list name> channel list name in config file describing the model type and its parameters\n"
+// clang-format off
 #define CHANNELMOD_PARAMS_DESC {  \
-    {"s"      ,     CONFIG_HLP_SNR,                                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,   dblptr:&snr_dB,                        defdblval:25,                    TYPE_DOUBLE, 0},\
-    {"sinr_dB",     NULL,                                               0,                                   dblptr:&sinr_dB,                       defdblval:0 ,                    TYPE_DOUBLE, 0},\
-    {"max_chan",    "Max number of runtime models",                     0,                                   uptr:&max_chan,                        defintval:10,                    TYPE_UINT,   0},\
-    {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                   strptr:&modellist_name,       defstrval:"DefaultChannelList",  TYPE_STRING, 0},\
-  }
+  {"s"      ,                     CONFIG_HLP_SNR,                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,  .dblptr=&snr_dB,              .defdblval=25,                    TYPE_DOUBLE, 0}, \
+  {"sinr_dB",                     NULL,                               0,                                  .dblptr=&sinr_dB,             .defdblval=0 ,                    TYPE_DOUBLE, 0}, \
+  {"max_chan",                    "Max number of runtime models",     0,                                  .uptr=&max_chan,              .defintval=10,                    TYPE_UINT,   0}, \
+  {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                  .strptr=&modellist_name,      .defstrval="DefaultChannelList",  TYPE_STRING, 0}, \
+}
+// clang-format on
 
 /* parameters for one model */ 
 #define CHANNELMOD_MODEL_NAME_PNAME "model_name"
@@ -278,15 +280,17 @@ typedef enum {
 #define CHANNELMOD_MODEL_CO_PNAME "offset"
 #define CHANNELMOD_MODEL_DT_PNAME "ds_tdl"
 
+// clang-format off
 #define CHANNELMOD_MODEL_PARAMS_DESC {  \
-    {CHANNELMOD_MODEL_NAME_PNAME, "name of the model\n",               0,  strptr:NULL ,             defstrval:"",                    TYPE_STRING,    0 },\
-    {CHANNELMOD_MODEL_TYPE_PNAME, "name of the model type\n",          0,  strptr:NULL ,             defstrval:"AWGN",                TYPE_STRING,    0 },\
-    {CHANNELMOD_MODEL_PL_PNAME,   "channel path loss in dB\n",         0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  dblptr:NULL,              defdblval:-50,                     TYPE_DOUBLE,    0 },\
-    {CHANNELMOD_MODEL_FF_PNAME,   "channel forget factor ((0 to 1)\n", 0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 },\
-    {CHANNELMOD_MODEL_CO_PNAME,   "channel offset in samps\n",         0,  iptr:NULL,                defintval:0,                     TYPE_INT,       0 },\
-    {CHANNELMOD_MODEL_DT_PNAME,    "delay spread for TDL models\n",    0,  dblptr:NULL,              defdblval:0,                     TYPE_DOUBLE,    0 }\
+    {CHANNELMOD_MODEL_NAME_PNAME, "name of the model\n",               0,  .strptr=NULL ,            .defstrval="",                    TYPE_STRING,    0 }, \
+    {CHANNELMOD_MODEL_TYPE_PNAME, "name of the model type\n",          0,  .strptr=NULL ,            .defstrval="AWGN",                TYPE_STRING,    0 }, \
+    {CHANNELMOD_MODEL_PL_PNAME,   "channel path loss in dB\n",         0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  .dblptr=NULL,             .defdblval=-50,                   TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_FF_PNAME,   "channel forget factor ((0 to 1)\n", 0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_CO_PNAME,   "channel offset in samps\n",         0,  .iptr=NULL,               .defintval=0,                     TYPE_INT,       0 }, \
+    {CHANNELMOD_MODEL_DT_PNAME,   "delay spread for TDL models\n",     0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
 }
+// clang-format on
 
 #include "common/platform_constants.h"
 

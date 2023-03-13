@@ -160,10 +160,10 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
 
 }
 
-void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
+void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
 
-  nfapi_nr_config_request_scf_t *cfg = &RC.nrmac[Mod_idP]->config[0];
-  RC.nrmac[Mod_idP]->common_channels[0].ServingCellConfigCommon = scc;
+  nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
+  nrmac->common_channels[0].ServingCellConfigCommon = scc;
 
   // Carrier configuration
 
@@ -233,7 +233,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   frequency_range_t frequency_range = band<100?FR1:FR2;
 
   frame_type_t frame_type = get_frame_type(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0], *scc->ssbSubcarrierSpacing);
-  RC.nrmac[Mod_idP]->common_channels[0].frame_type = frame_type;
+  nrmac->common_channels[0].frame_type = frame_type;
 
   // Cell configuration
   cfg->cell_config.phy_cell_id.value = *scc->physCellId;
@@ -351,8 +351,8 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
-  RC.nrmac[Mod_idP]->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
-  RC.nrmac[Mod_idP]->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
+  nrmac->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
+  nrmac->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -434,7 +434,7 @@ void config_common(int Mod_idP, int pdsch_AntennaPorts, int pusch_AntennaPorts, 
       LOG_E(NR_MAC,"TDD configuration can not be done\n");
     else {
       LOG_I(NR_MAC,"TDD has been properly configurated\n");
-      RC.nrmac[Mod_idP]->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
+      nrmac->tdd_beam_association = (int16_t *)malloc16(periods_per_frame*sizeof(int16_t));
     }
   }
 
@@ -459,190 +459,199 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   return 0;
 }
 
-int rrc_mac_config_req_gNB(module_id_t Mod_idP,
-                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
-                           int pusch_AntennaPorts,
-                           int sib1_tda,
-                           int minRXTXTIMEpdsch,
-                           NR_ServingCellConfigCommon_t *scc,
-                           NR_BCCH_BCH_Message_t *mib,
-                           NR_BCCH_DL_SCH_Message_t *sib1,
-                           int add_ue,
-                           uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup) {
+void nr_mac_config_scc(gNB_MAC_INST *nrmac,
+                       rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                       int pusch_AntennaPorts,
+                       int sib1_tda,
+                       int minRXTXTIMEpdsch,
+                       NR_ServingCellConfigCommon_t *scc)
+{
+  DevAssert(nrmac != NULL);
+  AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon == NULL, "logic error: multiple configurations of SCC\n");
 
-  if (scc != NULL ) {
-    AssertFatal((scc->ssb_PositionsInBurst->present > 0) && (scc->ssb_PositionsInBurst->present < 4), "SSB Bitmap type %d is not valid\n",scc->ssb_PositionsInBurst->present);
+  DevAssert(scc != NULL);
+  AssertFatal(scc->ssb_PositionsInBurst->present > 0 && scc->ssb_PositionsInBurst->present < 4,
+              "SSB Bitmap type %d is not valid\n",
+              scc->ssb_PositionsInBurst->present);
 
-    int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
-    if (*scc->ssbSubcarrierSpacing == 0)
-      n <<= 1; // to have enough room for feedback possibly beyond the frame we need a larger array at 15kHz SCS
-    RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL = calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
-    RC.nrmac[Mod_idP]->vrb_map_UL_size = n;
-    AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].vrb_map_UL,
-                "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
+  int n = nr_slots_per_frame[*scc->ssbSubcarrierSpacing];
+  if (*scc->ssbSubcarrierSpacing == 0)
+    n <<= 1; // to have enough room for feedback possibly beyond the frame we need a larger array at 15kHz SCS
+  nrmac->common_channels[0].vrb_map_UL = calloc(n * MAX_BWP_SIZE, sizeof(uint16_t));
+  nrmac->vrb_map_UL_size = n;
+  AssertFatal(nrmac->common_channels[0].vrb_map_UL,
+              "could not allocate memory for RC.nrmac[]->common_channels[0].vrb_map_UL\n");
 
-    LOG_I(NR_MAC,"Configuring common parameters from NR ServingCellConfig\n");
+  LOG_I(NR_MAC, "Configuring common parameters from NR ServingCellConfig\n");
 
-    int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
-    RC.nrmac[Mod_idP]->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
-    config_common(Mod_idP,
-                  num_pdsch_antenna_ports,
-                  pusch_AntennaPorts,
-		  scc);
-    LOG_D(NR_MAC, "%s() %s:%d RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req:%p\n", __FUNCTION__, __FILE__, __LINE__, RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
-  
-    if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
-      // fake that the gNB is configured in nFAPI mode, which would normally be
-      // done in a NR_PHY_config_req, but in this mode, there is no PHY
-      RC.gNB[Mod_idP]->configured = 1;
-    } else {
-      NR_PHY_Config_t phycfg = {
-        .Mod_id = Mod_idP,
-        .CC_id  = 0,
-        .cfg    = &RC.nrmac[Mod_idP]->config[0]
-      };
-      DevAssert(RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req);
-      RC.nrmac[Mod_idP]->if_inst->NR_PHY_config_req(&phycfg);
+  int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+  nrmac->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
+  config_common(nrmac, num_pdsch_antenna_ports, pusch_AntennaPorts, scc);
+
+  if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
+    // fake that the gNB is configured in nFAPI mode, which would normally be
+    // done in a NR_PHY_config_req, but in this mode, there is no PHY
+    RC.gNB[0]->configured = 1;
+  } else {
+    NR_PHY_Config_t phycfg = {.Mod_id = 0, .CC_id = 0, .cfg = &nrmac->config[0]};
+    DevAssert(nrmac->if_inst->NR_PHY_config_req);
+    nrmac->if_inst->NR_PHY_config_req(&phycfg);
+  }
+
+  nrmac->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
+  find_SSB_and_RO_available(nrmac);
+
+  const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+
+  int nr_slots_period = n;
+  int nr_dl_slots = n;
+  int nr_ulstart_slot = 0;
+  if (tdd) {
+    nr_dl_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
+    nr_ulstart_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
+    nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
+  } else {
+    // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
+    AssertFatal(nrmac->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
+  }
+
+  for (int slot = 0; slot < n; ++slot) {
+    nrmac->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
+    nrmac->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
+
+    LOG_I(NR_MAC,
+          "slot %d DL %d UL %d\n",
+          slot,
+          (nrmac->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
+          (nrmac->ulsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0);
+  }
+
+  if (get_softmodem_params()->phy_test) {
+    nrmac->pre_processor_dl = nr_preprocessor_phytest;
+    nrmac->pre_processor_ul = nr_ul_preprocessor_phytest;
+  } else {
+    nrmac->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(0);
+    nrmac->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(0);
+  }
+
+  if (get_softmodem_params()->sa > 0) {
+    NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
+    nrmac->sib1_tda = sib1_tda;
+    for (int n = 0; n < NR_NB_RA_PROC_MAX; n++) {
+      NR_RA_t *ra = &cc->ra[n];
+      ra->cfra = false;
+      ra->rnti = 0;
+      ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+      ra->preambles.preamble_list = malloc(MAX_NUM_NR_PRACH_PREAMBLES * sizeof(*ra->preambles.preamble_list));
+      for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+        ra->preambles.preamble_list[i] = i;
     }
+  }
+}
 
-    RC.nrmac[Mod_idP]->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
-    find_SSB_and_RO_available(Mod_idP);
+void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib)
+{
+  DevAssert(nrmac != NULL);
+  DevAssert(mib != NULL);
+  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
 
-    const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
+  AssertFatal(cc->mib == NULL, "logic bug: updated MIB multiple times\n");
+  cc->mib = mib;
+}
 
-    int nr_slots_period = n;
-    int nr_dl_slots = n;
-    int nr_ulstart_slot = 0;
-    if (tdd) {
-      nr_dl_slots = tdd->nrofDownlinkSlots + (tdd->nrofDownlinkSymbols != 0);
-      nr_ulstart_slot = get_first_ul_slot(tdd->nrofDownlinkSlots, tdd->nrofDownlinkSymbols, tdd->nrofUplinkSymbols);
-      nr_slots_period /= get_nb_periods_per_frame(tdd->dl_UL_TransmissionPeriodicity);
-    }
-    else
-      // if TDD configuration is not present and the band is not FDD, it means it is a dynamic TDD configuration
-      AssertFatal(RC.nrmac[Mod_idP]->common_channels[0].frame_type == FDD,"Dynamic TDD not handled yet\n");
+void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1)
+{
+  DevAssert(nrmac != NULL);
+  DevAssert(sib1 != NULL);
+  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
 
-    for (int slot = 0; slot < n; ++slot) {
-      RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
-      RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
+  AssertFatal(cc->sib1 == NULL, "logic bug: updated SIB1 multiple times\n");
+  cc->sib1 = sib1;
+}
 
-      LOG_I(NR_MAC, "In %s: slot %d DL %d UL %d\n",
-            __FUNCTION__,
-            slot,
-            (RC.nrmac[Mod_idP]->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
-            (RC.nrmac[Mod_idP]->ulsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0);
-    }
+bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+{
+  DevAssert(nrmac != NULL);
+  DevAssert(CellGroup != NULL);
+  DevAssert(get_softmodem_params()->phy_test);
 
-    if (get_softmodem_params()->phy_test) {
-      RC.nrmac[Mod_idP]->pre_processor_dl = nr_preprocessor_phytest;
-      RC.nrmac[Mod_idP]->pre_processor_ul = nr_ul_preprocessor_phytest;
-    } else {
-      RC.nrmac[Mod_idP]->pre_processor_dl = nr_init_fr1_dlsch_preprocessor(Mod_idP, 0);
-      RC.nrmac[Mod_idP]->pre_processor_ul = nr_init_fr1_ulsch_preprocessor(Mod_idP, 0);
-    }
+  NR_UE_info_t* UE = add_new_nr_ue(nrmac, rnti, CellGroup);
+  if (UE) {
+    LOG_I(NR_MAC,"Force-added new UE %x with initial CellGroup\n", rnti);
+  } else {
+    LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
+    return false;
+  }
+  process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
+  return true;
+}
 
-    if (get_softmodem_params()->sa > 0) {
-      NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[0];
-      RC.nrmac[Mod_idP]->sib1_tda = sib1_tda;
-      for (int n=0;n<NR_NB_RA_PROC_MAX;n++ ) {
-        cc->ra[n].cfra = false;
-        cc->ra[n].msg3_dcch_dtch = false;
-        cc->ra[n].rnti = 0;
-        cc->ra[n].preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-        cc->ra[n].preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-          cc->ra[n].preambles.preamble_list[i] = i;
+bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+{
+  DevAssert(nrmac != NULL);
+  DevAssert(CellGroup != NULL);
+  DevAssert(!get_softmodem_params()->phy_test);
+
+  // NSA case: need to pre-configure CFRA
+  const int CC_id = 0;
+  NR_COMMON_channels_t *cc = &nrmac->common_channels[CC_id];
+  uint8_t ra_index = 0;
+  /* checking for free RA process */
+  for(; ra_index < NR_NB_RA_PROC_MAX; ra_index++) {
+    if((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra)) break;
+  }
+  if (ra_index == NR_NB_RA_PROC_MAX) {
+    LOG_E(NR_MAC, "RA processes are not available for CFRA RNTI %04x\n", rnti);
+    return false;
+  }
+  NR_RA_t *ra = &cc->ra[ra_index];
+  ra->CellGroup = CellGroup;
+  AssertFatal(CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
+                  && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated != NULL
+                  && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL,
+              "invalid CellGroup for RNTI %04x, cannot create RA occasion\n",
+              rnti);
+
+  ra->cfra = true;
+  ra->rnti = rnti;
+  struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+  uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+  AssertFatal(ra->preambles.num_preambles == 0 && ra->preambles.preamble_list == NULL,
+              "preamble_list already configured means logic bug, list is allocated here\n");
+  ra->preambles.num_preambles = num_preamble;
+  ra->preambles.preamble_list = calloc(ra->preambles.num_preambles, sizeof(*ra->preambles.preamble_list));
+  for (int i = 0; i < cc->num_active_ssb; i++) {
+    for (int j = 0; j < num_preamble; j++) {
+      if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
+        // one dedicated preamble for each beam
+        ra->preambles.preamble_list[i] = cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
+        break;
       }
     }
   }
- 
-  if (mib) RC.nrmac[Mod_idP]->common_channels[0].mib = mib;
-  if (sib1) RC.nrmac[Mod_idP]->common_channels[0].sib1 = sib1;
+  LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
+  return true;
+}
 
-  if (CellGroup) {
+bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+{
+  DevAssert(nrmac != NULL);
+  DevAssert(CellGroup != NULL);
 
-    if (add_ue == 1 && get_softmodem_params()->phy_test) {
-      NR_UE_info_t* UE = add_new_nr_ue(RC.nrmac[Mod_idP], rnti, CellGroup);
-      if (UE) {
-        LOG_I(NR_MAC,"Added new UE %x with initial CellGroup\n", rnti);
-      } else {
-        LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
-        return -1;
-      }
-      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
-    } else if (add_ue == 1 && !get_softmodem_params()->phy_test) {
-      const int CC_id = 0;
-      NR_COMMON_channels_t *cc = &RC.nrmac[Mod_idP]->common_channels[CC_id];
-      uint8_t ra_index = 0;
-      /* checking for free RA process */
-      for(; ra_index < NR_NB_RA_PROC_MAX; ra_index++) {
-        if((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra)) break;
-      }
-      if (ra_index == NR_NB_RA_PROC_MAX) {
-        LOG_E(NR_MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
-        return -1;
-      }	
-      NR_RA_t *ra = &cc->ra[ra_index];
-      ra->CellGroup = CellGroup;
-      if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync &&
-	        CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated!=NULL) {
-        if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
-          ra->cfra = true;
-          ra->rnti = rnti;
-          struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
-          uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-          ra->preambles.num_preambles = num_preamble;
-          ra->preambles.preamble_list = (uint8_t *) malloc(num_preamble*sizeof(uint8_t));
-          for(int i=0; i<cc->num_active_ssb; i++) {
-            for(int j=0; j<num_preamble; j++) {
-              if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
-                // one dedicated preamble for each beam
-                ra->preambles.preamble_list[i] =
-                    cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
-                break;
-              }
-            }
-          }
-        }
-      } else {
-        ra->cfra = false;
-        ra->rnti = 0;
-        ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-        ra->preambles.preamble_list = (uint8_t *) malloc(MAX_NUM_NR_PRACH_PREAMBLES*sizeof(uint8_t));
-        for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-          ra->preambles.preamble_list[i] = i;
-      }
-      ra->msg3_dcch_dtch = false;
-      LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
-    } else { // CellGroup has been updated
-      NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info, rnti);
-      if (!UE) {
-        LOG_E(NR_MAC, "Can't find UE %04x\n", rnti);
-        return -1;
-      }
+  NR_UE_info_t *UE = find_nr_UE(&nrmac->UE_info, rnti);
+  AssertFatal(UE != NULL, "Can't find UE %04x for CellGroup update\n", rnti);
 
-      /* copy CellGroup by calling asn1c encode
-         this is a temporary hack to avoid the gNB having
-         a pointer to RRC CellGroup structure
-         (otherwise it would be applied to early)
-         TODO remove once we have a proper implementation */
-      UE->enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                           NULL,
-                                           (void *) CellGroup,
-                                           UE->cg_buf,
-                                           32768);
+  /* copy CellGroup by calling asn1c encode this is a temporary hack to avoid the gNB having a pointer to RRC CellGroup structure
+   * (otherwise it would be applied to early)
+   * TODO remove once we have a proper implementation */
+  UE->enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, (void *)CellGroup, UE->cg_buf, 32768);
 
-      if (UE->enc_rval.encoded == -1) {
-        LOG_E(NR_MAC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
-              UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
-        exit(1);
-      }
-
-      process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
-    }
+  if (UE->enc_rval.encoded == -1) {
+    LOG_E(NR_MAC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n", UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
+    exit(1);
   }
-  VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_MAC_CONFIG, VCD_FUNCTION_OUT);
 
-  return 0;
-}// END rrc_mac_config_req_gNB
+  process_CellGroup(CellGroup, &UE->UE_sched_ctrl);
+
+  return true;
+}

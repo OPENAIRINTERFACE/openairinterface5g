@@ -252,16 +252,15 @@ In the second terminal (the one you used to build the UE):
 $ ssh sudousername@machineC
 cd ue_folder/cmake_targets
 # Test 64 UEs, 1 thread in FDD mode
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
 # Test 64 UEs, 1 thread in TDD mode
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 -T 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 -T 1 > ue.log 2>&1
 # The "-T 1" option means TDD config
 ```
 
 -   The number of UEs can set by using `--num-ues` option and the maximum UE number is 255 (with the `--mu*` options, otherwise 16).
 -   The number of threads can set with the `--nums-ue-thread`. This number **SHALL NOT** be greater than the number of UEs.
     * At the time of writing, it seems to be enough to run on a single thread.
--   The `--nokrnmod 1` option makes use of the preferred and supported tunnel interface.
 -   How many UE that can be tested depends on hardware (server , PC, etc) performance in your environment.
 
 For example, running with 4 UEs:
@@ -269,7 +268,7 @@ For example, running with 4 UEs:
 ```bash
 $ ssh sudousername@machineC
 cd ue_folder/cmake_targets
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 --nokrnmod 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
 sleep 10
 ifconfig
 ens3      Link encap:Ethernet  HWaddr XX:XX:XX:XX:XX:XX
