@@ -54,8 +54,8 @@ int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
     decoded++;
   }
 
-  ielen = *(buffer + decoded);
-  decoded++;
+  ielen = *(uint16_t*)(buffer + decoded);  /* length is two bytes */
+  decoded += 2;
   CHECK_LENGTH_DECODER(len - decoded, ielen);
 
   uint8_t typeofidentity = *(buffer + decoded) & 0x7;
@@ -63,6 +63,8 @@ int decode_5gs_mobile_identity(FGSMobileIdentity *fgsmobileidentity, uint8_t iei
   if (typeofidentity == FGS_MOBILE_IDENTITY_5G_GUTI) {
     decoded_rc = decode_guti_5gs_mobile_identity(&fgsmobileidentity->guti,
                  buffer + decoded);
+  } else {
+    AssertFatal(false, "Mobile Identity encoding of type %d not implemented\n", typeofidentity);
   }
 
   if (decoded_rc < 0) {
