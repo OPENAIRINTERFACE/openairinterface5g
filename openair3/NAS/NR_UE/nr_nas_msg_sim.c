@@ -585,7 +585,7 @@ static void generateSecurityModeComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
 
   stream_cipher.key        = nas->security.knas_int;
   stream_cipher.key_length = 16;
-  stream_cipher.count      = 0;
+  stream_cipher.count      = nas->security.mm_counter++;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
@@ -690,7 +690,7 @@ static void generateRegistrationComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
   initialNasMsg->length = length;
   stream_cipher.key        = nas->security.knas_int;
   stream_cipher.key_length = 16;
-  stream_cipher.count      = 1;
+  stream_cipher.count      = nas->security.mm_counter++;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
@@ -802,7 +802,7 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
 
   stream_cipher.key        = nas->security.knas_int;
   stream_cipher.key_length = 16;
-  stream_cipher.count      = 0;
+  stream_cipher.count      = nas->security.sm_counter++;
   stream_cipher.bearer     = 1;
   stream_cipher.direction  = 0;
   stream_cipher.message    = (unsigned char *)(initialNasMsg->data + 6);
