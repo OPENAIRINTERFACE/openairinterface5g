@@ -1012,10 +1012,14 @@ void *nas_nrue_task(void *args_p)
 
       case NAS_DEREGISTRATION_REQ: {
           LOG_I(NAS, "[UE %ld] Received %s\n", instance, ITTI_MSG_NAME(msg_p));
-          nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
-          as_nas_info_t initialNasMsg = {0};
-          generateDeregistrationRequest(nas, &initialNasMsg, req);
-          send_nas_uplink_data_req(instance, &initialNasMsg);
+          if (nas->guti) {
+            nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
+            as_nas_info_t initialNasMsg = {0};
+            generateDeregistrationRequest(nas, &initialNasMsg, req);
+            send_nas_uplink_data_req(instance, &initialNasMsg);
+          } else {
+            LOG_E(NAS, "no GUTI, cannot trigger deregistration request\n");
+          }
         }
         break;
 
