@@ -2288,7 +2288,7 @@ nr_rrc_ue_establish_srb2(
            NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
          }
 
-         itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+         itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
          break;
        case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
          LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n", ctxt_pP->module_id,gNB_indexP);
