@@ -137,7 +137,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of dlsim */
-int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1, g_pmi = 0;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -183,6 +183,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->rbSize = g_rbSize;
   sched_pdsch->mcs = g_mcsIndex;
   sched_pdsch->nrOfLayers = g_nrOfLayers;
+  sched_pdsch->pm_index = g_pmi;
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
@@ -327,7 +328,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
 
-  while ((c = getopt(argc, argv, "f:hA:pf:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -404,34 +405,18 @@ int main(int argc, char **argv)
       printf("Setting SNR1 to %f\n",snr1);
       break;
 
-      /*
-      case 't':
-      Td= atof(optarg);
-      break;
-      */
-    /*case 'p':
-      extended_prefix_flag=1;
-      break;*/
-
-      /*
-      case 'r':
-      ricean_factor = pow(10,-.1*atof(optarg));
-      if (ricean_factor>1) {
-        printf("Ricean factor must be between 0 and 1\n");
-        exit(-1);
-      }
-      break;
-      */
     case 'x':
-      g_nrOfLayers=atoi(optarg);
+      g_nrOfLayers = atoi(optarg);
 
-      if ((g_nrOfLayers==0) ||
-          (g_nrOfLayers>4)) {
-        printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
+      if ((g_nrOfLayers == 0) || (g_nrOfLayers > 4)) {
+        printf("Unsupported nr Of Layers %d\n", g_nrOfLayers);
         exit(-1);
       }
-
       break;
+
+    case 'p':
+     g_pmi = atoi(optarg);
+     break;
 
     case 'v':
       num_rounds = atoi(optarg);
