@@ -316,7 +316,7 @@ static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const u
 
 void apply_macrlc_config_reest(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP, ue_id_t ue_id)
 {
-  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
+  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_id, ue_context_pP->ue_context.masterCellGroup);
 
   nr_rrc_rlc_config_asn1_req(ctxt_pP,
                              ue_context_pP->ue_context.SRB_configList,
