@@ -2890,3 +2890,29 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             LOG_E(NR_RRC, "No NSA Message Found\n");
     }
 }
+
+void *nr_rrc_timers_update() {
+
+  while (1) {
+
+    for (int mod_id = 0; mod_id < NB_NR_UE_INST; mod_id++) {
+      for (int i = 0; i < NB_SIG_CNX_UE; i++) {
+        NR_UE_RRC_INFO *timers = &NR_UE_rrc_inst[mod_id].Info[i];
+
+        // T304
+        if (timers->T304_active == 1) {
+          if ((timers->T304_cnt % 100) == 0) {
+            LOG_W(NR_RRC, "T304: %u\n", timers->T304_cnt);
+          }
+          if (timers->T304_cnt == 1) {
+            timers->T304_active = 0;
+          }
+          timers->T304_cnt--;
+        }
+
+      }
+    }
+
+    usleep(1000);
+  }
+}

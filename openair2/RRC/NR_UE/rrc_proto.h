@@ -162,6 +162,9 @@ int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index);
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
 
+/**\brief RRC timers update at UE. */
+void *nr_rrc_timers_update();
+
 /**\brief RRC NSA UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *recv_msgs_from_lte_ue(void *args_p);
