@@ -348,7 +348,7 @@ static int decodePDUSessionResourceSetup(pdusession_t *session)
         return -1;
     }
   }
-  ASN_STRUCT_FREE(asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer,pdusessionTransfer );
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer,pdusessionTransfer );
 
   return 0;
 }
