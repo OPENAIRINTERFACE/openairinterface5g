@@ -371,7 +371,7 @@ typedef struct {
 #define STATIC_ASSERT(test_for_true) _Static_assert((test_for_true), "(" #test_for_true ") failed")
 #define myCalloc(var, type) type * var=(type*)calloc(sizeof(type),1);
 #define arrayCpy(tO, FroM)  STATIC_ASSERT(sizeof(tO) == sizeof(FroM)) ; memcpy(tO, FroM, sizeof(tO))
-int resToresStar(uint8_t *msg, uicc_t* uicc);
+int resToresStar(uint8_t *msg, const uicc_t* uicc);
 
 int identityResponse(void **msg, nr_user_nas_t *UE);
 int authenticationResponse(void **msg, nr_user_nas_t *UE);

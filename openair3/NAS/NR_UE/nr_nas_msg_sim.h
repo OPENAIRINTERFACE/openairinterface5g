@@ -39,6 +39,7 @@
 #include "RegistrationComplete.h"
 #include "as_message.h"
 #include "FGSUplinkNasTransport.h"
+#include <openair3/UICC/usim_interface.h>
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
@@ -79,6 +80,11 @@ typedef struct {
   uint8_t rand[16];
   uint8_t kgnb[32];
 } ue_sa_security_key_t;
+
+typedef struct {
+  uicc_t *uicc;
+  ue_sa_security_key_t security;
+} nr_ue_nas_t;
 
 typedef enum fgs_protocol_discriminator_e {
   /* Protocol discriminator identifier for 5GS Mobility Management */
@@ -158,7 +164,8 @@ typedef struct {
     fgs_sm_nas_msg_header_t sm_nas_msg_header;
 } dl_nas_transport_t;
 
-void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id);
+nr_ue_nas_t *get_ue_nas_info(module_id_t module_id);
+void generateRegistrationRequest(as_nas_info_t *initialNasMsg, nr_ue_nas_t *nas);
 void *nas_nrue_task(void *args_p);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/
