@@ -1710,10 +1710,10 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
               int t_dc_prep = 0;
               int t_dc_overall = 0;
               paramdef_t p[] = {
-                { "t_reloc_prep", "t_reloc_prep", 0, iptr:&t_reloc_prep, defintval:0, TYPE_INT, 0 },
-                { "tx2_reloc_overall", "tx2_reloc_overall", 0, iptr:&tx2_reloc_overall, defintval:0, TYPE_INT, 0 },
-                { "t_dc_prep", "t_dc_prep", 0, iptr:&t_dc_prep, defintval:0, TYPE_INT, 0 },
-                { "t_dc_overall", "t_dc_overall", 0, iptr:&t_dc_overall, defintval:0, TYPE_INT, 0 }
+                { "t_reloc_prep", "t_reloc_prep", 0, .iptr=&t_reloc_prep, .defintval=0, TYPE_INT, 0 },
+                { "tx2_reloc_overall", "tx2_reloc_overall", 0, .iptr=&tx2_reloc_overall, .defintval=0, TYPE_INT, 0 },
+                { "t_dc_prep", "t_dc_prep", 0, .iptr=&t_dc_prep, .defintval=0, TYPE_INT, 0 },
+                { "t_dc_overall", "t_dc_overall", 0, .iptr=&t_dc_overall, .defintval=0, TYPE_INT, 0 }
               };
               config_get(p, sizeof(p)/sizeof(paramdef_t), aprefix);
 
@@ -2084,24 +2084,6 @@ void du_extract_and_decode_SI(int inst, int si_ind, uint8_t *si_container, int s
   } else AssertFatal(1 == 0, "No SI messages\n");
 }
 
-void configure_gnb_du_mac(int inst) {
-  gNB_RRC_INST *rrc = RC.nrrrc[inst];
-  // LOG_I(GNB_APP,"Configuring MAC/L1 %d, carrier->sib2 %p\n", inst, &carrier->sib2->radioResourceConfigCommon);
-  LOG_I(GNB_APP,"Configuring gNB DU MAC/L1 %d \n", inst);
-  rrc_mac_config_req_gNB(rrc->module_id,
-                        rrc->configuration.pdsch_AntennaPorts,
-                        rrc->configuration.pusch_AntennaPorts,
-                        rrc->configuration.sib1_tda,
-                        rrc->configuration.minRXTXTIME,
-                        rrc->configuration.scc,
-                        NULL,
-                        NULL,
-                        0,
-                        0, // rnti
-                        NULL);
-}
-
-
 int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
   int i, j, si_ind;
   int ret=0;
@@ -2126,9 +2108,6 @@ int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
                                    resp->cells_to_activate[j].SI_container[si_ind],
                                    resp->cells_to_activate[j].SI_container_length[si_ind]);
         }
-
-        // perform MAC/L1 common configuration
-        configure_gnb_du_mac(i);
 	ret++;
       } else {
         LOG_E(GNB_APP, "F1 Setup Response not matching\n");
@@ -2161,9 +2140,6 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
                                    gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
                                    gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
         }
-
-        // perform MAC/L1 common configuration
-        configure_gnb_du_mac(i);
 	ret++;
       } else {
         LOG_E(GNB_APP, "GNB_CU_CONFIGURATION_UPDATE not matching\n");

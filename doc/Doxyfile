@@ -1024,7 +1024,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_encoder.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_task.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_system_information.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_system_information.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_rrc_message_transfer.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_interface_management.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_handlers.c \

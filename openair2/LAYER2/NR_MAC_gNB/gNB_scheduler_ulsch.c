@@ -227,7 +227,7 @@ int nr_process_mac_pdu(instance_t module_idP,
           NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
           if (ra->state >= WAIT_Msg3 && ra->rnti == UE->rnti) {
             ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
-            ra->msg3_dcch_dtch = true;
+            ra->state = Msg3_dcch_dtch;
             LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x\n", ra->crnti);
             break;
           }
@@ -755,9 +755,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // harq_pid set a non valid value because it is not used in this call
           // the function is only called to decode the contention resolution sub-header
           if (nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
-            ra->state = Msg4;
             
-            if (ra->msg3_dcch_dtch) {
+            if (ra->state == Msg3_dcch_dtch) {
               // Check if the UE identified by C-RNTI still exists at the gNB
               NR_UE_info_t * UE_C = find_nr_UE(&gNB_mac->UE_info, ra->crnti);
               if (!UE_C) {
@@ -775,13 +774,18 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 reset_dl_harq_list(&UE_C->UE_sched_ctrl);
                 reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
+              LOG_I(NR_MAC, "Activating scheduling response to MSG3 with DCCH/DTCCH and RNTI 0x%04x (state %d)\n",
+                    ra->crnti, ra->state);
             }
-            LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
-                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state);
+            else {
+              LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
+                    ra->rnti, ra->state);
+              ra->state = Msg4;
+            }
           }
           else {
-             nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
-             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+            nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+            nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
         }
         return;
@@ -1944,7 +1948,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   return true;
 }
 
-nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
 {
   /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
    * This would include the number of DMRS symbols, which in turn depends on

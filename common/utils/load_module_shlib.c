@@ -69,8 +69,12 @@ char *loader_format_shlibpath(char *modname, char *version)
 char *tmpstr;
 char *shlibpath   =NULL;
 char *shlibversion=NULL;
-paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0, NULL},
-                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0, NULL}};
+// clang-format off
+paramdef_t LoaderParams[] = {
+    {"shlibpath",    NULL, 0, .strptr = &shlibpath,    .defstrval = NULL, TYPE_STRING, 0, NULL},
+    {"shlibversion", NULL, 0, .strptr = &shlibversion, .defstrval = "",   TYPE_STRING, 0, NULL}
+};
+// clang-format on
 
 int ret;
 

@@ -176,17 +176,16 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
   LOG_I(NR_RRC,"Done init_NR_SI\n");
 
   if (NODE_IS_MONOLITHIC(rrc->node_type) || NODE_IS_DU(rrc->node_type)){
-    rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.pdsch_AntennaPorts,
-                           rrc->configuration.pusch_AntennaPorts,
-                           rrc->configuration.sib1_tda,
-                           rrc->configuration.minRXTXTIME,
-                           rrc->carrier.servingcellconfigcommon,
-                           &rrc->carrier.mib,
-                           rrc->carrier.siblock1,
-                           0,
-                           0, // WIP hardcoded rnti
-                           NULL);
+    // update SI info
+    nr_mac_config_scc(RC.nrmac[rrc->module_id],
+                      rrc->configuration.pdsch_AntennaPorts,
+                      rrc->configuration.pusch_AntennaPorts,
+                      rrc->configuration.sib1_tda,
+                      rrc->configuration.minRXTXTIME,
+                      rrc->carrier.servingcellconfigcommon);
+    nr_mac_config_mib(RC.nrmac[rrc->module_id], &rrc->carrier.mib);
+    if (get_softmodem_params()->sa)
+      nr_mac_config_sib1(RC.nrmac[rrc->module_id], rrc->carrier.siblock1);
   }
 
   /* set flag to indicate that cell information is configured. This is required
@@ -302,17 +301,7 @@ unsigned int rrc_gNB_get_next_transaction_identifier(module_id_t gnb_mod_idP)
 static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP)
 {
   NR_CellGroupConfig_t *cgc = get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL;
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         rrc->configuration.pusch_AntennaPorts,
-                         rrc->configuration.sib1_tda,
-                         rrc->configuration.minRXTXTIME,
-                         NULL,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_context_pP->ue_context.rnti,
-                         cgc);
+  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, cgc);
 
   nr_rrc_rlc_config_asn1_req(ctxt_pP,
                              ue_context_pP->ue_context.SRB_configList,
@@ -323,17 +312,7 @@ static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const u
 
 void apply_macrlc_config_reest(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP, ue_id_t ue_id)
 {
-  rrc_mac_config_req_gNB(rrc->module_id,
-                         rrc->configuration.pdsch_AntennaPorts,
-                         rrc->configuration.pusch_AntennaPorts,
-                         rrc->configuration.sib1_tda,
-                         rrc->configuration.minRXTXTIME,
-                         NULL,
-                         NULL,
-                         NULL,
-                         0,
-                         ue_id,
-                         get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL);
+  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
 
   nr_rrc_rlc_config_asn1_req(ctxt_pP,
                              ue_context_pP->ue_context.SRB_configList,
@@ -411,17 +390,15 @@ static void rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t 
 
   LOG_D(NR_RRC, "RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB for rnti %04x\n", rnti);
 
-  rrc_mac_config_req_gNB(rrc_instance_p->module_id,
-                         rrc_instance_p->configuration.pdsch_AntennaPorts,
-                         rrc_instance_p->configuration.pusch_AntennaPorts,
-                         rrc_instance_p->configuration.sib1_tda,
-                         rrc_instance_p->configuration.minRXTXTIME,
-                         rrc_instance_p->carrier.servingcellconfigcommon,
-                         &rrc_instance_p->carrier.mib,
-                         rrc_instance_p->carrier.siblock1,
-                         0,
-                         rnti,
-                         NULL);
+  // update SCC and MIB/SIB (two calls)
+  nr_mac_config_scc(RC.nrmac[rrc_instance_p->module_id],
+                    rrc_instance_p->configuration.pdsch_AntennaPorts,
+                    rrc_instance_p->configuration.pusch_AntennaPorts,
+                    rrc_instance_p->configuration.sib1_tda,
+                    rrc_instance_p->configuration.minRXTXTIME,
+                    rrc_instance_p->carrier.servingcellconfigcommon);
+  nr_mac_config_mib(RC.nrmac[rrc_instance_p->module_id], &rrc_instance_p->carrier.mib);
+  nr_mac_config_sib1(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.siblock1);
 
   LOG_I(NR_RRC, " [RAPROC] rnti: %04x Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n", rnti, size);
   // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
@@ -600,17 +577,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   }
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.pdsch_AntennaPorts,
-                           rrc->configuration.pusch_AntennaPorts,
-                           rrc->configuration.sib1_tda,
-                           rrc->configuration.minRXTXTIME,
-                           NULL,
-                           NULL,
-                           NULL,
-                           0,
-                           ue_p->rnti,
-                           ue_p->masterCellGroup);
+    gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+    nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_p->rnti, ue_p->masterCellGroup);
 
     uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
@@ -805,17 +773,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     PDCP_TRANSMISSION_MODE_CONTROL);
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    rrc_mac_config_req_gNB(rrc->module_id,
-                           rrc->configuration.pdsch_AntennaPorts,
-                           rrc->configuration.pusch_AntennaPorts,
-                           rrc->configuration.sib1_tda,
-                           rrc->configuration.minRXTXTIME,
-                           NULL,
-                           NULL,
-                           NULL,
-                           0,
-                           ue_p->rnti,
-                           ue_p->masterCellGroup);
+    nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
 
     uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
@@ -1551,19 +1509,7 @@ cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGr
           ctxt_pP->module_id,
           DCCH);
 
-    gNB_RrcConfigurationReq *configuration = &RC.nrrrc[ctxt_pP->module_id]->configuration;
-    rrc_mac_config_req_gNB(ctxt_pP->module_id,
-                           configuration->pdsch_AntennaPorts,
-                           configuration->pusch_AntennaPorts,
-                           configuration->sib1_tda,
-                           configuration->minRXTXTIME,
-                           NULL,
-                           NULL,
-                           NULL,
-                           0,
-                           ue_p->rnti,
-                           cellGroupConfig);
-
+    nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, cellGroupConfig);
     nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
   }
 
@@ -1613,9 +1559,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                        NULL,
                                        masterCellGroup);
 
-  gNB_RrcConfigurationReq *configuration = &RC.nrrrc[ctxt_pP->module_id]->configuration;
-  rrc_mac_config_req_gNB(
-      ctxt_pP->module_id, configuration->pdsch_AntennaPorts, configuration->pusch_AntennaPorts, configuration->sib1_tda, configuration->minRXTXTIME, NULL, NULL, NULL, 0, ue_p->rnti, masterCellGroup);
+  nr_mac_update_cellgroup(RC.nrmac[ctxt_pP->module_id], ue_context_pP->ue_context.rnti, masterCellGroup);
 
   nr_rrc_data_req(ctxt_pP,
                   DCCH,

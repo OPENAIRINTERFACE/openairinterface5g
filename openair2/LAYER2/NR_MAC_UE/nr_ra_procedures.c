@@ -70,7 +70,7 @@ long nr_get_Pcmax(module_id_t mod_id){
   NR_P_Max_t p_max           = 0;
   uint8_t P_powerclass       = 23;
   uint8_t delta_P_powerclass = 0;
-  uint8_t MPR_c              = 1.5;
+  uint8_t MPR_c              = 1;
   uint8_t delta_MPR_c        = 0;
   uint8_t A_MPR_c            = 0;
   uint8_t delta_T_IB_c       = 0;
@@ -82,7 +82,7 @@ long nr_get_Pcmax(module_id_t mod_id){
   long P_cmax                = 0;
 
   if (band == 28 && mac->phy_config.config_req.carrier_config.uplink_bandwidth == 30){
-    delta_MPR_c = 0.5;
+    delta_MPR_c = 1;
   }
 
   if (mac->cg && mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){

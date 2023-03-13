@@ -555,7 +555,9 @@ struct vcd_module_s vcd_modules[] = {
 };
 
 FILE *vcd_fd = NULL;
+#if defined(ENABLE_VCD_FIFO)
 static inline unsigned long long int vcd_get_time(void);
+#endif
 
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
 struct timespec     g_time_start;
@@ -809,6 +811,7 @@ static inline void vcd_signal_dumper_print_time_since_start(void)
   }
 }
 
+#if defined(ENABLE_VCD_FIFO)
 static inline unsigned long long int vcd_get_time(void)
 {
 #if defined(ENABLE_USE_CPU_EXECUTION_TIME)
@@ -821,6 +824,7 @@ static inline unsigned long long int vcd_get_time(void)
 #endif
   return 0;
 }
+#endif
 
 void vcd_signal_dumper_create_header(void)
 {

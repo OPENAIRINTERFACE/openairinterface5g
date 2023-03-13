@@ -464,7 +464,7 @@ void rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(const protocol_ctxt_t *const c
       pdu_sessions_failed++;
       resp->pdusessions_failed[pdusession].pdusession_id = session->param.pdusession_id;
       // TODO add cause when it will be integrated
-      resp->pdusessions_failed[pdusession].cause = NGAP_Cause_PR_radioNetwork;
+      resp->pdusessions_failed[pdusession].cause = NGAP_CAUSE_RADIO_NETWORK;
       resp->pdusessions_failed[pdusession].cause_value = NGAP_CauseRadioNetwork_unknown_PDU_session_ID;
     }
   }

@@ -708,7 +708,7 @@ int is_m3ap_MME_enabled(void)
 
   char *enable_m3 = NULL;
   paramdef_t p[] = {
-   { "enable_mme_m3", "yes/no", 0, strptr:&enable_m3, defstrval:"", TYPE_STRING, 0 }
+   { "enable_mme_m3", "yes/no", 0, .strptr=&enable_m3, .defstrval="", TYPE_STRING, 0 }
   };
 
   /* TODO: do it per module - we check only first MME */

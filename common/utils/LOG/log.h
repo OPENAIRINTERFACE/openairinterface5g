@@ -393,11 +393,13 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 /*   LOG global configuration parameters                                                                                                                                                */
 /*   optname                               help                                          paramflags         XXXptr               defXXXval                          type        numelt */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define LOG_GLOBALPARAMS_DESC { \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,   "Default log level for all componemts\n",              0, strptr:&gloglevel, defstrval:log_level_names[3].name, TYPE_STRING,     0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,  "Default console output option, for all components\n", 0, iptr:&(consolelog),         defintval:1,                       TYPE_INT,        0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS, LOG_CONFIG_HELP_OPTIONS,                               0, strlistptr:NULL,            defstrlistval:NULL,                TYPE_STRINGLIST, 0} \
-  }
+  {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,   "Default log level for all componemts\n",              0, .strptr=&gloglevel,         .defstrval=log_level_names[3].name, TYPE_STRING,     0}, \
+  {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,  "Default console output option, for all components\n", 0, .iptr=&(consolelog),        .defintval=1,                       TYPE_INT,        0}, \
+  {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS, LOG_CONFIG_HELP_OPTIONS,                               0, .strlistptr=NULL,           .defstrlistval=NULL,                TYPE_STRINGLIST, 0}, \
+}
+// clang-format on
 
 #define LOG_OPTIONS_IDX   2
 

@@ -660,36 +660,35 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
     for (i = 0; i < initial_ctxt_resp_p->nb_of_pdusessions_failed; i++) {
       asn1cSequenceAdd(ie->value.choice.PDUSessionResourceFailedToSetupListCxtRes.list, NGAP_PDUSessionResourceFailedToSetupItemCxtRes_t, item);
       NGAP_PDUSessionResourceSetupUnsuccessfulTransfer_t pdusessionUnTransfer = {0};
-
+    
       /* pDUSessionID */
       item->pDUSessionID = initial_ctxt_resp_p->pdusessions_failed[i].pdusession_id;
 
       /* cause */
-
       pdusessionUnTransfer.cause.present = initial_ctxt_resp_p->pdusessions_failed[i].cause;
       switch (pdusessionUnTransfer.cause.present) {
-        case NGAP_Cause_PR_radioNetwork:
+        case NGAP_CAUSE_RADIO_NETWORK:
           pdusessionUnTransfer.cause.choice.radioNetwork = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
           break;
 
-        case NGAP_Cause_PR_transport:
+        case NGAP_CAUSE_TRANSPORT:
           pdusessionUnTransfer.cause.choice.transport = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
           break;
 
-        case NGAP_Cause_PR_nas:
+        case NGAP_CAUSE_NAS:
           pdusessionUnTransfer.cause.choice.nas = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
           break;
 
-        case NGAP_Cause_PR_protocol:
+        case NGAP_CAUSE_PROTOCOL:
           pdusessionUnTransfer.cause.choice.protocol = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
           break;
 
-        case NGAP_Cause_PR_misc:
+        case NGAP_CAUSE_MISC:
           pdusessionUnTransfer.cause.choice.misc = initial_ctxt_resp_p->pdusessions_failed[i].cause_value;
           break;
 
-        case NGAP_Cause_PR_NOTHING:
-        default:
+        case NGAP_CAUSE_NOTHING:
+          default:
           break;
       }
 
@@ -931,29 +930,29 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
       /* cause */
       pdusessionUnTransfer_p.cause.present = pdusession_failed->cause;
       switch (pdusessionUnTransfer_p.cause.present) {
-        case NGAP_Cause_PR_radioNetwork:
+        case NGAP_CAUSE_RADIO_NETWORK:
           pdusessionUnTransfer_p.cause.choice.radioNetwork = pdusession_failed->cause_value;
           break;
 
-        case NGAP_Cause_PR_transport:
+        case NGAP_CAUSE_TRANSPORT:
           pdusessionUnTransfer_p.cause.choice.transport = pdusession_failed->cause_value;
           break;
 
-        case NGAP_Cause_PR_nas:
+        case NGAP_CAUSE_NAS:
           pdusessionUnTransfer_p.cause.choice.nas = pdusession_failed->cause_value;
           break;
 
-        case NGAP_Cause_PR_protocol:
+        case NGAP_CAUSE_PROTOCOL:
           pdusessionUnTransfer_p.cause.choice.protocol = pdusession_failed->cause_value;
           break;
 
-        case NGAP_Cause_PR_misc:
+        case NGAP_CAUSE_MISC:
           pdusessionUnTransfer_p.cause.choice.misc = pdusession_failed->cause_value;
           break;
 
-        case NGAP_Cause_PR_NOTHING:
-        default:
-            break;
+        case NGAP_CAUSE_NOTHING:
+          default:
+          break;
       }
 
       NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
@@ -1091,27 +1090,27 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
       pdusessionTransfer.cause.present = pdusession_modify_resp_p->pdusessions_failed[i].cause;
 
       switch (pdusessionTransfer.cause.present) {
-        case NGAP_Cause_PR_radioNetwork:
+      case NGAP_CAUSE_RADIO_NETWORK:
           pdusessionTransfer.cause.choice.radioNetwork = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
-          break;
+        break;
 
-      case NGAP_Cause_PR_transport:
+      case NGAP_CAUSE_TRANSPORT:
         pdusessionTransfer.cause.choice.transport = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
         break;
 
-      case NGAP_Cause_PR_nas:
+      case NGAP_CAUSE_NAS:
         pdusessionTransfer.cause.choice.nas = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
         break;
 
-      case NGAP_Cause_PR_protocol:
+      case NGAP_CAUSE_PROTOCOL:
         pdusessionTransfer.cause.choice.protocol = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
         break;
 
-      case NGAP_Cause_PR_misc:
+      case NGAP_CAUSE_MISC:
         pdusessionTransfer.cause.choice.misc = pdusession_modify_resp_p->pdusessions_failed[i].cause_value;
         break;
 
-      case NGAP_Cause_PR_NOTHING:
+      case NGAP_CAUSE_NOTHING:
       default:
           break;
       }

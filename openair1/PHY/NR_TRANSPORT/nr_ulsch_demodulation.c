@@ -1371,7 +1371,7 @@ __m128i nr_ulsch_comp_muli_sum(__m128i input_x,
   //divide by matrix det and convert back to Q15 before packing
   int sum_det =0;
   for (int k=0; k<4;k++) {
-    sum_det += ((((int *)&det[0])[k])>>2);
+    sum_det += ((((int *)&det)[k])>>2);
     //printf("det_%d = %d log2 =%d \n",k,(((int *)&det[0])[k]),log2_approx(((int *)&det[0])[k]));
     }
 

@@ -43,7 +43,7 @@ void RCconfig_nrUE_prs(void *cfg)
 {
   int j = 0, k = 0, gNB_id = 0;
   char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-  char str[7][100] = {'\0'}; int16_t n[7] = {0};
+  char str[7][100] = {{'\0'}}; int16_t n[7] = {0};
   PHY_VARS_NR_UE *ue  = (PHY_VARS_NR_UE *)cfg;
   prs_config_t *prs_config = NULL;
 

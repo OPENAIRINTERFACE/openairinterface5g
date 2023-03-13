@@ -362,7 +362,7 @@ schedule_SIB1_BR(module_id_t module_idP,
                       N_RB_DL);
 
           if ((sfoffset == 1)
-              && ((subframeP != 0) || (subframeP != 5)))
+              && ((subframeP != 0) && (subframeP != 5)))
             continue;
           else if ((sfoffset == 0) && (foffset == 0)
                    && (subframeP != 4) && (subframeP != 9))

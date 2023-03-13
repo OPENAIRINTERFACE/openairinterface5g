@@ -37,7 +37,6 @@
 #include "f1ap_du_ue_context_management.h"
 
 #include "rrc_extern.h"
-#include "rrc_eNB_UE_context.h"
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
@@ -1247,7 +1246,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
     /* procedureCriticality */
     if (0) {
       ie11->value.choice.CriticalityDiagnostics.procedureCriticality = (F1AP_Criticality_t *)calloc(1, sizeof(F1AP_Criticality_t));
-      ie11->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
+      *ie11->value.choice.CriticalityDiagnostics.procedureCriticality = F1AP_Criticality_reject;
     }
 
     /* optional */

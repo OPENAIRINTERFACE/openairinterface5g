@@ -1133,13 +1133,13 @@ static int ngap_gNB_handle_pdusession_modify_request(uint32_t assoc_id, uint32_t
     memset(msg, 0, sizeof(*msg));
     msg->gNB_ue_ngap_id = gnb_ue_ngap_id;
     for (int nb_of_pdusessions_failed = 0; nb_of_pdusessions_failed < ie->value.choice.PDUSessionResourceModifyListModReq.list.count; nb_of_pdusessions_failed++) {
-      NGAP_PDUSessionResourceModifyItemModReq_t *item_p;
-      item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[nb_of_pdusessions_failed];
-      pdusession_failed_t *tmp = &msg->pdusessions_failed[nb_of_pdusessions_failed];
-      tmp->pdusession_id = item_p->pDUSessionID;
-      tmp->cause = NGAP_Cause_PR_radioNetwork;
-      tmp->cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
-    }
+        NGAP_PDUSessionResourceModifyItemModReq_t *item_p;
+        item_p = (NGAP_PDUSessionResourceModifyItemModReq_t *)ie->value.choice.PDUSessionResourceModifyListModReq.list.array[nb_of_pdusessions_failed];
+        pdusession_failed_t *tmp = &msg->pdusessions_failed[nb_of_pdusessions_failed];
+        tmp->pdusession_id = item_p->pDUSessionID;
+        tmp->cause = NGAP_CAUSE_RADIO_NETWORK;
+        tmp->cause_value = NGAP_CauseRadioNetwork_unknown_local_UE_NGAP_ID;
+      }
     msg->nb_of_pdusessions_failed = ie->value.choice.PDUSessionResourceModifyListModReq.list.count;
     ngap_gNB_pdusession_modify_resp(amf_desc_p->ngap_gNB_instance->instance,msg);
     itti_free(TASK_RRC_GNB, message_p);
