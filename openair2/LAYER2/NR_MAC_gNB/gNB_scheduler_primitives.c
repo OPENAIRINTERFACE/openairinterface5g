@@ -2799,7 +2799,13 @@ void nr_mac_update_timers(module_id_t module_id,
                     (void **)&cg,
                     (uint8_t *)UE->cg_buf,
                     (UE->enc_rval.encoded+7)/8, 0, 0);
-        UE->CellGroup = cg;
+        if (UE->CellGroup) {
+          NR_CellGroupConfig_t *tmp=UE->CellGroup;
+          UE->CellGroup = cg;
+          ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig,tmp);
+        } else
+          UE->CellGroup = cg;
+          
 
         if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
           xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) UE->CellGroup);

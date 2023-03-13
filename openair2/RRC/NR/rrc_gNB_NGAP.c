@@ -279,6 +279,9 @@ static void fill_qos(NGAP_QosFlowSetupRequestList_t *qos, pdusession_t *session)
 static int decodePDUSessionResourceSetup(pdusession_t *session)
 {
   NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer;
+  for (int i=0; i<session->pdusessionTransfer.length; i++)
+    printf("%02x:",session->pdusessionTransfer.buffer[i]);
+  printf("\n");
   asn_codec_ctx_t st = {.max_stack_size = 100 * 1000};
   asn_dec_rval_t dec_rval =
       aper_decode(&st, &asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer, (void **)&pdusessionTransfer, session->pdusessionTransfer.buffer, session->pdusessionTransfer.length, 0, 0);
@@ -345,6 +348,8 @@ static int decodePDUSessionResourceSetup(pdusession_t *session)
         return -1;
     }
   }
+  ASN_STRUCT_FREE(asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer,pdusessionTransfer );
+
   return 0;
 }
 
@@ -629,6 +634,7 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
       AssertFatal(srb_id > 0 && srb_id < maxSRBs, "");
       /* Transfer data to PDCP */
       nr_rrc_data_req(&ctxt, srb_id, (*rrc_gNB_mui)++, SDU_CONFIRM_NO, length, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
+      free(buffer); // nr_rrc_data_req do a second malloc and copy
     } break;
 
     case ngran_gNB_DU:
@@ -924,6 +930,7 @@ static void decodePDUSessionResourceModify(pdusession_t *param, const ngap_pdu_t
         return;
     }
   }
+    ASN_STRUCT_FREE(asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer,pdusessionTransfer );
 }
 
 //------------------------------------------------------------------------------

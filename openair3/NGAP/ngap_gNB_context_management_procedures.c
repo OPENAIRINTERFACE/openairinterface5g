@@ -187,7 +187,7 @@ int ngap_ue_context_release_req(instance_t instance,
     ie->id = NGAP_ProtocolIE_ID_id_Cause;
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_Cause;
-    DevAssert(ue_release_req_p->cause <= NGAP_Cause_PR_choice_Extensions);
+    DevAssert(ue_release_req_p->cause <= NGAP_Cause_PR_choice_ExtensionS);
     ie->value.choice.Cause.present = ue_release_req_p->cause;
     ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
   }

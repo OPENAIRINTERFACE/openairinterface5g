@@ -45,6 +45,7 @@ void ngap_gNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uin
   sctp_data_req->buffer        = buffer;
   sctp_data_req->buffer_length = buffer_length;
   sctp_data_req->stream        = stream;
+  sctp_data_req->freeAfterSend=true;
 
   itti_send_msg_to_task(TASK_SCTP, instance, message_p);
 }

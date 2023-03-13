@@ -550,7 +550,7 @@ int main( int argc, char **argv ) {
 
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
-  sleep(20);
+  sleep(200);
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
   while(true)
