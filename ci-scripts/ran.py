@@ -265,17 +265,19 @@ class RANManagement():
 		cmd.close()
 		logging.debug(f'CustomCommand: {self.command} returnCode: {ret.returncode}')
 		status = 'OK'
-		message = ''
+		message = []
 		if ret.returncode != 0 and not self.command_fail:
-			message = ret.stdout
+			message = [ret.stdout]
 			logging.warning(f'CustomCommand output: {message}')
 			status = 'Warning'
+		if self.command_fail: # important command since it would make the pipeline fail, so show output in HTML
+			message = [ret.stdout]
 		if ret.returncode != 0 and self.command_fail:
-			message = ret.stdout
+			message = [ret.stdout]
 			logging.error(f'CustomCommand failed: output: {message}')
 			status = 'KO'
 			self.prematureExit = True
-		HTML.CreateHtmlTestRowQueue(self.command, status, [message])
+		HTML.CreateHtmlTestRowQueue(self.command, status, message)
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId, HTML):
 		HTML.testCase_id=testcaseId
