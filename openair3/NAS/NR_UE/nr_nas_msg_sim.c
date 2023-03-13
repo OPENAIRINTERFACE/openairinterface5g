@@ -117,21 +117,10 @@ static int fill_suci(FGSMobileIdentity *mi, const uicc_t *uicc)
   return sizeof(Suci5GSMobileIdentity_t);
 }
 
-static int fill_guti(FGSMobileIdentity *mi, const nr_ue_nas_t *nas)
+static int fill_guti(FGSMobileIdentity *mi, const Guti5GSMobileIdentity_t *guti)
 {
-  uicc_t *uicc = nas->uicc;
-  AssertFatal(false, "Need to add AMF data in function\n");
-  mi->guti.typeofidentity = FGS_MOBILE_IDENTITY_5G_GUTI;
-  mi->guti.amfregionid = 0xca;
-  mi->guti.amfpointer = 0;
-  mi->guti.amfsetid = 1016;
-  mi->guti.tmsi = 10;
-  mi->guti.mncdigit1 = uicc->nmc_size == 2 ? uicc->imsiStr[3] - '0' : uicc->imsiStr[4] - '0';
-  mi->guti.mncdigit2 = uicc->nmc_size == 2 ? uicc->imsiStr[4] - '0' : uicc->imsiStr[5] - '0';
-  mi->guti.mncdigit3 = uicc->nmc_size == 2 ? 0xf : uicc->imsiStr[3] - '0';
-  mi->guti.mccdigit1 = uicc->imsiStr[0]-'0';
-  mi->guti.mccdigit2 = uicc->imsiStr[1]-'0';
-  mi->guti.mccdigit3 = uicc->imsiStr[2]-'0';
+  AssertFatal(guti != NULL, "UE has no GUTI\n");
+  mi->guti = *guti;
   return 13;
 }
 
@@ -447,8 +436,8 @@ void generateRegistrationRequest(as_nas_info_t *initialNasMsg, nr_ue_nas_t *nas)
   mm_msg->registration_request.fgsregistrationtype = INITIAL_REGISTRATION;
   mm_msg->registration_request.naskeysetidentifier.naskeysetidentifier = 1;
   size += 1;
-  if(0){
-    size += fill_guti(&mm_msg->registration_request.fgsmobileidentity, nas);
+  if(nas->guti){
+    size += fill_guti(&mm_msg->registration_request.fgsmobileidentity, nas->guti);
   } else {
     size += fill_suci(&mm_msg->registration_request.fgsmobileidentity, nas->uicc);
   }
