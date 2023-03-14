@@ -37,12 +37,6 @@
 #include "otg_form.h"
 #include "otg_kpi.h"
 
-#ifdef ENABLE_DB_STATS
-  #include <mysql.h>
-  #include <m_ctype.h>
-  #include <sql_common.h>
-#endif
-
 extern uint16_t NB_UE_INST;
 
 //#include "LAYER2/MAC/extern.h"

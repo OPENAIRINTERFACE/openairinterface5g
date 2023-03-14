@@ -41,8 +41,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/nr/nr_common.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 

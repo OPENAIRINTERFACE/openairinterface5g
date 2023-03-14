@@ -74,8 +74,6 @@
 
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "UTIL/OSA/osa_defs.h"
 

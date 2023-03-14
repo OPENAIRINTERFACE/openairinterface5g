@@ -40,8 +40,6 @@
   #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-#include "OCG_vars.h"
-
 #include "unitary_defs.h"
 
 PHY_VARS_eNB *eNB,*eNB1,*eNB2;

@@ -45,7 +45,6 @@
 #include "SCHED/sched_eNB.h"
 #include "LAYER2/MAC/mac_vars.h"
 
-#include "OCG_vars.h"
 #include "common/utils/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 

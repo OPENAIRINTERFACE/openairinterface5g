@@ -20,10 +20,7 @@ endif
 # activate OCG and libxml only under linux
 ifeq ($(linux),1) 
 CFLAGS += -I/usr/include/libxml2 -L/usr/local/lib -I/usr/include/atlas -L/usr/X11R6/lib 
-OCG_FLAG = 1
 CFLAGS += -DLINUX
-else
-OCG_FLAG = 0
 endif
 
 
@@ -100,7 +97,6 @@ printvars:
 	@echo LINUX variable is $(linux)
 	@echo rrc_cellular variable is $(rrc_cellular)
 	@echo EXTRA_CFLAGS = $(EXTRA_CFLAGS)
-	@echo OAI Config generator is $(OCG_FLAG)	
 	@echo OAI NETLINK FLAG is $(NAS_FLAG)
 	@echo SSE3 proc is $(SSE3PROC)
 	@echo IS_REL_8 is $(IS_REL_8)
@@ -153,7 +149,6 @@ cleanasn1:
 	rm -f $(OPENAIR2_DIR)/RRC/LITE/MESSAGES/Makefile.inc.generated
 
 print:
-	@echo $(OCG_FLAG)
 	@echo $(CFLAGS)
 	@echo $(EXTRA_CFLAGS)
 	@echo $(OBJ)

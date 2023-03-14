@@ -36,9 +36,7 @@
 #include "UTIL/LOG/log_extern.h"
 #include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
-#include "UTIL/OCG/OCG.h"
 #include "LAYER2/PDCP_v10.1.0/pdcp.h"
-#include "OCG_vars.h"
 #include "rlc.h"
 #include "pdcp.h"
 

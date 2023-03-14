@@ -35,8 +35,6 @@
 #include "defs.h"
 #include "extern.h"
 #include "proto.h"
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LOG/vcd_signal_dumper.h"
 #include "openair1/SIMULATION/ETH_TRANSPORT/extern.h"
