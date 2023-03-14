@@ -488,7 +488,7 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
     // Overwrite seed with non-random seed for IQ player/recorder
     seed = 1;
   } else {
-    seed=(unsigned int) (rdtsc_oai() && ~0);
+    seed=(unsigned int) (rdtsc_oai() & ~0);
   }
 
   RA_config_t *ra = &mac->ra;
@@ -1040,7 +1040,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     // Overwrite seed with non-random seed for IQ player/recorder
     seed = 1;
   } else {
-    seed=(unsigned int) (rdtsc_oai() && ~0);
+    seed=(unsigned int) (rdtsc_oai() & ~0);
   }
   
   ra->first_Msg3 = 1;
