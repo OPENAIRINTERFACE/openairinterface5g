@@ -1760,7 +1760,8 @@ do_NR_DLInformationTransfer(
 
     asn1cCalloc(infoTransfer->criticalExtensions.choice.dlInformationTransfer, dlInfoTransfer);
     asn1cCalloc(dlInfoTransfer->dedicatedNAS_Message,msg);
-    // we will free the caller buffer
+    // we will free the caller buffer, that is ok in the present code logic (else it will leak memory) but not natural,
+    // comprehensive code design
     msg->buf = pdu_buffer;
     msg->size = pdu_length;
 

@@ -237,7 +237,10 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;
   fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.gNB_ue_ngap_id);
-  rrc_gNB_update_ue_context_rnti(UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, rrc, UE->gNB_ue_ngap_id);
+  // the UE context is not yet inserted in the RRC UE manager
+  // rrc_gNB_update_ue_context_rnti(UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, rrc,
+  // UE->gNB_ue_ngap_id);
+  UE->rnti = UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
   // int CG_Config_size = generate_CG_Config(rrc,CG_Config,UE->reconfig,UE->rb_config);

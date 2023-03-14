@@ -1193,21 +1193,21 @@ int ngap_gNB_pdusession_release_resp(instance_t instance, ngap_pdusession_releas
     ie->value.choice.RAN_UE_NGAP_ID = pdusession_release_resp_p->gNB_ue_ngap_id;
   }
 
-    /* optional */
-    if (pdusession_release_resp_p->nb_of_pdusessions_released > 0) {
-      asn1cSequenceAdd(out->protocolIEs.list, NGAP_PDUSessionResourceReleaseResponseIEs_t, ie);
-      ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListRelRes;
-      ie->criticality = NGAP_Criticality_ignore;
-      ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_PDUSessionResourceReleasedListRelRes;
-
-      for (i = 0; i < pdusession_release_resp_p->nb_of_pdusessions_released; i++) {
-        asn1cSequenceAdd(ie->value.choice.PDUSessionResourceReleasedListRelRes.list, NGAP_PDUSessionResourceReleasedItemRelRes_t, item);
-        item->pDUSessionID = pdusession_release_resp_p->pdusession_release[i].pdusession_id;
-        allocCopy(&item->pDUSessionResourceReleaseResponseTransfer, pdusession_release_resp_p->pdusession_release[i].data);
-        NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
-      }
+  /* optional */
+  if (pdusession_release_resp_p->nb_of_pdusessions_released > 0) {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_PDUSessionResourceReleaseResponseIEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceReleasedListRelRes;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_PDUSessionResourceReleaseResponseIEs__value_PR_PDUSessionResourceReleasedListRelRes;
+    
+    for (i = 0; i < pdusession_release_resp_p->nb_of_pdusessions_released; i++) {
+      asn1cSequenceAdd(ie->value.choice.PDUSessionResourceReleasedListRelRes.list, NGAP_PDUSessionResourceReleasedItemRelRes_t, item);
+      item->pDUSessionID = pdusession_release_resp_p->pdusession_release[i].pdusession_id;
+      allocCopy(&item->pDUSessionResourceReleaseResponseTransfer, pdusession_release_resp_p->pdusession_release[i].data);
+      NGAP_DEBUG("pdusession_release_resp: pdusession ID %ld\n", item->pDUSessionID);
+    }
   }
-
+  
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     NGAP_ERROR("Failed to encode release response\n");
     /* Encode procedure has failed... */

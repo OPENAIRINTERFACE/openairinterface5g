@@ -119,7 +119,7 @@ typedef struct sctp_data_ind_s {
   /* Buffer to send over SCTP */
   uint32_t  buffer_length;
   uint8_t  *buffer;
-  bool freeAfterSend;
+
   /* Streams on which data will be sent/received */
   uint16_t  stream;
 } sctp_data_ind_t;
