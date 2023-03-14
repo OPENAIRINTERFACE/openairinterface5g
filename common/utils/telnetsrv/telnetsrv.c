@@ -821,14 +821,14 @@ void poll_telnetcmdq(void *qid, void *arg) {
  *
  *
 */
-void exec_moduleinit(char *modname) {
+static bool exec_moduleinit(char *modname) {
   void (*fptr)(void);
   char initfunc[TELNET_CMD_MAXSIZE+10];
 
   if (strlen(modname) > TELNET_CMD_MAXSIZE) {
     fprintf(stderr,"[TELNETSRV] module %s not loaded, name exceeds the %i size limit\n",
             modname, TELNET_CMD_MAXSIZE);
-    return;
+    return false;
   }
 
   sprintf(initfunc,"add_%s_cmds",modname);
@@ -836,37 +836,35 @@ void exec_moduleinit(char *modname) {
 
   if ( fptr != NULL) {
     fptr();
-  } else {
-    fprintf(stderr,"[TELNETSRV] couldn't find %s for module %s \n",initfunc,modname);
+    return true;
   }
+  fprintf(stderr, "[TELNETSRV] couldn't find %s for module %s \n", initfunc, modname);
+  return false;
 }
 
 int add_embeddedmodules(void) {
   int ret=0;
   int pindex = config_paramidx_fromname(telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t), TELNETSRV_OPTNAME_STATICMOD); 
   for(int i=0; i<telnetoptions[pindex].numelt; i++) {
-    ret++;
-    exec_moduleinit(telnetoptions[pindex].strlistptr[i]);
+    bool success = exec_moduleinit(telnetoptions[pindex].strlistptr[i]);
+    if (success)
+      ret++;
   }
 
   return ret;
 }
 
 int add_sharedmodules(void) {
-  char initfunc[TELNET_CMD_MAXSIZE+9];
-  void (*fptr)(void);
   int ret=0;
   int pindex = config_paramidx_fromname(telnetoptions,sizeof(telnetoptions)/sizeof(paramdef_t), TELNETSRV_OPTNAME_SHRMOD); 
   for(int i=0; i<telnetoptions[pindex].numelt; i++) {
-    sprintf(initfunc,"add_%s_cmds",telnetoptions[pindex].strlistptr[i]);
-    fptr = dlsym(RTLD_DEFAULT,initfunc);
-
-    if ( fptr != NULL) {
-      fptr();
+    char *name = telnetoptions[pindex].strlistptr[i];
+    char libname[256];
+    snprintf(libname, sizeof(libname), "telnetsrv_%s", name);
+    load_module_shlib(libname, NULL, 0, NULL);
+    bool success = exec_moduleinit(name);
+    if (success)
       ret++;
-    } else {
-      fprintf(stderr,"[TELNETSRV] couldn't find %s for module %s \n",initfunc,telnetoptions[pindex].strlistptr[i]);
-    }
   }
 
   return ret;
@@ -890,6 +888,7 @@ int telnetsrv_autoinit(void) {
 
   add_telnetcmd("telnet", telnet_vardef, telnet_cmdarray);
   add_embeddedmodules();
+  add_sharedmodules();
   if ( telnetparams.listenstdin ) {
     if(pthread_create(&telnetparams.telnetclt_pthread,NULL, (void *(*)(void *))run_telnetclt, NULL) != 0) {
       fprintf(stderr,"[TELNETSRV] Error %s on pthread_create f() run_telnetclt \n",strerror(errno));
