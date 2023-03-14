@@ -2665,9 +2665,6 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
         return 2+nr_extract_dci_info(mac, NR_UL_DCI_FORMAT_0_0, dci_size, rnti, ss_type, dci_pdu, dci_pdu_rel15, slot);
       }
 
-      if (dci_pdu_rel15->format_indicator == 0)
-        return 1; // discard dci, format indicator not corresponding to dci_format
-
         // Freq domain assignment 0-16 bit
       fsize = (int)ceil(log2((N_RB * (N_RB + 1)) >> 1));
       pos+=fsize;
