@@ -71,23 +71,8 @@ enum scopeDataType {
 };
 
 enum PlotTypeGnbIf {
-  empty,
-  waterFall,
-  CIR,
   puschLLRe,
   puschIQe,
-  puschSNR,
-  puschBLER,
-  puschMCS,
-  puschRETX,
-  puschThroughput,
-  pdschSNR,
-  pdschBLER,
-  pdschMCS,
-  pdschRETX,
-  pdschThroughput,
-  pdschRBs,
-  config
 };
 
 #define COPIES_MEM 4
