@@ -105,7 +105,6 @@ typedef enum {
   MAX_RF_DEV_TYPE
 } dev_type_t;
 /* list of names of devices, needs to match dev_type_t */
-extern const char* devtype_names[MAX_RF_DEV_TYPE];
 
 /*!\brief transport protocol types
  */

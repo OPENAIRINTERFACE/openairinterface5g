@@ -40,8 +40,7 @@
 #include "transport_common_proto.h"
 #include "SCHED/sched_common.h"
 //#define DEBUG_HARQ
-
-
+#include "openair1/PHY/LTE_TRANSPORT/dci_tools_common_extern.h"
 
 //#define DEBUG_DCI
 
@@ -98,69 +97,7 @@ uint16_t RIV2nb_rb_LUT100[6000];
 uint16_t RIV2first_rb_LUT100[6000];
 uint16_t RIV_max100=0;
 
-
-extern uint32_t current_dlsch_cqi;
-
-// Table 8.6.3-3 36.213
-uint16_t beta_cqi[16] = {0,   //reserved
-                         0,   //reserved
-                         9,   //1.125
-                         10,  //1.250
-                         11,  //1.375
-                         13,  //1.625
-                         14,  //1.750
-                         16,  //2.000
-                         18,  //2.250
-                         20,  //2.500
-                         23,  //2.875
-                         25,  //3.125
-                         28,  //3.500
-                         32,  //4.000
-                         40,  //5.000
-                         50
-                        }; //6.250
-
-// Table 8.6.3-2 36.213
-uint16_t beta_ri[16] = {10,   //1.250
-                        13,   //1.625
-                        16,   //2.000
-                        20,   //2.500
-                        25,   //3.125
-                        32,   //4.000
-                        40,   //5.000
-                        50,   //6.250
-                        64,   //8.000
-                        80,   //10.000
-                        101,  //12.625
-                        127,  //15.875
-                        160,  //20.000
-                        0,    //reserved
-                        0,    //reserved
-                        0
-                       };   //reserved
-
-// Table 8.6.3-2 36.213
-uint16_t beta_ack[16] = {16,  //2.000
-                         20,  //2.500
-                         25,  //3.125
-                         32,  //4.000
-                         40,  //5.000
-                         50,  //6.250
-                         64,  //8.000
-                         80,  //10.000
-                         101, //12.625
-                         127, //15.875
-                         160, //20.000
-                         248, //31.000
-                         400, //50.000
-                         640, //80.000
-                         808
-                        };//126.00
-
-int8_t delta_PUSCH_abs[4] = {-4,-1,1,4};
-int8_t delta_PUSCH_acc[4] = {-1,0,1,3};
-
-int8_t *delta_PUCCH_lut = delta_PUSCH_acc;
+const int8_t *delta_PUCCH_lut = delta_PUSCH_acc;
 
 uint32_t check_phich_reg(LTE_DL_FRAME_PARMS *frame_parms,uint32_t kprime,uint8_t lprime,uint8_t mi)
 {

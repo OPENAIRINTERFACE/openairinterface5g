@@ -52,25 +52,20 @@ void multadd_complex_vector_real_scalar(int16_t *x,
 
 }
 
-
-void multadd_real_vector_complex_scalar(int16_t *x,
-                                        int16_t *alpha,
-                                        int16_t *y,
-                                        uint32_t N)
+void multadd_real_vector_complex_scalar(const int16_t *x, const int16_t *alpha, int16_t *y, uint32_t N)
 {
 
   uint32_t i;
 
   // do 8 multiplications at a time
-  simd_q15_t alpha_r_128, alpha_i_128, yr, yi, *x_128 = (simd_q15_t *)x, *y_128 = (simd_q15_t *)y;
+  simd_q15_t *x_128 = (simd_q15_t *)x, *y_128 = (simd_q15_t *)y;
 
   //  printf("alpha = %d,%d\n",alpha[0],alpha[1]);
-  alpha_r_128 = set1_int16(alpha[0]);
-  alpha_i_128 = set1_int16(alpha[1]);
+  const simd_q15_t alpha_r_128 = set1_int16(alpha[0]);
+  const simd_q15_t alpha_i_128 = set1_int16(alpha[1]);
   for (i=0; i<N>>3; i++) {
-
-    yr     = mulhi_s1_int16(alpha_r_128,x_128[i]);
-    yi     = mulhi_s1_int16(alpha_i_128,x_128[i]);
+    const simd_q15_t yr = mulhi_s1_int16(alpha_r_128, x_128[i]);
+    const simd_q15_t yi = mulhi_s1_int16(alpha_i_128, x_128[i]);
 #if defined(__x86_64__) || defined(__i386__)
     const simd_q15_t tmp = _mm_loadu_si128(y_128);
     _mm_storeu_si128(y_128++, _mm_adds_epi16(tmp, _mm_unpacklo_epi16(yr, yi)));

@@ -33,11 +33,7 @@
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
-
-extern uint16_t prach_root_sequence_map_0_3[838];
-extern uint16_t prach_root_sequence_map_abc[138];
-extern uint16_t nr_du[838];
-extern const char *prachfmt[];
+#include "openair1/PHY/NR_TRANSPORT/nr_prach.h"
 
 void init_prach_list(PHY_VARS_gNB *gNB)
 {
@@ -442,7 +438,7 @@ void rx_nr_prach(PHY_VARS_gNB *gNB,
   uint16_t preamble_index0=0,n_shift_ra=0,n_shift_ra_bar;
   uint16_t d_start=0;
   uint16_t numshift=0;
-  uint16_t *prach_root_sequence_map;
+  const uint16_t *prach_root_sequence_map;
   uint8_t not_found;
   uint16_t u;
   int16_t *Xu=0;

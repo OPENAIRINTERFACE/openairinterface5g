@@ -787,11 +787,11 @@ int nr_srs_channel_estimation(const PHY_VARS_gNB *gNB,
           } else if(subcarrier < K_TC) { // Start of OFDM symbol case
             // filt8_start is {12288,8192,4096,0,0,0,0,0}
             srs_estimated_channel16 = (int16_t *)&srs_est[subcarrier];
-            short *filter = mem_offset==0 ? filt8_start:filt8_start_shift2;
+            const short *filter = mem_offset == 0 ? filt8_start : filt8_start_shift2;
             multadd_real_vector_complex_scalar(filter, ls_estimated, srs_estimated_channel16, 8);
           } else if((subcarrier+K_TC)>=frame_parms->ofdm_symbol_size || k == (M_sc_b_SRS-1)) { // End of OFDM symbol or last subcarrier cases
             // filt8_end is {4096,8192,12288,16384,0,0,0,0}
-            short *filter = mem_offset==0 || k == (M_sc_b_SRS-1) ? filt8_end:filt8_end_shift2;
+            const short *filter = mem_offset == 0 || k == (M_sc_b_SRS - 1) ? filt8_end : filt8_end_shift2;
             multadd_real_vector_complex_scalar(filter, ls_estimated, srs_estimated_channel16, 8);
           } else if(k%2 == 1) { // 1st middle case
             // filt8_middle2 is {4096,8192,8192,8192,4096,0,0,0}

@@ -56,18 +56,18 @@ extern RAN_CONTEXT_t RC;
 
 
 #define size_Sj25 2
-int Sj25[size_Sj25] = { 0, 3 };
+static const int Sj25[size_Sj25] = {0, 3};
 
 #define size_Sj50 6
-int Sj50[size_Sj50] = { 0, 1, 2, 5, 6, 7 };
+static const int Sj50[size_Sj50] = {0, 1, 2, 5, 6, 7};
 
 #define size_Sj75 10
-int Sj75[size_Sj75] = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11 };
+static const int Sj75[size_Sj75] = {0, 1, 2, 3, 4, 7, 8, 9, 10, 11};
 
 #define size_Sj100 14
-int Sj100[size_Sj100] = { 0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15 };
+static const int Sj100[size_Sj100] = {0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15};
 
-int SIB1_BR_TBS_table[6] = { 208, 256, 328, 504, 712, 936 };
+static const int SIB1_BR_TBS_table[6] = {208, 256, 328, 504, 712, 936};
 
 //------------------------------------------------------------------------------
 void
@@ -87,7 +87,7 @@ schedule_SIB1_MBMS(module_id_t module_idP,
   nfapi_tx_request_pdu_t *TX_req;
   nfapi_dl_config_request_body_t *dl_req;
   int m, i, N_S_NB;
-  int *Sj;
+  const int *Sj;
   int n_NB = 0;
   int TBS;
   int k = 0, rvidx;
@@ -311,7 +311,7 @@ schedule_SIB1_BR(module_id_t module_idP,
   nfapi_tx_request_pdu_t *TX_req;
   nfapi_dl_config_request_body_t *dl_req;
   int m, i, N_S_NB;
-  int *Sj;
+  const int *Sj;
   int n_NB = 0;
   int TBS;
   int k = 0, rvidx;
@@ -515,10 +515,10 @@ schedule_SIB1_BR(module_id_t module_idP,
   }
 }
 
-int si_WindowLength_BR_r13tab[LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] = { 20, 40, 60, 80, 120, 160, 200 };
-int si_TBS_r13tab[LTE_SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = { 152, 208, 256, 328, 408, 504, 600, 712, 808, 936 };
-
-int si_WindowLength_MBMS_r14tab[8] = { 1, 2, 5, 10, 15, 20, 40, 80 };
+static const int si_WindowLength_BR_r13tab
+    [LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] =
+        {20, 40, 60, 80, 120, 160, 200};
+static const int si_TBS_r13tab[LTE_SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = {152, 208, 256, 328, 408, 504, 600, 712, 808, 936};
 
 //------------------------------------------------------------------------------
 void

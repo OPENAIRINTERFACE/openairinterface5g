@@ -24,15 +24,15 @@
 #include <stdio.h>
 
 #if defined(__x86_64__) || defined(__i386__)
-int16_t conjug[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1} ;
-int16_t conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
+static const int16_t conjug[8] __attribute__((aligned(16))) = {-1, 1, -1, 1, -1, 1, -1, 1};
+static const int16_t conjug2[8] __attribute__((aligned(16))) = {1, -1, 1, -1, 1, -1, 1, -1};
 
 #define simd_q15_t __m128i
 #define simdshort_q15_t __m64
 #define set1_int16(a) _mm_set1_epi16(a)
 #define setr_int16(a0, a1, a2, a3, a4, a5, a6, a7) _mm_setr_epi16(a0, a1, a2, a3, a4, a5, a6, a7 )
 #elif defined(__arm__) || defined(__aarch64__)
-int16_t conjug[4]__attribute__((aligned(16))) = {-1,1,-1,1} ;
+static const int16_t conjug[4] __attribute__((aligned(16))) = {-1, 1, -1, 1};
 #define simd_q15_t int16x8_t
 #define simdshort_q15_t int16x4_t
 #define _mm_empty()

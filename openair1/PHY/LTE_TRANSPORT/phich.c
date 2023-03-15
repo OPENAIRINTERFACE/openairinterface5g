@@ -44,11 +44,6 @@
 
 //unsigned short phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
-
-
-int32_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
-int32_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
-
 // This routine generates the PHICH
 
 void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,

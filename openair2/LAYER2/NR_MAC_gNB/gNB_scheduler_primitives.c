@@ -63,64 +63,60 @@
 
 extern RAN_CONTEXT_t RC;
 
-  // Note the 2 scs values in the table names represent resp. scs_common and pdcch_scs
-/// LUT for the number of symbols in the coreset indexed by coreset index (4 MSB rmsi_pdcch_config)
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_15_15[15] = {2,2,2,3,3,3,1,1,2,2,3,3,1,2,3};
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_15_30[14] = {2,2,2,2,3,3,3,3,1,1,2,2,3,3};
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_30_15_b40Mhz[9] = {1,1,2,2,3,3,1,2,3};
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_30_15_a40Mhz[9] = {1,2,3,1,1,2,2,3,3};
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_30_30_b40Mhz[16] = {2,2,2,2,2,3,3,3,3,3,1,1,1,2,2,2}; // below 40Mhz bw
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_30_30_a40Mhz[10] = {2,2,3,3,1,1,2,2,3,3}; // above 40Mhz bw
-uint8_t nr_coreset_nsymb_pdcch_type_0_scs_120_60[12] = {1,1,2,2,3,3,1,2,1,1,1,1};
-
-/// LUT for the number of RBs in the coreset indexed by coreset index
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_15_15[15] = {0,2,4,0,2,4,12,16,12,16,12,16,38,38,38};
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_15_30[14] = {5,6,7,8,5,6,7,8,18,20,18,20,18,20};
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_30_15_b40Mhz[9] = {2,6,2,6,2,6,28,28,28};
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_30_15_a40Mhz[9] = {4,4,4,0,56,0,56,0,56};
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_30_30_b40Mhz[16] = {0,1,2,3,4,0,1,2,3,4,12,14,16,12,14,16};
-uint8_t nr_coreset_rb_offset_pdcch_type_0_scs_30_30_a40Mhz[10] = {0,4,0,4,0,28,0,28,0,28};
-int8_t  nr_coreset_rb_offset_pdcch_type_0_scs_120_60[12] = {0,8,0,8,0,8,28,28,-1,49,-1,97};
-int8_t  nr_coreset_rb_offset_pdcch_type_0_scs_120_120[8] = {0,4,14,14,-1,24,-1,48};
-int8_t  nr_coreset_rb_offset_pdcch_type_0_scs_240_120[8] = {0,8,0,8,-1,25,-1,49};
-
-/// LUT for monitoring occasions param O indexed by ss index (4 LSB rmsi_pdcch_config)
-  // Note: scaling is used to avoid decimal values for O and M, original values commented
-uint8_t nr_ss_param_O_type_0_mux1_FR1[16] = {0,0,2,2,5,5,7,7,0,5,0,0,2,2,5,5};
-uint8_t nr_ss_param_O_type_0_mux1_FR2[14] = {0,0,5,5,5,5,0,5,5,15,15,15,0,5}; //{0,0,2.5,2.5,5,5,0,2.5,5,7.5,7.5,7.5,0,5}
-uint8_t nr_ss_scale_O_mux1_FR2[14] = {0,0,1,1,0,0,0,1,0,1,1,1,0,0};
-
-/// LUT for number of SS sets per slot indexed by ss index
-uint8_t nr_ss_sets_per_slot_type_0_FR1[16] = {1,2,1,2,1,2,1,2,1,1,1,1,1,1,1,1};
-uint8_t nr_ss_sets_per_slot_type_0_FR2[14] = {1,2,1,2,1,2,2,2,2,1,2,2,1,1};
-
-/// LUT for monitoring occasions param M indexed by ss index
-uint8_t nr_ss_param_M_type_0_mux1_FR1[16] = {1,1,1,1,1,1,1,1,2,2,1,1,1,1,1,1}; //{1,0.5,1,0.5,1,0.5,1,0.5,2,2,1,1,1,1,1,1}
-uint8_t nr_ss_scale_M_mux1_FR1[16] = {0,1,0,1,0,1,0,1,0,0,0,0,0,0,0,0};
-uint8_t nr_ss_param_M_type_0_mux1_FR2[14] = {1,1,1,1,1,1,1,1,1,1,1,1,2,2}; //{1,0.5,1,0.5,1,0.5,0.5,0.5,0.5,1,0.5,0.5,2,2}
-uint8_t nr_ss_scale_M_mux1_FR2[14] = {0,1,0,1,0,1,1,1,1,0,1,1,0,0};
-
-/// LUT for SS first symbol index indexed by ss index
-uint8_t nr_ss_first_symb_idx_type_0_mux1_FR1[8] = {0,0,1,2,1,2,1,2};
-  // Mux pattern type 2
-uint8_t nr_ss_first_symb_idx_scs_120_60_mux2[4] = {0,1,6,7};
-uint8_t nr_ss_first_symb_idx_scs_240_120_set1_mux2[6] = {0,1,2,3,0,1};
-  // Mux pattern type 3
-uint8_t nr_ss_first_symb_idx_scs_120_120_mux3[4] = {4,8,2,6};
-
 // CQI TABLES (10 times the value in 214 to adequately compare with R)
 // Table 1 (38.214 5.2.2.1-2)
-uint16_t cqi_table1[16][2] = {{0,0},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},{2,6020},{4,3780},
-                              {4,4900},{4,6160},{6,4660},{6,5670},{6,6660},{6,7720},{6,8730},{6,9480}};
+static const uint16_t cqi_table1[16][2] = {{0, 0},
+                                           {2, 780},
+                                           {2, 1200},
+                                           {2, 1930},
+                                           {2, 3080},
+                                           {2, 4490},
+                                           {2, 6020},
+                                           {4, 3780},
+                                           {4, 4900},
+                                           {4, 6160},
+                                           {6, 4660},
+                                           {6, 5670},
+                                           {6, 6660},
+                                           {6, 7720},
+                                           {6, 8730},
+                                           {6, 9480}};
 
 // Table 2 (38.214 5.2.2.1-3)
-uint16_t cqi_table2[16][2] = {{0,0},{2,780},{2,1930},{2,4490},{4,3780},{4,4900},{4,6160},{6,4660},
-                              {6,5670},{6,6660},{6,7720},{6,8730},{8,7110},{8,7970},{8,8850},{8,9480}};
+static const uint16_t cqi_table2[16][2] = {{0, 0},
+                                           {2, 780},
+                                           {2, 1930},
+                                           {2, 4490},
+                                           {4, 3780},
+                                           {4, 4900},
+                                           {4, 6160},
+                                           {6, 4660},
+                                           {6, 5670},
+                                           {6, 6660},
+                                           {6, 7720},
+                                           {6, 8730},
+                                           {8, 7110},
+                                           {8, 7970},
+                                           {8, 8850},
+                                           {8, 9480}};
 
 // Table 2 (38.214 5.2.2.1-4)
-uint16_t cqi_table3[16][2] = {{0,0},{2,300},{2,500},{2,780},{2,1200},{2,1930},{2,3080},{2,4490},
-                              {2,6020},{4,3780},{4,4900},{4,6160},{6,4660},{6,5670},{6,6660},{6,7720}};
-
+static const uint16_t cqi_table3[16][2] = {{0, 0},
+                                           {2, 300},
+                                           {2, 500},
+                                           {2, 780},
+                                           {2, 1200},
+                                           {2, 1930},
+                                           {2, 3080},
+                                           {2, 4490},
+                                           {2, 6020},
+                                           {4, 3780},
+                                           {4, 4900},
+                                           {4, 6160},
+                                           {6, 4660},
+                                           {6, 5670},
+                                           {6, 6660},
+                                           {6, 7720}};
 
 uint8_t get_dl_nrOfLayers(const NR_UE_sched_ctrl_t *sched_ctrl,
                           const nr_dci_format_t dci_format) {

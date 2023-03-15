@@ -81,8 +81,9 @@ int nr_prs_channel_estimation(uint8_t rsc_id,
   
   int slot_prs           = (proc->nr_slot_rx - rep_num*prs_cfg->PRSResourceTimeGap + frame_params->slots_per_frame)%frame_params->slots_per_frame;
   uint32_t **nr_gold_prs = ue->nr_gold_prs[gNB_id][rsc_id][slot_prs];
-  
-  int16_t *rxF, *pil, *fl, *fm, *fmm, *fml, *fmr, *fr, mod_prs[NR_MAX_PRS_LENGTH<<1];
+
+  int16_t *rxF, *pil, mod_prs[NR_MAX_PRS_LENGTH << 1];
+  const int16_t *fl, *fm, *fmm, *fml, *fmr, *fr;
   int16_t ch[2] = {0}, noiseFig[2] = {0};
   int16_t k_prime = 0, k = 0, re_offset = 0, first_half = 0, second_half = 0;
   int32_t ch_pwr = 0, snr = 0;
@@ -737,7 +738,8 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   int pilot[200] __attribute__((aligned(16)));
   unsigned short k;
   unsigned int pilot_cnt;
-  int16_t *pil,*rxF,*dl_ch,*fl,*fm,*fr;
+  int16_t *pil, *rxF, *dl_ch;
+  const int16_t *fl, *fm, *fr;
   int ch_offset,symbol_offset;
   //int slot_pbch;
 
@@ -1243,10 +1245,10 @@ void NFAPI_NR_DMRS_TYPE1_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
   c16_t *dl_ch0 = dl_ch;
   c16_t ch = {0};
 
-  int16_t *fdcl = NULL;
-  int16_t *fdcr = NULL;
-  int16_t *fdclh = NULL;
-  int16_t *fdcrh = NULL;
+  const int16_t *fdcl = NULL;
+  const int16_t *fdcr = NULL;
+  const int16_t *fdclh = NULL;
+  const int16_t *fdcrh = NULL;
   switch (delta) {
     case 0: // port 0,1
       fdcl = filt8_dcl0; // left DC interpolation Filter (even RB)

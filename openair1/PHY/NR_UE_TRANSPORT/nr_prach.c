@@ -43,12 +43,7 @@
 #include "T.h"
 
 //#define NR_PRACH_DEBUG 1
-
-extern uint16_t prach_root_sequence_map_0_3[838];
-extern uint16_t prach_root_sequence_map_abc[138];
-extern uint16_t nr_du[838];
-extern int16_t nr_ru[2*839];
-extern const char *prachfmt[];
+#include "openair1/PHY/NR_TRANSPORT/nr_prach.h"
 
 // Note:
 // - prach_fmt_id is an ID used to map to the corresponding PRACH format value in prachfmt
@@ -64,7 +59,8 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
   fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
 
   uint8_t Mod_id, fd_occasion, preamble_index, restricted_set, not_found;
-  uint16_t rootSequenceIndex, prach_fmt_id, NCS, *prach_root_sequence_map, preamble_offset = 0;
+  uint16_t rootSequenceIndex, prach_fmt_id, NCS, preamble_offset = 0;
+  const uint16_t *prach_root_sequence_map;
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start=INT16_MAX, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
   int16_t prach_tmp[(4688+4*24576)*4*2] __attribute__((aligned(32))) = {0};
   int16_t prachF_tmp[(4688+4*24576)*4*2] __attribute__((aligned(32))) = {0};

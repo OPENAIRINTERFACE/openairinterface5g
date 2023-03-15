@@ -35,6 +35,7 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "PHY/phy_extern.h"
 void init_7_5KHz(void);
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
@@ -359,8 +360,6 @@ void phy_config_harq_ue(module_id_t Mod_id,
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
-
-extern uint16_t beta_cqi[16];
 
 void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct LTE_PhysicalConfigDedicated *physicalConfigDedicated ) {

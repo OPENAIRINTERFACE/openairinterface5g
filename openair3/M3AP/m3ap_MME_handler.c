@@ -47,15 +47,15 @@
 #include "conversions.h"
 
 /* Handlers matrix. Only eNB related procedure present here */
-m3ap_MCE_message_decoded_callback m3ap_MME_messages_callback[][3] = {
-  { 0, MME_handle_MBMS_SESSION_START_RESPONSE, 0 }, /* MBMSSessionStart  */
-  { 0, MME_handle_MBMS_SESSION_STOP_RESPONSE, 0 }, /* MBMSSessionStop */
-  { 0, 0, 0 }, /* Error Indication */
-  { 0, 0, 0 }, /* Reset */
-  { 0, 0, 0 }, /* ??? */
-  { 0, MME_handle_MBMS_SESSION_UPDATE_RESPONSE, 0 }, /* MBMSSessionUpdate */
-  { 0, 0, 0 }, /* MCEConfigurationUpdate */
-  { MME_handle_M3_SETUP_REQUEST, 0, 0 } /* M3 Setup */
+static const m3ap_MCE_message_decoded_callback m3ap_MME_messages_callback[][3] = {
+    {0, MME_handle_MBMS_SESSION_START_RESPONSE, 0}, /* MBMSSessionStart  */
+    {0, MME_handle_MBMS_SESSION_STOP_RESPONSE, 0}, /* MBMSSessionStop */
+    {0, 0, 0}, /* Error Indication */
+    {0, 0, 0}, /* Reset */
+    {0, 0, 0}, /* ??? */
+    {0, MME_handle_MBMS_SESSION_UPDATE_RESPONSE, 0}, /* MBMSSessionUpdate */
+    {0, 0, 0}, /* MCEConfigurationUpdate */
+    {MME_handle_M3_SETUP_REQUEST, 0, 0} /* M3 Setup */
 };
 
 static char *m3ap_direction2String(int m3ap_dir) {

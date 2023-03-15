@@ -530,7 +530,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
         }
         else {
           //get the precoding matrix weights:
-          char *W_prec;
+          const char *W_prec;
           switch (frame_parms->nb_antennas_tx) {
             case 1://1 antenna port
               W_prec = nr_W_1l_2p[pmi][ap];

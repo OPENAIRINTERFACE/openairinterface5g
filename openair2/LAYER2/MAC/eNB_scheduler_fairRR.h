@@ -134,7 +134,5 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
 
 /* extern */
 extern DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
-extern int last_dlsch_ue_id[MAX_NUM_CCs];
-extern int last_ulsch_ue_id[MAX_NUM_CCs];
 
 #endif

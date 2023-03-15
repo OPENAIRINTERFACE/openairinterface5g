@@ -166,58 +166,65 @@ int x2ap_gNB_handle_ENDC_sGNB_release_confirm(instance_t instance,
                                           X2AP_X2AP_PDU_t *pdu);
 
 /* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
-x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
-  { x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0 }, /* handoverPreparation */
-  { x2ap_eNB_handle_handover_cancel, 0, 0 }, /* handoverCancel */
-  { 0, 0, 0 }, /* loadIndication */
-  { 0, 0, 0 }, /* errorIndication */
-  { 0, 0, 0 }, /* snStatusTransfer */
-  { x2ap_eNB_handle_ue_context_release, 0, 0 }, /* uEContextRelease */
-  { x2ap_eNB_handle_x2_setup_request, x2ap_eNB_handle_x2_setup_response, x2ap_eNB_handle_x2_setup_failure }, /* x2Setup */
-  { x2ap_eNB_handle_x2_reset_request, x2ap_eNB_handle_x2_reset_response, 0 }, /* reset */
-  { 0, 0, 0 }, /* eNBConfigurationUpdate */
-  { 0, 0, 0 }, /* resourceStatusReportingInitiation */
-  { 0, 0, 0 }, /* resourceStatusReporting */
-  { 0, 0, 0 }, /* privateMessage */
-  { 0, 0, 0 }, /* mobilitySettingsChange */
-  { 0, 0, 0 }, /* rLFIndication */
-  { 0, 0, 0 }, /* handoverReport */
-  { 0, 0, 0 }, /* cellActivation */
-  { 0, 0, 0 }, /* x2Release */
-  { 0, 0, 0 }, /* x2APMessageTransfer */
-  { 0, 0, 0 }, /* x2Removal */
-  { x2ap_eNB_handle_senb_addition_request, x2ap_eNB_handle_senb_addition_request_ack, x2ap_eNB_handle_senb_addition_request_reject }, /* seNBAdditionPreparation */
-  { 0, 0, 0 }, /* seNBReconfigurationCompletion */
-  { 0, 0, 0 }, /* meNBinitiatedSeNBModificationPreparation */
-  { 0, 0, 0 }, /* seNBinitiatedSeNBModification */
-  { 0, 0, 0 }, /* meNBinitiatedSeNBRelease */
-  { 0, 0, 0 }, /* seNBinitiatedSeNBRelease */
-  { 0, 0, 0 }, /* seNBCounterCheck */
-  { 0, 0, 0 },  /* retrieveUEContext */
-  { x2ap_gNB_handle_ENDC_sGNB_addition_request, x2ap_eNB_handle_ENDC_sGNB_addition_response, 0 }, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
-  { x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete, 0, 0 }, /*X2AP_ProcedureCode_id_sgNBReconfigurationCompletion*/
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { x2ap_gNB_handle_ENDC_sGNB_release_request, x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge, 0 }, /* meNBinitiatedSgNBRelease */
-  { x2ap_gNB_handle_ENDC_sGNB_release_required, x2ap_gNB_handle_ENDC_sGNB_release_confirm, 0 }, /* sgNBinitiatedSgNBRelease */
+static const x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
+    {x2ap_eNB_handle_handover_preparation, x2ap_eNB_handle_handover_response, 0}, /* handoverPreparation */
+    {x2ap_eNB_handle_handover_cancel, 0, 0}, /* handoverCancel */
+    {0, 0, 0}, /* loadIndication */
+    {0, 0, 0}, /* errorIndication */
+    {0, 0, 0}, /* snStatusTransfer */
+    {x2ap_eNB_handle_ue_context_release, 0, 0}, /* uEContextRelease */
+    {x2ap_eNB_handle_x2_setup_request, x2ap_eNB_handle_x2_setup_response, x2ap_eNB_handle_x2_setup_failure}, /* x2Setup */
+    {x2ap_eNB_handle_x2_reset_request, x2ap_eNB_handle_x2_reset_response, 0}, /* reset */
+    {0, 0, 0}, /* eNBConfigurationUpdate */
+    {0, 0, 0}, /* resourceStatusReportingInitiation */
+    {0, 0, 0}, /* resourceStatusReporting */
+    {0, 0, 0}, /* privateMessage */
+    {0, 0, 0}, /* mobilitySettingsChange */
+    {0, 0, 0}, /* rLFIndication */
+    {0, 0, 0}, /* handoverReport */
+    {0, 0, 0}, /* cellActivation */
+    {0, 0, 0}, /* x2Release */
+    {0, 0, 0}, /* x2APMessageTransfer */
+    {0, 0, 0}, /* x2Removal */
+    {x2ap_eNB_handle_senb_addition_request,
+     x2ap_eNB_handle_senb_addition_request_ack,
+     x2ap_eNB_handle_senb_addition_request_reject}, /* seNBAdditionPreparation */
+    {0, 0, 0}, /* seNBReconfigurationCompletion */
+    {0, 0, 0}, /* meNBinitiatedSeNBModificationPreparation */
+    {0, 0, 0}, /* seNBinitiatedSeNBModification */
+    {0, 0, 0}, /* meNBinitiatedSeNBRelease */
+    {0, 0, 0}, /* seNBinitiatedSeNBRelease */
+    {0, 0, 0}, /* seNBCounterCheck */
+    {0, 0, 0}, /* retrieveUEContext */
+    {x2ap_gNB_handle_ENDC_sGNB_addition_request,
+     x2ap_eNB_handle_ENDC_sGNB_addition_response,
+     0}, /*X2AP_ProcedureCode_id_sgNBAdditionPreparation*/
+    {x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete, 0, 0}, /*X2AP_ProcedureCode_id_sgNBReconfigurationCompletion*/
+    {0, 0, 0},
+    {0, 0, 0},
+    {x2ap_gNB_handle_ENDC_sGNB_release_request,
+     x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge,
+     0}, /* meNBinitiatedSgNBRelease */
+    {x2ap_gNB_handle_ENDC_sGNB_release_required, x2ap_gNB_handle_ENDC_sGNB_release_confirm, 0}, /* sgNBinitiatedSgNBRelease */
 
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { x2ap_eNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0 }, /*X2AP_ProcedureCode_id_endcX2Setup*/
-  { 0, 0, 0 },
-  { 0, 0, 0 },
-  { 0, 0, 0 }
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0},
+    {x2ap_eNB_handle_ENDC_x2_setup_request, x2ap_gNB_handle_ENDC_x2_setup_response, 0}, /*X2AP_ProcedureCode_id_endcX2Setup*/
+    {0, 0, 0},
+    {0, 0, 0},
+    {0, 0, 0}};
+
+static const char *const x2ap_direction_String[] = {
+    "", /* Nothing */
+    "Originating message", /* originating message */
+    "Successfull outcome", /* successfull outcome */
+    "UnSuccessfull outcome", /* successfull outcome */
 };
 
-char *x2ap_direction2String(int x2ap_dir) {
-static char *x2ap_direction_String[] = {
-  "", /* Nothing */
-  "Originating message", /* originating message */
-  "Successfull outcome", /* successfull outcome */
-  "UnSuccessfull outcome", /* successfull outcome */
-};
-return(x2ap_direction_String[x2ap_dir]);
+const char *x2ap_direction2String(int x2ap_dir)
+{
+  return (x2ap_direction_String[x2ap_dir]);
 }
 
 void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data_t *enb_desc_p, int sctp_shutdown)
@@ -509,74 +516,6 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
-const char *X2AP_ResetRequest_str[2]={"X2AP_ResetRequest_IEs__value_PR_Cause","X2AP_ResetRequest_IEs__value_PR_InterfaceInstanceIndication"};
-const char *X2AP_case_str_radio[50]={"X2AP_CauseRadioNetwork_handover_desirable_for_radio_reasons",
-        "X2AP_CauseRadioNetwork_time_critical_handover",
-        "X2AP_CauseRadioNetwork_resource_optimisation_handover",
-        "X2AP_CauseRadioNetwork_reduce_load_in_serving_cell",
-        "X2AP_CauseRadioNetwork_partial_handover",
-        "X2AP_CauseRadioNetwork_unknown_new_eNB_UE_X2AP_ID",
-        "X2AP_CauseRadioNetwork_unknown_old_eNB_UE_X2AP_ID",
-        "X2AP_CauseRadioNetwork_unknown_pair_of_UE_X2AP_ID",
-        "X2AP_CauseRadioNetwork_ho_target_not_allowed",
-        "X2AP_CauseRadioNetwork_tx2relocoverall_expiry",
-        "X2AP_CauseRadioNetwork_trelocprep_expiry",
-        "X2AP_CauseRadioNetwork_cell_not_available",
-        "X2AP_CauseRadioNetwork_no_radio_resources_available_in_target_cell",
-        "X2AP_CauseRadioNetwork_invalid_MME_GroupID",
-        "X2AP_CauseRadioNetwork_unknown_MME_Code",
-        "X2AP_CauseRadioNetwork_encryption_and_or_integrity_protection_algorithms_not_supported",
-        "X2AP_CauseRadioNetwork_reportCharacteristicsEmpty",
-        "X2AP_CauseRadioNetwork_noReportPeriodicity",
-        "X2AP_CauseRadioNetwork_existingMeasurementID",
-        "X2AP_CauseRadioNetwork_unknown_eNB_Measurement_ID",
-        "X2AP_CauseRadioNetwork_measurement_temporarily_not_available",
-        "X2AP_CauseRadioNetwork_unspecified",
-        "X2AP_CauseRadioNetwork_load_balancing",
-        "X2AP_CauseRadioNetwork_handover_optimisation",
-        "X2AP_CauseRadioNetwork_value_out_of_allowed_range",
-        "X2AP_CauseRadioNetwork_multiple_E_RAB_ID_instances",
-        "X2AP_CauseRadioNetwork_switch_off_ongoing",
-        "X2AP_CauseRadioNetwork_not_supported_QCI_value",
-        "X2AP_CauseRadioNetwork_measurement_not_supported_for_the_object",
-        "X2AP_CauseRadioNetwork_tDCoverall_expiry",
-        "X2AP_CauseRadioNetwork_tDCprep_expiry",
-        "X2AP_CauseRadioNetwork_action_desirable_for_radio_reasons",
-        "X2AP_CauseRadioNetwork_reduce_load",
-        "X2AP_CauseRadioNetwork_resource_optimisation",
-        "X2AP_CauseRadioNetwork_time_critical_action",
-        "X2AP_CauseRadioNetwork_target_not_allowed",
-        "X2AP_CauseRadioNetwork_no_radio_resources_available",
-        "X2AP_CauseRadioNetwork_invalid_QoS_combination",
-        "X2AP_CauseRadioNetwork_encryption_algorithms_not_supported",
-        "X2AP_CauseRadioNetwork_procedure_cancelled",
-        "X2AP_CauseRadioNetwork_rRM_purpose",
-        "X2AP_CauseRadioNetwork_improve_user_bit_rate",
-        "X2AP_CauseRadioNetwork_user_inactivity",
-        "X2AP_CauseRadioNetwork_radio_connection_with_UE_lost",
-        "X2AP_CauseRadioNetwork_bearer_option_not_supported",
-        "X2AP_CauseRadioNetwork_mCG_Mobility",
-        "X2AP_CauseRadioNetwork_sCG_Mobility",
-        "X2AP_CauseRadioNetwork_count_reaches_max_value",
-        "X2AP_CauseRadioNetwork_unknown_old_en_gNB_UE_X2AP_ID",
-        "X2AP_CauseRadioNetwork_pDCP_Overload"};
-
-const char *X2AP_cause_str_radio[2]={"X2AP_CauseTransport_transport_resource_unavailable",
-        "X2AP_CauseTransport_unspecified"};
-const char *X2AP_cause_str_protocol[7]={" X2AP_CauseProtocol_transfer_syntax_error",
-        "X2AP_CauseProtocol_abstract_syntax_error_reject",
-        "X2AP_CauseProtocol_abstract_syntax_error_ignore_and_notify",
-        "X2AP_CauseProtocol_message_not_compatible_with_receiver_state",
-        "X2AP_CauseProtocol_semantic_error",
-        "X2AP_CauseProtocol_unspecified",
-        "X2AP_CauseProtocol_abstract_syntax_error_falsely_constructed_message"};
-const char *X2AP_cause_str_misc[5]={"X2AP_CauseMisc_control_processing_overload",
-        "X2AP_CauseMisc_hardware_failure",
-        "X2AP_CauseMisc_om_intervention",
-        "X2AP_CauseMisc_not_enough_user_plane_processing_resources",
-        "X2AP_CauseMisc_unspecified"};
-
-
 int
 x2ap_eNB_handle_x2_reset_response(instance_t instance,
                                   uint32_t assoc_id,
@@ -594,6 +533,8 @@ x2ap_eNB_handle_x2_reset_request(instance_t instance,
                                  uint32_t stream,
                                  X2AP_X2AP_PDU_t *pdu)
 {
+  const char *const X2AP_ResetRequest_str[2] = {"X2AP_ResetRequest_IEs__value_PR_Cause",
+                                                "X2AP_ResetRequest_IEs__value_PR_InterfaceInstanceIndication"};
 
   X2AP_ResetRequest_t              *ResetRequest;
   X2AP_ResetRequest_IEs_t          *ie;

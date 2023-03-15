@@ -40,16 +40,20 @@
 #include "PHY/defs_gNB.h"
 
 // Table 6.4.1.1.3-1/2 from TS 38.211
-int delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
-int wf1[8][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1}};
-int wt1[8][2] = {{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1}};
-int delta2[12] = {0, 0, 2, 2, 4, 4, 0, 0, 2, 2, 4, 4};
-int wf2[12][2] = {{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1},{1,1},{1,-1}};
-int wt2[12][2] = {{1,1},{1,1},{1,1},{1,1},{1,1},{1,1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1},{1,-1}};
+static const int delta1[8] = {0, 0, 1, 1, 0, 0, 1, 1};
+static const int wf1[8][2] = {{1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}};
+static const int wt1[8][2] = {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, -1}, {1, -1}, {1, -1}, {1, -1}};
+static const int delta2[12] = {0, 0, 2, 2, 4, 4, 0, 0, 2, 2, 4, 4};
+static const int wf2[12][2] =
+    {{1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}, {1, 1}, {1, -1}};
+static const int wt2[12][2] =
+    {{1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, 1}, {1, -1}, {1, -1}, {1, -1}, {1, -1}, {1, -1}, {1, -1}};
 
 // complex conjugate of mod table
-short nr_rx_mod_table[14]  = {0,0,23170,-23170,-23170,23170,23170,-23170,23170,23170,-23170,-23170,-23170,23170};
-short nr_rx_nmod_table[14] = {0,0,-23170,23170,23170,-23170,-23170,23170,-23170,-23170,23170,23170,23170,-23170};
+static const short nr_rx_mod_table[14] =
+    {0, 0, 23170, -23170, -23170, 23170, 23170, -23170, 23170, 23170, -23170, -23170, -23170, 23170};
+static const short nr_rx_nmod_table[14] =
+    {0, 0, -23170, 23170, 23170, -23170, -23170, 23170, -23170, -23170, 23170, 23170, 23170, -23170};
 
 int nr_pusch_dmrs_delta(uint8_t dmrs_config_type, unsigned short p) {
   if (dmrs_config_type == pusch_dmrs_type1) {
@@ -70,14 +74,11 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
                      uint8_t dmrs_type)
 {
   int8_t w, nb_dmrs;
-  short *mod_table;
   unsigned char idx=0;
   int k;
   typedef int array_of_w[2];
-  array_of_w *wf;
-  array_of_w *wt;
-  wf = (dmrs_type==pusch_dmrs_type1) ? wf1 : wf2;
-  wt = (dmrs_type==pusch_dmrs_type1) ? wt1 : wt2;
+  const array_of_w *wf = (dmrs_type == pusch_dmrs_type1) ? wf1 : wf2;
+  const array_of_w *wt = (dmrs_type == pusch_dmrs_type1) ? wt1 : wt2;
 
   int dmrs_offset = re_offset/((dmrs_type==pusch_dmrs_type1)?2:3);
 
@@ -90,7 +91,7 @@ int nr_pusch_dmrs_rx(PHY_VARS_gNB *gNB,
         for (int i=dmrs_offset; i<dmrs_offset+(nb_pusch_rb*nb_dmrs); i++) {
           k = i-dmrs_offset;
           w = (wf[p-1000][i&1])*(wt[p-1000][lp]);
-          mod_table = (w==1) ? nr_rx_mod_table : nr_rx_nmod_table;
+          const short *mod_table = (w == 1) ? nr_rx_mod_table : nr_rx_nmod_table;
 
           idx = ((((nr_gold_pusch[(i<<1)>>5])>>((i<<1)&0x1f))&1)<<1) ^ (((nr_gold_pusch[((i<<1)+1)>>5])>>(((i<<1)+1)&0x1f))&1);
           ((int16_t*)output)[k<<1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx)<<1];
@@ -124,15 +125,11 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
                      uint8_t config_type)
 {
   int8_t w;
-  short *mod_table;
   unsigned char idx=0;
 
   typedef int array_of_w[2];
-  array_of_w *wf;
-  array_of_w *wt;
-
-  wf = (config_type==NFAPI_NR_DMRS_TYPE1) ? wf1 : wf2;
-  wt = (config_type==NFAPI_NR_DMRS_TYPE1) ? wt1 : wt2;
+  const array_of_w *wf = (config_type == NFAPI_NR_DMRS_TYPE1) ? wf1 : wf2;
+  const array_of_w *wt = (config_type == NFAPI_NR_DMRS_TYPE1) ? wt1 : wt2;
 
   if (config_type > 1)
     LOG_E(PHY,"Bad PDSCH DMRS config type %d\n", config_type);
@@ -141,7 +138,7 @@ int nr_pdsch_dmrs_rx(PHY_VARS_NR_UE *ue,
     if (ue->frame_parms.Ncp == NORMAL) {
       for (int i = 0; i < nb_pdsch_rb * ((config_type == NFAPI_NR_DMRS_TYPE1) ? 6 : 4); i++) {
         w = (wf[p - 1000][i & 1]) * (wt[p - 1000][lp]);
-        mod_table = (w == 1) ? nr_rx_mod_table : nr_rx_nmod_table;
+        const short *mod_table = (w == 1) ? nr_rx_mod_table : nr_rx_nmod_table;
 
         idx = ((((nr_gold_pdsch[(i << 1) >> 5]) >> ((i << 1) & 0x1f)) & 1) << 1) ^ (((nr_gold_pdsch[((i << 1) + 1) >> 5]) >> (((i << 1) + 1) & 0x1f)) & 1);
         ((int16_t *)output)[i << 1] = mod_table[(NR_MOD_TABLE_QPSK_OFFSET + idx) << 1];
