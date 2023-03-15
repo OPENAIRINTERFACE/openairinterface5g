@@ -7,10 +7,9 @@ services:
         container_name: sa-b200-gnb
         environment:
             USE_B2XX: 'yes'
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --telnetsrv --telnetsrv.shrmod ci --continuous-tx --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
-            - ../../conf_files/gnb.sa.band78.51prb.usrpb200.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb.sa.band78.51prb.usrpb200.conf:/opt/oai-gnb/etc/gnb.conf
             - /dev:/dev
         networks:
             public_net:

@@ -5,15 +5,6 @@ set -uo pipefail
 PREFIX=/opt/oai-lte-ru
 CONFIGFILE=$PREFIX/etc/rru.conf
 
-# Based another env var, pick one template to use
-if [[ -v USE_VOLUMED_CONF ]]; then
-  cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf
-else
-  echo "ERROR: No configuration file provided."
-  echo "Please set USE_VOLUMED_CONF and mount a configuration file at $PREFIX/etc/mounted.conf"
-  exit 1
-fi
-
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"
   exit 255

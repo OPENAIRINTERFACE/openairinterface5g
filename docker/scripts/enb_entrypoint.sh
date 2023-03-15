@@ -5,14 +5,6 @@ set -uo pipefail
 PREFIX=/opt/oai-enb
 CONFIGFILE=$PREFIX/etc/enb.conf
 
-if [[ -v USE_VOLUMED_CONF ]]; then
-  cp $PREFIX/etc/mounted.conf $PREFIX/etc/enb.conf
-else
-  echo "ERROR: No configuration file provided."
-  echo "Please set USE_VOLUMED_CONF and mount a configuration file at $PREFIX/etc/mounted.conf"
-  exit 1
-fi
-
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"
   exit 255

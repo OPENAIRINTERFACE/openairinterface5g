@@ -5,14 +5,6 @@ set -uo pipefail
 PREFIX=/opt/oai-gnb-aw2s
 CONFIGFILE=$PREFIX/etc/gnb.conf
 
-if [[ -v USE_VOLUMED_CONF ]]; then
-  cp $PREFIX/etc/mounted.conf $PREFIX/etc/gnb.conf
-else
-  echo "ERROR: No configuration file provided."
-  echo "Please set USE_VOLUMED_CONF and mount a configuration file at $PREFIX/etc/mounted.conf"
-  exit 1
-fi
-
 if [ ! -f $CONFIGFILE ]; then
   echo "No configuration file found: please mount at $CONFIGFILE"
   exit 255

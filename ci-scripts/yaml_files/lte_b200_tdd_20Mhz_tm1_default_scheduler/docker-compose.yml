@@ -7,10 +7,9 @@ services:
         container_name: lte-b200-enb-tdd-20Mhz-tm1
         environment:
             USE_B2XX: 'yes'
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --RUs.[0].max_rxgain 115 --eNBs.[0].component_carriers.[0].pdsch_referenceSignalPower -29 --MACRLCs.[0].scheduler_mode default --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
-            - ../../conf_files/enb.band40.100prb.usrpb200-tm1-defaultscheduler.conf:/opt/oai-enb/etc/mounted.conf
+            - ../../conf_files/enb.band40.100prb.usrpb200-tm1-defaultscheduler.conf:/opt/oai-enb/etc/enb.conf
             - /dev:/dev
         network_mode: "host"
         healthcheck:

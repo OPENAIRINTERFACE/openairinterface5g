@@ -169,13 +169,12 @@ services:
         network_mode: "host"
         environment:
             TZ: Europe/Paris
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --nfapi VNF --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
         depends_on:
             - oai-spgwu
             - oai-amf
         volumes:
-            - ../../conf_files/gnb.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -205,11 +204,10 @@ services:
         network_mode: "host"
         environment:
             TZ: Europe/Paris
-            USE_VOLUMED_CONF: 'yes'
             OPENAIR_DIR: /opt/oai-nr-ue
             USE_ADDITIONAL_OPTIONS: --nfapi STANDALONE_PNF --node-number 2 --sa --emulate-l1 --log_config.global_log_options level,time,thread_id,nocolor
         volumes:
-            - ../../conf_files/nrue.band78.106prb.l2sim.conf:/opt/oai-nr-ue/etc/mounted.conf
+            - ../../conf_files/nrue.band78.106prb.l2sim.conf:/opt/oai-nr-ue/etc/nr-ue.conf
             - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
         depends_on:
             - oai-gnb
