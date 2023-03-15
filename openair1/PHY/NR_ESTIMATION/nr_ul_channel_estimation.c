@@ -120,7 +120,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
                                 nfapi_nr_pusch_pdu_t *pusch_pdu,
                                 int *max_ch) {
 
-  c16_t pilot[3280] __attribute__((aligned(16)));
+  c16_t pilot[3280] __attribute__((aligned(32)));
   const int chest_freq = gNB->chest_freq;
 
 #ifdef DEBUG_CH
@@ -183,7 +183,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
 #endif
 
-  c16_t ul_ls_est[symbolSize];
+  c16_t ul_ls_est[symbolSize] __attribute__((aligned(32)));
   memset(ul_ls_est, 0, sizeof(c16_t) * symbolSize);
   memset(&gNB->measurements.delay[ul_id], 0, sizeof(gNB->measurements.delay[ul_id]));
 
