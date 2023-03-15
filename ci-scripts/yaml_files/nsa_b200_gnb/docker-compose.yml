@@ -15,7 +15,7 @@ services:
             TAC: 1
             ENABLE_X2: 'yes'
             ENB_X2_IP_ADDRESS: 192.168.68.130
-            MME_S1C_IP_ADDRESS: 172.21.16.136
+            MME_S1C_IP_ADDRESS: 172.21.16.137
             GNB_S1C_IF_NAME: eth0
             GNB_S1C_IP_ADDRESS: 192.168.68.194
             GNB_S1U_IF_NAME: eth0

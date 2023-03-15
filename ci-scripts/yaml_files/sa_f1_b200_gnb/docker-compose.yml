@@ -16,7 +16,7 @@ services:
             NSSAI_SST: 1
             NSSAI_SD0: 1
             NSSAI_SD1: 2
-            AMF_IP_ADDRESS: 172.21.16.136
+            AMF_IP_ADDRESS: 172.21.16.137
             GNB_NGA_IF_NAME: eth0
             GNB_NGA_IP_ADDRESS: 192.168.68.194
             GNB_NGU_IF_NAME: eth0
