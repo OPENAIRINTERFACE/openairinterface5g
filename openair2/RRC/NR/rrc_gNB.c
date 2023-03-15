@@ -74,8 +74,6 @@
 
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "UTIL/OSA/osa_defs.h"
 
@@ -312,7 +310,7 @@ static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const u
 
 void apply_macrlc_config_reest(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP, ue_id_t ue_id)
 {
-  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
+  nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_id, ue_context_pP->ue_context.masterCellGroup);
 
   nr_rrc_rlc_config_asn1_req(ctxt_pP,
                              ue_context_pP->ue_context.SRB_configList,
@@ -1083,6 +1081,7 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
     for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
       nr_reestablish_rnti_map_t *nr_reestablish_rnti_map = &(RC.nrrrc[ctxt_pP->module_id])->nr_reestablish_rnti_map[i];
       if (nr_reestablish_rnti_map->ue_id == ctxt_pP->rntiMaybeUEid) {
+        ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
         reestablish_ue_id = nr_reestablish_rnti_map[i].c_rnti;
         LOG_D(NR_RRC, "Removing reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n", i, nr_reestablish_rnti_map->ue_id, nr_reestablish_rnti_map->c_rnti);
         // clear current C-RNTI from map
@@ -2388,10 +2387,10 @@ rrc_gNB_decode_dcch(
         if (ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->criticalExtensions.present == NR_RRCReestablishmentComplete__criticalExtensions_PR_rrcReestablishmentComplete) {
           rrc_gNB_process_RRCReestablishmentComplete(ctxt_pP, reestablish_rnti, ue_context_p, ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->rrc_TransactionIdentifier);
 
-          if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-            gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
-            mac_remove_nr_ue(nrmac, reestablish_rnti);
-          }
+          gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
+          mac_remove_nr_ue(nrmac, reestablish_rnti);
+
+          ue_context_p->ue_context.ue_reestablishment_counter++;
         }
 
         // UE->ue_release_timer = 0;

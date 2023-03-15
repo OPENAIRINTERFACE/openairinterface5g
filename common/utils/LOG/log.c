@@ -460,7 +460,6 @@ int logInit (void)
   register_log_component("OTG_GP","dat",OTG_GP);
   register_log_component("OTG_GP_BG","dat",OTG_GP_BG);
   register_log_component("OTG_JITTER","dat",OTG_JITTER);
-  register_log_component("OCG","",OCG);
   register_log_component("PERF","",PERF);
   register_log_component("OIP","",OIP);
   register_log_component("OCM","log",OCM);

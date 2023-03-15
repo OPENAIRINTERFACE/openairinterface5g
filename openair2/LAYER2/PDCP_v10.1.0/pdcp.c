@@ -40,8 +40,6 @@
 #include "LAYER2/MAC/mac_extern.h"
 #include "RRC/LTE/rrc_proto.h"
 #include "pdcp_primitives.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "otg_rx.h"
 #include "common/utils/LOG/log.h"
 #include <inttypes.h>

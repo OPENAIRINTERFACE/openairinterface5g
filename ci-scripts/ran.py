@@ -99,6 +99,7 @@ class RANManagement():
 		self.cmd_prefix = '' # prefix before {lte,nr}-softmodem
 		self.node = ''
 		self.command = ''
+		self.command_fail = False
 
 
 #-----------------------------------------------------------
@@ -259,19 +260,24 @@ class RANManagement():
 		self.checkBuildeNB(lIpAddr, lUserName, lPassWord, lSourcePath, self.backgroundBuildTestId[int(self.eNB_instance)], HTML)
 
 	def CustomCommand(self, HTML):
-		if self.node == '' or self.node == "localhost":
-			cmd = cls_cmd.LocalCmd()
-		else:
-			cmd = cls_cmd.RemoteCmd(self.node)
+		cmd = cls_cmd.getConnection(self.node)
 		ret = cmd.run(self.command)
 		cmd.close()
-		logging.debug(f'CustomCommand: {self.command} returnCode: {ret.returncode} output: {ret.stdout}')
-		html_queue = SimpleQueue()
+		logging.debug(f'CustomCommand: {self.command} returnCode: {ret.returncode}')
 		status = 'OK'
-		if ret.returncode != 0:
-			html_queue.put(ret.stdout)
+		message = []
+		if ret.returncode != 0 and not self.command_fail:
+			message = [ret.stdout]
+			logging.warning(f'CustomCommand output: {message}')
 			status = 'Warning'
-		HTML.CreateHtmlTestRow(self.command, status, 1, html_queue)
+		if self.command_fail: # important command since it would make the pipeline fail, so show output in HTML
+			message = [ret.stdout]
+		if ret.returncode != 0 and self.command_fail:
+			message = [ret.stdout]
+			logging.error(f'CustomCommand failed: output: {message}')
+			status = 'KO'
+			self.prematureExit = True
+		HTML.CreateHtmlTestRowQueue(self.command, status, message)
 
 	def checkBuildeNB(self, lIpAddr, lUserName, lPassWord, lSourcePath, testcaseId, HTML):
 		HTML.testCase_id=testcaseId

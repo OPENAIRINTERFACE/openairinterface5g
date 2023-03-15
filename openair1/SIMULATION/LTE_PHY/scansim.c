@@ -41,8 +41,6 @@
   #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-#include "OCG_vars.h"
-
 #define BW 20.0
 
 

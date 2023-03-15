@@ -83,8 +83,8 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, rrc_pdu_session
   drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
   drb->headerCompression.choice.notUsed = 0;
 
-  asn1cCallocOne(pdcpConfig->t_Reordering, NR_PDCP_Config__t_Reordering_ms0);
-
+  asn1cCallocOne(pdcpConfig->t_Reordering, NR_PDCP_Config__t_Reordering_ms100);
+  
   if (do_drb_integrity) {
     asn1cCallocOne(drb->integrityProtection, NR_PDCP_Config__drb__integrityProtection_enabled);
   }

@@ -20,7 +20,7 @@
  */
 
 /*! \file oml.h
-* \brief Data structure for OCG of OpenAir emulator
+* \brief Data structure for OML
 * \author N. Nikaein and A. Hafsaoui
 * \date 2011
 * \version 1.0

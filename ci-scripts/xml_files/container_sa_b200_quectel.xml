@@ -22,7 +22,7 @@
 -->
 <testCaseList>
   <htmlTabRef>TEST-SA-FR1-B200</htmlTabRef>
-  <htmlTabName>40 MHz TDD SA</htmlTabName>
+  <htmlTabName>20 MHz TDD SA</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
@@ -36,6 +36,10 @@
     070000
     070001
     070002
+    060001
+    000002
+    060002
+    050000
     010010
     010002
     030201
@@ -136,8 +140,8 @@
 
   <testCase id="070001">
     <class>Iperf</class>
-    <desc>iperf (UL/8Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 8M -t 30 -i 1 -fm</iperf_args>
+    <desc>iperf (UL/3.5Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 3.5M -t 30 -i 1 -fm</iperf_args>
     <direction>UL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>1</iperf_packetloss_threshold>
@@ -152,6 +156,21 @@
     <direction>BIDIR</direction>
     <id>idefix</id>
     <iperf_profile>single-ue</iperf_profile>
+  </testCase>
+
+  <testCase id="060001">
+    <class>Custom_Command</class>
+    <desc>Trigger Reestablishment</desc>
+    <node>nepes</node>
+    <command>echo ci force_reestab | nc -N 192.168.68.194 9090 | grep -E 'force-remove UE RNTI [0-9a-f]{4} from RLC to trigger reestablishment'</command>
+    <command_fail>yes</command_fail>
+  </testCase>
+  <testCase id="060002">
+    <class>Custom_Command</class>
+    <desc>Verify Reestablishment</desc>
+    <node>nepes</node>
+    <command>echo ci get_reestab_count | nc -N 192.168.68.194 9090 | grep -E 'UE RNTI [0-9a-f]{4} reestab 1 reconf_after_reestab 1'</command>
+    <command_fail>yes</command_fail>
   </testCase>
 
   <testCase id="030201">
