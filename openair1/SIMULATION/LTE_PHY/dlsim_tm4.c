@@ -48,7 +48,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "OCG_vars.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 

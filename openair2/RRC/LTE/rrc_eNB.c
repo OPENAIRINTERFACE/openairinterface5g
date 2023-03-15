@@ -59,6 +59,7 @@
 #include "LTE_SL-CommConfig-r12.h"
 #include "LTE_PeriodicBSR-Timer-r12.h"
 #include "LTE_RetxBSR-Timer-r12.h"
+#include "PHY/defs_eNB.h"
 
 #include "LTE_BCCH-BCH-Message-MBMS.h"
 #include "LTE_BCCH-DL-SCH-Message-MBMS.h"
@@ -79,8 +80,6 @@
 
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "UTIL/OSA/osa_defs.h"
 

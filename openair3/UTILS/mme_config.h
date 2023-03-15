@@ -39,10 +39,6 @@
 #define MME_CONFIG_STRING_INTERTASK_INTERFACE_CONFIG     "INTERTASK_INTERFACE"
 #define MME_CONFIG_STRING_INTERTASK_INTERFACE_QUEUE_SIZE "ITTI_QUEUE_SIZE"
 
-#define MME_CONFIG_STRING_S6A_CONFIG                     "S6A"
-#define MME_CONFIG_STRING_S6A_CONF_FILE_PATH             "S6A_CONF"
-#define MME_CONFIG_STRING_S6A_HSS_HOSTNAME               "HSS_HOSTNAME"
-
 #define MME_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
 #define MME_CONFIG_STRING_SCTP_INSTREAMS                 "SCTP_INSTREAMS"
 #define MME_CONFIG_STRING_SCTP_OUTSTREAMS                "SCTP_OUTSTREAMS"
@@ -149,10 +145,6 @@ typedef struct mme_config_s {
 
     uint32_t  sgw_ip_address_for_S11;
   } ipv4;
-  struct {
-    char *conf_file;
-    char *hss_host_name;
-  } s6a_config;
   struct {
     uint32_t  queue_size;
     char     *log_file;

@@ -54,8 +54,6 @@
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/system.h"
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
 #include "LAYER2/MAC/mac_extern.h"
 
 #include "pdcp.h"

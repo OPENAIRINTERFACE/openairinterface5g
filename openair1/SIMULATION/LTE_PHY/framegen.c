@@ -28,7 +28,6 @@
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "SCHED/extern.h"
-#include "OCG_vars.h"
 #include "MAC_INTERFACE/vars.h"
 #ifdef IFFT_FPGA
 #include "PHY/LTE_REFSIG/mod_table.h"

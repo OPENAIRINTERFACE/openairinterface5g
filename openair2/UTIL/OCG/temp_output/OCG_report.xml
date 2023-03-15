@@ -1,9 +1,0 @@
-<?xml version="1.0"?>
-<COMMENT           >	in this output file, -9999 means NOT_PROCESSED; -2 means NO_FILE; -1 means ERROR; 0 means OK	</COMMENT           >
-<OCG_GET_OPT       >	-2	</OCG_GET_OPT       >
-<OCG_DETECT_FILE   >	0	</OCG_DETECT_FILE   >
-<OCG_PARSE_FILENAME>	-1	</OCG_PARSE_FILENAME>
-<OCG_CREATE_DIR    >	-9999	</OCG_CREATE_DIR    >
-<OCG_PARSE_XML     >	-9999	</OCG_PARSE_XML     >
-<OCG_SAVE_XML      >	-9999	</OCG_SAVE_XML      >
-<OCG_CALL_EMU      >	-9999	</OCG_CALL_EMU      >

@@ -594,19 +594,10 @@ check_install_oai_software() {
     case "$(get_distribution_release)" in
         "ubuntu18.04")
             add_cmake_repo
-            specific_packages="libgcrypt11-dev guile-2.0-dev"
-            ;;
-        "ubuntu20.04")
-            specific_packages="guile-2.0-dev"
-            ;;
-         "ubuntu21.04")
-            specific_packages="guile-2.0-dev"
-            ;;
-         "ubuntu22.04")
-            specific_packages="guile-2.2-dev"
+            specific_packages="libgcrypt11-dev"
             ;;
          "debian11")
-            specific_packages="guile-2.2-dev libz-dev"
+            specific_packages="libz-dev"
             ;;
     esac
     $SUDO apt-get install -y \
@@ -627,8 +618,6 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-	libxslt1-dev \
-	libtasn1-6-dev \
 	patch \
 	openssl \
         xxd
@@ -649,7 +638,6 @@ check_install_oai_software() {
       gcc \
       gcc-c++ \
       git \
-      guile-devel \
       atlas-devel \
       pkgconfig \
       libconfig-devel \
@@ -657,9 +645,7 @@ check_install_oai_software() {
       libgcrypt-devel \
       lksctp-tools \
       lksctp-tools-devel \
-      libtasn1 \
       libtool \
-      libxslt-devel \
       ninja-build \
       make \
       openssl \

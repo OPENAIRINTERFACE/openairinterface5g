@@ -38,9 +38,8 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/defs_eNB.h"
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/LTE/rrc_eNB_UE_context.h"

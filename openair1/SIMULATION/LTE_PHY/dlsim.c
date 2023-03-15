@@ -52,7 +52,6 @@
 #include "SCHED/sched_eNB.h"
 #include "SCHED_UE/sched_UE.h"
 #include "SIMULATION/TOOLS/sim.h"
-#include "OCG_vars.h"
 #include "unitary_defs.h"
 #include "dummy_functions.c"
 #include "executables/thread-common.h"

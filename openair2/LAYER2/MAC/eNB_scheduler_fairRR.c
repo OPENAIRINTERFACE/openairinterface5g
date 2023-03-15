@@ -35,6 +35,7 @@
 
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/defs_eNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -43,8 +44,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rlc.h"
 #include "common/utils/lte/prach_utils.h"

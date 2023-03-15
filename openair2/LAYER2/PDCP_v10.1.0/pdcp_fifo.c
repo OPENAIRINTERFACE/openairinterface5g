@@ -51,8 +51,6 @@ extern int otg_enabled;
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "NETWORK_DRIVER/LITE/constant.h"
 //#include "SIMULATION/ETH_TRANSPORT/extern.h"
-#include "UTIL/OCG/OCG.h"
-#include "UTIL/OCG/OCG_extern.h"
 #include "common/utils/LOG/log.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "nfapi/oai_integration/vendor_ext.h"

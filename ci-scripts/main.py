@@ -429,6 +429,7 @@ def GetParametersFromXML(action):
 	elif action == 'Custom_Command':
 		RAN.node = test.findtext('node')
 		RAN.command = test.findtext('command')
+		RAN.command_fail = test.findtext('command_fail') in ['True', 'true', 'Yes', 'yes']
 
 	else:
 		logging.warning(f"unknown action {action} from option-parsing point-of-view")
@@ -752,6 +753,8 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 				elif action == 'Custom_Command':
 					logging.info(f"Executing custom command")
 					RAN.CustomCommand(HTML)
+					if RAN.prematureExit:
+						CiTestObj.AutoTerminateeNB(HTML,RAN,EPC,CONTAINERS)
 				elif action == 'Initialize_eNB':
 					RAN.InitializeeNB(HTML, EPC)
 					if RAN.prematureExit:
