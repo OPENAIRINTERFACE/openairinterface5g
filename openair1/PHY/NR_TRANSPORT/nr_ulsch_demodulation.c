@@ -302,7 +302,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 }
 
 
-void nr_ulsch_extract_rbs(int32_t **rxdataF,
+void nr_ulsch_extract_rbs(c16_t **rxdataF,
                           NR_gNB_PUSCH *pusch_vars,
                           int slot,
                           unsigned char symbol,

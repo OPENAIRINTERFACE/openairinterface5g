@@ -1272,8 +1272,8 @@ int main(int argc, char **argv)
         for(uint8_t symbol = 0; symbol < (gNB->frame_parms.Ncp == EXTENDED ? 12 : 14); symbol++) {
           for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)
             nr_slot_fep_ul(&gNB->frame_parms,
-                           (int32_t*) rxdata[aa],
-                           gNB->common_vars.rxdataF[aa],
+                           (int32_t *)rxdata[aa],
+                           (int32_t *)gNB->common_vars.rxdataF[aa],
                            symbol,
                            slot,
                            0);

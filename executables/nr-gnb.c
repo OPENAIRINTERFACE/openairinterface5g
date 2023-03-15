@@ -558,7 +558,7 @@ void init_eNB_afterRU(void) {
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
         LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
         gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
-        gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
+        gNB->common_vars.rxdataF[aa]     =  (c16_t *)gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }
 

@@ -636,12 +636,12 @@ int main(int argc, char **argv)
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
             apply_nr_rotation(frame_parms,
-                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              gNB->common_vars.txdataF[aa],
                               slot,
                               0,
                               12);
 
-            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+            PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
             frame_parms->ofdm_symbol_size,
             12,
@@ -649,7 +649,7 @@ int main(int argc, char **argv)
             CYCLIC_PREFIX);
           } else {
             apply_nr_rotation(frame_parms,
-                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              gNB->common_vars.txdataF[aa],
                               slot,
                               0,
                               14);
@@ -659,14 +659,14 @@ int main(int argc, char **argv)
               14,
               frame_parms);*/
 
-            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+            PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
                          frame_parms->ofdm_symbol_size,
                          1,
                          frame_parms->nb_prefix_samples0,
                          CYCLIC_PREFIX);
 
-            PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+            PHY_ofdm_mod((int *)&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
                          frame_parms->ofdm_symbol_size,
                          13,

@@ -298,19 +298,21 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
     ue->tx_power_dBm[i]=-127;
 
   // init TX buffers
-  common_vars->txdata  = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t *) );
-  common_vars->txdataF = (int32_t **)malloc16( fp->nb_antennas_tx*sizeof(int32_t *) );
+  common_vars->txdata  = (c16_t **)malloc16(fp->nb_antennas_tx*sizeof(c16_t *));
+  common_vars->txdataF = (c16_t **)malloc16(fp->nb_antennas_tx*sizeof(c16_t *));
 
   for (i=0; i<fp->nb_antennas_tx; i++) {
-    common_vars->txdata[i]  = (int32_t *)malloc16_clear( fp->samples_per_subframe*10*sizeof(int32_t) );
-    common_vars->txdataF[i] = (int32_t *)malloc16_clear( fp->samples_per_slot_wCP*sizeof(int32_t) );
+    common_vars->txdata[i]  = (c16_t *)malloc16_clear((fp->samples_per_frame) * sizeof(c16_t));
+    common_vars->txdataF[i] = (c16_t *)malloc16_clear((fp->samples_per_frame) * sizeof(c16_t));
   }
 
   // init RX buffers
-  common_vars->rxdata   = (int32_t **)malloc16( fp->nb_antennas_rx*sizeof(int32_t *) );
+  common_vars->rxdata   = (c16_t **)malloc16( fp->nb_antennas_rx*sizeof(c16_t *));
+  common_vars->rxdataF   = (c16_t **)malloc16( fp->nb_antennas_rx*sizeof(c16_t *));
 
   for (i=0; i<fp->nb_antennas_rx; i++) {
-    common_vars->rxdata[i] = (int32_t *) malloc16_clear( (2*(fp->samples_per_frame)+fp->ofdm_symbol_size)*sizeof(int32_t) );
+    common_vars->rxdata[i] = (c16_t *)malloc16_clear((2 * (fp->samples_per_frame)+fp->ofdm_symbol_size) * sizeof(c16_t));
+    common_vars->rxdataF[i] = (c16_t *)malloc16_clear((2 * (fp->samples_per_frame)+fp->ofdm_symbol_size) * sizeof(c16_t));
   }
 
   // ceil(((NB_RB<<1)*3)/32) // 3 RE *2(QPSK)
@@ -426,8 +428,10 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int i = 0; i < fp->nb_antennas_rx; i++) {
     free_and_zero(common_vars->rxdata[i]);
+    free_and_zero(common_vars->rxdataF[i]);
   }
   free_and_zero(common_vars->rxdata);
+  free_and_zero(common_vars->rxdataF);
 
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++)

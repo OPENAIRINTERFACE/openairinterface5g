@@ -24,7 +24,7 @@
 
 //#define NR_PSS_DEBUG
 
-int nr_generate_pss(  int32_t *txdataF,
+int nr_generate_pss(  c16_t *txdataF,
                       int16_t amp,
                       uint8_t ssb_start_symbol,
                       nfapi_nr_config_request_scf_t* config,

@@ -129,7 +129,8 @@ int main(int argc, char **argv){
 
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs=-1, bw;
-  int i, l, aa, aarx, **txdata, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
+  int i, l, aa, aarx, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;
+  c16_t **txdata;
   int N_RB_UL = 106, delay = 0, NCS_config = 13, rootSequenceIndex = 1, threequarter_fs = 0, mu = 1, fd_occasion = 0, loglvl = OAILOG_INFO, numRA = 0, prachStartSymbol = 0;
   uint8_t snr1set = 0, ue_speed1set = 0, transmission_mode = 1, n_tx = 1, n_rx = 1, awgn_flag = 0, msg1_frequencystart = 0, num_prach_fd_occasions = 1, prach_format=0;
   uint8_t config_index = 98, prach_sequence_length = 1, restrictedSetConfig = 0, N_dur, N_t_slot, start_symbol;
@@ -759,8 +760,8 @@ int main(int argc, char **argv){
 	for (l = 0; l < frame_parms->symbols_per_slot; l++) {
 	  for (aa = 0; aa < frame_parms->nb_antennas_rx; aa++) {
 	    nr_slot_fep_ul(frame_parms,
-			   ru->common.rxdata[aa],
-			   ru->common.rxdataF[aa],
+			   (int32_t *)ru->common.rxdata[aa],
+			   (int32_t *)ru->common.rxdataF[aa],
 			   l,
 			   slot,
 			   ru->N_TA_offset);
