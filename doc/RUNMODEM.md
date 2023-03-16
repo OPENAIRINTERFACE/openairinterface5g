@@ -7,68 +7,123 @@
       </a>
     </td>
     <td style="border-collapse: collapse; border: none; vertical-align: center;">
-      <b><font size = "5">Running OAI Softmodem</font></b>
+      <b><font size = "5">Running OAI Softmodems</font></b>
     </td>
   </tr>
 </table>
 
 After you have [built the softmodem executables](BUILD.md) you can set your default directory  to the build directory `cmake_targets/ran_build/build/` and start testing some use cases. Below, the description of the different oai functionalities should help you choose the oai configuration that suits your need. 
 
-# RF Simulator
+[[_TOC_]]
 
-The rf simulator is a oai device replacing the radio heads (for example the USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the oai eNodeB or gNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.  The rf simulator has some preliminary support for channel modeling.
+# Simulators
+
+## RFsimulator
+
+The RF simulator is an OAI device replacing the radio heads (for example the USRP device). It allows connecting the oai UE (LTE or 5G) and respectively the oai eNodeB or gNodeB through a network interface carrying the time-domain samples, getting rid of over the air unpredictable perturbations. This is the ideal tool to check signal processing algorithms and protocols implementation.  The rf simulator has some preliminary support for channel modeling.
 
 It is planned to enhance this simulator with the following functionalities:
 
-- Support for multiple UE connections,each UE being a `lte-uesoftmodem` or `nr_uesoftmodem` instance.
 - Support for multiple eNodeB's or gNodeB's for hand-over tests
 
-   This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md ) contains the detailed documentation.
+This is an easy use-case to setup and test, as no specific hardware is required. The [rfsimulator page](../radio/rfsimulator/README.md ) contains the detailed documentation.
 
-# L2 nFAPI Simulator
+## L2 nFAPI Simulator
 
 This simulator connects a eNodeB  and UEs through a nfapi interface, short-cutting the L1 layer. The objective of this simulator is to allow multi UEs simulation, with a large number of UEs (ideally up to 255 ) .Here to ease the platform setup, UEs are simulated via a single `lte-uesoftmodem` instance. Today the CI tests just with one UE and architecture has to be reviewed to allow a number of UE above about 16. This work is on-going.
 
 As for the rf simulator, no specific hardware is required. The [L2 nfapi simulator page](L2NFAPI.md) contains the detailed documentation.
 
-# L1 Simulator
+## L1 Simulator
+
+**This information might be outdated. We recommend to use the RFsimulator as
+shown above.**
 
 The L1 simulator is using the ethernet fronthaul protocol, as used to connect a RRU and a RAU to connect UEs and a eNodeB. UEs are simulated in a single `lte-uesoftmodem` process, as for the nfapi simulator. 
 
 The [L1 simulator page](L1SIM.md) contains the detailed documentation.
 
-## noS1 mode
-
-The noS1 mode is now available via the `--noS1`command line option. It can be used with simulators, described above, or when using oai with true RF boards. Only the oai UE can be connected to the oai eNodeB in noS1 mode.
-
-By default the noS1 mode is using linux tun interfaces to send or receive ip packets to/from the linux ip stack. using the `--nokrnmod 0`option you can enforce kernel modules instead of tun.
-
-noS1 code has been revisited, it has been tested with the rf simulator, and tun interfaces. More tests are on going and CI will soon include noS1 tests.
-
 # Running with a true radio head
 
-oai supports [number of deployment](FEATURE_SET.md) model, the following are tested in the CI:
+OAI supports different radio heads, the following are tested in the CI:
 
-1.  [Monolithic eNodeB](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/HowToConnectCOTSUEwithOAIeNBNew) where the whole signal processing is performed in a single process
-2. if4p5 mode, where frequency domain samples are carried over ethernet, from the RRU which implement part of L1(FFT,IFFT,part of PRACH),  to a RAU
+1. [Monolithic eNodeB](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/HowToConnectCOTSUEwithOAIeNBNew) where the whole signal processing is performed in a single process
+2. IF4P5 mode, where frequency domain samples are carried over ethernet, from the RRU which implement part of L1(FFT,IFFT,part of PRACH),  to a RAU
+3. Monolithic gNodeB: see next section, or the [standalone tutorial](NR_SA_Tutorial_COTS_UE.md)
+
 
 # 5G NR
-
-As of February 2020, all 5G NR development is part of the develop branch (the branch develop-nr is no longer maintained). This also means that all new development will be merged into there once it passes all the CI. 
 
 ## NSA setup with COTS UE
 
 This setup requires an EPC, an OAI eNB and gNB, and a COTS Phone. A dedicated page describe the setup can be found [here](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home/gNB-COTS-UE-testing).
 
-### Launch gNB
-
-```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf```
-
 ### Launch eNB
 
-```bash sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf```
+```bash
+sudo ./lte-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/enb.band7.tm1.50PRB.usrpb210.conf
+```
+
+### Launch gNB
+
+```bash
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf
+```
+
+You should see the X2 messages in Wireshark and at the eNB.
+
+## SA setup with OAI NR-UE
+
+The sa flag is used to run gNB in standalone mode.
+
+In order to run gNB and UE in standalone mode, the `--sa` flag is needed.
+
+At the gNB the `--sa` flag does the following:
+- The RRC encodes SIB1 according to the configuration file and transmits it through NR-BCCH-DL-SCH.
+
+At the UE the --sa flag will:
+- Decode SIB1 and starts the 5G NR Initial Access Procedure for SA:
+  1) 5G-NR RRC Connection Setup
+  2) NAS Authentication and Security
+  3) 5G-NR AS Security Procedure
+  4) 5G-NR RRC Reconfiguration
+  5) Start Downlink and Uplink Data Transfer
+
+Command line parameters for UE in --sa mode:
+- `-C` : downlink carrier frequency in Hz (default value 0)
+- `--CO` : uplink frequency offset for FDD in Hz (default value 0)
+- `--numerology` : numerology index (default value 1)
+- `-r` : bandwidth in terms of RBs (default value 106)
+- `--band` : NR band number (default value 78)
+- `--ssb` : SSB start subcarrier (default value 512)
+
+You can run this, using USRPs, on two separate machines:
+
+```
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --sa
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --sa
+```
+
+With the RF simulator (on the same machine):
+
+```bash
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --rfsim --sa
+```
+
+Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml`
+
+## Some useful NR-UE parameters
+
+Some other useful paramters of the UE are
+
+ - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
+ - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
+ - --clock-source: sets the clock-source (internal or external). 
+ - --time-source: sets the time-source (internal or external). 
 
 
+# Specific OAI modes
 
 ## phy-test setup with OAI UE
 
@@ -81,22 +136,18 @@ At the UE the --phy-test flag will
  - read the binary files rbconfig.raw and reconfig.raw from the current directory (a different directory can be specified with the flag --rrc_config_path) and process them.
 
 
-### Launch gNB
+```bash
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test
+```
 
-```bash sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test```
+In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml` (1 layer) or `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports2.xml` (2 layers).
 
-In phy-test mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml`
+```bash
+sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]
+```
 
-### Launch UE in another window
-
-```bash sudo ./nr-uesoftmodem --phy-test [--rrc_config_path ../../../ci-scripts/rrc-files]```
-
-Some other useful paramters of the UE are
-
- - --ue-fo-compensation: enables the frequency offset compenstation at the UE. This is useful when running over the air and/or without an external clock/time source
- - --usrp-args: this is the equivalend paramter of sdr_addrs field in the gNB config file and can be used to identify the USRP and set some basic paramters (like the clock source)
- - --clock-source: sets the clock-source (internal or external). 
- - --time-source: sets the time-source (internal or external). 
+You need to provide `--rrc_config_path` if you don't start the UE after the gNB
+in the same directory.
 
 ## noS1 setup with OAI UE
 
@@ -108,78 +159,29 @@ This setup is described in the [rfsimulator page](../radio/rfsimulator/README.md
 
 The do-ra flag is used to ran the NR Random Access procedures in contention-free mode. Currently OAI implements the RACH process from Msg1 to Msg3. 
 
-In order to run the RA, the following flag is needed for both the gNB and the UE:
-
-`--do-ra`
-
-### Run OAI in do-ra mode
-
-From the `cmake_targets/ran_build/build` folder:
-
-gNB on machine 1:
-
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra`
+In order to run the RA, the `--do-ra` flag is needed for both the gNB and the UE.
 
 In do-ra mode it is possible to mimic the reception of UE Capabilities at gNB by passing through the command line parameter `--uecap_file` the location and file name of the input UE Capability file, e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml`
 
-UE on machine 2:
+To run using the RFsimulator:
 
-`sudo ./nr-uesoftmodem --do-ra`
+```bash
+sudo RFSIMULATOR=gnb ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD
+sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD
+```
 
-With the RF simulator (on the same machine):
+Using USRPs:
 
-`sudo RFSIMULATOR=gnb ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
+```bash
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --do-ra
+```
 
-`sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --do-ra --rfsim --parallel-config PARALLEL_SINGLE_THREAD`
+On a separate machine:
 
-## SA setup with OAI
+```bash
+sudo ./nr-uesoftmodem --do-ra
+```
 
-The sa flag is used to run gNB in standalone mode.
-
-In order to run gNB and UE in standalone mode, the following flag is needed:
-
-`--sa`
-
-At the gNB the --sa flag does the following:
-- The RRC encodes SIB1 according to the configuration file and transmits it through NR-BCCH-DL-SCH.
-
-At the UE the --sa flag will:
-- Decode SIB1 and starts the 5G NR Initial Access Procedure for SA:
-  1) 5G-NR RRC Connection Setup
-  2) NAS Authentication and Security
-  3) 5G-NR AS Security Procedure
-  4) 5G-NR RRC Reconfiguration
-  5) Start Downlink and Uplink Data Transfer
-
-Command line parameters for UE in --sa mode:
-- `C` : downlink carrier frequency in Hz (default value 0)
-- `CO` : uplink frequency offset for FDD in Hz (default value 0)
-- `numerology` : numerology index (default value 1)
-- `r` : bandwidth in terms of RBs (default value 106)
-- `band` : NR band number (default value 78)
-- `s` : SSB start subcarrier (default value 512)
-
-### Run OAI in SA mode
-
-From the `cmake_targets/ran_build/build` folder:
-
-gNB on machine 1:
-
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --sa`
-
-UE on machine 2:
-
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --sa`
-
-With the RF simulator (on the same machine):
-
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa`
-
-`sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ssb 516 --rfsim --sa`
-
-where `-r` sets the transmission bandwidth configuration in terms of RBs, `-C` sets the downlink carrier frequency and `--ssb` sets the SSB start subcarrier.
-
-Additionally, at UE side `--uecap_file` option can be used to pass the UE Capabilities input file (path location + filename), e.g. `--uecap_file ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/uecap_ports1.xml`
 
 ### Run OAI with SDAP & Custom DRBs
 
@@ -208,17 +210,14 @@ Accordingly, the following parameters must be configured in the RUs section of t
 
 The following example uses DL frequency 2169.080 MHz and UL frequency offset -400 MHz, with a configuration file for band 66 (FDD) at gNB side.
 
-From the `cmake_targets/ran_build/build` folder:
+On two separate machines with USRPs, run:
 
-gNB on machine 1:
+```
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band66.tm1.106PRB.usrpx300.conf
+sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000
+```
 
-`sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band66.tm1.106PRB.usrpx300.conf`
-
-UE on machine 2:
-
-`sudo ./nr-uesoftmodem --if_freq 2169080000 --if_freq_off -400000000`
-
-# MIMO configuration
+# 5G gNB MIMO configuration
 
 In order to enable DL-MIMO in OAI 5G softmodem, the prerequisite is to have `do_CSIRS = 1` in the configuration file. This allows the gNB to schedule CSI reference signal and to acquire from the UE CSI measurements to be able to schedule DLSCH with MIMO.
 
@@ -246,10 +245,3 @@ Finally the number of TX physical antenna in the RU part of the configuration fi
 # Additional links
 
 [Selecting an alternative ldpc implementation at run time](../openair1/PHY/CODING/DOC/LDPCImplementation.md)
-
-[oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
-
-[oai softmodem features](FEATURE_SET.md)
-
-[oai softmodem build procedure](BUILD.md)
-
