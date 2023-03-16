@@ -25,7 +25,7 @@ git config --global user.email "Your email address"
 
 ## In order to clone the Git repository (for OAI Users without login to gitlab server)
 
-Cloning RAN repository (eNB RAN + UE RAN):
+Cloning RAN repository:
 
 ```shell
 git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
@@ -35,22 +35,18 @@ git clone https://gitlab.eurecom.fr/oai/openairinterface5g.git
 
 Please send email to [contact@openairinterface.org](mailto:contact@openairinterface.org) to be added to the repository
 as a developer (only important for users who want to commit code to the repository). If
-you do not have account on gitlab.eurecom.fr, please register yourself to gitlab.eurecom.fr and provide the identifiant in the email.
+you do not have account on gitlab.eurecom.fr, please register yourself to gitlab.eurecom.fr and provide the login name in the email.
+
+More information can be found in [a separate page](../CONTRIBUTING.md).
 
 # Which branch to checkout?
 
-On the RAN side:
+`develop`: contains recent commits that are tested on our CI test bench. The update frequency is about once a week. 5G is only in this branch. It is the recommended  and default branch.
+`master`: contains a stable version of 4G, and will be updated in the future with 5G.
 
-* **master**: This branch is targeted for the user community. Since January 2019, it is also subject to a Continuous Integration process. The update frequency is about once every 2-3 months. We are also performing bug fixes on this branch.
-* **develop**: This branch contains recent commits that are tested on our CI test bench. The update frequency is about once a week.
+Please see the work flow and policies page: https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/oai-policies-home
 
-Please see the work flow and policies page:
-
-https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/oai-policies-home
-
-you can find the latest stable tag release here:
-
-https://gitlab.eurecom.fr/oai/openairinterface5g/tags
+You can find the latest stable tag release here: https://gitlab.eurecom.fr/oai/openairinterface5g/tags
 
 The tag naming conventions are:
 
@@ -60,4 +56,3 @@ The tag naming conventions are:
 - On `develop` branch **`yyyy`.w`xx`**
   * `yyyy` is the calendar year
   * `xx` the week number within the year
-
