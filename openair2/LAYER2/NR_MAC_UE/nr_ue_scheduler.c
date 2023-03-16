@@ -789,6 +789,140 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr
 
 }
 
+void configure_srs_pdu(NR_UE_MAC_INST_t *mac,
+                       NR_SRS_Resource_t *srs_resource,
+                       fapi_nr_ul_config_srs_pdu *srs_config_pdu,
+                       int period, int offset)
+{
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+
+  srs_config_pdu->rnti = mac->crnti;
+  srs_config_pdu->handle = 0;
+  srs_config_pdu->bwp_size = current_UL_BWP->BWPSize;
+  srs_config_pdu->bwp_start = current_UL_BWP->BWPStart;
+  srs_config_pdu->subcarrier_spacing = current_UL_BWP->scs;
+  srs_config_pdu->cyclic_prefix = 0;
+  srs_config_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
+  srs_config_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
+  srs_config_pdu->num_repetitions = srs_resource->resourceMapping.repetitionFactor;
+  srs_config_pdu->time_start_position = srs_resource->resourceMapping.startPosition;
+  srs_config_pdu->config_index = srs_resource->freqHopping.c_SRS;
+  srs_config_pdu->sequence_id = srs_resource->sequenceId;
+  srs_config_pdu->bandwidth_index = srs_resource->freqHopping.b_SRS;
+  srs_config_pdu->comb_size = srs_resource->transmissionComb.present - 1;
+
+  switch(srs_resource->transmissionComb.present) {
+    case NR_SRS_Resource__transmissionComb_PR_n2:
+      srs_config_pdu->comb_offset = srs_resource->transmissionComb.choice.n2->combOffset_n2;
+      srs_config_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n2->cyclicShift_n2;
+      break;
+    case NR_SRS_Resource__transmissionComb_PR_n4:
+      srs_config_pdu->comb_offset = srs_resource->transmissionComb.choice.n4->combOffset_n4;
+      srs_config_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n4->cyclicShift_n4;
+      break;
+    default:
+      LOG_W(NR_MAC, "Invalid or not implemented comb_size!\n");
+  }
+
+  srs_config_pdu->frequency_position = srs_resource->freqDomainPosition;
+  srs_config_pdu->frequency_shift = srs_resource->freqDomainShift;
+  srs_config_pdu->frequency_hopping = srs_resource->freqHopping.b_hop;
+  srs_config_pdu->group_or_sequence_hopping = srs_resource->groupOrSequenceHopping;
+  srs_config_pdu->resource_type = srs_resource->resourceType.present - 1;
+  if(srs_config_pdu->resource_type > 0) { // not aperiodic
+    srs_config_pdu->t_srs = period;
+    srs_config_pdu->t_offset = offset;
+  }
+
+#ifdef SRS_DEBUG
+  LOG_I(NR_MAC,"Frame = %i, slot = %i\n", frame, slot);
+  LOG_I(NR_MAC,"srs_config_pdu->rnti = 0x%04x\n", srs_config_pdu->rnti);
+  LOG_I(NR_MAC,"srs_config_pdu->handle = %u\n", srs_config_pdu->handle);
+  LOG_I(NR_MAC,"srs_config_pdu->bwp_size = %u\n", srs_config_pdu->bwp_size);
+  LOG_I(NR_MAC,"srs_config_pdu->bwp_start = %u\n", srs_config_pdu->bwp_start);
+  LOG_I(NR_MAC,"srs_config_pdu->subcarrier_spacing = %u\n", srs_config_pdu->subcarrier_spacing);
+  LOG_I(NR_MAC,"srs_config_pdu->cyclic_prefix = %u (0: Normal; 1: Extended)\n", srs_config_pdu->cyclic_prefix);
+  LOG_I(NR_MAC,"srs_config_pdu->num_ant_ports = %u (0 = 1 port, 1 = 2 ports, 2 = 4 ports)\n", srs_config_pdu->num_ant_ports);
+  LOG_I(NR_MAC,"srs_config_pdu->num_symbols = %u (0 = 1 symbol, 1 = 2 symbols, 2 = 4 symbols)\n", srs_config_pdu->num_symbols);
+  LOG_I(NR_MAC,"srs_config_pdu->num_repetitions = %u (0 = 1, 1 = 2, 2 = 4)\n", srs_config_pdu->num_repetitions);
+  LOG_I(NR_MAC,"srs_config_pdu->time_start_position = %u\n", srs_config_pdu->time_start_position);
+  LOG_I(NR_MAC,"srs_config_pdu->config_index = %u\n", srs_config_pdu->config_index);
+  LOG_I(NR_MAC,"srs_config_pdu->sequence_id = %u\n", srs_config_pdu->sequence_id);
+  LOG_I(NR_MAC,"srs_config_pdu->bandwidth_index = %u\n", srs_config_pdu->bandwidth_index);
+  LOG_I(NR_MAC,"srs_config_pdu->comb_size = %u (0 = comb size 2, 1 = comb size 4, 2 = comb size 8)\n", srs_config_pdu->comb_size);
+  LOG_I(NR_MAC,"srs_config_pdu->comb_offset = %u\n", srs_config_pdu->comb_offset);
+  LOG_I(NR_MAC,"srs_config_pdu->cyclic_shift = %u\n", srs_config_pdu->cyclic_shift);
+  LOG_I(NR_MAC,"srs_config_pdu->frequency_position = %u\n", srs_config_pdu->frequency_position);
+  LOG_I(NR_MAC,"srs_config_pdu->frequency_shift = %u\n", srs_config_pdu->frequency_shift);
+  LOG_I(NR_MAC,"srs_config_pdu->frequency_hopping = %u\n", srs_config_pdu->frequency_hopping);
+  LOG_I(NR_MAC,"srs_config_pdu->group_or_sequence_hopping = %u (0 = No hopping, 1 = Group hopping groupOrSequenceHopping, 2 = Sequence hopping)\n", srs_config_pdu->group_or_sequence_hopping);
+  LOG_I(NR_MAC,"srs_config_pdu->resource_type = %u (0: aperiodic, 1: semi-persistent, 2: periodic)\n", srs_config_pdu->resource_type);
+  LOG_I(NR_MAC,"srs_config_pdu->t_srs = %u\n", srs_config_pdu->t_srs);
+  LOG_I(NR_MAC,"srs_config_pdu->t_offset = %u\n", srs_config_pdu->t_offset);
+#endif
+}
+
+// Aperiodic SRS scheduling
+void nr_ue_aperiodic_srs_scheduling(NR_UE_MAC_INST_t *mac, long resource_trigger, int frame, int slot)
+{
+  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  NR_SRS_Config_t *srs_config = current_UL_BWP->srs_Config;
+
+  if (!srs_config) {
+    LOG_E(NR_MAC, "DCI is triggering aperiodic SRS but there is no SRS configuration\n");
+    return;
+  }
+
+  int slot_offset = 0;
+  NR_SRS_Resource_t *srs_resource = NULL;
+  for(int rs = 0; rs < srs_config->srs_ResourceSetToAddModList->list.count; rs++) {
+
+    // Find aperiodic resource set
+    NR_SRS_ResourceSet_t *srs_resource_set = srs_config->srs_ResourceSetToAddModList->list.array[rs];
+    if(srs_resource_set->resourceType.present != NR_SRS_ResourceSet__resourceType_PR_aperiodic)
+      continue;
+    // the resource trigger need to match the DCI one
+    if(srs_resource_set->resourceType.choice.aperiodic->aperiodicSRS_ResourceTrigger != resource_trigger)
+      continue;
+    // if slotOffset is null -> offset = 0
+    if(srs_resource_set->resourceType.choice.aperiodic->slotOffset)
+      slot_offset = *srs_resource_set->resourceType.choice.aperiodic->slotOffset;
+
+    // Find the corresponding srs resource
+    for(int r1 = 0; r1 < srs_resource_set->srs_ResourceIdList->list.count; r1++) {
+      for (int r2 = 0; r2 < srs_config->srs_ResourceToAddModList->list.count; r2++) {
+        if ((*srs_resource_set->srs_ResourceIdList->list.array[r1] == srs_config->srs_ResourceToAddModList->list.array[r2]->srs_ResourceId) &&
+            (srs_config->srs_ResourceToAddModList->list.array[r2]->resourceType.present == NR_SRS_Resource__resourceType_PR_aperiodic)) {
+          srs_resource = srs_config->srs_ResourceToAddModList->list.array[r2];
+          break;
+        }
+      }
+    }
+  }
+
+  if(srs_resource == NULL) {
+    LOG_E(NR_MAC, "Couldn't find SRS aperiodic resource with trigger %ld\n", resource_trigger);
+    return;
+  }
+
+  AssertFatal(slot_offset >= DURATION_RX_TO_TX,"Slot offset between DCI and aperiodic SRS (%d) cannot be less than DURATION_RX_TO_TX (%d)\n",
+              slot_offset, DURATION_RX_TO_TX);
+  int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
+  int sched_slot = (slot + slot_offset) % n_slots_frame;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
+  if (!is_nr_UL_slot(tdd_config, sched_slot, mac->frame_type)) {
+    LOG_E(NR_MAC, "Slot for scheduling aperiodic SRS %d is not an UL slot\n", sched_slot);
+    return;
+  }
+  int sched_frame = frame + (slot + slot_offset >= n_slots_frame) % 1024;
+
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot);
+  fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].srs_config_pdu;
+  configure_srs_pdu(mac, srs_resource, srs_config_pdu, 0, 0);
+  fill_ul_config(ul_config, sched_frame, sched_slot, FAPI_NR_UL_CONFIG_TYPE_SRS);
+}
+
+
 // Periodic SRS scheduling
 bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slot) {
 
@@ -838,68 +972,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
       fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot);
       fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].srs_config_pdu;
 
-      srs_config_pdu->rnti = mac->crnti;
-      srs_config_pdu->handle = 0;
-      srs_config_pdu->bwp_size = current_UL_BWP->BWPSize;
-      srs_config_pdu->bwp_start = current_UL_BWP->BWPStart;
-      srs_config_pdu->subcarrier_spacing = current_UL_BWP->scs;
-      srs_config_pdu->cyclic_prefix = 0;
-      srs_config_pdu->num_ant_ports = srs_resource->nrofSRS_Ports;
-      srs_config_pdu->num_symbols = srs_resource->resourceMapping.nrofSymbols;
-      srs_config_pdu->num_repetitions = srs_resource->resourceMapping.repetitionFactor;
-      srs_config_pdu->time_start_position = srs_resource->resourceMapping.startPosition;
-      srs_config_pdu->config_index = srs_resource->freqHopping.c_SRS;
-      srs_config_pdu->sequence_id = srs_resource->sequenceId;
-      srs_config_pdu->bandwidth_index = srs_resource->freqHopping.b_SRS;
-      srs_config_pdu->comb_size = srs_resource->transmissionComb.present - 1;
-
-      switch(srs_resource->transmissionComb.present) {
-        case NR_SRS_Resource__transmissionComb_PR_n2:
-          srs_config_pdu->comb_offset = srs_resource->transmissionComb.choice.n2->combOffset_n2;
-          srs_config_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n2->cyclicShift_n2;
-          break;
-        case NR_SRS_Resource__transmissionComb_PR_n4:
-          srs_config_pdu->comb_offset = srs_resource->transmissionComb.choice.n4->combOffset_n4;
-          srs_config_pdu->cyclic_shift = srs_resource->transmissionComb.choice.n4->cyclicShift_n4;
-          break;
-        default:
-          LOG_W(NR_MAC, "Invalid or not implemented comb_size!\n");
-      }
-
-      srs_config_pdu->frequency_position = srs_resource->freqDomainPosition;
-      srs_config_pdu->frequency_shift = srs_resource->freqDomainShift;
-      srs_config_pdu->frequency_hopping = srs_resource->freqHopping.b_hop;
-      srs_config_pdu->group_or_sequence_hopping = srs_resource->groupOrSequenceHopping;
-      srs_config_pdu->resource_type = srs_resource->resourceType.present - 1;
-      srs_config_pdu->t_srs = period;
-      srs_config_pdu->t_offset = offset;
-
-#ifdef SRS_DEBUG
-      LOG_I(NR_MAC,"Frame = %i, slot = %i\n", frame, slot);
-      LOG_I(NR_MAC,"srs_config_pdu->rnti = 0x%04x\n", srs_config_pdu->rnti);
-      LOG_I(NR_MAC,"srs_config_pdu->handle = %u\n", srs_config_pdu->handle);
-      LOG_I(NR_MAC,"srs_config_pdu->bwp_size = %u\n", srs_config_pdu->bwp_size);
-      LOG_I(NR_MAC,"srs_config_pdu->bwp_start = %u\n", srs_config_pdu->bwp_start);
-      LOG_I(NR_MAC,"srs_config_pdu->subcarrier_spacing = %u\n", srs_config_pdu->subcarrier_spacing);
-      LOG_I(NR_MAC,"srs_config_pdu->cyclic_prefix = %u (0: Normal; 1: Extended)\n", srs_config_pdu->cyclic_prefix);
-      LOG_I(NR_MAC,"srs_config_pdu->num_ant_ports = %u (0 = 1 port, 1 = 2 ports, 2 = 4 ports)\n", srs_config_pdu->num_ant_ports);
-      LOG_I(NR_MAC,"srs_config_pdu->num_symbols = %u (0 = 1 symbol, 1 = 2 symbols, 2 = 4 symbols)\n", srs_config_pdu->num_symbols);
-      LOG_I(NR_MAC,"srs_config_pdu->num_repetitions = %u (0 = 1, 1 = 2, 2 = 4)\n", srs_config_pdu->num_repetitions);
-      LOG_I(NR_MAC,"srs_config_pdu->time_start_position = %u\n", srs_config_pdu->time_start_position);
-      LOG_I(NR_MAC,"srs_config_pdu->config_index = %u\n", srs_config_pdu->config_index);
-      LOG_I(NR_MAC,"srs_config_pdu->sequence_id = %u\n", srs_config_pdu->sequence_id);
-      LOG_I(NR_MAC,"srs_config_pdu->bandwidth_index = %u\n", srs_config_pdu->bandwidth_index);
-      LOG_I(NR_MAC,"srs_config_pdu->comb_size = %u (0 = comb size 2, 1 = comb size 4, 2 = comb size 8)\n", srs_config_pdu->comb_size);
-      LOG_I(NR_MAC,"srs_config_pdu->comb_offset = %u\n", srs_config_pdu->comb_offset);
-      LOG_I(NR_MAC,"srs_config_pdu->cyclic_shift = %u\n", srs_config_pdu->cyclic_shift);
-      LOG_I(NR_MAC,"srs_config_pdu->frequency_position = %u\n", srs_config_pdu->frequency_position);
-      LOG_I(NR_MAC,"srs_config_pdu->frequency_shift = %u\n", srs_config_pdu->frequency_shift);
-      LOG_I(NR_MAC,"srs_config_pdu->frequency_hopping = %u\n", srs_config_pdu->frequency_hopping);
-      LOG_I(NR_MAC,"srs_config_pdu->group_or_sequence_hopping = %u (0 = No hopping, 1 = Group hopping groupOrSequenceHopping, 2 = Sequence hopping)\n", srs_config_pdu->group_or_sequence_hopping);
-      LOG_I(NR_MAC,"srs_config_pdu->resource_type = %u (0: aperiodic, 1: semi-persistent, 2: periodic)\n", srs_config_pdu->resource_type);
-      LOG_I(NR_MAC,"srs_config_pdu->t_srs = %u\n", srs_config_pdu->t_srs);
-      LOG_I(NR_MAC,"srs_config_pdu->t_offset = %u\n", srs_config_pdu->t_offset);
-#endif
+      configure_srs_pdu(mac, srs_resource, srs_config_pdu, period, offset);
 
       fill_ul_config(ul_config, frame, slot, FAPI_NR_UL_CONFIG_TYPE_SRS);
       srs_scheduled = true;

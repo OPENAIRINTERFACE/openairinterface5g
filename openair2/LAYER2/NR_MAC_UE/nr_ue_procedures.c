@@ -536,6 +536,11 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     // - SECOND_DAI
     // - SRS_RESOURCE_IND
 
+    /* SRS_REQUEST */
+    AssertFatal(dci->srs_request.nbits == 2, "If SUL is supported in the cell, there is an additional bit in SRS request field\n");
+    if(dci->srs_request.val > 0)
+      nr_ue_aperiodic_srs_scheduling(mac, dci->srs_request.val, frame, slot);
+
     // Schedule PUSCH
     tda_info = get_ul_tda_info(current_UL_BWP, coreset_type, dci_ind->ss_type, get_rnti_type(mac, rnti), dci->time_domain_assignment.val);
     if (tda_info.nrOfSymbols == 0)
@@ -1072,8 +1077,9 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_1->tci_state = dci->transmission_configuration_indication.val;
     }
     /* SRS_REQUEST */
-    // if SUL is supported in the cell, there is an additional bit in this field and the value of this bit represents table 7.1.1.1-1 TS 38.212 FIXME!!!
-    dlsch_config_pdu_1_1->srs_config.aperiodicSRS_ResourceTrigger = (dci->srs_request.val & 0x11); // as per Table 7.3.1.1.2-24 TS 38.212
+    AssertFatal(dci->srs_request.nbits == 2, "If SUL is supported in the cell, there is an additional bit in SRS request field\n");
+    if(dci->srs_request.val > 0 )
+      nr_ue_aperiodic_srs_scheduling(mac, dci->srs_request.val, frame, slot);
     /* CBGTI */
     dlsch_config_pdu_1_1->cbgti = dci->cbgti.val;
     /* CBGFI */

@@ -189,6 +189,8 @@ int8_t nr_ue_process_csirs_measurements(module_id_t module_id, frame_t frame, in
 
 uint32_t get_ssb_frame(uint32_t test);
 
+void nr_ue_aperiodic_srs_scheduling(NR_UE_MAC_INST_t *mac, long resource_trigger, int frame, int slot);
+
 bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          PUCCH_sched_t *pucch,
                                          frame_t frame,
