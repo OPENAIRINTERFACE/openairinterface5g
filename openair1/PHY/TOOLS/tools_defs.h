@@ -34,6 +34,7 @@
 #include <assert.h>
 #include "PHY/sse_intrin.h"
 #include "common/utils/assertions.h"
+#include "common/utils/utils.h"
 
 #if defined(__x86_64__) || defined(__i386__)
 #define simd_q15_t __m128i
@@ -93,6 +94,72 @@ extern "C" {
     int64_t r;
     int64_t i;
   } c64_t;
+
+  typedef struct {
+    int dim1;
+    int dim2;
+    int dim3;
+    int dim4;
+  } fourDimArray_t;
+
+  static inline fourDimArray_t *allocateFourDimArray(int elmtSz, int dim1, int dim2, int dim3, int dim4)
+  {
+    int sz = elmtSz;
+    DevAssert(dim1 > 0);
+    sz *= dim1;
+    if (dim2) {
+      sz *= dim2;
+      if (dim3) {
+        sz *= dim3;
+        if (dim4)
+          sz *= dim4;
+      }
+    }
+    fourDimArray_t *tmp = (fourDimArray_t *)malloc16(sizeof(*tmp) + sz);
+    AssertFatal(tmp, "no more memory\n");
+    *tmp = (fourDimArray_t){dim1, dim2, dim3, dim4};
+    return tmp;
+  }
+
+#define CheckArrAllocated(workingVar, elementType, ArraY, diM1, diM2, diM3, diM4)                                        \
+  if (!(ArraY))                                                                                                          \
+    ArraY = allocateFourDimArray(sizeof(elementType), diM1, diM2, diM3, diM4);                                           \
+  else {                                                                                                                 \
+    DevAssert((diM1) == (ArraY)->dim1 && (diM2) == (ArraY)->dim2 && (diM3) == (ArraY)->dim3 && (diM4) == (ArraY)->dim4); \
+  }
+
+#define cast1Darray(workingVar, elementType, ArraY) elementType *workingVar = (elementType *)((ArraY) + 1);
+
+#define allocCast1D(workingVar, elementType, ArraY, dim1)           \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, 0, 0, 0); \
+  cast1Darray(workingVar, elementType, ArraY);
+
+#define cast2Darray(workingVar, elementType, ArraY) \
+  elementType(*workingVar)[(ArraY)->dim2] = (elementType(*)[(ArraY)->dim2])((ArraY) + 1);
+
+#define allocCast2D(workingVar, elementType, ArraY, dim1, dim2)        \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, 0, 0); \
+  cast2Darray(workingVar, elementType, ArraY);
+
+#define cast3Darray(workingVar, elementType, ArraY) \
+  elementType(*workingVar)[(ArraY)->dim2][(ArraY)->dim3] = (elementType(*)[(ArraY)->dim2][(ArraY)->dim3])((ArraY) + 1);
+
+#define allocCast3D(workingVar, elementType, ArraY, dim1, dim2, dim3)     \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, 0); \
+  cast3Darray(workingVar, elementType, ArraY);
+
+#define cast4Darray(workingVar, elementType, ArraY)                       \
+  elementType(*workingVar)[(ArraY)->dim2][(ArraY)->dim3][(ArraY)->dim4] = \
+      (elementType(*)[(ArraY)->dim2][(ArraY)->dim3][(ArraY)->dim4])((ArraY) + 1);
+
+#define allocCast4D(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4)  \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4); \
+  cast4Darray(workingVar, elementType, ArraY);
+
+#define clearArray(ArraY, elementType) \
+  memset((ArraY) + 1,                  \
+         0,                            \
+         sizeof(elementType) * (ArraY)->dim1 * max((ArraY)->dim2, 1) * max((ArraY)->dim3, 1) * max((ArraY)->dim4, 1))
 
 #define squaredMod(a) ((a).r*(a).r + (a).i*(a).i)
 #define csum(res, i1, i2) (res).r = (i1).r + (i2).r ; (res).i = (i1).i + (i2).i

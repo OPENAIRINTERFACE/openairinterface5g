@@ -1905,7 +1905,11 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       }
 
       nr_gnb_measurements(gNB, ulsch, pusch_vars, symbol, rel15_ul->nrOfLayers);
-
+      allocCast2D(n0_subband_power,
+                  unsigned int,
+                  gNB->measurements.n0_subband_power,
+                  frame_parms->nb_antennas_rx,
+                  frame_parms->N_RB_UL);
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
         if (symbol == rel15_ul->start_symbol_index) {
           pusch_vars->ulsch_power[aarx] = 0;
@@ -1918,7 +1922,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
         }
         for (int rb = 0; rb < rel15_ul->rb_size; rb++) {
           pusch_vars->ulsch_noise_power[aarx] +=
-              gNB->measurements.n0_subband_power[aarx][rel15_ul->bwp_start + rel15_ul->rb_start + rb] / rel15_ul->rb_size;
+              n0_subband_power[aarx][rel15_ul->bwp_start + rel15_ul->rb_start + rb] / rel15_ul->rb_size;
         }
         LOG_D(PHY,
               "aa %d, bwp_start%d, rb_start %d, rb_size %d: ulsch_power %d, ulsch_noise_power %d\n",

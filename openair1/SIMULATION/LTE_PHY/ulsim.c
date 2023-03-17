@@ -806,7 +806,7 @@ int main(int argc, char **argv) {
 
   if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
 
-  rate = (double)TBStable[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
+  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb - 1] / (coded_bits_per_codeword);
   printf("Rate = %f (mod %d), coded bits %u\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
   for (ch_realization=0; ch_realization<n_ch_rlz; ch_realization++) {
