@@ -980,7 +980,7 @@ class Containerize():
 		services = []
 		for s in allServices:
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
-			running = mySSH.getBefore().split('\r\n')[3:-1]
+			running = mySSH.getBefore().split('\r\n')[2:-1]
 			#logging.debug(f'running services: {running}')
 			if len(running) > 0: # something is running for that service
 				services.append(s)
