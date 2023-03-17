@@ -74,9 +74,11 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB,
   harq->slot=slot;
   harq->handled = 0;
   harq->status= NR_ACTIVE;
-  harq->new_rx = ulsch_pdu->pusch_data.new_data_indicator;
+  if (ulsch_pdu->pusch_data.new_data_indicator)
+    harq->harq_to_be_cleared = true;
   LOG_D(PHY,"ULSCH ID %d RNTI %x HARQ PID %d new data indicator %d\n",ulsch_id, ulsch_pdu->rnti, harq_pid, ulsch_pdu->pusch_data.new_data_indicator);
-  if (harq->new_rx)
+
+  if (ulsch_pdu->pusch_data.new_data_indicator)
     harq->round = 0;
   else
     harq->round++;
