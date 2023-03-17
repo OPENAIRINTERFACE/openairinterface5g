@@ -222,7 +222,7 @@ typedef struct {
 
 typedef struct {
   //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  unsigned int rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated received spatial signal power (dB)
   unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
   //! estimated rssi (dBm)
@@ -613,10 +613,10 @@ typedef struct PHY_VARS_gNB_s {
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PRS         prs_vars;
-  NR_gNB_PUSCH       **pusch_vars;
-  NR_gNB_PUCCH_t     **pucch;
-  NR_gNB_SRS_t       **srs;
-  NR_gNB_ULSCH_t     **ulsch;
+  NR_gNB_PUSCH *pusch_vars;
+  NR_gNB_PUCCH_t *pucch;
+  NR_gNB_SRS_t *srs;
+  NR_gNB_ULSCH_t *ulsch;
   NR_gNB_PHY_STATS_t phy_stats[MAX_MOBILES_PER_GNB];
   t_nrPolar_params    **polarParams;
 
@@ -811,7 +811,7 @@ typedef struct processingData_L1tx {
   nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NR_SYMBOLS_PER_SLOT];
-  NR_gNB_DLSCH_t ***dlsch;
+  NR_gNB_DLSCH_t **dlsch;
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;

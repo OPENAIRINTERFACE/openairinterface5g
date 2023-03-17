@@ -44,33 +44,17 @@
 
 //#define SRS_DEBUG
 
-NR_gNB_SRS_t *new_gNB_srs(void){
-  NR_gNB_SRS_t *srs;
-  srs = (NR_gNB_SRS_t *)malloc16(sizeof(NR_gNB_SRS_t));
-  srs->active = 0;
-  return (srs);
-}
-
-void free_gNB_srs(NR_gNB_SRS_t *srs)
+void nr_fill_srs(PHY_VARS_gNB *gNB, frame_t frame, slot_t slot, nfapi_nr_srs_pdu_t *srs_pdu)
 {
-  free_and_zero(srs);
-}
-
-void nr_fill_srs(PHY_VARS_gNB *gNB,
-                 frame_t frame,
-                 slot_t slot,
-                 nfapi_nr_srs_pdu_t *srs_pdu)
-{
-
   bool found = false;
   for (int i = 0; i < gNB->max_nb_srs; i++) {
-    if (gNB->srs[i]->active == 0) {
+    NR_gNB_SRS_t *srs = &gNB->srs[i];
+    if (srs->active == 0) {
       found = true;
-      NR_gNB_SRS_t  *srs = gNB->srs[i];
       srs->frame = frame;
       srs->slot = slot;
       srs->active = 1;
-      memcpy((void*)&srs->srs_pdu, (void*)srs_pdu, sizeof(nfapi_nr_srs_pdu_t));
+      memcpy((void *)&srs->srs_pdu, (void *)srs_pdu, sizeof(nfapi_nr_srs_pdu_t));
       break;
     }
   }

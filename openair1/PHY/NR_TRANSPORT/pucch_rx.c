@@ -55,18 +55,6 @@
 
 //#define DEBUG_NR_PUCCH_RX 1
 
-NR_gNB_PUCCH_t *new_gNB_pucch(void)
-{
-  NR_gNB_PUCCH_t *pucch = malloc16(sizeof(*pucch));
-  memset(pucch, 0, sizeof(*pucch));
-  return pucch;
-}
-
-void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
-{
-  free_and_zero(pucch);
-}
-
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
@@ -74,18 +62,25 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
 {
 
   if (NFAPI_MODE == NFAPI_MODE_PNF)
-    gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
+    gNB->pucch[0].active = 0; // check if ture in monolithic mode
 
   bool found = false;
   for (int i = 0; i < gNB->max_nb_pucch; i++) {
-    if (gNB->pucch[i]->active == 0) {
-      NR_gNB_PUCCH_t  *pucch = gNB->pucch[i];
+    NR_gNB_PUCCH_t *pucch = &gNB->pucch[i];
+    if (pucch->active == 0) {
       pucch->frame = frame;
       pucch->slot = slot;
       pucch->active = 1;
-      memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
-      LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",
-            i, pucch->frame, pucch->slot, pucch->pucch_pdu.format_type, pucch->pucch_pdu.bit_len_harq, pucch->pucch_pdu.sr_flag, pucch->pucch_pdu.bit_len_csi_part1);
+      memcpy((void *)&pucch->pucch_pdu, (void *)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
+      LOG_D(PHY,
+            "Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",
+            i,
+            pucch->frame,
+            pucch->slot,
+            pucch->pucch_pdu.format_type,
+            pucch->pucch_pdu.bit_len_harq,
+            pucch->pucch_pdu.sr_flag,
+            pucch->pucch_pdu.bit_len_csi_part1);
       found = true;
       break;
     }
@@ -157,10 +152,9 @@ int16_t idft12_im[12][12] = {
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int frame,
                       int slot,
-                      nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu)
+                      nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu,
+                      nfapi_nr_pucch_pdu_t *pucch_pdu)
 {
-
   c16_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int soffset = (slot & 3) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
@@ -170,7 +164,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
 
   NR_gNB_PHY_STATS_t *phy_stats = get_phy_stats(gNB, pucch_pdu->rnti);
-  AssertFatal(phy_stats != NULL,"No stat index found\n");
+  AssertFatal(phy_stats != NULL, "phy_stats shouldn't be NULL\n");
   phy_stats->frame = frame;
   NR_gNB_UCI_STATS_t *uci_stats = &phy_stats->uci_stats;
 
@@ -227,11 +221,21 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int prb_offset[2] = {pucch_pdu->bwp_start+pucch_pdu->prb_start, pucch_pdu->bwp_start+pucch_pdu->prb_start};
 
   pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag << 1);
-  nr_group_sequence_hopping(pucch_GroupHopping, pucch_pdu->hopping_id, 0, slot, &u[0], &v[0]); // calculating u and v value first hop
+  nr_group_sequence_hopping(pucch_GroupHopping,
+                            pucch_pdu->hopping_id,
+                            0,
+                            slot,
+                            &u[0],
+                            &v[0]); // calculating u and v value first hop
   LOG_D(PHY,"pucch0: u %d, v %d\n",u[0],v[0]);
 
   if (pucch_pdu->freq_hop_flag == 1) {
-    nr_group_sequence_hopping(pucch_GroupHopping, pucch_pdu->hopping_id, 1, slot, &u[1], &v[1]); // calculating u and v value second hop
+    nr_group_sequence_hopping(pucch_GroupHopping,
+                              pucch_pdu->hopping_id,
+                              1,
+                              slot,
+                              &u[1],
+                              &v[1]); // calculating u and v value second hop
     LOG_D(PHY,"pucch0 second hop: u %d, v %d\n",u[1],v[1]);
     prb_offset[1] = pucch_pdu->bwp_start + pucch_pdu->second_hop_prb;
   }
@@ -254,7 +258,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch],*tmp_rp;
 
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
-    uint8_t l2 = l+pucch_pdu->start_symbol_index;
+    uint8_t l2 = l + pucch_pdu->start_symbol_index;
 
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset[l]>= frame_parms->ofdm_symbol_size)
@@ -420,10 +424,22 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(sizeof *uci_pdu->harq->harq_list);
     uci_pdu->harq->harq_list[0].harq_value = !(index&0x01);
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f\n",
-          frame,slot,uci_pdu->harq->harq_list[0].harq_value==0?"ACK":"NACK",
-	  uci_pdu->harq->harq_confidence_level==0?"good":"bad",
-	  xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy));
+    LOG_D(PHY,
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, "
+          "cqi %d, SNRtimes10 %d, energy %f\n",
+          frame,
+          slot,
+          uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
+          uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
+          xrtmag_dBtimes10,
+          xrtmag_next_dBtimes10,
+          max_n0,
+          uci_stats->pucch0_n00,
+          uci_stats->pucch0_n01,
+          uci_stats->pucch0_thres,
+          cqi,
+          SNRtimes10,
+          10 * log10((double)sigenergy));
 
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -444,13 +460,22 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
     uci_pdu->harq->harq_list[1].harq_value = !(index&0x01);
     uci_pdu->harq->harq_list[0].harq_value = !((index>>1)&0x01);
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
-          frame,slot,
+    LOG_D(PHY,
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) "
+          "pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
+          frame,
+          slot,
           uci_pdu->harq->harq_list[1].harq_value == 0 ? "ACK" : "NACK",
           uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
           uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
-          xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,
-          uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10);
+          xrtmag_dBtimes10,
+          xrtmag_next_dBtimes10,
+          max_n0,
+          uci_stats->pucch0_n00,
+          uci_stats->pucch0_n01,
+          uci_stats->pucch0_thres,
+          cqi,
+          SNRtimes10);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
@@ -463,24 +488,21 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 }
 
-
-
-
-
-void nr_decode_pucch1(  c16_t **rxdataF,
-		        pucch_GroupHopping_t pucch_GroupHopping,
-                        uint32_t n_id,       // hoppingID higher layer parameter  
-                        uint64_t *payload,
-		       	NR_DL_FRAME_PARMS *frame_parms, 
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit) {
+void nr_decode_pucch1(c16_t **rxdataF,
+		      pucch_GroupHopping_t pucch_GroupHopping,
+                      uint32_t n_id,       // hoppingID higher layer parameter  
+                      uint64_t *payload,
+		      NR_DL_FRAME_PARMS *frame_parms, 
+                      int16_t amp,
+                      int nr_tti_tx,
+                      uint8_t m0,
+                      uint8_t nrofSymbols,
+                      uint8_t startingSymbolIndex,
+                      uint16_t startingPRB,
+                      uint16_t startingPRB_intraSlotHopping,
+                      uint8_t timeDomainOCC,
+                      uint8_t nr_bit)
+{
 #ifdef DEBUG_NR_PUCCH_RX
   printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%lp m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
          nr_tti_tx,payload,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
@@ -1174,9 +1196,16 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     }
   }
-  LOG_D(PHY,"%d.%d Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
-        frame, slot, pucch_pdu->nr_of_symbols,pucch_pdu->prb_size,
-        pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
+  LOG_D(PHY,
+        "%d.%d Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
+        frame,
+        slot,
+        pucch_pdu->nr_of_symbols,
+        pucch_pdu->prb_size,
+        pucch_pdu->bit_len_harq,
+        pucch_pdu->sr_flag,
+        pucch_pdu->bit_len_csi_part1,
+        pucch_pdu->bit_len_csi_part2);
 
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
@@ -1754,32 +1783,65 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 }
 
 void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
-
-  int strpos=0;
+  int strpos = 0;
   char output[16384];
 
   for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
     NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
-    if (stats->active) {
-      NR_gNB_UCI_STATS_t *uci_stats = &stats->uci_stats;
-      if (uci_stats->pucch0_sr_trials > 0)
-        strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
-                        i,stats->rnti,uci_stats->pucch0_sr_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_sr_thres,dB_fixed(uci_stats->current_pucch0_sr_stat0),dB_fixed(uci_stats->current_pucch0_sr_stat1),uci_stats->pucch0_positive_SR);
-      if (uci_stats->pucch01_trials > 0)
-        strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
-                        i,stats->rnti,uci_stats->pucch01_trials,uci_stats->pucch0_n01,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch01_DTX);
+    if (!stats->active)
+      return;
+    NR_gNB_UCI_STATS_t *uci_stats = &stats->uci_stats;
+    if (uci_stats->pucch0_sr_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current "
+                        "pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch0_sr_trials,
+                        uci_stats->pucch0_n00,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_sr_thres,
+                        dB_fixed(uci_stats->current_pucch0_sr_stat0),
+                        dB_fixed(uci_stats->current_pucch0_sr_stat1),
+                        uci_stats->pucch0_positive_SR);
+    if (uci_stats->pucch01_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current "
+                        "pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch01_trials,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_thres,
+                        dB_fixed(uci_stats->current_pucch0_stat0),
+                        dB_fixed(uci_stats->current_pucch0_stat1),
+                        uci_stats->pucch01_DTX);
 
-      if (uci_stats->pucch02_trials > 0)
-        strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
-                        i,stats->rnti,uci_stats->pucch02_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch02_DTX);
+    if (uci_stats->pucch02_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current "
+                        "pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch02_trials,
+                        uci_stats->pucch0_n00,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_thres,
+                        dB_fixed(uci_stats->current_pucch0_stat0),
+                        dB_fixed(uci_stats->current_pucch0_stat1),
+                        uci_stats->pucch02_DTX);
 
-      if (uci_stats->pucch2_trials > 0)
-        strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
-                        i,stats->rnti,
+    if (uci_stats->pucch2_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
+                        i,
+                        stats->rnti,
                         uci_stats->pucch2_trials,
                         uci_stats->pucch2_DTX);
-    }
   }
-  if (fd) fprintf(fd,"%s",output);
-  else    printf("%s",output);
+  if (fd)
+    fprintf(fd, "%s", output);
+  else
+    printf("%s", output);
 }

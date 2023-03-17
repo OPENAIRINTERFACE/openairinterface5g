@@ -130,7 +130,6 @@ void tx_func(void *param) {
 
 void rx_func(void *param)
 {
-
   processingData_L1_t *info = (processingData_L1_t *) param;
   PHY_VARS_gNB *gNB = info->gNB;
   int frame_rx = info->frame_rx;
@@ -179,7 +178,7 @@ void rx_func(void *param)
   reset_active_ulsch(gNB, frame_tx);
 
   // RX processing
-  int rx_slot_type = nr_slot_select(cfg,frame_rx,slot_rx);
+  int rx_slot_type = nr_slot_select(cfg, frame_rx, slot_rx);
   if (rx_slot_type == NR_UPLINK_SLOT || rx_slot_type == NR_MIXED_SLOT) {
     // UE-specific RX processing for subframe n
     // TODO: check if this is correct for PARALLEL_RU_L1_TRX_SPLIT

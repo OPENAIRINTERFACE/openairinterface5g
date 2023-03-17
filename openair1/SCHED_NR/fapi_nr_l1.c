@@ -100,10 +100,7 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 
 }*/
 
-
-void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
-                               int frame,int slot,
-                               nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu)
+void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx, int frame, int slot, nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu)
 {
   int found = 0;
 
@@ -121,7 +118,6 @@ void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
     LOG_E(MAC,"CSI-RS list is full\n");
 }
 
-
 void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                             uint8_t *sdu)
@@ -133,7 +129,6 @@ void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
 
 void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
 {
-  
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
   nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
@@ -202,8 +197,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-            AssertFatal(msgTx->num_pdsch_slot < gNB->max_nb_pdsch,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-                        msgTx->num_pdsch_slot, gNB->max_nb_pdsch);
+            AssertFatal(msgTx->num_pdsch_slot < gNB->max_nb_pdsch,
+                        "Number of PDSCH PDUs %d exceeded the limit %d\n",
+                        msgTx->num_pdsch_slot,
+                        gNB->max_nb_pdsch);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }

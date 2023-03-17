@@ -983,7 +983,7 @@ int main(int argc, char **argv)
       int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = &UE->dl_harq_processes[0][harq_pid];
 
-      NR_gNB_DLSCH_t *gNB_dlsch = msgDataTx->dlsch[0][0];
+      NR_gNB_DLSCH_t *gNB_dlsch = &msgDataTx->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
       
       UE_harq_process->ack = 0;
@@ -1245,8 +1245,10 @@ int main(int argc, char **argv)
 
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, block %d)\n",
-	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3);
+             1000 >> *scc->ssbSubcarrierSpacing,
+             g_rbSize,
+             g_mcsIndex,
+             msgDataTx->dlsch[0][0].harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0] << 3);
       printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");

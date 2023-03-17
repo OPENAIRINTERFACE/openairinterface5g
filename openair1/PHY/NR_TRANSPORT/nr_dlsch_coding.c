@@ -48,13 +48,8 @@
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
-
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, 
-                    uint16_t N_RB,
-                    const NR_DL_FRAME_PARMS* frame_parms) {
-
-  NR_gNB_DLSCH_t *dlsch = *dlschptr;
-
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch, uint16_t N_RB, const NR_DL_FRAME_PARMS *frame_parms)
+{
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;
 
@@ -92,14 +87,10 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
   }
   free(dlsch->txdataF);
   free(dlsch->ue_spec_bf_weights);
-
-  free(dlsch);
-  *dlschptr = NULL;
 }
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
-                              uint16_t N_RB) {
-
+NR_gNB_DLSCH_t new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms, uint16_t N_RB)
+{
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
 
@@ -110,34 +101,32 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   LOG_D(PHY,"Allocating %d segments (MAX %d, N_PRB %d)\n",a_segments,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER,N_RB);
   uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
-  NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
-  AssertFatal(dlsch, "cannot allocate dlsch\n");
-  bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
+  NR_gNB_DLSCH_t dlsch;
 
   int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer
 
-  dlsch->txdataF = (int32_t **)malloc16(max_layers*sizeof(int32_t *));
+  dlsch.txdataF = (int32_t **)malloc16(max_layers * sizeof(int32_t *));
 
-  dlsch->ue_spec_bf_weights = (int32_t ***)malloc16(max_layers*sizeof(int32_t **));
+  dlsch.ue_spec_bf_weights = (int32_t ***)malloc16(max_layers * sizeof(int32_t **));
   for (int layer=0; layer<max_layers; layer++) {
-    dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64*sizeof(int32_t *));
+    dlsch.ue_spec_bf_weights[layer] = (int32_t **)malloc16(64 * sizeof(int32_t *));
 
     for (int aa=0; aa<64; aa++) {
-      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      dlsch.ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
 
       for (int re=0; re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
-        dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+        dlsch.ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
       }
     }
-    dlsch->txdataF[layer] = (int32_t *)malloc16((txdataf_size)*sizeof(int32_t));
+    dlsch.txdataF[layer] = (int32_t *)malloc16((txdataf_size) * sizeof(int32_t));
   }
 
   int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
-  dlsch->mod_symbs = (int32_t **)malloc16(nb_codewords*sizeof(int32_t *));
+  dlsch.mod_symbs = (int32_t **)malloc16(nb_codewords * sizeof(int32_t *));
   for (int q=0; q<nb_codewords; q++)
-    dlsch->mod_symbs[q] = (int32_t *)malloc16(txdataf_size*max_layers*sizeof(int32_t));
+    dlsch.mod_symbs[q] = (int32_t *)malloc16(txdataf_size * max_layers * sizeof(int32_t));
 
-  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  NR_DL_gNB_HARQ_t *harq = &dlsch.harq_process;
   bzero(harq, sizeof(NR_DL_gNB_HARQ_t));
   harq->b = malloc16(dlsch_bytes);
   AssertFatal(harq->b, "cannot allocate memory for harq->b\n");
@@ -276,9 +265,13 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
                       uint8_t slot,
                       NR_DL_gNB_HARQ_t *harq,
                       NR_DL_FRAME_PARMS *frame_parms,
-		      unsigned char * output,
-                      time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
-                      time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
+                      unsigned char *output,
+                      time_stats_t *tinput,
+                      time_stats_t *tprep,
+                      time_stats_t *tparity,
+                      time_stats_t *toutput,
+                      time_stats_t *dlsch_rate_matching_stats,
+                      time_stats_t *dlsch_interleaving_stats,
                       time_stats_t *dlsch_segmentation_stats)
 {
   encoder_implemparams_t impp;
