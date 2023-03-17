@@ -188,7 +188,7 @@ services:
             # Slice 2 for ims
             - DNN_NI2=ims
             - TYPE2=IPv4v6
-            - DNN_RANGE2=12.2.1.1 - 12.2.1.254
+            - DNN_RANGE2=12.1.9.2 - 12.1.9.254
             - NSSAI_SST2=1
             - SESSION_AMBR_UL2=10Gbps
             - SESSION_AMBR_DL2=10Gbps
@@ -203,8 +203,6 @@ services:
     oai-spgwu-tiny:
         container_name: "oai-spgwu-tiny"
         image: oaisoftwarealliance/oai-spgwu-tiny:develop
-        #for ims we need to execute below command once the container is running
-        # iptables -t nat -A POSTROUTING -o eth0 -s 12.2.1.0/24 -j SNAT --to 192.168.70.134
         environment:
             - TZ=Europe/Paris
             - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
