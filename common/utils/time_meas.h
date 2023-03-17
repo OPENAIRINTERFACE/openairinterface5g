@@ -153,15 +153,17 @@ static inline void start_meas(time_stats_t *ts) {
 static inline void stop_meas(time_stats_t *ts) {
   if (opp_enabled) {
     long long out = rdtsc_oai();
-    ts->diff += (out-ts->in);
-    /// process duration is the difference between two clock points
-    ts->p_time = (out-ts->in);
-    ts->diff_square += ((double)out-ts->in)*((double)out-ts->in);
+    if (ts->in) {
+      ts->diff += (out - ts->in);
+      /// process duration is the difference between two clock points
+      ts->p_time = (out - ts->in);
+      ts->diff_square += ((double)out - ts->in) * ((double)out - ts->in);
 
-    if ((out-ts->in) > ts->max)
-      ts->max = out-ts->in;
+      if ((out - ts->in) > ts->max)
+        ts->max = out - ts->in;
 
-    ts->meas_flag=0;
+      ts->meas_flag = 0;
+    }
   }
 }
 

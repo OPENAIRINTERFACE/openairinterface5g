@@ -2609,6 +2609,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
       int ssbri_bits = ceil(log2(nb_ssb));
 
       int ssb_rsrp[2][nb_meas]; // the array contains index and RSRP of each SSB to be reported (nb_meas highest RSRPs)
+      memset(ssb_rsrp, 0, sizeof(ssb_rsrp));
 
       //TODO replace the following 2 lines with a function to order the nb_meas highest SSB RSRPs
       for (int i=0; i<nb_ssb; i++) {

@@ -831,6 +831,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx = n_rx;
+  UE->frame_parms.nb_antenna_ports_gNB = n_tx;
   UE->max_ldpc_iterations = max_ldpc_iterations;
 
   if (run_initial_sync==1)

@@ -92,14 +92,16 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
               int,
               ue->measurements.rx_spatial_power,
               NUMBER_OF_CONNECTED_gNB_MAX,
+              frame_parms->nb_antenna_ports_gNB,
               frame_parms->nb_antennas_rx,
-              frame_parms->nb_antenna_ports_gNB);
+              false);
   allocCast3D(rx_spatial_power_dB,
               unsigned short,
               ue->measurements.rx_spatial_power_dB,
               NUMBER_OF_CONNECTED_gNB_MAX,
+              frame_parms->nb_antenna_ports_gNB,
               frame_parms->nb_antennas_rx,
-              frame_parms->nb_antenna_ports_gNB);
+              false);
 
   // signal measurements
   for (gNB_id = 0; gNB_id < ue->n_connected_gNB; gNB_id++){
@@ -111,7 +113,8 @@ void nr_ue_measurements(PHY_VARS_NR_UE *ue,
       ue->measurements.rx_power[gNB_id][aarx] = 0;
 
       for (aatx = 0; aatx < frame_parms->nb_antenna_ports_gNB; aatx++){
-        rx_spatial_power[gNB_id][aatx][aarx] = (signal_energy_nodc(&dl_ch_estimates[gNB_id][ch_offset], N_RB_DL * NR_NB_SC_PER_RB));
+        const int z=signal_energy_nodc(&dl_ch_estimates[gNB_id][ch_offset], N_RB_DL * NR_NB_SC_PER_RB);
+        rx_spatial_power[gNB_id][aatx][aarx] = z;
 
         if (rx_spatial_power[gNB_id][aatx][aarx] < 0)
           rx_spatial_power[gNB_id][aatx][aarx] = 0;

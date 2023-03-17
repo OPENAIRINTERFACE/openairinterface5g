@@ -150,13 +150,15 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
               unsigned int,
               gNB->measurements.n0_subband_power,
               frame_parms->nb_antennas_rx,
-              frame_parms->N_RB_UL);
+              frame_parms->N_RB_UL,
+              false);
   clearArray(gNB->measurements.n0_subband_power, unsigned int);
   allocCast2D(n0_subband_power_dB,
               unsigned int,
               gNB->measurements.n0_subband_power_dB,
               frame_parms->nb_antennas_rx,
-              frame_parms->N_RB_UL);
+              frame_parms->N_RB_UL,
+              false);
 
   for (int s=first_symb;s<(first_symb+num_symb);s++) {
     int offset0 = ((slot&3)*frame_parms->symbols_per_slot + s) * frame_parms->ofdm_symbol_size;
@@ -233,31 +235,26 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB,
   PHY_MEASUREMENTS_gNB *meas = &gNB->measurements;
   NR_DL_FRAME_PARMS      *fp = &gNB->frame_parms;
   int              ch_offset = fp->ofdm_symbol_size * symbol;
+  int N_RB_UL = ulsch->harq_process->ulsch_pdu.rb_size;
+  ulsch_measurements_gNB *ulsch_measurements = &ulsch->ulsch_measurements;
 
-  int N_RB_UL = gNB->ulsch->harq_processes->ulsch_pdu.rb_size;
-  int rx_power[NUMBER_OF_NR_ULSCH_MAX][fp->nb_antennas_rx];
-  rx_power_tot[ulsch_id] = 0;
-  allocCast3D(rx_spatial_power, int, meas->rx_spatial_power, NUMBER_OF_NR_ULSCH_MAX, nrOfLayers, fp->nb_antennas_rx);
-  allocCast3D(rx_spatial_power_dB,
-              unsigned short,
-              meas->rx_spatial_power_dB,
-              NUMBER_OF_NR_ULSCH_MAX,
-              nrOfLayers,
-              fp->nb_antennas_rx);
+  int rx_power[fp->nb_antennas_rx];
+  allocCast2D(rx_spatial_power, int, ulsch_measurements->rx_spatial_power, nrOfLayers, fp->nb_antennas_rx, true);
+  allocCast2D(rx_spatial_power_dB, unsigned short, ulsch_measurements->rx_spatial_power_dB, nrOfLayers, fp->nb_antennas_rx, true);
   for (int aarx = 0; aarx < fp->nb_antennas_rx; aarx++){
     rx_power[aarx] = 0;
 
     for (int aatx = 0; aatx < nrOfLayers; aatx++){
-      rx_spatial_power[ulsch_id][aatx][aarx] =
-          (signal_energy_nodc(&gNB->pusch_vars[ulsch_id]->ul_ch_estimates[aatx * fp->nb_antennas_rx + aarx][ch_offset],
+      rx_spatial_power[aatx][aarx] =
+          (signal_energy_nodc(&pusch_vars->ul_ch_estimates[aatx * fp->nb_antennas_rx + aarx][ch_offset],
                               N_RB_UL * NR_NB_SC_PER_RB));
 
-      if (rx_spatial_power[ulsch_id][aatx][aarx] < 0) {
-        rx_spatial_power[ulsch_id][aatx][aarx] = 0;
+      if (rx_spatial_power[aatx][aarx] < 0) {
+        rx_spatial_power[aatx][aarx] = 0;
       }
 
-      rx_spatial_power_dB[ulsch_id][aatx][aarx] = (unsigned short)dB_fixed(rx_spatial_power[ulsch_id][aatx][aarx]);
-      rx_power[ulsch_id][aarx] += rx_spatial_power[ulsch_id][aatx][aarx];
+      rx_spatial_power_dB[aatx][aarx] = (unsigned short)dB_fixed(rx_spatial_power[aatx][aarx]);
+      rx_power[aarx] += rx_spatial_power[aatx][aarx];
     }
     LOG_D(PHY, "[RNTI %04x] RX power in antenna %d = %d\n", ulsch->rnti, aarx, rx_power[aarx]);
 

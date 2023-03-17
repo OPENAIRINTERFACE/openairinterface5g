@@ -1909,7 +1909,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                   unsigned int,
                   gNB->measurements.n0_subband_power,
                   frame_parms->nb_antennas_rx,
-                  frame_parms->N_RB_UL);
+                  frame_parms->N_RB_UL,
+                  false);
       for (aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
         if (symbol == rel15_ul->start_symbol_index) {
           pusch_vars->ulsch_power[aarx] = 0;

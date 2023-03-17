@@ -100,6 +100,7 @@ extern "C" {
     int dim2;
     int dim3;
     int dim4;
+    uint8_t data[];
   } fourDimArray_t;
 
   static inline fourDimArray_t *allocateFourDimArray(int elmtSz, int dim1, int dim2, int dim3, int dim4)
@@ -115,49 +116,55 @@ extern "C" {
           sz *= dim4;
       }
     }
-    fourDimArray_t *tmp = (fourDimArray_t *)malloc16(sizeof(*tmp) + sz);
+    fourDimArray_t *tmp = (fourDimArray_t *)malloc16_clear(sizeof(*tmp) + sz);
     AssertFatal(tmp, "no more memory\n");
     *tmp = (fourDimArray_t){dim1, dim2, dim3, dim4};
     return tmp;
   }
 
-#define CheckArrAllocated(workingVar, elementType, ArraY, diM1, diM2, diM3, diM4)                                        \
-  if (!(ArraY))                                                                                                          \
-    ArraY = allocateFourDimArray(sizeof(elementType), diM1, diM2, diM3, diM4);                                           \
-  else {                                                                                                                 \
-    DevAssert((diM1) == (ArraY)->dim1 && (diM2) == (ArraY)->dim2 && (diM3) == (ArraY)->dim3 && (diM4) == (ArraY)->dim4); \
+#define CheckArrAllocated(workingVar, elementType, ArraY, diM1, diM2, diM3, diM4, resizeAllowed)                           \
+  if (!(ArraY))                                                                                                            \
+    ArraY = allocateFourDimArray(sizeof(elementType), diM1, diM2, diM3, diM4);                                             \
+  else {                                                                                                                   \
+    if ((resizeAllowed)                                                                                                    \
+        && ((diM1) != (ArraY)->dim1 || (diM2) != (ArraY)->dim2 || (diM3) != (ArraY)->dim3 || (diM4) != (ArraY)->dim4)) {   \
+      LOG_I(PHY, "resizing %s to %d/%d/%d/%d\n", #ArraY, (diM1), (diM2), (diM3), (diM4));                                  \
+      free(ArraY);                                                                                                         \
+      ArraY = allocateFourDimArray(sizeof(elementType), diM1, diM2, diM3, diM4);                                           \
+    } else                                                                                                                 \
+      DevAssert((diM1) == (ArraY)->dim1 && (diM2) == (ArraY)->dim2 && (diM3) == (ArraY)->dim3 && (diM4) == (ArraY)->dim4); \
   }
 
-#define cast1Darray(workingVar, elementType, ArraY) elementType *workingVar = (elementType *)((ArraY) + 1);
+#define cast1Darray(workingVar, elementType, ArraY) elementType *workingVar = (elementType *)((ArraY)->data);
 
-#define allocCast1D(workingVar, elementType, ArraY, dim1)           \
-  CheckArrAllocated(workingVar, elementType, ArraY, dim1, 0, 0, 0); \
+#define allocCast1D(workingVar, elementType, ArraY, dim1, resizeAllowed)           \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, 0, 0, 0, resizeAllowed); \
   cast1Darray(workingVar, elementType, ArraY);
 
 #define cast2Darray(workingVar, elementType, ArraY) \
-  elementType(*workingVar)[(ArraY)->dim2] = (elementType(*)[(ArraY)->dim2])((ArraY) + 1);
+  elementType(*workingVar)[(ArraY)->dim2] = (elementType(*)[(ArraY)->dim2])((ArraY)->data);
 
-#define allocCast2D(workingVar, elementType, ArraY, dim1, dim2)        \
-  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, 0, 0); \
+#define allocCast2D(workingVar, elementType, ArraY, dim1, dim2, resizeAllowed)        \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, 0, 0, resizeAllowed); \
   cast2Darray(workingVar, elementType, ArraY);
 
 #define cast3Darray(workingVar, elementType, ArraY) \
-  elementType(*workingVar)[(ArraY)->dim2][(ArraY)->dim3] = (elementType(*)[(ArraY)->dim2][(ArraY)->dim3])((ArraY) + 1);
+  elementType(*workingVar)[(ArraY)->dim2][(ArraY)->dim3] = (elementType(*)[(ArraY)->dim2][(ArraY)->dim3])((ArraY)->data);
 
-#define allocCast3D(workingVar, elementType, ArraY, dim1, dim2, dim3)     \
-  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, 0); \
+#define allocCast3D(workingVar, elementType, ArraY, dim1, dim2, dim3, resizeAllowed)     \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, 0, resizeAllowed); \
   cast3Darray(workingVar, elementType, ArraY);
 
 #define cast4Darray(workingVar, elementType, ArraY)                       \
   elementType(*workingVar)[(ArraY)->dim2][(ArraY)->dim3][(ArraY)->dim4] = \
-      (elementType(*)[(ArraY)->dim2][(ArraY)->dim3][(ArraY)->dim4])((ArraY) + 1);
+      (elementType(*)[(ArraY)->dim2][(ArraY)->dim3][(ArraY)->dim4])((ArraY)->data);
 
-#define allocCast4D(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4)  \
-  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4); \
+#define allocCast4D(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4, resizeAllowed)  \
+  CheckArrAllocated(workingVar, elementType, ArraY, dim1, dim2, dim3, dim4, resizeAllowed); \
   cast4Darray(workingVar, elementType, ArraY);
 
 #define clearArray(ArraY, elementType) \
-  memset((ArraY) + 1,                  \
+  memset((ArraY)->data,                  \
          0,                            \
          sizeof(elementType) * (ArraY)->dim1 * max((ArraY)->dim2, 1) * max((ArraY)->dim3, 1) * max((ArraY)->dim4, 1))
 

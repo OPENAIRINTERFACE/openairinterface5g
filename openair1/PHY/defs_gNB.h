@@ -229,9 +229,9 @@ typedef struct {
 
 typedef struct {
   //! estimated received spatial signal power (linear)
-  unsigned int rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  fourDimArray_t * rx_spatial_power;
   //! estimated received spatial signal power (dB)
-  unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  fourDimArray_t * rx_spatial_power_dB;
   //! estimated rssi (dBm)
   int rx_rssi_dBm;
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
