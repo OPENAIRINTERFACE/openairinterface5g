@@ -1443,7 +1443,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     if (rbStart + retInfo->rbSize > bwpSize) {
-      LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL retransmission: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d) \n",
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL retransmission: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d) \n",
             UE->rnti,
             frame,
             slot,
@@ -1683,7 +1683,7 @@ void pf_ul(module_id_t module_id,
       while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
       if (rbStart + min_rb >= bwpSize) {
-        LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate continuous UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
+        LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate continuous UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
               UE->rnti,
               frame,
               slot,
