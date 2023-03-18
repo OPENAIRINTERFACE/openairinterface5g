@@ -111,7 +111,7 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
     e1Setup->localAddressF1U = strdup(*(GNBParamList.paramarray[0][GNB_LOCAL_S_ADDRESS_IDX].strptr));
     e1Setup->localPortF1U = *(GNBParamList.paramarray[0][GNB_LOCAL_S_PORTD_IDX].uptr);
     get_NGU_S1U_addr(&e1Setup->localAddressN3, &e1Setup->localPortN3);
-    e1Setup->remotePortN3 = GTPV1_U_PORT_NUMBER;
+    e1Setup->remotePortN3 = e1Setup->localPortN3 ;
 
     if (separate_CUUP_process) {
       paramlist_def_t GNBE1ParamList = {GNB_CONFIG_STRING_E1_PARAMETERS, NULL, 0};
