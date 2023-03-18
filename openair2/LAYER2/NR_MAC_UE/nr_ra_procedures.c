@@ -164,25 +164,25 @@ void init_RA(module_id_t mod_id,
   NR_SearchSpaceId_t ss_id = -1;
   NR_SearchSpace_t *ss = NULL;
 
-  if(mac->scc_SIB) {
-    commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-    ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-  }
-  else{
-    if (mac->scc) {
-      NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      if (ra_ss) {
-        commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      }
+  if (mac->scc) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
     }
-    if (ss_id < 0) {
-      if (mac->current_DL_BWP.bwp_id>0) {
-        ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        if (ra_ss) {
-          commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-          ss_id = *mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        }
+  } else if (mac->scc_SIB) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
+    }
+  }
+  if (ss_id < 0) {
+    if (mac->current_DL_BWP.bwp_id>0) {
+      ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *ra_ss;
       }
     }
   }

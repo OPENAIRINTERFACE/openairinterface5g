@@ -196,8 +196,6 @@ typedef struct {
 
 /*! \brief gNB common channels */
 typedef struct {
-  int physCellId;
-  int p_gNB;
   int Ncp;
   int nr_band;
   frame_type_t frame_type;

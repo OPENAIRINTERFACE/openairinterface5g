@@ -84,7 +84,6 @@
 #define GNB_CONFIG_STRING_MSG1SUBCARRIERSPACING                 "msg1_SubcarrierSpacing"                           
 #define GNB_CONFIG_STRING_RESTRICTEDSETCONFIG                   "restrictedSetConfig"
 #define GNB_CONFIG_STRING_MSG3TRANSFPREC                        "msg3_transformPrecoder"
-#define GNB_CONFIG_STRING_PUSCHTIMEDOMAINALLOCATIONLIST         "puschTimeDomainAllocationList"
 #define GNB_CONFIG_STRING_MSG3DELTAPREABMLE                     "msg3_DeltaPreamble"
 #define GNB_CONFIG_STRING_P0NOMINALWITHGRANT                    "p0_NominalWithGrant"
 #define GNB_CONFIG_STRING_PUCCHGROUPHOPPING                     "pucchGroupHopping"

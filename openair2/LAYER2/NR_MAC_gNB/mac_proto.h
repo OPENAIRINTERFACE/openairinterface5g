@@ -460,6 +460,7 @@ int get_cce_index(const gNB_MAC_INST *nrmac,
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   long transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
