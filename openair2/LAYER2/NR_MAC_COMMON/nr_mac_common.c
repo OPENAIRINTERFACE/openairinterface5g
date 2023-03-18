@@ -2840,7 +2840,10 @@ long get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_
   if (dci_format == NR_UL_DCI_FORMAT_0_1 && current_UL_BWP && current_UL_BWP->pusch_Config && current_UL_BWP->pusch_Config->transformPrecoder)
     return *current_UL_BWP->pusch_Config->transformPrecoder;
 
-  return current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder ? 0 : 1;
+  if (current_UL_BWP->rach_ConfigCommon && current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder)
+    return NR_PUSCH_Config__transformPrecoder_enabled;
+
+  return NR_PUSCH_Config__transformPrecoder_disabled;
 }
 
 uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
