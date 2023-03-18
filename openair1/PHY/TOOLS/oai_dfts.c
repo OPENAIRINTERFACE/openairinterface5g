@@ -9068,7 +9068,7 @@ void idft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_fl
           int sz=idft_ftab[sizeidx].size;
           int16_t tmp[sz*2] __attribute__ ((aligned(32))); // input and output are not in right type (int16_t instead of c16_t)
           memcpy(tmp, input, sizeof tmp);
-          dft_ftab[sizeidx].func(tmp,output,scale_flag);
+          idft_ftab[sizeidx].func(tmp,output,scale_flag);
         } else
           idft_ftab[sizeidx].func(input,output,scale_flag);
 };
