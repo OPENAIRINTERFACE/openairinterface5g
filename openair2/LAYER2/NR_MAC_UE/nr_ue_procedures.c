@@ -319,6 +319,11 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   mac->dl_config_request.sfn = frame;
   mac->dl_config_request.slot = ssb_start_symbol/14;
 
+  if(get_softmodem_params()->phy_test)
+    mac->state = UE_CONNECTED;
+  else if(mac->state == UE_NOT_SYNC)
+    mac->state = UE_SYNC;
+
   return 0;
 }
 
