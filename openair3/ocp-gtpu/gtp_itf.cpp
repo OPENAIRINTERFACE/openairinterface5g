@@ -17,6 +17,7 @@ extern "C" {
 #include <openair2/COMMON/gtpv1_u_messages_types.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
+#include <openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h>
 #include <openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "sim.h"
@@ -748,7 +749,7 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
                                       create_tunnel_req->outgoing_qfi[i],
                                       create_tunnel_req->dst_addr[i],
                                       dstport,
-                                      pdcp_data_req,
+                                      nr_pdcp_data_req_drb,
                                       sdap_data_req);
     create_tunnel_resp->status=0;
     create_tunnel_resp->ue_id=create_tunnel_req->ue_id;

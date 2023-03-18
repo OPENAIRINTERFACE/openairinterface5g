@@ -82,7 +82,7 @@
 #include "rrc_gNB_GTPV1U.h"
 
 #include "nr_pdcp/nr_pdcp_entity.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "intertask_interface.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
@@ -104,15 +104,6 @@
 //#define XER_PRINT
 
 extern RAN_CONTEXT_t RC;
-
-extern void pdcp_config_set_security(const protocol_ctxt_t *const ctxt_pP,
-                                     pdcp_t *const pdcp_pP,
-                                     const rb_id_t rb_idP,
-                                     const uint16_t lc_idP,
-                                     const uint8_t security_modeP,
-                                     uint8_t *const kRRCenc,
-                                     uint8_t *const kRRCint,
-                                     uint8_t *const  kUPenc);
 
 static inline uint64_t bitStr_to_uint64(BIT_STRING_t *asn);
 
@@ -1289,14 +1280,15 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   } // if (*SRB_configList != NULL)
 
   LOG_I(NR_RRC, "Set PDCP security RNTI %04lx nca %ld nia %d in RRCReestablishment\n", ctxt_pP->rntiMaybeUEid, ue_p->ciphering_algorithm, ue_p->integrity_algorithm);
-  pdcp_config_set_security(ctxt_pP,
-                           NULL, /* pdcp_pP not used anymore in NR */
-                           DCCH,
-                           DCCH + 2,
-                           enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4),
-                           kRRCenc,
-                           kRRCint,
-                           kUPenc);
+  uint8_t security_mode =
+      enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4);
+
+  nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid,
+                              DCCH,
+                              security_mode,
+                              kRRCenc,
+                              kRRCint,
+                              kUPenc);
 
   if (!NODE_IS_CU(rrc->node_type)) {
     apply_macrlc_config_reest(rrc, ue_context_pP, ctxt_pP, ctxt_pP->rntiMaybeUEid);
@@ -3225,7 +3217,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
             gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
             mac_remove_nr_ue(nrmac, UE->rnti);
             rrc_rlc_remove_ue(ctxt_pP);
-            pdcp_remove_UE(ctxt_pP);
+            nr_pdcp_remove_UE(ctxt_pP->rntiMaybeUEid);
 
             /* remove RRC UE Context */
             ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, UE->rnti);
@@ -3262,7 +3254,7 @@ void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
           mac_remove_nr_ue(nrmac, UE->rnti);
         }
         rrc_rlc_remove_ue(ctxt_pP);
-        pdcp_remove_UE(ctxt_pP);
+        nr_pdcp_remove_UE(ctxt_pP->rntiMaybeUEid);
         newGtpuDeleteAllTunnels(ctxt_pP->instance, UE->rnti);
 
         /* remove RRC UE Context */

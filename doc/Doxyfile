@@ -1340,6 +1340,7 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/NR_MAC_UE/nr_ue_dci_configuration.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/NR_MAC_UE/mac_extern.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_timer_thread.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.h \

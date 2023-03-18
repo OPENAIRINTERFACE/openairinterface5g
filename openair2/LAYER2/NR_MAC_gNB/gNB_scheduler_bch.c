@@ -42,8 +42,6 @@
 #include "common/utils/nr/nr_common.h"
 
 
-#include "pdcp.h"
-
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
 

@@ -21,7 +21,7 @@
 
 #include "nr_sdap_entity.h"
 #include "common/utils/LOG/log.h"
-#include <openair2/LAYER2/PDCP_v10.1.0/pdcp.h>
+#include <openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_ue_manager.h"
 
@@ -36,8 +36,6 @@ typedef struct {
 static nr_sdap_entity_info sdap_info;
 
 instance_t *N3GTPUInst = NULL;
-
-nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager(void);
 
 void nr_pdcp_submit_sdap_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu)
 {
@@ -87,16 +85,16 @@ static bool nr_sdap_tx_entity(nr_sdap_entity_t *entity,
 
   if(!pdcp_ent_has_sdap){
     LOG_D(SDAP, "TX - DRB ID: %ld does not have SDAP\n", entity->qfi2drb_table[qfi].drb_id);
-    ret = pdcp_data_req(ctxt_p,
-                        srb_flag,
-                        sdap_drb_id,
-                        mui,
-                        confirm,
-                        sdu_buffer_size,
-                        sdu_buffer,
-                        pt_mode,
-                        sourceL2Id,
-                        destinationL2Id);
+    ret = nr_pdcp_data_req_drb(ctxt_p,
+                               srb_flag,
+                               sdap_drb_id,
+                               mui,
+                               confirm,
+                               sdu_buffer_size,
+                               sdu_buffer,
+                               pt_mode,
+                               sourceL2Id,
+                               destinationL2Id);
 
     if(!ret)
       LOG_E(SDAP, "%s:%d:%s: PDCP refused PDU\n", __FILE__, __LINE__, __FUNCTION__);
@@ -155,16 +153,16 @@ static bool nr_sdap_tx_entity(nr_sdap_entity_t *entity,
    *
    * Downlink gNB side
    */
-  ret = pdcp_data_req(ctxt_p,
-                      srb_flag,
-                      sdap_drb_id,
-                      mui,
-                      confirm,
-                      sdu_buffer_size+offset,
-                      sdap_buf,
-                      pt_mode,
-                      sourceL2Id,
-                      destinationL2Id);
+  ret = nr_pdcp_data_req_drb(ctxt_p,
+                             srb_flag,
+                             sdap_drb_id,
+                             mui,
+                             confirm,
+                             sdu_buffer_size + offset,
+                             sdap_buf,
+                             pt_mode,
+                             sourceL2Id,
+                             destinationL2Id);
 
   if(!ret)
     LOG_E(SDAP, "%s:%d:%s: PDCP refused PDU\n", __FILE__, __LINE__, __FUNCTION__);

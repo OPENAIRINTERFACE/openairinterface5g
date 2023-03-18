@@ -32,7 +32,6 @@
 #include "nr_rrc_defs.h"
 #include "nr_rrc_extern.h"
 #include "common/utils/LOG/log.h"
-#include "pdcp.h"
 #include "common/ran_context.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
@@ -43,6 +42,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "rrc_gNB_UE_context.h"
 #include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 
 extern RAN_CONTEXT_t RC;
@@ -100,7 +100,7 @@ nr_rrc_data_req(
    * Ideally, PDCP would not neet to be triggered like this but react to ITTI
    * messages automatically */
   if (ctxt_pP->enb_flag)
-    pdcp_run(ctxt_pP);
+    nr_pdcp_run(ctxt_pP);
 
   return true; // TODO should be changed to a CNF message later, currently RRC lite does not used the returned value anyway.
 }

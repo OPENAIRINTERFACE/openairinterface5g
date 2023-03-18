@@ -34,7 +34,7 @@
 #include "LAYER2/RLC/rlc.h"
 #include "LAYER2/MAC/mac.h"
 #include "LAYER2/MAC/mac_extern.h"
-#include "LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "common/utils/LOG/log.h"
 #include "common/ran_context.h"
 

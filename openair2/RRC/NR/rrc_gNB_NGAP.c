@@ -36,7 +36,7 @@
 
 #include "oai_asn1.h"
 #include "intertask_interface.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 #include "pdcp_primitives.h"
 
 #include "openair3/ocp-gtpu/gtp_itf.h"
@@ -153,14 +153,9 @@ nr_rrc_pdcp_config_security(
     }
   }
 
-  pdcp_config_set_security(ctxt_pP,
-                           NULL, /* pdcp_pP not used anymore in NR */
-                           DCCH,
-                           DCCH + 2,
-                           enable_ciphering ? UE->ciphering_algorithm | (UE->integrity_algorithm << 4) : 0 | (UE->integrity_algorithm << 4),
-                           kRRCenc,
-                           kRRCint,
-                           kUPenc);
+  uint8_t security_mode =
+      enable_ciphering ? UE->ciphering_algorithm | (UE->integrity_algorithm << 4) : 0 | (UE->integrity_algorithm << 4);
+  nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid, DCCH, security_mode, kRRCenc, kRRCint, kUPenc);
 }
 
 //------------------------------------------------------------------------------

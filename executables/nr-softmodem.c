@@ -59,7 +59,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "intertask_interface.h"
 
@@ -556,13 +556,8 @@ void init_pdcp(void) {
     PDCP_USE_NETLINK_BIT | LINK_ENB_PDCP_TO_IP_DRIVER_BIT | ENB_NAS_USE_TUN_BIT | SOFTMODEM_NOKRNMOD_BIT:
     LINK_ENB_PDCP_TO_GTPV1U_BIT;
   
-  if (!get_softmodem_params()->nsa) {
-    if (!NODE_IS_DU(get_node_type())) {
-      pdcp_layer_init();
-      nr_pdcp_module_init(pdcp_initmask, 0);
-    }
-  } else {
-    pdcp_layer_init();
+  if (!NODE_IS_DU(get_node_type())) {
+    nr_pdcp_layer_init();
     nr_pdcp_module_init(pdcp_initmask, 0);
   }
 }
