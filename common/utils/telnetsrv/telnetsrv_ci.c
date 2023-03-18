@@ -49,7 +49,7 @@ static int get_single_ue_rnti(void)
     return -1;
 
   // verify it exists in RRC as well
-  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context(RC.nrrrc[0], ue->rnti);
+  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], ue->rnti);
   if (!rrcue)
     return -1;
 
@@ -82,7 +82,7 @@ int get_reestab_count(char *buf, int debug, telnet_printfunc_t prnt)
       ERROR_MSG_RET("RNTI needs to be [1,0xfffe]\n");
   }
 
-  rrc_gNB_ue_context_t *ue = rrc_gNB_get_ue_context(RC.nrrrc[0], rnti);
+  rrc_gNB_ue_context_t *ue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
   if (!ue)
     ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
 
@@ -107,7 +107,7 @@ int trigger_reestab(char *buf, int debug, telnet_printfunc_t prnt)
   }
 
   // verify it exists in RRC as well
-  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context(RC.nrrrc[0], rnti);
+  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
   if (!rrcue)
     ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
 
