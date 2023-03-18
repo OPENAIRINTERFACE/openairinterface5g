@@ -797,7 +797,7 @@ typedef struct gNB_MAC_INST_s {
   NR_bler_options_t ul_bler;
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
-
+  bool identity_pm;
   nr_mac_rrc_ul_if_t mac_rrc;
 
   int16_t frame;
