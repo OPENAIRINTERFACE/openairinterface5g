@@ -2810,10 +2810,12 @@ void nr_mac_update_timers(module_id_t module_id,
 
         NR_CellGroupConfig_t *cg = NULL;
         uper_decode(NULL,
-                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    &asn_DEF_NR_CellGroupConfig, // might be added prefix later
                     (void **)&cg,
                     (uint8_t *)UE->cg_buf,
-                    (UE->enc_rval.encoded+7)/8, 0, 0);
+                    (UE->enc_rval.encoded + 7) / 8,
+                    0,
+                    0);
         UE->CellGroup = cg;
 
         if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
@@ -2918,13 +2920,8 @@ void send_initial_ul_rrc_message(module_id_t        module_id,
         sdu_len, rnti);
 
   /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_id]);
-    ue_context_p->ue_id_rnti                    = rnti;
-    ue_context_p->ue_context.rnti               = rnti;
-    ue_context_p->ue_context.random_ue_identity = rnti;
-    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_id]->rrc_ue_head, ue_context_p);
-  }
+  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type))
+    rrc_gNB_create_ue_context(rnti, RC.nrrrc[module_id], rnti);
 
   const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
   const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;

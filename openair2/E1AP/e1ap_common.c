@@ -220,16 +220,15 @@ int e1ap_encode_send(E1_t type, e1ap_setup_req_t *setupReq, E1AP_E1AP_PDU_t *pdu
   if (encoded < 0) {
     LOG_E(E1AP, "%s: Failed to encode E1AP message\n", func);
     return -1;
-  } else {
-    MessageDef *message = itti_alloc_new_message((type==CPtype)?TASK_CUCP_E1:TASK_CUUP_E1, 0, SCTP_DATA_REQ);
-    sctp_data_req_t *s = &message->ittiMsg.sctp_data_req;
-    s->assoc_id = setupReq->assoc_id;
-    s->buffer        = buffer;
-    s->buffer_length = encoded;
-    s->stream        = stream;
-    LOG_I(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
-    itti_send_msg_to_task(TASK_SCTP, 0 /*unused by callee*/, message);
   }
+  MessageDef *message = itti_alloc_new_message((type == CPtype) ? TASK_CUCP_E1 : TASK_CUUP_E1, 0, SCTP_DATA_REQ);
+  sctp_data_req_t *s = &message->ittiMsg.sctp_data_req;
+  s->assoc_id = setupReq->assoc_id;
+  s->buffer = buffer;
+  s->buffer_length = encoded;
+  s->stream = stream;
+  LOG_I(E1AP, "%s: Sending ITTI message to SCTP Task\n", func);
+  itti_send_msg_to_task(TASK_SCTP, 0 /*unused by callee*/, message);
 
   return encoded;
 }

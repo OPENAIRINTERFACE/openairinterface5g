@@ -236,11 +236,6 @@ typedef struct ngap_gNB_instance_s {
   /* Tree of NGAP AMF associations ordered by association ID */
   RB_HEAD(ngap_amf_map, ngap_gNB_amf_data_s) ngap_amf_head;
 
-  /* TODO: add a map ordered by relative AMF capacity */
-
-  /* Tree of UE ordered by gNB_ue_ngap_id's */
-  RB_HEAD(ngap_ue_map, ngap_gNB_ue_context_s) ngap_ue_head;
-
   /* For virtual mode, mod_id as defined in the rest of the L1/L2 stack */
   instance_t instance;
 

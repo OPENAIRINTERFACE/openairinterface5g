@@ -106,7 +106,7 @@ int dl_rrc_message_rrcSetup(module_id_t module_id, const f1ap_dl_rrc_message_t *
 
   /* TODO: drop the RRC context */
   gNB_RRC_INST *rrc = RC.nrrrc[module_id];
-  struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_get_ue_context(rrc, dl_rrc->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, dl_rrc->rnti);
   gNB_RRC_UE_t *ue_p = &ue_context_p->ue_context;
   ue_p->SRB_configList = rrcSetup_ies->radioBearerConfig.srb_ToAddModList;
   ue_p->masterCellGroup = cellGroup;

@@ -57,7 +57,7 @@ static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_as
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
   f1ap_cu_data->default_sctp_stream_id = 0;
-  if (RC.nrrrc[GNB_INSTANCE_TO_MODULE_ID(instance)]->node_type != ngran_gNB_CUCP) {
+  if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
     getCxt(CUtype, instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
     AssertFatal(getCxt(CUtype, instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
   } else

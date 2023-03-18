@@ -650,7 +650,7 @@ static void sctp_send_data(sctp_data_req_t *sctp_data_req_p)
         /* TODO: notify upper layer */
         return;
     }
-
+    free(sctp_data_req_p->buffer); // assuming it has been malloced
     SCTP_DEBUG("Successfully sent %u bytes on stream %d for assoc_id %u\n",
                sctp_data_req_p->buffer_length, sctp_data_req_p->stream,
                sctp_cnx->assoc_id);
