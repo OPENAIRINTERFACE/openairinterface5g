@@ -176,6 +176,12 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 double cpuf;
 
+/* hack: pdcp_run() is required by 4G scheduler which is compiled into
+ * nr-softmodem because of linker issues */
+void pdcp_run(const protocol_ctxt_t *const ctxt_pP)
+{
+  abort();
+}
 
 /* see file openair2/LAYER2/MAC/main.c for why abstraction_flag is needed
  * this is very hackish - find a proper solution

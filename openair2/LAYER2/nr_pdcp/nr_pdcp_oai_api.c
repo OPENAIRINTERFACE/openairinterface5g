@@ -795,46 +795,6 @@ srb_found:
   }
 }
 
-void nr_pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
-{
-  MessageDef      *msg_p;
-  int             result;
-  protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .rntiMaybeUEid = 0, .frame = -1, .subframe = -1, .eNB_index = 0, .brOption = false};
-
-  while (1) {
-    itti_poll_msg(ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
-    if (msg_p == NULL){
-     break;
-    }
-    switch (ITTI_MSG_ID(msg_p)) {
-    case RRC_DCCH_DATA_REQ:
-      LOG_D(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
-      PROTOCOL_CTXT_SET_BY_MODULE_ID(
-          &ctxt,
-          RRC_DCCH_DATA_REQ(msg_p).module_id,
-          RRC_DCCH_DATA_REQ(msg_p).enb_flag,
-          RRC_DCCH_DATA_REQ(msg_p).rnti,
-          RRC_DCCH_DATA_REQ(msg_p).frame,
-          0,
-          RRC_DCCH_DATA_REQ(msg_p).eNB_index);
-      result = nr_pdcp_data_req_srb(ctxt.rntiMaybeUEid,
-                                    RRC_DCCH_DATA_REQ(msg_p).rb_id,
-                                    RRC_DCCH_DATA_REQ(msg_p).muip,
-                                    RRC_DCCH_DATA_REQ(msg_p).sdu_size,
-                                    RRC_DCCH_DATA_REQ(msg_p).sdu_p);
-
-      if (result != true)
-        LOG_E(PDCP, "PDCP data request failed!\n");
-      result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_REQ(msg_p).sdu_p);
-      AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-      break;
-    default:
-      LOG_E(PDCP, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
-      break;
-    }
-  }
-}
-
 static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_srb;

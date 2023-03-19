@@ -334,9 +334,6 @@ At Tx side (DL in gNB), `pdcp_data_req_drb()` and `pdcp_data_req_srb()` are the 
 The upper layer can be GTP or a PDCP internal thread enb_tun_read_thread() that read directly from Linux socket in case we skip 3GPP core implementation.
 PDCP internals for  nr_pdcp_data_req_srb()/nr_pdcp_data_req_drb() are thread safe: inside them, the pdcp manager protects with the mutex the access to the SDU receiving function of PDCP (recv_sdu() callback, corresponding to nr_pdcp_entity_drb_am_recv_sdu() for DRBs). When it needs, the pdcp layer push this data to rlc by calling : rlc_data_req()
 
-Also, incoming downlink sdu can comme from internal RRC: in this case, nr
-nr_pdcp_run() reads a itti queue, for message RRC_DCCH_DATA_REQ, to0 only call 'nr_pdcp_data_req_srb()'
-
 At Rx side, pdcp_data_ind() is the entry point that receives the data from RLC.
 - Inside pdcp_data_ind(), the pdcp manager mutex protects the access to the PDU receiving function of PDCP (recv_pdu() callback corresponding to nr_pdcp_entity_drb_am_recv_pdu() for DRBs)
 - Then deliver_sdu_drb() function sends the received data to GTP thread through an ITTI message (GTPV1U_TUNNEL_DATA_REQ).

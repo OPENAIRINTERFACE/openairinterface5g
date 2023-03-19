@@ -93,7 +93,6 @@ bool nr_pdcp_data_req_drb(protocol_ctxt_t *ctxt_pP,
                           const uint32_t *const sourceL2Id,
                           const uint32_t *const destinationL2Id);
 
-void nr_pdcp_run(const protocol_ctxt_t *const ctxt_pP);
 void nr_pdcp_tick(int frame, int subframe);
 
 nr_pdcp_ue_manager_t *nr_pdcp_sdap_get_ue_manager();
