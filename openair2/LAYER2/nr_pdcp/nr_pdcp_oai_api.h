@@ -77,7 +77,7 @@ bool cu_f1u_data_req(protocol_ctxt_t  *ctxt_pP,
                      const uint32_t *const sourceL2Id,
                      const uint32_t *const destinationL2Id);
 
-typedef void (*deliver_pdu)(void *data, nr_pdcp_entity_t *entity,
+typedef void (*deliver_pdu)(void *data, ue_id_t ue_id, int srb_id,
                             char *buf, int size, int sdu_id);
 bool nr_pdcp_data_req_srb(ue_id_t ue_id,
                           const rb_id_t rb_id,

@@ -653,35 +653,12 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   }
 }
 
-static void deliver_pdu_drb(void *_ue, nr_pdcp_entity_t *entity,
+static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
                             char *buf, int size, int sdu_id)
 {
-  nr_pdcp_ue_t *ue = _ue;
-  int rb_id;
-  protocol_ctxt_t ctxt;
-  int i;
-  mem_block_t *memblock;
+  DevAssert(deliver_pdu_data == NULL);
+  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
 
-  for (i = 0; i < MAX_DRBS_PER_UE; i++) {
-    if (entity == ue->drb[i]) {
-      rb_id = i+1;
-      goto rb_found;
-    }
-  }
-
-  LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, ue->rntiMaybeUEid);
-  exit(1);
-
-rb_found:
-  ctxt.module_id = 0;
-  ctxt.enb_flag = 1;
-  ctxt.instance = 0;
-  ctxt.frame = 0;
-  ctxt.subframe = 0;
-  ctxt.eNB_index = 0;
-  ctxt.brOption = 0;
-
-  ctxt.rntiMaybeUEid = ue->rntiMaybeUEid;
   if (NODE_IS_CU(node_type)) {
     MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
 							  GTPV1U_TUNNEL_DATA_REQ,
@@ -696,14 +673,14 @@ rb_found:
     req->buffer        = gtpu_buffer_p;
     req->length        = size;
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-    req->ue_id = ue->rntiMaybeUEid;
+    req->ue_id = ue_id;
     req->bearer_id = rb_id;
     LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
-    memblock = get_free_mem_block(size, __FUNCTION__);
+    mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
@@ -755,40 +732,22 @@ srb_found:
   }
 }
 
-static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
+static void deliver_pdu_srb(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
                             char *buf, int size, int sdu_id)
 {
-  nr_pdcp_ue_t *ue = _ue;
-  int srb_id;
-  int i;
-
-  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
-    if (entity == ue->srb[i]) {
-      srb_id = i+1;
-      goto srb_found;
-    }
-  }
-
-  LOG_E(PDCP, "%s:%d:%s: fatal, no SRB found for UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, ue->rntiMaybeUEid);
-  exit(1);
-
-srb_found:
-
-
+  bool is_gnb = *(bool *) deliver_pdu_data;
   LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
-  //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-  //printf("\n");
-  if (entity->is_gnb) {
+  if (is_gnb) {
     f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF,
                                     .rrc_container = (uint8_t *)buf,
                                     .rrc_container_length = size,
-                                    .rnti = ue->rntiMaybeUEid,
+                                    .rnti = ue_id,
                                     .srb_id = srb_id};
     gNB_RRC_INST *rrc = RC.nrrrc[0];
     rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
   } else { // UE
     mem_block_t *memblock;
-    protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .frame = 0, .subframe = 0, .eNB_index = 0, .brOption = 0, .rntiMaybeUEid = ue->rntiMaybeUEid};
+    protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
     memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
@@ -1180,7 +1139,7 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-  deliver_pdu_cb(rb->deliver_pdu_data, rb, pdu_buf, pdu_size, muiP);
+  deliver_pdu_cb(&rb->is_gnb, ue_id, rb_id, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
@@ -1235,7 +1194,7 @@ bool nr_pdcp_data_req_drb(protocol_ctxt_t *ctxt_pP,
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-  deliver_pdu_cb(rb->deliver_pdu_data, rb, pdu_buf, pdu_size, muiP);
+  deliver_pdu_cb(NULL, ue_id, rb_id, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
