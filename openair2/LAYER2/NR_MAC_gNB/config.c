@@ -141,8 +141,7 @@ void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_PHR_Confi
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl) {
 
    AssertFatal(CellGroup, "CellGroup is null\n");
-   NR_MAC_CellGroupConfig_t   *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
-
+   NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
 
    if (mac_CellGroupConfig) {
      process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);

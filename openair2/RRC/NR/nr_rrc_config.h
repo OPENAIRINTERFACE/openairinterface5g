@@ -104,5 +104,6 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                       const NR_ServingCellConfig_t *servingcellconfigdedicated,
                       const NR_ServingCellConfigCommon_t *scc,
                       NR_UE_NR_Capability_t *uecap);
+NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void);
 
 #endif
