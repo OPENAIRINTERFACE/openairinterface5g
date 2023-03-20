@@ -160,7 +160,7 @@ uint8_t compute_nr_root_seq(NR_RACH_ConfigCommon_t *rach_config,
                             uint8_t unpaired,
                             frequency_range_t);
 
-int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig,long transformPrecoder);
+int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrecoder);
 
 uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int ss_type);
 
@@ -268,13 +268,11 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
                         uint8_t NrOfSymbols);
 
 /* \brief Set the transform precoding according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16
-@param    *pusch_config,   pointer to pusch config
-@param    *ubwp            pointer to uplink bwp
-@param    *dci_format      pointer to dci format
-@param    rnti_type        rnti type
+@param    *current_UL_BWP  pointer to uplink bwp
+@param    dci_format       dci format
 @param    configuredGrant  indicates whether a configured grant was received or not
 @returns                   transformPrecoding value */
-uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant);
+long get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant);
 
 void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
                                const int CC_idP,

@@ -2832,15 +2832,18 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant)
+long get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant)
 {
   if (configuredGrant && current_UL_BWP->configuredGrantConfig && current_UL_BWP->configuredGrantConfig->transformPrecoder)
     return *current_UL_BWP->configuredGrantConfig->transformPrecoder;
 
   if (dci_format == NR_UL_DCI_FORMAT_0_1 && current_UL_BWP && current_UL_BWP->pusch_Config && current_UL_BWP->pusch_Config->transformPrecoder)
     return *current_UL_BWP->pusch_Config->transformPrecoder;
-  else
-    return current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder ? 0 : 1;
+
+  if (current_UL_BWP->rach_ConfigCommon && current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder)
+    return NR_PUSCH_Config__transformPrecoder_enabled;
+
+  return NR_PUSCH_Config__transformPrecoder_disabled;
 }
 
 uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
@@ -3415,7 +3418,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       if(pusch_Config &&
          pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL){
         NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-        xb = ul_ant_bits(NR_DMRS_UplinkConfig,transformPrecoder);
+        xb = ul_ant_bits(NR_DMRS_UplinkConfig, transformPrecoder);
       }
       if (xa>xb)
         dci_pdu->antenna_ports.nbits = xa;

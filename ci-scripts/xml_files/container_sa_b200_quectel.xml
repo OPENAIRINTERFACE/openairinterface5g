@@ -57,13 +57,13 @@
   <testCase id="100000">
     <class>Custom_Command</class>
     <desc>Disable Sleep States</desc>
-    <node>nepes</node>
+    <node>ofqot</node>
     <command>sudo cpupower idle-set -D 0</command>
   </testCase>
   <testCase id="200000">
     <class>Custom_Command</class>
     <desc>Enable Sleep States</desc>
-    <node>nepes</node>
+    <node>ofqot</node>
     <command>sudo cpupower idle-set -E</command>
   </testCase>
 
@@ -161,14 +161,14 @@
   <testCase id="060001">
     <class>Custom_Command</class>
     <desc>Trigger Reestablishment</desc>
-    <node>nepes</node>
+    <node>ofqot</node>
     <command>echo ci force_reestab | nc -N 192.168.68.194 9090 | grep -E 'force-remove UE RNTI [0-9a-f]{4} from RLC to trigger reestablishment'</command>
     <command_fail>yes</command_fail>
   </testCase>
   <testCase id="060002">
     <class>Custom_Command</class>
     <desc>Verify Reestablishment</desc>
-    <node>nepes</node>
+    <node>ofqot</node>
     <command>echo ci get_reestab_count | nc -N 192.168.68.194 9090 | grep -E 'UE RNTI [0-9a-f]{4} reestab 1 reconf_after_reestab 1'</command>
     <command_fail>yes</command_fail>
   </testCase>

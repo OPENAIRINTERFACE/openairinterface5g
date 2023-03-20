@@ -513,8 +513,21 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
   }
 }
 
+bool multiple_2_3_5(int rb)
+{
+  while (rb % 2 == 0)
+    rb /= 2;
+  while (rb % 3 == 0)
+    rb /= 3;
+  while (rb % 5 == 0)
+    rb /= 5;
+
+  return (rb == 1);
+}
+
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   long transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
@@ -524,6 +537,11 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb)
 {
+  // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+  while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+        !multiple_2_3_5(nb_rb_max))
+    nb_rb_max--;
+
   /* is the maximum (not even) enough? */
   *nb_rb = nb_rb_max;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
@@ -545,6 +563,15 @@ bool nr_find_nb_rb(uint16_t Qm,
   int hi = nb_rb_max;
   int lo = nb_rb_min;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+    // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+    while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+          !multiple_2_3_5(p))
+      p++;
+
+    // If by increasing p for transform precoding we already hit the high, break to avoid infinite loop
+    if (p == hi)
+      break;
+
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
       hi = p;
@@ -568,7 +595,7 @@ NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
 
   NR_pusch_dmrs_t dmrs = {0};
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (ul_bwp->transform_precoding || Layers<3)
+  if (ul_bwp->transform_precoding && Layers < 3)
     dmrs.num_dmrs_cdm_grps_no_data = ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1 || tda_info->nrOfSymbols == 2 ? 1 : 2;
   else
     dmrs.num_dmrs_cdm_grps_no_data = 2;
@@ -804,7 +831,6 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   NR_PUCCH_ResourceId_t *resource_id = NULL;
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
-  long *id0 = NULL;
   int n_list, n_set;
   uint16_t N2,N3;
   int res_found = 0;
@@ -818,9 +844,13 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
   long *pusch_id = pusch_Config ? pusch_Config->dataScramblingIdentityPUSCH : NULL;
 
-  if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+  long *id0 = NULL;
+  if (pusch_Config &&
+      pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL &&
+      pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-  else if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+  else if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL &&
+           pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
   else id0 = scc->physCellId;
 
@@ -2173,11 +2203,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  if (UL_BWP->pusch_Config == NULL || !UL_BWP->pusch_Config->transformPrecoder)
-    UL_BWP->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
-  else
-    UL_BWP->transform_precoding = *UL_BWP->pusch_Config->transformPrecoder;
-
   if (UL_BWP->bwp_id > 0) {
     UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon ? ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup : NULL;
     UL_BWP->rach_ConfigCommon = ul_bwp->bwp_Common->rach_ConfigCommon ? ul_bwp->bwp_Common->rach_ConfigCommon->choice.setup : NULL;
@@ -2263,14 +2288,17 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   long *dl_mcs_Table = DL_BWP->pdsch_Config ? DL_BWP->pdsch_Config->mcs_Table : NULL;
   DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
-  long *ul_mcs_Table = NULL;
+  // 0 precoding enabled 1 precoding disabled
+  UL_BWP->transform_precoding = get_transformPrecoding(UL_BWP, UL_BWP->dci_format, 0);
+  // Set uplink MCS table
+  long *mcs_Table = NULL;
   if (UL_BWP->pusch_Config)
-    ul_mcs_Table = UL_BWP->transform_precoding ?
-                   UL_BWP->pusch_Config->mcs_Table :
-                   UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+    mcs_Table = UL_BWP->transform_precoding ?
+                UL_BWP->pusch_Config->mcs_Table :
+                UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
 
-  UL_BWP->mcs_table = get_pusch_mcs_table(ul_mcs_Table,
-                                          UL_BWP->transform_precoding ? 0 : 1,
+  UL_BWP->mcs_table = get_pusch_mcs_table(mcs_Table,
+                                          !UL_BWP->transform_precoding,
                                           UL_BWP->dci_format,
                                           NR_RNTI_C,
                                           target_ss,
@@ -2782,10 +2810,12 @@ void nr_mac_update_timers(module_id_t module_id,
 
         NR_CellGroupConfig_t *cg = NULL;
         uper_decode(NULL,
-                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    &asn_DEF_NR_CellGroupConfig, // might be added prefix later
                     (void **)&cg,
                     (uint8_t *)UE->cg_buf,
-                    (UE->enc_rval.encoded+7)/8, 0, 0);
+                    (UE->enc_rval.encoded + 7) / 8,
+                    0,
+                    0);
         UE->CellGroup = cg;
 
         if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
@@ -2890,13 +2920,8 @@ void send_initial_ul_rrc_message(module_id_t        module_id,
         sdu_len, rnti);
 
   /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_id]);
-    ue_context_p->ue_id_rnti                    = rnti;
-    ue_context_p->ue_context.rnti               = rnti;
-    ue_context_p->ue_context.random_ue_identity = rnti;
-    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_id]->rrc_ue_head, ue_context_p);
-  }
+  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type))
+    rrc_gNB_create_ue_context(rnti, RC.nrrrc[module_id], rnti);
 
   const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
   const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;

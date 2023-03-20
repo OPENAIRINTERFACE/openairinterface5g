@@ -162,7 +162,6 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
   } else {
     new_instance = calloc(1, sizeof(ngap_gNB_instance_t));
     DevAssert(new_instance != NULL);
-    RB_INIT(&new_instance->ngap_ue_head);
     RB_INIT(&new_instance->ngap_amf_head);
     /* Copy usefull parameters */
     new_instance->instance         = instance;
@@ -276,127 +275,88 @@ void *ngap_gNB_process_itti_msg(void *notUsed) {
   MessageDef *received_msg = NULL;
   int         result;
   itti_receive_msg(TASK_NGAP, &received_msg);
+  if (received_msg) {
+    instance_t instance = ITTI_MSG_DESTINATION_INSTANCE(received_msg);
+    LOG_D(RRC, "Received message %s\n", ITTI_MSG_NAME(received_msg));
+    switch (ITTI_MSG_ID(received_msg)) {
+      case TERMINATE_MESSAGE:
+        NGAP_WARN(" *** Exiting NGAP thread\n");
+        itti_exit_task();
+        break;
 
-  switch (ITTI_MSG_ID(received_msg)) {
-    case TERMINATE_MESSAGE:
-      NGAP_WARN(" *** Exiting NGAP thread\n");
-      itti_exit_task();
-      break;
+      case NGAP_REGISTER_GNB_REQ:
+        /* Register a new gNB.
+         * in Virtual mode gNBs will be distinguished using the mod_id/
+         * Each gNB has to send an NGAP_REGISTER_GNB message with its
+         * own parameters.
+         */
+        ngap_gNB_handle_register_gNB(instance, &NGAP_REGISTER_GNB_REQ(received_msg));
+        break;
 
-    case NGAP_REGISTER_GNB_REQ: {
-      /* Register a new gNB.
-       * in Virtual mode gNBs will be distinguished using the mod_id/
-       * Each gNB has to send an NGAP_REGISTER_GNB message with its
-       * own parameters.
-       */
-      ngap_gNB_handle_register_gNB(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                   &NGAP_REGISTER_GNB_REQ(received_msg));
+      case SCTP_NEW_ASSOCIATION_RESP:
+        ngap_gNB_handle_sctp_association_resp(instance, &received_msg->ittiMsg.sctp_new_association_resp);
+        break;
+
+      case SCTP_DATA_IND:
+        ngap_gNB_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
+        break;
+
+      case NGAP_NAS_FIRST_REQ:
+        ngap_gNB_handle_nas_first_req(instance, &NGAP_NAS_FIRST_REQ(received_msg));
+        break;
+
+      case NGAP_UPLINK_NAS:
+        ngap_gNB_nas_uplink(instance, &NGAP_UPLINK_NAS(received_msg));
+        break;
+
+      case NGAP_UE_CAPABILITIES_IND:
+        ngap_gNB_ue_capabilities(instance, &NGAP_UE_CAPABILITIES_IND(received_msg));
+        break;
+
+      case NGAP_INITIAL_CONTEXT_SETUP_RESP:
+        ngap_gNB_initial_ctxt_resp(instance, &NGAP_INITIAL_CONTEXT_SETUP_RESP(received_msg));
+        break;
+
+      case NGAP_PDUSESSION_SETUP_RESP:
+        ngap_gNB_pdusession_setup_resp(instance, &NGAP_PDUSESSION_SETUP_RESP(received_msg));
+        break;
+
+      case NGAP_PDUSESSION_MODIFY_RESP:
+        ngap_gNB_pdusession_modify_resp(instance, &NGAP_PDUSESSION_MODIFY_RESP(received_msg));
+        break;
+
+      case NGAP_NAS_NON_DELIVERY_IND:
+        ngap_gNB_nas_non_delivery_ind(instance, &NGAP_NAS_NON_DELIVERY_IND(received_msg));
+        break;
+
+      case NGAP_PATH_SWITCH_REQ:
+        ngap_gNB_path_switch_req(instance, &NGAP_PATH_SWITCH_REQ(received_msg));
+        break;
+
+      case NGAP_PDUSESSION_MODIFICATION_IND:
+        ngap_gNB_generate_PDUSESSION_Modification_Indication(instance, &NGAP_PDUSESSION_MODIFICATION_IND(received_msg));
+        break;
+
+      case NGAP_UE_CONTEXT_RELEASE_COMPLETE:
+        ngap_ue_context_release_complete(instance, &NGAP_UE_CONTEXT_RELEASE_COMPLETE(received_msg));
+        break;
+
+      case NGAP_UE_CONTEXT_RELEASE_REQ:
+        ngap_ue_context_release_req(instance, &NGAP_UE_CONTEXT_RELEASE_REQ(received_msg));
+        break;
+
+      case NGAP_PDUSESSION_RELEASE_RESPONSE:
+        ngap_gNB_pdusession_release_resp(instance, &NGAP_PDUSESSION_RELEASE_RESPONSE(received_msg));
+        break;
+
+      default:
+        NGAP_ERROR("Received unhandled message: %d:%s\n", ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
+        break;
     }
-    break;
 
-    case SCTP_NEW_ASSOCIATION_RESP: {
-      ngap_gNB_handle_sctp_association_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                            &received_msg->ittiMsg.sctp_new_association_resp);
-    }
-    break;
-
-    case SCTP_DATA_IND: {
-      ngap_gNB_handle_sctp_data_ind(&received_msg->ittiMsg.sctp_data_ind);
-    }
-    break;
-
-    case NGAP_NAS_FIRST_REQ: {
-      ngap_gNB_handle_nas_first_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                    &NGAP_NAS_FIRST_REQ(received_msg));
-    }
-    break;
-
-    case NGAP_UPLINK_NAS: {
-      ngap_gNB_nas_uplink(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                          &NGAP_UPLINK_NAS(received_msg));
-    }
-    break;
-
-    case NGAP_UE_CAPABILITIES_IND: {
-      ngap_gNB_ue_capabilities(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                               &NGAP_UE_CAPABILITIES_IND(received_msg));
-    }
-    break;
-
-    case NGAP_INITIAL_CONTEXT_SETUP_RESP: {
-      ngap_gNB_initial_ctxt_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                 &NGAP_INITIAL_CONTEXT_SETUP_RESP(received_msg));
-    }
-    break;
-
-    case NGAP_PDUSESSION_SETUP_RESP: {
-      ngap_gNB_pdusession_setup_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                &NGAP_PDUSESSION_SETUP_RESP(received_msg));
-    }
-    break;
-
-    case NGAP_PDUSESSION_MODIFY_RESP: {
-      ngap_gNB_pdusession_modify_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                 &NGAP_PDUSESSION_MODIFY_RESP(received_msg));
-    }
-    break;
-
-    case NGAP_NAS_NON_DELIVERY_IND: {
-      ngap_gNB_nas_non_delivery_ind(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                    &NGAP_NAS_NON_DELIVERY_IND(received_msg));
-    }
-    break;
-
-    case NGAP_PATH_SWITCH_REQ: {
-      ngap_gNB_path_switch_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                               &NGAP_PATH_SWITCH_REQ(received_msg));
-    }
-    break;
-
-    case NGAP_PDUSESSION_MODIFICATION_IND: {
-    	ngap_gNB_generate_PDUSESSION_Modification_Indication(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-    	                               &NGAP_PDUSESSION_MODIFICATION_IND(received_msg));
-    }
-    break;
-
-    case NGAP_UE_CONTEXT_RELEASE_COMPLETE: {
-      ngap_ue_context_release_complete(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                       &NGAP_UE_CONTEXT_RELEASE_COMPLETE(received_msg));
-    }
-    break;
-
-    case NGAP_UE_CONTEXT_RELEASE_REQ: {
-      ngap_gNB_instance_t               *ngap_gNB_instance_p           = NULL; // test
-      struct ngap_gNB_ue_context_s      *ue_context_p                  = NULL; // test
-      ngap_ue_context_release_req(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                  &NGAP_UE_CONTEXT_RELEASE_REQ(received_msg));
-      ngap_gNB_instance_p = ngap_gNB_get_instance(ITTI_MSG_DESTINATION_INSTANCE(received_msg)); // test
-      DevAssert(ngap_gNB_instance_p != NULL); // test
-
-      if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
-                          NGAP_UE_CONTEXT_RELEASE_REQ(received_msg).gNB_ue_ngap_id)) == NULL) { // test
-        /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-        NGAP_ERROR("Failed to find ue context associated with gNB ue ngap id: %u\n",
-                   NGAP_UE_CONTEXT_RELEASE_REQ(received_msg).gNB_ue_ngap_id); // test
-      }  // test
-    }
-    break;
-
-    case NGAP_PDUSESSION_RELEASE_RESPONSE: {
-      ngap_gNB_pdusession_release_resp(ITTI_MSG_DESTINATION_INSTANCE(received_msg),
-                                  &NGAP_PDUSESSION_RELEASE_RESPONSE(received_msg));
-    }
-    break;
-
-    default:
-      NGAP_ERROR("Received unhandled message: %d:%s\n",
-                 ITTI_MSG_ID(received_msg), ITTI_MSG_NAME(received_msg));
-      break;
+    result = itti_free(ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
+    AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
   }
-
-  result = itti_free (ITTI_MSG_ORIGIN_ID(received_msg), received_msg);
-  AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-  received_msg = NULL;
   return NULL;
 }
 

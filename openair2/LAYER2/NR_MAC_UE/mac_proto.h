@@ -120,7 +120,8 @@ NR_UE_MAC_INST_t *get_mac_inst(
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
    \param dl_info     DL indication
    \param ul_info     UL indication*/
-NR_UE_L2_STATE_t nr_ue_scheduler(nr_downlink_indication_t *dl_info, nr_uplink_indication_t *ul_info);
+void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info);
+void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info);
 
 /**\brief fill nr_scheduled_response struct instance
    @param nr_scheduled_response_t *    pointer to scheduled_response instance to fill
@@ -435,7 +436,7 @@ void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_BWP_Id_t dl_bwp_id);
 
 static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                                   uint8_t dci_format,
+                                   nr_dci_format_t dci_format,
                                    uint8_t dci_size,
                                    uint16_t rnti,
                                    int ss_type,
@@ -466,6 +467,12 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti);
 // - 6.1.4.2 of TS 38.214
 // - 6.4.1.1.1 of TS 38.211
 // - 6.3.1.7 of 38.211
-int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac, NR_tda_info_t *tda_info, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, RAR_grant_t *rar_grant, uint16_t rnti, uint8_t *dci_format);
+int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
+                        NR_tda_info_t *tda_info,
+                        nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
+                        dci_pdu_rel15_t *dci,
+                        RAR_grant_t *rar_grant,
+                        uint16_t rnti,
+                        const nr_dci_format_t *dci_format);
 #endif
 /** @}*/

@@ -24,6 +24,7 @@
 #ifndef E1AP_MESSAGES_TYPES_H
 #define E1AP_MESSAGES_TYPES_H
 
+#include "common/ngran_types.h"
 #include "f1ap_messages_types.h"
 #include "ngap_messages_types.h"
 

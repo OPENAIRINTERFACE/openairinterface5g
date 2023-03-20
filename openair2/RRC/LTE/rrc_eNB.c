@@ -432,7 +432,7 @@ init_SI(
       .physCellId = carrier->physCellId,
       .p_eNB = carrier->p_eNB,
       .Ncp = carrier->Ncp,
-      .eutra_band = carrier->sib1->freqBandIndicator,
+      .eutra_band = carrier->eutra_band,
       .dl_CarrierFreq = carrier->dl_CarrierFreq,
       .pbch_repetition = carrier->pbch_repetition,
       .mib = &carrier->mib,

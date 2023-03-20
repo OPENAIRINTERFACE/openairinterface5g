@@ -37,78 +37,197 @@ services:
     oai-udr:
         container_name: "oai-udr"
         image: oaisoftwarealliance/oai-udr:develop
-        entrypoint: ["/openair-udr/bin/oai_udr", "-c", "/openair-udr/etc/udr.conf", "-o"]
+        environment:
+            - TZ=Europe/Paris
+            - UDR_NAME=OAI_UDR
+            - UDR_INTERFACE_NAME_FOR_NUDR=eth0
+            - MYSQL_IPV4_ADDRESS=mysql
+            - MYSQL_USER=test
+            - MYSQL_PASS=test
+            - MYSQL_DB=oai_db
+            - WAIT_MYSQL=120
+            - USE_FQDN_DNS=yes
+            - REGISTER_NRF=yes
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
         depends_on:
             - mysql
             - oai-nrf
-        volumes:
-            - ./conf/oai-udr.conf:/openair-udr/etc/udr.conf
         networks:
             public_net:
                 ipv4_address: 192.168.70.136
     oai-udm:
         container_name: "oai-udm"
         image: oaisoftwarealliance/oai-udm:develop
-        entrypoint: ["/openair-udm/bin/oai_udm", "-c", "/openair-udm/etc/udm.conf", "-o"]
+        environment:
+            - TZ=Europe/Paris
+            - UDM_NAME=OAI_UDM
+            - SBI_IF_NAME=eth0
+            - REGISTER_NRF=yes
+            - USE_FQDN_DNS=yes
+            - UDR_IP_ADDRESS=192.168.70.136
+            - UDR_FQDN=oai-udr
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
         depends_on:
             - oai-nrf
-        volumes:
-            - ./conf/oai-udm.conf:/openair-udm/etc/udm.conf
+            - oai-udr
         networks:
             public_net:
                 ipv4_address: 192.168.70.137
     oai-ausf:
         container_name: "oai-ausf"
         image: oaisoftwarealliance/oai-ausf:develop
-        entrypoint: ["/openair-ausf/bin/oai_ausf", "-c", "/openair-ausf/etc/ausf.conf", "-o"]
+        environment:
+            - TZ=Europe/Paris
+            - AUSF_NAME=OAI_AUSF
+            - SBI_IF_NAME=eth0
+            - USE_FQDN_DNS=yes
+            - REGISTER_NRF=yes
+            - UDM_IP_ADDRESS=192.168.70.137
+            - UDM_FQDN=oai-udm
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
         depends_on:
             - oai-nrf
-        volumes:
-            - ./conf/oai-ausf.conf:/openair-ausf/etc/ausf.conf
+            - oai-udm
         networks:
             public_net:
                 ipv4_address: 192.168.70.138
     oai-nrf:
         container_name: "oai-nrf"
         image: oaisoftwarealliance/oai-nrf:develop
-        entrypoint: ["/openair-nrf/bin/oai_nrf", "-c", "/openair-nrf/etc/nrf.conf", "-o"]
-        volumes:
-            - ./conf/oai-nrf.conf:/openair-nrf/etc/nrf.conf
+        environment:
+            - TZ=Europe/Paris
+            - NRF_INTERFACE_NAME_FOR_SBI=eth0
         networks:
             public_net:
                 ipv4_address: 192.168.70.130
     oai-amf:
         container_name: "oai-amf"
         image: oaisoftwarealliance/oai-amf:develop
-        entrypoint: ["/openair-amf/bin/oai_amf", "-c", "/openair-amf/etc/amf.conf", "-o"]
+        environment:
+            - TZ=Europe/Paris
+            # PLMN informations
+            - MCC=001
+            - MNC=01
+            - REGION_ID=128
+            - AMF_SET_ID=1
+            - SERVED_GUAMI_MCC_0=001
+            - SERVED_GUAMI_MNC_0=01
+            - SERVED_GUAMI_REGION_ID_0=128
+            - SERVED_GUAMI_AMF_SET_ID_0=1
+            - PLMN_SUPPORT_MCC=001
+            - PLMN_SUPPORT_MNC=01
+            - PLMN_SUPPORT_TAC=0x0001
+            # Slice 0 (1, 0xFFFFFF)
+            - SST_0=1
+            - AMF_INTERFACE_NAME_FOR_NGAP=eth0
+            - AMF_INTERFACE_NAME_FOR_N11=eth0
+            # One single SMF instance
+            - SMF_INSTANCE_ID_0=1
+            - SMF_FQDN_0=oai-smf
+            - SMF_IPV4_ADDR_0=192.168.70.133
+            - SELECTED_0=true
+            # Interaction with other NFs
+            - NF_REGISTRATION=yes
+            - USE_FQDN_DNS=yes
+            - EXTERNAL_AUSF=yes
+            # Algorithm choices
+            - CIPH_ALGO_LIST=["NEA0" , "NEA1" , "NEA2"]
+            - INT_ALGO_LIST=["NIA1" , "NIA2"]
+            # Other NF
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
+            - AUSF_IPV4_ADDRESS=192.168.70.138
+            - AUSF_FQDN=oai-ausf
+            - UDM_IPV4_ADDRESS=192.168.70.137
+            - UDM_FQDN=oai-udm
         depends_on:
             - oai-nrf
-        volumes:
-            - ./conf/oai-amf.conf:/openair-amf/etc/amf.conf
+            - oai-ausf
         networks:
             public_net:
                 ipv4_address: 192.168.70.132
     oai-smf:
         container_name: "oai-smf"
         image: oaisoftwarealliance/oai-smf:develop
-        entrypoint: ["/openair-smf/bin/oai_smf", "-c", "/openair-smf/etc/smf.conf", "-o"]
+        environment:
+            - TZ=Europe/Paris
+            - SMF_INTERFACE_NAME_FOR_N4=eth0
+            - SMF_INTERFACE_NAME_FOR_SBI=eth0
+            - DEFAULT_DNS_IPV4_ADDRESS=8.8.8.8
+            - DEFAULT_DNS_SEC_IPV4_ADDRESS=4.4.4.4
+            - AMF_IPV4_ADDRESS=192.168.70.132
+            - AMF_FQDN=oai-amf
+            - UDM_IPV4_ADDRESS=192.168.70.137
+            - UDM_FQDN=oai-udm
+            - UPF_IPV4_ADDRESS=192.168.70.134
+            - UPF_FQDN_0=oai-spgwu-tiny
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
+            - USE_LOCAL_SUBSCRIPTION_INFO=yes
+            - REGISTER_NRF=yes
+            - DISCOVER_UPF=yes
+            - USE_FQDN_DNS=yes
+            - UE_MTU=1500
+            # Slice 0 (1, 0xFFFFFF)
+            - DNN_NI0=oai
+            - TYPE0=IPv4
+            - DNN_RANGE0=12.1.1.2 - 12.1.1.254
+            - NSSAI_SST0=1
+            - SESSION_AMBR_UL0=10Gbps
+            - SESSION_AMBR_DL0=10Gbps
+            # Slice 1 (1, 0xFFFFFF)
+            - DNN_NI1=openairinterface
+            - TYPE1=IPv4v6
+            - DNN_RANGE1=12.1.2.2 - 12.1.2.254
+            - NSSAI_SST1=1
+            - SESSION_AMBR_UL1=10Gbps
+            - SESSION_AMBR_DL1=10Gbps
+            # Slice 2 for ims
+            - DNN_NI2=ims
+            - TYPE2=IPv4v6
+            - DNN_RANGE2=12.1.9.2 - 12.1.9.254
+            - NSSAI_SST2=1
+            - SESSION_AMBR_UL2=10Gbps
+            - SESSION_AMBR_DL2=10Gbps
+            # IMS server
+            - DEFAULT_CSCF_IPV4_ADDRESS=192.168.70.139
         depends_on:
             - oai-nrf
-        volumes:
-            - ./conf/oai-smf.conf:/openair-smf/etc/smf.conf
+            - oai-amf
         networks:
             public_net:
                 ipv4_address: 192.168.70.133
     oai-spgwu-tiny:
         container_name: "oai-spgwu-tiny"
         image: oaisoftwarealliance/oai-spgwu-tiny:develop
-        #for ims we need to execute below command once the container is running
-        # iptables -t nat -A POSTROUTING -o eth0 -s 12.2.1.0/24 -j SNAT --to 192.168.70.134
-        entrypoint: ["/openair-spgwu-tiny/bin/oai_spgwu", "-c", "/openair-spgwu-tiny/etc/spgw_u.conf","-o"]
+        environment:
+            - TZ=Europe/Paris
+            - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0
+            - SGW_INTERFACE_NAME_FOR_SX=eth0
+            - PGW_INTERFACE_NAME_FOR_SGI=eth0
+            - NETWORK_UE_NAT_OPTION=yes
+            - NETWORK_UE_IP=12.1.0.0/16
+            - ENABLE_5G_FEATURES=yes
+            - REGISTER_NRF=yes
+            - USE_FQDN_NRF=yes
+            - UPF_FQDN_5G=oai-spgwu-tiny
+            - NRF_IPV4_ADDRESS=192.168.70.130
+            - NRF_FQDN=oai-nrf
+            # Slice 0 (1, 0xFFFFFF)
+            - NSSAI_SST_0=1
+            - DNN_0=oai
+            # Slice 1 (1, 0xFFFFFF)
+            - NSSAI_SST_1=1
+            - DNN_1=openairinterface
+            # Slice 2 (1, 0xFFFFFF)
+            - NSSAI_SST_2=1
+            - DNN_2=ims
         depends_on:
             - oai-nrf
-        volumes:
-            - ./conf/oai-spgwu-tiny.conf:/openair-spgwu-tiny/etc/spgw_u.conf
+            - oai-smf
         cap_add:
             - NET_ADMIN
             - SYS_ADMIN
@@ -127,7 +246,7 @@ services:
         depends_on:
             - oai-spgwu-tiny
         healthcheck:
-            test: /bin/bash -c "ip r | grep 12.1.1"
+            test: /bin/bash -c "ip r | grep 12.1.0"
             interval: 10s
             timeout: 5s
             retries: 5

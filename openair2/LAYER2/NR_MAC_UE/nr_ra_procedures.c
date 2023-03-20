@@ -141,7 +141,7 @@ void init_RA(module_id_t mod_id,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-
+  mac->state = UE_PERFORMING_RA;
   RA_config_t *ra          = &mac->ra;
   ra->RA_active            = 1;
   ra->ra_PreambleIndex     = -1;
@@ -164,25 +164,25 @@ void init_RA(module_id_t mod_id,
   NR_SearchSpaceId_t ss_id = -1;
   NR_SearchSpace_t *ss = NULL;
 
-  if(mac->scc_SIB) {
-    commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-    ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-  }
-  else{
-    if (mac->scc) {
-      NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      if (ra_ss) {
-        commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      }
+  if (mac->scc) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
     }
-    if (ss_id < 0) {
-      if (mac->current_DL_BWP.bwp_id>0) {
-        ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        if (ra_ss) {
-          commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-          ss_id = *mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        }
+  } else if (mac->scc_SIB) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
+    }
+  }
+  if (ss_id < 0) {
+    if (mac->current_DL_BWP.bwp_id>0) {
+      ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *ra_ss;
       }
     }
   }
@@ -312,11 +312,11 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
     mu = 4;
     break;
 
-    case NR_SubcarrierSpacing_spare3:
+    case NR_SubcarrierSpacing_kHz480_v1700:
     mu = 5;
     break;
 
-    case NR_SubcarrierSpacing_spare2:
+    case NR_SubcarrierSpacing_kHz960_v1700:
     mu = 6;
     break;
 
@@ -734,8 +734,8 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
                        int CC_id,
                        frame_t frame,
                        uint8_t gNB_id,
-                       int nr_slot_tx){
-
+                       int nr_slot_tx)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
@@ -1007,27 +1007,21 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
   RA_config_t *ra = &mac->ra;
 
   if (ra->cfra) {
-
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
-
+    mac->state = UE_CONNECTED;
     ra->RA_window_cnt = -1;
-
   } else {
-
     LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
-
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
-
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
-
+    mac->state = UE_WAIT_TX_ACK_MSG4;
   }
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
   ra->ra_state = RA_SUCCEEDED;
-
 }
 
 // Handling failure of RA procedure @ MAC layer

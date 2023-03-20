@@ -736,7 +736,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
-    nr_ue_scheduler(&mac->dl_info, NULL);
+    nr_ue_dl_scheduler(&mac->dl_info);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
@@ -756,8 +756,7 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                           mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
                           ul_info.slot_tx,
                           mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED) {
-            nr_ue_scheduler(NULL, &ul_info);
-            nr_ue_prach_scheduler(ul_info.module_id, ul_info.frame_tx, ul_info.slot_tx);
+            nr_ue_ul_scheduler(&ul_info);
         }
     }
 }
@@ -1115,36 +1114,17 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
   }
 }
 
-int nr_ue_ul_indication(nr_uplink_indication_t *ul_info){
-
-  NR_UE_L2_STATE_t ret=0;
+int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
+{
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
   LOG_T(NR_MAC, "In %s():%d not calling scheduler mac->ra.ra_state = %d\n",
         __FUNCTION__, __LINE__, mac->ra.ra_state);
 
-  ret = nr_ue_scheduler(NULL, ul_info);
-  if (is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type)) {
-    nr_ue_pucch_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx, ul_info->phy_data);
-    if (!get_softmodem_params()->phy_test)
-      nr_ue_prach_scheduler(module_id, ul_info->frame_tx, ul_info->slot_tx);
-  }
-
-  switch(ret){
-  case UE_CONNECTION_OK:
-    break;
-  case UE_CONNECTION_LOST:
-    break;
-  case UE_PHY_RESYNCH:
-    break;
-  case UE_PHY_HO_PRACH:
-    break;
-  default:
-    break;
-  }
-
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+  if (mac->phy_config_request_sent && is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
+    nr_ue_ul_scheduler(ul_info);
   return 0;
 }
 
@@ -1157,11 +1137,11 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
   if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
-    nr_ue_scheduler(dl_info, NULL);
+    if (mac->phy_config_request_sent)
+      nr_ue_dl_scheduler(dl_info);
   } else {
     // UL indication after reception of DCI or DL PDU
     if (dl_info && dl_info->dci_ind && dl_info->dci_ind->number_of_dcis) {
-
       LOG_T(MAC,"[L2][IF MODULE][DL INDICATION][DCI_IND]\n");
       for (int i = 0; i < dl_info->dci_ind->number_of_dcis; i++) {
         LOG_T(MAC,">>>NR_IF_Module i=%d, dl_info->dci_ind->number_of_dcis=%d\n",i,dl_info->dci_ind->number_of_dcis);

@@ -763,22 +763,22 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
   }
 
 //intraFreqBlackCellList
-  if( sib3->intraFreqBlackCellList){
-    LOG_I( RRC, "intraFreqBlackCellList : %p\n",
-           sib3->intraFreqBlackCellList );    
-    const int n = sib3->intraFreqBlackCellList->list.count;
+  if( sib3->intraFreqExcludedCellList){
+    LOG_I( RRC, "intraFreqExcludedCellList : %p\n",
+           sib3->intraFreqExcludedCellList );
+    const int n = sib3->intraFreqExcludedCellList->list.count;
     for (int i = 0; i < n; ++i){
-      LOG_I( RRC, "intraFreqBlackCellList->start : %ld\n",
-             sib3->intraFreqBlackCellList->list.array[i]->start );
+      LOG_I( RRC, "intraFreqExcludedCellList->start : %ld\n",
+             sib3->intraFreqExcludedCellList->list.array[i]->start );
 
-      if( sib3->intraFreqBlackCellList->list.array[i]->range)
-        LOG_I( RRC, "intraFreqBlackCellList->range : %ld\n",
-             *sib3->intraFreqBlackCellList->list.array[i]->range );
+      if( sib3->intraFreqExcludedCellList->list.array[i]->range)
+        LOG_I( RRC, "intraFreqExcludedCellList->range : %ld\n",
+             *sib3->intraFreqExcludedCellList->list.array[i]->range );
       else
-        LOG_I( RRC, "intraFreqBlackCellList->range : not defined\n" );
+        LOG_I( RRC, "intraFreqExcludedCellList->range : not defined\n" );
     }
    } else{
-    LOG_I( RRC, "intraFreqBlackCellList : not defined\n" );
+    LOG_I( RRC, "intraFreqExcludedCellList : not defined\n" );
    }
 
 //lateNonCriticalExtension
