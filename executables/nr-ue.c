@@ -567,12 +567,11 @@ void processSlotTX(void *arg) {
   LOG_D(PHY,"%d.%d => slot type %d\n", proc->frame_tx, proc->nr_slot_tx, proc->tx_slot_type);
   if (proc->tx_slot_type == NR_UPLINK_SLOT || proc->tx_slot_type == NR_MIXED_SLOT){
 
-    // wait for rx slots to send indication
-    for(int i=0; i < UE->tx_wait_for_dlsch[proc->nr_slot_tx]; i++) {
+    // wait for rx slots to send indication (if any) that DLSCH decoding is finished
+    for(int i=0; i < rxtxD->tx_wait_for_dlsch; i++) {
       notifiedFIFO_elt_t *res = pullNotifiedFIFO(UE->tx_resume_ind_fifo[proc->nr_slot_tx]);
       delNotifiedFIFO_elt(res);
     }
-    UE->tx_wait_for_dlsch[proc->nr_slot_tx] = 0;
 
     // trigger L2 to run ue_scheduler thru IF module
     // [TODO] mapping right after NR initial sync
@@ -798,6 +797,7 @@ void *UE_thread(void *arg) {
 
   int num_ind_fifo = nb_slot_frame;
   for(int i=0; i < num_ind_fifo; i++) {
+    UE->tx_wait_for_dlsch[num_ind_fifo] = 0;
     UE->tx_resume_ind_fifo[i] = malloc(sizeof(*UE->tx_resume_ind_fifo[i]));
     initNotifiedFIFO(UE->tx_resume_ind_fifo[i]);
   }
@@ -965,15 +965,16 @@ void *UE_thread(void *arg) {
     curMsgTx->writeBlockSize = writeBlockSize;
     curMsgTx->proc.timestamp_tx = writeTimestamp;
     curMsgTx->UE = UE;
+    curMsgTx->tx_wait_for_dlsch = UE->tx_wait_for_dlsch[curMsgTx->proc.nr_slot_tx];
+    UE->tx_wait_for_dlsch[curMsgTx->proc.nr_slot_tx] = 0;
     pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
     // RX slot processing. We launch and forget.
-    nr_phy_data_t phy_data = UE_dl_preprocessing(UE, &curMsg.proc);
     newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), curMsg.proc.nr_slot_rx, NULL, UE_dl_processing);
     nr_rxtx_thread_data_t *curMsgRx = (nr_rxtx_thread_data_t *) NotifiedFifoData(newElt);
     curMsgRx->proc = curMsg.proc;
     curMsgRx->UE = UE;
-    curMsgRx->phy_data = phy_data;
+    curMsgRx->phy_data = UE_dl_preprocessing(UE, &curMsg.proc);
     pushTpool(&(get_nrUE_params()->Tpool), newElt);
 
     if (curMsg.proc.decoded_frame_rx != -1)
