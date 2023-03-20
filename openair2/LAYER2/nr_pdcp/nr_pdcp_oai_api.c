@@ -1173,9 +1173,14 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
     return 0;
   }
 
-  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+  int max_size = sdu_buffer_size + 3 + 4; // 3: max header, 4: max integrity
+  char pdu_buf[max_size];
+  int pdu_size = rb->process_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP, pdu_buf, max_size);
+  deliver_pdu deliver_pdu_cb = rb->deliver_pdu;
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  deliver_pdu_cb(rb->deliver_pdu_data, rb, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
@@ -1223,9 +1228,14 @@ bool nr_pdcp_data_req_drb(protocol_ctxt_t *ctxt_pP,
     return 0;
   }
 
-  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+  int max_size = sdu_buffer_size + 3 + 4; // 3: max header, 4: max integrity
+  char pdu_buf[max_size];
+  int pdu_size = rb->process_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP, pdu_buf, max_size);
+  deliver_pdu deliver_pdu_cb = rb->deliver_pdu;
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  deliver_pdu_cb(rb->deliver_pdu_data, rb, pdu_buf, pdu_size, muiP);
 
   return 1;
 }

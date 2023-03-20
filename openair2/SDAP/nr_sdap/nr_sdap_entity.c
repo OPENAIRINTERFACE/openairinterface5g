@@ -39,11 +39,18 @@ instance_t *N3GTPUInst = NULL;
 
 void nr_pdcp_submit_sdap_ctrl_pdu(ue_id_t ue_id, rb_id_t sdap_ctrl_pdu_drb, nr_sdap_ul_hdr_t ctrl_pdu)
 {
-  nr_pdcp_ue_t *ue;
-  nr_pdcp_ue_manager_t *nr_pdcp_ue_manager;
-  nr_pdcp_ue_manager = nr_pdcp_sdap_get_ue_manager();
-  ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
-  ue->drb[sdap_ctrl_pdu_drb-1]->recv_sdu(ue->drb[sdap_ctrl_pdu_drb-1], (char*)&ctrl_pdu, SDAP_HDR_LENGTH, RLC_MUI_UNDEFINED);
+
+  protocol_ctxt_t ctxt = { .rntiMaybeUEid = ue_id };
+  nr_pdcp_data_req_drb(&ctxt,
+                       SRB_FLAG_NO,
+                       sdap_ctrl_pdu_drb,
+                       RLC_MUI_UNDEFINED,
+                       SDU_CONFIRM_NO,
+                       SDAP_HDR_LENGTH,
+                       (unsigned char *)&ctrl_pdu,
+                       PDCP_TRANSMISSION_MODE_UNKNOWN,
+                       NULL,
+                       NULL);
   LOG_D(SDAP, "Control PDU - Submitting Control PDU to DRB ID:  %ld\n", sdap_ctrl_pdu_drb);
   LOG_D(SDAP, "QFI: %u\n R: %u\n D/C: %u\n", ctrl_pdu.QFI, ctrl_pdu.R, ctrl_pdu.DC);
   return;
