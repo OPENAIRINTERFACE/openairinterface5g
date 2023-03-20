@@ -35,6 +35,9 @@
 #include "common/ran_context.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 #include "intertask_interface.h"
 
@@ -47,12 +50,17 @@
 
 extern RAN_CONTEXT_t RC;
 
+void nr_rrc_mac_remove_ue(rnti_t rntiMaybeUEid)
+{
+  nr_rlc_remove_ue(rntiMaybeUEid);
 
-int
-nr_rrc_mac_remove_ue(module_id_t mod_idP,
-                  rnti_t rntiP){
-  // todo
-  return 0;
+  gNB_MAC_INST *nrmac = RC.nrmac[0];
+  mac_remove_nr_ue(nrmac, rntiMaybeUEid);
+}
+
+void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc)
+{
+  nr_mac_update_cellgroup(RC.nrmac[0], rntiMaybeUEid, cgc);
 }
 
 uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,

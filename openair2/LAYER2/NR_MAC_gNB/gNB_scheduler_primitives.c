@@ -2483,8 +2483,6 @@ void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 {
-  nr_rlc_remove_ue(rnti);
-
   NR_UEs_t *UE_info = &nr_mac->UE_info;
   pthread_mutex_lock(&UE_info->mutex);
   UE_iterator(UE_info->list, UE) {

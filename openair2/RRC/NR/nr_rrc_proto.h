@@ -42,6 +42,7 @@
 #include "NR_CG-Config.h"
 #include "NR_CG-ConfigInfo.h"
 #include "NR_SecurityConfig.h"
+#include "NR_CellGroupConfig.h"
 
 #define NR_MAX_SUPPORTED_DL_LAYERS 2
 void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan);
@@ -136,9 +137,8 @@ void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
    \ *reOffset Pointer to RE Offset Value */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
 
-int
-nr_rrc_mac_remove_ue(module_id_t mod_idP,
-                  rnti_t rntiP);
+void nr_rrc_mac_remove_ue(rnti_t rntiP);
+void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc);
 
 int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
                                  const frame_t         frameP,
