@@ -1877,38 +1877,6 @@ int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
   *SRB_configList = CALLOC(1, sizeof(NR_SRB_ToAddModList_t));
   asn1cSeqAdd(&(*SRB_configList)->list, SRB1_config);
   /****************************** masterCellGroup ******************************/
-  /*
-   NR_CellGroupConfig_t *cellGroupConfig = NULL;
-   char masterCellGroup_buf[1000];
-   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-   if (masterCellGroup_from_DU) {
-    // decode masterCellGroup OCTET_STRING received from DU and place in ue context
-    uper_decode(NULL,
-    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
-    (void **)&cellGroupConfig,
-    (uint8_t *)masterCellGroup_from_DU->buf,
-    masterCellGroup_from_DU->size, 0, 0);
-
-    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void*)cellGroupConfig);
-  }
-  else {
-    cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-    fill_initial_cellGroupConfig(ue_context_pP->ue_context.rnti,ue_context_pP->local_uid,cellGroupConfig,scc,carrier);
-
-    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-             NULL,
-             (void *)cellGroupConfig,
-             masterCellGroup_buf,
-             1000);
-
-    if(enc_rval.encoded == -1) {
-      LOG_E(NR_RRC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n",
-      enc_rval.failed_type->name, enc_rval.encoded);
-      return -1;
-    }
-  }
-  ue_p->masterCellGroup = cellGroupConfig;
-  */
   rrcReestablishment->rrc_TransactionIdentifier = Transaction_id;
   rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
   rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1, sizeof(NR_RRCReestablishment_IEs_t));

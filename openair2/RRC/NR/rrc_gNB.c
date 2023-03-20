@@ -1223,18 +1223,6 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
                                        &rrc->carrier);
 
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n", ue_p->rnti, size);
-#if (0)
-  /* TODO : It may be needed if gNB goes into full stack working. */
-  UE = find_nr_UE(module_id, rnti);
-  if (UE_id != -1) {
-    /* Activate reject timer, if RRCComplete not received after 10 frames, reject UE */
-    RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 1;
-    /* Reject UE after 10 frames, NR_RRCReestablishmentReject is triggered */
-    RC.nrmac[module_id]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer_thres = 100;
-  } else {
-    LOG_E(NR_RRC, " Generating NR_RRCReestablishment without UE_id(MAC) rnti %x\n", rnti);
-  }
-#endif
 
   uint8_t *kRRCenc = NULL;
   uint8_t *kRRCint = NULL;
@@ -1798,34 +1786,6 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
           rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, c_rnti, 0);
           break;
         }
-#if 0
-        int UE_id = find_nr_UE_id(gnb_rrc_inst, c_rnti);
-        if (UE_id == -1) {
-          LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without MAC context, rnti %04x, fallback to RRC establishment\n", c_rnti);
-          rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
-          break;
-        }
-
-        // previous rnti
-        rnti_t previous_rnti = 0;
-
-        for (int i = 0; i < MAX_MOBILES_PER_ENB; i++) {
-          if (reestablish_rnti_map[i][1] == c_rnti) {
-            previous_rnti = reestablish_rnti_map[i][0];
-            break;
-          }
-        }
-
-        if (previous_rnti != 0) {
-          UE_id = find_nr_UE_id(gnb_rrc_inst, previous_rnti);
-          if (UE_id == -1) {
-            LOG_E(NR_RRC,"RRCReestablishmentRequest without mac context previous rnti %04x, nex rnti %04x, fallback to RRC establishment\n",
-                  previous_rnti, c_rnti);
-            rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
-            break;
-          }
-        }
-#endif
         // c-plane not end
         if ((UE->StatusRrc != NR_RRC_RECONFIGURED) && (UE->reestablishment_cause == NR_ReestablishmentCause_spare1)) {
           LOG_E(NR_RRC, "NR_RRCReestablishmentRequest (UE %x c-plane is not end), RRC establishment failed\n", c_rnti);
@@ -2418,19 +2378,6 @@ rrc_gNB_decode_dcch(
           LOG_E(NR_RRC, "NR_RRCReestablishmentComplete without UE context, fault\n");
           break;
         }
-
-#if (0)
-        /* TODO : It may be needed if gNB goes into full stack working. */
-        // clear
-        int UE_id = find_nr_UE_id(gnb_rrc_inst, ctxt_pP->rntiMaybeUEid);
-
-        if (UE_id == -1) {
-          LOG_E(NR_RRC, PROTOCOL_RRC_CTXT_UE_FMT " NR_RRCReestablishmentComplete without UE_id(MAC) rnti %lx, fault\n", PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), ctxt_pP->rntiMaybeUEid);
-          break;
-        }
-
-        RC.nrmac[gnb_rrc_inst]->UE_info.UE_sched_ctrl[UE_id].ue_reestablishment_reject_timer = 0;
-#endif
 
         if (ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->criticalExtensions.present == NR_RRCReestablishmentComplete__criticalExtensions_PR_rrcReestablishmentComplete) {
           rrc_gNB_process_RRCReestablishmentComplete(ctxt_pP, reestablish_rnti, ue_context_p, ul_dcch_msg->message.choice.c1->choice.rrcReestablishmentComplete->rrc_TransactionIdentifier);
