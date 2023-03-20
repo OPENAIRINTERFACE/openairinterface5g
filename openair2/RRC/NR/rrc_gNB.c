@@ -1385,7 +1385,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   // ue_p->Srb[2].Srb_info.Srb_id = 2;
 
   if (get_softmodem_params()->sa) {
-    AssertFatal(false, "rework identity mapping \n");
+    LOG_W(NR_RRC, "Rework identity mapping need to be done properly!\n");
     gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
     /* Save e RAB information for later */
     int j;
@@ -1832,7 +1832,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
         UE->Srb[2].Srb_info.Srb_id = Idx;
         rrc_init_nr_srb_param(&UE->Srb[2].Srb_info.Lchan_desc[0]);
         rrc_init_nr_srb_param(&UE->Srb[2].Srb_info.Lchan_desc[1]);
-        protocol_ctxt_t ctxt = {.rntiMaybeUEid = UE->rnti, .module_id = module_id, .instance = module_id, .enb_flag = 1, .eNB_index = module_id};
+        protocol_ctxt_t ctxt = {.rntiMaybeUEid = rnti, .module_id = module_id, .instance = module_id, .enb_flag = 1, .eNB_index = module_id};
         rrc_gNB_generate_RRCReestablishment(&ctxt, ue_context_p, du_to_cu_rrc_container, gnb_rrc_inst->carrier.servingcellconfigcommon, 0);
 
         LOG_I(NR_RRC, "CALLING RLC CONFIG SRB1 (rbid %d)\n", Idx);
@@ -2362,6 +2362,7 @@ rrc_gNB_decode_dcch(
           LOG_I(NR_RRC, "Removing nr_reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n", i, nr_reestablish_rnti_map->ue_id, nr_reestablish_rnti_map->c_rnti);
           reestablish_rnti = nr_reestablish_rnti_map->c_rnti;
           ue_context_p = rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, reestablish_rnti);
+          UE = &ue_context_p->ue_context;
           break;
           }
         }
@@ -2390,7 +2391,7 @@ rrc_gNB_decode_dcch(
           gNB_MAC_INST *nrmac = RC.nrmac[ctxt_pP->module_id]; // WHAT A BEAUTIFULL RACE CONDITION !!!
           mac_remove_nr_ue(nrmac, reestablish_rnti);
 
-          ue_context_p->ue_context.ue_reestablishment_counter++;
+          UE->ue_reestablishment_counter++;
         }
 
         // UE->ue_release_timer = 0;
