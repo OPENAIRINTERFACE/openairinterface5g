@@ -697,7 +697,7 @@ void PainterWidgetGnb::makeConnections(int type)
       break;
     }
     case PlotTypeGnb::CIR: {
-      newChart = new CIRPlot((complex16 *)p->gNB->pusch_vars[0]->ul_ch_estimates_time[0], frame_parms->ofdm_symbol_size);
+      newChart = new CIRPlot((complex16 *)p->gNB->pusch_vars[0].ul_ch_estimates_time[0], frame_parms->ofdm_symbol_size);
       break;
     }
 
@@ -705,12 +705,12 @@ void PainterWidgetGnb::makeConnections(int type)
       int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
       int Qm = 2;
       int coded_bits_per_codeword = num_re * Qm;
-      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0]->llr, coded_bits_per_codeword);
+      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, coded_bits_per_codeword);
       break;
     }
     case PlotTypeGnb::puschIQ: {
       int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
-      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0]->rxdataF_comp[0], num_re);
+      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], num_re);
       break;
     }
     case PlotTypeGnb::puschSNR: {
