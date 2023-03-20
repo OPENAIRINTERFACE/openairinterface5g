@@ -723,6 +723,18 @@ void get_samplerate_and_bw(int mu,
   }
 }
 
+void get_K1_K2(int N1, int N2, int *K1, int *K2)
+{
+  // num of allowed k1 and k2 according to 5.2.2.2.1-3 and -4 in 38.214
+  if(N2 == N1 || N1 == 2)
+    *K1 = 2;
+  else if (N2 == 1)
+    *K1 = 5;
+  else
+    *K1 = 3;
+  *K2 = N2 > 1 ? 2 : 1;
+}
+
 // from start symbol index and nb or symbols to symbol occupation bitmap in a slot
 uint16_t SL_to_bitmap(int startSymbolIndex, int nrOfSymbols) {
  return ((1<<nrOfSymbols)-1)<<startSymbolIndex;
