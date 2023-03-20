@@ -86,14 +86,14 @@
 	</testCase>
 	<testCase id="500000">
 		<class>Custom_Command</class>
-		<desc>Disable Sleep States (obelix)</desc>
-		<node>obelix</node>
+		<desc>Disable Sleep States (ofqot)</desc>
+		<node>ofqot</node>
 		<command>sudo cpupower idle-set -D 0</command>
 	</testCase>
 	<testCase id="600000">
 		<class>Custom_Command</class>
-		<desc>Enable Sleep States (obelix)</desc>
-		<node>obelix</node>
+		<desc>Enable Sleep States (ofqot)</desc>
+		<node>ofqot</node>
 		<command>sudo cpupower idle-set -E</command>
 	</testCase>
 
