@@ -341,8 +341,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
                                       rnti_t rnti,
                                       rrc_gNB_ue_context_t *const ue_context_pP,
                                       const uint8_t *masterCellGroup,
-                                      int masterCellGroup_len,
-                                      NR_ServingCellConfigCommon_t *scc)
+                                      int masterCellGroup_len)
 //-----------------------------------------------------------------------------
 {
   LOG_I(NR_RRC, "rrc_gNB_generate_RRCSetup for RNTI %04x\n", rnti);
@@ -350,8 +349,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   gNB_RRC_INST *rrc = RC.nrrrc[instance];
   unsigned char buf[1024];
-  const NR_ServingCellConfig_t *sccd = rrc->configuration.scd;
-  int size = do_RRCSetup(ue_context_pP, buf, rrc_gNB_get_next_transaction_identifier(instance), masterCellGroup, masterCellGroup_len, scc, sccd, &rrc->configuration);
+  int size = do_RRCSetup(ue_context_pP, buf, rrc_gNB_get_next_transaction_identifier(instance), masterCellGroup, masterCellGroup_len, &rrc->configuration);
   AssertFatal(size > 0, "do_RRCSetup failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
@@ -385,14 +383,12 @@ static void rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t 
   LOG_I(NR_RRC, "generate RRCSetup for RRCReestablishmentRequest \n");
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST *rrc_instance_p = RC.nrrrc[module_id];
-  const NR_ServingCellConfigCommon_t *scc=rrc_instance_p->carrier.servingcellconfigcommon;
-  const NR_ServingCellConfig_t       *sccd = rrc_instance_p->configuration.scd;
 
   ue_context_pP = rrc_gNB_create_ue_context(rnti, rrc_instance_p, 0);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   unsigned char buf[1024];
-  int size = do_RRCSetup(ue_context_pP, buf, rrc_gNB_get_next_transaction_identifier(module_id), NULL, 0, scc, sccd, &rrc_instance_p->configuration);
+  int size = do_RRCSetup(ue_context_pP, buf, rrc_gNB_get_next_transaction_identifier(module_id), NULL, 0, &rrc_instance_p->configuration);
   AssertFatal(size > 0, "do_RRCSetup failed\n");
   AssertFatal(size <= 1024, "memory corruption\n");
 
@@ -1730,8 +1726,11 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
           UE = &ue_context_p->ue_context;
           UE->establishment_cause = rrcSetupRequest->establishmentCause;
 
-          rrc_gNB_generate_RRCSetup(
-              module_id, rnti, rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, rnti), du_to_cu_rrc_container, du_to_cu_rrc_container_len, gnb_rrc_inst->carrier.servingcellconfigcommon);
+          rrc_gNB_generate_RRCSetup(module_id,
+                                    rnti,
+                                    rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, rnti),
+                                    du_to_cu_rrc_container,
+                                    du_to_cu_rrc_container_len);
         }
         break;
 

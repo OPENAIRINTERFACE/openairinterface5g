@@ -1187,8 +1187,6 @@ int do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
                 const uint8_t                transaction_id,
                 const uint8_t                *masterCellGroup,
                 int                          masterCellGroup_len,
-                const NR_ServingCellConfigCommon_t *scc,
-                const NR_ServingCellConfig_t        *servingcellconfigdedicated,
                 const gNB_RrcConfigurationReq *configuration)
 //------------------------------------------------------------------------------
 {
