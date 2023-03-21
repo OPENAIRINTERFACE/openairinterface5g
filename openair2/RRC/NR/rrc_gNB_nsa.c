@@ -100,7 +100,7 @@ void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerL
   LOG_A(NR_RRC, "Successfully decoded UE NR capabilities (NR and MRDC)\n");
 
   UE->spCellConfig = calloc(1, sizeof(struct NR_SpCellConfig));
-  UE->spCellConfig->spCellConfigDedicated = rrc->carrier.servingcellconfig;
+  UE->spCellConfig->spCellConfigDedicated = rrc->configuration.scd;
   LOG_I(NR_RRC,"Adding new NSA user (%p)\n",ue_context_p);
   rrc_add_nsa_user(rrc,ue_context_p, m);
 }

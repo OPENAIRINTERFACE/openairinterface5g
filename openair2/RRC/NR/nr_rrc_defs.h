@@ -467,7 +467,6 @@ typedef struct {
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
-  NR_ServingCellConfig_t                    *servingcellconfig;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   int                                       p_gNB;
 
