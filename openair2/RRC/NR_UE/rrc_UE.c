@@ -188,7 +188,7 @@ static void nr_rrc_addmod_srbs(int rnti,
     return;
 
   for (int i = 0; i < srb_list->list.count; i++) {
-    const NR_SRB_ToAddMod_t* srb = srb_list->list.array[i];
+    const NR_SRB_ToAddMod_t *srb = srb_list->list.array[i];
     for (int j = 0; j < bearer_list->list.count; j++) {
       const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
       if (bearer->servedRadioBearer != NULL
