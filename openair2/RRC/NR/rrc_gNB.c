@@ -3712,7 +3712,6 @@ rrc_gNB_generate_RRCRelease(
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
   ue_context_pP->ue_context.ue_release_timer_rrc = 1;
 
-  // Use this in monolithic as well to free UE correctly
   if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
     memcpy (message_buffer, buffer, size);
