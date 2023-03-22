@@ -36,10 +36,7 @@
 
 void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig);
 uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc);
-void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
-                        int bwp_id,
-                        int curr_bwp,
-                        uint64_t ssb_bitmap);
+NR_ControlResourceSet_t *get_coreset_config(int bwp_id, int curr_bwp, uint64_t ssb_bitmap);
 NR_SearchSpace_t *rrc_searchspace_config(bool is_common,
                                          int searchspaceid,
                                          int coresetid);

@@ -749,10 +749,9 @@ void fill_initial_SpCellConfig(int uid,
 
   bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList = calloc(1,sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
 
-  NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
 
   uint64_t bitmap = get_ssb_bitmap(scc);
-  rrc_coreset_config(coreset, 0, curr_bwp, bitmap);
+  NR_ControlResourceSet_t *coreset = get_coreset_config(0, curr_bwp, bitmap);
 
   asn1cSeqAdd(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list,
                    coreset);

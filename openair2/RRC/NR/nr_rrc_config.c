@@ -111,11 +111,10 @@ NR_SearchSpace_t *rrc_searchspace_config(bool is_common,
   return ss;
 }
 
-void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
-                        int bwp_id,
-                        int curr_bwp,
-                        uint64_t ssb_bitmap) {
-
+NR_ControlResourceSet_t *get_coreset_config(int bwp_id, int curr_bwp, uint64_t ssb_bitmap)
+{
+  NR_ControlResourceSet_t *coreset = calloc(1, sizeof(*coreset));
+  AssertFatal(coreset != NULL, "out of memory\n");
   // frequency domain resources depending on BWP size
   coreset->frequencyDomainResources.buf = calloc(1,6);
   coreset->frequencyDomainResources.buf[0] = (curr_bwp < 48) ? 0xf0 : 0xff;
@@ -145,6 +144,7 @@ void rrc_coreset_config(NR_ControlResourceSet_t *coreset,
   coreset->tci_StatesPDCCH_ToReleaseList = NULL;
   coreset->tci_PresentInDCI = NULL;
   coreset->pdcch_DMRS_ScramblingID = NULL;
+  return coreset;
 }
 
 uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc) {
@@ -1178,9 +1178,8 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
 
   int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth,MAX_BWP_SIZE);
 
-  NR_ControlResourceSet_t *coreset = calloc(1,sizeof(*coreset));
   uint64_t ssb_bitmap = get_ssb_bitmap(scc);
-  rrc_coreset_config(coreset, bwp->bwp_Id, curr_bwp, ssb_bitmap);
+  NR_ControlResourceSet_t *coreset = get_coreset_config(bwp->bwp_Id, curr_bwp, ssb_bitmap);
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->commonControlResourceSet = coreset;
 
   bwp->bwp_Common->pdcch_ConfigCommon->choice.setup->searchSpaceZero=NULL;
