@@ -691,7 +691,7 @@ void RCconfig_nr_prs(void)
   }
   else
   {
-    LOG_E(PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found..!!\n");
+    LOG_I(PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found..!!\n");
   }
 }
 
