@@ -573,7 +573,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
           ue_context_pP->ue_context.rnti);
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
@@ -762,7 +762,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
         ctxt_pP->module_id,
         DCCH);
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
@@ -929,15 +929,16 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
         ctxt_pP->module_id,
         DCCH);
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
-  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
                             ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
                             : NR_RRC_RECONFIGURATION_DELAY_MS;
 
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
   }
 }
 
@@ -1013,15 +1014,16 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
         ctxt_pP->module_id,
         DCCH);
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
-  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
                             ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
                             : NR_RRC_RECONFIGURATION_DELAY_MS;
 
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
   }
 }
 
@@ -1274,7 +1276,7 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
     apply_macrlc_config_reest(rrc, ue_context_pP, ctxt_pP, ctxt_pP->rntiMaybeUEid);
   }
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -1487,7 +1489,7 @@ cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGr
           DCCH);
 
     nr_mac_update_cellgroup(RC.nrmac[rrc->module_id], ue_context_pP->ue_context.rnti, cellGroupConfig);
-    nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+    nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
   }
 
   if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
@@ -1538,15 +1540,16 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 
   nr_mac_update_cellgroup(RC.nrmac[ctxt_pP->module_id], ue_context_pP->ue_context.rnti, masterCellGroup);
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
-  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
     uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
                             ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
                             : NR_RRC_RECONFIGURATION_DELAY_MS;
 
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
   }
 
   return 0;
@@ -3589,7 +3592,7 @@ rrc_gNB_generate_SecurityModeCommand(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 }
 
 void
@@ -3615,7 +3618,7 @@ rrc_gNB_generate_UECapabilityEnquiry(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -3649,12 +3652,13 @@ rrc_gNB_generate_RRCRelease(
         rrc_gNB_mui,
         DCCH);
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer);
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
   ue_context_pP->ue_context.ue_release_timer_rrc = 1;
 
-  if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
+  if (NODE_IS_CU(rrc->node_type)) {
     uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
     memcpy (message_buffer, buffer, size);
     MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);

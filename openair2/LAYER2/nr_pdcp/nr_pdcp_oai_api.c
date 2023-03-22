@@ -732,26 +732,26 @@ srb_found:
   }
 }
 
-static void deliver_pdu_srb(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
-                            char *buf, int size, int sdu_id)
+void deliver_pdu_srb_rlc(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
+                         char *buf, int size, int sdu_id)
 {
-  bool is_gnb = *(bool *) deliver_pdu_data;
-  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
-  if (is_gnb) {
-    f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF,
-                                    .rrc_container = (uint8_t *)buf,
-                                    .rrc_container_length = size,
-                                    .rnti = ue_id,
-                                    .srb_id = srb_id};
-    gNB_RRC_INST *rrc = RC.nrrrc[0];
-    rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
-  } else { // UE
-    mem_block_t *memblock;
-    protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
-    memblock = get_free_mem_block(size, __FUNCTION__);
-    memcpy(memblock->data, buf, size);
-    enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
-  }
+  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
+  mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
+  memcpy(memblock->data, buf, size);
+  enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
+}
+
+void deliver_pdu_srb_f1(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
+                        char *buf, int size, int sdu_id)
+{
+  DevAssert(deliver_pdu_data != NULL);
+  gNB_RRC_INST *rrc = deliver_pdu_data;
+  f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF,
+                                  .rrc_container = (uint8_t *)buf,
+                                  .rrc_container_length = size,
+                                  .rnti = ue_id,
+                                  .srb_id = srb_id};
+  rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
 }
 
 static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)
@@ -772,7 +772,7 @@ static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s
   } else {
     pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   0, false, false, // sdap parameters
-                                  deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                  deliver_sdu_srb, ue, NULL, ue,
                                   12, t_Reordering, -1,
                                   ciphering_algorithm,
                                   integrity_algorithm,
@@ -1111,7 +1111,9 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
                           const rb_id_t rb_id,
                           const mui_t muiP,
                           const sdu_size_t sdu_buffer_size,
-                          unsigned char *const sdu_buffer)
+                          unsigned char *const sdu_buffer,
+                          deliver_pdu deliver_pdu_cb,
+                          void *data)
 {
   LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
@@ -1135,11 +1137,11 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
   int max_size = sdu_buffer_size + 3 + 4; // 3: max header, 4: max integrity
   char pdu_buf[max_size];
   int pdu_size = rb->process_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP, pdu_buf, max_size);
-  deliver_pdu deliver_pdu_cb = rb->deliver_pdu;
+  AssertFatal(rb->deliver_pdu == NULL, "SRB callback should be NULL, to be provided on every invocation\n");
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
-  deliver_pdu_cb(&rb->is_gnb, ue_id, rb_id, pdu_buf, pdu_size, muiP);
+  deliver_pdu_cb(data, ue_id, rb_id, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
