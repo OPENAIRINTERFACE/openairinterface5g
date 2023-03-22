@@ -1064,11 +1064,6 @@ rlc_op_status_t rrc_rlc_config_req   (
   return RLC_OP_STATUS_OK;
 }
 
-void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP)
-{
-  /* nothing to do */
-}
-
 void nr_rlc_remove_ue(int rnti)
 {
   LOG_W(RLC, "remove UE %x\n", rnti);

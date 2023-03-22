@@ -56,7 +56,6 @@ rrc_init_global_param(
 )
 //-----------------------------------------------------------------------------
 {
-  rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
   DCCH_LCHAN_DESC.transport_block_size = 4;
   DCCH_LCHAN_DESC.max_transport_blocks = 16;
   DCCH_LCHAN_DESC.Delay_class = 1;

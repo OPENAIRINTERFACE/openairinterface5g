@@ -976,11 +976,6 @@ rlc_op_status_t rrc_rlc_config_req   (
   return RLC_OP_STATUS_OK;
 }
 
-void rrc_rlc_register_rrc (rrc_data_ind_cb_t rrc_data_indP, rrc_data_conf_cb_t rrc_data_confP)
-{
-  /* nothing to do */
-}
-
 rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 {
   LOG_D(RLC, "%s:%d:%s: remove UE %ld\n", __FILE__, __LINE__, __FUNCTION__, x->rntiMaybeUEid);
