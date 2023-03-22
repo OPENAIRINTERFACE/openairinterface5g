@@ -93,7 +93,7 @@
                 <bandNR>78</bandNR>
                 <mimo-ParametersPerBand>
                     <tci-StatePDSCH>
-                        <maxNumberConfiguredTCIstatesPerCC><n16/></maxNumberConfiguredTCIstatesPerCC>
+                        <maxNumberConfiguredTCI-StatesPerCC><n16/></maxNumberConfiguredTCI-StatesPerCC>
                         <maxNumberActiveTCI-PerBWP><n1/></maxNumberActiveTCI-PerBWP>
                     </tci-StatePDSCH>
                     <pusch-TransCoherence><nonCoherent/></pusch-TransCoherence>
