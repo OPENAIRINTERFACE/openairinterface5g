@@ -385,6 +385,27 @@ pipeline {
             }
           }
         }
+        stage ("LTE-TDD-2x2-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-TDD-2x2-Container', 'LTE-TDD-2x2-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-TDD-2x2-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+
         //avra is offline, re-enable once it is available
         //stage ("T1-Offload-Test") {
         //  when { expression {do5Gtest} }

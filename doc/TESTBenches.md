@@ -108,6 +108,9 @@ Webhook
     build using the OpenShift Cluster
 - [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
   - obelix: Ubuntu 18 image build using docker
+- [RAN-LTE-TDD-2x2-Container](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-TDD-2x2-Container/)
+  - obelix + N310, porcepix, quectel
+  - TM1 and TM2 test 
 
 ### [RAN-CI-NSA-Trigger](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-CI-NSA-Trigger/)
 

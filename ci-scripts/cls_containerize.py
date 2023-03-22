@@ -844,7 +844,7 @@ class Containerize():
 		CreateWorkspace(mySSH, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
-		mySSH.command('cp docker-compose.yml ci-docker-compose.yml', '\$', 5)
+		mySSH.command('cp docker-compose.y*ml ci-docker-compose.yml', '\$', 5)
 		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
 		for image in imagesList:
 			imageToUse = self.ImageTagToUse(image)
