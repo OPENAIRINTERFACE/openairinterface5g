@@ -984,7 +984,7 @@ void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
   srb0_data = calloc(1, sizeof(struct srb0_data));
   AssertFatal(srb0_data != NULL, "out of memory\n");
 
-  srb0_data->mac = mac;
+  srb0_data->mac       = mac;
   srb0_data->rnti      = rnti;
   srb0_data->rawUE     = rawUE;
   srb0_data->send_initial_ul_rrc_message = send_initial_ul_rrc_message;

@@ -2908,11 +2908,11 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
   }
 }
 
-void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void* rawUE)
+void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE)
 {
   LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", sdu_len, rnti);
 
-  NR_UE_info_t* UE = (NR_UE_info_t*) rawUE;
+  NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
 
   uint8_t du2cu_rrc_container[1024];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
@@ -2936,7 +2936,7 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
   mac->mac_rrc.initial_ul_rrc_message_transfer(0, &ul_rrc_msg);
 }
 
-void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t* UE)
+void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 {
   /* create this UE's initial CellGroup */
   /* Note: relying on the RRC is a hack, as we are in the DU; there should be
