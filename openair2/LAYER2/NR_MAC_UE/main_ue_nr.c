@@ -55,6 +55,7 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     nr_ue_mac_inst->sib1_decoded = false;
     nr_ue_mac_inst->phy_config_request_sent = false;
     nr_ue_mac_inst->state = UE_NOT_SYNC;
+    memset(&nr_ue_mac_inst->ssb_measurements, 0, sizeof(nr_ue_mac_inst->ssb_measurements));
 
     for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
 	nr_ue_init_mac(j);

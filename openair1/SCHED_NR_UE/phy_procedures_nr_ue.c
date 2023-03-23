@@ -118,10 +118,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
                            UE_nr_rxtx_proc_t *proc,
-                           void *typeSpecific){
-
-  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-
+                           void *typeSpecific)
+{
   if (n_pdus > 1){
     LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
   }
@@ -154,17 +152,23 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
         AssertFatal(1==0,"Second codeword currently not supported\n");
       }
       break;
-    case FAPI_NR_RX_PDU_TYPE_SSB:
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu=malloc(sizeof(((fapiPbch_t*)typeSpecific)->decoded_output));
-      memcpy(rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu,
-	     ((fapiPbch_t*)typeSpecific)->decoded_output,
-	     sizeof(((fapiPbch_t*)typeSpecific)->decoded_output));
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.additional_bits = ((fapiPbch_t*)typeSpecific)->xtra_byte;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_index = (frame_parms->ssb_index)&0x7;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_length = frame_parms->Lmax;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.cell_id = frame_parms->Nid_cell;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+    case FAPI_NR_RX_PDU_TYPE_SSB: {
+        fapi_nr_ssb_pdu_t *ssb_pdu = &rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu;
+        if(typeSpecific) {
+          NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+          fapiPbch_t *pbch = (fapiPbch_t *)typeSpecific;
+          memcpy(ssb_pdu->pdu, pbch->decoded_output, sizeof(pbch->decoded_output));
+          ssb_pdu->additional_bits = pbch->xtra_byte;
+          ssb_pdu->ssb_index = (frame_parms->ssb_index)&0x7;
+          ssb_pdu->ssb_length = frame_parms->Lmax;
+          ssb_pdu->cell_id = frame_parms->Nid_cell;
+          ssb_pdu->ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
+          ssb_pdu->rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+          ssb_pdu->decoded_pdu = true;
+        }
+        else
+          ssb_pdu->decoded_pdu = false;
+      }
     break;
     case FAPI_NR_CSIRS_IND:
       memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
@@ -382,7 +386,6 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    proc,
                    estimateSz,
                    dl_ch_estimates,
-                   ue->pbch_vars[gNB_id],
                    &ue->frame_parms,
                    (ue->frame_parms.ssb_index)&7,
                    SISO,
@@ -391,8 +394,6 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    rxdataF);
 
   if (ret==0) {
-
-    ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
@@ -426,36 +427,12 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
       write_output("H10.m","h10",&(ue->common_vars.dl_ch_estimates[0][2][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
 
       write_output("rxsigF0.m","rxsF0", ue->common_vars.rxdataF[0],8*ue->frame_parms.ofdm_symbol_size,1,1);
-      write_output("PBCH_rxF0_ext.m","pbch0_ext",ue->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
-      write_output("PBCH_rxF0_comp.m","pbch0_comp",ue->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-      write_output("PBCH_rxF_llr.m","pbch_llr",ue->pbch_vars[0]->llr,(ue->frame_parms.Ncp==0) ? 1920 : 1728,1,4);
       exit(-1);
     */
 
-    ue->pbch_vars[gNB_id]->pdu_errors_conseq++;
-    ue->pbch_vars[gNB_id]->pdu_errors++;
-
-    if (ue->pbch_vars[gNB_id]->pdu_errors_conseq>=100) {
-      if (get_softmodem_params()->non_stop) {
-        LOG_E(PHY,"More that 100 consecutive PBCH errors! Going back to Sync mode!\n");
-        ue->lost_sync = 1;
-      } else {
-        LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-        exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
-      }
-    }
   }
 
-  if (frame_rx % 100 == 0) {
-    ue->pbch_vars[gNB_id]->pdu_errors_last = ue->pbch_vars[gNB_id]->pdu_errors;
-  }
 
-#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[UE %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
-	ue->Mod_id,frame_rx, nr_slot_rx,
-	ue->pbch_vars[gNB_id]->pdu_errors,
-	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
 }
 

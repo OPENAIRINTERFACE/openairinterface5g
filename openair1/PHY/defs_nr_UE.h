@@ -317,17 +317,6 @@ typedef struct {
 #define PBCH_A 24
 
 typedef struct {
-  /// \brief Total number of PDU errors.
-  uint32_t pdu_errors;
-  /// \brief Total number of PDU errors 128 frames ago.
-  uint32_t pdu_errors_last;
-  /// \brief Total number of consecutive PDU errors.
-  uint32_t pdu_errors_conseq;
-  /// \brief FER (in percent) .
-  //uint32_t pdu_fer;
-} NR_UE_PBCH;
-
-typedef struct {
   int16_t amp;
   bool active;
   fapi_nr_ul_config_prach_pdu prach_pdu;
@@ -402,8 +391,6 @@ typedef struct {
   int is_synchronized;
   /// \brief Target gNB Nid_cell when UE is resynchronizing
   int target_Nid_cell;
-  /// \brief Indicator that UE lost frame synchronization
-  int lost_sync;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -444,7 +431,6 @@ typedef struct {
   fapi_nr_config_request_t nrUE_config;
   nr_synch_request_t synch_request;
 
-  NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];

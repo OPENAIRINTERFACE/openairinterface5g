@@ -116,7 +116,8 @@ typedef struct {
 } fapi_nr_pdsch_pdu_t;
 
 typedef struct {
-  uint8_t* pdu;   //  3bytes
+  bool decoded_pdu;
+  uint8_t pdu[3];
   uint8_t additional_bits;
   uint8_t ssb_index;
   uint8_t ssb_length;

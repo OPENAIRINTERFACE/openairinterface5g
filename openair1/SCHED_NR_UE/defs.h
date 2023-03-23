@@ -83,7 +83,7 @@
 
 
 typedef struct {
-  uint8_t decoded_output[64];
+  uint8_t decoded_output[3]; // PBCH paylod not larger than 3B
   uint8_t xtra_byte;
 } fapiPbch_t;
 
