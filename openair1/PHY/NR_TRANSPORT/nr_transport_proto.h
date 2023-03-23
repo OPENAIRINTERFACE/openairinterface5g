@@ -293,6 +293,7 @@ void reset_active_stats(PHY_VARS_gNB *gNB, int frame);
 void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame);
 
 void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
+                             int32_t **ul_ch_mag,
                              int32_t ***rho,
                              int16_t **llr_layers,
                              uint8_t nb_antennas_rx,

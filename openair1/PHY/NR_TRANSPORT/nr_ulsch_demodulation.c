@@ -2177,6 +2177,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
         }
       } else {
         nr_ulsch_compute_ML_llr(pusch_vars->rxdataF_comp,
+                                pusch_vars->ul_ch_mag0,
                                 pusch_vars->rho,
                                 pusch_vars->llr_layers,
                                 frame_parms->nb_antennas_rx,
