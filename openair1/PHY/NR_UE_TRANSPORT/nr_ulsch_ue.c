@@ -122,7 +122,7 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int sample_offsetF, N_RE_prime;
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  int32_t **txdataF = UE->common_vars.txdataF;
+  c16_t **txdataF = UE->common_vars.txdataF;
 
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
@@ -595,8 +595,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       uint8_t n_antenna_ports) {
 
   int tx_offset, ap;
-  int32_t **txdata;
-  int32_t **txdataF;
+  c16_t **txdata;
+  c16_t **txdataF;
 
   /////////////////////////IFFT///////////////////////
   ///////////
@@ -616,7 +616,7 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   for(ap = 0; ap < n_antenna_ports; ap++) {
     for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
-      c16_t *this_symbol = (c16_t *)&txdataF[ap][frame_parms->ofdm_symbol_size * s];
+      c16_t *this_symbol = &txdataF[ap][frame_parms->ofdm_symbol_size * s];
       c16_t rot=frame_parms->symbol_rotation[1][s + symb_offset];
       LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
 	    s,
@@ -643,8 +643,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
 
   for (ap = 0; ap < n_antenna_ports; ap++) {
     if (frame_parms->Ncp == 1) { // extended cyclic prefix
-      PHY_ofdm_mod(txdataF[ap],
-                   &txdata[ap][tx_offset],
+      PHY_ofdm_mod((int *)txdataF[ap],
+                   (int *)&txdata[ap][tx_offset],
                    frame_parms->ofdm_symbol_size,
                    12,
                    frame_parms->nb_prefix_samples,

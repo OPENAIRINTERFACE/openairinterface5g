@@ -106,7 +106,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   LOG_I(NR_PHY,"Calling %s function\n", __FUNCTION__);
 #endif
 
-  int32_t **rxdataF = gNB->common_vars.rxdataF;
+  c16_t **rxdataF = gNB->common_vars.rxdataF;
   const NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
 
   const uint16_t n_symbols = (slot&3)*frame_parms->symbols_per_slot;                    // number of symbols until this slot
@@ -124,7 +124,7 @@ int nr_get_srs_signal(PHY_VARS_gNB *gNB,
   for (int ant = 0; ant < frame_parms->nb_antennas_rx; ant++) {
 
     memset(srs_received_signal[ant], 0, frame_parms->ofdm_symbol_size*sizeof(int32_t));
-    rx_signal = &rxdataF[ant][symbol_offset];
+    rx_signal = (int32_t *)&rxdataF[ant][symbol_offset];
 
     for (int p_index = 0; p_index < N_ap; p_index++) {
 

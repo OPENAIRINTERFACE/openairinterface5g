@@ -10,7 +10,7 @@
 extern short nr_qpsk_mod_table[8];
 
 int nr_generate_prs(uint32_t **nr_gold_prs,
-                          int32_t *txdataF,
+                          c16_t *txdataF,
                           int16_t amp,
                           prs_config_t *prs_cfg,
                           nfapi_nr_config_request_scf_t *config,

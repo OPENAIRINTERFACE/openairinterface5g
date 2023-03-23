@@ -40,7 +40,7 @@
 
 
 int nr_generate_prs(uint32_t **nr_gold_prs,
-                    int32_t *txdataF,
+                    c16_t *txdataF,
                     int16_t amp,
                     prs_config_t *prs_cfg,
                     nfapi_nr_config_request_scf_t *config,
@@ -52,7 +52,7 @@ int nr_generate_prs(uint32_t **nr_gold_prs,
 @param
 @returns 0 on success
  */
-int nr_generate_pss(int32_t *txdataF,
+int nr_generate_pss(c16_t *txdataF,
                     int16_t amp,
                     uint8_t ssb_start_symbol,
                     nfapi_nr_config_request_scf_t *config,
@@ -64,7 +64,7 @@ int nr_generate_pss(int32_t *txdataF,
 @param
 @returns 0 on success
  */
-int nr_generate_sss(int32_t *txdataF,
+int nr_generate_sss(c16_t *txdataF,
                     int16_t amp,
                     uint8_t ssb_start_symbol,
                     nfapi_nr_config_request_scf_t *config,
@@ -77,7 +77,7 @@ int nr_generate_sss(int32_t *txdataF,
 @returns 0 on success
  */
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
-                          int32_t *txdataF,
+                          c16_t *txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
                           nfapi_nr_config_request_scf_t *config,
@@ -91,7 +91,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
  */
 int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
-                     int32_t *txdataF,
+                     c16_t *txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
                      uint8_t n_hf,
@@ -140,7 +140,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
     @param nb_rb_pusch The number of RBs allocated (used for Resource Allocation Type 1 in NR)
     @param frame_parms, Pointer to frame descriptor structure
 */
-void nr_ulsch_extract_rbs(int32_t **rxdataF,
+void nr_ulsch_extract_rbs(c16_t **rxdataF,
                           NR_gNB_PUSCH *pusch_vars,
                           int slot,
                           unsigned char symbol,
@@ -359,7 +359,7 @@ void nr_generate_csi_rs(const NR_DL_FRAME_PARMS *frame_parms,
 
 void free_nr_prach_entry(PHY_VARS_gNB *gNB, int prach_id);
 
-void nr_decode_pucch1(int32_t **rxdataF,
+void nr_decode_pucch1(c16_t **rxdataF,
                       pucch_GroupHopping_t pucch_GroupHopping,
                       uint32_t n_id,       // hoppingID higher layer parameter
                       uint64_t *payload,
