@@ -102,9 +102,11 @@ __attribute__((always_inline)) inline c16_t c32x16cumulVectVectWithSteps(c16_t *
 
 int get_delay_idx(int delay) {
   int delay_idx = MAX_UL_DELAY_COMP + delay;
+  // If the measured delay is less than -MAX_UL_DELAY_COMP, a -MAX_UL_DELAY_COMP delay is compensated.
   if (delay_idx < 0) {
     delay_idx = 0;
   }
+  // If the measured delay is greater than +MAX_UL_DELAY_COMP, a +MAX_UL_DELAY_COMP delay is compensated.
   if (delay_idx > MAX_UL_DELAY_COMP<<1) {
     delay_idx = MAX_UL_DELAY_COMP<<1;
   }
