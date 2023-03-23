@@ -883,7 +883,7 @@ void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs) {
   asn1cSeqAdd(&pucch_Config->spatialRelationInfoToAddModList->list,pucchspatial);
 }
 
-static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig, const NR_ServingCellConfigCommon_t *scc)
+static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedulingRequestResourceConfig, const NR_ServingCellConfigCommon_t *scc, int scs)
 {
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   int sr_slot = 1; // in FDD SR in slot 1
@@ -892,43 +892,46 @@ static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedul
 
   schedulingRequestResourceConfig->periodicityAndOffset = calloc(1,sizeof(*schedulingRequestResourceConfig->periodicityAndOffset));
 
-  if(sr_slot<10){
+  if(sr_slot < 10 && scs < NR_SubcarrierSpacing_kHz60){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl10;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl10 = sr_slot;
     return;
   }
-  if(sr_slot<20){
+  else if(sr_slot < 20 && scs < NR_SubcarrierSpacing_kHz120){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl20;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl20 = sr_slot;
     return;
   }
-  if(sr_slot<40){
+  else if(sr_slot < 40){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl40;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl40 = sr_slot;
     return;
   }
-  if(sr_slot<80){
+  else if(sr_slot < 80 || scs == NR_SubcarrierSpacing_kHz15){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl80;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl80 = sr_slot;
     return;
   }
-  if(sr_slot<160){
+  else if(sr_slot < 160 || scs == NR_SubcarrierSpacing_kHz30){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl160;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl160 = sr_slot;
     return;
   }
-  if(sr_slot<320){
+  else if(sr_slot < 320 || NR_SubcarrierSpacing_kHz60){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl320 = sr_slot;
     return;
   }
-  schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640;
-  schedulingRequestResourceConfig->periodicityAndOffset->choice.sl640 = sr_slot;
+  else {
+    schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl640;
+    schedulingRequestResourceConfig->periodicityAndOffset->choice.sl640 = sr_slot;
+  }
 }
 
 void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
-                               NR_PUCCH_Config_t *pucch_Config) {
-
+                               NR_PUCCH_Config_t *pucch_Config,
+                               int scs)
+{
   // format with <=2 bits in pucch resource set 0
   NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[0];
   // assigning the 1st pucch resource in the set to scheduling request
@@ -939,7 +942,7 @@ void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
   schedulingRequestResourceConfig->schedulingRequestResourceId = 1;
   schedulingRequestResourceConfig->schedulingRequestID = 0;
 
-  set_SR_periodandoffset(schedulingRequestResourceConfig, scc);
+  set_SR_periodandoffset(schedulingRequestResourceConfig, scc, scs);
 
   schedulingRequestResourceConfig->resource = calloc(1,sizeof(*schedulingRequestResourceConfig->resource));
   *schedulingRequestResourceConfig->resource = *pucchressetid;
@@ -1250,7 +1253,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   config_pucch_resset0(pucch_Config, uid, curr_bwp, uecap);
   config_pucch_resset1(pucch_Config, uecap);
   set_pucch_power_config(pucch_Config, configuration->do_CSIRS);
-  scheduling_request_config(scc, pucch_Config);
+  scheduling_request_config(scc, pucch_Config, ubwp->bwp_Common->genericParameters.subcarrierSpacing);
   set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, ubwp->bwp_Common->genericParameters.subcarrierSpacing);
 
   NR_PUSCH_Config_t *pusch_Config = NULL;
