@@ -180,14 +180,6 @@ static void nr_rrc_addmod_drbs(int rnti,
 }
 
 
-static void openair_nr_rrc_on(gNB_RRC_INST *rrc)
-{
-  NR_SRB_INFO *si = &rrc->carrier.SI;
-  si->Rx_buffer.payload_size = 0;
-  si->Tx_buffer.payload_size = 0;
-  si->Active = 1;
-}
-
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -295,7 +287,6 @@ static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_Rrc
   rrc->cell_info_configured = 0;
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
   init_NR_SI(rrc, configuration);
-  openair_nr_rrc_on(rrc);
   return;
 } // END openair_rrc_gNB_configuration
 
@@ -501,7 +492,6 @@ static void rrc_gNB_process_RRCSetupComplete(const protocol_ctxt_t *const ctxt_p
   LOG_A(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT" [RAPROC] Logical Channel UL-DCCH, " "processing NR_RRCSetupComplete from UE (SRB1 Active)\n",
       PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
   ue_context_pP->ue_context.Srb[1].Active = 1;
-  ue_context_pP->ue_context.Srb[1].Srb_info.Srb_id = 1;
   ue_context_pP->ue_context.Srb[2].Active = 0;
   ue_context_pP->ue_context.StatusRrc = NR_RRC_CONNECTED;
 
@@ -1137,10 +1127,8 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
     for (int i = 0; (i < SRB_configList->list.count) && (i < 3); i++) {
       if (SRB_configList->list.array[i]->srb_Identity == 1) {
         ue_p->Srb[1].Active = 1;
-        ue_p->Srb[1].Srb_info.Srb_id = 1;
       } else if (SRB_configList->list.array[i]->srb_Identity == 2) {
         ue_p->Srb[2].Active = 1;
-        ue_p->Srb[2].Srb_info.Srb_id = 2;
         LOG_I(NR_RRC, "[gNB %d] Frame      %d CC %d : SRB2 is now active\n", ctxt_pP->module_id, ctxt_pP->frame, ue_p->primaryCC_id);
       } else {
         LOG_W(NR_RRC, "[gNB %d] Frame %d CC %d: invalid SRB identity %ld\n", ctxt_pP->module_id, ctxt_pP->frame, ue_p->primaryCC_id, SRB_configList->list.array[i]->srb_Identity);
@@ -1401,7 +1389,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   }
 
   ue_p->Srb[1].Active = 1;
-  // ue_p->Srb[2].Srb_info.Srb_id = 2;
 
   if (get_softmodem_params()->sa) {
     LOG_W(NR_RRC, "Rework identity mapping need to be done properly!\n");
@@ -1843,14 +1830,8 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
         Idx = DCCH;
         // SRB1
         UE->Srb[1].Active = 1;
-        UE->Srb[1].Srb_info.Srb_id = Idx;
-        rrc_init_nr_srb_param(&UE->Srb[1].Srb_info.Lchan_desc[0]);
-        rrc_init_nr_srb_param(&UE->Srb[1].Srb_info.Lchan_desc[1]);
         // SRB2: set  it to go through SRB1 with id 1 (DCCH)
         UE->Srb[2].Active = 1;
-        UE->Srb[2].Srb_info.Srb_id = Idx;
-        rrc_init_nr_srb_param(&UE->Srb[2].Srb_info.Lchan_desc[0]);
-        rrc_init_nr_srb_param(&UE->Srb[2].Srb_info.Lchan_desc[1]);
         protocol_ctxt_t ctxt = {.rntiMaybeUEid = rnti, .module_id = module_id, .instance = module_id, .enb_flag = 1, .eNB_index = module_id};
         rrc_gNB_generate_RRCReestablishment(&ctxt, ue_context_p, du_to_cu_rrc_container, gnb_rrc_inst->carrier.servingcellconfigcommon, 0);
 
@@ -3457,8 +3438,6 @@ void *rrc_gnb_task(void *args_p) {
   MessageDef *msg_p;
   instance_t                         instance;
   int                                result;
-  //SRB_INFO                           *srb_info_p;
-  //int                                CC_id;
   protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .rntiMaybeUEid = 0, .frame = -1, .subframe = -1, .eNB_index = 0, .brOption = false};
 
   /* timer to write stats to file */
@@ -3643,9 +3622,6 @@ rrc_gNB_generate_SecurityModeCommand(
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
-
-  memcpy(ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.Payload, buffer, size);
-  ue_context_pP->ue_context.Srb[1].Srb_info.Tx_buffer.payload_size = size;
 
   nr_rrc_data_req(ctxt_pP, DCCH, rrc_gNB_mui++, SDU_CONFIRM_NO, size, buffer, PDCP_TRANSMISSION_MODE_CONTROL);
 }
