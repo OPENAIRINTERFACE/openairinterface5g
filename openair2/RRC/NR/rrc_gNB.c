@@ -177,10 +177,8 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 {
 
   LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    rrc->carrier.MIB             = (uint8_t *) malloc16(4);
-    rrc->carrier.sizeof_MIB      = do_MIB_NR(rrc,0);
-  }
+  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type))
+    rrc->carrier.mib = get_new_MIB_NR(rrc->carrier.servingcellconfigcommon);
 
   if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
     rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
@@ -204,7 +202,7 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                       rrc->configuration.sib1_tda,
                       rrc->configuration.minRXTXTIME,
                       rrc->carrier.servingcellconfigcommon);
-    nr_mac_config_mib(RC.nrmac[rrc->module_id], &rrc->carrier.mib);
+    nr_mac_config_mib(RC.nrmac[rrc->module_id], rrc->carrier.mib);
     if (get_softmodem_params()->sa)
       nr_mac_config_sib1(RC.nrmac[rrc->module_id], rrc->carrier.siblock1);
   }
@@ -407,7 +405,7 @@ static void rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t 
                     rrc_instance_p->configuration.sib1_tda,
                     rrc_instance_p->configuration.minRXTXTIME,
                     rrc_instance_p->carrier.servingcellconfigcommon);
-  nr_mac_config_mib(RC.nrmac[rrc_instance_p->module_id], &rrc_instance_p->carrier.mib);
+  nr_mac_config_mib(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.mib);
   nr_mac_config_sib1(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.siblock1);
 
   LOG_I(NR_RRC, " [RAPROC] rnti: %04x Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n", rnti, size);
@@ -2413,26 +2411,17 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 	//fixme: multi instance is not consistent here
 	F1AP_SETUP_RESP (msg_p).gNB_CU_name  = rrc->node_name;
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
-        rrc->carrier.MIB = malloc(f1_setup_req->mib_length[i]);
-        rrc->carrier.sizeof_MIB = f1_setup_req->mib_length[i];
-        LOG_W(NR_RRC, "instance %d mib length %d\n", i, f1_setup_req->mib_length[i]);
         LOG_W(NR_RRC, "instance %d sib1 length %d\n", i, f1_setup_req->sib1_length[i]);
-        memcpy((void *)rrc->carrier.MIB,f1_setup_req->mib[i],f1_setup_req->mib_length[i]);
+        AssertFatal(rrc->carrier.mib == NULL, "CU MIB is already initialized: double F1 setup request?\n");
         asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                                   &asn_DEF_NR_BCCH_BCH_Message,
-                                  (void **)&rrc->carrier.mib_DU,
+                                  (void **)&rrc->carrier.mib,
                                   f1_setup_req->mib[i],
                                   f1_setup_req->mib_length[i]);
         AssertFatal(dec_rval.code == RC_OK,
                     "[gNB_CU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
                     j,
                     dec_rval.consumed );
-        NR_BCCH_BCH_Message_t *mib = &rrc->carrier.mib;
-        NR_BCCH_BCH_Message_t *mib_DU = rrc->carrier.mib_DU;
-        mib->message.present = NR_BCCH_BCH_MessageType_PR_mib;
-        mib->message.choice.mib = CALLOC(1,sizeof(struct NR_MIB));
-        memset(mib->message.choice.mib,0,sizeof(struct NR_MIB));
-        memcpy(mib->message.choice.mib, mib_DU->message.choice.mib, sizeof(struct NR_MIB));
 
         dec_rval = uper_decode_complete(NULL,
                                         &asn_DEF_NR_SIB1, //&asn_DEF_NR_BCCH_DL_SCH_Message,

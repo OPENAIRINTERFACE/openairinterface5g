@@ -442,10 +442,6 @@ typedef struct rrc_gNB_ue_context_s {
 
 typedef struct {
 
-  // buffer that contains the encoded messages
-  uint8_t                                   *MIB;
-  uint8_t                                   sizeof_MIB;
-
   uint8_t                                   *SIB1;
   uint16_t                                  sizeof_SIB1;
 
@@ -454,8 +450,7 @@ typedef struct {
 
   int                                       physCellId;
 
-  NR_BCCH_BCH_Message_t                     mib;
-  NR_BCCH_BCH_Message_t                    *mib_DU;
+  NR_BCCH_BCH_Message_t                    *mib;
   NR_SIB1_t                                *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;

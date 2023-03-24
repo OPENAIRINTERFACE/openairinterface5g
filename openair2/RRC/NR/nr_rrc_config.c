@@ -1577,3 +1577,115 @@ void config_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
   *csirep->groupBasedBeamReporting.choice.disabled->nrofReportedRS = NR_CSI_ReportConfig__groupBasedBeamReporting__disabled__nrofReportedRS_n1;
   asn1cSeqAdd(&csi_MeasConfig->csi_ReportConfigToAddModList->list, csirep);
 }
+
+NR_BCCH_BCH_Message_t *get_new_MIB_NR(const NR_ServingCellConfigCommon_t *scc)
+{
+  NR_BCCH_BCH_Message_t *mib = calloc(1, sizeof(*mib));
+  if (mib == NULL)
+    abort();
+  mib->message.present = NR_BCCH_BCH_MessageType_PR_mib;
+  mib->message.choice.mib = calloc(1, sizeof(struct NR_MIB));
+  if (mib->message.choice.mib == NULL)
+    abort();
+
+  // 36.331 SFN BIT STRING (SIZE (8)  , 38.331 SFN BIT STRING (SIZE (6))
+  uint8_t sfn_msb = 0; // encoding will update with the correct frame number
+  mib->message.choice.mib->systemFrameNumber.buf = CALLOC(1, sizeof(uint8_t));
+  mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
+  mib->message.choice.mib->systemFrameNumber.size = 1;
+  mib->message.choice.mib->systemFrameNumber.bits_unused = 2;
+
+  // 38.331 spare BIT STRING (SIZE (1))
+  uint16_t *spare = CALLOC(1, sizeof(uint16_t));
+  if (spare == NULL)
+    abort();
+  mib->message.choice.mib->spare.buf = (uint8_t *)spare;
+  mib->message.choice.mib->spare.size = 1;
+  mib->message.choice.mib->spare.bits_unused = 7; // This makes a spare of 1 bits
+
+  AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
+  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
+  int ssb_subcarrier_offset = 31; // default value for NSA
+  if (get_softmodem_params()->sa) {
+    uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB
+                              - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
+    int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
+    ssb_subcarrier_offset = (absolute_diff / scs_scaling) % 24;
+    if (frequency_range == FR2) {
+      // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only
+      // option supported by OAI for now)
+      ssb_subcarrier_offset >>= 1;
+    }
+  }
+  mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset & 15;
+
+  /*
+   * The SIB1 will be sent in this allocation (Type0-PDCCH) : 38.213, 13-4 Table and 38.213 13-11 to 13-14 tables
+   * the reverse allocation is in nr_ue_decode_mib()
+   */
+  const NR_PDCCH_ConfigCommon_t *pdcch_cc = scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup;
+  long cset0 = pdcch_cc->controlResourceSetZero ? *pdcch_cc->controlResourceSetZero : 0;
+  mib->message.choice.mib->pdcch_ConfigSIB1.controlResourceSetZero = cset0;
+  long ss0 = pdcch_cc->searchSpaceZero ? *pdcch_cc->searchSpaceZero : 0;
+  mib->message.choice.mib->pdcch_ConfigSIB1.searchSpaceZero = ss0;
+
+  switch (*scc->ssbSubcarrierSpacing) {
+    case NR_SubcarrierSpacing_kHz15:
+      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
+      break;
+
+    case NR_SubcarrierSpacing_kHz30:
+      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
+      break;
+
+    case NR_SubcarrierSpacing_kHz60:
+      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs15or60;
+      break;
+
+    case NR_SubcarrierSpacing_kHz120:
+      mib->message.choice.mib->subCarrierSpacingCommon = NR_MIB__subCarrierSpacingCommon_scs30or120;
+      break;
+
+    case NR_SubcarrierSpacing_kHz240:
+      AssertFatal(1 == 0, "Unknown subCarrierSpacingCommon %d\n", (int)*scc->ssbSubcarrierSpacing);
+      break;
+
+    default:
+      AssertFatal(1 == 0, "Unknown subCarrierSpacingCommon %d\n", (int)*scc->ssbSubcarrierSpacing);
+  }
+
+  switch (scc->dmrs_TypeA_Position) {
+    case NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos2:
+      mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos2;
+      break;
+
+    case NR_ServingCellConfigCommon__dmrs_TypeA_Position_pos3:
+      mib->message.choice.mib->dmrs_TypeA_Position = NR_MIB__dmrs_TypeA_Position_pos3;
+      break;
+
+    default:
+      AssertFatal(1 == 0, "Unknown dmrs_TypeA_Position %d\n", (int)scc->dmrs_TypeA_Position);
+  }
+
+  mib->message.choice.mib->cellBarred = NR_MIB__cellBarred_notBarred;
+  mib->message.choice.mib->intraFreqReselection = NR_MIB__intraFreqReselection_notAllowed;
+  return mib;
+}
+
+void free_MIB_NR(NR_BCCH_BCH_Message_t *mib)
+{
+  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
+}
+
+int encode_MIB_NR(NR_BCCH_BCH_Message_t *mib, int frame, uint8_t *buf, int buf_size)
+{
+  DevAssert(mib != NULL && mib->message.choice.mib->systemFrameNumber.buf != NULL);
+  uint8_t sfn_msb = (uint8_t)((frame >> 4) & 0x3f);
+  *mib->message.choice.mib->systemFrameNumber.buf = sfn_msb << 2;
+
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message, NULL, mib, buf, buf_size);
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  LOG_D(NR_RRC, "Encoded MIB for frame %d sfn_msb %d, bits %lu\n", frame, sfn_msb, enc_rval.encoded);
+  return (enc_rval.encoded + 7) / 8;
+}

@@ -94,7 +94,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc;
   nfapi_nr_dl_tti_request_body_t *dl_req;
-  NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib.message.choice.mib;
+  NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib->message.choice.mib;
   uint8_t num_tdd_period,num_ssb;
   int mib_sdu_length;
   int CC_id;

@@ -77,27 +77,13 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   // MIBCH
   if ((Srb_id & RAB_OFFSET) == MIBCH) {
 
-    asn_enc_rval_t enc_rval;
-    uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
+    int encode_size = 3;
     rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
-    NR_BCCH_BCH_Message_t *mib = &carrier->mib;
-
-    mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
-    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
-                                     NULL,
-                                     (void *) mib,
-                                     carrier->MIB,
-                                     24);
-    LOG_D(NR_RRC, "Encoded MIB for frame %d sfn_msb %d (%p), bits %lu\n", frameP, sfn_msb, carrier->MIB,
-          enc_rval.encoded);
-    buffer_pP[0] = carrier->MIB[0];
-    buffer_pP[1] = carrier->MIB[1];
-    buffer_pP[2] = carrier->MIB[2];
+    int encoded = encode_MIB_NR(carrier->mib, frameP, buffer_pP, encode_size);
+    DevAssert(encoded == encode_size);
     LOG_D(NR_RRC, "MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n", buffer_pP[0], buffer_pP[1],
           buffer_pP[2]);
-    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-                 enc_rval.failed_type->name, enc_rval.encoded);
-    return 3;
+    return encode_size;
   }
 
   // TODO BCCH SIB1 SIBs

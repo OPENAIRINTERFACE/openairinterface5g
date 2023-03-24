@@ -55,9 +55,6 @@
  */
 int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
 
-uint8_t do_MIB_NR(gNB_RRC_INST *rrc,
-                  uint32_t frame);
-
 /**
 \brief Generate configuration for SIB1 (gNB).
 @param carrier pointer to Carrier information
