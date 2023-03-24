@@ -79,7 +79,6 @@ void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch, uint16_t N_RB_UL)
     free_and_zero(ulsch->harq_process);
     ulsch->harq_process = NULL;
   }
-  free_and_zero(ulsch);
 }
 
 NR_gNB_ULSCH_t new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL)

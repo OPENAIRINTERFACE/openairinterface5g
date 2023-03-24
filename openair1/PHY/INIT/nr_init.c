@@ -885,7 +885,6 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars->rho);
 
     free_and_zero(pusch_vars->llr);
-    free_and_zero(pusch_vars);
   } // ULSCH_id
   free(gNB->pusch_vars);
 }
@@ -1117,4 +1116,5 @@ void reset_nr_transport(PHY_VARS_gNB *gNB)
 
   for (int i = 0; i < gNB->max_nb_pusch; i++)
     free_gNB_ulsch(&gNB->ulsch[i], fp->N_RB_UL);
+  free(gNB->ulsch);
 }
