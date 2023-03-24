@@ -33,9 +33,11 @@
 #include "NR_UE-NR-Capability.h"
 //#include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
+#include "NR_CellGroupConfig.h"
 #include "NR_CG-Config.h"
 //#include "NR_SRB-ToAddModList.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/RRC/LTE/rrc_eNB_GTPV1U.h"
 #include "executables/softmodem-common.h"
 #include "executables/nr-softmodem.h"
@@ -109,6 +111,7 @@ RB_PROTOTYPE(rrc_nr_ue_tree_s, rrc_gNB_ue_context_s, entries,
 
 void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2ap_ENDC_sgnb_addition_req_t *m)
 {
+  AssertFatal(!get_softmodem_params()->sa, "%s() cannot be called in SA mode, it is intrinsically for NSA\n", __func__);
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
   rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
   const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
@@ -351,11 +354,25 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
         ctxt.subframe,
         ctxt.eNB_index);
 
-  nr_pdcp_add_drbs(
-      ctxt.enb_flag, ctxt.rntiMaybeUEid, 0, UE->rb_config->drb_ToAddModList, (UE->integrity_algorithm << 4) | UE->ciphering_algorithm, kUPenc, kUPint, UE->secondaryCellGroup->rlc_BearerToAddModList);
+  nr_pdcp_add_drbs(ctxt.enb_flag,
+                   ctxt.rntiMaybeUEid,
+                   0,
+                   ue_context_p->ue_context.rb_config->drb_ToAddModList,
+                   (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
+                   kUPenc,
+                   kUPint,
+                   ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList);
 
-  nr_rrc_rlc_config_asn1_req(
-      &ctxt, get_softmodem_params()->sa ? UE->rb_config->srb_ToAddModList : NULL, UE->rb_config->drb_ToAddModList, UE->rb_config->drb_ToReleaseList, UE->secondaryCellGroup->rlc_BearerToAddModList);
+  // assume only a single bearer
+  const NR_DRB_ToAddModList_t *drb_list = ue_context_p->ue_context.rb_config->drb_ToAddModList;
+  DevAssert(drb_list->list.count == 1);
+  const NR_DRB_ToAddMod_t *drb = drb_list->list.array[0];
+  const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list =
+      ue_context_p->ue_context.secondaryCellGroup->rlc_BearerToAddModList;
+  const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[0];
+  DevAssert(bearer_list->list.count == 1);
+  DevAssert(drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity);
+  nr_rlc_add_drb(ctxt.rntiMaybeUEid, drb->drb_Identity, bearer);
 
   LOG_D(RRC, "%s:%d: done RRC PDCP/RLC ASN1 request for UE rnti %lx\n", __FUNCTION__, __LINE__, ctxt.rntiMaybeUEid);
 }

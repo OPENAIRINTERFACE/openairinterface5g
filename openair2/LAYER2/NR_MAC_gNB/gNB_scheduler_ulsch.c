@@ -372,8 +372,9 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 6;
         }
 
-        nr_rlc_activate_srb0(UE->rnti, module_idP, CC_id, UE->uid, send_initial_ul_rrc_message);
+        LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", mac_len, UE->rnti);
 
+        prepare_initial_ul_rrc_message(RC.nrmac[module_idP], UE);
         mac_rlc_data_ind(module_idP,
                          UE->rnti,
                          module_idP,
