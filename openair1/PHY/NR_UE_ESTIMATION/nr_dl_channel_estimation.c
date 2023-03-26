@@ -483,6 +483,11 @@ int nr_prs_channel_estimation(uint8_t rsc_id,
     case 4096:
       idftsizeidx = IDFT_4096;
       break;
+    
+    case 6144:
+      idftsizeidx = IDFT_6144;
+      break;
+ 
     // 16x IDFT oversampling
     case 8192:
       idftsizeidx = IDFT_8192;
@@ -833,7 +838,11 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   case 4096:
     idftsizeidx = IDFT_4096;
     break;
-    
+  
+  case 6144:
+    idftsizeidx = IDFT_6144;
+    break;
+ 
   default:
     printf("unsupported ofdm symbol size \n");
     assert(0);

@@ -1224,6 +1224,8 @@ extern "C" {
         // from usrp_time_offset
         //openair0_cfg[0].samples_per_packet    = 2048;
         openair0_cfg[0].tx_sample_advance     = 15; //to be checked
+	openair0_cfg[0].tx_bw                 = 100e6;
+        openair0_cfg[0].rx_bw                 = 100e6;
         break;
 
       case 122880000:
