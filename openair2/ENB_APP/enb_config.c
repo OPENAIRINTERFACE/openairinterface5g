@@ -1935,7 +1935,7 @@ int RCconfig_M2(MessageDef *msg_p, uint32_t i) {
               M2AP_REGISTER_ENB_REQ (msg_p).cell_type = CELL_HOME_ENB;
             } else {
               AssertFatal (0,
-                           "Failed to parse eNB configuration file %s, enb %d unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
+                           "Failed to parse eNB configuration file %s, enb %u unknown value \"%s\" for cell_type choice: CELL_MACRO_ENB or CELL_HOME_ENB !\n",
                            RC.config_file_name, i, *(ENBParamList.paramarray[k][ENB_CELL_TYPE_IDX].strptr));
             }
 

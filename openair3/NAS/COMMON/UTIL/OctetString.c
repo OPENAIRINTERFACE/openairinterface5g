@@ -60,7 +60,7 @@ int encode_octet_string(OctetString *octetstring, uint8_t *buffer, uint32_t bufl
 {
   if (octetstring != NULL) {
 	if ((octetstring->value != NULL) && (octetstring->length > 0)) {
-      CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, octetstring->length, buflen);
+      CHECK_PDU_POINTER_AND_LENGTH_ENCODER(buffer, (int)octetstring->length, buflen);
       memcpy((void*)buffer, (void*)octetstring->value, octetstring->length);
       return octetstring->length;
 	} else {

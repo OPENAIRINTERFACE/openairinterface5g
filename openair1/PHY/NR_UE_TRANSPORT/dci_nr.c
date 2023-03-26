@@ -777,7 +777,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     
 #endif
 #ifdef DEBUG_DCI_DECODING
-    printf("demapping: slot %d, mi %d\n",slot,get_mi(frame_parms,slot));
+    printf("demapping: slot %u, mi %d\n",slot,get_mi(frame_parms,slot));
 #endif
   }
 

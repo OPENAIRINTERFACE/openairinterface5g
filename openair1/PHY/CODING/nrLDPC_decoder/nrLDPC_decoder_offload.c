@@ -311,7 +311,7 @@ create_mempools(struct active_device *ad, int socket_id,
 	mp = rte_bbdev_op_pool_create(pool_name, op_type,
 			ops_pool_size, OPS_CACHE_SIZE, socket_id);
 	TEST_ASSERT_NOT_NULL(mp,
-			"ERROR Failed to create %u items ops pool for dev %u on socket %u.",
+			"ERROR Failed to create %u items ops pool for dev %u on socket %d.",
 			ops_pool_size,
 			ad->dev_id,
 			socket_id);
@@ -328,7 +328,7 @@ create_mempools(struct active_device *ad, int socket_id,
 		mp = create_mbuf_pool(p_offloadParams->E, ad->dev_id, socket_id,
 				mbuf_pool_size, "in");
 		TEST_ASSERT_NOT_NULL(mp,
-				"ERROR Failed to create %u items input pktmbuf pool for dev %u on socket %u.",
+				"ERROR Failed to create %u items input pktmbuf pool for dev %u on socket %d.",
 				mbuf_pool_size,
 				ad->dev_id,
 				socket_id);
@@ -342,7 +342,7 @@ create_mempools(struct active_device *ad, int socket_id,
 				mbuf_pool_size,
 				"hard_out");
 		TEST_ASSERT_NOT_NULL(mp,
-				"ERROR Failed to create %u items hard output pktmbuf pool for dev %u on socket %u.",
+				"ERROR Failed to create %u items hard output pktmbuf pool for dev %u on socket %d.",
 				mbuf_pool_size,
 				ad->dev_id,
 				socket_id);
@@ -634,7 +634,7 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 			 * Special case when DPDK mbuf cannot handle
 			 * the required input size
 			 */
-			printf("Warning: Larger input size than DPDK mbuf %d\n",
+			printf("Warning: Larger input size than DPDK mbuf %u\n",
 					data_len);
 			large_input = true;
 		}
@@ -684,7 +684,7 @@ init_op_data_objs(struct rte_bbdev_op_data *bufs,
 				struct rte_mbuf *m_tail =
 						rte_pktmbuf_alloc(mbuf_pool);
 				TEST_ASSERT_NOT_NULL(m_tail,
-						"Not enough mbufs in %d data type mbuf pool (needed %u, available %u)",
+						"Not enough mbufs in %d data type mbuf pool (needed %d, available %u)",
 						op_type,
 						n * nb_segments,
 						mbuf_pool->size);
@@ -1554,7 +1554,7 @@ int32_t nrLDPC_decod_offload(t_nrLDPC_dec_params* p_decParams, uint8_t harq_pid,
 	      m_head[type] = rte_pktmbuf_alloc(mbuf_pools[type]);	  
 	
 	      TEST_ASSERT_NOT_NULL(m_head[type],
-			     "Not enough mbufs in %d data type mbuf pool (needed %u, available %u)",
+			     "Not enough mbufs in %d data type mbuf pool (needed %d, available %u)",
 			     op_type, 1,
 			     mbuf_pools[type]->size);
 	

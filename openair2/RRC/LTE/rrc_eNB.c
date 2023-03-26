@@ -7214,12 +7214,12 @@ void rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
     if ((ctxt_pP->frame&127) == 0 && ctxt_pP->subframe ==0) {
       if (fd) {
         if (ue_context_p->ue_context.Initialue_identity_s_TMSI.presence == true) {
-          fprintf(fd,"RRC UE rnti %x: S-TMSI %x failure timer %d/8\n",
+          fprintf(fd,"RRC UE rnti %x: S-TMSI %x failure timer %u/8\n",
                 ue_context_p->ue_context.rnti,
                 ue_context_p->ue_context.Initialue_identity_s_TMSI.m_tmsi,
                 ue_context_p->ue_context.ul_failure_timer);
         } else {
-          fprintf(fd,"RRC UE rnti %x failure timer %d/8\n",
+          fprintf(fd,"RRC UE rnti %x failure timer %u/8\n",
                 ue_context_p->ue_context.rnti,
                 ue_context_p->ue_context.ul_failure_timer);
         }

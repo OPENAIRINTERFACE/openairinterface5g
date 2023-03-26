@@ -631,9 +631,9 @@ int main(int argc, char **argv) {
          SCM_A, SCM_B, SCM_C, SCM_D, EPA, EVA, ETU, Rayleigh8, Rayleigh1, Rayleigh1_corr, Rayleigh1_anticorr, Rice1, Rice8);
 
   if(transmission_mode==5)
-    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%d_ntx%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1,mcs_i,dual_stream_UE,i_mod);
+    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%u_ntx%d_nrx%d_mcs%d_mcsi%d_u%d_imod%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1,mcs_i,dual_stream_UE,i_mod);
   else
-    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%d_ntx%d_nrx%d_mcs%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1);
+    sprintf(bler_fname,"bler_tm%d_chan%d_perfce%u_ntx%d_nrx%d_mcs%d.csv",transmission_mode,channel_model,perfect_ce,n_tx_phy,n_rx,mcs1);
 
   bler_fd = fopen(bler_fname,"w");
 

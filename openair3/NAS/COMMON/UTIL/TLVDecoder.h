@@ -103,7 +103,7 @@ void tlv_decode_perror(void);
         }                                                                      \
         if (lENGTH < mINIMUMlENGTH)                                            \
         {                                                                      \
-                printf("(%s:%d) Expecting at least %d bytes, got %d\n",        \
+                printf("(%s:%d) Expecting at least %d bytes, got %u\n",        \
                       __FILE__, __LINE__, mINIMUMlENGTH, lENGTH);              \
                 errorCodeDecoder = TLV_DECODE_BUFFER_TOO_SHORT;                \
                 LOG_FUNC_RETURN(TLV_DECODE_BUFFER_TOO_SHORT);                  \

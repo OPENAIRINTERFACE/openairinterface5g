@@ -713,7 +713,7 @@ int main(int argc, char **argv) {
   r_re2 = malloc(2*sizeof(double *));
   r_im2 = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx,

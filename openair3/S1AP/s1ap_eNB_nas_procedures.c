@@ -332,14 +332,14 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     /* UE-related procedure -> stream != 0 */
     if (stream == 0) {
-        S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream == 0\n",
+        S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream == 0\n",
                    assoc_id);
         return -1;
     }
 
     if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
         S1AP_ERROR(
-            "[SCTP %d] Received NAS downlink message for non existing MME context\n",
+            "[SCTP %u] Received NAS downlink message for non existing MME context\n",
             assoc_id);
         return -1;
     }
@@ -365,7 +365,7 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(s1ap_eNB_instance,
                      enb_ue_s1ap_id)) == NULL) {
-        S1AP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
+        S1AP_ERROR("[SCTP %u] Received NAS downlink message for non existing UE context eNB_UE_S1AP_ID: 0x%lx\n",
                    assoc_id,
                    enb_ue_s1ap_id);
         return -1;
@@ -374,7 +374,7 @@ int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
     if (0 == ue_desc_p->rx_stream) {
         ue_desc_p->rx_stream = stream;
     } else if (stream != ue_desc_p->rx_stream) {
-        S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream %u, expecting %u\n",
+        S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream %u, expecting %d\n",
                    assoc_id, stream, ue_desc_p->rx_stream);
         return -1;
     }
@@ -1305,7 +1305,7 @@ int s1ap_eNB_e_rab_release_resp(instance_t instance,
     s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                      ue_context_p->mme_ref->assoc_id, buffer,
                                      length, ue_context_p->tx_stream);
-    S1AP_INFO("e_rab_release_response sended eNB_UE_S1AP_ID %d  mme_ue_s1ap_id %d nb_of_e_rabs_released %d nb_of_e_rabs_failed %d\n",
+    S1AP_INFO("e_rab_release_response sended eNB_UE_S1AP_ID %d  mme_ue_s1ap_id %u nb_of_e_rabs_released %d nb_of_e_rabs_failed %d\n",
               e_rab_release_resp_p->eNB_ue_s1ap_id, ue_context_p->mme_ue_s1ap_id,e_rab_release_resp_p->nb_of_e_rabs_released,e_rab_release_resp_p->nb_of_e_rabs_failed);
     return 0;
 }
@@ -1842,7 +1842,7 @@ int s1ap_eNB_generate_E_RAB_Modification_Indication(
   }
 
   // Non UE-Associated signalling -> stream = 0 
-  S1AP_INFO("Size of encoded message: %d \n", len);
+  S1AP_INFO("Size of encoded message: %u \n", len);
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
                                        ue_context_p->mme_ref->assoc_id, buffer,
                                        len, ue_context_p->tx_stream);  

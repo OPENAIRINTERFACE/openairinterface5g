@@ -1329,7 +1329,7 @@ static uint32_t _nas_message_get_mac(
     fprintf(stderr, "\n[NAS]\t");
 
     for (i=0; i < length; i++) {
-      fprintf(stderr, "%.2hx ", (const unsigned char) buffer[i]);
+      fprintf(stderr, "%.2hhx ", (const unsigned char) buffer[i]);
 
       /* Add new line when the number of displayed bytes exceeds
        * the line's size */

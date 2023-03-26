@@ -189,7 +189,7 @@ main()
 
   for (Bbytes=5; Bbytes<8; Bbytes++) {
     nr_segmentation(0,0,Bbytes<<3,&C,&K,&Zout, &F);
-    printf("Bbytes %d : C %d, K %d, F %d\n",
+    printf("Bbytes %u : C %u, K %u, F %u\n",
            Bbytes, C, K, F);
   }
 }

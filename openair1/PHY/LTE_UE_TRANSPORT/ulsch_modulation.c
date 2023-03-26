@@ -417,12 +417,12 @@ void ulsch_modulation(int32_t **txdataF,
   nb_rb = ulsch->harq_processes[harq_pid]->nb_rb;
 
   if (nb_rb == 0) {
-    printf("ulsch_modulation.c: Frame %d, Subframe %d Illegal nb_rb %d\n",frame,subframe,nb_rb);
+    printf("ulsch_modulation.c: Frame %u, Subframe %u Illegal nb_rb %d\n",frame,subframe,nb_rb);
     return;
   }
 
   if (first_rb > frame_parms->N_RB_UL) {
-    printf("ulsch_modulation.c: Frame %d, Subframe %d Illegal first_rb %d\n",frame,subframe,first_rb);
+    printf("ulsch_modulation.c: Frame %u, Subframe %u Illegal first_rb %d\n",frame,subframe,first_rb);
     return;
   }
 
@@ -707,7 +707,7 @@ void ulsch_modulation(int32_t **txdataF,
     re_offset = re_offset0;
     symbol_offset = (uint32_t)frame_parms->ofdm_symbol_size*(l+(subframe*nsymb));
 #ifdef DEBUG_ULSCH_MODULATION
-    printf("ulsch_mod (SC-FDMA) symbol %d (subframe %d): symbol_offset %d\n",l,subframe,symbol_offset);
+    printf("ulsch_mod (SC-FDMA) symbol %d (subframe %u): symbol_offset %u\n",l,subframe,symbol_offset);
 #endif
     txptr = &txdataF[0][symbol_offset];
 

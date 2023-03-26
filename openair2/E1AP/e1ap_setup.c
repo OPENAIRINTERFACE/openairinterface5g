@@ -84,7 +84,7 @@ MessageDef *RCconfig_NR_CU_E1(bool separate_CUUP_process)
   if (num_gnbs > 0) {
     config_getlist(&GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
     paramdef_t *gnbParms = GNBParamList.paramarray[0];
-    AssertFatal(gnbParms[GNB_GNB_ID_IDX].uptr != NULL, "gNB id %u is not defined in configuration file\n", 0);
+    AssertFatal(gnbParms[GNB_GNB_ID_IDX].uptr != NULL, "gNB id %d is not defined in configuration file\n", 0);
     e1ap_setup_req_t *e1Setup = &E1AP_SETUP_REQ(msgConfig);
     msgConfig->ittiMsgHeader.destinationInstance = 0;
     e1Setup->gNB_cu_up_id = *(gnbParms[GNB_GNB_ID_IDX].uptr);

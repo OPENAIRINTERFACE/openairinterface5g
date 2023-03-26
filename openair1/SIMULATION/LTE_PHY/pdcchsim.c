@@ -697,7 +697,7 @@ int main(int argc, char **argv) {
   get_dci(frame_parms, log2L, log2Lcommon, format_selector, num_dci, n_rnti);
   txdata = eNB->common_vars.txdata[eNb_id];
   nsymb = (eNB->frame_parms.Ncp == 0) ? 14 : 12;
-  printf("Subframe %d, FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",
+  printf("Subframe %d, FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",
          subframe,NUMBER_OF_OFDM_CARRIERS,
          eNB->frame_parms.Ncp,eNB->frame_parms.samples_per_tti,nsymb);
   eNB2UE = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -804,7 +804,7 @@ int main(int argc, char **argv) {
         numCCE = get_nCCE(num_pdcch_symbols,&eNB->frame_parms,get_mi(&eNB->frame_parms,subframe));
 
         if (n_frames==1) {
-          printf("num_dci %d, num_pddch_symbols %d, nCCE %d\n",
+          printf("num_dci %d, num_pddch_symbols %u, nCCE %d\n",
                  DCI_pdu.Num_dci,
                  num_pdcch_symbols,numCCE);
         }
@@ -858,7 +858,7 @@ int main(int argc, char **argv) {
                                              subframe);
 
         if (n_frames==1)
-          printf("num_pdcch_symbols at TX %d\n",num_pdcch_symbols);
+          printf("num_pdcch_symbols at TX %u\n",num_pdcch_symbols);
 
         if (is_phich_subframe(&eNB->frame_parms,subframe)) {
           if (n_frames==1)
@@ -960,7 +960,7 @@ int main(int argc, char **argv) {
       sigma2_dB = (double)tx_lev_dB +10*log10((double)eNB->frame_parms.ofdm_symbol_size/(double)(12*eNB->frame_parms.N_RB_DL)) - SNR;
 
       if (n_frames==1)
-        printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %d\n",sigma2_dB,SNR,tx_lev_dB);
+        printf("sigma2_dB %f (SNR %f dB) tx_lev_dB %u\n",sigma2_dB,SNR,tx_lev_dB);
 
       //AWGN
       sigma2 = pow(10,sigma2_dB/10);
@@ -1130,11 +1130,11 @@ int main(int argc, char **argv) {
 #endif
     } //trials
 
-    if (common_active) printf("SNR %f : n_errors_common = %d/%d (%e)\n", SNR,n_errors_common,n_trials_common,(double)n_errors_common/n_trials_common);
+    if (common_active) printf("SNR %f : n_errors_common = %d/%u (%e)\n", SNR,n_errors_common,n_trials_common,(double)n_errors_common/n_trials_common);
 
-    if (ul_active==1) printf("SNR %f : n_errors_ul = %d/%d (%e)\n", SNR,n_errors_ul,n_trials_ul,(double)n_errors_ul/n_trials_ul);
+    if (ul_active==1) printf("SNR %f : n_errors_ul = %d/%u (%e)\n", SNR,n_errors_ul,n_trials_ul,(double)n_errors_ul/n_trials_ul);
 
-    if (dl_active==1) printf("SNR %f : n_errors_dl = %d/%d (%e)\n", SNR,n_errors_dl,n_trials_dl,(double)n_errors_dl/n_trials_dl);
+    if (dl_active==1) printf("SNR %f : n_errors_dl = %d/%u (%e)\n", SNR,n_errors_dl,n_trials_dl,(double)n_errors_dl/n_trials_dl);
 
     printf("SNR %f : n_errors_cfi = %d/%d (%e)\n", SNR,n_errors_cfi,trial,(double)n_errors_cfi/trial);
     printf("SNR %f : n_errors_hi = %d/%d (%e)\n", SNR,n_errors_hi,trial,(double)n_errors_hi/trial);

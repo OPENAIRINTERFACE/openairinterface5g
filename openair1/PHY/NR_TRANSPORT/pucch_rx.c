@@ -1541,7 +1541,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
             corr_re = ( corr32_re[symb][group][aa]+((int16_t*)(&prod_re[aa]))[0]+((int16_t*)(&prod_re[aa]))[8]);
             corr_im = ( corr32_im[symb][group][aa]+((int16_t*)(&prod_im[aa]))[0]+((int16_t*)(&prod_im[aa]))[8]);
 #ifdef DEBUG_NR_PUCCH_RX
-            printf("pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%d,%d)\n",cw,group,aa,
+            printf("pucch2 cw %d group %d aa %d: (%d,%d)+(%d,%d) = (%ld,%ld)\n",cw,group,aa,
               corr32_re[symb][group][aa],corr32_im[symb][group][aa],
               ((int16_t*)(&prod_re[aa]))[0]+((int16_t*)(&prod_re[aa]))[8],
               ((int16_t*)(&prod_im[aa]))[0]+((int16_t*)(&prod_im[aa]))[8],
@@ -1558,7 +1558,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
          corr = corr_tmp;
          cw_ML=cw;
 #ifdef DEBUG_NR_PUCCH_RX
-         printf("slot %d PUCCH2 cw_ML %d, corr %llu\n",slot,cw_ML,corr);
+         printf("slot %d PUCCH2 cw_ML %d, corr %lu\n",slot,cw_ML,corr);
 #endif
       }
     } // cw loop

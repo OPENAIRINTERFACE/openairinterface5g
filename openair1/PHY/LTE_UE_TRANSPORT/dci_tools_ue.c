@@ -2899,7 +2899,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
 
   }
 #ifdef DEBUG_HARQ
-    printf( "quantize_subband_pmi pmivect %d \n", pmivect);
+    printf( "quantize_subband_pmi pmivect %u \n", pmivect);
 #endif
   return(pmivect);
 }

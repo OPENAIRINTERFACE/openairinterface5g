@@ -244,7 +244,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
   if (pdu.choice.initiatingMessage.procedureCode >= sizeof(messages_callback) / (3 * sizeof(
         s1ap_message_decoded_callback))
       || (pdu.present > S1AP_S1AP_PDU_PR_unsuccessfulOutcome)) {
-    S1AP_ERROR("[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
+    S1AP_ERROR("[SCTP %u] Either procedureCode %ld or direction %d exceed expected\n",
                assoc_id, pdu.choice.initiatingMessage.procedureCode, pdu.present);
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_S1AP_S1AP_PDU, &pdu);
     return -1;
@@ -254,7 +254,7 @@ int s1ap_eNB_handle_message(uint32_t assoc_id, int32_t stream,
    * This can mean not implemented or no procedure for eNB (wrong direction).
    */
   if (messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1] == NULL) {
-    S1AP_ERROR("[SCTP %d] No handler for procedureCode %ld in %s\n",
+    S1AP_ERROR("[SCTP %u] No handler for procedureCode %ld in %s\n",
                assoc_id, pdu.choice.initiatingMessage.procedureCode,
                s1ap_direction2String(pdu.present - 1));
     ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_S1AP_S1AP_PDU, &pdu);
@@ -284,12 +284,12 @@ int s1ap_eNB_handle_s1_setup_failure(uint32_t               assoc_id,
 
   /* S1 Setup Failure == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
-    S1AP_WARN("[SCTP %d] Received s1 setup failure on stream != 0 (%d)\n",
+    S1AP_WARN("[SCTP %u] Received s1 setup failure on stream != 0 (%u)\n",
               assoc_id, stream);
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 setup failure for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 setup failure for non existing "
                "MME context\n", assoc_id);
     return -1;
   }
@@ -374,13 +374,13 @@ int s1ap_eNB_handle_s1_setup_response(uint32_t               assoc_id,
 
   /* S1 Setup Response == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
-    S1AP_ERROR("[SCTP %d] Received s1 setup response on stream != 0 (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received s1 setup response on stream != 0 (%u)\n",
                assoc_id, stream);
     return -1;
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 setup response for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 setup response for non existing "
                "MME context\n", assoc_id);
     return -1;
   }
@@ -491,12 +491,12 @@ int s1ap_eNB_handle_error_indication(uint32_t         assoc_id,
 
   /* S1 Setup Failure == Non UE-related procedure -> stream 0 */
   if (stream != 0) {
-    S1AP_WARN("[SCTP %d] Received s1 Error indication on stream != 0 (%d)\n",
+    S1AP_WARN("[SCTP %u] Received s1 Error indication on stream != 0 (%u)\n",
               assoc_id, stream);
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 Error indication for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 Error indication for non existing "
                "MME context\n", assoc_id);
     return -1;
   }
@@ -834,7 +834,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
   container = &pdu->choice.initiatingMessage.value.choice.InitialContextSetupRequest;
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
+    S1AP_ERROR("[SCTP %u] Received initial context setup request for non "
                "existing MME context\n", assoc_id);
     return -1;
   }
@@ -858,7 +858,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
 
     if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                      enb_ue_s1ap_id)) == NULL) {
-      S1AP_ERROR("[SCTP %d] Received initial context setup request for non "
+      S1AP_ERROR("[SCTP %u] Received initial context setup request for non "
                  "existing UE context 0x%06lx\n", assoc_id,
                  enb_ue_s1ap_id);
       return -1;
@@ -869,7 +869,7 @@ int s1ap_eNB_handle_initial_context_request(uint32_t   assoc_id,
 
   /* Initial context request = UE-related procedure -> stream != 0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream (%u)\n",
                assoc_id, stream);
     return -1;
   }
@@ -1003,7 +1003,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
   container = &pdu->choice.initiatingMessage.value.choice.UEContextReleaseCommand;
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received UE context release command for non "
+    S1AP_ERROR("[SCTP %u] Received UE context release command for non "
                "existing MME context\n", assoc_id);
     return -1;
   }
@@ -1026,7 +1026,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
 
         if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                          enb_ue_s1ap_id)) == NULL) {
-          S1AP_ERROR("[SCTP %d] Received UE context release command for non "
+          S1AP_ERROR("[SCTP %u] Received UE context release command for non "
                      "existing UE context 0x%06lx\n",
                      assoc_id,
                      enb_ue_s1ap_id);
@@ -1063,7 +1063,7 @@ int s1ap_eNB_handle_ue_context_release_command(uint32_t   assoc_id,
             return 0;
           }
         }
-        S1AP_ERROR("[SCTP %d] Received UE context release command(mME_UE_S1AP_ID) for non "
+        S1AP_ERROR("[SCTP %u] Received UE context release command(mME_UE_S1AP_ID) for non "
                    "existing UE context 0x%06lx\n",
                    assoc_id,
                    mme_ue_s1ap_id);
@@ -1097,7 +1097,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
   container = &pdu->choice.initiatingMessage.value.choice.E_RABSetupRequest;
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received E-RAB setup request for non "
+    S1AP_ERROR("[SCTP %u] Received E-RAB setup request for non "
                "existing MME context\n", assoc_id);
     return -1;
   }
@@ -1124,7 +1124,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    enb_ue_s1ap_id)) == NULL) {
-   S1AP_ERROR("[SCTP %d] Received E-RAB setup request for non "
+   S1AP_ERROR("[SCTP %u] Received E-RAB setup request for non "
                "existing UE context 0x%06lx\n", assoc_id,
                enb_ue_s1ap_id);
     return -1;
@@ -1132,7 +1132,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
 
   /* Initial context request = UE-related procedure -> stream != 0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream (%u)\n",
                assoc_id, stream);
     return -1;
   }
@@ -1140,7 +1140,7 @@ int s1ap_eNB_handle_e_rab_setup_request(uint32_t         assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if ( ue_desc_p->mme_ue_s1ap_id != mme_ue_s1ap_id) {
-    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%u != %ld)",
               ue_desc_p->mme_ue_s1ap_id, mme_ue_s1ap_id);
   }
 
@@ -1216,10 +1216,10 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
   DevAssert(pdu != NULL);
   container = &pdu->choice.initiatingMessage.value.choice.Paging;
   // received Paging Message from MME
-  S1AP_DEBUG("[SCTP %d] Received Paging Message From MME\n",assoc_id);
+  S1AP_DEBUG("[SCTP %u] Received Paging Message From MME\n",assoc_id);
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received Paging for non "
+    S1AP_ERROR("[SCTP %u] Received Paging for non "
                "existing MME context\n", assoc_id);
     return -1;
   }
@@ -1227,7 +1227,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
   s1ap_eNB_instance = mme_desc_p->s1ap_eNB_instance;
 
   if (s1ap_eNB_instance == NULL) {
-    S1AP_ERROR("[SCTP %d] Received Paging for non existing MME context : s1ap_eNB_instance is NULL\n",
+    S1AP_ERROR("[SCTP %u] Received Paging for non existing MME context : s1ap_eNB_instance is NULL\n",
                assoc_id);
     return -1;
   }
@@ -1240,7 +1240,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
     S1AP_PAGING_IND(message_p).ue_index_value  = BIT_STRING_to_uint32(&ie->value.choice.UEIdentityIndexValue);
-    S1AP_DEBUG("[SCTP %d] Received Paging ue_index_value (%d)\n",
+    S1AP_DEBUG("[SCTP %u] Received Paging ue_index_value (%u)\n",
                assoc_id,(uint32_t)S1AP_PAGING_IND(message_p).ue_index_value);
     S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.mme_code = 0;
     S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi = 0;
@@ -1272,7 +1272,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
         if (S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[2*i+1] == 0x0F) {
           if(i != ie->value.choice.UEPagingID.choice.iMSI.size - 1) {
             /* invalid paging_p->uePagingID.choise.iMSI.buffer */
-            S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI error(i %d 0x0F)\n", assoc_id,i);
+            S1AP_ERROR("[SCTP %u] Received Paging : uePagingID.choise.iMSI error(i %d 0x0F)\n", assoc_id,i);
             itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
             return -1;
           }
@@ -1283,13 +1283,13 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
 
       if (S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length >= S1AP_IMSI_LENGTH) {
         /* invalid paging_p->uePagingID.choise.iMSI.size */
-        S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.choise.iMSI.size(%d) is over IMSI length(%d)\n", assoc_id, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length, S1AP_IMSI_LENGTH);
+        S1AP_ERROR("[SCTP %u] Received Paging : uePagingID.choise.iMSI.size(%d) is over IMSI length(%d)\n", assoc_id, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length, S1AP_IMSI_LENGTH);
         itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
         return -1;
       }
     } else { /* of if (ie->value.choice.UEPagingID.present == S1AP_UEPagingID_PR_iMSI) */
       /* invalid paging_p->uePagingID.present */
-      S1AP_ERROR("[SCTP %d] Received Paging : uePagingID.present(%d) is unknown\n", assoc_id, ie->value.choice.UEPagingID.present);
+      S1AP_ERROR("[SCTP %u] Received Paging : uePagingID.present(%d) is unknown\n", assoc_id, ie->value.choice.UEPagingID.present);
       itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
       return -1;
     }
@@ -1322,7 +1322,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
       S1AP_PAGING_IND(message_p).cn_domain = CN_DOMAIN_CS;
     } else {
       /* invalid paging_p->cnDomain */
-      S1AP_ERROR("[SCTP %d] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, ie->value.choice.CNDomain);
+      S1AP_ERROR("[SCTP %u] Received Paging : cnDomain(%ld) is unknown\n", assoc_id, ie->value.choice.CNDomain);
       itti_free (ITTI_MSG_ORIGIN_ID(message_p), message_p);
       return -1;
     }
@@ -1339,7 +1339,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
                              S1AP_ProtocolIE_ID_id_TAIList, true);
 
   if (ie != NULL) { /* checked by macro but cppcheck doesn't see it */
-    S1AP_INFO("[SCTP %d] Received Paging taiList: count %d\n", assoc_id, ie->value.choice.TAIList.list.count);
+    S1AP_INFO("[SCTP %u] Received Paging taiList: count %d\n", assoc_id, ie->value.choice.TAIList.list.count);
 
     for (int i = 0; i < ie->value.choice.TAIList.list.count; i++) {
       S1AP_TAIItem_t *item_p;
@@ -1349,7 +1349,7 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
                       S1AP_PAGING_IND(message_p).plmn_identity[i].mnc_digit_length);
       OCTET_STRING_TO_INT16(&(item_p->tAI.tAC), S1AP_PAGING_IND(message_p).tac[i]);
       S1AP_PAGING_IND(message_p).tai_size++;
-      S1AP_DEBUG("[SCTP %d] Received Paging: MCC %d, MNC %d, TAC %d\n", assoc_id,
+      S1AP_DEBUG("[SCTP %u] Received Paging: MCC %d, MNC %d, TAC %d\n", assoc_id,
                  S1AP_PAGING_IND(message_p).plmn_identity[i].mcc,
                  S1AP_PAGING_IND(message_p).plmn_identity[i].mnc,
                  S1AP_PAGING_IND(message_p).tac[i]);
@@ -1360,10 +1360,10 @@ int s1ap_eNB_handle_paging(uint32_t               assoc_id,
   }
 
   //paging parameter values
-  S1AP_DEBUG("[SCTP %d] Received Paging parameters: ue_index_value %d  cn_domain %d paging_drx %d paging_priority %d\n",assoc_id,
+  S1AP_DEBUG("[SCTP %u] Received Paging parameters: ue_index_value %d  cn_domain %d paging_drx %d paging_priority %d\n",assoc_id,
              S1AP_PAGING_IND(message_p).ue_index_value, S1AP_PAGING_IND(message_p).cn_domain,
              S1AP_PAGING_IND(message_p).paging_drx, S1AP_PAGING_IND(message_p).paging_priority);
-  S1AP_DEBUG("[SCTP %d] Received Paging parameters(ue): presenceMask %d  s_tmsi.m_tmsi %d s_tmsi.mme_code %d IMSI length %d (0-5) %d%d%d%d%d%d\n",assoc_id,
+  S1AP_DEBUG("[SCTP %u] Received Paging parameters(ue): presenceMask %d  s_tmsi.m_tmsi %d s_tmsi.mme_code %d IMSI length %d (0-5) %d%d%d%d%d%d\n",assoc_id,
              S1AP_PAGING_IND(message_p).ue_paging_identity.presenceMask, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.m_tmsi,
              S1AP_PAGING_IND(message_p).ue_paging_identity.choice.s_tmsi.mme_code, S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.length,
              S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[0], S1AP_PAGING_IND(message_p).ue_paging_identity.choice.imsi.buffer[1],
@@ -1390,7 +1390,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
   container = &pdu->choice.initiatingMessage.value.choice.E_RABModifyRequest;
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received E-RAB modify request for non "
+    S1AP_ERROR("[SCTP %u] Received E-RAB modify request for non "
                "existing MME context\n", assoc_id);
     return -1;
   }
@@ -1417,7 +1417,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    enb_ue_s1ap_id)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received E-RAB modify request for non "
+    S1AP_ERROR("[SCTP %u] Received E-RAB modify request for non "
                "existing UE context 0x%06lx\n", assoc_id,
                enb_ue_s1ap_id);
     return -1;
@@ -1425,7 +1425,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
 
   /* E-RAB modify request = UE-related procedure -> stream != 0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream (%u)\n",
                assoc_id, stream);
     return -1;
   }
@@ -1433,7 +1433,7 @@ int s1ap_eNB_handle_e_rab_modify_request(uint32_t               assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->mme_ue_s1ap_id != mme_ue_s1ap_id) {
-    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%u != %ld)",
               ue_desc_p->mme_ue_s1ap_id, mme_ue_s1ap_id);
     message_p = itti_alloc_new_message (TASK_RRC_ENB, 0, S1AP_E_RAB_MODIFY_RESP);
     S1AP_E_RAB_MODIFY_RESP (message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
@@ -1526,7 +1526,7 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
   container = &pdu->choice.initiatingMessage.value.choice.E_RABReleaseCommand;
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing MME context\n", assoc_id);
+    S1AP_ERROR("[SCTP %u] Received E-RAB release command for non existing MME context\n", assoc_id);
     return -1;
   }
 
@@ -1553,14 +1553,14 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    enb_ue_s1ap_id)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received E-RAB release command for non existing UE context 0x%06lx\n", assoc_id,
+    S1AP_ERROR("[SCTP %u] Received E-RAB release command for non existing UE context 0x%06lx\n", assoc_id,
                ie->value.choice.ENB_UE_S1AP_ID);
     return -1;
   }
 
   /* Initial context request = UE-related procedure -> stream != 0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received UE-related procedure on stream (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received UE-related procedure on stream (%u)\n",
                assoc_id, stream);
     return -1;
   }
@@ -1568,11 +1568,11 @@ int s1ap_eNB_handle_e_rab_release_command(uint32_t               assoc_id,
   ue_desc_p->rx_stream = stream;
 
   if (ue_desc_p->mme_ue_s1ap_id != mme_ue_s1ap_id) {
-    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%u != %ld)",
               ue_desc_p->mme_ue_s1ap_id, mme_ue_s1ap_id);
   }
 
-  S1AP_DEBUG("[SCTP %d] Received E-RAB release command for eNB_UE_S1AP_ID %ld mme_ue_s1ap_id %ld\n",
+  S1AP_DEBUG("[SCTP %u] Received E-RAB release command for eNB_UE_S1AP_ID %ld mme_ue_s1ap_id %ld\n",
              assoc_id, enb_ue_s1ap_id, mme_ue_s1ap_id);
   message_p = itti_alloc_new_message(TASK_S1AP, 0, S1AP_E_RAB_RELEASE_COMMAND);
   S1AP_E_RAB_RELEASE_COMMAND(message_p).eNB_ue_s1ap_id = enb_ue_s1ap_id;
@@ -1632,12 +1632,12 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
 
   /* Path Switch request == UE-related procedure -> stream !=0 */
   if (stream == 0) {
-    S1AP_ERROR("[SCTP %d] Received s1 path switch request ack on stream (%d)\n",
+    S1AP_ERROR("[SCTP %u] Received s1 path switch request ack on stream (%u)\n",
                assoc_id, stream);
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 path switch request ack for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 path switch request ack for non existing "
                "MME context\n", assoc_id);
     return -1;
   }
@@ -1648,7 +1648,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   S1AP_FIND_PROTOCOLIE_BY_ID(S1AP_PathSwitchRequestAcknowledgeIEs_t, ie, pathSwitchRequestAcknowledge,
                              S1AP_ProtocolIE_ID_id_eNB_UE_S1AP_ID, true);
   if (ie == NULL) {
-    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+    S1AP_ERROR("[SCTP %u] Received path switch request ack for non "
                "ie context is NULL\n", assoc_id);
     itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
@@ -1658,7 +1658,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
 
   if ((ue_desc_p = s1ap_eNB_get_ue_context(mme_desc_p->s1ap_eNB_instance,
                    ie->value.choice.ENB_UE_S1AP_ID)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+    S1AP_ERROR("[SCTP %u] Received path switch request ack for non "
                "existing UE context 0x%06lx\n", assoc_id,
                ie->value.choice.ENB_UE_S1AP_ID);
     itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
@@ -1671,7 +1671,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
                              S1AP_ProtocolIE_ID_id_MME_UE_S1AP_ID, true);
 
   if (ie == NULL) {
-    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+    S1AP_ERROR("[SCTP %u] Received path switch request ack for non "
                "ie context is NULL\n", assoc_id);
     itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
@@ -1680,7 +1680,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
   S1AP_PATH_SWITCH_REQ_ACK(message_p).mme_ue_s1ap_id = ie->value.choice.MME_UE_S1AP_ID;
 
   if ( ue_desc_p->mme_ue_s1ap_id != ie->value.choice.MME_UE_S1AP_ID) {
-    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%d != %ld)",
+    S1AP_WARN("UE context mme_ue_s1ap_id is different form that of the message (%u != %ld)",
               ue_desc_p->mme_ue_s1ap_id, ie->value.choice.MME_UE_S1AP_ID);
   }
 
@@ -1689,7 +1689,7 @@ int s1ap_eNB_handle_s1_path_switch_request_ack(uint32_t               assoc_id,
                              S1AP_ProtocolIE_ID_id_SecurityContext, true);
 
   if (ie == NULL) {
-    S1AP_ERROR("[SCTP %d] Received path switch request ack for non "
+    S1AP_ERROR("[SCTP %u] Received path switch request ack for non "
                "ie context is NULL\n", assoc_id);
     itti_free(ITTI_MSG_ORIGIN_ID(message_p), message_p);
     return -1;
@@ -1787,12 +1787,12 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
   pathSwitchRequestFailure = &pdu->choice.unsuccessfulOutcome.value.choice.PathSwitchRequestFailure;
 
   if (stream != 0) {
-    S1AP_WARN("[SCTP %d] Received s1 path switch request failure on stream != 0 (%d)\n",
+    S1AP_WARN("[SCTP %u] Received s1 path switch request failure on stream != 0 (%u)\n",
                assoc_id, stream);
   }
 
   if ((mme_desc_p = s1ap_eNB_get_MME(NULL, assoc_id, 0)) == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 path switch request failure for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 path switch request failure for non existing "
                "MME context\n", assoc_id);
     return -1;
   }
@@ -1801,7 +1801,7 @@ int s1ap_eNB_handle_s1_path_switch_request_failure(uint32_t               assoc_
                              S1AP_ProtocolIE_ID_id_Cause, true);
 
   if (ie == NULL) {
-    S1AP_ERROR("[SCTP %d] Received S1 path switch request failure for non existing "
+    S1AP_ERROR("[SCTP %u] Received S1 path switch request failure for non existing "
                "ie context is NULL\n", assoc_id);
     return -1;
   }
@@ -1893,7 +1893,7 @@ static int s1ap_eNB_snd_s1_setup_request(
   ie->value.choice.Global_ENB_ID.eNB_ID.present = S1AP_ENB_ID_PR_macroENB_ID;
   MACRO_ENB_ID_TO_BIT_STRING(instance_p->eNB_id,
                              &ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID);
-  S1AP_INFO("%d -> %02x%02x%02x\n", instance_p->eNB_id,
+  S1AP_INFO("%u -> %02x%02x%02x\n", instance_p->eNB_id,
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[0],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[1],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[2]);

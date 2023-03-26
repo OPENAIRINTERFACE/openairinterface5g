@@ -746,7 +746,7 @@ void init_bler_table(void)
   for (unsigned int i = 0; i < NUM_MCS; i++)
   {
     char fName[1024];
-    snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%d.csv", openair_dir, i);
+    snprintf(fName, sizeof(fName), "%s/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results/bler_tx1_chan18_nrx1_mcs%u.csv", openair_dir, i);
     FILE *pFile = fopen(fName, "r");
     if (!pFile)
     {

@@ -811,7 +811,7 @@ int main(int argc, char **argv){
         }
       }
 
-      printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n", SNR, ue_speed, prach_errors, n_frames, delay_avg/(double)(n_frames-prach_errors));
+      printf("SNR %f dB, UE Speed %f km/h: errors %u/%d (delay %f)\n", SNR, ue_speed, prach_errors, n_frames, delay_avg/(double)(n_frames-prach_errors));
       if (input_fd)
 	break;
       if (prach_errors)

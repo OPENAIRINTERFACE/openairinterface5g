@@ -1106,7 +1106,7 @@ extern "C"
 
     if(instance->mac->tick == 1000) {
       if(instance->mac->byte_count > 0) {
-        printf("[MAC] Rx rate %d bytes/sec\n", instance->mac->byte_count);
+        printf("[MAC] Rx rate %u bytes/sec\n", instance->mac->byte_count);
         instance->mac->byte_count = 0;
       }
 

@@ -694,7 +694,7 @@ static int s1ap_eNB_generate_s1_setup_request(
   ie->value.choice.Global_ENB_ID.eNB_ID.present = S1AP_ENB_ID_PR_macroENB_ID;
   MACRO_ENB_ID_TO_BIT_STRING(instance_p->eNB_id,
                              &ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID);
-  S1AP_INFO("%d -> %02x%02x%02x\n", instance_p->eNB_id,
+  S1AP_INFO("%u -> %02x%02x%02x\n", instance_p->eNB_id,
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[0],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[1],
             ie->value.choice.Global_ENB_ID.eNB_ID.choice.macroENB_ID.buf[2]);

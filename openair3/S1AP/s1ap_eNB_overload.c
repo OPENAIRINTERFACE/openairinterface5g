@@ -68,7 +68,7 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
     }
     /* Non UE-associated signalling -> stream 0 */
     if (stream != 0) {
-      S1AP_ERROR("[SCTP %d] Received s1 overload start on stream != 0 (%d)\n",
+      S1AP_ERROR("[SCTP %u] Received s1 overload start on stream != 0 (%u)\n",
                  assoc_id, stream);
       return -1;
     }
@@ -102,7 +102,7 @@ int s1ap_eNB_handle_overload_stop(uint32_t         assoc_id,
 
     /* Non UE-associated signalling -> stream 0 */
     if (stream != 0) {
-      S1AP_ERROR("[SCTP %d] Received s1 overload stop on stream != 0 (%d)\n",
+      S1AP_ERROR("[SCTP %u] Received s1 overload stop on stream != 0 (%u)\n",
                  assoc_id, stream);
       return -1;
     }

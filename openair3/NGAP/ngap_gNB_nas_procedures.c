@@ -315,7 +315,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
   // }
 
   if ((amf_desc_p = ngap_gNB_get_AMF(NULL, assoc_id, 0)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received NAS downlink message for non existing AMF context\n", assoc_id);
+    NGAP_ERROR("[SCTP %u] Received NAS downlink message for non existing AMF context\n", assoc_id);
     return -1;
   }
 
@@ -332,7 +332,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
   gnb_ue_ngap_id = ie->value.choice.RAN_UE_NGAP_ID;
 
   if ((ue_desc_p = ngap_get_ue_context(gnb_ue_ngap_id)) == NULL) {
-    NGAP_ERROR("[SCTP %d] Received NAS downlink message for non existing UE context gNB_UE_NGAP_ID: 0x%lx\n",
+    NGAP_ERROR("[SCTP %u] Received NAS downlink message for non existing UE context gNB_UE_NGAP_ID: 0x%lx\n",
                assoc_id,
                gnb_ue_ngap_id);
     return -1;
@@ -341,7 +341,7 @@ int ngap_gNB_handle_nas_downlink(uint32_t         assoc_id,
   if (0 == ue_desc_p->rx_stream) {
     ue_desc_p->rx_stream = stream;
   } else if (stream != ue_desc_p->rx_stream) {
-    NGAP_ERROR("[SCTP %d] Received UE-related procedure on stream %u, expecting %u\n",
+    NGAP_ERROR("[SCTP %u] Received UE-related procedure on stream %u, expecting %d\n",
                assoc_id, stream, ue_desc_p->rx_stream);
     return -1;
   }

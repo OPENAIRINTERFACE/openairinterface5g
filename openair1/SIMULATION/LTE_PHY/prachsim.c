@@ -329,7 +329,7 @@ int main(int argc, char **argv) {
   r_re = malloc(2*sizeof(double *));
   r_im = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   msg("[SIM] Using SCM/101\n");
   UE2eNB = new_channel_desc_scm(UE->frame_parms.nb_antennas_tx,
@@ -493,7 +493,7 @@ int main(int argc, char **argv) {
         }
       }
 
-      printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+      printf("SNR %f dB, UE Speed %f km/h: errors %u/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
       //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
     } // UE Speed loop
 

@@ -1203,7 +1203,7 @@ void nr_pdcch_channel_estimation(PHY_VARS_NR_UE *ue,
         rxF = (int16_t *)&rxdataF[aarx][(symbol_offset+k+1)];
       }
 #ifdef DEBUG_PDCCH
-      printf("pilot[%d] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt, pil[0], pil[1], k+1, rxF[0], rxF[1]);
+      printf("pilot[%u] = (%d, %d)\trxF[%d] = (%d, %d)\n", pilot_cnt, pil[0], pil[1], k+1, rxF[0], rxF[1]);
 #endif
       ch_sum[0] += (int16_t)(((int32_t)pil[0]*rxF[0] - (int32_t)pil[1]*rxF[1])>>15);
       ch_sum[1] += (int16_t)(((int32_t)pil[0]*rxF[1] + (int32_t)pil[1]*rxF[0])>>15);
@@ -1281,7 +1281,7 @@ void NFAPI_NR_DMRS_TYPE1_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
     }
 
 #ifdef DEBUG_PDSCH
-    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch.r, ch.i);
+    printf("pilot %3d: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch.r, ch.i);
 #endif
 
     if (pilot_cnt == 0) { // Treat first pilot
@@ -1441,13 +1441,13 @@ void NFAPI_NR_DMRS_TYPE2_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
   for (int pilot_cnt = 0; pilot_cnt < 4 * nb_rb_pdsch; pilot_cnt += 2) {
     ch_l = c16mulShift(*pil, rxF[re_offset], 15);
 #ifdef DEBUG_PDSCH
-    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_l.r, ch_l.i);
+    printf("pilot %3d: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_l.r, ch_l.i);
 #endif
     pil++;
     re_offset = (re_offset + 1) % frame_parms->ofdm_symbol_size;
     ch_r = c16mulShift(*pil, rxF[re_offset], 15);
 #ifdef DEBUG_PDSCH
-    printf("pilot %3u: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_r.r, ch_r.i);
+    printf("pilot %3d: pil -> (%6d,%6d), rxF -> (%4d,%4d), ch -> (%4d,%4d) \n", pilot_cnt, pil->r, pil->i, rxF[re_offset].r, rxF[re_offset].i, ch_r.r, ch_r.i);
 #endif
     ch = c16addShift(ch_l, ch_r, 1);
     if (pilot_cnt == 1) {

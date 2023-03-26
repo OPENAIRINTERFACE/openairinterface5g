@@ -362,7 +362,7 @@ int main(int argc, char **argv) {
   r_re2 = malloc(2*sizeof(double *));
   r_im2 = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d, interf (%d,%d)\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u, interf (%d,%d)\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb,interf1,interf2);
   printf("eNB1->common_vars.txdataF[0][0] = %p\n",
          eNB1->common_vars.txdataF[0][0]);
