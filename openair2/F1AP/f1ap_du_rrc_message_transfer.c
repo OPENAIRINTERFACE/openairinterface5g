@@ -139,19 +139,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     .rnti = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id),
     .srb_id = srb_id
   };
-  int rc = dl_rrc_message(instance, &dl_rrc);
-  if (rc == 0)
-    return 0; /* has been handled, otherwise continue below */
-
-  // decode RRC Container and act on the message type
-  AssertFatal(srb_id<3,"illegal srb_id\n");
-  MessageDef *msg = itti_alloc_new_message(TASK_DU_F1, 0, NR_DU_RRC_DL_INDICATION);
-  NRDuDlReq_t *req=&NRDuDlReq(msg);
-  req->rnti=f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id);
-  req->srb_id=srb_id;
-  req->buf= get_free_mem_block( ie->value.choice.RRCContainer.size, __func__);
-  memcpy(req->buf->data, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg);
+  dl_rrc_message(instance, &dl_rrc);
   return 0;
 }
 

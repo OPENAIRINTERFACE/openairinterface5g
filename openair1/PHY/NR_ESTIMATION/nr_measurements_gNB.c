@@ -45,9 +45,8 @@ void nr_est_timing_advance_pusch(const NR_DL_FRAME_PARMS *frame_parms, const int
   const int sync_pos = 0;
 
   for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
-    int Re = ((int16_t *)ul_ch_estimates_time)[(i << 1)];
-    int Im = ((int16_t *)ul_ch_estimates_time)[1 + (i << 1)];
-    int temp = (Re * Re / 2) + (Im * Im / 2);
+    c16_t *sample = (c16_t *)&ul_ch_estimates_time[i];
+    int temp = (sample->r * sample->r / 2) + (sample->i * sample->i / 2);
     if (temp > max_val) {
       max_pos = i;
       max_val = temp;
@@ -157,12 +156,12 @@ void gNB_I0_measurements(PHY_VARS_gNB *gNB,int slot, int first_symb,int num_symb
         int offset = offset0 + (frame_parms->first_carrier_offset + (rb*12))%frame_parms->ofdm_symbol_size;
         nb_symb[rb]++;
         for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-          int32_t *ul_ch = &common_vars->rxdataF[aarx][offset];
+          int32_t *ul_ch = (int32_t *)&common_vars->rxdataF[aarx][offset];
           int32_t signal_energy;
           if (((frame_parms->N_RB_UL&1) == 1) &&
               (rb==(frame_parms->N_RB_UL>>1))) {
             signal_energy = signal_energy_nodc(ul_ch, 6);
-            ul_ch = &common_vars->rxdataF[aarx][offset0];
+            ul_ch = (int32_t *)&common_vars->rxdataF[aarx][offset0];
             signal_energy += signal_energy_nodc(ul_ch, 6);
           } else {
             signal_energy = signal_energy_nodc(ul_ch, 12);

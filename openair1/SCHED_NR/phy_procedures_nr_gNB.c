@@ -55,7 +55,7 @@ void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_
 
   NR_DL_FRAME_PARMS *fp=&gNB->frame_parms;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-  int **txdataF = gNB->common_vars.txdataF;
+  c16_t **txdataF = gNB->common_vars.txdataF;
   uint8_t ssb_index, n_hf;
   uint16_t ssb_start_symbol;
   int txdataF_offset = slot*fp->samples_per_slot_wCP;
@@ -170,7 +170,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,1);
 
     nr_generate_dci_top(msgTx, slot,
-			&gNB->common_vars.txdataF[0][txdataF_offset],
+			(int32_t *)&gNB->common_vars.txdataF[0][txdataF_offset],
 			AMP, fp);
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_PDCCH_TX,0);
@@ -188,7 +188,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
     if (csirs->active == 1) {
       LOG_D(PHY, "CSI-RS generation started in frame %d.%d\n",frame,slot);
       nfapi_nr_dl_tti_csi_rs_pdu_rel15_t *csi_params = &csirs->csirs_pdu.csi_rs_pdu_rel15;
-      nr_generate_csi_rs(&gNB->frame_parms, gNB->common_vars.txdataF, AMP, gNB->nr_csi_info, csi_params, slot, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+      nr_generate_csi_rs(&gNB->frame_parms, (int32_t **)gNB->common_vars.txdataF, AMP, gNB->nr_csi_info, csi_params, slot, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
       csirs->active = 0;
     }
   }
@@ -197,7 +197,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
 
   //apply the OFDM symbol rotation here
   for (aa=0; aa<cfg->carrier_config.num_tx_ant.value; aa++) {
-    apply_nr_rotation(fp,(int16_t*) &gNB->common_vars.txdataF[aa][txdataF_offset],slot,0,fp->Ncp==EXTENDED?12:14);
+    apply_nr_rotation(fp, &gNB->common_vars.txdataF[aa][txdataF_offset], slot, 0, fp->Ncp == EXTENDED ? 12 : 14);
 
     T(T_GNB_PHY_DL_OUTPUT_SIGNAL, T_INT(0),
       T_INT(frame), T_INT(slot),
@@ -707,7 +707,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   const int soffset = (slot_rx&3) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
   int offset = 10*gNB->frame_parms.ofdm_symbol_size + gNB->frame_parms.first_carrier_offset;
-  int power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][soffset+offset+(47*12)],12*18);
+  int power_rxF = signal_energy_nodc((int32_t *)&gNB->common_vars.rxdataF[0][soffset+offset+(47*12)],12*18);
   LOG_D(PHY,"frame %d, slot %d: UL signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
   start_meas(&gNB->phy_proc_rx);
@@ -736,7 +736,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
           nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu_format0 = &gNB->uci_pdu_list[num_ucis].pucch_pdu_format_0_1;
 
           offset = pucch_pdu->start_symbol_index*gNB->frame_parms.ofdm_symbol_size + (gNB->frame_parms.first_carrier_offset+pucch_pdu->prb_start*12);
-          power_rxF = signal_energy_nodc(&gNB->common_vars.rxdataF[0][soffset+offset],12);
+          power_rxF = signal_energy_nodc((int32_t *)&gNB->common_vars.rxdataF[0][soffset+offset],12);
           LOG_D(PHY,"frame %d, slot %d: PUCCH signal energy %d\n",frame_rx,slot_rx,power_rxF);
 
           nr_decode_pucch0(gNB,

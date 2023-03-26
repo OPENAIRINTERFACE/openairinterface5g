@@ -72,7 +72,7 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 //#ifdef DEBUG_FEP
   //  if (ue->frame <100)
   LOG_D(PHY,"slot_fep: slot %d, symbol %d, nb_prefix_samples %u, nb_prefix_samples0 %u, rx_offset %u energy %d\n",
-  Ns, symbol, nb_prefix_samples, nb_prefix_samples0, rx_offset, dB_fixed(signal_energy(&common_vars->rxdata[0][rx_offset],frame_parms->ofdm_symbol_size)));
+  Ns, symbol, nb_prefix_samples, nb_prefix_samples0, rx_offset, dB_fixed(signal_energy((int32_t *)&common_vars->rxdata[0][rx_offset],frame_parms->ofdm_symbol_size)));
   //#endif
 
   for (unsigned char aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
@@ -311,7 +311,7 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
 }
 
 void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
-			  int32_t *rxdataF,
+			  c16_t *rxdataF,
 			  int slot,
 			  int first_symbol,
 			  int nsymb)
@@ -326,7 +326,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
     LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
 
     c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = (c16_t *)&rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)];
+    c16_t *this_symbol = &rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)];
 
     if (frame_parms->N_RB_UL & 1) {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,

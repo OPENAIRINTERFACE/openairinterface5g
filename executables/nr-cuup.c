@@ -99,14 +99,9 @@ void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChann
   abort();
 }
 
-rlc_op_status_t nr_rrc_rlc_config_asn1_req(const protocol_ctxt_t *const ctxt_pP,
-                                           const NR_SRB_ToAddModList_t *const srb2add_listP,
-                                           const NR_DRB_ToAddModList_t *const drb2add_listP,
-                                           const NR_DRB_ToReleaseList_t *const drb2release_listP,
-                                           struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+void nr_rlc_add_drb(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig)
 {
   abort();
-  return 0;
 }
 
 int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_pP, const gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_p, int offset)

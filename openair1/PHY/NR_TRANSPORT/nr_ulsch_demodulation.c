@@ -302,7 +302,7 @@ void nr_idft(int32_t *z, uint32_t Msc_PUSCH)
 }
 
 
-void nr_ulsch_extract_rbs(int32_t **rxdataF,
+void nr_ulsch_extract_rbs(c16_t **rxdataF,
                           NR_gNB_PUSCH *pusch_vars,
                           int slot,
                           unsigned char symbol,
@@ -547,7 +547,19 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
 #endif
 }
 
-
+__m128i a_mult_conjb(__m128i a, __m128i b, unsigned char output_shift)
+{
+  __m128i mmtmpD0 = _mm_madd_epi16(b, a);
+  __m128i mmtmpD1 = _mm_shufflelo_epi16(b, _MM_SHUFFLE(2, 3, 0, 1));
+  mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1, _MM_SHUFFLE(2, 3, 0, 1));
+  mmtmpD1 = _mm_sign_epi16(mmtmpD1, *(__m128i *)&conjugate[0]);
+  mmtmpD1 = _mm_madd_epi16(mmtmpD1, a);
+  mmtmpD0 = _mm_srai_epi32(mmtmpD0, output_shift);
+  mmtmpD1 = _mm_srai_epi32(mmtmpD1, output_shift);
+  __m128i mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0, mmtmpD1);
+  __m128i mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0, mmtmpD1);
+  return _mm_packs_epi32(mmtmpD2, mmtmpD3);
+}
 
 //==============================================================================================
 // Pre-processing for LLR computation
@@ -689,71 +701,16 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 
         }
 
-        // multiply by conjugated channel
-        mmtmpD0 = _mm_madd_epi16(ul_ch128[0],rxdataF128[0]);
-        //  print_ints("re",&mmtmpD0);
+        // Multiply received data by conjugated channel
+        rxdataF_comp128[0] = a_mult_conjb(rxdataF128[0], ul_ch128[0], output_shift);
+        rxdataF_comp128[1] = a_mult_conjb(rxdataF128[1], ul_ch128[1], output_shift);
+        rxdataF_comp128[2] = a_mult_conjb(rxdataF128[2], ul_ch128[2], output_shift);
 
-        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[0],_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)&conjugate[0]);
-        //  print_ints("im",&mmtmpD1);
-        mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[0]);
-        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        //  print_ints("re(shift)",&mmtmpD0);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-        //  print_ints("im(shift)",&mmtmpD1);
-        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-        //        print_ints("c0",&mmtmpD2);
-        //  print_ints("c1",&mmtmpD3);
-        rxdataF_comp128[0] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-        //  print_shorts("rx:",rxdataF128);
-        //  print_shorts("ch:",ul_ch128);
-        //  print_shorts("pack:",rxdataF_comp128);
-
-        // multiply by conjugated channel
-        mmtmpD0 = _mm_madd_epi16(ul_ch128[1],rxdataF128[1]);
-        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[1],_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-        mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[1]);
-        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-
-        rxdataF_comp128[1] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-        //  print_shorts("rx:",rxdataF128+1);
-        //  print_shorts("ch:",ul_ch128+1);
-        //  print_shorts("pack:",rxdataF_comp128+1);
-
-        // multiply by conjugated channel
-        mmtmpD0 = _mm_madd_epi16(ul_ch128[2],rxdataF128[2]);
-        // mmtmpD0 contains real part of 4 consecutive outputs (32-bit)
-        mmtmpD1 = _mm_shufflelo_epi16(ul_ch128[2],_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_shufflehi_epi16(mmtmpD1,_MM_SHUFFLE(2,3,0,1));
-        mmtmpD1 = _mm_sign_epi16(mmtmpD1,*(__m128i*)conjugate);
-        mmtmpD1 = _mm_madd_epi16(mmtmpD1,rxdataF128[2]);
-        // mmtmpD1 contains imag part of 4 consecutive outputs (32-bit)
-        mmtmpD0 = _mm_srai_epi32(mmtmpD0,output_shift);
-        mmtmpD1 = _mm_srai_epi32(mmtmpD1,output_shift);
-        mmtmpD2 = _mm_unpacklo_epi32(mmtmpD0,mmtmpD1);
-        mmtmpD3 = _mm_unpackhi_epi32(mmtmpD0,mmtmpD1);
-
-        rxdataF_comp128[2] = _mm_packs_epi32(mmtmpD2,mmtmpD3);
-        //print_shorts("rx:",rxdataF128+2);
-        //print_shorts("ch:",ul_ch128+2);
-        //print_shorts("pack:",rxdataF_comp128+2);
-
-        ul_ch128+=3;
-        ul_ch_mag128+=3;
-        ul_ch_mag128b+=3;
-        rxdataF128+=3;
-        rxdataF_comp128+=3;
+        ul_ch128 += 3;
+        ul_ch_mag128 += 3;
+        ul_ch_mag128b += 3;
+        rxdataF128 += 3;
+        rxdataF_comp128 += 3;
       }
     }
   }
@@ -1375,13 +1332,14 @@ __m128i nr_ulsch_comp_muli_sum(__m128i input_x,
     //printf("det_%d = %d log2 =%d \n",k,(((int *)&det[0])[k]),log2_approx(((int *)&det[0])[k]));
     }
 
-  xy_re_128 = _mm_slli_epi32(xy_re_128,5);
-  xy_re_128 = _mm_srai_epi32(xy_re_128,log2_approx(sum_det));
-  xy_re_128 = _mm_slli_epi32(xy_re_128,5);
-
-  xy_im_128 = _mm_slli_epi32(xy_im_128,5);
-  xy_im_128 = _mm_srai_epi32(xy_im_128,log2_approx(sum_det));
-  xy_im_128 = _mm_slli_epi32(xy_im_128,5);
+  int b = log2_approx(sum_det) - 8;
+  if (b > 0) {
+    xy_re_128 = _mm_srai_epi32(xy_re_128, b);
+    xy_im_128 = _mm_srai_epi32(xy_im_128, b);
+  } else {
+    xy_re_128 = _mm_slli_epi32(xy_re_128, -b);
+    xy_im_128 = _mm_slli_epi32(xy_im_128, -b);
+  }
 
   tmp_z0  = _mm_unpacklo_epi32(xy_re_128,xy_im_128);
   //print_ints("unpack lo:",&tmp_z0[0]);
@@ -1514,16 +1472,17 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
  *
  *
  * */
-uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
-                                   int **ul_ch_mag,
-                                   int **ul_ch_magb,                                   
-                                   int **ul_ch_estimates_ext,
-                                   unsigned short nb_rb,
-                                   unsigned char n_rx,
-                                   unsigned char mod_order,
-                                   int shift,
-                                   unsigned char symbol,
-                                   int length)
+uint8_t nr_ulsch_zero_forcing_rx_2layers(NR_DL_FRAME_PARMS *frame_parms,
+                                         int **rxdataF_comp,
+                                         int **ul_ch_mag,
+                                         int **ul_ch_magb,
+                                         int **ul_ch_estimates_ext,
+                                         unsigned short nb_rb,
+                                         unsigned char n_rx,
+                                         unsigned char mod_order,
+                                         int shift,
+                                         unsigned char symbol,
+                                         int length)
 {
   int *ch00, *ch01, *ch10, *ch11;
   int *ch20, *ch30, *ch21, *ch31;
@@ -1765,10 +1724,10 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
      *
      *
      **************************************************************************/
-  __m128i *rxdataF_comp128_0,*rxdataF_comp128_1,*ul_ch_mag128_0=NULL,*ul_ch_mag128b_0=NULL,*determ_fin_128;//*dl_ch_mag128_1,*dl_ch_mag128b_1,*dl_ch_mag128r_1
-  __m128i mmtmpD0,mmtmpD1,mmtmpD2,mmtmpD3;
-  __m128i *after_mf_a_128,*after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
-  __m128i QAM_amp128={0},QAM_amp128b={0};
+  __m128i *rxdataF_comp128_0, *rxdataF_comp128_1, *ul_ch_mag128_0 = NULL, *ul_ch_mag128b_0 = NULL, *ul_ch_mag128_1 = NULL, *ul_ch_mag128b_1 = NULL, *determ_fin_128;
+  __m128i mmtmpD0, mmtmpD1, mmtmpD2, mmtmpD3;
+  __m128i *after_mf_a_128, *after_mf_b_128, *after_mf_c_128, *after_mf_d_128;
+  __m128i QAM_amp128 = {0}, QAM_amp128b = {0};
 
   determ_fin_128      = (__m128i *)&determ_fin[0];
 
@@ -1787,45 +1746,50 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
     } else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //4/sqrt{42}
       QAM_amp128b = _mm_set1_epi16(QAM64_n2); //2/sqrt{42}
-    } 
-    ul_ch_mag128_0      = (__m128i *)&ul_ch_mag[0][symbol*(off+nb_rb*12)];
-    ul_ch_mag128b_0     = (__m128i *)&ul_ch_magb[0][symbol*(off+nb_rb*12)];
+    }
+    ul_ch_mag128_0 = (__m128i *)&ul_ch_mag[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_0 = (__m128i *)&ul_ch_magb[0][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128_1 = (__m128i *)&ul_ch_mag[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
+    ul_ch_mag128b_1 = (__m128i *)&ul_ch_magb[frame_parms->nb_antennas_rx][symbol * (off + nb_rb * 12)];
   }
 
-  for (int rb=0; rb<3*nb_rb_0; rb++) {
-    if (mod_order>2) {
-      int sum_det =0;
-      for (int k=0; k<4;k++) {
-        sum_det += ((((int *)&determ_fin_128[0])[k])>>2);
-        //printf("det_%d = %d\n",k,sum_det);
-        }
+  for (int rb = 0; rb < 3 * nb_rb_0; rb++) {
 
-      mmtmpD2 = _mm_slli_epi32(determ_fin_128[0],5);
-      mmtmpD2 = _mm_srai_epi32(mmtmpD2,log2_approx(sum_det));
-      mmtmpD2 = _mm_slli_epi32(mmtmpD2,5);
+    // Magnitude computation
+    if (mod_order > 2) {
 
-      mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2,mmtmpD2);
+      int sum_det = 0;
+      for (int k = 0; k < 4; k++) {
+        sum_det += ((((int *)&determ_fin_128[0])[k]) >> 2);
+      }
 
-      mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2,mmtmpD2);
+      int b = log2_approx(sum_det) - 8;
+      if (b > 0) {
+        mmtmpD2 = _mm_srai_epi32(determ_fin_128[0], b);
+      } else {
+        mmtmpD2 = _mm_slli_epi32(determ_fin_128[0], -b);
+      }
+      mmtmpD3 = _mm_unpacklo_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = _mm_unpackhi_epi32(mmtmpD2, mmtmpD2);
+      mmtmpD2 = _mm_packs_epi32(mmtmpD3, mmtmpD2);
 
-      mmtmpD2 = _mm_packs_epi32(mmtmpD3,mmtmpD2);
-
+      // Layer 0
       ul_ch_mag128_0[0] = mmtmpD2;
       ul_ch_mag128b_0[0] = mmtmpD2;
+      ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0], QAM_amp128);
+      ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0], 1);
+      ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0], QAM_amp128b);
+      ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0], 1);
 
-      ul_ch_mag128_0[0] = _mm_mulhi_epi16(ul_ch_mag128_0[0],QAM_amp128);
-      ul_ch_mag128_0[0] = _mm_slli_epi16(ul_ch_mag128_0[0],1);
-
-      ul_ch_mag128b_0[0] = _mm_mulhi_epi16(ul_ch_mag128b_0[0],QAM_amp128b);
-      ul_ch_mag128b_0[0] = _mm_slli_epi16(ul_ch_mag128b_0[0],1);
-
-      //print_shorts("mag layer 1:",(int16_t*)&dl_ch_mag128_0[0]);
-      //print_shorts("mag layer 2:",(int16_t*)&dl_ch_mag128_1[0]);
-      //print_shorts("magb layer 1:",(int16_t*)&dl_ch_mag128b_0[0]);
-      //print_shorts("magb layer 2:",(int16_t*)&dl_ch_mag128b_1[0]);
-      //print_shorts("magr layer 1:",(int16_t*)&dl_ch_mag128r_0[0]);
-      //print_shorts("magr layer 2:",(int16_t*)&dl_ch_mag128r_1[0]);
+      // Layer 1
+      ul_ch_mag128_1[0] = mmtmpD2;
+      ul_ch_mag128b_1[0] = mmtmpD2;
+      ul_ch_mag128_1[0] = _mm_mulhi_epi16(ul_ch_mag128_1[0], QAM_amp128);
+      ul_ch_mag128_1[0] = _mm_slli_epi16(ul_ch_mag128_1[0], 1);
+      ul_ch_mag128b_1[0] = _mm_mulhi_epi16(ul_ch_mag128b_1[0], QAM_amp128b);
+      ul_ch_mag128b_1[0] = _mm_slli_epi16(ul_ch_mag128b_1[0], 1);
     }
+
     // multiply by channel Inv
     //rxdataF_zf128_0 = rxdataF_comp128_0*d - b*rxdataF_comp128_1
     //rxdataF_zf128_1 = rxdataF_comp128_1*a - c*rxdataF_comp128_0
@@ -1844,12 +1808,7 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
                                determ_fin_128[0]);
 
     rxdataF_comp128_0[0] = mmtmpD0;
-    if (mod_order > 2) {
-      // We need to check why it is a shift of 3
-      rxdataF_comp128_1[0] = simde_mm_srai_epi16(mmtmpD1, 3);
-    } else {
-      rxdataF_comp128_1[0] = mmtmpD1;
-    }
+    rxdataF_comp128_1[0] = mmtmpD1;
 
 #ifdef DEBUG_DLSCH_DEMOD
     printf("\n Rx signal after ZF l%d rb%d\n",symbol,rb);
@@ -1858,7 +1817,9 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(int **rxdataF_comp,
 #endif
     determ_fin_128 += 1;
     ul_ch_mag128_0 += 1;
-    ul_ch_mag128b_0 += 1;    
+    ul_ch_mag128_1 += 1;
+    ul_ch_mag128b_0 += 1;
+    ul_ch_mag128b_1 += 1;
     rxdataF_comp128_0 += 1;
     rxdataF_comp128_1 += 1;
     after_mf_a_128 += 1;
@@ -1964,7 +1925,13 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
   uint32_t rxdataF_ext_offset = 0;
   uint8_t shift_ch_ext = rel15_ul->nrOfLayers > 1 ? log2_approx(max_ch >> 11) : 0;
-  uint8_t ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2) + (rel15_ul->nrOfLayers == 2);
+
+  int ad_shift = 0;
+  if (rel15_ul->nrOfLayers == 1) {
+    ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2);
+  } else {
+    ad_shift = -3; // For 2-layers, we are already doing a bit shift in the nr_ulsch_zero_forcing_rx_2layers() function, so we can use more bits
+  }
 
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
@@ -2033,7 +2000,10 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
           for (aarx=0;aarx<frame_parms->nb_antennas_rx;aarx++)
             avgs = cmax(avgs,avg[aatx*frame_parms->nb_antennas_rx+aarx]);
 
-        gNB->pusch_vars[ulsch_id]->log2_maxh = (log2_approx(avgs) / 2) + ad_shift;
+        gNB->pusch_vars[ulsch_id]->log2_maxh = (log2_approx(avgs) >> 1) + ad_shift;
+        if (gNB->pusch_vars[ulsch_id]->log2_maxh < 0) {
+          gNB->pusch_vars[ulsch_id]->log2_maxh = 0;
+        }
         gNB->pusch_vars[ulsch_id]->cl_done = 1;
       }
 
@@ -2071,7 +2041,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
 
       //Apply zero forcing for 2 Tx layers
       if (rel15_ul->nrOfLayers == 2) {
-        nr_ulsch_zero_forcing_rx_2layers(gNB->pusch_vars[ulsch_id]->rxdataF_comp,
+        nr_ulsch_zero_forcing_rx_2layers(frame_parms,
+                                         gNB->pusch_vars[ulsch_id]->rxdataF_comp,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_mag0,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_magb0,
                                          gNB->pusch_vars[ulsch_id]->ul_ch_estimates_ext,

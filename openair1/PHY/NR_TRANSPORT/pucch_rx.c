@@ -183,7 +183,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
 
-  int32_t **rxdataF = gNB->common_vars.rxdataF;
+  c16_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   int soffset=(slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
   int nr_sequences;
@@ -295,7 +295,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
       re_offset[l]-=frame_parms->ofdm_symbol_size;
 
     for (int aa=0;aa<frame_parms->nb_antennas_rx;aa++) {
-      tmp_rp = &rxdataF[aa][soffset + l2*frame_parms->ofdm_symbol_size];
+      tmp_rp = (int32_t *)&rxdataF[aa][soffset + l2*frame_parms->ofdm_symbol_size];
       if(re_offset[l] + nb_re_pucch > frame_parms->ofdm_symbol_size) {
         int neg_length = frame_parms->ofdm_symbol_size-re_offset[l];
         int pos_length = nb_re_pucch-neg_length;
@@ -502,7 +502,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
 
 
-void nr_decode_pucch1(  int32_t **rxdataF,
+void nr_decode_pucch1(  c16_t **rxdataF,
 		        pucch_GroupHopping_t pucch_GroupHopping,
                         uint32_t n_id,       // hoppingID higher layer parameter  
                         uint64_t *payload,
@@ -1148,7 +1148,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                       nfapi_nr_uci_pucch_pdu_format_2_3_4_t* uci_pdu,
                       nfapi_nr_pucch_pdu_t* pucch_pdu) {
 
-  int32_t **rxdataF = gNB->common_vars.rxdataF;
+  c16_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   //pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
 
@@ -1720,7 +1720,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   // estimate CQI for MAC (from antenna port 0 only)
   // TODO this computation is wrong -> to be ignored at MAC for now
-  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
+  int SNRtimes10 = dB_fixed_times10(signal_energy_nodc((int32_t *)&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],
                                                        12*pucch_pdu->prb_size)) -
                                                        (10*gNB->measurements.n0_power_tot_dB);
   int cqi,bit_left;
@@ -1735,7 +1735,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   uci_pdu->pucch_format=0;
   uci_pdu->ul_cqi=cqi;
   uci_pdu->timing_advance=0xffff; // currently not valid
-  uci_pdu->rssi=1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc(&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],12*pucch_pdu->prb_size)));
+  uci_pdu->rssi=1280 - (10*dB_fixed(32767*32767)-dB_fixed_times10(signal_energy_nodc((int32_t *)&rxdataF[0][soffset+(l2*frame_parms->ofdm_symbol_size)+re_offset[0]],12*pucch_pdu->prb_size)));
   if (pucch_pdu->bit_len_harq>0) {
     int harq_bytes=pucch_pdu->bit_len_harq>>3;
     if ((pucch_pdu->bit_len_harq&7) > 0) harq_bytes++;

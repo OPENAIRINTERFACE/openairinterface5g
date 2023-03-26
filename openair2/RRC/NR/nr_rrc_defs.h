@@ -280,7 +280,6 @@ typedef struct gNB_RRC_UE_s {
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint8_t                            DRB_active[NGAP_MAX_DRBS_PER_UE];
 
-  NR_SRB_INFO                       SI;
   NR_SRB_INFO_TABLE_ENTRY Srb[maxSRBs]; // 3gpp max is 3 SRBs, number 1..3, we waste the entry 0 for code simplicity
   NR_MeasConfig_t                   *measConfig;
   NR_HANDOVER_INFO                  *handover_info;
@@ -435,7 +434,6 @@ typedef struct {
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_ServingCellConfig_t                    *servingcellconfig;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
-  NR_SRB_INFO                               SI;
   int                                       p_gNB;
 
 } rrc_gNB_carrier_data_t;

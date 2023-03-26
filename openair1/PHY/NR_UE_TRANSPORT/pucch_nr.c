@@ -51,7 +51,7 @@
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
@@ -169,7 +169,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
 }
 
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
@@ -955,7 +955,7 @@ static void nr_uci_encoding(uint64_t payload,
 }
 //#if 0
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
@@ -1125,7 +1125,7 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
 }
 //#if 0
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
-                          int32_t **txdataF,
+                          c16_t **txdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
                           int16_t amp,
                           int nr_slot_tx,
