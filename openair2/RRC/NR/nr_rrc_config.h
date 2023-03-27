@@ -119,6 +119,10 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
                                                   const NR_ServingCellConfigCommon_t *scc,
                                                   const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                                   const gNB_RrcConfigurationReq *configuration);
+void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
+                            const int uid,
+                            NR_UE_NR_Capability_t *uecap,
+                            const gNB_RrcConfigurationReq *configuration);
 void free_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig);
 int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size);
 NR_CellGroupConfig_t *decode_cellGroupConfig(const uint8_t *buffer, int max_buffer_size);

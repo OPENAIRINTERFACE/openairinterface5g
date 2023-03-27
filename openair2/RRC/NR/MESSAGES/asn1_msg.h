@@ -69,11 +69,6 @@ NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(
     long priority,
     e_NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration bucketSizeDuration);
 
-void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
-                            const int uid,
-                            NR_UE_NR_Capability_t *uecap,
-                            const gNB_RrcConfigurationReq *configuration);
-
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                                 NR_CellGroupConfig_t *ue_context_mastercellGroup,
                                 int use_rlc_um_for_drb,
