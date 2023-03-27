@@ -33,8 +33,6 @@
 #include "mac_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "common/utils/LOG/log.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "UTIL/OPT/opt.h"
 #include "common/ran_context.h"
 

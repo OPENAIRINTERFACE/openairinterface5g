@@ -50,7 +50,6 @@
 #endif //XFORMS
 
 
-#include "OCG_vars.h"
 #include "openair_hw.h"
 
 #define BW 5.0

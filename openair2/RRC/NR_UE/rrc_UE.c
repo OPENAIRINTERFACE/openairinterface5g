@@ -54,6 +54,7 @@
 
 #include "intertask_interface.h"
 
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr-uesoftmodem.h"
 #include "executables/softmodem-common.h"
 #include "plmn_data.h"
@@ -179,6 +180,46 @@ static int nr_rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_NR_t subS
   return (0);
 }
 
+static void nr_rrc_addmod_srbs(int rnti,
+                               const NR_SRB_ToAddModList_t *srb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (srb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < srb_list->list.count; i++) {
+    const NR_SRB_ToAddMod_t *srb = srb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity
+          && srb->srb_Identity == bearer->servedRadioBearer->choice.srb_Identity) {
+        nr_rlc_add_srb(rnti, srb->srb_Identity, bearer);
+      }
+    }
+  }
+}
+
+static void nr_rrc_addmod_drbs(int rnti,
+                               const NR_DRB_ToAddModList_t *drb_list,
+                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
+{
+  if (drb_list == NULL || bearer_list == NULL)
+    return;
+
+  for (int i = 0; i < drb_list->list.count; i++) {
+    const NR_DRB_ToAddMod_t *drb = drb_list->list.array[i];
+    for (int j = 0; j < bearer_list->list.count; j++) {
+      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
+      if (bearer->servedRadioBearer != NULL
+          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity
+          && drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity) {
+        nr_rlc_add_drb(rnti, drb->drb_Identity, bearer);
+      }
+    }
+  }
+}
+
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
                                                    const uint8_t *buffer,
@@ -194,10 +235,10 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
                                         size, 0, 0);
 
   if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    printf("NR_CellGroupConfig decode error\n");
+    LOG_E(NR_RRC, "NR_CellGroupConfig decode error\n");
     for (i=0; i<size; i++)
-      printf("%02x ",buffer[i]);
-    printf("\n");
+      LOG_E(NR_RRC, "%02x ",buffer[i]);
+    LOG_E(NR_RRC, "\n");
     // free the memory
     SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1 );
     return -1;
@@ -763,22 +804,22 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
   }
 
 //intraFreqBlackCellList
-  if( sib3->intraFreqBlackCellList){
-    LOG_I( RRC, "intraFreqBlackCellList : %p\n",
-           sib3->intraFreqBlackCellList );    
-    const int n = sib3->intraFreqBlackCellList->list.count;
+  if( sib3->intraFreqExcludedCellList){
+    LOG_I( RRC, "intraFreqExcludedCellList : %p\n",
+           sib3->intraFreqExcludedCellList );
+    const int n = sib3->intraFreqExcludedCellList->list.count;
     for (int i = 0; i < n; ++i){
-      LOG_I( RRC, "intraFreqBlackCellList->start : %ld\n",
-             sib3->intraFreqBlackCellList->list.array[i]->start );
+      LOG_I( RRC, "intraFreqExcludedCellList->start : %ld\n",
+             sib3->intraFreqExcludedCellList->list.array[i]->start );
 
-      if( sib3->intraFreqBlackCellList->list.array[i]->range)
-        LOG_I( RRC, "intraFreqBlackCellList->range : %ld\n",
-             *sib3->intraFreqBlackCellList->list.array[i]->range );
+      if( sib3->intraFreqExcludedCellList->list.array[i]->range)
+        LOG_I( RRC, "intraFreqExcludedCellList->range : %ld\n",
+             *sib3->intraFreqExcludedCellList->list.array[i]->range );
       else
-        LOG_I( RRC, "intraFreqBlackCellList->range : not defined\n" );
+        LOG_I( RRC, "intraFreqExcludedCellList->range : not defined\n" );
     }
    } else{
-    LOG_I( RRC, "intraFreqBlackCellList : not defined\n" );
+    LOG_I( RRC, "intraFreqExcludedCellList : not defined\n" );
    }
 
 //lateNonCriticalExtension
@@ -992,7 +1033,7 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
     if (new_sib == 1) {
       NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
       if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
-        nr_rrc_set_sub_state( ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE );
+        nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
   
       LOG_I(NR_RRC,"SIStatus %x, SIcnt %d/%d\n",
             NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
@@ -1025,15 +1066,15 @@ static int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t reques
 
     LOG_D(RRC, "SIBs broadcasting: ");
     for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
-      printf("SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
+      LOG_D(RRC, "SIB%li  ", sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.array[i]->type + 2);
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     LOG_D(RRC, "SIBs needed by UE: ");
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if( ((requested_SI_List.buf[j/8]>>(j%8))&1) == 1) {
 
-        printf("SIB%i  ", j + 2);
+        LOG_D(RRC, "SIB%i  ", j + 2);
 
         SIB_to_request[j] = true;
         for(int i = 0; i < sib1.si_SchedulingInfo->schedulingInfoList.list.array[0]->sib_MappingInfo.list.count; i++) {
@@ -1045,17 +1086,17 @@ static int8_t check_requested_SI_List(module_id_t module_id, BIT_STRING_t reques
 
       }
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     LOG_D(RRC, "SIBs to request by UE: ");
     bool do_ra = false;
     for(int j = 0; j < 8*requested_SI_List.size; j++) {
       if(SIB_to_request[j]) {
-        printf("SIB%i  ", j + 2);
+        LOG_D(RRC, "SIB%i  ", j + 2);
         do_ra = true;
       }
     }
-    printf("\n");
+    LOG_D(RRC, "\n");
 
     if(do_ra) {
 
@@ -1217,7 +1258,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   if (nr_rrc_get_sub_state(module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
     //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!get_softmodem_params()->sa)) {
       nr_rrc_ue_generate_RRCSetupRequest(module_id, 0);
-      nr_rrc_set_sub_state( module_id, RRC_SUB_STATE_IDLE_CONNECTING );
+      nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_CONNECTING_NR);
     //}
   }
 
@@ -1458,8 +1499,8 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
    if ((dec_rval.code != RC_OK) || (dec_rval.consumed == 0)) {
      for (i=0; i<buffer_len; i++)
-       printf("%02x ",bufferP[i]);
-     printf("\n");
+       LOG_D(NR_RRC, "%02x ",bufferP[i]);
+     LOG_D(NR_RRC, "\n");
      // free the memory
      SEQUENCE_free( &asn_DEF_NR_DL_DCCH_Message, (void *)nr_dl_dcch_msg, 1 );
      return -1;
@@ -1947,35 +1988,31 @@ nr_rrc_ue_establish_srb2(
      }
    }
 
+   NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
    if (radioBearerConfig->srb_ToAddModList != NULL) {
      if (radioBearerConfig->securityConfig != NULL) {
        if (*radioBearerConfig->securityConfig->keyToUse == NR_SecurityConfig__keyToUse_master) {
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm = radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
-	      NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm = *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
+	      ue_rrc->cipheringAlgorithm = radioBearerConfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm;
+	      ue_rrc->integrityProtAlgorithm = *radioBearerConfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm;
        }
      }
 
      uint8_t *kRRCenc = NULL;
      uint8_t *kRRCint = NULL;
-     nr_derive_key_rrc_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCenc);
-     nr_derive_key_rrc_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                           NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kRRCint);
+     nr_derive_key_rrc_enc(ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, &kRRCenc);
+     nr_derive_key_rrc_int(ue_rrc->integrityProtAlgorithm, ue_rrc->kgnb, &kRRCint);
 
      // Refresh SRBs
      nr_pdcp_add_srbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
                       radioBearerConfig->srb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kRRCenc,
                       kRRCint);
      // Refresh SRBs
-      nr_rrc_rlc_config_asn1_req(ctxt_pP,
-                                  radioBearerConfig->srb_ToAddModList,
-                                  NULL,
-                                  NULL,
-                                  NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList
-                                  );
+     nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid,
+                        radioBearerConfig->srb_ToAddModList,
+                        ue_rrc->cell_group_config->rlc_BearerToAddModList);
 
      for (cnt = 0; cnt < radioBearerConfig->srb_ToAddModList->list.count; cnt++) {
        SRB_id = radioBearerConfig->srb_ToAddModList->list.array[cnt]->srb_Identity;
@@ -2054,22 +2091,24 @@ nr_rrc_ue_establish_srb2(
      uint8_t *kUPenc = NULL;
      uint8_t *kUPint = NULL;
 
-     nr_derive_key_up_enc(NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPenc);
-     nr_derive_key_up_int(NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                          NR_UE_rrc_inst[ctxt_pP->module_id].kgnb, &kUPint);
+     NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
+     nr_derive_key_up_enc(ue_rrc->cipheringAlgorithm, ue_rrc->kgnb, &kUPenc);
+     nr_derive_key_up_int(ue_rrc->integrityProtAlgorithm, ue_rrc->kgnb, &kUPint);
 
-       // Refresh DRBs
+     // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
                       0,
                       radioBearerConfig->drb_ToAddModList,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
+                      ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kUPenc,
                       kUPint,
-                      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+                      ue_rrc->cell_group_config->rlc_BearerToAddModList);
      // Refresh DRBs
-     nr_rrc_rlc_config_asn1_req(ctxt_pP, NULL, radioBearerConfig->drb_ToAddModList, NULL, NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->rlc_BearerToAddModList);
+     nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid,
+                        radioBearerConfig->drb_ToAddModList,
+                        ue_rrc->cell_group_config->rlc_BearerToAddModList);
+
    } // drb_ToAddModList //
 
    if (radioBearerConfig->drb_ToReleaseList != NULL) {

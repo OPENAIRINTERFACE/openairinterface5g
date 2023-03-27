@@ -31,8 +31,6 @@
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
 
-#include "OCG_vars.h"
-
 #include "unitary_defs.h"
 
 int current_dlsch_cqi; //FIXME!

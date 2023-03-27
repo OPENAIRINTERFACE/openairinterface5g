@@ -38,6 +38,7 @@
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_entity.h"
 #include "executables/softmodem-common.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
 #include <pthread.h>
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
@@ -52,6 +53,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
     nr_ue_mac_inst->first_sync_frame = -1;
     nr_ue_mac_inst->sib1_decoded = false;
+    nr_ue_mac_inst->phy_config_request_sent = false;
+    nr_ue_mac_inst->state = UE_NOT_SYNC;
 
     for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
 	nr_ue_init_mac(j);

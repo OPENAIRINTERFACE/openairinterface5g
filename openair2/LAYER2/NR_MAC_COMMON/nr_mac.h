@@ -113,11 +113,11 @@ typedef struct {
 } __attribute__ ((__packed__)) NR_MAC_SUBHEADER_FIXED;
 
 static inline int get_mac_len(uint8_t* pdu, int pdu_len, uint16_t *mac_ce_len, uint16_t *mac_subheader_len) {
-  if ( pdu_len < sizeof(NR_MAC_SUBHEADER_SHORT))
+  if ( pdu_len < (int)sizeof(NR_MAC_SUBHEADER_SHORT))
     return false;
   NR_MAC_SUBHEADER_SHORT *s = (NR_MAC_SUBHEADER_SHORT*) pdu;
   NR_MAC_SUBHEADER_LONG *l = (NR_MAC_SUBHEADER_LONG*) pdu;
-  if (s->F && pdu_len < sizeof(NR_MAC_SUBHEADER_LONG))
+  if (s->F && pdu_len < (int)sizeof(NR_MAC_SUBHEADER_LONG))
     return false;
   if (s->F) {
     *mac_subheader_len = sizeof(*l);
@@ -602,7 +602,7 @@ typedef struct NR_UE_UL_BWP {
   NR_CSI_MeasConfig_t *csi_MeasConfig;
   NR_SRS_Config_t *srs_Config;
   long *msg3_DeltaPreamble;
-  uint8_t transform_precoding;
+  long transform_precoding;
   uint8_t mcs_table;
   nr_dci_format_t dci_format;
   int max_fb_time;

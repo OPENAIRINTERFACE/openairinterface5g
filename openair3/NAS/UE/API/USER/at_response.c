@@ -1068,31 +1068,31 @@ static int _at_response_encode_cgpaddr(char* buffer, const at_response_t* data)
             if (cgpaddr->PDP_addr_1[i] != NULL) {
                 /* IPv4 address */
                 offset += sprintf(buffer+offset, ",%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][0],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][1],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][2],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][3]);
+                                  (unsigned char)cgpaddr->PDP_addr_1[i][0],
+                                  (unsigned char)cgpaddr->PDP_addr_1[i][1],
+                                  (unsigned char)cgpaddr->PDP_addr_1[i][2],
+                                  (unsigned char)cgpaddr->PDP_addr_1[i][3]);
             }
 
             if (cgpaddr->PDP_addr_2[i] != NULL) {
                 /* IPv6 Link-local address prefixe */
                 offset += sprintf(buffer+offset,
                                   ",%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)0xfe, (unsigned int)0x80,
-                                  (unsigned int)0, (unsigned int)0,
-                                  (unsigned int)0, (unsigned int)0,
-                                  (unsigned int)0, (unsigned int)0);
+                                  (unsigned char)0xfe, (unsigned char)0x80,
+                                  (unsigned char)0, (unsigned char)0,
+                                  (unsigned char)0, (unsigned char)0,
+                                  (unsigned char)0, (unsigned char)0);
                 /* IPv6 Link-local address */
                 offset += sprintf(buffer+offset,
                                   ".%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][0],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][1],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][2],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][3],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][4],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][5],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][6],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][7]);
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][0],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][1],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][2],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][3],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][4],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][5],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][6],
+                                  (unsigned char)cgpaddr->PDP_addr_2[i][7]);
             }
 
             offset += sprintf(buffer+offset, "\r\n");

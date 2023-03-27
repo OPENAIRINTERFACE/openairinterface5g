@@ -49,12 +49,14 @@
 #include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
 
 #include "PHY/phy_vars.h"
+#include "PHY/phy_extern.h"
 #include "PHY/TOOLS/phy_scope_interface.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "PHY/INIT/phy_init.h"
 #include "openair2/ENB_APP/enb_paramdef.h"
 #include "system.h"
+#include "nfapi/oai_integration/vendor_ext.h"
 
 #include <executables/softmodem-common.h>
 #include <executables/thread-common.h>
@@ -85,7 +87,7 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 
 
 void nfapi_setmode(nfapi_mode_t nfapi_mode) { return; }
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert) {
 
   if (s != NULL) {
     printf("%s:%d %s() Exiting OAI softmodem: %s\n",file,line, function, s);
@@ -102,11 +104,15 @@ void exit_function(const char *file, const char *function, const int line, const
     ru_m.ifdevice.trx_end_func(&ru_m.ifdevice);
     ru_m.ifdevice.trx_end_func = NULL;
   }
- 
+
   pthread_mutex_destroy(ru_m.ru_mutex);
-  pthread_cond_destroy(ru_m.ru_cond); 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  pthread_cond_destroy(ru_m.ru_cond);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow lte-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 

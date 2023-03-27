@@ -36,6 +36,7 @@
 
 #include "oai_asn1.h"
 #include "intertask_interface.h"
+#include "pdcp.h"
 
 
 # include "common/ran_context.h"

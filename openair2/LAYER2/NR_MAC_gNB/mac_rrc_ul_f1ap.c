@@ -20,6 +20,7 @@
  */
 
 #include "nr_mac_gNB.h"
+#include "intertask_interface.h"
 
 #include "mac_rrc_ul.h"
 

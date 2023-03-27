@@ -33,32 +33,31 @@
 
 #include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "NR_TAG-Id.h"
+#include "common/ngran_types.h"
+#include "rrc_messages_types.h"
 
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(ngran_node_t node_type);
 
-void config_common(int Mod_idP,
-                   int pdsch_AntennaPorts,
-                   int pusch_AntennaPorts,
-                   NR_ServingCellConfigCommon_t *scc);
+void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc);
 
 int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
                                           rnti_t rnti,
                                           NR_SubcarrierSpacing_t subcarrierSpacing,
                                           uint32_t rrc_reconfiguration_delay);
 
-int rrc_mac_config_req_gNB(module_id_t Mod_idP,
-                           rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
-                           int pusch_AntennaPorts,
-                           int sib1_tda,
-                           int minRXTXTIMEpdsch,
-                           NR_ServingCellConfigCommon_t *scc,
-                           NR_BCCH_BCH_Message_t *mib,
-                           NR_BCCH_DL_SCH_Message_t *sib1,
-                           int add_ue,
-                           uint32_t rnti,
-                           NR_CellGroupConfig_t *CellGroup);
+void nr_mac_config_scc(gNB_MAC_INST *nrmac,
+                       rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
+                       int pusch_AntennaPorts,
+                       int sib1_tda,
+                       int minRXTXTIMEpdsch,
+                       NR_ServingCellConfigCommon_t *scc);
+void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib);
+void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1);
+bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
+bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
+bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
@@ -93,7 +92,7 @@ uint32_t schedule_control_sib1(module_id_t module_id,
                                uint16_t num_total_bytes);
 
 /* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
-nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(module_id_t module_id, int CC_id);
+nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(int CC_id);
 
 void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
 
@@ -105,7 +104,7 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot);
 
 /* \brief default FR1 UL preprocessor init routine, returns preprocessor to call */
-nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id);
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
@@ -343,7 +342,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
                       NR_RA_t *ra,
-                      NR_UE_info_t *UE);
+                      NR_UE_info_t *UE,
+                      int dl_bwp_switch,
+                      int ul_bwp_switch);
 
 NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 
@@ -370,6 +371,8 @@ void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_fra
 void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
+
+void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
 
 int binomial(int n, int k);
 
@@ -423,7 +426,7 @@ int16_t ssb_index_from_prach(module_id_t module_idP,
                              uint8_t freq_index,
                              uint8_t symbol);
 
-void find_SSB_and_RO_available(module_id_t module_idP);
+void find_SSB_and_RO_available(gNB_MAC_INST *nrmac);
 
 NR_pdsch_dmrs_t get_dl_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
                                    const NR_UE_DL_BWP_t *BWP,
@@ -457,6 +460,7 @@ int get_cce_index(const gNB_MAC_INST *nrmac,
 
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   long transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
@@ -482,12 +486,8 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
 
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl);
 
-void send_initial_ul_rrc_message(module_id_t        module_id,
-                                 int                CC_id,
-                                 int                rnti,
-                                 int                uid,
-                                 const uint8_t      *sdu,
-                                 sdu_size_t         sdu_len);
+void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE);
+void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE);
 
 void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid);
 

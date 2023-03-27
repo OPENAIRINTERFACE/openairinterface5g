@@ -321,7 +321,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   // cellAccessRelatedInfo
   // TODO : Add support for more than one PLMN
   int num_plmn = 1; // int num_plmn = configuration->num_plmn;
-  asn1cSequenceAdd(sib1->cellAccessRelatedInfo.plmn_IdentityList.list, struct NR_PLMN_IdentityInfo, nr_plmn_info);
+  asn1cSequenceAdd(sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list, struct NR_PLMN_IdentityInfo, nr_plmn_info);
   for (int i = 0; i < num_plmn; ++i) {
     asn1cSequenceAdd(nr_plmn_info->plmn_IdentityList.list, struct NR_PLMN_Identity, nr_plmn);
     asn1cCalloc(nr_plmn->mcc,  mcc);
@@ -478,7 +478,7 @@ uint16_t do_SIB1_NR(rrc_gNB_carrier_data_t *carrier,
   UL->initialUplinkBWP.genericParameters = configuration->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   UL->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
   UL->initialUplinkBWP.pusch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
-  UL->initialUplinkBWP.pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = null;
+  UL->initialUplinkBWP.pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding = NULL;
 
   UL->initialUplinkBWP.pucch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon;
 
@@ -658,7 +658,7 @@ int do_RRCReject(uint8_t Mod_id,
     memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
     dl_ccch_msg.message.present = NR_DL_CCCH_MessageType_PR_c1;
     dl_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_CCCH_MessageType__c1));
-    dl_ccch_msg.message.choice.c1->present = NR_RRCReject__criticalExtensions_PR_rrcReject;
+    dl_ccch_msg.message.choice.c1->present = NR_DL_CCCH_MessageType__c1_PR_rrcReject;
 
     dl_ccch_msg.message.choice.c1->choice.rrcReject = CALLOC(1,sizeof(NR_RRCReject_t));
     rrcReject = dl_ccch_msg.message.choice.c1->choice.rrcReject;
@@ -723,7 +723,7 @@ void fill_initial_SpCellConfig(int uid,
   config_pucch_resset1(pucch_Config, NULL);
   set_pucch_power_config(pucch_Config, configuration->do_CSIRS);
 
-  initialUplinkBWP->pusch_Config = config_pusch(NULL, scc);
+  initialUplinkBWP->pusch_Config = config_pusch(NULL);
 
   long maxMIMO_Layers = uplinkConfig &&
                                 uplinkConfig->pusch_ServingCellConfig &&
@@ -735,7 +735,7 @@ void fill_initial_SpCellConfig(int uid,
   initialUplinkBWP->srs_Config = calloc(1,sizeof(*initialUplinkBWP->srs_Config));
   config_srs(scc, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
 
-  scheduling_request_config(scc, pucch_Config);
+  scheduling_request_config(scc, pucch_Config, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
 
   set_dl_DataToUL_ACK(pucch_Config, configuration->minRXTXTIME, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
 
@@ -1152,43 +1152,21 @@ void fill_initial_cellGroupConfig(int uid,
                                   const NR_ServingCellConfig_t *servingcellconfigdedicated,
                                   const gNB_RrcConfigurationReq *configuration)
 {
-  NR_MAC_CellGroupConfig_t                         *mac_CellGroupConfig  = NULL;
-  NR_PhysicalCellGroupConfig_t	                   *physicalCellGroupConfig = NULL;
-  
+
+  NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig = NULL;
+
   cellGroupConfig->cellGroupId = 0;
-  
+
   /* Rlc Bearer Config */
   /* TS38.331 9.2.1	Default SRB configurations */
   cellGroupConfig->rlc_BearerToAddModList                          = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
   NR_RLC_BearerConfig_t *rlc_BearerConfig = get_SRB_RLC_BearerConfig(1, 1, NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000);
   asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
-  
+
   cellGroupConfig->rlc_BearerToReleaseList = NULL;
-  
+
   /* mac CellGroup Config */
-  mac_CellGroupConfig                                                     = calloc(1, sizeof(*mac_CellGroupConfig));
-
-  mac_CellGroupConfig->bsr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
-  mac_CellGroupConfig->bsr_Config->periodicBSR_Timer                      = NR_BSR_Config__periodicBSR_Timer_sf10;
-  mac_CellGroupConfig->bsr_Config->retxBSR_Timer                          = NR_BSR_Config__retxBSR_Timer_sf80;
-  mac_CellGroupConfig->tag_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->tag_Config));
-  mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
-  mac_CellGroupConfig->tag_Config->tag_ToAddModList  = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
-  struct NR_TAG *tag=calloc(1,sizeof(*tag));
-  tag->tag_Id             = 0;
-  tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
-  asn1cSeqAdd(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
-  set_phr_config(mac_CellGroupConfig);
-
-  mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
-  mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
-  struct NR_SchedulingRequestToAddMod *schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
-  schedulingrequestlist->schedulingRequestId  = 0;
-  schedulingrequestlist->sr_ProhibitTimer = NULL;
-  schedulingrequestlist->sr_TransMax      = NR_SchedulingRequestToAddMod__sr_TransMax_n64;
-  asn1cSeqAdd(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
-
-  cellGroupConfig->mac_CellGroupConfig                                      = mac_CellGroupConfig;
+  cellGroupConfig->mac_CellGroupConfig = configure_mac_cellgroup();
 
   physicalCellGroupConfig                                                   = calloc(1,sizeof(*physicalCellGroupConfig));
   physicalCellGroupConfig->p_NR_FR1                                         = NULL;
@@ -1298,27 +1276,24 @@ uint8_t do_NR_SecurityModeCommand(
   uint8_t *const buffer,
   const uint8_t Transaction_id,
   const uint8_t cipheringAlgorithm,
-  NR_IntegrityProtAlgorithm_t *integrityProtAlgorithm
+  NR_IntegrityProtAlgorithm_t integrityProtAlgorithm
 )
 //------------------------------------------------------------------------------
 {
-  NR_DL_DCCH_Message_t dl_dcch_msg;
+  NR_DL_DCCH_Message_t dl_dcch_msg={0};
   asn_enc_rval_t enc_rval;
-  memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
   dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
-  dl_dcch_msg.message.choice.c1=CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
-  dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_securityModeCommand;
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand = CALLOC(1, sizeof(struct NR_SecurityModeCommand));
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->rrc_TransactionIdentifier = Transaction_id;
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.present = NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand;
+  asn1cCalloc(dl_dcch_msg.message.choice.c1, c1);
+  c1->present = NR_DL_DCCH_MessageType__c1_PR_securityModeCommand;
+  asn1cCalloc(c1->choice.securityModeCommand,scm);
+  scm->rrc_TransactionIdentifier = Transaction_id;
+  scm->criticalExtensions.present = NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand;
 
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand =
-		  CALLOC(1, sizeof(struct NR_SecurityModeCommand_IEs));
+  asn1cCalloc(scm->criticalExtensions.choice.securityModeCommand,scmIE);
   // the two following information could be based on the mod_id
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
+  scmIE->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm
     = (NR_CipheringAlgorithm_t)cipheringAlgorithm;
-  dl_dcch_msg.message.choice.c1->choice.securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm
-    = integrityProtAlgorithm;
+  asn1cCallocOne(scmIE->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm, integrityProtAlgorithm);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
@@ -1332,7 +1307,7 @@ uint8_t do_NR_SecurityModeCommand(
 
   AssertFatal(enc_rval.encoded >0 , "ASN1 message encoding failed (%s, %lu)!\n",
               enc_rval.failed_type->name, enc_rval.encoded);
-
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message,&dl_dcch_msg);
   LOG_D(NR_RRC, "[gNB %d] securityModeCommand for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   //  rrc_ue_process_ueCapabilityEnquiry(0,1000,&dl_dcch_msg.message.choice.c1.choice.ueCapabilityEnquiry,0);
@@ -1521,10 +1496,7 @@ int16_t do_RRCReconfiguration(
     }
 
     if(cellGroupConfig!=NULL){
-      update_cellGroupConfig(cellGroupConfig,
-                             ue_context_pP->local_uid,
-                             ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL,
-                             configuration);
+      update_cellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.gNB_ue_ngap_id, ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL, configuration);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                        NULL,
@@ -1754,29 +1726,27 @@ do_NR_DLInformationTransfer(
 //------------------------------------------------------------------------------
 {
     ssize_t encoded;
-    NR_DL_DCCH_Message_t   dl_dcch_msg;
-    memset(&dl_dcch_msg, 0, sizeof(NR_DL_DCCH_Message_t));
+    NR_DL_DCCH_Message_t   dl_dcch_msg={0};
     dl_dcch_msg.message.present            = NR_DL_DCCH_MessageType_PR_c1;
-    dl_dcch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_DCCH_MessageType__c1));
-    dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
+    asn1cCalloc(dl_dcch_msg.message.choice.c1, c1);
+    c1->present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
 
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer = CALLOC(1, sizeof(NR_DLInformationTransfer_t));
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->rrc_TransactionIdentifier = transaction_id;
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->criticalExtensions.present =
+    asn1cCalloc(c1->choice.dlInformationTransfer, infoTransfer);
+    infoTransfer->rrc_TransactionIdentifier = transaction_id;
+    infoTransfer->criticalExtensions.present =
         NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer;
 
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
-        criticalExtensions.choice.dlInformationTransfer = CALLOC(1, sizeof(NR_DLInformationTransfer_IEs_t));
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
-        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message = CALLOC(1, sizeof(NR_DedicatedNAS_Message_t));
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
-        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->buf = pdu_buffer;
-    dl_dcch_msg.message.choice.c1->choice.dlInformationTransfer->
-        criticalExtensions.choice.dlInformationTransfer->dedicatedNAS_Message->size = pdu_length;
+    asn1cCalloc(infoTransfer->criticalExtensions.choice.dlInformationTransfer, dlInfoTransfer);
+    asn1cCalloc(dlInfoTransfer->dedicatedNAS_Message,msg);
+    // we will free the caller buffer, that is ok in the present code logic (else it will leak memory) but not natural,
+    // comprehensive code design
+    msg->buf = pdu_buffer;
+    msg->size = pdu_length;
 
     encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
     AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
                 "DLInformationTransfer", encoded);
+    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message,&dl_dcch_msg );
     LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
     //for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
     return encoded;

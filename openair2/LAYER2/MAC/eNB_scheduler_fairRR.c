@@ -35,6 +35,7 @@
 
 #include "PHY/phy_extern.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
+#include "PHY/defs_eNB.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "LAYER2/MAC/mac_proto.h"
 #include "LAYER2/MAC/mac_extern.h"
@@ -43,8 +44,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rlc.h"
 #include "common/utils/lte/prach_utils.h"
@@ -2742,7 +2741,7 @@ void ulsch_scheduler_pre_processor_fairRR(module_id_t module_idP,
               UE_info->UE_template[CC_id][UE_id].pre_allocated_rb_table_index_ul = rb_table_index;
               UE_info->UE_template[CC_id][UE_id].pre_assigned_mcs_ul = mcs;
             }
-            LOG_D(MAC,"[eNB %hu] frame %u subframe %u, UE %d/%x CC %d snr %hhu snr_inst %hhu mcs %hhd mcs_offset %hhu bler %lf total_bler %lf ( %lu %lu ) rb_num %hhu phr_info %hhd tx_power %hd bsr %d estimated_ul_buffer %d scheduled_ul_bytes %d\n",
+            LOG_D(MAC,"[eNB %hu] frame %u subframe %u, UE %d/%x CC %d snr %hhu snr_inst %hd mcs %hhd mcs_offset %hhu bler %lf total_bler %lf ( %lu %lu ) rb_num %hhu phr_info %hhd tx_power %hd bsr %d estimated_ul_buffer %d scheduled_ul_bytes %d\n",
                   module_idP,frameP,subframeP,UE_id,UE_RNTI(CC_id,UE_id),CC_id, snr, UE_info->UE_sched_ctrl[UE_id].pusch_snr[CC_id], mcs, UE_info->UE_sched_ctrl[UE_id].mcs_offset[CC_id], UE_info->UE_sched_ctrl[UE_id].pusch_bler[CC_id], 
                   total_bler, UE_info->UE_sched_ctrl[UE_id].pusch_rx_num[CC_id], UE_info->UE_sched_ctrl[UE_id].pusch_rx_error_num[CC_id], rb_table[rb_table_index-1], UE_template->phr_info, tx_power, bytes_to_schedule, UE_template->estimated_ul_buffer, UE_template->scheduled_ul_bytes);
             

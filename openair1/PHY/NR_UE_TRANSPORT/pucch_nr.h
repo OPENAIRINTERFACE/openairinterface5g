@@ -46,28 +46,28 @@
 
 
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
                         fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
 void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
                         fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
 void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
-                        int32_t **txdataF,
+                        c16_t **txdataF,
                         NR_DL_FRAME_PARMS *frame_parms,
                         int16_t amp,
                         int nr_slot_tx,
                         fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
 void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
-                          int32_t **txdataF,
+                          c16_t **txdataF,
                           NR_DL_FRAME_PARMS *frame_parms,
                           int16_t amp,
                           int nr_slot_tx,

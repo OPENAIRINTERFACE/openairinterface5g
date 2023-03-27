@@ -24,7 +24,7 @@
 #include "common/ran_context.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
@@ -64,6 +64,17 @@ int l1_north_init_gNB() {
   }
 
   return(0);
+}
+
+void init_ul_delay_table(NR_DL_FRAME_PARMS *fp)
+{
+  for (int delay = -MAX_UL_DELAY_COMP; delay <= MAX_UL_DELAY_COMP; delay++) {
+    for (int k = 0; k < fp->ofdm_symbol_size; k++) {
+      double complex delay_cexp = cexp(I * (2.0 * M_PI * k * delay / fp->ofdm_symbol_size));
+      fp->ul_delay_table[MAX_UL_DELAY_COMP + delay][k].r = (int16_t)round(256 * creal(delay_cexp));
+      fp->ul_delay_table[MAX_UL_DELAY_COMP + delay][k].i = (int16_t)round(256 * cimag(delay_cexp));
+    }
+  }
 }
 
 int init_codebook_gNB(PHY_VARS_gNB *gNB) {
@@ -500,6 +511,7 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
     load_nrLDPClib_offload(); 
 
   init_codebook_gNB(gNB);
+  init_ul_delay_table(fp);
 
   // PBCH DMRS gold sequences generation
   nr_init_pbch_dmrs(gNB);
@@ -620,17 +632,17 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
     }
   }
 
-  common_vars->txdataF = (int32_t **)malloc16(Ptx*sizeof(int32_t*));
-  common_vars->rxdataF = (int32_t **)malloc16(Prx*sizeof(int32_t*));
+  common_vars->txdataF = (c16_t **)malloc16(Ptx*sizeof(c16_t*));
+  common_vars->rxdataF = (c16_t **)malloc16(Prx*sizeof(c16_t*));
   /* Do NOT allocate per-antenna txdataF/rxdataF: the gNB gets a pointer to the
    * RU to copy/recover freq-domain memory from there */
   common_vars->beam_id = (uint8_t **)malloc16(Ptx*sizeof(uint8_t*));
 
   for (i=0;i<Ptx;i++){
-    common_vars->txdataF[i] = (int32_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(int32_t)); // [hna] samples_per_frame without CP
+    common_vars->txdataF[i] = (c16_t*)malloc16_clear(fp->samples_per_frame_wCP*sizeof(c16_t)); // [hna] samples_per_frame without CP
     LOG_D(PHY,"[INIT] common_vars->txdataF[%d] = %p (%lu bytes)\n",
           i,common_vars->txdataF[i],
-          fp->samples_per_frame_wCP*sizeof(int32_t));
+          fp->samples_per_frame_wCP*sizeof(c16_t));
     common_vars->beam_id[i] = (uint8_t*)malloc16_clear(fp->symbols_per_slot*fp->slots_per_frame*sizeof(uint8_t));
     memset(common_vars->beam_id[i],255,fp->symbols_per_slot*fp->slots_per_frame);
   }
@@ -981,7 +993,7 @@ void init_DLSCH_struct(PHY_VARS_gNB *gNB, processingData_L1tx_t *msg) {
 
   int num_cw = NR_MAX_NB_LAYERS > 4? 2:1;
   for (int i = 0; i < NUMBER_OF_NR_DLSCH_MAX; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for DLSCH %d/%d\n", i, NUMBER_OF_NR_DLSCH_MAX);
     for (int j=0; j<num_cw; j++) {
       msg->dlsch[i][j] = new_gNB_dlsch(fp, grid_size);
       AssertFatal(msg->dlsch[i][j]!=NULL,"Can't initialize dlsch %d \n", i);
@@ -1036,21 +1048,21 @@ void init_nr_transport(PHY_VARS_gNB *gNB)
 
   gNB->pucch = (NR_gNB_PUCCH_t **) malloc16(gNB->max_nb_pucch * sizeof(NR_gNB_PUCCH_t*));
   for (int i = 0; i < gNB->max_nb_pucch; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for PUCCH %d/%d\n", i, gNB->max_nb_pucch);
     gNB->pucch[i] = new_gNB_pucch();
     AssertFatal(gNB->pucch[i] != NULL,"Can't initialize pucch %d \n", i);
   }
 
   gNB->srs = (NR_gNB_SRS_t **) malloc16(gNB->max_nb_srs * sizeof(NR_gNB_SRS_t*));
   for (int i = 0; i < gNB->max_nb_srs; i++) {
-    LOG_I(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for SRS %d/%d\n", i, gNB->max_nb_srs);
     gNB->srs[i] = new_gNB_srs();
     AssertFatal(gNB->srs[i]!=NULL,"Can't initialize srs %d \n", i);
   }
 
   for (int i = 0; i < NUMBER_OF_NR_ULSCH_MAX; i++) {
 
-    LOG_I(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
+    LOG_D(PHY,"Allocating Transport Channel Buffers for ULSCH  %d/%d\n", i, NUMBER_OF_NR_ULSCH_MAX);
 
     gNB->ulsch[i] = new_gNB_ulsch(gNB->max_ldpc_iterations, fp->N_RB_UL);
 

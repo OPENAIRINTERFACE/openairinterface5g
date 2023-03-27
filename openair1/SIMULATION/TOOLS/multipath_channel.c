@@ -220,15 +220,18 @@ void __attribute__ ((no_sanitize_address)) multipath_channel(channel_desc_t *des
             rx_tmp.r += (tx.r * chan[l].r) - (tx.i * chan[l].i);
             rx_tmp.i += (tx.i * chan[l].r) + (tx.r * chan[l].i);
           }
+          #if 0
           if (i==0 && log_channel == 1) {
             printf("channel[%d][%d][%d] = %f dB \t(%e, %e)\n",
                    ii, j, l, 10 * log10(pow(chan[l].r, 2.0) + pow(chan[l].i, 2.0)), chan[l].r, chan[l].i);
 	        }
+          #endif
         } //l
       }  // j
-
+#if 0
       if (desc->max_Doppler != 0.0)
         rx_tmp = cdMul(rx_tmp, cexp_doppler[i]);
+#endif
 
 #ifdef DOPPLER_DEBUG
       printf("[k %2i] cexp_doppler = (%7.4f, %7.4f), abs(cexp_doppler) = %.4f\n",

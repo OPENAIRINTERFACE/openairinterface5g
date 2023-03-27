@@ -801,27 +801,6 @@ ID = LEGACY_OTG_TRACE
     GROUP = ALL:LEGACY_OTG:LEGACY_GROUP_TRACE:LEGACY
     FORMAT = string,log
 
-ID = LEGACY_OCG_INFO
-    DESC = OCG legacy logs - info level
-    GROUP = ALL:LEGACY_OCG:LEGACY_GROUP_INFO:LEGACY
-    FORMAT = string,log
-ID = LEGACY_OCG_ERROR
-    DESC = OCG legacy logs - error level
-    GROUP = ALL:LEGACY_OCG:LEGACY_GROUP_ERROR:LEGACY
-    FORMAT = string,log
-ID = LEGACY_OCG_WARNING
-    DESC = OCG legacy logs - warning level
-    GROUP = ALL:LEGACY_OCG:LEGACY_GROUP_WARNING:LEGACY
-    FORMAT = string,log
-ID = LEGACY_OCG_DEBUG
-    DESC = OCG legacy logs - debug level
-    GROUP = ALL:LEGACY_OCG:LEGACY_GROUP_DEBUG:LEGACY
-    FORMAT = string,log
-ID = LEGACY_OCG_TRACE
-    DESC = OCG legacy logs - trace level
-    GROUP = ALL:LEGACY_OCG:LEGACY_GROUP_TRACE:LEGACY
-    FORMAT = string,log
-
 ID = LEGACY_OCM_INFO
     DESC = OCM legacy logs - info level
     GROUP = ALL:LEGACY_OCM:LEGACY_GROUP_INFO:LEGACY

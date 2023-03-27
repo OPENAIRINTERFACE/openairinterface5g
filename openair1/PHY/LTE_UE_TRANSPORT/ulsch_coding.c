@@ -38,6 +38,7 @@
 #include "PHY/CODING/lte_interleaver_inline.h"
 #include "PHY/LTE_UE_TRANSPORT/transport_ue.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 
 //#define DEBUG_ULSCH_CODING
 //#define DEBUG_ULSCH_FREE 1

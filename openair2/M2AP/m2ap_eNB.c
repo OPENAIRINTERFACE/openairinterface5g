@@ -702,7 +702,7 @@ int is_m2ap_eNB_enabled(void)
 
   char *enable_m2 = NULL;
   paramdef_t p[] = {
-   { "enable_enb_m2", "yes/no", 0, strptr:&enable_m2, defstrval:"", TYPE_STRING, 0 }
+   { "enable_enb_m2", "yes/no", 0, .strptr=&enable_m2, .defstrval="", TYPE_STRING, 0 }
   };
 
   /* TODO: do it per module - we check only first eNB */

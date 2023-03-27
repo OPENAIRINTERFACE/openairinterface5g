@@ -227,7 +227,7 @@ int nr_process_mac_pdu(instance_t module_idP,
           NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
           if (ra->state >= WAIT_Msg3 && ra->rnti == UE->rnti) {
             ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
-            ra->msg3_dcch_dtch = true;
+            ra->state = Msg3_dcch_dtch;
             LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x\n", ra->crnti);
             break;
           }
@@ -372,8 +372,9 @@ int nr_process_mac_pdu(instance_t module_idP,
           mac_len = 6;
         }
 
-        nr_rlc_activate_srb0(UE->rnti, module_idP, CC_id, UE->uid, send_initial_ul_rrc_message);
+        LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", mac_len, UE->rnti);
 
+        prepare_initial_ul_rrc_message(RC.nrmac[module_idP], UE);
         mac_rlc_data_ind(module_idP,
                          UE->rnti,
                          module_idP,
@@ -755,9 +756,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           // harq_pid set a non valid value because it is not used in this call
           // the function is only called to decode the contention resolution sub-header
           if (nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
-            ra->state = Msg4;
             
-            if (ra->msg3_dcch_dtch) {
+            if (ra->state == Msg3_dcch_dtch) {
               // Check if the UE identified by C-RNTI still exists at the gNB
               NR_UE_info_t * UE_C = find_nr_UE(&gNB_mac->UE_info, ra->crnti);
               if (!UE_C) {
@@ -775,13 +775,18 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
                 reset_dl_harq_list(&UE_C->UE_sched_ctrl);
                 reset_ul_harq_list(&UE_C->UE_sched_ctrl);
               }
+              LOG_I(NR_MAC, "Activating scheduling response to MSG3 with DCCH/DTCCH and RNTI 0x%04x (state %d)\n",
+                    ra->crnti, ra->state);
             }
-            LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
-                  (ra->msg3_dcch_dtch?ra->crnti:ra->rnti), ra->state);
+            else {
+              LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
+                    ra->rnti, ra->state);
+              ra->state = Msg4;
+            }
           }
           else {
-             nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
-             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+            nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+            nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
         }
         return;
@@ -1037,7 +1042,7 @@ uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
 void get_precoder_matrix_coef(char *w,
                               const uint8_t ul_ri,
                               const uint16_t num_ue_srs_ports,
-                              const uint8_t transform_precoding,
+                              const long transform_precoding,
                               const uint8_t tpmi,
                               const uint8_t uI,
                               int layer_idx)
@@ -1064,7 +1069,7 @@ void get_precoder_matrix_coef(char *w,
 }
 
 int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
-                           const uint8_t transform_precoding,
+                           const long transform_precoding,
                            const uint8_t *channel_matrix,
                            const uint8_t normalized_iq_representation,
                            const uint16_t num_gnb_antenna_elements,
@@ -1439,7 +1444,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
     if (rbStart + retInfo->rbSize > bwpSize) {
-      LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL retransmission: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d) \n",
+      LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate UL retransmission: no resources (rbStart %d, retInfo->rbSize %d, bwpSize %d) \n",
             UE->rnti,
             frame,
             slot,
@@ -1466,6 +1471,7 @@ static bool allocate_ul_retransmission(gNB_MAC_INST *nrmac,
     uint16_t new_rbSize;
     bool success = nr_find_nb_rb(retInfo->Qm,
                                  retInfo->R,
+                                 UE->current_UL_BWP.transform_precoding,
                                  nrOfLayers,
                                  tda_info.nrOfSymbols,
                                  dmrs_info.N_PRB_DMRS * dmrs_info.num_dmrs_symb,
@@ -1679,7 +1685,7 @@ void pf_ul(module_id_t module_id,
       while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
       if (rbStart + min_rb >= bwpSize) {
-        LOG_W(NR_MAC, "[UE %04x][%4d.%2d] could not allocate continuous UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
+        LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate continuous UL data: no resources (rbStart %d, min_rb %d, bwpSize %d)\n",
               UE->rnti,
               frame,
               slot,
@@ -1811,6 +1817,7 @@ void pf_ul(module_id_t module_id,
     uint32_t TBS = 0;
     nr_find_nb_rb(sched_pusch->Qm,
                   sched_pusch->R,
+                  current_BWP->transform_precoding,
                   sched_pusch->nrOfLayers,
                   sched_pusch->tda_info.nrOfSymbols,
                   sched_pusch->dmrs_info.N_PRB_DMRS * sched_pusch->dmrs_info.num_dmrs_symb,
@@ -1944,7 +1951,7 @@ bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
   return true;
 }
 
-nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(module_id_t module_id, int CC_id)
+nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
 {
   /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
    * This would include the number of DMRS symbols, which in turn depends on
@@ -2170,13 +2177,14 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
     }
     else {
       pusch_pdu->ul_dmrs_scrambling_id = *scc->physCellId;
-      if (NR_DMRS_UplinkConfig && NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
+      if (NR_DMRS_UplinkConfig &&
+          NR_DMRS_UplinkConfig->transformPrecodingEnabled &&
+          NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity != NULL)
         pusch_pdu->pusch_identity = *NR_DMRS_UplinkConfig->transformPrecodingEnabled->nPUSCH_Identity;
       else if (NR_DMRS_UplinkConfig)
         pusch_pdu->pusch_identity = *scc->physCellId;
     }
     pusch_pdu->scid = 0;      // DMRS sequence initialization [TS38.211, sec 6.4.1.1.1]
-    pusch_pdu->num_dmrs_cdm_grps_no_data = sched_pusch->dmrs_info.num_dmrs_cdm_grps_no_data;
     pusch_pdu->dmrs_ports = ((1<<sched_pusch->nrOfLayers) - 1);
 
     /* FAPI: Pusch Allocation in frequency domain */
@@ -2227,11 +2235,13 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
       pusch_pdu->dfts_ofdm.low_papr_group_number = pusch_pdu->pusch_identity % 30;
 
       // V as specified in section 6.4.1.1.1.2 in 38.211 V = 0 if sequence hopping and group hopping are disabled
-      if ((NR_DMRS_UplinkConfig==NULL) || ((NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping == NULL) &&
-					       (NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping == NULL)))
+      if ((!NR_DMRS_UplinkConfig ||
+          !NR_DMRS_UplinkConfig->transformPrecodingEnabled ||
+          (!NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceGroupHopping && !NR_DMRS_UplinkConfig->transformPrecodingEnabled->sequenceHopping)) &&
+          !scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon->choice.setup->groupHoppingEnabledTransformPrecoding)
         pusch_pdu->dfts_ofdm.low_papr_sequence_number = 0;
       else
-        AssertFatal(1==0,"SequenceGroupHopping or sequenceHopping are NOT Supported\n");
+        AssertFatal(1==0,"Hopping mode is not supported in transform precoding\n");
 
       LOG_D(NR_MAC,"TRANSFORM PRECODING IS ENABLED. CDM groups: %d, U: %d MCS table: %d\n", pusch_pdu->num_dmrs_cdm_grps_no_data, pusch_pdu->dfts_ofdm.low_papr_group_number, current_BWP->mcs_table);
     }

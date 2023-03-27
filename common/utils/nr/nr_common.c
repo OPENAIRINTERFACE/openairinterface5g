@@ -132,7 +132,7 @@ const nr_bandentry_t nr_bandtable[] = {
 
 uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
 {
-  const uint64_t dl_freq_khz = downlink_frequency / 1000;
+  const int64_t dl_freq_khz = downlink_frequency / 1000;
   const int32_t  delta_duplex_khz = delta_duplex / 1000;
 
   uint64_t center_freq_diff_khz = UINT64_MAX; // 2^64
@@ -148,11 +148,11 @@ uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
     if (current_offset_khz != delta_duplex_khz)
       continue;
 
-    uint64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
+    int64_t center_frequency_khz = (nr_bandtable[ind].dl_max + nr_bandtable[ind].dl_min) / 2;
 
-    if (abs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
+    if (labs(dl_freq_khz - center_frequency_khz) < center_freq_diff_khz){
       current_band = nr_bandtable[ind].band;
-      center_freq_diff_khz = abs(dl_freq_khz - center_frequency_khz);
+      center_freq_diff_khz = labs(dl_freq_khz - center_frequency_khz);
     }
   }
 
@@ -721,6 +721,18 @@ void get_samplerate_and_bw(int mu,
   } else {
     AssertFatal(0 == 1,"Numerology %d not supported for the moment\n",mu);
   }
+}
+
+void get_K1_K2(int N1, int N2, int *K1, int *K2)
+{
+  // num of allowed k1 and k2 according to 5.2.2.2.1-3 and -4 in 38.214
+  if(N2 == N1 || N1 == 2)
+    *K1 = 2;
+  else if (N2 == 1)
+    *K1 = 5;
+  else
+    *K1 = 3;
+  *K2 = N2 > 1 ? 2 : 1;
 }
 
 // from start symbol index and nb or symbols to symbol occupation bitmap in a slot

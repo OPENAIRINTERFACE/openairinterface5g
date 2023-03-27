@@ -980,7 +980,7 @@ class Containerize():
 		services = []
 		for s in allServices:
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
-			running = mySSH.getBefore().split('\r\n')[3:-1]
+			running = mySSH.getBefore().split('\r\n')[2:-1]
 			#logging.debug(f'running services: {running}')
 			if len(running) > 0: # something is running for that service
 				services.append(s)
@@ -1490,11 +1490,6 @@ class Containerize():
 			result = re.search('172.21.16.128', mySSH.getBefore())
 			if result is None:
 				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev eno1', '\$', 10)
-			# Check if route to nepes gnb exists
-			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
-			result = re.search('172.21.16.137', mySSH.getBefore())
-			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.137 dev eno1', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
@@ -1564,16 +1559,39 @@ class Containerize():
 			mySSH.close()
 		if svrName == 'nepes':
 			mySSH.open(ipAddr, userName, password)
-			# Check if route to porcepix epc exists
-			mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			result = re.search('172.21.16.136', mySSH.getBefore())
+			# Check if route to porcepix epc exists: not necessary, is on same host
+			#mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
+			#result = re.search('172.21.16.136', mySSH.getBefore())
+			#if result is None:
+			#	mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev enp0s31f6', '\$', 10)
+			# Check if X2 route to obelix enb exists: not necessary, gnb is on ofqot
+			#mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
+			#result = re.search('172.21.16.128', mySSH.getBefore())
+			#if result is None:
+			#	mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev enp0s31f6', '\$', 10)
+			# Check if forwarding is enabled
+			# Check if route to ofqot gnb exists
+			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
+			result = re.search('172.21.16.109', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev enp0s31f6', '\$', 10)
-			# Check if X2 route to obelix enb exists
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.192/26 via 172.21.16.109 dev enp0s31f6', '\$', 10)
+			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
+			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S sysctl net.ipv4.conf.all.forwarding=1', '\$', 10)
+			# Check if iptables forwarding is accepted
+			mySSH.command('echo ' + password + ' | sudo -S iptables -L FORWARD', '\$', 10)
+			result = re.search('Chain FORWARD .*policy ACCEPT', mySSH.getBefore())
+			if result is None:
+				mySSH.command('echo ' + password + ' | sudo -S iptables -P FORWARD ACCEPT', '\$', 10)
+			mySSH.close()
+		if svrName == 'ofqot':
+			mySSH.open(ipAddr, userName, password)
+			# Check if X2 route to nepes enb/epc exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			result = re.search('172.21.16.128', mySSH.getBefore())
+			result = re.search('172.21.16.137', mySSH.getBefore())
 			if result is None:
-				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev enp0s31f6', '\$', 10)
+				mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.137 dev enp2s0', '\$', 10)
 			# Check if forwarding is enabled
 			mySSH.command('sysctl net.ipv4.conf.all.forwarding', '\$', 10)
 			result = re.search('net.ipv4.conf.all.forwarding = 1', mySSH.getBefore())

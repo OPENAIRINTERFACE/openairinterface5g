@@ -680,70 +680,50 @@ uint16_t get_NCS(uint8_t index, uint16_t format0, uint8_t restricted_set_config)
   }
 }
 
-//38.211 Table 6.3.3.2-1
-int16_t table_6_3_3_2_1[16][5] = {
-//Length_RA, delta_f_RA_PRACH, delta_f_PUSCH, N_RA_RB, kbar
-{ 839,        1.25,             15,            6,      7},
-{ 839,        1.25,             30,            3,      1},
-{ 839,        1.25,             60,            2,    133},
-{ 839,           5,             15,           24,     12},
-{ 839,           5,             30,           12,     10},
-{ 839,           5,             60,            6,      7},
-{ 139,          15,             15,           12,      2},
-{ 139,          15,             30,            6,      2},
-{ 139,          15,             60,            3,      2},
-{ 139,          30,             15,           24,      2},
-{ 139,          30,             30,           12,      2},
-{ 139,          30,             60,            6,      2},
-{ 139,          60,             60,           12,      2},
-{ 139,          60,            120,            6,      2},
-{ 139,         120,             60,           24,      2},
-{ 139,         120,            120,           12,      2}
-};
+//from 38.211 Table 6.3.3.2-1
+int16_t N_RA_RB[16] = {6, 3, 2, 24, 12, 6, 12, 6, 3, 24, 12, 6, 12, 6, 24, 12};
 
 /* Function to get number of RBs required for prach occasion based on
  * 38.211 Table 6.3.3.2-1 */
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH) {
 	
-	int8_t index = 0;
-	switch(delta_f_RA_PRACH) {
-			case 0 : index = 6;
-		          if (delta_f_PUSCH == 0)
-			          index += 0;
-		          else if(delta_f_PUSCH == 1)
-			          index += 1;
-		          else
-			          index += 2;
-							break;
-
-		case 1 : index = 9;
-		         if (delta_f_PUSCH == 0)
-			         index += 0;
-		         else if(delta_f_PUSCH == 1)
-		           index += 1;
-		         else
-			          index += 2;
-	           break;
-
-		case 2 : index = 11;
-		         if (delta_f_PUSCH == 2)
-			         index += 0;
-		         else
-			         index += 1;
-		         break;		
-		
-		case 3: index = 13;
-		          if (delta_f_PUSCH == 2)
-			          index += 0;
-		          else
-			          index += 1;
-		          break;
-
-		default : index = 10;/*30khz prach scs and 30khz pusch scs*/
-				
-	}
-  
-	return table_6_3_3_2_1[index][3];
+  int8_t index = 0;
+  switch(delta_f_RA_PRACH) {
+    case 0 :
+      index = 6;
+      if (delta_f_PUSCH == 0)
+        index += 0;
+      else if(delta_f_PUSCH == 1)
+        index += 1;
+      else
+        index += 2;
+      break;
+    case 1 :
+      index = 9;
+      if (delta_f_PUSCH == 0)
+        index += 0;
+      else if(delta_f_PUSCH == 1)
+        index += 1;
+      else
+        index += 2;
+      break;
+    case 2 :
+      index = 11;
+      if (delta_f_PUSCH == 2)
+        index += 0;
+      else
+        index += 1;
+      break;		
+    case 3:
+      index = 13;
+      if (delta_f_PUSCH == 2)
+        index += 0;
+      else
+        index += 1;
+      break;
+    default : index = 10;/*30khz prach scs and 30khz pusch scs*/
+  }
+  return N_RA_RB[index];
 }	
 // Table 6.3.3.2-2: Random access configurations for FR1 and paired spectrum/supplementary uplink
 // the column 5, (SFN_nbr is a bitmap where we set bit to '1' in the position of the subframe where the RACH can be sent.
@@ -2852,15 +2832,18 @@ uint16_t get_nr_srs_offset(NR_SRS_PeriodicityAndOffset_t periodicityAndOffset) {
 
 // Set the transform precoding status according to 6.1.3 of 3GPP TS 38.214 version 16.3.0 Release 16:
 // - "UE procedure for applying transform precoding on PUSCH"
-uint8_t get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant)
+long get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant)
 {
   if (configuredGrant && current_UL_BWP->configuredGrantConfig && current_UL_BWP->configuredGrantConfig->transformPrecoder)
     return *current_UL_BWP->configuredGrantConfig->transformPrecoder;
 
   if (dci_format == NR_UL_DCI_FORMAT_0_1 && current_UL_BWP && current_UL_BWP->pusch_Config && current_UL_BWP->pusch_Config->transformPrecoder)
     return *current_UL_BWP->pusch_Config->transformPrecoder;
-  else
-    return current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder ? 0 : 1;
+
+  if (current_UL_BWP->rach_ConfigCommon && current_UL_BWP->rach_ConfigCommon->msg3_transformPrecoder)
+    return NR_PUSCH_Config__transformPrecoder_enabled;
+
+  return NR_PUSCH_Config__transformPrecoder_disabled;
 }
 
 uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
@@ -3435,7 +3418,7 @@ uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
       if(pusch_Config &&
          pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL){
         NR_DMRS_UplinkConfig = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup;
-        xb = ul_ant_bits(NR_DMRS_UplinkConfig,transformPrecoder);
+        xb = ul_ant_bits(NR_DMRS_UplinkConfig, transformPrecoder);
       }
       if (xa>xb)
         dci_pdu->antenna_ports.nbits = xa;

@@ -58,9 +58,7 @@ int ngap_ue_context_release_complete(instance_t instance,
 
   ngap_gNB_instance_t                 *ngap_gNB_instance_p = NULL;
   struct ngap_gNB_ue_context_s        *ue_context_p        = NULL;
-  NGAP_NGAP_PDU_t                      pdu;
-  NGAP_UEContextReleaseComplete_t     *out;
-  NGAP_UEContextReleaseComplete_IEs_t *ie;
+  NGAP_NGAP_PDU_t pdu = {0};
   uint8_t  *buffer;
   uint32_t length;
 
@@ -70,44 +68,37 @@ int ngap_ue_context_release_complete(instance_t instance,
   DevAssert(ue_release_complete_p != NULL);
   DevAssert(ngap_gNB_instance_p != NULL);
 
-  /*RB_FOREACH(ue_context_p, ngap_ue_map, &ngap_gNB_instance_p->ngap_ue_head) {
-    NGAP_WARN("in ngap_ue_map: UE context gNB_ue_ngap_id %u amf_ue_ngap_id %u state %u\n",
-        ue_context_p->gNB_ue_ngap_id, ue_context_p->amf_ue_ngap_id,
-        ue_context_p->ue_state);
-  }*/
-  if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
-                      ue_release_complete_p->gNB_ue_ngap_id)) == NULL) {
+  if ((ue_context_p = ngap_get_ue_context(ue_release_complete_p->gNB_ue_ngap_id)) == NULL) {
     /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
-    NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %u\n",
-              ue_release_complete_p->gNB_ue_ngap_id);
+    NGAP_ERROR("Failed to find ue context associated with gNB ue ngap id: %u\n", ue_release_complete_p->gNB_ue_ngap_id);
     return -1;
   }
 
   /* Prepare the NGAP message to encode */
-  memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_successfulOutcome;
-  pdu.choice.successfulOutcome = CALLOC(1, sizeof(struct NGAP_SuccessfulOutcome));
-  pdu.choice.successfulOutcome->procedureCode = NGAP_ProcedureCode_id_UEContextRelease;
-  pdu.choice.successfulOutcome->criticality = NGAP_Criticality_reject;
-  pdu.choice.successfulOutcome->value.present = NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
-  out = &pdu.choice.successfulOutcome->value.choice.UEContextReleaseComplete;
+  asn1cCalloc(pdu.choice.successfulOutcome, head);
+  head->procedureCode = NGAP_ProcedureCode_id_UEContextRelease;
+  head->criticality = NGAP_Criticality_reject;
+  head->value.present = NGAP_SuccessfulOutcome__value_PR_UEContextReleaseComplete;
+  NGAP_UEContextReleaseComplete_t *out = &head->value.choice.UEContextReleaseComplete;
 
   /* mandatory */
-  ie = (NGAP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseComplete_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_AMF_UE_NGAP_ID;
-  asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-  asn1cSeqAdd(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseComplete_IEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_AMF_UE_NGAP_ID;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
+  }
 
   /* mandatory */
-  ie = (NGAP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseComplete_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_RAN_UE_NGAP_ID;
-  ie->value.choice.RAN_UE_NGAP_ID = ue_release_complete_p->gNB_ue_ngap_id;
-  asn1cSeqAdd(&out->protocolIEs.list, ie);
-
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseComplete_IEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_UEContextReleaseComplete_IEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = ue_release_complete_p->gNB_ue_ngap_id;
+  }
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
@@ -123,35 +114,18 @@ int ngap_ue_context_release_complete(instance_t instance,
   //LG ngap_gNB_itti_send_sctp_close_association(ngap_gNB_instance_p->instance,
   //                                             ue_context_p->amf_ref->assoc_id);
   // release UE context
-  struct ngap_gNB_ue_context_s *ue_context2_p = NULL;
-
-  if ((ue_context2_p = RB_REMOVE(ngap_ue_map, &ngap_gNB_instance_p->ngap_ue_head, ue_context_p))
-      != NULL) {
-    NGAP_WARN("Removed UE context gNB_ue_ngap_id %u\n",
-              ue_context2_p->gNB_ue_ngap_id);
-    ngap_gNB_free_ue_context(ue_context2_p);
-  } else {
-    NGAP_WARN("Removing UE context gNB_ue_ngap_id %u: did not find context\n",
-              ue_context_p->gNB_ue_ngap_id);
-  }
-  /*RB_FOREACH(ue_context_p, ngap_ue_map, &ngap_gNB_instance_p->ngap_ue_head) {
-    NGAP_WARN("in ngap_ue_map: UE context gNB_ue_ngap_id %u amf_ue_ngap_id %u state %u\n",
-        ue_context_p->gNB_ue_ngap_id, ue_context_p->amf_ue_ngap_id,
-        ue_context_p->ue_state);
-  }*/
-
+  ngap_gNB_ue_context_t *tmp = ngap_detach_ue_context(ue_release_complete_p->gNB_ue_ngap_id);
+  if (tmp)
+    free(tmp);
   return 0;
 }
-
 
 int ngap_ue_context_release_req(instance_t instance,
                                 ngap_ue_release_req_t *ue_release_req_p)
 {
   ngap_gNB_instance_t                *ngap_gNB_instance_p           = NULL;
   struct ngap_gNB_ue_context_s       *ue_context_p                  = NULL;
-  NGAP_NGAP_PDU_t                     pdu;
-  NGAP_UEContextReleaseRequest_t     *out;
-  NGAP_UEContextReleaseRequest_IEs_t *ie;
+  NGAP_NGAP_PDU_t pdu = {0};
   uint8_t                            *buffer                        = NULL;
   uint32_t                            length;
   /* Retrieve the NGAP gNB instance associated with Mod_id */
@@ -160,8 +134,7 @@ int ngap_ue_context_release_req(instance_t instance,
   DevAssert(ue_release_req_p != NULL);
   DevAssert(ngap_gNB_instance_p != NULL);
 
-  if ((ue_context_p = ngap_gNB_get_ue_context(ngap_gNB_instance_p,
-                      ue_release_req_p->gNB_ue_ngap_id)) == NULL) {
+  if ((ue_context_p = ngap_get_ue_context(ue_release_req_p->gNB_ue_ngap_id)) == NULL) {
     /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
     NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %u\n",
               ue_release_req_p->gNB_ue_ngap_id);
@@ -169,33 +142,34 @@ int ngap_ue_context_release_req(instance_t instance,
   }
 
   /* Prepare the NGAP message to encode */
-  memset(&pdu, 0, sizeof(pdu));
   pdu.present = NGAP_NGAP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage = CALLOC(1, sizeof(struct NGAP_InitiatingMessage));
-  pdu.choice.initiatingMessage->procedureCode = NGAP_ProcedureCode_id_UEContextReleaseRequest;
-  pdu.choice.initiatingMessage->criticality = NGAP_Criticality_ignore;
-  pdu.choice.initiatingMessage->value.present = NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest;
-  out = &pdu.choice.initiatingMessage->value.choice.UEContextReleaseRequest;
+  asn1cCalloc(pdu.choice.initiatingMessage, head);
+  head->procedureCode = NGAP_ProcedureCode_id_UEContextReleaseRequest;
+  head->criticality = NGAP_Criticality_ignore;
+  head->value.present = NGAP_InitiatingMessage__value_PR_UEContextReleaseRequest;
+  NGAP_UEContextReleaseRequest_t *out = &head->value.choice.UEContextReleaseRequest;
 
   /* mandatory */
-  ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID;
-  asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
-  asn1cSeqAdd(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseRequest_IEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_AMF_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_reject;
+    ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_AMF_UE_NGAP_ID;
+    asn_uint642INTEGER(&ie->value.choice.AMF_UE_NGAP_ID, ue_context_p->amf_ue_ngap_id);
+  }
 
   /* mandatory */
-  ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
-  ie->criticality = NGAP_Criticality_reject;
-  ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID;
-  ie->value.choice.RAN_UE_NGAP_ID = ue_release_req_p->gNB_ue_ngap_id;
-  asn1cSeqAdd(&out->protocolIEs.list, ie);
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseRequest_IEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_RAN_UE_NGAP_ID;
+    ie->criticality = NGAP_Criticality_reject;
+    ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_RAN_UE_NGAP_ID;
+    ie->value.choice.RAN_UE_NGAP_ID = ue_release_req_p->gNB_ue_ngap_id;
+  }
 
   /* optional */
   if (ue_release_req_p->nb_of_pdusessions > 0) {
-    ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseRequest_IEs_t, ie);
     ie->id = NGAP_ProtocolIE_ID_id_PDUSessionResourceListCxtRelReq;
     ie->criticality = NGAP_Criticality_reject;
     ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_PDUSessionResourceListCxtRelReq;
@@ -205,50 +179,18 @@ int ngap_ue_context_release_req(instance_t instance,
       item->pDUSessionID = ue_release_req_p->pdusessions[i].pdusession_id;
       asn1cSeqAdd(&ie->value.choice.PDUSessionResourceListCxtRelReq.list, item);
     }
-    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* mandatory */
-  ie = (NGAP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(NGAP_UEContextReleaseRequest_IEs_t));
-  ie->id = NGAP_ProtocolIE_ID_id_Cause;
-  ie->criticality = NGAP_Criticality_ignore;
-  ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_Cause;
-
-  switch (ue_release_req_p->cause) {
-    case NGAP_Cause_PR_radioNetwork:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_radioNetwork;
-      ie->value.choice.Cause.choice.radioNetwork = ue_release_req_p->cause_value;
-      break;
-
-    case NGAP_Cause_PR_transport:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_transport;
-      ie->value.choice.Cause.choice.transport = ue_release_req_p->cause_value;
-      break;
-
-    case NGAP_Cause_PR_nas:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_nas;
-      ie->value.choice.Cause.choice.nas = ue_release_req_p->cause_value;
-      break;
-
-    case NGAP_Cause_PR_protocol:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_protocol;
-      ie->value.choice.Cause.choice.protocol = ue_release_req_p->cause_value;
-      break;
-
-    case NGAP_Cause_PR_misc:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_misc;
-      ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
-      break;
-
-    case NGAP_Cause_PR_NOTHING:
-    default:
-      ie->value.choice.Cause.present = NGAP_Cause_PR_NOTHING;
-      break;
+  {
+    asn1cSequenceAdd(out->protocolIEs.list, NGAP_UEContextReleaseRequest_IEs_t, ie);
+    ie->id = NGAP_ProtocolIE_ID_id_Cause;
+    ie->criticality = NGAP_Criticality_ignore;
+    ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_Cause;
+    DevAssert(ue_release_req_p->cause <= NGAP_Cause_PR_choice_ExtensionS);
+    ie->value.choice.Cause.present = ue_release_req_p->cause;
+    ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
   }
-
-  asn1cSeqAdd(&out->protocolIEs.list, ie);
-
-
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */

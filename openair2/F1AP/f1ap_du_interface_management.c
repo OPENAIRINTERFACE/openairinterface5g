@@ -95,7 +95,7 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 
 // SETUP REQUEST
 int DU_send_F1_SETUP_REQUEST(instance_t instance) {
-  instance_t enb_mod_idP=0;
+  instance_t nb_mod_idP=0;
   instance_t du_mod_idP=0;
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
@@ -114,7 +114,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality               = F1AP_Criticality_reject;
   ieC1->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
-  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);
+  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(nb_mod_idP, du_mod_idP);
   /* mandatory */
   /* c2. GNB_DU_ID (integer value) */
   asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC2);
@@ -515,7 +515,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
     AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
 
   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
-  itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;
 }
 
@@ -936,7 +936,7 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
   LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
   F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
   LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message \n");
-  itti_send_msg_to_task(TASK_F1APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
   return 0;
 }
 

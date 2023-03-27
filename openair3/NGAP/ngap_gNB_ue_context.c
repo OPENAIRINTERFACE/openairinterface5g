@@ -40,8 +40,15 @@
 #include "ngap_gNB_defs.h"
 #include "ngap_gNB_ue_context.h"
 
-int ngap_gNB_compare_gNB_ue_ngap_id(
-  struct ngap_gNB_ue_context_s *p1, struct ngap_gNB_ue_context_s *p2)
+/* Tree of UE ordered by gNB_ue_ngap_id's
+ * NO INSTANCE, the 32 bits id is large enough to handle all UEs, regardless the cell, gNB, ...
+ */
+static RB_HEAD(ngap_ue_map, ngap_gNB_ue_context_s) ngap_ue_head = RB_INITIALIZER(&ngap_ue_head);
+
+/* Generate the tree management functions prototypes */
+RB_PROTOTYPE(ngap_ue_map, ngap_gNB_ue_context_s, entries, ngap_gNB_compare_gNB_ue_ngap_id);
+
+static int ngap_gNB_compare_gNB_ue_ngap_id(struct ngap_gNB_ue_context_s *p1, struct ngap_gNB_ue_context_s *p2)
 {
   if (p1->gNB_ue_ngap_id > p2->gNB_ue_ngap_id) {
     return 1;
@@ -58,46 +65,26 @@ int ngap_gNB_compare_gNB_ue_ngap_id(
 RB_GENERATE(ngap_ue_map, ngap_gNB_ue_context_s, entries,
             ngap_gNB_compare_gNB_ue_ngap_id);
 
-struct ngap_gNB_ue_context_s *ngap_gNB_allocate_new_UE_context(void)
+void ngap_store_ue_context(struct ngap_gNB_ue_context_s *ue_desc_p)
 {
-  struct ngap_gNB_ue_context_s *new_p;
+  if (RB_INSERT(ngap_ue_map, &ngap_ue_head, ue_desc_p))
+    LOG_E(NGAP, "Bug in UE uniq number allocation %u, we try to add a existing UE\n", ue_desc_p->gNB_ue_ngap_id);
+  return;
+}
 
-  new_p = malloc(sizeof(struct ngap_gNB_ue_context_s));
+struct ngap_gNB_ue_context_s *ngap_get_ue_context(uint32_t gNB_ue_ngap_id)
+{
+  ngap_gNB_ue_context_t temp = {.gNB_ue_ngap_id = gNB_ue_ngap_id};
+  return RB_FIND(ngap_ue_map, &ngap_ue_head, &temp);
+}
 
-  if (new_p == NULL) {
-    NGAP_ERROR("Cannot allocate new ue context\n");
+struct ngap_gNB_ue_context_s *ngap_detach_ue_context(uint32_t gNB_ue_ngap_id)
+{
+  struct ngap_gNB_ue_context_s *tmp = ngap_get_ue_context(gNB_ue_ngap_id);
+  if (tmp == NULL) {
+    NGAP_ERROR("Trying to free a NULL UE context, %u\n", gNB_ue_ngap_id);
     return NULL;
   }
-
-  memset(new_p, 0, sizeof(struct ngap_gNB_ue_context_s));
-
-  return new_p;
-}
-
-struct ngap_gNB_ue_context_s *ngap_gNB_get_ue_context(
-  ngap_gNB_instance_t *instance_p,
-  uint32_t gNB_ue_ngap_id)
-{
-  ngap_gNB_ue_context_t temp;
-
-  memset(&temp, 0, sizeof(struct ngap_gNB_ue_context_s));
-
-  /* gNB ue ngap id = 32 bits wide */
-  temp.gNB_ue_ngap_id = gNB_ue_ngap_id & 0xFFFFFFFF;
-
-  return RB_FIND(ngap_ue_map, &instance_p->ngap_ue_head, &temp);
-}
-
-void ngap_gNB_free_ue_context(struct ngap_gNB_ue_context_s *ue_context_p)
-{
-  if (ue_context_p == NULL) {
-    NGAP_ERROR("Trying to free a NULL context\n");
-    return;
-  }
-
-  /* TODO: check that context is currently not in the tree of known
-   * contexts.
-   */
-
-  free(ue_context_p);
+  RB_REMOVE(ngap_ue_map, &ngap_ue_head, tmp);
+  return tmp;
 }

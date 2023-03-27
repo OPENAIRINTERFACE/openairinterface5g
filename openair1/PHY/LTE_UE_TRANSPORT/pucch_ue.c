@@ -32,6 +32,7 @@
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h" 
 #include "PHY/LTE_REFSIG/lte_refsig.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"

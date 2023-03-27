@@ -39,8 +39,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -2685,7 +2683,7 @@ allocate_prbs_sub(int nb_rb,
           break;
 
         case 25:
-          if ((check == N_RBG - 1)) {
+          if (check == N_RBG - 1) {
             nb_rb--;
           } else {
             nb_rb -= 2;
@@ -2694,7 +2692,7 @@ allocate_prbs_sub(int nb_rb,
           break;
 
         case 50:
-          if ((check == N_RBG - 1)) {
+          if (check == N_RBG - 1) {
             nb_rb -= 2;
           } else {
             nb_rb -= 3;

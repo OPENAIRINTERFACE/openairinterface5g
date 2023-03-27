@@ -40,13 +40,11 @@
  *        recplay_state: store recorder or player data while the device runs
  */
 int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_state) {
-  unsigned int    u_sf_record = 0;                       // record mode
-  unsigned int    u_sf_replay = 0;                       // replay mode
   *recplay_conf = calloc(sizeof(recplay_conf_t),1);
   paramdef_t device_recplay_params[]=DEVICE_RECPLAY_PARAMS_DESC ;
   config_get(device_recplay_params,sizeof(device_recplay_params)/sizeof(paramdef_t),DEVICE_RECPLAY_SECTION);
 
-  if (u_sf_record || u_sf_replay ) {
+  if ((*recplay_conf)->u_sf_record || (*recplay_conf)->u_sf_replay ) {
     struct sysinfo systeminfo;
     *recplay_state = calloc(sizeof(recplay_state_t),1);
 
@@ -62,17 +60,18 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
 	  LOG_W(HW,"System with %f GB of mem (<6GB), mmap usage disabled\n",systeminfo.totalram/10E9);
       (*recplay_conf)->use_mmap = 0;
     }
-  } else { /* record player enabled */
+  } else { /* player-recorder disable */
     free(*recplay_conf);
     *recplay_conf=NULL;
+    return RECPLAY_DISABLED;
   }
 
-  if (u_sf_replay == 1)
+  if ((*recplay_conf)->u_sf_replay == 1)
     return RECPLAY_REPLAYMODE;
-  else if (u_sf_record == 1)
+  else if ((*recplay_conf)->u_sf_record == 1)
     return RECPLAY_RECORDMODE;
 
-  return 0;
+  return RECPLAY_DISABLED;
 }
 
 /*! \brief Terminate operation of the oai iq recorder. to be called by any device
@@ -81,21 +80,15 @@ int read_recplayconfig(recplay_conf_t **recplay_conf, recplay_state_t **recplay_
  */
 void iqrecorder_end(openair0_device *device) {
   if (device->recplay_state != NULL) { // subframes store
-    iqfile_header_t    fh = {device->type,device->openair0_cfg->tx_sample_advance, device->openair0_cfg->rx_bw,0,OAIIQFILE_ID};
+    iqfile_header_t fh = {device->type,device->openair0_cfg->tx_sample_advance, device->openair0_cfg->rx_bw,0,OAIIQFILE_ID};
     recplay_state_t *rs = device->recplay_state;
-    recplay_conf_t  *rc = device->openair0_cfg[0].recplay_conf;
+    recplay_conf_t *rc = device->openair0_cfg[0].recplay_conf;
     rs->pFile = fopen (rc->u_sf_filename,"wb+");
 
     if (rs->pFile == NULL) {
       LOG_E(HW,"Cannot open %s\n", rc->u_sf_filename);
     } else {
       unsigned int i = 0;
-      unsigned int modu = 0;
-
-      if ((modu = rs->nbSamplesBlocks % 10) != 0) {
-        rs->nbSamplesBlocks -= modu; // store entire number of frames
-      }
-
       fh.nbSamplesBlocks=rs->nbSamplesBlocks;
       LOG_I(HW,"Writing file header to %s \n", rc->u_sf_filename );
       fwrite(&fh, sizeof(fh), 1, rs->pFile);
@@ -103,7 +96,7 @@ void iqrecorder_end(openair0_device *device) {
       uint8_t *ptr=(uint8_t *)rs->ms_sample;
 
       for (i = 0; i < rs->nbSamplesBlocks; i++) {
-        int blockBytes=sizeof(iqrec_t)+((iqrec_t *)ptr)->nbBytes;
+        int blockBytes=sizeof(iqrec_t)+BELL_LABS_IQ_BYTES_PER_SF;
         fwrite(ptr, sizeof(unsigned char), blockBytes, rs->pFile);
         ptr+=blockBytes;
       }

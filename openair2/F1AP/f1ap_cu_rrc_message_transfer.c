@@ -37,6 +37,7 @@
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "common/ran_context.h"
 #include "openair3/UTILS/conversions.h"
+#include "pdcp.h"
 
 /*
     Initial UL RRC Message Transfer
@@ -162,7 +163,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
   ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
-  LOG_I(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %ld)\n",
+  LOG_D(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %ld)\n",
         (unsigned long long int)ie1->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
@@ -171,7 +172,7 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
   ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
-  LOG_I(F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie2->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
+  LOG_D(F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie2->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
   /* if (f1ap_dl_rrc->old_gNB_DU_ue_id != 0xFFFFFFFF) {
@@ -299,8 +300,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   ctxt.eNB_index = 0;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);
   memcpy((void *)mb->data,(void *)ie->value.choice.RRCContainer.buf,ie->value.choice.RRCContainer.size);
-  LOG_I(F1AP, "Calling pdcp_data_ind for UE RNTI %lx srb_id %lu with size %ld (DCCH) \n", ctxt.rntiMaybeUEid, srb_id, ie->value.choice.RRCContainer.size);
-  //LOG_I(F1AP, "%s() RRCContainer size %lu: ", __func__, ie->value.choice.RRCContainer.size);
+  LOG_D(F1AP, "Calling pdcp_data_ind for UE RNTI %lx srb_id %lu with size %ld (DCCH) \n", ctxt.rntiMaybeUEid, srb_id, ie->value.choice.RRCContainer.size);
   //for (int i = 0; i < ie->value.choice.RRCContainer.size; i++)
   //  printf("%02x ", mb->data[i]);
   //printf("\n");

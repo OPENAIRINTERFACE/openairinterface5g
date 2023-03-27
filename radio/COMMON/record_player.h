@@ -44,9 +44,8 @@ extern "C"
 #define RECPLAY_REPLAYMODE   2
 
 #define BELL_LABS_IQ_HEADER       0xabababababababab
-#define BELL_LABS_IQ_PER_SF       46080 // 7680 => 5MHz bw for now; 46080 => 3/4 40MHz (106 PRBs)
+#define BELL_LABS_IQ_PER_SF       23040 // 23040 => 46080/2 slots => 3/4 40MHz (106 PRBs)
 #define BELL_LABS_IQ_BYTES_PER_SF (BELL_LABS_IQ_PER_SF * 4)
-#define MAX_BELL_LABS_IQ_BYTES_PER_SF  BELL_LABS_IQ_BYTES_PER_SF*10
 
 #define OAIIQFILE_ID {'O', 'I','Q','F'}
 typedef struct {
@@ -61,7 +60,9 @@ typedef struct {
   int64_t       header;
   int64_t       ts;
   int64_t       nbBytes;
-  int64_t       rfu2; // pad for 256 bits alignement required by AVX2
+  int64_t       tv_sec;  // nb of secs since EPOCH
+  int64_t       tv_usec; // nb of µsecs since EPOCH
+  int64_t       rfu2;    // pad for 256 bits alignement required by AVX2
 } iqrec_t;
 #define DEF_NB_SF           120000               // default nb of sf or ms to capture (2 minutes at 5MHz)
 #define DEF_SF_FILE         "/tmp/iqfile"        // default subframes file name
@@ -95,29 +96,31 @@ typedef struct {
 /*   optname                     helpstr                paramflags                      XXXptr                           defXXXval                            type           numelt   */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define DEVICE_RECPLAY_PARAMS_DESC {  \
-    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE,   0,                strptr:&((*recplay_conf)->u_sf_filename),   defstrval:DEF_SF_FILE,           TYPE_STRING,   0}, \
-    {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,    PARAMFLAG_BOOL,   uptr:&(u_sf_record),                                defuintval:0,                    TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,    PARAMFLAG_BOOL,   uptr:&(u_sf_replay),                                defuintval:0,                    TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_MAX,       CONFIG_HLP_SF_MAX,    0,                uptr:&((*recplay_conf)->u_sf_max),                  defintval:DEF_NB_SF,             TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_LOOPS,     CONFIG_HLP_SF_LOOPS,  0,                uptr:&((*recplay_conf)->u_sf_loops),                defintval:DEF_SF_NB_LOOP,        TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_RDELAY,    CONFIG_HLP_SF_RDELAY, 0,                uptr:&((*recplay_conf)->u_sf_read_delay),           defintval:DEF_SF_DELAY_READ,     TYPE_UINT,   0}, \
-    {CONFIG_OPT_SF_WDELAY,    CONFIG_HLP_SF_WDELAY, 0,                uptr:&((*recplay_conf)->u_sf_write_delay),          defintval:DEF_SF_DELAY_WRITE,    TYPE_UINT,   0}, \
-    {CONFIG_OPT_USE_MMAP,     CONFIG_HLP_USE_MMAP,  PARAMFLAG_BOOL,   uptr:&((*recplay_conf)->use_mmap),                  defuintval:1,                    TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_FILE,      CONFIG_HLP_SF_FILE,   0,                .strptr=&((*recplay_conf)->u_sf_filename),   .defstrval=DEF_SF_FILE,           TYPE_STRING, 0}, \
+    {CONFIG_OPT_SF_REC,       CONFIG_HLP_SF_REC,    PARAMFLAG_BOOL,   .uptr=&((*recplay_conf)->u_sf_record),       .defuintval=0,                    TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_REP,       CONFIG_HLP_SF_REP,    PARAMFLAG_BOOL,   .uptr=&((*recplay_conf)->u_sf_replay),       .defuintval=0,                    TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_MAX,       CONFIG_HLP_SF_MAX,    0,                .uptr=&((*recplay_conf)->u_sf_max),          .defintval=DEF_NB_SF,             TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_LOOPS,     CONFIG_HLP_SF_LOOPS,  0,                .uptr=&((*recplay_conf)->u_sf_loops),        .defintval=DEF_SF_NB_LOOP,        TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_RDELAY,    CONFIG_HLP_SF_RDELAY, 0,                .uptr=&((*recplay_conf)->u_sf_read_delay),   .defintval=DEF_SF_DELAY_READ,     TYPE_UINT,   0}, \
+    {CONFIG_OPT_SF_WDELAY,    CONFIG_HLP_SF_WDELAY, 0,                .uptr=&((*recplay_conf)->u_sf_write_delay),  .defintval=DEF_SF_DELAY_WRITE,    TYPE_UINT,   0}, \
+    {CONFIG_OPT_USE_MMAP,     CONFIG_HLP_USE_MMAP,  PARAMFLAG_BOOL,   .uptr=&((*recplay_conf)->use_mmap),          .defuintval=1,                    TYPE_UINT,   0}, \
   }/*! \brief Record Player Configuration and state */
 typedef struct {
-  char            *u_sf_filename;              // subframes file path
-  unsigned int    u_sf_max ;                  // max number of recorded subframes
-  unsigned int    u_sf_loops ;           // number of loops in replay mode
+  char            *u_sf_filename;    // subframes file path
+  unsigned int    u_sf_max ;         // max number of recorded subframes
+  unsigned int    u_sf_loops ;       // number of loops in replay mode
   unsigned int    u_sf_read_delay;   // read delay in replay mode
   unsigned int    u_sf_write_delay ; // write delay in replay mode
-  unsigned int    use_mmap; // default is to use mmap
+  unsigned int    use_mmap;          // default is to use mmap
+  unsigned int    u_sf_replay;       // replay mode (if 1)
+  unsigned int    u_sf_record;       // record mode (if 1)
 } recplay_conf_t;
 
 typedef struct {
   size_t          mapsize;
   FILE            *pFile;
   int             fd;
-  iqrec_t        *ms_sample;                      // memory for all subframes
+  iqrec_t        *ms_sample;         // memory for all subframes
   unsigned int    nbSamplesBlocks;
   uint8_t        *currentPtr;
   uint64_t        currentTs;

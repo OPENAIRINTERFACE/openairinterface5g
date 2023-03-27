@@ -30,7 +30,7 @@
  * \warning
  */
 #include "PHY/defs_UE.h"
-#include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_UE/sched_UE.h"
 #include "transport_ue.h"
 #include "transport_proto_ue.h"

@@ -43,8 +43,6 @@
 
 #include <time.h>
 
-#include "intertask_interface.h"
-
 extern uint8_t nfapi_mode;
 
 uint8_t get_nr_prach_duration(uint8_t prach_format){

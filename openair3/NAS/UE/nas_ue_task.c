@@ -308,7 +308,7 @@ void *nas_ue_task(void *args_p)
     struct epoll_event events[20];
     nb_events = itti_get_events(TASK_NAS_UE, events, 20);
 
-    if ((nb_events > 0) && (events != NULL)) {
+    if (nb_events > 0) {
       if (nas_ue_process_events(users, events, nb_events) == true) {
         LOG_E(NAS, "[UE] Received exit loop\n");
       }

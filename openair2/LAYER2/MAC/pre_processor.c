@@ -40,8 +40,6 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "rlc.h"
@@ -806,6 +804,7 @@ void rr_ul_unset(void **data) {
     free(*data);
   *data = NULL;
 }
+#define MAX(a, b) (((a)>(b))?(a):(b))
 int rr_ul_run(module_id_t Mod_id,
               int CC_id,
               int frame,

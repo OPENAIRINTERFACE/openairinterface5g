@@ -38,7 +38,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/types.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/MODULATION/modulation_UE.h"
@@ -89,7 +89,6 @@ int32_t uplink_frequency_offset[MAX_NUM_CCs][4];
 double cpuf;
 char *uecap_file;
 
-uint16_t sf_ahead=4 ;
 uint16_t sl_ahead=0;
 //uint8_t nfapi_mode = 0;
 uint64_t downlink_frequency[MAX_NUM_CCs][4];
@@ -104,21 +103,7 @@ int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t 
   return 0;
 }
 
-// dummy functions
-int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info)              { return(0);  }
-
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
-                              const int CC_id,
-                              const uint8_t gNB_index,
-                              const frame_t frame,
-                              const sub_frame_t sub_frame,
-                              const rnti_t rnti,
-                              const channel_t channel,
-                              const uint8_t* pduP,
-                              const sdu_size_t pdu_len)
-{
-  return 0;
-}
+int dummy_nr_ue_ul_indication(nr_uplink_indication_t *ul_info) { return(0);  }
 
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
 {
@@ -135,69 +120,15 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
   return 0;
 }
 
-void
-rrc_data_ind(
-  const protocol_ctxt_t *const ctxt_pP,
-  const rb_id_t                Srb_id,
-  const sdu_size_t             sdu_sizeP,
-  const uint8_t   *const       buffer_pP
-)
-{
-}
-
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
   return 0;
 }
 
-void config_common(int Mod_idP,
-                   int pdsch_AntennaPorts,
-                   int pusch_AntennaPorts,
-                   NR_ServingCellConfigCommon_t *scc);
-
-int generate_dlsch_header(unsigned char *mac_header,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
-                          unsigned char drx_cmd,
-                          unsigned short timing_advance_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned char short_padding,
-                          unsigned short post_padding){return 0;}
-
-// Dummy function to avoid linking error at compilation of nr-dlsim
-int is_x2ap_enabled(void)
-{
-  return 0;
-}
-
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
-                                            int             CC_idP,
-                                            int             UE_id,
-                                            rnti_t          rntiP,
-                                            const uint8_t   *sduP,
-                                            sdu_size_t      sdu_lenP,
-                                            const uint8_t   *sdu2P,
-                                            sdu_size_t      sdu2_lenP) {
-  return 0;
-}
-
 void processSlotTX(void *arg) {}
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
-
-//nFAPI P7 dummy functions to avoid linking errors 
-
-int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
-int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
-int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
-int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
-int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 // needed for some functions
 openair0_config_t openair0_cfg[MAX_CARDS];
@@ -206,7 +137,7 @@ void update_dmrs_config(NR_CellGroupConfig_t *scg, int8_t* dmrs_arg);
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
 /* specific dlsim DL preprocessor: uses rbStart/rbSize/mcs/nrOfLayers from command line of dlsim */
-int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1;
+int g_mcsIndex = -1, g_mcsTableIdx = 0, g_rbStart = -1, g_rbSize = -1, g_nrOfLayers = 1, g_pmi = 0;
 void nr_dlsim_preprocessor(module_id_t module_id,
                            frame_t frame,
                            sub_frame_t slot) {
@@ -252,6 +183,7 @@ void nr_dlsim_preprocessor(module_id_t module_id,
   sched_pdsch->rbSize = g_rbSize;
   sched_pdsch->mcs = g_mcsIndex;
   sched_pdsch->nrOfLayers = g_nrOfLayers;
+  sched_pdsch->pm_index = g_pmi;
   /* the following might override the table that is mandated by RRC
    * configuration */
   current_BWP->mcsTableIdx = g_mcsTableIdx;
@@ -304,8 +236,39 @@ nrUE_params_t *get_nrUE_params(void) {
   return &nrUE_params;
 }
 
-void do_nothing(void *args) {
+
+void validate_input_pmi(rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts, int nrOfLayers, int pmi)
+{
+  if (pmi == 0)
+    return;
+
+  int num_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
+  int N1 = pdsch_AntennaPorts.N1;
+  int N2 = pdsch_AntennaPorts.N2;
+  int O1 = N1 > 1 ? 4 : 1;
+  int O2 = N2 > 1 ? 4 : 1;
+  int K1, K2;
+  if (num_antenna_ports > 2)
+    get_K1_K2(N1, N2, &K1, &K2);
+  else {
+    K1 = 1; K2 = 1;
+  }
+  int num_pmi = 1; // pmi = 0 is the identity matrix
+  switch (nrOfLayers) {
+    case 1 :
+      num_pmi += N1 * O1 * N2 * O2 * 4;
+      AssertFatal(pmi < num_pmi, "Input PMI index %d exceeds the limit of configured matrices %d for %d layers\n", pmi, num_pmi, nrOfLayers);
+      return;
+    case 2 :
+      num_pmi += N1 * O1 * N2 * O2 * K1 * K2 * 2;
+      AssertFatal(pmi < num_pmi, "Input PMI index %d exceeds the limit of conigured matrices %d for %d layers\n", pmi, num_pmi, nrOfLayers);
+      break;
+    default :
+      AssertFatal(false, "Precoding with more than 2 nrOfLayers not yet supported\n");
+  }
 }
+
+
 int NB_UE_INST = 1;
 
 int main(int argc, char **argv)
@@ -319,7 +282,7 @@ int main(int argc, char **argv)
   //float psnr;
   float eff_tp_check = 0.7;
   uint32_t TBS = 0;
-  int **txdata;
+  c16_t **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
   //unsigned char pbch_pdu[6];
@@ -396,7 +359,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
 
-  while ((c = getopt(argc, argv, "f:hA:pf:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -473,34 +436,18 @@ int main(int argc, char **argv)
       printf("Setting SNR1 to %f\n",snr1);
       break;
 
-      /*
-      case 't':
-      Td= atof(optarg);
-      break;
-      */
-    /*case 'p':
-      extended_prefix_flag=1;
-      break;*/
-
-      /*
-      case 'r':
-      ricean_factor = pow(10,-.1*atof(optarg));
-      if (ricean_factor>1) {
-        printf("Ricean factor must be between 0 and 1\n");
-        exit(-1);
-      }
-      break;
-      */
     case 'x':
-      g_nrOfLayers=atoi(optarg);
+      g_nrOfLayers = atoi(optarg);
 
-      if ((g_nrOfLayers==0) ||
-          (g_nrOfLayers>4)) {
-        printf("Unsupported nr Of Layers %d\n",g_nrOfLayers);
+      if ((g_nrOfLayers == 0) || (g_nrOfLayers > 4)) {
+        printf("Unsupported nr Of Layers %d\n", g_nrOfLayers);
         exit(-1);
       }
-
       break;
+
+    case 'p':
+     g_pmi = atoi(optarg);
+     break;
 
     case 'v':
       num_rounds = atoi(optarg);
@@ -628,6 +575,7 @@ int main(int argc, char **argv)
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-x Num of layer for PDSCH\n");
+      printf("-p Precoding matrix index\n");
       printf("-i Change channel estimation technique. Arguments list: Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}\n");
       //printf("-j Relative strength of second intefering gNB (in dB) - cell_id mod 3 = 2\n");
       printf("-R N_RB_DL\n");
@@ -757,6 +705,8 @@ int main(int argc, char **argv)
   gNB->ap_N2 = pdsch_AntennaPorts.N2;
   gNB->ap_XP = pdsch_AntennaPorts.XP;
 
+  validate_input_pmi(pdsch_AntennaPorts, g_nrOfLayers, g_pmi);
+
   NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
                     N_RB_DL,g_mcsTableIdx);
@@ -789,23 +739,23 @@ int main(int argc, char **argv)
   gNB->if_inst->NR_PHY_config_req      = nr_phy_config_request;
 
   // common configuration
-  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 0, 0, NULL);
+  nr_mac_config_scc(RC.nrmac[0], pdsch_AntennaPorts, n_tx, 0, 6, scc);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0, pdsch_AntennaPorts, n_tx, 0, 6, scc, NULL, NULL, 1, secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity,secondaryCellGroup);
+  nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   // reset preprocessor to the one of DLSIM after it has been set during
-  // rrc_mac_config_req_gNB
+  // nr_mac_config_scc()
   gNB_mac->pre_processor_dl = nr_dlsim_preprocessor;
   phy_init_nr_gNB(gNB);
   N_RB_DL = gNB->frame_parms.N_RB_DL;
   NR_UE_info_t *UE_info = RC.nrmac[0]->UE_info.list[0];
 
-  configure_UE_BWP(RC.nrmac[0], scc, &UE_info->UE_sched_ctrl, NULL, UE_info);
+  configure_UE_BWP(RC.nrmac[0], scc, &UE_info->UE_sched_ctrl, NULL, UE_info, -1, -1);
 
   // stub to configure frame_parms
   //  nr_phy_config_request_sim(gNB,N_RB_DL,N_RB_DL,mu,Nid_cell,SSB_positions);
   // call MAC to configure common parameters
 
-  /* rrc_mac_config_req_gNB() has created one user, so set the scheduling
+  /* nr_mac_add_test_ue() has created one user, so set the scheduling
    * parameters from command line in global variables that will be picked up by
    * scheduling preprocessor */
   if (g_mcsIndex < 0) g_mcsIndex = 9;
@@ -921,6 +871,7 @@ int main(int argc, char **argv)
   UE->chest_time = chest_type[1];
 
   UE_mac->if_module = nr_ue_if_module_init(0);
+  UE_mac->state = UE_CONNECTED;
 
   unsigned int available_bits=0;
   unsigned char *estimated_output_bit;
@@ -1099,8 +1050,8 @@ int main(int argc, char **argv)
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
     
           if (cyclic_prefix_type == 1) {
-            PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
-                         &txdata[aa][tx_offset],
+            PHY_ofdm_mod((int *)&gNB->common_vars.txdataF[aa][txdataF_offset],
+                         (int *)&txdata[aa][tx_offset],
                          frame_parms->ofdm_symbol_size,
                          12,
                          frame_parms->nb_prefix_samples,
@@ -1130,7 +1081,7 @@ int main(int argc, char **argv)
         int txlev_sum = 0;
         int l_ofdm = 6;
         for (aa=0; aa<n_tx; aa++) {
-          txlev[aa] = signal_energy(&txdata[aa][tx_offset+l_ofdm*frame_parms->ofdm_symbol_size + (l_ofdm-1)*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+          txlev[aa] = signal_energy((int32_t *)&txdata[aa][tx_offset+l_ofdm*frame_parms->ofdm_symbol_size + (l_ofdm-1)*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
           txlev_sum += txlev[aa];
           if (n_trials==1) printf("txlev[%d] = %d (%f dB) txlev_sum %d\n",aa,txlev[aa],10*log10((double)txlev[aa]),txlev_sum);

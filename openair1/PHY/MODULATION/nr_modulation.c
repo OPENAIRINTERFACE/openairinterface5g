@@ -618,7 +618,7 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
   for (uint8_t ll = 0; ll < 2; ll++){
 
     double f0 = f[ll];
-    LOG_I(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
+    LOG_D(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
     c16_t *symbol_rotation = fp->symbol_rotation[ll];
 
     double tl = 0.0;
@@ -641,7 +641,7 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
       symbol_rotation[l].r = (int16_t)floor(exp_re * 32767);
       symbol_rotation[l].i = (int16_t)floor(exp_im * 32767);
 
-      LOG_I(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
+      LOG_D(PHY, "Symbol rotation %d/%d => tl %f (%d,%d) (%f)\n",
         l,
         nsymb,
         tl,
@@ -666,7 +666,7 @@ void init_timeshift_rotation(NR_DL_FRAME_PARMS *fp)
     fp->timeshift_symbol_rotation[i].i = (int16_t)round(exp_im * 32767);
 
     if (i < 10)
-      LOG_I(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",i,
+      LOG_D(PHY,"Timeshift symbol rotation %d => (%d,%d) %f\n",i,
             fp->timeshift_symbol_rotation[i].r,
             fp->timeshift_symbol_rotation[i].i,
             poff);

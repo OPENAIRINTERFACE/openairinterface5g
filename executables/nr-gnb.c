@@ -42,7 +42,7 @@
 
 #include "PHY/types.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 
 #include "PHY/defs_gNB.h"
 #include "SCHED/sched_eNB.h"
@@ -230,7 +230,7 @@ void rx_func(void *param) {
         gNB->ulsch[j]->harq_mask = 0;
         int h;
         for (h = 0; h < NR_MAX_ULSCH_HARQ_PROCESSES; h++) {
-          gNB->ulsch[j]->harq_processes[h]->status = SCH_IDLE;
+          gNB->ulsch[j]->harq_processes[h]->status = NR_SCH_IDLE;
           gNB->ulsch[j]->harq_processes[h]->round  = 0;
           gNB->ulsch[j]->harq_processes[h]->handled = 0;
         }
@@ -639,7 +639,7 @@ void init_eNB_afterRU(void) {
       for (i=0; i<gNB->RU_list[ru_id]->nb_rx; aa++,i++) {
         LOG_I(PHY,"Attaching RU %d antenna %d to gNB antenna %d\n",gNB->RU_list[ru_id]->idx,i,aa);
         gNB->prach_vars.rxsigF[aa]    =  gNB->RU_list[ru_id]->prach_rxsigF[0][i];
-        gNB->common_vars.rxdataF[aa]     =  gNB->RU_list[ru_id]->common.rxdataF[i];
+        gNB->common_vars.rxdataF[aa]     =  (c16_t *)gNB->RU_list[ru_id]->common.rxdataF[i];
       }
     }
 

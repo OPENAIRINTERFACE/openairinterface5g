@@ -59,10 +59,11 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
+#include "pdcp.h"
 
 #include "intertask_interface.h"
 
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 
 #include "system.h"
 #include <openair2/GNB_APP/gnb_app.h>
@@ -249,8 +250,8 @@ unsigned int build_rfdc(int dcoff_i_rxfe, int dcoff_q_rxfe) {
 #define KBLU  "\x1B[34m"
 #define RESET "\033[0m"
 
-
-void exit_function(const char *file, const char *function, const int line, const char *s) {
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
   int ru_id;
 
   if (s != NULL) {
@@ -274,8 +275,12 @@ void exit_function(const char *file, const char *function, const int line, const
     }
   }
 
-  sleep(1); //allow lte-softmodem threads to exit first
-  exit(1);
+  if (assert) {
+    abort();
+  } else {
+    sleep(1); // allow nr-softmodem threads to exit first
+    exit(EXIT_SUCCESS);
+  }
 }
 
 
@@ -528,7 +533,7 @@ void wait_gNBs(void) {
 void terminate_task(task_id_t task_id, module_id_t mod_id) {
   LOG_I(GNB_APP, "sending TERMINATE_MESSAGE to task %s (%d)\n", itti_get_task_name(task_id), task_id);
   MessageDef *msg;
-  msg = itti_alloc_new_message (ENB_APP, 0, TERMINATE_MESSAGE);
+  msg = itti_alloc_new_message (TASK_ENB_APP, 0, TERMINATE_MESSAGE);
   itti_send_msg_to_task (task_id, ENB_MODULE_ID_TO_INSTANCE(mod_id), msg);
 }
 

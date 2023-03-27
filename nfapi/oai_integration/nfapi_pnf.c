@@ -52,6 +52,7 @@
 #include "common/utils/LOG/log.h"
 
 #include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/LTE_TRANSPORT/transport_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "openair1/SCHED_NR/fapi_nr_l1.h"
@@ -495,7 +496,7 @@ void nfapi_nr_send_pnf_start_resp(nfapi_pnf_config_t *config, uint16_t phy_id) {
   memset(&start_resp, 0, sizeof(start_resp));
   start_resp.header.message_id = NFAPI_NR_PHY_MSG_TYPE_START_RESPONSE;
   start_resp.header.phy_id = phy_id;
-  start_resp.error_code = NFAPI_MSG_OK;
+  start_resp.error_code = NFAPI_NR_START_MSG_OK;
   nfapi_nr_pnf_start_resp(config, &start_resp);
 }
 

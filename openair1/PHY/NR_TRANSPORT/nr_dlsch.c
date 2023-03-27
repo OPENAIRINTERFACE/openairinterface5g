@@ -59,7 +59,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 
   PHY_VARS_gNB *gNB = msgTx->gNB;
   NR_gNB_DLSCH_t *dlsch;
-  int32_t** txdataF = gNB->common_vars.txdataF;
+  c16_t** txdataF = gNB->common_vars.txdataF;
   int16_t amp = AMP;
   int xOverhead = 0;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;

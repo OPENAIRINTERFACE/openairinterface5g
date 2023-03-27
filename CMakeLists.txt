@@ -37,12 +37,6 @@ include("cmake_targets/macros.cmake")
 ###################################
 include(FindPkgConfig)
 
-pkg_search_module(LIBXML2 libxml-2.0 REQUIRED)
-include_directories(${LIBXML2_INCLUDE_DIRS})
-
-pkg_search_module(LIBXSLT libxslt REQUIRED)
-include_directories(${LIBXSLT_INCLUDE_DIRS})
-
 pkg_search_module(OPENSSL openssl REQUIRED)
 include_directories(${OPENSSL_INCLUDE_DIRS})
 
@@ -289,7 +283,6 @@ add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
 add_definitions("-DPACKAGE_VERSION=\"Branch: ${GIT_BRANCH} Abrev. Hash: ${GIT_COMMIT_HASH} Date: ${GIT_COMMIT_DATE}\"")
 add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
-
 # Debug related options
 #########################################
 add_boolean_option(DEBUG_ASN1      False "ASN1 coder/decoder Debug" OFF)
@@ -301,7 +294,7 @@ add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace" ON)
 
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI ${OCP_ITTI}/intertask_interface.cpp)
-target_link_libraries(ITTI PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(ITTI PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 # asn1c skeletons have hardcoded this flag to make customized debug logs
 # OAI uses this feature to re-use OAI LOG_I(ASN, ...)
@@ -348,7 +341,7 @@ add_library(s1ap
   ${S1AP_DIR}/s1ap_eNB_ue_context.c
   )
 target_link_libraries(s1ap PUBLIC asn1_s1ap)
-target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc lte_rrc)
+target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc)
 
 # NGAP
 ##############
@@ -368,8 +361,8 @@ add_library(ngap
   ${NGAP_DIR}/ngap_gNB_trace.c
   ${NGAP_DIR}/ngap_gNB_ue_context.c
   )
-target_link_libraries(ngap PUBLIC asn1_ngap lte_rrc)
-target_link_libraries(ngap PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(ngap PUBLIC asn1_ngap)
+target_link_libraries(ngap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 #M2AP
 ##############
@@ -417,7 +410,7 @@ add_library(m3ap
 )
 target_link_libraries(m3ap PUBLIC asn1_m3ap)
 target_link_libraries(m3ap PRIVATE m2ap)
-target_link_libraries(m3ap PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(m3ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 target_include_directories(m3ap PUBLIC "${M3AP_DIR}")
 
 #X2AP
@@ -437,7 +430,7 @@ add_library(x2ap
   ${X2AP_DIR}/x2ap_timers.c
  )
 target_link_libraries(x2ap PUBLIC asn1_x2ap)
-target_link_libraries(x2ap PRIVATE nr_rrc lte_rrc)
+target_link_libraries(x2ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 
 # F1AP
@@ -448,7 +441,6 @@ add_library(f1ap
             ${F1AP_DIR}/f1ap_cu_interface_management.c
             ${F1AP_DIR}/f1ap_cu_paging.c
             ${F1AP_DIR}/f1ap_cu_rrc_message_transfer.c
-            ${F1AP_DIR}/f1ap_cu_system_information.c
             ${F1AP_DIR}/f1ap_cu_task.c
             ${F1AP_DIR}/f1ap_cu_ue_context_management.c
             ${F1AP_DIR}/f1ap_cu_warning_message_transmission.c
@@ -566,7 +558,6 @@ set_target_properties(benetel_4g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -
 SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
 target_link_libraries(benetel_4g PRIVATE ${DPDK_LIBS})
 target_link_libraries(benetel_4g PRIVATE pthread dl rt m numa)
-target_link_libraries(benetel_4g PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 # Benetel 5G library
 ######################################################################
@@ -585,7 +576,6 @@ set_target_properties(benetel_5g PROPERTIES COMPILE_FLAGS "-fvisibility=hidden -
 SET(DPDK_LIBS "-Wl,-rpath,$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -Wl,--whole-archive -L$ENV{RTE_SDK}/$ENV{RTE_TARGET}/lib -ldpdk -Wl,--no-whole-archive")
 target_link_libraries(benetel_5g PRIVATE ${DPDK_LIBS})
 target_link_libraries(benetel_5g PRIVATE pthread dl rt m numa)
-target_link_libraries(benetel_5g PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 ##########################################################
 
@@ -654,11 +644,6 @@ add_boolean_option(ENABLE_NAS_UE_LOGGING   True  "????" ON)
 add_boolean_option(NAS_BUILT_IN_UE         True  "UE NAS layer present in this executable" ON)
 add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)" ON)
 
-
-##########################
-# ACCESS STRATUM LAYER2 OPTIONS
-##########################
-add_boolean_option(JUMBO_FRAME             True  "ENABLE LARGE SDU in ACCESS STRATUM (larger than common MTU)" ON)
 
 ##########################
 # PDCP LAYER OPTIONS
@@ -752,7 +737,6 @@ include_directories("${OPENAIR2_DIR}/UTIL/OSA")
 include_directories("${OPENAIR2_DIR}/UTIL/MEM")
 include_directories("${OPENAIR2_DIR}/UTIL/LISTS")
 include_directories("${OPENAIR2_DIR}/UTIL/FIFO")
-include_directories("${OPENAIR2_DIR}/UTIL/OCG")
 include_directories("${OPENAIR2_DIR}/UTIL/MATH")
 include_directories("${OPENAIR2_DIR}/UTIL/TIMER")
 include_directories("${OPENAIR2_DIR}/UTIL/OMG")
@@ -783,7 +767,6 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
-target_link_libraries(UTIL PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set(SECU_OSA_SRC
   ${OPENAIR2_DIR}/UTIL/OSA/osa_key_deriver.c
@@ -822,7 +805,7 @@ set(SCHED_SRC
   ${OPENAIR1_DIR}/SCHED/phy_procedures_lte_common.c
 )
 add_library(SCHED_LIB ${SCHED_SRC})
-target_link_libraries(SCHED_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCHED_LIB PRIVATE asn1_lte_rrc_hdrs)
 
 set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/fapi_nr_l1.c
@@ -831,7 +814,7 @@ set(SCHED_NR_SRC
   ${OPENAIR1_DIR}/SCHED_NR/phy_frame_config_nr.c
 )
 add_library(SCHED_NR_LIB ${SCHED_NR_SRC})
-target_link_libraries(SCHED_NR_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCHED_NR_LIB PRIVATE asn1_nr_rrc_hdrs)
 
 set(SCHED_SRC_RU
   ${OPENAIR1_DIR}/SCHED/ru_procedures.c
@@ -839,7 +822,7 @@ set(SCHED_SRC_RU
   ${OPENAIR1_DIR}/SCHED/prach_procedures.c
 )
 add_library(SCHED_RU_LIB ${SCHED_SRC_RU})
-target_link_libraries(SCHED_RU_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCHED_RU_LIB PRIVATE asn1_lte_rrc_hdrs)
 
 set(SCHED_SRC_UE
   ${OPENAIR1_DIR}/SCHED_UE/phy_procedures_lte_ue.c
@@ -849,7 +832,7 @@ set(SCHED_SRC_UE
   ${OPENAIR1_DIR}/SCHED_UE/srs_pc.c
 )
 add_library(SCHED_UE_LIB ${SCHED_SRC_UE})
-target_link_libraries(SCHED_UE_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCHED_UE_LIB PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 set(SCHED_SRC_NR_UE
   ${OPENAIR1_DIR}/SCHED_NR_UE/phy_procedures_nr_ue.c
@@ -859,7 +842,7 @@ set(SCHED_SRC_NR_UE
   ${OPENAIR1_DIR}/SCHED_NR_UE/pucch_uci_ue_nr.c
 )
 add_library(SCHED_NR_UE_LIB ${SCHED_SRC_NR_UE})
-target_link_libraries(SCHED_NR_UE_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCHED_NR_UE_LIB PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 
 # nFAPI
@@ -889,7 +872,7 @@ set(NFAPI_PNF_SRC
   ${NFAPI_DIR}/pnf/src/pnf_p7_interface.c
 )
 add_library(NFAPI_PNF_LIB ${NFAPI_PNF_SRC})
-target_link_libraries(NFAPI_PNF_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(NFAPI_PNF_LIB PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 include_directories(${NFAPI_DIR}/pnf/public_inc)
 include_directories(${NFAPI_DIR}/pnf/inc)
@@ -901,7 +884,7 @@ set(NFAPI_VNF_SRC
   ${NFAPI_DIR}/vnf/src/vnf_p7_interface.c
 )
 add_library(NFAPI_VNF_LIB ${NFAPI_VNF_SRC})
-target_link_libraries(NFAPI_VNF_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(NFAPI_VNF_LIB PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 include_directories(${NFAPI_DIR}/vnf/public_inc)
 include_directories(${NFAPI_DIR}/vnf/inc)
@@ -915,7 +898,7 @@ set(NFAPI_USER_SRC
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
 )
 add_library(NFAPI_USER_LIB ${NFAPI_USER_SRC})
-target_link_libraries(NFAPI_USER_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(NFAPI_USER_LIB PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 include_directories(${NFAPI_USER_DIR})
 
 # Layer 1
@@ -1017,7 +1000,6 @@ add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
 target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
 
 add_library(coding MODULE ${PHY_TURBOSRC} )
-target_link_libraries(coding PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c )
 
@@ -1274,27 +1256,23 @@ set(PHY_SRC_UE ${PHY_SRC_UE} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_comp
 set(PHY_NR_UE_SRC ${PHY_NR_UE_SRC} ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c)
 
 add_library(PHY_COMMON ${PHY_SRC_COMMON})
-target_link_libraries(PHY_COMMON PRIVATE lte_rrc)
 add_dependencies(PHY_COMMON dfts)
-target_link_libraries(PHY_COMMON PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(PHY_COMMON PRIVATE asn1_lte_rrc_hdrs)
 
 add_library(PHY ${PHY_SRC})
-target_link_libraries(PHY PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(PHY PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(PHY_UE ${PHY_SRC_UE})
-target_link_libraries(PHY_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(PHY_UE PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
-target_link_libraries(PHY_NR_COMMON PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(PHY_NR ${PHY_NR_SRC})
-target_link_libraries(PHY_NR PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(PHY_NR_UE ${PHY_NR_UE_SRC})
-target_link_libraries(PHY_NR_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(PHY_RU ${PHY_SRC_RU})
-target_link_libraries(PHY_RU PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(PHY_RU PRIVATE asn1_lte_rrc_hdrs)
 
 #Library for mex functions
 #########################3
@@ -1318,7 +1296,7 @@ set(PHY_MEX_UE
   ${OPENAIR_DIR}/common/utils/T/local_tracer.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE} ${CONFIG_LIB})
-target_link_libraries(PHY_MEX PRIVATE asn1_lte_rrc)
+target_link_libraries(PHY_MEX PRIVATE asn1_lte_rrc_hdrs)
 
 #Layer 2 library
 #####################
@@ -1559,14 +1537,12 @@ set (MISC_NFAPI_LTE
  )
 
 add_library(MISC_NFAPI_LTE_LIB ${MISC_NFAPI_LTE})
-target_link_libraries(MISC_NFAPI_LTE_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 set (MISC_NFAPI_NR
  ${OPENAIR1_DIR}/SCHED/nfapi_nr_dummy.c
  )
 
 add_library(MISC_NFAPI_NR_LIB ${MISC_NFAPI_NR})
-target_link_libraries(MISC_NFAPI_NR_LIB PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(L2
   ${L2_SRC}
@@ -1575,16 +1551,16 @@ add_library(L2
   ${MCE_APP_SRC}
   )
 target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap)
-target_link_libraries(L2 PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(MAC_NR ${MAC_NR_SRC})
-target_link_libraries(MAC_NR PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(MAC_NR PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(MAC_UE_NR ${MAC_NR_SRC_UE})
-target_link_libraries(MAC_UE_NR PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(MAC_UE_NR PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(L2_LTE ${L2_LTE_SRC})
-target_link_libraries(L2_LTE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(L2_LTE PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_library(L2_NR
   ${L2_NR_SRC}
@@ -1597,13 +1573,13 @@ add_library(e1_if
   ${NR_RRC_DIR}/cucp_cuup_e1ap.c
   )
 
-target_link_libraries(e1_if PRIVATE asn1_nr_rrc asn1_lte_rrc asn1_f1ap e1ap GTPV1U)
+target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap e1ap GTPV1U)
 
 add_library(e1_pdcp_if
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_e1_api.c
   )
 
-target_link_libraries(e1_pdcp_if PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(e1_pdcp_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap)
 
@@ -1620,29 +1596,29 @@ add_library(L2_UE
   ${L2_SRC_UE}
   ${MAC_SRC_UE}
 )
-target_link_libraries(L2_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(L2_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_library(L2_UE_LTE_NR
   ${L2_RRC_SRC_UE}
   ${MAC_SRC_UE}
 )
-target_link_libraries(L2_UE_LTE_NR PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(L2_UE_LTE_NR PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 if (NOT ${NOS1})
 target_compile_definitions(L2_UE PUBLIC -DPDCP_USE_NETLINK)
 endif()
 
-target_link_libraries(L2_UE PRIVATE lte_rrc)
+target_link_libraries(L2_UE PRIVATE asn1_lte_rrc_hdrs)
 
 add_library( NR_L2_UE ${NR_L2_SRC_UE} ${MAC_NR_SRC_UE} )
 target_link_libraries(NR_L2_UE PRIVATE f1ap)
-target_link_libraries(NR_L2_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(NR_L2_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_library(MAC_NR_COMMON
             ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
             ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_compute_tbs_common.c
 )
-target_link_libraries(MAC_NR_COMMON PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(MAC_NR_COMMON PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 include_directories("${OPENAIR2_DIR}/NR_UE_PHY_INTERFACE")
 include_directories("${OPENAIR2_DIR}/LAYER2")
@@ -1660,7 +1636,7 @@ add_library (GTPV1U
   ${RRC_DIR}/rrc_eNB_GTPV1U.c
   ${OPENAIR3_DIR}/ocp-gtpu/gtp_itf.cpp
   )
-target_link_libraries(GTPV1U PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(GTPV1U PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 target_link_libraries(GTPV1U PRIVATE SIMU)
 include_directories(${OPENAIR3_DIR}/ocp-gtp)
 
@@ -1670,7 +1646,7 @@ set (MME_APP_SRC
 )
 add_library(MME_APP ${MME_APP_SRC})
 target_link_libraries(MME_APP PRIVATE m2ap m3ap)
-target_link_libraries(MME_APP PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(MME_APP PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_common.c
@@ -1678,7 +1654,7 @@ set(SCTP_SRC
   ${OPENAIR3_DIR}/SCTP/sctp_eNB_itti_messaging.c
 )
 add_library(SCTP_CLIENT ${SCTP_SRC})
-target_link_libraries(SCTP_CLIENT PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(SCTP_CLIENT PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 set(NAS_SRC ${OPENAIR3_DIR}/NAS/)
 set(libnas_api_OBJS
@@ -1960,7 +1936,7 @@ target_link_libraries(LIB_NAS_SIMUE PRIVATE lte_rrc)
 
 
 set(NAS_SIM_LIB LIB_NAS_SIMUE)
-target_link_libraries(LIB_NAS_SIMUE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(LIB_NAS_SIMUE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_library(LIB_NAS_UE
   ${NAS_SRC}UE/nas_itti_messaging.c
@@ -1981,9 +1957,8 @@ add_library(LIB_NAS_UE
   $<TARGET_OBJECTS:ds>
   )
 target_include_directories(LIB_NAS_UE PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
-target_link_libraries(LIB_NAS_UE PRIVATE lte_rrc)
 set(NAS_UE_LIB LIB_NAS_UE)
-target_link_libraries(LIB_NAS_UE PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(LIB_NAS_UE PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 include_directories(${NAS_SRC}NR_UE)
 include_directories(${NAS_SRC}UE)
@@ -2015,7 +1990,7 @@ add_library(LIB_5GNAS_GNB
 
 target_include_directories(LIB_5GNAS_GNB PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
 target_link_libraries(LIB_5GNAS_GNB PRIVATE SECU_CN ${CRYPTO_LIBRARIES})
-target_link_libraries(LIB_5GNAS_GNB PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(LIB_5GNAS_GNB PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 # Simulation library
 ##########################
@@ -2034,7 +2009,6 @@ set (SIMUSRC
 )
 add_library(SIMU STATIC ${SIMUSRC} )
 target_include_directories(SIMU PUBLIC ${OPENAIR1_DIR}/SIMULATION/TOOLS ${OPENAIR1_DIR}/SIMULATION/RF)
-target_link_libraries(SIMU PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 # Qt-based scope
 add_boolean_option(ENABLE_NRQTSCOPE OFF "Build the Qt-Scope" OFF)
@@ -2046,16 +2020,15 @@ if (ENABLE_NRQTSCOPE)
   qt5_wrap_cpp(QTSCOPE_SOURCE_NR ${OPENAIR1_DIR}/PHY/TOOLS/nr_phy_qt_scope.h)
   add_library(nrqtscope MODULE ${QTSCOPE_SOURCE_NR})
   target_link_libraries(nrqtscope PRIVATE Qt5::Widgets Qt5::Charts)
-  target_link_libraries(nrqtscope PRIVATE asn1_nr_rrc asn1_lte_rrc)
+  target_link_libraries(nrqtscope PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 endif()
 
-add_library(SIMU_ETH
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
-${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/bypass_session_layer.c
-#${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/emu_transport.c
+add_library(SIMU_ETH STATIC
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
+  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
 )
+target_link_libraries(SIMU_ETH PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 include_directories("${NFAPI_DIR}/nfapi/public_inc")
 include_directories("${NFAPI_DIR}/common/public_inc")
@@ -2073,7 +2046,6 @@ add_library(rfsimulator MODULE
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
 target_link_libraries(rfsimulator PRIVATE SIMU ${ATLAS_LIBRARIES})
-target_link_libraries(rfsimulator PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_library(oai_iqplayer MODULE
 	${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c
@@ -2166,9 +2138,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
@@ -2183,13 +2152,12 @@ target_link_libraries(lte-softmodem PRIVATE
   -Wl,--start-group
   lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI SIMU
+  ${NAS_UE_LIB} ITTI SIMU SIMU_ETH
   -Wl,--end-group z dl)
 
-target_link_libraries(lte-softmodem PRIVATE ${LIBXML2_LIBRARIES})
 target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp)
 target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
-target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 
 add_executable(oairu
@@ -2211,7 +2179,7 @@ target_link_libraries(oairu PRIVATE
   -Wl,--end-group z dl)
 
 target_link_libraries(oairu PRIVATE pthread m CONFIG_LIB rt ${T_LIB})
-target_link_libraries(oairu PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(oairu PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(lte-softmodem PRIVATE
@@ -2230,9 +2198,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/multicast_link.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/socket.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
@@ -2248,14 +2213,13 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   -Wl,--start-group
   lte_rrc nr_rrc s1ap x2ap m2ap m3ap
   SECU_CN SECU_OSA UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
-  PHY_UE PHY_RU L2_UE L2_LTE SIMU NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
+  PHY_UE PHY_RU L2_UE L2_LTE SIMU SIMU_ETH NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
   ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
   -Wl,--end-group z dl)
 
-target_link_libraries(lte-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
 target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${ATLAS_LIBRARIES})
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
-target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(lte-uesoftmodem PRIVATE
@@ -2277,7 +2241,6 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/radio/COMMON/record_player.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
@@ -2291,14 +2254,13 @@ target_link_libraries(nr-softmodem PRIVATE
   -Wl,--start-group
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECU_CN SECU_OSA
   ITTI ${NAS_UE_LIB} lte_rrc nr_rrc
-  ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU
+  ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU SIMU_ETH
   x2ap f1ap m2ap m3ap e1ap
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-softmodem PRIVATE ${LIBXML2_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} sctp ${ATLAS_LIBRARIES})
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
-target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_dependencies(nr-softmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc)
 
@@ -2313,7 +2275,6 @@ target_link_libraries(nr-softmodem PRIVATE
 add_executable(nr-cuup
   executables/nr-cuup.c
   executables/softmodem-common.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${NR_RRC_DIR}/rrc_gNB_UE_context.c
   ${OPENAIR2_DIR}/E1AP/e1ap_setup.c
@@ -2325,9 +2286,9 @@ add_executable(nr-cuup
 
 target_link_libraries(nr-cuup PRIVATE
                       CONFIG_LIB ITTI SCTP_CLIENT
-                      GTPV1U e1ap e1_pdcp_if f1ap
+                      GTPV1U e1ap e1_pdcp_if f1ap SIMU_ETH
                       SECU_OSA SECU_CN ${OPENSSL_LIBRARIES} crypt z sctp dl pthread)
-target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc asn1_nr_rrc)
+target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
                       
 # nr-uesoftmodem is  UE implementation
 #######################################
@@ -2344,7 +2305,6 @@ add_executable(nr-uesoftmodem
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
   ${OPENAIR2_DIR}/LAYER2/NR_MAC_COMMON/nr_mac_common.c
   ${OPENAIR2_DIR}/RRC/NAS/rb_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
@@ -2357,13 +2317,12 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   nr_rrc SECU_CN SECU_OSA UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB
-  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU
+  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-uesoftmodem PRIVATE ${LIBXML2_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${OPENSSL_LIBRARIES} ${ATLAS_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
-target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_dependencies( nr-uesoftmodem ldpc_orig ldpc_optim ldpc_optim8seg ldpc )
 if (ENABLE_LDPC_CUDA)
@@ -2402,7 +2361,7 @@ add_executable(rftest
   ${SHLIB_LOADER_SOURCES}
 )
 target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m ${T_LIB} )
-target_link_libraries(rftest PRIVATE asn1_lte_rrc asn1_nr_rrc)
+target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
@@ -2414,7 +2373,6 @@ target_link_libraries(polartest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
-target_link_libraries(polartest PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_executable(smallblocktest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
@@ -2427,7 +2385,6 @@ target_link_libraries(smallblocktest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
 )
-target_link_libraries(smallblocktest PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 
 add_executable(ldpctest
@@ -2445,12 +2402,11 @@ target_link_libraries(ldpctest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} dl
   )
-target_link_libraries(ldpctest PRIVATE asn1_nr_rrc asn1_lte_rrc)
 
 add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2458,10 +2414,11 @@ target_link_libraries(nr_dlschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
   )
-target_link_libraries(nr_dlschsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_dlschsim PRIVATE asn1_nr_rrc_hdrs)
 
 add_executable(nr_pbchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2470,14 +2427,14 @@ target_link_libraries(nr_pbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
 )
-target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 
 #PUCCH ---> Prashanth
 add_executable(nr_pucchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
@@ -2485,45 +2442,42 @@ target_link_libraries(nr_pucchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
 )
-target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_dlsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
+  ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_dlsim PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
+  -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECU_CN ngap -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
-target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
-  ${NR_UE_RRC_DIR}/rrc_nsa.c
-  ${NFAPI_USER_DIR}/nfapi.c
-  ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
+  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB CONFIG_LIB -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl)
-target_link_libraries(nr_prachsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_prachsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulschsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${OPENAIR_DIR}/executables/softmodem-common.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2532,16 +2486,17 @@ target_link_libraries(nr_ulschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
 )
-target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_ulsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/ulsim.c
+  ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR2_DIR}/RRC/NAS/nas_config.c
-  ${OPENAIR1_DIR}/SIMULATION/ETH_TRANSPORT/netlink_init.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NFAPI_USER_DIR}/nfapi.c
+  ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
   ${SHLIB_LOADER_SOURCES}
@@ -2552,10 +2507,10 @@ if (ENABLE_LDPC_T1)
 endif()
 
 target_link_libraries(nr_ulsim PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON lte_rrc nr_rrc CONFIG_LIB L2_LTE_NR L2_NR HASHTABLE x2ap SECU_CN ngap NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB -lz -Wl,--end-group
+  -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECU_CN ngap -lz -Wl,--end-group
   m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI ${OPENSSL_LIBRARIES} dl
   )
-target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc asn1_lte_rrc)
+target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim prachsim syncsim)
 
@@ -2572,7 +2527,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
     pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES} ${T_LIB} dl
     )
-  target_link_libraries(${myExe} PRIVATE asn1_nr_rrc asn1_lte_rrc)
+  target_link_libraries(${myExe} PRIVATE asn1_lte_rrc_hdrs)
 
 endforeach(myExe)
 

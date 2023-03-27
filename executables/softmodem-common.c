@@ -146,7 +146,6 @@ void get_common_options(uint32_t execmask) {
   }
 
   if (nokrnmod) {
-    printf("nokrnmod bit enabled \n");
     set_softmodem_optmask(SOFTMODEM_NOKRNMOD_BIT);
   }
 
@@ -220,7 +219,7 @@ void signal_handler(int sig) {
       softmodem_printresources(sig,(telnet_printfunc_t)printf);
     if (sig != SOFTMODEM_RTSIGNAL) {
       printf("Linux signal %s...\n",strsignal(sig));
-      exit_function(__FILE__, __FUNCTION__, __LINE__,"softmodem starting exit procedure\n");
+      exit_function(__FILE__, __FUNCTION__, __LINE__, "softmodem starting exit procedure\n", OAI_EXIT_NORMAL);
     }
   }
 }

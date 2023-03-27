@@ -45,8 +45,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "openair2/PHY_INTERFACE/phy_stub_UE.h"
 
 #include "pdcp.h"
@@ -903,7 +901,7 @@ int ue_query_p_mch_info(module_id_t module_idP, uint32_t frameP, uint32_t subfra
       continue;
 
     int mch_scheduling_period = 8 << UE_mac_inst[module_idP].pmch_Config[i]->mch_SchedulingPeriod_r9;
-    uint8_t  sf_AllocEnd_r9   = UE_mac_inst[module_idP].pmch_Config[i]->sf_AllocEnd_r9;
+    long sf_AllocEnd_r9 = UE_mac_inst[module_idP].pmch_Config[i]->sf_AllocEnd_r9;
 
     if (sf_AllocEnd_r9 == 2047) {
       msi_flag = 1;
@@ -915,7 +913,7 @@ int ue_query_p_mch_info(module_id_t module_idP, uint32_t frameP, uint32_t subfra
         //msi and mtch are mutally excluded then the break is safe
         if ((num_sf_alloc == 0) && (sf_AllocEnd_r9 >= 1)) {
           msi_flag = 1;
-          LOG_D(MAC,"msi(%d) should be allocated:frame(%d),submframe(%d),num_sf_alloc(%d),sf_AllocEnd_r9(%d),common_num_sf_alloc(%d)\n",i,frameP,subframe,num_sf_alloc,sf_AllocEnd_r9,
+          LOG_D(MAC,"msi(%d) should be allocated:frame(%d),submframe(%d),num_sf_alloc(%d),sf_AllocEnd_r9(%ld),common_num_sf_alloc(%d)\n",i,frameP,subframe,num_sf_alloc,sf_AllocEnd_r9,
                 UE_mac_inst[module_idP].common_num_sf_alloc);
           UE_mac_inst[module_idP].msi_current_alloc = num_sf_alloc;
           UE_mac_inst[module_idP].msi_pmch = i;
@@ -927,7 +925,7 @@ int ue_query_p_mch_info(module_id_t module_idP, uint32_t frameP, uint32_t subfra
         //if ((num_sf_alloc ==  UE_mac_inst[module_idP].pmch_Config[i-1]->sf_AllocEnd_r9) && (sf_AllocEnd_r9 >= (num_sf_alloc))) {
           //msi should be just after
           msi_flag = 1;
-          LOG_D(MAC,"msi(%d) should be allocated:frame(%d),submframe(%d),num_sf_alloc(%d),sf_AllocEnd_r9(%d),common_num_sf_alloc(%d)\n",i,frameP,subframe,num_sf_alloc,sf_AllocEnd_r9,
+          LOG_D(MAC,"msi(%d) should be allocated:frame(%d),submframe(%d),num_sf_alloc(%d),sf_AllocEnd_r9(%ld),common_num_sf_alloc(%d)\n",i,frameP,subframe,num_sf_alloc,sf_AllocEnd_r9,
                 UE_mac_inst[module_idP].common_num_sf_alloc);
           UE_mac_inst[module_idP].msi_current_alloc = num_sf_alloc;
           UE_mac_inst[module_idP].msi_pmch = i;
@@ -1305,7 +1303,7 @@ int ue_query_mch_fembms(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, 
   //}
 
 
-  if ((mcch_flag == 1)) { // || (msi_flag==1))
+  if (mcch_flag == 1) { // || (msi_flag==1))
     *mcch_active = 1;
   }
 
@@ -1975,7 +1973,7 @@ int ue_query_mch(module_id_t module_idP, uint8_t CC_id, uint32_t frameP, uint32_
 
   stop_UE_TIMING(UE_mac_inst[module_idP].ue_query_mch);
 
-  if ((mcch_flag == 1)) { // || (msi_flag==1))
+  if (mcch_flag == 1) { // || (msi_flag==1))
     *mcch_active = 1;
   }
 
@@ -3129,7 +3127,7 @@ ue_scheduler(const module_id_t module_idP,
   }
 
   // UE has no valid phy config dedicated ||  no valid/released  SR
-  if ((UE_mac_inst[module_idP].physicalConfigDedicated == NULL)) {
+  if (UE_mac_inst[module_idP].physicalConfigDedicated == NULL) {
     // cancel all pending SRs
     UE_mac_inst[module_idP].scheduling_info.SR_pending = 0;
     UE_mac_inst[module_idP].ul_active = 0;

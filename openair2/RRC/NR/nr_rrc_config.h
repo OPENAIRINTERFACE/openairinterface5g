@@ -53,7 +53,8 @@ void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing);
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
 void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
-                               NR_PUCCH_Config_t *pucch_Config);
+                               NR_PUCCH_Config_t *pucch_Config,
+                               int scs);
 void config_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig, const NR_ServingCellConfigCommon_t *servingcellconfigcommon, NR_PUCCH_CSI_Resource_t *pucchcsires, int do_csi, int rep_id, int uid);
 void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
                             const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
@@ -90,7 +91,7 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        int numerology,
                        int rbsize,
                        int mcs_table);
-struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Config, const NR_ServingCellConfigCommon_t *scc);
+struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Config);
 void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
                         const NR_ServingCellConfigCommon_t *scc,
                         const NR_ServingCellConfig_t *servingcellconfigdedicated,
@@ -104,5 +105,6 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                       const NR_ServingCellConfig_t *servingcellconfigdedicated,
                       const NR_ServingCellConfigCommon_t *scc,
                       NR_UE_NR_Capability_t *uecap);
+NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void);
 
 #endif

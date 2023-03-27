@@ -986,9 +986,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/ringbuffer_queue.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/message_queue.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/ASYNC_IF/link_manager.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG_extern.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/OCG/OCG_vars.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/UTIL/LISTS/list2.c \
@@ -1024,7 +1021,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_encoder.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_task.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_system_information.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_system_information.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_rrc_message_transfer.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_interface_management.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_handlers.c \
@@ -2244,7 +2240,6 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/defs_L1_NB_IoT.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/phy_extern_ue.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/defs_gNB.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/primary_synch.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/lte_dl_cell_spec.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/defs_NB_IoT.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair1/PHY/LTE_REFSIG/lte_refsig.h \

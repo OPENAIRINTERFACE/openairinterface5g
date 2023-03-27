@@ -70,7 +70,7 @@ long nr_get_Pcmax(module_id_t mod_id){
   NR_P_Max_t p_max           = 0;
   uint8_t P_powerclass       = 23;
   uint8_t delta_P_powerclass = 0;
-  uint8_t MPR_c              = 1.5;
+  uint8_t MPR_c              = 1;
   uint8_t delta_MPR_c        = 0;
   uint8_t A_MPR_c            = 0;
   uint8_t delta_T_IB_c       = 0;
@@ -82,7 +82,7 @@ long nr_get_Pcmax(module_id_t mod_id){
   long P_cmax                = 0;
 
   if (band == 28 && mac->phy_config.config_req.carrier_config.uplink_bandwidth == 30){
-    delta_MPR_c = 0.5;
+    delta_MPR_c = 1;
   }
 
   if (mac->cg && mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
@@ -141,7 +141,7 @@ void init_RA(module_id_t mod_id,
              NR_RACH_ConfigDedicated_t *rach_ConfigDedicated)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-
+  mac->state = UE_PERFORMING_RA;
   RA_config_t *ra          = &mac->ra;
   ra->RA_active            = 1;
   ra->ra_PreambleIndex     = -1;
@@ -164,25 +164,25 @@ void init_RA(module_id_t mod_id,
   NR_SearchSpaceId_t ss_id = -1;
   NR_SearchSpace_t *ss = NULL;
 
-  if(mac->scc_SIB) {
-    commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-    ss_id = *mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-  }
-  else{
-    if (mac->scc) {
-      NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      if (ra_ss) {
-        commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ss_id = *mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      }
+  if (mac->scc) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
     }
-    if (ss_id < 0) {
-      if (mac->current_DL_BWP.bwp_id>0) {
-        ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        if (ra_ss) {
-          commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-          ss_id = *mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-        }
+  } else if (mac->scc_SIB) {
+    NR_SearchSpaceId_t *ra_ss = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+    if (ra_ss) {
+      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+      ss_id = *ra_ss;
+    }
+  }
+  if (ss_id < 0) {
+    if (mac->current_DL_BWP.bwp_id>0) {
+      ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+      if (ra_ss) {
+        commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
+        ss_id = *ra_ss;
       }
     }
   }
@@ -312,11 +312,11 @@ int8_t nr_get_DELTA_PREAMBLE(module_id_t mod_id, int CC_id, uint16_t prach_forma
     mu = 4;
     break;
 
-    case NR_SubcarrierSpacing_spare3:
+    case NR_SubcarrierSpacing_kHz480_v1700:
     mu = 5;
     break;
 
-    case NR_SubcarrierSpacing_spare2:
+    case NR_SubcarrierSpacing_kHz960_v1700:
     mu = 6;
     break;
 
@@ -482,8 +482,14 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
   long deltaPreamble_Msg3 = 0;
   uint8_t noGroupB = 0;
   // Random seed generation
-  long long tmp = rdtsc_oai();
-  unsigned short int *seed = (unsigned short int*)&tmp;
+  unsigned int seed;
+
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    seed = 1;
+  } else {
+    seed=(unsigned int) (rdtsc_oai() && ~0);
+  }
 
   RA_config_t *ra = &mac->ra;
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
@@ -580,28 +586,28 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
     if(ra->ra_PreambleIndex < 0 || ra->ra_PreambleIndex > 63) {
       if (noGroupB) {
         // use Group A preamble
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % ra->cb_preambles_per_ssb);
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % ra->cb_preambles_per_ssb);
         ra->RA_usedGroupA = 1;
       } else if ((ra->Msg3_size < messageSizeGroupA) && (dl_pathloss > PLThreshold)) {
         // Group B is configured and RA preamble Group A is used
         // - todo add condition on CCCH_sdu_size for initiation by CCCH
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % sizeOfRA_PreamblesGroupA);
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % sizeOfRA_PreamblesGroupA);
         ra->RA_usedGroupA = 1;
       } else {
         // Group B preamble is configured and used
         // the first sizeOfRA_PreamblesGroupA RA preambles belong to RA Preambles Group A
         // the remaining belong to RA Preambles Group B
-        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r((unsigned int *)seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+        ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r(&seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
         ra->RA_usedGroupA = 0;
       }
     }
   } else { // Msg3 is being retransmitted
     if (ra->RA_usedGroupA && noGroupB) {
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % ra->cb_preambles_per_ssb);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % ra->cb_preambles_per_ssb);
     } else if (ra->RA_usedGroupA && !noGroupB){
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r((unsigned int *)seed) % sizeOfRA_PreamblesGroupA);
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + (rand_r(&seed) % sizeOfRA_PreamblesGroupA);
     } else {
-      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r((unsigned int *)seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
+      ra->ra_PreambleIndex = ra->starting_preamble_nb + sizeOfRA_PreamblesGroupA + (rand_r(&seed) % (ra->cb_preambles_per_ssb - sizeOfRA_PreamblesGroupA));
     }
   }
 }
@@ -728,8 +734,8 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
                        int CC_id,
                        frame_t frame,
                        uint8_t gNB_id,
-                       int nr_slot_tx){
-
+                       int nr_slot_tx)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   NR_RACH_ConfigDedicated_t *rach_ConfigDedicated = ra->rach_ConfigDedicated;
@@ -1001,27 +1007,21 @@ void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
   RA_config_t *ra = &mac->ra;
 
   if (ra->cfra) {
-
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
-
+    mac->state = UE_CONNECTED;
     ra->RA_window_cnt = -1;
-
   } else {
-
     LOG_A(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CB-RA: Contention Resolution is successful.\n", mod_id, frame, slot);
-
     ra->RA_contention_resolution_timer_active = 0;
     mac->crnti = ra->t_crnti;
     ra->t_crnti = 0;
-
     LOG_D(MAC, "In %s: [UE %d][%d.%d] CB-RA: cleared contention resolution timer...\n", __FUNCTION__, mod_id, frame, slot);
-
+    mac->state = UE_WAIT_TX_ACK_MSG4;
   }
 
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
   ra->ra_state = RA_SUCCEEDED;
-
 }
 
 // Handling failure of RA procedure @ MAC layer
@@ -1033,9 +1033,15 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   // Random seed generation
-  long long tmp = rdtsc_oai();
-  unsigned short int *seed = (unsigned short int*)&tmp;
+  unsigned int seed;
 
+  if (IS_SOFTMODEM_IQPLAYER || IS_SOFTMODEM_IQRECORDER) {
+    // Overwrite seed with non-random seed for IQ player/recorder
+    seed = 1;
+  } else {
+    seed=(unsigned int) (rdtsc_oai() && ~0);
+  }
+  
   ra->first_Msg3 = 1;
   ra->ra_PreambleIndex = -1;
   ra->ra_state = RA_UE_IDLE;
@@ -1047,7 +1053,7 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     LOG_D(MAC, "In %s: [UE %d][%d.%d] Maximum number of RACH attempts (%d) reached, selecting backoff time...\n",
           __FUNCTION__, mod_id, frame, slot, ra->preambleTransMax);
 
-    ra->RA_backoff_cnt = rand_r((unsigned int *)seed) % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
+    ra->RA_backoff_cnt = rand_r(&seed) % (prach_resources->RA_PREAMBLE_BACKOFF + 1);
     prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
     prach_resources->RA_PREAMBLE_POWER_RAMPING_STEP += 2; // 2 dB increment
     prach_resources->ra_PREAMBLE_RECEIVED_TARGET_POWER = nr_get_Po_NOMINAL_PUSCH(prach_resources, mod_id, CC_id);

@@ -61,6 +61,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_ServingCellConfig.h"
 #include "NR_MeasConfig.h"
+#include "NR_ServingCellConfigCommonSIB.h"
 
 
 // ==========
@@ -158,10 +159,11 @@
 
 /*!\brief UE layer 2 status */
 typedef enum {
-    UE_CONNECTION_OK = 0,
-    UE_CONNECTION_LOST,
-    UE_PHY_RESYNCH,
-    UE_PHY_HO_PRACH
+  UE_NOT_SYNC = 0,
+  UE_SYNC,
+  UE_PERFORMING_RA,
+  UE_WAIT_TX_ACK_MSG4,
+  UE_CONNECTED
 } NR_UE_L2_STATE_t;
 
 typedef enum {
@@ -379,7 +381,7 @@ typedef struct {
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
-
+  NR_UE_L2_STATE_t state;
   NR_ServingCellConfigCommon_t    *scc;
   NR_ServingCellConfigCommonSIB_t *scc_SIB;
   NR_CellGroupConfig_t            *cg;
@@ -405,6 +407,7 @@ typedef struct {
   NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
+  bool phy_config_request_sent;
   frame_type_t frame_type;
 
   ///     Type0-PDCCH seach space
@@ -504,7 +507,7 @@ typedef struct prach_association_pattern {
 typedef struct ssb_info {
   bool transmitted; // True if the SSB index is transmitted according to the SSB positions map configuration
   prach_occasion_info_t *mapped_ro[MAX_NB_RO_PER_SSB_IN_ASSOCIATION_PATTERN]; // List of mapped RACH Occasions to this SSB index
-  uint16_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
+  uint32_t nb_mapped_ro; // Total number of mapped ROs to this SSB index
 } ssb_info_t;
 
 // List of all the possible SSBs and their details

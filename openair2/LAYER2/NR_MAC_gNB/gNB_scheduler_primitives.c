@@ -41,8 +41,6 @@
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "common/utils/nr/nr_common.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
@@ -515,8 +513,21 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
   }
 }
 
+bool multiple_2_3_5(int rb)
+{
+  while (rb % 2 == 0)
+    rb /= 2;
+  while (rb % 3 == 0)
+    rb /= 3;
+  while (rb % 5 == 0)
+    rb /= 5;
+
+  return (rb == 1);
+}
+
 bool nr_find_nb_rb(uint16_t Qm,
                    uint16_t R,
+                   long transform_precoding,
                    uint8_t nrOfLayers,
                    uint16_t nb_symb_sch,
                    uint16_t nb_dmrs_prb,
@@ -526,6 +537,11 @@ bool nr_find_nb_rb(uint16_t Qm,
                    uint32_t *tbs,
                    uint16_t *nb_rb)
 {
+  // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+  while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+        !multiple_2_3_5(nb_rb_max))
+    nb_rb_max--;
+
   /* is the maximum (not even) enough? */
   *nb_rb = nb_rb_max;
   *tbs = nr_compute_tbs(Qm, R, *nb_rb, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
@@ -547,6 +563,15 @@ bool nr_find_nb_rb(uint16_t Qm,
   int hi = nb_rb_max;
   int lo = nb_rb_min;
   for (int p = (hi + lo) / 2; lo + 1 < hi; p = (hi + lo) / 2) {
+    // for transform precoding only RB = 2^a_2 * 3^a_3 * 5^a_5 is allowed with a non-negative
+    while(transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled &&
+          !multiple_2_3_5(p))
+      p++;
+
+    // If by increasing p for transform precoding we already hit the high, break to avoid infinite loop
+    if (p == hi)
+      break;
+
     const uint32_t TBS = nr_compute_tbs(Qm, R, p, nb_symb_sch, nb_dmrs_prb, 0, 0, nrOfLayers) >> 3;
     if (bytes == TBS) {
       hi = p;
@@ -570,7 +595,7 @@ NR_pusch_dmrs_t get_ul_dmrs_params(const NR_ServingCellConfigCommon_t *scc,
 
   NR_pusch_dmrs_t dmrs = {0};
   // TODO setting of cdm groups with no data to be redone for MIMO
-  if (ul_bwp->transform_precoding || Layers<3)
+  if (ul_bwp->transform_precoding && Layers < 3)
     dmrs.num_dmrs_cdm_grps_no_data = ul_bwp->dci_format == NR_UL_DCI_FORMAT_0_1 || tda_info->nrOfSymbols == 2 ? 1 : 2;
   else
     dmrs.num_dmrs_cdm_grps_no_data = 2;
@@ -806,7 +831,6 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
   NR_PUCCH_ResourceId_t *resource_id = NULL;
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
-  long *id0 = NULL;
   int n_list, n_set;
   uint16_t N2,N3;
   int res_found = 0;
@@ -820,9 +844,13 @@ void nr_configure_pucch(nfapi_nr_pucch_pdu_t* pucch_pdu,
 
   long *pusch_id = pusch_Config ? pusch_Config->dataScramblingIdentityPUSCH : NULL;
 
-  if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL)
+  long *id0 = NULL;
+  if (pusch_Config &&
+      pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA != NULL &&
+      pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeA->choice.setup->transformPrecodingDisabled->scramblingID0;
-  else if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL)
+  else if (pusch_Config && pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB != NULL &&
+           pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled != NULL)
     id0 = pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->transformPrecodingDisabled->scramblingID0;
   else id0 = scc->physCellId;
 
@@ -2021,8 +2049,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
                       NR_ServingCellConfigCommon_t *scc,
                       NR_UE_sched_ctrl_t *sched_ctrl,
                       NR_RA_t *ra,
-                      NR_UE_info_t *UE) {
-
+                      NR_UE_info_t *UE,
+                      int dl_bwp_switch,
+                      int ul_bwp_switch)
+{
   AssertFatal((ra != NULL && UE == NULL) || (ra == NULL && UE != NULL), "RA and UE structures are mutually exlusive in BWP configuration\n");
 
   NR_CellGroupConfig_t *CellGroup;
@@ -2067,23 +2097,10 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 
     target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
 
-    if(UE && UE->Msg3_dcch_dtch) {
-      // switching to initial BWP
-      DL_BWP->bwp_id = 0;
-      UL_BWP->bwp_id = 0;
-      UE->Msg3_dcch_dtch = false;
-
-      // Schedule BWP switching to the first active BWP (previous active BWP before RA with Msg3 carrying DCCH or DTCH message)
-      if (servingCellConfig->firstActiveDownlinkBWP_Id) {
-        sched_ctrl->next_dl_bwp_id = *servingCellConfig->firstActiveDownlinkBWP_Id;
-      } else {
-        sched_ctrl->next_dl_bwp_id = 0;
-      }
-      if (servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id) {
-        sched_ctrl->next_ul_bwp_id = *servingCellConfig->uplinkConfig->firstActiveUplinkBWP_Id;
-      } else {
-        sched_ctrl->next_ul_bwp_id = 0;
-      }
+    if(dl_bwp_switch >= 0 && ul_bwp_switch >= 0) {
+      AssertFatal(dl_bwp_switch == ul_bwp_switch, "Different UL and DL BWP not supported\n");
+      DL_BWP->bwp_id = dl_bwp_switch;
+      UL_BWP->bwp_id = ul_bwp_switch;
     }
     else {
       // (re)configuring BWP
@@ -2186,14 +2203,9 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   UL_BWP->initial_BWPSize = NRRIV2BW(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
   UL_BWP->initial_BWPStart = NRRIV2PRBOFFSET(scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-  if (UL_BWP->pusch_Config == NULL || !UL_BWP->pusch_Config->transformPrecoder)
-    UL_BWP->transform_precoding = !scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->msg3_transformPrecoder;
-  else
-    UL_BWP->transform_precoding = *UL_BWP->pusch_Config->transformPrecoder;
-
   if (UL_BWP->bwp_id > 0) {
-    UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup;
-    UL_BWP->rach_ConfigCommon = ul_bwp->bwp_Common->rach_ConfigCommon->choice.setup;
+    UL_BWP->pucch_ConfigCommon = ul_bwp->bwp_Common->pucch_ConfigCommon ? ul_bwp->bwp_Common->pucch_ConfigCommon->choice.setup : NULL;
+    UL_BWP->rach_ConfigCommon = ul_bwp->bwp_Common->rach_ConfigCommon ? ul_bwp->bwp_Common->rach_ConfigCommon->choice.setup : NULL;
   } else {
     UL_BWP->pucch_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->pucch_ConfigCommon->choice.setup;
     UL_BWP->rach_ConfigCommon = scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup;
@@ -2276,14 +2288,17 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
   long *dl_mcs_Table = DL_BWP->pdsch_Config ? DL_BWP->pdsch_Config->mcs_Table : NULL;
   DL_BWP->mcsTableIdx = get_pdsch_mcs_table(dl_mcs_Table, DL_BWP->dci_format, NR_RNTI_C, target_ss);
 
-  long *ul_mcs_Table = NULL;
+  // 0 precoding enabled 1 precoding disabled
+  UL_BWP->transform_precoding = get_transformPrecoding(UL_BWP, UL_BWP->dci_format, 0);
+  // Set uplink MCS table
+  long *mcs_Table = NULL;
   if (UL_BWP->pusch_Config)
-    ul_mcs_Table = UL_BWP->transform_precoding ?
-                   UL_BWP->pusch_Config->mcs_Table :
-                   UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
+    mcs_Table = UL_BWP->transform_precoding ?
+                UL_BWP->pusch_Config->mcs_Table :
+                UL_BWP->pusch_Config->mcs_TableTransformPrecoder;
 
-  UL_BWP->mcs_table = get_pusch_mcs_table(ul_mcs_Table,
-                                          UL_BWP->transform_precoding ? 0 : 1,
+  UL_BWP->mcs_table = get_pusch_mcs_table(mcs_Table,
+                                          !UL_BWP->transform_precoding,
                                           UL_BWP->dci_format,
                                           NR_RNTI_C,
                                           target_ss,
@@ -2335,7 +2350,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   memset(dl_bwp, 0, sizeof(*dl_bwp));
   NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   memset(ul_bwp, 0, sizeof(*ul_bwp));
-  configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE);
+  configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE, -1, -1);
 
   /* set illegal time domain allocation to force recomputation of all fields */
   sched_ctrl->sched_pdsch.time_domain_allocation = -1;
@@ -2795,10 +2810,12 @@ void nr_mac_update_timers(module_id_t module_id,
 
         NR_CellGroupConfig_t *cg = NULL;
         uper_decode(NULL,
-                    &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                    &asn_DEF_NR_CellGroupConfig, // might be added prefix later
                     (void **)&cg,
                     (uint8_t *)UE->cg_buf,
-                    (UE->enc_rval.encoded+7)/8, 0, 0);
+                    (UE->enc_rval.encoded + 7) / 8,
+                    0,
+                    0);
         UE->CellGroup = cg;
 
         if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
@@ -2811,7 +2828,7 @@ void nr_mac_update_timers(module_id_t module_id,
         process_CellGroup(cg,&UE->UE_sched_ctrl);
         NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
-        configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE);
+        configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE, -1, -1);
 
         if (get_softmodem_params()->sa) {
           // add all available DL HARQ processes for this UE in SA
@@ -2891,35 +2908,16 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
   }
 }
 
-void send_initial_ul_rrc_message(module_id_t        module_id,
-                                 int                CC_id,
-                                 int                rnti,
-                                 int                uid,
-                                 const uint8_t      *sdu,
-                                 sdu_size_t         sdu_len) {
-  const gNB_MAC_INST *mac = RC.nrmac[module_id];
-  LOG_W(MAC,
-        "[RAPROC] Received SDU for CCCH length %d for UE %04x\n",
-        sdu_len, rnti);
+void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE)
+{
+  LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", sdu_len, rnti);
 
-  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(RC.nrrrc[module_id]->node_type)) {
-    struct rrc_gNB_ue_context_s *ue_context_p = rrc_gNB_allocate_new_UE_context(RC.nrrrc[module_id]);
-    ue_context_p->ue_id_rnti                    = rnti;
-    ue_context_p->ue_context.rnti               = rnti;
-    ue_context_p->ue_context.random_ue_identity = rnti;
-    RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[module_id]->rrc_ue_head, ue_context_p);
-  }
-
-  const NR_ServingCellConfigCommon_t *scc = RC.nrrrc[module_id]->carrier.servingcellconfigcommon;
-  const NR_ServingCellConfig_t *sccd = RC.nrrrc[module_id]->configuration.scd;
-  NR_CellGroupConfig_t cellGroupConfig = {0};
-  fill_initial_cellGroupConfig(uid, &cellGroupConfig, scc, sccd, &RC.nrrrc[module_id]->configuration);
+  NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
 
   uint8_t du2cu_rrc_container[1024];
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                                   NULL,
-                                                  &cellGroupConfig,
+                                                  UE->CellGroup,
                                                   du2cu_rrc_container,
                                                   sizeof(du2cu_rrc_container));
   AssertFatal(enc_rval.encoded > 0,
@@ -2935,5 +2933,48 @@ void send_initial_ul_rrc_message(module_id_t        module_id,
     .du2cu_rrc_container = (uint8_t *) du2cu_rrc_container,
     .du2cu_rrc_container_length = (enc_rval.encoded + 7) / 8
   };
-  mac->mac_rrc.initial_ul_rrc_message_transfer(module_id, &ul_rrc_msg);
+  mac->mac_rrc.initial_ul_rrc_message_transfer(0, &ul_rrc_msg);
+}
+
+void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
+{
+  /* create this UE's initial CellGroup */
+  /* Note: relying on the RRC is a hack, as we are in the DU; there should be
+   * no RRC, remove in the future */
+  module_id_t mod_id = 0;
+  gNB_RRC_INST *rrc = RC.nrrrc[mod_id];
+  const NR_ServingCellConfigCommon_t *scc = rrc->carrier.servingcellconfigcommon;
+  const NR_ServingCellConfig_t *sccd = rrc->configuration.scd;
+  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(*cellGroupConfig));
+  AssertFatal(cellGroupConfig != NULL, "out of memory\n");
+  fill_initial_cellGroupConfig(UE->uid, cellGroupConfig, scc, sccd, &rrc->configuration);
+
+  uint8_t du2cu_rrc_container[1024];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
+                                                  NULL,
+                                                  cellGroupConfig,
+                                                  du2cu_rrc_container,
+                                                  sizeof(du2cu_rrc_container));
+  AssertFatal(enc_rval.encoded > 0,
+              "Could not encode cellGroupConfig for UE %04x, failed element %s\n",
+              UE->rnti,
+              enc_rval.failed_type->name);
+
+  UE->CellGroup = cellGroupConfig;
+  nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);
+
+  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
+  if (NODE_IS_DU(rrc->node_type)) {
+    rrc_gNB_ue_context_t *ue = rrc_gNB_create_ue_context(UE->rnti, rrc, UE->rnti);
+    ue->ue_context.masterCellGroup = cellGroupConfig;
+  }
+
+  /* activate SRB0 */
+  nr_rlc_activate_srb0(UE->rnti, mac, UE, send_initial_ul_rrc_message);
+
+  /* the cellGroup sent to CU specifies there is SRB1, so create it */
+  DevAssert(cellGroupConfig->rlc_BearerToAddModList->list.count == 1);
+  const NR_RLC_BearerConfig_t *bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[0];
+  DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
+  nr_rlc_add_srb(UE->rnti, DCCH, bearer);
 }

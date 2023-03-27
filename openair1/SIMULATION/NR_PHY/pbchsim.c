@@ -38,7 +38,7 @@
 #include "PHY/MODULATION/modulation_eNB.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/MODULATION/nr_modulation.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_UE_TRANSPORT/nr_transport_proto_ue.h"
 #include "PHY/NR_UE_ESTIMATION/nr_estimation.h"
@@ -47,10 +47,10 @@
 #include "openair1/SIMULATION/TOOLS/sim.h"
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
-#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include <executables/softmodem-common.h>
 #include <executables/nr-uesoftmodem.h>
+#include "nfapi/oai_integration/vendor_ext.h"
 //#define DEBUG_NR_PBCHSIM
 
 PHY_VARS_gNB *gNB;
@@ -80,6 +80,23 @@ nrUE_params_t *get_nrUE_params(void) {
 }
 
 void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
+NR_IF_Module_t *NR_IF_Module_init(int Mod_id) { return (NULL); }
+nfapi_mode_t nfapi_getmode(void) { return NFAPI_MODE_UNKNOWN; }
+
+void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
+                           fapi_nr_dci_indication_t *dci_ind,
+                           fapi_nr_rx_indication_t *rx_ind,
+                           UE_nr_rxtx_proc_t *proc,
+                           PHY_VARS_NR_UE *ue,
+                           void *phy_data) {}
+void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
+                           uint8_t pdu_type,
+                           PHY_VARS_NR_UE *ue,
+                           NR_UE_DLSCH_t *dlsch0,
+                           NR_UE_DLSCH_t *dlsch1,
+                           uint16_t n_pdus,
+                           UE_nr_rxtx_proc_t *proc,
+                           void *typeSpecific ) {}
 
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
@@ -619,12 +636,12 @@ int main(int argc, char **argv)
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
             apply_nr_rotation(frame_parms,
-                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              gNB->common_vars.txdataF[aa],
                               slot,
                               0,
                               12);
 
-            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+            PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
             &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
             frame_parms->ofdm_symbol_size,
             12,
@@ -632,7 +649,7 @@ int main(int argc, char **argv)
             CYCLIC_PREFIX);
           } else {
             apply_nr_rotation(frame_parms,
-                              (int16_t*)gNB->common_vars.txdataF[aa],
+                              gNB->common_vars.txdataF[aa],
                               slot,
                               0,
                               14);
@@ -642,14 +659,14 @@ int main(int argc, char **argv)
               14,
               frame_parms);*/
 
-            PHY_ofdm_mod(gNB->common_vars.txdataF[aa],
+            PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
                          frame_parms->ofdm_symbol_size,
                          1,
                          frame_parms->nb_prefix_samples0,
                          CYCLIC_PREFIX);
 
-            PHY_ofdm_mod(&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
+            PHY_ofdm_mod((int *)&gNB->common_vars.txdataF[aa][frame_parms->ofdm_symbol_size],
                          (int*)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)+frame_parms->nb_prefix_samples0+frame_parms->ofdm_symbol_size],
                          frame_parms->ofdm_symbol_size,
                          13,

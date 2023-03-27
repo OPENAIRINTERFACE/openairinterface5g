@@ -46,7 +46,7 @@
 #include "PHY/defs_nr_common.h"
 #include "PHY/phy_extern.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "SCHED_NR/sched_nr.h"
 
 #include "common/utils/LOG/log.h"
@@ -1858,6 +1858,16 @@ static void NRRCconfig_RU(void) {
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
+      }
+
+      if (config_isparamset(RUParamList.paramarray[j], RU_TX_SUBDEV)) {
+        RC.ru[j]->openair0_cfg.tx_subdev = strdup(*(RUParamList.paramarray[j][RU_TX_SUBDEV].strptr));
+        LOG_I(PHY, "RU USRP tx subdev == %s\n", RC.ru[j]->openair0_cfg.tx_subdev);
+      }
+
+      if (config_isparamset(RUParamList.paramarray[j], RU_RX_SUBDEV)) {
+        RC.ru[j]->openair0_cfg.rx_subdev = strdup(*(RUParamList.paramarray[j][RU_RX_SUBDEV].strptr));
+        LOG_I(PHY, "RU USRP rx subdev == %s\n", RC.ru[j]->openair0_cfg.rx_subdev);
       }
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_CLK_SRC)) {

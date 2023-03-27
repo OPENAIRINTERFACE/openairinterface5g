@@ -659,36 +659,12 @@ int trx_usrp_write_init(openair0_device *device){
   printf("end of tx write thread\n");
   pthread_mutex_init(&write_thread->mutex_write, NULL);
   pthread_cond_init(&write_thread->cond_write, NULL);
-  struct sched_param sparam={0};
-  sparam.sched_priority = sched_get_priority_max(SCHED_RR);
-  pthread_attr_t attr;
-  int ret=pthread_attr_init(&attr);
-  if (ret!=0) { 
-    printf("error initializing USRP tx-thread attribute ret %d, errno: %d\n",ret,errno);
-    exit(-1);
-  }
-  else printf("USRP tx-thread attribute initialized\n");
-  ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  if (ret!=0) { 
-    printf("error setting USRP tx-thread inheritance ret %d, errno: %d\n",ret,errno);
-    exit(-1);
-  }
-  else printf("USRP tx-thread inheritance set\n");
-  ret=pthread_attr_setschedpolicy(&attr, SCHED_RR);
-  if (ret!=0) { 
-    printf("error setting USRP tx-thread scheduling policy ret %d, errno: %d\n",ret,errno);
-    exit(-1);
-  }
-  else printf("USRP tx-thread scheduling policy set to SCHED_RR\n");
-  ret = pthread_attr_setschedparam(&attr, &sparam);
-  if (ret!=0) { 
-    printf("error setting USRP tx-thread priority ret %d, errno: %d\n",ret,errno);
-    exit(-1);
-  }
-  else printf("USRP tx-thread priority set to %d\n",sparam.sched_priority);
-
-  pthread_create(&write_thread->pthread_write,&attr,trx_usrp_write_thread,(void *)device);
-
+  threadCreate(&write_thread->pthread_write,
+               trx_usrp_write_thread,
+               (void *)device,
+               (char*)"trx_usrp_write_thread",
+               -1,
+               OAI_PRIORITY_RT_MAX);
   return(0);
 }
 
@@ -727,7 +703,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
   nsamps2 = (nsamps+3)>>2;
   int16x8_t buff_tmp[cc<2 ? 2 : cc][nsamps2];
 #endif
-
+  static int read_count = 0;
   int rxshift;
   switch (device->type) {
      case USRP_B200_DEV:
@@ -798,25 +774,30 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
 
   recplay_state_t *recPlay=device->recplay_state;
 
-  if ( recPlay != NULL) { // record mode
+  if (device->openair0_cfg->recplay_mode == RECPLAY_RECORDMODE) { // record mode
     // Copy subframes to memory (later dump on a file)
-    if (recPlay->nbSamplesBlocks < device->openair0_cfg->recplay_conf->u_sf_max &&
-        recPlay->maxSizeBytes > (recPlay->currentPtr-(uint8_t *)recPlay->ms_sample) +
-        sizeof(iqrec_t) + nsamps*4 ) {
+    // The number of read samples might differ from BELL_LABS_IQ_BYTES_PER_SF
+    // The number of read samples is always stored in nbBytes but the record is always of BELL_LABS_IQ_BYTES_PER_SF size
+    if (recPlay->nbSamplesBlocks <= device->openair0_cfg->recplay_conf->u_sf_max &&
+        recPlay->maxSizeBytes >= (recPlay->currentPtr-(uint8_t *)recPlay->ms_sample) +
+        sizeof(iqrec_t) + BELL_LABS_IQ_BYTES_PER_SF) {
       iqrec_t *hdr=(iqrec_t *)recPlay->currentPtr;
+      struct timespec trec;
+      (void) clock_gettime(CLOCK_REALTIME, &trec);
       hdr->header = BELL_LABS_IQ_HEADER;
       hdr->ts = *ptimestamp;
-      hdr->nbBytes=nsamps*4;
+      hdr->nbBytes=nsamps*4;            // real number of samples bytes
+      hdr->tv_sec = trec.tv_sec;        // record secs
+      hdr->tv_usec = trec.tv_nsec/1000; // record µsecs
       memcpy(hdr+1, buff[0], nsamps*4);
-      recPlay->currentPtr+=sizeof(iqrec_t)+nsamps*4;
+      recPlay->currentPtr+=sizeof(iqrec_t)+BELL_LABS_IQ_BYTES_PER_SF; // record size is constant (BELL_LABS_IQ_BYTES_PER_SF)
       recPlay->nbSamplesBlocks++;
-#if 0 // BMC: this is too verbose      
-      LOG_D(HW,"recorded %d samples, for TS %lu, shift in buffer %ld\n", nsamps, hdr->ts, recPlay->currentPtr-(uint8_t *)recPlay->ms_sample);
-#endif      
+      LOG_D(HW,"recorded %d samples, for TS %lu, shift in buffer %ld nbBytes %d nbSamplesBlocks %d\n", nsamps, hdr->ts, recPlay->currentPtr-(uint8_t *)recPlay->ms_sample, (int)hdr->nbBytes, (int)recPlay->nbSamplesBlocks);
     } else
-      exit_function(__FILE__, __FUNCTION__, __LINE__,"Recording reaches max iq limit\n");
+      exit_function(__FILE__, __FUNCTION__, __LINE__, "Recording reaches max iq limit\n", OAI_EXIT_NORMAL);
   }
-
+  read_count++;
+  LOG_D(HW,"usrp_lib: returning %d samples at ts %lu read_count %d\n", samples_received, *ptimestamp, read_count); 
   return samples_received;
 }
 
@@ -1096,18 +1077,28 @@ extern "C" {
       return -1;
     }
 
-    LOG_I(HW,"Found USRP %s\n", device_adds[0].get("type").c_str());
+    std::string type_str, product_str;
+    if (args.find("addr0") != std::string::npos) {
+      type_str = "type0";
+      product_str = "product0";
+    }
+    else {
+      type_str = "type";
+      product_str = "product";
+    }
+    
+    LOG_I(HW,"Found USRP %s\n", device_adds[0].get(type_str).c_str());
     double usrp_master_clock;
 
-    if (device_adds[0].get("type") == "b200") {
+    if (device_adds[0].get(type_str) == "b200") {
       device->type = USRP_B200_DEV;
       usrp_master_clock = 30.72e6;
       args += boost::str(boost::format(",master_clock_rate=%f") % usrp_master_clock);
       args += ",num_send_frames=256,num_recv_frames=256, send_frame_size=7680, recv_frame_size=7680" ;
     }
 
-    if (device_adds[0].get("type") == "n3xx") {
-      const std::string product = device_adds[0].get("product");
+    if (device_adds[0].get(type_str) == "n3xx") {
+      const std::string product = device_adds[0].get(product_str);
       printf("Found USRP %s\n", product.c_str());
       device->type=USRP_N300_DEV;
       if (product == "n320")
@@ -1120,7 +1111,7 @@ extern "C" {
         LOG_W(HW,"Can't set kernel parameters for N3x0\n");
     }
 
-    if (device_adds[0].get("type") == "x300") {
+    if (device_adds[0].get(type_str) == "x300") {
       printf("Found USRP x300\n");
       device->type=USRP_X300_DEV;
       usrp_master_clock = 184.32e6;
@@ -1131,7 +1122,7 @@ extern "C" {
         LOG_W(HW,"Can't set kernel parameters for X3xx\n");
     }
 
-    if (device_adds[0].get("type") == "x4xx") {
+    if (device_adds[0].get(type_str) == "x4xx") {
       printf("Found USRP x400\n");
       device->type = USRP_X400_DEV;
       usrp_master_clock = 245.76e6;

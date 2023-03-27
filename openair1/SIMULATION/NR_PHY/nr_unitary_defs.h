@@ -33,9 +33,12 @@
 #ifndef __NR_UNITARY_DEFS__H__
 #define __NR_UNITARY_DEFS__H__
 
+#include "NR_ServingCellConfigCommon.h"
+#include "NR_ServingCellConfig.h"
+
 int oai_exit=0;
 
-void exit_function(const char* file, const char* function, const int line, const char *s) {
+void exit_function(const char* file, const char* function, const int line, const char *s, const int assert) {
   const char * msg= s==NULL ? "no comment": s;
   printf("Exiting at: %s:%d %s(), %s\n", file, line, function, msg);
   exit(-1);
@@ -64,9 +67,5 @@ void fix_scc(NR_ServingCellConfigCommon_t *scc,uint64_t ssbmap);
 void prepare_scc(NR_ServingCellConfigCommon_t *scc);
 void prepare_scd(NR_ServingCellConfig_t *scd);
 uint32_t ngap_generate_gNB_id(void) {return 0;}
-void configure_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) { return;}
-void configure_nfapi_vnf(char *vnf_addr, int vnf_p5_port) { return;}
-void configure_nr_nfapi_pnf(char *vnf_ip_addr, int vnf_p5_port, char *pnf_ip_addr, int pnf_p7_port, int vnf_p7_port) { return;}
-void configure_nr_nfapi_vnf(char *vnf_addr, int vnf_p5_port) { return;}
 
 #endif

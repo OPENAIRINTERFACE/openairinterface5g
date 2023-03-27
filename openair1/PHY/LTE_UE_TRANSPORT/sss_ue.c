@@ -31,7 +31,7 @@
 */
 #include "PHY/defs_UE.h"
 #include "transport_ue.h"
-#include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "PHY/MODULATION/modulation_UE.h"
 
 //#define DEBUG_SSS
@@ -44,7 +44,7 @@ int pss_ch_est(PHY_VARS_UE *ue,
                int32_t sss_ext[4][72])
 {
 
-  int16_t *pss;
+  const int16_t *pss;
   int16_t *pss_ext2,*sss_ext2,*sss_ext3,tmp_re,tmp_im,tmp_re2,tmp_im2;
   uint8_t aarx,i;
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;

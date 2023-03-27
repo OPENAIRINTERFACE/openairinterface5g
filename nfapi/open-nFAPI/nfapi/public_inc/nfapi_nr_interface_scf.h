@@ -452,7 +452,7 @@ typedef struct
 // ERROR enums
 typedef enum {    // Table 2-22
   NFAPI_NR_PARAM_MSG_OK = 0, 
-	NFAPI_NR_PARAM_MSG_INVALID_STATE
+  NFAPI_NR_PARAM_MSG_INVALID_STATE
 } nfapi_nr_param_errors_e;
 
 typedef enum {    // Table 2-25
@@ -463,7 +463,7 @@ typedef enum {    // Table 2-25
 
 typedef enum {    // Table 2-27
   NFAPI_NR_START_MSG_OK = 0,       
-	NFAPI_NR_START_MSG_INVALID_STATE
+  NFAPI_NR_START_MSG_INVALID_STATE
 } nfapi_nr_start_errors_e;
 
 //PNF P5 NR 

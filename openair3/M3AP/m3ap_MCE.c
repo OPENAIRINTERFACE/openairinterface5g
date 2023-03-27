@@ -683,7 +683,7 @@ int is_m3ap_MCE_enabled(void)
 
   char *enable_m3 = NULL;
   paramdef_t p[] = {
-   { "enable_mce_m3", "yes/no", 0, strptr:&enable_m3, defstrval:"", TYPE_STRING, 0 }
+   { "enable_mce_m3", "yes/no", 0, .strptr=&enable_m3, .defstrval="", TYPE_STRING, 0 }
   };
 
   /* TODO: do it per module - we check only first MCE */

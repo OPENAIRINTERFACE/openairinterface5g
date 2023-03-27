@@ -31,7 +31,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "OCG_vars.h"
 
 #ifdef XFORMS
   #include "PHY/TOOLS/lte_phy_scope.h"

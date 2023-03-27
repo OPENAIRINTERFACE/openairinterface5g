@@ -38,6 +38,10 @@
 #include "telnetsrv.h"
 #define TELNETSRV_PHYCMD_MAIN
 #include "telnetsrv_phycmd.h"
+
+#include "PHY/defs_eNB.h"
+#include "LAYER2/MAC/mac_proto.h"
+
 char *prnbuff;
 extern int dump_eNB_stats(PHY_VARS_eNB *eNB, char *buffer, int length);
 

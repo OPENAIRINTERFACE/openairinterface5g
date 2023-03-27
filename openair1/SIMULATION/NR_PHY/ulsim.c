@@ -35,7 +35,7 @@
 #include "PHY/defs_nr_UE.h"
 #include "PHY/phy_vars_nr_ue.h"
 #include "PHY/types.h"
-#include "PHY/INIT/phy_init.h"
+#include "PHY/INIT/nr_phy_init.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/MODULATION/nr_modulation.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
@@ -54,7 +54,6 @@
 #include "openair1/SIMULATION/RF/rf.h"
 #include "openair1/SIMULATION/NR_PHY/nr_unitary_defs.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
-//#include "openair1/SIMULATION/NR_PHY/nr_dummy_functions.c"
 #include "openair2/LAYER2/NR_MAC_UE/mac_proto.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/threadPool/thread-pool.h"
@@ -102,46 +101,6 @@ int nr_derive_key_ng_ran_star(uint16_t pci, uint64_t nr_arfcn_dl, const uint8_t 
 
 extern void fix_scd(NR_ServingCellConfig_t *scd);// forward declaration
 
-int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
-                              const int CC_id,
-                              const uint8_t gNB_index,
-                              const frame_t frame,
-                              const sub_frame_t sub_frame,
-                              const rnti_t rnti,
-                              const channel_t channel,
-                              const uint8_t* pduP,
-                              const sdu_size_t pdu_len)
-{
-  return 0;
-}
-
-int generate_dlsch_header(unsigned char *mac_header,
-                          unsigned char num_sdus,
-                          unsigned short *sdu_lengths,
-                          unsigned char *sdu_lcids,
-                          unsigned char drx_cmd,
-                          unsigned short timing_advance_cmd,
-                          unsigned char *ue_cont_res_id,
-                          unsigned char short_padding,
-                          unsigned short post_padding){return 0;}
-
-void
-rrc_data_ind(
-  const protocol_ctxt_t *const ctxt_pP,
-  const rb_id_t                Srb_id,
-  const sdu_size_t             sdu_sizeP,
-  const uint8_t   *const       buffer_pP
-)
-{
-}
-
-
-// Dummy function to avoid linking error at compilation of nr-ulsim
-int is_x2ap_enabled(void)
-{
-  return 0;
-}
-
 void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index)
 {
   return;
@@ -169,18 +128,6 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(module_id_t     module_idP,
 }
 
 nr_bler_struct nr_bler_data[NR_NUM_MCS];
-
-//nFAPI P7 dummy functions
-
-int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req) { return(0);  }
-int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req){ return(0);  }
-int oai_nfapi_ul_dci_req(nfapi_nr_ul_dci_request_t *ul_dci_req){ return(0);  }
-int oai_nfapi_ul_tti_req(nfapi_nr_ul_tti_request_t *ul_tti_req){ return(0);  }
-int oai_nfapi_nr_rx_data_indication(nfapi_nr_rx_data_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_crc_indication(nfapi_nr_crc_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_srs_indication(nfapi_nr_srs_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_uci_indication(nfapi_nr_uci_indication_t *ind) { return(0);  }
-int oai_nfapi_nr_rach_indication(nfapi_nr_rach_indication_t *ind) { return(0);  }
 
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
@@ -707,10 +654,10 @@ int main(int argc, char **argv)
 
   gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
   // common configuration
-  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 0, 0, NULL);
+  nr_mac_config_scc(RC.nrmac[0], conf.pdsch_AntennaPorts, n_tx, 0, 6, scc);
+  nr_mac_config_mib(RC.nrmac[0], &rrc.carrier.mib);
   // UE dedicated configuration
-  rrc_mac_config_req_gNB(0, conf.pdsch_AntennaPorts, n_rx, 0, 6, scc, &rrc.carrier.mib, rrc.carrier.siblock1, 1,
-                         secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
+  nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   frame_parms->nb_antennas_tx = 1;
   frame_parms->nb_antennas_rx = n_rx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -1040,6 +987,12 @@ int main(int argc, char **argv)
     double berStats[16] = {0};
 
     clear_pusch_stats(gNB);
+
+    uint64_t sum_pusch_delay = 0;
+    int min_pusch_delay = INT_MAX;
+    int max_pusch_delay = INT_MIN;
+    int delay_pusch_est_count = 0;
+
     for (trial = 0; trial < n_trials; trial++) {
 
       uint8_t round = 0;
@@ -1319,8 +1272,8 @@ int main(int argc, char **argv)
         for(uint8_t symbol = 0; symbol < (gNB->frame_parms.Ncp == EXTENDED ? 12 : 14); symbol++) {
           for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++)
             nr_slot_fep_ul(&gNB->frame_parms,
-                           (int32_t*) rxdata[aa],
-                           gNB->common_vars.rxdataF[aa],
+                           (int32_t *)rxdata[aa],
+                           (int32_t *)gNB->common_vars.rxdataF[aa],
                            symbol,
                            slot,
                            0);
@@ -1552,6 +1505,12 @@ int main(int argc, char **argv)
       roundStats += ((float)round);
       if (!crc_status)
         effRate += ((double)TBS) / (double)round;
+
+      sum_pusch_delay += gNB->measurements.delay[UE_id].pusch_est_delay;
+      min_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay < min_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : min_pusch_delay;
+      max_pusch_delay = gNB->measurements.delay[UE_id].pusch_est_delay > max_pusch_delay ? gNB->measurements.delay[UE_id].pusch_est_delay : max_pusch_delay;
+      delay_pusch_est_count++;
+
     } // trial loop
 
     roundStats/=((float)n_trials);
@@ -1581,6 +1540,12 @@ int main(int argc, char **argv)
       printf(",%e", berStats[r]);
     printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", roundStats,effRate,effTP,TBS);
 
+    printf("DMRS-PUSCH delay estimation: min %i, max %i, average %f\n",
+           min_pusch_delay >> 1, max_pusch_delay >> 1, (double)sum_pusch_delay / (2 * delay_pusch_est_count));
+
+    printf("*****************************************\n");
+    printf("\n");
+
     FILE *fd=fopen("nr_ulsim.log","w");
     if (fd == NULL) {
       printf("Problem with filename %s\n", "nr_ulsim.log");
@@ -1589,9 +1554,6 @@ int main(int argc, char **argv)
     dump_pusch_stats(fd,gNB);
     fclose(fd);
 
-    printf("*****************************************\n");
-    printf("\n");
-    
     if (print_perf==1) {
       printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
       printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");

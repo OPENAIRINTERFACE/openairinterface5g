@@ -33,13 +33,10 @@
 #include "PHY/phy_extern.h"
 #include "PHY/phy_extern_ue.h"
 
-#include "LAYER2/MAC/mac.h"
-#include "LAYER2/MAC/mac_extern.h"
 #include "common/utils/LOG/log.h"
-#include "RRC/LTE/rrc_extern.h"
 #include "PHY_INTERFACE/phy_interface_extern.h"
-#include "UTIL/OCG/OCG.h"
 #include "UTIL/OPT/opt.h" // to test OPT
+#include "common/ran_context.h"
 
 #define RF
 

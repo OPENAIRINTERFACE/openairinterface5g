@@ -139,11 +139,7 @@ void send_T_messages_txt(void *forwarder) {
     /* TODO: be careful, we use internal T stuff, to rewrite? */
     T_LOCAL_size = 0;
     T_HEADER(T_ID(-1));
-    T_PUT_buffer(1, ((T_buffer) {
-addr:
-(src), length:
-      (send_size)
-    }));
+    T_PUT_buffer(1, ((T_buffer) { .addr= (src), .length= (send_size) }));
     forward(forwarder, buf, T_LOCAL_size);
     src += send_size;
     src_len -= send_size;

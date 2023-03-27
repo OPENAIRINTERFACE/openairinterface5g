@@ -66,33 +66,36 @@
 /*                                            L1 configuration parameters                                                                             */
 /*   optname                                         helpstr   paramflags    XXXptr              defXXXval                  type           numelt     */
 /*----------------------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define L1PARAMS_DESC { \
-{CONFIG_STRING_L1_CC,                                NULL,      0,         uptr:NULL,           defintval:1,               TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE,            NULL,      0,         strptr:NULL,         defstrval:"local_mac",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_IF_NAME,                   NULL,      0,         strptr:NULL,         defstrval:"lo",            TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_ADDRESS,                   NULL,      0,         strptr:NULL,         defstrval:"127.0.0.1",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_REMOTE_N_ADDRESS,                  NULL,      0,         strptr:NULL,         defstrval:"127.0.0.2",     TYPE_STRING,   0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTC,                     NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,      0,         uptr:NULL,           defintval:50030,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,      0,         uptr:NULL,           defintval:50031,           TYPE_UINT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,      0,         iptr:NULL,           defintval:100,             TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1_DTX_THRESHOLD,              NULL,      0,         iptr:NULL,           defintval:0,                TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1AB_DTX_THRESHOLD,            NULL,      0,         iptr:NULL,           defintval:4,                TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_EMTC0_THRESHOLD,         NULL,      0,         iptr:NULL,           defintval:200,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1_DTX_EMTC0_THRESHOLD,        NULL,      0,         iptr:NULL,           defintval:0,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC0_THRESHOLD,      NULL,      0,         iptr:NULL,           defintval:4,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_EMTC1_THRESHOLD,         NULL,      0,         iptr:NULL,           defintval:200,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1_DTX_EMTC1_THRESHOLD,        NULL,      0,         iptr:NULL,           defintval:0,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC1_THRESHOLD,      NULL,      0,         iptr:NULL,           defintval:4,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_EMTC2_THRESHOLD,         NULL,      0,         iptr:NULL,           defintval:200,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1_DTX_EMTC2_THRESHOLD,        NULL,      0,         iptr:NULL,           defintval:0,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC2_THRESHOLD,      NULL,      0,         iptr:NULL,           defintval:4,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PRACH_DTX_EMTC3_THRESHOLD,         NULL,      0,         iptr:NULL,           defintval:200,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1_DTX_EMTC3_THRESHOLD,        NULL,      0,         iptr:NULL,           defintval:0,           TYPE_INT,     0},         \
-{CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC3_THRESHOLD,      NULL,      0,         iptr:NULL,           defintval:4,           TYPE_INT,     0}, \
-{CONFIG_STRING_L1_PUSCH_SIGNAL_THRESHOLD,            NULL,      0,         iptr:NULL,           defintval:635,             TYPE_INT,     0}  \
-  }
+  {CONFIG_STRING_L1_CC,                                NULL,                 0,         .uptr=NULL,           .defintval=1,               TYPE_UINT,     0}, \
+  {CONFIG_STRING_L1_TRANSPORT_N_PREFERENCE,            NULL,                 0,         .strptr=NULL,         .defstrval="local_mac",     TYPE_STRING,   0}, \
+  {CONFIG_STRING_L1_LOCAL_N_IF_NAME,                   NULL,                 0,         .strptr=NULL,         .defstrval="lo",            TYPE_STRING,   0}, \
+  {CONFIG_STRING_L1_LOCAL_N_ADDRESS,                   NULL,                 0,         .strptr=NULL,         .defstrval="127.0.0.1",     TYPE_STRING,   0}, \
+  {CONFIG_STRING_L1_REMOTE_N_ADDRESS,                  NULL,                 0,         .strptr=NULL,         .defstrval="127.0.0.2",     TYPE_STRING,   0}, \
+  {CONFIG_STRING_L1_LOCAL_N_PORTC,                     NULL,                 0,         .uptr=NULL,           .defintval=50030,           TYPE_UINT,     0}, \
+  {CONFIG_STRING_L1_REMOTE_N_PORTC,                    NULL,                 0,         .uptr=NULL,           .defintval=50030,           TYPE_UINT,     0}, \
+  {CONFIG_STRING_L1_LOCAL_N_PORTD,                     NULL,                 0,         .uptr=NULL,           .defintval=50031,           TYPE_UINT,     0}, \
+  {CONFIG_STRING_L1_REMOTE_N_PORTD,                    NULL,                 0,         .uptr=NULL,           .defintval=50031,           TYPE_UINT,     0}, \
+  {CONFIG_STRING_L1_PRACH_DTX_THRESHOLD,               NULL,                 0,         .iptr=NULL,           .defintval=100,             TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1_DTX_THRESHOLD,              NULL,                 0,         .iptr=NULL,           .defintval=0,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1AB_DTX_THRESHOLD,            NULL,                 0,         .iptr=NULL,           .defintval=4,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PRACH_DTX_EMTC0_THRESHOLD,         NULL,                 0,         .iptr=NULL,           .defintval=200,             TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1_DTX_EMTC0_THRESHOLD,        NULL,                 0,         .iptr=NULL,           .defintval=0,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC0_THRESHOLD,      NULL,                 0,         .iptr=NULL,           .defintval=4,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PRACH_DTX_EMTC1_THRESHOLD,         NULL,                 0,         .iptr=NULL,           .defintval=200,             TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1_DTX_EMTC1_THRESHOLD,        NULL,                 0,         .iptr=NULL,           .defintval=0,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC1_THRESHOLD,      NULL,                 0,         .iptr=NULL,           .defintval=4,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PRACH_DTX_EMTC2_THRESHOLD,         NULL,                 0,         .iptr=NULL,           .defintval=200,             TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1_DTX_EMTC2_THRESHOLD,        NULL,                 0,         .iptr=NULL,           .defintval=0,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC2_THRESHOLD,      NULL,                 0,         .iptr=NULL,           .defintval=4,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PRACH_DTX_EMTC3_THRESHOLD,         NULL,                 0,         .iptr=NULL,           .defintval=200,             TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1_DTX_EMTC3_THRESHOLD,        NULL,                 0,         .iptr=NULL,           .defintval=0,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUCCH1AB_DTX_EMTC3_THRESHOLD,      NULL,                 0,         .iptr=NULL,           .defintval=4,               TYPE_INT,      0}, \
+  {CONFIG_STRING_L1_PUSCH_SIGNAL_THRESHOLD,            NULL,                 0,         .iptr=NULL,           .defintval=635,             TYPE_INT,      0}, \
+}
+// clang-format on
+
 #define L1_CC_IDX                                          0
 #define L1_TRANSPORT_N_PREFERENCE_IDX                      1
 #define L1_LOCAL_N_IF_NAME_IDX                             2

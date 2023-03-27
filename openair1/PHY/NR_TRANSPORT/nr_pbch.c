@@ -48,7 +48,7 @@ const uint8_t nr_pbch_payload_interleaving_pattern[32] = {16, 23, 18, 17, 8, 30,
                                                    };
 
 int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
-                          int32_t *txdataF,
+                          c16_t *txdataF,
                           int16_t amp,
                           uint8_t ssb_start_symbol,
                           nfapi_nr_config_request_scf_t *config,
@@ -222,7 +222,7 @@ void nr_init_pbch_interleaver(uint8_t *interleaver) {
 
 int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
                      uint8_t *interleaver,
-                     int32_t *txdataF,
+                     c16_t *txdataF,
                      int16_t amp,
                      uint8_t ssb_start_symbol,
                      uint8_t n_hf,

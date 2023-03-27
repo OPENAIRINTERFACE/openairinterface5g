@@ -51,6 +51,8 @@
 #include "telnetsrv_cpumeasur_def.h"
 #include "openair2/LAYER2/MAC/mac.h"
 #include "openair1/PHY/phy_extern.h"
+#include "openair2/LAYER2/RLC/rlc.h"
+#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.c"
 
 void measurcmd_display_macstats(telnet_printfunc_t prnt);
 void measurcmd_display_macstats_ue(telnet_printfunc_t prnt);

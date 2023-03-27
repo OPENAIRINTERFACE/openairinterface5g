@@ -20,6 +20,7 @@
  */
 
 #include "phy_init.h"
+#include "PHY/phy_extern.h"
 #include "SCHED/sched_common.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "assertions.h"
@@ -27,8 +28,6 @@
 #include "openair1/PHY/defs_RU.h"
 
 void init_prach_ru_list(RU_t *ru);
-
-extern const char ru_if_types[MAX_RU_IF_TYPES][20];
 
 int nr_phy_init_RU(RU_t *ru) {
 

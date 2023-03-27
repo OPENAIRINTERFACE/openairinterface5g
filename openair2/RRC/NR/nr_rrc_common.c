@@ -50,8 +50,6 @@ extern mui_t rrc_gNB_mui;
 //-----------------------------------------------------------------------------
 void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan)
 {
-  rrc_rlc_register_rrc (rrc_data_ind, NULL); //register with rlc
-
   chan->transport_block_size = 4;
   chan->max_transport_blocks = 16;
   chan->Delay_class = 1;
