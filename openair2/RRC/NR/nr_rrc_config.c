@@ -2000,3 +2000,306 @@ int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buff
   AssertFatal(enc_rval.encoded > 0 && enc_rval.encoded <= max_buffer_size * 8, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   return (enc_rval.encoded + 7) / 8;
 }
+
+static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
+                                                   const NR_ServingCellConfigCommon_t *scc,
+                                                   const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                                   const gNB_RrcConfigurationReq *configuration)
+{
+  // This assert will never happen in the current implementation because NUMBER_OF_UE_MAX = 4.
+  // However, if in the future NUMBER_OF_UE_MAX is increased, it will be necessary to improve the allocation of SRS resources,
+  // where the startPosition = 2 or 3 and sl160 = 17, 17, 27 ... 157 only give us 30 different allocations.
+  AssertFatal(uid >= 0 && uid < 30, "gNB cannot allocate the SRS resources\n");
+
+  const int pdsch_AntennaPorts =
+      configuration->pdsch_AntennaPorts.N1 * configuration->pdsch_AntennaPorts.N2 * configuration->pdsch_AntennaPorts.XP;
+  int curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+  NR_SpCellConfig_t *SpCellConfig = calloc(1, sizeof(*SpCellConfig));
+  SpCellConfig->servCellIndex = NULL;
+  SpCellConfig->reconfigurationWithSync = NULL;
+  SpCellConfig->rlmInSyncOutOfSyncThreshold = NULL;
+  SpCellConfig->rlf_TimersAndConstants = NULL;
+
+  SpCellConfig->spCellConfigDedicated = calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated));
+  SpCellConfig->spCellConfigDedicated->uplinkConfig = calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->uplinkConfig));
+  NR_UplinkConfig_t *uplinkConfig = SpCellConfig->spCellConfigDedicated->uplinkConfig;
+
+  NR_BWP_UplinkDedicated_t *initialUplinkBWP = calloc(1, sizeof(*initialUplinkBWP));
+  uplinkConfig->initialUplinkBWP = initialUplinkBWP;
+  initialUplinkBWP->pucch_Config = calloc(1, sizeof(*initialUplinkBWP->pucch_Config));
+  initialUplinkBWP->pucch_Config->present = NR_SetupRelease_PUCCH_Config_PR_setup;
+  NR_PUCCH_Config_t *pucch_Config = calloc(1, sizeof(*pucch_Config));
+  initialUplinkBWP->pucch_Config->choice.setup = pucch_Config;
+  pucch_Config->resourceSetToAddModList = calloc(1, sizeof(*pucch_Config->resourceSetToAddModList));
+  pucch_Config->resourceSetToReleaseList = NULL;
+  pucch_Config->resourceToAddModList = calloc(1, sizeof(*pucch_Config->resourceToAddModList));
+  pucch_Config->resourceToReleaseList = NULL;
+  config_pucch_resset0(pucch_Config, uid, curr_bwp, NULL);
+  config_pucch_resset1(pucch_Config, NULL);
+  set_pucch_power_config(pucch_Config, configuration->do_CSIRS);
+
+  initialUplinkBWP->pusch_Config = config_pusch(NULL);
+
+  long maxMIMO_Layers = uplinkConfig && uplinkConfig->pusch_ServingCellConfig
+                                && uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1
+                                && uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers
+                            ? *uplinkConfig->pusch_ServingCellConfig->choice.setup->ext1->maxMIMO_Layers
+                            : 1;
+
+  // We are using do_srs = 0 here because the periodic SRS will only be enabled in update_cellGroupConfig() if do_srs == 1
+  initialUplinkBWP->srs_Config = calloc(1, sizeof(*initialUplinkBWP->srs_Config));
+  config_srs(scc, initialUplinkBWP->srs_Config, NULL, curr_bwp, uid, 0, maxMIMO_Layers, 0);
+
+  scheduling_request_config(scc, pucch_Config, scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
+
+  set_dl_DataToUL_ACK(pucch_Config,
+                      configuration->minRXTXTIME,
+                      scc->uplinkConfigCommon->initialUplinkBWP->genericParameters.subcarrierSpacing);
+
+  SpCellConfig->spCellConfigDedicated->initialDownlinkBWP =
+      calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->initialDownlinkBWP));
+  NR_BWP_DownlinkDedicated_t *bwp_Dedicated = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP;
+  bwp_Dedicated->pdcch_Config = calloc(1, sizeof(*bwp_Dedicated->pdcch_Config));
+  bwp_Dedicated->pdcch_Config->present = NR_SetupRelease_PDCCH_Config_PR_setup;
+  bwp_Dedicated->pdcch_Config->choice.setup = calloc(1, sizeof(*bwp_Dedicated->pdcch_Config->choice.setup));
+
+  bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList =
+      calloc(1, sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
+
+  bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList =
+      calloc(1, sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList));
+
+  uint64_t bitmap = get_ssb_bitmap(scc);
+  NR_ControlResourceSet_t *coreset = get_coreset_config(0, curr_bwp, bitmap);
+
+  asn1cSeqAdd(&bwp_Dedicated->pdcch_Config->choice.setup->controlResourceSetToAddModList->list, coreset);
+
+  bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList =
+      calloc(1, sizeof(*bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList));
+
+  NR_SearchSpace_t *ss2 = rrc_searchspace_config(false, 5, coreset->controlResourceSetId);
+  asn1cSeqAdd(&bwp_Dedicated->pdcch_Config->choice.setup->searchSpacesToAddModList->list, ss2);
+
+  bwp_Dedicated->pdsch_Config = config_pdsch(bitmap, 0, pdsch_AntennaPorts);
+
+  SpCellConfig->spCellConfigDedicated->tag_Id = 0;
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig =
+      calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig));
+  NR_PDSCH_ServingCellConfig_t *pdsch_servingcellconfig = calloc(1, sizeof(*pdsch_servingcellconfig));
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->present = NR_SetupRelease_PDSCH_ServingCellConfig_PR_setup;
+  SpCellConfig->spCellConfigDedicated->pdsch_ServingCellConfig->choice.setup = pdsch_servingcellconfig;
+
+  // Downlink BWPs
+  int n_dl_bwp = 0;
+  if (servingcellconfigdedicated && servingcellconfigdedicated->downlinkBWP_ToAddModList
+      && servingcellconfigdedicated->downlinkBWP_ToAddModList->list.count > 0) {
+    n_dl_bwp = servingcellconfigdedicated->downlinkBWP_ToAddModList->list.count;
+  }
+  if (n_dl_bwp > 0) {
+    SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList =
+        calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList));
+    for (int bwp_loop = 0; bwp_loop < n_dl_bwp; bwp_loop++) {
+      NR_BWP_Downlink_t *bwp = calloc(1, sizeof(*bwp));
+      config_downlinkBWP(bwp, scc, servingcellconfigdedicated, NULL, 0, false, bwp_loop, true);
+      asn1cSeqAdd(&SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list, bwp);
+    }
+    SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id =
+        calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id));
+    *SpCellConfig->spCellConfigDedicated->firstActiveDownlinkBWP_Id =
+        servingcellconfigdedicated->firstActiveDownlinkBWP_Id ? *servingcellconfigdedicated->firstActiveDownlinkBWP_Id : 1;
+    SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id =
+        calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id));
+    *SpCellConfig->spCellConfigDedicated->defaultDownlinkBWP_Id =
+        servingcellconfigdedicated->defaultDownlinkBWP_Id ? *servingcellconfigdedicated->defaultDownlinkBWP_Id : 1;
+  }
+
+  // Uplink BWPs
+  int n_ul_bwp = 0;
+  if (servingcellconfigdedicated && servingcellconfigdedicated->uplinkConfig
+      && servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList
+      && servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count > 0) {
+    n_ul_bwp = servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList->list.count;
+  }
+  if (n_ul_bwp > 0) {
+    uplinkConfig->uplinkBWP_ToAddModList = calloc(1, sizeof(*uplinkConfig->uplinkBWP_ToAddModList));
+    for (int bwp_loop = 0; bwp_loop < n_ul_bwp; bwp_loop++) {
+      NR_BWP_Uplink_t *ubwp = calloc(1, sizeof(*ubwp));
+      config_uplinkBWP(ubwp, bwp_loop, true, uid, configuration, servingcellconfigdedicated, scc, NULL);
+      asn1cSeqAdd(&uplinkConfig->uplinkBWP_ToAddModList->list, ubwp);
+    }
+    uplinkConfig->firstActiveUplinkBWP_Id = calloc(1, sizeof(*uplinkConfig->firstActiveUplinkBWP_Id));
+    *uplinkConfig->firstActiveUplinkBWP_Id = servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id
+                                                 ? *servingcellconfigdedicated->uplinkConfig->firstActiveUplinkBWP_Id
+                                                 : 1;
+  }
+
+  SpCellConfig->spCellConfigDedicated->csi_MeasConfig = calloc(1, sizeof(*SpCellConfig->spCellConfigDedicated->csi_MeasConfig));
+  SpCellConfig->spCellConfigDedicated->csi_MeasConfig->present = NR_SetupRelease_CSI_MeasConfig_PR_setup;
+
+  NR_CSI_MeasConfig_t *csi_MeasConfig = calloc(1, sizeof(*csi_MeasConfig));
+  SpCellConfig->spCellConfigDedicated->csi_MeasConfig->choice.setup = csi_MeasConfig;
+
+  csi_MeasConfig->csi_SSB_ResourceSetToAddModList = calloc(1, sizeof(*csi_MeasConfig->csi_SSB_ResourceSetToAddModList));
+  csi_MeasConfig->csi_SSB_ResourceSetToReleaseList = NULL;
+  csi_MeasConfig->csi_ResourceConfigToAddModList = calloc(1, sizeof(*csi_MeasConfig->csi_ResourceConfigToAddModList));
+  csi_MeasConfig->csi_ResourceConfigToReleaseList = NULL;
+  csi_MeasConfig->csi_ReportConfigToAddModList = calloc(1, sizeof(*csi_MeasConfig->csi_ReportConfigToAddModList));
+  csi_MeasConfig->csi_ReportConfigToReleaseList = NULL;
+
+  NR_CSI_SSB_ResourceSet_t *ssbresset0 = calloc(1, sizeof(*ssbresset0));
+  ssbresset0->csi_SSB_ResourceSetId = 0;
+
+  for (int i = 0; i < 64; i++) {
+    if ((bitmap >> (63 - i)) & 0x01) {
+      NR_SSB_Index_t *ssbres = NULL;
+      asn1cCallocOne(ssbres, i);
+      asn1cSeqAdd(&ssbresset0->csi_SSB_ResourceList.list, ssbres);
+    }
+  }
+  asn1cSeqAdd(&csi_MeasConfig->csi_SSB_ResourceSetToAddModList->list, ssbresset0);
+
+  int bwp_loop_end = n_dl_bwp > 0 ? n_dl_bwp : 1;
+  for (int bwp_loop = 0; bwp_loop < bwp_loop_end; bwp_loop++) {
+    int curr_bwp, bwp_id;
+    struct NR_SetupRelease_PDSCH_Config *pdsch_Config;
+    if (n_dl_bwp == 0) {
+      pdsch_Config = SpCellConfig->spCellConfigDedicated->initialDownlinkBWP->pdsch_Config;
+      curr_bwp = NRRIV2BW(scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      bwp_id = 0;
+    } else {
+      NR_BWP_Downlink_t *bwp = SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
+      pdsch_Config = bwp->bwp_Dedicated->pdsch_Config;
+      curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
+      bwp_id = bwp->bwp_Id;
+    }
+
+    config_csirs(scc, csi_MeasConfig, uid, pdsch_AntennaPorts, curr_bwp, configuration->do_CSIRS, bwp_loop);
+    config_csiim(configuration->do_CSIRS, pdsch_AntennaPorts, curr_bwp, csi_MeasConfig, bwp_loop);
+
+    NR_CSI_ResourceConfig_t *csires1 = calloc(1, sizeof(*csires1));
+    csires1->csi_ResourceConfigId = bwp_id + 20;
+    csires1->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
+    csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB =
+        calloc(1, sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
+    csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList =
+        calloc(1, sizeof(*csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList));
+    NR_CSI_SSB_ResourceSetId_t *ssbres00 = calloc(1, sizeof(*ssbres00));
+    *ssbres00 = 0;
+    asn1cSeqAdd(&csires1->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->csi_SSB_ResourceSetList->list, ssbres00);
+    csires1->bwp_Id = bwp_id;
+    csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+    asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list, csires1);
+
+    NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1, sizeof(*pucchcsires1));
+    pucchcsires1->uplinkBandwidthPartId = bwp_id;
+    pucchcsires1->pucch_Resource = 2;
+
+    if (configuration->do_CSIRS) {
+      NR_CSI_ResourceConfig_t *csires0 = calloc(1, sizeof(*csires0));
+      csires0->csi_ResourceConfigId = bwp_id;
+      csires0->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB;
+      csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB =
+          calloc(1, sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB));
+      csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList =
+          calloc(1, sizeof(*csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList));
+      NR_NZP_CSI_RS_ResourceSetId_t *nzp0 = calloc(1, sizeof(*nzp0));
+      *nzp0 = bwp_loop;
+      asn1cSeqAdd(&csires0->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list, nzp0);
+      csires0->bwp_Id = bwp_id;
+      csires0->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+      asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list, csires0);
+    }
+
+    if (configuration->do_CSIRS && pdsch_AntennaPorts > 1) {
+      NR_CSI_ResourceConfig_t *csires2 = calloc(1, sizeof(*csires2));
+      csires2->csi_ResourceConfigId = bwp_id + 10;
+      csires2->csi_RS_ResourceSetList.present = NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_csi_IM_ResourceSetList;
+      csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList =
+          calloc(1, sizeof(*csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList));
+      NR_CSI_IM_ResourceSetId_t *csiim00 = calloc(1, sizeof(*csiim00));
+      *csiim00 = bwp_loop;
+      asn1cSeqAdd(&csires2->csi_RS_ResourceSetList.choice.csi_IM_ResourceSetList->list, csiim00);
+      csires2->bwp_Id = bwp_id;
+      csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
+      asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list, csires2);
+
+      config_csi_meas_report(csi_MeasConfig,
+                             scc,
+                             pucchcsires1,
+                             pdsch_Config,
+                             &configuration->pdsch_AntennaPorts,
+                             NR_MAX_SUPPORTED_DL_LAYERS,
+                             bwp_id,
+                             uid);
+    }
+    config_rsrp_meas_report(csi_MeasConfig, scc, pucchcsires1, configuration->do_CSIRS, bwp_id + 10, uid);
+  }
+  pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
+  pdsch_servingcellconfig->xOverhead = NULL;
+  pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = calloc(1, sizeof(*pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH));
+  *pdsch_servingcellconfig->nrofHARQ_ProcessesForPDSCH = NR_PDSCH_ServingCellConfig__nrofHARQ_ProcessesForPDSCH_n16;
+  pdsch_servingcellconfig->pucch_Cell = NULL;
+  pdsch_servingcellconfig->ext1 = calloc(1, sizeof(*pdsch_servingcellconfig->ext1));
+  pdsch_servingcellconfig->ext1->maxMIMO_Layers = calloc(1, sizeof(*pdsch_servingcellconfig->ext1->maxMIMO_Layers));
+  *pdsch_servingcellconfig->ext1->maxMIMO_Layers = 2;
+
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_SpCellConfig, SpCellConfig);
+  }
+  return SpCellConfig;
+}
+
+NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
+                                                  const NR_ServingCellConfigCommon_t *scc,
+                                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                                  const gNB_RrcConfigurationReq *configuration)
+{
+  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(*cellGroupConfig));
+  cellGroupConfig->cellGroupId = 0;
+
+  /* Rlc Bearer Config */
+  /* TS38.331 9.2.1	Default SRB configurations */
+  cellGroupConfig->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+  NR_RLC_BearerConfig_t *rlc_BearerConfig =
+      get_SRB_RLC_BearerConfig(1, 1, NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration_ms1000);
+  asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, rlc_BearerConfig);
+
+  cellGroupConfig->rlc_BearerToReleaseList = NULL;
+
+  /* mac CellGroup Config */
+  cellGroupConfig->mac_CellGroupConfig = configure_mac_cellgroup();
+
+  NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig = calloc(1, sizeof(*physicalCellGroupConfig));
+  physicalCellGroupConfig->p_NR_FR1 = NULL;
+  physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
+  cellGroupConfig->physicalCellGroupConfig = physicalCellGroupConfig;
+
+  cellGroupConfig->spCellConfig = get_initial_SpCellConfig(uid, scc, servingcellconfigdedicated, configuration);
+
+  cellGroupConfig->sCellToAddModList = NULL;
+  cellGroupConfig->sCellToReleaseList = NULL;
+  return cellGroupConfig;
+}
+
+void free_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig)
+{
+  ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, cellGroupConfig);
+}
+
+int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size)
+{
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, cellGroupConfig, buffer, max_buffer_size);
+  AssertFatal(enc_rval.encoded > 0 && enc_rval.encoded <= max_buffer_size * 8,
+              "ASN1 message encoding failed (%s, %lu)!\n",
+              enc_rval.failed_type->name,
+              enc_rval.encoded);
+  return (enc_rval.encoded + 7) / 8;
+}
+
+NR_CellGroupConfig_t *decode_cellGroupConfig(const uint8_t *buffer, int buffer_size)
+{
+  NR_CellGroupConfig_t *cellGroupConfig = NULL;
+  asn_dec_rval_t rval = uper_decode(NULL, &asn_DEF_NR_CellGroupConfig, (void **)&cellGroupConfig, buffer, buffer_size, 0, 0);
+  AssertFatal(rval.code == RC_OK, "could not decode cellGroupConfig\n");
+  return cellGroupConfig;
+}

@@ -2884,24 +2884,16 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
 
   NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
 
-  uint8_t du2cu_rrc_container[1024];
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                                  NULL,
-                                                  UE->CellGroup,
-                                                  du2cu_rrc_container,
-                                                  sizeof(du2cu_rrc_container));
-  AssertFatal(enc_rval.encoded > 0,
-              "Could not encode cellGroupConfig for UE %04x, failed element %s\n",
-              rnti,
-              enc_rval.failed_type->name);
+  uint8_t du2cu[1024];
+  int encoded = encode_cellGroupConfig(UE->CellGroup, du2cu, sizeof(du2cu));
 
   const f1ap_initial_ul_rrc_message_t ul_rrc_msg = {
     /* TODO: add mcc, mnc, cell_id, ..., is not available at MAC yet */
     .crnti = rnti,
     .rrc_container = (uint8_t *) sdu,
     .rrc_container_length = sdu_len,
-    .du2cu_rrc_container = (uint8_t *) du2cu_rrc_container,
-    .du2cu_rrc_container_length = (enc_rval.encoded + 7) / 8
+    .du2cu_rrc_container = (uint8_t *) du2cu,
+    .du2cu_rrc_container_length = encoded
   };
   mac->mac_rrc.initial_ul_rrc_message_transfer(0, &ul_rrc_msg);
 }
@@ -2915,20 +2907,7 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   gNB_RRC_INST *rrc = RC.nrrrc[mod_id];
   const NR_ServingCellConfigCommon_t *scc = rrc->carrier.servingcellconfigcommon;
   const NR_ServingCellConfig_t *sccd = rrc->configuration.scd;
-  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(*cellGroupConfig));
-  AssertFatal(cellGroupConfig != NULL, "out of memory\n");
-  fill_initial_cellGroupConfig(UE->uid, cellGroupConfig, scc, sccd, &rrc->configuration);
-
-  uint8_t du2cu_rrc_container[1024];
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                                  NULL,
-                                                  cellGroupConfig,
-                                                  du2cu_rrc_container,
-                                                  sizeof(du2cu_rrc_container));
-  AssertFatal(enc_rval.encoded > 0,
-              "Could not encode cellGroupConfig for UE %04x, failed element %s\n",
-              UE->rnti,
-              enc_rval.failed_type->name);
+  NR_CellGroupConfig_t *cellGroupConfig = get_initial_cellGroupConfig(UE->uid, scc, sccd, &rrc->configuration);
 
   UE->CellGroup = cellGroupConfig;
   nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);

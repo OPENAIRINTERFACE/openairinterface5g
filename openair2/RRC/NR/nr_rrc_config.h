@@ -115,4 +115,12 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
 void free_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1);
 int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buffer_size);
 
+NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
+                                                  const NR_ServingCellConfigCommon_t *scc,
+                                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                                  const gNB_RrcConfigurationReq *configuration);
+void free_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig);
+int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size);
+NR_CellGroupConfig_t *decode_cellGroupConfig(const uint8_t *buffer, int max_buffer_size);
+
 #endif

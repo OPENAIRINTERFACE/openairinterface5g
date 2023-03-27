@@ -64,17 +64,10 @@ void do_SpCellConfig(gNB_RRC_INST *rrc,
 int do_RRCReject(uint8_t Mod_id,
                  uint8_t *const buffer);
 
-void fill_initial_SpCellConfig(int uid,
-                               NR_SpCellConfig_t *SpCellConfig,
-                               const NR_ServingCellConfigCommon_t *scc,
-                               const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                               const gNB_RrcConfigurationReq *configuration);
-
-void fill_initial_cellGroupConfig(int uid,
-                                  NR_CellGroupConfig_t *cellGroupConfig,
-                                  const NR_ServingCellConfigCommon_t *scc,
-                                  const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                                  const gNB_RrcConfigurationReq *configuration);
+NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(
+    long channelId,
+    long priority,
+    e_NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration bucketSizeDuration);
 
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
