@@ -214,7 +214,7 @@ typedef enum {
   {CONFIG_STRING_RU_NUM_TP_CORES,              HLP_RU_NUM_TP_CORES,               0,       .uptr=NULL,       .defintval=2,                 TYPE_UINT,        0}, \
   {CONFIG_STRING_RU_NUM_INTERFACES,            HLP_RU_NUM_INTERFACES,             0,       .uptr=NULL,       .defintval=1,                 TYPE_UINT,        0}, \
   {CONFIG_STRING_RU_HALF_SLOT_PARALLELIZATION, HLP_RU_HALF_SLOT_PARALLELIZATION,  0,       .uptr=NULL,       .defintval=1,                 TYPE_UINT,        0}, \
-  {CONFIG_STRING_RU_RU_THREAD_CORE,            HLP_RU_RU_THREAD_CORE,             0,       .uptr:NULL,       .defintval:-1,                TYPE_UINT,         0}, \
+  {CONFIG_STRING_RU_RU_THREAD_CORE,            HLP_RU_RU_THREAD_CORE,             0,       .uptr=NULL,       .defintval=-1,                TYPE_UINT,         0}, \
 }
 // clang-format on
 
