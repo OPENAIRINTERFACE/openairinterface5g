@@ -86,7 +86,6 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
     return encode_size;
   }
 
-  // TODO BCCH SIB1 SIBs
   if ((Srb_id & RAB_OFFSET) == BCCH) {
     memcpy(&buffer_pP[0], RC.nrrrc[Mod_idP]->carrier.SIB1, RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1);
     return RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1;

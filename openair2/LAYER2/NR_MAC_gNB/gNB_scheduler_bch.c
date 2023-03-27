@@ -38,7 +38,7 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "RRC/NR/nr_rrc_extern.h"
+#include "RRC/NR/nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 
 

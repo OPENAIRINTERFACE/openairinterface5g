@@ -109,4 +109,10 @@ NR_BCCH_BCH_Message_t *get_new_MIB_NR(const NR_ServingCellConfigCommon_t *scc);
 void free_MIB_NR(NR_BCCH_BCH_Message_t *mib);
 int encode_MIB_NR(NR_BCCH_BCH_Message_t *mib, int frame, uint8_t *buf, int buf_size);
 
+
+#define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1
+NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configuration);
+void free_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1);
+int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buffer_size);
+
 #endif

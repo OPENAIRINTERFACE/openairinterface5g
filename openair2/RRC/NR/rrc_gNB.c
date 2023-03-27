@@ -181,7 +181,12 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
     rrc->carrier.mib = get_new_MIB_NR(rrc->carrier.servingcellconfigcommon);
 
   if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
-    rrc->carrier.sizeof_SIB1 = do_SIB1_NR(&rrc->carrier,configuration);
+    NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(configuration);
+    rrc->carrier.SIB1 = calloc(NR_MAX_SIB_LENGTH / 8, sizeof(*rrc->carrier.SIB1));
+    AssertFatal(rrc->carrier.SIB1 != NULL, "out of memory\n");
+    rrc->carrier.sizeof_SIB1 = encode_SIB1_NR(sib1, rrc->carrier.SIB1, NR_MAX_SIB_LENGTH / 8);
+    rrc->carrier.siblock1 = sib1;
+    nr_mac_config_sib1(RC.nrmac[rrc->module_id], sib1);
   }
 
   if (!NODE_IS_DU(rrc->node_type)) {
@@ -203,8 +208,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                       rrc->configuration.minRXTXTIME,
                       rrc->carrier.servingcellconfigcommon);
     nr_mac_config_mib(RC.nrmac[rrc->module_id], rrc->carrier.mib);
-    if (get_softmodem_params()->sa)
-      nr_mac_config_sib1(RC.nrmac[rrc->module_id], rrc->carrier.siblock1);
   }
 
   /* set flag to indicate that cell information is configured. This is required
