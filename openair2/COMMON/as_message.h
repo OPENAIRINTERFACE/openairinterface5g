@@ -469,7 +469,11 @@ typedef ul_info_transfer_ind_t dl_info_transfer_ind_t;
  */
 
 /* TODO: Quality of Service parameters */
-typedef struct {} as_qos_t;
+typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
+} as_qos_t;
 
 /*
  * NAS->AS - Radio access bearer establishment request
