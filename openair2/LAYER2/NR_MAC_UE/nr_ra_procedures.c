@@ -813,7 +813,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         uint16_t sdu_lengths[NB_RB_MAX] = {0};
         int TBS_bytes = 848;
         int mac_ce_len = 0;
-        int header_length_total=0;
         unsigned short post_padding = 1;
 
         // fill ulsch_buffer with random data
@@ -823,7 +822,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         //Sending SDUs with size 1
         //Initialize elements of sdu_lengths
         sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
         size_sdu += sdu_lengths[0];
 
         if (size_sdu > 0) {
