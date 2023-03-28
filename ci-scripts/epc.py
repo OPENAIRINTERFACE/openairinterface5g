@@ -615,7 +615,8 @@ class EPCManagement():
 			       mySSH.run(f'oc logs -f {podName} -c {ii} &> {lSourcePath}/logs/{ii}.log &')
 			       mySSH.run(f'helm uninstall {ii}')
 			       podName = ''
-			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq {self.eNBSourceCodePath}/ci-scripts/CN_logs.zip *.log')
+			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq {self.eNBSourceCodePath}/ci-scripts/test_logs_CN.zip *.log')
+			mySSH.copyin(f'{self.eNBSourceCodePath}/ci-scripts/test_logs_CN.zip','test_logs_CN.zip')
 			ret = mySSH.run(f'oc get pods', silent=True)
 			res = re.search('No resources found in oaicicd-ran namespace.', ret.stdout)
 			if res is not None:
