@@ -337,6 +337,42 @@ NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(long channelId,
   return rlc_BearerConfig;
 }
 
+static void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config_pr)
+{
+  switch (rlc_config_pr) {
+    case NR_RLC_Config_PR_um_Bi_Directional:
+      // RLC UM Bi-directional Bearer configuration
+      LOG_I(RLC, "RLC UM Bi-directional Bearer configuration selected \n");
+      rlc_Config->choice.um_Bi_Directional = calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional));
+      rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength =
+          calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength));
+      *rlc_Config->choice.um_Bi_Directional->ul_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
+      rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength =
+          calloc(1, sizeof(*rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength));
+      *rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.sn_FieldLength = NR_SN_FieldLengthUM_size12;
+      rlc_Config->choice.um_Bi_Directional->dl_UM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+      break;
+    case NR_RLC_Config_PR_am:
+      // RLC AM Bearer configuration
+      rlc_Config->choice.am = calloc(1, sizeof(*rlc_Config->choice.am));
+      rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = calloc(1, sizeof(*rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength));
+      *rlc_Config->choice.am->ul_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+      rlc_Config->choice.am->ul_AM_RLC.t_PollRetransmit = NR_T_PollRetransmit_ms45;
+      rlc_Config->choice.am->ul_AM_RLC.pollPDU = NR_PollPDU_p64;
+      rlc_Config->choice.am->ul_AM_RLC.pollByte = NR_PollByte_kB500;
+      rlc_Config->choice.am->ul_AM_RLC.maxRetxThreshold = NR_UL_AM_RLC__maxRetxThreshold_t32;
+      rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = calloc(1, sizeof(*rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength));
+      *rlc_Config->choice.am->dl_AM_RLC.sn_FieldLength = NR_SN_FieldLengthAM_size18;
+      rlc_Config->choice.am->dl_AM_RLC.t_Reassembly = NR_T_Reassembly_ms15;
+      rlc_Config->choice.am->dl_AM_RLC.t_StatusProhibit = NR_T_StatusProhibit_ms15;
+      break;
+    default:
+      AssertFatal(false, "RLC config type %d not handled\n", rlc_config_pr);
+      break;
+  }
+  rlc_Config->present = rlc_config_pr;
+}
+
 NR_RLC_BearerConfig_t *get_DRB_RLC_BearerConfig(long lcChannelId, long drbId, NR_RLC_Config_PR rlc_conf, long priority)
 {
   NR_RLC_BearerConfig_t *rlc_BearerConfig                  = calloc(1, sizeof(NR_RLC_BearerConfig_t));

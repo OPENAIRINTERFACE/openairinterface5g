@@ -962,6 +962,7 @@ bool rrc_pdcp_config_asn1_req(const protocol_ctxt_t *const  ctxt_pP,
   return 0;
 }
 
+extern NR_RLC_BearerConfig_t *get_DRB_RLC_BearerConfig(long lcChannelId, long drbId, NR_RLC_Config_PR rlc_conf, long priority);
 void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
 {
 
@@ -1011,11 +1012,7 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid)
     xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
   }
 
-  NR_RLC_BearerConfig_t *RLC_BearerConfig = calloc(1,sizeof(*RLC_BearerConfig));
-  nr_rlc_bearer_init(RLC_BearerConfig,NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity);
-  nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_um_Bi_Directional);
-  //nr_drb_config(RLC_BearerConfig->rlc_Config, NR_RLC_Config_PR_am);
-  nr_rlc_bearer_init_ul_spec(RLC_BearerConfig->mac_LogicalChannelConfig);
+  NR_RLC_BearerConfig_t *RLC_BearerConfig = get_DRB_RLC_BearerConfig(4, 1, NR_RLC_Config_PR_um_Bi_Directional, 1);
 
   Rlc_Bearer_ToAdd_list = calloc(1,sizeof(*Rlc_Bearer_ToAdd_list));
   asn1cSeqAdd(&Rlc_Bearer_ToAdd_list->list, RLC_BearerConfig);
