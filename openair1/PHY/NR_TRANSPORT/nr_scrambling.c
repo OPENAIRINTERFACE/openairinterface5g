@@ -51,6 +51,7 @@ void nr_codeword_unscrambling(int16_t* llr, uint32_t size, uint8_t q, uint32_t N
   uint32_t x2 = (n_RNTI << 15) + (q << 14) + Nid;
   uint32_t s = 0;
 
+#if defined(__x86_64__) || defined(__i386__) || defined(__arm__) || defined(__aarch64__)
   uint8_t *s8=(uint8_t *)&s;
   simde__m128i *llr128 = (simde__m128i*)llr;
   s = lte_gold_generic(&x1, &x2, 1);
@@ -62,4 +63,16 @@ void nr_codeword_unscrambling(int16_t* llr, uint32_t size, uint8_t q, uint32_t N
     llr128[j+3] = simde_mm_mullo_epi16(llr128[j+3],byte2m128i[s8[3]]);
     s = lte_gold_generic(&x1, &x2, 0);
   }
+#else
+  uint8_t reset = 1;
+
+  for (uint32_t i=0; i<size; i++) {
+    if ((i&0x1f)==0) {
+      s = lte_gold_generic(&x1, &x2, reset);
+      reset = 0;
+    }
+    if (((s>>(i&0x1f))&1)==1)
+      llr[i] = -llr[i];
+  }
+#endif
 }
