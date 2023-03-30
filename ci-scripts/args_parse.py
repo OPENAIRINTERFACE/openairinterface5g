@@ -226,14 +226,6 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM,CLUST
         elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
             EPC.ContainerPrefix=matchReg.group(1)
-        elif re.match('^\-\-ADBIPAddress=(.+)$', myArgv, re.IGNORECASE):
-            print("ignoring --ADBIPAddress parameter")
-        elif re.match('^\-\-ADBUserName=(.+)$', myArgv, re.IGNORECASE):
-            print("ignoring --ADBUserName parameter")
-        elif re.match('^\-\-ADBType=(.+)$', myArgv, re.IGNORECASE):
-            print("ignoring --ADBType parameter")
-        elif re.match('^\-\-ADBPassword=(.+)$', myArgv, re.IGNORECASE):
-            print("ignoring --ADBPassword parameter")
         elif re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-XMLTestFile=(.+)$', myArgv, re.IGNORECASE)
             CiTestObj.testXMLfiles.append(matchReg.group(1))
