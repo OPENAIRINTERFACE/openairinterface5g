@@ -686,7 +686,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                                          NR_DL_DCI_FORMAT_1_0,
-                                                         (get_softmodem_params()->nsa) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
+                                                         mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          tda_info.mapping_type,
@@ -2421,6 +2421,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
   switch(dci_format) {
 
   case NR_DL_DCI_FORMAT_1_0:
+
     switch(rnti_type) {
     case NR_RNTI_RA:
       // Freq domain assignment
@@ -3256,7 +3257,7 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 	  }
 
           if ( (ra->RA_active == 1) && ra_success) {
-            nr_ra_succeeded(module_idP, frameP, slot);
+            nr_ra_succeeded(module_idP, gNB_index, frameP, slot);
           } else if (!ra_success){
             // TODO: Handle failure of RA procedure @ MAC layer
             //  nr_ra_failed(module_idP, CC_id, prach_resources, frameP, slot); // prach_resources is a PHY structure

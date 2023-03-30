@@ -1286,10 +1286,38 @@ nr_rrc_ue_process_masterCellGroup(
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
   }
 
-  if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
-    //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
-    //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
-    // NSA procedures
+  // TS 38.331 - Section 5.3.5.5.2 Reconfiguration with sync
+  if (cellGroupConfig->spCellConfig != NULL && cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL) {
+
+    LOG_A(NR_RRC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
+
+    NR_ReconfigurationWithSync_t *reconfigurationWithSync = cellGroupConfig->spCellConfig->reconfigurationWithSync;
+    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_active = 1;
+    switch (reconfigurationWithSync->t304) {
+      case NR_ReconfigurationWithSync__t304_ms100:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 100;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms150:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 150;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms200:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 200;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms500:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 500;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms1000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 1000;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms2000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 2000;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms10000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 10000;
+        break;
+      default:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 50;
+    }
   }
 
   if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
@@ -2861,4 +2889,30 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");
     }
+}
+
+void *nr_rrc_timers_update() {
+
+  while (1) {
+
+    for (int mod_id = 0; mod_id < NB_NR_UE_INST; mod_id++) {
+      for (int i = 0; i < NB_SIG_CNX_UE; i++) {
+        NR_UE_RRC_INFO *timers = &NR_UE_rrc_inst[mod_id].Info[i];
+
+        // T304
+        if (timers->T304_active == 1) {
+          if ((timers->T304_cnt % 100) == 0) {
+            LOG_W(NR_RRC, "T304: %u\n", timers->T304_cnt);
+          }
+          if (timers->T304_cnt == 1) {
+            timers->T304_active = 0;
+          }
+          timers->T304_cnt--;
+        }
+
+      }
+    }
+
+    usleep(1000);
+  }
 }

@@ -300,11 +300,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       /* time samples in buffer rxdata are used as input of FFT -> FFT results are stored in the frequency buffer rxdataF */
       /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
-      for(int i=0; i<4;i++)
+      for (int i = 0; i < NR_N_SYMBOLS_SSB; i++)
         nr_slot_fep_init_sync(ue,
                               proc,
                               i,
-                              is*fp->samples_per_frame+ue->ssb_offset,
+                              is * fp->samples_per_frame + ue->ssb_offset,
                               false,
                               rxdataF);
 
@@ -520,6 +520,10 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
 #endif
 
+  }
+
+  if (ue->target_Nid_cell != -1) {
+    return ret;
   }
 
   // if stand alone and sync on ssb do sib1 detection as part of initial sync

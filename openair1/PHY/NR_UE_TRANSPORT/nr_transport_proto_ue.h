@@ -251,6 +251,8 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       NR_DL_FRAME_PARMS *frame_parms,
                                       uint8_t Nl);
 
+int8_t clean_UE_ulsch(PHY_VARS_NR_UE *UE, uint8_t gNB_id);
+
 void nr_dlsch_unscrambling(int16_t* llr,
 			   uint32_t size,
 			   uint8_t q,
@@ -313,7 +315,7 @@ int dump_ue_stats(PHY_VARS_NR_UE *phy_vars_ue, UE_nr_rxtx_proc_t *proc, char* bu
   @param mode current running mode
 */
 int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
-                    PHY_VARS_NR_UE *phy_vars_ue, 
+                    PHY_VARS_NR_UE *phy_vars_ue,
                     int n_frames,
                     int sa);
 

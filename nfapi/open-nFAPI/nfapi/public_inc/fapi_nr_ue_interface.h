@@ -655,6 +655,10 @@ typedef struct
 } fapi_nr_prach_config_t;
 
 typedef struct {
+  uint16_t target_Nid_cell;
+} fapi_nr_synch_request_t;
+
+typedef struct {
   uint32_t config_mask;
 
   fapi_nr_ue_carrier_config_t carrier_config;

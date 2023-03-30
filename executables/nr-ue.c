@@ -157,6 +157,7 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
   ue->dci_thres   = 0;
+  ue->target_Nid_cell = -1;
 
   // initialize all signal buffers
   init_nr_ue_signal(ue, nb_connected_gNB);
@@ -413,7 +414,11 @@ static void UE_synch(void *arg) {
     */
   }
 
-  LOG_W(PHY, "Starting sync detection\n");
+  if (UE->target_Nid_cell != -1) {
+    LOG_W(NR_PHY, "Starting re-sync detection for target Nid_cell %i\n", UE->target_Nid_cell);
+  } else {
+    LOG_W(NR_PHY, "Starting sync detection\n");
+  }
 
   switch (sync_mode) {
     /*
@@ -597,6 +602,17 @@ void UE_processing(nr_rxtx_thread_data_t *rxtxD) {
   nr_phy_data_t phy_data = {0};
 
   if (IS_SOFTMODEM_NOS1 || get_softmodem_params()->sa) {
+
+    // Start synchronization with a target gNB
+    if (UE->synch_request.received_synch_request == 1 && UE->target_Nid_cell == -1) {
+      UE->is_synchronized = 0;
+      UE->target_Nid_cell = UE->synch_request.synch_req.target_Nid_cell;
+      clean_UE_ulsch(UE, proc->gNB_id);
+    } else if (UE->synch_request.received_synch_request == 1 && UE->target_Nid_cell != -1) {
+      UE->synch_request.received_synch_request = 0;
+      UE->target_Nid_cell = -1;
+    }
+
     /* send tick to RLC and PDCP every ms */
     if (proc->nr_slot_rx % UE->frame_parms.slots_per_subframe == 0) {
       void nr_rlc_tick(int frame, int subframe);
@@ -815,13 +831,13 @@ void *UE_thread(void *arg) {
 
     if (!UE->is_synchronized) {
       readFrame(UE, &timestamp, false);
-      notifiedFIFO_elt_t *Msg=newNotifiedFIFO_elt(sizeof(syncData_t),0,&nf,UE_synch);
-      syncData_t *syncMsg=(syncData_t *)NotifiedFifoData(Msg);
-      syncMsg->UE=UE;
+      notifiedFIFO_elt_t *Msg = newNotifiedFIFO_elt(sizeof(syncData_t), 0, &nf, UE_synch);
+      syncData_t *syncMsg = (syncData_t *)NotifiedFifoData(Msg);
+      syncMsg->UE = UE;
       memset(&syncMsg->proc, 0, sizeof(syncMsg->proc));
       pushTpool(&(get_nrUE_params()->Tpool), Msg);
-      trashed_frames=0;
-      syncRunning=true;
+      trashed_frames = 0;
+      syncRunning = true;
       continue;
     }
 
