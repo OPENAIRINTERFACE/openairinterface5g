@@ -151,7 +151,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 
   // NR RRCReconfiguration
   UE->reconfig = calloc(1, sizeof(NR_RRCReconfiguration_t));
-  UE->secondaryCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
   memset((void *)UE->reconfig, 0, sizeof(NR_RRCReconfiguration_t));
   UE->reconfig->rrc_TransactionIdentifier = 0;
   UE->reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
@@ -239,6 +238,16 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   }
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;
+  UE->secondaryCellGroup = get_default_secondaryCellGroup(carrier->servingcellconfigcommon,
+                                                          scc,
+                                                          UE->UE_Capability_nr,
+                                                          1,
+                                                          1,
+                                                          configuration,
+                                                          ue_context_p->ue_context.gNB_ue_ngap_id);
+  AssertFatal(UE->secondaryCellGroup != NULL, "out of memory\n");
+  xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->secondaryCellGroup);
+
   fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.gNB_ue_ngap_id);
   // the UE context is not yet inserted in the RRC UE manager
   // rrc_gNB_update_ue_context_rnti(UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, rrc,

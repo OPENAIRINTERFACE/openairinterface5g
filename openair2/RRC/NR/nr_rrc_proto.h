@@ -73,15 +73,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 
 void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti);
 
-void fill_default_secondaryCellGroup(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                                     NR_ServingCellConfig_t *servingcellconfigdedicated,
-                                     NR_CellGroupConfig_t *secondaryCellGroup,
-                                     NR_UE_NR_Capability_t *uecap,
-                                     int scg_id,
-                                     int servCellIndex,
-                                     const gNB_RrcConfigurationReq *configuration,
-                                     int uid);
-
 void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                            NR_ServingCellConfig_t *servingcellconfigdedicated,
                            NR_RRCReconfiguration_IEs_t *reconfig,

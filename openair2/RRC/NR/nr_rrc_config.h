@@ -45,8 +45,8 @@ void nr_rrc_config_dl_tda(struct NR_PDSCH_TimeDomainResourceAllocationList *pdsc
                           NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,
                           int curr_bwp);
 void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay);
-void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, NR_UE_NR_Capability_t *uecap);
-void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, NR_UE_NR_Capability_t *uecap);
+void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, const NR_UE_NR_Capability_t *uecap);
+void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, const NR_UE_NR_Capability_t *uecap);
 void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing);
 void set_pucch_power_config(NR_PUCCH_Config_t *pucch_Config, int do_csirs);
 void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
@@ -80,7 +80,7 @@ void config_srs(const NR_ServingCellConfigCommon_t *scc,
                 const int do_srs);
 struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_Id, int dl_antenna_ports);
 void set_dl_mcs_table(int scs,
-                      NR_UE_NR_Capability_t *cap,
+                      const NR_UE_NR_Capability_t *cap,
                       NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
                       const NR_ServingCellConfigCommon_t *scc);
 void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
@@ -92,7 +92,7 @@ struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Confi
 void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
                         const NR_ServingCellConfigCommon_t *scc,
                         const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                        NR_UE_NR_Capability_t *uecap,
+                        const NR_UE_NR_Capability_t *uecap,
                         int dl_antenna_ports,
                         bool force_256qam_off,
                         int bwp_loop, bool is_SA);
@@ -101,7 +101,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                       const gNB_RrcConfigurationReq *configuration,
                       const NR_ServingCellConfig_t *servingcellconfigdedicated,
                       const NR_ServingCellConfigCommon_t *scc,
-                      NR_UE_NR_Capability_t *uecap);
+                      const NR_UE_NR_Capability_t *uecap);
 NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void);
 
 
@@ -126,5 +126,17 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 void free_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig);
 int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size);
 NR_CellGroupConfig_t *decode_cellGroupConfig(const uint8_t *buffer, int max_buffer_size);
+
+/* Note: this function returns a new CellGroupConfig for a user with given
+ * configuration, but it will also overwrite the ServingCellConfig passed in
+ * parameter servingcellconfigdedicated! */
+NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                                                     NR_ServingCellConfig_t *servingcellconfigdedicated,
+                                                     const NR_UE_NR_Capability_t *uecap,
+                                                     int scg_id,
+                                                     int servCellIndex,
+                                                     const gNB_RrcConfigurationReq *configuration,
+                                                     int uid);
+
 
 #endif
