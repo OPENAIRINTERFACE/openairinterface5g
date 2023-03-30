@@ -187,6 +187,4 @@ nr_pdcp_entity_t *new_nr_pdcp_entity(
     unsigned char *ciphering_key,
     unsigned char *integrity_key);
 
-void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
-
 #endif /* _NR_PDCP_ENTITY_H_ */

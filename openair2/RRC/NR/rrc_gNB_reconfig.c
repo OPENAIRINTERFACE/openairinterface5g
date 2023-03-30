@@ -47,6 +47,7 @@
 #include "executables/softmodem-common.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr_rrc_config.h"
+#include "MESSAGES/asn1_msg.h"
 
 void fix_servingcellconfigdedicated(NR_ServingCellConfig_t *scd) {
 
@@ -440,54 +441,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
   reconfig->nonCriticalExtension = NULL;
 }
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
-                          int eps_bearer_id, int rb_id,
-                           e_NR_CipheringAlgorithm ciphering_algorithm,
-                           e_NR_SecurityConfig__keyToUse key_to_use) {
-
-  rbconfig->srb_ToAddModList = NULL;
-  rbconfig->srb3_ToRelease = NULL;
-  rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
-  NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
-  drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
-  drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
-  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= eps_bearer_id;
-  drb_ToAddMod->drb_Identity = rb_id;
-  drb_ToAddMod->reestablishPDCP = NULL;
-  drb_ToAddMod->recoverPDCP = NULL;
-  drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
-  drb_ToAddMod->pdcp_Config->drb = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb));
-  drb_ToAddMod->pdcp_Config->drb->discardTimer = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->discardTimer));
-  *drb_ToAddMod->pdcp_Config->drb->discardTimer=NR_PDCP_Config__drb__discardTimer_infinity;
-  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL));
-  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-  drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL));
-  *drb_ToAddMod->pdcp_Config->drb->pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-  drb_ToAddMod->pdcp_Config->drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-  drb_ToAddMod->pdcp_Config->drb->headerCompression.choice.notUsed = 0;
-
-  drb_ToAddMod->pdcp_Config->drb->integrityProtection=NULL;
-  drb_ToAddMod->pdcp_Config->drb->statusReportRequired=NULL;
-  drb_ToAddMod->pdcp_Config->drb->outOfOrderDelivery=NULL;
-  drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
-
-  drb_ToAddMod->pdcp_Config->t_Reordering = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config->t_Reordering));
-  *drb_ToAddMod->pdcp_Config->t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
-  drb_ToAddMod->pdcp_Config->ext1 = NULL;
-
-  asn1cSeqAdd(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
-
-  rbconfig->drb_ToReleaseList = NULL;
-
-  rbconfig->securityConfig = calloc(1,sizeof(*rbconfig->securityConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig = calloc(1,sizeof(*rbconfig->securityConfig->securityAlgorithmConfig));
-  rbconfig->securityConfig->securityAlgorithmConfig->cipheringAlgorithm = ciphering_algorithm;
-  rbconfig->securityConfig->securityAlgorithmConfig->integrityProtAlgorithm=NULL;
-  rbconfig->securityConfig->keyToUse = calloc(1,sizeof(*rbconfig->securityConfig->keyToUse));
-  *rbconfig->securityConfig->keyToUse = key_to_use;
-
-//  xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void*)rbconfig);
-}
 /* Function to set or overwrite PTRS DL RRC parameters */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset)
 {

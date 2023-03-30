@@ -404,6 +404,74 @@ NR_RLC_BearerConfig_t *get_DRB_RLC_BearerConfig(long lcChannelId, long drbId, NR
   return rlc_BearerConfig;
 }
 
+/* returns a default radio bearer config suitable for NSA etc */
+NR_RadioBearerConfig_t *get_default_rbconfig(int eps_bearer_id,
+                                             int rb_id,
+                                             e_NR_CipheringAlgorithm ciphering_algorithm,
+                                             e_NR_SecurityConfig__keyToUse key_to_use)
+{
+  NR_RadioBearerConfig_t *rbconfig = calloc(1, sizeof(*rbconfig));
+  rbconfig->srb_ToAddModList = NULL;
+  rbconfig->srb3_ToRelease = NULL;
+  rbconfig->drb_ToAddModList = calloc(1,sizeof(*rbconfig->drb_ToAddModList));
+  NR_DRB_ToAddMod_t *drb_ToAddMod = calloc(1,sizeof(*drb_ToAddMod));
+  drb_ToAddMod->cnAssociation = calloc(1,sizeof(*drb_ToAddMod->cnAssociation));
+  drb_ToAddMod->cnAssociation->present = NR_DRB_ToAddMod__cnAssociation_PR_eps_BearerIdentity;
+  drb_ToAddMod->cnAssociation->choice.eps_BearerIdentity= eps_bearer_id;
+  drb_ToAddMod->drb_Identity = rb_id;
+  drb_ToAddMod->reestablishPDCP = NULL;
+  drb_ToAddMod->recoverPDCP = NULL;
+  drb_ToAddMod->pdcp_Config = calloc(1,sizeof(*drb_ToAddMod->pdcp_Config));
+  asn1cCalloc(drb_ToAddMod->pdcp_Config->drb, drb);
+  asn1cCallocOne(drb->discardTimer, NR_PDCP_Config__drb__discardTimer_infinity);
+  asn1cCallocOne(drb->pdcp_SN_SizeUL, NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits);
+  asn1cCallocOne(drb->pdcp_SN_SizeDL, NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits);
+  drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+  drb->headerCompression.choice.notUsed = 0;
+  drb->integrityProtection = NULL;
+  drb->statusReportRequired = NULL;
+  drb->outOfOrderDelivery = NULL;
+
+  drb_ToAddMod->pdcp_Config->moreThanOneRLC = NULL;
+  asn1cCallocOne(drb_ToAddMod->pdcp_Config->t_Reordering, NR_PDCP_Config__t_Reordering_ms100);
+  drb_ToAddMod->pdcp_Config->ext1 = NULL;
+
+  asn1cSeqAdd(&rbconfig->drb_ToAddModList->list,drb_ToAddMod);
+
+  rbconfig->drb_ToReleaseList = NULL;
+
+  asn1cCalloc(rbconfig->securityConfig, secConf);
+  asn1cCalloc(secConf->securityAlgorithmConfig, secConfAlgo);
+  secConfAlgo->cipheringAlgorithm = ciphering_algorithm;
+  secConfAlgo->integrityProtAlgorithm = NULL;
+  asn1cCallocOne(secConf->keyToUse, key_to_use);
+  return rbconfig;
+}
+
+void fill_nr_noS1_bearer_config(NR_RadioBearerConfig_t **rbconfig,
+                                NR_RLC_BearerConfig_t **rlc_rbconfig)
+{
+  /* the EPS bearer ID is arbitrary; the rb_id is 1/the first DRB, it needs to
+   * match the one in get_DRB_RLC_BearerConfig(). No ciphering is to be
+   * configured */
+  *rbconfig = get_default_rbconfig(10, 1, NR_CipheringAlgorithm_nea0, NR_SecurityConfig__keyToUse_master);
+  AssertFatal(*rbconfig != NULL, "get_default_rbconfig() failed\n");
+  /* LCID is 4 because the RLC layer requires it to be 3+rb_id; the rb_id 1 is
+   * common with get_default_rbconfig() (first RB). We pre-configure RLC UM
+   * Bi-directional, priority is 1 */
+  *rlc_rbconfig = get_DRB_RLC_BearerConfig(4, 1, NR_RLC_Config_PR_um_Bi_Directional, 1);
+  AssertFatal(*rlc_rbconfig != NULL, "get_DRB_RLC_BearerConfig() failed\n");
+}
+
+void free_nr_noS1_bearer_config(NR_RadioBearerConfig_t **rbconfig,
+                                NR_RLC_BearerConfig_t **rlc_rbconfig)
+{
+  ASN_STRUCT_FREE(asn_DEF_NR_RadioBearerConfig, *rbconfig);
+  *rbconfig = NULL;
+  ASN_STRUCT_FREE(asn_DEF_NR_RLC_BearerConfig, *rlc_rbconfig);
+  *rlc_rbconfig = NULL;
+}
+
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, NR_CellGroupConfig_t *ue_context_mastercellGroup, int use_rlc_um_for_drb, uint8_t configure_srb, uint8_t bearer_id_start, uint8_t nb_bearers_to_setup, long *priority) {
 
   cellGroupConfig->cellGroupId = 0;

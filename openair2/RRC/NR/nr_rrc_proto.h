@@ -90,11 +90,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            const gNB_RrcConfigurationReq *configuration,
                            int uid);
 
-void fill_default_rbconfig(NR_RadioBearerConfig_t *rbconfig,
-                           int eps_bearer_id, int rb_id,
-                           e_NR_CipheringAlgorithm ciphering_algorithm,
-                           e_NR_SecurityConfig__keyToUse key_to_use);
-
 int generate_CG_Config(gNB_RRC_INST *rrc, 
 		       NR_CG_Config_t *cg_Config,
 		       NR_RRCReconfiguration_t *reconfig,

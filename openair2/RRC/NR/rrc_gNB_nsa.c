@@ -46,6 +46,7 @@
 #include "UTIL/OSA/osa_defs.h"
 #include <openair2/RRC/NR/nr_rrc_proto.h>
 #include "nr_pdcp/nr_pdcp_oai_api.h"
+#include "MESSAGES/asn1_msg.h"
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t *cg_config_info)
 {
@@ -156,9 +157,8 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   UE->reconfig->criticalExtensions.present = NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration;
   NR_RRCReconfiguration_IEs_t *reconfig_ies=calloc(1,sizeof(NR_RRCReconfiguration_IEs_t));
   UE->reconfig->criticalExtensions.choice.rrcReconfiguration = reconfig_ies;
-  UE->rb_config = calloc(1, sizeof(NR_RRCReconfiguration_t));
   if (get_softmodem_params()->phy_test == 1 || get_softmodem_params()->do_ra == 1 || get_softmodem_params()->sa == 1){
-    fill_default_rbconfig(UE->rb_config, 10 /* EPS bearer ID */, 1 /* drb ID */, NR_CipheringAlgorithm_nea0, NR_SecurityConfig__keyToUse_master);
+    UE->rb_config = get_default_rbconfig(10 /* EPS bearer ID */, 1 /* drb ID */, NR_CipheringAlgorithm_nea0, NR_SecurityConfig__keyToUse_master);
   } else {
     /* TODO: handle more than one bearer */
     if (m == NULL) {
@@ -235,7 +235,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
         exit(1);
     }
 
-    fill_default_rbconfig(UE->rb_config, m->e_rabs_tobeadded[0].e_rab_id, m->e_rabs_tobeadded[0].drb_ID, cipher_algo, NR_SecurityConfig__keyToUse_secondary);
+    UE->rb_config = get_default_rbconfig(m->e_rabs_tobeadded[0].e_rab_id, m->e_rabs_tobeadded[0].drb_ID, cipher_algo, NR_SecurityConfig__keyToUse_secondary);
   }
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;

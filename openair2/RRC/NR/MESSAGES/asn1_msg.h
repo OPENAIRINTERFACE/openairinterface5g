@@ -69,6 +69,17 @@ NR_RLC_BearerConfig_t *get_SRB_RLC_BearerConfig(
     long priority,
     e_NR_LogicalChannelConfig__ul_SpecificParameters__bucketSizeDuration bucketSizeDuration);
 
+NR_RadioBearerConfig_t *get_default_rbconfig(int eps_bearer_id,
+                                             int rb_id,
+                                             e_NR_CipheringAlgorithm ciphering_algorithm,
+                                             e_NR_SecurityConfig__keyToUse key_to_use);
+
+void fill_nr_noS1_bearer_config(NR_RadioBearerConfig_t **rbconfig,
+                                NR_RLC_BearerConfig_t **rlc_rbconfig);
+void free_nr_noS1_bearer_config(NR_RadioBearerConfig_t **rbconfig,
+                                NR_RLC_BearerConfig_t **rlc_rbconfig);
+
+
 void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                                 NR_CellGroupConfig_t *ue_context_mastercellGroup,
                                 int use_rlc_um_for_drb,
