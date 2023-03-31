@@ -36,39 +36,7 @@
 
 const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
 
-NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void)
-{
-  NR_MAC_CellGroupConfig_t * mac_CellGroupConfig = calloc(1, sizeof(*mac_CellGroupConfig));
-
-  mac_CellGroupConfig->bsr_Config = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
-  mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
-  mac_CellGroupConfig->bsr_Config->retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf80;
-  mac_CellGroupConfig->tag_Config = calloc(1, sizeof(*mac_CellGroupConfig->tag_Config));
-  mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
-  mac_CellGroupConfig->tag_Config->tag_ToAddModList = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
-  struct NR_TAG *tag=calloc(1,sizeof(*tag));
-  tag->tag_Id = 0;
-  tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
-  asn1cSeqAdd(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
-
-  set_phr_config(mac_CellGroupConfig);
-
-  mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
-  mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
-  struct NR_SchedulingRequestToAddMod *schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
-  schedulingrequestlist->schedulingRequestId = 0;
-  schedulingrequestlist->sr_ProhibitTimer = NULL;
-  schedulingrequestlist->sr_TransMax = NR_SchedulingRequestToAddMod__sr_TransMax_n64;
-  asn1cSeqAdd(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
-
-  mac_CellGroupConfig->skipUplinkTxDynamic=false;
-  mac_CellGroupConfig->ext1 = NULL;
-  return mac_CellGroupConfig;
-}
-
-NR_SearchSpace_t *rrc_searchspace_config(bool is_common,
-                                         int searchspaceid,
-                                         int coresetid)
+static NR_SearchSpace_t *rrc_searchspace_config(bool is_common, int searchspaceid, int coresetid)
 {
 
   NR_SearchSpace_t *ss = calloc(1,sizeof(*ss));
@@ -112,7 +80,7 @@ NR_SearchSpace_t *rrc_searchspace_config(bool is_common,
   return ss;
 }
 
-NR_ControlResourceSet_t *get_coreset_config(int bwp_id, int curr_bwp, uint64_t ssb_bitmap)
+static NR_ControlResourceSet_t *get_coreset_config(int bwp_id, int curr_bwp, uint64_t ssb_bitmap)
 {
   NR_ControlResourceSet_t *coreset = calloc(1, sizeof(*coreset));
   AssertFatal(coreset != NULL, "out of memory\n");
@@ -148,7 +116,8 @@ NR_ControlResourceSet_t *get_coreset_config(int bwp_id, int curr_bwp, uint64_t s
   return coreset;
 }
 
-uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc) {
+static uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
+{
   uint64_t bitmap=0;
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
@@ -168,8 +137,8 @@ uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc) {
   return bitmap;
 }
 
-void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period) {
-
+static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period)
+{
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
   int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
 
@@ -215,14 +184,14 @@ void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_sl
   }
 }
 
-void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                  NR_CSI_MeasConfig_t *csi_MeasConfig,
-                  int uid,
-                  int num_dl_antenna_ports,
-                  int curr_bwp,
-                  int do_csirs,
-                  int id) {
-
+static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                         NR_CSI_MeasConfig_t *csi_MeasConfig,
+                         int uid,
+                         int num_dl_antenna_ports,
+                         int curr_bwp,
+                         int do_csirs,
+                         int id)
+{
   if (do_csirs) {
 
     if(!csi_MeasConfig->nzp_CSI_RS_ResourceSetToAddModList)
@@ -307,9 +276,9 @@ void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
   csi_MeasConfig->nzp_CSI_RS_ResourceToReleaseList = NULL;
 }
 
-void set_csiim_offset(struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
-                      struct NR_CSI_ResourcePeriodicityAndOffset *target_periodicityAndOffset) {
-
+static void set_csiim_offset(struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAndOffset,
+                             struct NR_CSI_ResourcePeriodicityAndOffset *target_periodicityAndOffset)
+{
   switch(periodicityAndOffset->present) {
     case NR_CSI_ResourcePeriodicityAndOffset_PR_slots4:
       periodicityAndOffset->choice.slots4 = target_periodicityAndOffset->choice.slots4;
@@ -356,9 +325,12 @@ void set_csiim_offset(struct NR_CSI_ResourcePeriodicityAndOffset *periodicityAnd
 
 }
 
-void config_csiim(int do_csirs, int dl_antenna_ports, int curr_bwp,
-                  NR_CSI_MeasConfig_t *csi_MeasConfig, int id) {
-
+static void config_csiim(int do_csirs,
+                         int dl_antenna_ports,
+                         int curr_bwp,
+                         NR_CSI_MeasConfig_t *csi_MeasConfig,
+                         int id)
+{
  if (do_csirs && dl_antenna_ports > 1) {
    if (!csi_MeasConfig->csi_IM_ResourceToAddModList)
      csi_MeasConfig->csi_IM_ResourceToAddModList = calloc(1, sizeof(*csi_MeasConfig->csi_IM_ResourceToAddModList));
@@ -430,8 +402,8 @@ long rrc_get_max_nr_csrs(const int max_rbs, const long b_SRS) {
   return c_srs;
 }
 
-struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(const NR_ServingCellConfigCommon_t *scc,
-                                                                      const int uid)
+static struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(const NR_ServingCellConfigCommon_t *scc,
+                                                                              const int uid)
 {
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -504,14 +476,14 @@ struct NR_SRS_Resource__resourceType__periodic *configure_periodic_srs(const NR_
   return periodic_srs;
 }
 
-void config_srs(const NR_ServingCellConfigCommon_t *scc,
-                NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
-                const NR_UE_NR_Capability_t *uecap,
-                const int curr_bwp,
-                const int uid,
-                const int res_id,
-                const long maxMIMO_Layers,
-                const int do_srs)
+static void config_srs(const NR_ServingCellConfigCommon_t *scc,
+                       NR_SetupRelease_SRS_Config_t *setup_release_srs_Config,
+                       const NR_UE_NR_Capability_t *uecap,
+                       const int curr_bwp,
+                       const int uid,
+                       const int res_id,
+                       const long maxMIMO_Layers,
+                       const int do_srs)
 {
   setup_release_srs_Config->present = NR_SetupRelease_SRS_Config_PR_setup;
 
@@ -787,7 +759,7 @@ void nr_rrc_config_ul_tda(NR_ServingCellConfigCommon_t *scc, int min_fb_delay){
   }
 }
 
-void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing)
+static void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time, NR_SubcarrierSpacing_t subcarrierSpacing)
 {
   pucch_Config->dl_DataToUL_ACK = calloc(1,sizeof(*pucch_Config->dl_DataToUL_ACK));
   long *delay[8];
@@ -800,7 +772,7 @@ void set_dl_DataToUL_ACK(NR_PUCCH_Config_t *pucch_Config, int min_feedback_time,
 }
 
 // PUCCH resource set 0 for configuration with O_uci <= 2 bits and/or a positive or negative SR (section 9.2.1 of 38.213)
-void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, const NR_UE_NR_Capability_t *uecap)
+static void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp, const NR_UE_NR_Capability_t *uecap)
 {
   NR_PUCCH_ResourceSet_t *pucchresset = calloc(1,sizeof(*pucchresset));
   pucchresset->pucch_ResourceSetId = 0;
@@ -831,7 +803,7 @@ void config_pucch_resset0(NR_PUCCH_Config_t *pucch_Config, int uid, int curr_bwp
 
 
 // PUCCH resource set 1 for configuration with O_uci > 2 bits (currently format2)
-void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, const NR_UE_NR_Capability_t *uecap)
+static void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, const NR_UE_NR_Capability_t *uecap)
 {
   NR_PUCCH_ResourceSet_t *pucchresset=calloc(1,sizeof(*pucchresset));
   pucchresset->pucch_ResourceSetId = 1;
@@ -958,9 +930,7 @@ static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedul
   }
 }
 
-void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
-                               NR_PUCCH_Config_t *pucch_Config,
-                               int scs)
+static void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc, NR_PUCCH_Config_t *pucch_Config, int scs)
 {
   // format with <=2 bits in pucch resource set 0
   NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[0];
@@ -979,11 +949,11 @@ void scheduling_request_config(const NR_ServingCellConfigCommon_t *scc,
   asn1cSeqAdd(&pucch_Config->schedulingRequestResourceToAddModList->list,schedulingRequestResourceConfig);
 }
 
-void set_dl_mcs_table(int scs,
-                      const NR_UE_NR_Capability_t *cap,
-                      NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
-                      const NR_ServingCellConfigCommon_t *scc) {
-
+static void set_dl_mcs_table(int scs,
+                             const NR_UE_NR_Capability_t *cap,
+                             NR_BWP_DownlinkDedicated_t *bwp_Dedicated,
+                             const NR_ServingCellConfigCommon_t *scc)
+{
   if (cap == NULL){
     bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
     return;
@@ -1024,7 +994,7 @@ void set_dl_mcs_table(int scs,
     bwp_Dedicated->pdsch_Config->choice.setup->mcs_Table = NULL;
 }
 
-struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Config)
+static struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Config)
 {
   struct NR_SetupRelease_PUSCH_Config *setup_puschconfig = calloc(1, sizeof(*setup_puschconfig));
   setup_puschconfig->present = NR_SetupRelease_PUSCH_Config_PR_setup;
@@ -1105,7 +1075,7 @@ struct NR_SetupRelease_PUSCH_Config *config_pusch(NR_PUSCH_Config_t *pusch_Confi
   return setup_puschconfig;
 }
 
-struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_Id, int dl_antenna_ports)
+static struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_Id, int dl_antenna_ports)
 {
   struct NR_SetupRelease_PDSCH_Config *setup_pdsch_Config = calloc(1,sizeof(*setup_pdsch_Config));
   setup_pdsch_Config->present = NR_SetupRelease_PDSCH_Config_PR_setup;
@@ -1148,14 +1118,14 @@ struct NR_SetupRelease_PDSCH_Config *config_pdsch(uint64_t ssb_bitmap, int bwp_I
   return setup_pdsch_Config;
 }
 
-void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
-                        const NR_ServingCellConfigCommon_t *scc,
-                        const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                        const NR_UE_NR_Capability_t *uecap,
-                        int dl_antenna_ports,
-                        bool force_256qam_off,
-                        int bwp_loop,
-                        bool is_SA)
+static void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
+                               const NR_ServingCellConfigCommon_t *scc,
+                               const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                               const NR_UE_NR_Capability_t *uecap,
+                               int dl_antenna_ports,
+                               bool force_256qam_off,
+                               int bwp_loop,
+                               bool is_SA)
 {
   bwp->bwp_Common = calloc(1,sizeof(*bwp->bwp_Common));
 
@@ -1234,14 +1204,14 @@ void config_downlinkBWP(NR_BWP_Downlink_t *bwp,
                    scc);
 }
 
-void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
-                      long bwp_loop,
-                      bool is_SA,
-                      int uid,
-                      const gNB_RrcConfigurationReq *configuration,
-                      const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                      const NR_ServingCellConfigCommon_t *scc,
-                      const NR_UE_NR_Capability_t *uecap)
+static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
+                             long bwp_loop,
+                             bool is_SA,
+                             int uid,
+                             const gNB_RrcConfigurationReq *configuration,
+                             const NR_ServingCellConfig_t *servingcellconfigdedicated,
+                             const NR_ServingCellConfigCommon_t *scc,
+                             const NR_UE_NR_Capability_t *uecap)
 {
   ubwp->bwp_Common = calloc(1,sizeof(*ubwp->bwp_Common));
   if(servingcellconfigdedicated->uplinkConfig->uplinkBWP_ToAddModList &&
@@ -1316,7 +1286,7 @@ void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
   ubwp->bwp_Dedicated->beamFailureRecoveryConfig = NULL;
 }
 
-void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig)
+static void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig)
 {
   mac_CellGroupConfig->phr_Config                                         = calloc(1, sizeof(*mac_CellGroupConfig->phr_Config));
   mac_CellGroupConfig->phr_Config->present                                = NR_SetupRelease_PHR_Config_PR_setup;
@@ -1326,7 +1296,7 @@ void set_phr_config(NR_MAC_CellGroupConfig_t *mac_CellGroupConfig)
   mac_CellGroupConfig->phr_Config->choice.setup->phr_Tx_PowerFactorChange = NR_PHR_Config__phr_Tx_PowerFactorChange_dB1;
 }
 
-void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR_CSI_ReportConfig_t *csirep, int uid, bool is_rsrp)
+static void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR_CSI_ReportConfig_t *csirep, int uid, bool is_rsrp)
 {
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   const int n_slots_frame = slotsperframe[*scc->ssbSubcarrierSpacing];
@@ -1371,7 +1341,9 @@ void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR_CSI_Re
   }
 }
 
-void config_csi_codebook(const rrc_pdsch_AntennaPorts_t *antennaports, const int max_layers, struct NR_CodebookConfig *codebookConfig)
+static void config_csi_codebook(const rrc_pdsch_AntennaPorts_t *antennaports,
+                                const int max_layers,
+                                struct NR_CodebookConfig *codebookConfig)
 {
   const int num_ant_ports = antennaports->N1 * antennaports->N2 * antennaports->XP;
   codebookConfig->codebookType.present = NR_CodebookConfig__codebookType_PR_type1;
@@ -1470,14 +1442,14 @@ void config_csi_codebook(const rrc_pdsch_AntennaPorts_t *antennaports, const int
   codebookConfig->codebookType.choice.type1->codebookMode = 1;
 }
 
-void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
-                            const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                            NR_PUCCH_CSI_Resource_t *pucchcsires,
-                            struct NR_SetupRelease_PDSCH_Config *pdsch_Config,
-                            const rrc_pdsch_AntennaPorts_t *antennaports,
-                            const int max_layers,
-                            int rep_id,
-                            int uid)
+static void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
+                                   const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                                   NR_PUCCH_CSI_Resource_t *pucchcsires,
+                                   struct NR_SetupRelease_PDSCH_Config *pdsch_Config,
+                                   const rrc_pdsch_AntennaPorts_t *antennaports,
+                                   const int max_layers,
+                                   int rep_id,
+                                   int uid)
 {
   NR_CSI_ReportConfig_t *csirep = calloc(1, sizeof(*csirep));
   csirep->reportConfigId = rep_id;
@@ -1535,12 +1507,12 @@ void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
   asn1cSeqAdd(&csi_MeasConfig->csi_ReportConfigToAddModList->list, csirep);
 }
 
-void config_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
-                             const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
-                             NR_PUCCH_CSI_Resource_t *pucchcsires,
-                             int do_csi, // if rsrp is based on CSI or SSB
-                             int rep_id,
-                             int uid)
+static void config_rsrp_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
+                                    const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
+                                    NR_PUCCH_CSI_Resource_t *pucchcsires,
+                                    int do_csi, // if rsrp is based on CSI or SSB
+                                    int rep_id,
+                                    int uid)
 {
   NR_CSI_ReportConfig_t *csirep = calloc(1, sizeof(*csirep));
   csirep->reportConfigId = rep_id;
@@ -2018,6 +1990,37 @@ int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buff
   AssertFatal(enc_rval.encoded > 0 && enc_rval.encoded <= max_buffer_size * 8, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   return (enc_rval.encoded + 7) / 8;
 }
+
+static NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void)
+{
+  NR_MAC_CellGroupConfig_t * mac_CellGroupConfig = calloc(1, sizeof(*mac_CellGroupConfig));
+
+  mac_CellGroupConfig->bsr_Config = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
+  mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
+  mac_CellGroupConfig->bsr_Config->retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf80;
+  mac_CellGroupConfig->tag_Config = calloc(1, sizeof(*mac_CellGroupConfig->tag_Config));
+  mac_CellGroupConfig->tag_Config->tag_ToReleaseList = NULL;
+  mac_CellGroupConfig->tag_Config->tag_ToAddModList = calloc(1,sizeof(*mac_CellGroupConfig->tag_Config->tag_ToAddModList));
+  struct NR_TAG *tag=calloc(1,sizeof(*tag));
+  tag->tag_Id = 0;
+  tag->timeAlignmentTimer = NR_TimeAlignmentTimer_infinity;
+  asn1cSeqAdd(&mac_CellGroupConfig->tag_Config->tag_ToAddModList->list,tag);
+
+  set_phr_config(mac_CellGroupConfig);
+
+  mac_CellGroupConfig->schedulingRequestConfig = calloc(1, sizeof(*mac_CellGroupConfig->schedulingRequestConfig));
+  mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList = CALLOC(1,sizeof(*mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList));
+  struct NR_SchedulingRequestToAddMod *schedulingrequestlist = CALLOC(1,sizeof(*schedulingrequestlist));
+  schedulingrequestlist->schedulingRequestId = 0;
+  schedulingrequestlist->sr_ProhibitTimer = NULL;
+  schedulingrequestlist->sr_TransMax = NR_SchedulingRequestToAddMod__sr_TransMax_n64;
+  asn1cSeqAdd(&(mac_CellGroupConfig->schedulingRequestConfig->schedulingRequestToAddModList->list),schedulingrequestlist);
+
+  mac_CellGroupConfig->skipUplinkTxDynamic=false;
+  mac_CellGroupConfig->ext1 = NULL;
+  return mac_CellGroupConfig;
+}
+
 
 static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
                                                    const NR_ServingCellConfigCommon_t *scc,
