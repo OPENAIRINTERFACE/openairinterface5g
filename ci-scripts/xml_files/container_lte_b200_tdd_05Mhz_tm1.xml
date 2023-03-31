@@ -27,6 +27,7 @@ Replaces xml_files/enb_usrp210_band40_test_05mhz_tm1.xml
     <htmlTabName>Test-TDD-05MHz-TM1</htmlTabName>
     <htmlTabIcon>tasks</htmlTabIcon>
     <TestCaseRequestedList>
+300000
 100000
 111110
 040101
@@ -55,6 +56,13 @@ Replaces xml_files/enb_usrp210_band40_test_05mhz_tm1.xml
         <desc>Enable Sleep States</desc>
         <node>starsky</node>
         <command>sudo cpupower idle-set -E</command>
+    </testCase>
+
+    <testCase id="300000">
+	<class>Custom_Command</class>
+	<desc>Reset USRP</desc>
+	<node>starsky</node>
+	<command>sudo -S b2xx_fx3_utils --reset-device</command>
     </testCase>
 
     <testCase id="030104">
