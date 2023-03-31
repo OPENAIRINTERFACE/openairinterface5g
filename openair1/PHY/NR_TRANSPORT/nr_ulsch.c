@@ -72,7 +72,8 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB, int frame, int slot, nfapi_nr_pusch_pdu_t 
   ulsch->slot = slot;
 
   NR_UL_gNB_HARQ_t *harq = ulsch->harq_process;
-  harq->new_rx = ulsch_pdu->pusch_data.new_data_indicator;
+  if (ulsch_pdu->pusch_data.new_data_indicator)
+    harq->harq_to_be_cleared = true;
   LOG_D(PHY,
         "%d.%d RNTI %x HARQ PID %d new data indicator %d\n",
         frame,
@@ -80,7 +81,8 @@ void nr_fill_ulsch(PHY_VARS_gNB *gNB, int frame, int slot, nfapi_nr_pusch_pdu_t 
         ulsch_pdu->rnti,
         harq_pid,
         ulsch_pdu->pusch_data.new_data_indicator);
-  if (harq->new_rx)
+
+  if (ulsch_pdu->pusch_data.new_data_indicator)
     harq->round = 0;
   else
     harq->round++;

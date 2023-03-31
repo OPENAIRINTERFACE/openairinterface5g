@@ -192,6 +192,9 @@ typedef struct {
   uint8_t round;
   bool new_rx;
   /////////////////////// ulsch decoding ///////////////////////
+  /// flag used to clear d properly (together with d_to_be_cleared below)
+  /// set to true in nr_fill_ulsch() when new_data_indicator is received
+  bool harq_to_be_cleared;
   /// Transport block size (This is A from 38.212 V15.4.0 section 5.1)
   uint32_t TBS;
   /// Pointer to the payload (38.212 V15.4.0 section 5.1)
@@ -208,6 +211,10 @@ typedef struct {
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
   int16_t **d;
+  /// flag used to clear d properly (together with harq_to_be_cleared above)
+  /// set to true in nr_ulsch_decoding() when harq_to_be_cleared is true
+  /// when true, clear d in the next call to function nr_rate_matching_ldpc_rx()
+  bool *d_to_be_cleared;
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
