@@ -40,7 +40,7 @@
 #include "rrc_extern.h"
 #include "openair2/RRC/NR/rrc_gNB_NGAP.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
-#include "pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 static void setQos(F1AP_NonDynamic5QIDescriptor_t *toFill) {
   asn1cCalloc(toFill, tmp);
@@ -958,7 +958,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
   }
 
-  pdcp_remove_UE(&ctxt);
+  nr_pdcp_remove_UE(ctxt.rntiMaybeUEid);
 
   LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
   f1ap_remove_ue(CUtype, instance, rnti);

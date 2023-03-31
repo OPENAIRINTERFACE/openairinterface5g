@@ -25,7 +25,7 @@
 #include "common/utils/oai_asn1.h"
 #include "NR_RadioBearerConfig.h"
 
-#include "pdcp.h"
+#include "nr_pdcp_oai_api.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"

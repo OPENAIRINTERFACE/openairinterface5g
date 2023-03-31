@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-#include "pdcp.h"
+#include "common/utils/LOG/log.h"
 
 int decode_t_reordering(int v)
 {

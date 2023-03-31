@@ -58,7 +58,7 @@
 #include "nr-uesoftmodem.h"
 #include "executables/softmodem-common.h"
 #include "plmn_data.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 #include "UTIL/OSA/osa_defs.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -89,17 +89,6 @@ static const char  nr_nas_attach_req_imsi[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
-
-extern void pdcp_config_set_security(
-  const protocol_ctxt_t *const  ctxt_pP,
-  pdcp_t          *const pdcp_pP,
-  const rb_id_t         rb_idP,
-  const uint16_t        lc_idP,
-  const uint8_t         security_modeP,
-  uint8_t         *const kRRCenc,
-  uint8_t         *const kRRCint,
-  uint8_t         *const  kUPenc
-);
 
 void
 nr_rrc_ue_process_ueCapabilityEnquiry(
@@ -1426,14 +1415,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   //for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
   //printf("\n");
 
-   // ctxt_pP_local.rnti = ctxt_pP->rnti;
-  rrc_data_req_nr_ue(ctxt_pP,
-                  DCCH,
-                  nr_rrc_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
 int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB_INFO *const Srb_info, const uint8_t gNB_index ){
@@ -1704,10 +1686,9 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
 
    if (securityMode != 0xff) {
-     pdcp_config_set_security(ctxt_pP, NULL, DCCH, DCCH+2,
-                              NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-                              | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-                              kRRCenc, kRRCint, kUPenc);
+     uint8_t security_mode =
+         NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4);
+     nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid, DCCH, security_mode, kRRCenc, kRRCint, kUPenc);
    } else {
      LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
    }
@@ -1739,13 +1720,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
      }
 
      LOG_T(NR_RRC, "\n");
-     rrc_data_req_nr_ue (ctxt_pP,
-                      DCCH,
-                      nr_rrc_mui++,
-                      SDU_CONFIRM_NO,
-                      (enc_rval.encoded + 7) / 8,
-                      buffer,
-                      PDCP_TRANSMISSION_MODE_CONTROL);
+     nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
    } else
      LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
 		  securityModeCommand->criticalExtensions.present);
@@ -2231,14 +2206,7 @@ nr_rrc_ue_establish_srb2(
 	 nr_rrc_mui,
 	 UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
 	 DCCH);
-   rrc_data_req_nr_ue (
-     ctxt_pP,
-     DCCH,
-     nr_rrc_mui++,
-     SDU_CONFIRM_NO,
-     size,
-     buffer,
-     PDCP_TRANSMISSION_MODE_CONTROL);
+   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, size, buffer, deliver_pdu_srb_rlc, NULL);
  }
 
  // from NR SRB1
@@ -2485,21 +2453,8 @@ nr_rrc_ue_establish_srb2(
         /* Transfer data to PDCP */
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
         // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2)
-        if(NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL) {
-          rrc_data_req_nr_ue (&ctxt,
-                           DCCH,
-                           nr_rrc_mui++,
-                           SDU_CONFIRM_NO,
-                           length, buffer,
-                           PDCP_TRANSMISSION_MODE_CONTROL);
-        } else {
-          rrc_data_req_nr_ue (&ctxt,
-                           DCCH1,
-                           nr_rrc_mui++,
-                           SDU_CONFIRM_NO,
-                           length, buffer,
-                           PDCP_TRANSMISSION_MODE_CONTROL);
-        }
+        rb_id_t srb_id = NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL ? DCCH : DCCH1;
+        nr_pdcp_data_req_srb(ctxt.rntiMaybeUEid, srb_id, nr_rrc_mui++, length, buffer, deliver_pdu_srb_rlc, NULL);
         break;
       }
 
@@ -2643,14 +2598,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       }
 
       LOG_I(NR_RRC, "UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-      rrc_data_req_nr_ue (
-        ctxt_pP,
-        DCCH,
-        nr_rrc_mui++,
-        SDU_CONFIRM_NO,
-        (enc_rval.encoded + 7) / 8,
-        buffer,
-        PDCP_TRANSMISSION_MODE_CONTROL);
+      nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
     }
   }
 }

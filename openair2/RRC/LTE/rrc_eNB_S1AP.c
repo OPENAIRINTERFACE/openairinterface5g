@@ -921,10 +921,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
 
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       //      create_tunnel_req.num_tunnels    = i;
-      ret = gtpv1u_create_s1u_tunnel(
-              instance,
-              &create_tunnel_req,
-              &create_tunnel_resp);
+      ret = gtpv1u_create_s1u_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, pdcp_data_req);
 
       if ( ret != 0 ) {
         LOG_E(RRC,"rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
@@ -1234,10 +1231,7 @@ int rrc_eNB_process_S1AP_E_RAB_SETUP_REQ(MessageDef *msg_p, const char *msg_name
       create_tunnel_req.rnti       = ue_context_p->ue_context.rnti; // warning put zero above
       create_tunnel_req.num_tunnels    = e_rab_done;
       // NN: not sure if we should create a new tunnel: need to check teid, etc.
-      ret = gtpv1u_create_s1u_tunnel(
-              instance,
-              &create_tunnel_req,
-              &create_tunnel_resp);
+      ret = gtpv1u_create_s1u_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, pdcp_data_req);
 
       if ( ret != 0 ) {
         LOG_E(RRC,"rrc_eNB_process_S1AP_E_RAB_SETUP_REQ : gtpv1u_create_s1u_tunnel failed,start to release UE %x\n",ue_context_p->ue_context.rnti);
@@ -1908,14 +1902,8 @@ int rrc_eNB_send_PATH_SWITCH_REQ(const protocol_ctxt_t *const ctxt_pP,
   S1AP_PATH_SWITCH_REQ (msg_p).nb_of_e_rabs = e_rabs_done;
   create_tunnel_req.rnti           = ue_context_pP->ue_context.rnti;
   create_tunnel_req.num_tunnels    = e_rabs_done;
-  gtpv1u_create_s1u_tunnel(
-    ctxt_pP->instance,
-    &create_tunnel_req,
-    &create_tunnel_resp);
-  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(
-    ctxt_pP,
-    &create_tunnel_resp,
-    &inde_list[0]);
+  gtpv1u_create_s1u_tunnel(ctxt_pP->instance, &create_tunnel_req, &create_tunnel_resp, pdcp_data_req);
+  rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP(ctxt_pP, &create_tunnel_resp, &inde_list[0]);
 
   for (e_rab = 0; e_rab < e_rabs_done; e_rab++) {
     S1AP_PATH_SWITCH_REQ (msg_p).e_rabs_tobeswitched[e_rab].e_rab_id = create_tunnel_resp.eps_bearer_id[e_rab];

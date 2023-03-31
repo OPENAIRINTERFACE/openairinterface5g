@@ -42,8 +42,7 @@
 
 #include "RRC/NR/nr_rrc_extern.h"
 
-//#include "LAYER2/MAC/pre_processor.c"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "intertask_interface.h"
 
@@ -137,7 +136,6 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
   start_meas(&gNB->eNB_scheduler);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ULSCH_SCHEDULER,VCD_FUNCTION_IN);
 
-  pdcp_run(&ctxt);
   /* send tick to RLC and RRC every ms */
   if ((slot & ((1 << *scc->ssbSubcarrierSpacing) - 1)) == 0) {
     void nr_rlc_tick(int frame, int subframe);
