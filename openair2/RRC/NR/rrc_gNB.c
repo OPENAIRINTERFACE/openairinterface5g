@@ -3687,6 +3687,15 @@ rrc_gNB_generate_RRCRelease(
 
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
   ue_context_pP->ue_context.ue_release_timer_rrc = 1;
+  /* TODO: 38.331 says for RRC Release that the UE should release everything
+   * after 60ms or if lower layers acked receipt of release. Hence, from the
+   * gNB POV, we can free the UE's RRC context as soon as we sent the msg.
+   * Currently, without the F1 interface, the ue_release timer expiration also
+   * triggers MAC, so we give it some time. If we send an F1 UE Context release
+   * message, we can free it immediately. The MAC should release it after these
+   * 60ms, or the ack of the DLSCH transmission. */
+  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 5;
+  LOG_I(RRC, "delaying UE %ld context removal by 5ms\n", ctxt_pP->rntiMaybeUEid);
 
   if (NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
     uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
