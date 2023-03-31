@@ -1559,17 +1559,6 @@ class Containerize():
 			mySSH.close()
 		if svrName == 'nepes':
 			mySSH.open(ipAddr, userName, password)
-			# Check if route to porcepix epc exists: not necessary, is on same host
-			#mySSH.command('ip route | grep --colour=never "192.168.61.192/26"', '\$', 10)
-			#result = re.search('172.21.16.136', mySSH.getBefore())
-			#if result is None:
-			#	mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.61.192/26 via 172.21.16.136 dev enp0s31f6', '\$', 10)
-			# Check if X2 route to obelix enb exists: not necessary, gnb is on ofqot
-			#mySSH.command('ip route | grep --colour=never "192.168.68.128/26"', '\$', 10)
-			#result = re.search('172.21.16.128', mySSH.getBefore())
-			#if result is None:
-			#	mySSH.command('echo ' + password + ' | sudo -S ip route add 192.168.68.128/26 via 172.21.16.128 dev enp0s31f6', '\$', 10)
-			# Check if forwarding is enabled
 			# Check if route to ofqot gnb exists
 			mySSH.command('ip route | grep --colour=never "192.168.68.192/26"', '\$', 10)
 			result = re.search('172.21.16.109', mySSH.getBefore())
