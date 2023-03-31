@@ -3275,41 +3275,26 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
         //  check if LCID is valid at current time.
       case DL_SCH_LCID_DCCH1:
         //  check if LCID is valid at current time.
+      case DL_SCH_LCID_DTCH ... (DL_SCH_LCID_DTCH + 28):
+        if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
+          return;
+        LOG_D(NR_MAC, "%4d.%2d : DLSCH -> LCID %d %d bytes\n", frameP, slot, rx_lcid, mac_len);
+
+        mac_rlc_data_ind(module_idP,
+                         mac->crnti,
+                         gNB_index,
+                         frameP,
+                         ENB_FLAG_NO,
+                         MBMS_FLAG_NO,
+                         rx_lcid,
+                         (char *)(pduP + mac_subheader_len),
+                         mac_len,
+                         1,
+                         NULL);
+        break;
       default:
-            {
-	      if (!get_mac_len(pduP, pdu_len, &mac_len, &mac_subheader_len))
-		    return;
-                LOG_D(NR_MAC, "[UE %d] %4d.%2d : DLSCH -> DL-DTCH %d (gNB %d, %d bytes)\n", module_idP, frameP, slot, rx_lcid, gNB_index, mac_len);
-
-                #if defined(ENABLE_MAC_PAYLOAD_DEBUG)
-                    LOG_T(MAC, "[UE %d] First 32 bytes of DLSCH : \n", module_idP);
-
-                    for (i = 0; i < 32; i++)
-                      LOG_T(MAC, "%x.", (pduP + mac_subheader_len)[i]);
-
-                    LOG_T(MAC, "\n");
-                #endif
-
-                if (rx_lcid < NB_RB_MAX && rx_lcid >= DL_SCH_LCID_DCCH) {
-
-                mac_rlc_data_ind(module_idP,
-                                mac->crnti,
-                                gNB_index,
-                                frameP,
-                                ENB_FLAG_NO,
-                                MBMS_FLAG_NO,
-                                rx_lcid,
-                                (char *) (pduP + mac_subheader_len),
-                                mac_len,
-                                1,
-                                NULL);
-                } else {
-                  LOG_E(MAC, "[UE %d] Frame %d : unknown LCID %d (gNB %d)\n", module_idP, frameP, rx_lcid, gNB_index);
-                }
-
-
-            break;
-            }
+        LOG_W(MAC, "unknown lcid %02x\n", rx_lcid);
+        break;
       }
       pduP += ( mac_subheader_len + mac_len );
       pdu_len -= ( mac_subheader_len + mac_len );

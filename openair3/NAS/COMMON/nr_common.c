@@ -39,7 +39,7 @@ void servingNetworkName(uint8_t *msg, char * imsiStr, int nmc_size) {
   memcpy(msg+13, imsiStr, 3);
 }
 
-int resToresStar(uint8_t *msg, uicc_t* uicc) {
+int resToresStar(uint8_t *msg, const uicc_t* uicc) {
   // TS 33.220  annex B.2 => FC=0x6B in TS 33.501 annex A.4
   //input S to KDF
   uint8_t S[128]= {0};

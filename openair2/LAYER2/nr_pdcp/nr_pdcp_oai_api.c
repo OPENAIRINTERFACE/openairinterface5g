@@ -774,7 +774,7 @@ srb_found:
   //printf("\n");
   if ((RC.nrrrc == NULL) || (!NODE_IS_CU(node_type))) {
     if (entity->is_gnb) {
-      f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF, .rrc_container = (uint8_t *)buf, .rrc_container_length = size, .rnti = ue->rntiMaybeUEid, .srb_id = DCCH};
+      f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF, .rrc_container = (uint8_t *)buf, .rrc_container_length = size, .rnti = ue->rntiMaybeUEid, .srb_id = srb_id};
       gNB_RRC_INST *rrc = RC.nrrrc[0];
       rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
     } else { // UE

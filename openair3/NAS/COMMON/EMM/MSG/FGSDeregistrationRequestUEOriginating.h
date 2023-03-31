@@ -19,52 +19,42 @@
  *      contact@openairinterface.org
  */
 
-/*! \file RegistrationAccept.h
-
-\brief 5GS registration accept procedures
-\author Yoshio INOUE, Masayuki HARADA
-\email: yoshio.inoue@fujitsu.com,masayuki.harada@fujitsu.com
-\date 2020
-\version 0.1
-*/
+#ifndef FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING_H_
+#define FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING_H_
 
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
 
-
 #include "ExtendedProtocolDiscriminator.h"
 #include "SecurityHeaderType.h"
 #include "SpareHalfOctet.h"
 #include "MessageType.h"
-#include "FGSRegistrationResult.h"
+#include "FGSDeregistrationType.h"
+#include "NasKeySetIdentifier.h"
 #include "FGSMobileIdentity.h"
 
-#ifndef REGISTRATION_ACCEPT_H_
-#define REGISTRATION_ACCEPT_H_
-
 /*
- * Message name: Registration accept
- * Description: The REGISTRATION ACCEPT message is sent by the AMF to the UE. See table 8.2.7.1.1.
+ * Message name: De-registration request (UE originating de-registration)
+ * Description: This message is sent by the UE to the AMF. See TS24.501 table 8.2.12.1.1.
  * Significance: dual
- * Direction: network to UE
+ * Direction: UE to network
  */
 
-typedef struct registration_accept_msg_tag {
+typedef struct fgs_deregistration_request_ue_originating_msg_tag {
   /* Mandatory fields */
-  ExtendedProtocolDiscriminator           protocoldiscriminator;
-  SecurityHeaderType                      securityheadertype:4;
-  SpareHalfOctet                          sparehalfoctet:4;
-  MessageType                             messagetype;
-  FGSRegistrationResult                   fgsregistrationresult;
+  ExtendedProtocolDiscriminator protocoldiscriminator;
+  SecurityHeaderType securityheadertype: 4;
+  SpareHalfOctet sparehalfoctet: 4;
+  MessageType messagetype;
+  FGSDeregistrationType deregistrationtype;
+  NasKeySetIdentifier naskeysetidentifier;
+  FGSMobileIdentity fgsmobileidentity;
+} fgs_deregistration_request_ue_originating_msg;
 
-  /* Optional fields */
-  FGSMobileIdentity *guti;
-} registration_accept_msg;
+int encode_fgs_deregistration_request_ue_originating(fgs_deregistration_request_ue_originating_msg *registrationrequest,
+                                                     uint8_t *buffer,
+                                                     uint32_t len);
 
-int decode_registration_accept(registration_accept_msg *registrationaccept, uint8_t *buffer, uint32_t len);
-
-int encode_registration_accept(registration_accept_msg *registrationaccept, uint8_t *buffer, uint32_t len);
-
-#endif /* ! defined(REGISTRATION_ACCEPT_H_) */
+#endif /* ! defined(REGISTRATION_REQUEST_H_) */
 

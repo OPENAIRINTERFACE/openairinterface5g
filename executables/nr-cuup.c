@@ -153,7 +153,7 @@ int main(int argc, char **argv)
   itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
 
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  itti_wait_tasks_end();
+  itti_wait_tasks_end(NULL);
 
   logClean();
   printf("Bye.\n");

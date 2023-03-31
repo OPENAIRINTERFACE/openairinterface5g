@@ -1400,7 +1400,8 @@ static void rrc_ue_generate_RRCSetupComplete(
 
   if (get_softmodem_params()->sa) {
     as_nas_info_t initialNasMsg;
-    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+    nr_ue_nas_t *nas = get_ue_nas_info(ctxt_pP->module_id);
+    generateRegistrationRequest(&initialNasMsg, nas);
     nas_msg = (char*)initialNasMsg.data;
     nas_msg_length = initialNasMsg.length;
   } else {
@@ -2256,11 +2257,9 @@ nr_rrc_ue_establish_srb2(
    NR_DL_DCCH_Message_t                *dl_dcch_msg  = NULL;
    MessageDef *msg_p;
 
-   if (Srb_id != 1) {
+   if (Srb_id != 1 && Srb_id != 2) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
            ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-   } else {
-     LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }
 
    LOG_D(NR_RRC, "Decoding DL-DCCH Message\n");
@@ -2315,7 +2314,7 @@ nr_rrc_ue_establish_srb2(
            NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
          }
 
-         itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+         itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
          break;
        case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
          LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n", ctxt_pP->module_id,gNB_indexP);
