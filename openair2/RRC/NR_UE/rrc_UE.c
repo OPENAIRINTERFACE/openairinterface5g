@@ -2229,11 +2229,9 @@ nr_rrc_ue_establish_srb2(
    NR_DL_DCCH_Message_t                *dl_dcch_msg  = NULL;
    MessageDef *msg_p;
 
-   if (Srb_id != 1) {
+   if (Srb_id != 1 && Srb_id != 2) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
            ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-   } else {
-     LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }
 
    LOG_D(NR_RRC, "Decoding DL-DCCH Message\n");
