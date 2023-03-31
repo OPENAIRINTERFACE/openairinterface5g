@@ -648,7 +648,9 @@ teid_t newGtpuCreateTunnel(instance_t instance,
 
 int gtpv1u_create_s1u_tunnel(instance_t instance,
                              const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                             gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp) {
+                             gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp,
+                             gtpCallback callBack)
+{
   LOG_D(GTPU, "[%ld] Start create tunnels for UE ID %u, num_tunnels %d, sgw_S1u_teid %x\n",
         instance,
         create_tunnel_req->rnti,
@@ -675,7 +677,7 @@ int gtpv1u_create_s1u_tunnel(instance_t instance,
                                       -1, // no pdu session in 4G
                                       create_tunnel_req->sgw_addr[i],
                                       dstport,
-                                      pdcp_data_req,
+                                      callBack,
                                       NULL);
     create_tunnel_resp->status=0;
     create_tunnel_resp->rnti=create_tunnel_req->rnti;
@@ -712,10 +714,10 @@ int gtpv1u_update_s1u_tunnel(
   auto it=inst->ue2te_mapping.find(prior_rnti);
 
   if ( it != inst->ue2te_mapping.end() ) {
-    LOG_W(GTPU,"[%ld] Update a not existing tunnel, start create the new one (new ue id %u, old ue id %u)\n", instance, create_tunnel_req->rnti, prior_rnti);
     pthread_mutex_unlock(&globGtp.gtp_lock);
-    gtpv1u_enb_create_tunnel_resp_t tmp;
-    (void)gtpv1u_create_s1u_tunnel(instance, create_tunnel_req, &tmp);
+    AssertFatal(false, "logic bug: update of non-existing tunnel (new ue id %u, old ue id %u)\n", create_tunnel_req->rnti, prior_rnti);
+    /* we don't know if we need 4G or 5G PDCP and can therefore not create a
+     * new tunnel */
     return 0;
   }
 
@@ -725,9 +727,12 @@ int gtpv1u_update_s1u_tunnel(
   return 0;
 }
 
-int gtpv1u_create_ngu_tunnel(  const instance_t instance,
-                               const gtpv1u_gnb_create_tunnel_req_t   *const create_tunnel_req,
-                               gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp) {
+int gtpv1u_create_ngu_tunnel(const instance_t instance,
+                             const gtpv1u_gnb_create_tunnel_req_t *const create_tunnel_req,
+                             gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp,
+                             gtpCallback callBack,
+                             gtpCallbackSDAP callBackSDAP)
+{
   LOG_D(GTPU, "[%ld] Start create tunnels for ue id %lu, num_tunnels %d, sgw_S1u_teid %x\n",
         instance,
         create_tunnel_req->ue_id,
@@ -749,8 +754,8 @@ int gtpv1u_create_ngu_tunnel(  const instance_t instance,
                                       create_tunnel_req->outgoing_qfi[i],
                                       create_tunnel_req->dst_addr[i],
                                       dstport,
-                                      nr_pdcp_data_req_drb,
-                                      sdap_data_req);
+                                      callBack,
+                                      callBackSDAP);
     create_tunnel_resp->status=0;
     create_tunnel_resp->ue_id=create_tunnel_req->ue_id;
     create_tunnel_resp->num_tunnels=create_tunnel_req->num_tunnels;

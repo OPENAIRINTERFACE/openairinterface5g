@@ -282,10 +282,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
       memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
       if (!IS_SOFTMODEM_NOS1) {
         LOG_D(RRC, "Calling gtpv1u_create_s1u_tunnel()\n");
-        gtpv1u_create_s1u_tunnel(
-          ctxt.instance,
-          &create_tunnel_req,
-          &create_tunnel_resp);
+        gtpv1u_create_s1u_tunnel(ctxt.instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb);
         rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
           &create_tunnel_resp,

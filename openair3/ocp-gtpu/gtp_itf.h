@@ -51,8 +51,10 @@ extern "C" {
   // the parameter originInstance will be sent back in each message from gtp to the creator
   void gtpv1uReceiver(int h);
   void gtpv1uProcessTimeout(int handle,void *arg);
-  int gtpv1u_create_s1u_tunnel(const instance_t instance, const gtpv1u_enb_create_tunnel_req_t  *create_tunnel_req,
-                               gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp);
+  int gtpv1u_create_s1u_tunnel(const instance_t instance,
+                               const gtpv1u_enb_create_tunnel_req_t *create_tunnel_req,
+                               gtpv1u_enb_create_tunnel_resp_t *create_tunnel_resp,
+                               gtpCallback callBack);
   int gtpv1u_update_s1u_tunnel(const instance_t instanceP,
                                const gtpv1u_enb_create_tunnel_req_t   *create_tunnel_req_pP,
                                const rnti_t prior_rnti
@@ -66,12 +68,12 @@ extern "C" {
 
   int gtpv1u_delete_x2u_tunnel( const instance_t instanceP,
                                 const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
-  int
-  gtpv1u_create_ngu_tunnel(
-                           const instance_t instanceP,
-                           const gtpv1u_gnb_create_tunnel_req_t   *const create_tunnel_req_pP,
-                           gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP);
-  
+  int gtpv1u_create_ngu_tunnel(const instance_t instanceP,
+                               const gtpv1u_gnb_create_tunnel_req_t *const create_tunnel_req_pP,
+                               gtpv1u_gnb_create_tunnel_resp_t *const create_tunnel_resp_pP,
+                               gtpCallback callBack,
+                               gtpCallbackSDAP callBackSDAP);
+
   int gtpv1u_delete_ngu_tunnel( const instance_t instance,
                                 gtpv1u_gnb_delete_tunnel_req_t *req);
   

@@ -38,6 +38,7 @@
 #include "intertask_interface.h"
 #include "nr_pdcp/nr_pdcp_oai_api.h"
 #include "pdcp_primitives.h"
+#include "SDAP/nr_sdap/nr_sdap.h"
 
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
@@ -391,7 +392,7 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
     }
     create_tunnel_req.ue_id = UE->rnti;
     gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp = {0};
-    int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, &create_tunnel_resp);
+    int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);
     if (ret != 0) {
       LOG_E(NR_RRC, "rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE %x\n", UE->rnti);
       UE->ue_release_timer_ng = 1;
