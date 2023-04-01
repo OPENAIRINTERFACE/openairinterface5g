@@ -219,7 +219,7 @@ services:
             F1_DU_IP_ADDRESS: 192.168.71.142
             F1_CU_D_PORT: 2153
             F1_DU_D_PORT: 2153
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim --rfsimulator.wait_timeout 20 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-cu
         networks:

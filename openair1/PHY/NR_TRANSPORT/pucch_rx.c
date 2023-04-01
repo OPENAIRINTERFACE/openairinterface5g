@@ -44,54 +44,16 @@
 #include "PHY/NR_UE_TRANSPORT/pucch_nr.h"
 #include <openair1/PHY/CODING/nrSmallBlock/nr_small_block_defs.h>
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "nfapi/oai_integration/vendor_ext.h"
-
 #include "nfapi/oai_integration/vendor_ext.h"
 
 #include "T.h"
 
 //#define DEBUG_NR_PUCCH_RX 1
-
-NR_gNB_PUCCH_t *new_gNB_pucch(void){
-    NR_gNB_PUCCH_t *pucch;
-    pucch = (NR_gNB_PUCCH_t *)malloc16(sizeof(NR_gNB_PUCCH_t));
-    pucch->active = 0;
-    return (pucch);
-}
-
-void free_gNB_pucch(NR_gNB_PUCCH_t *pucch)
-{
-  free_and_zero(pucch);
-}
-
-int nr_find_pucch(uint16_t rnti,
-                  int frame,
-                  int slot,
-                  PHY_VARS_gNB *gNB)
-{
-
-  AssertFatal(gNB!=NULL,"gNB is null\n");
-  int index = -1;
-
-  for (int i = 0; i < gNB->max_nb_pucch; i++) {
-    AssertFatal(gNB->pucch[i] != NULL,"gNB->pucch[%d] is null\n",i);
-    if ((gNB->pucch[i]->active > 0) &&
-        (gNB->pucch[i]->pucch_pdu.rnti == rnti) &&
-        (gNB->pucch[i]->frame == frame) &&
-        (gNB->pucch[i]->slot == slot))
-      return i;
-    else if ((gNB->pucch[i]->active == 0) && (index == -1))
-      index = i;
-  }
-
-  if (index==-1)
-    LOG_E(MAC,"PUCCH list is full\n");
-
-  return(index);
-}
 
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
@@ -100,19 +62,30 @@ void nr_fill_pucch(PHY_VARS_gNB *gNB,
 {
 
   if (NFAPI_MODE == NFAPI_MODE_PNF)
-    gNB->pucch[0]->active = 0; //check if ture in monolithic mode 
-  int id = nr_find_pucch(pucch_pdu->rnti,frame,slot,gNB);
-  AssertFatal((id >= 0) && (id < gNB->max_nb_pucch),
-              "invalid id found for pucch !!! rnti %04x id %d\n",pucch_pdu->rnti,id);
+    gNB->pucch[0].active = 0; // check if ture in monolithic mode
 
-  NR_gNB_PUCCH_t  *pucch = gNB->pucch[id];
-  pucch->frame = frame;
-  pucch->slot = slot;
-  pucch->active = 1;
-  if (pucch->pucch_pdu.format_type > 0)
-    LOG_D(PHY,"Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",id,
-          pucch->frame,pucch->slot,pucch->pucch_pdu.format_type,pucch->pucch_pdu.bit_len_harq,pucch->pucch_pdu.sr_flag,pucch->pucch_pdu.bit_len_csi_part1);
-  memcpy((void*)&pucch->pucch_pdu, (void*)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
+  bool found = false;
+  for (int i = 0; i < gNB->max_nb_pucch; i++) {
+    NR_gNB_PUCCH_t *pucch = &gNB->pucch[i];
+    if (pucch->active == 0) {
+      pucch->frame = frame;
+      pucch->slot = slot;
+      pucch->active = 1;
+      memcpy((void *)&pucch->pucch_pdu, (void *)pucch_pdu, sizeof(nfapi_nr_pucch_pdu_t));
+      LOG_D(PHY,
+            "Programming PUCCH[%d] for %d.%d, format %d, nb_harq %d, nb_sr %d, nb_csi %d\n",
+            i,
+            pucch->frame,
+            pucch->slot,
+            pucch->pucch_pdu.format_type,
+            pucch->pucch_pdu.bit_len_harq,
+            pucch->pucch_pdu.sr_flag,
+            pucch->pucch_pdu.bit_len_csi_part1);
+      found = true;
+      break;
+    }
+  }
+  AssertFatal(found, "PUCCH list is full\n");
 }
 
 
@@ -176,38 +149,27 @@ int16_t idft12_im[12][12] = {
   {0,-11585,-20066,-23170,-20066,-11585,0,11585,20066,23170,20066,11585}
 };
 
-
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int frame,
                       int slot,
-                      nfapi_nr_uci_pucch_pdu_format_0_1_t* uci_pdu,
-                      nfapi_nr_pucch_pdu_t* pucch_pdu) {
-
+                      nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_pdu,
+                      nfapi_nr_pucch_pdu_t *pucch_pdu)
+{
   c16_t **rxdataF = gNB->common_vars.rxdataF;
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
-  int soffset=(slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
-  int nr_sequences;
-  const uint8_t *mcs;
-
-  pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag<<1);
+  int soffset = (slot & 3) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
 
   AssertFatal(pucch_pdu->bit_len_harq > 0 || pucch_pdu->sr_flag > 0,
 	      "Either bit_len_harq (%d) or sr_flag (%d) must be > 0\n",
 	      pucch_pdu->bit_len_harq,pucch_pdu->sr_flag);
 
-  NR_gNB_UCI_STATS_t *uci_stats=NULL;
-  NR_gNB_UCI_STATS_t *first_uci_stats = gNB->uci_stats;
-  for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++)
-     if (gNB->uci_stats[i].rnti == pucch_pdu->rnti) {
-        uci_stats = &gNB->uci_stats[i];
-        break;
-     } else if (first_uci_stats == NULL && gNB->uci_stats[i].rnti == 0) first_uci_stats = &gNB->uci_stats[i];
+  NR_gNB_PHY_STATS_t *phy_stats = get_phy_stats(gNB, pucch_pdu->rnti);
+  AssertFatal(phy_stats != NULL, "phy_stats shouldn't be NULL\n");
+  phy_stats->frame = frame;
+  NR_gNB_UCI_STATS_t *uci_stats = &phy_stats->uci_stats;
 
-  if (uci_stats == NULL) { uci_stats=first_uci_stats; uci_stats->rnti = pucch_pdu->rnti;}
-
-  AssertFatal(uci_stats!=NULL,"No stat index found\n");
-  uci_stats->frame = frame;
-
+  int nr_sequences;
+  const uint8_t *mcs;
   if(pucch_pdu->bit_len_harq==0){
     mcs=table1_mcs;
     nr_sequences=1;
@@ -258,20 +220,28 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int n,i;
   int prb_offset[2] = {pucch_pdu->bwp_start+pucch_pdu->prb_start, pucch_pdu->bwp_start+pucch_pdu->prb_start};
 
-  nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,0,slot,&u[0],&v[0]); // calculating u and v value first hop
+  pucch_GroupHopping_t pucch_GroupHopping = pucch_pdu->group_hop_flag + (pucch_pdu->sequence_hop_flag << 1);
+  nr_group_sequence_hopping(pucch_GroupHopping,
+                            pucch_pdu->hopping_id,
+                            0,
+                            slot,
+                            &u[0],
+                            &v[0]); // calculating u and v value first hop
   LOG_D(PHY,"pucch0: u %d, v %d\n",u[0],v[0]);
 
-
   if (pucch_pdu->freq_hop_flag == 1) {
-    nr_group_sequence_hopping(pucch_GroupHopping,pucch_pdu->hopping_id,1,slot,&u[1],&v[1]); // calculating u and v value second hop
+    nr_group_sequence_hopping(pucch_GroupHopping,
+                              pucch_pdu->hopping_id,
+                              1,
+                              slot,
+                              &u[1],
+                              &v[1]); // calculating u and v value second hop
     LOG_D(PHY,"pucch0 second hop: u %d, v %d\n",u[1],v[1]);
-    prb_offset[1] = pucch_pdu->bwp_start+pucch_pdu->second_hop_prb;
+    prb_offset[1] = pucch_pdu->bwp_start + pucch_pdu->second_hop_prb;
   }
 
-
   AssertFatal(pucch_pdu->nr_of_symbols < 3,"nr_of_symbols %d not allowed\n",pucch_pdu->nr_of_symbols);
-  uint32_t re_offset[2]={0};
-  uint8_t l2;
+  uint32_t re_offset[2] = {0};
 
   const int16_t *x_re[2],*x_im[2];
   x_re[0] = table_5_2_2_2_2_Re[u[0]];
@@ -288,7 +258,7 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch],*tmp_rp;
 
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
-    l2 = l+pucch_pdu->start_symbol_index;
+    uint8_t l2 = l + pucch_pdu->start_symbol_index;
 
     re_offset[l] = (12*prb_offset[l]) + frame_parms->first_carrier_offset;
     if (re_offset[l]>= frame_parms->ofdm_symbol_size)
@@ -454,10 +424,22 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_pdu->harq->harq_confidence_level = no_conf;
     uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(sizeof *uci_pdu->harq->harq_list);
     uci_pdu->harq->harq_list[0].harq_value = !(index&0x01);
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d, energy %f, sync_pos %d\n",
-          frame,slot,uci_pdu->harq->harq_list[0].harq_value==0?"ACK":"NACK",
-	  uci_pdu->harq->harq_confidence_level==0?"good":"bad",
-	  xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,SNRtimes10,10*log10((double)sigenergy),gNB->ulsch_stats[0].sync_pos);
+    LOG_D(PHY,
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, "
+          "cqi %d, SNRtimes10 %d, energy %f\n",
+          frame,
+          slot,
+          uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
+          uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
+          xrtmag_dBtimes10,
+          xrtmag_next_dBtimes10,
+          max_n0,
+          uci_stats->pucch0_n00,
+          uci_stats->pucch0_n01,
+          uci_stats->pucch0_thres,
+          cqi,
+          SNRtimes10,
+          10 * log10((double)sigenergy));
 
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
@@ -478,14 +460,22 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
 
     uci_pdu->harq->harq_list[1].harq_value = !(index&0x01);
     uci_pdu->harq->harq_list[0].harq_value = !((index>>1)&0x01);
-    LOG_D(PHY, "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, cqi %d, SNRtimes10 %d,sync_pos %d\n",
-          frame,slot,
+    LOG_D(PHY,
+          "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) "
+          "pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
+          frame,
+          slot,
           uci_pdu->harq->harq_list[1].harq_value == 0 ? "ACK" : "NACK",
           uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
           uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
-          xrtmag_dBtimes10,xrtmag_next_dBtimes10,max_n0,
-          uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,cqi,
-          SNRtimes10,gNB->ulsch_stats[0].sync_pos);
+          xrtmag_dBtimes10,
+          xrtmag_next_dBtimes10,
+          max_n0,
+          uci_stats->pucch0_n00,
+          uci_stats->pucch0_n01,
+          uci_stats->pucch0_thres,
+          cqi,
+          SNRtimes10);
     if (pucch_pdu->sr_flag == 1) {
       uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
       uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
@@ -498,24 +488,21 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   }
 }
 
-
-
-
-
-void nr_decode_pucch1(  c16_t **rxdataF,
-		        pucch_GroupHopping_t pucch_GroupHopping,
-                        uint32_t n_id,       // hoppingID higher layer parameter  
-                        uint64_t *payload,
-		       	NR_DL_FRAME_PARMS *frame_parms, 
-                        int16_t amp,
-                        int nr_tti_tx,
-                        uint8_t m0,
-                        uint8_t nrofSymbols,
-                        uint8_t startingSymbolIndex,
-                        uint16_t startingPRB,
-                        uint16_t startingPRB_intraSlotHopping,
-                        uint8_t timeDomainOCC,
-                        uint8_t nr_bit) {
+void nr_decode_pucch1(c16_t **rxdataF,
+		      pucch_GroupHopping_t pucch_GroupHopping,
+                      uint32_t n_id,       // hoppingID higher layer parameter  
+                      uint64_t *payload,
+		      NR_DL_FRAME_PARMS *frame_parms, 
+                      int16_t amp,
+                      int nr_tti_tx,
+                      uint8_t m0,
+                      uint8_t nrofSymbols,
+                      uint8_t startingSymbolIndex,
+                      uint16_t startingPRB,
+                      uint16_t startingPRB_intraSlotHopping,
+                      uint8_t timeDomainOCC,
+                      uint8_t nr_bit)
+{
 #ifdef DEBUG_NR_PUCCH_RX
   printf("\t [nr_generate_pucch1] start function at slot(nr_tti_tx)=%d payload=%lp m0=%d nrofSymbols=%d startingSymbolIndex=%d startingPRB=%d startingPRB_intraSlotHopping=%d timeDomainOCC=%d nr_bit=%d\n",
          nr_tti_tx,payload,m0,nrofSymbols,startingSymbolIndex,startingPRB,startingPRB_intraSlotHopping,timeDomainOCC,nr_bit);
@@ -1209,9 +1196,16 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
       }
     }
   }
-  LOG_D(PHY,"Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
-        pucch_pdu->nr_of_symbols,pucch_pdu->prb_size,
-        pucch_pdu->bit_len_harq,pucch_pdu->sr_flag,pucch_pdu->bit_len_csi_part1,pucch_pdu->bit_len_csi_part2);
+  LOG_D(PHY,
+        "%d.%d Decoding pucch2 for %d symbols, %d PRB, nb_harq %d, nb_sr %d, nb_csi %d/%d\n",
+        frame,
+        slot,
+        pucch_pdu->nr_of_symbols,
+        pucch_pdu->prb_size,
+        pucch_pdu->bit_len_harq,
+        pucch_pdu->sr_flag,
+        pucch_pdu->bit_len_csi_part1,
+        pucch_pdu->bit_len_csi_part2);
 
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
@@ -1789,31 +1783,65 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 }
 
 void nr_dump_uci_stats(FILE *fd,PHY_VARS_gNB *gNB,int frame) {
+  int strpos = 0;
+  char output[16384];
 
-   int strpos=0;
-   char output[16384];
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
+    if (!stats->active)
+      return;
+    NR_gNB_UCI_STATS_t *uci_stats = &stats->uci_stats;
+    if (uci_stats->pucch0_sr_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current "
+                        "pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch0_sr_trials,
+                        uci_stats->pucch0_n00,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_sr_thres,
+                        dB_fixed(uci_stats->current_pucch0_sr_stat0),
+                        dB_fixed(uci_stats->current_pucch0_sr_stat1),
+                        uci_stats->pucch0_positive_SR);
+    if (uci_stats->pucch01_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current "
+                        "pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch01_trials,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_thres,
+                        dB_fixed(uci_stats->current_pucch0_stat0),
+                        dB_fixed(uci_stats->current_pucch0_stat1),
+                        uci_stats->pucch01_DTX);
 
-   for (int i=0;i<NUMBER_OF_NR_UCI_STATS_MAX;i++){
-      if (gNB->uci_stats[i].rnti>0) {
-         NR_gNB_UCI_STATS_t *uci_stats = &gNB->uci_stats[i];
-         if (uci_stats->pucch0_sr_trials > 0)
-             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch0_sr_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_sr_thres %d dB, current pucch1_stat0 %d dB, current pucch1_stat1 %d dB, positive SR count %d\n",
-                             i,uci_stats->rnti,uci_stats->pucch0_sr_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_sr_thres,dB_fixed(uci_stats->current_pucch0_sr_stat0),dB_fixed(uci_stats->current_pucch0_sr_stat1),uci_stats->pucch0_positive_SR);
-         if (uci_stats->pucch01_trials > 0)
-            strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch1_stat1 %d dB, pucch01_DTX %d\n",
-                            i,uci_stats->rnti,uci_stats->pucch01_trials,uci_stats->pucch0_n01,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch01_DTX);
+    if (uci_stats->pucch02_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current "
+                        "pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch02_trials,
+                        uci_stats->pucch0_n00,
+                        uci_stats->pucch0_n01,
+                        uci_stats->pucch0_thres,
+                        dB_fixed(uci_stats->current_pucch0_stat0),
+                        dB_fixed(uci_stats->current_pucch0_stat1),
+                        uci_stats->pucch02_DTX);
 
-         if (uci_stats->pucch02_trials > 0)
-             strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch01_trials %d, pucch0_n00 %d dB, pucch0_n01 %d dB, pucch0_thres %d dB, current pucch0_stat0 %d dB, current pucch0_stat1 %d dB, pucch01_DTX %d\n",
-                             i,uci_stats->rnti,uci_stats->pucch02_trials,uci_stats->pucch0_n00,uci_stats->pucch0_n01,uci_stats->pucch0_thres,dB_fixed(uci_stats->current_pucch0_stat0),dB_fixed(uci_stats->current_pucch0_stat1),uci_stats->pucch02_DTX);
-
-         if (uci_stats->pucch2_trials > 0)
-           strpos+=sprintf(output+strpos,"UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
-                           i,uci_stats->rnti,
-                           uci_stats->pucch2_trials,
-                           uci_stats->pucch2_DTX);
-       }
-    }
-    if (fd) fprintf(fd,"%s",output);
-    else    printf("%s",output);
+    if (uci_stats->pucch2_trials > 0)
+      strpos += sprintf(output + strpos,
+                        "UCI %d RNTI %x: pucch2_trials %d, pucch2_DTX %d\n",
+                        i,
+                        stats->rnti,
+                        uci_stats->pucch2_trials,
+                        uci_stats->pucch2_DTX);
+  }
+  if (fd)
+    fprintf(fd, "%s", output);
+  else
+    printf("%s", output);
 }

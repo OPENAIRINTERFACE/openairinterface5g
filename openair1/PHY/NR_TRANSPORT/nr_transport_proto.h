@@ -38,6 +38,7 @@
 
 #define NR_PBCH_PDU_BITS 24
 
+NR_gNB_PHY_STATS_t *get_phy_stats(PHY_VARS_gNB *gNB, uint16_t rnti);
 
 int nr_generate_prs(uint32_t **nr_gold_prs,
                     c16_t *txdataF,
@@ -107,10 +108,9 @@ int nr_generate_pbch(nfapi_nr_dl_tti_ssb_pdu *ssb_pdu,
  */
 void nr_init_pbch_interleaver(uint8_t *interleaver);
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
-                              uint16_t N_RB);
+NR_gNB_DLSCH_t new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms, uint16_t N_RB);
 
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, uint16_t N_RB, const NR_DL_FRAME_PARMS* frame_parms);
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch, uint16_t N_RB, const NR_DL_FRAME_PARMS *frame_parms);
 
 /** \brief This function is the top-level entry point to PUSCH demodulation, after frequency-domain transformation and channel estimation.  It performs
     - RB extraction (signal and channel estimates)
@@ -269,6 +269,9 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           uint8_t  symbol,
                           uint8_t  mod_order);
 
+void reset_active_stats(PHY_VARS_gNB *gNB, int frame);
+void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame);
+
 void nr_fill_ulsch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
@@ -304,26 +307,10 @@ void nr_fill_prach_ru(RU_t *ru,
 int16_t find_nr_prach(PHY_VARS_gNB *gNB,int frame,int slot, find_type_t type);
 int16_t find_nr_prach_ru(RU_t *ru,int frame,int slot, find_type_t type);
 
-NR_gNB_PUCCH_t *new_gNB_pucch(void);
-void free_gNB_pucch(NR_gNB_PUCCH_t *pucch);
-
 void nr_fill_pucch(PHY_VARS_gNB *gNB,
                    int frame,
                    int slot,
                    nfapi_nr_pucch_pdu_t *pucch_pdu);
-
-int nr_find_pucch(uint16_t rnti,
-                  int frame,
-                  int slot,
-                  PHY_VARS_gNB *gNB);
-
-NR_gNB_SRS_t *new_gNB_srs(void);
-void free_gNB_srs(NR_gNB_SRS_t *srs);
-
-int nr_find_srs(rnti_t rnti,
-                frame_t frame,
-                slot_t slot,
-                PHY_VARS_gNB *gNB);
 
 void nr_fill_srs(PHY_VARS_gNB *gNB,
                  frame_t frame,

@@ -478,14 +478,29 @@ void abort_nr_ul_harq(NR_UE_info_t *UE, int8_t harq_pid)
     sched_ctrl->sched_ul_bytes = 0;
 }
 
+bool get_UE_waiting_CFRA_msg3(const gNB_MAC_INST *gNB_mac, const int CC_id, const frame_t frame, const sub_frame_t slot)
+{
+  bool UE_waiting_CFRA_msg3 = false;
+  for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+    const NR_RA_t *ra = &gNB_mac->common_channels[CC_id].ra[i];
+    if (ra->cfra == true && ra->state == WAIT_Msg3 && frame == ra->Msg3_frame && slot == ra->Msg3_slot) {
+      UE_waiting_CFRA_msg3 = true;
+      break;
+    }
+  }
+  return UE_waiting_CFRA_msg3;
+}
+
 void handle_nr_ul_harq(const int CC_idP,
                        module_id_t mod_id,
                        frame_t frame,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu)
 {
-  NR_UE_info_t* UE = find_nr_UE(&RC.nrmac[mod_id]->UE_info, crc_pdu->rnti);
-  if (!UE) {
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[mod_id]->UE_info, crc_pdu->rnti);
+  bool UE_waiting_CFRA_msg3 = get_UE_waiting_CFRA_msg3(RC.nrmac[mod_id], CC_idP, frame, slot);
+
+  if (!UE || UE_waiting_CFRA_msg3 == true) {
     LOG_W(NR_MAC, "handle harq for rnti %04x, in RA process\n", crc_pdu->rnti);
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
       NR_RA_t *ra = &RC.nrmac[mod_id]->common_channels[CC_idP].ra[i];
@@ -568,9 +583,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   LOG_D(NR_MAC, "rx_sdu for rnti %04x\n", current_rnti);
   const int target_snrx10 = gNB_mac->pusch_target_snrx10;
   const int pusch_failure_thres = gNB_mac->pusch_failure_thres;
-  
-  NR_UE_info_t* UE = find_nr_UE(&gNB_mac->UE_info, current_rnti);
-  if (UE) {
+
+  NR_UE_info_t *UE = find_nr_UE(&gNB_mac->UE_info, current_rnti);
+  bool UE_waiting_CFRA_msg3 = get_UE_waiting_CFRA_msg3(gNB_mac, CC_idP, frameP, slotP);
+
+  if (UE && UE_waiting_CFRA_msg3 == false) {
+
     NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
     const int8_t harq_pid = UE_scheduling_control->feedback_ul_harq.head;
 
@@ -680,7 +698,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       
       if(no_sig) {
         LOG_D(NR_MAC, "Random Access %i failed at state %i (no signal)\n", i, ra->state);
-        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
       } else {
 
@@ -693,25 +710,24 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
 
           if( (frameP==ra->Msg3_frame) && (slotP==ra->Msg3_slot) ) {
             LOG_D(NR_MAC, "Random Access %i failed at state %i (TC_RNTI %04x RNTI %04x)\n", i, ra->state,ra->rnti,current_rnti);
-            nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
 
           continue;
         }
 
-        NR_UE_info_t *UE = add_new_nr_ue(gNB_mac, ra->rnti, ra->CellGroup);
-        if (!UE) {
-          LOG_W(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state,ra->rnti,current_rnti);
-          nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+        NR_UE_info_t *UE_msg3_stage = UE ? UE : add_new_nr_ue(gNB_mac, ra->rnti, ra->CellGroup);
+        if (!UE_msg3_stage) {
+          LOG_W(NR_MAC, "Random Access %i discarded at state %i (TC_RNTI %04x RNTI %04x): max number of users achieved!\n", i, ra->state, ra->rnti, current_rnti);
+
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           return;
         }
 
-        UE->UE_beam_index = ra->beam_id;
+        UE_msg3_stage->UE_beam_index = ra->beam_id;
 
         // re-initialize ta update variables after RA procedure completion
-        UE->UE_sched_ctrl.ta_frame = frameP;
+        UE_msg3_stage->UE_sched_ctrl.ta_frame = frameP;
 
         LOG_D(NR_MAC,
               "reset RA state information for RA-RNTI 0x%04x/index %d\n",
@@ -725,19 +741,22 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
               current_rnti,
               ra->rnti);
 
-        NR_UE_sched_ctrl_t *UE_scheduling_control = &UE->UE_sched_ctrl;
+        NR_UE_sched_ctrl_t *UE_scheduling_control = &UE_msg3_stage->UE_sched_ctrl;
 
-        UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10,ul_cqi,30);
+        UE_scheduling_control->tpc0 = nr_get_tpc(target_snrx10, ul_cqi, 30);
         if (timing_advance != 0xffff)
           UE_scheduling_control->ta_update = timing_advance;
         UE_scheduling_control->raw_rssi = rssi;
         UE_scheduling_control->pusch_snrx10 = ul_cqi * 5 - 640;
-        LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n",UE->rnti,UE_scheduling_control->tpc0,UE_scheduling_control->ta_update);
-        if(ra->cfra) {
-
+        LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n", UE_msg3_stage->rnti, UE_scheduling_control->tpc0, UE_scheduling_control->ta_update);
+        if (ra->cfra) {
           LOG_A(NR_MAC, "(rnti 0x%04x) CFRA procedure succeeded!\n", ra->rnti);
-          UE->ra_timer = 0;
-          nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
+          nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->rnti);
+          reset_dl_harq_list(UE_scheduling_control);
+          reset_ul_harq_list(UE_scheduling_control);
+          UE_scheduling_control->pusch_consecutive_dtx_cnt = 0;
+          UE_scheduling_control->ul_failure = 0;
+          UE_msg3_stage->ra_timer = 0;
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           process_CellGroup(ra->CellGroup, UE_scheduling_control);
 
@@ -755,7 +774,7 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
           memcpy(ra->cont_res_id, &sduP[1], sizeof(uint8_t) * 6);
           // harq_pid set a non valid value because it is not used in this call
           // the function is only called to decode the contention resolution sub-header
-          if (nr_process_mac_pdu(gnb_mod_idP, UE, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
+          if (nr_process_mac_pdu(gnb_mod_idP, UE_msg3_stage, CC_idP, frameP, slotP, sduP, sdu_lenP, -1) == 0) {
             
             if (ra->state == Msg3_dcch_dtch) {
               // Check if the UE identified by C-RNTI still exists at the gNB
@@ -785,7 +804,6 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
             }
           }
           else {
-            nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
             nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           }
         }
@@ -804,14 +822,12 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       // for CFRA (NSA) do not schedule retransmission of msg3
       if (ra->cfra) {
         LOG_D(NR_MAC, "Random Access %i failed at state %i (NSA msg3 reception failed)\n", i, ra->state);
-        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
       }
 
       if (ra->msg3_round >= gNB_mac->ul_bler.harq_round_max - 1) {
         LOG_W(NR_MAC, "Random Access %i failed at state %i (Reached msg3 max harq rounds)\n", i, ra->state);
-        nr_mac_remove_ra_rnti(gnb_mod_idP, ra->rnti);
         nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
         return;
       }

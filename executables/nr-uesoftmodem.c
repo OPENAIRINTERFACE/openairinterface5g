@@ -22,6 +22,8 @@
 
 #define _GNU_SOURCE             /* See feature_test_macros(7) */
 #include <sched.h>
+#include <stdbool.h>
+#include <signal.h>
 
 #include "T.h"
 #include "assertions.h"
@@ -59,7 +61,7 @@ unsigned short config_frames[4] = {2,9,11,13};
 
 #include "UTIL/OPT/opt.h"
 #include "enb_config.h"
-#include "pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 #include "intertask_interface.h"
 
@@ -211,6 +213,11 @@ int create_tasks_nrue(uint32_t ue_nb) {
   }
 
   itti_wait_ready(0);
+
+  // Thread to update the RRC timers (in msec) at UE
+  pthread_t timers_update;
+  threadCreate(&timers_update, nr_rrc_timers_update, NULL, "nr_rrc_timer_update", -1, OAI_PRIORITY_RT_LOW);
+
   return 0;
 }
 
@@ -386,7 +393,7 @@ static void init_pdcp(int ue_id) {
   if (get_softmodem_params()->nsa && rlc_module_init(0) != 0) {
     LOG_I(RLC, "Problem at RLC initiation \n");
   }
-  pdcp_layer_init();
+  nr_pdcp_layer_init();
   nr_pdcp_module_init(pdcp_initmask, ue_id);
   pdcp_set_rlc_data_req_func((send_rlc_data_req_func_t) rlc_data_req);
   pdcp_set_pdcp_data_ind_func((pdcp_data_ind_func_t) pdcp_data_ind);
@@ -395,6 +402,27 @@ static void init_pdcp(int ue_id) {
 // Stupid function addition because UE itti messages queues definition is common with eNB
 void *rrc_enb_process_msg(void *notUsed) {
   return NULL;
+}
+
+static bool stop_immediately = false;
+static void trigger_stop(int sig)
+{
+  if (!oai_exit)
+    itti_wait_tasks_unblock();
+}
+static void trigger_deregistration(int sig)
+{
+  if (!stop_immediately) {
+    MessageDef *msg = itti_alloc_new_message(TASK_RRC_UE_SIM, 0, NAS_DEREGISTRATION_REQ);
+    itti_send_msg_to_task(TASK_NAS_NRUE, 0, msg);
+    stop_immediately = true;
+    static const char m[] = "Press ^C again to trigger immediate shutdown\n";
+    __attribute__((unused)) int unused = write(STDOUT_FILENO, m, sizeof(m) - 1);
+    signal(SIGALRM, trigger_stop);
+    alarm(5);
+  } else {
+    itti_wait_tasks_unblock();
+  }
 }
 
 static void get_channel_model_mode() {
@@ -426,7 +454,7 @@ int main( int argc, char **argv ) {
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
-  set_softmodem_sighandler();
+  //set_softmodem_sighandler();
   CONFIG_SETRTFLAG(CONFIG_NOEXITONHELP);
   memset(openair0_cfg,0,sizeof(openair0_config_t)*MAX_CARDS);
   memset(tx_max_power,0,sizeof(int)*MAX_NUM_CCs);
@@ -550,14 +578,27 @@ int main( int argc, char **argv ) {
 
   // Sleep a while before checking all parameters have been used
   // Some are used directly in external threads, asynchronously
-  sleep(20);
+  sleep(2);
   config_check_unknown_cmdlineopt(CONFIG_CHECKALLSECTIONS);
 
-  while(true)
-    sleep(3600);
+  // wait for end of program
+  printf("Entering ITTI signals handler\n");
+  printf("TYPE <CTRL-C> TO TERMINATE\n");
+  itti_wait_tasks_end(trigger_deregistration);
+  printf("Returned from ITTI signal handler\n");
+  oai_exit=1;
+  printf("oai_exit=%d\n",oai_exit);
 
   if (ouput_vcd)
     vcd_signal_dumper_close();
+
+  if (PHY_vars_UE_g && PHY_vars_UE_g[0]) {
+    for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+      PHY_VARS_NR_UE *phy_vars = PHY_vars_UE_g[0][CC_id];
+      if (phy_vars && phy_vars->rfdevice.trx_end_func)
+        phy_vars->rfdevice.trx_end_func(&phy_vars->rfdevice);
+    }
+  }
 
   return 0;
 }

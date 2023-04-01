@@ -473,10 +473,10 @@ static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   int uestart = 0; // xforms scope designed to display nb_UEs signals
 #endif
   for (int ue = uestart; ue < nb_UEs; ue++) {
-    if ( p->gNB->pusch_vars && p->gNB->pusch_vars[ue] &&
-         p->gNB->pusch_vars[ue]->ul_ch_estimates_time &&
-         p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant] ) {
-      scopeSample_t *data= (scopeSample_t *)p->gNB->pusch_vars[ue]->ul_ch_estimates_time[ant];
+    if (p->gNB->pusch_vars &&
+        p->gNB->pusch_vars[ue].ul_ch_estimates_time &&
+        p->gNB->pusch_vars[ue].ul_ch_estimates_time[ant] ) {
+      scopeSample_t *data= (scopeSample_t *)p->gNB->pusch_vars[ue].ul_ch_estimates_time[ant];
 
       if (data != NULL) {
         for (int i=0; i<len; i++) {
@@ -527,10 +527,9 @@ static void puschLLR (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   int coded_bits_per_codeword = num_re*Qm;
 
   for (int ue = uestart; ue < nb_UEs; ue++) {
-    if ( p->gNB->pusch_vars &&
-         p->gNB->pusch_vars[ue] &&
-         p->gNB->pusch_vars[ue]->llr ) {
-      int16_t *pusch_llr = (int16_t *)p->gNB->pusch_vars[ue]->llr;
+    if (p->gNB->pusch_vars &&
+        p->gNB->pusch_vars[ue].llr ) {
+      int16_t *pusch_llr = (int16_t *)p->gNB->pusch_vars[ue].llr;
       float *llr=NULL, *bit=NULL;
       int nx = coded_bits_per_codeword;
 #ifdef WEBSRVSCOPE
@@ -557,11 +556,10 @@ static void puschIQ (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   int uestart = 0; // xforms scope designed to display nb_UEs signals
 #endif
   for (int ue = uestart; ue < nb_UEs; ue++) {
-    if ( p->gNB->pusch_vars &&
-         p->gNB->pusch_vars[ue] &&
-         p->gNB->pusch_vars[ue]->rxdataF_comp &&
-         p->gNB->pusch_vars[ue]->rxdataF_comp[0] ) {
-      scopeSample_t *pusch_comp = (scopeSample_t *)p->gNB->pusch_vars[ue]->rxdataF_comp[0];
+    if (p->gNB->pusch_vars &&
+        p->gNB->pusch_vars[ue].rxdataF_comp &&
+        p->gNB->pusch_vars[ue].rxdataF_comp[0] ) {
+      scopeSample_t *pusch_comp = (scopeSample_t *)p->gNB->pusch_vars[ue].rxdataF_comp[0];
       float *I=NULL, *Q=NULL;
 #ifdef WEBSRVSCOPE
       newsz = websrv_cpiqbuff_tomsg(graph, pusch_comp, sz, 0, 0);

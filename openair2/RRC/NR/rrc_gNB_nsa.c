@@ -45,7 +45,7 @@
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "UTIL/OSA/osa_defs.h"
 #include <openair2/RRC/NR/nr_rrc_proto.h>
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 void rrc_parse_ue_capabilities(gNB_RRC_INST *rrc, NR_UE_CapabilityRAT_ContainerList_t *UE_CapabilityRAT_ContainerList, x2ap_ENDC_sgnb_addition_req_t *m, NR_CG_ConfigInfo_IEs_t *cg_config_info)
 {
@@ -282,10 +282,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
       memset(&create_tunnel_resp, 0, sizeof(create_tunnel_resp));
       if (!IS_SOFTMODEM_NOS1) {
         LOG_D(RRC, "Calling gtpv1u_create_s1u_tunnel()\n");
-        gtpv1u_create_s1u_tunnel(
-          ctxt.instance,
-          &create_tunnel_req,
-          &create_tunnel_resp);
+        gtpv1u_create_s1u_tunnel(ctxt.instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb);
         rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(
           &ctxt,
           &create_tunnel_resp,
@@ -391,7 +388,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
     return;
   }
 
-  pdcp_remove_UE(&ctxt);
+  nr_pdcp_remove_UE(ctxt.rntiMaybeUEid);
 
   rrc_rlc_remove_ue(&ctxt);
 

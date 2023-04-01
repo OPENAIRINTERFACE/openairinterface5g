@@ -97,9 +97,7 @@ typedef struct {
 } NR_gNB_CSIRS_t;
 
 typedef struct {
-  int frame;
   int dump_frame;
-  uint16_t rnti;
   int round_trials[8];
   int total_bytes_tx;
   int total_bytes_rx;
@@ -112,8 +110,6 @@ typedef struct {
 } NR_gNB_SCH_STATS_t;
 
 typedef struct {
-  int frame;
-  uint16_t rnti;
   int pucch0_sr_trials;
   int pucch0_sr_thres;
   int current_pucch0_sr_stat0;
@@ -133,6 +129,17 @@ typedef struct {
 } NR_gNB_UCI_STATS_t;
 
 typedef struct {
+  int frame;
+  uint16_t rnti;
+  bool active;
+  /// statistics for DLSCH measurement collection
+  NR_gNB_SCH_STATS_t dlsch_stats;
+  /// statistics for ULSCH measurement collection
+  NR_gNB_SCH_STATS_t ulsch_stats;
+  NR_gNB_UCI_STATS_t uci_stats;
+} NR_gNB_PHY_STATS_t;
+
+typedef struct {
   /// Pointers to variables related to DLSCH harq process
   NR_DL_gNB_HARQ_t harq_process;
   /// TX buffers for UE-spec transmission (antenna layers 1,...,4 after to precoding)
@@ -141,12 +148,8 @@ typedef struct {
   int32_t **mod_symbs;
   /// beamforming weights for UE-spec transmission (antenna ports 5 or 7..14), for each codeword, maximum 4 layers?
   int32_t ***ue_spec_bf_weights;
-  /// Allocated RNTI (0 means DLSCH_t is not currently used)
-  uint16_t rnti;
   /// Active flag for baseband transmitter processing
   uint8_t active;
-  /// HARQ process mask, indicates which processes are currently active
-  uint16_t harq_mask;
   /// Number of soft channel bits
   uint32_t G;
 } NR_gNB_DLSCH_t;
@@ -185,18 +188,13 @@ typedef struct {
 typedef struct {
   /// Nfapi ULSCH PDU
   nfapi_nr_pusch_pdu_t ulsch_pdu;
-  /// Frame where current HARQ round was sent
-  uint32_t frame;
-  /// Slot where current HARQ round was sent
-  uint32_t slot;
   /// Index of current HARQ round for this DLSCH
   uint8_t round;
   bool new_rx;
-  /// Status Flag indicating for this ULSCH (idle,active,disabled)
-  NR_SCH_status_t status;
-  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
-  uint8_t handled;
-    /////////////////////// ulsch decoding ///////////////////////
+  /////////////////////// ulsch decoding ///////////////////////
+  /// flag used to clear d properly (together with d_to_be_cleared below)
+  /// set to true in nr_fill_ulsch() when new_data_indicator is received
+  bool harq_to_be_cleared;
   /// Transport block size (This is A from 38.212 V15.4.0 section 5.1)
   uint32_t TBS;
   /// Pointer to the payload (38.212 V15.4.0 section 5.1)
@@ -213,6 +211,10 @@ typedef struct {
   uint32_t C;
   /// Pointers to code blocks after LDPC coding (38.212 V15.4.0 section 5.3.2)
   int16_t **d;
+  /// flag used to clear d properly (together with harq_to_be_cleared above)
+  /// set to true in nr_ulsch_decoding() when harq_to_be_cleared is true
+  /// when true, clear d in the next call to function nr_rate_matching_ldpc_rx()
+  bool *d_to_be_cleared;
   /// LDPC lifting size (38.212 V15.4.0 table 5.3.2-1)
   uint32_t Z;
   /// Number of bits in each code block after rate matching for LDPC code (38.212 V15.4.0 section 5.4.2.1)
@@ -225,20 +227,61 @@ typedef struct {
   //////////////////////////////////////////////////////////////
 } NR_UL_gNB_HARQ_t;
 
+typedef struct {
+  //! estimated received spatial signal power (linear)
+  unsigned int rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  //! estimated received spatial signal power (dB)
+  unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  //! estimated rssi (dBm)
+  int rx_rssi_dBm;
+  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
+  int rx_correlation[2];
+  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
+  int rx_correlation_dB[2];
+  /// Wideband CQI (= SINR)
+  int wideband_cqi[MAX_NUM_RU_PER_gNB];
+  /// Wideband CQI in dB (= SINR dB)
+  int wideband_cqi_dB[MAX_NUM_RU_PER_gNB];
+  /// Wideband CQI (sum of all RX antennas, in dB)
+  char wideband_cqi_tot;
+  /// Subband CQI per RX antenna and RB (= SINR)
+  int subband_cqi[MAX_NUM_RU_PER_gNB][275];
+  /// Total Subband CQI and RB (= SINR)
+  int subband_cqi_tot[275];
+  /// Subband CQI in dB and RB (= SINR dB)
+  int subband_cqi_dB[MAX_NUM_RU_PER_gNB][275];
+  /// Total Subband CQI and RB
+  int subband_cqi_tot_dB[275];
+} ulsch_measurements_gNB;
 
 typedef struct {
+  /// Time shift in number of samples estimated based on DMRS-PUSCH
+  int pusch_est_delay;
+  /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
+  int pusch_delay_max_pos;
+  /// Max value related to time shift estimation based on DMRS-PUSCH
+  int pusch_delay_max_val;
+} NR_ULSCH_delay_t;
+
+typedef struct {
+  uint32_t frame;
+  uint32_t slot;
   /// Pointers to 16 HARQ processes for the ULSCH
-  NR_UL_gNB_HARQ_t *harq_processes[NR_MAX_ULSCH_HARQ_PROCESSES];
+  NR_UL_gNB_HARQ_t *harq_process;
   /// HARQ process mask, indicates which processes are currently active
-  uint16_t harq_mask;
+  int harq_pid;
   /// Allocated RNTI for this ULSCH
   uint16_t rnti;
-  /// RNTI type
-  uint8_t rnti_type;
   /// Maximum number of LDPC iterations
   uint8_t max_ldpc_iterations;
   /// number of iterations used in last LDPC decoding
-  uint8_t last_iteration_cnt;  
+  uint8_t last_iteration_cnt;
+  /// Status Flag indicating for this ULSCH
+  bool active;
+  /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
+  uint8_t handled;
+  NR_ULSCH_delay_t delay;
+  ulsch_measurements_gNB ulsch_measurements;
 } NR_gNB_ULSCH_t;
 
 typedef struct {
@@ -492,8 +535,6 @@ typedef struct gNB_L1_proc_t_s {
   gNB_L1_rxtx_proc_t L1_proc, L1_proc_tx;
 } gNB_L1_proc_t;
 
-
-
 typedef struct {
   // common measurements
   //! estimated noise power (linear)
@@ -517,43 +558,8 @@ typedef struct {
   //! estimated avg noise power per RB (dBm)
   int n0_subband_power_tot_dBm[275];
 
-  // gNB measurements (per user)
-  //! estimated received spatial signal power (linear)
-  unsigned int   rx_spatial_power[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
-  //! estimated received spatial signal power (dB)
-  unsigned int rx_spatial_power_dB[NUMBER_OF_NR_ULSCH_MAX][NB_ANTENNAS_TX][NB_ANTENNAS_RX];
-  //! estimated rssi (dBm)
-  int            rx_rssi_dBm[NUMBER_OF_NR_ULSCH_MAX];
-  //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation[NUMBER_OF_NR_ULSCH_MAX][2];
-  //! estimated correlation (wideband dB) between spatial channels (computed in dlsch_demodulation)
-  int            rx_correlation_dB[NUMBER_OF_NR_ULSCH_MAX][2];
-
-  /// Wideband CQI (= SINR)
-  int            wideband_cqi[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB];
-  /// Wideband CQI in dB (= SINR dB)
-  int            wideband_cqi_dB[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB];
-  /// Wideband CQI (sum of all RX antennas, in dB)
-  char           wideband_cqi_tot[NUMBER_OF_NR_ULSCH_MAX];
-  /// Subband CQI per RX antenna and RB (= SINR)
-  int            subband_cqi[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB][275];
-  /// Total Subband CQI and RB (= SINR)
-  int            subband_cqi_tot[NUMBER_OF_NR_ULSCH_MAX][275];
-  /// Subband CQI in dB and RB (= SINR dB)
-  int            subband_cqi_dB[NUMBER_OF_NR_ULSCH_MAX][MAX_NUM_RU_PER_gNB][275];
-  /// Total Subband CQI and RB
-  int            subband_cqi_tot_dB[NUMBER_OF_NR_ULSCH_MAX][275];
   /// PRACH background noise level
   int            prach_I0;
-
-  struct delay_s {
-    /// Time shift in number of samples estimated based on DMRS-PUSCH
-    int pusch_est_delay;
-    /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
-    int pusch_delay_max_pos;
-    /// Max value related to time shift estimation based on DMRS-PUSCH
-    int pusch_delay_max_val;
-  } delay[NUMBER_OF_NR_ULSCH_MAX];
 
 } PHY_MEASUREMENTS_gNB;
 
@@ -607,19 +613,18 @@ typedef struct PHY_VARS_gNB_s {
   
   int max_nb_pucch;
   int max_nb_srs;
+  int max_nb_pdsch;
+  int max_nb_pusch;
+
   NR_gNB_PBCH        pbch;
   NR_gNB_COMMON      common_vars;
   NR_gNB_PRACH       prach_vars;
   NR_gNB_PRS         prs_vars;
-  NR_gNB_PUSCH       *pusch_vars[NUMBER_OF_NR_ULSCH_MAX];
-  NR_gNB_PUCCH_t     **pucch;
-  NR_gNB_SRS_t       **srs;
-  NR_gNB_ULSCH_t     *ulsch[NUMBER_OF_NR_ULSCH_MAX];  // [Nusers times]
-  /// statistics for DLSCH measurement collection
-  NR_gNB_SCH_STATS_t dlsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
-  /// statistics for ULSCH measurement collection
-  NR_gNB_SCH_STATS_t ulsch_stats[NUMBER_OF_NR_SCH_STATS_MAX];
-  NR_gNB_UCI_STATS_t uci_stats[NUMBER_OF_NR_UCI_STATS_MAX];
+  NR_gNB_PUSCH *pusch_vars;
+  NR_gNB_PUCCH_t *pucch;
+  NR_gNB_SRS_t *srs;
+  NR_gNB_ULSCH_t *ulsch;
+  NR_gNB_PHY_STATS_t phy_stats[MAX_MOBILES_PER_GNB];
   t_nrPolar_params    **polarParams;
 
   /// SRS variables
@@ -813,7 +818,7 @@ typedef struct processingData_L1tx {
   nfapi_nr_dl_tti_pdcch_pdu pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   nfapi_nr_ul_dci_request_pdus_t ul_pdcch_pdu[NFAPI_NR_MAX_NB_CORESETS];
   NR_gNB_CSIRS_t csirs_pdu[NR_SYMBOLS_PER_SLOT];
-  NR_gNB_DLSCH_t *dlsch[NUMBER_OF_NR_DLSCH_MAX][2];
+  NR_gNB_DLSCH_t **dlsch;
   NR_gNB_SSB_t ssb[64];
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;

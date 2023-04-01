@@ -364,6 +364,12 @@ typedef struct  __attribute__((packed)) {
 
 } securityModeCommand_t;
 
+typedef struct __attribute__((packed)) {
+  Extendedprotocoldiscriminator_t epd: 8;
+  Security_header_t sh: 8;
+  SGSmobilitymanagementmessages_t mt: 8;
+} deregistrationRequestUEOriginating_t;
+
 typedef struct {
   uicc_t *uicc;
 } nr_user_nas_t;
@@ -371,7 +377,7 @@ typedef struct {
 #define STATIC_ASSERT(test_for_true) _Static_assert((test_for_true), "(" #test_for_true ") failed")
 #define myCalloc(var, type) type * var=(type*)calloc(sizeof(type),1);
 #define arrayCpy(tO, FroM)  STATIC_ASSERT(sizeof(tO) == sizeof(FroM)) ; memcpy(tO, FroM, sizeof(tO))
-int resToresStar(uint8_t *msg, uicc_t* uicc);
+int resToresStar(uint8_t *msg, const uicc_t* uicc);
 
 int identityResponse(void **msg, nr_user_nas_t *UE);
 int authenticationResponse(void **msg, nr_user_nas_t *UE);

@@ -120,7 +120,11 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
   }
   create_tunnel_req.num_tunnels = UE->nb_of_pdusessions;
   create_tunnel_req.ue_id = UE->rnti;
-  int ret = gtpv1u_create_ngu_tunnel(getCxtE1(instance)->gtpInstN3, &create_tunnel_req, &create_tunnel_resp);
+  int ret = gtpv1u_create_ngu_tunnel(getCxtE1(instance)->gtpInstN3,
+                                     &create_tunnel_req,
+                                     &create_tunnel_resp,
+                                     nr_pdcp_data_req_drb,
+                                     sdap_data_req);
 
   if (ret != 0) {
     LOG_E(NR_RRC,"rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE rnti %ld\n",

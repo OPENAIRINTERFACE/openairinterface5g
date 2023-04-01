@@ -58,7 +58,7 @@
 #include "nr-uesoftmodem.h"
 #include "executables/softmodem-common.h"
 #include "plmn_data.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 #include "UTIL/OSA/osa_defs.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
@@ -89,17 +89,6 @@ static const char  nr_nas_attach_req_imsi[] = {
   0x00, 0x00, 0x00, 0x0D, 0x00, 0x00, 0x0A, 0x00, 0x52, 0x12, 0xF2,
   0x01, 0x27, 0x11,
 };
-
-extern void pdcp_config_set_security(
-  const protocol_ctxt_t *const  ctxt_pP,
-  pdcp_t          *const pdcp_pP,
-  const rb_id_t         rb_idP,
-  const uint16_t        lc_idP,
-  const uint8_t         security_modeP,
-  uint8_t         *const kRRCenc,
-  uint8_t         *const kRRCint,
-  uint8_t         *const  kUPenc
-);
 
 void
 nr_rrc_ue_process_ueCapabilityEnquiry(
@@ -1286,10 +1275,38 @@ nr_rrc_ue_process_masterCellGroup(
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
   }
 
-  if( cellGroupConfig->spCellConfig != NULL &&  cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL){
-    //TODO (perform Reconfiguration with sync according to 5.3.5.5.2)
-    //TODO (resume all suspended radio bearers and resume SCG transmission for all radio bearers, if suspended)
-    // NSA procedures
+  // TS 38.331 - Section 5.3.5.5.2 Reconfiguration with sync
+  if (cellGroupConfig->spCellConfig != NULL && cellGroupConfig->spCellConfig->reconfigurationWithSync != NULL) {
+
+    LOG_A(NR_RRC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
+
+    NR_ReconfigurationWithSync_t *reconfigurationWithSync = cellGroupConfig->spCellConfig->reconfigurationWithSync;
+    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_active = 1;
+    switch (reconfigurationWithSync->t304) {
+      case NR_ReconfigurationWithSync__t304_ms100:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 100;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms150:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 150;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms200:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 200;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms500:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 500;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms1000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 1000;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms2000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 2000;
+        break;
+      case NR_ReconfigurationWithSync__t304_ms10000:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 10000;
+        break;
+      default:
+        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 50;
+    }
   }
 
   if(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config == NULL){
@@ -1372,7 +1389,8 @@ static void rrc_ue_generate_RRCSetupComplete(
 
   if (get_softmodem_params()->sa) {
     as_nas_info_t initialNasMsg;
-    generateRegistrationRequest(&initialNasMsg, ctxt_pP->module_id);
+    nr_ue_nas_t *nas = get_ue_nas_info(ctxt_pP->module_id);
+    generateRegistrationRequest(&initialNasMsg, nas);
     nas_msg = (char*)initialNasMsg.data;
     nas_msg_length = initialNasMsg.length;
   } else {
@@ -1397,14 +1415,7 @@ static void rrc_ue_generate_RRCSetupComplete(
   //for (int i=0;i<size;i++) printf("%02x ",buffer[i]);
   //printf("\n");
 
-   // ctxt_pP_local.rnti = ctxt_pP->rnti;
-  rrc_data_req_nr_ue(ctxt_pP,
-                  DCCH,
-                  nr_rrc_mui++,
-                  SDU_CONFIRM_NO,
-                  size,
-                  buffer,
-                  PDCP_TRANSMISSION_MODE_CONTROL);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, size, buffer, deliver_pdu_srb_rlc, NULL);
 }
 
 int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB_INFO *const Srb_info, const uint8_t gNB_index ){
@@ -1675,10 +1686,9 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
 
    if (securityMode != 0xff) {
-     pdcp_config_set_security(ctxt_pP, NULL, DCCH, DCCH+2,
-                              NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm
-                              | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4),
-                              kRRCenc, kRRCint, kUPenc);
+     uint8_t security_mode =
+         NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4);
+     nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid, DCCH, security_mode, kRRCenc, kRRCint, kUPenc);
    } else {
      LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
    }
@@ -1710,13 +1720,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
      }
 
      LOG_T(NR_RRC, "\n");
-     rrc_data_req_nr_ue (ctxt_pP,
-                      DCCH,
-                      nr_rrc_mui++,
-                      SDU_CONFIRM_NO,
-                      (enc_rval.encoded + 7) / 8,
-                      buffer,
-                      PDCP_TRANSMISSION_MODE_CONTROL);
+     nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
    } else
      LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
 		  securityModeCommand->criticalExtensions.present);
@@ -2202,14 +2206,7 @@ nr_rrc_ue_establish_srb2(
 	 nr_rrc_mui,
 	 UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id),
 	 DCCH);
-   rrc_data_req_nr_ue (
-     ctxt_pP,
-     DCCH,
-     nr_rrc_mui++,
-     SDU_CONFIRM_NO,
-     size,
-     buffer,
-     PDCP_TRANSMISSION_MODE_CONTROL);
+   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, size, buffer, deliver_pdu_srb_rlc, NULL);
  }
 
  // from NR SRB1
@@ -2228,11 +2225,9 @@ nr_rrc_ue_establish_srb2(
    NR_DL_DCCH_Message_t                *dl_dcch_msg  = NULL;
    MessageDef *msg_p;
 
-   if (Srb_id != 1) {
+   if (Srb_id != 1 && Srb_id != 2) {
      LOG_E(NR_RRC,"[UE %d] Frame %d: Received message on DL-DCCH (SRB%ld), should not have ...\n",
            ctxt_pP->module_id, ctxt_pP->frame, Srb_id);
-   } else {
-     LOG_D(NR_RRC, "Received message on SRB%ld\n", Srb_id);
    }
 
    LOG_D(NR_RRC, "Decoding DL-DCCH Message\n");
@@ -2287,7 +2282,7 @@ nr_rrc_ue_establish_srb2(
            NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
          }
 
-         itti_send_msg_to_task(TASK_NAS_UE, ctxt_pP->instance, msg_p);
+         itti_send_msg_to_task(TASK_NAS_NRUE, ctxt_pP->instance, msg_p);
          break;
        case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
          LOG_I(NR_RRC, "[UE %d] Received Capability Enquiry (gNB %d)\n", ctxt_pP->module_id,gNB_indexP);
@@ -2458,21 +2453,8 @@ nr_rrc_ue_establish_srb2(
         /* Transfer data to PDCP */
         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
         // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2)
-        if(NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL) {
-          rrc_data_req_nr_ue (&ctxt,
-                           DCCH,
-                           nr_rrc_mui++,
-                           SDU_CONFIRM_NO,
-                           length, buffer,
-                           PDCP_TRANSMISSION_MODE_CONTROL);
-        } else {
-          rrc_data_req_nr_ue (&ctxt,
-                           DCCH1,
-                           nr_rrc_mui++,
-                           SDU_CONFIRM_NO,
-                           length, buffer,
-                           PDCP_TRANSMISSION_MODE_CONTROL);
-        }
+        rb_id_t srb_id = NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL ? DCCH : DCCH1;
+        nr_pdcp_data_req_srb(ctxt.rntiMaybeUEid, srb_id, nr_rrc_mui++, length, buffer, deliver_pdu_srb_rlc, NULL);
         break;
       }
 
@@ -2616,14 +2598,7 @@ nr_rrc_ue_process_ueCapabilityEnquiry(
       }
 
       LOG_I(NR_RRC, "UECapabilityInformation Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-      rrc_data_req_nr_ue (
-        ctxt_pP,
-        DCCH,
-        nr_rrc_mui++,
-        SDU_CONFIRM_NO,
-        (enc_rval.encoded + 7) / 8,
-        buffer,
-        PDCP_TRANSMISSION_MODE_CONTROL);
+      nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
     }
   }
 }
@@ -2861,4 +2836,30 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
         default:
             LOG_E(NR_RRC, "No NSA Message Found\n");
     }
+}
+
+void *nr_rrc_timers_update() {
+
+  while (1) {
+
+    for (int mod_id = 0; mod_id < NB_NR_UE_INST; mod_id++) {
+      for (int i = 0; i < NB_SIG_CNX_UE; i++) {
+        NR_UE_RRC_INFO *timers = &NR_UE_rrc_inst[mod_id].Info[i];
+
+        // T304
+        if (timers->T304_active == 1) {
+          if ((timers->T304_cnt % 100) == 0) {
+            LOG_W(NR_RRC, "T304: %u\n", timers->T304_cnt);
+          }
+          if (timers->T304_cnt == 1) {
+            timers->T304_active = 0;
+          }
+          timers->T304_cnt--;
+        }
+
+      }
+    }
+
+    usleep(1000);
+  }
 }

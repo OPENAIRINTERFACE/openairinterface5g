@@ -48,13 +48,8 @@
 //#define DEBUG_DLSCH_CODING
 //#define DEBUG_DLSCH_FREE 1
 
-
-void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr, 
-                    uint16_t N_RB,
-                    const NR_DL_FRAME_PARMS* frame_parms) {
-
-  NR_gNB_DLSCH_t *dlsch = *dlschptr;
-
+void free_gNB_dlsch(NR_gNB_DLSCH_t *dlsch, uint16_t N_RB, const NR_DL_FRAME_PARMS *frame_parms)
+{
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;
 
@@ -92,14 +87,10 @@ void free_gNB_dlsch(NR_gNB_DLSCH_t **dlschptr,
   }
   free(dlsch->txdataF);
   free(dlsch->ue_spec_bf_weights);
-
-  free(dlsch);
-  *dlschptr = NULL;
 }
 
-NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
-                              uint16_t N_RB) {
-
+NR_gNB_DLSCH_t new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms, uint16_t N_RB)
+{
   int max_layers = (frame_parms->nb_antennas_tx<NR_MAX_NB_LAYERS) ? frame_parms->nb_antennas_tx : NR_MAX_NB_LAYERS;
   uint16_t a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*max_layers;  //number of segments to be allocated
 
@@ -110,34 +101,32 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
   LOG_D(PHY,"Allocating %d segments (MAX %d, N_PRB %d)\n",a_segments,MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER,N_RB);
   uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
-  NR_gNB_DLSCH_t *dlsch = malloc16(sizeof(NR_gNB_DLSCH_t));
-  AssertFatal(dlsch, "cannot allocate dlsch\n");
-  bzero(dlsch,sizeof(NR_gNB_DLSCH_t));
+  NR_gNB_DLSCH_t dlsch;
 
   int txdataf_size = frame_parms->N_RB_DL*NR_SYMBOLS_PER_SLOT*NR_NB_SC_PER_RB*8; // max pdsch encoded length for each layer
 
-  dlsch->txdataF = (int32_t **)malloc16(max_layers*sizeof(int32_t *));
+  dlsch.txdataF = (int32_t **)malloc16(max_layers * sizeof(int32_t *));
 
-  dlsch->ue_spec_bf_weights = (int32_t ***)malloc16(max_layers*sizeof(int32_t **));
+  dlsch.ue_spec_bf_weights = (int32_t ***)malloc16(max_layers * sizeof(int32_t **));
   for (int layer=0; layer<max_layers; layer++) {
-    dlsch->ue_spec_bf_weights[layer] = (int32_t **)malloc16(64*sizeof(int32_t *));
+    dlsch.ue_spec_bf_weights[layer] = (int32_t **)malloc16(64 * sizeof(int32_t *));
 
     for (int aa=0; aa<64; aa++) {
-      dlsch->ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES*sizeof(int32_t));
+      dlsch.ue_spec_bf_weights[layer][aa] = (int32_t *)malloc16(OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES * sizeof(int32_t));
 
       for (int re=0; re<OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES; re++) {
-        dlsch->ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
+        dlsch.ue_spec_bf_weights[layer][aa][re] = 0x00007fff;
       }
     }
-    dlsch->txdataF[layer] = (int32_t *)malloc16((txdataf_size)*sizeof(int32_t));
+    dlsch.txdataF[layer] = (int32_t *)malloc16((txdataf_size) * sizeof(int32_t));
   }
 
   int nb_codewords = NR_MAX_NB_LAYERS > 4 ? 2 : 1;
-  dlsch->mod_symbs = (int32_t **)malloc16(nb_codewords*sizeof(int32_t *));
+  dlsch.mod_symbs = (int32_t **)malloc16(nb_codewords * sizeof(int32_t *));
   for (int q=0; q<nb_codewords; q++)
-    dlsch->mod_symbs[q] = (int32_t *)malloc16(txdataf_size*max_layers*sizeof(int32_t));
+    dlsch.mod_symbs[q] = (int32_t *)malloc16(txdataf_size * max_layers * sizeof(int32_t));
 
-  NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
+  NR_DL_gNB_HARQ_t *harq = &dlsch.harq_process;
   bzero(harq, sizeof(NR_DL_gNB_HARQ_t));
   harq->b = malloc16(dlsch_bytes);
   AssertFatal(harq->b, "cannot allocate memory for harq->b\n");
@@ -167,7 +156,6 @@ NR_gNB_DLSCH_t *new_gNB_dlsch(NR_DL_FRAME_PARMS *frame_parms,
 
 void clean_gNB_dlsch(NR_gNB_DLSCH_t *dlsch) {
   AssertFatal(dlsch!=NULL,"dlsch is null\n");
-  dlsch->rnti = 0;
   dlsch->active = 0;
 }
 
@@ -277,10 +265,15 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
                       uint8_t slot,
                       NR_DL_gNB_HARQ_t *harq,
                       NR_DL_FRAME_PARMS *frame_parms,
-		      unsigned char * output,
-                      time_stats_t *tinput,time_stats_t *tprep,time_stats_t *tparity,time_stats_t *toutput,
-                      time_stats_t *dlsch_rate_matching_stats,time_stats_t *dlsch_interleaving_stats,
-                      time_stats_t *dlsch_segmentation_stats) {
+                      unsigned char *output,
+                      time_stats_t *tinput,
+                      time_stats_t *tprep,
+                      time_stats_t *tparity,
+                      time_stats_t *toutput,
+                      time_stats_t *dlsch_rate_matching_stats,
+                      time_stats_t *dlsch_interleaving_stats,
+                      time_stats_t *dlsch_segmentation_stats)
+{
   encoder_implemparams_t impp;
   impp.output=output;
   unsigned int crc=1;
@@ -289,29 +282,18 @@ int nr_dlsch_encoding(PHY_VARS_gNB *gNB,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_DLSCH_ENCODING, VCD_FUNCTION_IN);
   uint32_t A = rel15->TBSize[0]<<3;
   unsigned char *a=harq->pdu;
-  if ( rel15->rnti != SI_RNTI)
+  if (rel15->rnti != SI_RNTI)
     trace_NRpdu(DIRECTION_DOWNLINK, a, rel15->TBSize[0], WS_C_RNTI, rel15->rnti, frame, slot,0, 0);
 
-  NR_gNB_SCH_STATS_t *stats=NULL;
-  int first_free=-1;
+  NR_gNB_PHY_STATS_t *phy_stats = NULL;
+  if (rel15->rnti != 0xFFFF)
+    phy_stats = get_phy_stats(gNB, rel15->rnti);
 
-  for (int i=0; i<NUMBER_OF_NR_SCH_STATS_MAX; i++) {
-    if (gNB->dlsch_stats[i].rnti == 0 && first_free == -1) {
-      first_free = i;
-      stats=&gNB->dlsch_stats[i];
-    }
-
-    if (gNB->dlsch_stats[i].rnti == rel15->rnti) {
-      stats=&gNB->dlsch_stats[i];
-      break;
-    }
-  }
-
-  if (stats) {
-    stats->rnti = rel15->rnti;
-    stats->total_bytes_tx += rel15->TBSize[0];
-    stats->current_RI   = rel15->nrOfLayers;
-    stats->current_Qm   = rel15->qamModOrder[0];
+  if (phy_stats) {
+    phy_stats->frame = frame;
+    phy_stats->dlsch_stats.total_bytes_tx += rel15->TBSize[0];
+    phy_stats->dlsch_stats.current_RI = rel15->nrOfLayers;
+    phy_stats->dlsch_stats.current_Qm = rel15->qamModOrder[0];
   }
 
   int max_bytes = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*rel15->nrOfLayers*1056;

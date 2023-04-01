@@ -328,6 +328,13 @@ typedef struct nas_establish_req_s {
 } nas_establish_req_t;
 
 /*
+ * fill me
+ */
+typedef struct nas_deregistration_req_s {
+  // fill me
+} nas_deregistration_req_t;
+
+/*
  * AS->NAS - NAS signalling connection establishment indication
  * AS transfers the initial NAS message to the NAS.
  */

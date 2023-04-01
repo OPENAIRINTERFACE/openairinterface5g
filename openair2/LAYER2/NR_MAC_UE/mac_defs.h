@@ -446,6 +446,7 @@ typedef struct {
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
   nr_phy_config_t         phy_config;
+  nr_synch_request_t      synch_request;
 
   /// BSR report flag management
   uint8_t BSR_reporting_active;

@@ -16,7 +16,7 @@
   \node[label=above:porcepix] (porcepix)
     {\includegraphics[width=1.2cm]{server}};
 
-  \node[above right=1cm and 2cm of porcepix, label=above:asterix] (asterix)
+  \node[above right=-0.4cm and 2cm of porcepix, label=above:asterix] (asterix)
     {\includegraphics[width=1.2cm]{server}}
     edge (porcepix);
   \node[right=0.3cm of asterix, label=above:N310] (n310a)
@@ -27,7 +27,7 @@
   \node[above right=-0.1cm and 0.35cm of b78o.east] (anto2)
     {\includegraphics[width=0.3cm]{antenna}} edge (b78o);
 
-  \node[right=2cm of porcepix, label=above:obelix] (obelix)
+  \node[below right=-0.4cm and 2cm of porcepix, label=above:obelix] (obelix)
     {\includegraphics[width=1.2cm]{server}}
     edge (porcepix);
   \node[above right=-0.5cm and 0.3cm of obelix, label=above:N310] (n310o)
@@ -45,7 +45,7 @@
   \node[above right=-0.1cm and 0.35cm of b78o.east] (anto2)
     {\includegraphics[width=0.3cm]{antenna}} edge (b78o);
 
-  \node[above right=-1.3cm and 5.0cm of n310a.east, label=above:RM500Q-GL] (quectel)
+  \node[above right=-0.5cm and 5.0cm of n310o.east, label=above:RM500Q-GL] (quectel)
     {\includegraphics[height=1.2cm]{quectel}};
   \node[above left=-0.1cm and 0.8cm of quectel.west] (aq2)
     {\includegraphics[width=0.3cm]{antenna}} edge (quectel);
@@ -58,11 +58,6 @@
   \node[right=1cm of quectel, label=above:nrmodule2] (nrmodule2)
     {\includegraphics[width=1.2cm]{server}}
     edge (quectel);
-
-  \node[above right=-0.3cm and 5.0cm of x310o.east, label=above:amariue] (amariue)
-    {\includegraphics[height=1.2cm]{server}};
-  \node[left=0.8cm of amariue.west] (aa1)
-    {\includegraphics[width=0.3cm]{antenna}} edge (amariue);
 
 \end{tikzpicture}
 \end{document}

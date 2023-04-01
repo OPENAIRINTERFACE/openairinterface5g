@@ -58,6 +58,7 @@ void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1);
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
+bool nr_mac_update_RA(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 
 void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
                                 int CC_idP,
@@ -349,8 +350,6 @@ void configure_UE_BWP(gNB_MAC_INST *nr_mac,
 NR_UE_info_t* add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConfig_t *CellGroup);
 
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti);
-
-void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti);
 
 int nr_get_default_pucch_res(int pucch_ResourceCommon);
 

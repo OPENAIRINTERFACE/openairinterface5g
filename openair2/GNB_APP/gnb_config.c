@@ -54,7 +54,7 @@
 #include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 //#include "L1_paramdef.h"
 #include "prs_nr_paramdef.h"
@@ -2244,6 +2244,6 @@ void nr_read_config_and_init(void) {
   }
 
   if (NODE_IS_CU(RC.nrrrc[0]->node_type) && RC.nrrrc[0]->node_type != ngran_gNB_CUCP) {
-    pdcp_layer_init();
+    nr_pdcp_layer_init();
   }
 }

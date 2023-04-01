@@ -455,6 +455,12 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
   LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
 
+  // it might happen that timing advance command should be sent during the RRC
+  // processing timer. To prevent this, set a variable as if we would have just
+  // sent it. This way, another TA command will for sure be sent in some
+  // frames, after RRC processing timer.
+  sched_ctrl->ta_frame = (RC.nrmac[Mod_idP]->frame - 1 + 1024) % 1024;
+
   return 0;
 }
 
@@ -650,7 +656,58 @@ bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCon
     exit(1);
   }
 
+  nr_mac_update_RA(nrmac, rnti, CellGroup);
   process_CellGroup(CellGroup, &UE->UE_sched_ctrl);
+
+  return true;
+}
+
+bool nr_mac_update_RA(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+{
+  // Checking for free RA process
+  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
+  uint8_t ra_index = 0;
+  for (; ra_index < NR_NB_RA_PROC_MAX; ra_index++) {
+    if ((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra))
+      break;
+  }
+  if (ra_index == NR_NB_RA_PROC_MAX) {
+    LOG_E(NR_MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
+    return -1;
+  }
+
+  NR_RA_t *ra = &cc->ra[ra_index];
+  if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
+      && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated != NULL) {
+    if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
+      ra->cfra = true;
+      ra->rnti = rnti;
+      ra->CellGroup = CellGroup;
+      struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+      uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+      ra->preambles.num_preambles = num_preamble;
+      ra->preambles.preamble_list = (uint8_t *)malloc(num_preamble * sizeof(uint8_t));
+      for (int i = 0; i < cc->num_active_ssb; i++) {
+        for (int j = 0; j < num_preamble; j++) {
+          if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
+            // One dedicated preamble for each beam
+            ra->preambles.preamble_list[i] = cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
+            break;
+          }
+        }
+      }
+    }
+  } else {
+    ra->cfra = false;
+    ra->rnti = 0;
+    if (ra->preambles.preamble_list == NULL) {
+      ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+      ra->preambles.preamble_list = (uint8_t *)malloc(MAX_NUM_NR_PRACH_PREAMBLES * sizeof(uint8_t));
+      for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+        ra->preambles.preamble_list[i] = i;
+    }
+  }
+  LOG_I(NR_MAC, "Added new %s process for UE RNTI %04x with initial CellGroup\n", ra->cfra ? "CFRA" : "CBRA", rnti);
 
   return true;
 }

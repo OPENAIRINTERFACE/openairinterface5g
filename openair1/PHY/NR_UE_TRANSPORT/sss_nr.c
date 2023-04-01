@@ -511,9 +511,15 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
   /* cosinus cos(x + y) = cos(x)cos(y) - sin(x)sin(y) */
   /* sinus   sin(x + y) = sin(x)cos(y) + cos(x)sin(y) */
 
-   for (Nid1 = 0 ; Nid1 < N_ID_1_NUMBER; Nid1++) {          // all possible Nid1 values
-      for (phase=0; phase < PHASE_HYPOTHESIS_NUMBER; phase++) {  // phase offset between PSS and SSS
+  uint16_t Nid1_start = 0;
+  uint16_t Nid1_end = N_ID_1_NUMBER;
+  if (ue->target_Nid_cell != -1) {
+    Nid1_start = GET_NID1(ue->target_Nid_cell);
+    Nid1_end = Nid1_start + 1;
+  }
 
+  for (Nid1 = Nid1_start; Nid1 < Nid1_end; Nid1++) { // all possible Nid1 values
+    for (phase = 0; phase < PHASE_HYPOTHESIS_NUMBER; phase++) { // phase offset between PSS and SSS
 
       metric = 0;
       metric_re = 0;
@@ -523,7 +529,6 @@ int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, 
       // This is the inner product using one particular value of each unknown parameter
       for (i=0; i < LENGTH_SSS_NR; i++) {
 
-	
         metric_re += d[i]*(((phase_re_nr[phase]*sss[2*i])>>SCALING_METRIC_SSS_NR) - ((phase_im_nr[phase]*sss[2*i+1])>>SCALING_METRIC_SSS_NR));
                    
 #if 0

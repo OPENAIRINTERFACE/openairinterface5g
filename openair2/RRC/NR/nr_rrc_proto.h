@@ -136,17 +136,6 @@ void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
    \ *reOffset Pointer to RE Offset Value */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, int *ptrsNrb, int *ptrsMcs, int *epre_Ratio, int * reOffset);
 
-uint8_t
-nr_rrc_data_req(
-  const protocol_ctxt_t   *const ctxt_pP,
-  const rb_id_t                  rb_idP,
-  const mui_t                    muiP,
-  const confirm_t                confirmP,
-  const sdu_size_t               sdu_size,
-  uint8_t                 *const buffer_pP,
-  const pdcp_transmission_mode_t modeP
-);
-
 int
 nr_rrc_mac_remove_ue(module_id_t mod_idP,
                   rnti_t rntiP);

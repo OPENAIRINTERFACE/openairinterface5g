@@ -126,12 +126,7 @@ void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
 void free_context_pss_nr(void);
 int set_pss_nr(int ofdm_symbol_size);
 int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change);
-int pss_search_time_nr(c16_t **rxdata, ///rx data in time domain
-                       NR_DL_FRAME_PARMS *frame_parms,
-		       int fo_flag,
-                       int is,
-                       int *eNB_id,
-		       int *f_off);
+int pss_search_time_nr(c16_t **rxdata, PHY_VARS_NR_UE *ue, int fo_flag, int is);
 
 #endif
 #undef EXTERN

@@ -752,8 +752,8 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
     config_control_ue(mac);
     // Setup the SSB to Rach Occasions mapping according to the config
     build_ssb_to_ro_map(mac);
-  }
-  else if (cell_group_config != NULL ){
+
+  } else if (cell_group_config != NULL) {
     LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
     mac->cg = cell_group_config;
     if (cell_group_config->spCellConfig)
@@ -772,20 +772,38 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
     configure_current_BWP(mac, NULL, cell_group_config);
     config_control_ue(mac);
 
-    if (get_softmodem_params()->nsa) {
-      if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
-        if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-          ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-        }
-        mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-        int num_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-        if (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
-          num_slots++;
-        }
-        mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
-        config_common_ue(mac,module_id,cc_idP);
-        mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-        LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
+    if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
+      LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
+      if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
+        ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+      }
+      mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+      if (mac->scc_SIB) {
+        free(mac->scc_SIB);
+        mac->scc_SIB = NULL;
+      }
+      int num_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+      if (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
+        num_slots++;
+      }
+      mac->state = UE_NOT_SYNC;
+      mac->ra.ra_state = RA_UE_IDLE;
+      mac->physCellId = *mac->scc->physCellId;
+      if (!get_softmodem_params()->emulate_l1) {
+        mac->synch_request.Mod_id = module_id;
+        mac->synch_request.CC_id = cc_idP;
+        mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
+        mac->if_module->synch_request(&mac->synch_request);
+      }
+      mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
+      config_common_ue(mac, module_id, cc_idP);
+      mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
+      LOG_I(MAC, "Configuring CRNTI %x\n", mac->crnti);
+
+      nr_ue_init_mac(module_id);
+      if (!get_softmodem_params()->emulate_l1) {
+        mac->if_module->phy_config_request(&mac->phy_config);
+        mac->phy_config_request_sent = true;
       }
 
       // Setup the SSB to Rach Occasions mapping according to the config

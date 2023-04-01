@@ -38,6 +38,7 @@
 #include "SpareHalfOctet.h"
 #include "MessageType.h"
 #include "FGSRegistrationResult.h"
+#include "FGSMobileIdentity.h"
 
 #ifndef REGISTRATION_ACCEPT_H_
 #define REGISTRATION_ACCEPT_H_
@@ -56,6 +57,9 @@ typedef struct registration_accept_msg_tag {
   SpareHalfOctet                          sparehalfoctet:4;
   MessageType                             messagetype;
   FGSRegistrationResult                   fgsregistrationresult;
+
+  /* Optional fields */
+  FGSMobileIdentity *guti;
 } registration_accept_msg;
 
 int decode_registration_accept(registration_accept_msg *registrationaccept, uint8_t *buffer, uint32_t len);

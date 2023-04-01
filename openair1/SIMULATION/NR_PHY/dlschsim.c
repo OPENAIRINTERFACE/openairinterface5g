@@ -422,15 +422,14 @@ int main(int argc, char **argv)
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   processingData_L1tx_t msgDataTx;
   init_DLSCH_struct(gNB, &msgDataTx);
-	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
-	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
+  NR_gNB_DLSCH_t *dlsch = &msgDataTx.dlsch[0][0];
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	unsigned int TBS = 8424;
 	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
-	dlsch->rnti = 1;
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
