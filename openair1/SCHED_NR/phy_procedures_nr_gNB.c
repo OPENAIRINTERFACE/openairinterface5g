@@ -602,9 +602,8 @@ void fill_ul_rb_mask(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx) {
 
   for (int ULSCH_id = 0; ULSCH_id < gNB->max_nb_pusch; ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = &gNB->ulsch[ULSCH_id];
-    int harq_pid;
     NR_UL_gNB_HARQ_t *ulsch_harq = ulsch->harq_process;
-    AssertFatal(ulsch_harq != NULL, "harq_pid %d is not allocated\n", harq_pid);
+    AssertFatal(ulsch_harq != NULL, "harq_pid %d is not allocated\n", ulsch->harq_pid);
     if ((ulsch->active == true) && (ulsch->frame == frame_rx) && (ulsch->slot == slot_rx) && (ulsch->handled == 0)) {
       uint8_t symbol_start = ulsch_harq->ulsch_pdu.start_symbol_index;
       uint8_t symbol_end = symbol_start + ulsch_harq->ulsch_pdu.nr_of_symbols;

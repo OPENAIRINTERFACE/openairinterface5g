@@ -331,7 +331,9 @@ typedef struct nas_establish_req_s {
  * fill me
  */
 typedef struct nas_deregistration_req_s {
-  // fill me
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } nas_deregistration_req_t;
 
 /*
