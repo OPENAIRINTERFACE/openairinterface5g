@@ -98,6 +98,53 @@ NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, rrc_pdu_session
   return DRB_config;
 }
 
+NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
+{
+  NR_DRB_ToAddMod_t *DRB_config = CALLOC(1, sizeof(*DRB_config));
+  NR_SDAP_Config_t *SDAP_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
+
+  asn1cCalloc(DRB_config->cnAssociation, association);
+  asn1cCalloc(SDAP_config->mappedQoS_FlowsToAdd, sdapFlows);
+  asn1cCalloc(DRB_config->pdcp_Config, pdcpConfig);
+  asn1cCalloc(pdcpConfig->drb, drb);
+
+  DRB_config->drb_Identity = drb_asn1.drb_id;
+  association->present     = drb_asn1.cnAssociation.present;
+
+  /* SDAP Configuration */
+  SDAP_config->pdu_Session   = drb_asn1.cnAssociation.sdap_config.pdusession_id;
+  SDAP_config->sdap_HeaderDL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderDL;
+  SDAP_config->sdap_HeaderUL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderUL;
+  SDAP_config->defaultDRB    = drb_asn1.cnAssociation.sdap_config.defaultDRB;
+  
+  for (int qos_flow_index = 0; qos_flow_index < QOSFLOW_MAX_VALUE; qos_flow_index++) 
+  {
+    if(drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] != 0) {
+      asn1cSequenceAdd(sdapFlows->list, NR_QFI_t, qfi);
+      *qfi = drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index];
+    }
+  }
+
+  association->choice.sdap_Config = SDAP_config;
+
+  /* PDCP Configuration */
+  asn1cCallocOne(drb->discardTimer, drb_asn1.pdcp_config.discardTimer);
+  asn1cCallocOne(drb->pdcp_SN_SizeUL, drb_asn1.pdcp_config.pdcp_SN_SizeUL);
+  asn1cCallocOne(drb->pdcp_SN_SizeDL, drb_asn1.pdcp_config.pdcp_SN_SizeDL);
+  asn1cCallocOne(pdcpConfig->t_Reordering, drb_asn1.pdcp_config.t_Reordering);
+  asn1cCallocOne(drb->integrityProtection,  drb_asn1.pdcp_config.integrityProtection);
+
+  drb->headerCompression.present        = drb_asn1.pdcp_config.headerCompression.present;
+  drb->headerCompression.choice.notUsed = drb_asn1.pdcp_config.headerCompression.NotUsed;
+
+  if (!drb_asn1.pdcp_config.ext1.cipheringDisabled) {
+    asn1cCalloc(pdcpConfig->ext1, ext1);
+    asn1cCallocOne(ext1->cipheringDisabled, drb_asn1.pdcp_config.ext1.cipheringDisabled);
+  }
+
+  return DRB_config;
+}
+
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession, bool is_gbr)
 {
   uint8_t drb_id;

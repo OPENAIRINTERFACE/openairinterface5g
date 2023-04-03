@@ -35,6 +35,10 @@
 #define GBR_FLOW                (1)
 #define NONGBR_FLOW             (0)
 
+/// @brief Generates an ASN1 DRB-ToAddMod, from the established_drbs in gNB_RRC_UE_t. 
+/// @param drb_t drb_asn1 
+/// @return Returns the ASN1 DRB-ToAddMod structs.
+NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1);
 NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue, uint8_t drb_id, rrc_pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering);
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession, bool is_gbr);
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
