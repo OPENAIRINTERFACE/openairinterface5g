@@ -643,7 +643,8 @@ void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP,
         if(drb_is_active(ue_p, drb_id)){ /* Non-GBR flow using the same DRB or a GBR flow with no available DRBs*/
           nb_drb_to_setup--;
         } else {
-          NR_DRB_ToAddMod_t *DRB_config = generateDRB(ue_p, drb_id, &ue_p->pduSession[i], rrc->configuration.enable_sdap, rrc->security.do_drb_integrity, rrc->security.do_drb_ciphering);
+          generateDRB(ue_p, drb_id, &ue_p->pduSession[i], rrc->configuration.enable_sdap, rrc->security.do_drb_integrity, rrc->security.do_drb_ciphering);
+          NR_DRB_ToAddMod_t *DRB_config = generateDRB_ASN1(ue_p->established_drbs[drb_id-1]);
           if (drb_id_to_setup_start == 0)
             drb_id_to_setup_start = DRB_config->drb_Identity;
           asn1cSeqAdd(&ue_p->DRB_configList->list, DRB_config);

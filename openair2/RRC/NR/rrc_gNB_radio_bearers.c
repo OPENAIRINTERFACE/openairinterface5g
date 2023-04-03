@@ -36,66 +36,59 @@ rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create)
   return ue->pduSession + j;
 }
 
-NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *ue, uint8_t drb_id, rrc_pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering)
+void generateDRB(gNB_RRC_UE_t *ue,
+                 uint8_t drb_id,
+                 rrc_pdu_session_param_t *pduSession,
+                 bool enable_sdap,
+                 int do_drb_integrity,
+                 int do_drb_ciphering)
 {
-  NR_DRB_ToAddMod_t *DRB_config = CALLOC(1, sizeof(*DRB_config));
-  DRB_config->drb_Identity = drb_id;
-  asn1cCalloc(DRB_config->cnAssociation, association);
-  association->present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
+  int i;
+  int qos_flow_index;
+  if (ue->established_drbs[drb_id - 1].status == DRB_INACTIVE) {
+    /* DRB Management */
+    ue->established_drbs[drb_id - 1].drb_id          = drb_id;
+    ue->established_drbs[drb_id - 1].reestablishPDCP = -1;
+    ue->established_drbs[drb_id - 1].recoverPDCP     = -1;
+    for (i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
+      if ((ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == 0 ||
+           ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == pduSession->param.pdusession_id) &&
+           ue->established_drbs[drb_id - 1].defaultDRBid == 0) {
+        ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.defaultDRB = true;
+        ue->established_drbs[drb_id - 1].defaultDRBid = drb_id;
+      }
+    }
+    /* SDAP Configuration */
+    ue->established_drbs[drb_id - 1].cnAssociation.present                   = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
+    ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id = pduSession->param.pdusession_id;
+    if (enable_sdap) {
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
+    } else {
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
+    }
+    for (qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) 
+    {
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] = pduSession->param.qos[qos_flow_index].qfi;
+      if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
+        ue->established_drbs[drb_id - 1].status = DRB_ACTIVE_NONGBR;
+      else
+        ue->established_drbs[drb_id - 1].status = DRB_ACTIVE;
+    }
+    /* PDCP Configuration */
+    ue->established_drbs[drb_id - 1].pdcp_config.discardTimer              = NR_PDCP_Config__drb__discardTimer_infinity;
+    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeDL            = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeUL            = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+    ue->established_drbs[drb_id - 1].pdcp_config.t_Reordering              = NR_PDCP_Config__t_Reordering_ms100;
+    ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+    ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.NotUsed = 0;
+    if (do_drb_integrity)
+      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection    = NR_PDCP_Config__drb__integrityProtection_enabled;
+    if (!do_drb_ciphering)
+      ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
 
-  /* SDAP Configuration */
-  NR_SDAP_Config_t *SDAP_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
-  asn1cCalloc(SDAP_config->mappedQoS_FlowsToAdd, sdapFlows);
-
-  SDAP_config->pdu_Session = pduSession->param.pdusession_id;
-  
-  if (enable_sdap) {
-    SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
-    SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
-  } else {
-    SDAP_config->sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
-    SDAP_config->sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
   }
-  
-  SDAP_config->defaultDRB = true;
-  
-  for (int qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) 
-  {
-    asn1cSequenceAdd(sdapFlows->list, NR_QFI_t, qfi);
-    *qfi = pduSession->param.qos[qos_flow_index].qfi;
-    if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
-      pduSession->param.used_drbs[drb_id - 1] = DRB_ACTIVE_NONGBR;
-    else
-      pduSession->param.used_drbs[drb_id - 1] = DRB_ACTIVE;
-  }
-
-  association->choice.sdap_Config = SDAP_config;
-
-  /* PDCP Configuration */
-  asn1cCalloc(DRB_config->pdcp_Config, pdcpConfig);
-  asn1cCalloc(pdcpConfig->drb, drb);
-
-  asn1cCallocOne(drb->discardTimer, NR_PDCP_Config__drb__discardTimer_infinity);
-
-  asn1cCallocOne(drb->pdcp_SN_SizeUL, NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits);
-  asn1cCallocOne(drb->pdcp_SN_SizeDL, NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits);
-
-  drb->headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-  drb->headerCompression.choice.notUsed = 0;
-
-  asn1cCallocOne(pdcpConfig->t_Reordering, NR_PDCP_Config__t_Reordering_ms100);
-  
-  if (do_drb_integrity) {
-    asn1cCallocOne(drb->integrityProtection, NR_PDCP_Config__drb__integrityProtection_enabled);
-  }
-  if (!do_drb_ciphering) {
-    asn1cCalloc(pdcpConfig->ext1, ext1);
-    asn1cCallocOne(ext1->cipheringDisabled, NR_PDCP_Config__ext1__cipheringDisabled_true);
-  }
-
-  ue->DRB_active[drb_id-1] = DRB_ACTIVE;
-
-  return DRB_config;
 }
 
 NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
