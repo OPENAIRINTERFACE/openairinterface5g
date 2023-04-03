@@ -317,6 +317,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            fapi_nr_ul_config_pucch_pdu *pucch_pdu,
                            int O_SR, int O_ACK, int O_CSI);
 
+int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs, int N_RB_UL, bool is_transform_precoding, int n_prbs, int start_prb);
+
 
 /* Random Access */
 
