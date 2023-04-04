@@ -1280,9 +1280,19 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 }
 
-//-----------------------------------------------------------------------------
-void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctxt_pP, const rnti_t reestablish_rnti, rrc_gNB_ue_context_t *ue_context_pP, const uint8_t xid)
-//-----------------------------------------------------------------------------
+/*
+ * Handle RRC Reestablishment Complete Functions 
+ */
+
+/// @brief Function tha processes RRCReestablishmentComplete message sent by the UE, after RRCReestasblishment request.
+/// @param ctxt_pP Protocol context containing information regarding the UE and gNB
+/// @param reestablish_rnti is the old C-RNTI
+/// @param ue_context_pP  UE context container information regarding the UE
+/// @param xid Transaction Identifier used in RRC messages
+void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctxt_pP,
+                                                const rnti_t reestablish_rnti,
+                                                rrc_gNB_ue_context_t *ue_context_pP,
+                                                const uint8_t xid)
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel UL-DCCH, processing NR_RRCReestablishmentComplete from UE (SRB1 Active)\n", ue_p->rnti);
