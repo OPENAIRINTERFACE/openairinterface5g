@@ -1284,6 +1284,54 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
  * Handle RRC Reestablishment Complete Functions 
  */
 
+/// @brief Function used in RRCReestablishmentComplete procedure to update the NGU Tunnels.
+/// @param reestablish_rnti is the old C-RNTI 
+void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const ctxt_pP,
+                                                  rrc_gNB_ue_context_t *ue_context_pP,
+                                                  const rnti_t reestablish_rnti)
+{
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  int i   = 0;
+  int j   = 0;
+  int ret = 0;
+
+  if (get_softmodem_params()->sa) {
+    LOG_W(NR_RRC, "RRC Reestablishment - Rework identity mapping need to be done properly!\n");
+    gtpv1u_gnb_create_tunnel_req_t create_tunnel_req={0};
+    /* Save e RAB information for later */
+    
+    for (j = 0, i = 0; i < NB_RB_MAX; i++) {
+      if (ue_p->pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_p->pduSession[i].status == PDU_SESSION_STATUS_DONE) {
+        create_tunnel_req.pdusession_id[j]  = ue_p->pduSession[i].param.pdusession_id;
+        create_tunnel_req.incoming_rb_id[j] = i+1;
+        create_tunnel_req.outgoing_teid[j]  = ue_p->pduSession[i].param.gtp_teid;
+        // to be developped, use the first QFI only
+        create_tunnel_req.outgoing_qfi[j] = ue_p->pduSession[i].param.qos[0].qfi;
+        memcpy(create_tunnel_req.dst_addr[j].buffer, ue_p->pduSession[i].param.upf_addr.buffer, sizeof(uint8_t) * 20);
+        create_tunnel_req.dst_addr[j].length = ue_p->pduSession[i].param.upf_addr.length;
+        j++;
+      }
+    }
+
+    create_tunnel_req.ue_id       = ctxt_pP->rntiMaybeUEid; // warning put zero above
+    create_tunnel_req.num_tunnels = j;
+    ret = gtpv1u_update_ngu_tunnel(ctxt_pP->instance,
+                                   &create_tunnel_req,
+                                   reestablish_rnti);
+
+    if ( ret != 0 ) {
+      LOG_E(NR_RRC, "RRC Reestablishment - gtpv1u_update_ngu_tunnel failed,start to release UE %x\n", reestablish_rnti);
+      ue_p->ue_release_timer_s1       = 1;
+      ue_p->ue_release_timer_thres_s1 = 100;
+      ue_p->ue_release_timer          = 0;
+      ue_p->ue_reestablishment_timer  = 0;
+      ue_p->ul_failure_timer          = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+      ue_p->ul_failure_timer          = 0;
+      return;
+    }
+  }
+}
+
 /// @brief Function used in RRCReestablishmentComplete procedure to update the NAS PDUSessions and the xid.
 /// @param old_xid Refers to the old transaction identifier passed to rrc_gNB_process_RRCReestablishmentComplete as xid.
 /// @todo parameters yet to process inside the for loop.
@@ -1405,42 +1453,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
 
   ue_p->Srb[1].Active = 1;
 
-  if (get_softmodem_params()->sa) {
-    LOG_W(NR_RRC, "Rework identity mapping need to be done properly!\n");
-    gtpv1u_gnb_create_tunnel_req_t  create_tunnel_req={0};
-    /* Save e RAB information for later */
-    int j;
-    for (j = 0, i = 0; i < NB_RB_MAX; i++) {
-      if (ue_p->pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_p->pduSession[i].status == PDU_SESSION_STATUS_DONE) {
-        create_tunnel_req.pdusession_id[j] = ue_p->pduSession[i].param.pdusession_id;
-        create_tunnel_req.incoming_rb_id[j]  = i+1;
-        create_tunnel_req.outgoing_teid[j] = ue_p->pduSession[i].param.gtp_teid;
-        // to be developped, use the first QFI only
-        create_tunnel_req.outgoing_qfi[j] = ue_p->pduSession[i].param.qos[0].qfi;
-        memcpy(create_tunnel_req.dst_addr[j].buffer, ue_p->pduSession[i].param.upf_addr.buffer, sizeof(uint8_t) * 20);
-        create_tunnel_req.dst_addr[j].length = ue_p->pduSession[i].param.upf_addr.length;
-        j++;
-      }
-    }
-
-    create_tunnel_req.ue_id = ctxt_pP->rntiMaybeUEid; // warning put zero above
-    create_tunnel_req.num_tunnels    = j;
-    ret = gtpv1u_update_ngu_tunnel(
-            ctxt_pP->instance,
-            &create_tunnel_req,
-            reestablish_rnti);
-
-    if ( ret != 0 ) {
-      LOG_E(NR_RRC, "gtpv1u_update_ngu_tunnel failed,start to release UE %x\n", reestablish_rnti);
-      ue_p->ue_release_timer_s1 = 1;
-      ue_p->ue_release_timer_thres_s1 = 100;
-      ue_p->ue_release_timer = 0;
-      ue_p->ue_reestablishment_timer = 0;
-      ue_p->ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
-      ue_p->ul_failure_timer = 0;
-      return;
-    }
-  }
+  RRCReestablishmentComplete_update_ngu_tunnel(ctxt_pP, ue_context_pP, reestablish_rnti);
   RRCReestablishmentComplete_nas_pdu_update(ue_context_pP, xid);
 
   /* Update RNTI in ue_context */
