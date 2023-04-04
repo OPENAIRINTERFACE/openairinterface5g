@@ -84,8 +84,12 @@ void generateDRB(gNB_RRC_UE_t *ue,
     ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
     ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.NotUsed = 0;
     if (do_drb_integrity)
-      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection    = NR_PDCP_Config__drb__integrityProtection_enabled;
-    if (!do_drb_ciphering)
+      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
+    else
+      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection = 1;
+    if (do_drb_ciphering)
+      ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = 1;
+    else
       ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
 
   }
