@@ -14,10 +14,10 @@ Ref :
   L1 Tx processing : 400.0
   DLSCH encoding : 177.0
   L1 Rx processing : 345.0
-  PUSCH inner-receiver : 184.0
-  PUSCH decoding : 276.0 
+  PUSCH inner-receiver : 210.0
+  PUSCH decoding : 210.0
   Schedule Response : 111.0
-  DL & UL scheduling timing : 37.0
+  DL & UL scheduling timing : 20.0
   UL Indication : 127.0
 Threshold :
   feprx : 1.25
