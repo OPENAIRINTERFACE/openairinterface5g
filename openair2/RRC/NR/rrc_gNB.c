@@ -1284,6 +1284,35 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
  * Handle RRC Reestablishment Complete Functions 
  */
 
+/// @brief Function used in RRCReestablishmentComplete procedure to reestablish the DRBs 
+///        that the UE previously had, it gets the information from the established_drbs 
+///        struct.
+/// @param new_xid The new RRC transaction id. 
+void RRCReestablishmentComplete_fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP,
+                                                    rrc_gNB_ue_context_t *ue_context_pP,
+                                                    const uint8_t new_xid)
+{
+  gNB_RRC_UE_t           *ue_p            = &ue_context_pP->ue_context;
+  NR_DRB_ToAddMod_t      *DRB_config      = NULL;
+  NR_DRB_ToAddModList_t **DRB_configList2 = &(ue_p->DRB_configList2[new_xid]);
+
+  if (*DRB_configList2) {
+    free(*DRB_configList2);
+    LOG_D(NR_RRC, "RRC Reestablishment - free(ue_p->DRB_configList2[%d])\n", new_xid);
+  }
+
+  *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
+
+  for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
+    if (ue_p->established_drbs[i].status != DRB_INACTIVE) {
+      ue_p->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
+      DRB_config = generateDRB_ASN1(ue_p->established_drbs[i]);
+      asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
+      asn1cSeqAdd(&(*DRB_configList2)->list, DRB_config);
+    }
+  }
+}
+
 /// @brief Function used in RRCReestablishmentComplete procedure to update the NGU Tunnels.
 /// @param reestablish_rnti is the old C-RNTI 
 void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const ctxt_pP,
@@ -1433,23 +1462,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
     LOG_W(NR_RRC,"SRB2 configuration does not exist in SRB configuration list\n");
   }
 
-  if (*DRB_configList2) {
-    free(*DRB_configList2);
-    LOG_D(NR_RRC, "free(ue_p->DRB_configList2[%d])\n", new_xid);
-  }
-
-  *DRB_configList2 = CALLOC(1, sizeof(**DRB_configList2));
-
-  if (DRB_configList != NULL) {
-    LOG_D(NR_RRC, "get DRB_config from (ue_p->DRB_configList)\n");
-
-    for (i = 0; (i < DRB_configList->list.count) && (i < 3); i++) {
-      DRB_config = DRB_configList->list.array[i];
-      asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
-      // Add DRB to DRB configuration list, for LTE_RRCConnectionReconfigurationComplete
-      asn1cSeqAdd(&(*DRB_configList2)->list, DRB_config);
-    }
-  }
+  RRCReestablishmentComplete_fill_DRB_configList(ctxt_pP, ue_context_pP, new_xid);
 
   ue_p->Srb[1].Active = 1;
 
