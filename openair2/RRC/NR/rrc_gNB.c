@@ -1466,17 +1466,9 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel UL-DCCH, processing NR_RRCReestablishmentComplete from UE (SRB1 Active)\n", ue_p->rnti);
 
-  NR_DRB_ToAddModList_t *DRB_configList = ue_p->DRB_configList;
-  NR_SRB_ToAddModList_t *SRB_configList = ue_p->SRB_configList;
-  NR_SRB_ToAddModList_t                **SRB_configList2 = NULL;
-  NR_DRB_ToAddModList_t                **DRB_configList2 = NULL;
-  NR_SRB_ToAddMod_t                     *SRB2_config     = NULL;
-  NR_DRB_ToAddMod_t                     *DRB_config      = NULL;
-  //NR_SDAP_Config_t                      *sdap_config     = NULL;
   int i = 0;
 
   uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
-  int ret = 0;
   ue_p->StatusRrc = NR_RRC_CONNECTED;
   ue_p->ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   ue_p->reestablishment_xid = new_xid;
@@ -1490,8 +1482,8 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   LOG_I(NR_RRC, "Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
   rrc_gNB_update_ue_context_rnti(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], ue_p->gNB_ue_ngap_id);
 
-  uint8_t drb_id_to_setup_start = DRB_configList ? DRB_configList->list.array[0]->drb_Identity : 1;
-  uint8_t nb_drb_to_setup = DRB_configList ? DRB_configList->list.count : ue_p->nb_of_pdusessions;
+  uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
+  uint8_t nb_drb_to_setup = ue_p->DRB_configList ? ue_p->DRB_configList->list.count : ue_p->nb_of_pdusessions;
   /* TODO: hardcoded to 13 for the time being, to be changed? */
   long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
 
