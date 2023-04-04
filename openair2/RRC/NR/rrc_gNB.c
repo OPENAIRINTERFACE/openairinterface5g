@@ -1284,6 +1284,20 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
  * Handle RRC Reestablishment Complete Functions 
  */
 
+/// @brief Function used in RRCReestablishmentComplete procedure to Free all the NAS PDU buffers. 
+void RRCReestablishmentComplete_nas_pdu_free(rrc_gNB_ue_context_t *ue_context_pP)
+{
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  /* Free all NAS PDUs */
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
+    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
+      /* Free the NAS PDU buffer and invalidate it */
+      free(ue_p->pduSession[i].param.nas_pdu.buffer);
+      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
+    }
+  }
+}
+
 /// @brief Function tha processes RRCReestablishmentComplete message sent by the UE, after RRCReestasblishment request.
 /// @param ctxt_pP Protocol context containing information regarding the UE and gNB
 /// @param reestablish_rnti is the old C-RNTI
@@ -1475,14 +1489,7 @@ cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGr
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
-  /* Free all NAS PDUs */
-  for (i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
-      /* Free the NAS PDU buffer and invalidate it */
-      free(ue_p->pduSession[i].param.nas_pdu.buffer);
-      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
-    }
-  }
+  RRCReestablishmentComplete_nas_pdu_free(ue_context_pP);
 
   if (size < 0) {
     LOG_E(NR_RRC, "RRC decode err!!! do_RRCReconfiguration\n");
