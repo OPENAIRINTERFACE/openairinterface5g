@@ -774,7 +774,6 @@ void *UE_thread(void *arg) {
   fapi_nr_config_request_t *cfg = &UE->nrUE_config;
   AssertFatal(0== openair0_device_load(&(UE->rfdevice), &openair0_cfg[0]), "");
   UE->rfdevice.host_type = RAU_HOST;
-  UE->lost_sync = 0;
   UE->is_synchronized = 0;
   AssertFatal(UE->rfdevice.trx_start_func(&UE->rfdevice) == 0, "Could not start the device\n");
 
@@ -803,10 +802,6 @@ void *UE_thread(void *arg) {
   }
 
   while (!oai_exit) {
-    if (UE->lost_sync) {
-      UE->is_synchronized = 0;
-      UE->lost_sync = 0;
-    }
 
     if (syncRunning) {
       notifiedFIFO_elt_t *res=tryPullTpool(&nf,&(get_nrUE_params()->Tpool));

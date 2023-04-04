@@ -376,8 +376,9 @@ typedef struct {
   uint32_t ssb_index;
   /// SSB RSRP in dBm
   short ssb_rsrp_dBm;
+  int consecutive_bch_failures;
 
-} NR_PHY_meas_t;
+} NR_SSB_meas_t;
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -465,7 +466,7 @@ typedef struct {
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
 
-  NR_PHY_meas_t phy_measurements;
+  NR_SSB_meas_t ssb_measurements;
 
   dci_pdu_rel15_t def_dci_pdu_rel15[NR_MAX_SLOTS_PER_FRAME][8];
 

@@ -794,8 +794,8 @@ int main(int argc, char **argv)
 	fapiPbch_t result;
         ret = nr_rx_pbch(UE,
                          &proc,
-			 estimateSz, dl_ch_estimates,
-			 UE->pbch_vars[0],
+                         estimateSz,
+                         dl_ch_estimates,
                          frame_parms,
                          ssb_index%8,
                          SISO,
@@ -814,7 +814,6 @@ int main(int argc, char **argv)
 	  for (i=0;i<3;i++){
 	    payload_ret += (result.decoded_output[i] == ((msgDataTx.ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
-	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);
 	  if (payload_ret!=4) 
 	    n_errors_payload++;

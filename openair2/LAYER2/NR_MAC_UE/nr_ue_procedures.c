@@ -238,6 +238,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
 
+  mac->ssb_measurements.consecutive_bch_failures = 0; // resetting decoding failures
+
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
 
@@ -1571,7 +1573,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
     return (PUCCH_POWER_DEFAULT);
   }
 
-  int16_t pathloss = compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm);
+  int16_t pathloss = compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm);
   int M_pucch_component = (10 * log10((double)(pow(2,scs) * nb_of_prbs)));
 
   int16_t pucch_power = P_O_PUCCH + M_pucch_component + pathloss + delta_F_PUCCH + DELTA_TF + G_b_f_c;
@@ -2188,7 +2190,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
         }
       }
       AssertFatal(*SSB_resource.list.array[ssb_rsrp[0][0]] == mac->mib_ssb, "Couldn't find corresponding SSB in csi_SSB_ResourceList\n");
-      ssb_rsrp[1][0] = mac->phy_measurements.ssb_rsrp_dBm;
+      ssb_rsrp[1][0] = mac->ssb_measurements.ssb_rsrp_dBm;
 
       uint8_t ssbi;
 
