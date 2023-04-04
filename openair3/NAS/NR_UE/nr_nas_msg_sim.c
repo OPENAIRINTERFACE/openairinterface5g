@@ -622,7 +622,7 @@ static void decodeRegistrationAccept(uint8_t *buf, int len, nr_ue_nas_t *nas)
      AssertFatal(reg_acc.guti->guti.typeofidentity == FGS_MOBILE_IDENTITY_5G_GUTI,
                  "registration accept 5GS Mobile Identity is not GUTI, but %d\n",
                  reg_acc.guti->guti.typeofidentity);
-     nas->guti = malloc(sizeof(nas->guti));
+     nas->guti = malloc(sizeof(*nas->guti));
      AssertFatal(nas->guti, "out of memory\n");
      *nas->guti = reg_acc.guti->guti;
      free(reg_acc.guti); /* no proper memory management for NAS decoded messages */
