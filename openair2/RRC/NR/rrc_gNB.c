@@ -1284,6 +1284,22 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
  * Handle RRC Reestablishment Complete Functions 
  */
 
+/// @brief Function used in RRCReestablishmentComplete procedure to update the NAS PDUSessions and the xid.
+/// @param old_xid Refers to the old transaction identifier passed to rrc_gNB_process_RRCReestablishmentComplete as xid.
+/// @todo parameters yet to process inside the for loop.
+/// @todo should test if pdu session are Ok before! inside the for loop.
+void RRCReestablishmentComplete_nas_pdu_update(rrc_gNB_ue_context_t *ue_context_pP,
+                                               const uint8_t old_xid)
+{
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  /* Add all NAS PDUs to the list */
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
+    ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
+    ue_p->pduSession[i].xid = old_xid;
+    LOG_D(NR_RRC, "RRC Reestablishment - setting the status for the default DRB (index %d) to (%d,%s)\n", i, ue_p->pduSession[i].status, "PDU_SESSION_STATUS_DONE");
+  }
+}
+
 /// @brief Function used in RRCReestablishmentComplete procedure to Free all the NAS PDU buffers. 
 void RRCReestablishmentComplete_nas_pdu_free(rrc_gNB_ue_context_t *ue_context_pP)
 {
@@ -1425,6 +1441,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
       return;
     }
   }
+  RRCReestablishmentComplete_nas_pdu_update(ue_context_pP, xid);
 
   /* Update RNTI in ue_context */
   LOG_I(NR_RRC, "Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
@@ -1443,15 +1460,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   uint8_t nb_drb_to_setup = DRB_configList ? DRB_configList->list.count : ue_p->nb_of_pdusessions;
   /* TODO: hardcoded to 13 for the time being, to be changed? */
   long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
-
-  /* Add all NAS PDUs to the list */
-  for (i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    /* TODO parameters yet to process ... */
-    /* TODO should test if pdu session are Ok before! */
-    ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
-    ue_p->pduSession[i].xid = xid;
-    LOG_D(NR_RRC, "setting the status for the default DRB (index %d) to (%d,%s)\n", i, ue_p->pduSession[i].status, "PDU_SESSION_STATUS_DONE");
-  }
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
