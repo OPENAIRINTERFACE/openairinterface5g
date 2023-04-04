@@ -1469,9 +1469,9 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   int i = 0;
 
   uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
-  ue_p->StatusRrc = NR_RRC_CONNECTED;
+  ue_p->StatusRrc               = NR_RRC_CONNECTED;
   ue_p->ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  ue_p->reestablishment_xid = new_xid;
+  ue_p->reestablishment_xid     = new_xid;
 
   RRCReestablishmentComplete_fill_SRB2_configList(ctxt_pP, ue_context_pP, xid, new_xid);
   RRCReestablishmentComplete_fill_DRB_configList(ctxt_pP, ue_context_pP, new_xid);
@@ -1479,22 +1479,22 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   RRCReestablishmentComplete_nas_pdu_update(ue_context_pP, xid);
 
   /* Update RNTI in ue_context */
-  LOG_I(NR_RRC, "Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
+  LOG_I(NR_RRC, "RRC Reestablishment - Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
   rrc_gNB_update_ue_context_rnti(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], ue_p->gNB_ue_ngap_id);
-
-  uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
-  uint8_t nb_drb_to_setup = ue_p->DRB_configList ? ue_p->DRB_configList->list.count : ue_p->nb_of_pdusessions;
-  /* TODO: hardcoded to 13 for the time being, to be changed? */
-  long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
 
   // Revert spCellConfig stored in spCellConfigReestablishment before had been dropped during RRC Reestablishment
-  ue_p->masterCellGroup->spCellConfig = ue_p->spCellConfigReestablishment;
-  ue_p->spCellConfigReestablishment = NULL;
-  cellGroupConfig->spCellConfig = ue_p->masterCellGroup->spCellConfig;
-cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
+  ue_p->masterCellGroup->spCellConfig      = ue_p->spCellConfigReestablishment;
+  ue_p->spCellConfigReestablishment        = NULL;
+  cellGroupConfig->spCellConfig            = ue_p->masterCellGroup->spCellConfig;
+  cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
+
+  uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
+  uint8_t nb_drb_to_setup = ue_p->DRB_configList ? ue_p->DRB_configList->list.count : ue_p->nb_of_pdusessions;
+  /* TODO: hardcoded to 13 for the time being, to be changed? */
+  long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
 
   fill_mastercellGroupConfig(cellGroupConfig, ue_p->masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
 
@@ -1505,21 +1505,21 @@ cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGr
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ctxt_pP,
-                                       buffer,
-                                       RRC_BUF_SIZE,
-                                       new_xid,
-                                       *ue_p->SRB_configList2,
-                                       *ue_p->DRB_configList2,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL, // MeasObj_list,
-                                       NULL,
-                                       ue_context_pP,
-                                       &rrc->carrier,
-                                       NULL,
-                                       NULL,
-                                       cellGroupConfig);
+                                   buffer,
+                                   RRC_BUF_SIZE,
+                                   new_xid,
+                                   *ue_p->SRB_configList2,
+                                   *ue_p->DRB_configList2,
+                                   NULL,
+                                   NULL,
+                                   NULL,
+                                   NULL, // MeasObj_list,
+                                   NULL,
+                                   ue_context_pP,
+                                   &rrc->carrier,
+                                   NULL,
+                                   NULL,
+                                   cellGroupConfig);
 
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
