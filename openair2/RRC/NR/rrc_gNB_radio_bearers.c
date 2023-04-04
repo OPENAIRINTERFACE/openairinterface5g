@@ -125,11 +125,13 @@ NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
   asn1cCallocOne(drb->pdcp_SN_SizeUL, drb_asn1.pdcp_config.pdcp_SN_SizeUL);
   asn1cCallocOne(drb->pdcp_SN_SizeDL, drb_asn1.pdcp_config.pdcp_SN_SizeDL);
   asn1cCallocOne(pdcpConfig->t_Reordering, drb_asn1.pdcp_config.t_Reordering);
-  asn1cCallocOne(drb->integrityProtection,  drb_asn1.pdcp_config.integrityProtection);
 
   drb->headerCompression.present        = drb_asn1.pdcp_config.headerCompression.present;
   drb->headerCompression.choice.notUsed = drb_asn1.pdcp_config.headerCompression.NotUsed;
 
+  if (!drb_asn1.pdcp_config.integrityProtection) {
+    asn1cCallocOne(drb->integrityProtection, drb_asn1.pdcp_config.integrityProtection);
+  }
   if (!drb_asn1.pdcp_config.ext1.cipheringDisabled) {
     asn1cCalloc(pdcpConfig->ext1, ext1);
     asn1cCallocOne(ext1->cipheringDisabled, drb_asn1.pdcp_config.ext1.cipheringDisabled);
