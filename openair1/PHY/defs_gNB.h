@@ -823,6 +823,8 @@ typedef struct processingData_L1tx {
   uint16_t num_pdsch_slot;
   int num_dl_pdcch;
   int num_ul_pdcch;
+  /* a reference to the sched_response, to release it when not needed anymore */
+  int sched_response_id;
 } processingData_L1tx_t;
 
 #endif

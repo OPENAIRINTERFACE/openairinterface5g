@@ -83,6 +83,8 @@ typedef struct {
 
 
 typedef struct {
+  /// the ID of this sched_response - used by sched_reponse memory management
+  int sched_response_id;
   /// Module ID
   module_id_t module_id;
   /// CC ID
@@ -92,13 +94,13 @@ typedef struct {
   /// slot
   slot_t slot;
   /// nFAPI DL Config Request
-  nfapi_nr_dl_tti_request_t *DL_req;
+  nfapi_nr_dl_tti_request_t DL_req;
   /// nFAPI UL Config Request
-  nfapi_nr_ul_tti_request_t *UL_tti_req;
+  nfapi_nr_ul_tti_request_t UL_tti_req;
   /// nFAPI UL_DCI Request
-  nfapi_nr_ul_dci_request_t *UL_dci_req;
+  nfapi_nr_ul_dci_request_t UL_dci_req;
   /// Pointers to DL SDUs
-  nfapi_nr_tx_data_request_t *TX_req;
+  nfapi_nr_tx_data_request_t TX_req;
 } NR_Sched_Rsp_t;
 
 typedef struct {

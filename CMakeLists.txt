@@ -1474,6 +1474,7 @@ set (MAC_SRC
 
 set (MAC_NR_SRC
   ${NR_PHY_INTERFACE_DIR}/NR_IF_Module.c
+  ${NR_PHY_INTERFACE_DIR}/nr_sched_response.c
   ${NR_GNB_MAC_DIR}/main.c
   ${NR_GNB_MAC_DIR}/config.c
   ${NR_GNB_MAC_DIR}/gNB_scheduler.c

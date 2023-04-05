@@ -1997,7 +1997,7 @@ nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
   return nr_fr1_ulsch_preprocessor;
 }
 
-void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
+void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, nfapi_nr_ul_dci_request_t *ul_dci_req)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
@@ -2010,8 +2010,6 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot)
   if (!do_sched)
     return;
 
-  const int CC_id = 0;
-  nfapi_nr_ul_dci_request_t *ul_dci_req = &nr_mac->UL_dci_req[CC_id];
   ul_dci_req->SFN = frame;
   ul_dci_req->Slot = slot;
   /* a PDCCH PDU groups DCIs per BWP and CORESET. Save a pointer to each
