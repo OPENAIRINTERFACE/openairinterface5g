@@ -328,7 +328,9 @@ void fh_if5_south_in(RU_t *ru,
   if (proc->first_rx == 0) {
     if (proc->tti_rx != *tti) {
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->tti_rx %d, subframe %d)\n",proc->tti_rx,*tti);
-      exit_fun("Exiting");
+      if (!oai_exit)
+        exit_fun("Exiting");
+      return;
     }
 
     if (proc->frame_rx != *frame) {
