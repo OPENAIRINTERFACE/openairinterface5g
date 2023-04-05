@@ -47,19 +47,19 @@ void generateDRB(gNB_RRC_UE_t *ue,
   int qos_flow_index;
   if (ue->established_drbs[drb_id - 1].status == DRB_INACTIVE) {
     /* DRB Management */
-    ue->established_drbs[drb_id - 1].drb_id          = drb_id;
+    ue->established_drbs[drb_id - 1].drb_id = drb_id;
     ue->established_drbs[drb_id - 1].reestablishPDCP = -1;
-    ue->established_drbs[drb_id - 1].recoverPDCP     = -1;
+    ue->established_drbs[drb_id - 1].recoverPDCP = -1;
     for (i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
-      if ((ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == 0 ||
-           ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == pduSession->param.pdusession_id) &&
-           ue->established_drbs[drb_id - 1].defaultDRBid == 0) {
+      if ((ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == 0
+           || ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == pduSession->param.pdusession_id)
+          && ue->established_drbs[drb_id - 1].defaultDRBid == 0) {
         ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.defaultDRB = true;
         ue->established_drbs[drb_id - 1].defaultDRBid = drb_id;
       }
     }
     /* SDAP Configuration */
-    ue->established_drbs[drb_id - 1].cnAssociation.present                   = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
+    ue->established_drbs[drb_id - 1].cnAssociation.present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
     ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id = pduSession->param.pdusession_id;
     if (enable_sdap) {
       ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
@@ -68,19 +68,19 @@ void generateDRB(gNB_RRC_UE_t *ue,
       ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
       ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     }
-    for (qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) 
-    {
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] = pduSession->param.qos[qos_flow_index].qfi;
-      if(pduSession->param.qos[qos_flow_index].fiveQI > 5)
+    for (qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) {
+      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] =
+          pduSession->param.qos[qos_flow_index].qfi;
+      if (pduSession->param.qos[qos_flow_index].fiveQI > 5)
         ue->established_drbs[drb_id - 1].status = DRB_ACTIVE_NONGBR;
       else
         ue->established_drbs[drb_id - 1].status = DRB_ACTIVE;
     }
     /* PDCP Configuration */
-    ue->established_drbs[drb_id - 1].pdcp_config.discardTimer              = NR_PDCP_Config__drb__discardTimer_infinity;
-    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeDL            = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeUL            = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-    ue->established_drbs[drb_id - 1].pdcp_config.t_Reordering              = NR_PDCP_Config__t_Reordering_ms100;
+    ue->established_drbs[drb_id - 1].pdcp_config.discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
+    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+    ue->established_drbs[drb_id - 1].pdcp_config.t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
     ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
     ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.NotUsed = 0;
     if (do_drb_integrity)
@@ -91,7 +91,6 @@ void generateDRB(gNB_RRC_UE_t *ue,
       ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = 1;
     else
       ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
-
   }
 }
 
@@ -106,17 +105,16 @@ NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
   asn1cCalloc(pdcpConfig->drb, drb);
 
   DRB_config->drb_Identity = drb_asn1.drb_id;
-  association->present     = drb_asn1.cnAssociation.present;
+  association->present = drb_asn1.cnAssociation.present;
 
   /* SDAP Configuration */
-  SDAP_config->pdu_Session   = drb_asn1.cnAssociation.sdap_config.pdusession_id;
+  SDAP_config->pdu_Session = drb_asn1.cnAssociation.sdap_config.pdusession_id;
   SDAP_config->sdap_HeaderDL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderDL;
   SDAP_config->sdap_HeaderUL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderUL;
-  SDAP_config->defaultDRB    = drb_asn1.cnAssociation.sdap_config.defaultDRB;
-  
-  for (int qos_flow_index = 0; qos_flow_index < QOSFLOW_MAX_VALUE; qos_flow_index++) 
-  {
-    if(drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] != 0) {
+  SDAP_config->defaultDRB = drb_asn1.cnAssociation.sdap_config.defaultDRB;
+
+  for (int qos_flow_index = 0; qos_flow_index < QOSFLOW_MAX_VALUE; qos_flow_index++) {
+    if (drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] != 0) {
       asn1cSequenceAdd(sdapFlows->list, NR_QFI_t, qfi);
       *qfi = drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index];
     }
@@ -130,7 +128,7 @@ NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
   asn1cCallocOne(drb->pdcp_SN_SizeDL, drb_asn1.pdcp_config.pdcp_SN_SizeDL);
   asn1cCallocOne(pdcpConfig->t_Reordering, drb_asn1.pdcp_config.t_Reordering);
 
-  drb->headerCompression.present        = drb_asn1.pdcp_config.headerCompression.present;
+  drb->headerCompression.present = drb_asn1.pdcp_config.headerCompression.present;
   drb->headerCompression.choice.notUsed = drb_asn1.pdcp_config.headerCompression.NotUsed;
 
   if (!drb_asn1.pdcp_config.integrityProtection) {

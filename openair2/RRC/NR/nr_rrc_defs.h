@@ -295,7 +295,7 @@ typedef struct drb_s {
     int pdcp_SN_SizeDL;
     int t_Reordering;
     int integrityProtection;
-    struct headerCompression_s{
+    struct headerCompression_s {
       int NotUsed;
       int present;
     } headerCompression;

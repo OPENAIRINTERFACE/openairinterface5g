@@ -1281,7 +1281,7 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
 }
 
 /*
- * Handle RRC Reestablishment Complete Functions 
+ * Handle RRC Reestablishment Complete Functions
  */
 
 /// @brief Function used in RRCReestablishmentComplete procedure to reestablish the SRB2.
@@ -1292,25 +1292,28 @@ void RRCReestablishmentComplete_fill_SRB2_configList(const protocol_ctxt_t *cons
                                                      const uint8_t old_xid,
                                                      const uint8_t new_xid)
 {
-  gNB_RRC_UE_t           *ue_p            = &ue_context_pP->ue_context;
-  NR_SRB_ToAddMod_t      *SRB2_config     = NULL;
-  NR_SRB_ToAddModList_t  *SRB_configList  = ue_p->SRB_configList;
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  NR_SRB_ToAddMod_t *SRB2_config = NULL;
+  NR_SRB_ToAddModList_t *SRB_configList = ue_p->SRB_configList;
   NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
 
   SRB_configList2 = &ue_p->SRB_configList2[old_xid];
 
   // get old configuration of SRB2
   if (*SRB_configList2 != NULL) {
-    if((*SRB_configList2)->list.count!=0) {
-      LOG_D(NR_RRC, "RRC Reestablishment - SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p\n",
-      SRB_configList2, (*SRB_configList2)->list.count,  (*SRB_configList2)->list.array[0]);
+    if ((*SRB_configList2)->list.count != 0) {
+      LOG_D(NR_RRC,
+            "RRC Reestablishment - SRB_configList2(%p) count is %d\n           SRB_configList2->list.array[0] addr is %p\n",
+            SRB_configList2,
+            (*SRB_configList2)->list.count,
+            (*SRB_configList2)->list.array[0]);
     }
 
     for (int i = 0; (i < (*SRB_configList2)->list.count) && (i < 3); i++) {
-      if ((*SRB_configList2)->list.array[i]->srb_Identity == 2 ) {
+      if ((*SRB_configList2)->list.array[i]->srb_Identity == 2) {
         LOG_D(NR_RRC, "RRC Reestablishment - get SRB2_config from (ue_p->SRB_configList2[%d])\n", old_xid);
         SRB2_config = (*SRB_configList2)->list.array[i];
-        SRB2_config->reestablishPDCP  = CALLOC(1, sizeof(*SRB2_config->reestablishPDCP));
+        SRB2_config->reestablishPDCP = CALLOC(1, sizeof(*SRB2_config->reestablishPDCP));
         *SRB2_config->reestablishPDCP = NR_SRB_ToAddMod__reestablishPDCP_true;
         break;
       }
@@ -1331,10 +1334,13 @@ void RRCReestablishmentComplete_fill_SRB2_configList(const protocol_ctxt_t *cons
     asn1cSeqAdd(&SRB_configList->list, SRB2_config);
     asn1cSeqAdd(&(*SRB_configList2)->list, SRB2_config);
     LOG_D(NR_RRC, "RRC Reestablishment - Add SRB2_config (srb_Identity:%ld) to ue_p->SRB_configList\n", SRB2_config->srb_Identity);
-    LOG_D(NR_RRC, "RRC Reestablishment - Add SRB2_config (srb_Identity:%ld) to ue_p->SRB_configList2[%d]\n", SRB2_config->srb_Identity, new_xid);
+    LOG_D(NR_RRC,
+          "RRC Reestablishment - Add SRB2_config (srb_Identity:%ld) to ue_p->SRB_configList2[%d]\n",
+          SRB2_config->srb_Identity,
+          new_xid);
   } else {
     // SRB configuration list only contains SRB1.
-    LOG_W(NR_RRC,"RRC Reestablishment - SRB2 configuration does not exist in SRB configuration list\n");
+    LOG_W(NR_RRC, "RRC Reestablishment - SRB2 configuration does not exist in SRB configuration list\n");
   }
 
   ue_p->Srb[1].Active = 1;
@@ -1346,16 +1352,16 @@ void RRCReestablishmentComplete_fill_SRB2_configList(const protocol_ctxt_t *cons
   }
 }
 
-/// @brief Function used in RRCReestablishmentComplete procedure to reestablish the DRBs 
-///        that the UE previously had, it gets the information from the established_drbs 
+/// @brief Function used in RRCReestablishmentComplete procedure to reestablish the DRBs
+///        that the UE previously had, it gets the information from the established_drbs
 ///        struct.
-/// @param new_xid The new RRC transaction id. 
+/// @param new_xid The new RRC transaction id.
 void RRCReestablishmentComplete_fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP,
                                                     rrc_gNB_ue_context_t *ue_context_pP,
                                                     const uint8_t new_xid)
 {
-  gNB_RRC_UE_t           *ue_p            = &ue_context_pP->ue_context;
-  NR_DRB_ToAddMod_t      *DRB_config      = NULL;
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  NR_DRB_ToAddMod_t *DRB_config = NULL;
   NR_DRB_ToAddModList_t **DRB_configList2 = &(ue_p->DRB_configList2[new_xid]);
 
   if (*DRB_configList2) {
@@ -1376,26 +1382,26 @@ void RRCReestablishmentComplete_fill_DRB_configList(const protocol_ctxt_t *const
 }
 
 /// @brief Function used in RRCReestablishmentComplete procedure to update the NGU Tunnels.
-/// @param reestablish_rnti is the old C-RNTI 
+/// @param reestablish_rnti is the old C-RNTI
 void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const ctxt_pP,
                                                   rrc_gNB_ue_context_t *ue_context_pP,
                                                   const rnti_t reestablish_rnti)
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  int i   = 0;
-  int j   = 0;
+  int i = 0;
+  int j = 0;
   int ret = 0;
 
   if (get_softmodem_params()->sa) {
     LOG_W(NR_RRC, "RRC Reestablishment - Rework identity mapping need to be done properly!\n");
-    gtpv1u_gnb_create_tunnel_req_t create_tunnel_req={0};
+    gtpv1u_gnb_create_tunnel_req_t create_tunnel_req = {0};
     /* Save e RAB information for later */
-    
+
     for (j = 0, i = 0; i < NB_RB_MAX; i++) {
       if (ue_p->pduSession[i].status == PDU_SESSION_STATUS_ESTABLISHED || ue_p->pduSession[i].status == PDU_SESSION_STATUS_DONE) {
-        create_tunnel_req.pdusession_id[j]  = ue_p->pduSession[i].param.pdusession_id;
-        create_tunnel_req.incoming_rb_id[j] = i+1;
-        create_tunnel_req.outgoing_teid[j]  = ue_p->pduSession[i].param.gtp_teid;
+        create_tunnel_req.pdusession_id[j] = ue_p->pduSession[i].param.pdusession_id;
+        create_tunnel_req.incoming_rb_id[j] = i + 1;
+        create_tunnel_req.outgoing_teid[j] = ue_p->pduSession[i].param.gtp_teid;
         // to be developped, use the first QFI only
         create_tunnel_req.outgoing_qfi[j] = ue_p->pduSession[i].param.qos[0].qfi;
         memcpy(create_tunnel_req.dst_addr[j].buffer, ue_p->pduSession[i].param.upf_addr.buffer, sizeof(uint8_t) * 20);
@@ -1404,20 +1410,18 @@ void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const c
       }
     }
 
-    create_tunnel_req.ue_id       = ctxt_pP->rntiMaybeUEid; // warning put zero above
+    create_tunnel_req.ue_id = ctxt_pP->rntiMaybeUEid; // warning put zero above
     create_tunnel_req.num_tunnels = j;
-    ret = gtpv1u_update_ngu_tunnel(ctxt_pP->instance,
-                                   &create_tunnel_req,
-                                   reestablish_rnti);
+    ret = gtpv1u_update_ngu_tunnel(ctxt_pP->instance, &create_tunnel_req, reestablish_rnti);
 
-    if ( ret != 0 ) {
+    if (ret != 0) {
       LOG_E(NR_RRC, "RRC Reestablishment - gtpv1u_update_ngu_tunnel failed,start to release UE %x\n", reestablish_rnti);
-      ue_p->ue_release_timer_s1       = 1;
+      ue_p->ue_release_timer_s1 = 1;
       ue_p->ue_release_timer_thres_s1 = 100;
-      ue_p->ue_release_timer          = 0;
-      ue_p->ue_reestablishment_timer  = 0;
-      ue_p->ul_failure_timer          = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
-      ue_p->ul_failure_timer          = 0;
+      ue_p->ue_release_timer = 0;
+      ue_p->ue_reestablishment_timer = 0;
+      ue_p->ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
+      ue_p->ul_failure_timer = 0;
       return;
     }
   }
@@ -1427,19 +1431,22 @@ void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const c
 /// @param old_xid Refers to the old transaction identifier passed to rrc_gNB_process_RRCReestablishmentComplete as xid.
 /// @todo parameters yet to process inside the for loop.
 /// @todo should test if pdu session are Ok before! inside the for loop.
-void RRCReestablishmentComplete_nas_pdu_update(rrc_gNB_ue_context_t *ue_context_pP,
-                                               const uint8_t old_xid)
+void RRCReestablishmentComplete_nas_pdu_update(rrc_gNB_ue_context_t *ue_context_pP, const uint8_t old_xid)
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   /* Add all NAS PDUs to the list */
   for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
     ue_p->pduSession[i].status = PDU_SESSION_STATUS_DONE;
     ue_p->pduSession[i].xid = old_xid;
-    LOG_D(NR_RRC, "RRC Reestablishment - setting the status for the default DRB (index %d) to (%d,%s)\n", i, ue_p->pduSession[i].status, "PDU_SESSION_STATUS_DONE");
+    LOG_D(NR_RRC,
+          "RRC Reestablishment - setting the status for the default DRB (index %d) to (%d,%s)\n",
+          i,
+          ue_p->pduSession[i].status,
+          "PDU_SESSION_STATUS_DONE");
   }
 }
 
-/// @brief Function used in RRCReestablishmentComplete procedure to Free all the NAS PDU buffers. 
+/// @brief Function used in RRCReestablishmentComplete procedure to Free all the NAS PDU buffers.
 void RRCReestablishmentComplete_nas_pdu_free(rrc_gNB_ue_context_t *ue_context_pP)
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
@@ -1464,14 +1471,16 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
                                                 const uint8_t xid)
 {
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel UL-DCCH, processing NR_RRCReestablishmentComplete from UE (SRB1 Active)\n", ue_p->rnti);
+  LOG_I(NR_RRC,
+        "[RAPROC] UE %04x Logical Channel UL-DCCH, processing NR_RRCReestablishmentComplete from UE (SRB1 Active)\n",
+        ue_p->rnti);
 
   int i = 0;
 
   uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
-  ue_p->StatusRrc               = NR_RRC_CONNECTED;
+  ue_p->StatusRrc = NR_RRC_CONNECTED;
   ue_p->ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
-  ue_p->reestablishment_xid     = new_xid;
+  ue_p->reestablishment_xid = new_xid;
 
   RRCReestablishmentComplete_fill_SRB2_configList(ctxt_pP, ue_context_pP, xid, new_xid);
   RRCReestablishmentComplete_fill_DRB_configList(ctxt_pP, ue_context_pP, new_xid);
@@ -1486,9 +1495,9 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
 
   // Revert spCellConfig stored in spCellConfigReestablishment before had been dropped during RRC Reestablishment
-  ue_p->masterCellGroup->spCellConfig      = ue_p->spCellConfigReestablishment;
-  ue_p->spCellConfigReestablishment        = NULL;
-  cellGroupConfig->spCellConfig            = ue_p->masterCellGroup->spCellConfig;
+  ue_p->masterCellGroup->spCellConfig = ue_p->spCellConfigReestablishment;
+  ue_p->spCellConfigReestablishment = NULL;
+  cellGroupConfig->spCellConfig = ue_p->masterCellGroup->spCellConfig;
   cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
 
   uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
@@ -1496,10 +1505,17 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   /* TODO: hardcoded to 13 for the time being, to be changed? */
   long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
 
-  fill_mastercellGroupConfig(cellGroupConfig, ue_p->masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
+  fill_mastercellGroupConfig(cellGroupConfig,
+                             ue_p->masterCellGroup,
+                             rrc->um_on_default_drb,
+                             (drb_id_to_setup_start < 2) ? 1 : 0,
+                             drb_id_to_setup_start,
+                             nb_drb_to_setup,
+                             drb_priority);
 
-  for(i = 0; i < cellGroupConfig->rlc_BearerToAddModList->list.count; i++) {
-    cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC = CALLOC(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC));
+  for (i = 0; i < cellGroupConfig->rlc_BearerToAddModList->list.count; i++) {
+    cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC =
+        CALLOC(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC));
     *cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC = NR_RLC_BearerConfig__reestablishRLC_true;
   }
 
@@ -1521,7 +1537,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
                                    NULL,
                                    cellGroupConfig);
 
-  LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
+  LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
   RRCReestablishmentComplete_nas_pdu_free(ue_context_pP);
 
@@ -1529,9 +1545,15 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
     LOG_E(NR_RRC, "RRC decode err!!! do_RRCReconfiguration\n");
     return;
   } else {
-    LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %04x)\n", ctxt_pP->module_id, ctxt_pP->frame, size, ue_p->rnti);
+    LOG_I(NR_RRC,
+          "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate NR_RRCReconfiguration (bytes %d, UE id %04x)\n",
+          ctxt_pP->module_id,
+          ctxt_pP->frame,
+          size,
+          ue_p->rnti);
     LOG_D(NR_RRC,
-          "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (RRCReconfiguration to UE %04x MUI %d) --->][PDCP][MOD %u][RB %u]\n",
+          "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (RRCReconfiguration to UE %04x MUI %d) --->][PDCP][MOD "
+          "%u][RB %u]\n",
           ctxt_pP->frame,
           ctxt_pP->module_id,
           size,
@@ -1545,12 +1567,16 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   }
 
   if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
+    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig
+                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
                             ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
                             : NR_RRC_RECONFIGURATION_DELAY_MS;
 
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_p->rnti,
+                                          *RC.nrrrc[ctxt_pP->module_id]->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          delay_ms);
   }
 }
 //-----------------------------------------------------------------------------
