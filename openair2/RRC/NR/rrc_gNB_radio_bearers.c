@@ -45,56 +45,56 @@ void generateDRB(gNB_RRC_UE_t *ue,
 {
   int i;
   int qos_flow_index;
-  if (ue->established_drbs[drb_id - 1].status == DRB_INACTIVE) {
+  drb_t *est_drb = &ue->established_drbs[drb_id - 1];
+  if (est_drb->status == DRB_INACTIVE) {
     /* DRB Management */
-    ue->established_drbs[drb_id - 1].drb_id = drb_id;
-    ue->established_drbs[drb_id - 1].reestablishPDCP = -1;
-    ue->established_drbs[drb_id - 1].recoverPDCP = -1;
+    est_drb->drb_id = drb_id;
+    est_drb->reestablishPDCP = -1;
+    est_drb->recoverPDCP = -1;
     for (i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
-      if ((ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == 0
-           || ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id == pduSession->param.pdusession_id)
-          && ue->established_drbs[drb_id - 1].defaultDRBid == 0) {
-        ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.defaultDRB = true;
-        ue->established_drbs[drb_id - 1].defaultDRBid = drb_id;
+      if ((est_drb->cnAssociation.sdap_config.pdusession_id == 0
+           || est_drb->cnAssociation.sdap_config.pdusession_id == pduSession->param.pdusession_id)
+          && est_drb->defaultDRBid == 0) {
+        est_drb->cnAssociation.sdap_config.defaultDRB = true;
+        est_drb->defaultDRBid = drb_id;
       }
     }
     /* SDAP Configuration */
-    ue->established_drbs[drb_id - 1].cnAssociation.present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
-    ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.pdusession_id = pduSession->param.pdusession_id;
+    est_drb->cnAssociation.present = NR_DRB_ToAddMod__cnAssociation_PR_sdap_Config;
+    est_drb->cnAssociation.sdap_config.pdusession_id = pduSession->param.pdusession_id;
     if (enable_sdap) {
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
+      est_drb->cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_present;
+      est_drb->cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_present;
     } else {
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
+      est_drb->cnAssociation.sdap_config.sdap_HeaderDL = NR_SDAP_Config__sdap_HeaderDL_absent;
+      est_drb->cnAssociation.sdap_config.sdap_HeaderUL = NR_SDAP_Config__sdap_HeaderUL_absent;
     }
     for (qos_flow_index = 0; qos_flow_index < pduSession->param.nb_qos; qos_flow_index++) {
-      ue->established_drbs[drb_id - 1].cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] =
-          pduSession->param.qos[qos_flow_index].qfi;
+      est_drb->cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] = pduSession->param.qos[qos_flow_index].qfi;
       if (pduSession->param.qos[qos_flow_index].fiveQI > 5)
-        ue->established_drbs[drb_id - 1].status = DRB_ACTIVE_NONGBR;
+        est_drb->status = DRB_ACTIVE_NONGBR;
       else
-        ue->established_drbs[drb_id - 1].status = DRB_ACTIVE;
+        est_drb->status = DRB_ACTIVE;
     }
     /* PDCP Configuration */
-    ue->established_drbs[drb_id - 1].pdcp_config.discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
-    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
-    ue->established_drbs[drb_id - 1].pdcp_config.pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
-    ue->established_drbs[drb_id - 1].pdcp_config.t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
-    ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
-    ue->established_drbs[drb_id - 1].pdcp_config.headerCompression.NotUsed = 0;
+    est_drb->pdcp_config.discardTimer = NR_PDCP_Config__drb__discardTimer_infinity;
+    est_drb->pdcp_config.pdcp_SN_SizeDL = NR_PDCP_Config__drb__pdcp_SN_SizeDL_len18bits;
+    est_drb->pdcp_config.pdcp_SN_SizeUL = NR_PDCP_Config__drb__pdcp_SN_SizeUL_len18bits;
+    est_drb->pdcp_config.t_Reordering = NR_PDCP_Config__t_Reordering_ms100;
+    est_drb->pdcp_config.headerCompression.present = NR_PDCP_Config__drb__headerCompression_PR_notUsed;
+    est_drb->pdcp_config.headerCompression.NotUsed = 0;
     if (do_drb_integrity)
-      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
+      est_drb->pdcp_config.integrityProtection = NR_PDCP_Config__drb__integrityProtection_enabled;
     else
-      ue->established_drbs[drb_id - 1].pdcp_config.integrityProtection = 1;
+      est_drb->pdcp_config.integrityProtection = 1;
     if (do_drb_ciphering)
-      ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = 1;
+      est_drb->pdcp_config.ext1.cipheringDisabled = 1;
     else
-      ue->established_drbs[drb_id - 1].pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
+      est_drb->pdcp_config.ext1.cipheringDisabled = NR_PDCP_Config__ext1__cipheringDisabled_true;
   }
 }
 
-NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
+NR_DRB_ToAddMod_t *generateDRB_ASN1(const drb_t *drb_asn1)
 {
   NR_DRB_ToAddMod_t *DRB_config = CALLOC(1, sizeof(*DRB_config));
   NR_SDAP_Config_t *SDAP_config = CALLOC(1, sizeof(NR_SDAP_Config_t));
@@ -104,39 +104,39 @@ NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1)
   asn1cCalloc(DRB_config->pdcp_Config, pdcpConfig);
   asn1cCalloc(pdcpConfig->drb, drb);
 
-  DRB_config->drb_Identity = drb_asn1.drb_id;
-  association->present = drb_asn1.cnAssociation.present;
+  DRB_config->drb_Identity = drb_asn1->drb_id;
+  association->present = drb_asn1->cnAssociation.present;
 
   /* SDAP Configuration */
-  SDAP_config->pdu_Session = drb_asn1.cnAssociation.sdap_config.pdusession_id;
-  SDAP_config->sdap_HeaderDL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderDL;
-  SDAP_config->sdap_HeaderUL = drb_asn1.cnAssociation.sdap_config.sdap_HeaderUL;
-  SDAP_config->defaultDRB = drb_asn1.cnAssociation.sdap_config.defaultDRB;
+  SDAP_config->pdu_Session = drb_asn1->cnAssociation.sdap_config.pdusession_id;
+  SDAP_config->sdap_HeaderDL = drb_asn1->cnAssociation.sdap_config.sdap_HeaderDL;
+  SDAP_config->sdap_HeaderUL = drb_asn1->cnAssociation.sdap_config.sdap_HeaderUL;
+  SDAP_config->defaultDRB = drb_asn1->cnAssociation.sdap_config.defaultDRB;
 
   for (int qos_flow_index = 0; qos_flow_index < QOSFLOW_MAX_VALUE; qos_flow_index++) {
-    if (drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] != 0) {
+    if (drb_asn1->cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index] != 0) {
       asn1cSequenceAdd(sdapFlows->list, NR_QFI_t, qfi);
-      *qfi = drb_asn1.cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index];
+      *qfi = drb_asn1->cnAssociation.sdap_config.mappedQoS_FlowsToAdd[qos_flow_index];
     }
   }
 
   association->choice.sdap_Config = SDAP_config;
 
   /* PDCP Configuration */
-  asn1cCallocOne(drb->discardTimer, drb_asn1.pdcp_config.discardTimer);
-  asn1cCallocOne(drb->pdcp_SN_SizeUL, drb_asn1.pdcp_config.pdcp_SN_SizeUL);
-  asn1cCallocOne(drb->pdcp_SN_SizeDL, drb_asn1.pdcp_config.pdcp_SN_SizeDL);
-  asn1cCallocOne(pdcpConfig->t_Reordering, drb_asn1.pdcp_config.t_Reordering);
+  asn1cCallocOne(drb->discardTimer, drb_asn1->pdcp_config.discardTimer);
+  asn1cCallocOne(drb->pdcp_SN_SizeUL, drb_asn1->pdcp_config.pdcp_SN_SizeUL);
+  asn1cCallocOne(drb->pdcp_SN_SizeDL, drb_asn1->pdcp_config.pdcp_SN_SizeDL);
+  asn1cCallocOne(pdcpConfig->t_Reordering, drb_asn1->pdcp_config.t_Reordering);
 
-  drb->headerCompression.present = drb_asn1.pdcp_config.headerCompression.present;
-  drb->headerCompression.choice.notUsed = drb_asn1.pdcp_config.headerCompression.NotUsed;
+  drb->headerCompression.present = drb_asn1->pdcp_config.headerCompression.present;
+  drb->headerCompression.choice.notUsed = drb_asn1->pdcp_config.headerCompression.NotUsed;
 
-  if (!drb_asn1.pdcp_config.integrityProtection) {
-    asn1cCallocOne(drb->integrityProtection, drb_asn1.pdcp_config.integrityProtection);
+  if (!drb_asn1->pdcp_config.integrityProtection) {
+    asn1cCallocOne(drb->integrityProtection, drb_asn1->pdcp_config.integrityProtection);
   }
-  if (!drb_asn1.pdcp_config.ext1.cipheringDisabled) {
+  if (!drb_asn1->pdcp_config.ext1.cipheringDisabled) {
     asn1cCalloc(pdcpConfig->ext1, ext1);
-    asn1cCallocOne(ext1->cipheringDisabled, drb_asn1.pdcp_config.ext1.cipheringDisabled);
+    asn1cCallocOne(ext1->cipheringDisabled, drb_asn1->pdcp_config.ext1.cipheringDisabled);
   }
 
   return DRB_config;

@@ -644,7 +644,7 @@ void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP,
           nb_drb_to_setup--;
         } else {
           generateDRB(ue_p, drb_id, &ue_p->pduSession[i], rrc->configuration.enable_sdap, rrc->security.do_drb_integrity, rrc->security.do_drb_ciphering);
-          NR_DRB_ToAddMod_t *DRB_config = generateDRB_ASN1(ue_p->established_drbs[drb_id-1]);
+          NR_DRB_ToAddMod_t *DRB_config = generateDRB_ASN1(&ue_p->established_drbs[drb_id-1]);
           if (drb_id_to_setup_start == 0)
             drb_id_to_setup_start = DRB_config->drb_Identity;
           asn1cSeqAdd(&ue_p->DRB_configList->list, DRB_config);
@@ -1374,7 +1374,7 @@ void RRCReestablishmentComplete_fill_DRB_configList(const protocol_ctxt_t *const
   for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
     if (ue_p->established_drbs[i].status != DRB_INACTIVE) {
       ue_p->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
-      DRB_config = generateDRB_ASN1(ue_p->established_drbs[i]);
+      DRB_config = generateDRB_ASN1(&ue_p->established_drbs[i]);
       asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
       asn1cSeqAdd(&(*DRB_configList2)->list, DRB_config);
     }

@@ -38,7 +38,7 @@
 /// @brief Generates an ASN1 DRB-ToAddMod, from the established_drbs in gNB_RRC_UE_t.
 /// @param drb_t drb_asn1
 /// @return Returns the ASN1 DRB-ToAddMod structs.
-NR_DRB_ToAddMod_t *generateDRB_ASN1(drb_t drb_asn1);
+NR_DRB_ToAddMod_t *generateDRB_ASN1(const drb_t *drb_asn1);
 /// @brief Creates and stores a DRB in the gNB_RRC_UE_t struct, it doesn't create the actual entity,
 /// to create the actual entity use the generateDRB_ASN1.
 /// @param ue The gNB_RRC_UE_t struct that holds information for the UEs
