@@ -980,9 +980,8 @@ int nr_ue_csi_rs_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, c16_t r
   fapi_nr_rx_indication_t rx_ind = {0};
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, NULL);
   nr_fill_rx_indication(&rx_ind, FAPI_NR_CSIRS_IND, ue, NULL, NULL, 1, proc, (void *)&csirs_measurements, NULL);
-  if (ue->if_inst && ue->if_inst->dl_indication) {
-    ue->if_inst->dl_indication(&dl_indication, NULL);
-  }
+  if (ue->if_inst && ue->if_inst->dl_indication)
+    ue->if_inst->dl_indication(&dl_indication);
 
   return 0;
 }

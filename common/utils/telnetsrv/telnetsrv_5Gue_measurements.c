@@ -96,10 +96,7 @@ void measurcmd_display_phyta(telnet_printfunc_t prnt)
   PHY_VARS_NR_UE *UE = PHY_vars_UE_g[0][0];
   prnt("%s PHY TA stats\n", HDR);
   prnt("N_TA_offset %d\n", UE->N_TA_offset);
-  for (int i = 0; i < UE->n_connected_gNB; ++i) {
-    NR_UL_TIME_ALIGNMENT_t *ta = &UE->ul_time_alignment[i];
-    prnt("gNB %d TA command %d TA total %d TAG ID %d\n", i, ta->ta_command, ta->ta_total, ta->tag_id);
-  }
+  prnt("TA command %d\n", UE->ta_command);
   prnt("timing_advance %d (samples)\n", UE->timing_advance);
 }
 /*

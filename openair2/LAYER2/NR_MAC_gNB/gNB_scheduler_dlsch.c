@@ -108,10 +108,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
     AssertFatal(timing_advance_cmd < 64, "timing_advance_cmd %d > 63\n", timing_advance_cmd);
     ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND = timing_advance_cmd;    //(timing_advance_cmd+31)&0x3f;
 
-    if (gNB->tag->tag_Id != 0) {
-      tag_id = gNB->tag->tag_Id;
-      ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
-    }
+    tag_id = gNB->tag->tag_Id;
+    ((NR_MAC_CE_TA *) ce_ptr)->TAGID = tag_id;
 
     LOG_D(NR_MAC, "NR MAC CE timing advance command = %d (%d) TAG ID = %d\n", timing_advance_cmd, ((NR_MAC_CE_TA *) ce_ptr)->TA_COMMAND, tag_id);
     mac_ce_size = sizeof(NR_MAC_CE_TA);
@@ -1191,7 +1189,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_INT(harq->round), T_BUFFER(harq->transportBlock, TBS));
       UE->mac_stats.dl.total_rbs_retx += sched_pdsch->rbSize;
     } else { /* initial transmission */
-      LOG_D(NR_MAC, "[%s] Initial HARQ transmission in %d.%d\n", __FUNCTION__, frame, slot);
+      LOG_D(NR_MAC, "Initial HARQ transmission in %d.%d\n", frame, slot);
       uint8_t *buf = (uint8_t *) harq->transportBlock;
       /* first, write all CEs that might be there */
       int written = nr_write_ce_dlsch_pdu(module_id,

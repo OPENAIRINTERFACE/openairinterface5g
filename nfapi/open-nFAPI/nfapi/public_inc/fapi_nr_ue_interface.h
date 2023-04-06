@@ -526,6 +526,11 @@ typedef struct {
   fapi_nr_dl_config_csiim_pdu_rel15_t csiim_config_rel15;
 } fapi_nr_dl_config_csiim_pdu;
 
+typedef struct {
+ int ta_frame;
+ int ta_slot;
+ int ta_command;
+} fapi_nr_ta_command_pdu;
 
 typedef struct {
   uint8_t pdu_type;
@@ -534,6 +539,7 @@ typedef struct {
     fapi_nr_dl_config_dlsch_pdu dlsch_config_pdu;
     fapi_nr_dl_config_csirs_pdu csirs_config_pdu;
     fapi_nr_dl_config_csiim_pdu csiim_config_pdu;
+    fapi_nr_ta_command_pdu ta_command_pdu;
   };
 } fapi_nr_dl_config_request_pdu_t;
 
