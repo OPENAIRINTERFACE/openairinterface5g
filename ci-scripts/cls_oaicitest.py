@@ -1271,7 +1271,7 @@ class OaiCiTest():
 			logging.debug("Iperf in UL requested")
 			cmd = cls_cmd.getConnection(EPC.IPAddress)
 			cmd.run(f'rm {EPC.SourceCodePath}/{server_filename}')
-			cmd.run(f'{cn_iperf_prefix} iperf -s {udpSwitch} -1 -t {iperf_time * 1.5} {port} &> {EPC.SourceCodePath}/{server_filename} &')
+			cmd.run(f'{cn_iperf_prefix} iperf -s {udpSwitch} -t {iperf_time * 1.5} {port} &> {EPC.SourceCodePath}/{server_filename} &')
 			cmd.close()
 
 			cmd = cls_cmd.getConnection(ue.getHost())
