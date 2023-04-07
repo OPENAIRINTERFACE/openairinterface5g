@@ -66,6 +66,7 @@ queue_t nr_dl_tti_req_queue;
 queue_t nr_tx_req_queue;
 queue_t nr_ul_dci_req_queue;
 queue_t nr_ul_tti_req_queue;
+pthread_mutex_t mac_IF_mutex;
 
 void nrue_init_standalone_socket(int tx_port, int rx_port)
 {
@@ -304,25 +305,24 @@ static void fill_dl_info_with_pdcch(fapi_nr_dci_indication_t *dci, nfapi_nr_dl_d
 
 static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_rx_indication_t *rx_ind, int pdu_idx, int pdu_type)
 {
-    AssertFatal(pdu_idx < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
-                "pdu_index (%d) is greater than rx_indication_body size!\n", pdu_idx);
-    AssertFatal(pdu_idx == rx_ind->number_pdus,  "Invalid pdu_idx %d!\n", pdu_idx);
+  AssertFatal(pdu_idx < sizeof(rx_ind->rx_indication_body) / sizeof(rx_ind->rx_indication_body[0]),
+              "pdu_index (%d) is greater than rx_indication_body size!\n", pdu_idx);
+  AssertFatal(pdu_idx == rx_ind->number_pdus,  "Invalid pdu_idx %d!\n", pdu_idx);
 
-    LOG_T(NR_MAC, "Recevied an SSB and are filling rx_ind with the MIB!\n");
+  LOG_T(NR_MAC, "Recevied an SSB and are filling rx_ind with the MIB!\n");
 
-    nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.cell_id = ssb_pdu->PhysCellId;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu = MALLOC(3 * sizeof(*rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu));
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xff;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xff;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xff;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.rsrp_dBm = ssb_pdu->ssbRsrp;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_index = ssb_pdu->SsbBlockIndex;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_length = pdu_list->PDUSize;
-    rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_start_subcarrier = ssb_pdu->SsbSubcarrierOffset;
-    rx_ind->rx_indication_body[pdu_idx].pdu_type = pdu_type;
-    rx_ind->number_pdus = pdu_idx + 1;
-
+  nfapi_nr_dl_tti_ssb_pdu_rel15_t *ssb_pdu = &pdu_list->ssb_pdu.ssb_pdu_rel15;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.cell_id = ssb_pdu->PhysCellId;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[0] = (ssb_pdu->bchPayload) & 0xff;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[1] = (ssb_pdu->bchPayload >> 8) & 0xff;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.pdu[2] = (ssb_pdu->bchPayload >> 16) & 0xff;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.rsrp_dBm = ssb_pdu->ssbRsrp;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_index = ssb_pdu->SsbBlockIndex;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_length = pdu_list->PDUSize;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.ssb_start_subcarrier = ssb_pdu->SsbSubcarrierOffset;
+  rx_ind->rx_indication_body[pdu_idx].ssb_pdu.decoded_pdu = true;
+  rx_ind->rx_indication_body[pdu_idx].pdu_type = pdu_type;
+  rx_ind->number_pdus = pdu_idx + 1;
 }
 
 static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu)
@@ -692,7 +692,6 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         slot = dl_tti_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] dl_tti_request\n", frame, slot);
         copy_dl_tti_req_to_dl_info(&mac->dl_info, dl_tti_request);
-        free_and_zero(dl_tti_request);
     }
     /* This checks if the previously recevied DCI matches our current RNTI
        value. The assumption is that if the DCI matches our RNTI, then the
@@ -711,14 +710,12 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         else {
             LOG_D(NR_MAC, "Unexpected tx_data_req\n");
         }
-        free_and_zero(tx_data_request);
     }
     else if (ul_dci_request) {
         frame = ul_dci_request->SFN;
         slot = ul_dci_request->Slot;
         LOG_D(NR_PHY, "[%d, %d] ul_dci_request\n", frame, slot);
         copy_ul_dci_data_req_to_dl_info(&mac->dl_info, ul_dci_request);
-        free_and_zero(ul_dci_request);
     }
     else if (ul_tti_request) {
         frame = ul_tti_request->SFN;
@@ -735,7 +732,10 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
 
     NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
     memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
-    fill_dci_from_dl_config(&mac->dl_info, &mac->dl_config_request);
+    if (dl_tti_request || tx_data_request || ul_dci_request) {
+      fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
+      fill_dci_from_dl_config(&mac->dl_info, dl_config);
+    }
     nr_ue_dl_scheduler(&mac->dl_info);
     nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
 
@@ -1045,16 +1045,24 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
                     uint16_t ssb_start_subcarrier, uint16_t cell_id){
 
   return nr_ue_decode_mib(module_id,
-			  cc_id,
-			  gNB_index,
-			  phy_data,
-			  additional_bits,
-			  ssb_length,  //  Lssb = 64 is not support    
-			  ssb_index,
-			  pduP,
-			  ssb_start_subcarrier,
-			  cell_id);
+                          cc_id,
+                          gNB_index,
+                          phy_data,
+                          additional_bits,
+                          ssb_length,  //  Lssb = 64 is not support
+                          ssb_index,
+                          pduP,
+                          ssb_start_subcarrier,
+                          cell_id);
 
+}
+
+void handle_bch_failure(NR_UE_MAC_INST_t *mac)
+{
+  mac->ssb_measurements.consecutive_bch_failures++;
+  //TODO handle this properly by scheduling re-synchronization
+  AssertFatal(mac->ssb_measurements.consecutive_bch_failures < 100,
+              "Radio link failure caused by 100 consecutive PBCH detection failures.\n");
 }
 
 //  L2 Abstraction Layer
@@ -1069,10 +1077,10 @@ int handle_dci(module_id_t module_id, int cc_id, unsigned int gNB_index, frame_t
 
 }
 
-void  handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm)
+void handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm)
 {
-  mac->phy_measurements.ssb_index = ssb_index;
-  mac->phy_measurements.ssb_rsrp_dBm = rsrp_dbm;
+  mac->ssb_measurements.ssb_index = ssb_index;
+  mac->ssb_measurements.ssb_rsrp_dBm = rsrp_dbm;
 }
 
 // L2 Abstraction Layer
@@ -1116,6 +1124,9 @@ void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nac
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
 {
+
+  pthread_mutex_lock(&mac_IF_mutex);
+
   module_id_t module_id = ul_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
 
@@ -1125,15 +1136,19 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
   NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
   if (mac->phy_config_request_sent && is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_ul_scheduler(ul_info);
+
+  pthread_mutex_unlock(&mac_IF_mutex);
+
   return 0;
 }
 
 int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
 
+  pthread_mutex_lock(&mac_IF_mutex);
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
 
   if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
@@ -1160,7 +1175,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
           LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
           continue;
         }
-        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dci_index->dci_format];
+        dci_pdu_rel15_t *def_dci_pdu_rel15 = &mac->def_dci_pdu_rel15[dl_info->slot][dci_index->dci_format];
         g_harq_pid = def_dci_pdu_rel15->harq_pid;
         LOG_T(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
 
@@ -1180,31 +1195,35 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
       for (int i=0; i<dl_info->rx_ind->number_pdus; ++i) {
 
+        fapi_nr_rx_indication_body_t rx_indication_body = dl_info->rx_ind->rx_indication_body[i];
         LOG_D(NR_MAC, "In %s sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
           __FUNCTION__,
-          dl_info->rx_ind->rx_indication_body[i].pdu_type,
+          rx_indication_body.pdu_type,
           dl_info->rx_ind->number_pdus);
 
-        switch(dl_info->rx_ind->rx_indication_body[i].pdu_type){
+        switch(rx_indication_body.pdu_type){
           case FAPI_NR_RX_PDU_TYPE_SSB:
-            handle_ssb_meas(mac,
-                            (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
-                            (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.rsrp_dBm);
-            ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->phy_data,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.additional_bits,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_index,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_length,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.ssb_start_subcarrier,
-                                         (dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
-            free((dl_info->rx_ind->rx_indication_body+i)->ssb_pdu.pdu);
+            if(rx_indication_body.ssb_pdu.decoded_pdu) {
+              handle_ssb_meas(mac,
+                              rx_indication_body.ssb_pdu.ssb_index,
+                              rx_indication_body.ssb_pdu.rsrp_dBm);
+              ret_mask |= (handle_bcch_bch(dl_info->module_id, dl_info->cc_id, dl_info->gNB_index, dl_info->phy_data,
+                                           rx_indication_body.ssb_pdu.pdu,
+                                           rx_indication_body.ssb_pdu.additional_bits,
+                                           rx_indication_body.ssb_pdu.ssb_index,
+                                           rx_indication_body.ssb_pdu.ssb_length,
+                                           rx_indication_body.ssb_pdu.ssb_start_subcarrier,
+                                           rx_indication_body.ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
+            }
+            else
+              handle_bch_failure(mac);
             break;
           case FAPI_NR_RX_PDU_TYPE_SIB:
             ret_mask |= (handle_bcch_dlsch(dl_info->module_id,
                                            dl_info->cc_id, dl_info->gNB_index,
-                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.ack_nack,
-                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu,
-                                           (dl_info->rx_ind->rx_indication_body+i)->pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
+                                           rx_indication_body.pdsch_pdu.ack_nack,
+                                           rx_indication_body.pdsch_pdu.pdu,
+                                           rx_indication_body.pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
             break;
           case FAPI_NR_RX_PDU_TYPE_DLSCH:
             ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
@@ -1216,16 +1235,16 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
             ret_mask |= (handle_csirs_measurements(dl_info->module_id,
                                                    dl_info->frame,
                                                    dl_info->slot,
-                                                   &(dl_info->rx_ind->rx_indication_body+i)->csirs_measurements)) << FAPI_NR_CSIRS_IND;
+                                                   &rx_indication_body.csirs_measurements)) << FAPI_NR_CSIRS_IND;
             break;
           default:
             break;
         }
       }
-      free(dl_info->rx_ind);
       dl_info->rx_ind = NULL;
     }
   }
+  pthread_mutex_unlock(&mac_IF_mutex);
   return 0;
 }
 
@@ -1247,6 +1266,7 @@ nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
     nr_ue_if_module_inst[module_id]->dl_indication = nr_ue_dl_indication;
     nr_ue_if_module_inst[module_id]->ul_indication = nr_ue_ul_indication;
   }
+  pthread_mutex_init(&mac_IF_mutex, NULL);
 
   return nr_ue_if_module_inst[module_id];
 }
@@ -1263,8 +1283,8 @@ int nr_ue_dcireq(nr_dcireq_t *dcireq) {
 
   fapi_nr_dl_config_request_t *dl_config = &dcireq->dl_config_req;
   NR_UE_MAC_INST_t *UE_mac = get_mac_inst(0);
-  dl_config->sfn = UE_mac->dl_config_request.sfn;
-  dl_config->slot = UE_mac->dl_config_request.slot;
+  dl_config->sfn = dcireq->frame;
+  dl_config->slot = dcireq->slot;
 
   LOG_T(PHY, "Entering UE DCI configuration frame %d slot %d \n", dcireq->frame, dcireq->slot);
 

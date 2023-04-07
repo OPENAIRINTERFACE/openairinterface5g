@@ -21,6 +21,7 @@
 #include "stddef.h"
 #include "platform_types.h"
 #include "fapi_nr_ue_constants.h"
+#include "PHY/impl_defs_top.h"
 #include "PHY/impl_defs_nr.h"
 #include "common/utils/nr/nr_common.h"
 
@@ -116,7 +117,8 @@ typedef struct {
 } fapi_nr_pdsch_pdu_t;
 
 typedef struct {
-  uint8_t* pdu;   //  3bytes
+  bool decoded_pdu;
+  uint8_t pdu[3];
   uint8_t additional_bits;
   uint8_t ssb_index;
   uint8_t ssb_length;
@@ -390,8 +392,6 @@ typedef struct {
 } fapi_nr_ul_config_request_pdu_t;
 
 typedef struct {
-  //uint16_t sfn;
-  //uint16_t slot;
   uint16_t sfn;
   uint16_t slot;
   uint8_t number_pdus;
@@ -423,9 +423,6 @@ typedef struct {
 typedef struct {
   fapi_nr_dl_config_dci_dl_pdu_rel15_t dci_config_rel15;
 } fapi_nr_dl_config_dci_pdu;
-typedef struct{
-  uint8_t aperiodicSRS_ResourceTrigger;
-} fapi_nr_dl_srs_config_t;
 
 typedef enum{vrb_to_prb_mapping_non_interleaved = 0, vrb_to_prb_mapping_interleaved = 1} vrb_to_prb_mapping_t;
 
@@ -462,7 +459,6 @@ typedef struct {
   uint16_t dmrs_ports;
   uint8_t n_front_load_symb;
   uint8_t tci_state;
-  fapi_nr_dl_srs_config_t srs_config;
   uint8_t cbgti;
   uint8_t codeBlockGroupFlushIndicator;
   //  to be check the fields needed to L1 with NR_DL_UE_HARQ_t and NR_UE_DLSCH_t
@@ -483,6 +479,7 @@ typedef struct {
   uint8_t nscid;
   uint16_t dlDmrsScramblingId;
   uint16_t pduBitmap;
+  uint32_t k1_feedback;
 } fapi_nr_dl_config_dlsch_pdu_rel15_t;
 
 typedef struct {

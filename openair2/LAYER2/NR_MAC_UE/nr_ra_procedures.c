@@ -124,7 +124,7 @@ int16_t get_prach_tx_power(module_id_t mod_id) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  int16_t pathloss = compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm);
+  int16_t pathloss = compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm);
   int16_t ra_preamble_rx_power = (int16_t)(ra->prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
   return min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
@@ -674,7 +674,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   } else {
     /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
              can abstract this, perhaps in the proxy. But for the time being lets leave it as below. */
-    int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm) : 0;
+    int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm) : 0;
     ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", ra->ra_PreambleIndex);

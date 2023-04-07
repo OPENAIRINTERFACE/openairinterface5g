@@ -60,17 +60,19 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
 bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 bool nr_mac_update_RA(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 
-void clear_nr_nfapi_information(gNB_MAC_INST * gNB, 
+void clear_nr_nfapi_information(gNB_MAC_INST *gNB,
                                 int CC_idP,
-                                frame_t frameP, 
-                                sub_frame_t subframeP);
+                                frame_t frameP,
+                                sub_frame_t slotP,
+                                nfapi_nr_dl_tti_request_t *DL_req,
+                                nfapi_nr_tx_data_request_t *TX_req,
+                                nfapi_nr_ul_dci_request_t *UL_dci_req);
 
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
                           sub_frame_t slot);
 
-void gNB_dlsch_ulsch_scheduler(module_id_t module_idP,
-			       frame_t frame_rxP, sub_frame_t slot_rxP);
+void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frame_rxP, sub_frame_t slot_rxP, NR_Sched_Rsp_t *sched_info);
 
 void schedule_nr_bwp_switch(module_id_t module_id,
                             frame_t frame,
@@ -81,7 +83,9 @@ void schedule_nr_bwp_switch(module_id_t module_id,
  * messages, statistics, HARQ handling, CEs, ... */
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot);
+                         sub_frame_t slot,
+                         nfapi_nr_dl_tti_request_t *DL_req,
+                         nfapi_nr_tx_data_request_t *TX_req);
 
 uint32_t schedule_control_sib1(module_id_t module_id,
                                int CC_id,
@@ -95,21 +99,30 @@ uint32_t schedule_control_sib1(module_id_t module_id,
 /* \brief default FR1 DL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(int CC_id);
 
-void schedule_nr_sib1(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP);
+void schedule_nr_sib1(module_id_t module_idP,
+                      frame_t frameP,
+                      sub_frame_t slotP,
+                      nfapi_nr_dl_tti_request_t *DL_req,
+                      nfapi_nr_tx_data_request_t *TX_req);
 
-void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, nfapi_nr_dl_tti_request_t *DL_req);
 
 /* \brief main UL scheduler function. Calls a preprocessor to decide on
  * resource allocation, then "post-processes" resource allocation (nFAPI
  * messages, statistics, HARQ handling, ... */
-void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot);
+void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, nfapi_nr_ul_dci_request_t *ul_dci_req);
 
 /* \brief default FR1 UL preprocessor init routine, returns preprocessor to call */
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id);
 
 /////// Random Access MAC-PHY interface functions and primitives ///////
 
-void nr_schedule_RA(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
+void nr_schedule_RA(module_id_t module_idP,
+                    frame_t frameP,
+                    sub_frame_t slotP,
+                    nfapi_nr_ul_dci_request_t *ul_dci_req,
+                    nfapi_nr_dl_tti_request_t *DL_req,
+                    nfapi_nr_tx_data_request_t *TX_req);
 
 /* \brief Function to indicate a received preamble on PRACH.  It initiates the RA procedure.
 @param module_idP Instance ID of gNB
@@ -134,7 +147,12 @@ void nr_get_Msg3alloc(module_id_t module_id,
                       NR_RA_t *ra,
                       int16_t *tdd_beam_association);
 
-void nr_generate_Msg3_retransmission(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+void nr_generate_Msg3_retransmission(module_id_t module_idP,
+                                     int CC_id,
+                                     frame_t frameP,
+                                     sub_frame_t slotP,
+                                     NR_RA_t *ra,
+                                     nfapi_nr_ul_dci_request_t *ul_dci_req);
 
 /* \brief Function in gNB to fill RAR pdu when requested by PHY.
 @param ra Instance of RA resources of gNB
@@ -201,10 +219,7 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
 
 void nr_schedule_srs(int module_id, frame_t frame, int slot);
 
-void nr_csirs_scheduling(int Mod_idP,
-                         frame_t frame,
-                         sub_frame_t slot,
-                         int n_slots_frame);
+void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slots_frame, nfapi_nr_dl_tti_request_t *DL_req);
 
 void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frameP,
@@ -365,13 +380,31 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
                           unsigned char drx_cmd,
                           unsigned char *ue_cont_res_id);
 
-void nr_generate_Msg2(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+void nr_generate_Msg2(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t slotP,
+                      NR_RA_t *ra,
+                      nfapi_nr_dl_tti_request_t *dl_req,
+                      nfapi_nr_tx_data_request_t *TX_req);
 
-void nr_generate_Msg4(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+void nr_generate_Msg4(module_id_t module_idP,
+                      int CC_id,
+                      frame_t frameP,
+                      sub_frame_t slotP,
+                      NR_RA_t *ra,
+                      nfapi_nr_dl_tti_request_t *DL_req,
+                      nfapi_nr_tx_data_request_t *TX_req);
 
 void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, sub_frame_t slot, NR_RA_t *ra);
 
-void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP, int CC_id, frame_t frameP, sub_frame_t slotP, NR_RA_t *ra);
+void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP,
+                                         int CC_id,
+                                         frame_t frameP,
+                                         sub_frame_t slotP,
+                                         NR_RA_t *ra,
+                                         nfapi_nr_dl_tti_request_t *DL_req,
+                                         nfapi_nr_tx_data_request_t *TX_req);
 
 int binomial(int n, int k);
 

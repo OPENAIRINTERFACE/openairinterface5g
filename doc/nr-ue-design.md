@@ -16,19 +16,20 @@ The UE exits when at any point in operation it gets out of synchronization. When
 ## Initial Synchronization Block
 ```mermaid
 graph TD
-    A(Start) -->|UE_thread| B["readFrame<br/>--Reads samples worth 2 frames"]
-    B --> |Tpool thread| C["UE_synch<br/>--PSS & SSS detection<br/>--PBCH decode"]
-    B --> |UE_thread| D["readFrame<br/>--trash samples to unblock radio"]
-    C --> |Tpool thread| E[syncInFrame<br/>--shift first sample to start of frame]
-    D --> |UE_thread| E
+    start(Start) -->|UE_thread| rxRu["RU read<br/>(Reads two frames)"]
+    rxRu --> |Tpool thread| sync["SSB detection<br/>(PSS & SSS detection<br/>PBCH decoding<br/>SIB decoding)"]
+    rxRu --> |UE_thread| rxRuDummy["RU read<br/>(Dummy read till sync detection to avoid buffer overflow at radio)"]
+    sync --> |Tpool thread| frameSync["Frame synchronization<br/>(Shift received samples to align with frame)"]
+    rxRuDummy --> |UE_thread| frameSync
 ```
 ## Regular Slot Processing
 ```mermaid
 graph TD
-    E[syncInFrame<br/>--shift first sample to start of frame] -->|UE_thread| F["trx_read_func (slot n)"]
-    F --> |Tpool thread| G["processSlotTX (slot n+4)<br/>--PUSCH encode<br/>--PUCCH encode<br/>--trx_write_func"]
-    F --> |UE_thread| H["UE_processing (slot n)<br/>--PDCCH decode<br/>--PDSCH decode"]
-    G --> |Tpool thread| I(Merge)
-    H --> |UE_thread| I(Merge)
-    I --> |Go to next slot<br/>UE_thread| F
+    sync["Frame synchronization<br/>(Shift received samples to align with frame)"] -->|UE_thread| hw_read["RU read (slot n)"]
+    hw_read --> |UE_thread| rxPreProc["PBCH & PDCCH decoding (slot n)"]
+    hw_read --> |Tpool thread| txProc["Tx processing (slot n+3)<br/>PUSCH encode<br/>PUCCH encode (wait for DLSCH in slot n+3-k1 to finish)<br/>RU write"]
+    rxPreProc --> |Tpool thread| rxProc["PDSCH decoding (slot n)"]
+    rxPreProc --> |UE_thread| join(Merge)
+    txProc --> |Tpool thread| join
+    join --> |Go to next slot<br/>UE_thread| hw_read
 ```

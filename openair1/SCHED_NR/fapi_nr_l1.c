@@ -35,6 +35,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "openair2/NR_PHY_INTERFACE/nr_sched_response.h"
 
 extern int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req);
 extern int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
@@ -131,10 +132,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
 {
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
-  nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
-  nfapi_nr_tx_data_request_t    *TX_req      = Sched_INFO->TX_req;
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
-  nfapi_nr_ul_dci_request_t     *UL_dci_req  = Sched_INFO->UL_dci_req;
+  nfapi_nr_dl_tti_request_t     *DL_req      = &Sched_INFO->DL_req;
+  nfapi_nr_tx_data_request_t    *TX_req      = &Sched_INFO->TX_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &Sched_INFO->UL_tti_req;
+  nfapi_nr_ul_dci_request_t     *UL_dci_req  = &Sched_INFO->UL_dci_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
@@ -169,6 +170,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
       msgTx->num_ul_pdcch = number_ul_dci_pdu;
       msgTx->slot = slot;
       msgTx->frame = frame;
+      /* store the sched_response_id for the TX thread to release it when done */
+      msgTx->sched_response_id = Sched_INFO->sched_response_id;
 
       for (int i=0;i<number_dl_pdu;i++) {
         nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
@@ -208,6 +211,11 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
       for (int i=0; i<number_ul_dci_pdu; i++)
         msgTx->ul_pdcch_pdu[i] = UL_dci_req->ul_dci_pdu_list[i];
 
+      /* Both the current thread and the TX thread will access the sched_info
+       * at the same time, so increase its reference counter, so that it is
+       * released only when both threads are done with it.
+       */
+      inc_ref_sched_response(Sched_INFO->sched_response_id);
       pushNotifiedFIFO(&gNB->L1_tx_filled,res);
     }
 
@@ -250,5 +258,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
     if (number_dl_pdu>0)
       oai_nfapi_dl_tti_req(DL_req);
   }
+
+  /* this thread is done with the sched_info, decrease the reference counter */
+  deref_sched_response(Sched_INFO->sched_response_id);
+
   stop_meas(&gNB->schedule_response_stats);
 }

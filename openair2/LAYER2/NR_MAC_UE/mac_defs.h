@@ -376,8 +376,9 @@ typedef struct {
   uint32_t ssb_index;
   /// SSB RSRP in dBm
   short ssb_rsrp_dBm;
+  int consecutive_bch_failures;
 
-} NR_PHY_meas_t;
+} NR_SSB_meas_t;
 
 /*!\brief Top level UE MAC structure */
 typedef struct {
@@ -441,7 +442,7 @@ typedef struct {
   int first_ul_tx[NR_MAX_HARQ_PROCESSES];
   ////	FAPI-like interface message
   fapi_nr_ul_config_request_t *ul_config_request;
-  fapi_nr_dl_config_request_t dl_config_request;
+  fapi_nr_dl_config_request_t *dl_config_request;
 
   ///     Interface module instances
   nr_ue_if_module_t       *if_module;
@@ -465,9 +466,9 @@ typedef struct {
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
 
-  NR_PHY_meas_t phy_measurements;
+  NR_SSB_meas_t ssb_measurements;
 
-  dci_pdu_rel15_t def_dci_pdu_rel15[8];
+  dci_pdu_rel15_t def_dci_pdu_rel15[NR_MAX_SLOTS_PER_FRAME][8];
 
   // Defined for abstracted mode
   nr_downlink_indication_t dl_info;

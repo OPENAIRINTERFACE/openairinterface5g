@@ -190,6 +190,8 @@ int8_t nr_ue_process_csirs_measurements(module_id_t module_id, frame_t frame, in
 
 uint32_t get_ssb_frame(uint32_t test);
 
+void nr_ue_aperiodic_srs_scheduling(NR_UE_MAC_INST_t *mac, long resource_trigger, int frame, int slot);
+
 bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          PUCCH_sched_t *pucch,
                                          frame_t frame,
@@ -441,9 +443,11 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                                    uint16_t rnti,
                                    int ss_type,
                                    uint64_t *dci_pdu,
-                                   dci_pdu_rel15_t *dci_pdu_rel15);
+                                   dci_pdu_rel15_t *dci_pdu_rel15,
+                                   int slot);
 
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
+fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot);
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);
 

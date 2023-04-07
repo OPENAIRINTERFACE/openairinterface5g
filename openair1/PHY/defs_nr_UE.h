@@ -32,6 +32,10 @@
 #ifndef __PHY_DEFS_NR_UE__H__
 #define __PHY_DEFS_NR_UE__H__
 
+#ifdef __cplusplus
+#include <atomic>
+#define _Atomic(X) std::atomic< X >
+#endif
 
 #include "defs_nr_common.h"
 #include "CODING/nrPolar_tools/nr_polar_pbch_defs.h"
@@ -317,17 +321,6 @@ typedef struct {
 #define PBCH_A 24
 
 typedef struct {
-  /// \brief Total number of PDU errors.
-  uint32_t pdu_errors;
-  /// \brief Total number of PDU errors 128 frames ago.
-  uint32_t pdu_errors_last;
-  /// \brief Total number of consecutive PDU errors.
-  uint32_t pdu_errors_conseq;
-  /// \brief FER (in percent) .
-  //uint32_t pdu_fer;
-} NR_UE_PBCH;
-
-typedef struct {
   int16_t amp;
   bool active;
   fapi_nr_ul_config_prach_pdu prach_pdu;
@@ -385,9 +378,6 @@ typedef struct {
   uint8_t CC_id;
   /// \brief Mapping of CC_id antennas to cards
   openair0_rf_map      rf_map;
-  //uint8_t local_flag;
-  /// \brief Indicator of current run mode of UE (normal_txrx, rx_calib_ue, no_L2_connect, debug_prach)
-  runmode_t mode;
   /// \brief Indicator that UE should perform band scanning
   int UE_scan;
   /// \brief Indicator that UE should perform coarse scanning around carrier
@@ -402,8 +392,6 @@ typedef struct {
   int is_synchronized;
   /// \brief Target gNB Nid_cell when UE is resynchronizing
   int target_Nid_cell;
-  /// \brief Indicator that UE lost frame synchronization
-  int lost_sync;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -444,7 +432,6 @@ typedef struct {
   fapi_nr_config_request_t nrUE_config;
   nr_synch_request_t synch_request;
 
-  NR_UE_PBCH      *pbch_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_PRACH     *prach_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_IM    *csiim_vars[NUMBER_OF_CONNECTED_gNB_MAX];
   NR_UE_CSI_RS    *csirs_vars[NUMBER_OF_CONNECTED_gNB_MAX];
@@ -655,7 +642,7 @@ typedef struct {
   SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
 #endif
   int dl_errors;
-  int dl_stats[8];
+  _Atomic(int) dl_stats[16];
   void* scopeData;
   // Pointers to hold PDSCH data only for phy simulators
   void *phy_sim_rxdataF;
@@ -664,6 +651,10 @@ typedef struct {
   void *phy_sim_pdsch_rxdataF_comp;
   void *phy_sim_pdsch_dl_ch_estimates;
   void *phy_sim_pdsch_dl_ch_estimates_ext;
+  uint8_t *phy_sim_dlsch_b;
+  notifiedFIFO_t phy_config_ind;
+  notifiedFIFO_t *tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
+  int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
 } PHY_VARS_NR_UE;
 
 typedef struct nr_phy_data_tx_s {
@@ -682,6 +673,8 @@ typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
   int writeBlockSize;
+  nr_phy_data_t phy_data;
+  int tx_wait_for_dlsch;
 } nr_rxtx_thread_data_t;
 
 typedef struct LDPCDecode_ue_s {
@@ -707,6 +700,7 @@ typedef struct LDPCDecode_ue_s {
   time_stats_t ts_deinterleave;
   time_stats_t ts_rate_unmatch;
   time_stats_t ts_ldpc_decode;
+  UE_nr_rxtx_proc_t *proc;
 } ldpcDecode_ue_t;
 
 #include "SIMULATION/ETH_TRANSPORT/defs.h"

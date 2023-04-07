@@ -205,7 +205,9 @@ uint32_t  nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                          uint32_t frame,
                          uint16_t nb_symb_sch,
                          uint8_t nr_slot_rx,
-                         uint8_t harq_pid);
+                         uint8_t harq_pid,
+                         int b_size,
+                         uint8_t b[b_size]);
 
 int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                      NR_UE_ULSCH_t *ulsch,
@@ -285,7 +287,6 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                UE_nr_rxtx_proc_t *proc,
                const int estimateSz,
                struct complex16 dl_ch_estimates[][estimateSz],
-               NR_UE_PBCH *nr_ue_pbch_vars,
                NR_DL_FRAME_PARMS *frame_parms,
                uint8_t i_ssb,
                MIMO_mode_t mimo_mode,

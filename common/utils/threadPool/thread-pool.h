@@ -279,6 +279,8 @@ static inline void pushTpool(tpool_t *t, notifiedFIFO_elt_t *msg) {
 
     if (msg->reponseFifo)
       pushNotifiedFIFO(msg->reponseFifo, msg);
+    else
+      delNotifiedFIFO_elt(msg);
   }
 }
 

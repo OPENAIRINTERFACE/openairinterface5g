@@ -67,6 +67,17 @@ openair0_config_t openair0_cfg[MAX_CARDS];
 
 uint8_t const nr_rv_round_map[4] = {0, 2, 3, 1};
 
+void inc_ref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+void deref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+
 uint64_t get_softmodem_optmask(void) {return 0;}
 static softmodem_params_t softmodem_params;
 softmodem_params_t *get_softmodem_params(void) {
@@ -96,7 +107,8 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
                            UE_nr_rxtx_proc_t *proc,
-                           void *typeSpecific ) {}
+                           void *typeSpecific,
+                           uint8_t *b) {}
 
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 			   UE_nr_rxtx_proc_t *proc,
@@ -793,8 +805,8 @@ int main(int argc, char **argv)
 	fapiPbch_t result;
         ret = nr_rx_pbch(UE,
                          &proc,
-			 estimateSz, dl_ch_estimates,
-			 UE->pbch_vars[0],
+                         estimateSz,
+                         dl_ch_estimates,
                          frame_parms,
                          ssb_index%8,
                          SISO,
@@ -813,7 +825,6 @@ int main(int argc, char **argv)
 	  for (i=0;i<3;i++){
 	    payload_ret += (result.decoded_output[i] == ((msgDataTx.ssb[ssb_index].ssb_pdu.ssb_pdu_rel15.bchPayload>>(8*i)) & 0xff));
 	  } 
-	  //printf("xtra byte gNB: 0x%02x UE: 0x%02x\n",gNB_xtra_byte, UE->pbch_vars[0]->xtra_byte);
 	  //printf("ret %d\n", payload_ret);
 	  if (payload_ret!=4) 
 	    n_errors_payload++;

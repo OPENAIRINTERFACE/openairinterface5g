@@ -317,6 +317,34 @@ void CIRPlot::timerEvent(QTimerEvent *event)
   this->series->replace(points);
 }
 
+void CIRPlotUE::timerEvent(QTimerEvent *event)
+{
+  if (!this->isVisible())
+    return;
+
+  scopeGraphData_t *data = this->valueProvider->getPlotValue();
+  if (data) {
+    this->data = (complex16 *)(data + 1);
+    this->len = data->lineSz;
+    QVector<QPointF> points(this->len);
+    float maxY = this->axisY->max();
+
+    for (int i = 0; i < this->len / 2; i++) {
+      float value = SquaredNorm(this->data[i + this->len / 2]);
+      points[i] = QPointF(i - this->len / 2, value);
+      maxY = std::max(maxY, value);
+    }
+    for (int i = 0; i < this->len / 2; i++) {
+      float value = SquaredNorm(this->data[i]);
+      points[i + this->len / 2] = QPointF(i, value);
+      maxY = std::max(maxY, value);
+    }
+
+    this->axisY->setMax(maxY);
+    this->series->replace(points);
+  }
+}
+
 LLRPlot::LLRPlot(int16_t *data, int len) : data(data), len(len)
 {
   this->legend()->hide();
@@ -359,6 +387,28 @@ void LLRPlot::timerEvent(QTimerEvent *event)
 
   this->axisY->setRange(-maxY, maxY);
   this->series->replace(points);
+}
+
+void LLRPlotUE::timerEvent(QTimerEvent *event)
+{
+  if (!this->isVisible())
+    return;
+
+  scopeGraphData_t *data = this->valueProvider->getPlotValue();
+  if (data) {
+    this->data = (int16_t *)(data + 1);
+    this->len = data->lineSz;
+    QVector<QPointF> points(this->len);
+    int maxY = this->axisY->max();
+
+    for (int i = 0; i < this->len; i++) {
+      points[i] = QPointF(i, this->data[i]);
+      maxY = std::max(maxY, abs(this->data[i]));
+    }
+
+    this->axisY->setRange(-maxY, maxY);
+    this->series->replace(points);
+  }
 }
 
 IQPlot::IQPlot(complex16 *data, int len) : data(data), len(len)
@@ -405,6 +455,32 @@ void IQPlot::timerEvent(QTimerEvent *event)
   this->axisX->setRange(-maxX, maxX);
   this->axisY->setRange(-maxY, maxY);
   this->series->replace(points);
+}
+
+void IQPlotUE::timerEvent(QTimerEvent *event)
+{
+  if (!this->isVisible())
+    return;
+
+  scopeGraphData_t *data = this->valueProvider->getPlotValue();
+  if (data) {
+    this->data = (complex16 *)(data + 1);
+    this->len = data->lineSz;
+    QVector<QPointF> points(this->len);
+    int maxX = this->axisX->max();
+    int maxY = this->axisY->max();
+
+    for (int i = 0; i < this->len; i++) {
+      points[i] = QPointF(this->data[i].r, this->data[i].i);
+
+      maxX = std::max(maxX, abs(this->data[i].r));
+      maxY = std::max(maxY, abs(this->data[i].i));
+    }
+
+    this->axisX->setRange(-maxX, maxX);
+    this->axisY->setRange(-maxY, maxY);
+    this->series->replace(points);
+  }
 }
 
 KPIPlot::KPIPlot(ValueProvider *valueProvider, float *limits) : valueProvider(valueProvider), limits(limits)
@@ -815,8 +891,39 @@ float PainterWidgetUE::getValue()
     case PlotTypeUE::timingAdvance:
       return (float)this->ue->timing_advance;
 
+
     default:
       return 0;
+  }
+}
+
+scopeGraphData_t *PainterWidgetUE::getPlotValue()
+{
+  scopeData_t *scope = (scopeData_t *)this->ue->scopeData;
+  scopeGraphData_t **data = (scopeGraphData_t **)scope->liveData;
+  switch (this->plotType) {
+    case PlotTypeUE::CIR:
+      return data[pbchDlChEstimateTime];
+
+    case PlotTypeUE::pbchLLR:
+      return data[pbchLlr];
+    case PlotTypeUE::pbchIQ:
+      return data[pbchRxdataF_comp];
+
+    case PlotTypeUE::pdcchLLR:
+      return data[pdcchLlr];
+
+    case PlotTypeUE::pdcchIQ:
+      return data[pdcchRxdataF_comp];
+
+    case PlotTypeUE::pdschLLR:
+      return data[pdschLlr];
+
+    case PlotTypeUE::pdschIQ:
+      return data[pdschRxdataF_comp];
+
+    default:
+      return nullptr;
   }
 }
 
@@ -890,7 +997,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new LLRPlot((int16_t *)(data[pbchLlr] + 1), data[pbchLlr]->lineSz);
+      newChart = new LLRPlotUE((int16_t *)(data[pbchLlr] + 1), data[pbchLlr]->lineSz, this);
       break;
     }
     case PlotTypeUE::pbchIQ: {
@@ -900,7 +1007,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new IQPlot((complex16 *)(data[pbchRxdataF_comp] + 1), data[pbchRxdataF_comp]->lineSz);
+      newChart = new IQPlotUE((complex16 *)(data[pbchRxdataF_comp] + 1), data[pbchRxdataF_comp]->lineSz, this);
       break;
     }
     case PlotTypeUE::pdcchLLR: {
@@ -910,7 +1017,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new LLRPlot((int16_t *)(data[pdcchLlr] + 1), data[pdcchLlr]->lineSz);
+      newChart = new LLRPlotUE((int16_t *)(data[pdcchLlr] + 1), data[pdcchLlr]->lineSz, this);
       break;
     }
     case PlotTypeUE::pdcchIQ: {
@@ -920,7 +1027,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new IQPlot((complex16 *)(data[pdcchRxdataF_comp] + 1), data[pdcchRxdataF_comp]->lineSz);
+      newChart = new IQPlotUE((complex16 *)(data[pdcchRxdataF_comp] + 1), data[pdcchRxdataF_comp]->lineSz, this);
       break;
     }
     case PlotTypeUE::pdschLLR: {
@@ -930,7 +1037,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new LLRPlot((int16_t *)(data[pdschLlr] + 1), data[pdschLlr]->lineSz);
+      newChart = new LLRPlotUE((int16_t *)(data[pdschLlr] + 1), data[pdschLlr]->lineSz, this);
       break;
     }
     case PlotTypeUE::pdschIQ: {
@@ -940,7 +1047,7 @@ void PainterWidgetUE::makeConnections(int type)
         this->comboBox->setCurrentIndex(static_cast<int>(PlotTypeUE::empty));
         break;
       }
-      newChart = new IQPlot((complex16 *)(data[pdschRxdataF_comp] + 1), data[pdschRxdataF_comp]->lineSz);
+      newChart = new IQPlotUE((complex16 *)(data[pdschRxdataF_comp] + 1), data[pdschRxdataF_comp]->lineSz, this);
       break;
     }
 
@@ -1147,6 +1254,7 @@ void nrUEinitQtScope(PHY_VARS_NR_UE *ue)
 
   scope->liveData = calloc(sizeof(scopeGraphData_t *), UEdataTypeNumberOfItems);
   scope->copyData = UEcopyData;
+  UEcopyDataMutexInit();
 
   ue->scopeData = scope;
 

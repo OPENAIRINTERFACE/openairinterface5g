@@ -119,8 +119,6 @@ typedef struct {
   uint32_t TBS;
   /// The payload + CRC size in bits
   uint32_t B;
-  /// Pointer to the payload
-  uint8_t *b;
   /// Pointers to transport block segments
   uint8_t **c;
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)

@@ -35,7 +35,24 @@
 #define GBR_FLOW                (1)
 #define NONGBR_FLOW             (0)
 
-NR_DRB_ToAddMod_t *generateDRB(gNB_RRC_UE_t *rrc_ue, uint8_t drb_id, rrc_pdu_session_param_t *pduSession, bool enable_sdap, int do_drb_integrity, int do_drb_ciphering);
+/// @brief Generates an ASN1 DRB-ToAddMod, from the established_drbs in gNB_RRC_UE_t.
+/// @param drb_t drb_asn1
+/// @return Returns the ASN1 DRB-ToAddMod structs.
+NR_DRB_ToAddMod_t *generateDRB_ASN1(const drb_t *drb_asn1);
+/// @brief Creates and stores a DRB in the gNB_RRC_UE_t struct, it doesn't create the actual entity,
+/// to create the actual entity use the generateDRB_ASN1.
+/// @param ue The gNB_RRC_UE_t struct that holds information for the UEs
+/// @param drb_id The Data Radio Bearer Identity to be created for the established DRB.
+/// @param pduSession The PDU Session that the DRB is created for.
+/// @param enable_sdap If true the SDAP header will be added to the packet, else it will not add or search for SDAP header.
+/// @param do_drb_integrity
+/// @param do_drb_ciphering
+void generateDRB(gNB_RRC_UE_t *ue,
+                 uint8_t drb_id,
+                 rrc_pdu_session_param_t *pduSession,
+                 bool enable_sdap,
+                 int do_drb_integrity,
+                 int do_drb_ciphering);
 uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession, bool is_gbr);
 bool drb_is_active(gNB_RRC_UE_t *ue, uint8_t drb_id);
 

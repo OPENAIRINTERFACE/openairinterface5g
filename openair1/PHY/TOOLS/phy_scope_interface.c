@@ -35,8 +35,15 @@
 #include "phy_scope_interface.h"
 
 #define SOFTSCOPE_ENDFUNC_IDX 0
+#define THREAD_MEM 4
 
 static  loader_shlibfunc_t scope_fdesc[]= {{"end_forms",NULL}};
+
+pthread_mutex_t UEcopyDataMutex;
+
+int UEcopyDataMutexInit(void) {
+  return pthread_mutex_init(&UEcopyDataMutex, NULL);
+}
 
 int load_softscope(char *exectype, void *initarg) {
   char libname[64];
@@ -56,16 +63,19 @@ int end_forms(void) {
 void UEcopyData(PHY_VARS_NR_UE *ue, enum UEdataType type, void *dataIn, int elementSz, int colSz, int lineSz) {
   // Local static copy of the scope data bufs
   // The active data buf is alterned to avoid interference between the Scope thread (display) and the Rx thread (data input)
-  // Index of "2" could be set to the number of Rx threads + 1
-  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][2] = {0};
+  // Index of THREAD_MEM could be set to the number of Rx threads + 1. Rx slots could run asynchronous to each other.
+  // THREAD_MEM = 4 slot process running in parallel is an assumption. THREAD_MEM can be increased if scope appears inconsistent.
+  static scopeGraphData_t *copyDataBufs[UEdataTypeNumberOfItems][THREAD_MEM] = {0};
   static int  copyDataBufsIdx[UEdataTypeNumberOfItems] = {0};
 
   scopeData_t *tmp = (scopeData_t *)ue->scopeData;
 
   if (tmp) {
-    // Begin of critical zone between UE Rx threads that might copy new data at the same time: might require a mutex
-    int newCopyDataIdx = (copyDataBufsIdx[type]==0)?1:0;
+    // Begin of critical zone between UE Rx threads that might copy new data at the same time:
+    pthread_mutex_lock(&UEcopyDataMutex);
+    int newCopyDataIdx = (copyDataBufsIdx[type]<(THREAD_MEM-1))?copyDataBufsIdx[type]+1:0;
     copyDataBufsIdx[type] = newCopyDataIdx;
+    pthread_mutex_unlock(&UEcopyDataMutex);
     // End of critical zone between UE Rx threads
 
     // New data will be copied in a different buffer than the live one

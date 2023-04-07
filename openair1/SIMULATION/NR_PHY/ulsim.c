@@ -759,10 +759,10 @@ int main(int argc, char **argv)
   NR_gNB_ULSCH_t *ulsch_gNB = &gNB->ulsch[UE_id];
 
   // nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_process->ulsch_pdu;
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = malloc(sizeof(*UL_tti_req));
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
   memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
-  Sched_INFO->UL_tti_req=UL_tti_req;
+  nfapi_nr_ul_tti_request_t *UL_tti_req = &Sched_INFO->UL_tti_req;
+  Sched_INFO->sched_response_id = -1;
 
   nr_phy_data_tx_t phy_data = {0};
 
