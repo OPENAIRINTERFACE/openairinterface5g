@@ -48,8 +48,6 @@ static void busy_wait(uint32_t usecs) {
   // Active wait
   clock_gettime(CLOCK_REALTIME, &requestStart);
   while (1) {
-    for (int j=0; j < 40; j++)
-      (void) sin(j);
     clock_gettime(CLOCK_REALTIME, &requestEnd);
     elapsed_usecs = ( requestEnd.tv_sec - requestStart.tv_sec ) / 1e-6
       + ( requestEnd.tv_nsec - requestStart.tv_nsec ) / 1e3;

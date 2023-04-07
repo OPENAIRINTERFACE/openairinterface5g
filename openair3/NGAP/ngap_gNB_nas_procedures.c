@@ -692,7 +692,8 @@ int ngap_gNB_initial_ctxt_resp(instance_t instance, ngap_initial_context_setup_r
           break;
 
         case NGAP_CAUSE_NOTHING:
-          default:
+        default:
+          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", initial_ctxt_resp_p->pdusessions_failed[i].cause);
           break;
       }
 
@@ -959,7 +960,8 @@ int ngap_gNB_pdusession_setup_resp(instance_t instance, ngap_pdusession_setup_re
           break;
 
         case NGAP_CAUSE_NOTHING:
-          default:
+        default:
+          LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_failed->cause);
           break;
       }
       NGAP_DEBUG("pdusession setup response: failed pdusession ID %ld\n", item->pDUSessionID);
@@ -1123,7 +1125,8 @@ int ngap_gNB_pdusession_modify_resp(instance_t instance, ngap_pdusession_modify_
 
       case NGAP_CAUSE_NOTHING:
       default:
-          break;
+        LOG_E(NR_RRC, "Unknown PDU session failure cause %d\n", pdusession_modify_resp_p->pdusessions_failed[i].cause);
+        break;
       }
 
       asn_encode_to_new_buffer_result_t res = {0};
