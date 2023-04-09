@@ -395,18 +395,3 @@ The following parts have been validated with FR1 COTS UE:
     DL traffic : 3Mbps  
     UL traffic : 1Mbps  
     some packet losses might still occur even in ideal channel conditions  
-
-
-## CI integration  
-The automation scripts are available on ILIADE.  
-The end-to-end test is integrated in the CI flow in a semi-automated manner, comprising 3 steps:  
-- update a YAML file comprising the IT resources definition, branch and commit number the test has to run on   
-- run the python script that generates the test from the YAML file  
-```
-python3 obj_build_from_yaml.py py_params_template.yaml fr1.sh
-```
-- run the test (fr1.sh)
-
-At the date of writing, the test comprises the deployment of the components (epc, eNB, gNB, cots ue) and the execution of 2 pings procedures (20 pings in 20sec, then 5 pings in 1sec)  
-
-This automation is run for every integration branch to be merged into develop.

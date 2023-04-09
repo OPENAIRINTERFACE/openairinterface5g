@@ -33,10 +33,9 @@
 #include "PHY/defs_gNB.h"
 #include "common/utils/threadPool/thread-pool.h"
 
-void free_gNB_ulsch(NR_gNB_ULSCH_t **ulsch, uint16_t N_RB_UL);
+void free_gNB_ulsch(NR_gNB_ULSCH_t *ulsch, uint16_t N_RB_UL);
 
-NR_gNB_ULSCH_t *new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL);
-
+NR_gNB_ULSCH_t new_gNB_ulsch(uint8_t max_ldpc_iterations, uint16_t N_RB_UL);
 
 /*! \brief Perform PUSCH decoding. TS 38.212 V15.4.0 subclause 6.2
   @param phy_vars_gNB, Pointer to PHY data structure for gNB
@@ -82,11 +81,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB,
                          int slot_rx,
                          int UE_id,
                          uint8_t harq_pid);
-int16_t find_nr_ulsch(uint16_t rnti, PHY_VARS_gNB *gNB,find_type_t type);
+
+NR_gNB_ULSCH_t *find_nr_ulsch(PHY_VARS_gNB *gNB, uint16_t rnti, int pid);
 
 void dump_pusch_stats(FILE *fd,PHY_VARS_gNB *gNB);
 
 void dump_nr_I0_stats(FILE *fd,PHY_VARS_gNB *gNB);
-void clear_pusch_stats(PHY_VARS_gNB *gNB);
 
 NR_gNB_SCH_STATS_t *get_ulsch_stats(PHY_VARS_gNB *gNB,NR_gNB_ULSCH_t *ulsch);

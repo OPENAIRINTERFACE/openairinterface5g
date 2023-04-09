@@ -34,7 +34,7 @@
 
 /* from OAI */
 #include "oai_asn1.h"
-#include "pdcp.h"
+#include "nr_pdcp_oai_api.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
@@ -73,7 +73,7 @@ static ngran_node_t node_type;
 /* NR PDCP and RLC both use "big locks". In some cases a thread may do
  * lock(rlc) followed by lock(pdcp) (typically when running 'rx_sdu').
  * Another thread may first do lock(pdcp) and then lock(rlc) (typically
- * the GTP module calls 'pdcp_data_req' that, in a previous implementation
+ * the GTP module calls 'nr_pdcp_data_req' that, in a previous implementation
  * was indirectly calling 'rlc_data_req' which does lock(rlc)).
  * To avoid the resulting deadlock it is enough to ensure that a call
  * to lock(pdcp) will never be followed by a call to lock(rlc). So,
@@ -531,7 +531,13 @@ static void set_node_type() {
   node_type = get_node_type();
 }
 
+/* hack: dummy function needed due to LTE dependencies */
 void pdcp_layer_init(void)
+{
+  abort();
+}
+
+void nr_pdcp_layer_init(void)
 {
   /* hack: be sure to initialize only once */
   static pthread_mutex_t m = PTHREAD_MUTEX_INITIALIZER;
@@ -647,35 +653,12 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   }
 }
 
-static void deliver_pdu_drb(void *_ue, nr_pdcp_entity_t *entity,
+static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
                             char *buf, int size, int sdu_id)
 {
-  nr_pdcp_ue_t *ue = _ue;
-  int rb_id;
-  protocol_ctxt_t ctxt;
-  int i;
-  mem_block_t *memblock;
+  DevAssert(deliver_pdu_data == NULL);
+  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
 
-  for (i = 0; i < MAX_DRBS_PER_UE; i++) {
-    if (entity == ue->drb[i]) {
-      rb_id = i+1;
-      goto rb_found;
-    }
-  }
-
-  LOG_E(PDCP, "%s:%d:%s: fatal, no RB found for UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, ue->rntiMaybeUEid);
-  exit(1);
-
-rb_found:
-  ctxt.module_id = 0;
-  ctxt.enb_flag = 1;
-  ctxt.instance = 0;
-  ctxt.frame = 0;
-  ctxt.subframe = 0;
-  ctxt.eNB_index = 0;
-  ctxt.brOption = 0;
-
-  ctxt.rntiMaybeUEid = ue->rntiMaybeUEid;
   if (NODE_IS_CU(node_type)) {
     MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
 							  GTPV1U_TUNNEL_DATA_REQ,
@@ -690,14 +673,14 @@ rb_found:
     req->buffer        = gtpu_buffer_p;
     req->length        = size;
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-    req->ue_id = ue->rntiMaybeUEid;
+    req->ue_id = ue_id;
     req->bearer_id = rb_id;
     LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
 	  __func__, rb_id, size);
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
-    memblock = get_free_mem_block(size, __FUNCTION__);
+    mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
     //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
@@ -749,101 +732,26 @@ srb_found:
   }
 }
 
-static void deliver_pdu_srb(void *_ue, nr_pdcp_entity_t *entity,
-                            char *buf, int size, int sdu_id)
+void deliver_pdu_srb_rlc(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
+                         char *buf, int size, int sdu_id)
 {
-  nr_pdcp_ue_t *ue = _ue;
-  int srb_id;
-  int i;
-
-  for (i = 0; i < sizeofArray(ue->srb) ; i++) {
-    if (entity == ue->srb[i]) {
-      srb_id = i+1;
-      goto srb_found;
-    }
-  }
-
-  LOG_E(PDCP, "%s:%d:%s: fatal, no SRB found for UE ID/RNTI %ld\n", __FILE__, __LINE__, __FUNCTION__, ue->rntiMaybeUEid);
-  exit(1);
-
-srb_found:
-
-
-  LOG_D(PDCP, "%s(): (srb %d) calling rlc_data_req size %d\n", __func__, srb_id, size);
-  //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-  //printf("\n");
-  if ((RC.nrrrc == NULL) || (!NODE_IS_CU(node_type))) {
-    if (entity->is_gnb) {
-      f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF, .rrc_container = (uint8_t *)buf, .rrc_container_length = size, .rnti = ue->rntiMaybeUEid, .srb_id = DCCH};
-      gNB_RRC_INST *rrc = RC.nrrrc[0];
-      rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
-    } else { // UE
-      mem_block_t *memblock;
-      protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .frame = 0, .subframe = 0, .eNB_index = 0, .brOption = 0, .rntiMaybeUEid = ue->rntiMaybeUEid};
-      memblock = get_free_mem_block(size, __FUNCTION__);
-      memcpy(memblock->data, buf, size);
-      enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
-    }
-  } else {
-    MessageDef  *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
-    uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
-    memcpy (message_buffer, buf, size);
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container        = message_buffer;
-    F1AP_DL_RRC_MESSAGE (message_p).rrc_container_length = size;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_CU_ue_id         = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).gNB_DU_ue_id         = 0;
-    F1AP_DL_RRC_MESSAGE (message_p).old_gNB_DU_ue_id     = 0xFFFFFFFF; // unknown
-    F1AP_DL_RRC_MESSAGE(message_p).rnti = ue->rntiMaybeUEid;
-    F1AP_DL_RRC_MESSAGE (message_p).srb_id               = srb_id;
-    F1AP_DL_RRC_MESSAGE (message_p).execute_duplication  = 1;
-    F1AP_DL_RRC_MESSAGE (message_p).RAT_frequency_priority_information.en_dc = 0;
-    itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
-    LOG_D(PDCP, "Send F1AP_DL_RRC_MESSAGE with ITTI\n");
-  }
+  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
+  mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
+  memcpy(memblock->data, buf, size);
+  enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
 }
 
-void pdcp_run(const protocol_ctxt_t *const  ctxt_pP)
+void deliver_pdu_srb_f1(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
+                        char *buf, int size, int sdu_id)
 {
-  MessageDef      *msg_p;
-  int             result;
-  protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .rntiMaybeUEid = 0, .frame = -1, .subframe = -1, .eNB_index = 0, .brOption = false};
-
-  while (1) {
-    itti_poll_msg(ctxt_pP->enb_flag ? TASK_PDCP_ENB : TASK_PDCP_UE, &msg_p);
-    if (msg_p == NULL){
-     break;
-    }
-    switch (ITTI_MSG_ID(msg_p)) {
-    case RRC_DCCH_DATA_REQ:
-      LOG_D(PDCP, "Received RRC_DCCH_DATA_REQ type at PDCP task \n");
-      PROTOCOL_CTXT_SET_BY_MODULE_ID(
-          &ctxt,
-          RRC_DCCH_DATA_REQ(msg_p).module_id,
-          RRC_DCCH_DATA_REQ(msg_p).enb_flag,
-          RRC_DCCH_DATA_REQ(msg_p).rnti,
-          RRC_DCCH_DATA_REQ(msg_p).frame,
-          0,
-          RRC_DCCH_DATA_REQ(msg_p).eNB_index);
-      result = pdcp_data_req(&ctxt,
-                             SRB_FLAG_YES,
-                             RRC_DCCH_DATA_REQ(msg_p).rb_id,
-                             RRC_DCCH_DATA_REQ(msg_p).muip,
-                             RRC_DCCH_DATA_REQ(msg_p).confirmp,
-                             RRC_DCCH_DATA_REQ(msg_p).sdu_size,
-                             RRC_DCCH_DATA_REQ(msg_p).sdu_p,
-                             RRC_DCCH_DATA_REQ(msg_p).mode,
-                             NULL, NULL);
-
-      if (result != true)
-        LOG_E(PDCP, "PDCP data request failed!\n");
-      result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), RRC_DCCH_DATA_REQ(msg_p).sdu_p);
-      AssertFatal(result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
-      break;
-    default:
-      LOG_E(PDCP, "Received unexpected message %s\n", ITTI_MSG_NAME(msg_p));
-      break;
-    }
-  }
+  DevAssert(deliver_pdu_data != NULL);
+  gNB_RRC_INST *rrc = deliver_pdu_data;
+  f1ap_dl_rrc_message_t dl_rrc = {.old_gNB_DU_ue_id = 0xFFFFFF,
+                                  .rrc_container = (uint8_t *)buf,
+                                  .rrc_container_length = size,
+                                  .rnti = ue_id,
+                                  .srb_id = srb_id};
+  rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
 }
 
 static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)
@@ -864,7 +772,7 @@ static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s
   } else {
     pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   0, false, false, // sdap parameters
-                                  deliver_sdu_srb, ue, deliver_pdu_srb, ue,
+                                  deliver_sdu_srb, ue, NULL, ue,
                                   12, t_Reordering, -1,
                                   ciphering_algorithm,
                                   integrity_algorithm,
@@ -1131,30 +1039,43 @@ uint64_t get_pdcp_optmask(void)
   return pdcp_optmask;
 }
 
+/* hack: dummy function needed due to LTE dependencies */
 bool pdcp_remove_UE(const protocol_ctxt_t *const ctxt_pP)
 {
-  ue_id_t rntiMaybeUEid = ctxt_pP->rntiMaybeUEid;
+  abort();
+}
 
+bool nr_pdcp_remove_UE(ue_id_t ue_id)
+{
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
-  nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager, rntiMaybeUEid);
+  nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager, ue_id);
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 
   return 1;
 }
 
-void pdcp_config_set_security(
-        const protocol_ctxt_t* const  ctxt_pP,
-        pdcp_t *const pdcp_pP,
-        const rb_id_t rb_id,
-        const uint16_t lc_idP,
-        const uint8_t security_modeP,
-        uint8_t *const kRRCenc_pP,
-        uint8_t *const kRRCint_pP,
-        uint8_t *const kUPenc_pP)
+/* hack: dummy function needed due to LTE dependencies */
+void pdcp_config_set_security(const protocol_ctxt_t *const ctxt_pP,
+                                 pdcp_t *const pdcp_pP,
+                                 const rb_id_t rb_id,
+                                 const uint16_t lc_idP,
+                                 const uint8_t security_modeP,
+                                 uint8_t *const kRRCenc_pP,
+                                 uint8_t *const kRRCint_pP,
+                                 uint8_t *const kUPenc_pP)
+{
+  abort();
+}
+
+void nr_pdcp_config_set_security(ue_id_t ue_id,
+                                 const rb_id_t rb_id,
+                                 const uint8_t security_modeP,
+                                 uint8_t *const kRRCenc_pP,
+                                 uint8_t *const kRRCint_pP,
+                                 uint8_t *const kUPenc_pP)
 {
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
-  ue_id_t ue_id = ctxt_pP->rntiMaybeUEid;
   int integrity_algorithm;
   int ciphering_algorithm;
 
@@ -1186,27 +1107,17 @@ void pdcp_config_set_security(
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-static bool pdcp_data_req_srb(protocol_ctxt_t  *ctxt_pP,
-                              const rb_id_t rb_id,
-                              const mui_t muiP,
-                              const confirm_t confirmP,
-                              const sdu_size_t sdu_buffer_size,
-                              unsigned char *const sdu_buffer)
+bool nr_pdcp_data_req_srb(ue_id_t ue_id,
+                          const rb_id_t rb_id,
+                          const mui_t muiP,
+                          const sdu_size_t sdu_buffer_size,
+                          unsigned char *const sdu_buffer,
+                          deliver_pdu deliver_pdu_cb,
+                          void *data)
 {
   LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
-  ue_id_t ue_id = ctxt_pP->rntiMaybeUEid;
-
-  if (ctxt_pP->module_id != 0 ||
-      //ctxt_pP->enb_flag != 1 ||
-      ctxt_pP->instance != 0 ||
-      ctxt_pP->eNB_index != 0 /*||
-      ctxt_pP->configured != 1 ||
-      ctxt_pP->brOption != 0*/) {
-    LOG_E(PDCP, "%s:%d:%s: fatal\n", __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
 
@@ -1223,21 +1134,31 @@ static bool pdcp_data_req_srb(protocol_ctxt_t  *ctxt_pP,
     return 0;
   }
 
-  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+  int max_size = sdu_buffer_size + 3 + 4; // 3: max header, 4: max integrity
+  char pdu_buf[max_size];
+  int pdu_size = rb->process_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP, pdu_buf, max_size);
+  AssertFatal(rb->deliver_pdu == NULL, "SRB callback should be NULL, to be provided on every invocation\n");
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  deliver_pdu_cb(data, ue_id, rb_id, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
 
-
-static bool pdcp_data_req_drb(protocol_ctxt_t  *ctxt_pP,
-                              const rb_id_t rb_id,
-                              const mui_t muiP,
-                              const confirm_t confirmP,
-                              const sdu_size_t sdu_buffer_size,
-                              unsigned char *const sdu_buffer)
+bool nr_pdcp_data_req_drb(protocol_ctxt_t *ctxt_pP,
+                          const srb_flag_t srb_flagP,
+                          const rb_id_t rb_id,
+                          const mui_t muiP,
+                          const confirm_t confirmP,
+                          const sdu_size_t sdu_buffer_size,
+                          unsigned char *const sdu_buffer,
+                          const pdcp_transmission_mode_t mode,
+                          const uint32_t *const sourceL2Id,
+                          const uint32_t *const destinationL2Id)
 {
+  DevAssert(srb_flagP == SRB_FLAG_NO);
+
   LOG_D(PDCP, "%s() called, size %d\n", __func__, sdu_buffer_size);
   nr_pdcp_ue_t *ue;
   nr_pdcp_entity_t *rb;
@@ -1268,9 +1189,14 @@ static bool pdcp_data_req_drb(protocol_ctxt_t  *ctxt_pP,
     return 0;
   }
 
-  rb->recv_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP);
+  int max_size = sdu_buffer_size + 3 + 4; // 3: max header, 4: max integrity
+  char pdu_buf[max_size];
+  int pdu_size = rb->process_sdu(rb, (char *)sdu_buffer, sdu_buffer_size, muiP, pdu_buf, max_size);
+  deliver_pdu deliver_pdu_cb = rb->deliver_pdu;
 
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+
+  deliver_pdu_cb(NULL, ue_id, rb_id, pdu_buf, pdu_size, muiP);
 
   return 1;
 }
@@ -1301,23 +1227,20 @@ bool cu_f1u_data_req(protocol_ctxt_t  *ctxt_pP,
   return ret;
 }
 
+/* hack: dummy function needed due to LTE dependencies */
 bool pdcp_data_req(protocol_ctxt_t  *ctxt_pP,
-                   const srb_flag_t srb_flagP,
-                   const rb_id_t rb_id,
-                   const mui_t muiP,
-                   const confirm_t confirmP,
-                   const sdu_size_t sdu_buffer_size,
-                   unsigned char *const sdu_buffer,
-                   const pdcp_transmission_mode_t mode,
+                   const srb_flag_t     srb_flagP,
+                   const rb_id_t        rb_idP,
+                   const mui_t          muiP,
+                   const confirm_t      confirmP,
+                   const sdu_size_t     sdu_buffer_sizeP,
+                   unsigned char *const sdu_buffer_pP,
+                   const pdcp_transmission_mode_t modeP,
                    const uint32_t *const sourceL2Id,
                    const uint32_t *const destinationL2Id)
 {
-  if (srb_flagP) {
-   return pdcp_data_req_srb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
-  }
-  else{
-    return pdcp_data_req_drb(ctxt_pP, rb_id, muiP, confirmP, sdu_buffer_size, sdu_buffer);
-  }
+  abort();
+  return false;
 }
 
 void pdcp_set_pdcp_data_ind_func(pdcp_data_ind_func_t pdcp_data_ind)

@@ -37,7 +37,7 @@
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "common/ran_context.h"
 #include "openair3/UTILS/conversions.h"
-#include "pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 /*
     Initial UL RRC Message Transfer

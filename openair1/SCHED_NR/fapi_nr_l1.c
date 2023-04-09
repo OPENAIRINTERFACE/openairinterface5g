@@ -35,6 +35,7 @@
 #include "PHY/NR_TRANSPORT/nr_dlsch.h"
 #include "PHY/NR_TRANSPORT/nr_dci.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "openair2/NR_PHY_INTERFACE/nr_sched_response.h"
 
 #define USE_MSGQ 1
 
@@ -102,11 +103,8 @@ void handle_nr_nfapi_ssb_pdu(processingData_L1tx_t *msgTx,int frame,int slot,
 
 }*/
 
-
-void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
-                               int frame,int slot,
-                               nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu) {
-
+void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx, int frame, int slot, nfapi_nr_dl_tti_csi_rs_pdu *csirs_pdu)
+{
   int found = 0;
 
   for (int id = 0; id < NR_SYMBOLS_PER_SLOT; id++) {
@@ -123,33 +121,30 @@ void handle_nfapi_nr_csirs_pdu(processingData_L1tx_t *msgTx,
     LOG_E(MAC,"CSI-RS list is full\n");
 }
 
-
 void handle_nr_nfapi_pdsch_pdu(processingData_L1tx_t *msgTx,
                             nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,
                             uint8_t *sdu)
 {
 
-
   nr_fill_dlsch(msgTx,pdsch_pdu,sdu);
 
 }
 
-void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
-  
-  PHY_VARS_gNB *gNB;
+void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
+{
   // copy data from L2 interface into L1 structures
   module_id_t                   Mod_id       = Sched_INFO->module_id;
-  nfapi_nr_dl_tti_request_t     *DL_req      = Sched_INFO->DL_req;
-  nfapi_nr_tx_data_request_t    *TX_req      = Sched_INFO->TX_req;
-  nfapi_nr_ul_tti_request_t     *UL_tti_req  = Sched_INFO->UL_tti_req;
-  nfapi_nr_ul_dci_request_t     *UL_dci_req  = Sched_INFO->UL_dci_req;
+  nfapi_nr_dl_tti_request_t     *DL_req      = &Sched_INFO->DL_req;
+  nfapi_nr_tx_data_request_t    *TX_req      = &Sched_INFO->TX_req;
+  nfapi_nr_ul_tti_request_t     *UL_tti_req  = &Sched_INFO->UL_tti_req;
+  nfapi_nr_ul_dci_request_t     *UL_dci_req  = &Sched_INFO->UL_dci_req;
   frame_t                       frame        = Sched_INFO->frame;
   sub_frame_t                   slot         = Sched_INFO->slot;
 
   AssertFatal(RC.gNB!=NULL,"RC.gNB is null\n");
   AssertFatal(RC.gNB[Mod_id]!=NULL,"RC.gNB[%d] is null\n",Mod_id);
 
-  gNB = RC.gNB[Mod_id];
+  PHY_VARS_gNB *gNB = RC.gNB[Mod_id];
   start_meas(&gNB->schedule_response_stats);
 
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
@@ -179,11 +174,13 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       /*const time_stats_t ts = exec_time_stats_NotifiedFIFO(res);
       merge_meas(&gNB->phy_proc_tx, &ts);
 */
-      msgTx->num_pdsch_slot=0;
-      msgTx->num_dl_pdcch=0;
-      msgTx->num_ul_pdcch=number_ul_dci_pdu;
+      msgTx->num_pdsch_slot = 0;
+      msgTx->num_dl_pdcch = 0;
+      msgTx->num_ul_pdcch = number_ul_dci_pdu;
       msgTx->slot = slot;
       msgTx->frame = frame;
+      /* store the sched_response_id for the TX thread to release it when done */
+      msgTx->sched_response_id = Sched_INFO->sched_response_id;
 
       for (int i=0;i<number_dl_pdu;i++) {
         nfapi_nr_dl_tti_request_pdu_t *dl_tti_pdu = &DL_req->dl_tti_request_body.dl_tti_pdu_list[i];
@@ -212,8 +209,10 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
             AssertFatal(TX_req->pdu_list[pduIndex].num_TLV == 1, "TX_req->pdu_list[%d].num_TLV %d != 1\n",
             pduIndex,TX_req->pdu_list[pduIndex].num_TLV);
             uint8_t *sdu = (uint8_t *)TX_req->pdu_list[pduIndex].TLVs[0].value.direct;
-            AssertFatal(msgTx->num_pdsch_slot < NUMBER_OF_NR_DLSCH_MAX,"Number of PDSCH PDUs %d exceeded the limit %d\n",
-                        msgTx->num_pdsch_slot, NUMBER_OF_NR_DLSCH_MAX);
+            AssertFatal(msgTx->num_pdsch_slot < gNB->max_nb_pdsch,
+                        "Number of PDSCH PDUs %d exceeded the limit %d\n",
+                        msgTx->num_pdsch_slot,
+                        gNB->max_nb_pdsch);
             handle_nr_nfapi_pdsch_pdu(msgTx,&dl_tti_pdu->pdsch_pdu, sdu);
         }
       }
@@ -221,13 +220,16 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
       for (int i=0; i<number_ul_dci_pdu; i++)
         msgTx->ul_pdcch_pdu[i] = UL_dci_req->ul_dci_pdu_list[i];
 
+      /* Both the current thread and the TX thread will access the sched_info
+       * at the same time, so increase its reference counter, so that it is
+       * released only when both threads are done with it.
+       */
+      inc_ref_sched_response(Sched_INFO->sched_response_id);
 #ifndef USE_MSGQ      
       if (gNB->reorder_thread_disable)
         pushNotifiedFIFO(&gNB->L1_tx_out,res);
       else
 	pushNotifiedFIFO(&gNB->L1_tx_filled,res);
-#else
-      //pushNotifiedFIFO(&gNB->L1_tx_out, res);
 #endif
     }
 
@@ -270,5 +272,9 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO){
     if (number_dl_pdu>0)
       oai_nfapi_dl_tti_req(DL_req);
   }
+
+  /* this thread is done with the sched_info, decrease the reference counter */
+  deref_sched_response(Sched_INFO->sched_response_id);
+
   stop_meas(&gNB->schedule_response_stats);
 }

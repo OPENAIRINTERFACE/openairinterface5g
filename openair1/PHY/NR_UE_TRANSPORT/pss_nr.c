@@ -555,12 +555,8 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 #endif
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_IN);
-  synchro_position = pss_search_time_nr(rxdata,
-                                        frame_parms,
-					fo_flag,
-                                        is,
-                                        (int *)&PHY_vars_UE->common_vars.eNb_id,
-					(int *)&PHY_vars_UE->common_vars.freq_offset);
+
+  synchro_position = pss_search_time_nr(rxdata, PHY_vars_UE, fo_flag, is);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PSS_SEARCH_TIME_NR, VCD_FUNCTION_OUT);
 
@@ -605,7 +601,7 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 *
 * NAME :         pss_search_time_nr
 *
-* PARAMETERS :   received buffer
+* PARAMETERS :   received buffer in time domain
 *                frame parameters
 *
 * RETURN :       position of detected pss
@@ -651,17 +647,15 @@ int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change)
 *
 *********************************************************************/
 
-int pss_search_time_nr(c16_t **rxdata, ///rx data in time domain
-                       NR_DL_FRAME_PARMS *frame_parms,
-		       int fo_flag,
-                       int is,
-                       int *eNB_id,
-		       int *f_off)
+int pss_search_time_nr(c16_t **rxdata, PHY_VARS_NR_UE *ue, int fo_flag, int is)
 {
+  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+  int *eNB_id = (int *)&ue->common_vars.eNb_id;
+  int *f_off = (int *)&ue->common_vars.freq_offset;
   unsigned int n, ar, peak_position, pss_source;
   int64_t peak_value;
-  int64_t avg[NUMBER_PSS_SEQUENCE]={0};
-  double ffo_est=0;
+  int64_t avg[NUMBER_PSS_SEQUENCE] = {0};
+  double ffo_est = 0;
 
   // performing the correlation on a frame length plus one symbol for the first of the two frame
   // to take into account the possibility of PSS in between the two frames 
@@ -692,7 +686,14 @@ int pss_search_time_nr(c16_t **rxdata, ///rx data in time domain
   /* This is required by SIMD (single instruction Multiple Data) Extensions of Intel processors. */
   /* Correlation computation is based on a a dot product which is realized thank to SIMS extensions */
 
-  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++) {
+  uint16_t pss_index_start = 0;
+  uint16_t pss_index_end = NUMBER_PSS_SEQUENCE;
+  if (ue->target_Nid_cell != -1) {
+    pss_index_start = GET_NID2(ue->target_Nid_cell);
+    pss_index_end = pss_index_start + 1;
+  }
+
+  for (int pss_index = pss_index_start; pss_index < pss_index_end; pss_index++) {
     for (n = 0; n < length; n += 8) { //
 
       int64_t pss_corr_ue=0;
@@ -748,10 +749,10 @@ int pss_search_time_nr(c16_t **rxdata, ///rx data in time domain
   }
 
   // computing absolute value of frequency offset
-  *f_off = ffo_est*frame_parms->subcarrier_spacing;  
+  *f_off = ffo_est*frame_parms->subcarrier_spacing;
 
-  for (int pss_index = 0; pss_index < NUMBER_PSS_SEQUENCE; pss_index++)
-    avg[pss_index]/=(length/4);
+  for (int pss_index = pss_index_start; pss_index < pss_index_end; pss_index++)
+    avg[pss_index] /= (length / 4);
 
   *eNB_id = pss_source;
 
@@ -776,6 +777,6 @@ int pss_search_time_nr(c16_t **rxdata, ///rx data in time domain
 
 #endif
 
-  return(peak_position);
+  return peak_position;
 }
 

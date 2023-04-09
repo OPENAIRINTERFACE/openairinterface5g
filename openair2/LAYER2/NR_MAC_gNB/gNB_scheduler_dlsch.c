@@ -873,8 +873,10 @@ nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(int CC_id) {
 
 void nr_schedule_ue_spec(module_id_t module_id,
                          frame_t frame,
-                         sub_frame_t slot) {
-
+                         sub_frame_t slot,
+                         nfapi_nr_dl_tti_request_t *DL_req,
+                         nfapi_nr_tx_data_request_t *TX_req)
+{
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
 
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
@@ -885,7 +887,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
   const int CC_id = 0;
   NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
   NR_UEs_t *UE_info = &gNB_mac->UE_info;
-  nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+  nfapi_nr_dl_tti_request_body_t *dl_req = &DL_req->dl_tti_request_body;
 
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -1326,16 +1328,16 @@ void nr_schedule_ue_spec(module_id_t module_id,
         T_INT(frame), T_INT(slot), T_INT(current_harq_pid), T_BUFFER(harq->transportBlock, TBS));
     }
 
-    const int ntx_req = gNB_mac->TX_req[CC_id].Number_of_PDUs;
-    nfapi_nr_pdu_t *tx_req = &gNB_mac->TX_req[CC_id].pdu_list[ntx_req];
+    const int ntx_req = TX_req->Number_of_PDUs;
+    nfapi_nr_pdu_t *tx_req = &TX_req->pdu_list[ntx_req];
     tx_req->PDU_length = TBS;
     tx_req->PDU_index  = pduindex;
     tx_req->num_TLV = 1;
     tx_req->TLVs[0].length = TBS + 2;
     memcpy(tx_req->TLVs[0].value.direct, harq->transportBlock, TBS);
-    gNB_mac->TX_req[CC_id].Number_of_PDUs++;
-    gNB_mac->TX_req[CC_id].SFN = frame;
-    gNB_mac->TX_req[CC_id].Slot = slot;
+    TX_req->Number_of_PDUs++;
+    TX_req->SFN = frame;
+    TX_req->Slot = slot;
     /* mark UE as scheduled */
     sched_pdsch->rbSize = 0;
   }

@@ -21,7 +21,7 @@
 
 /* from openair */
 #include "rlc.h"
-#include "pdcp.h"
+#include "LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 
 /* from nr rlc module */
 #include "nr_rlc_asn1_utils.h"

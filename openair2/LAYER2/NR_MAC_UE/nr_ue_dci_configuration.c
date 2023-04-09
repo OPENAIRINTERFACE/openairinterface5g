@@ -172,7 +172,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->dci_length_options[i] = nr_dci_size(current_DL_BWP,
                                                current_UL_BWP,
                                                mac->cg,
-                                               &mac->def_dci_pdu_rel15[dci_format],
+                                               &mac->def_dci_pdu_rel15[dl_config->slot][dci_format],
                                                dci_format,
                                                NR_RNTI_TC,
                                                coreset,
@@ -269,7 +269,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
   uint8_t bwp_id = mac->current_DL_BWP.bwp_id;
   //NR_ServingCellConfig_t *scd = mac->scg->spCellConfig->spCellConfigDedicated;
   NR_BWP_DownlinkDedicated_t *bwpd  = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Dedicated : (mac->cg ? mac->cg->spCellConfig->spCellConfigDedicated->initialDownlinkBWP : NULL);
-  NR_BWP_DownlinkCommon_t *bwp_Common = (bwp_id>0) ? mac->DLbwp[bwp_id-1]->bwp_Common : &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
+  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, bwp_id);
 
   LOG_D(NR_MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
 

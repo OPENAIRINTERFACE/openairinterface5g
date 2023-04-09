@@ -49,7 +49,7 @@
 #include "f1ap_du_task.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <openair2/LAYER2/nr_pdcp/nr_pdcp.h>
-#include "openair2/LAYER2/PDCP_v10.1.0/pdcp.h"
+#include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "openair2/E1AP/e1ap.h"
 #include "gnb_config.h"
 extern unsigned char NB_gNB_INST;

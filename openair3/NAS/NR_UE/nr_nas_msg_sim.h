@@ -36,9 +36,11 @@
 #include "FGSIdentityResponse.h"
 #include "FGSAuthenticationResponse.h"
 #include "FGSNASSecurityModeComplete.h"
+#include "FGSDeregistrationRequestUEOriginating.h"
 #include "RegistrationComplete.h"
 #include "as_message.h"
 #include "FGSUplinkNasTransport.h"
+#include <openair3/UICC/usim_interface.h>
 
 #define PLAIN_5GS_MSG                                      0b0000
 #define INTEGRITY_PROTECTED                                0b0001
@@ -49,6 +51,8 @@
 #define REGISTRATION_REQUEST                               0b01000001 /* 65 = 0x41 */
 #define REGISTRATION_ACCEPT                                0b01000010 /* 66 = 0x42 */
 #define REGISTRATION_COMPLETE                              0b01000011 /* 67 = 0x43 */
+#define FGS_DEREGISTRATION_REQUEST_UE_ORIGINATING          0b01000101
+#define FGS_DEREGISTRATION_ACCEPT                          0b01000110
 #define FGS_AUTHENTICATION_REQUEST                         0b01010110 /* 86 = 0x56 */
 #define FGS_AUTHENTICATION_RESPONSE                        0b01010111 /* 87 = 0x57 */
 #define FGS_IDENTITY_REQUEST                               0b01011011 /* 91 = 0x5b */
@@ -78,7 +82,15 @@ typedef struct {
   uint8_t res[16];
   uint8_t rand[16];
   uint8_t kgnb[32];
+  uint32_t mm_counter;
+  uint32_t sm_counter;
 } ue_sa_security_key_t;
+
+typedef struct {
+  uicc_t *uicc;
+  ue_sa_security_key_t security;
+  Guti5GSMobileIdentity_t *guti;
+} nr_ue_nas_t;
 
 typedef enum fgs_protocol_discriminator_e {
   /* Protocol discriminator identifier for 5GS Mobility Management */
@@ -108,6 +120,7 @@ typedef union {
   registration_request_msg               registration_request;
   fgs_identiy_response_msg               fgs_identity_response;
   fgs_authentication_response_msg        fgs_auth_response;
+  fgs_deregistration_request_ue_originating_msg fgs_deregistration_request_ue_originating;
   fgs_security_mode_complete_msg         fgs_security_mode_complete;
   registration_complete_msg              registration_complete;
   fgs_uplink_nas_transport_msg           uplink_nas_transport;
@@ -158,7 +171,8 @@ typedef struct {
     fgs_sm_nas_msg_header_t sm_nas_msg_header;
 } dl_nas_transport_t;
 
-void generateRegistrationRequest(as_nas_info_t *initialNasMsg, int Mod_id);
+nr_ue_nas_t *get_ue_nas_info(module_id_t module_id);
+void generateRegistrationRequest(as_nas_info_t *initialNasMsg, nr_ue_nas_t *nas);
 void *nas_nrue_task(void *args_p);
 
 #endif /* __NR_NAS_MSG_SIM_H__*/

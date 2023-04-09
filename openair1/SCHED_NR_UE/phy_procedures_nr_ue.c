@@ -118,10 +118,9 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
                            NR_UE_DLSCH_t *dlsch1,
                            uint16_t n_pdus,
                            UE_nr_rxtx_proc_t *proc,
-                           void *typeSpecific){
-
-  NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
-
+                           void *typeSpecific,
+                           uint8_t *b)
+{
   if (n_pdus > 1){
     LOG_E(PHY, "In %s: multiple number of DL PDUs not supported yet...\n", __FUNCTION__);
   }
@@ -131,7 +130,7 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
   if ((pdu_type !=  FAPI_NR_RX_PDU_TYPE_SSB) && dlsch0) {
     dl_harq0 = &ue->dl_harq_processes[0][dlsch0->dlsch_config.harq_process_nbr];
     trace_NRpdu(DIRECTION_DOWNLINK,
-		dl_harq0->b,
+		b,
 		dlsch0->dlsch_config.TBS / 8,
 		WS_C_RNTI,
 		dlsch0->rnti,
@@ -147,24 +146,30 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
         dl_harq0 = &ue->dl_harq_processes[0][dlsch0->dlsch_config.harq_process_nbr];
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.harq_pid = dlsch0->dlsch_config.harq_process_nbr;
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.ack_nack = dl_harq0->ack;
-        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = dl_harq0->b;
+        rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu = b;
         rx_ind->rx_indication_body[n_pdus - 1].pdsch_pdu.pdu_length = dlsch0->dlsch_config.TBS / 8;
       }
       if(dlsch1) {
         AssertFatal(1==0,"Second codeword currently not supported\n");
       }
       break;
-    case FAPI_NR_RX_PDU_TYPE_SSB:
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu=malloc(sizeof(((fapiPbch_t*)typeSpecific)->decoded_output));
-      memcpy(rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.pdu,
-	     ((fapiPbch_t*)typeSpecific)->decoded_output,
-	     sizeof(((fapiPbch_t*)typeSpecific)->decoded_output));
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.additional_bits = ((fapiPbch_t*)typeSpecific)->xtra_byte;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_index = (frame_parms->ssb_index)&0x7;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_length = frame_parms->Lmax;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.cell_id = frame_parms->Nid_cell;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
-      rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu.rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+    case FAPI_NR_RX_PDU_TYPE_SSB: {
+        fapi_nr_ssb_pdu_t *ssb_pdu = &rx_ind->rx_indication_body[n_pdus - 1].ssb_pdu;
+        if(typeSpecific) {
+          NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
+          fapiPbch_t *pbch = (fapiPbch_t *)typeSpecific;
+          memcpy(ssb_pdu->pdu, pbch->decoded_output, sizeof(pbch->decoded_output));
+          ssb_pdu->additional_bits = pbch->xtra_byte;
+          ssb_pdu->ssb_index = (frame_parms->ssb_index)&0x7;
+          ssb_pdu->ssb_length = frame_parms->Lmax;
+          ssb_pdu->cell_id = frame_parms->Nid_cell;
+          ssb_pdu->ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
+          ssb_pdu->rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+          ssb_pdu->decoded_pdu = true;
+        }
+        else
+          ssb_pdu->decoded_pdu = false;
+      }
     break;
     case FAPI_NR_CSIRS_IND:
       memcpy(&rx_ind->rx_indication_body[n_pdus - 1].csirs_measurements,
@@ -382,7 +387,6 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    proc,
                    estimateSz,
                    dl_ch_estimates,
-                   ue->pbch_vars[gNB_id],
                    &ue->frame_parms,
                    (ue->frame_parms.ssb_index)&7,
                    SISO,
@@ -391,8 +395,6 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    rxdataF);
 
   if (ret==0) {
-
-    ue->pbch_vars[gNB_id]->pdu_errors_conseq = 0;
 
 #ifdef DEBUG_PHY_PROC
     uint16_t frame_tx;
@@ -426,36 +428,12 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
       write_output("H10.m","h10",&(ue->common_vars.dl_ch_estimates[0][2][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
 
       write_output("rxsigF0.m","rxsF0", ue->common_vars.rxdataF[0],8*ue->frame_parms.ofdm_symbol_size,1,1);
-      write_output("PBCH_rxF0_ext.m","pbch0_ext",ue->pbch_vars[0]->rxdataF_ext[0],12*4*6,1,1);
-      write_output("PBCH_rxF0_comp.m","pbch0_comp",ue->pbch_vars[0]->rxdataF_comp[0],12*4*6,1,1);
-      write_output("PBCH_rxF_llr.m","pbch_llr",ue->pbch_vars[0]->llr,(ue->frame_parms.Ncp==0) ? 1920 : 1728,1,4);
       exit(-1);
     */
 
-    ue->pbch_vars[gNB_id]->pdu_errors_conseq++;
-    ue->pbch_vars[gNB_id]->pdu_errors++;
-
-    if (ue->pbch_vars[gNB_id]->pdu_errors_conseq>=100) {
-      if (get_softmodem_params()->non_stop) {
-        LOG_E(PHY,"More that 100 consecutive PBCH errors! Going back to Sync mode!\n");
-        ue->lost_sync = 1;
-      } else {
-        LOG_E(PHY,"More that 100 consecutive PBCH errors! Exiting!\n");
-        exit_fun("More that 100 consecutive PBCH errors! Exiting!\n");
-      }
-    }
   }
 
-  if (frame_rx % 100 == 0) {
-    ue->pbch_vars[gNB_id]->pdu_errors_last = ue->pbch_vars[gNB_id]->pdu_errors;
-  }
 
-#ifdef DEBUG_PHY_PROC
-  LOG_D(PHY,"[UE %d] frame %d, slot %d, PBCH errors = %d, consecutive errors = %d!\n",
-	ue->Mod_id,frame_rx, nr_slot_rx,
-	ue->pbch_vars[gNB_id]->pdu_errors,
-	ue->pbch_vars[gNB_id]->pdu_errors_conseq);
-#endif
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
 }
 
@@ -696,6 +674,15 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
   return 0;
 }
 
+void send_slot_ind(notifiedFIFO_t *nf, int slot) {
+  if (nf) {
+    notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(int), 0, NULL, NULL);
+    int *msgData = (int *) NotifiedFifoData(newElt);
+    *msgData = slot;
+    pushNotifiedFIFO(nf, newElt);
+  }
+}
+
 bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                             UE_nr_rxtx_proc_t *proc,
                             NR_UE_DLSCH_t dlsch[2],
@@ -716,7 +703,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   NR_DL_UE_HARQ_t *dl_harq1 = &ue->dl_harq_processes[1][harq_pid];
   uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
   nr_downlink_indication_t dl_indication;
-  fapi_nr_rx_indication_t *rx_ind = calloc(1, sizeof(*rx_ind));
+  fapi_nr_rx_indication_t rx_ind = {0};
   uint16_t number_pdus = 1;
   // params for UL time alignment procedure
   NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
@@ -739,8 +726,12 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   LOG_D(PHY,"AbsSubframe %d.%d Start LDPC Decoder for CW1 [harq_pid %d] ? %d \n", frame_rx%1024, nr_slot_rx, harq_pid, is_cw1_active);
 
   // exit dlsch procedures as there are no active dlsch
-  if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE)
+  if (is_cw0_active != ACTIVE && is_cw1_active != ACTIVE) {
+    // don't wait anymore
+    const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
+    send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
     return false;
+  }
 
   // start ldpc decode for CW 0
   dl_harq0->G = nr_get_G(dlsch[0].dlsch_config.number_rbs,
@@ -762,6 +753,16 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
 
   start_meas(&ue->dlsch_decoding_stats);
 
+  // create memory to store decoder output
+  int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
+  int num_rb = dlsch[0].dlsch_config.number_rbs;
+  if (num_rb != 273) {
+    a_segments = a_segments*num_rb;
+    a_segments = (a_segments/273)+1;
+  }
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  __attribute__ ((aligned(32))) uint8_t p_b[dlsch_bytes];
+
   ret = nr_dlsch_decoding(ue,
                           proc,
                           gNB_id,
@@ -772,7 +773,9 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                           frame_rx,
                           nb_symb_sch,
                           nr_slot_rx,
-                          harq_pid);
+                          harq_pid,
+                          dlsch_bytes,
+                          p_b);
 
   LOG_T(PHY,"dlsch decoding, ret = %d\n", ret);
 
@@ -799,8 +802,8 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       break;
   }
 
-  nr_fill_dl_indication(&dl_indication, NULL, rx_ind, proc, ue, NULL);
-  nr_fill_rx_indication(rx_ind, ind_type, ue, &dlsch[0], NULL, number_pdus, proc, NULL);
+  nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, NULL);
+  nr_fill_rx_indication(&rx_ind, ind_type, ue, &dlsch[0], NULL, number_pdus, proc, NULL, p_b);
 
   LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch[0].dlsch_config.TBS, dlsch[0].dlsch_config.TBS / 8);
 
@@ -840,7 +843,9 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
                              frame_rx,
                              nb_symb_sch,
                              nr_slot_rx,
-                             harq_pid);
+                             harq_pid,
+                             dlsch_bytes,
+                             p_b);
     LOG_T(PHY,"CW dlsch decoding, ret1 = %d\n", ret1);
 
     stop_meas(&ue->dlsch_decoding_stats);
@@ -856,6 +861,13 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (ue->if_inst && ue->if_inst->dl_indication) {
     ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
   }
+
+  // DLSCH decoding finished! don't wait anymore
+  const int ack_nack_slot = (proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame;
+  send_slot_ind(ue->tx_resume_ind_fifo[ack_nack_slot], proc->nr_slot_rx);
+
+  if (ue->phy_sim_dlsch_b)
+    memcpy(ue->phy_sim_dlsch_b, p_b, dlsch_bytes);
 
   if (ue->mac_enabled == 1) { // TODO: move this from PHY to MAC layer!
 
@@ -989,8 +1001,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   return dec;
 }
 
-
-int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
+void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
                            nr_phy_data_t *phy_data) {
 
@@ -1124,7 +1135,7 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     p += snprintf(p, end - p, "Harq round stats for Downlink: %d", ue->dl_stats[0]);
     for (int round = 1; round < 16 && (round < 3 || ue->dl_stats[round] != 0); ++round)
       p += snprintf(p, end - p,"/%d", ue->dl_stats[round]);
-    LOG_I(NR_PHY,"%s/0\n", output);
+    LOG_I(NR_PHY,"%s\n", output);
 
     LOG_I(NR_PHY,"============================================\n");
   }
@@ -1169,40 +1180,43 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
     }
     dci_cnt = dci_cnt + nr_ue_pdcch_procedures(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, phy_data, n_ss, rxdataF);
   }
+  LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_slot_rx, dci_cnt);
   phy_pdcch_config->nb_search_space = 0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_OUT);
+}
+
+void pdsch_processing(PHY_VARS_NR_UE *ue,
+                      UE_nr_rxtx_proc_t *proc,
+                      nr_phy_data_t *phy_data) {
+
+  int frame_rx = proc->frame_rx;
+  int nr_slot_rx = proc->nr_slot_rx;
+  int gNB_id = proc->gNB_id;
 
   NR_UE_DLSCH_t *dlsch = &phy_data->dlsch[0];
-  if (dci_cnt > 0) {
-
-    LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: found %d DCIs\n", ue->Mod_id, frame_rx, nr_slot_rx, dci_cnt);
-
-    if (dlsch->active) {
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_IN);
-      uint16_t nb_symb_sch = dlsch[0].dlsch_config.number_symbols;
-      uint16_t start_symb_sch = dlsch[0].dlsch_config.start_symbol;
-
-      LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-      //to update from pdsch config
-
-      for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
-        nr_slot_fep(ue,
-                    proc,
-                    m,  //to be updated from higher layer
-                    rxdataF);
-      }
-      VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_OUT);
-    }
-  } else {
-    LOG_D(PHY,"[UE %d] Frame %d, nr_slot_rx %d: No DCIs found\n", ue->Mod_id, frame_rx, nr_slot_rx);
-  }
-
 #endif //NR_PDCCH_SCHED
-
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
   int ret_pdsch = 0;
+
+  const uint32_t rxdataF_sz = ue->frame_parms.samples_per_slot_wCP;
+  __attribute__ ((aligned(32))) c16_t rxdataF[ue->frame_parms.nb_antennas_rx][rxdataF_sz];
   if (dlsch[0].active) {
+
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_IN);
+    uint16_t nb_symb_sch = dlsch[0].dlsch_config.number_symbols;
+    uint16_t start_symb_sch = dlsch[0].dlsch_config.start_symbol;
+
+    LOG_D(PHY," ------ --> PDSCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
+    //to update from pdsch config
+
+    for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
+      nr_slot_fep(ue,
+                  proc,
+                  m,  //to be updated from higher layer
+                  rxdataF);
+    }
+    VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDSCH, VCD_FUNCTION_OUT);
 
     uint8_t nb_re_dmrs;
     if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
@@ -1243,6 +1257,9 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
     if (ret_pdsch >= 0)
       nr_ue_dlsch_procedures(ue, proc, dlsch, llr);
+    else
+      // don't wait anymore
+      send_slot_ind(ue->tx_resume_ind_fifo[(proc->nr_slot_rx + dlsch[0].dlsch_config.k1_feedback) % ue->frame_parms.slots_per_frame], proc->nr_slot_rx);
 
     stop_meas(&ue->dlsch_procedures_stat);
     if (cpumeas(CPUMEAS_GETSTATE)) {
@@ -1333,7 +1350,6 @@ int phy_procedures_nrUE_RX(PHY_VARS_NR_UE *ue,
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
   UEscopeCopy(ue, commonRxdataF, rxdataF, sizeof(int32_t), ue->frame_parms.nb_antennas_rx, rxdataF_sz);
-  return (0);
 }
 
 

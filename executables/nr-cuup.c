@@ -28,7 +28,7 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/GNB_APP/gnb_config.h"
-#include "pdcp.h"
+#include "nr_pdcp/nr_pdcp_oai_api.h"
 
 RAN_CONTEXT_t RC;
 THREAD_STRUCT thread_struct;
@@ -147,13 +147,13 @@ int main(int argc, char **argv)
   AssertFatal(rc >= 0, "Create task for GTPV1U failed\n");
   rc = itti_create_task(TASK_CUUP_E1, E1AP_CUUP_task, NULL);
   AssertFatal(rc >= 0, "Create task for CUUP E1 failed\n");
-  pdcp_layer_init();
+  nr_pdcp_layer_init();
   MessageDef *msg = RCconfig_NR_CU_E1(true);
   AssertFatal(msg != NULL, "Send init to task for E1AP UP failed\n");
   itti_send_msg_to_task(TASK_CUUP_E1, 0, msg);
 
   printf("TYPE <CTRL-C> TO TERMINATE\n");
-  itti_wait_tasks_end();
+  itti_wait_tasks_end(NULL);
 
   logClean();
   printf("Bye.\n");

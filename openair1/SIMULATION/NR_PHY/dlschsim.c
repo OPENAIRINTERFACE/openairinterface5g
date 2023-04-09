@@ -81,6 +81,17 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) {}
 NR_IF_Module_t *NR_IF_Module_init(int Mod_id) { return (NULL); }
 nfapi_mode_t nfapi_getmode(void) { return NFAPI_MODE_UNKNOWN; }
 
+void inc_ref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+void deref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+
 nrUE_params_t nrUE_params={0};
 
 nrUE_params_t *get_nrUE_params(void) {
@@ -422,15 +433,14 @@ int main(int argc, char **argv)
 	unsigned char harq_pid = 0; //dlsch->harq_ids[subframe];
   processingData_L1tx_t msgDataTx;
   init_DLSCH_struct(gNB, &msgDataTx);
-	NR_gNB_DLSCH_t *dlsch = msgDataTx.dlsch[0][0];
-	nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
+  NR_gNB_DLSCH_t *dlsch = &msgDataTx.dlsch[0][0];
+  nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
 	//time_stats_t *rm_stats, *te_stats, *i_stats;
 	unsigned int TBS = 8424;
 	uint8_t nb_re_dmrs = 6;  // No data in dmrs symbol
 	uint16_t length_dmrs = 1;
 	uint8_t Nl = 1;
 	uint8_t rvidx = 0;
-	dlsch->rnti = 1;
 	/*dlsch->harq_processes[0]->mcs = Imcs;
 	 dlsch->harq_processes[0]->rvidx = rvidx;*/
 	//printf("dlschsim harqid %d nb_rb %d, mscs %d\n",dlsch->harq_ids[subframe],
@@ -543,9 +553,17 @@ int main(int argc, char **argv)
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_IN);
 
+      int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
+      int num_rb = dlsch0_ue->dlsch_config.number_rbs;
+      if (num_rb != 273) {
+        a_segments = a_segments*num_rb;
+        a_segments = (a_segments/273)+1;
+      }
+      uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+      __attribute__ ((aligned(32))) uint8_t b[dlsch_bytes];
 			ret = nr_dlsch_decoding(UE, &proc, 0, channel_output_fixed, &UE->frame_parms,
 					dlsch0_ue, harq_process, frame, nb_symb_sch,
-					slot,harq_pid);
+					slot,harq_pid,dlsch_bytes,b);
 
 			vcd_signal_dumper_dump_function_by_name(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_DECODING0, VCD_FUNCTION_OUT);
 
@@ -556,7 +574,7 @@ int main(int argc, char **argv)
 			errors_bit = 0;
 
 			for (i = 0; i < TBS; i++) {
-				estimated_output_bit[i] = (harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+				estimated_output_bit[i] = (b[i / 8] & (1 << (i & 7))) >> (i & 7);
 				test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
 				if (estimated_output_bit[i] != test_input_bit[i]) {

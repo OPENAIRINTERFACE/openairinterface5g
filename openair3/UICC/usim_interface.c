@@ -116,9 +116,8 @@ uicc_t * checkUicc(int Mod_id) {
   return (uicc_t*) uiccArray[Mod_id];  
 }
 
-uint8_t getImeisvDigit(int Mod_id,uint8_t i)
+uint8_t getImeisvDigit(const uicc_t *uicc, uint8_t i)
 {
-  uicc_t * uicc=checkUicc(Mod_id);
   uint8_t r = 0;
   uint8_t l = strlen(uicc->imeisvStr);
   if (l > IMEISV_STR_MAX_LENGTH) {

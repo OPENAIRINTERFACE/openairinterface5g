@@ -75,7 +75,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
   time_stats_t *dlsch_segmentation_stats=&gNB->dlsch_segmentation_stats;
 
   for (int dlsch_id=0; dlsch_id<msgTx->num_pdsch_slot; dlsch_id++) {
-    dlsch = msgTx->dlsch[dlsch_id][0];
+    dlsch = &msgTx->dlsch[dlsch_id][0];
 
     NR_DL_gNB_HARQ_t *harq = &dlsch->harq_process;
     nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &harq->pdsch_pdu.pdsch_pdu_rel15;
@@ -567,21 +567,16 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
 }
 
 void dump_pdsch_stats(FILE *fd,PHY_VARS_gNB *gNB) {
-
-  for (int i=0;i<NUMBER_OF_NR_SCH_STATS_MAX;i++)
-    if (gNB->dlsch_stats[i].rnti > 0 && gNB->dlsch_stats[i].frame != gNB->dlsch_stats[i].dump_frame) {
-      gNB->dlsch_stats[i].dump_frame = gNB->dlsch_stats[i].frame;
-      fprintf(fd,"DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
-	    gNB->dlsch_stats[i].rnti,
-	    gNB->dlsch_stats[i].current_Qm,
-	    gNB->dlsch_stats[i].current_RI,
-	    gNB->dlsch_stats[i].total_bytes_tx);
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    NR_gNB_PHY_STATS_t *stats = &gNB->phy_stats[i];
+    if (stats->active && stats->frame != stats->dlsch_stats.dump_frame) {
+      stats->dlsch_stats.dump_frame = stats->frame;
+      fprintf(fd,
+              "DLSCH RNTI %x: current_Qm %d, current_RI %d, total_bytes TX %d\n",
+              stats->rnti,
+              stats->dlsch_stats.current_Qm,
+              stats->dlsch_stats.current_RI,
+              stats->dlsch_stats.total_bytes_tx);
     }
-
-}
-
-void clear_pdsch_stats(PHY_VARS_gNB *gNB) {
-
-  for (int i = 0;i < NUMBER_OF_NR_SCH_STATS_MAX; i++)
-    memset((void*)&gNB->dlsch_stats[i],0,sizeof(gNB->dlsch_stats[i]));
+  }
 }

@@ -120,6 +120,10 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
   return 0;
 }
 
+int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index) {
+  return 0;
+}
+
 int nr_derive_key(int alg_type, uint8_t alg_id,
                const uint8_t key[32], uint8_t **out)
 {
@@ -324,7 +328,7 @@ int main(int argc, char **argv)
   //int frame_length_complex_samples_no_prefix;
   NR_DL_FRAME_PARMS *frame_parms;
   UE_nr_rxtx_proc_t UE_proc;
-  NR_Sched_Rsp_t Sched_INFO;
+  NR_Sched_Rsp_t *Sched_INFO;
   gNB_MAC_INST *gNB_mac;
   NR_UE_MAC_INST_t *UE_mac;
   int cyclic_prefix_type = NFAPI_CP_NORMAL;
@@ -936,6 +940,13 @@ int main(int argc, char **argv)
   UE->phy_sim_pdsch_rxdataF_comp = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
   UE->phy_sim_pdsch_dl_ch_estimates = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
   UE->phy_sim_pdsch_dl_ch_estimates_ext = calloc(sizeof(int32_t *) * frame_parms->nb_antennas_rx * g_nrOfLayers, rx_size);
+  int a_segments = MAX_NUM_NR_DLSCH_SEGMENTS_PER_LAYER*NR_MAX_NB_LAYERS;  //number of segments to be allocated
+  if (g_rbSize != 273) {
+    a_segments = a_segments*g_rbSize;
+    a_segments = (a_segments/273)+1;
+  }
+  uint32_t dlsch_bytes = a_segments*1056;  // allocated bytes per segment
+  UE->phy_sim_dlsch_b = calloc(1, dlsch_bytes);
 
   for (SNR = snr0; SNR < snr1; SNR += .2) {
 
@@ -950,8 +961,6 @@ int main(int argc, char **argv)
     reset_meas(&gNB->tprep);
     reset_meas(&gNB->tparity);
     reset_meas(&gNB->toutput);
-
-    clear_pdsch_stats(gNB);
 
     uint32_t errors_scrambling[16] = {0};
     int n_errors[16] = {0};
@@ -985,35 +994,40 @@ int main(int argc, char **argv)
       int harq_pid = slot;
       NR_DL_UE_HARQ_t *UE_harq_process = &UE->dl_harq_processes[0][harq_pid];
 
-      NR_gNB_DLSCH_t *gNB_dlsch = msgDataTx->dlsch[0][0];
+      NR_gNB_DLSCH_t *gNB_dlsch = &msgDataTx->dlsch[0][0];
       nfapi_nr_dl_tti_pdsch_pdu_rel15_t *rel15 = &gNB_dlsch->harq_process.pdsch_pdu.pdsch_pdu_rel15;
       
       UE_harq_process->ack = 0;
       round = 0;
       UE_harq_process->DLround = round;
       UE_harq_process->first_rx = 1;
-        
+
+      Sched_INFO = malloc(sizeof(*Sched_INFO));
+      if (Sched_INFO == NULL) {
+        LOG_E(PHY, "out of memory\n");
+        exit(1);
+      }
+      memset(Sched_INFO, 0, sizeof(*Sched_INFO));
+      Sched_INFO->sched_response_id = -1;
+
       while ((round<num_rounds) && (UE_harq_process->ack==0)) {
         round_trials[round]++;
 
-        clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot);
+        clear_nr_nfapi_information(RC.nrmac[0], 0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req, &Sched_INFO->UL_dci_req);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].round = round;
 
-        nr_schedule_ue_spec(0, frame, slot);
-        Sched_INFO.module_id = 0;
-        Sched_INFO.CC_id     = 0;
-        Sched_INFO.frame     = frame;
-        Sched_INFO.slot      = slot;
-        Sched_INFO.DL_req    = &gNB_mac->DL_req[0];
-        Sched_INFO.UL_tti_req    = gNB_mac->UL_tti_req_ahead[0];
-        Sched_INFO.UL_dci_req  = NULL;
-        Sched_INFO.TX_req    = &gNB_mac->TX_req[0];
+        nr_schedule_ue_spec(0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req);
+        Sched_INFO->module_id = 0;
+        Sched_INFO->CC_id = 0;
+        Sched_INFO->frame = frame;
+        Sched_INFO->slot = slot;
+        Sched_INFO->UL_dci_req.numPdus = 0;
         pushNotifiedFIFO(&gNB->L1_tx_free,msgL1Tx);
-        nr_schedule_response(&Sched_INFO);
+        nr_schedule_response(Sched_INFO);
 
         /* PTRS values for DLSIM calculations   */
-        nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[Sched_INFO.CC_id].dl_tti_request_body;
+        nfapi_nr_dl_tti_request_body_t *dl_req = &Sched_INFO->DL_req.dl_tti_request_body;
         nfapi_nr_dl_tti_request_pdu_t  *dl_tti_pdsch_pdu = &dl_req->dl_tti_pdu_list[1];
         nfapi_nr_dl_tti_pdsch_pdu_rel15_t *pdsch_pdu_rel15 = &dl_tti_pdsch_pdu->pdsch_pdu.pdsch_pdu_rel15;
         pdu_bit_map = pdsch_pdu_rel15->pduBitmap;
@@ -1151,9 +1165,12 @@ int main(int argc, char **argv)
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);
 
-        phy_procedures_nrUE_RX(UE,
-                               &UE_proc,
-                               &phy_data);
+        pbch_pdcch_processing(UE,
+                              &UE_proc,
+                              &phy_data);
+        pdsch_processing(UE,
+                         &UE_proc,
+                         &phy_data);
         
         //----------------------------------------------------------
         //---------------------- count errors ----------------------
@@ -1196,7 +1213,7 @@ int main(int argc, char **argv)
 
       for (i = 0; i < TBS; i++) {
 
-	estimated_output_bit[i] = (UE_harq_process->b[i/8] & (1 << (i & 7))) >> (i & 7);
+	estimated_output_bit[i] = (UE->phy_sim_dlsch_b[i/8] & (1 << (i & 7))) >> (i & 7);
 	test_input_bit[i]       = (gNB_dlsch->harq_process.b[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 	
 	if (estimated_output_bit[i] != test_input_bit[i]) {
@@ -1247,8 +1264,10 @@ int main(int argc, char **argv)
 
     if (print_perf==1) {
       printf("\ngNB TX function statistics (per %d us slot, NPRB %d, mcs %d, block %d)\n",
-	     1000>>*scc->ssbSubcarrierSpacing, g_rbSize, g_mcsIndex,
-	     msgDataTx->dlsch[0][0]->harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0]<<3);
+             1000 >> *scc->ssbSubcarrierSpacing,
+             g_rbSize,
+             g_mcsIndex,
+             msgDataTx->dlsch[0][0].harq_process.pdsch_pdu.pdsch_pdu_rel15.TBSize[0] << 3);
       printDistribution(&gNB->phy_proc_tx,table_tx,"PHY proc tx");
       printStatIndent2(&gNB->dlsch_encoding_stats,"DLSCH encoding time");
       printStatIndent3(&gNB->dlsch_segmentation_stats,"DLSCH segmentation time");
@@ -1343,6 +1362,7 @@ int main(int argc, char **argv)
   free(UE->phy_sim_pdsch_rxdataF_comp);
   free(UE->phy_sim_pdsch_dl_ch_estimates);
   free(UE->phy_sim_pdsch_dl_ch_estimates_ext);
+  free(UE->phy_sim_dlsch_b);
   
   if (output_fd)
     fclose(output_fd);

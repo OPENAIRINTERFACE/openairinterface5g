@@ -112,9 +112,7 @@ static int drb_config_N3gtpu_create(e1ap_bearer_setup_req_t * const req,
   create_tunnel_req.ue_id = (req->gNB_cu_cp_ue_id & 0xFFFF);
 
   // Create N3 tunnel
-  int ret = gtpv1u_create_ngu_tunnel(instance,
-                                     &create_tunnel_req,
-                                     create_tunnel_resp);
+  int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);
   if (ret != 0) {
     LOG_E(NR_RRC,"rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE id %ld\n",
           create_tunnel_req.ue_id);

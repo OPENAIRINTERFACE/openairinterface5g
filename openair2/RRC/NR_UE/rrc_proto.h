@@ -145,20 +145,14 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
                               const rb_id_t     Srb_id,
                               uint8_t           *buffer_pP);
 
-uint8_t
-rrc_data_req_nr_ue(
-  const protocol_ctxt_t   *const ctxt_pP,
-  const rb_id_t                  rb_idP,
-  const mui_t                    muiP,
-  const confirm_t                confirmP,
-  const sdu_size_t               sdu_sizeP,
-  uint8_t                 *const buffer_pP,
-  const pdcp_transmission_mode_t modeP
-);
+int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index);
 
 /**\brief RRC UE task.
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
+
+/**\brief RRC timers update at UE. */
+void *nr_rrc_timers_update();
 
 /**\brief RRC NSA UE task.
    \param void *args_p Pointer on arguments to start the task. */

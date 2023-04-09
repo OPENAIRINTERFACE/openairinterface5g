@@ -40,7 +40,6 @@
 
 #include "PHY/defs_nr_common.h"
 
-
 void nr_group_sequence_hopping(pucch_GroupHopping_t PUCCH_GroupHopping,
                                uint32_t n_id,
                                uint8_t n_hop,

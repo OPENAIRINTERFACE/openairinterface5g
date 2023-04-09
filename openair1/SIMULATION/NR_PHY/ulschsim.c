@@ -80,6 +80,17 @@ PHY_VARS_NR_UE *PHY_vars_UE_g[1][1] = { { NULL } };
 uint16_t n_rnti = 0x1234;
 openair0_config_t openair0_cfg[MAX_CARDS];
 
+void inc_ref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+void deref_sched_response(int _)
+{
+  LOG_E(PHY, "fatal\n");
+  exit(1);
+}
+
 int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
@@ -455,8 +466,8 @@ int main(int argc, char **argv)
   uint8_t rvidx = 0;
   uint8_t UE_id = 0;
 
-  NR_gNB_ULSCH_t *ulsch_gNB = gNB->ulsch[UE_id];
-  NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_processes[harq_pid];
+  NR_gNB_ULSCH_t *ulsch_gNB = &gNB->ulsch[UE_id];
+  NR_UL_gNB_HARQ_t *harq_process_gNB = ulsch_gNB->harq_process;
   nfapi_nr_pusch_pdu_t *rel15_ul = &harq_process_gNB->ulsch_pdu;
 
   nr_phy_data_tx_t phy_data = {0};
@@ -614,7 +625,7 @@ int main(int argc, char **argv)
       errors_bit = 0;
 
       for (i = 0; i < TBS; i++) {
-        estimated_output_bit[i] = (ulsch_gNB->harq_processes[harq_pid]->b[i/8] & (1 << (i & 7))) >> (i & 7);
+        estimated_output_bit[i] = (ulsch_gNB->harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
         test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
 
         if (estimated_output_bit[i] != test_input_bit[i]) {

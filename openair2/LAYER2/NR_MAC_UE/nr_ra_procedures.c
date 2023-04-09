@@ -124,7 +124,7 @@ int16_t get_prach_tx_power(module_id_t mod_id) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
-  int16_t pathloss = compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm);
+  int16_t pathloss = compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm);
   int16_t ra_preamble_rx_power = (int16_t)(ra->prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
   return min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
 
@@ -674,7 +674,7 @@ void nr_get_prach_resources(module_id_t mod_id,
   } else {
     /* TODO: This controls the tx_power of UE and the ramping procedure of RA of UE. Later we
              can abstract this, perhaps in the proxy. But for the time being lets leave it as below. */
-    int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? compute_nr_SSB_PL(mac, mac->phy_measurements.ssb_rsrp_dBm) : 0;
+    int16_t dl_pathloss = !get_softmodem_params()->emulate_l1 ? compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm) : 0;
     ssb_rach_config(ra, prach_resources, nr_rach_ConfigCommon);
     ra_preambles_config(prach_resources, mac, dl_pathloss);
     LOG_D(MAC, "[RAPROC] - Selected RA preamble index %d for contention-based random access procedure... \n", ra->ra_PreambleIndex);
@@ -886,7 +886,7 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
 
         if(ra->cfra) {
           // Reset RA_active flag: it disables Msg3 retransmission (8.3 of TS 38.213)
-          nr_ra_succeeded(mod_id, frame, nr_slot_tx);
+          nr_ra_succeeded(mod_id, gNB_id, frame, nr_slot_tx);
         }
 
       } else if (ra->RA_window_cnt == 0 && !ra->RA_RAPID_found) {
@@ -1001,13 +1001,14 @@ void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame
 // according to section 5 of 3GPP TS 38.321 version 16.2.1 Release 16
 // todo:
 // - complete handling of received contention-based RA preamble
-void nr_ra_succeeded(module_id_t mod_id, frame_t frame, int slot){
-
+void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const frame_t frame, const int slot)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
 
   if (ra->cfra) {
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
+    nr_rrc_RA_succeeded(mod_id, gNB_index);
     mac->state = UE_CONNECTED;
     ra->RA_window_cnt = -1;
   } else {

@@ -47,6 +47,10 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
    \param scheduled_response including transmission config(dl_config, ul_config) and data transmission (tx_req)*/
 int8_t nr_ue_phy_config_request(nr_phy_config_t *phy_config);
 
+/**\brief NR UE FAPI message to schedule a synchronization with target gNB
+   \param synch_request including target_Nid_cell*/
+void nr_ue_synch_request(nr_synch_request_t *synch_request);
+
 void update_harq_status(module_id_t module_id, uint8_t harq_pid, uint8_t ack_nack);
 
 #endif

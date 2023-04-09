@@ -130,7 +130,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   debug_ch_est = fopen("debug_ch_est.txt","w");
 #endif
   //uint16_t Nid_cell = (eNB_offset == 0) ? gNB->frame_parms.Nid_cell : gNB->measurements.adj_cell_id[eNB_offset-1];
-  c16_t **ul_ch_estimates  = (c16_t **) gNB->pusch_vars[ul_id]->ul_ch_estimates;
+  NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ul_id];
+  c16_t **ul_ch_estimates = (c16_t **)pusch_vars->ul_ch_estimates;
   const int symbolSize = gNB->frame_parms.ofdm_symbol_size;
   const int soffset = (Ns&3)*gNB->frame_parms.symbols_per_slot*symbolSize;
   const int nushift = (p>>1)&1;
@@ -187,7 +188,8 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
 
   c16_t ul_ls_est[symbolSize] __attribute__((aligned(32)));
   memset(ul_ls_est, 0, sizeof(c16_t) * symbolSize);
-  memset(&gNB->measurements.delay[ul_id], 0, sizeof(gNB->measurements.delay[ul_id]));
+  NR_ULSCH_delay_t *delay = &gNB->ulsch[ul_id].delay;
+  memset(delay, 0, sizeof(*delay));
 
   for (int aarx=0; aarx<gNB->frame_parms.nb_antennas_rx; aarx++) {
     c16_t *rxdataF = (c16_t *)&gNB->common_vars.rxdataF[aarx][symbol_offset];
@@ -228,17 +230,15 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         pilot_cnt += 2;
       }
 
-      freq2time(symbolSize,
-                (int16_t *) ul_ls_est,
-                (int16_t *) gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
+      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)pusch_vars->ul_ch_estimates_time[aarx]);
 
-      nr_est_timing_advance_pusch(&gNB->frame_parms, gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx], &gNB->measurements.delay[ul_id]);
-      int delay = gNB->measurements.delay[ul_id].pusch_est_delay;
-      int delay_idx = get_delay_idx(delay);
+      nr_est_timing_advance_pusch(&gNB->frame_parms, pusch_vars->ul_ch_estimates_time[aarx], delay);
+      int pusch_delay = delay->pusch_est_delay;
+      int delay_idx = get_delay_idx(pusch_delay);
       c16_t *ul_delay_table = gNB->frame_parms.ul_delay_table[delay_idx];
 
 #ifdef DEBUG_PUSCH
-      printf("Estimated delay = %i\n", delay >> 1);
+      printf("Estimated delay = %i\n", pusch_delay >> 1);
 #endif
 
       pilot_cnt = 0;
@@ -277,7 +277,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       // Revert delay
       pilot_cnt = 0;
       ul_ch = &ul_ch_estimates[p * gNB->frame_parms.nb_antennas_rx + aarx][ch_offset];
-      int inv_delay_idx = get_delay_idx(-delay);
+      int inv_delay_idx = get_delay_idx(-pusch_delay);
       c16_t *ul_inv_delay_table = gNB->frame_parms.ul_delay_table[inv_delay_idx];
       for (int n = 0; n < 3 * nb_rb_pusch; n++) {
         for (int k_line = 0; k_line <= 1; k_line++) {
@@ -310,10 +310,10 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 
       // Delay compensation
-      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx]);
-      nr_est_timing_advance_pusch(&gNB->frame_parms, gNB->pusch_vars[ul_id]->ul_ch_estimates_time[aarx], &gNB->measurements.delay[ul_id]);
-      int delay = gNB->measurements.delay[ul_id].pusch_est_delay;
-      int delay_idx = get_delay_idx(-delay);
+      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)pusch_vars->ul_ch_estimates_time[aarx]);
+      nr_est_timing_advance_pusch(&gNB->frame_parms, pusch_vars->ul_ch_estimates_time[aarx], delay);
+      int pusch_delay = delay->pusch_est_delay;
+      int delay_idx = get_delay_idx(-pusch_delay);
       c16_t *ul_delay_table = gNB->frame_parms.ul_delay_table[delay_idx];
       for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n++) {
         ul_ch[n] = c16mulShift(ul_ls_est[n], ul_delay_table[n % 6], 8);
@@ -532,7 +532,9 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               uint8_t ulsch_id,
                               uint8_t nr_tti_rx,
                               unsigned char symbol,
-                              uint32_t nb_re_pusch) {
+                              uint32_t nb_re_pusch)
+{
+  NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ulsch_id];
   //#define DEBUG_UL_PTRS 1
   int32_t *ptrs_re_symbol   = NULL;
   int8_t   ret = 0;
@@ -542,16 +544,16 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
   uint8_t  *L_ptrs          = &rel15_ul->pusch_ptrs.ptrs_time_density;
   uint8_t  *K_ptrs          = &rel15_ul->pusch_ptrs.ptrs_freq_density;
   uint16_t *dmrsSymbPos     = &rel15_ul->ul_dmrs_symb_pos;
-  uint16_t *ptrsSymbPos     = &gNB->pusch_vars[ulsch_id]->ptrs_symbols;
-  uint8_t  *ptrsSymbIdx     = &gNB->pusch_vars[ulsch_id]->ptrs_symbol_index;
+  uint16_t *ptrsSymbPos = &pusch_vars->ptrs_symbols;
+  uint8_t *ptrsSymbIdx = &pusch_vars->ptrs_symbol_index;
   uint8_t  *dmrsConfigType  = &rel15_ul->dmrs_config_type;
   uint16_t *nb_rb           = &rel15_ul->rb_size;
   uint8_t  *ptrsReOffset    = &rel15_ul->pusch_ptrs.ptrs_ports_list[0].ptrs_re_offset;
 
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
-    c16_t *phase_per_symbol = (c16_t*)gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx];
-    ptrs_re_symbol = &gNB->pusch_vars[ulsch_id]->ptrs_re_per_slot;
+    c16_t *phase_per_symbol = (c16_t *)pusch_vars->ptrs_phase_per_slot[aarx];
+    ptrs_re_symbol = &pusch_vars->ptrs_re_per_slot;
     *ptrs_re_symbol = 0;
     phase_per_symbol[symbol].i = 0; 
     /* set DMRS estimates to 0 angle with magnitude 1 */
@@ -584,13 +586,17 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
       /*------------------------------------------------------------------------------------------------------- */
       /* 1) Estimate common phase error per PTRS symbol                                                                */
       /*------------------------------------------------------------------------------------------------------- */
-      nr_ptrs_cpe_estimation(*K_ptrs,*ptrsReOffset,*dmrsConfigType,*nb_rb,
+      nr_ptrs_cpe_estimation(*K_ptrs,
+                             *ptrsReOffset,
+                             *dmrsConfigType,
+                             *nb_rb,
                              rel15_ul->rnti,
                              nr_tti_rx,
-                             symbol,frame_parms->ofdm_symbol_size,
-                             (int16_t *)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(symbol * nb_re_pusch)],
+                             symbol,
+                             frame_parms->ofdm_symbol_size,
+                             (int16_t *)&pusch_vars->rxdataF_comp[aarx][(symbol * nb_re_pusch)],
                              gNB->nr_gold_pusch_dmrs[rel15_ul->scid][nr_tti_rx][symbol],
-                             (int16_t*)&phase_per_symbol[symbol],
+                             (int16_t *)&phase_per_symbol[symbol],
                              ptrs_re_symbol);
     }
 
@@ -608,7 +614,7 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
       }
 
 #ifdef DEBUG_UL_PTRS
-      LOG_M("ptrsEstUl.m","est",gNB->pusch_vars[ulsch_id]->ptrs_phase_per_slot[aarx],frame_parms->symbols_per_slot,1,1 );
+      LOG_M("ptrsEstUl.m", "est", pusch_vars->ptrs_phase_per_slot[aarx], frame_parms->symbols_per_slot, 1, 1);
       LOG_M("rxdataF_bf_ptrs_comp_ul.m","bf_ptrs_cmp",
             &gNB->pusch_vars[0]->rxdataF_comp[aarx][rel15_ul->start_symbol_index * NR_NB_SC_PER_RB * rel15_ul->rb_size],
             rel15_ul->nr_of_symbols * NR_NB_SC_PER_RB * rel15_ul->rb_size,1,1);
@@ -624,10 +630,11 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_UL_PTRS
           printf("[PHY][UL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[i].r,phase_per_symbol[i].i);
 #endif
-          rotate_cpx_vector((c16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+          rotate_cpx_vector((c16_t *)&pusch_vars->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
                             &phase_per_symbol[i],
-                            (c16_t*)&gNB->pusch_vars[ulsch_id]->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                            ((*nb_rb) * NR_NB_SC_PER_RB), 15);
+                            (c16_t *)&pusch_vars->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                            ((*nb_rb) * NR_NB_SC_PER_RB),
+                            15);
         }// if not DMRS Symbol
       }// symbol loop
     }// last symbol check

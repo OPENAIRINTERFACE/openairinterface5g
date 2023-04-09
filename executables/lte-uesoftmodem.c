@@ -699,7 +699,7 @@ int main( int argc, char **argv ) {
   printf("TYPE <CTRL-C> TO TERMINATE\n");
   //getchar();
   printf("Entering ITTI signals handler\n");
-  itti_wait_tasks_end();
+  itti_wait_tasks_end(NULL);
   printf("Returned from ITTI signal handler\n");
   oai_exit=1;
   printf("oai_exit=%d\n",oai_exit);

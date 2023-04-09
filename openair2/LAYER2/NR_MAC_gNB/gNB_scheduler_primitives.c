@@ -1979,11 +1979,6 @@ int get_nrofHARQ_ProcessesForPDSCH(e_NR_PDSCH_ServingCellConfig__nrofHARQ_Proces
   }
 }
 
-/* hack data to remove UE in the phy */
-int rnti_to_remove[10];
-volatile int rnti_to_remove_count;
-pthread_mutex_t rnti_to_remove_mutex = PTHREAD_MUTEX_INITIALIZER;
-
 void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_allocator_t *uia)
 {
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -1997,16 +1992,6 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
   const rnti_t rnti = UE->rnti;
   free(UE);
-  /* hack to remove UE in the phy */
-  if (pthread_mutex_lock(&rnti_to_remove_mutex))
-    exit(1);
-  if (rnti_to_remove_count == 10)
-    exit(1);
-  rnti_to_remove[rnti_to_remove_count] = rnti;
-  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
-  rnti_to_remove_count++;
-  if (pthread_mutex_unlock(&rnti_to_remove_mutex))
-    exit(1);
 
   /* clear RA process(es?) associated to the UE */
   for (int cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
@@ -2015,8 +2000,8 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
       if (cc->ra[i].rnti == rnti) {
         LOG_D(NR_MAC, "free RA process %d for rnti %04x\n", i, rnti);
         /* is it enough? */
-        cc->ra[i].cfra  = false;
-        cc->ra[i].rnti  = 0;
+        cc->ra[i].cfra = false;
+        cc->ra[i].rnti = 0;
         cc->ra[i].crnti = 0;
       }
     }
@@ -2524,16 +2509,6 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
   delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
 }
 
-void nr_mac_remove_ra_rnti(module_id_t mod_id, rnti_t rnti) {
-  // Hack to remove UE in the phy (following the same procedure as in function mac_remove_nr_ue)
-  if (pthread_mutex_lock(&rnti_to_remove_mutex)) exit(1);
-  if (rnti_to_remove_count == 10) exit(1);
-  rnti_to_remove[rnti_to_remove_count] = rnti;
-  LOG_W(NR_MAC, "to remove in mac rnti_to_remove[%d] = 0x%04x\n", rnti_to_remove_count, rnti);
-  rnti_to_remove_count++;
-  if (pthread_mutex_unlock(&rnti_to_remove_mutex)) exit(1);
-}
-
 uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
   // al values passed to this function are x10
   int snrx10 = (cqi*5) - 640;
@@ -2563,11 +2538,8 @@ int get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
   }
 }
 
-void nr_csirs_scheduling(int Mod_idP,
-                         frame_t frame,
-                         sub_frame_t slot,
-                         int n_slots_frame){
-
+void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slots_frame, nfapi_nr_dl_tti_request_t *DL_req)
+{
   int CC_id = 0;
   NR_UEs_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
@@ -2606,7 +2578,7 @@ void nr_csirs_scheduling(int Mod_idP,
       NR_NZP_CSI_RS_Resource_t *nzpcsi;
       int period, offset;
 
-      nfapi_nr_dl_tti_request_body_t *dl_req = &gNB_mac->DL_req[CC_id].dl_tti_request_body;
+      nfapi_nr_dl_tti_request_body_t *dl_req = &DL_req->dl_tti_request_body;
 
       for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
         nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];

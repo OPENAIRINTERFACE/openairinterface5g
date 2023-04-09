@@ -50,6 +50,16 @@ int decode_registration_accept(registration_accept_msg *registration_accept, uin
 
   decoded += decoded_result;
 
+  if (decoded < len && buffer[decoded] == 0x77) {
+    registration_accept->guti = calloc(1, sizeof(*registration_accept->guti));
+    if (!registration_accept->guti)
+      return -1;
+    int mi_dec = decode_5gs_mobile_identity(registration_accept->guti, 0x77, buffer + decoded, len - decoded);
+    if (mi_dec < 0)
+      return -1;
+    decoded += mi_dec;
+  }
+
   // todo ,Decoding optional fields
   return decoded;
 }
@@ -63,6 +73,13 @@ int encode_registration_accept(registration_accept_msg *registration_accept, uin
 
   *(buffer + encoded) = encode_fgs_registration_result(&registration_accept->fgsregistrationresult);
   encoded = encoded + 2;
+
+  if (registration_accept->guti) {
+    int mi_enc = encode_5gs_mobile_identity(registration_accept->guti, 0x77, buffer + encoded, len - encoded);
+    if (mi_enc < 0)
+      return mi_enc;
+    encoded += mi_enc;
+  }
 
   // todo ,Encoding optional fields
   LOG_FUNC_RETURN(encoded);
