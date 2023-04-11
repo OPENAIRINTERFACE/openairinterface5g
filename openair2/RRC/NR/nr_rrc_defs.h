@@ -481,6 +481,7 @@ typedef struct {
 
 typedef struct nr_mac_rrc_dl_if_s {
   /* TODO add other message types as necessary */
+  ue_context_setup_request_func_t ue_context_setup_request;
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
 } nr_mac_rrc_dl_if_t;
 

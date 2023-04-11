@@ -35,6 +35,7 @@
 #include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_du_ue_context_management.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 #include "rrc_extern.h"
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
@@ -65,13 +66,13 @@ bool lteDURecvCb(protocol_ctxt_t  *ctxt_pP,
 int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
                                        uint32_t         assoc_id,
                                        uint32_t         stream,
-                                       F1AP_F1AP_PDU_t *pdu) {
-  MessageDef                      *msg_p; // message to RRC
+                                       F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextSetupRequest_t    *container;
   int i;
   DevAssert(pdu);
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_SETUP_REQ);
-  f1ap_ue_context_setup_t *f1ap_ue_context_setup_req = &F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
+  f1ap_ue_context_setup_t ue_context_setup = {0};
+  f1ap_ue_context_setup_t *f1ap_ue_context_setup_req = &ue_context_setup;
   container = &pdu->choice.initiatingMessage->value.choice.UEContextSetupRequest;
   /* GNB_CU_UE_F1AP_ID */
   F1AP_UEContextSetupRequestIEs_t *ieCU;
@@ -224,8 +225,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
     LOG_W(F1AP, "can't find RRCContainer in UEContextSetupRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
-
+  ue_context_setup_request(f1ap_ue_context_setup_req);
   return 0;
 }
 

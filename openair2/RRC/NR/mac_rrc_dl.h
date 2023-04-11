@@ -25,6 +25,8 @@
 #include "platform_types.h"
 #include "f1ap_messages_types.h"
 
+typedef void (*ue_context_setup_request_func_t)(const f1ap_ue_context_setup_t *req);
+
 typedef void (*dl_rrc_message_transfer_func_t)(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc);
 
 struct nr_mac_rrc_dl_if_s;

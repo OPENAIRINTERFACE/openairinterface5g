@@ -19,6 +19,8 @@
  *      contact@openairinterface.org
  */
 
+#include <stdlib.h>
+
 #include "mac_rrc_dl_handler.h"
 
 #include "mac_proto.h"
@@ -28,6 +30,12 @@
 #include "NR_RRCSetup.h"
 #include "NR_DL-CCCH-Message.h"
 #include "NR_CellGroupConfig.h"
+
+void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
+{
+  (void) req;
+  abort();
+}
 
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
