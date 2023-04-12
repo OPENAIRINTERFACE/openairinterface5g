@@ -147,6 +147,12 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   free(resp.du_to_cu_rrc_information);
 }
 
+void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
+{
+  (void)req;
+  AssertFatal(false, "not implemented\n");
+}
+
 void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
 {
   /* mark UE as to be deleted after PUSCH failure */

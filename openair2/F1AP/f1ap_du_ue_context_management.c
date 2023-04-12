@@ -810,17 +810,12 @@ static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, c
   return gtpv1Init(tmp);
 }
 
-int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
-
-  MessageDef                      *msg_p; // message to RRC
+int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextModificationRequest_t    *container;
   int i;
-  DevAssert(pdu);
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_MODIFICATION_REQ);
-  f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
+  f1ap_ue_context_modif_req_t ue_context_modification = {0};
+  f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req = &ue_context_modification;
   container = &pdu->choice.initiatingMessage->value.choice.UEContextModificationRequest;
 
   /* mandatory */
@@ -970,7 +965,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
     LOG_W(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+  ue_context_modification_request(f1ap_ue_context_modification_req);
   return 0;
 }
 
