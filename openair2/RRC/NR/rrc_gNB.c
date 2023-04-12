@@ -2284,71 +2284,10 @@ rrc_gNB_decode_dcch(
                                     ul_dcch_msg);
       }
 
-      if (!NODE_IS_CU(gnb_rrc_inst->node_type)) {
-        if (UE->established_pdu_sessions_flag == 1) {
-          rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p, NULL);
-        } else {
-          rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
-        }
+      if (UE->established_pdu_sessions_flag == 1) {
+        rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p, NULL);
       } else {
-        /*Generate a UE context setup request message towards the DU to provide the UE
-         *capability info and get the updates on master cell group config from the DU*/
-        MessageDef *message_p;
-        message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
-        f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_SETUP_REQ (message_p);
-        //UE_IDs will be extracted from F1AP layer
-        req->gNB_CU_ue_id     = 0;
-        req->gNB_DU_ue_id = 0;
-        req->rnti = UE->rnti;
-        req->mcc = gnb_rrc_inst->configuration.mcc[0];
-        req->mnc = gnb_rrc_inst->configuration.mnc[0];
-        req->mnc_digit_length = gnb_rrc_inst->configuration.mnc_digit_length[0];
-        req->nr_cellid = gnb_rrc_inst->nr_cellid;
-
-        if (UE->established_pdu_sessions_flag == 1) {
-          /*Instruction towards the DU for SRB2 configuration*/
-          req->srbs_to_be_setup = malloc(1*sizeof(f1ap_srb_to_be_setup_t));
-          req->srbs_to_be_setup_length = 1;
-          f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
-          SRBs[0].srb_id = 2;
-          SRBs[0].lcid = 2;
-
-          /*Instruction towards the DU for DRB configuration and tunnel creation*/
-          req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t));
-          req->drbs_to_be_setup_length = 1;
-          f1ap_drb_to_be_setup_t *DRBs=req->drbs_to_be_setup;
-          LOG_I(RRC, "Length of DRB list:%d \n", req->drbs_to_be_setup_length);
-          DRBs[0].drb_id = 1;
-          DRBs[0].rlc_mode = RLC_MODE_AM;
-          DRBs[0].up_ul_tnl[0].tl_address = inet_addr(gnb_rrc_inst->eth_params_s.my_addr);
-          DRBs[0].up_ul_tnl[0].port = gnb_rrc_inst->eth_params_s.my_portd;
-          DRBs[0].up_ul_tnl_length = 1;
-          DRBs[0].up_dl_tnl[0].tl_address = inet_addr(gnb_rrc_inst->eth_params_s.remote_addr);
-          DRBs[0].up_dl_tnl[0].port = gnb_rrc_inst->eth_params_s.remote_portd;
-          DRBs[0].up_dl_tnl_length = 1;
-        }
-        if( ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.present ==
-                NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation ) {
-          struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList =
-              ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
-          if(ue_CapabilityRAT_ContainerList!=NULL){
-            LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is present \n");
-            req->cu_to_du_rrc_information = calloc(1,sizeof(cu_to_du_rrc_information_t));
-            req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = calloc(1,4096);
-            asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
-              NULL,
-              ue_CapabilityRAT_ContainerList,
-              req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
-              4096);
-            AssertFatal (enc_rval.encoded > 0, "ASN1 ue_CapabilityRAT_ContainerList encoding failed (%s, %jd)!\n",
-                             enc_rval.failed_type->name, enc_rval.encoded);
-            req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = (enc_rval.encoded+7)>>3;
-          }
-          else{
-            LOG_I(NR_RRC, "ue_CapabilityRAT_ContainerList is not present \n");
-          }
-        }
-        itti_send_msg_to_task (TASK_CU_F1, ctxt_pP->module_id, message_p);
+        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
       }
 
       break;
@@ -2524,233 +2463,6 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
   rrc_remove_nsa_user(rrc, m->rnti);
 }
 
-static void rrc_DU_process_ue_context_setup_request(MessageDef *msg_p, instance_t instance)
-{
-  f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_SETUP_REQ(msg_p);
-  gNB_RRC_INST *rrc = RC.nrrrc[instance];
-  gNB_MAC_INST *mac = RC.nrmac[instance];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
-  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-  MessageDef *message_p;
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_RESP);
-  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(message_p);
-  uint32_t incoming_teid = 0;
-
-  if(req->cu_to_du_rrc_information!=NULL){
-    if(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList!=NULL){
-      LOG_I(NR_RRC, "Length of ue_CapabilityRAT_ContainerList is: %d \n", (int) req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
-      struct NR_UE_CapabilityRAT_ContainerList  *ue_CapabilityRAT_ContainerList = NULL;
-      asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-          &asn_DEF_NR_UE_CapabilityRAT_ContainerList,
-          (void **)&ue_CapabilityRAT_ContainerList,
-          (uint8_t *)req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
-          (int) req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
-
-      if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-        AssertFatal(1==0,"UE Capability RAT ContainerList decode error\n");
-        // free the memory
-        SEQUENCE_free( &asn_DEF_NR_UE_CapabilityRAT_ContainerList, ue_CapabilityRAT_ContainerList, 1 );
-        return;
-      }
-      //To fill ue_context.UE_Capability_MRDC, ue_context.UE_Capability_nr ...
-      int NR_index = -1;
-      for(int i = 0;i < ue_CapabilityRAT_ContainerList->list.count; i++){
-        if(ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
-          NR_RAT_Type_nr){
-          LOG_I(NR_RRC, "DU received NR_RAT_Type_nr UE capabilities Info through the UE Context Setup Request from the CU \n");
-          if (UE->UE_Capability_nr) {
-            ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->UE_Capability_nr);
-            UE->UE_Capability_nr = 0;
-          }
-
-          dec_rval = uper_decode(NULL,
-                                 &asn_DEF_NR_UE_NR_Capability,
-                                 (void **)&UE->UE_Capability_nr,
-                                 ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.buf,
-                                 ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size,
-                                 0,
-                                 0);
-          if(LOG_DEBUGFLAG(DEBUG_ASN1)){
-            xer_fprint(stdout, &asn_DEF_NR_UE_NR_Capability, UE->UE_Capability_nr);
-          }
-
-          if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
-            LOG_E(NR_RRC, "UE %04x Failed to decode nr UE capabilities (%zu bytes)\n", req->rnti, dec_rval.consumed);
-            ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->UE_Capability_nr);
-            UE->UE_Capability_nr = 0;
-          }
-
-          UE->UE_Capability_size = ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size;
-          if(NR_index != -1){
-            LOG_E(NR_RRC,"fatal: more than 1 eutra capability\n");
-            exit(1);
-          }
-          NR_index = i;
-        }
-
-        if(ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
-        NR_RAT_Type_eutra_nr){
-          LOG_I(NR_RRC, "DU received NR_RAT_Type_eutra_nr UE capabilities Info through the UE Context Setup Request from the CU \n");
-          if (UE->UE_Capability_MRDC) {
-            ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability, UE->UE_Capability_MRDC);
-            UE->UE_Capability_MRDC = 0;
-          }
-          dec_rval = uper_decode(NULL,
-                                 &asn_DEF_NR_UE_MRDC_Capability,
-                                 (void **)&UE->UE_Capability_MRDC,
-                                 ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.buf,
-                                 ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size,
-                                 0,
-                                 0);
-          if(LOG_DEBUGFLAG(DEBUG_ASN1)){
-            xer_fprint(stdout, &asn_DEF_NR_UE_MRDC_Capability, UE->UE_Capability_MRDC);
-          }
-
-          if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)){
-            LOG_E(NR_RRC, "UE %04x Failed to decode nr UE capabilities (%zu bytes)\n", req->rnti, dec_rval.consumed);
-            ASN_STRUCT_FREE(asn_DEF_NR_UE_MRDC_Capability, UE->UE_Capability_MRDC);
-            UE->UE_Capability_MRDC = 0;
-          }
-          UE->UE_MRDC_Capability_size = ue_CapabilityRAT_ContainerList->list.array[i]->ue_CapabilityRAT_Container.size;
-        }
-
-        if(ue_CapabilityRAT_ContainerList->list.array[i]->rat_Type ==
-        NR_RAT_Type_eutra){
-          //TODO
-        }
-      }
-    }
-  }
-
-
-  /* Configure SRB2 */
-  NR_SRB_ToAddMod_t            *SRB2_config          = NULL;
-  NR_SRB_ToAddModList_t        *SRB_configList       = NULL;
-  uint8_t SRBs_before_new_addition = 0;
-
-  if(req->srbs_to_be_setup_length>0){
-    if (UE->SRB_configList == NULL) {
-      LOG_W(NR_RRC, "The SRB list of the UE context is empty before the addition of new SRB at the DU \n");
-      UE->SRB_configList = CALLOC(1, sizeof(*UE->SRB_configList));
-    }
-    SRB_configList = UE->SRB_configList;
-    SRBs_before_new_addition = SRB_configList->list.count;
-    for (int i=0; i<req->srbs_to_be_setup_length; i++){
-      SRB2_config = CALLOC(1, sizeof(*SRB2_config));
-      SRB2_config->srb_Identity = req->srbs_to_be_setup[i].srb_id;
-      asn1cSeqAdd(&SRB_configList->list, SRB2_config);
-    }
-  }
-
-  /* Configure DRB */
-  NR_DRB_ToAddMod_t            *DRB_config          = NULL;
-  NR_DRB_ToAddModList_t        *DRB_configList      = NULL;
-  uint8_t drb_id_to_setup_start = 0;
-  uint8_t nb_drb_to_setup = 0;
-  long drb_priority[NGAP_MAX_DRBS_PER_UE];
-  if(req->drbs_to_be_setup_length>0){
-    if (UE->DRB_configList == NULL) {
-      UE->DRB_configList = CALLOC(1, sizeof(*UE->DRB_configList));
-    }
-    DRB_configList = UE->DRB_configList;
-    nb_drb_to_setup = req->drbs_to_be_setup_length;
-    for (int i=0; i<req->drbs_to_be_setup_length; i++){
-      DRB_config = CALLOC(1, sizeof(*DRB_config));
-      DRB_config->drb_Identity = req->drbs_to_be_setup[i].drb_id;
-      if (drb_id_to_setup_start == 0) drb_id_to_setup_start = DRB_config->drb_Identity;
-      asn1cSeqAdd(&DRB_configList->list, DRB_config);
-      f1ap_drb_to_be_setup_t drb_p = req->drbs_to_be_setup[i];
-      transport_layer_addr_t addr;
-      memcpy(addr.buffer, &drb_p.up_ul_tnl[0].tl_address, sizeof(drb_p.up_ul_tnl[0].tl_address));
-      addr.length=sizeof(drb_p.up_ul_tnl[0].tl_address)*8;
-      extern instance_t DUuniqInstance;
-      incoming_teid = newGtpuCreateTunnel(DUuniqInstance,
-                                          req->rnti,
-                                          drb_p.drb_id,
-                                          drb_p.drb_id,
-                                          drb_p.up_ul_tnl[0].teid,
-                                          -1, // no qfi
-                                          addr,
-                                          drb_p.up_ul_tnl[0].port,
-                                          DURecvCb,
-                                          NULL);
-      /* TODO: hardcoded to 13 for the time being, to be changed? */
-      drb_priority[DRB_config->drb_Identity-1] = 13;
-    }
-  }
-
-  NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-  if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length>0)
-    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities or
-    // bearer IDs for the DRBs
-    fill_mastercellGroupConfig(cellGroupConfig, UE->masterCellGroup, rrc->um_on_default_drb, SRB2_config ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
-  protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
-  apply_macrlc_config(rrc, ue_context_p, &ctxt);
-  
-  if(req->rrc_container_length > 0){
-    mem_block_t *pdcp_pdu_p = get_free_mem_block(req->rrc_container_length, __func__);
-    memcpy(&pdcp_pdu_p->data[0], req->rrc_container, req->rrc_container_length);
-    du_rlc_data_req(&ctxt, 1, 0x00, 1, 1, 0, req->rrc_container_length, pdcp_pdu_p);
-    LOG_I(F1AP, "Printing RRC Container of UE context setup request: \n");
-    for (int j=0; j<req->rrc_container_length; j++){
-      printf("%02x ", pdcp_pdu_p->data[j]);
-    }
-    printf("\n");
-  }
-
-  /* Fill the UE context setup response ITTI message to send to F1AP */
-  resp->gNB_CU_ue_id = req->gNB_CU_ue_id;
-  resp->rnti = req->rnti;
-  if(DRB_configList){ 
-    if(DRB_configList->list.count > 0){
-      resp->drbs_to_be_setup = calloc(1,DRB_configList->list.count*sizeof(f1ap_drb_to_be_setup_t));
-      resp->drbs_to_be_setup_length = DRB_configList->list.count;
-      for (int i=0; i<DRB_configList->list.count; i++){
-        resp->drbs_to_be_setup[i].drb_id = DRB_configList->list.array[i]->drb_Identity;
-        resp->drbs_to_be_setup[i].rlc_mode = RLC_MODE_AM;
-        resp->drbs_to_be_setup[i].up_dl_tnl[0].teid = incoming_teid;
-        resp->drbs_to_be_setup[i].up_dl_tnl[0].tl_address = inet_addr(mac->eth_params_n.my_addr);
-        resp->drbs_to_be_setup[i].up_dl_tnl_length = 1;
-      }
-    }
-    else{
-      LOG_W(NR_RRC, "No DRB added upon reception of F1 UE context setup request with a DRB to setup list\n");
-    }
-  }
-  if(SRB_configList){
-    if(SRB_configList->list.count >0 && SRBs_before_new_addition < SRB_configList->list.count){
-      resp->srbs_to_be_setup = calloc(1,req->srbs_to_be_setup_length*sizeof(f1ap_srb_to_be_setup_t));
-      resp->srbs_to_be_setup_length = req->srbs_to_be_setup_length;
-      for (int i=SRBs_before_new_addition; i<SRB_configList->list.count; i++){
-        resp->srbs_to_be_setup[i-SRBs_before_new_addition].srb_id = SRB_configList->list.array[i]->srb_Identity;
-      }
-    }
-    else{
-      LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context setup request at the DU\n");
-    }
-  }
-  else{
-    LOG_W(NR_RRC, "No SRB added upon reception of F1 UE Context setup request at the DU\n");
-  }
-  /* fixme:
-   * Here we should be encoding the updates on cellgroupconfig based on the content of UE capabilities
-   */
-  resp->du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
-  resp->du_to_cu_rrc_information->cellGroupConfig = calloc(1,1024);
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                                  NULL,
-                                                  UE->masterCellGroup, //(void *)cellGroupConfig,
-                                                  resp->du_to_cu_rrc_information->cellGroupConfig,
-                                                  1024);
-  if (enc_rval.encoded == -1) {
-        LOG_E(F1AP,"Could not encode ue_context.masterCellGroup, failed element %s\n",enc_rval.failed_type->name);
-        exit(-1);
-  }
-  resp->du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded+7)>>3;
-  free(cellGroupConfig);
-  itti_send_msg_to_task(TASK_DU_F1, instance, message_p);
-}
-
 static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
@@ -2898,54 +2610,29 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, in
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
-  protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
+  asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                 &asn_DEF_NR_CellGroupConfig,
+                                                 (void **)&cellGroupConfig,
+                                                 (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
+                                                 resp->du_to_cu_rrc_information->cellGroupConfig_length);
+  AssertFatal(dec_rval.code == RC_OK && dec_rval.consumed > 0, "Cell group config decode error\n");
 
-  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-    &asn_DEF_NR_CellGroupConfig,
-    (void **)&cellGroupConfig,
-    (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
-    (int) resp->du_to_cu_rrc_information->cellGroupConfig_length);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0,"Cell group config decode error\n");
-    // free the memory
-    SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, cellGroupConfig, 1 );
-    return;
+  if (UE->masterCellGroup) {
+    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
+    LOG_I(RRC, "UE %04x replacing existing CellGroupConfig with new one received from DU\n", UE->rnti);
   }
-  //xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
-
-  if (UE->masterCellGroup == NULL) {
-    UE->masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
-  }
-  if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
-    if (UE->masterCellGroup->rlc_BearerToAddModList != NULL) {
-      int ue_ctxt_rlc_Bearers = UE->masterCellGroup->rlc_BearerToAddModList->list.count;
-      for(int i=ue_ctxt_rlc_Bearers; i<ue_ctxt_rlc_Bearers + cellGroupConfig->rlc_BearerToAddModList->list.count; i++){
-        asn1cSeqAdd(&UE->masterCellGroup->rlc_BearerToAddModList->list, cellGroupConfig->rlc_BearerToAddModList->list.array[i - ue_ctxt_rlc_Bearers]);
-      }
-    } else {
-      LOG_W(NR_RRC, "Empty rlc_BearerToAddModList at ue_context of the CU before filling the updates from UE context setup response \n");
-      UE->masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-      memcpy(UE->masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-    }
-  }
-  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+  UE->masterCellGroup = cellGroupConfig;
+  if (LOG_DEBUGFLAG(DEBUG_ASN1))
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
-  }
 
-  if (UE->established_pdu_sessions_flag == 1) {
-    fill_DRB_configList(&ctxt, ue_context_p);
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
-  } else {
-    rrc_gNB_generate_defaultRRCReconfiguration(&ctxt, ue_context_p);
-  }
-
-  free(cellGroupConfig->rlc_BearerToAddModList);
-  free(cellGroupConfig);
+  /* at this point, we don't have to do anything: the UE context setup request
+   * includes the Security Command, whose response will trigger the following
+   * messages (UE capability, to be specific) */
 }
 
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, instance_t instance)
@@ -3507,10 +3194,6 @@ void *rrc_gnb_task(void *args_p) {
         AssertFatal(NODE_IS_CU(RC.nrrrc[instance]->node_type), "should not receive F1AP_SETUP_REQUEST, need call by CU!\n");
         rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
         break;
-	
-      case F1AP_UE_CONTEXT_SETUP_REQ:
-        rrc_DU_process_ue_context_setup_request(msg_p, instance);
-        break;
 
       case F1AP_UE_CONTEXT_SETUP_RESP:
         rrc_CU_process_ue_context_setup_response(msg_p, instance);
@@ -3582,6 +3265,27 @@ void *rrc_gnb_task(void *args_p) {
   }
 }
 
+static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
+{
+  DevAssert(deliver_pdu_data != NULL);
+  gNB_RRC_INST *rrc = deliver_pdu_data;
+  f1ap_ue_context_setup_t ue_context_setup_req = {
+    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .rnti = ue_id,
+    .mcc = rrc->configuration.mcc[0],
+    .mnc = rrc->configuration.mnc[0],
+    .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+    .nr_cellid = rrc->nr_cellid,
+    .servCellId = 0, /* TODO: correct value? */
+    .srbs_to_be_setup = 0, /* no new SRBs */
+    .drbs_to_be_setup = 0, /* no new DRBs */
+    .rrc_container = (uint8_t*) buf, /* security mode command */
+    .rrc_container_length = size,
+  };
+  rrc->mac_rrc.ue_context_setup_request(&ue_context_setup_req);
+}
+
 //-----------------------------------------------------------------------------
 void
 rrc_gNB_generate_SecurityModeCommand(
@@ -3603,7 +3307,8 @@ rrc_gNB_generate_SecurityModeCommand(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
+  /* the callback will fill the UE context setup request and forward it */
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, rrc);
 }
 
 void
