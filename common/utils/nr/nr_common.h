@@ -101,7 +101,11 @@ void get_samplerate_and_bw(int mu,
                            unsigned int *samples_per_frame,
                            double *tx_bw,
                            double *rx_bw);
-
+uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
+                                  uint32_t absoluteFrequencyPointA,
+                                  int ssbSubcarrierSpacing,
+                                  int frequency_range);
+int get_ssb_subcarrier_offset(uint32_t absoluteFrequencySSB, uint32_t absoluteFrequencyPointA);
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 
