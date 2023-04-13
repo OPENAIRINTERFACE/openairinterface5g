@@ -81,7 +81,7 @@ class Module_UE:
 			c = cls_cmd.RemoteCmd(self.host)
 		response = c.run(cmd, silent=silent)
 		c.close()
-		return response.stdout
+		return response
 
 #-----------------$
 #PUBLIC Methods$
@@ -95,7 +95,11 @@ class Module_UE:
 		if self.cmd_dict["detach"]:
 			self._command(self.cmd_dict["detach"], silent=True)
 		self._command(self.cmd_dict["terminate"], silent=True)
-		self._command(self.cmd_dict["initialize"])
+		ret = self._command(self.cmd_dict["initialize"])
+		logging.info(f'For command: {ret.args} | return output: {ret.stdout} | Code: {ret.returncode}')
+		# Here each UE returns differently for the successful initialization, requires check based on UE
+		return ret.returncode == 0
+
 
 	def terminate(self):
 		self._command(self.cmd_dict["terminate"])
@@ -122,9 +126,9 @@ class Module_UE:
 			self._command(self.cmd_dict["detach"])
 			time.sleep(5)
 		if ip:
-			logging.debug(f'\u001B[1mUE IP Address is {ip}\u001B[0m')
+			logging.debug(f'\u001B[1mUE IP Address for UE {self.module_name} is {ip}\u001B[0m')
 		else:
-			logging.debug('\u001B[1;37;41mUE IP Address Not Found!\u001B[0m')
+			logging.debug(f'\u001B[1;37;41mUE IP Address for UE {self.module_name} Not Found!\u001B[0m')
 		return ip
 
 	def detach(self):
@@ -133,7 +137,7 @@ class Module_UE:
 	def check(self):
 		cmd = self.cmd_dict["check"]
 		if cmd:
-			return self._command(cmd)
+			return self._command(cmd).stdout
 		else:
 			logging.warning(f"requested status check of UE {self.getName()}, but operation is not supported")
 			return f"UE {self.getName()} does not support status checking"
@@ -160,7 +164,7 @@ class Module_UE:
 
 	def getIP(self):
 		output = self._command(self.cmd_dict["getNetwork"], silent=True)
-		result = re.search('inet (?P<ip>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output)
+		result = re.search('inet (?P<ip>[0-9]+\.[0-9]+\.[0-9]+\.[0-9]+)', output.stdout)
 		if result and result.group('ip'):
 			ip = result.group('ip')
 			return ip
@@ -168,12 +172,12 @@ class Module_UE:
 
 	def checkMTU(self):
 		output = self._command(self.cmd_dict["getNetwork"], silent=True)
-		result = re.search('mtu (?P<mtu>[0-9]+)', output)
+		result = re.search('mtu (?P<mtu>[0-9]+)', output.stdout)
 		if result and result.group('mtu') and int(result.group('mtu')) == self.MTU:
-			logging.debug('\u001B[1mUE Module NIC MTU is ' + str(self.MTU) + ' as expected\u001B[0m')
+			logging.debug(f'\u001B[1mUE Module {self.module_name} NIC MTU is {self.MTU} as expected\u001B[0m')
 			return True
 		else:
-			logging.debug('\u001B[1;37;41m Incorrect Module NIC MTU or MTU not found! Expected: ' + str(self.MTU) + '\u001B[0m')
+			logging.debug(f'\u001B[1;37;41m UE module {self.module_name} has incorrect Module NIC MTU or MTU not found! Expected: {self.MTU} \u001B[0m')
 			return False
 
 	def getName(self):
