@@ -2435,6 +2435,10 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                    configuration->force_256qam_off ? NULL : uecap,
                    bwp_Dedicated,
                    scc);
+
+  NR_BWP_UplinkDedicated_t *ul_bwp_Dedicated = SpCellConfig->spCellConfigDedicated->uplinkConfig->initialUplinkBWP;
+  set_ul_mcs_table(configuration->force_256qam_off ? NULL : uecap, scc, ul_bwp_Dedicated->pusch_Config->choice.setup);
+
   struct NR_ServingCellConfig__downlinkBWP_ToAddModList *DL_BWP_list =
       SpCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList;
   struct NR_UplinkConfig__uplinkBWP_ToAddModList *UL_BWP_list = uplinkConfig->uplinkBWP_ToAddModList;
