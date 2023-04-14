@@ -383,7 +383,7 @@ class Containerize():
 	
 		CreateWorkspace(cmd, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
- 		# if asterix, copy the entitlement and subscription manager configurations
+		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
 			cmd.run('mkdir -p ./etc-pki-entitlement ./rhsm-conf ./rhsm-ca')
 			cmd.run('cp /etc/rhsm/rhsm.conf ./rhsm-conf/')
@@ -981,7 +981,7 @@ class Containerize():
 		for s in allServices:
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
 			running = mySSH.getBefore().split('\r\n')[2:-1]
-			#logging.debug(f'running services: {running}')
+			logging.debug(f'running services: {running}')
 			if len(running) > 0: # something is running for that service
 				services.append(s)
 		logging.info(f'stopping services {services}')
