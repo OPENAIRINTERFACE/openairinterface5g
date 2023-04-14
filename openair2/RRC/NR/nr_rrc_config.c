@@ -946,7 +946,7 @@ static void set_SR_periodandoffset(NR_SchedulingRequestResourceConfig_t *schedul
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl160 = sr_slot;
     return;
   }
-  else if(sr_slot < 320 || NR_SubcarrierSpacing_kHz60){
+  else if(sr_slot < 320 || scs == NR_SubcarrierSpacing_kHz60){
     schedulingRequestResourceConfig->periodicityAndOffset->present = NR_SchedulingRequestResourceConfig__periodicityAndOffset_PR_sl320;
     schedulingRequestResourceConfig->periodicityAndOffset->choice.sl320 = sr_slot;
     return;

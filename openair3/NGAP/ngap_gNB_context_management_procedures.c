@@ -188,8 +188,31 @@ int ngap_ue_context_release_req(instance_t instance,
     ie->criticality = NGAP_Criticality_ignore;
     ie->value.present = NGAP_UEContextReleaseRequest_IEs__value_PR_Cause;
     DevAssert(ue_release_req_p->cause <= NGAP_Cause_PR_choice_ExtensionS);
-    ie->value.choice.Cause.present = ue_release_req_p->cause;
-    ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
+    switch(ue_release_req_p->cause){
+      case NGAP_CAUSE_RADIO_NETWORK:
+	ie->value.choice.Cause.present = NGAP_Cause_PR_radioNetwork;
+	ie->value.choice.Cause.choice.radioNetwork = ue_release_req_p->cause_value;
+	break;
+      case NGAP_CAUSE_TRANSPORT:
+	ie->value.choice.Cause.present = NGAP_Cause_PR_transport;
+	ie->value.choice.Cause.choice.transport = ue_release_req_p->cause_value;
+	break;
+      case NGAP_CAUSE_NAS:
+	ie->value.choice.Cause.present = NGAP_Cause_PR_nas;
+	ie->value.choice.Cause.choice.nas = ue_release_req_p->cause_value;
+	break;
+      case NGAP_CAUSE_PROTOCOL:
+	ie->value.choice.Cause.present = NGAP_Cause_PR_protocol;
+	ie->value.choice.Cause.choice.protocol = ue_release_req_p->cause_value;
+	break;
+      case NGAP_CAUSE_MISC:
+	ie->value.choice.Cause.present = NGAP_Cause_PR_misc;
+	ie->value.choice.Cause.choice.misc = ue_release_req_p->cause_value;
+	break;
+      default:
+        NGAP_WARN("Received NG Error indication cause NGAP_Cause_PR_choice_Extensions\n");
+        break;
+    }
   }
 
   if (ngap_gNB_encode_pdu(&pdu, &buffer, &length) < 0) {

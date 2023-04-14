@@ -569,7 +569,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   unsigned char symbol_mod,len_mod4;
   short *llr;
   int16_t *llr2;
-  int8_t *pllr_symbol;
 
   /*
   if (first_symbol_flag==1)
@@ -578,9 +577,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     llr = *llr_save;
   */
   llr = dlsch_llr;
-
-  pllr_symbol = (int8_t*)dlsch_llr;
-  pllr_symbol += llr_offset;
 
   symbol_mod = (symbol>=(7-frame_parms->Ncp)) ? symbol-(7-frame_parms->Ncp) : symbol;
 
@@ -596,15 +592,6 @@ void dlsch_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   } else {
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
-
-//  printf("dlsch_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-
-/*  LOG_I(PHY,"dlsch_64qam_llr [symb %d / FirstSym %d / Length %d]: @LLR Buff %x \n",
-             symbol,
-             first_symbol_flag,
-             len,
-             dlsch_llr,
-             pllr_symbol);*/
 
   llr2 = llr;
   llr += (len*6);
@@ -8325,7 +8312,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   int16_t *ch_mag_i = (int16_t*)&dl_ch_mag_i[0][(symbol*frame_parms->N_RB_DL*12)];
   int16_t *rho      = (int16_t*)&rho_i[0][(symbol*frame_parms->N_RB_DL*12)];
   int16_t *llr16;
-  int8_t  *pllr_symbol; // pointer where llrs should filled for this ofdm symbol
   int len;
   uint8_t symbol_mod = (symbol >= (7-frame_parms->Ncp))? (symbol-(7-frame_parms->Ncp)) : symbol;
 
@@ -8353,18 +8339,6 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
     // symbol has no pilots
     len = (nb_rb*12) - pbch_pss_sss_adjust;
   }
-
-  pllr_symbol = (int8_t*)dlsch_llr;
-  pllr_symbol += llr_offset;
-  //printf("dlsch_64qam_64qam_llr: symbol %d,nb_rb %d, len %d,pbch_pss_sss_adjust %d\n",symbol,nb_rb,len,pbch_pss_sss_adjust);
-  /*LOG_I(PHY,"dlsch_64qam_64qam_llr [symb %d / FirstSym %d / Length %d / LLR Offset %d]: @LLR Buff %x, @LLR Buff(symb) %x, , @Compute LLR Buff(symb) %x  \n",
-             symbol,
-             first_symbol_flag,
-             len,
-             llr_offset,
-             (int16_t*)dlsch_llr,
-             llr16,
-             pllr_symbol);*/
 
   // Round length up to multiple of 16 words
   uint32_t len256i = ((len+16)>>4)*16;

@@ -145,15 +145,13 @@ void mch_extract_rbs_khz_1dot25(int **rxdataF,
                                 /*unsigned char symbol,*/
                                 unsigned char subframe,
                                 LTE_DL_FRAME_PARMS *frame_parms) {
-  int i,j,offset,aarx,numext;
+  int i, j, offset, aarx;
 
   if( (subframe&0x1) == 0) {
     offset=0;
   } else {
     offset=3;
   }
-
-  numext=0;
 
   for (aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
     for (i=0,j=0; i<frame_parms->N_RB_DL*72; i++) {
@@ -163,7 +161,6 @@ void mch_extract_rbs_khz_1dot25(int **rxdataF,
         rxdataF_ext[aarx][(frame_parms->N_RB_DL*60)+j+0] = rxdataF[aarx][i+1+0]; //DC
         dl_ch_estimates_ext[aarx][j+0] = dl_ch_estimates[aarx][i+0];
         dl_ch_estimates_ext[aarx][(frame_parms->N_RB_DL*60)+j+0] = dl_ch_estimates[aarx][i+(frame_parms->N_RB_DL*72)+0];
-        numext+=2;
         j++;
       }
     }

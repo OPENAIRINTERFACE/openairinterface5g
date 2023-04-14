@@ -609,12 +609,13 @@ void det_HhH(int32_t *after_mf_00,
 
 {
   unsigned short rb;
-  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_10_128, *after_mf_11_128, ad_re_128, bc_re_128;
+  __m128i *after_mf_00_128,*after_mf_01_128, *after_mf_11_128, ad_re_128, bc_re_128;
+  //__m128i *after_mf_10_128; // the variable is only written, but leave it here for "symmetry" in the algorithm
   __m128i *det_fin_128, det_128;
 
   after_mf_00_128 = (__m128i *)after_mf_00;
   after_mf_01_128 = (__m128i *)after_mf_01;
-  after_mf_10_128 = (__m128i *)after_mf_10;
+  //after_mf_10_128 = (__m128i *)after_mf_10;
   after_mf_11_128 = (__m128i *)after_mf_11;
 
   det_fin_128 = (__m128i *)det_fin;
@@ -630,7 +631,7 @@ void det_HhH(int32_t *after_mf_00,
     printf("\n Computing denominator \n");
     print_shorts("after_mf_00_128:",(int16_t*)&after_mf_00_128[0]);
     print_shorts("after_mf_01_128:",(int16_t*)&after_mf_01_128[0]);
-    print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
+    //print_shorts("after_mf_10_128:",(int16_t*)&after_mf_10_128[0]);
     print_shorts("after_mf_11_128:",(int16_t*)&after_mf_11_128[0]);
     print_ints("ad_re_128:",(int32_t*)&ad_re_128);
     print_ints("bc_re_128:",(int32_t*)&bc_re_128);
@@ -640,7 +641,7 @@ void det_HhH(int32_t *after_mf_00,
     det_fin_128+=1;
     after_mf_00_128+=1;
     after_mf_01_128+=1;
-    after_mf_10_128+=1;
+    //after_mf_10_128+=1;
     after_mf_11_128+=1;
   }
   _mm_empty();

@@ -1897,6 +1897,9 @@ typedef struct {
 } nfapi_ul_config_periodic_cqi_pmi_ri_report_re13_t;
 
 typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } nfapi_ul_config_aperiodic_cqi_pmi_ri_report_re13_t;
 
 typedef struct {
@@ -3020,9 +3023,15 @@ typedef struct {
 #define NFAPI_LBT_DL_INDICATION_BODY_TAG 0x2058
 
 typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } nfapi_error_indication_msg_invalid_state;
 
 typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } nfapi_error_indication_msg_bch_missing;
 
 typedef struct {

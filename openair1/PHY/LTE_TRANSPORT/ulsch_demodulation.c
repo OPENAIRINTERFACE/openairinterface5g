@@ -771,7 +771,6 @@ void ulsch_correct_ext(int32_t **rxdataF_ext,
 void ulsch_channel_compensation(int32_t **rxdataF_ext,
                                 int32_t **ul_ch_estimates_ext,
                                 int32_t **ul_ch_mag,
-                                int32_t **ul_ch_magb,
                                 int32_t **rxdataF_comp,
                                 LTE_DL_FRAME_PARMS *frame_parms,
                                 uint8_t symbol,
@@ -780,13 +779,13 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
                                 uint8_t output_shift) {
   uint16_t rb;
 #if defined(__x86_64__) || defined(__i386__)
-  __m128i *ul_ch128,*ul_ch_mag128,*ul_ch_mag128b,*rxdataF128,*rxdataF_comp128;
+  __m128i *ul_ch128,*ul_ch_mag128,*rxdataF128,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
   __m128i mmtmpU0,mmtmpU1,mmtmpU2,mmtmpU3;
 
 #elif defined(__arm__) || defined(__aarch64__)
   int16x4_t *ul_ch128,*rxdataF128;
-  int16x8_t *ul_ch_mag128,*ul_ch_mag128b,*rxdataF_comp128;
+  int16x8_t *ul_ch_mag128,*rxdataF_comp128;
   uint8_t aarx;//,symbol_mod;
   int32x4_t mmtmpU0,mmtmpU1,mmtmpU0b,mmtmpU1b;
   int16_t conj[4]__attribute__((aligned(16))) = {1,-1,1,-1};
@@ -798,13 +797,11 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 #if defined(__x86_64__) || defined(__i386__)
     ul_ch128          = (__m128i *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128      = (__m128i *)&ul_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128b     = (__m128i *)&ul_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF128        = (__m128i *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128   = (__m128i *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
 #elif defined(__arm__) || defined(__aarch64__)
     ul_ch128          = (int16x4_t *)&ul_ch_estimates_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     ul_ch_mag128      = (int16x8_t *)&ul_ch_mag[aarx][symbol*frame_parms->N_RB_DL*12];
-    ul_ch_mag128b     = (int16x8_t *)&ul_ch_magb[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF128        = (int16x4_t *)&rxdataF_ext[aarx][symbol*frame_parms->N_RB_DL*12];
     rxdataF_comp128   = (int16x8_t *)&rxdataF_comp[aarx][symbol*frame_parms->N_RB_DL*12];
 #endif
@@ -912,7 +909,6 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
 
       ul_ch128+=3;
       ul_ch_mag128+=3;
-      ul_ch_mag128b+=3;
       rxdataF128+=3;
       rxdataF_comp128+=3;
 #elif defined(__arm__) || defined(__aarch64__)
@@ -962,7 +958,6 @@ void ulsch_channel_compensation(int32_t **rxdataF_ext,
       
       ul_ch128+=6;
       ul_ch_mag128+=3;
-      ul_ch_mag128b+=3;
       rxdataF128+=6;
       rxdataF_comp128+=3;
 #endif
@@ -1169,7 +1164,6 @@ void rx_ulsch(PHY_VARS_eNB *eNB,
       pusch_vars->rxdataF_ext,
       pusch_vars->drs_ch_estimates,
       pusch_vars->ul_ch_mag,
-      pusch_vars->ul_ch_magb,
       pusch_vars->rxdataF_comp,
       frame_parms,
       l,
