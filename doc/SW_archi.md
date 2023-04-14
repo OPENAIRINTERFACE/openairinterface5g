@@ -340,8 +340,6 @@ At Rx side, pdcp_data_ind() is the entry point that receives the data from RLC.
 
 nr_pdcp_config_set_security(): sets the keys for AS security of a UE
 
-nr_DRB_preconfiguration(): the mac layer calls this for configuration in phy-test/do-ra mode
-
 nr_pdcp_add_srbs() adds UE SRBs in pdcp, nr_pdcp_remove_UE() removes it
 nr_pdcp_add_drbs() adds UE DRBs in pdcp, nr_pdcp_remove_UE() removes it
 
