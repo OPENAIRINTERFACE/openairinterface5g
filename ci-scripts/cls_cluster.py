@@ -215,14 +215,16 @@ class Cluster:
 			return False
 		for image in self.imageToPull:
 			imagePrefix = f'{self.OCRegistry}{self.OCProjectName}'
-			imageTag = Get_Image_Tag(image, imagePrefix, self.ranCommitID, self.ranBranch, self.ranTargetBranch, self.ranAllowMerge)
-			ret = cmd.run(f'docker pull {imageTag}')
+			imageTag = cls_containerize.ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			ret = cmd.run(f'docker pull {imagePrefix}/{imageTag}')
 			if ret.returncode != 0:
 				logging.error(f'Could not pull {image} from local registry : {self.OCRegistry}')
 				OC_logout(cmd)
 				cmd.close()
 				HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
 				return False
+			cmd.run(f'docker tag {imagePrefix}/{imageTag} oai-ci/{imageTag}')
+			cmd.run(f'docker rmi {imagePrefix}/{imageTag}')
 		OC_logout(cmd)
 		cmd.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)

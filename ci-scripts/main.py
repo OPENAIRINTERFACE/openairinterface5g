@@ -38,12 +38,12 @@ import helpreadme as HELP
 import constants as CONST
 
 
-import cls_oaicitest	         #main class for OAI CI test framework
-import cls_physim	         #class PhySim for physical simulators build and test
+import cls_oaicitest		 #main class for OAI CI test framework
+import cls_physim		 #class PhySim for physical simulators build and test
 import cls_containerize	 #class Containerize for all container-based operations on RAN/UE objects
 import cls_static_code_analysis  #class for static code analysis
-import cls_physim1	         #class PhySim for physical simulators deploy and run
-import cls_cluster	         # class for building/deploying on cluster
+import cls_physim1		 #class PhySim for physical simulators deploy and run
+import cls_cluster		 # class for building/deploying on cluster
 
 import sshconnection 
 import epc
