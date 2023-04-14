@@ -36,20 +36,20 @@
 
 const char *duplex_mode[]={"FDD","TDD"};
 
-int tables_5_3_2[5][11] = {
-  {25, 52, 79, 106, 133, 160, 216, 270, -1, -1, -1}, // 15 FR1
-  {11, 24, 38, 51, 65, 78, 106, 133, 162, 217, 273}, // 30 FR1
-  {-1, 11, 18, 24, 31, 38, 51, 65, 79, 107, 135},    // 60 FR1
-  {66, 132, 264, -1 , -1, -1, -1, -1, -1, -1, -1},   // 60 FR2
-  {32, 66, 132, 264, -1, -1, -1, -1, -1, -1, -1}     // 120FR2
+int tables_5_3_2[5][12] = {
+  {25, 52, 79, 106, 133, 160, 216, 270, -1, -1, -1, -1}, // 15 FR1
+  {11, 24, 38, 51, 65, 78, 106, 133, 162, 217, 245, 273},// 30 FR1
+  {-1, 11, 18, 24, 31, 38, 51, 65, 79, 107, 121, 135},   // 60 FR1
+  {66, 132, 264, -1 , -1, -1, -1, -1, -1, -1, -1, -1},   // 60 FR2
+  {32, 66, 132, 264, -1, -1, -1, -1, -1, -1, -1, -1}     // 120FR2
 };
 
-int get_supported_band_index(int scs, int band, int n_rbs){
-
+int get_supported_band_index(int scs, int band, int n_rbs)
+{
   int scs_index = scs;
-  if (band>256)
+  if (band > 256)
     scs_index++;
-  for (int i=0; i<11; i++) {
+  for (int i = 0; i < 11; i++) {
     if(n_rbs == tables_5_3_2[scs][i])
       return i;
   }
@@ -129,6 +129,66 @@ const nr_bandentry_t nr_bandtable[] = {
   {261,27500040,28350000,27500040,28350000,  1,2070833,  60},
   {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
 };
+
+int get_supported_bw_khz(frequency_range_t frequency_range, int bw_index)
+{
+  if (frequency_range == FR1) {
+    switch (bw_index) {
+      case 0 :
+        return 5000; // 5MHz
+      case 1 :
+        return 10000;
+      case 2 :
+        return 15000;
+      case 3 :
+        return 20000;
+      case 4 :
+        return 25000;
+      case 5 :
+        return 30000;
+      case 6 :
+        return 40000;
+      case 7 :
+        return 50000;
+      case 8 :
+        return 60000;
+      case 9 :
+        return 80000;
+      case 10 :
+        return 90000;
+      case 11 :
+        return 100000;
+      default :
+        AssertFatal(false, "Invalid band index for FR1 %d\n", bw_index);
+    }
+  }
+  else {
+    switch (bw_index) {
+      case 0 :
+        return 50000; // 50MHz
+      case 1 :
+        return 100000;
+      case 2 :
+        return 200000;
+      case 3 :
+        return 400000;
+      default :
+        AssertFatal(false, "Invalid band index for FR2 %d\n", bw_index);
+    }
+  }
+}
+
+bool compare_relative_ul_channel_bw(int nr_band, int scs, int nb_ul, frame_type_t frame_type)
+{
+  // 38.101-1 section 6.2.2
+  // Relative channel bandwidth <= 4% for TDD bands and <= 3% for FDD bands
+  int index = get_nr_table_idx(nr_band, scs);
+  int bw_index = get_supported_band_index(scs, nr_band, nb_ul);
+  int band_size_khz = get_supported_bw_khz(nr_band > 256 ? FR2 : FR1, bw_index);
+  float limit = frame_type == TDD ? 0.04 : 0.03;
+  float rel_bw = (float) (2 * band_size_khz) / (float) (nr_bandtable[index].ul_max + nr_bandtable[index].ul_min);
+  return rel_bw <= limit;
+}
 
 uint16_t get_band(uint64_t downlink_frequency, int32_t delta_duplex)
 {

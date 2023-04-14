@@ -307,6 +307,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,
                            fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
+int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs, int N_RB_UL, bool is_transform_precoding, int n_prbs, int start_prb);
+
 /* Random Access */
 
 /* \brief This function schedules the PRACH according to prach_ConfigurationIndex and TS 38.211 tables 6.3.3.2.x
