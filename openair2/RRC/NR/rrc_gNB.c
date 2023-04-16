@@ -2284,11 +2284,12 @@ rrc_gNB_decode_dcch(
                                     ul_dcch_msg);
       }
 
-      if (UE->established_pdu_sessions_flag == 1) {
-        rrc_gNB_generate_dedicatedRRCReconfiguration(ctxt_pP, ue_context_p, NULL);
-      } else {
-        rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
-      }
+      // we send the UE capabilities request before RRC connection is complete,
+      // so we cannot have a PDU session yet
+      AssertFatal(UE->established_pdu_sessions_flag == 0, "logic bug: received capabilities while PDU session established\n");
+      // TODO: send UE context modification response with UE capabilities to
+      // allow DU configure CellGroupConfig
+      rrc_gNB_generate_defaultRRCReconfiguration(ctxt_pP, ue_context_p);
 
       break;
 
