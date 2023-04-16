@@ -641,17 +641,10 @@ void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_contex
 }
 
 //-----------------------------------------------------------------------------
-void
-rrc_gNB_generate_dedicatedRRCReconfiguration(
-    const protocol_ctxt_t     *const ctxt_pP,
-    rrc_gNB_ue_context_t      *ue_context_pP,
-    NR_CellGroupConfig_t      *cell_groupConfig_from_DU
-)
+void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP)
 //-----------------------------------------------------------------------------
 {
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  long drb_priority[NGAP_MAX_DRBS_PER_UE];
-  NR_CellGroupConfig_t *cellGroupConfig = NULL;
   int xid = -1;
 
   int drb_id_to_setup_start = 1;
@@ -682,7 +675,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     }
 
     xid = ue_p->pduSession[j].xid;
-    drb_priority[DRB_config->drb_Identity - 1] = 13; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
   }
 
   /* If list is empty free the list and reset the address */
@@ -691,20 +683,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     dedicatedNAS_MessageList = NULL;
   }
 
-  if(cell_groupConfig_from_DU == NULL){
-    cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities
-    fill_mastercellGroupConfig(cellGroupConfig,
-                               ue_p->masterCellGroup,
-                               rrc->um_on_default_drb,
-                               (drb_id_to_setup_start < 2) ? 1 : 0,
-                               DRB_configList,
-                               drb_priority);
-  }
-  else{
-    LOG_I(NR_RRC, "Master cell group originating from the DU \n");
-    cellGroupConfig = cell_groupConfig_from_DU;
-  }
+  NR_CellGroupConfig_t *cellGroupConfig = ue_p->masterCellGroup;
 
   AssertFatal(xid > -1, "Invalid xid %d. No PDU sessions setup to configure.\n", xid);
   NR_SRB_ToAddModList_t *SRB_configList2 = NULL;
@@ -2572,69 +2551,46 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
-  e1ap_bearer_setup_req_t req = {0};
-  req.numPDUSessionsMod = UE->nb_of_pdusessions;
-  req.gNB_cu_cp_ue_id = UE->gNB_ue_ngap_id;
-  req.rnti = UE->rnti;
-  for (int i=0; i < req.numPDUSessionsMod; i++) {
-    req.pduSessionMod[i].numDRB2Modify = resp->drbs_to_be_setup_length;
-    for (int j=0; j < resp->drbs_to_be_setup_length; j++) {
-      f1ap_drb_to_be_setup_t *drb_f1 = resp->drbs_to_be_setup + j;
-      DRB_nGRAN_to_setup_t *drb_e1 = req.pduSessionMod[i].DRBnGRanModList + j;
+  if (resp->drbs_to_be_setup_length > 0) {
+    e1ap_bearer_setup_req_t req = {0};
+    req.numPDUSessionsMod = UE->nb_of_pdusessions;
+    req.gNB_cu_cp_ue_id = UE->gNB_ue_ngap_id;
+    req.rnti = UE->rnti;
+    for (int i = 0; i < req.numPDUSessionsMod; i++) {
+      req.pduSessionMod[i].numDRB2Modify = resp->drbs_to_be_setup_length;
+      for (int j = 0; j < resp->drbs_to_be_setup_length; j++) {
+        f1ap_drb_to_be_setup_t *drb_f1 = resp->drbs_to_be_setup + j;
+        DRB_nGRAN_to_setup_t *drb_e1 = req.pduSessionMod[i].DRBnGRanModList + j;
 
-      drb_e1->id = drb_f1->drb_id;
-      drb_e1->numDlUpParam = drb_f1->up_dl_tnl_length;
-      drb_e1->DlUpParamList[0].tlAddress = drb_f1->up_dl_tnl[0].tl_address;
-      drb_e1->DlUpParamList[0].teId = drb_f1->up_dl_tnl[0].teid;
-    }
-  }
-
-  // send the F1 response message up to update F1-U tunnel info
-  // it seems the rrc transaction id (xid) is not needed here
-  rrc->cucp_cuup.bearer_context_mod(&req, instance, 0);
-
-  NR_CellGroupConfig_t *cellGroupConfig = NULL;
-
-  if(resp->du_to_cu_rrc_information->cellGroupConfig!=NULL){
-    asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-      &asn_DEF_NR_CellGroupConfig,
-      (void **)&cellGroupConfig,
-      (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
-      (int) resp->du_to_cu_rrc_information->cellGroupConfig_length);
-
-    if((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-      AssertFatal(1==0,"Cell group config decode error\n");
-      // free the memory
-      SEQUENCE_free( &asn_DEF_NR_CellGroupConfig, cellGroupConfig, 1 );
-      return;
-    }
-    //xer_fprint(stdout,&asn_DEF_NR_CellGroupConfig, cellGroupConfig);
-
-    if (UE->masterCellGroup == NULL) {
-      UE->masterCellGroup = calloc(1, sizeof(NR_CellGroupConfig_t));
-    }
-
-    if(cellGroupConfig->rlc_BearerToAddModList!=NULL){
-      if (UE->masterCellGroup->rlc_BearerToAddModList != NULL) {
-        int ue_ctxt_rlc_Bearers = UE->masterCellGroup->rlc_BearerToAddModList->list.count;
-        for(int i=ue_ctxt_rlc_Bearers; i<ue_ctxt_rlc_Bearers + cellGroupConfig->rlc_BearerToAddModList->list.count; i++){
-          asn1cSeqAdd(&UE->masterCellGroup->rlc_BearerToAddModList->list, cellGroupConfig->rlc_BearerToAddModList->list.array[i - ue_ctxt_rlc_Bearers]);
-        }
-      } else {
-        LOG_W(NR_RRC, "Empty rlc_BearerToAddModList at ue_context of the CU before filling the updates from UE context setup response \n");
-        UE->masterCellGroup->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
-        memcpy(UE->masterCellGroup->rlc_BearerToAddModList, cellGroupConfig->rlc_BearerToAddModList, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
+        drb_e1->id = drb_f1->drb_id;
+        drb_e1->numDlUpParam = drb_f1->up_dl_tnl_length;
+        drb_e1->DlUpParamList[0].tlAddress = drb_f1->up_dl_tnl[0].tl_address;
+        drb_e1->DlUpParamList[0].teId = drb_f1->up_dl_tnl[0].teid;
       }
     }
-    LOG_I(NR_RRC, "Updated master cell group configuration stored at the UE context of the CU:\n");
-    if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
-      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
+
+    // send the F1 response message up to update F1-U tunnel info
+    // it seems the rrc transaction id (xid) is not needed here
+    rrc->cucp_cuup.bearer_context_mod(&req, instance, 0);
+  }
+
+  if (resp->du_to_cu_rrc_information != NULL && resp->du_to_cu_rrc_information->cellGroupConfig != NULL) {
+    LOG_W(RRC, "UE context modification response contains new CellGroupConfig for UE %04x, triggering reconfiguration\n", UE->rnti);
+    NR_CellGroupConfig_t *cellGroupConfig = NULL;
+    asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                   &asn_DEF_NR_CellGroupConfig,
+                                                   (void **)&cellGroupConfig,
+                                                   (uint8_t *)resp->du_to_cu_rrc_information->cellGroupConfig,
+                                                   resp->du_to_cu_rrc_information->cellGroupConfig_length);
+    AssertFatal(dec_rval.code == RC_OK && dec_rval.consumed > 0, "Cell group config decode error\n");
+
+    if (UE->masterCellGroup) {
+      ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
+      LOG_I(RRC, "UE %04x replacing existing CellGroupConfig with new one received from DU\n", UE->rnti);
     }
+    UE->masterCellGroup = cellGroupConfig;
 
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, cellGroupConfig);
-
-    free(cellGroupConfig->rlc_BearerToAddModList);
-    free(cellGroupConfig);
+    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
   }
 }
 
@@ -2817,46 +2773,49 @@ int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
   return 0;
 }
 
-void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p,
-                                                 e1ap_bearer_setup_resp_t *e1ap_resp) {
+void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p, e1ap_bearer_setup_resp_t *e1ap_resp)
+{
+  /* Generate a UE context modification request message towards the DU to
+   * instruct the DU for SRB2 and DRB configuration and get the updates on
+   * master cell group config from the DU*/
 
-  /*Generate a UE context modification request message towards the DU to instruct the DU
-   *for SRB2 and DRB configuration and get the updates on master cell group config from the DU*/
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
-  protocol_ctxt_t ctxt = {0};
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, UE->rnti, 0, 0, 0);
-  // TODO: So many hard codings
-  MessageDef *message_p;
-  message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
-  f1ap_ue_context_modif_req_t *req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(message_p);
-  req->rnti = UE->rnti;
-  req->mcc              = RC.nrrrc[ctxt.module_id]->configuration.mcc[0];
-  req->mnc              = RC.nrrrc[ctxt.module_id]->configuration.mnc[0];
-  req->mnc_digit_length = RC.nrrrc[ctxt.module_id]->configuration.mnc_digit_length[0];
-  req->nr_cellid        = RC.nrrrc[ctxt.module_id]->nr_cellid;
-
-  /*Instruction towards the DU for SRB2 configuration*/
-  req->srbs_to_be_setup = malloc(1*sizeof(f1ap_srb_to_be_setup_t));
-  req->srbs_to_be_setup_length = 1;
-  f1ap_srb_to_be_setup_t *SRBs=req->srbs_to_be_setup;
-  SRBs[0].srb_id = 2;
-  SRBs[0].lcid = 2;
-
-  /*Instruction towards the DU for DRB configuration and tunnel creation*/
-  req->drbs_to_be_setup_length = e1ap_resp->pduSession[0].numDRBSetup;
-  req->drbs_to_be_setup = malloc(1*sizeof(f1ap_drb_to_be_setup_t)*req->drbs_to_be_setup_length);
-  for (int i=0; i < e1ap_resp->pduSession[0].numDRBSetup; i++) {
-    f1ap_drb_to_be_setup_t *DRBs =  req->drbs_to_be_setup + i;
-    DRBs[i].drb_id = e1ap_resp->pduSession[0].DRBnGRanList[i].id;
-    DRBs[i].rlc_mode = RLC_MODE_AM;
-    DRBs[i].up_ul_tnl[0].tl_address = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].tlAddress;
-    DRBs[i].up_ul_tnl[0].port = RC.nrrrc[ctxt.module_id]->eth_params_s.my_portd;
-    DRBs[i].up_ul_tnl[0].teid = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
-    DRBs[i].up_ul_tnl_length = 1;
+  /* Instruction towards the DU for DRB configuration and tunnel creation */
+  int nb_drb = e1ap_resp->pduSession[0].numDRBSetup;
+  f1ap_drb_to_be_setup_t drbs[nb_drb];
+  for (int i = 0; i < nb_drb; i++) {
+    drbs[i].drb_id = e1ap_resp->pduSession[0].DRBnGRanList[i].id;
+    drbs[i].rlc_mode = rrc->um_on_default_drb ? RLC_MODE_UM : RLC_MODE_AM;
+    drbs[i].up_ul_tnl[0].tl_address = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].tlAddress;
+    drbs[i].up_ul_tnl[0].port = rrc->eth_params_s.my_portd;
+    drbs[i].up_ul_tnl[0].teid = e1ap_resp->pduSession[0].DRBnGRanList[i].UpParamList[0].teId;
+    drbs[i].up_ul_tnl_length = 1;
   }
 
-  itti_send_msg_to_task (TASK_CU_F1, ctxt.module_id, message_p);
+  /* Instruction towards the DU for SRB2 configuration */
+  int nb_srb = 1;
+  f1ap_srb_to_be_setup_t srbs[nb_srb];
+  srbs[0].srb_id = 2;
+  srbs[0].lcid = 2;
+  srbs[0].rlc_mode = RLC_MODE_AM;
+
+  f1ap_ue_context_modif_req_t ue_context_modif_req = {
+    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .rnti = UE->rnti,
+    .mcc = rrc->configuration.mcc[0],
+    .mnc = rrc->configuration.mnc[0],
+    .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+    .nr_cellid = rrc->nr_cellid,
+    .servCellId = 0, /* TODO: correct value? */
+    .srbs_to_be_setup_length = nb_srb,
+    .srbs_to_be_setup = srbs,
+    .drbs_to_be_setup_length = nb_drb,
+    .drbs_to_be_setup = drbs,
+  };
+  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
 }
 
 void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp, instance_t instance) {
