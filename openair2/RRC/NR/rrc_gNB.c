@@ -363,7 +363,6 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
   // remove UE after 10 frames after RRCConnectionRelease is triggered
   ue_context_pP->ue_context.ue_release_timer_thres = 1000;
 
-  /* TODO: this should go through the E1 interface */
   nr_pdcp_add_srbs(true, rnti, ue_context_pP->ue_context.SRB_configList, 0, NULL, NULL);
 
   f1ap_dl_rrc_message_t dl_rrc = {
