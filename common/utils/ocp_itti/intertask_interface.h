@@ -64,6 +64,9 @@ typedef struct itti_lte_time_s {
 
 
 typedef struct IttiMsgEmpty_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } IttiMsgEmpty;
 
 typedef struct IttiMsgText_s {

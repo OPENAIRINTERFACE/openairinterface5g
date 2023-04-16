@@ -255,7 +255,6 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
                 pdu_0_1->ul_cqi = 255;
                 pdu_0_1->timing_advance = 0;
                 pdu_0_1->rssi = 0;
-
                 if (mac->nr_ue_emul_l1.num_harqs > 0) {
                   int harq_index = 0;
                   pdu_0_1->pduBitmap = 2; // (value->pduBitmap >> 1) & 0x01) == HARQ and (value->pduBitmap) & 0x01) == SR

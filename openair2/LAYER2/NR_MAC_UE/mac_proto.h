@@ -197,10 +197,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
                                          frame_t frame,
                                          int slot);
 
-uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
-                                frame_t frame,
-                                int slot,
-                                PUCCH_sched_t *pucch);
+int nr_get_csi_measurements(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch);
 
 uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
                              PUCCH_sched_t *pucch,
@@ -276,49 +273,41 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t dai,
                      int n_CCE,
                      int N_CCE,
-                     int is_common,
                      frame_t frame,
                      int slot);
 
-uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
-                         frame_t frame,
-                         int slot,
-                         PUCCH_sched_t *pucch);
+bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch);
 
 int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size);
 
-void select_pucch_resource(NR_UE_MAC_INST_t *mac,
-                           PUCCH_sched_t *pucch);
+void multiplex_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, int num_res);
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
                               int scs,
                               NR_PUCCH_Config_t *pucch_Config,
-                              PUCCH_sched_t *pucch,
+                              int delta_pucch,
                               uint8_t format_type,
                               uint16_t nb_of_prbs,
-                              uint8_t  freq_hop_flag,
-                              uint8_t  add_dmrs_flag,
+                              uint8_t freq_hop_flag,
+                              uint8_t add_dmrs_flag,
                               uint8_t N_symb_PUCCH,
                               int subframe_number,
-                              int O_ACK, int O_SR,
-                              int O_CSI, int O_CRC);
+                              int O_uci);
 
 int get_deltatf(uint16_t nb_of_prbs,
                 uint8_t N_symb_PUCCH,
                 uint8_t freq_hop_flag,
                 uint8_t add_dmrs_flag,
                 int N_sc_ctrl_RB,
-                int n_HARQ_ACK,
-                int O_ACK, int O_SR,
-                int O_CSI, int O_CRC);
+                int O_UCI);
 
 void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
                            PUCCH_sched_t *pucch,
-                           fapi_nr_ul_config_pucch_pdu *pucch_pdu,
-                           int O_SR, int O_ACK, int O_CSI);
+                           fapi_nr_ul_config_pucch_pdu *pucch_pdu);
 
+int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs, int N_RB_UL, bool is_transform_precoding, int n_prbs, int start_prb);
 
 /* Random Access */
 

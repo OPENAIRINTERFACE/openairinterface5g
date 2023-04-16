@@ -84,17 +84,7 @@ int nr_rlc_get_available_tx_space(const rnti_t rntiP, const logical_chan_id_t ch
   return 0;
 }
 
-void nr_rlc_bearer_init(NR_RLC_BearerConfig_t *RLC_BearerConfig, NR_RLC_BearerConfig__servedRadioBearer_PR rb_type)
-{
-  abort();
-}
-
 void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, NR_CellGroupConfig_t *cell_groupConfig_from_DU)
-{
-  abort();
-}
-
-void nr_rlc_bearer_init_ul_spec(struct NR_LogicalChannelConfig *mac_LogicalChannelConfig)
 {
   abort();
 }
@@ -108,11 +98,6 @@ int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ct
 {
   abort();
   return 0;
-}
-
-void nr_drb_config(struct NR_RLC_Config *rlc_Config, NR_RLC_Config_PR rlc_config_pr)
-{
-  abort();
 }
 
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p, e1ap_bearer_setup_resp_t *e1ap_resp)

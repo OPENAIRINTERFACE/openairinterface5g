@@ -41,13 +41,13 @@
 /*   optname                     helpstr                paramflags        XXXptr                      defXXXval           type      numelt  */
 /*------------------------------------------------------------------------------------------------------------------------------------------*/
 #define CMDLINE_UEMODEPARAMS_DESC {  \
-    {"calib-ue-rx",              CONFIG_HLP_CALUER,     0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"calib-ue-rx-med",          CONFIG_HLP_CALUERM,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"calib-ue-rx-byp",          CONFIG_HLP_CALUERB,    0,                iptr:&rx_input_level_dBm,   defintval:0,        TYPE_INT,   0},    \
-    {"debug-ue-prach",           CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"no-L2-connect",            CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"calib-prach-tx",           CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   uptr:NULL,                  defuintval:1,       TYPE_INT,   0},    \
-    {"ue-dump-frame",            CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   iptr:&dumpframe,            defintval:0,        TYPE_INT,   0},    \
+    {"calib-ue-rx",              CONFIG_HLP_CALUER,     0,                .iptr=&rx_input_level_dBm,   .defintval=0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-med",          CONFIG_HLP_CALUERM,    0,                .iptr=&rx_input_level_dBm,   .defintval=0,        TYPE_INT,   0},    \
+    {"calib-ue-rx-byp",          CONFIG_HLP_CALUERB,    0,                .iptr=&rx_input_level_dBm,   .defintval=0,        TYPE_INT,   0},    \
+    {"debug-ue-prach",           CONFIG_HLP_DBGUEPR,    PARAMFLAG_BOOL,   .uptr=NULL,                  .defuintval=1,       TYPE_INT,   0},    \
+    {"no-L2-connect",            CONFIG_HLP_NOL2CN,     PARAMFLAG_BOOL,   .uptr=NULL,                  .defuintval=1,       TYPE_INT,   0},    \
+    {"calib-prach-tx",           CONFIG_HLP_CALPRACH,   PARAMFLAG_BOOL,   .uptr=NULL,                  .defuintval=1,       TYPE_INT,   0},    \
+    {"ue-dump-frame",            CONFIG_HLP_DUMPFRAME,  PARAMFLAG_BOOL,   .iptr=&dumpframe,            .defintval=0,        TYPE_INT,   0},    \
   }
 #define CMDLINE_CALIBUERX_IDX                   0
 #define CMDLINE_CALIBUERXMED_IDX                1
@@ -90,25 +90,25 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------*/
 // clang-format off
 #define CMDLINE_UEPARAMS_DESC {  \
-    {"U",                 CONFIG_HLP_NUMUE,       0,               iptr:&NB_UE_INST,                   defuintval:1,         TYPE_INT,      0},   \
-    {"ue-rxgain",         CONFIG_HLP_UERXG,       0,               dblptr:&(rx_gain[0][0]),            defdblval:130,        TYPE_DOUBLE,   0},   \
-    {"ue-rxgain-off",     CONFIG_HLP_UERXGOFF,    0,               dblptr:&rx_gain_off,                defdblval:0,          TYPE_DOUBLE,   0},   \
-    {"ue-txgain",         CONFIG_HLP_UETXG,       0,               dblptr:&(tx_gain[0][0]),            defdblval:0,          TYPE_DOUBLE,   0},   \
-    {"ue-nb-ant-rx",      CONFIG_HLP_UENANTR,     0,               u8ptr:&nb_antenna_rx,               defuintval:1,         TYPE_UINT8,    0},   \
-    {"ue-nb-ant-tx",      CONFIG_HLP_UENANTT,     0,               u8ptr:&nb_antenna_tx,               defuintval:1,         TYPE_UINT8,    0},   \
-    {"ue-scan-carrier",   CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  iptr:&UE_scan_carrier,              defintval:0,          TYPE_INT,      0},   \
-    {"ue-max-power",      NULL,                   0,               iptr:&(tx_max_power[0]),            defintval:23,         TYPE_INT,      0},   \
-    {"emul-iface",        CONFIG_HLP_EMULIFACE,   0,               strptr:&emul_iface,                 defstrval:"lo",       TYPE_STRING, 100},   \
-    {"L2-emul",           NULL,                   0,               u8ptr:&nfapi_mode,                  defuintval:3,         TYPE_UINT8,    0},   \
-    {"num-ues",           NULL,                   0,               iptr:&(NB_UE_INST),                 defuintval:1,         TYPE_INT,      0},   \
-    {"r"  ,               CONFIG_HLP_PRB,         0,               u8ptr:&(frame_parms[0]->N_RB_DL),   defintval:25,         TYPE_UINT8,    0},   \
-    {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               iptr:(int32_t *)&dlsch_demod_shift, defintval:0,          TYPE_INT,      0},   \
-    {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               strptr:&usrp_args,         defstrval:"type=b200",TYPE_STRING,   0},   \
-    {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  uptr:&mmapped_dma,                  defintval:0,          TYPE_INT,      0},   \
-    {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  iptr:&tddflag,                      defintval:0,          TYPE_INT,      0},   \
-    {"A",                 CONFIG_HLP_TADV,        0,               iptr:&(timingadv),                  defintval:0,          TYPE_INT,      0},   \
-    {"ue-idx-standalone", NULL,                   0,               u16ptr:&ue_idx_standalone,          defuintval:0xFFFF,    TYPE_UINT16,   0},   \
-    {"node-number",       NULL,                   0,               u16ptr:&node_number,                defuintval:2,         TYPE_UINT16,   0},   \
+    {"U",                 CONFIG_HLP_NUMUE,       0,               .iptr=&NB_UE_INST,                   .defuintval=1,         TYPE_INT,      0},   \
+    {"ue-rxgain",         CONFIG_HLP_UERXG,       0,               .dblptr=&(rx_gain[0][0]),            .defdblval=130,        TYPE_DOUBLE,   0},   \
+    {"ue-rxgain-off",     CONFIG_HLP_UERXGOFF,    0,               .dblptr=&rx_gain_off,                .defdblval=0,          TYPE_DOUBLE,   0},   \
+    {"ue-txgain",         CONFIG_HLP_UETXG,       0,               .dblptr=&(tx_gain[0][0]),            .defdblval=0,          TYPE_DOUBLE,   0},   \
+    {"ue-nb-ant-rx",      CONFIG_HLP_UENANTR,     0,               .u8ptr=&nb_antenna_rx,               .defuintval=1,         TYPE_UINT8,    0},   \
+    {"ue-nb-ant-tx",      CONFIG_HLP_UENANTT,     0,               .u8ptr=&nb_antenna_tx,               .defuintval=1,         TYPE_UINT8,    0},   \
+    {"ue-scan-carrier",   CONFIG_HLP_UESCAN,      PARAMFLAG_BOOL,  .iptr=&UE_scan_carrier,              .defintval=0,          TYPE_INT,      0},   \
+    {"ue-max-power",      NULL,                   0,               .iptr=&(tx_max_power[0]),            .defintval=23,         TYPE_INT,      0},   \
+    {"emul-iface",        CONFIG_HLP_EMULIFACE,   0,               .strptr=&emul_iface,                 .defstrval="lo",       TYPE_STRING, 100},   \
+    {"L2-emul",           NULL,                   0,               .u8ptr=&nfapi_mode,                  .defuintval=3,         TYPE_UINT8,    0},   \
+    {"num-ues",           NULL,                   0,               .iptr=&(NB_UE_INST),                 .defuintval=1,         TYPE_INT,      0},   \
+    {"r"  ,               CONFIG_HLP_PRB,         0,               .u8ptr=&(frame_parms[0]->N_RB_DL),   .defintval=25,         TYPE_UINT8,    0},   \
+    {"dlsch-demod-shift", CONFIG_HLP_DLSHIFT,     0,               .iptr=(int32_t *)&dlsch_demod_shift, .defintval=0,          TYPE_INT,      0},   \
+    {"usrp-args",         CONFIG_HLP_USRP_ARGS,   0,               .strptr=&usrp_args,         .defstrval="type=b200",TYPE_STRING,   0},   \
+    {"mmapped-dma",       CONFIG_HLP_DMAMAP,      PARAMFLAG_BOOL,  .uptr=&mmapped_dma,                  .defintval=0,          TYPE_INT,      0},   \
+    {"T" ,                CONFIG_HLP_TDD,         PARAMFLAG_BOOL,  .iptr=&tddflag,                      .defintval=0,          TYPE_INT,      0},   \
+    {"A",                 CONFIG_HLP_TADV,        0,               .iptr=&(timingadv),                  .defintval=0,          TYPE_INT,      0},   \
+    {"ue-idx-standalone", NULL,                   0,               .u16ptr=&ue_idx_standalone,          .defuintval=0xFFFF,    TYPE_UINT16,   0},   \
+    {"node-number",       NULL,                   0,               .u16ptr=&node_number,                .defuintval=2,         TYPE_UINT16,   0},   \
   }
 // clang-format on
 

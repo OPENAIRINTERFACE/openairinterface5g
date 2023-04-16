@@ -35,6 +35,9 @@
 #include "common/ran_context.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
 #include "intertask_interface.h"
 
@@ -47,12 +50,17 @@
 
 extern RAN_CONTEXT_t RC;
 
+void nr_rrc_mac_remove_ue(rnti_t rntiMaybeUEid)
+{
+  nr_rlc_remove_ue(rntiMaybeUEid);
 
-int
-nr_rrc_mac_remove_ue(module_id_t mod_idP,
-                  rnti_t rntiP){
-  // todo
-  return 0;
+  gNB_MAC_INST *nrmac = RC.nrmac[0];
+  mac_remove_nr_ue(nrmac, rntiMaybeUEid);
+}
+
+void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc)
+{
+  nr_mac_update_cellgroup(RC.nrmac[0], rntiMaybeUEid, cgc);
 }
 
 uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
@@ -69,30 +77,15 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   // MIBCH
   if ((Srb_id & RAB_OFFSET) == MIBCH) {
 
-    asn_enc_rval_t enc_rval;
-    uint8_t sfn_msb = (uint8_t)((frameP>>4)&0x3f);
+    int encode_size = 3;
     rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
-    NR_BCCH_BCH_Message_t *mib = &carrier->mib;
-
-    mib->message.choice.mib->systemFrameNumber.buf[0] = sfn_msb << 2;
-    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_BCCH_BCH_Message,
-                                     NULL,
-                                     (void *) mib,
-                                     carrier->MIB,
-                                     24);
-    LOG_D(NR_RRC, "Encoded MIB for frame %d sfn_msb %d (%p), bits %lu\n", frameP, sfn_msb, carrier->MIB,
-          enc_rval.encoded);
-    buffer_pP[0] = carrier->MIB[0];
-    buffer_pP[1] = carrier->MIB[1];
-    buffer_pP[2] = carrier->MIB[2];
+    int encoded = encode_MIB_NR(carrier->mib, frameP, buffer_pP, encode_size);
+    DevAssert(encoded == encode_size);
     LOG_D(NR_RRC, "MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n", buffer_pP[0], buffer_pP[1],
           buffer_pP[2]);
-    AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-                 enc_rval.failed_type->name, enc_rval.encoded);
-    return 3;
+    return encode_size;
   }
 
-  // TODO BCCH SIB1 SIBs
   if ((Srb_id & RAB_OFFSET) == BCCH) {
     memcpy(&buffer_pP[0], RC.nrrrc[Mod_idP]->carrier.SIB1, RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1);
     return RC.nrrrc[Mod_idP]->carrier.sizeof_SIB1;

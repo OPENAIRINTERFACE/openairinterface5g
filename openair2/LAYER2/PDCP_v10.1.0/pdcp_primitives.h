@@ -102,16 +102,6 @@ typedef struct {
 #define PDCP_CONTROL_PDU_STATUS_REPORT_HEADER_SIZE 2
 
 /*
- * Parses data/control field out of buffer of User Plane PDCP Data PDU with
- * long PDCP SN (12-bit)
- *
- * @param pdu_buffer PDCP PDU buffer
- * @return 1 bit dc
- */
-
-uint8_t pdcp_get_dc_filed(unsigned char* pdu_buffer);
-
-/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *

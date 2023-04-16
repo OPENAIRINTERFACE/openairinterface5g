@@ -171,7 +171,7 @@ int64_t *get_prach_config_info(frequency_range_t freq_range,
                                uint8_t unpaired);
 
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
-
+int compute_pucch_crc_size(int O_uci);
 uint8_t get_l0_ul(uint8_t mapping_type, uint8_t dmrs_typeA_position);
 int32_t get_l_prime(uint8_t duration_in_symbols, uint8_t mapping_type, pusch_dmrs_AdditionalPosition_t additional_pos, pusch_maxLength_t pusch_maxLength, uint8_t start_symbolt, uint8_t dmrs_typeA_position);
 
@@ -238,8 +238,7 @@ uint8_t get_pusch_nb_antenna_ports(NR_PUSCH_Config_t *pusch_Config,
 
 uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
+                                uint16_t O_uci,
                                 NR_PUCCH_MaxCodeRate_t *maxCodeRate,
                                 uint8_t Qm,
                                 uint8_t n_symb,

@@ -691,7 +691,7 @@ void RCconfig_nr_prs(void)
   }
   else
   {
-    LOG_E(PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found..!!\n");
+    LOG_I(PHY,"No " CONFIG_STRING_PRS_CONFIG " configuration found..!!\n");
   }
 }
 
@@ -1896,8 +1896,12 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         f1Setup->measurement_timing_information[k]             = "0";
         f1Setup->ranac[k]                                      = 0;
-        f1Setup->mib[k]                                        = rrc->carrier.MIB;
-        f1Setup->mib_length[k]                                 = rrc->carrier.sizeof_MIB;
+        DevAssert(rrc->carrier.mib != NULL);
+        int buf_len = 3; // this is what we assume in monolithic
+        f1Setup->mib[k]                                        = calloc(buf_len, sizeof(*f1Setup->mib[k]));
+        DevAssert(f1Setup->mib[k] != NULL);
+        f1Setup->mib_length[k]                                 = encode_MIB_NR(rrc->carrier.mib, 0, f1Setup->mib[k], buf_len);
+        DevAssert(f1Setup->mib_length[k] == buf_len);
 
         NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
         asn_codec_ctx_t st={100*1000};

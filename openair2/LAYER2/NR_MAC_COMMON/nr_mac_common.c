@@ -4651,29 +4651,32 @@ void find_period_offset_SR(const NR_SchedulingRequestResourceConfig_t *Schedulin
   }
 }
 
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_tot,
-                                uint16_t O_csi,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl) {
-
-  uint16_t O_crc;
-
-  if (O_tot<12)
-    O_crc = 0;
+int compute_pucch_crc_size(int O_uci)
+{
+  if (O_uci < 12)
+    return 0;
   else{
-    if (O_tot<20)
-      O_crc = 6;
+    if (O_uci < 20)
+      return 6;
     else {
-      if (O_tot<360)
-        O_crc = 11;
+      if (O_uci < 360)
+        return 11;
       else
         AssertFatal(1==0,"Case for segmented PUCCH not yet implemented");
     }
   }
+}
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_uci,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl)
+{
+  int O_crc = compute_pucch_crc_size(O_uci);
+  int O_tot = O_uci + O_crc;
 
   int rtimes100;
   switch(*maxCodeRate){
@@ -4704,25 +4707,27 @@ uint16_t compute_pucch_prb_size(uint8_t format,
 
   float r = (float)rtimes100/100;
 
-  if (O_csi == O_tot) {
-    if ((O_tot+O_csi)>(nr_prbs*n_re_ctrl*n_symb*Qm*r))
-      AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
-                  r,O_tot,O_crc,nr_prbs);
-  }
+  AssertFatal(O_tot <= (nr_prbs * n_re_ctrl * n_symb * Qm * r),
+              "MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
+              r,
+              O_tot,
+              O_crc,
+              nr_prbs);
 
   if (format==2){
     // TODO fix this for multiple CSI reports
-    for (int i=1; i<=nr_prbs; i++){
-      if((O_tot+O_crc)<=(i*n_symb*Qm*n_re_ctrl*r) &&
-         (O_tot+O_crc)>((i-1)*n_symb*Qm*n_re_ctrl*r))
+    for (int i = nr_prbs; i > 0; i--) {
+      // compute code rate factor for next prb value
+      int next_prb_factor = (i - 1) * n_symb * Qm * n_re_ctrl * r;
+      // if it does not sa
+      if (O_tot > next_prb_factor)
         return i;
     }
-    AssertFatal(1==0,"MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with at most %d PRBs",
-                r,O_tot,O_crc,nr_prbs);
   }
   else{
     AssertFatal(1==0,"Not yet implemented");
   }
+  return 0;
 }
 
 int get_dlbw_tbslbrm(int scc_bwpsize,

@@ -1275,7 +1275,6 @@ void nr_schedule_ue_spec(module_id_t module_id,
           header->LCID = DL_SCH_LCID_PADDING;
           buf += sizeof(NR_MAC_SUBHEADER_LONG);
           header->L = htons(bufEnd-buf);
-          dlsch_total_bytes += bufEnd-buf;
 
           for (; ((intptr_t)buf) % 4; buf++)
             *buf = lrand48() & 0xff;
@@ -1306,6 +1305,7 @@ void nr_schedule_ue_spec(module_id_t module_id,
       UE->mac_stats.dl.total_rbs += sched_pdsch->rbSize;
       UE->mac_stats.dl.num_mac_sdu += sdus;
       UE->mac_stats.dl.current_rbs = sched_pdsch->rbSize;
+      UE->mac_stats.dl.total_sdu_bytes += dlsch_total_bytes;
 
       /* save retransmission information */
       harq->sched_pdsch = *sched_pdsch;

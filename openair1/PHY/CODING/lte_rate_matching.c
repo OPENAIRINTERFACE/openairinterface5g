@@ -174,7 +174,7 @@ uint32_t sub_block_interleaving_cc(uint32_t D, uint8_t *d,uint8_t *w) {
 
 void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
   uint32_t RTC = (D>>5), ND, ND3;
-  uint32_t row,col,Kpi,index;
+  uint32_t row,col,Kpi;
   uint32_t index3,k,k2;
   int16_t *d1,*d2,*d3;
 
@@ -200,7 +200,6 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
 #ifdef RM_DEBUG2
     printf("Col %d\n",col);
 #endif
-    index = bitrev[col];
     index3 = bitrev_x3[col];//3*index;
 
     for (row=0; row<RTC; row++) {
@@ -208,7 +207,6 @@ void sub_block_deinterleaving_turbo(uint32_t D,int16_t *d,int16_t *w) {
       d2[index3]   = w[Kpi+k2];
       d3[index3]   = w[Kpi+1+k2];
       index3+=96;
-      index+=32;
       k++;
       k2++;
       k2++;

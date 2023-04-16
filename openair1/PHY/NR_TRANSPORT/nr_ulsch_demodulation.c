@@ -1468,21 +1468,21 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
   _m_empty();
 }
 
-/* Zero Forcing Rx function: nr_ulsch_zero_forcing_rx_2layers()
- *
- *
- * */
-uint8_t nr_ulsch_zero_forcing_rx_2layers(NR_DL_FRAME_PARMS *frame_parms,
-                                         int **rxdataF_comp,
-                                         int **ul_ch_mag,
-                                         int **ul_ch_magb,
-                                         int **ul_ch_estimates_ext,
-                                         unsigned short nb_rb,
-                                         unsigned char n_rx,
-                                         unsigned char mod_order,
-                                         int shift,
-                                         unsigned char symbol,
-                                         int length)
+/*
+ * MMSE Rx function: nr_ulsch_mmse_2layers()
+ */
+uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
+                              int **rxdataF_comp,
+                              int **ul_ch_mag,
+                              int **ul_ch_magb,
+                              int **ul_ch_estimates_ext,
+                              unsigned short nb_rb,
+                              unsigned char n_rx,
+                              unsigned char mod_order,
+                              int shift,
+                              unsigned char symbol,
+                              int length,
+                              uint32_t noise_var)
 {
   int *ch00, *ch01, *ch10, *ch11;
   int *ch20, *ch30, *ch21, *ch31;
@@ -1702,6 +1702,20 @@ uint8_t nr_ulsch_zero_forcing_rx_2layers(NR_DL_FRAME_PARMS *frame_parms,
                               nb_rb_0,
                               symbol);
   }
+
+  // Add noise_var such that: H^h * H + noise_var * I
+  if (noise_var != 0) {
+    __m128i nvar_128i = simde_mm_set1_epi32(noise_var);
+    __m128i *af_mf_00_128i = (__m128i *)af_mf_00;
+    __m128i *af_mf_11_128i = (__m128i *)af_mf_11;
+    for (int k = 0; k < 3 * nb_rb_0; k++) {
+      af_mf_00_128i[0] = simde_mm_add_epi32(af_mf_00_128i[0], nvar_128i);
+      af_mf_11_128i[0] = simde_mm_add_epi32(af_mf_11_128i[0], nvar_128i);
+      af_mf_00_128i++;
+      af_mf_11_128i++;
+    }
+  }
+
   //det_HhH = ad -bc
   nr_ulsch_det_HhH(af_mf_00,//a
              af_mf_01,//b
@@ -1867,6 +1881,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   //----------------------------------------------------------
   start_meas(&gNB->ulsch_channel_estimation_stats);
   int max_ch = 0;
+  uint32_t nvar = 0;
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
     uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
     LOG_D(PHY, "symbol %d, dmrs_symbol_flag :%d\n", symbol, dmrs_symbol_flag);
@@ -1876,7 +1891,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
         pusch_vars->dmrs_symbol = symbol;
 
       for (int nl=0; nl<rel15_ul->nrOfLayers; nl++) {
-        
+        uint32_t nvar_tmp = 0;
         nr_pusch_channel_estimation(gNB,
                                     slot,
                                     get_dmrs_port(nl,rel15_ul->dmrs_ports),
@@ -1884,7 +1899,9 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                                     ulsch_id,
                                     bwp_start_subcarrier,
                                     rel15_ul,
-                                    &max_ch);
+                                    &max_ch,
+                                    &nvar_tmp);
+        nvar += nvar_tmp;
       }
 
       nr_gnb_measurements(gNB, ulsch, pusch_vars, symbol, rel15_ul->nrOfLayers);
@@ -1914,6 +1931,8 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       }
     }
   }
+
+  nvar /= (rel15_ul->nr_of_symbols * rel15_ul->nrOfLayers * frame_parms->nb_antennas_rx);
 
   if (gNB->chest_time == 1) { // averaging time domain channel estimates
     nr_chest_time_domain_avg(frame_parms,
@@ -2039,19 +2058,20 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                              rel15_ul->rb_size,
                              nb_re_pusch);
 
-      //Apply zero forcing for 2 Tx layers
+      // Apply MMSE for 2 Tx layers
       if (rel15_ul->nrOfLayers == 2) {
-        nr_ulsch_zero_forcing_rx_2layers(frame_parms,
-                                         pusch_vars->rxdataF_comp,
-                                         pusch_vars->ul_ch_mag0,
-                                         pusch_vars->ul_ch_magb0,
-                                         pusch_vars->ul_ch_estimates_ext,
-                                         rel15_ul->rb_size,
-                                         frame_parms->nb_antennas_rx,
-                                         rel15_ul->qam_mod_order,
-                                         pusch_vars->log2_maxh,
-                                         symbol,
-                                         nb_re_pusch);
+        nr_ulsch_mmse_2layers(frame_parms,
+                              pusch_vars->rxdataF_comp,
+                              pusch_vars->ul_ch_mag0,
+                              pusch_vars->ul_ch_magb0,
+                              pusch_vars->ul_ch_estimates_ext,
+                              rel15_ul->rb_size,
+                              frame_parms->nb_antennas_rx,
+                              rel15_ul->qam_mod_order,
+                              pusch_vars->log2_maxh,
+                              symbol,
+                              nb_re_pusch,
+                              nvar);
       }
 
       stop_meas(&gNB->ulsch_mrc_stats);

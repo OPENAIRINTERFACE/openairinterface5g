@@ -43,16 +43,11 @@
 
 static void busy_wait(uint32_t usecs) {
   uint32_t elapsed_usecs;
-  double temp;
-  int j;
   struct timespec requestStart, requestEnd;
   
   // Active wait
   clock_gettime(CLOCK_REALTIME, &requestStart);
-  temp = 0;
   while (1) {
-    for (j=0; j < 40; j++)
-      temp += sin(j);
     clock_gettime(CLOCK_REALTIME, &requestEnd);
     elapsed_usecs = ( requestEnd.tv_sec - requestStart.tv_sec ) / 1e-6
       + ( requestEnd.tv_nsec - requestStart.tv_nsec ) / 1e3;

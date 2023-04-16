@@ -174,7 +174,6 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  mac->nr_band = *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
   mac->frame_type = get_frame_type(mac->nr_band, get_softmodem_params()->numerology);
   // cell config
 
@@ -261,8 +260,8 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
 
 void config_common_ue(NR_UE_MAC_INST_t *mac,
 		      module_id_t module_id,
-		      int cc_idP) {
-
+		      int cc_idP)
+{
   fapi_nr_config_request_t        *cfg = &mac->phy_config.config_req;
   NR_ServingCellConfigCommon_t    *scc = mac->scc;
   int i;
@@ -717,7 +716,7 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
   if (sccP != NULL) {
 
     mac->scc_SIB = sccP;
-    LOG_D(NR_MAC, "In %s: Keeping ServingCellConfigCommonSIB\n", __FUNCTION__);
+    mac->nr_band = *sccP->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
     config_common_ue_sa(mac, module_id, cc_idP);
     configure_current_BWP(mac, sccP, NULL);
 
@@ -758,6 +757,7 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
         ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
       }
       mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+      mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
       mac->physCellId = *mac->scc->physCellId;
       config_common_ue(mac,module_id,cc_idP);
       mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
@@ -793,6 +793,7 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
         ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
       }
       mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+      mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
       if (mac->scc_SIB) {
         free(mac->scc_SIB);
         mac->scc_SIB = NULL;

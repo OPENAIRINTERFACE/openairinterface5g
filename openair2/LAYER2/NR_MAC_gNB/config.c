@@ -54,10 +54,10 @@ extern RAN_CONTEXT_t RC;
 //extern int l2_init_gNB(void);
 extern uint8_t nfapi_mode;
 
-void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
-                             struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
-                             NR_UE_sched_ctrl_t *sched_ctrl) {
-
+static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list,
+                                    struct NR_CellGroupConfig__rlc_BearerToReleaseList *rlc_bearer2release_list,
+                                    NR_UE_sched_ctrl_t *sched_ctrl)
+{
   if (rlc_bearer2release_list) {
     for (int i = 0; i < rlc_bearer2release_list->list.count; i++) {
       for (int idx = 0; idx < sched_ctrl->dl_lc_num; idx++) {
@@ -97,8 +97,9 @@ void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddModList *
 
 }
 
+static void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_DRX_Config_t *drx_Config)
+{
 
-void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_DRX_Config_t *drx_Config) {
  if (!drx_Config) return;
  AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
 
@@ -110,23 +111,27 @@ void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_DRX_Confi
  }
 }
 
-void process_schedulingRequestConfig(NR_UE_sched_ctrl_t *sched_ctrl,NR_SchedulingRequestConfig_t *schedulingRequestConfig) {
+static void process_schedulingRequestConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_SchedulingRequestConfig_t *schedulingRequestConfig)
+{
  if (!schedulingRequestConfig) return;
 
    LOG_I(NR_MAC,"Adding SchedulingRequestconfig\n");
 }
 
-void process_bsrConfig(NR_UE_sched_ctrl_t *sched_ctrl,NR_BSR_Config_t *bsr_Config) {
+static void process_bsrConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_BSR_Config_t *bsr_Config)
+{
   if (!bsr_Config) return;
   LOG_I(NR_MAC,"Adding BSR config\n");
 }
 
-void process_tag_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_TAG_Config_t *tag_Config) {
+static void process_tag_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_TAG_Config_t *tag_Config)
+{
   if (!tag_Config) return;
   LOG_I(NR_MAC,"Adding TAG config\n");
 }
 
-void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_PHR_Config_t *phr_Config) {
+static void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_PHR_Config_t *phr_Config)
+{
    if (!phr_Config) return;
    AssertFatal(phr_Config->present != NR_SetupRelease_PHR_Config_PR_NOTHING, "Cannot have NR_SetupRelease_PHR_Config_PR_NOTHING\n");
 
@@ -138,8 +143,8 @@ void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl,NR_SetupRelease_PHR_Confi
    }
 }
 
-void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl) {
-
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl)
+{
    AssertFatal(CellGroup, "CellGroup is null\n");
    NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
 
