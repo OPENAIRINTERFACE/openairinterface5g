@@ -1139,7 +1139,6 @@ int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
   struct NR_SRB_ToAddMod *SRB2_config = NULL;
   NR_DL_DCCH_Message_t dl_dcch_msg = {0};
   NR_RRCReestablishment_t *rrcReestablishment = NULL;
-  ue_context_pP->ue_context.reestablishment_xid = Transaction_id;
   NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
   SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
 
