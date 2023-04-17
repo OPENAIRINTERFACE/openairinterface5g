@@ -211,8 +211,10 @@ pipeline {
         script {
           dir ('ci-scripts') {
             // Zipping all archived log files
-              sh "zip -r -qq test_logs_${env.BUILD_ID}.zip *log*"
-              sh "rm -r *.log"
+              sh "mkdir test_logs"
+              sh "mv *.log* test_logs || true"
+              sh "zip -r -qq test_logs_${env.BUILD_ID}.zip *test_log*/"
+              sh "rm -rf *test_log*/"
               if (fileExists("test_logs_${env.BUILD_ID}.zip")) {
                 archiveArtifacts artifacts: "test_logs_${env.BUILD_ID}.zip"
               }
