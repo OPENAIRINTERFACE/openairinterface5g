@@ -306,14 +306,13 @@ class EPCManagement():
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 				return False
 			for ii in imageNames:
-					mySSH.run(f'helm uninstall ' + ii, reportNonZero=False)
+					mySSH.run(f'helm uninstall {ii}', reportNonZero=False)
 			mySSH.run(f'helm spray {lSourcePath}/ci-scripts/charts/oai-5g-basic/.')
 			ret = mySSH.run(f'oc get pods', silent=True)
 			if ret.stdout.count('Running') != 9:
 				logging.error('\u001B[1m Deploying 5GCN Failed using helm chart on OC Cluster\u001B[0m')
 				for ii in imageNames:
 					mySSH.run('helm uninstall '+ ii)
-				mySSH.run(f'oc delete pod iperf-pod')
 				ret = mySSH.run(f'oc get pods')
 				if re.search('No resources found', ret.stdout):
 					logging.debug('All pods uninstalled')
@@ -561,6 +560,7 @@ class EPCManagement():
 
 	def Terminate5GCN(self, HTML):
 		imageNames = ["mysql", "oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr", "oai-traffic-server"]
+		containerInPods = ["", "-c nrf", "-c amf", "-c smf", "-c spgwu", "-c ausf", "-c udm", "-c udr", ""]
 		mySSH = cls_cmd.getConnection(self.IPAddress)
 		message = ''
 		if re.match('ltebox', self.Type, re.IGNORECASE):
@@ -606,17 +606,17 @@ class EPCManagement():
 				return False
 			mySSH.run(f'oc describe pod &> {lSourcePath}/logs/describe-pods-post-test.log')
 			mySSH.run(f'oc get pods.metrics.k8s &> {lSourcePath}/logs/nf-resource-consumption.log')
-			for ii in imageNames:
-			       podName = mySSH.run(f"oc get pods | grep "+ ii +" | awk '{print $1}'").stdout.strip()
+			for ii, ci in zip(imageNames, containerInPods):
+			       podName = mySSH.run(f"oc get pods | grep {ii} | awk \'{{print $1}}\'").stdout.strip()
 			       if not podName:
-				       logging.debug('{ii} pod not found!')
+				       logging.debug(f'{ii} pod not found!')
 				       HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
 				       HTML.CreateHtmlTabFooter(False)
-			       mySSH.run(f'oc logs -f {podName} -c {ii} &> {lSourcePath}/logs/{ii}.log &')
+			       mySSH.run(f'oc logs -f {podName} {ci} &> {lSourcePath}/logs/{ii}.log &')
 			       mySSH.run(f'helm uninstall {ii}')
 			       podName = ''
-			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq {self.eNBSourceCodePath}/ci-scripts/test_logs_CN.zip *.log')
-			mySSH.copyin(f'{self.eNBSourceCodePath}/ci-scripts/test_logs_CN.zip','test_logs_CN.zip')
+			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq test_logs_CN.zip *.log')
+			mySSH.copyin(f'{lSourcePath}/logs/test_logs_CN.zip','test_logs_CN.zip')
 			ret = mySSH.run(f'oc get pods', silent=True)
 			res = re.search('No resources found in oaicicd-ran namespace.', ret.stdout)
 			if res is not None:
