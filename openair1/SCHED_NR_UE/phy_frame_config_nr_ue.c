@@ -39,63 +39,40 @@
 *
 *********************************************************************/
 
-int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_slot) {
-  /* for FFD all slot can be considered as an uplink */
-  int mu = cfg->ssb_config.scs_common, check_slot = 0;
+int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_slot)
+{
+  if (cfg->cell_config.frame_duplex_type == FDD)
+    return NR_UPLINK_SLOT | NR_DOWNLINK_SLOT;
 
-  if (cfg->cell_config.frame_duplex_type == FDD) {
-    return (NR_UPLINK_SLOT | NR_DOWNLINK_SLOT);
+  int period = cfg->tdd_table_1.tdd_period_in_slots +
+               (cfg->tdd_table_2 ? cfg->tdd_table_2->tdd_period_in_slots : 0);
+  int rel_slot = nr_slot % period;
+  fapi_nr_tdd_table_t *tdd_table = &cfg->tdd_table_1;
+  if (cfg->tdd_table_2 && rel_slot >= tdd_table->tdd_period_in_slots) {
+    rel_slot -= tdd_table->tdd_period_in_slots;
+    tdd_table = cfg->tdd_table_2;
   }
-  if (cfg->tdd_table.max_tdd_periodicity_list == NULL) // this happens before receiving TDD configuration
-    return (NR_DOWNLINK_SLOT);
 
-  if (nr_frame%2 == 0) {
-    for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-      if (cfg->tdd_table.max_tdd_periodicity_list[nr_slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config == 1) {
-        check_slot++;
-      }
-    }
+  if (tdd_table->max_tdd_periodicity_list == NULL) // this happens before receiving TDD configuration
+    return NR_DOWNLINK_SLOT;
 
-    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
-      return (NR_UPLINK_SLOT);
-    }
+  fapi_nr_max_tdd_periodicity_t *current_slot = &tdd_table->max_tdd_periodicity_list[rel_slot];
 
-    check_slot = 0;
+  // if the 1st symbol is UL the whole slot is UL
+  if (current_slot->max_num_of_symbol_per_slot_list[0].slot_config == 1)
+    return NR_UPLINK_SLOT;
 
-    for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-      if (cfg->tdd_table.max_tdd_periodicity_list[nr_slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config == 0) {
-        check_slot++;
-      }
-    }
+  // if the 1st symbol is flexible the whole slot is mixed
+  if (current_slot->max_num_of_symbol_per_slot_list[0].slot_config == 2)
+    return NR_MIXED_SLOT;
 
-    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
-      return (NR_DOWNLINK_SLOT);
-    } else {
-      return (NR_MIXED_SLOT);
-    }
-  } else {
-    for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-      if (cfg->tdd_table.max_tdd_periodicity_list[((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config == 1) {
-        check_slot++;
-      }
-    }
-
-    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
-      return (NR_UPLINK_SLOT);
-    }
-
-    check_slot = 0;
-
-    for(int symbol_count=0; symbol_count<NR_NUMBER_OF_SYMBOLS_PER_SLOT; symbol_count++) {
-      if (cfg->tdd_table.max_tdd_periodicity_list[((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) + nr_slot].max_num_of_symbol_per_slot_list[symbol_count].slot_config == 0) {
-        check_slot++;
-      }
-    }
-
-    if(check_slot == NR_NUMBER_OF_SYMBOLS_PER_SLOT) {
-      return (NR_DOWNLINK_SLOT);
-    } else {
-      return (NR_MIXED_SLOT);
+  for (int i = 1; i < NR_NUMBER_OF_SYMBOLS_PER_SLOT; i++) {
+    // if the 1st symbol is DL and any other is not, the slot is mixed
+    if (current_slot->max_num_of_symbol_per_slot_list[i].slot_config != 0) {
+      return NR_MIXED_SLOT;
     }
   }
+
+  // if here, all the symbols where DL
+  return NR_DOWNLINK_SLOT;
 }
