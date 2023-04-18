@@ -188,7 +188,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 		    	       8);
 
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*(c16_t*)rxF) - squaredMod(*(c16_t*)noiseFig)) - 10*log10(squaredMod(*(c16_t*)noiseFig));
@@ -220,7 +220,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
           }
           
           //SNR & RSRP estimation
-          rsrp += squaredMod(*((c16_t*)rxF);
+          rsrp += squaredMod(*((c16_t*)rxF));
           noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
           noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
           snr += 10*log10(squaredMod(*(c16_t*)rxF) - squaredMod(*(c16_t*)noiseFig)) - 10*log10(squaredMod(*(c16_t*)noiseFig));
@@ -249,7 +249,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
           }
           
           //SNR & RSRP estimation
-          rsrp += squaredMod(*((c16_t*)rxF);
+          rsrp += squaredMod(*((c16_t*)rxF));
           noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
           noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
           snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -271,7 +271,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	       8);
 
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -334,7 +334,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	       16);
         
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -353,7 +353,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	       16);
 
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -376,7 +376,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	         16);
         
           //SNR & RSRP estimation
-          rsrp += squaredMod(*((c16_t*)rxF);
+          rsrp += squaredMod(*((c16_t*)rxF));
           noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
           noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
           snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -398,7 +398,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	       16);
         
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -417,7 +417,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 	      	       16);
         
         //SNR & RSRP estimation
-        rsrp += squaredMod(*((c16_t*)rxF);
+        rsrp += squaredMod(*((c16_t*)rxF));
         noiseFig[0] = rxF[0] - (int16_t)(((int32_t)ch[0]*pil[0] - (int32_t)ch[1]*pil[1])>>15);
         noiseFig[1] = rxF[1] - (int16_t)(((int32_t)ch[1]*pil[0] + (int32_t)ch[0]*pil[1])>>15);
         snr += 10*log10(squaredMod(*((c16_t*)rxF)) - squaredMod(*((c16_t*)noiseFig))) - 10*log10(squaredMod(*((c16_t*)noiseFig)));
@@ -549,7 +549,7 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
          (int16_t *)&chT_interpol[rxAnt][0],1);
 
     // peak estimator
-    mean_val = abs32((int32_t)ch_tmp[(prs_cfg->NumRB*12)]);
+    mean_val = squaredMod(((c16_t*)ch_tmp)[(prs_cfg->NumRB*12)>>1]);
     peak_estimator(&chT_interpol[rxAnt][0],
                    NR_PRS_IDFT_OVERSAMP_FACTOR*frame_params->ofdm_symbol_size,
                    &prs_toa,
