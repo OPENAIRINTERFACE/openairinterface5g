@@ -89,6 +89,26 @@ static const int sequence_cyclic_shift_2_harq_ack_bits[4]
 /*        HARQ-ACK Value       (0,0)  (0,1)  (1,0)  (1,1) */
 /* Sequence cyclic shift */ = {   0,     3,     9,     6 };
 
+int get_pucch0_mcs(const int O_ACK, const int O_SR, const int ack_payload, const int sr_payload)
+{
+  int mcs = 0;
+  if (O_SR == 0 || sr_payload == 0) { /* only ack is transmitted TS 36.213 9.2.3 UE procedure for reporting HARQ-ACK */
+    if (O_ACK == 1)
+      mcs = sequence_cyclic_shift_1_harq_ack_bit[ack_payload & 0x1]; /* only harq of 1 bit */
+    else
+      mcs = sequence_cyclic_shift_2_harq_ack_bits[ack_payload & 0x3]; /* only harq with 2 bits */
+  } else { /* SR + eventually ack are transmitted TS 36.213 9.2.5.1 UE procedure for multiplexing HARQ-ACK or CSI and SR */
+    if (sr_payload == 1) { /* positive scheduling request */
+      if (O_ACK == 1)
+        mcs = sequence_cyclic_shift_1_harq_ack_bit_positive_sr[ack_payload & 0x1]; /* positive SR and harq of 1 bit */
+      else if (O_ACK == 2)
+        mcs = sequence_cyclic_shift_2_harq_ack_bits_positive_sr[ack_payload & 0x3]; /* positive SR and harq with 2 bits */
+      else
+        mcs = 0; /* only positive SR */
+    }
+  }
+  return mcs;
+}
 
 /* TS 38.211 Table 6.4.1.3.3.2-1: DM-RS positions for PUCCH format 3 and 4 */
 static const int nb_symbols_excluding_dmrs[11][2][2]
@@ -633,7 +653,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
     NR_PDSCH_Config_t *pdsch_config = current_DL_BWP ? current_DL_BWP->pdsch_Config : NULL;
-    int is_common = 0;
     if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
       dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
       dlsch_config_pdu_1_0->BWPStart = dci_ind->cset_start;
@@ -654,10 +673,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH;
       } else {
         dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
-      }
-      if ((ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti) || (rnti == ra->t_crnti)) {
-        if (mac->scc == NULL) // use coreset0
-          is_common = 1;
       }
     }
 
@@ -778,46 +793,54 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       return -1;
     }
 
-   if(rnti != ra->ra_rnti && rnti != SI_RNTI)
-     AssertFatal(1+dci->pdsch_to_harq_feedback_timing_indicator.val>=DURATION_RX_TO_TX,"PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d).\n",
-                 1+dci->pdsch_to_harq_feedback_timing_indicator.val,DURATION_RX_TO_TX);
+    if(rnti != ra->ra_rnti && rnti != SI_RNTI)
+      AssertFatal(1 + dci->pdsch_to_harq_feedback_timing_indicator.val >= DURATION_RX_TO_TX, "PDSCH to HARQ feedback time (%d) cannot be less than DURATION_RX_TO_TX (%d).\n",
+                  1 + dci->pdsch_to_harq_feedback_timing_indicator.val, DURATION_RX_TO_TX);
 
-   // set the harq status at MAC for feedback
-   set_harq_status(mac,dci->pucch_resource_indicator,
-                   dci->harq_pid,
-                   dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
-                   1+dci->pdsch_to_harq_feedback_timing_indicator.val,
-                   dci->dai[0].val,
-                   dci_ind->n_CCE,dci_ind->N_CCE,is_common,
-                   frame,slot);
+    // set the harq status at MAC for feedback
+    set_harq_status(mac,
+                    dci->pucch_resource_indicator,
+                    dci->harq_pid,
+                    dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
+                    1 + dci->pdsch_to_harq_feedback_timing_indicator.val,
+                    dci->dai[0].val,
+                    dci_ind->n_CCE,
+                    dci_ind->N_CCE,
+                    frame,
+                    slot);
 
-    LOG_D(MAC,"(nr_ue_procedures.c) rnti = %x dl_config->number_pdus = %d\n",
-	  dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
-	  dl_config->number_pdus);
-    LOG_D(MAC,"(nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
-	  dci->frequency_domain_assignment.val,
-	  dlsch_config_pdu_1_0->number_rbs,
-	  dlsch_config_pdu_1_0->start_rb);
-    LOG_D(MAC,"(nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
-	  dci->time_domain_assignment.val,
-	  dlsch_config_pdu_1_0->number_symbols,
-	  dlsch_config_pdu_1_0->start_symbol);
-    LOG_D(MAC,"(nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
-	  dlsch_config_pdu_1_0->vrb_to_prb_mapping,
-	  dlsch_config_pdu_1_0->mcs,
-	  dlsch_config_pdu_1_0->ndi,
-	  dlsch_config_pdu_1_0->rv,
-	  dlsch_config_pdu_1_0->harq_process_nbr,
-	  dci->dai[0].val,
-	  dlsch_config_pdu_1_0->scaling_factor_S,
-	  dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
-	  dci->pucch_resource_indicator,
-	  1+dci->pdsch_to_harq_feedback_timing_indicator.val);
+    LOG_D(MAC,
+          "(nr_ue_procedures.c) rnti = %x dl_config->number_pdus = %d\n",
+          dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti,
+          dl_config->number_pdus);
+    LOG_D(MAC,
+          "(nr_ue_procedures.c) frequency_domain_resource_assignment=%d \t number_rbs=%d \t start_rb=%d\n",
+          dci->frequency_domain_assignment.val,
+          dlsch_config_pdu_1_0->number_rbs,
+          dlsch_config_pdu_1_0->start_rb);
+    LOG_D(MAC,
+          "(nr_ue_procedures.c) time_domain_resource_assignment=%d \t number_symbols=%d \t start_symbol=%d\n",
+          dci->time_domain_assignment.val,
+          dlsch_config_pdu_1_0->number_symbols,
+          dlsch_config_pdu_1_0->start_symbol);
+    LOG_D(MAC,
+          "(nr_ue_procedures.c) vrb_to_prb_mapping=%d \n>>> mcs=%d\n>>> ndi=%d\n>>> rv=%d\n>>> harq_process_nbr=%d\n>>> dai=%d\n>>> "
+          "scaling_factor_S=%f\n>>> tpc_pucch=%d\n>>> pucch_res_ind=%d\n>>> pdsch_to_harq_feedback_time_ind=%d\n",
+          dlsch_config_pdu_1_0->vrb_to_prb_mapping,
+          dlsch_config_pdu_1_0->mcs,
+          dlsch_config_pdu_1_0->ndi,
+          dlsch_config_pdu_1_0->rv,
+          dlsch_config_pdu_1_0->harq_process_nbr,
+          dci->dai[0].val,
+          dlsch_config_pdu_1_0->scaling_factor_S,
+          dlsch_config_pdu_1_0->accumulated_delta_PUCCH,
+          dci->pucch_resource_indicator,
+          1 + dci->pdsch_to_harq_feedback_timing_indicator.val);
 
-    dlsch_config_pdu_1_0->k1_feedback = 1+dci->pdsch_to_harq_feedback_timing_indicator.val;
-	    
-    LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
-            
+    dlsch_config_pdu_1_0->k1_feedback = 1 + dci->pdsch_to_harq_feedback_timing_indicator.val;
+
+    LOG_D(MAC, "(nr_ue_procedures.c) pdu_type=%d\n\n", dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
+
     dl_config->number_pdus = dl_config->number_pdus + 1;
 
     break;
@@ -1101,13 +1124,16 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
                 feedback_ti,DURATION_RX_TO_TX);
 
     // set the harq status at MAC for feedback
-    set_harq_status(mac,dci->pucch_resource_indicator,
+    set_harq_status(mac,
+                    dci->pucch_resource_indicator,
                     dci->harq_pid,
                     dlsch_config_pdu_1_1->accumulated_delta_PUCCH,
                     feedback_ti,
                     dci->dai[0].val,
-                    dci_ind->n_CCE,dci_ind->N_CCE,
-                    0,frame,slot);
+                    dci_ind->n_CCE,
+                    dci_ind->N_CCE,
+                    frame,
+                    slot);
 
     dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DLSCH;
     LOG_D(MAC,"(nr_ue_procedures.c) pdu_type=%d\n\n",dl_config->dl_config_list[dl_config->number_pdus].pdu_type);
@@ -1201,7 +1227,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t dai,
                      int n_CCE,
                      int N_CCE,
-                     int is_common,
                      frame_t frame,
                      int slot) {
 
@@ -1211,7 +1236,6 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
   current_harq->ack_received = false;
   current_harq->pucch_resource_indicator = pucch_id;
   current_harq->feedback_to_ul = data_toul_fb;
-  current_harq->is_common = is_common;
   current_harq->dai = dai;
   current_harq->n_CCE = n_CCE;
   current_harq->N_CCE = N_CCE;
@@ -1231,16 +1255,12 @@ void set_harq_status(NR_UE_MAC_INST_t *mac,
         harq_id, current_harq->dl_frame, current_harq->dl_slot, frame, slot);
 }
 
-
 void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                            int slot,
                            uint16_t rnti,
                            PUCCH_sched_t *pucch,
-                           fapi_nr_ul_config_pucch_pdu *pucch_pdu,
-                           int O_SR, int O_ACK, int O_CSI) {
-
-  int O_CRC = 0; //FIXME
-  uint16_t O_uci = O_CSI + O_ACK;
+                           fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+{
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_PUCCH_FormatConfig_t *pucchfmt;
@@ -1253,7 +1273,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
 
   pucch_pdu->rnti = rnti;
 
-  LOG_D(NR_MAC,"initial_pucch_id %d, pucch_resource %p\n",pucch->initial_pucch_id,pucch->pucch_resource);
+  LOG_D(NR_MAC, "initial_pucch_id %d, pucch_resource %p\n", pucch->initial_pucch_id, pucch->pucch_resource);
   // configure pucch from Table 9.2.1-1
   // only for ack/nack
   if (pucch->initial_pucch_id > -1 &&
@@ -1286,12 +1306,8 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     }
     pucch_pdu->freq_hop_flag = 1;
     pucch_pdu->time_domain_occ_idx = 0;
-
-    if (O_ACK == 1)
-      pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit[pucch->ack_payload & 0x1];   /* only harq of 1 bit */
-    else
-      pucch_pdu->mcs = sequence_cyclic_shift_2_harq_ack_bits[pucch->ack_payload & 0x3];  /* only harq with 2 bits */
-
+    // Only HARQ transmitted in default PUCCH
+    pucch_pdu->mcs = get_pucch0_mcs(pucch->n_harq, 0, pucch->ack_payload, 0);
     pucch_pdu->payload = pucch->ack_payload;
   }
   else if (pucch->pucch_resource != NULL) {
@@ -1327,11 +1343,14 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->second_hop_prb = pucchres->secondHopPRB!= NULL ?  *pucchres->secondHopPRB : 0;
     pucch_pdu->prb_size = 1; // format 0 or 1
 
-    if ((O_SR+O_CSI+O_SR) > (sizeof(uint64_t)*8)) {
+    int n_uci = pucch->n_sr + pucch->n_harq + pucch->n_csi;
+    if (n_uci > (sizeof(uint64_t) * 8)) {
       LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size\n");
       return;
     }
-    pucch_pdu->payload = (pucch->csi_part1_payload << (O_ACK + O_SR)) |  (pucch->sr_payload << O_ACK) | pucch->ack_payload;
+    if (pucchres->format.present != NR_PUCCH_Resource__format_PR_format0)
+      pucch_pdu->payload =
+          (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
 
     switch(pucchres->format.present) {
       case NR_PUCCH_Resource__format_PR_format0 :
@@ -1339,22 +1358,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         pucch_pdu->initial_cyclic_shift = pucchres->format.choice.format0->initialCyclicShift;
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format0->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format0->startingSymbolIndex;
-        if (O_SR == 0 || pucch->sr_payload == 0) {  /* only ack is transmitted TS 36.213 9.2.3 UE procedure for reporting HARQ-ACK */
-          if (O_ACK == 1)
-            pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit[pucch->ack_payload & 0x1];   /* only harq of 1 bit */
-          else
-            pucch_pdu->mcs = sequence_cyclic_shift_2_harq_ack_bits[pucch->ack_payload & 0x3];  /* only harq with 2 bits */
-        }
-        else { /* SR + eventually ack are transmitted TS 36.213 9.2.5.1 UE procedure for multiplexing HARQ-ACK or CSI and SR */
-          if (pucch->sr_payload == 1) {                /* positive scheduling request */
-            if (O_ACK == 1)
-              pucch_pdu->mcs = sequence_cyclic_shift_1_harq_ack_bit_positive_sr[pucch->ack_payload & 0x1];   /* positive SR and harq of 1 bit */
-            else if (O_ACK == 2)
-              pucch_pdu->mcs = sequence_cyclic_shift_2_harq_ack_bits_positive_sr[pucch->ack_payload & 0x3];  /* positive SR and harq with 2 bits */
-            else
-              pucch_pdu->mcs = 0;  /* only positive SR */
-          }
-        }
+        pucch_pdu->mcs = get_pucch0_mcs(pucch->n_harq, pucch->n_sr, pucch->ack_payload, pucch->sr_payload);
         break;
       case NR_PUCCH_Resource__format_PR_format1 :
         pucch_pdu->format_type = 1;
@@ -1365,18 +1369,22 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         break;
       case NR_PUCCH_Resource__format_PR_format2 :
         pucch_pdu->format_type = 2;
-        pucch_pdu->n_bit = O_uci+O_SR;
+        pucch_pdu->n_bit = n_uci;
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format2->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format2->startingSymbolIndex;
         pucch_pdu->data_scrambling_id = pusch_id != NULL ? *pusch_id : mac->physCellId;
         pucch_pdu->dmrs_scrambling_id = id0 != NULL ? *id0 : mac->physCellId;
-        pucch_pdu->prb_size = compute_pucch_prb_size(2,pucchres->format.choice.format2->nrofPRBs,
-                                                     O_uci+O_SR,O_CSI,pucch_Config->format2->choice.setup->maxCodeRate,
-                                                     2,pucchres->format.choice.format2->nrofSymbols,8);
+        pucch_pdu->prb_size = compute_pucch_prb_size(2,
+                                                     pucchres->format.choice.format2->nrofPRBs,
+                                                     n_uci,
+                                                     pucch_Config->format2->choice.setup->maxCodeRate,
+                                                     2,
+                                                     pucchres->format.choice.format2->nrofSymbols,
+                                                     8);
         break;
       case NR_PUCCH_Resource__format_PR_format3 :
         pucch_pdu->format_type = 3;
-        pucch_pdu->n_bit = O_uci+O_SR;
+        pucch_pdu->n_bit = n_uci;
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format3->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format3->startingSymbolIndex;
         pucch_pdu->data_scrambling_id = pusch_id != NULL ? *pusch_id : mac->physCellId;
@@ -1398,9 +1406,13 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
           else
             f3_dmrs_symbols = 2<<pucch_pdu->add_dmrs_flag;
         }
-        pucch_pdu->prb_size = compute_pucch_prb_size(3,pucchres->format.choice.format3->nrofPRBs,
-                                                     O_uci+O_SR,O_CSI,pucch_Config->format3->choice.setup->maxCodeRate,
-                                                     2-pucch_pdu->pi_2bpsk,pucchres->format.choice.format3->nrofSymbols-f3_dmrs_symbols,12);
+        pucch_pdu->prb_size = compute_pucch_prb_size(3,
+                                                     pucchres->format.choice.format3->nrofPRBs,
+                                                     n_uci,
+                                                     pucch_Config->format3->choice.setup->maxCodeRate,
+                                                     2 - pucch_pdu->pi_2bpsk,
+                                                     pucchres->format.choice.format3->nrofSymbols - f3_dmrs_symbols,
+                                                     12);
         break;
       case NR_PUCCH_Resource__format_PR_format4 :
         pucch_pdu->format_type = 4;
@@ -1426,17 +1438,16 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     pucch_pdu->pucch_tx_power = get_pucch_tx_power_ue(mac,
                                                       scs,
                                                       pucch_Config,
-                                                      pucch,
+                                                      pucch->delta_pucch,
                                                       pucch_pdu->format_type,
                                                       pucch_pdu->prb_size,
                                                       pucch_pdu->freq_hop_flag,
                                                       pucch_pdu->add_dmrs_flag,
                                                       pucch_pdu->nr_of_symbols,
                                                       subframe_number,
-                                                      O_ACK, O_SR,
-                                                      O_CSI, O_CRC);
-  }
-  else AssertFatal(1==0,"problem with pucch configuration\n");
+                                                      n_uci);
+  } else
+    AssertFatal(1 == 0, "problem with pucch configuration\n");
 
   NR_PUCCH_ConfigCommon_t *pucch_ConfigCommon = current_UL_BWP->pucch_ConfigCommon;
 
@@ -1463,22 +1474,21 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
       break;
     default:
       AssertFatal(1==0,"Group hopping flag undefined (0,1,2) \n");
-    }
+  }
 }
-
 
 int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
                               int scs,
                               NR_PUCCH_Config_t *pucch_Config,
-                              PUCCH_sched_t *pucch,
+                              int delta_pucch,
                               uint8_t format_type,
                               uint16_t nb_of_prbs,
-                              uint8_t  freq_hop_flag,
-                              uint8_t  add_dmrs_flag,
+                              uint8_t freq_hop_flag,
+                              uint8_t add_dmrs_flag,
                               uint8_t N_symb_PUCCH,
                               int subframe_number,
-                              int O_ACK, int O_SR,
-                              int O_CSI, int O_CRC) {
+                              int O_uci)
+{
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   int PUCCH_POWER_DEFAULT = 0;
   int16_t P_O_NOMINAL_PUCCH = *current_UL_BWP->pucch_ConfigCommon->p0_nominal;
@@ -1501,7 +1511,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
     G_b_f_c = 0;
   }
   else {
-    G_b_f_c = pucch->delta_pucch;
+    G_b_f_c = delta_pucch;
     LOG_E(MAC,"PUCCH Transmit power control command not yet implemented for NR\n");
     return (PUCCH_POWER_DEFAULT);
   }
@@ -1527,38 +1537,17 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
       break;
     case 2:
       N_sc_ctrl_RB = 10;
-      DELTA_TF = get_deltatf(nb_of_prbs,
-                             N_symb_PUCCH,
-                             freq_hop_flag,
-                             add_dmrs_flag,
-                             N_sc_ctrl_RB,
-                             pucch->n_HARQ_ACK,
-                             O_ACK, O_SR,
-                             O_CSI, O_CRC);
+      DELTA_TF = get_deltatf(nb_of_prbs, N_symb_PUCCH, freq_hop_flag, add_dmrs_flag, N_sc_ctrl_RB, O_uci);
       delta_F_PUCCH =  *power_config->deltaF_PUCCH_f2;
       break;
     case 3:
       N_sc_ctrl_RB = 14;
-      DELTA_TF = get_deltatf(nb_of_prbs,
-                             N_symb_PUCCH,
-                             freq_hop_flag,
-                             add_dmrs_flag,
-                             N_sc_ctrl_RB,
-                             pucch->n_HARQ_ACK,
-                             O_ACK, O_SR,
-                             O_CSI, O_CRC);
+      DELTA_TF = get_deltatf(nb_of_prbs, N_symb_PUCCH, freq_hop_flag, add_dmrs_flag, N_sc_ctrl_RB, O_uci);
       delta_F_PUCCH =  *power_config->deltaF_PUCCH_f3;
       break;
     case 4:
       N_sc_ctrl_RB = 14/(nb_pucch_format_4_in_subframes[subframe_number]);
-      DELTA_TF = get_deltatf(nb_of_prbs,
-                             N_symb_PUCCH,
-                             freq_hop_flag,
-                             add_dmrs_flag,
-                             N_sc_ctrl_RB,
-                             pucch->n_HARQ_ACK,
-                             O_ACK, O_SR,
-                             O_CSI, O_CRC);
+      DELTA_TF = get_deltatf(nb_of_prbs, N_symb_PUCCH, freq_hop_flag, add_dmrs_flag, N_sc_ctrl_RB, O_uci);
       delta_F_PUCCH =  *power_config->deltaF_PUCCH_f4;
       break;
     default:
@@ -1568,7 +1557,7 @@ int16_t get_pucch_tx_power_ue(NR_UE_MAC_INST_t *mac,
     }
   }
 
-  if (*power_config->twoPUCCH_PC_AdjustmentStates > 1) {
+  if (power_config->twoPUCCH_PC_AdjustmentStates && *power_config->twoPUCCH_PC_AdjustmentStates > 1) {
     LOG_E(MAC,"PUCCH power control adjustment states with 2 states not yet implemented\n");
     return (PUCCH_POWER_DEFAULT);
   }
@@ -1589,20 +1578,18 @@ int get_deltatf(uint16_t nb_of_prbs,
                 uint8_t freq_hop_flag,
                 uint8_t add_dmrs_flag,
                 int N_sc_ctrl_RB,
-                int n_HARQ_ACK,
-                int O_ACK, int O_SR,
-                int O_CSI, int O_CRC){
-
+                int O_UCI)
+{
   int DELTA_TF;
-  int O_UCI = O_ACK + O_SR + O_CSI + O_CRC;
+  int O_CRC = compute_pucch_crc_size(O_UCI);
   int N_symb = nb_symbols_excluding_dmrs[N_symb_PUCCH-4][add_dmrs_flag][freq_hop_flag];
   float N_RE = nb_of_prbs * N_sc_ctrl_RB * N_symb;
   float K1 = 6;
-  if (O_UCI < 12)
-    DELTA_TF = 10 * log10((double)(((K1 * (n_HARQ_ACK + O_SR + O_CSI))/N_RE)));
+  if (O_UCI + O_CRC < 12)
+    DELTA_TF = 10 * log10((double)(((K1 * (O_UCI)) / N_RE)));
   else {
     float K2 = 2.4;
-    float BPRE = O_UCI/N_RE;
+    float BPRE = (O_UCI + O_CRC) / N_RE;
     DELTA_TF = 10 * log10((double)(pow(2,(K2*BPRE)) - 1));
   }
   return DELTA_TF;
@@ -1623,7 +1610,8 @@ int get_deltatf(uint16_t nb_of_prbs,
 *
 *********************************************************************/
 
-int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
+int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int size)
+{
   int pucch_resource_set_id = 0;
   NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP.pucch_Config;
 
@@ -1636,16 +1624,15 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
     -- The field is not present in the last configured set since the UE derives its maximum payload size as specified in 38.213.
     -- This field can take integer values that are multiples of 4. Corresponds to L1 parameter 'N_2' or 'N_3' (see 38.213, section 9.2)
   */
-  /* look for the first resource set which supports uci_size number of bits for payload */
+  /* look for the first resource set which supports size number of bits for payload */
   while (pucch_resource_set_id < MAX_NB_OF_PUCCH_RESOURCE_SETS) {
     if (pucch_Config && pucch_Config->resourceSetToAddModList && pucch_Config->resourceSetToAddModList->list.array[pucch_resource_set_id] != NULL) {
       // PUCCH with format0 can be up to 3 bits (2 ack/nacks + 1 sr is 3 max bits)
-      if (uci_size <= 3) {
+      if (size <= 3) {
         pucch_resource_set_id = 0;
         return (pucch_resource_set_id);
         break;
-      }
-      else {
+      } else {
         pucch_resource_set_id = 1;
         return (pucch_resource_set_id);
         break;
@@ -1659,68 +1646,466 @@ int find_pucch_resource_set(NR_UE_MAC_INST_t *mac, int uci_size) {
   return (pucch_resource_set_id);
 }
 
-
-/*******************************************************************
-*
-* NAME :         select_pucch_format
-*
-* PARAMETERS :   ue context
-*                processing slots of reception/transmission
-*                gNB_id identifier
-*
-* RETURN :       true a valid resource has been found
-*
-* DESCRIPTION :  return tx harq process identifier for given transmission slot
-*                TS 38.213 9.2.1  PUCCH Resource Sets
-*                TS 38.213 9.2.2  PUCCH Formats for UCI transmission
-*                In the case of pucch for scheduling request only, resource is already get from scheduling request configuration
-*
-*********************************************************************/
-
-void select_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch)
+NR_PUCCH_Resource_t *find_pucch_resource_from_list(struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList,
+                                                   long resource_id)
 {
-  NR_PUCCH_ResourceId_t *current_resource_id = NULL;
-  NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP.pucch_Config;
-  int n_list;
-  if (pucch->is_common == 1 || !pucch_Config || !pucch_Config->resourceSetToAddModList || pucch_Config->resourceSetToAddModList->list.array[0] == NULL) {
-    /* see TS 38.213 9.2.1  PUCCH Resource Sets */
-    int delta_PRI = pucch->resource_indicator;
-    int n_CCE_0 = pucch->n_CCE;
-    int N_CCE_0 = pucch->N_CCE;
-    if (N_CCE_0 == 0) {
-      AssertFatal(1==0,"PUCCH No compatible pucch format found\n");
-    }
-    int r_PUCCH = ((2 * n_CCE_0)/N_CCE_0) + (2 * delta_PRI);
-    pucch->initial_pucch_id = r_PUCCH;
-    pucch->pucch_resource = NULL;
-  } else {
-    struct NR_PUCCH_Config__resourceSetToAddModList *resourceSetToAddModList = pucch_Config->resourceSetToAddModList;
-    struct NR_PUCCH_Config__resourceToAddModList *resourceToAddModList = pucch_Config->resourceToAddModList;
-    n_list = resourceSetToAddModList->list.count;
-    if (pucch->resource_set_id > n_list) {
-      LOG_E(MAC,"Invalid PUCCH resource set id %d\n",pucch->resource_set_id);
-      pucch->pucch_resource = NULL;
-      return;
-    }
-    n_list = resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.count;
-    if (pucch->resource_indicator > n_list) {
-      LOG_E(MAC,"Invalid PUCCH resource id %d\n",pucch->resource_indicator);
-      pucch->pucch_resource = NULL;
-      return;
-    }
-    current_resource_id = resourceSetToAddModList->list.array[pucch->resource_set_id]->resourceList.list.array[pucch->resource_indicator];
-    n_list = resourceToAddModList->list.count;
-    int res_found = 0;
-    for (int i=0; i<n_list; i++) {
-      if (resourceToAddModList->list.array[i]->pucch_ResourceId == *current_resource_id) {
-        pucch->pucch_resource = resourceToAddModList->list.array[i];
-        res_found = 1;
-        break;
+  NR_PUCCH_Resource_t *pucch_resource = NULL;
+  int n_list = resourceToAddModList->list.count;
+  for (int i = 0; i < n_list; i++) {
+    if (resourceToAddModList->list.array[i]->pucch_ResourceId == resource_id)
+      pucch_resource = resourceToAddModList->list.array[i];
+  }
+  return pucch_resource;
+}
+
+bool check_mux_acknack_csi(NR_PUCCH_Resource_t *csi_res, NR_PUCCH_Config_t *pucch_Config)
+{
+  bool ret;
+  switch (csi_res->format.present) {
+    case NR_PUCCH_Resource__format_PR_format2:
+      ret = pucch_Config->format2->choice.setup->simultaneousHARQ_ACK_CSI ? true : false;
+      break;
+    case NR_PUCCH_Resource__format_PR_format3:
+      ret = pucch_Config->format3->choice.setup->simultaneousHARQ_ACK_CSI ? true : false;
+      break;
+    case NR_PUCCH_Resource__format_PR_format4:
+      ret = pucch_Config->format4->choice.setup->simultaneousHARQ_ACK_CSI ? true : false;
+      break;
+    default:
+      AssertFatal(false, "Invalid PUCCH format for CSI\n");
+  }
+  return ret;
+}
+
+void get_pucch_start_symbol_length(NR_PUCCH_Resource_t *pucch_resource, int *start, int *length)
+{
+  switch (pucch_resource->format.present) {
+    case NR_PUCCH_Resource__format_PR_format0:
+      *length = pucch_resource->format.choice.format0->nrofSymbols;
+      *start = pucch_resource->format.choice.format0->startingSymbolIndex;
+      break;
+    case NR_PUCCH_Resource__format_PR_format1:
+      *length = pucch_resource->format.choice.format1->nrofSymbols;
+      *start = pucch_resource->format.choice.format1->startingSymbolIndex;
+      break;
+    case NR_PUCCH_Resource__format_PR_format2:
+      *length = pucch_resource->format.choice.format2->nrofSymbols;
+      *start = pucch_resource->format.choice.format2->startingSymbolIndex;
+      break;
+    case NR_PUCCH_Resource__format_PR_format3:
+      *length = pucch_resource->format.choice.format3->nrofSymbols;
+      *start = pucch_resource->format.choice.format3->startingSymbolIndex;
+      break;
+    case NR_PUCCH_Resource__format_PR_format4:
+      *length = pucch_resource->format.choice.format4->nrofSymbols;
+      *start = pucch_resource->format.choice.format4->startingSymbolIndex;
+      break;
+    default:
+      AssertFatal(false, "Invalid PUCCH format\n");
+  }
+}
+
+// Ref. 38.213 section 9.2.5 order(Q)
+void order_resources(PUCCH_sched_t *pucch, int num_res)
+{
+  int k = 0;
+  while (k < num_res - 1) {
+    int l = 0;
+    while (l < num_res - 1 - k) {
+      NR_PUCCH_Resource_t *pucch_resource = pucch[l].pucch_resource;
+      int curr_start, curr_length;
+      get_pucch_start_symbol_length(pucch_resource, &curr_start, &curr_length);
+      pucch_resource = pucch[l + 1].pucch_resource;
+      int next_start, next_length;
+      get_pucch_start_symbol_length(pucch_resource, &next_start, &next_length);
+      if (curr_start > next_start || (curr_start == next_start && curr_length < next_length)) {
+        // swap resources
+        PUCCH_sched_t temp_res = pucch[l];
+        pucch[l] = pucch[l + 1];
+        pucch[l + 1] = temp_res;
       }
+      l++;
     }
-    if (res_found == 0) {
-      LOG_E(MAC,"Couldn't find PUCCH Resource\n");
-      pucch->pucch_resource = NULL;
+    k++;
+  }
+}
+
+bool check_overlapping_resources(int curr_start, int curr_length, int next_start, int next_length)
+{
+  // assuming overlapping means if two resources overlaps in time,
+  // ie share a symbol in the slot regardless of PRB
+  if (curr_start == next_start)
+    return true;
+  if (curr_start + curr_length - 1 < next_start)
+    return false;
+  else
+    return true;
+}
+
+// 38.213 section 9.2.5
+void merge_resources(PUCCH_sched_t *res, int num_res, NR_PUCCH_Config_t *pucch_Config)
+{
+  PUCCH_sched_t empty = {0};
+  for (int i = 0; i < num_res - 1; i++) {
+    NR_PUCCH_Resource_t *curr_resource = res[i].pucch_resource;
+    NR_PUCCH_Resource_t *next_resource = res[i + 1].pucch_resource;
+    switch (curr_resource->format.present) {
+      case NR_PUCCH_Resource__format_PR_format0:
+        switch (next_resource->format.present) {
+          case NR_PUCCH_Resource__format_PR_format0:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0 && res[i + 1].n_sr == 0 && res[i + 1].n_harq > 0) {
+              // we multiplex SR and HARQ in the HARQ resource
+              res[i + 1].n_sr = res[i].n_sr;
+              res[i + 1].sr_payload = res[i].sr_payload;
+              res[i] = empty;
+            } else if (res[i].n_sr == 0 && res[i].n_harq > 0 && res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              // we multiplex SR and HARQ in the HARQ resource and move it to the i+1 spot
+              res[i].n_sr = res[i + 1].n_sr;
+              res[i].sr_payload = res[i + 1].sr_payload;
+              res[i + 1] = res[i];
+              res[i] = empty;
+            } else
+              AssertFatal(
+                  false,
+                  "We cannot multiplex more than 1 SR into a PUCCH F0 and we don't expect more than 1 PUCCH with HARQ per slot\n");
+            break;
+          case NR_PUCCH_Resource__format_PR_format1:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0 && res[i + 1].n_sr == 0 && res[i + 1].n_harq > 0)
+              // we transmit only HARQ in F1
+              res[i] = empty;
+            else if (res[i].n_sr == 0 && res[i].n_harq > 0 && res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              // we multiplex SR and HARQ in the HARQ F0 resource and move it to the i+1 spot
+              res[i].n_sr = res[i + 1].n_sr;
+              res[i].sr_payload = res[i + 1].sr_payload;
+              res[i + 1] = res[i];
+              res[i] = empty;
+            } else
+              AssertFatal(
+                  false,
+                  "We cannot multiplex more than 1 SR into a PUCCH F0 and we don't expect more than 1 PUCCH with HARQ per slot\n");
+            break;
+          case NR_PUCCH_Resource__format_PR_format2:
+          case NR_PUCCH_Resource__format_PR_format3:
+          case NR_PUCCH_Resource__format_PR_format4:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0) {
+              AssertFatal(res[i + 1].n_sr == 0, "We don't support multiple SR in a slot\n");
+              // we multiplex SR in the F2 or above resource
+              res[i + 1].n_sr = res[i].n_sr;
+              res[i + 1].sr_payload = res[i].sr_payload;
+              res[i] = empty;
+            } else if (res[i].n_harq > 0) {
+              AssertFatal(res[i + 1].n_harq == 0, "The standard doesn't allow for more the 1 PUCCH in a slot with HARQ\n");
+              if (check_mux_acknack_csi(next_resource, pucch_Config)) {
+                // we multiplex what in F0 to CSI resource
+                if (res[i + 1].n_sr == 0) {
+                  res[i + 1].n_sr = res[i].n_sr;
+                  res[i + 1].sr_payload = res[i].sr_payload;
+                } else
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                res[i + 1].n_harq = res[i].n_harq;
+                res[i + 1].ack_payload = res[i].ack_payload;
+                res[i] = empty;
+              } else {
+                // if we can't multiplex HARQ and CSI we discard CSI
+                if (res[i + 1].n_sr == 0) {
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                } else {
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  // we take SR from F2 or above into F0 and drop CSI
+                  res[i].n_sr = res[i + 1].n_sr;
+                  res[i].sr_payload = res[i + 1].sr_payload;
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                }
+              }
+            }
+            break;
+          default:
+            AssertFatal(false, "Invalid PUCCH format %d\n", next_resource->format.present);
+        }
+        break;
+      case NR_PUCCH_Resource__format_PR_format1:
+        switch (next_resource->format.present) {
+          case NR_PUCCH_Resource__format_PR_format0:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0 && res[i + 1].n_sr == 0 && res[i + 1].n_harq > 0) {
+              // we multiplex SR and HARQ in the HARQ F0 resource and move it to the i+1 spot
+              res[i + 1].n_sr = res[i].n_sr;
+              res[i + 1].sr_payload = res[i].sr_payload;
+              res[i] = empty;
+            } else if (res[i].n_sr == 0 && res[i].n_harq > 0 && res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              // we transmit only HARQ in F1
+              res[i + 1] = res[i];
+              res[i] = empty;
+            } else
+              AssertFatal(
+                  false,
+                  "We cannot multiplex more than 1 SR into a PUCCH F0 and we don't expect more than 1 PUCCH with HARQ per slot\n");
+            break;
+          case NR_PUCCH_Resource__format_PR_format1:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0 && res[i + 1].n_sr == 0 && res[i + 1].n_harq > 0) {
+              if (res[i].sr_payload == 0) {
+                // negative SR -> transmit HARQ only in HARQ resource
+                res[i] = empty;
+              } else {
+                // positive SR -> transmit HARQ only in SR resource
+                res[i].n_harq = res[i + 1].n_harq;
+                res[i].ack_payload = res[i + 1].ack_payload;
+                res[i].n_sr = 0;
+                res[i].sr_payload = 0;
+                res[i + 1] = res[i];
+                res[i] = empty;
+              }
+            } else if (res[i].n_sr == 0 && res[i].n_harq > 0 && res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              if (res[i].sr_payload == 0) {
+                // negative SR -> transmit HARQ only in HARQ resource
+                res[i + 1] = res[i];
+                res[i] = empty;
+              } else {
+                // positive SR -> transmit HARQ only in SR resource
+                res[i + 1].n_harq = res[i].n_harq;
+                res[i + 1].ack_payload = res[i].ack_payload;
+                res[i + 1].n_sr = 0;
+                res[i + 1].sr_payload = 0;
+                res[i] = empty;
+              }
+            } else
+              AssertFatal(
+                  false,
+                  "We cannot multiplex more than 1 SR into a PUCCH F0 and we don't expect more than 1 PUCCH with HARQ per slot\n");
+            break;
+          case NR_PUCCH_Resource__format_PR_format2:
+          case NR_PUCCH_Resource__format_PR_format4:
+          case NR_PUCCH_Resource__format_PR_format3:
+            if (res[i].n_sr > 0 && res[i].n_harq == 0) {
+              AssertFatal(res[i + 1].n_sr == 0, "We don't support multiple SR in a slot\n");
+              // we multiplex SR in the F2 or above resource
+              res[i + 1].n_sr = res[i].n_sr;
+              res[i + 1].sr_payload = res[i].sr_payload;
+              res[i] = empty;
+            } else if (res[i].n_harq > 0) {
+              AssertFatal(res[i + 1].n_harq == 0, "The standard doesn't allow for more the 1 PUCCH in a slot with HARQ\n");
+              if (check_mux_acknack_csi(next_resource, pucch_Config)) {
+                // we multiplex what in F0 to CSI resource
+                if (res[i + 1].n_sr == 0) {
+                  res[i + 1].n_sr = res[i].n_sr;
+                  res[i + 1].sr_payload = res[i].sr_payload;
+                } else
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                res[i + 1].n_harq = res[i].n_harq;
+                res[i + 1].ack_payload = res[i].ack_payload;
+                res[i] = empty;
+              } else {
+                // if we can't multiplex HARQ and CSI we discard CSI
+                if (res[i + 1].n_sr == 0) {
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                } else {
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  if (res[i + 1].n_sr > 0)
+                    LOG_E(MAC, "Not sure what to do here because you can't easily mux HARQ and SR in F1\n");
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                }
+              }
+            }
+            break;
+          default:
+            AssertFatal(false, "Invalid PUCCH format %d\n", next_resource->format.present);
+        }
+        break;
+      case NR_PUCCH_Resource__format_PR_format2:
+      case NR_PUCCH_Resource__format_PR_format4:
+      case NR_PUCCH_Resource__format_PR_format3:
+        switch (next_resource->format.present) {
+          case NR_PUCCH_Resource__format_PR_format0:
+            if (res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              AssertFatal(res[i].n_sr == 0, "We don't support multiple SR in a slot\n");
+              // we multiplex SR in the F2 or above resource
+              res[i].n_sr = res[i + 1].n_sr;
+              res[i].sr_payload = res[i + 1].sr_payload;
+              res[i + 1] = res[i];
+              res[i] = empty;
+            } else if (res[i + 1].n_harq > 0) {
+              AssertFatal(res[i].n_harq == 0, "The standard doesn't allow for more the 1 PUCCH in a slot with HARQ\n");
+              if (check_mux_acknack_csi(curr_resource, pucch_Config)) {
+                // we multiplex what in F0 to CSI resource
+                if (res[i].n_sr == 0) {
+                  res[i].n_sr = res[i + 1].n_sr;
+                  res[i].sr_payload = res[i + 1].sr_payload;
+                } else
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                res[i].n_harq = res[i + 1].n_harq;
+                res[i].ack_payload = res[i + 1].ack_payload;
+                res[i + 1] = res[i];
+                res[i] = empty;
+              } else {
+                // if we can't multiplex HARQ and CSI we discard CSI
+                if (res[i].n_sr == 0)
+                  res[i] = empty;
+                else {
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  // we take SR from F2 or above into F0 and drop CSI
+                  res[i + 1].n_sr = res[i].n_sr;
+                  res[i + 1].sr_payload = res[i].sr_payload;
+                  res[i] = empty;
+                }
+              }
+            }
+            break;
+          case NR_PUCCH_Resource__format_PR_format1:
+            if (res[i + 1].n_sr > 0 && res[i + 1].n_harq == 0) {
+              AssertFatal(res[i].n_sr == 0, "We don't support multiple SR in a slot\n");
+              // we multiplex SR in the F2 or above resource
+              res[i].n_sr = res[i + 1].n_sr;
+              res[i].sr_payload = res[i + 1].sr_payload;
+              res[i + 1] = res[i];
+              res[i] = empty;
+            } else if (res[i + 1].n_harq > 0) {
+              AssertFatal(res[i].n_harq == 0, "The standard doesn't allow for more the 1 PUCCH in a slot with HARQ\n");
+              if (check_mux_acknack_csi(curr_resource, pucch_Config)) {
+                // we multiplex what in F0 to CSI resource
+                if (res[i].n_sr == 0) {
+                  res[i].n_sr = res[i + 1].n_sr;
+                  res[i].sr_payload = res[i + 1].sr_payload;
+                } else
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                res[i].n_harq = res[i + 1].n_harq;
+                res[i].ack_payload = res[i + 1].ack_payload;
+                res[i + 1] = res[i];
+                res[i] = empty;
+              } else {
+                // if we can't multiplex HARQ and CSI we discard CSI
+                if (res[i].n_sr == 0)
+                  res[i] = empty;
+                else {
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  if (res[i].n_sr > 0)
+                    LOG_E(MAC, "Not sure what to do here because you can't easily mux HARQ and SR in F1\n");
+                  res[i] = empty;
+                }
+              }
+            }
+            break;
+          case NR_PUCCH_Resource__format_PR_format2:
+          case NR_PUCCH_Resource__format_PR_format4:
+          case NR_PUCCH_Resource__format_PR_format3:
+            if (res[i + 1].n_csi > 0) {
+              AssertFatal(res[i].n_csi == 0, "Multiplexing multiple CSI report in a single PUCCH not supported yet\n");
+              AssertFatal(res[i].n_harq > 0 && res[i + 1].n_harq == 0,
+                          "There is CSI in next F2 or above resource, since there is no CSI in current one, we expect HARQ in "
+                          "there and not in next\n");
+              // the UE expects to be provided a same configuration for simultaneousHARQ-ACK-CSI each of PUCCH formats 2, 3, and 4
+              // we can check next or current
+              if (check_mux_acknack_csi(next_resource, pucch_Config)) {
+                // We need to use HARQ resource
+                if (res[i + 1].n_sr > 0) {
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  res[i].n_sr = res[i + 1].n_sr;
+                  res[i].sr_payload = res[i + 1].sr_payload;
+                }
+                res[i].n_csi = res[i + 1].n_csi;
+                res[i].csi_part1_payload = res[i + 1].csi_part1_payload;
+                res[i + 1] = res[i];
+                res[i] = empty;
+              } else {
+                if (res[i].n_sr > 0) {
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  // if we can't multiplex HARQ and CSI we discard CSI
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                } else if (res[i + 1].n_sr == 0) {
+                  // if we can't multiplex HARQ and CSI we discard CSI
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                } else {
+                  // we move SR (assuming it was previously multiplexed with CSI) into HARQ resource and discard CSI
+                  res[i].n_sr = res[i + 1].n_sr;
+                  res[i].sr_payload = res[i + 1].sr_payload;
+                  res[i + 1] = res[i];
+                  res[i] = empty;
+                }
+              }
+            } else if (res[i].n_csi > 0) {
+              AssertFatal(res[i + 1].n_csi == 0, "Multiplexing multiple CSI report in a single PUCCH not supported yet\n");
+              AssertFatal(res[i + 1].n_harq > 0 && res[i].n_harq == 0,
+                          "There is CSI in next F2 or above resource, since there is no CSI in current one, we expect HARQ in "
+                          "there and not in next\n");
+              // the UE expects to be provided a same configuration for simultaneousHARQ-ACK-CSI each of PUCCH formats 2, 3, and 4
+              // we can check next or current
+              if (check_mux_acknack_csi(next_resource, pucch_Config)) {
+                // We need to use HARQ resource
+                if (res[i].n_sr > 0) {
+                  AssertFatal(res[i + 1].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  res[i + 1].n_sr = res[i].n_sr;
+                  res[i + 1].sr_payload = res[i].sr_payload;
+                }
+                res[i + 1].n_csi = res[i].n_csi;
+                res[i + 1].csi_part1_payload = res[i].csi_part1_payload;
+                res[i] = empty;
+              } else {
+                if (res[i + 1].n_sr > 0) {
+                  AssertFatal(res[i].n_sr == 0, "We don't support more than 1 SR in a slot\n");
+                  // if we can't multiplex HARQ and CSI we discard CSI
+                  res[i] = empty;
+                } else if (res[i].n_sr == 0) {
+                  // if we can't multiplex HARQ and CSI we discard CSI
+                  res[i] = empty;
+                } else {
+                  // we move SR (assuming it was previously multiplexed with CSI) into HARQ resource and discard CSI
+                  res[i + 1].n_sr = res[i].n_sr;
+                  res[i + 1].sr_payload = res[i].sr_payload;
+                  res[i] = empty;
+                }
+              }
+            } else
+              AssertFatal(false, "We expect at least one of the 2 PUCCH F2 or above resources with CSI\n");
+            break;
+          default:
+            AssertFatal(false, "Invalid PUCCH format %d\n", next_resource->format.present);
+        }
+        break;
+      default:
+        AssertFatal(false, "Invalid PUCCH format %d\n", curr_resource->format.present);
+    }
+  }
+}
+
+void multiplex_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, int num_res)
+{
+  NR_PUCCH_Config_t *pucch_Config = mac->current_UL_BWP.pucch_Config;
+  order_resources(pucch, num_res);
+  // following pseudocode in Ref. 38.213 section 9.2.5 to multiplex resources
+  int j = 0;
+  int o = 0;
+  while (j <= num_res - 1) {
+    if (j < num_res - 1) {
+      NR_PUCCH_Resource_t *pucch_resource = pucch[j - o].pucch_resource;
+      int curr_start, curr_length;
+      get_pucch_start_symbol_length(pucch_resource, &curr_start, &curr_length);
+      pucch_resource = pucch[j + 1].pucch_resource;
+      int next_start, next_length;
+      get_pucch_start_symbol_length(pucch_resource, &next_start, &next_length);
+      bool overlap = check_overlapping_resources(curr_start, curr_length, next_start, next_length);
+      if (overlap) {
+        o++;
+        j++;
+      }
+    } else {
+      if (o > 0) {
+        merge_resources(&pucch[j - o], o + 1, pucch_Config);
+        // move the resources to occupy the places left empty
+        int num_empty = o;
+        for (int i = j; i < num_res; i++)
+          pucch[i - num_empty] = pucch[i];
+        for (int e = num_res - num_empty; e < num_res; e++)
+          memset(&pucch[e], 0, sizeof(pucch[e]));
+        j = 0;
+        o = 0;
+        num_res = num_res - num_empty;
+        order_resources(pucch, num_res);
+      } else
+        j++;
     }
   }
 }
@@ -1752,12 +2137,8 @@ void select_pucch_resource(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch)
 *
 *********************************************************************/
 
-uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
-                         frame_t frame,
-                         int slot,
-                         PUCCH_sched_t *pucch) {
-
-
+bool get_downlink_ack(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch)
+{
   uint32_t ack_data[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}};
   uint32_t dai[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}};       /* for serving cell */
   uint32_t dai_total[NR_DL_MAX_NB_CW][NR_DL_MAX_DAI] = {{0},{0}}; /* for multiple cells */
@@ -1784,6 +2165,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   int scs = current_UL_BWP->scs;
 
   slots_per_frame = nr_slots_per_frame[scs];
+  int res_ind = -1;
 
   /* look for dl acknowledgment which should be done on current uplink slot */
   for (int code_word = 0; code_word < number_of_code_word; code_word++) {
@@ -1796,7 +2178,7 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
 
         sched_slot = current_harq->dl_slot + current_harq->feedback_to_ul;
         sched_frame = current_harq->dl_frame;
-        if (sched_slot>=slots_per_frame){
+        if (sched_slot >= slots_per_frame) {
           sched_slot %= slots_per_frame;
           sched_frame = (sched_frame + 1) % 1024;
         }
@@ -1814,16 +2196,17 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
             LOG_E(MAC,"PUCCH Downlink DAI has an invalid value of %d\n", current_harq->dai);
           }
           else {
-
-            if ((pucch->resource_indicator != -1) && (pucch->resource_indicator != current_harq->pucch_resource_indicator))
-              LOG_E(MAC, "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
-                    current_harq->pucch_resource_indicator,pucch->resource_indicator);
+            if (res_ind != -1 && res_ind != current_harq->pucch_resource_indicator)
+              LOG_E(MAC,
+                    "Value of pucch_resource_indicator %d not matching with what set before %d (Possibly due to a false DCI) \n",
+                    current_harq->pucch_resource_indicator,
+                    res_ind);
             else{
-              dai_current = current_harq->dai+1; // DCI DAI to counter DAI conversion
+              dai_current = current_harq->dai + 1; // DCI DAI to counter DAI conversion
 
               if (dai_current == 0) {
                 LOG_E(MAC,"PUCCH Downlink dai is invalid\n");
-                return(0);
+                return false;
               } else if (dai_current > dai_max) {
                 dai_max = dai_current;
               }
@@ -1838,12 +2221,15 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
                 ack_data[code_word][dai_current - 1] = 0;
               }
               dai[code_word][dai_current - 1] = dai_current;
-
-              pucch->resource_indicator = current_harq->pucch_resource_indicator;
+              int temp_ind = current_harq->pucch_resource_indicator;
+              AssertFatal(res_ind == -1 || res_ind == temp_ind,
+                          "Current resource index %d does not match with previous resource index %d\n",
+                          temp_ind,
+                          res_ind);
+              res_ind = temp_ind;
               pucch->n_CCE = current_harq->n_CCE;
               pucch->N_CCE = current_harq->N_CCE;
               pucch->delta_pucch = current_harq->delta_pucch;
-              pucch->is_common = current_harq->is_common;
               LOG_D(PHY,"%4d.%2d Sent %d ack on harq pid %d\n", frame, slot, current_harq->ack, dl_harq_pid);
             }
           }
@@ -1854,12 +2240,11 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
 
   /* no any ack to transmit */
   if (number_harq_feedback == 0) {
-    pucch->n_HARQ_ACK = 0;
-    return(0);
+    return false;
   }
   else  if (number_harq_feedback > (sizeof(uint32_t)*8)) {
     LOG_E(MAC,"PUCCH number of ack bits exceeds payload size\n");
-    return(0);
+    return false;
   }
 
   /* for computing n_HARQ_ACK for power */
@@ -1867,10 +2252,17 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
   U_DAI_c = number_harq_feedback/number_of_code_word;
   N_m_c_rx = number_harq_feedback;
   int N_SPS_c = 0; /* FFS TODO_NR multicells and SPS are not supported at the moment */
+  int n_HARQ_ACK = 0;
   if (current_UL_BWP->harq_ACK_SpatialBundlingPUCCH != NULL) {
     int N_TB_max_DL = current_DL_BWP->pdsch_Config->maxNrofCodeWordsScheduledByDCI[0];
-    pucch->n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c)%4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
-    LOG_D(MAC, "PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n", pucch->n_HARQ_ACK, V_DAI_m_DL, U_DAI_c, N_TB_max_DL, N_m_c_rx);
+    n_HARQ_ACK = (((V_DAI_m_DL - U_DAI_c) % 4) * N_TB_max_DL) + N_m_c_rx + N_SPS_c;
+    LOG_D(MAC,
+          "PUCCH power n(%d) = ( V(%d) - U(%d) )mod4 * N_TB(%d) + N(%d) \n",
+          n_HARQ_ACK,
+          V_DAI_m_DL,
+          U_DAI_c,
+          N_TB_max_DL,
+          N_m_c_rx);
   }
 
   /*
@@ -1943,26 +2335,46 @@ uint8_t get_downlink_ack(NR_UE_MAC_INST_t *mac,
 
   if (number_harq_feedback != O_ACK) {
     LOG_E(MAC,"PUCCH Error for number of bits for acknowledgment\n");
-    return (0);
+    return false;
   }
 
+  NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
+  if (mac->state == UE_WAIT_TX_ACK_MSG4 || !pucch_Config || !pucch_Config->resourceSetToAddModList
+      || pucch_Config->resourceSetToAddModList->list.array[0] == NULL) {
+    /* see TS 38.213 9.2.1  PUCCH Resource Sets */
+    int delta_PRI = res_ind;
+    int n_CCE_0 = pucch->n_CCE;
+    int N_CCE_0 = pucch->N_CCE;
+    if (N_CCE_0 == 0)
+      AssertFatal(1 == 0, "PUCCH No compatible pucch format found\n");
+    int r_PUCCH = ((2 * n_CCE_0) / N_CCE_0) + (2 * delta_PRI);
+    pucch->initial_pucch_id = r_PUCCH;
+    pucch->pucch_resource = NULL;
+  } else {
+    int resource_set_id = find_pucch_resource_set(mac, O_ACK);
+    int n_list = pucch_Config->resourceSetToAddModList->list.count;
+    AssertFatal(resource_set_id < n_list, "Invalid PUCCH resource set id %d\n", resource_set_id);
+    n_list = pucch_Config->resourceSetToAddModList->list.array[resource_set_id]->resourceList.list.count;
+    AssertFatal(res_ind < n_list, "Invalid PUCCH resource id %d\n", res_ind);
+    long *acknack_resource_id =
+        pucch_Config->resourceSetToAddModList->list.array[resource_set_id]->resourceList.list.array[res_ind];
+    AssertFatal(acknack_resource_id != NULL, "Couldn't find PUCCH Resource ID in ResourceSet\n");
+    NR_PUCCH_Resource_t *acknack_resource = find_pucch_resource_from_list(pucch_Config->resourceToAddModList, *acknack_resource_id);
+    AssertFatal(acknack_resource != NULL, "Couldn't find PUCCH Resource ID for ACK/NACK in PUCCH resource list\n");
+    pucch->pucch_resource = acknack_resource;
+    LOG_D(MAC, "frame %d slot %d pucch acknack payload %d\n", frame, slot, o_ACK);
+  }
   reverse_n_bits(&o_ACK,number_harq_feedback);
   pucch->ack_payload = o_ACK;
+  pucch->n_harq = number_harq_feedback;
 
-  LOG_D(MAC,"frame %d slot %d pucch acknack payload %d\n",frame,slot,o_ACK);
-
-  return(number_harq_feedback);
+  return (number_harq_feedback > 0);
 }
 
-
-bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
-                                         PUCCH_sched_t *pucch,
-                                         frame_t frame,
-                                         int slot) {
-
+bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac, PUCCH_sched_t *pucch, frame_t frame, int slot)
+{
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
-
   const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
 
   if(!pucch_Config ||
@@ -1970,6 +2382,7 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
      pucch_Config->schedulingRequestResourceToAddModList->list.count==0)
     return false; // SR not configured
 
+  int sr_count = 0;
   for (int SR_resource_id =0; SR_resource_id < pucch_Config->schedulingRequestResourceToAddModList->list.count;SR_resource_id++) {
     NR_SchedulingRequestResourceConfig_t *SchedulingRequestResourceConfig = pucch_Config->schedulingRequestResourceToAddModList->list.array[SR_resource_id];
     int SR_period; int SR_offset;
@@ -1979,26 +2392,20 @@ bool trigger_periodic_scheduling_request(NR_UE_MAC_INST_t *mac,
 
     if ((sfn_sf - SR_offset) % SR_period == 0) {
       LOG_D(MAC, "Scheduling Request active in frame %d slot %d \n", frame, slot);
-      NR_PUCCH_ResourceId_t *PucchResourceId = SchedulingRequestResourceConfig->resource;
-
-      int found = -1;
-      NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[0]; // set with formats 0,1
-      int n_list = pucchresset->resourceList.list.count;
-       for (int i=0; i<n_list; i++) {
-        if (*pucchresset->resourceList.list.array[i] == *PucchResourceId ) {
-          found = i;
-          break;
-        }
+      if (!SchedulingRequestResourceConfig->resource) {
+        LOG_E(MAC, "No resource associated with SR. SR not scheduled\n");
+        break;
       }
-      if (found == -1) {
-        LOG_E(MAC,"Couldn't find PUCCH resource for SR\n");
-        return false;
-      }
-      pucch->resource_indicator = found;
-      return true;
+      NR_PUCCH_Resource_t *sr_pucch =
+          find_pucch_resource_from_list(pucch_Config->resourceToAddModList, *SchedulingRequestResourceConfig->resource);
+      AssertFatal(sr_pucch != NULL, "Couldn't find PUCCH Resource ID for SR in PUCCH resource list\n");
+      pucch->pucch_resource = sr_pucch;
+      pucch->n_sr = 1;
+      sr_count++;
     }
   }
-  return false;
+  AssertFatal(sr_count < 2, "Cannot handle more than 1 SR per slot yet\n");
+  return sr_count > 0 ? true : false;
 }
 
 int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
@@ -2049,62 +2456,83 @@ int8_t nr_ue_get_SR(module_id_t module_idP, frame_t frameP, slot_t slot){
   }
 }
 
+// section 5.2.5 of 38.214
+int compute_csi_priority(NR_UE_MAC_INST_t *mac, NR_CSI_ReportConfig_t *csirep)
+{
+  int y = 4 - csirep->reportConfigType.present;
+  int k = csirep->reportQuantity.present == NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP
+                  || csirep->reportQuantity.present == NR_CSI_ReportConfig__reportQuantity_PR_ssb_Index_RSRP
+              ? 0
+              : 1;
+  int Ncells = 32; // maxNrofServingCells
+  int c = mac->servCellIndex;
+  int s = csirep->reportConfigId;
+  int Ms = 48; // maxNrofCSI-ReportConfigurations
 
-uint8_t nr_get_csi_measurements(NR_UE_MAC_INST_t *mac,
-                                frame_t frame,
-                                int slot,
-                                PUCCH_sched_t *pucch) {
+  return 2 * Ncells * Ms * y + Ncells * Ms * k + Ms * c + s;
+}
 
+int nr_get_csi_measurements(NR_UE_MAC_INST_t *mac, frame_t frame, int slot, PUCCH_sched_t *pucch)
+{
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t bwp_id = current_UL_BWP->bwp_id;
   NR_PUCCH_Config_t *pucch_Config = current_UL_BWP->pucch_Config;
-  int csi_bits = 0;
+  int num_csi = 0;
 
   if (current_UL_BWP->csi_MeasConfig) {
     NR_CSI_MeasConfig_t *csi_measconfig = current_UL_BWP->csi_MeasConfig;
 
+    int csi_priority = INT_MAX;
     for (int csi_report_id = 0; csi_report_id < csi_measconfig->csi_ReportConfigToAddModList->list.count; csi_report_id++){
       NR_CSI_ReportConfig_t *csirep = csi_measconfig->csi_ReportConfigToAddModList->list.array[csi_report_id];
 
       if(csirep->reportConfigType.present == NR_CSI_ReportConfig__reportConfigType_PR_periodic){
-
-        const NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
-        if(pucchcsires->uplinkBandwidthPartId != bwp_id)
-          continue;
 
         int period, offset;
         csi_period_offset(csirep, NULL, &period, &offset);
 
         const int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
         if (((n_slots_frame*frame + slot - offset)%period) == 0 && pucch_Config) {
-          LOG_D(NR_MAC, "Preparing CSI report in frame %d slot %d CSI report ID %d\n", frame, slot, csi_report_id);
-          NR_PUCCH_CSI_Resource_t *pucchcsires = csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[0];
-          NR_PUCCH_ResourceSet_t *pucchresset = pucch_Config->resourceSetToAddModList->list.array[1]; // set with formats >1
-          int n = pucchresset->resourceList.list.count;
-
-          int res_index;
-          int found = -1;
-          for (res_index = 0; res_index < n; res_index++) {
-            if (*pucchresset->resourceList.list.array[res_index] == pucchcsires->pucch_Resource) {
-              found = res_index;
+          int csi_res_id = -1;
+          for (int i = 0; i < csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.count; i++) {
+            const NR_PUCCH_CSI_Resource_t *pucchcsires =
+                csirep->reportConfigType.choice.periodic->pucch_CSI_ResourceList.list.array[i];
+            if (pucchcsires->uplinkBandwidthPartId == bwp_id) {
+              csi_res_id = pucchcsires->pucch_Resource;
               break;
             }
           }
-          AssertFatal(found != -1,
-                      "CSI resource not found among PUCCH resources\n");
-          LOG_D(NR_MAC, "CSI reporting in frame %d slot %d CSI report ID %ld\n", frame, slot, csirep->reportConfigId);
-          pucch->resource_indicator = found;
-          csi_bits += nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
+          AssertFatal(csi_res_id > -1, "Couldn't find PUCCH resource ID associated with current BWP\n");
+          NR_PUCCH_Resource_t *csi_pucch = find_pucch_resource_from_list(pucch_Config->resourceToAddModList, csi_res_id);
+          AssertFatal(csi_pucch != NULL, "Couldn't find PUCCH Resource ID for SR in PUCCH resource list\n");
+          LOG_D(NR_MAC, "Preparing CSI report in frame %d slot %d CSI report ID %d\n", frame, slot, csi_report_id);
+          int temp_priority = compute_csi_priority(mac, csirep);
+          if (num_csi > 0) {
+            // need to verify if we can multiplex multiple CSI report
+            if (pucch_Config->multi_CSI_PUCCH_ResourceList) {
+              AssertFatal(false, "Multiplexing multiple CSI report in a single PUCCH not supported yet\n");
+            } else if (temp_priority < csi_priority) {
+              // we discard previous report
+              csi_priority = temp_priority;
+              num_csi = 1;
+              pucch->n_csi = nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
+              pucch->pucch_resource = csi_pucch;
+            } else
+              continue;
+          } else {
+            num_csi = 1;
+            csi_priority = temp_priority;
+            pucch->n_csi = nr_get_csi_payload(mac, pucch, csi_report_id, csi_measconfig);
+            pucch->pucch_resource = csi_pucch;
+          }
         }
       }
       else
         AssertFatal(1==0,"Only periodic CSI reporting is currently implemented\n");
     }
   }
-
-  return csi_bits;
+  return num_csi;
 }
-
 
 uint8_t nr_get_csi_payload(NR_UE_MAC_INST_t *mac,
                            PUCCH_sched_t *pucch,

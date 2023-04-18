@@ -325,6 +325,7 @@ int nr_process_mac_pdu(instance_t module_idP,
 
         if (UE_idx->CellGroup) {
           LOG_D(NR_MAC, "Frame %d : ULSCH -> UL-DCCH %d (gNB %ld, %d bytes), rnti: 0x%04x \n", frameP, rx_lcid, module_idP, mac_len, crnti);
+          UE->mac_stats.ul.total_sdu_bytes += mac_len;
           mac_rlc_data_ind(module_idP,
                            crnti,
                            module_idP,

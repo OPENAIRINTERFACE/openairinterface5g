@@ -32,7 +32,6 @@ rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create)
     ue->nb_of_pdusessions++;
   else
     return NULL;
-  AssertFatal(ue->nb_of_pdusessions < NGAP_MAX_PDU_SESSION, "");
   return ue->pduSession + j;
 }
 

@@ -73,7 +73,9 @@ typedef struct f1ap_net_ip_address_s {
 } f1ap_net_ip_address_t;
 
 typedef struct f1ap_cu_setup_req_s {
-   //
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } f1ap_cu_setup_req_t;
 
 typedef struct cellIDs_s {

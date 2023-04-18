@@ -35,27 +35,6 @@
 extern bool util_mark_nth_bit_of_octet(uint8_t* octet, uint8_t index);
 
 /*
- * Parses data/control field out of buffer of User Plane PDCP Data PDU with
- * long PDCP SN (12-bit)
- *
- * @param pdu_buffer PDCP PDU buffer
- * @return 1 bit dc
- */
-uint8_t pdcp_get_dc_filed(unsigned char* pdu_buffer)
-{
-  uint8_t dc = 0x00;
-
-  if (pdu_buffer == NULL) {
-    return 0;
-  }
-
-  dc = (uint8_t)pdu_buffer[0] & 0xF0; // Reset D/C field
-  dc >>= 8; // FIXME this is broken!!! returns 0 all the time
-
-  return dc;
-}
-
-/*
  * Parses sequence number out of buffer of User Plane PDCP Data PDU with
  * long PDCP SN (12-bit)
  *

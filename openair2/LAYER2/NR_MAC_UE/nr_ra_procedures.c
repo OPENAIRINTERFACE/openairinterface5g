@@ -40,93 +40,13 @@
 
 #include <executables/softmodem-common.h>
 
-// Implementation of 6.2.4 Configured ransmitted power
-// 3GPP TS 38.101-1 version 16.5.0 Release 16
-// -
-// The UE is allowed to set its configured maximum output power PCMAX,f,c for carrier f of serving cell c in each slot.
-// The configured maximum output power PCMAX,f,c is set within the following bounds: PCMAX_L,f,c <=  PCMAX,f,c <=  PCMAX_H,f,c
-// -
-// Measurement units:
-// - p_max:              dBm
-// - delta_TC_c:         dB
-// - P_powerclass:       dBm
-// - delta_P_powerclass: dB
-// - MPR_c:              dB
-// - delta_MPR_c:        dB
-// - delta_T_IB_c        dB
-// - delta_rx_SRS        dB
-// note:
-// - Assuming:
-// -- Powerclass 3 capable UE (which is default power class unless otherwise stated)
-// -- Maximum power reduction (MPR_c) for power class 3, QPSK, inner RB allocations
-// -- no additional MPR (A_MPR_c)
-// todo:
-// - in current implementation delta_P_powerclass is not handling power classes different from 3
-long nr_get_Pcmax(module_id_t mod_id){
-
-  NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
-  uint32_t band = (mac->scc!=NULL) ? *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0] :
-    *mac->scc_SIB->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
-  NR_P_Max_t p_max           = 0;
-  uint8_t P_powerclass       = 23;
-  uint8_t delta_P_powerclass = 0;
-  uint8_t MPR_c              = 1;
-  uint8_t delta_MPR_c        = 0;
-  uint8_t A_MPR_c            = 0;
-  uint8_t delta_T_IB_c       = 0;
-  uint8_t delta_TC_c         = 0;
-  uint8_t delta_rx_SRS       = 0;
-  uint8_t P_MPR_c            = 0;
-  long P_cmax_l              = 0;
-  long P_cmax_h              = 0;
-  long P_cmax                = 0;
-
-  if (band == 28 && mac->phy_config.config_req.carrier_config.uplink_bandwidth == 30){
-    delta_MPR_c = 1;
-  }
-
-  if (mac->cg && mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1){
-    if (*mac->cg->spCellConfig->spCellConfigDedicated->uplinkConfig->ext1->powerBoostPi2BPSK == 1){
-      // TbD: assuming power class 3 capable UE operating in TDD bands n40, n41, n77, n78, and n79 with Pi/2 BPSK modulation
-      delta_P_powerclass = -3;
-      p_max += 3;
-    }
-  }
-
-  NR_P_Max_t *p_Max = (mac->scc!=NULL) ? mac->scc->uplinkConfigCommon->frequencyInfoUL->p_Max : mac->scc_SIB->uplinkConfigCommon->frequencyInfoUL.p_Max;
-  if (p_Max){
-
-    p_max += *p_Max;
-
-    LOG_D(MAC, "In %s maximum UL transmission power p_max is %ld dBm \n", __FUNCTION__, p_max);
-
-    P_cmax_l = min(p_max - delta_TC_c, (P_powerclass - delta_P_powerclass) - max(max(MPR_c + delta_MPR_c, A_MPR_c) + delta_T_IB_c + delta_TC_c + delta_rx_SRS, P_MPR_c));
-
-    P_cmax_h = min(p_max, P_powerclass - delta_P_powerclass);
-
-  } else {
-
-    P_cmax_l = (P_powerclass - delta_P_powerclass) - max(max(MPR_c + delta_MPR_c, A_MPR_c) + delta_T_IB_c + delta_TC_c + delta_rx_SRS, P_MPR_c);
-
-    P_cmax_h = P_powerclass - delta_P_powerclass;
-
-  }
-
-  P_cmax = (P_cmax_h + P_cmax_l) / 2;
-
-  LOG_D(MAC, "In %s configured maximum output power:  %ld dBm <= PCMAX %ld dBm <= %ld dBm \n", __FUNCTION__, P_cmax_l, P_cmax, P_cmax_h);
-
-  return P_cmax;
-
-}
-
 int16_t get_prach_tx_power(module_id_t mod_id) {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra = &mac->ra;
   int16_t pathloss = compute_nr_SSB_PL(mac, mac->ssb_measurements.ssb_rsrp_dBm);
   int16_t ra_preamble_rx_power = (int16_t)(ra->prach_resources.ra_PREAMBLE_RECEIVED_TARGET_POWER - pathloss + 30);
-  return min(nr_get_Pcmax(mod_id), ra_preamble_rx_power);
+  return min(ra->prach_resources.RA_PCMAX, ra_preamble_rx_power);
 
 }
 
@@ -153,7 +73,13 @@ void init_RA(module_id_t mod_id,
   ra->RA_backoff_cnt       = 0;
 
   prach_resources->RA_PREAMBLE_BACKOFF = 0;
-  prach_resources->RA_PCMAX = nr_get_Pcmax(mod_id);
+  NR_SubcarrierSpacing_t prach_scs = *nr_rach_ConfigCommon->msg1_SubcarrierSpacing;
+  int n_prbs = get_N_RA_RB (prach_scs, mac->current_UL_BWP.scs);
+  int start_prb = rach_ConfigGeneric->msg1_FrequencyStart + mac->current_UL_BWP.BWPStart;
+  int carrier_bandwidth = mac->scc_SIB ? mac->scc_SIB->uplinkConfigCommon->frequencyInfoUL.scs_SpecificCarrierList.list.array[0]->carrierBandwidth :
+                          mac->scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+  // PRACH shall be as specified for QPSK modulated DFT-s-OFDM of equivalent RB allocation (38.101-1)
+  prach_resources->RA_PCMAX = nr_get_Pcmax(mac, 2, false, prach_scs, carrier_bandwidth, true, n_prbs, start_prb);
   prach_resources->RA_PREAMBLE_TRANSMISSION_COUNTER = 1;
   prach_resources->RA_PREAMBLE_POWER_RAMPING_COUNTER = 1;
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
@@ -488,7 +414,8 @@ void ra_preambles_config(NR_PRACH_RESOURCES_t *prach_resources, NR_UE_MAC_INST_t
     // Overwrite seed with non-random seed for IQ player/recorder
     seed = 1;
   } else {
-    seed=(unsigned int) (rdtsc_oai() && ~0);
+    // & to truncate the int64_t and keep only the LSB bits, up to sizeof(int)
+    seed = (unsigned int) (rdtsc_oai() & ~0);
   }
 
   RA_config_t *ra = &mac->ra;
@@ -813,7 +740,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         uint16_t sdu_lengths[NB_RB_MAX] = {0};
         int TBS_bytes = 848;
         int mac_ce_len = 0;
-        int header_length_total=0;
         unsigned short post_padding = 1;
 
         // fill ulsch_buffer with random data
@@ -823,7 +749,6 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
         //Sending SDUs with size 1
         //Initialize elements of sdu_lengths
         sdu_lengths[0] = TBS_bytes - 3 - post_padding - mac_ce_len;
-        header_length_total += 2 + (sdu_lengths[0] >= 128);
         size_sdu += sdu_lengths[0];
 
         if (size_sdu > 0) {
@@ -1040,7 +965,8 @@ void nr_ra_failed(uint8_t mod_id, uint8_t CC_id, NR_PRACH_RESOURCES_t *prach_res
     // Overwrite seed with non-random seed for IQ player/recorder
     seed = 1;
   } else {
-    seed=(unsigned int) (rdtsc_oai() && ~0);
+    // & to truncate the int64_t and keep only the LSB bits, up to sizeof(int)
+    seed = (unsigned int) (rdtsc_oai() & ~0);
   }
   
   ra->first_Msg3 = 1;

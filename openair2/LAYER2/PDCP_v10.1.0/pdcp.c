@@ -647,7 +647,6 @@ pdcp_data_ind(
         exit(1);
       }
 
-      //uint8_t dc = pdcp_get_dc_filed((unsigned char*)sdu_buffer_pP->data);
     }
 
     /*

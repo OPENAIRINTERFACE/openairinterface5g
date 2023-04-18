@@ -986,6 +986,7 @@ static int _nas_message_decrypt(
               length, security_header_type);
     memcpy(dest, src, length);
     DECODE_U8(dest, *(uint8_t*)(&header), size);
+    (void) size; // prevent warning of unused variable, but we have to decode it
     LOG_FUNC_RETURN (header.protocol_discriminator);
     //LOG_FUNC_RETURN (length);
     break;
@@ -1022,6 +1023,7 @@ static int _nas_message_decrypt(
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
+      (void) size; // prevent warning of unused variable, but we have to decode it
 
       LOG_FUNC_RETURN (header.protocol_discriminator);
 
@@ -1056,6 +1058,7 @@ static int _nas_message_decrypt(
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
+      (void) size; // prevent warning of unused variable, but we have to decode it
 
       LOG_FUNC_RETURN (header.protocol_discriminator);
     }
@@ -1071,6 +1074,7 @@ static int _nas_message_decrypt(
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
+      (void) size; // prevent warning of unused variable, but we have to decode it
 
       LOG_FUNC_RETURN (header.protocol_discriminator);
 
@@ -1084,6 +1088,7 @@ static int _nas_message_decrypt(
       /* Decode the first octet (security header type or EPS bearer identity,
        * and protocol discriminator) */
       DECODE_U8(dest, *(uint8_t*)(&header), size);
+      (void) size; // prevent warning of unused variable, but we have to decode it
 
       LOG_FUNC_RETURN (header.protocol_discriminator);
       break;

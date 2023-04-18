@@ -14,7 +14,7 @@ int get_from_lte_ue_fd()
     return from_lte_ue_fd;
 }
 
-void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, MessagesIds msg_type)
+void nsa_sendmsg_to_lte_ue(const void *message, size_t msg_len, Rrc_Msg_Type_t msg_type)
 {
     LOG_I(NR_RRC, "Entered %s \n", __FUNCTION__);
     nsa_msg_t n_msg;

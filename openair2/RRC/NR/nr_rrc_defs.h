@@ -442,32 +442,22 @@ typedef struct rrc_gNB_ue_context_s {
 
 typedef struct {
 
-  // buffer that contains the encoded messages
-  uint8_t                                   *MIB;
-  uint8_t                                   sizeof_MIB;
-
   uint8_t                                   *SIB1;
   uint16_t                                  sizeof_SIB1;
 
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
 
-  uint8_t                                   *ServingCellConfigCommon;
-  uint8_t                                   sizeof_servingcellconfigcommon;
-
   int                                       physCellId;
 
-  NR_BCCH_BCH_Message_t                     mib;
-  NR_BCCH_BCH_Message_t                    *mib_DU;
+  NR_BCCH_BCH_Message_t                    *mib;
   NR_SIB1_t                                *siblock1_DU;
-  //NR_BCCH_DL_SCH_Message_t                 *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
-  NR_ServingCellConfig_t                    *servingcellconfig;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
   int                                       p_gNB;
 

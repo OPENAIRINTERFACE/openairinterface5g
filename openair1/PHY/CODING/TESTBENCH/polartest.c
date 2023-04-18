@@ -29,7 +29,6 @@ int main(int argc, char *argv[])
   uint32_t decoderState=0, blockErrorState=0; //0 = Success, -1 = Decoding failed, 1 = Block Error.
   uint16_t testLength = NR_POLAR_PBCH_PAYLOAD_BITS, coderLength = NR_POLAR_PBCH_E;
   uint16_t blockErrorCumulative=0, bitErrorCumulative=0;
-  double timeEncoderCumulative = 0, timeDecoderCumulative = 0;
   uint8_t aggregation_level = 8, decoderListSize = 8, logFlag = 0;
   uint16_t rnti=0;
 
@@ -326,8 +325,6 @@ int main(int argc, char *argv[])
 #endif
 
       //Iteration times are in microseconds.
-      timeEncoderCumulative+=(timeEncoder.diff/(get_cpu_freq_GHz()*1000.0));
-      timeDecoderCumulative+=(timeDecoder.diff/(get_cpu_freq_GHz()*1000.0));
       if (logFlag) fprintf(logFile,",%f,%d,%u,%f,%f\n", SNR, nBitError, blockErrorState, (timeEncoder.diff/(get_cpu_freq_GHz()*1000.0)), (timeDecoder.diff/(get_cpu_freq_GHz()*1000.0)));
 
       if (nBitError<0) {
@@ -351,14 +348,11 @@ int main(int argc, char *argv[])
            decoderListSize, SNR, ((double)blockErrorCumulative/iterations),
            ((double)bitErrorCumulative / (iterations*testLength)),
            (double)timeEncoder.diff/timeEncoder.trials/(get_cpu_freq_GHz()*1000.0),(double)timeDecoder.diff/timeDecoder.trials/(get_cpu_freq_GHz()*1000.0));
-    //(timeEncoderCumulative/iterations),timeDecoderCumulative/iterations);
 
     if (blockErrorCumulative==0 && bitErrorCumulative==0) break;
 
     blockErrorCumulative = 0;
     bitErrorCumulative = 0;
-    timeEncoderCumulative = 0;
-    timeDecoderCumulative = 0;
   }
 
   print_meas(&timeEncoder,"polar_encoder",NULL,NULL);

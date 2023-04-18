@@ -10,7 +10,7 @@ add_definitions(-std=gnu99)
 ENABLE_LANGUAGE(C)
 
 set(CMAKE_C_FLAGS
-  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -Werror -Wall -Wstrict-prototypes -Wno-packed-bitfield-compat -g")
+  "${CMAKE_C_FLAGS} ${C_FLAGS_PROCESSOR} -Werror -Wall -Wstrict-prototypes -g")
 
 set(OPENAIR_DIR     $ENV{OPENAIR_DIR})
 set(OPENAIR3_DIR    $ENV{OPENAIR_DIR}/openair3)

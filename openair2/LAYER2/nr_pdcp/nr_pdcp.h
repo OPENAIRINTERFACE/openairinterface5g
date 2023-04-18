@@ -26,6 +26,5 @@
 #define _NR_PDCP_H_
 
 void nr_pdcp_layer_init_ue(void);
-void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 #endif /* _NR_PDCP_H_ */

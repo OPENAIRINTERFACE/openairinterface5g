@@ -1126,7 +1126,7 @@ static void do_ru_synch(RU_t *ru) {
 
 
 int check_sync(RU_t *ru, RU_t *ru_master, int subframe) {
-  if (fabs(ru_master->proc.t[subframe].tv_nsec - ru->proc.t[subframe].tv_nsec) > 500000)
+  if (labs(ru_master->proc.t[subframe].tv_nsec - ru->proc.t[subframe].tv_nsec) > 500000)
     return 0;
 
   return 1;
@@ -1178,12 +1178,12 @@ void wakeup_L1s(RU_t *ru) {
 
     if (ru->is_slave == 0 && ( (proc->RU_mask[ru->proc.tti_rx]&(1<<i)) == 1 ) && eNB->RU_list[i]->state == RU_RUN) { //This is master & the RRU has already been received
       if (check_sync(eNB->RU_list[i],eNB->RU_list[0],ru->proc.tti_rx) == 0)
-        LOG_E(PHY,"RU %d is not SYNC, subframe %d, time  %f this is master\n",
-              eNB->RU_list[i]->idx, ru->proc.tti_rx, fabs(eNB->RU_list[i]->proc.t[ru->proc.tti_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.tti_rx].tv_nsec));
+        LOG_E(PHY,"RU %d is not SYNC, subframe %d, time  %ld this is master\n",
+              eNB->RU_list[i]->idx, ru->proc.tti_rx, labs(eNB->RU_list[i]->proc.t[ru->proc.tti_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.tti_rx].tv_nsec));
     } else if (ru->is_slave == 1 && ru->state == RU_RUN && ( (proc->RU_mask[ru->proc.tti_rx]&(1<<0)) == 1)) { // master already received. TODO: we assume that RU0 is master.
       if (check_sync(ru,eNB->RU_list[0],ru->proc.tti_rx) == 0)
-        LOG_E(PHY,"RU %d is not SYNC time, subframe %d, time  %f\n",
-              ru->idx, ru->proc.tti_rx, fabs(ru->proc.t[ru->proc.tti_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.tti_rx].tv_nsec));
+        LOG_E(PHY,"RU %d is not SYNC time, subframe %d, time  %ld\n",
+              ru->idx, ru->proc.tti_rx, labs(ru->proc.t[ru->proc.tti_rx].tv_nsec - eNB->RU_list[0]->proc.t[ru->proc.tti_rx].tv_nsec));
     }
   }
 

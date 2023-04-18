@@ -1245,7 +1245,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
     }
   }
   pthread_mutex_unlock(&mac_IF_mutex);
-  return 0;
+  return ret_mask;
 }
 
 nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){

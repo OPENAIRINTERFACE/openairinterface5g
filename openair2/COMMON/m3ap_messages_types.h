@@ -160,6 +160,9 @@ typedef struct m3ap_register_mce_req_s {
 
 typedef struct m3ap_subframe_process_s {
   /* nothing, we simply use the module ID in the header */
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m3ap_subframe_process_t;
 
 //-------------------------------------------------------------------------------------------//
@@ -270,28 +273,64 @@ typedef struct m3ap_mme_sctp_req_s {
 
 
 typedef struct m3ap_session_start_req_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_start_req_t;
 typedef struct m3ap_session_start_resp_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_start_resp_t;
 typedef struct m3ap_session_start_failure_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_start_failure_t;
 typedef struct m3ap_session_stop_req_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_stop_req_t;
 typedef struct m3ap_session_stop_resp_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_stop_resp_t;
 typedef struct m3ap_session_stop_failure_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_session_stop_failure_t;
 typedef struct m3ap_error_indication_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_error_indication_t;
 typedef struct m3ap_reset_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_reset_t;
 typedef struct m3ap_reset_ack_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_reset_ack_t;
 typedef struct m3ap_mbms_session_update_req_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mbms_session_update_req_t;
 typedef struct m3ap_mbms_session_update_resp_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mbms_session_update_resp_t;
 typedef struct m3ap_mbms_session_update_failure_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mbms_session_update_failure_t;
 typedef struct m3ap_setup_req_s{
   /* Connexion id used between SCTP/M3AP */
@@ -306,14 +345,29 @@ typedef struct m3ap_setup_req_s{
   uint16_t default_sctp_stream_id;
 }m3ap_setup_req_t;
 typedef struct m3ap_setup_resp_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_setup_resp_t;
 typedef struct m3ap_setup_failure_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_setup_failure_t;
 typedef struct m3ap_mce_configuration_update_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mce_configuration_update_t;
 typedef struct m3ap_mce_configuration_update_ack_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mce_configuration_update_ack_t;
 typedef struct m3ap_mce_configuration_update_failure_s{
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m3ap_mce_configuration_update_failure_t;
 
 
