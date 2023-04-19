@@ -273,11 +273,18 @@ class Cluster:
 			ranbuild_job = self._start_build('ran-build')
 			attemptedImages += ['ran-build']
 
-			wait = ranbuild_job is not None and physim_job is not None and self._wait_build_end([ranbuild_job, physim_job], 1200)
-			if not wait: logging.error('error during build of ranbuild_job or physim_job')
+			self._recreate_is_tag('oai-clang', imageTag, 'openshift/oai-clang-is.yaml')
+			self._recreate_bc('oai-clang', imageTag, 'openshift/oai-clang-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.clang.rhel8.2')
+			clang_job = self._start_build('oai-clang')
+			attemptedImages += ['oai-clang']
+
+			wait = ranbuild_job is not None and physim_job is not None and clang_job is not None and self._wait_build_end([ranbuild_job, physim_job, clang_job], 1200)
+			if not wait: logging.error('error during build of ranbuild_job or physim_job or clang_job')
 			status = status and wait
 			self.cmd.run(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log')
 			self.cmd.run(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log')
+			self.cmd.run(f'oc logs {clang_job} &> cmake_targets/log/oai-clang.log')
 			self.cmd.run(f'oc get pods.metrics.k8s.io &>> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		if status:
