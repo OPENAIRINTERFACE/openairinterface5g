@@ -88,7 +88,7 @@ Some directories under `radio` contain READMEs:
 - [RFsimulator](../radio/rfsimulator/README.md)
 - [USRP](../radio/USRP/README.md)
 - [BladeRF](../radio/BLADERF/README)
-- [IQPlayer](../radio/iqplayer/DOC/iqrecordplayer_usage.md)
+- [IQPlayer](../radio/iqplayer/DOC/iqrecordplayer_usage.md), and [general documentation](./iqrecordplayer_usage.md)
 
 The other SDRs (AW2S, LimeSDR, ...) have no READMEs.
 
