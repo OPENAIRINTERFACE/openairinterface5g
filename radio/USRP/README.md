@@ -39,11 +39,38 @@ Note 2: when using multiple USRPs they always have to be synchronized using "ext
 
 Last but not least you may specify that only a specfic subdevice of the USRP is used. See also https://files.ettus.com/manual/page_configuration.html#config_subdev
 
-For example on a USRP N310 the following fields will specify that you use channel 0 of subdevice A.
+For example on a USRP N310 the following fields will specify that you use channel 0 of subdevice A. You can enter this information after providing the ip addresses of the USRPs in sdr_addrs.
 
 ```bash
 tx_subdev = "A:0"
 rx_subdev = "A:0"
 ```
+Here is an example of the RUs configuration for a setup with 2 USRP N310. 
 
-When combining this with the multi USRP feature you can easily create a distributed antenna array with only 1 channel used at each USRP.
+```bash
+RUs = (
+{
+  local_rf       = "yes"
+  nb_tx          = 2
+  nb_rx          = 2
+  att_tx         = 0
+  att_rx         = 0;
+  bands          = [78];
+  max_pdschReferenceSignalPower = -27;
+  max_rxgain                    = 75;
+  eNB_instances  = [0];
+  ##beamforming 1x2 matrix: 1 layer x 2 antennas
+  bf_weights = [0x00007fff, 0x0000];
+  sdr_addrs = "addr0=192.168.10.2,addr1=192.168.20.2,clock_source=external,time_source=external"
+  tx_subdev ="A:0 B:0"
+  rx_subdev ="A:1 B:1"
+}
+);
+```
+Hint:
+
+You cannot see TX/RX spread over multiple USRPs, if you use "internal" as a refrence of the clock and time source.
+
+Furthur information about synchronization on the USRP N3xx devices can be found here: https://kb.ettus.com/Using_Ethernet-Based_Synchronization_on_the_USRP%E2%84%A2_N3xx_Devices
+
+When combining this with the multi USRP feature you can create a distributed antenna array with only 1 channel used at each USRP.
