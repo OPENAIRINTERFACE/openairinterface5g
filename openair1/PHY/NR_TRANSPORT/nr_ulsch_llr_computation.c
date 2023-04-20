@@ -1376,6 +1376,2630 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
   _m_empty();
 }
 
+static const int16_t ones256[16] __attribute__((aligned(32))) = {0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff,
+                                                                 0xffff};
+
+/// Auxiliary Makros
+
+// calculate interference magnitude
+// tmp_result = ones in shorts corr. to interval 2<=x<=4, tmp_result2 interval < 2, tmp_result3 interval 4<x<6 and tmp_result4
+// interval x>6
+#define interference_abs_64qam_epi16_256(psi, int_ch_mag, int_two_ch_mag, int_three_ch_mag, a, c1, c3, c5, c7) \
+  tmp_result = simde_mm256_cmpgt_epi16(int_two_ch_mag, psi);                                               \
+  tmp_result3 = simde_mm256_xor_si256(tmp_result, (*(__m256i *)&ones256[0]));                              \
+  tmp_result2 = simde_mm256_cmpgt_epi16(int_ch_mag, psi);                                                  \
+  tmp_result = simde_mm256_xor_si256(tmp_result, tmp_result2);                                             \
+  tmp_result4 = simde_mm256_cmpgt_epi16(psi, int_three_ch_mag);                                            \
+  tmp_result3 = simde_mm256_xor_si256(tmp_result3, tmp_result4);                                           \
+  tmp_result = simde_mm256_and_si256(tmp_result, c3);                                                      \
+  tmp_result2 = simde_mm256_and_si256(tmp_result2, c1);                                                    \
+  tmp_result3 = simde_mm256_and_si256(tmp_result3, c5);                                                    \
+  tmp_result4 = simde_mm256_and_si256(tmp_result4, c7);                                                    \
+  tmp_result = simde_mm256_or_si256(tmp_result, tmp_result2);                                              \
+  tmp_result3 = simde_mm256_or_si256(tmp_result3, tmp_result4);                                            \
+  const simde__m256i a = simde_mm256_or_si256(tmp_result, tmp_result3);
+
+// calculates psi_a = psi_r*a_r + psi_i*a_i
+#define prodsum_psi_a_epi16_256(psi_r, a_r, psi_i, a_i, psi_a) \
+  tmp_result = simde_mm256_mulhi_epi16(psi_r, a_r);        \
+  tmp_result = simde_mm256_slli_epi16(tmp_result, 1);      \
+  tmp_result2 = simde_mm256_mulhi_epi16(psi_i, a_i);       \
+  tmp_result2 = simde_mm256_slli_epi16(tmp_result2, 1);    \
+  simde__m256i psi_a = simde_mm256_adds_epi16(tmp_result, tmp_result2);
+
+// calculates a_sq = int_ch_mag*(a_r^2 + a_i^2)*scale_factor for 64-QAM
+#define square_a_64qam_epi16_256(a_r, a_i, int_ch_mag, scale_factor, a_sq) \
+  tmp_result = simde_mm256_mulhi_epi16(a_r, a_r);                      \
+  tmp_result = simde_mm256_slli_epi16(tmp_result, 1);                  \
+  tmp_result = simde_mm256_mulhi_epi16(tmp_result, scale_factor);      \
+  tmp_result = simde_mm256_slli_epi16(tmp_result, 3);                  \
+  tmp_result = simde_mm256_mulhi_epi16(tmp_result, int_ch_mag);        \
+  tmp_result = simde_mm256_slli_epi16(tmp_result, 1);                  \
+  tmp_result2 = simde_mm256_mulhi_epi16(a_i, a_i);                     \
+  tmp_result2 = simde_mm256_slli_epi16(tmp_result2, 1);                \
+  tmp_result2 = simde_mm256_mulhi_epi16(tmp_result2, scale_factor);    \
+  tmp_result2 = simde_mm256_slli_epi16(tmp_result2, 3);                \
+  tmp_result2 = simde_mm256_mulhi_epi16(tmp_result2, int_ch_mag);      \
+  tmp_result2 = simde_mm256_slli_epi16(tmp_result2, 1);                \
+  const simde__m256i a_sq = simde_mm256_adds_epi16(tmp_result, tmp_result2);
+
+void separate_real_imag_parts(__m256i *out_re, __m256i *out_im, __m256i in0, __m256i in1)
+{
+  in0 = simde_mm256_shufflelo_epi16(in0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+  in0 = simde_mm256_shufflehi_epi16(in0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+  in0 = simde_mm256_shuffle_epi32(in0, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+
+  in1 = simde_mm256_shufflelo_epi16(in1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+  in1 = simde_mm256_shufflehi_epi16(in1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+  in1 = simde_mm256_shuffle_epi32(in1, 0xd8); //_MM_SHUFFLE(0,2,1,3));
+
+  // in0 = [Re(0,1,2,3)   Im(0,1,2,3)   Re(4,5,6,7)     Im(4,5,6,7)]
+  // in0 = [Re(8,9,10,11) Im(8,9,10,11) Re(12,13,14,15) Im(12,13,14,15)]
+
+  __m256i tmp0 = simde_mm256_unpacklo_epi64(in0, in1);
+  // axmm2 = [Re(0,1,2,3) Re(8,9,10,11) Re(4,5,6,7) Re(12,13,14,15)]
+  tmp0 = simde_mm256_permute4x64_epi64(tmp0, 0xd8); // Re(rho)
+
+  __m256i tmp1 = simde_mm256_unpackhi_epi64(in0, in1);
+  // axmm3 = [Im(0,1,2,3) Im(8,9,10,11) Im(4,5,6,7) Im(12,13,14,15)]
+  tmp1 = simde_mm256_permute4x64_epi64(tmp1, 0xd8); // Im(rho)
+
+  *out_re = tmp0;
+  *out_im = tmp1;
+}
+
+/*
+ * This function computes the LLRs of stream 0 (s_0) in presence of the interfering stream 1 (s_1) assuming that both symbols are
+ * 64QAM. It can be used for both MU-MIMO interference-aware receiver or for SU-MIMO receivers.
+ *
+ * Input:
+ *   stream0_in:  MF filter output for 1st stream, i.e., y0' = h0'*y0
+ *   stream1_in:  MF filter output for 2nd stream, i.e., y1' = h1'*y0
+ *   ch_mag:      4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+ *   ch_mag_i:    4*h0/sqrt(42), [Re0 Im0 Re1 Im1] s.t. Im0=Re0, Im1=Re1, etc
+ *   rho01:       Channel cross correlation, i.e., rho01 = h0'*h1
+ *   length:      Number of resource elements
+ *
+ * Output:
+ *   stream0_out: Output LLRs for 1st stream
+ */
+void nr_ulsch_qam64_qam64(c16_t *stream0_in,
+                          c16_t *stream1_in,
+                          c16_t *ch_mag,
+                          c16_t *ch_mag_i,
+                          c16_t *stream0_out,
+                          c16_t *rho01,
+                          uint32_t length)
+{
+  __m256i *rho01_256i = (__m256i *)rho01;
+  __m256i *stream0_256i_in = (__m256i *)stream0_in;
+  __m256i *stream1_256i_in = (__m256i *)stream1_in;
+  __m256i *ch_mag_256i = (__m256i *)ch_mag;
+  __m256i *ch_mag_256i_i = (__m256i *)ch_mag_i;
+
+  __m256i ONE_OVER_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(10112)); // round(1/sqrt(42)*2^16)
+  __m256i THREE_OVER_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(30337)); // round(3/sqrt(42)*2^16)
+  __m256i FIVE_OVER_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(25281)); // round(5/sqrt(42)*2^15)
+  __m256i SEVEN_OVER_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(17697)); // round(7/sqrt(42)*2^14) Q2.14
+  __m256i ONE_OVER_SQRT_2 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(23170)); // round(1/sqrt(2)*2^15)
+  __m256i ONE_OVER_SQRT_2_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(3575)); // round(1/sqrt(2*42)*2^15)
+  __m256i THREE_OVER_SQRT_2_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(10726)); // round(3/sqrt(2*42)*2^15)
+  __m256i FIVE_OVER_SQRT_2_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(17876)); // round(5/sqrt(2*42)*2^15)
+  __m256i SEVEN_OVER_SQRT_2_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(25027)); // round(7/sqrt(2*42)*2^15)
+  __m256i FORTYNINE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(30969)); // round(49/(4*sqrt(42))*2^14), Q2.14
+  __m256i THIRTYSEVEN_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(23385)); // round(37/(4*sqrt(42))*2^14), Q2.14
+  __m256i TWENTYFIVE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(31601)); // round(25/(4*sqrt(42))*2^15)
+  __m256i TWENTYNINE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(18329)); // round(29/(4*sqrt(42))*2^15), Q2.14
+  __m256i SEVENTEEN_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(21489)); // round(17/(4*sqrt(42))*2^15)
+  __m256i NINE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(11376)); // round(9/(4*sqrt(42))*2^15)
+  __m256i THIRTEEN_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(16433)); // round(13/(4*sqrt(42))*2^15)
+  __m256i FIVE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(6320)); // round(5/(4*sqrt(42))*2^15)
+  __m256i ONE_OVER_FOUR_SQRT_42 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(1264)); // round(1/(4*sqrt(42))*2^15)
+  __m256i SQRT_42_OVER_FOUR = simde_mm256_broadcastw_epi16(_mm_set1_epi16(13272)); // round(sqrt(42)/4*2^13), Q3.12
+
+  __m256i ch_mag_des;
+  __m256i ch_mag_int;
+  __m256i ch_mag_98_over_42_with_sigma2;
+  __m256i ch_mag_74_over_42_with_sigma2;
+  __m256i ch_mag_58_over_42_with_sigma2;
+  __m256i ch_mag_50_over_42_with_sigma2;
+  __m256i ch_mag_34_over_42_with_sigma2;
+  __m256i ch_mag_18_over_42_with_sigma2;
+  __m256i ch_mag_26_over_42_with_sigma2;
+  __m256i ch_mag_10_over_42_with_sigma2;
+  __m256i ch_mag_2_over_42_with_sigma2;
+  __m256i y0r_one_over_sqrt_21;
+  __m256i y0r_three_over_sqrt_21;
+  __m256i y0r_five_over_sqrt_21;
+  __m256i y0r_seven_over_sqrt_21;
+  __m256i y0i_one_over_sqrt_21;
+  __m256i y0i_three_over_sqrt_21;
+  __m256i y0i_five_over_sqrt_21;
+  __m256i y0i_seven_over_sqrt_21;
+  __m256i ch_mag_int_with_sigma2;
+  __m256i two_ch_mag_int_with_sigma2;
+  __m256i three_ch_mag_int_with_sigma2;
+
+  uint32_t len256 = length >> 3;
+
+  for (int i = 0; i < len256; i += 2) {
+
+    // Get rho
+    simde__m256i xmm2, xmm3, xmm4, xmm5, xmm6, xmm7, xmm8;
+    separate_real_imag_parts(&xmm2, &xmm3, rho01_256i[i], rho01_256i[i + 1]);
+
+    simde__m256i rho_rpi = simde_mm256_adds_epi16(xmm2, xmm3); // rho = Re(rho) + Im(rho)
+    simde__m256i rho_rmi = simde_mm256_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
+
+    // Compute the different rhos
+    simde__m256i rho_rpi_1_1 = simde_mm256_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_42);
+    simde__m256i rho_rmi_1_1 = simde_mm256_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_42);
+    simde__m256i rho_rpi_3_3 = simde_mm256_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_42);
+    simde__m256i rho_rmi_3_3 = simde_mm256_mulhi_epi16(rho_rmi, THREE_OVER_SQRT_42);
+    simde__m256i rho_rpi_5_5 = simde_mm256_mulhi_epi16(rho_rpi, FIVE_OVER_SQRT_42);
+    simde__m256i rho_rmi_5_5 = simde_mm256_mulhi_epi16(rho_rmi, FIVE_OVER_SQRT_42);
+    simde__m256i rho_rpi_7_7 = simde_mm256_mulhi_epi16(rho_rpi, SEVEN_OVER_SQRT_42);
+    simde__m256i rho_rmi_7_7 = simde_mm256_mulhi_epi16(rho_rmi, SEVEN_OVER_SQRT_42);
+
+    rho_rpi_5_5 = simde_mm256_slli_epi16(rho_rpi_5_5, 1);
+    rho_rmi_5_5 = simde_mm256_slli_epi16(rho_rmi_5_5, 1);
+    rho_rpi_7_7 = simde_mm256_slli_epi16(rho_rpi_7_7, 2);
+    rho_rmi_7_7 = simde_mm256_slli_epi16(rho_rmi_7_7, 2);
+
+    xmm4 = simde_mm256_mulhi_epi16(xmm2, ONE_OVER_SQRT_42);
+    xmm5 = simde_mm256_mulhi_epi16(xmm3, ONE_OVER_SQRT_42);
+    xmm6 = simde_mm256_mulhi_epi16(xmm3, THREE_OVER_SQRT_42);
+    xmm7 = simde_mm256_mulhi_epi16(xmm3, FIVE_OVER_SQRT_42);
+    xmm8 = simde_mm256_mulhi_epi16(xmm3, SEVEN_OVER_SQRT_42);
+    xmm7 = simde_mm256_slli_epi16(xmm7, 1);
+    xmm8 = simde_mm256_slli_epi16(xmm8, 2);
+
+    simde__m256i rho_rpi_1_3 = simde_mm256_adds_epi16(xmm4, xmm6);
+    simde__m256i rho_rmi_1_3 = simde_mm256_subs_epi16(xmm4, xmm6);
+    simde__m256i rho_rpi_1_5 = simde_mm256_adds_epi16(xmm4, xmm7);
+    simde__m256i rho_rmi_1_5 = simde_mm256_subs_epi16(xmm4, xmm7);
+    simde__m256i rho_rpi_1_7 = simde_mm256_adds_epi16(xmm4, xmm8);
+    simde__m256i rho_rmi_1_7 = simde_mm256_subs_epi16(xmm4, xmm8);
+
+    xmm4 = simde_mm256_mulhi_epi16(xmm2, THREE_OVER_SQRT_42);
+    simde__m256i rho_rpi_3_1 = simde_mm256_adds_epi16(xmm4, xmm5);
+    simde__m256i rho_rmi_3_1 = simde_mm256_subs_epi16(xmm4, xmm5);
+    simde__m256i rho_rpi_3_5 = simde_mm256_adds_epi16(xmm4, xmm7);
+    simde__m256i rho_rmi_3_5 = simde_mm256_subs_epi16(xmm4, xmm7);
+    simde__m256i rho_rpi_3_7 = simde_mm256_adds_epi16(xmm4, xmm8);
+    simde__m256i rho_rmi_3_7 = simde_mm256_subs_epi16(xmm4, xmm8);
+
+    xmm4 = simde_mm256_mulhi_epi16(xmm2, FIVE_OVER_SQRT_42);
+    xmm4 = simde_mm256_slli_epi16(xmm4, 1);
+    simde__m256i rho_rpi_5_1 = simde_mm256_adds_epi16(xmm4, xmm5);
+    simde__m256i rho_rmi_5_1 = simde_mm256_subs_epi16(xmm4, xmm5);
+    simde__m256i rho_rpi_5_3 = simde_mm256_adds_epi16(xmm4, xmm6);
+    simde__m256i rho_rmi_5_3 = simde_mm256_subs_epi16(xmm4, xmm6);
+    simde__m256i rho_rpi_5_7 = simde_mm256_adds_epi16(xmm4, xmm8);
+    simde__m256i rho_rmi_5_7 = simde_mm256_subs_epi16(xmm4, xmm8);
+
+    xmm4 = simde_mm256_mulhi_epi16(xmm2, SEVEN_OVER_SQRT_42);
+    xmm4 = simde_mm256_slli_epi16(xmm4, 2);
+    simde__m256i rho_rpi_7_1 = simde_mm256_adds_epi16(xmm4, xmm5);
+    simde__m256i rho_rmi_7_1 = simde_mm256_subs_epi16(xmm4, xmm5);
+    simde__m256i rho_rpi_7_3 = simde_mm256_adds_epi16(xmm4, xmm6);
+    simde__m256i rho_rmi_7_3 = simde_mm256_subs_epi16(xmm4, xmm6);
+    simde__m256i rho_rpi_7_5 = simde_mm256_adds_epi16(xmm4, xmm7);
+    simde__m256i rho_rmi_7_5 = simde_mm256_subs_epi16(xmm4, xmm7);
+
+    // Rearrange interfering MF output
+    simde__m256i y1r, y1i, xmm0;
+    separate_real_imag_parts(&y1r, &y1i, stream1_256i_in[i], stream1_256i_in[i + 1]);
+
+    // Psi_r calculation from rho_rpi or rho_rmi
+    xmm0 = simde_mm256_broadcastw_epi16(_mm_set1_epi16(0)); // ZERO for abs_pi16
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_7, y1r);
+
+    simde__m256i psi_r_p7_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_5, y1r);
+    simde__m256i psi_r_p7_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_3, y1r);
+    simde__m256i psi_r_p7_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_1, y1r);
+    simde__m256i psi_r_p7_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_1, y1r);
+    simde__m256i psi_r_p7_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_3, y1r);
+    simde__m256i psi_r_p7_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_5, y1r);
+    simde__m256i psi_r_p7_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_7, y1r);
+    simde__m256i psi_r_p7_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_7, y1r);
+    simde__m256i psi_r_p5_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_5, y1r);
+    simde__m256i psi_r_p5_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_3, y1r);
+    simde__m256i psi_r_p5_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_1, y1r);
+    simde__m256i psi_r_p5_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_1, y1r);
+    simde__m256i psi_r_p5_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_3, y1r);
+    simde__m256i psi_r_p5_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_5, y1r);
+    simde__m256i psi_r_p5_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_7, y1r);
+    simde__m256i psi_r_p5_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_7, y1r);
+    simde__m256i psi_r_p3_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_5, y1r);
+    simde__m256i psi_r_p3_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_3, y1r);
+    simde__m256i psi_r_p3_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_1, y1r);
+    simde__m256i psi_r_p3_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_1, y1r);
+    simde__m256i psi_r_p3_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_3, y1r);
+    simde__m256i psi_r_p3_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_5, y1r);
+    simde__m256i psi_r_p3_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_7, y1r);
+    simde__m256i psi_r_p3_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_7, y1r);
+    simde__m256i psi_r_p1_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_5, y1r);
+    simde__m256i psi_r_p1_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_3, y1r);
+    simde__m256i psi_r_p1_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_1, y1r);
+    simde__m256i psi_r_p1_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_1, y1r);
+    simde__m256i psi_r_p1_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_3, y1r);
+    simde__m256i psi_r_p1_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_5, y1r);
+    simde__m256i psi_r_p1_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_7, y1r);
+    simde__m256i psi_r_p1_m7 = simde_mm256_abs_epi16(xmm2);
+
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_7, y1r);
+    simde__m256i psi_r_m1_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_5, y1r);
+    simde__m256i psi_r_m1_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_3, y1r);
+    simde__m256i psi_r_m1_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_1, y1r);
+    simde__m256i psi_r_m1_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_1, y1r);
+    simde__m256i psi_r_m1_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_3, y1r);
+    simde__m256i psi_r_m1_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_5, y1r);
+    simde__m256i psi_r_m1_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_7, y1r);
+    simde__m256i psi_r_m1_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_7, y1r);
+    simde__m256i psi_r_m3_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_5, y1r);
+    simde__m256i psi_r_m3_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_3, y1r);
+    simde__m256i psi_r_m3_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_1, y1r);
+    simde__m256i psi_r_m3_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_1, y1r);
+    simde__m256i psi_r_m3_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_3, y1r);
+    simde__m256i psi_r_m3_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_5, y1r);
+    simde__m256i psi_r_m3_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_7, y1r);
+    simde__m256i psi_r_m3_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_7, y1r);
+    simde__m256i psi_r_m5_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_5, y1r);
+    simde__m256i psi_r_m5_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_3, y1r);
+    simde__m256i psi_r_m5_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_1, y1r);
+    simde__m256i psi_r_m5_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_1, y1r);
+    simde__m256i psi_r_m5_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_3, y1r);
+    simde__m256i psi_r_m5_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_5, y1r);
+    simde__m256i psi_r_m5_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_7, y1r);
+    simde__m256i psi_r_m5_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_7, y1r);
+    simde__m256i psi_r_m7_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_5, y1r);
+    simde__m256i psi_r_m7_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_3, y1r);
+    simde__m256i psi_r_m7_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_1, y1r);
+    simde__m256i psi_r_m7_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_1, y1r);
+    simde__m256i psi_r_m7_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_3, y1r);
+    simde__m256i psi_r_m7_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_5, y1r);
+    simde__m256i psi_r_m7_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_7, y1r);
+    simde__m256i psi_r_m7_m7 = simde_mm256_abs_epi16(xmm2);
+
+    // Simde__M256i Psi_i calculation from rho_rpi or rho_rmi
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_7, y1i);
+    simde__m256i psi_i_p7_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_7, y1i);
+    simde__m256i psi_i_p7_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_7, y1i);
+    simde__m256i psi_i_p7_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_7, y1i);
+    simde__m256i psi_i_p7_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_7, y1i);
+    simde__m256i psi_i_p7_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_7, y1i);
+    simde__m256i psi_i_p7_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_7, y1i);
+    simde__m256i psi_i_p7_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_7, y1i);
+    simde__m256i psi_i_p7_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_5, y1i);
+    simde__m256i psi_i_p5_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_5, y1i);
+    simde__m256i psi_i_p5_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_5, y1i);
+    simde__m256i psi_i_p5_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_5, y1i);
+    simde__m256i psi_i_p5_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_5, y1i);
+    simde__m256i psi_i_p5_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_5, y1i);
+    simde__m256i psi_i_p5_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_5, y1i);
+    simde__m256i psi_i_p5_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_5, y1i);
+    simde__m256i psi_i_p5_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_3, y1i);
+    simde__m256i psi_i_p3_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_3, y1i);
+    simde__m256i psi_i_p3_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_3, y1i);
+    simde__m256i psi_i_p3_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_3, y1i);
+    simde__m256i psi_i_p3_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_3, y1i);
+    simde__m256i psi_i_p3_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_3, y1i);
+    simde__m256i psi_i_p3_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_3, y1i);
+    simde__m256i psi_i_p3_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_3, y1i);
+    simde__m256i psi_i_p3_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_7_1, y1i);
+    simde__m256i psi_i_p1_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_5_1, y1i);
+    simde__m256i psi_i_p1_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_1, y1i);
+    simde__m256i psi_i_p1_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_1, y1i);
+    simde__m256i psi_i_p1_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_1, y1i);
+    simde__m256i psi_i_p1_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_1, y1i);
+    simde__m256i psi_i_p1_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_5_1, y1i);
+    simde__m256i psi_i_p1_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rpi_7_1, y1i);
+    simde__m256i psi_i_p1_m7 = simde_mm256_abs_epi16(xmm2);
+
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_1, y1i);
+    simde__m256i psi_i_m1_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_1, y1i);
+    simde__m256i psi_i_m1_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_1, y1i);
+    simde__m256i psi_i_m1_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_1, y1i);
+    simde__m256i psi_i_m1_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_1, y1i);
+    simde__m256i psi_i_m1_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_1, y1i);
+    simde__m256i psi_i_m1_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_1, y1i);
+    simde__m256i psi_i_m1_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_1, y1i);
+    simde__m256i psi_i_m1_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_3, y1i);
+    simde__m256i psi_i_m3_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_3, y1i);
+    simde__m256i psi_i_m3_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_3, y1i);
+    simde__m256i psi_i_m3_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_3, y1i);
+    simde__m256i psi_i_m3_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_3, y1i);
+    simde__m256i psi_i_m3_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_3, y1i);
+    simde__m256i psi_i_m3_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_3, y1i);
+    simde__m256i psi_i_m3_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_3, y1i);
+    simde__m256i psi_i_m3_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_5, y1i);
+    simde__m256i psi_i_m5_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_5, y1i);
+    simde__m256i psi_i_m5_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_5, y1i);
+    simde__m256i psi_i_m5_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_5, y1i);
+    simde__m256i psi_i_m5_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_5, y1i);
+    simde__m256i psi_i_m5_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_5, y1i);
+    simde__m256i psi_i_m5_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_5, y1i);
+    simde__m256i psi_i_m5_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_5, y1i);
+    simde__m256i psi_i_m5_m7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_7_7, y1i);
+    simde__m256i psi_i_m7_p7 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_5_7, y1i);
+    simde__m256i psi_i_m7_p5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_7, y1i);
+    simde__m256i psi_i_m7_p3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_7, y1i);
+    simde__m256i psi_i_m7_p1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_1_7, y1i);
+    simde__m256i psi_i_m7_m1 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_3_7, y1i);
+    simde__m256i psi_i_m7_m3 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_5_7, y1i);
+    simde__m256i psi_i_m7_m5 = simde_mm256_abs_epi16(xmm2);
+    xmm2 = simde_mm256_adds_epi16(rho_rmi_7_7, y1i);
+    simde__m256i psi_i_m7_m7 = simde_mm256_abs_epi16(xmm2);
+
+    // Rearrange desired MF output
+    simde__m256i y0r, y0i;
+    separate_real_imag_parts(&y0r, &y0i, stream0_256i_in[i], stream0_256i_in[i + 1]);
+
+    // Rearrange desired channel magnitudes
+    // [|h|^2(1),|h|^2(1),|h|^2(2),|h|^2(2),...,,|h|^2(7),|h|^2(7)]*(2/sqrt(10))
+    // xmm2 is dummy variable that contains the same values as ch_mag_des
+    separate_real_imag_parts(&ch_mag_des, &xmm2, ch_mag_256i[i], ch_mag_256i[i + 1]);
+
+    // Rearrange interfering channel magnitudes
+    separate_real_imag_parts(&ch_mag_int, &xmm2, ch_mag_256i_i[i], ch_mag_256i_i[i + 1]);
+
+    y0r_one_over_sqrt_21 = simde_mm256_mulhi_epi16(y0r, ONE_OVER_SQRT_42);
+    y0r_three_over_sqrt_21 = simde_mm256_mulhi_epi16(y0r, THREE_OVER_SQRT_42);
+    y0r_five_over_sqrt_21 = simde_mm256_mulhi_epi16(y0r, FIVE_OVER_SQRT_42);
+    y0r_five_over_sqrt_21 = simde_mm256_slli_epi16(y0r_five_over_sqrt_21, 1);
+    y0r_seven_over_sqrt_21 = simde_mm256_mulhi_epi16(y0r, SEVEN_OVER_SQRT_42);
+    y0r_seven_over_sqrt_21 = simde_mm256_slli_epi16(y0r_seven_over_sqrt_21, 2); // Q2.14
+
+    y0i_one_over_sqrt_21 = simde_mm256_mulhi_epi16(y0i, ONE_OVER_SQRT_42);
+    y0i_three_over_sqrt_21 = simde_mm256_mulhi_epi16(y0i, THREE_OVER_SQRT_42);
+    y0i_five_over_sqrt_21 = simde_mm256_mulhi_epi16(y0i, FIVE_OVER_SQRT_42);
+    y0i_five_over_sqrt_21 = simde_mm256_slli_epi16(y0i_five_over_sqrt_21, 1);
+    y0i_seven_over_sqrt_21 = simde_mm256_mulhi_epi16(y0i, SEVEN_OVER_SQRT_42);
+    y0i_seven_over_sqrt_21 = simde_mm256_slli_epi16(y0i_seven_over_sqrt_21, 2); // Q2.14
+
+    simde__m256i y0_p_7_1 = simde_mm256_adds_epi16(y0r_seven_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_p_7_3 = simde_mm256_adds_epi16(y0r_seven_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_p_7_5 = simde_mm256_adds_epi16(y0r_seven_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_p_7_7 = simde_mm256_adds_epi16(y0r_seven_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_p_5_1 = simde_mm256_adds_epi16(y0r_five_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_p_5_3 = simde_mm256_adds_epi16(y0r_five_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_p_5_5 = simde_mm256_adds_epi16(y0r_five_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_p_5_7 = simde_mm256_adds_epi16(y0r_five_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_p_3_1 = simde_mm256_adds_epi16(y0r_three_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_p_3_3 = simde_mm256_adds_epi16(y0r_three_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_p_3_5 = simde_mm256_adds_epi16(y0r_three_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_p_3_7 = simde_mm256_adds_epi16(y0r_three_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_p_1_1 = simde_mm256_adds_epi16(y0r_one_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_p_1_3 = simde_mm256_adds_epi16(y0r_one_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_p_1_5 = simde_mm256_adds_epi16(y0r_one_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_p_1_7 = simde_mm256_adds_epi16(y0r_one_over_sqrt_21, y0i_seven_over_sqrt_21);
+
+    simde__m256i y0_m_1_1 = simde_mm256_subs_epi16(y0r_one_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_m_1_3 = simde_mm256_subs_epi16(y0r_one_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_m_1_5 = simde_mm256_subs_epi16(y0r_one_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_m_1_7 = simde_mm256_subs_epi16(y0r_one_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_m_3_1 = simde_mm256_subs_epi16(y0r_three_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_m_3_3 = simde_mm256_subs_epi16(y0r_three_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_m_3_5 = simde_mm256_subs_epi16(y0r_three_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_m_3_7 = simde_mm256_subs_epi16(y0r_three_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_m_5_1 = simde_mm256_subs_epi16(y0r_five_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_m_5_3 = simde_mm256_subs_epi16(y0r_five_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_m_5_5 = simde_mm256_subs_epi16(y0r_five_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_m_5_7 = simde_mm256_subs_epi16(y0r_five_over_sqrt_21, y0i_seven_over_sqrt_21);
+    simde__m256i y0_m_7_1 = simde_mm256_subs_epi16(y0r_seven_over_sqrt_21, y0i_one_over_sqrt_21);
+    simde__m256i y0_m_7_3 = simde_mm256_subs_epi16(y0r_seven_over_sqrt_21, y0i_three_over_sqrt_21);
+    simde__m256i y0_m_7_5 = simde_mm256_subs_epi16(y0r_seven_over_sqrt_21, y0i_five_over_sqrt_21);
+    simde__m256i y0_m_7_7 = simde_mm256_subs_epi16(y0r_seven_over_sqrt_21, y0i_seven_over_sqrt_21);
+
+    // Detection of interference term
+    ch_mag_int_with_sigma2 = simde_mm256_srai_epi16(ch_mag_int, 1); // *2
+    two_ch_mag_int_with_sigma2 = ch_mag_int; // *4
+    three_ch_mag_int_with_sigma2 = simde_mm256_adds_epi16(ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2); // *6
+    simde__m256i tmp_result, tmp_result2, tmp_result3, tmp_result4;
+    interference_abs_64qam_epi16_256(psi_r_p7_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p7_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p7_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p5_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p5_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p3_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p3_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_p1_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_p1_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m1_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m1_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m3_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m3_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m5_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m5_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_r_m7_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_r_m7_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+
+    interference_abs_64qam_epi16_256(psi_i_p7_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p7_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p7_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p5_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p5_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p3_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p3_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_p1_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_p1_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m1_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m1_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m3_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m3_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m5_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m5_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_p7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_p7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_p5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_p5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_p3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_p3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_p1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_p1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_m1,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_m1,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_m3,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_m3,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_m5,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_m5,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+    interference_abs_64qam_epi16_256(psi_i_m7_m7,
+                                     ch_mag_int_with_sigma2,
+                                     two_ch_mag_int_with_sigma2,
+                                     three_ch_mag_int_with_sigma2,
+                                     a_i_m7_m7,
+                                     ONE_OVER_SQRT_2_42,
+                                     THREE_OVER_SQRT_2_42,
+                                     FIVE_OVER_SQRT_2_42,
+                                     SEVEN_OVER_SQRT_2_42);
+
+    // Calculation of a group of two terms in the bit metric involving product of psi and interference
+    prodsum_psi_a_epi16_256(psi_r_p7_p7, a_r_p7_p7, psi_i_p7_p7, a_i_p7_p7, psi_a_p7_p7);
+    prodsum_psi_a_epi16_256(psi_r_p7_p5, a_r_p7_p5, psi_i_p7_p5, a_i_p7_p5, psi_a_p7_p5);
+    prodsum_psi_a_epi16_256(psi_r_p7_p3, a_r_p7_p3, psi_i_p7_p3, a_i_p7_p3, psi_a_p7_p3);
+    prodsum_psi_a_epi16_256(psi_r_p7_p1, a_r_p7_p1, psi_i_p7_p1, a_i_p7_p1, psi_a_p7_p1);
+    prodsum_psi_a_epi16_256(psi_r_p7_m1, a_r_p7_m1, psi_i_p7_m1, a_i_p7_m1, psi_a_p7_m1);
+    prodsum_psi_a_epi16_256(psi_r_p7_m3, a_r_p7_m3, psi_i_p7_m3, a_i_p7_m3, psi_a_p7_m3);
+    prodsum_psi_a_epi16_256(psi_r_p7_m5, a_r_p7_m5, psi_i_p7_m5, a_i_p7_m5, psi_a_p7_m5);
+    prodsum_psi_a_epi16_256(psi_r_p7_m7, a_r_p7_m7, psi_i_p7_m7, a_i_p7_m7, psi_a_p7_m7);
+    prodsum_psi_a_epi16_256(psi_r_p5_p7, a_r_p5_p7, psi_i_p5_p7, a_i_p5_p7, psi_a_p5_p7);
+    prodsum_psi_a_epi16_256(psi_r_p5_p5, a_r_p5_p5, psi_i_p5_p5, a_i_p5_p5, psi_a_p5_p5);
+    prodsum_psi_a_epi16_256(psi_r_p5_p3, a_r_p5_p3, psi_i_p5_p3, a_i_p5_p3, psi_a_p5_p3);
+    prodsum_psi_a_epi16_256(psi_r_p5_p1, a_r_p5_p1, psi_i_p5_p1, a_i_p5_p1, psi_a_p5_p1);
+    prodsum_psi_a_epi16_256(psi_r_p5_m1, a_r_p5_m1, psi_i_p5_m1, a_i_p5_m1, psi_a_p5_m1);
+    prodsum_psi_a_epi16_256(psi_r_p5_m3, a_r_p5_m3, psi_i_p5_m3, a_i_p5_m3, psi_a_p5_m3);
+    prodsum_psi_a_epi16_256(psi_r_p5_m5, a_r_p5_m5, psi_i_p5_m5, a_i_p5_m5, psi_a_p5_m5);
+    prodsum_psi_a_epi16_256(psi_r_p5_m7, a_r_p5_m7, psi_i_p5_m7, a_i_p5_m7, psi_a_p5_m7);
+    prodsum_psi_a_epi16_256(psi_r_p3_p7, a_r_p3_p7, psi_i_p3_p7, a_i_p3_p7, psi_a_p3_p7);
+    prodsum_psi_a_epi16_256(psi_r_p3_p5, a_r_p3_p5, psi_i_p3_p5, a_i_p3_p5, psi_a_p3_p5);
+    prodsum_psi_a_epi16_256(psi_r_p3_p3, a_r_p3_p3, psi_i_p3_p3, a_i_p3_p3, psi_a_p3_p3);
+    prodsum_psi_a_epi16_256(psi_r_p3_p1, a_r_p3_p1, psi_i_p3_p1, a_i_p3_p1, psi_a_p3_p1);
+    prodsum_psi_a_epi16_256(psi_r_p3_m1, a_r_p3_m1, psi_i_p3_m1, a_i_p3_m1, psi_a_p3_m1);
+    prodsum_psi_a_epi16_256(psi_r_p3_m3, a_r_p3_m3, psi_i_p3_m3, a_i_p3_m3, psi_a_p3_m3);
+    prodsum_psi_a_epi16_256(psi_r_p3_m5, a_r_p3_m5, psi_i_p3_m5, a_i_p3_m5, psi_a_p3_m5);
+    prodsum_psi_a_epi16_256(psi_r_p3_m7, a_r_p3_m7, psi_i_p3_m7, a_i_p3_m7, psi_a_p3_m7);
+    prodsum_psi_a_epi16_256(psi_r_p1_p7, a_r_p1_p7, psi_i_p1_p7, a_i_p1_p7, psi_a_p1_p7);
+    prodsum_psi_a_epi16_256(psi_r_p1_p5, a_r_p1_p5, psi_i_p1_p5, a_i_p1_p5, psi_a_p1_p5);
+    prodsum_psi_a_epi16_256(psi_r_p1_p3, a_r_p1_p3, psi_i_p1_p3, a_i_p1_p3, psi_a_p1_p3);
+    prodsum_psi_a_epi16_256(psi_r_p1_p1, a_r_p1_p1, psi_i_p1_p1, a_i_p1_p1, psi_a_p1_p1);
+    prodsum_psi_a_epi16_256(psi_r_p1_m1, a_r_p1_m1, psi_i_p1_m1, a_i_p1_m1, psi_a_p1_m1);
+    prodsum_psi_a_epi16_256(psi_r_p1_m3, a_r_p1_m3, psi_i_p1_m3, a_i_p1_m3, psi_a_p1_m3);
+    prodsum_psi_a_epi16_256(psi_r_p1_m5, a_r_p1_m5, psi_i_p1_m5, a_i_p1_m5, psi_a_p1_m5);
+    prodsum_psi_a_epi16_256(psi_r_p1_m7, a_r_p1_m7, psi_i_p1_m7, a_i_p1_m7, psi_a_p1_m7);
+    prodsum_psi_a_epi16_256(psi_r_m1_p7, a_r_m1_p7, psi_i_m1_p7, a_i_m1_p7, psi_a_m1_p7);
+    prodsum_psi_a_epi16_256(psi_r_m1_p5, a_r_m1_p5, psi_i_m1_p5, a_i_m1_p5, psi_a_m1_p5);
+    prodsum_psi_a_epi16_256(psi_r_m1_p3, a_r_m1_p3, psi_i_m1_p3, a_i_m1_p3, psi_a_m1_p3);
+    prodsum_psi_a_epi16_256(psi_r_m1_p1, a_r_m1_p1, psi_i_m1_p1, a_i_m1_p1, psi_a_m1_p1);
+    prodsum_psi_a_epi16_256(psi_r_m1_m1, a_r_m1_m1, psi_i_m1_m1, a_i_m1_m1, psi_a_m1_m1);
+    prodsum_psi_a_epi16_256(psi_r_m1_m3, a_r_m1_m3, psi_i_m1_m3, a_i_m1_m3, psi_a_m1_m3);
+    prodsum_psi_a_epi16_256(psi_r_m1_m5, a_r_m1_m5, psi_i_m1_m5, a_i_m1_m5, psi_a_m1_m5);
+    prodsum_psi_a_epi16_256(psi_r_m1_m7, a_r_m1_m7, psi_i_m1_m7, a_i_m1_m7, psi_a_m1_m7);
+    prodsum_psi_a_epi16_256(psi_r_m3_p7, a_r_m3_p7, psi_i_m3_p7, a_i_m3_p7, psi_a_m3_p7);
+    prodsum_psi_a_epi16_256(psi_r_m3_p5, a_r_m3_p5, psi_i_m3_p5, a_i_m3_p5, psi_a_m3_p5);
+    prodsum_psi_a_epi16_256(psi_r_m3_p3, a_r_m3_p3, psi_i_m3_p3, a_i_m3_p3, psi_a_m3_p3);
+    prodsum_psi_a_epi16_256(psi_r_m3_p1, a_r_m3_p1, psi_i_m3_p1, a_i_m3_p1, psi_a_m3_p1);
+    prodsum_psi_a_epi16_256(psi_r_m3_m1, a_r_m3_m1, psi_i_m3_m1, a_i_m3_m1, psi_a_m3_m1);
+    prodsum_psi_a_epi16_256(psi_r_m3_m3, a_r_m3_m3, psi_i_m3_m3, a_i_m3_m3, psi_a_m3_m3);
+    prodsum_psi_a_epi16_256(psi_r_m3_m5, a_r_m3_m5, psi_i_m3_m5, a_i_m3_m5, psi_a_m3_m5);
+    prodsum_psi_a_epi16_256(psi_r_m3_m7, a_r_m3_m7, psi_i_m3_m7, a_i_m3_m7, psi_a_m3_m7);
+    prodsum_psi_a_epi16_256(psi_r_m5_p7, a_r_m5_p7, psi_i_m5_p7, a_i_m5_p7, psi_a_m5_p7);
+    prodsum_psi_a_epi16_256(psi_r_m5_p5, a_r_m5_p5, psi_i_m5_p5, a_i_m5_p5, psi_a_m5_p5);
+    prodsum_psi_a_epi16_256(psi_r_m5_p3, a_r_m5_p3, psi_i_m5_p3, a_i_m5_p3, psi_a_m5_p3);
+    prodsum_psi_a_epi16_256(psi_r_m5_p1, a_r_m5_p1, psi_i_m5_p1, a_i_m5_p1, psi_a_m5_p1);
+    prodsum_psi_a_epi16_256(psi_r_m5_m1, a_r_m5_m1, psi_i_m5_m1, a_i_m5_m1, psi_a_m5_m1);
+    prodsum_psi_a_epi16_256(psi_r_m5_m3, a_r_m5_m3, psi_i_m5_m3, a_i_m5_m3, psi_a_m5_m3);
+    prodsum_psi_a_epi16_256(psi_r_m5_m5, a_r_m5_m5, psi_i_m5_m5, a_i_m5_m5, psi_a_m5_m5);
+    prodsum_psi_a_epi16_256(psi_r_m5_m7, a_r_m5_m7, psi_i_m5_m7, a_i_m5_m7, psi_a_m5_m7);
+    prodsum_psi_a_epi16_256(psi_r_m7_p7, a_r_m7_p7, psi_i_m7_p7, a_i_m7_p7, psi_a_m7_p7);
+    prodsum_psi_a_epi16_256(psi_r_m7_p5, a_r_m7_p5, psi_i_m7_p5, a_i_m7_p5, psi_a_m7_p5);
+    prodsum_psi_a_epi16_256(psi_r_m7_p3, a_r_m7_p3, psi_i_m7_p3, a_i_m7_p3, psi_a_m7_p3);
+    prodsum_psi_a_epi16_256(psi_r_m7_p1, a_r_m7_p1, psi_i_m7_p1, a_i_m7_p1, psi_a_m7_p1);
+    prodsum_psi_a_epi16_256(psi_r_m7_m1, a_r_m7_m1, psi_i_m7_m1, a_i_m7_m1, psi_a_m7_m1);
+    prodsum_psi_a_epi16_256(psi_r_m7_m3, a_r_m7_m3, psi_i_m7_m3, a_i_m7_m3, psi_a_m7_m3);
+    prodsum_psi_a_epi16_256(psi_r_m7_m5, a_r_m7_m5, psi_i_m7_m5, a_i_m7_m5, psi_a_m7_m5);
+    prodsum_psi_a_epi16_256(psi_r_m7_m7, a_r_m7_m7, psi_i_m7_m7, a_i_m7_m7, psi_a_m7_m7);
+
+    // Multiply by sqrt(2)
+    psi_a_p7_p7 = simde_mm256_mulhi_epi16(psi_a_p7_p7, ONE_OVER_SQRT_2);
+    psi_a_p7_p7 = simde_mm256_slli_epi16(psi_a_p7_p7, 2);
+    psi_a_p7_p5 = simde_mm256_mulhi_epi16(psi_a_p7_p5, ONE_OVER_SQRT_2);
+    psi_a_p7_p5 = simde_mm256_slli_epi16(psi_a_p7_p5, 2);
+    psi_a_p7_p3 = simde_mm256_mulhi_epi16(psi_a_p7_p3, ONE_OVER_SQRT_2);
+    psi_a_p7_p3 = simde_mm256_slli_epi16(psi_a_p7_p3, 2);
+    psi_a_p7_p1 = simde_mm256_mulhi_epi16(psi_a_p7_p1, ONE_OVER_SQRT_2);
+    psi_a_p7_p1 = simde_mm256_slli_epi16(psi_a_p7_p1, 2);
+    psi_a_p7_m1 = simde_mm256_mulhi_epi16(psi_a_p7_m1, ONE_OVER_SQRT_2);
+    psi_a_p7_m1 = simde_mm256_slli_epi16(psi_a_p7_m1, 2);
+    psi_a_p7_m3 = simde_mm256_mulhi_epi16(psi_a_p7_m3, ONE_OVER_SQRT_2);
+    psi_a_p7_m3 = simde_mm256_slli_epi16(psi_a_p7_m3, 2);
+    psi_a_p7_m5 = simde_mm256_mulhi_epi16(psi_a_p7_m5, ONE_OVER_SQRT_2);
+    psi_a_p7_m5 = simde_mm256_slli_epi16(psi_a_p7_m5, 2);
+    psi_a_p7_m7 = simde_mm256_mulhi_epi16(psi_a_p7_m7, ONE_OVER_SQRT_2);
+    psi_a_p7_m7 = simde_mm256_slli_epi16(psi_a_p7_m7, 2);
+    psi_a_p5_p7 = simde_mm256_mulhi_epi16(psi_a_p5_p7, ONE_OVER_SQRT_2);
+    psi_a_p5_p7 = simde_mm256_slli_epi16(psi_a_p5_p7, 2);
+    psi_a_p5_p5 = simde_mm256_mulhi_epi16(psi_a_p5_p5, ONE_OVER_SQRT_2);
+    psi_a_p5_p5 = simde_mm256_slli_epi16(psi_a_p5_p5, 2);
+    psi_a_p5_p3 = simde_mm256_mulhi_epi16(psi_a_p5_p3, ONE_OVER_SQRT_2);
+    psi_a_p5_p3 = simde_mm256_slli_epi16(psi_a_p5_p3, 2);
+    psi_a_p5_p1 = simde_mm256_mulhi_epi16(psi_a_p5_p1, ONE_OVER_SQRT_2);
+    psi_a_p5_p1 = simde_mm256_slli_epi16(psi_a_p5_p1, 2);
+    psi_a_p5_m1 = simde_mm256_mulhi_epi16(psi_a_p5_m1, ONE_OVER_SQRT_2);
+    psi_a_p5_m1 = simde_mm256_slli_epi16(psi_a_p5_m1, 2);
+    psi_a_p5_m3 = simde_mm256_mulhi_epi16(psi_a_p5_m3, ONE_OVER_SQRT_2);
+    psi_a_p5_m3 = simde_mm256_slli_epi16(psi_a_p5_m3, 2);
+    psi_a_p5_m5 = simde_mm256_mulhi_epi16(psi_a_p5_m5, ONE_OVER_SQRT_2);
+    psi_a_p5_m5 = simde_mm256_slli_epi16(psi_a_p5_m5, 2);
+    psi_a_p5_m7 = simde_mm256_mulhi_epi16(psi_a_p5_m7, ONE_OVER_SQRT_2);
+    psi_a_p5_m7 = simde_mm256_slli_epi16(psi_a_p5_m7, 2);
+    psi_a_p3_p7 = simde_mm256_mulhi_epi16(psi_a_p3_p7, ONE_OVER_SQRT_2);
+    psi_a_p3_p7 = simde_mm256_slli_epi16(psi_a_p3_p7, 2);
+    psi_a_p3_p5 = simde_mm256_mulhi_epi16(psi_a_p3_p5, ONE_OVER_SQRT_2);
+    psi_a_p3_p5 = simde_mm256_slli_epi16(psi_a_p3_p5, 2);
+    psi_a_p3_p3 = simde_mm256_mulhi_epi16(psi_a_p3_p3, ONE_OVER_SQRT_2);
+    psi_a_p3_p3 = simde_mm256_slli_epi16(psi_a_p3_p3, 2);
+    psi_a_p3_p1 = simde_mm256_mulhi_epi16(psi_a_p3_p1, ONE_OVER_SQRT_2);
+    psi_a_p3_p1 = simde_mm256_slli_epi16(psi_a_p3_p1, 2);
+    psi_a_p3_m1 = simde_mm256_mulhi_epi16(psi_a_p3_m1, ONE_OVER_SQRT_2);
+    psi_a_p3_m1 = simde_mm256_slli_epi16(psi_a_p3_m1, 2);
+    psi_a_p3_m3 = simde_mm256_mulhi_epi16(psi_a_p3_m3, ONE_OVER_SQRT_2);
+    psi_a_p3_m3 = simde_mm256_slli_epi16(psi_a_p3_m3, 2);
+    psi_a_p3_m5 = simde_mm256_mulhi_epi16(psi_a_p3_m5, ONE_OVER_SQRT_2);
+    psi_a_p3_m5 = simde_mm256_slli_epi16(psi_a_p3_m5, 2);
+    psi_a_p3_m7 = simde_mm256_mulhi_epi16(psi_a_p3_m7, ONE_OVER_SQRT_2);
+    psi_a_p3_m7 = simde_mm256_slli_epi16(psi_a_p3_m7, 2);
+    psi_a_p1_p7 = simde_mm256_mulhi_epi16(psi_a_p1_p7, ONE_OVER_SQRT_2);
+    psi_a_p1_p7 = simde_mm256_slli_epi16(psi_a_p1_p7, 2);
+    psi_a_p1_p5 = simde_mm256_mulhi_epi16(psi_a_p1_p5, ONE_OVER_SQRT_2);
+    psi_a_p1_p5 = simde_mm256_slli_epi16(psi_a_p1_p5, 2);
+    psi_a_p1_p3 = simde_mm256_mulhi_epi16(psi_a_p1_p3, ONE_OVER_SQRT_2);
+    psi_a_p1_p3 = simde_mm256_slli_epi16(psi_a_p1_p3, 2);
+    psi_a_p1_p1 = simde_mm256_mulhi_epi16(psi_a_p1_p1, ONE_OVER_SQRT_2);
+    psi_a_p1_p1 = simde_mm256_slli_epi16(psi_a_p1_p1, 2);
+    psi_a_p1_m1 = simde_mm256_mulhi_epi16(psi_a_p1_m1, ONE_OVER_SQRT_2);
+    psi_a_p1_m1 = simde_mm256_slli_epi16(psi_a_p1_m1, 2);
+    psi_a_p1_m3 = simde_mm256_mulhi_epi16(psi_a_p1_m3, ONE_OVER_SQRT_2);
+    psi_a_p1_m3 = simde_mm256_slli_epi16(psi_a_p1_m3, 2);
+    psi_a_p1_m5 = simde_mm256_mulhi_epi16(psi_a_p1_m5, ONE_OVER_SQRT_2);
+    psi_a_p1_m5 = simde_mm256_slli_epi16(psi_a_p1_m5, 2);
+    psi_a_p1_m7 = simde_mm256_mulhi_epi16(psi_a_p1_m7, ONE_OVER_SQRT_2);
+    psi_a_p1_m7 = simde_mm256_slli_epi16(psi_a_p1_m7, 2);
+    psi_a_m1_p7 = simde_mm256_mulhi_epi16(psi_a_m1_p7, ONE_OVER_SQRT_2);
+    psi_a_m1_p7 = simde_mm256_slli_epi16(psi_a_m1_p7, 2);
+    psi_a_m1_p5 = simde_mm256_mulhi_epi16(psi_a_m1_p5, ONE_OVER_SQRT_2);
+    psi_a_m1_p5 = simde_mm256_slli_epi16(psi_a_m1_p5, 2);
+    psi_a_m1_p3 = simde_mm256_mulhi_epi16(psi_a_m1_p3, ONE_OVER_SQRT_2);
+    psi_a_m1_p3 = simde_mm256_slli_epi16(psi_a_m1_p3, 2);
+    psi_a_m1_p1 = simde_mm256_mulhi_epi16(psi_a_m1_p1, ONE_OVER_SQRT_2);
+    psi_a_m1_p1 = simde_mm256_slli_epi16(psi_a_m1_p1, 2);
+    psi_a_m1_m1 = simde_mm256_mulhi_epi16(psi_a_m1_m1, ONE_OVER_SQRT_2);
+    psi_a_m1_m1 = simde_mm256_slli_epi16(psi_a_m1_m1, 2);
+    psi_a_m1_m3 = simde_mm256_mulhi_epi16(psi_a_m1_m3, ONE_OVER_SQRT_2);
+    psi_a_m1_m3 = simde_mm256_slli_epi16(psi_a_m1_m3, 2);
+    psi_a_m1_m5 = simde_mm256_mulhi_epi16(psi_a_m1_m5, ONE_OVER_SQRT_2);
+    psi_a_m1_m5 = simde_mm256_slli_epi16(psi_a_m1_m5, 2);
+    psi_a_m1_m7 = simde_mm256_mulhi_epi16(psi_a_m1_m7, ONE_OVER_SQRT_2);
+    psi_a_m1_m7 = simde_mm256_slli_epi16(psi_a_m1_m7, 2);
+    psi_a_m3_p7 = simde_mm256_mulhi_epi16(psi_a_m3_p7, ONE_OVER_SQRT_2);
+    psi_a_m3_p7 = simde_mm256_slli_epi16(psi_a_m3_p7, 2);
+    psi_a_m3_p5 = simde_mm256_mulhi_epi16(psi_a_m3_p5, ONE_OVER_SQRT_2);
+    psi_a_m3_p5 = simde_mm256_slli_epi16(psi_a_m3_p5, 2);
+    psi_a_m3_p3 = simde_mm256_mulhi_epi16(psi_a_m3_p3, ONE_OVER_SQRT_2);
+    psi_a_m3_p3 = simde_mm256_slli_epi16(psi_a_m3_p3, 2);
+    psi_a_m3_p1 = simde_mm256_mulhi_epi16(psi_a_m3_p1, ONE_OVER_SQRT_2);
+    psi_a_m3_p1 = simde_mm256_slli_epi16(psi_a_m3_p1, 2);
+    psi_a_m3_m1 = simde_mm256_mulhi_epi16(psi_a_m3_m1, ONE_OVER_SQRT_2);
+    psi_a_m3_m1 = simde_mm256_slli_epi16(psi_a_m3_m1, 2);
+    psi_a_m3_m3 = simde_mm256_mulhi_epi16(psi_a_m3_m3, ONE_OVER_SQRT_2);
+    psi_a_m3_m3 = simde_mm256_slli_epi16(psi_a_m3_m3, 2);
+    psi_a_m3_m5 = simde_mm256_mulhi_epi16(psi_a_m3_m5, ONE_OVER_SQRT_2);
+    psi_a_m3_m5 = simde_mm256_slli_epi16(psi_a_m3_m5, 2);
+    psi_a_m3_m7 = simde_mm256_mulhi_epi16(psi_a_m3_m7, ONE_OVER_SQRT_2);
+    psi_a_m3_m7 = simde_mm256_slli_epi16(psi_a_m3_m7, 2);
+    psi_a_m5_p7 = simde_mm256_mulhi_epi16(psi_a_m5_p7, ONE_OVER_SQRT_2);
+    psi_a_m5_p7 = simde_mm256_slli_epi16(psi_a_m5_p7, 2);
+    psi_a_m5_p5 = simde_mm256_mulhi_epi16(psi_a_m5_p5, ONE_OVER_SQRT_2);
+    psi_a_m5_p5 = simde_mm256_slli_epi16(psi_a_m5_p5, 2);
+    psi_a_m5_p3 = simde_mm256_mulhi_epi16(psi_a_m5_p3, ONE_OVER_SQRT_2);
+    psi_a_m5_p3 = simde_mm256_slli_epi16(psi_a_m5_p3, 2);
+    psi_a_m5_p1 = simde_mm256_mulhi_epi16(psi_a_m5_p1, ONE_OVER_SQRT_2);
+    psi_a_m5_p1 = simde_mm256_slli_epi16(psi_a_m5_p1, 2);
+    psi_a_m5_m1 = simde_mm256_mulhi_epi16(psi_a_m5_m1, ONE_OVER_SQRT_2);
+    psi_a_m5_m1 = simde_mm256_slli_epi16(psi_a_m5_m1, 2);
+    psi_a_m5_m3 = simde_mm256_mulhi_epi16(psi_a_m5_m3, ONE_OVER_SQRT_2);
+    psi_a_m5_m3 = simde_mm256_slli_epi16(psi_a_m5_m3, 2);
+    psi_a_m5_m5 = simde_mm256_mulhi_epi16(psi_a_m5_m5, ONE_OVER_SQRT_2);
+    psi_a_m5_m5 = simde_mm256_slli_epi16(psi_a_m5_m5, 2);
+    psi_a_m5_m7 = simde_mm256_mulhi_epi16(psi_a_m5_m7, ONE_OVER_SQRT_2);
+    psi_a_m5_m7 = simde_mm256_slli_epi16(psi_a_m5_m7, 2);
+    psi_a_m7_p7 = simde_mm256_mulhi_epi16(psi_a_m7_p7, ONE_OVER_SQRT_2);
+    psi_a_m7_p7 = simde_mm256_slli_epi16(psi_a_m7_p7, 2);
+    psi_a_m7_p5 = simde_mm256_mulhi_epi16(psi_a_m7_p5, ONE_OVER_SQRT_2);
+    psi_a_m7_p5 = simde_mm256_slli_epi16(psi_a_m7_p5, 2);
+    psi_a_m7_p3 = simde_mm256_mulhi_epi16(psi_a_m7_p3, ONE_OVER_SQRT_2);
+    psi_a_m7_p3 = simde_mm256_slli_epi16(psi_a_m7_p3, 2);
+    psi_a_m7_p1 = simde_mm256_mulhi_epi16(psi_a_m7_p1, ONE_OVER_SQRT_2);
+    psi_a_m7_p1 = simde_mm256_slli_epi16(psi_a_m7_p1, 2);
+    psi_a_m7_m1 = simde_mm256_mulhi_epi16(psi_a_m7_m1, ONE_OVER_SQRT_2);
+    psi_a_m7_m1 = simde_mm256_slli_epi16(psi_a_m7_m1, 2);
+    psi_a_m7_m3 = simde_mm256_mulhi_epi16(psi_a_m7_m3, ONE_OVER_SQRT_2);
+    psi_a_m7_m3 = simde_mm256_slli_epi16(psi_a_m7_m3, 2);
+    psi_a_m7_m5 = simde_mm256_mulhi_epi16(psi_a_m7_m5, ONE_OVER_SQRT_2);
+    psi_a_m7_m5 = simde_mm256_slli_epi16(psi_a_m7_m5, 2);
+    psi_a_m7_m7 = simde_mm256_mulhi_epi16(psi_a_m7_m7, ONE_OVER_SQRT_2);
+    psi_a_m7_m7 = simde_mm256_slli_epi16(psi_a_m7_m7, 2);
+
+    // Calculation of a group of two terms in the bit metric involving squares of interference
+    square_a_64qam_epi16_256(a_r_p7_p7, a_i_p7_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p7);
+    square_a_64qam_epi16_256(a_r_p7_p5, a_i_p7_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p5);
+    square_a_64qam_epi16_256(a_r_p7_p3, a_i_p7_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p3);
+    square_a_64qam_epi16_256(a_r_p7_p1, a_i_p7_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_p1);
+    square_a_64qam_epi16_256(a_r_p7_m1, a_i_p7_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m1);
+    square_a_64qam_epi16_256(a_r_p7_m3, a_i_p7_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m3);
+    square_a_64qam_epi16_256(a_r_p7_m5, a_i_p7_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m5);
+    square_a_64qam_epi16_256(a_r_p7_m7, a_i_p7_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p7_m7);
+    square_a_64qam_epi16_256(a_r_p5_p7, a_i_p5_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p7);
+    square_a_64qam_epi16_256(a_r_p5_p5, a_i_p5_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p5);
+    square_a_64qam_epi16_256(a_r_p5_p3, a_i_p5_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p3);
+    square_a_64qam_epi16_256(a_r_p5_p1, a_i_p5_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_p1);
+    square_a_64qam_epi16_256(a_r_p5_m1, a_i_p5_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m1);
+    square_a_64qam_epi16_256(a_r_p5_m3, a_i_p5_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m3);
+    square_a_64qam_epi16_256(a_r_p5_m5, a_i_p5_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m5);
+    square_a_64qam_epi16_256(a_r_p5_m7, a_i_p5_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p5_m7);
+    square_a_64qam_epi16_256(a_r_p3_p7, a_i_p3_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p7);
+    square_a_64qam_epi16_256(a_r_p3_p5, a_i_p3_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p5);
+    square_a_64qam_epi16_256(a_r_p3_p3, a_i_p3_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p3);
+    square_a_64qam_epi16_256(a_r_p3_p1, a_i_p3_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_p1);
+    square_a_64qam_epi16_256(a_r_p3_m1, a_i_p3_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m1);
+    square_a_64qam_epi16_256(a_r_p3_m3, a_i_p3_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m3);
+    square_a_64qam_epi16_256(a_r_p3_m5, a_i_p3_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m5);
+    square_a_64qam_epi16_256(a_r_p3_m7, a_i_p3_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p3_m7);
+    square_a_64qam_epi16_256(a_r_p1_p7, a_i_p1_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p7);
+    square_a_64qam_epi16_256(a_r_p1_p5, a_i_p1_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p5);
+    square_a_64qam_epi16_256(a_r_p1_p3, a_i_p1_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p3);
+    square_a_64qam_epi16_256(a_r_p1_p1, a_i_p1_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_p1);
+    square_a_64qam_epi16_256(a_r_p1_m1, a_i_p1_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m1);
+    square_a_64qam_epi16_256(a_r_p1_m3, a_i_p1_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m3);
+    square_a_64qam_epi16_256(a_r_p1_m5, a_i_p1_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m5);
+    square_a_64qam_epi16_256(a_r_p1_m7, a_i_p1_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_p1_m7);
+    square_a_64qam_epi16_256(a_r_m1_p7, a_i_m1_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p7);
+    square_a_64qam_epi16_256(a_r_m1_p5, a_i_m1_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p5);
+    square_a_64qam_epi16_256(a_r_m1_p3, a_i_m1_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p3);
+    square_a_64qam_epi16_256(a_r_m1_p1, a_i_m1_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_p1);
+    square_a_64qam_epi16_256(a_r_m1_m1, a_i_m1_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m1);
+    square_a_64qam_epi16_256(a_r_m1_m3, a_i_m1_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m3);
+    square_a_64qam_epi16_256(a_r_m1_m5, a_i_m1_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m5);
+    square_a_64qam_epi16_256(a_r_m1_m7, a_i_m1_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m1_m7);
+    square_a_64qam_epi16_256(a_r_m3_p7, a_i_m3_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p7);
+    square_a_64qam_epi16_256(a_r_m3_p5, a_i_m3_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p5);
+    square_a_64qam_epi16_256(a_r_m3_p3, a_i_m3_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p3);
+    square_a_64qam_epi16_256(a_r_m3_p1, a_i_m3_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_p1);
+    square_a_64qam_epi16_256(a_r_m3_m1, a_i_m3_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m1);
+    square_a_64qam_epi16_256(a_r_m3_m3, a_i_m3_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m3);
+    square_a_64qam_epi16_256(a_r_m3_m5, a_i_m3_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m5);
+    square_a_64qam_epi16_256(a_r_m3_m7, a_i_m3_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m3_m7);
+    square_a_64qam_epi16_256(a_r_m5_p7, a_i_m5_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p7);
+    square_a_64qam_epi16_256(a_r_m5_p5, a_i_m5_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p5);
+    square_a_64qam_epi16_256(a_r_m5_p3, a_i_m5_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p3);
+    square_a_64qam_epi16_256(a_r_m5_p1, a_i_m5_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_p1);
+    square_a_64qam_epi16_256(a_r_m5_m1, a_i_m5_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m1);
+    square_a_64qam_epi16_256(a_r_m5_m3, a_i_m5_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m3);
+    square_a_64qam_epi16_256(a_r_m5_m5, a_i_m5_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m5);
+    square_a_64qam_epi16_256(a_r_m5_m7, a_i_m5_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m5_m7);
+    square_a_64qam_epi16_256(a_r_m7_p7, a_i_m7_p7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p7);
+    square_a_64qam_epi16_256(a_r_m7_p5, a_i_m7_p5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p5);
+    square_a_64qam_epi16_256(a_r_m7_p3, a_i_m7_p3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p3);
+    square_a_64qam_epi16_256(a_r_m7_p1, a_i_m7_p1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_p1);
+    square_a_64qam_epi16_256(a_r_m7_m1, a_i_m7_m1, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m1);
+    square_a_64qam_epi16_256(a_r_m7_m3, a_i_m7_m3, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m3);
+    square_a_64qam_epi16_256(a_r_m7_m5, a_i_m7_m5, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m5);
+    square_a_64qam_epi16_256(a_r_m7_m7, a_i_m7_m7, ch_mag_int, SQRT_42_OVER_FOUR, a_sq_m7_m7);
+
+    // Computing different multiples of ||h0||^2
+    // x=1, y=1
+    ch_mag_2_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, ONE_OVER_FOUR_SQRT_42);
+    ch_mag_2_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_2_over_42_with_sigma2, 1);
+    // x=1, y=3
+    ch_mag_10_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, FIVE_OVER_FOUR_SQRT_42);
+    ch_mag_10_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_10_over_42_with_sigma2, 1);
+    // x=1, x=5
+    ch_mag_26_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, THIRTEEN_OVER_FOUR_SQRT_42);
+    ch_mag_26_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_26_over_42_with_sigma2, 1);
+    // x=1, y=7
+    ch_mag_50_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, TWENTYFIVE_OVER_FOUR_SQRT_42);
+    ch_mag_50_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_50_over_42_with_sigma2, 1);
+    // x=3, y=3
+    ch_mag_18_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, NINE_OVER_FOUR_SQRT_42);
+    ch_mag_18_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_18_over_42_with_sigma2, 1);
+    // x=3, y=5
+    ch_mag_34_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, SEVENTEEN_OVER_FOUR_SQRT_42);
+    ch_mag_34_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_34_over_42_with_sigma2, 1);
+    // x=3, y=7
+    ch_mag_58_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, TWENTYNINE_OVER_FOUR_SQRT_42);
+    ch_mag_58_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_58_over_42_with_sigma2, 2);
+    // x=5, y=5
+    ch_mag_50_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, TWENTYFIVE_OVER_FOUR_SQRT_42);
+    ch_mag_50_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_50_over_42_with_sigma2, 1);
+    // x=5, y=7
+    ch_mag_74_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, THIRTYSEVEN_OVER_FOUR_SQRT_42);
+    ch_mag_74_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_74_over_42_with_sigma2, 2);
+    // x=7, y=7
+    ch_mag_98_over_42_with_sigma2 = simde_mm256_mulhi_epi16(ch_mag_des, FORTYNINE_OVER_FOUR_SQRT_42);
+    ch_mag_98_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_98_over_42_with_sigma2, 2);
+
+    // Computing Metrics
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_p7, a_sq_p7_p7);
+    simde__m256i xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_7_7);
+    simde__m256i bit_met_p7_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_p5, a_sq_p7_p5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_7_5);
+    simde__m256i bit_met_p7_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_p3, a_sq_p7_p3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_7_3);
+    simde__m256i bit_met_p7_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_p1, a_sq_p7_p1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_7_1);
+    simde__m256i bit_met_p7_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_m1, a_sq_p7_m1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_7_1);
+    simde__m256i bit_met_p7_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_m3, a_sq_p7_m3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_7_3);
+    simde__m256i bit_met_p7_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_m5, a_sq_p7_m5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_7_5);
+    simde__m256i bit_met_p7_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p7_m7, a_sq_p7_m7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_7_7);
+    simde__m256i bit_met_p7_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_p7, a_sq_p5_p7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_5_7);
+    simde__m256i bit_met_p5_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_p5, a_sq_p5_p5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_5_5);
+    simde__m256i bit_met_p5_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_p3, a_sq_p5_p3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_5_3);
+    simde__m256i bit_met_p5_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_p1, a_sq_p5_p1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_5_1);
+    simde__m256i bit_met_p5_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_m1, a_sq_p5_m1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_5_1);
+    simde__m256i bit_met_p5_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_m3, a_sq_p5_m3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_5_3);
+    simde__m256i bit_met_p5_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_m5, a_sq_p5_m5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_5_5);
+    simde__m256i bit_met_p5_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p5_m7, a_sq_p5_m7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_5_7);
+    simde__m256i bit_met_p5_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_p7, a_sq_p3_p7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_3_7);
+    simde__m256i bit_met_p3_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_p5, a_sq_p3_p5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_3_5);
+    simde__m256i bit_met_p3_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_p3, a_sq_p3_p3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_3_3);
+    simde__m256i bit_met_p3_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_18_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_p1, a_sq_p3_p1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_3_1);
+    simde__m256i bit_met_p3_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_m1, a_sq_p3_m1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_3_1);
+    simde__m256i bit_met_p3_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_m3, a_sq_p3_m3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_3_3);
+    simde__m256i bit_met_p3_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_18_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_m5, a_sq_p3_m5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_3_5);
+    simde__m256i bit_met_p3_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p3_m7, a_sq_p3_m7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_3_7);
+    simde__m256i bit_met_p3_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_p7, a_sq_p1_p7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_1_7);
+    simde__m256i bit_met_p1_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_p5, a_sq_p1_p5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_1_5);
+    simde__m256i bit_met_p1_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_p3, a_sq_p1_p3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_1_3);
+    simde__m256i bit_met_p1_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_p1, a_sq_p1_p1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_p_1_1);
+    simde__m256i bit_met_p1_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_2_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_m1, a_sq_p1_m1);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_1_1);
+    simde__m256i bit_met_p1_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_2_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_m3, a_sq_p1_m3);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_1_3);
+    simde__m256i bit_met_p1_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_m5, a_sq_p1_m5);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_1_5);
+    simde__m256i bit_met_p1_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_p1_m7, a_sq_p1_m7);
+    xmm1 = simde_mm256_adds_epi16(xmm0, y0_m_1_7);
+    simde__m256i bit_met_p1_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_p7, a_sq_m1_p7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_1_7);
+    simde__m256i bit_met_m1_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_p5, a_sq_m1_p5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_1_5);
+    simde__m256i bit_met_m1_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_p3, a_sq_m1_p3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_1_3);
+    simde__m256i bit_met_m1_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_p1, a_sq_m1_p1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_1_1);
+    simde__m256i bit_met_m1_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_2_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_m1, a_sq_m1_m1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_1_1);
+    simde__m256i bit_met_m1_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_2_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_m3, a_sq_m1_m3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_1_3);
+    simde__m256i bit_met_m1_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_m5, a_sq_m1_m5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_1_5);
+    simde__m256i bit_met_m1_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m1_m7, a_sq_m1_m7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_1_7);
+    simde__m256i bit_met_m1_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_p7, a_sq_m3_p7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_3_7);
+    simde__m256i bit_met_m3_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_p5, a_sq_m3_p5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_3_5);
+    simde__m256i bit_met_m3_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_p3, a_sq_m3_p3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_3_3);
+    simde__m256i bit_met_m3_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_18_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_p1, a_sq_m3_p1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_3_1);
+    simde__m256i bit_met_m3_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_m1, a_sq_m3_m1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_3_1);
+    simde__m256i bit_met_m3_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_10_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_m3, a_sq_m3_m3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_3_3);
+    simde__m256i bit_met_m3_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_18_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_m5, a_sq_m3_m5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_3_5);
+    simde__m256i bit_met_m3_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m3_m7, a_sq_m3_m7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_3_7);
+    simde__m256i bit_met_m3_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_p7, a_sq_m5_p7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_5_7);
+    simde__m256i bit_met_m5_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_p5, a_sq_m5_p5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_5_5);
+    simde__m256i bit_met_m5_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_p3, a_sq_m5_p3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_5_3);
+    simde__m256i bit_met_m5_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_p1, a_sq_m5_p1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_5_1);
+    simde__m256i bit_met_m5_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_m1, a_sq_m5_m1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_5_1);
+    simde__m256i bit_met_m5_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_26_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_m3, a_sq_m5_m3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_5_3);
+    simde__m256i bit_met_m5_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_34_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_m5, a_sq_m5_m5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_5_5);
+    simde__m256i bit_met_m5_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m5_m7, a_sq_m5_m7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_5_7);
+    simde__m256i bit_met_m5_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_p7, a_sq_m7_p7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_7_7);
+    simde__m256i bit_met_m7_p7 = simde_mm256_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_p5, a_sq_m7_p5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_7_5);
+    simde__m256i bit_met_m7_p5 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_p3, a_sq_m7_p3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_7_3);
+    simde__m256i bit_met_m7_p3 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_p1, a_sq_m7_p1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_m_7_1);
+    simde__m256i bit_met_m7_p1 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_m1, a_sq_m7_m1);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_7_1);
+    simde__m256i bit_met_m7_m1 = simde_mm256_subs_epi16(xmm1, ch_mag_50_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_m3, a_sq_m7_m3);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_7_3);
+    simde__m256i bit_met_m7_m3 = simde_mm256_subs_epi16(xmm1, ch_mag_58_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_m5, a_sq_m7_m5);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_7_5);
+    simde__m256i bit_met_m7_m5 = simde_mm256_subs_epi16(xmm1, ch_mag_74_over_42_with_sigma2);
+    xmm0 = simde_mm256_subs_epi16(psi_a_m7_m7, a_sq_m7_m7);
+    xmm1 = simde_mm256_subs_epi16(xmm0, y0_p_7_7);
+    simde__m256i bit_met_m7_m7 = simde_mm256_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
+
+    // Detection for 1st bit
+    // bit = 1
+    xmm0 = simde_mm256_max_epi16(bit_met_m7_p7, bit_met_m7_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m7_p3, bit_met_m7_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m7_m1, bit_met_m7_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m7_m5, bit_met_m7_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    simde__m256i logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m5_p7, bit_met_m5_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m5_p3, bit_met_m5_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m5_m1, bit_met_m5_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m5, bit_met_m5_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m3_p7, bit_met_m3_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m3_p3, bit_met_m3_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m3_m1, bit_met_m3_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m3_m5, bit_met_m3_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m1_p7, bit_met_m1_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m1_p3, bit_met_m1_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m1, bit_met_m1_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m1_m5, bit_met_m1_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    // bit = 0
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p7, bit_met_p7_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p7_p3, bit_met_p7_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p7_m1, bit_met_p7_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p7_m5, bit_met_p7_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    simde__m256i logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p5_p7, bit_met_p5_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p5_p3, bit_met_p5_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p5_m1, bit_met_p5_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p5_m5, bit_met_p5_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p3_p7, bit_met_p3_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p3, bit_met_p3_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p3_m1, bit_met_p3_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p3_m5, bit_met_p3_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p1_p7, bit_met_p1_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p1_p3, bit_met_p1_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p1_m1, bit_met_p1_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p1_m5, bit_met_p1_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    y0r = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Detection for 2nd bit
+    // bit = 1
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m1, bit_met_p5_m1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m1, bit_met_p1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m1, bit_met_m3_m1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m1, bit_met_m7_m1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m3, bit_met_p5_m3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m3, bit_met_p1_m3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m3, bit_met_m3_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m3, bit_met_m7_m3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m5, bit_met_p5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m5, bit_met_p1_m5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m5, bit_met_m3_m5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m5, bit_met_m7_m5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m7, bit_met_p5_m7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m7, bit_met_p1_m7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m7, bit_met_m3_m7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m7, bit_met_m7_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    // bit = 0
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p1, bit_met_p5_p1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p1, bit_met_p1_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p1, bit_met_m3_p1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p1, bit_met_m7_p1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p3, bit_met_p5_p3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p3, bit_met_p1_p3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p3, bit_met_m3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p3, bit_met_m7_p3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p5, bit_met_p5_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p5, bit_met_p1_p5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p5, bit_met_m3_p5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p5, bit_met_m7_p5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p7, bit_met_p5_p7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p7, bit_met_p1_p7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p7, bit_met_m3_p7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p7, bit_met_m7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    y1r = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Detection for 3rd bit
+    xmm0 = simde_mm256_max_epi16(bit_met_m7_m7, bit_met_m7_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m7_m3, bit_met_m7_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m7_p1, bit_met_m7_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m7_p5, bit_met_m7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m5_m7, bit_met_m5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m5_m3, bit_met_m5_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m5_p1, bit_met_m5_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p5, bit_met_m5_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p5_m7, bit_met_p5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p5_m3, bit_met_p5_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p5_p1, bit_met_p5_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p5_p5, bit_met_p5_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m7, bit_met_p7_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p7_m3, bit_met_p7_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p7_p1, bit_met_p7_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p7_p5, bit_met_p7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    xmm0 = simde_mm256_max_epi16(bit_met_m3_m7, bit_met_m3_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m3_m3, bit_met_m3_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m3_p1, bit_met_m3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m3_p5, bit_met_m3_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m1_m7, bit_met_m1_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m1_m3, bit_met_m1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p1, bit_met_m1_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m1_p5, bit_met_m1_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p1_m7, bit_met_p1_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p1_m3, bit_met_p1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p1_p1, bit_met_p1_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p1_p5, bit_met_p1_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p3_m7, bit_met_p3_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m3, bit_met_p3_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p3_p1, bit_met_p3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p3_p5, bit_met_p3_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    simde__m256i y2r = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Detection for 4th bit
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p7, bit_met_p5_p7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p7, bit_met_p1_p7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p7, bit_met_m3_p7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p7, bit_met_m7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p5, bit_met_p5_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p5, bit_met_p1_p5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p5, bit_met_m3_p5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p5, bit_met_m5_p5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m5, bit_met_p5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m5, bit_met_p1_m5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m5, bit_met_m3_m5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m5, bit_met_m7_m5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m7, bit_met_p5_m7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m7, bit_met_p1_m7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m7, bit_met_m3_m7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m7, bit_met_m7_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m1, bit_met_p5_m1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m1, bit_met_p1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m1, bit_met_m3_m1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m1, bit_met_m7_m1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m3, bit_met_p5_m3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m3, bit_met_p1_m3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m3, bit_met_m3_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m3, bit_met_m7_m3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p1, bit_met_p5_p1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p1, bit_met_p1_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p1, bit_met_m3_p1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p1, bit_met_m7_p1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p3, bit_met_p5_p3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p3, bit_met_p1_p3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p3, bit_met_m3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p3, bit_met_m7_p3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    y0i = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Detection for 5th bit
+    xmm0 = simde_mm256_max_epi16(bit_met_m7_m7, bit_met_m7_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m7_m3, bit_met_m7_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m7_p1, bit_met_m7_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m7_p5, bit_met_m7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m1_m7, bit_met_m1_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m1_m3, bit_met_m1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p1, bit_met_m1_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m1_p5, bit_met_m1_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p1_m7, bit_met_p1_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p1_m3, bit_met_p1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p1_p1, bit_met_p1_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p1_p5, bit_met_p1_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m7, bit_met_p7_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p7_m3, bit_met_p7_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p7_p1, bit_met_p7_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p7_p5, bit_met_p7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    xmm0 = simde_mm256_max_epi16(bit_met_m5_m7, bit_met_m5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m5_m3, bit_met_m5_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m5_p1, bit_met_m5_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p5, bit_met_m5_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_m3_m7, bit_met_m3_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_m3_m3, bit_met_m3_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m3_p1, bit_met_m3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m3_p5, bit_met_m3_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p3_m7, bit_met_p3_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m3, bit_met_p3_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p3_p1, bit_met_p3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p3_p5, bit_met_p3_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p5_m7, bit_met_p5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p5_m3, bit_met_p5_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_p5_p1, bit_met_p5_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_p5_p5, bit_met_p5_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    y1i = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Detection for 6th bit
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p7, bit_met_p5_p7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p7, bit_met_p1_p7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p7, bit_met_m3_p7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p7, bit_met_m7_p7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p1, bit_met_p5_p1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p1, bit_met_p1_p1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p1, bit_met_m3_p1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p1, bit_met_m5_p1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m1, bit_met_p5_m1);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m1, bit_met_p1_m1);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m1, bit_met_m3_m1);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m1, bit_met_m7_m1);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m7, bit_met_p5_m7);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m7, bit_met_p1_m7);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m7, bit_met_m3_m7);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m7, bit_met_m7_m7);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm4);
+    logmax_den_re0 = simde_mm256_max_epi16(logmax_den_re0, xmm5);
+
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m5, bit_met_p5_m5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m5, bit_met_p1_m5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m5, bit_met_m3_m5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m5, bit_met_m7_m5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(xmm4, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_m3, bit_met_p5_m3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_m3, bit_met_p1_m3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_m3, bit_met_m3_m3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_m3, bit_met_m7_m3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p3, bit_met_p5_p3);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p3, bit_met_p1_p3);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p3, bit_met_m3_p3);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p3, bit_met_m7_p3);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+    xmm0 = simde_mm256_max_epi16(bit_met_p7_p5, bit_met_p5_p5);
+    xmm1 = simde_mm256_max_epi16(bit_met_p3_p5, bit_met_p1_p5);
+    xmm2 = simde_mm256_max_epi16(bit_met_m1_p5, bit_met_m3_p5);
+    xmm3 = simde_mm256_max_epi16(bit_met_m5_p5, bit_met_m7_p5);
+    xmm4 = simde_mm256_max_epi16(xmm0, xmm1);
+    xmm5 = simde_mm256_max_epi16(xmm2, xmm3);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm4);
+    logmax_num_re0 = simde_mm256_max_epi16(logmax_num_re0, xmm5);
+
+    simde__m256i y2i = simde_mm256_subs_epi16(logmax_num_re0, logmax_den_re0);
+
+    // Map to output stream, difficult to do in SIMD since we have 6 16bit LLRs
+    int idx0 = 24 * i;
+    for (int re = 0; re < 16; re++) {
+      stream0_out[idx0 + 0].r = ((short *)&y0r)[re];
+      stream0_out[idx0 + 0].i = ((short *)&y1r)[re];
+      stream0_out[idx0 + 1].r = ((short *)&y2r)[re];
+      stream0_out[idx0 + 1].i = ((short *)&y0i)[re];
+      stream0_out[idx0 + 2].r = ((short *)&y1i)[re];
+      stream0_out[idx0 + 2].i = ((short *)&y2i)[re];
+      idx0 += 3;
+    }
+  }
+
+  _mm_empty();
+  _m_empty();
+}
+
 void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
                              int32_t **ul_ch_mag,
                              int32_t ***rho,
@@ -1407,7 +4031,9 @@ void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
       nr_ulsch_qam16_qam16(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
       break;
     case 6:
-      AssertFatal(1 == 0, "LLR computation is not implemented yet for ML with Qm = %d\n", mod_order);
+      nr_ulsch_qam64_qam64(rxdataF_comp0, rxdataF_comp1, ul_ch_mag0, ul_ch_mag1, llr_layers0, rho0, nb_re);
+      nr_ulsch_qam64_qam64(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
+      break;
     default:
       AssertFatal(1 == 0, "nr_ulsch_compute_llr: invalid Qm value, symbol = %d, Qm = %d\n", symbol, mod_order);
   }
