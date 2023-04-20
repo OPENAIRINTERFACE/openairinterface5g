@@ -43,6 +43,10 @@
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);
 
+/**\brief apply default configuration values in nr_mac instance
+   \param mac           mac instance */
+void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
+
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
    \param cc_id          component carrier id
