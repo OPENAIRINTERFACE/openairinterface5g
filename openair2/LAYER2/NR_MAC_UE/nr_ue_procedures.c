@@ -181,6 +181,12 @@ void nr_ue_init_mac(module_id_t module_idP)
 //  mac->scheduling_info.PathlossChange_db = nr_get_db_dl_PathlossChange(mac->scheduling_info.PathlossChange);
 //  mac->PHR_reporting_active = 0;
 
+  mac->first_sync_frame = -1;
+  mac->get_sib1 = false;
+  mac->phy_config_request_sent = false;
+  mac->state = UE_NOT_SYNC;
+  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
+
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     LOG_D(NR_MAC, "[UE%d] Applying default logical channel config for LCGID %d\n",
                  module_idP, i);
@@ -511,7 +517,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (ret != -1){
 
       // Get UL config request corresponding slot_tx
-      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
+      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx, tda_info.k2);
 
       if (!ul_config) {
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
@@ -580,7 +586,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     if (ret != -1){
 
       // Get UL config request corresponding slot_tx
-      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
+      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx, tda_info.k2);
 
       if (!ul_config) {
         LOG_W(MAC, "In %s: ul_config request is NULL. Probably due to unexpected UL DCI in frame.slot %d.%d. Ignoring DCI!\n", __FUNCTION__, frame, slot);
@@ -4132,7 +4138,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 
     if (ret != -1){
 
-      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
+      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx, tda_info.k2);
       uint16_t rnti = mac->crnti;
 
       if (!ul_config) {
