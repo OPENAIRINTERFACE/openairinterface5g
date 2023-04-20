@@ -405,6 +405,26 @@ pipeline {
             }
           }
         }
+        stage ("SA-AW2S-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-AW2S-CN5G', 'SA-AW2S-CN5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-AW2S-CN5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
 
         //avra is offline, re-enable once it is available
         //stage ("T1-Offload-Test") {

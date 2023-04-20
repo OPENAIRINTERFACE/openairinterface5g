@@ -31,8 +31,8 @@
 #-----------------------------------------------------------
 # Import
 #-----------------------------------------------------------
-import sys              # arg
-import re               # reg
+import sys	      # arg
+import re	       # reg
 import logging
 import os
 import shutil
@@ -47,6 +47,7 @@ from zipfile import ZipFile
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
+import cls_cluster as OC
 import cls_cmd
 import sshconnection as SSH
 import helpreadme as HELP
@@ -89,6 +90,15 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 			ranTargetBranch = 'develop'
 		logging.debug(f'Merging with the target branch: {ranTargetBranch}')
 		sshSession.command(f'git merge --ff origin/{ranTargetBranch} -m "Temporary merge for CI"', '\$', 30)
+
+def ImageTagToUse(imageName, ranCommitID, ranBranch, ranAllowMerge):
+	shortCommit = ranCommitID[0:8]
+	if ranAllowMerge:
+		tagToUse = f'{ranBranch}-{shortCommit}'
+	else:
+		tagToUse = f'develop-{shortCommit}'
+	fullTag = f'{imageName}:{tagToUse}'
+	return fullTag
 
 def CopyLogsToExecutor(cmd, sourcePath, log_name):
 	cmd.cd(f'{sourcePath}/cmake_targets')
@@ -306,7 +316,6 @@ class Containerize():
 		self.registrySvrId = ''
 		self.testSvrId = ''
 		self.imageToPull = []
-
 		#checkers from xml
 		self.ran_checkers={}
 
@@ -383,7 +392,7 @@ class Containerize():
 	
 		CreateWorkspace(cmd, lSourcePath, self.ranRepository, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
- 		# if asterix, copy the entitlement and subscription manager configurations
+		# if asterix, copy the entitlement and subscription manager configurations
 		if self.host == 'Red Hat':
 			cmd.run('mkdir -p ./etc-pki-entitlement ./rhsm-conf ./rhsm-ca')
 			cmd.run('cp /etc/rhsm/rhsm.conf ./rhsm-conf/')
@@ -649,15 +658,6 @@ class Containerize():
 		HTML.CreateHtmlTestRow('commit ' + tag, 'OK', CONST.ALL_PROCESSES_OK)
 		HTML.CreateHtmlNextTabHeaderTestRow(collectInfo, allImagesSize)
 
-	def ImageTagToUse(self, imageName):
-		shortCommit = self.ranCommitID[0:8]
-		if self.ranAllowMerge:
-			tagToUse = f'{self.ranBranch}-{shortCommit}'
-		else:
-			tagToUse = f'develop-{shortCommit}'
-		fullTag = f'porcepix.sboai.cs.eurecom.fr/{imageName}:{tagToUse}'
-		return fullTag
-
 	def Push_Image_to_Local_Registry(self, HTML):
 		if self.registrySvrId == '0':
 			lIpAddr = self.eNBIPAddress
@@ -680,8 +680,8 @@ class Containerize():
 		logging.debug('Pushing images from server: ' + lIpAddr)
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
-
-		mySSH.command('docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		imagePrefix = 'porcepix.sboai.cs.eurecom.fr'
+		mySSH.command(f'docker login -u oaicicd -p oaicicd {imagePrefix}', '\$', 5)
 		if re.search('Login Succeeded', mySSH.getBefore()) is None:
 			msg = 'Could not log into local registry'
 			logging.error(msg)
@@ -694,9 +694,9 @@ class Containerize():
 			orgTag = 'ci-temp'
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
-			tagToUse = self.ImageTagToUse(image)
-			mySSH.command(f'docker image tag {image}:{orgTag} {tagToUse}', '\$', 5)
-			mySSH.command(f'docker push {tagToUse}', '\$', 120)
+			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			mySSH.command(f'docker image tag {image}:{orgTag} {imagePrefix}/{tagToUse}', '\$', 5)
+			mySSH.command(f'docker push {imagePrefix}/{tagToUse}', '\$', 120)
 			if re.search(': digest:', mySSH.getBefore()) is None:
 				logging.debug(mySSH.getBefore())
 				msg = f'Could not push {image} to local registry : {tagToUse}'
@@ -704,9 +704,9 @@ class Containerize():
 				mySSH.close()
 				HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 				return False
-			mySSH.command(f'docker rmi {tagToUse} {image}:{orgTag}', '\$', 30)
+			mySSH.command(f'docker rmi {imagePrefix}/{tagToUse} {image}:{orgTag}', '\$', 30)
 
-		mySSH.command('docker logout porcepix.sboai.cs.eurecom.fr', '\$', 5)
+		mySSH.command(f'docker logout {imagePrefix}', '\$', 5)
 		if re.search('Removing login credentials', mySSH.getBefore()) is None:
 			msg = 'Could not log off from local registry'
 			logging.error(msg)
@@ -739,25 +739,18 @@ class Containerize():
 		if lIpAddr == '' or lUserName == '' or lPassWord == '' or lSourcePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		if lIpAddr != 'none':
-			logging.debug('Pulling images onto server: ' + lIpAddr)
-			myCmd = cls_cmd.RemoteCmd(lIpAddr)
-		else:
-			logging.debug('Pulling images locally')
-			myCmd = cls_cmd.LocalCmd()
-
-		cmd = 'docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr'
-		response = myCmd.run(cmd)
+		myCmd = cls_cmd.getConnection(lIpAddr)
+		imagePrefix = 'porcepix.sboai.cs.eurecom.fr'
+		response = myCmd.run(f'docker login -u oaicicd -p oaicicd {imagePrefix}')
 		if response.returncode != 0:
 			msg = 'Could not log into local registry'
 			logging.error(msg)
 			myCmd.close()
 			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
-
 		for image in self.imageToPull:
-			tagToUse = self.ImageTagToUse(image)
-			cmd = f'docker pull {tagToUse}'
+			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			cmd = f'docker pull {imagePrefix}/{tagToUse}'
 			response = myCmd.run(cmd, timeout=120)
 			if response.returncode != 0:
 				logging.debug(response)
@@ -766,16 +759,15 @@ class Containerize():
 				myCmd.close()
 				HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
 				return False
-
-		cmd = 'docker logout porcepix.sboai.cs.eurecom.fr'
-		response = myCmd.run(cmd)
+			myCmd.run(f'docker tag {imagePrefix}/{tagToUse} oai-ci/{tagToUse}')
+			myCmd.run(f'docker rmi {imagePrefix}/{tagToUse}')
+		response = myCmd.run(f'docker logout {imagePrefix}')
 		if response.returncode != 0:
 			msg = 'Could not log off from local registry'
 			logging.error(msg)
 			myCmd.close()
 			HTML.CreateHtmlTestRow(msg, 'KO', CONST.ALL_PROCESSES_OK)
 			return False
-
 		myCmd.close()
 		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 		return True
@@ -810,7 +802,8 @@ class Containerize():
 
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
-			cmd = f'docker rmi {self.ImageTagToUse(image)}'
+			imageTag = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			cmd = f'docker rmi oai-ci/{imageTag}'
 			myCmd.run(cmd, reportNonZero=False)
 
 		myCmd.close()
@@ -845,10 +838,10 @@ class Containerize():
 
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 		mySSH.command('cp docker-compose.y*ml ci-docker-compose.yml', '\$', 5)
-		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup']
+		imagesList = ['oai-enb', 'oai-gnb', 'oai-nr-cuup', 'oai-gnb-aw2s']
 		for image in imagesList:
-			imageToUse = self.ImageTagToUse(image)
-			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: {imageToUse}#" ci-docker-compose.yml', '\$', 2)
+			imageTag = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: oai-ci/{imageTag}#" ci-docker-compose.yml', '\$', 2)
 		localMmeIpAddr = EPC.MmeIPAddress
 		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 
@@ -966,6 +959,7 @@ class Containerize():
 		logging.debug('\u001B[1m Undeploying OAI Object from server: ' + lIpAddr + '\u001B[0m')
 		mySSH = SSH.SSHConnection()
 		mySSH.open(lIpAddr, lUserName, lPassWord)
+
 		mySSH.command('cd ' + lSourcePath + '/' + self.yamlPath[self.eNB_instance], '\$', 5)
 
 		svcName = self.services[self.eNB_instance]
@@ -981,7 +975,7 @@ class Containerize():
 		for s in allServices:
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml ps --all -- {s}', '\$', 5, silent=False)
 			running = mySSH.getBefore().split('\r\n')[2:-1]
-			#logging.debug(f'running services: {running}')
+			logging.debug(f'running services: {running}')
 			if len(running) > 0: # something is running for that service
 				services.append(s)
 		logging.info(f'stopping services {services}')
@@ -1050,13 +1044,12 @@ class Containerize():
 			myCmd.close()
 			HTML.CreateHtmlTestRow('SVC not Found', 'KO', CONST.ALL_PROCESSES_OK)
 			return
-
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
 		myCmd.run(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
-			tagToUse = self.ImageTagToUse(image)
-			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
 
@@ -1193,13 +1186,12 @@ class Containerize():
 		ymlPath = self.yamlPath[0].split('/')
 		logPath = '../cmake_targets/log/' + ymlPath[1]
 		myCmd = cls_cmd.LocalCmd(d = self.yamlPath[0])
-
 		cmd = 'cp docker-compose.y*ml docker-compose-ci.yml'
 		myCmd.run(cmd, silent=self.displayedNewTags)
 		imageNames = ['oai-enb', 'oai-gnb', 'oai-lte-ue', 'oai-nr-ue', 'oai-lte-ru', 'oai-nr-cuup']
 		for image in imageNames:
-			tagToUse = self.ImageTagToUse(image)
-			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@{tagToUse}@" docker-compose-ci.yml'
+			tagToUse = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			cmd = f'sed -i -e "s@oaisoftwarealliance/{image}:develop@oai-ci/{tagToUse}@" docker-compose-ci.yml'
 			myCmd.run(cmd, silent=self.displayedNewTags)
 		self.displayedNewTags = True
 
