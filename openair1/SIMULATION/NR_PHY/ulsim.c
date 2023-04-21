@@ -631,6 +631,10 @@ int main(int argc, char **argv)
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   prepare_scd(scd);
 
+  NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
+  prepare_sim_uecap(UE_Capability_nr,scc,mu,
+                    N_RB_UL,0,mcs_table);
+
   // TODO do a UECAP for phy-sim
   const gNB_RrcConfigurationReq conf = {
     .pdsch_AntennaPorts = { .N1 = 1, .N2 = 1, .XP = 1 },
@@ -640,7 +644,8 @@ int main(int argc, char **argv)
     .do_SRS = 0,
     .force_256qam_off = false
   };
-  NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, NULL, 0, 1, &conf, 0);
+
+  NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, UE_Capability_nr, 0, 1, &conf, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
   fix_scd(scd);

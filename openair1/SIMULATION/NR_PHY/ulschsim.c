@@ -169,6 +169,7 @@ int main(int argc, char **argv)
   uint8_t Imcs = 9;
   uint8_t Nl = 1;
   uint8_t max_ldpc_iterations = 5;
+  uint8_t mcs_table = 0;
 
   double DS_TDL = .03;
 
@@ -182,7 +183,7 @@ int main(int argc, char **argv)
   randominit(0);
 
   //while ((c = getopt(argc, argv, "df:hpg:i:j:n:l:m:r:s:S:y:z:M:N:F:R:P:")) != -1) {
-  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:r:W:")) != -1) {
+  while ((c = getopt(argc, argv, "hg:n:s:S:py:z:M:N:R:F:m:l:q:r:W:")) != -1) {
     switch (c) {
       /*case 'f':
          write_output_file = 1;
@@ -346,6 +347,10 @@ int main(int argc, char **argv)
         nb_symb_sch = atoi(optarg);
         break;
 
+      case 'q':
+        mcs_table = atoi(optarg);
+        break;
+
       case 'r':
         nb_rb = atoi(optarg);
         break;
@@ -476,8 +481,8 @@ int main(int argc, char **argv)
   if ((Nl==4)||(Nl==3))
     nb_re_dmrs = nb_re_dmrs*2;
 
-  mod_order = nr_get_Qm_ul(Imcs, 0);
-  code_rate = nr_get_code_rate_ul(Imcs, 0);
+  mod_order = nr_get_Qm_ul(Imcs, mcs_table);
+  code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, length_dmrs, mod_order, Nl);
   TBS = nr_compute_tbs(mod_order,code_rate, nb_rb, nb_symb_sch, nb_re_dmrs*length_dmrs, 0, 0, Nl);
 
@@ -513,6 +518,7 @@ int main(int argc, char **argv)
   N_RE_prime = NR_NB_SC_PER_RB*nb_symb_sch - nb_re_dmrs - N_PRB_oh;
 
   ulsch_ue->pusch_pdu.rnti = n_rnti;
+  ulsch_ue->pusch_pdu.mcs_table = mcs_table;
   ulsch_ue->pusch_pdu.mcs_index = Imcs;
   ulsch_ue->pusch_pdu.nrOfLayers = Nl;
   ulsch_ue->pusch_pdu.rb_size = nb_rb;
