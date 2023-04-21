@@ -263,7 +263,6 @@ class Cluster:
 
 		baseTag = 'develop'
 		forceBaseImageBuild = False
-		imageTag = 'develop'
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
 			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == 'develop':
