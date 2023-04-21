@@ -114,7 +114,7 @@ class PhySim:
 				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
 				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 30)
 		else:
-			imageTag = "develop"
+			imageTag = f'develop-{self.ranCommitID[0:8]}'
 
 		# logging to OC Cluster and then switch to corresponding project
 		mySSH.command(f'oc login -u {ocUserName} -p {ocPassword} --server https://api.oai.cs.eurecom.fr:6443', '\$', 30)

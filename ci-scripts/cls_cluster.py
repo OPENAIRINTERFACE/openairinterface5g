@@ -273,6 +273,7 @@ class Cluster:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
 		else:
+			imageTag = f'develop-{self.ranCommitID[0:8]}'
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
