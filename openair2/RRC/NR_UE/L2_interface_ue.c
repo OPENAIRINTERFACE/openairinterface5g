@@ -35,6 +35,7 @@
 #include "assertions.h"
 #include "rrc_vars.h"
 #include "MAC/mac.h"
+#include "LAYER2/NR_MAC_COMMON/nr_mac.h"
 
 typedef uint32_t channel_t;
 
@@ -126,10 +127,6 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 
     case CCCH:
 
-      // TODO: Enable timer T300
-      //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_active = 1;
-      //NR_UE_rrc_inst[Mod_idP].Info[gNB_id].T300_cnt = 0;
-
       LOG_D(NR_RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n", NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       memcpy(buffer_pP, (uint8_t*)NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.Payload, NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size);
       for(int i = 0; i<NR_UE_rrc_inst[Mod_idP].Srb0[gNB_id].Tx_buffer.payload_size; i++) {
@@ -151,10 +148,10 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 
 int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index)
 {
-  if (NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_active == 1) {
-    LOG_W(NR_RRC, "T304 was stoped with value %i\n", NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_cnt);
-    NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_active = 0;
-    NR_UE_rrc_inst[mod_id].Info[gNB_index].T304_cnt = 0;
+  if (NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active == 1) {
+    LOG_W(NR_RRC, "T304 was stoped with value %i\n", NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt);
+    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active = 0;
+    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt = 0;
   }
   return 0;
 }
