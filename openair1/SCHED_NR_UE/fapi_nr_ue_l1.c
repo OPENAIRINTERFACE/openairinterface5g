@@ -341,9 +341,6 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
     int slot = scheduled_response->slot;
 
     // Note: we have to handle the thread IDs for this. To be revisited completely.
-    NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
-    NR_UE_ULSCH_t *ulsch = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->ulsch;
-    NR_UE_PUCCH *pucch_vars = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->pucch_vars;
     NR_UE_CSI_IM *csiim_vars = PHY_vars_UE_g[module_id][cc_id]->csiim_vars[0];
     NR_UE_CSI_RS *csirs_vars = PHY_vars_UE_g[module_id][cc_id]->csirs_vars[0];
     NR_UE_PDCCH_CONFIG *phy_pdcch_config = NULL;
@@ -384,27 +381,30 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
             memcpy((void*)&(csirs_vars->csirs_config_pdu), (void*)csirs_config_pdu, sizeof(fapi_nr_dl_config_csirs_pdu_rel15_t));
             csirs_vars->active = true;
             break;
-          case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH:
+          case FAPI_NR_DL_CONFIG_TYPE_RA_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+            NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
             dlsch0->rnti_type = _RA_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
-            break;
-          case FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH:
+          } break;
+          case FAPI_NR_DL_CONFIG_TYPE_SI_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+            NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
             dlsch0->rnti_type = _SI_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
-            break;
-          case FAPI_NR_DL_CONFIG_TYPE_DLSCH:
+          } break;
+          case FAPI_NR_DL_CONFIG_TYPE_DLSCH: {
             dlsch_config_pdu = &dl_config->dl_config_list[i].dlsch_config_pdu.dlsch_config_rel15;
+            NR_UE_DLSCH_t *dlsch0 = &((nr_phy_data_t *)scheduled_response->phy_data)->dlsch[0];
             dlsch0->rnti_type = _C_RNTI_;
             dlsch0->dlsch_config = *dlsch_config_pdu;
             configure_dlsch(dlsch0, PHY_vars_UE_g[module_id][cc_id]->dl_harq_processes[0], dlsch_config_pdu, module_id,
                             dl_config->dl_config_list[i].dlsch_config_pdu.rnti);
-            break;
+          } break;
         }
       }
       dl_config->number_pdus = 0;
@@ -435,90 +435,136 @@ int8_t nr_ue_scheduled_response(nr_scheduled_response_t *scheduled_response){
         fapi_nr_ul_config_srs_pdu *srs_config_pdu;
 
         switch (pdu_type){
+          case FAPI_NR_UL_CONFIG_TYPE_PUSCH: {
+            // pusch config pdu
+            pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
+            current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
+            NR_UL_UE_HARQ_t *harq_process_ul_ue = &PHY_vars_UE_g[module_id][cc_id]->ul_harq_processes[current_harq_pid];
+            NR_UE_ULSCH_t *ulsch = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->ulsch;
+            nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch->pusch_pdu;
 
-        case (FAPI_NR_UL_CONFIG_TYPE_PUSCH):
-          // pusch config pdu
-          pusch_config_pdu = &ul_config->ul_config_list[i].pusch_config_pdu;
-          current_harq_pid = pusch_config_pdu->pusch_data.harq_process_id;
-          NR_UL_UE_HARQ_t *harq_process_ul_ue = &PHY_vars_UE_g[module_id][cc_id]->ul_harq_processes[current_harq_pid];
+            LOG_D(PHY,
+                  "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n",
+                  __FUNCTION__,
+                  i,
+                  pusch_config_pdu->nrOfLayers,
+                  pusch_config_pdu->num_dmrs_cdm_grps_no_data);
 
-          nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch->pusch_pdu;
+            memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
+            if (scheduled_response->tx_request) {
+              for (int j = 0; j < scheduled_response->tx_request->number_of_pdus; j++) {
+                fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
+                if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
+                  LOG_D(PHY,
+                        "%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",
+                        scheduled_response->frame,
+                        slot,
+                        tx_req_body->pdu_length,
+                        current_harq_pid);
+                  memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+                  break;
+                }
+              }
 
-          LOG_D(PHY, "In %s i %d: copy pusch_config_pdu nrOfLayers:%d, num_dmrs_cdm_grps_no_data:%d \n", __FUNCTION__, i, pusch_config_pdu->nrOfLayers,pusch_config_pdu->num_dmrs_cdm_grps_no_data);
+              harq_process_ul_ue->status = ACTIVE;
+              ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+              pdu_done++;
+              LOG_D(PHY,
+                    "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                    scheduled_response->frame,
+                    slot,
+                    ul_config,
+                    pdu_type,
+                    pdu_done,
+                    ul_config->number_pdus);
 
-          memcpy(pusch_pdu, pusch_config_pdu, sizeof(nfapi_nr_ue_pusch_pdu_t));
-          if (scheduled_response->tx_request) {
-            for (int j=0; j<scheduled_response->tx_request->number_of_pdus; j++) {
-              fapi_nr_tx_request_body_t *tx_req_body = &scheduled_response->tx_request->tx_request_body[j];
-              if ((tx_req_body->pdu_index == i) && (tx_req_body->pdu_length > 0)) {
-                LOG_D(PHY,"%d.%d Copying %d bytes to harq_process_ul_ue->a (harq_pid %d)\n",scheduled_response->frame,slot,tx_req_body->pdu_length,current_harq_pid);
-                memcpy(harq_process_ul_ue->a, tx_req_body->pdu, tx_req_body->pdu_length);
+            } else {
+              LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
+              return -1;
+            }
+          } break;
+
+          case FAPI_NR_UL_CONFIG_TYPE_PUCCH: {
+            NR_UE_PUCCH *pucch_vars = &((nr_phy_data_tx_t *)scheduled_response->phy_data)->pucch_vars;
+            found = false;
+            pucch_config_pdu = &ul_config->ul_config_list[i].pucch_config_pdu;
+            for (int j = 0; j < 2; j++) {
+              if (pucch_vars->active[j] == false) {
+                LOG_D(PHY, "%d.%d Copying pucch pdu to UE PHY\n", scheduled_response->frame, slot);
+                memcpy((void *)&(pucch_vars->pucch_pdu[j]), (void *)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
+                pucch_vars->active[j] = true;
+                found = true;
+                ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+                pdu_done++;
+                LOG_D(PHY,
+                      "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                      scheduled_response->frame,
+                      slot,
+                      ul_config,
+                      pdu_type,
+                      pdu_done,
+                      ul_config->number_pdus);
                 break;
               }
             }
+            if (!found)
+              LOG_E(PHY, "Couldn't find allocation for PUCCH PDU in PUCCH VARS\n");
+          } break;
 
-            harq_process_ul_ue->status = ACTIVE;
+          case FAPI_NR_UL_CONFIG_TYPE_PRACH:
+            // prach config pdu
+            prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
+            memcpy((void *)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu),
+                   (void *)prach_config_pdu,
+                   sizeof(fapi_nr_ul_config_prach_pdu));
+            PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->active = true;
             ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
             pdu_done++;
-            LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
+            LOG_D(PHY,
+                  "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                  scheduled_response->frame,
+                  slot,
+                  ul_config,
+                  pdu_type,
+                  pdu_done,
+                  ul_config->number_pdus);
+            break;
 
-          } else {
+          case FAPI_NR_UL_CONFIG_TYPE_DONE:
+            pdu_done++; // count the no of pdu processed
+            LOG_D(PHY,
+                  "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                  scheduled_response->frame,
+                  slot,
+                  ul_config,
+                  pdu_type,
+                  pdu_done,
+                  ul_config->number_pdus);
+            break;
 
-            LOG_E(PHY, "[phy_procedures_nrUE_TX] harq_process_ul_ue is NULL !!\n");
-            return -1;
+          case FAPI_NR_UL_CONFIG_TYPE_SRS:
+            // srs config pdu
+            srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
+            memcpy((void *)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu),
+                   (void *)srs_config_pdu,
+                   sizeof(fapi_nr_ul_config_srs_pdu));
+            PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->active = true;
+            ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+            pdu_done++;
+            break;
 
-          }
-
-        break;
-
-        case (FAPI_NR_UL_CONFIG_TYPE_PUCCH):
-          found = false;
-          pucch_config_pdu = &ul_config->ul_config_list[i].pucch_config_pdu;
-          for(int j=0; j<2; j++) {
-            if(pucch_vars->active[j] == false) {
-              LOG_D(PHY,"%d.%d Copying pucch pdu to UE PHY\n",scheduled_response->frame,slot);
-              memcpy((void*)&(pucch_vars->pucch_pdu[j]), (void*)pucch_config_pdu, sizeof(fapi_nr_ul_config_pucch_pdu));
-              pucch_vars->active[j] = true;
-              found = true;
-              ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-              pdu_done++;
-              LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
-              break;
-            }
-          }
-          if (!found)
-            LOG_E(PHY, "Couldn't find allocation for PUCCH PDU in PUCCH VARS\n");
-        break;
-
-        case (FAPI_NR_UL_CONFIG_TYPE_PRACH):
-          // prach config pdu
-          prach_config_pdu = &ul_config->ul_config_list[i].prach_config_pdu;
-          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->prach_pdu), (void*)prach_config_pdu, sizeof(fapi_nr_ul_config_prach_pdu));
-          PHY_vars_UE_g[module_id][cc_id]->prach_vars[gNB_id]->active = true;
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-          pdu_done++;
-          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
-        break;
-
-        case (FAPI_NR_UL_CONFIG_TYPE_DONE):
-          pdu_done++; // count the no of pdu processed
-          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
-        break;
-
-        case (FAPI_NR_UL_CONFIG_TYPE_SRS):
-          // srs config pdu
-          srs_config_pdu = &ul_config->ul_config_list[i].srs_config_pdu;
-          memcpy((void*)&(PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->srs_config_pdu), (void*)srs_config_pdu, sizeof(fapi_nr_ul_config_srs_pdu));
-          PHY_vars_UE_g[module_id][cc_id]->srs_vars[gNB_id]->active = true;
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-          pdu_done++;
-        break;
-
-        default:
-          ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
-          pdu_done++; // count the no of pdu processed
-          LOG_D(PHY, "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n", scheduled_response->frame, slot, ul_config, pdu_type, pdu_done, ul_config->number_pdus);
-        break;
+          default:
+            ul_config->ul_config_list[i].pdu_type = FAPI_NR_UL_CONFIG_TYPE_DONE; // not handle it any more
+            pdu_done++; // count the no of pdu processed
+            LOG_D(PHY,
+                  "%d.%d ul A ul_config %p t %d pdu_done %d number_pdus %d\n",
+                  scheduled_response->frame,
+                  slot,
+                  ul_config,
+                  pdu_type,
+                  pdu_done,
+                  ul_config->number_pdus);
+            break;
         }
       }
 

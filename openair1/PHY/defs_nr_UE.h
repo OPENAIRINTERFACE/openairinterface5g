@@ -151,9 +151,9 @@ typedef struct {
 
   // UE measurements
   //! estimated received spatial signal power (linear)
-  int            rx_spatial_power[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
+  fourDimArray_t *rx_spatial_power;
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
+  fourDimArray_t *rx_spatial_power_dB;
 
   /// estimated received signal power (sum over all TX antennas)
   int            rx_power[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];

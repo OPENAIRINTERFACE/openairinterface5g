@@ -103,8 +103,8 @@ typedef struct {
   int total_bytes_rx;
   int current_Qm;
   int current_RI;
-  int power[NB_ANTENNAS_RX];
-  int noise_power[NB_ANTENNAS_RX];
+  int power[MAX_ANT];
+  int noise_power[MAX_ANT];
   int DTX;
   int sync_pos;
 } NR_gNB_SCH_STATS_t;
@@ -229,9 +229,9 @@ typedef struct {
 
 typedef struct {
   //! estimated received spatial signal power (linear)
-  unsigned int rx_spatial_power[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  fourDimArray_t * rx_spatial_power;
   //! estimated received spatial signal power (dB)
-  unsigned int rx_spatial_power_dB[NB_ANTENNAS_TX][NB_ANTENNAS_RX];
+  fourDimArray_t * rx_spatial_power_dB;
   //! estimated rssi (dBm)
   int rx_rssi_dBm;
   //! estimated correlation (wideband linear) between spatial channels (computed in dlsch_demodulation)
@@ -546,9 +546,9 @@ typedef struct {
   //! estimated avg noise power (dB)
   unsigned int n0_power_tot_dB;
   //! estimated avg noise power per RB per RX ant (lin)
-  unsigned int n0_subband_power[NB_ANTENNAS_RX][275];
+  fourDimArray_t *n0_subband_power;
   //! estimated avg noise power per RB per RX ant (dB)
-  unsigned int n0_subband_power_dB[NB_ANTENNAS_RX][275];
+  fourDimArray_t *n0_subband_power_dB;
   //! estimated avg subband noise power (dB)
   unsigned int n0_subband_power_avg_dB;
   //! estimated avg subband noise power per antenna (dB)
@@ -557,7 +557,6 @@ typedef struct {
   int n0_subband_power_tot_dB[275];
   //! estimated avg noise power per RB (dBm)
   int n0_subband_power_tot_dBm[275];
-
   /// PRACH background noise level
   int            prach_I0;
 

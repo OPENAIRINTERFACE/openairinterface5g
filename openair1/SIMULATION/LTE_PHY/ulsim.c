@@ -53,8 +53,7 @@
 #include "executables/lte-softmodem.h"
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
-#include "openair1/PHY/LTE_TRANSPORT/dlsch_tbs.h"
-
+#include "openair1/PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
 const char *__asan_default_options()
 {
   /* don't do leak checking in ulsim, not finished yet */
@@ -806,7 +805,7 @@ int main(int argc, char **argv) {
 
   if (cqi_flag == 1) coded_bits_per_codeword-=UE->ulsch[0]->O;
 
-  rate = (double)dlsch_tbs25[get_I_TBS(mcs)][nb_rb-1]/(coded_bits_per_codeword);
+  rate = (double)TBStable[get_I_TBS(mcs)][nb_rb - 1] / (coded_bits_per_codeword);
   printf("Rate = %f (mod %d), coded bits %u\n",rate,get_Qm_ul(mcs),coded_bits_per_codeword);
 
   for (ch_realization=0; ch_realization<n_ch_rlz; ch_realization++) {

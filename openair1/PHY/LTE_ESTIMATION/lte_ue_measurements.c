@@ -1024,7 +1024,7 @@ void lte_ue_measurements(PHY_VARS_UE *ue,
 #elif defined(__arm__) || defined(__aarch64__)
   int16x8_t *dl_ch0_128, *dl_ch1_128;
 #endif
-  int *dl_ch0,*dl_ch1;
+  int *dl_ch0=NULL,*dl_ch1=NULL;
 
   LTE_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   int nb_subbands,subband_size,last_subband_size;

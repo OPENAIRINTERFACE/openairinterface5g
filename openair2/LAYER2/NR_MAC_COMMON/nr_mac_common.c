@@ -2764,8 +2764,8 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 *
 *********************************************************************/
 
-uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
-
+uint8_t get_K_ptrs(uint32_t nrb0, uint32_t nrb1, uint32_t N_RB)
+{
   if (N_RB < nrb0) {
     LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;

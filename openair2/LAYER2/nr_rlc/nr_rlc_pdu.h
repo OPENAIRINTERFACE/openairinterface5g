@@ -71,7 +71,7 @@ int nr_rlc_pdu_decoder_get_bits(nr_rlc_pdu_decoder_t *decoder, int count);
 typedef struct {
   int byte;           /* next byte to encode */
   int bit;            /* next bit in next byte to encode */
-  char *buffer;
+  unsigned char *buffer;
   int size;
 } nr_rlc_pdu_encoder_t;
 

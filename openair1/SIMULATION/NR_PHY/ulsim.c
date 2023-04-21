@@ -873,7 +873,7 @@ int main(int argc, char **argv)
 
   if (input_fd != NULL || n_trials == 1) max_rounds=1;
 
-  if(1<<ptrs_time_density >= nb_symb_sch)
+  if (enable_ptrs && 1 << ptrs_time_density >= nb_symb_sch)
     pdu_bit_map &= ~PUSCH_PDU_BITMAP_PUSCH_PTRS; // disable PUSCH PTRS
 
   printf("\n");

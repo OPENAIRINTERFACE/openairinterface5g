@@ -352,16 +352,16 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
     if (ra_header==0) {
 
       for (i=16; i>0; i--) {
-	if ((rb_alloc&(1<<i)) != 0)
-	  rb_alloc2[(3*(16-i))>>5] |= (7<<((3*(16-i))%32));
+        if ((rb_alloc & (1 << i)) != 0)
+          rb_alloc2[(3 * (16 - i)) >> 5] |= (7U << ((3 * (16 - i)) % 32));
       }
 
       // bit mask across
       if ((rb_alloc2[0]>>31)==1)
-	rb_alloc2[1] |= 1;
+        rb_alloc2[1] |= 1;
 
       if ((rb_alloc&1) != 0)
-	rb_alloc2[1] |= (3<<16);
+        rb_alloc2[1] |= (3 << 16);
     }
     else {
       LOG_W(PHY,"resource type 1 not supported for  N_RB_DL=50\n");
@@ -371,10 +371,10 @@ void conv_rballoc(uint8_t ra_header,uint32_t rb_alloc,uint32_t N_RB_DL,uint32_t 
   case 100:
     if (ra_header==0) {
       for (i=0; i<25; i++) {
-	if ((rb_alloc&(1<<(24-i))) != 0)
-	  rb_alloc2[(4*i)>>5] |= (0xf<<((4*i)%32));
+        if ((rb_alloc & (1 << (24 - i))) != 0)
+          rb_alloc2[(4 * i) >> 5] |= (0xfU << ((4 * i) % 32));
 
-	//  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
+        //  printf("rb_alloc2[%d] (type 0) %x (%d)\n",(4*i)>>5,rb_alloc2[(4*i)>>5],rb_alloc&(1<<i));
       }
     }
     else {
@@ -960,8 +960,8 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
 
     case 2:
       if ((subframe!=2) && (subframe!=7)) {
-	LOG_E(PHY,"subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n",subframe,frame_parms->tdd_config);
-	ret=255;
+        LOG_E(PHY, "subframe2_harq_pid, Illegal subframe %d for TDD mode %d\n", subframe, frame_parms->tdd_config);
+        ret = 255;
       }
       else ret = (subframe/7);
       break;
@@ -996,8 +996,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
     }
   }
 
-  AssertFatal(ret!=255,
-	      "invalid harq_pid(%d) at SFN/SF = %d/%d\n", (int8_t)ret, frame, subframe);
+  AssertFatal(ret != 255, "invalid harq_pid(%d) at SFN/SF = %d/%d\n", (int8_t)ret, frame, subframe);
   return ret;
 }
 

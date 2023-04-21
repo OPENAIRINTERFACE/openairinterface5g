@@ -544,7 +544,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
   if (!(NR_MAX_NB_LAYERS>4)) {
     NR_UE_DLSCH_t *dlsch0 = &dlsch[0];
     int harq_pid = dlsch0->dlsch_config.harq_process_nbr;
-    NR_DL_UE_HARQ_t *dlsch0_harq = ue->dl_harq_processes[harq_pid];
+    NR_DL_UE_HARQ_t *dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
     uint16_t BWPStart       = dlsch0->dlsch_config.BWPStart;
     uint16_t pdsch_start_rb = dlsch0->dlsch_config.start_rb;
     uint16_t pdsch_nb_rb    = dlsch0->dlsch_config.number_rbs;

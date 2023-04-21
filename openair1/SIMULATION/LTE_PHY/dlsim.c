@@ -2080,9 +2080,7 @@ int main(int argc, char **argv) {
                 squareRoot(&UE->dlsch_demodulation_stats),
                 median(table_rx_demod), q1(table_rx_demod), q3(table_rx_demod));
         //fprintf(time_meas_fd,"DEC;\n");
-        fprintf(time_meas_fd,"%f;%f;%f;%f\n",
-                squareRoot(&UE->dlsch_decoding_stats[subframe]),
-                median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
+        fprintf(time_meas_fd, "%f;%f;%f;%f\n", squareRoot(&UE->dlsch_decoding_stats[UE->current_thread_id[subframe]]), median(table_rx_dec), q1(table_rx_dec), q3(table_rx_dec));
         printf("[passed] effective rate : %f  (%2.1f%%,%f)): log and break \n",rate*effective_rate, 100*effective_rate, rate );
         test_passed = 1;
         break;

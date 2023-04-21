@@ -883,7 +883,9 @@ uint8_t get_msg_type(uint8_t *pdu_buffer, uint32_t length) {
         msg_type = ((mm_msg_header_t *)(pdu_buffer + offset))->message_type;
 
         if (msg_type == FGS_DOWNLINK_NAS_TRANSPORT) {
-          msg_type = ((dl_nas_transport_t *)(pdu_buffer+ offset))->sm_nas_msg_header.message_type;
+          dl_nas_transport_t tmp;
+          memcpy(&tmp, pdu_buffer + offset, sizeof(tmp));
+          msg_type = tmp.sm_nas_msg_header.message_type;
         }
       }
     } else { // plain 5GS NAS message

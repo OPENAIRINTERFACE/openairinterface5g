@@ -753,7 +753,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   const int Prx = gNB->gNB_config.carrier_config.num_rx_ant.value;
   const int max_ul_mimo_layers = 4; // taken from phy_init_nr_gNB()
   const int n_buf = Prx * max_ul_mimo_layers;
-
+  PHY_MEASUREMENTS_gNB *meas=&gNB->measurements;
+  free_and_zero(meas->n0_subband_power);
+  free_and_zero(meas->n0_subband_power_dB);
   int max_dl_mimo_layers =(fp->nb_antennas_tx<NR_MAX_NB_LAYERS) ? fp->nb_antennas_tx : NR_MAX_NB_LAYERS;
   if (fp->nb_antennas_tx>1) {
     for (int nl = 0; nl < max_dl_mimo_layers; nl++) {
