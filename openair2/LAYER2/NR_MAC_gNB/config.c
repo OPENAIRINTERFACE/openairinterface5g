@@ -99,48 +99,28 @@ static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddMo
 
 static void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_DRX_Config_t *drx_Config)
 {
-
- if (!drx_Config) return;
- AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
-
- if (drx_Config->present == NR_SetupRelease_DRX_Config_PR_setup) {
-   LOG_I(NR_MAC,"Adding DRX config\n");
- }
- else {
-   LOG_I(NR_MAC,"Removing DRX config\n");
- }
+  AssertFatal(false, "%s() not implemented\n", __func__);
+  AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
 }
 
 static void process_schedulingRequestConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_SchedulingRequestConfig_t *schedulingRequestConfig)
 {
- if (!schedulingRequestConfig) return;
-
-   LOG_I(NR_MAC,"Adding SchedulingRequestconfig\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_bsrConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_BSR_Config_t *bsr_Config)
 {
-  if (!bsr_Config) return;
-  LOG_I(NR_MAC,"Adding BSR config\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_tag_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_TAG_Config_t *tag_Config)
 {
-  if (!tag_Config) return;
-  LOG_I(NR_MAC,"Adding TAG config\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_PHR_Config_t *phr_Config)
 {
-   if (!phr_Config) return;
-   AssertFatal(phr_Config->present != NR_SetupRelease_PHR_Config_PR_NOTHING, "Cannot have NR_SetupRelease_PHR_Config_PR_NOTHING\n");
-
-   if (phr_Config->present == NR_SetupRelease_PHR_Config_PR_setup) {
-     LOG_I(NR_MAC,"Adding PHR config\n");
-   }
-   else {
-     LOG_I(NR_MAC,"Removing PHR config\n");
-   }
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl)
@@ -149,15 +129,11 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
    NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
 
    if (mac_CellGroupConfig) {
-     process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
-     process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
-     process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
-     process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
-     process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
-   }
-   else {
-     // apply defaults
-
+     //process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
+     //process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
+     //process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
+     //process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
+     //process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
    }
 
    process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList,CellGroup->rlc_BearerToReleaseList,sched_ctrl);
