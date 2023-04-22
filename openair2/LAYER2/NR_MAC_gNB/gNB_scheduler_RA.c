@@ -715,7 +715,7 @@ void nr_generate_Msg3_retransmission(module_id_t module_idP,
   NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = ul_bwp->tdaList_Common;
   int mu = ul_bwp->scs;
   uint8_t K2 = *pusch_TimeDomainAllocationList->list.array[ra->Msg3_tda_id]->k2;
-  const int sched_frame = frame + (slot + K2 >= nr_slots_per_frame[mu]);
+  const int sched_frame = (frame + (slot + K2 >= nr_slots_per_frame[mu])) % 1024;
   const int sched_slot = (slot + K2) % nr_slots_per_frame[mu];
 
   if (is_xlsch_in_slot(nr_mac->ulsch_slot_bitmap[sched_slot / 64], sched_slot)) {
