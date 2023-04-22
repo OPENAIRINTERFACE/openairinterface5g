@@ -443,9 +443,7 @@ static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_
             rx_ind->sfn = dl_tti_request->SFN;
             rx_ind->slot = dl_tti_request->Slot;
             fill_mib_in_rx_ind(pdu_list, rx_ind, 0, FAPI_NR_RX_PDU_TYPE_SSB);
-            NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
-            memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
-            nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+            nr_ue_dl_indication(&mac->dl_info);
         }
     }
     dl_info->slot = dl_tti_request->Slot;
@@ -729,15 +727,12 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
         return;
     }
 
-
-    NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
-    memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
     if (dl_tti_request || tx_data_request || ul_dci_request) {
       fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
       fill_dci_from_dl_config(&mac->dl_info, dl_config);
     }
     nr_ue_dl_scheduler(&mac->dl_info);
-    nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+    nr_ue_dl_indication(&mac->dl_info);
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
@@ -1085,7 +1080,8 @@ void handle_ssb_meas(NR_UE_MAC_INST_t *mac, uint8_t ssb_index, int16_t rsrp_dbm)
 
 // L2 Abstraction Layer
 // Note: sdu should always be processed because data and timing advance updates are transmitted by the UE
-int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
+int8_t handle_dlsch(nr_downlink_indication_t *dl_info, int pdu_id)
+{
   /* L1 assigns harq_pid, but in emulated L1 mode we need to assign
      the harq_pid based on the saved global g_harq_pid. Because we are
      emulating L1, no antenna measurements are conducted to calculate
@@ -1097,7 +1093,7 @@ int8_t handle_dlsch(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
                      dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.harq_pid,
                      dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack);
   if(dl_info->rx_ind->rx_indication_body[pdu_id].pdsch_pdu.ack_nack)
-    nr_ue_send_sdu(dl_info, ul_time_alignment, pdu_id);
+    nr_ue_send_sdu(dl_info, pdu_id);
 
   return 0;
 }
@@ -1142,8 +1138,8 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
   return 0;
 }
 
-int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment){
-
+int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
+{
   pthread_mutex_lock(&mac_IF_mutex);
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
@@ -1193,13 +1189,12 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
 
     if (dl_info->rx_ind != NULL) {
 
-      for (int i=0; i<dl_info->rx_ind->number_pdus; ++i) {
+      for (int i = 0; i < dl_info->rx_ind->number_pdus; ++i) {
 
         fapi_nr_rx_indication_body_t rx_indication_body = dl_info->rx_ind->rx_indication_body[i];
-        LOG_D(NR_MAC, "In %s sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
-          __FUNCTION__,
-          rx_indication_body.pdu_type,
-          dl_info->rx_ind->number_pdus);
+        LOG_D(NR_MAC, "Sending DL indication to MAC. 1 PDU type %d of %d total number of PDUs \n",
+              rx_indication_body.pdu_type,
+              dl_info->rx_ind->number_pdus);
 
         switch(rx_indication_body.pdu_type){
           case FAPI_NR_RX_PDU_TYPE_SSB:
@@ -1226,10 +1221,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_
                                            rx_indication_body.pdsch_pdu.pdu_length)) << FAPI_NR_RX_PDU_TYPE_SIB;
             break;
           case FAPI_NR_RX_PDU_TYPE_DLSCH:
-            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
+            ret_mask |= (handle_dlsch(dl_info, i)) << FAPI_NR_RX_PDU_TYPE_DLSCH;
             break;
           case FAPI_NR_RX_PDU_TYPE_RAR:
-            ret_mask |= (handle_dlsch(dl_info, ul_time_alignment, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
+            ret_mask |= (handle_dlsch(dl_info, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
             break;
           case FAPI_NR_CSIRS_IND:
             ret_mask |= (handle_csirs_measurements(dl_info->module_id,

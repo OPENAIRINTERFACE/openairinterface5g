@@ -378,6 +378,16 @@ typedef struct {
 
 } NR_SSB_meas_t;
 
+typedef struct NR_UL_TIME_ALIGNMENT {
+  /// TA command and TAGID received from the gNB
+  bool ta_apply;
+  int ta_command;
+  int ta_total;
+  uint32_t tag_id;
+  int frame;
+  int slot;
+} NR_UL_TIME_ALIGNMENT_t;
+
 /*!\brief Top level UE MAC structure */
 typedef struct {
   NR_UE_L2_STATE_t state;
@@ -400,11 +410,12 @@ typedef struct {
 
   NR_UE_DL_BWP_t current_DL_BWP;
   NR_UE_UL_BWP_t current_UL_BWP;
+  NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
 
-  NR_BWP_Downlink_t               *DLbwp[MAX_NUM_BWP_UE];
-  NR_BWP_Uplink_t                 *ULbwp[MAX_NUM_BWP_UE];
-  NR_ControlResourceSet_t         *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t                *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
+  NR_BWP_Downlink_t *DLbwp[MAX_NUM_BWP_UE];
+  NR_BWP_Uplink_t *ULbwp[MAX_NUM_BWP_UE];
+  NR_ControlResourceSet_t *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
+  NR_SearchSpace_t *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
   bool phy_config_request_sent;
   frame_type_t frame_type;

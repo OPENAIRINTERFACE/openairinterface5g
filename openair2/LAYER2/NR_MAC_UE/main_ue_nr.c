@@ -51,16 +51,10 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     //LOG_I(MAC, "[MAIN] init UE MAC functions \n");
     
     //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t),NB_NR_UE_MAC_INST);
-    nr_ue_mac_inst->first_sync_frame = -1;
-    nr_ue_mac_inst->sib1_decoded = false;
-    nr_ue_mac_inst->phy_config_request_sent = false;
-    nr_ue_mac_inst->state = UE_NOT_SYNC;
-    memset(&nr_ue_mac_inst->ssb_measurements, 0, sizeof(nr_ue_mac_inst->ssb_measurements));
+    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(sizeof(NR_UE_MAC_INST_t), NB_NR_UE_MAC_INST);
 
-    for (int j=0;j<NB_NR_UE_MAC_INST;j++) {
-	nr_ue_init_mac(j);
-    }
+    for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
+      nr_ue_init_mac(j);
 
     if (rrc_inst && rrc_inst->scell_group_config) {
 

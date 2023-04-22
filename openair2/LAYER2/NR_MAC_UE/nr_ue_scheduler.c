@@ -1024,6 +1024,8 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
     nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
     *dl_config = dcireq.dl_config_req;
 
+    if(mac->ul_time_alignment.ta_apply)
+      schedule_ta_command(dl_config, &mac->ul_time_alignment);
     nr_schedule_csirs_reception(mac, rx_frame, rx_slot);
     nr_schedule_csi_for_im(mac, rx_frame, rx_slot);
     dcireq.dl_config_req = *dl_config;
@@ -1037,6 +1039,8 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
   else if (mac->state == UE_PERFORMING_RA) {
     // this is for Msg2/Msg4
     if (mac->ra.ra_state >= WAIT_RAR) {
+      if(mac->ul_time_alignment.ta_apply)
+        schedule_ta_command(dl_config, &mac->ul_time_alignment);
       fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
       rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
       rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
@@ -3171,5 +3175,15 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   #endif
 
   return num_sdus > 0 ? 1 : 0;
+}
 
+void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment)
+{
+  fapi_nr_ta_command_pdu *ta = &dl_config->dl_config_list[dl_config->number_pdus].ta_command_pdu;
+  ta->ta_frame = ul_time_alignment->frame;
+  ta->ta_slot = ul_time_alignment->slot;
+  ta->ta_command = ul_time_alignment->ta_command;
+  dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_CONFIG_TA_COMMAND;
+  dl_config->number_pdus += 1;
+  ul_time_alignment->ta_apply = false;
 }
