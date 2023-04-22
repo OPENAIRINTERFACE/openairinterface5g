@@ -172,7 +172,8 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   else fp->nr_band = 78;
   fp->threequarter_fs= 0;
 
-  gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
+  int bw_index = get_supported_band_index(mu, fp->nr_band, N_RB_DL);
+  gNB_config->carrier_config.dl_bandwidth.value = get_supported_bw_mhz(fp->nr_band > 256 ? FR2 : FR1, bw_index);
 
   fp->ofdm_offset_divisor = UINT_MAX;
   nr_init_frame_parms(gNB_config, fp);

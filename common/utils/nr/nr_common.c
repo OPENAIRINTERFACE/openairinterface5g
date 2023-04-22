@@ -49,8 +49,8 @@ int get_supported_band_index(int scs, int band, int n_rbs)
   int scs_index = scs;
   if (band > 256)
     scs_index++;
-  for (int i = 0; i < 11; i++) {
-    if(n_rbs == tables_5_3_2[scs][i])
+  for (int i = 0; i < 12; i++) {
+    if(n_rbs == tables_5_3_2[scs_index][i])
       return i;
   }
   return (-1); // not found
@@ -130,34 +130,34 @@ const nr_bandentry_t nr_bandtable[] = {
   {261,27500040,28350000,27500040,28350000,  2,2070833, 120}
 };
 
-int get_supported_bw_khz(frequency_range_t frequency_range, int bw_index)
+int get_supported_bw_mhz(frequency_range_t frequency_range, int bw_index)
 {
   if (frequency_range == FR1) {
     switch (bw_index) {
       case 0 :
-        return 5000; // 5MHz
+        return 5; // 5MHz
       case 1 :
-        return 10000;
+        return 10;
       case 2 :
-        return 15000;
+        return 15;
       case 3 :
-        return 20000;
+        return 20;
       case 4 :
-        return 25000;
+        return 25;
       case 5 :
-        return 30000;
+        return 30;
       case 6 :
-        return 40000;
+        return 40;
       case 7 :
-        return 50000;
+        return 50;
       case 8 :
-        return 60000;
+        return 60;
       case 9 :
-        return 80000;
+        return 80;
       case 10 :
-        return 90000;
+        return 90;
       case 11 :
-        return 100000;
+        return 100;
       default :
         AssertFatal(false, "Invalid band index for FR1 %d\n", bw_index);
     }
@@ -165,13 +165,13 @@ int get_supported_bw_khz(frequency_range_t frequency_range, int bw_index)
   else {
     switch (bw_index) {
       case 0 :
-        return 50000; // 50MHz
+        return 50; // 50MHz
       case 1 :
-        return 100000;
+        return 100;
       case 2 :
-        return 200000;
+        return 200;
       case 3 :
-        return 400000;
+        return 400;
       default :
         AssertFatal(false, "Invalid band index for FR2 %d\n", bw_index);
     }
@@ -184,7 +184,7 @@ bool compare_relative_ul_channel_bw(int nr_band, int scs, int nb_ul, frame_type_
   // Relative channel bandwidth <= 4% for TDD bands and <= 3% for FDD bands
   int index = get_nr_table_idx(nr_band, scs);
   int bw_index = get_supported_band_index(scs, nr_band, nb_ul);
-  int band_size_khz = get_supported_bw_khz(nr_band > 256 ? FR2 : FR1, bw_index);
+  int band_size_khz = get_supported_bw_mhz(nr_band > 256 ? FR2 : FR1, bw_index) * 1000;
   float limit = frame_type == TDD ? 0.04 : 0.03;
   float rel_bw = (float) (2 * band_size_khz) / (float) (nr_bandtable[index].ul_max + nr_bandtable[index].ul_min);
   return rel_bw <= limit;
@@ -380,118 +380,6 @@ int32_t get_delta_duplex(int nr_bandP, uint8_t scs_index)
   LOG_I(NR_MAC, "NR band duplex spacing is %d KHz (nr_bandtable[%d].band = %d)\n", delta_duplex, nr_table_idx, nr_bandtable[nr_table_idx].band);
 
   return delta_duplex;
-}
-
-uint16_t config_bandwidth(int mu, int nb_rb, int nr_band)
-{
-
-  if (nr_band < 100)  { //FR1
-   switch(mu) {
-    case 0 :
-      if (nb_rb<=25)
-        return 5;
-      if (nb_rb<=52)
-        return 10;
-      if (nb_rb<=79)
-        return 15;
-      if (nb_rb<=106)
-        return 20;
-      if (nb_rb<=133)
-        return 25;
-      if (nb_rb<=160)
-        return 30;
-      if (nb_rb<=216)
-        return 40;
-      if (nb_rb<=270)
-        return 50;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 1 :
-      if (nb_rb<=11)
-        return 5;
-      if (nb_rb<=24)
-        return 10;
-      if (nb_rb<=38)
-        return 15;
-      if (nb_rb<=51)
-        return 20;
-      if (nb_rb<=65)
-        return 25;
-      if (nb_rb<=78)
-        return 30;
-      if (nb_rb<=106)
-        return 40;
-      if (nb_rb<=133)
-        return 50;
-      if (nb_rb<=162)
-        return 60;
-      if (nb_rb<=189)
-        return 70;
-      if (nb_rb<=217)
-        return 80;
-      if (nb_rb<=245)
-        return 90;
-      if (nb_rb<=273)
-        return 100;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 2 :
-      if (nb_rb<=11)
-        return 10;
-      if (nb_rb<=18)
-        return 15;
-      if (nb_rb<=24)
-        return 20;
-      if (nb_rb<=31)
-        return 25;
-      if (nb_rb<=38)
-        return 30;
-      if (nb_rb<=51)
-        return 40;
-      if (nb_rb<=65)
-        return 50;
-      if (nb_rb<=79)
-        return 60;
-      if (nb_rb<=93)
-        return 70;
-      if (nb_rb<=107)
-        return 80;
-      if (nb_rb<=121)
-        return 90;
-      if (nb_rb<=135)
-        return 100;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    default:
-      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
-  else {
-   switch(mu) {
-    case 2 :
-      if (nb_rb<=66)
-        return 50;
-      if (nb_rb<=132)
-        return 100;
-      if (nb_rb<=264)
-        return 200;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    case 3 :
-      if (nb_rb<=32)
-        return 50;
-      if (nb_rb<=66)
-        return 100;
-      if (nb_rb<=132)
-        return 200;
-      if (nb_rb<=264)
-        return 400;
-      AssertFatal(1==0,"Number of DL resource blocks %d undefined for mu %d and band %d\n", nb_rb, mu, nr_band);
-      break;
-    default:
-      AssertFatal(1==0,"Numerology %d undefined for band %d in FR1\n", mu,nr_band);
-   }
-  }
 }
 
 // Returns the corresponding row index of the NR table
