@@ -26,8 +26,18 @@
 
 static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
 {
-  (void) req;
-  abort();
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
+  f1ap_ue_context_setup_t *f1ap_msg = &F1AP_UE_CONTEXT_SETUP_REQ(msg);
+  *f1ap_msg = *req;
+  AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
+  f1ap_msg->cu_to_du_rrc_information = malloc(sizeof(*f1ap_msg->cu_to_du_rrc_information));
+  if (req->rrc_container_length > 0) {
+    f1ap_msg->rrc_container = calloc(req->rrc_container_length, sizeof(*f1ap_msg->rrc_container));
+    AssertFatal(f1ap_msg->rrc_container != NULL, "out of memory\n");
+    f1ap_msg->rrc_container_length = req->rrc_container_length;
+    memcpy(f1ap_msg->rrc_container, req->rrc_container, req->rrc_container_length);
+  }
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
 static void dl_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
