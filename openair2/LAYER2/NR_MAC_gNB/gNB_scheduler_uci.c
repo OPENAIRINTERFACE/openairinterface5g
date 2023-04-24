@@ -144,7 +144,7 @@ static const int diff_rsrp_ssb_csi_meas_10_1_6_1_2[16] = {
     -30 // 10 - 15
 };
 
-int get_pucch_index(int frame, int slot, int n_slots_frame, const NR_TDD_UL_DL_Pattern_t *tdd, int sched_pucch_size)
+static int get_pucch_index(int frame, int slot, int n_slots_frame, const NR_TDD_UL_DL_Pattern_t *tdd, int sched_pucch_size)
 {
   // PUCCH structures are indexed by slot in the PUCCH period determined by sched_pucch_size number of UL slots
   // this functions return the index to the structure for slot passed to the function
@@ -324,8 +324,8 @@ static void handle_dl_harq(NR_UE_info_t * UE,
   }
 }
 
-int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, NR_UE_info_t * UE) {
-
+static int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, NR_UE_info_t *UE)
+{
   const NR_PDSCH_Config_t *pdsch_Config = UE->current_DL_BWP.pdsch_Config;
   int nb_tci_states = pdsch_Config ? pdsch_Config->tci_StatesToAddModList->list.count : 0;
   NR_TCI_State_t *tci =NULL;
@@ -350,8 +350,8 @@ int checkTargetSSBInFirst64TCIStates_pdschConfig(int ssb_index_t, NR_UE_info_t *
   return -1;
 }
 
-int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, NR_UE_info_t *UE) {
-
+static int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, NR_UE_info_t *UE)
+{
   NR_TCI_State_t *tci =NULL;
   NR_TCI_StateId_t *tci_id = NULL;
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -390,7 +390,8 @@ int checkTargetSSBInTCIStates_pdcchConfig(int ssb_index_t, NR_UE_info_t *UE) {
 }
 
 //returns the measured RSRP value (upper limit)
-int get_measured_rsrp(uint8_t index) {
+static int get_measured_rsrp(uint8_t index)
+{
   //if index is invalid returning minimum rsrp -140
   if(index <= 15 || index >= 114)
     return MIN_RSRP_VALUE;
@@ -399,7 +400,7 @@ int get_measured_rsrp(uint8_t index) {
 }
 
 //returns the differential RSRP value (upper limit)
-int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
+static int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
   if(strongest_rsrp != -1) {
     return strongest_rsrp + diff_rsrp_ssb_csi_meas_10_1_6_1_2[index];
   } else
@@ -409,8 +410,8 @@ int get_diff_rsrp(uint8_t index, int strongest_rsrp) {
 //identifies the target SSB Beam index
 //keeps the required date for PDCCH and PDSCH TCI state activation/deactivation CE consutruction globally
 //handles triggering of PDCCH and PDSCH MAC CEs
-void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
-
+static void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot)
+{
   int strongest_ssb_rsrp = 0;
   int cqi_idx = 0;
   int curr_ssb_beam_index = 0; //ToDo: yet to know how to identify the serving ssb beam index
@@ -583,24 +584,23 @@ void tci_handling(NR_UE_info_t *UE, frame_t frame, slot_t slot) {
       }
     }//tci_presentInDCI
   }//is-triggering_beam_switch
-}//tci handling
+} // tci handling
 
-
-uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit) {
+static uint8_t pickandreverse_bits(uint8_t *payload, uint16_t bitlen, uint8_t start_bit)
+{
   uint8_t rev_bits = 0;
   for (int i=0; i<bitlen; i++)
     rev_bits |= ((payload[(start_bit+i)/8]>>((start_bit+i)%8))&0x01)<<(bitlen-i-1);
   return rev_bits;
 }
 
-
-void evaluate_rsrp_report(NR_UE_info_t *UE,
-                          NR_UE_sched_ctrl_t *sched_ctrl,
-                          uint8_t csi_report_id,
-                          uint8_t *payload,
-                          int *cumul_bits,
-                          NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type){
-
+static void evaluate_rsrp_report(NR_UE_info_t *UE,
+                                 NR_UE_sched_ctrl_t *sched_ctrl,
+                                 uint8_t csi_report_id,
+                                 uint8_t *payload,
+                                 int *cumul_bits,
+                                 NR_CSI_ReportConfig__reportQuantity_PR reportQuantity_type)
+{
   nr_csi_report_t *csi_report = &UE->csi_report_template[csi_report_id];
   uint8_t cri_ssbri_bitlen = csi_report->CSI_report_bitlen.cri_ssbri_bitlen;
   uint16_t curr_payload;
@@ -659,21 +659,18 @@ void evaluate_rsrp_report(NR_UE_info_t *UE,
   stats->num_rsrp_meas++;
 }
 
-void evaluate_cri_report(uint8_t *payload,
-                         uint8_t cri_bitlen,
-                         int cumul_bits,
-                         NR_UE_sched_ctrl_t *sched_ctrl){
-
+static void evaluate_cri_report(uint8_t *payload, uint8_t cri_bitlen, int cumul_bits, NR_UE_sched_ctrl_t *sched_ctrl)
+{
   uint8_t temp_cri = pickandreverse_bits(payload, cri_bitlen, cumul_bits);
   sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.cri = temp_cri;
 }
 
-int evaluate_ri_report(uint8_t *payload,
-                       uint8_t ri_bitlen,
-                       uint8_t ri_restriction,
-                       int cumul_bits,
-                       NR_UE_sched_ctrl_t *sched_ctrl){
-
+static int evaluate_ri_report(uint8_t *payload,
+                              uint8_t ri_bitlen,
+                              uint8_t ri_restriction,
+                              int cumul_bits,
+                              NR_UE_sched_ctrl_t *sched_ctrl)
+{
   uint8_t ri_index = pickandreverse_bits(payload, ri_bitlen, cumul_bits);
   int count=0;
   for (int i=0; i<8; i++) {
@@ -689,13 +686,12 @@ int evaluate_ri_report(uint8_t *payload,
   AssertFatal(1==0, "Decoded ri %d does not correspond to any valid value in ri_restriction %d\n",ri_index,ri_restriction);
 }
 
-
-void evaluate_cqi_report(uint8_t *payload,
-                         nr_csi_report_t *csi_report,
-                         int cumul_bits,
-                         uint8_t ri,
-                         NR_UE_info_t *UE,
-                         uint8_t cqi_Table)
+static void evaluate_cqi_report(uint8_t *payload,
+                                nr_csi_report_t *csi_report,
+                                int cumul_bits,
+                                uint8_t ri,
+                                NR_UE_info_t *UE,
+                                uint8_t cqi_Table)
 {
 
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -723,13 +719,12 @@ void evaluate_cqi_report(uint8_t *payload,
   sched_ctrl->dl_max_mcs = get_mcs_from_cqi(mcs_table, cqi_Table, cqi_idx);
 }
 
-
-uint8_t evaluate_pmi_report(uint8_t *payload,
-                            nr_csi_report_t *csi_report,
-                            int cumul_bits,
-                            uint8_t ri,
-                            NR_UE_sched_ctrl_t *sched_ctrl){
-
+static uint8_t evaluate_pmi_report(uint8_t *payload,
+                                   nr_csi_report_t *csi_report,
+                                   int cumul_bits,
+                                   uint8_t ri,
+                                   NR_UE_sched_ctrl_t *sched_ctrl)
+{
   int x1_bitlen = csi_report->csi_meas_bitlen.pmi_x1_bitlen[ri];
   int x2_bitlen = csi_report->csi_meas_bitlen.pmi_x2_bitlen[ri];
   int tot_bitlen = x1_bitlen + x2_bitlen;
@@ -744,16 +739,14 @@ uint8_t evaluate_pmi_report(uint8_t *payload,
         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
   return tot_bitlen;
-
 }
 
-
-int evaluate_li_report(uint8_t *payload,
-                       nr_csi_report_t *csi_report,
-                       int cumul_bits,
-                       uint8_t ri,
-                       NR_UE_sched_ctrl_t *sched_ctrl){
-
+static int evaluate_li_report(uint8_t *payload,
+                              nr_csi_report_t *csi_report,
+                              int cumul_bits,
+                              uint8_t ri,
+                              NR_UE_sched_ctrl_t *sched_ctrl)
+{
   int li_bitlen = csi_report->csi_meas_bitlen.li_bitlen[ri];
 
   if (li_bitlen>0) {
@@ -762,14 +755,10 @@ int evaluate_li_report(uint8_t *payload,
     sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.li = temp_li;
   }
   return li_bitlen;
-
 }
 
-void skip_zero_padding(int *cumul_bits,
-                       nr_csi_report_t *csi_report,
-                       uint8_t ri,
-                       uint16_t max_bitlen) {
-
+static void skip_zero_padding(int *cumul_bits, nr_csi_report_t *csi_report, uint8_t ri, uint16_t max_bitlen)
+{
   // actual number of reported bits depends on the reported rank
   // zero padding bits are added to have a predetermined max bit length to decode
 
@@ -783,13 +772,12 @@ void skip_zero_padding(int *cumul_bits,
   *cumul_bits+=(max_bitlen-reported_bitlen);
 }
 
-
-void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
-                              const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
-                              frame_t frame,
-                              slot_t slot,
-                              NR_UE_info_t *UE,
-                              NR_ServingCellConfigCommon_t *scc)
+static void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
+                                     const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_pdu,
+                                     frame_t frame,
+                                     slot_t slot,
+                                     NR_UE_info_t *UE,
+                                     NR_ServingCellConfigCommon_t *scc)
 {
   /** From Table 6.3.1.1.2-3: RI, LI, CQI, and CRI of codebookType=typeI-SinglePanel */
   uint8_t *payload = uci_pdu->csi_part1.csi_part1_payload;
@@ -1031,7 +1019,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
   }
 }
 
-void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const int bwp_size, NR_sched_pucch_t *pucch)
+static void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const int bwp_size, NR_sched_pucch_t *pucch)
 {
   if(r_pucch<0){
     const NR_PUCCH_Resource_t *resource = ul_bwp->pucch_Config->resourceToAddModList->list.array[0];
@@ -1053,11 +1041,8 @@ void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const
   }
 }
 
-bool test_pucch0_vrb_occupation(const NR_sched_pucch_t *pucch,
-                                uint16_t *vrb_map_UL,
-                                const int bwp_start,
-                                const int bwp_size) {
-
+static bool test_pucch0_vrb_occupation(const NR_sched_pucch_t *pucch, uint16_t *vrb_map_UL, const int bwp_start, const int bwp_size)
+{
   // We assume initial cyclic shift is always 0 so different pucch resources can't overlap
 
   // verifying occupation of PRBs for ACK/NACK on dedicated pucch
@@ -1076,9 +1061,7 @@ bool test_pucch0_vrb_occupation(const NR_sched_pucch_t *pucch,
   return true;
 }
 
-void set_pucch0_vrb_occupation(const NR_sched_pucch_t *pucch,
-                               uint16_t *vrb_map_UL,
-                               const int bwp_start)
+static void set_pucch0_vrb_occupation(const NR_sched_pucch_t *pucch, uint16_t *vrb_map_UL, const int bwp_start)
 {
   for (int l=0; l<pucch->nr_of_symb; l++) {
     uint16_t symb = SL_to_bitmap(pucch->start_symb+l, 1);

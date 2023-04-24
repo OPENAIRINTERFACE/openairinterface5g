@@ -61,14 +61,8 @@ const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *sc
   return 0; // if FDD or not mixed slot in TDD, for now use default TDA (TODO handle CSI-RS slots)
 }
 
-int compute_ph_factor(int mu,
-                      int tbs_bits,
-                      int rb,
-                      int n_layers,
-                      int n_symbols,
-                      int n_dmrs,
-                      long *deltaMCS) {
-
+static int compute_ph_factor(int mu, int tbs_bits, int rb, int n_layers, int n_symbols, int n_dmrs, long *deltaMCS)
+{
   // 38.213 7.1.1
   // if the PUSCH transmission is over more than one layer delta_tf = 0
   int delta_tf = 0;
@@ -109,14 +103,14 @@ int compute_ph_factor(int mu,
 //  F: length of L is 0:8 or 1:16 bits wide
 //  R: Reserved bit, set to zero.
 
-int nr_process_mac_pdu(instance_t module_idP,
-                       NR_UE_info_t* UE,
-                       uint8_t CC_id,
-                       frame_t frameP,
-                       sub_frame_t slot,
-                       uint8_t *pduP,
-                       int pdu_len,
-                       const int8_t harq_pid)
+static int nr_process_mac_pdu(instance_t module_idP,
+                              NR_UE_info_t *UE,
+                              uint8_t CC_id,
+                              frame_t frameP,
+                              sub_frame_t slot,
+                              uint8_t *pduP,
+                              int pdu_len,
+                              const int8_t harq_pid)
 {
 
   uint8_t done = 0;
@@ -462,7 +456,7 @@ int nr_process_mac_pdu(instance_t module_idP,
   return 0;
 }
 
-void abort_nr_ul_harq(NR_UE_info_t *UE, int8_t harq_pid)
+static void abort_nr_ul_harq(NR_UE_info_t *UE, int8_t harq_pid)
 {
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_ul_harq_t *harq = &sched_ctrl->ul_harq_processes[harq_pid];
@@ -479,7 +473,7 @@ void abort_nr_ul_harq(NR_UE_info_t *UE, int8_t harq_pid)
     sched_ctrl->sched_ul_bytes = 0;
 }
 
-bool get_UE_waiting_CFRA_msg3(const gNB_MAC_INST *gNB_mac, const int CC_id, const frame_t frame, const sub_frame_t slot)
+static bool get_UE_waiting_CFRA_msg3(const gNB_MAC_INST *gNB_mac, const int CC_id, const frame_t frame, const sub_frame_t slot)
 {
   bool UE_waiting_CFRA_msg3 = false;
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
@@ -841,8 +835,8 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
   }
 }
 
-uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t size) {
-
+static uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t size)
+{
   // Real part value
   int64_t sum_x = 0;
   int64_t sum_x2 = 0;
@@ -864,7 +858,8 @@ uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t s
   return power_re+power_im;
 }
 
-c16_t nr_h_times_w(c16_t h, char w) {
+static c16_t nr_h_times_w(c16_t h, char w)
+{
   c16_t output;
     switch (w) {
       case '0': // 0
@@ -893,11 +888,11 @@ c16_t nr_h_times_w(c16_t h, char w) {
   return output;
 }
 
-uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
-                     const uint16_t num_ue_srs_ports,
-                     const uint8_t *nrOfLayers,
-                     int *additional_max_tpmi) {
-
+static uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
+                            const uint16_t num_ue_srs_ports,
+                            const uint8_t *nrOfLayers,
+                            int *additional_max_tpmi)
+{
   uint8_t max_tpmi = 0;
 
   if ((pusch_Config && pusch_Config->txConfig != NULL && *pusch_Config->txConfig == NR_PUSCH_Config__txConfig_nonCodebook) ||
@@ -1056,13 +1051,13 @@ uint8_t get_max_tpmi(const NR_PUSCH_Config_t *pusch_Config,
   return max_tpmi;
 }
 
-void get_precoder_matrix_coef(char *w,
-                              const uint8_t ul_ri,
-                              const uint16_t num_ue_srs_ports,
-                              const long transform_precoding,
-                              const uint8_t tpmi,
-                              const uint8_t uI,
-                              int layer_idx)
+static void get_precoder_matrix_coef(char *w,
+                                     const uint8_t ul_ri,
+                                     const uint16_t num_ue_srs_ports,
+                                     const long transform_precoding,
+                                     const uint8_t tpmi,
+                                     const uint8_t uI,
+                                     int layer_idx)
 {
   if (ul_ri == 0) {
     if (num_ue_srs_ports == 2) {
@@ -1085,15 +1080,16 @@ void get_precoder_matrix_coef(char *w,
   }
 }
 
-int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
-                           const long transform_precoding,
-                           const uint8_t *channel_matrix,
-                           const uint8_t normalized_iq_representation,
-                           const uint16_t num_gnb_antenna_elements,
-                           const uint16_t num_ue_srs_ports,
-                           const uint16_t prg_size,
-                           const uint16_t num_prgs,
-                           const uint8_t ul_ri) {
+static int nr_srs_tpmi_estimation(const NR_PUSCH_Config_t *pusch_Config,
+                                  const long transform_precoding,
+                                  const uint8_t *channel_matrix,
+                                  const uint8_t normalized_iq_representation,
+                                  const uint16_t num_gnb_antenna_elements,
+                                  const uint16_t num_ue_srs_ports,
+                                  const uint16_t prg_size,
+                                  const uint16_t num_prgs,
+                                  const uint8_t ul_ri)
+{
   if (ul_ri > 1) {
     LOG_D(NR_MAC, "TPMI computation for ul_ri %i is not implemented yet!\n", ul_ri);
     return 0;
@@ -1363,7 +1359,7 @@ static bool nr_UE_is_to_be_scheduled(const NR_ServingCellConfigCommon_t *scc, in
   return has_data || sched_ctrl->SR || high_inactivity;
 }
 
-void update_ul_ue_R_Qm(int mcs, int mcs_table, const NR_PUSCH_Config_t *pusch_Config, uint16_t *R, uint8_t *Qm)
+static void update_ul_ue_R_Qm(int mcs, int mcs_table, const NR_PUSCH_Config_t *pusch_Config, uint16_t *R, uint8_t *Qm)
 {
   *R = nr_get_code_rate_ul(mcs, mcs_table);
   *Qm = nr_get_Qm_ul(mcs, mcs_table);
@@ -1374,7 +1370,14 @@ void update_ul_ue_R_Qm(int mcs, int mcs_table, const NR_PUSCH_Config_t *pusch_Co
   }
 }
 
-void nr_ue_max_mcs_min_rb(int mu, int ph_limit, NR_sched_pusch_t *sched_pusch, NR_UE_UL_BWP_t *ul_bwp, uint16_t minRb, uint32_t tbs, uint16_t *Rb, uint8_t *mcs)
+static void nr_ue_max_mcs_min_rb(int mu,
+                                 int ph_limit,
+                                 NR_sched_pusch_t *sched_pusch,
+                                 NR_UE_UL_BWP_t *ul_bwp,
+                                 uint16_t minRb,
+                                 uint32_t tbs,
+                                 uint16_t *Rb,
+                                 uint8_t *mcs)
 {
   AssertFatal(*Rb >= minRb, "illegal Rb %d < minRb %d\n", *Rb, minRb);
   AssertFatal(*mcs >= 0 && *mcs <= 28, "illegal MCS %d\n", *mcs);
@@ -1577,13 +1580,13 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
-void pf_ul(module_id_t module_id,
-           frame_t frame,
-           sub_frame_t slot,
-           NR_UE_info_t *UE_list[],
-           int max_num_ue,
-           int n_rb_sched,
-           uint16_t *rballoc_mask)
+static void pf_ul(module_id_t module_id,
+                  frame_t frame,
+                  sub_frame_t slot,
+                  NR_UE_info_t *UE_list[],
+                  int max_num_ue,
+                  int n_rb_sched,
+                  uint16_t *rballoc_mask)
 {
 
   const int CC_id = 0;
@@ -1870,7 +1873,7 @@ void pf_ul(module_id_t module_id,
   }
 }
 
-bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
+static bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = nr_mac->common_channels;

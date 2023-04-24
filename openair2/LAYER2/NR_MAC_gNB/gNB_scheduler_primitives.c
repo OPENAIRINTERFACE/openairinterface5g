@@ -509,7 +509,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
   }
 }
 
-bool multiple_2_3_5(int rb)
+static bool multiple_2_3_5(int rb)
 {
   while (rb % 2 == 0)
     rb /= 2;

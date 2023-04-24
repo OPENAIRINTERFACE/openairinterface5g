@@ -51,11 +51,15 @@
 
 extern RAN_CONTEXT_t RC;
 
-void schedule_ssb(frame_t frame, sub_frame_t slot,
-                  NR_ServingCellConfigCommon_t *scc,
-                  nfapi_nr_dl_tti_request_body_t *dl_req,
-                  int i_ssb, uint8_t scoffset, uint16_t offset_pointa, uint32_t payload) {
-
+static void schedule_ssb(frame_t frame,
+                         sub_frame_t slot,
+                         NR_ServingCellConfigCommon_t *scc,
+                         nfapi_nr_dl_tti_request_body_t *dl_req,
+                         int i_ssb,
+                         uint8_t scoffset,
+                         uint16_t offset_pointa,
+                         uint32_t payload)
+{
   uint8_t beam_index = 0;
   nfapi_nr_dl_tti_request_pdu_t  *dl_config_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
   memset((void *) dl_config_pdu, 0,sizeof(nfapi_nr_dl_tti_request_pdu_t));
@@ -86,7 +90,19 @@ void schedule_ssb(frame_t frame, sub_frame_t slot,
   dl_req->nPDUs++;
 
   LOG_D(MAC,"Scheduling ssb %d at frame %d and slot %d\n",i_ssb,frame,slot);
+}
 
+static void fill_ssb_vrb_map(NR_COMMON_channels_t *cc, int rbStart, int ssb_subcarrier_offset, uint16_t symStart, int CC_id)
+{
+  AssertFatal(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing !=
+              NR_SubcarrierSpacing_kHz240,
+              "240kHZ subcarrier won't work with current VRB map because a single SSB might be across 2 slots\n");
+
+  uint16_t *vrb_map = cc[CC_id].vrb_map;
+
+  const int extra_prb = ssb_subcarrier_offset > 0;
+  for (int rb = 0; rb < 20+extra_prb; rb++)
+    vrb_map[rbStart + rb] = SL_to_bitmap(symStart, 4);
 }
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, nfapi_nr_dl_tti_request_t *DL_req)
@@ -254,33 +270,15 @@ void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, 
   }
 }
 
-void schedule_nr_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
-//----------------------------------------  
-}
-
-void fill_ssb_vrb_map (NR_COMMON_channels_t *cc, int rbStart, int ssb_subcarrier_offset, uint16_t symStart, int CC_id) {
-
-  AssertFatal(*cc->ServingCellConfigCommon->ssbSubcarrierSpacing !=
-              NR_SubcarrierSpacing_kHz240,
-              "240kHZ subcarrier won't work with current VRB map because a single SSB might be across 2 slots\n");
-
-  uint16_t *vrb_map = cc[CC_id].vrb_map;
-
-  const int extra_prb = ssb_subcarrier_offset > 0;
-  for (int rb = 0; rb < 20+extra_prb; rb++)
-    vrb_map[rbStart + rb] = SL_to_bitmap(symStart, 4);
-
-}
-
-uint32_t schedule_control_sib1(module_id_t module_id,
-                               int CC_id,
-                               NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                               int time_domain_allocation,
-                               NR_pdsch_dmrs_t *dmrs_parms,
-                               NR_tda_info_t *tda_info,
-                               uint8_t candidate_idx,
-                               uint16_t num_total_bytes) {
-
+static uint32_t schedule_control_sib1(module_id_t module_id,
+                                      int CC_id,
+                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                      int time_domain_allocation,
+                                      NR_pdsch_dmrs_t *dmrs_parms,
+                                      NR_tda_info_t *tda_info,
+                                      uint8_t candidate_idx,
+                                      uint16_t num_total_bytes)
+{
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
   NR_COMMON_channels_t *cc = &gNB_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
@@ -377,14 +375,14 @@ uint32_t schedule_control_sib1(module_id_t module_id,
   return TBS;
 }
 
-void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
-                               nfapi_nr_dl_tti_request_body_t *dl_req,
-                               int pdu_index,
-                               NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
-                               uint32_t TBS,
-                               int StartSymbolIndex,
-                               int NrOfSymbols) {
-
+static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
+                                      nfapi_nr_dl_tti_request_body_t *dl_req,
+                                      int pdu_index,
+                                      NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config,
+                                      uint32_t TBS,
+                                      int StartSymbolIndex,
+                                      int NrOfSymbols)
+{
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
   NR_COMMON_channels_t *cc = gNB_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;

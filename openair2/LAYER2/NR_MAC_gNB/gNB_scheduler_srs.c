@@ -42,7 +42,8 @@ const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 4
                              160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
                              256, 264, 272, 272, 272 };
 
-uint32_t max4(uint32_t a, uint32_t b,uint32_t c,uint32_t d) {
+static uint32_t max4(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
   int x = max(a, b);
   x = max(x, c);
   x = max(x, d);
@@ -137,7 +138,14 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
 
 }
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int CC_id, NR_UE_info_t *UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource, int buffer_index)
+static void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu,
+                             int slot,
+                             int module_id,
+                             int CC_id,
+                             NR_UE_info_t *UE,
+                             NR_SRS_ResourceSet_t *srs_resource_set,
+                             NR_SRS_Resource_t *srs_resource,
+                             int buffer_index)
 {
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -196,7 +204,13 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int 
     vrb_map_UL[i + srs_pdu->bwp_start] |= mask;
 }
 
-void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, int frame, int slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource)
+static void nr_fill_nfapi_srs(int module_id,
+                              int CC_id,
+                              NR_UE_info_t *UE,
+                              int frame,
+                              int slot,
+                              NR_SRS_ResourceSet_t *srs_resource_set,
+                              NR_SRS_Resource_t *srs_resource)
 {
 
   int index = ul_buffer_index(frame, slot, UE->current_UL_BWP.scs, RC.nrmac[module_id]->UL_tti_req_ahead_size);

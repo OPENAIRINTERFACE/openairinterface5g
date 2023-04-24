@@ -311,10 +311,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
-void nr_store_dlsch_buffer(module_id_t module_id,
-                           frame_t frame,
-                           sub_frame_t slot) {
-
+static void nr_store_dlsch_buffer(module_id_t module_id, frame_t frame, sub_frame_t slot)
+{
   UE_iterator(RC.nrmac[module_id]->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     sched_ctrl->num_total_bytes = 0;
@@ -375,13 +373,13 @@ void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid) {
 
 }
 
-bool allocate_dl_retransmission(module_id_t module_id,
-                                frame_t frame,
-                                sub_frame_t slot,
-                                uint16_t *rballoc_mask,
-                                int *n_rb_sched,
-                                NR_UE_info_t *UE,
-                                int current_harq_pid)
+static bool allocate_dl_retransmission(module_id_t module_id,
+                                       frame_t frame,
+                                       sub_frame_t slot,
+                                       uint16_t *rballoc_mask,
+                                       int *n_rb_sched,
+                                       NR_UE_info_t *UE,
+                                       int current_harq_pid)
 {
 
   int CC_id = 0;
@@ -549,15 +547,14 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
-void pf_dl(module_id_t module_id,
-           frame_t frame,
-           sub_frame_t slot,
-           NR_UE_info_t **UE_list,
-           int max_num_ue,
-           int n_rb_sched,
-           uint16_t *rballoc_mask)
+static void pf_dl(module_id_t module_id,
+                  frame_t frame,
+                  sub_frame_t slot,
+                  NR_UE_info_t **UE_list,
+                  int max_num_ue,
+                  int n_rb_sched,
+                  uint16_t *rballoc_mask)
 {
-
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc=mac->common_channels[0].ServingCellConfigCommon;
   // UEs that could be scheduled
@@ -784,7 +781,7 @@ void pf_dl(module_id_t module_id,
   }
 }
 
-void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
+static void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
