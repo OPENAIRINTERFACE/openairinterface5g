@@ -39,6 +39,11 @@ static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
+static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t *cmd)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
 static void dl_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
   /* TODO call F1AP function directly? no real-time constraint here */
@@ -58,5 +63,6 @@ static void dl_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_dl_rr
 void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
   mac_rrc->ue_context_setup_request = ue_context_setup_request_f1ap;
+  mac_rrc->ue_context_release_command = ue_context_release_command_f1ap;
   mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer_f1ap;
 }

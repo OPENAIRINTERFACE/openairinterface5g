@@ -659,8 +659,9 @@ typedef struct NR_bler_options {
 } NR_bler_options_t;
 
 typedef struct nr_mac_rrc_ul_if_s {
-  /* TODO add other message types as necessary */
   ue_context_setup_response_func_t ue_context_setup_response;
+  ue_context_release_request_func_t ue_context_release_request;
+  ue_context_release_complete_func_t ue_context_release_complete;
   initial_ul_rrc_message_transfer_func_t initial_ul_rrc_message_transfer;
 } nr_mac_rrc_ul_if_t;
 

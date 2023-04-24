@@ -647,18 +647,13 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   return 0;
 }
 
-int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextReleaseCommand_t *container;
   F1AP_UEContextReleaseCommandIEs_t *ie;
 
-  /* ITTI message to NR-RRC for the case of gNB-DU */
-  MessageDef                      *msg_p; // message to NR-RRC
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_CMD);
-  f1ap_ue_context_release_req_t *f1ap_ue_context_release_cmd = &F1AP_UE_CONTEXT_RELEASE_CMD(msg_p);
-
+  f1ap_ue_context_release_req_t ue_context_release = {0};
+  f1ap_ue_context_release_req_t *f1ap_ue_context_release_cmd = &ue_context_release;
 
   DevAssert(pdu);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseCommand;
@@ -709,7 +704,8 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     break;
 
   }
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+
+  ue_context_release_command(f1ap_ue_context_release_cmd);
   return 0;
 }
 

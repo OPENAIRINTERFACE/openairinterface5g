@@ -147,6 +147,11 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   free(resp.du_to_cu_rrc_information);
 }
 
+void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
   LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
