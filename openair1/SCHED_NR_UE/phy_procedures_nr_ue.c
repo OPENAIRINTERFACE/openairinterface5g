@@ -50,7 +50,6 @@
 #endif
 #include "executables/softmodem-common.h"
 #include "executables/nr-uesoftmodem.h"
-#include "LAYER2/NR_MAC_UE/mac_proto.h"
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
@@ -87,8 +86,8 @@ void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,
                            fapi_nr_rx_indication_t *rx_ind,
                            UE_nr_rxtx_proc_t *proc,
                            PHY_VARS_NR_UE *ue,
-                           void *phy_data){
-
+                           void *phy_data)
+{
   memset((void*)dl_ind, 0, sizeof(nr_downlink_indication_t));
 
   dl_ind->gNB_index = proc->gNB_id;
@@ -223,49 +222,37 @@ int get_tx_amp_prach(int power_dBm, int power_max_dBm, int N_RB_UL){
   return (amp_x_100);
 }
 
-// convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second
-//   16 * 64 * T_c            / (2^mu) * samples_per_second
-// = 16 * T_s                 / (2^mu) * samples_per_second
-// = 16 * 1 / (15 kHz * 2048) / (2^mu) * (15 kHz * 2^mu * ofdm_symbol_size)
-// = 16 * 1 /           2048           *                  ofdm_symbol_size
-// = 16 * ofdm_symbol_size / 2048
-static inline
-uint16_t get_bw_scaling(uint16_t ofdm_symbol_size){
-  return 16 * ofdm_symbol_size / 2048;
-}
-
 // UL time alignment procedures:
-// - If the current tx frame and slot match the TA configuration in ul_time_alignment
+// - If the current tx frame and slot match the TA configuration
 //   then timing advance is processed and set to be applied in the next UL transmission
 // - Application of timing adjustment according to TS 38.213 p4.2
 // todo:
 // - handle RAR TA application as per ch 4.2 TS 38.213
-void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx){
+void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
+{
+  if (frame_tx == ue->ta_frame && slot_tx == ue->ta_slot) {
 
-  if (ue->mac_enabled == 1) {
+    uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
 
-    uint8_t gNB_id = 0;
-    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
+    // convert time factor "16 * 64 * T_c / (2^mu)" in N_TA calculation in TS38.213 section 4.2 to samples by multiplying with samples per second
+    //   16 * 64 * T_c            / (2^mu) * samples_per_second
+    // = 16 * T_s                 / (2^mu) * samples_per_second
+    // = 16 * 1 / (15 kHz * 2048) / (2^mu) * (15 kHz * 2^mu * ofdm_symbol_size)
+    // = 16 * 1 /           2048           *                  ofdm_symbol_size
+    // = 16 * ofdm_symbol_size / 2048
+    uint16_t bw_scaling = 16 * ofdm_symbol_size / 2048;
 
-    if (frame_tx == ul_time_alignment->ta_frame && slot_tx == ul_time_alignment->ta_slot) {
+    ue->timing_advance += (ue->ta_command - 31) * bw_scaling;
 
-      uint16_t ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
-      uint16_t bw_scaling = get_bw_scaling(ofdm_symbol_size);
+    LOG_D(PHY, "[UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
+          ue->Mod_id,
+          frame_tx,
+          slot_tx,
+          ue->ta_command,
+          ue->timing_advance);
 
-      ue->timing_advance += (ul_time_alignment->ta_command - 31) * bw_scaling;
-
-      LOG_D(PHY, "In %s: [UE %d] [%d.%d] Got timing advance command %u from MAC, new value is %d\n",
-        __FUNCTION__,
-        ue->Mod_id,
-        frame_tx,
-        slot_tx,
-        ul_time_alignment->ta_command,
-        ue->timing_advance);
-
-      ul_time_alignment->ta_frame = -1;
-      ul_time_alignment->ta_slot = -1;
-
-    }
+    ue->ta_frame = -1;
+    ue->ta_slot = -1;
   }
 }
 
@@ -516,7 +503,7 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   // fill dl_indication message
   nr_fill_dl_indication(&dl_indication, &dci_ind, NULL, proc, ue, phy_data);
   //  send to mac
-  ue->if_inst->dl_indication(&dl_indication, NULL);
+  ue->if_inst->dl_indication(&dl_indication);
 
 
   stop_meas(&ue->dlsch_rx_pdcch_stats);
@@ -544,7 +531,7 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
   if (!(NR_MAX_NB_LAYERS>4)) {
     NR_UE_DLSCH_t *dlsch0 = &dlsch[0];
     int harq_pid = dlsch0->dlsch_config.harq_process_nbr;
-    NR_DL_UE_HARQ_t *dlsch0_harq = ue->dl_harq_processes[harq_pid];
+    NR_DL_UE_HARQ_t *dlsch0_harq = &ue->dl_harq_processes[0][harq_pid];
     uint16_t BWPStart       = dlsch0->dlsch_config.BWPStart;
     uint16_t pdsch_start_rb = dlsch0->dlsch_config.start_rb;
     uint16_t pdsch_nb_rb    = dlsch0->dlsch_config.number_rbs;
@@ -705,13 +692,10 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   nr_downlink_indication_t dl_indication;
   fapi_nr_rx_indication_t rx_ind = {0};
   uint16_t number_pdus = 1;
-  // params for UL time alignment procedure
-  NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &ue->ul_time_alignment[gNB_id];
 
   uint8_t is_cw0_active = dl_harq0->status;
   uint8_t is_cw1_active = dl_harq1->status;
   uint16_t nb_symb_sch = dlsch[0].dlsch_config.number_symbols;
-  uint16_t start_symbol = dlsch[0].dlsch_config.start_symbol;
   uint8_t dmrs_type = dlsch[0].dlsch_config.dmrsConfigType;
 
   uint8_t nb_re_dmrs;
@@ -805,7 +789,7 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   nr_fill_dl_indication(&dl_indication, NULL, &rx_ind, proc, ue, NULL);
   nr_fill_rx_indication(&rx_ind, ind_type, ue, &dlsch[0], NULL, number_pdus, proc, NULL, p_b);
 
-  LOG_D(PHY, "In %s DL PDU length in bits: %d, in bytes: %d \n", __FUNCTION__, dlsch[0].dlsch_config.TBS, dlsch[0].dlsch_config.TBS / 8);
+  LOG_D(PHY, "DL PDU length in bits: %d, in bytes: %d \n", dlsch[0].dlsch_config.TBS, dlsch[0].dlsch_config.TBS / 8);
 
   stop_meas(&ue->dlsch_decoding_stats);
   if (cpumeas(CPUMEAS_GETSTATE))  {
@@ -857,9 +841,10 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
       }
   LOG_D(PHY, "harq_pid: %d, TBS expected dlsch1: %d \n", harq_pid, dlsch[1].dlsch_config.TBS);
   }
+
   //  send to mac
   if (ue->if_inst && ue->if_inst->dl_indication) {
-    ue->if_inst->dl_indication(&dl_indication, ul_time_alignment);
+    ue->if_inst->dl_indication(&dl_indication);
   }
 
   // DLSCH decoding finished! don't wait anymore
@@ -869,135 +854,6 @@ bool nr_ue_dlsch_procedures(PHY_VARS_NR_UE *ue,
   if (ue->phy_sim_dlsch_b)
     memcpy(ue->phy_sim_dlsch_b, p_b, dlsch_bytes);
 
-  if (ue->mac_enabled == 1) { // TODO: move this from PHY to MAC layer!
-
-    /* Time Alignment procedure
-    // - UE processing capability 1
-    // - Setting the TA update to be applied after the reception of the TA command
-    // - Timing adjustment computed according to TS 38.213 section 4.2
-    // - Durations of N1 and N2 symbols corresponding to PDSCH and PUSCH are
-    //   computed according to sections 5.3 and 6.4 of TS 38.214 */
-    const int numerology = ue->frame_parms.numerology_index;
-    const int ofdm_symbol_size = ue->frame_parms.ofdm_symbol_size;
-    const int nb_prefix_samples = ue->frame_parms.nb_prefix_samples;
-    const int samples_per_subframe = ue->frame_parms.samples_per_subframe;
-    const int slots_per_frame = ue->frame_parms.slots_per_frame;
-    const int slots_per_subframe = ue->frame_parms.slots_per_subframe;
-
-    const double tc_factor = 1.0 / samples_per_subframe;
-    const uint16_t bw_scaling = get_bw_scaling(ofdm_symbol_size);
-
-    const int Ta_max = 3846; // Max value of 12 bits TA Command
-    const double N_TA_max = Ta_max * bw_scaling * tc_factor;
-
-    NR_UE_MAC_INST_t *mac = get_mac_inst(0);
-    NR_BWP_Id_t ul_bwp = mac->current_UL_BWP.bwp_id;
-
-    NR_PUSCH_TimeDomainResourceAllocationList_t *pusch_TimeDomainAllocationList = NULL;
-    if(ul_bwp){
-      if (mac->ULbwp[ul_bwp-1] &&
-          mac->ULbwp[ul_bwp-1]->bwp_Dedicated &&
-          mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config &&
-          mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup &&
-          mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Dedicated->pusch_Config->choice.setup->pusch_TimeDomainAllocationList->choice.setup;
-      }
-      else if (mac->ULbwp[ul_bwp-1] &&
-               mac->ULbwp[ul_bwp-1]->bwp_Common &&
-               mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon &&
-               mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup &&
-               mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-        pusch_TimeDomainAllocationList = mac->ULbwp[ul_bwp-1]->bwp_Common->pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-      }
-    }
-    else if (mac->scc_SIB &&
-             mac->scc_SIB->uplinkConfigCommon &&
-             mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon &&
-             mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup &&
-             mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList) {
-      pusch_TimeDomainAllocationList = mac->scc_SIB->uplinkConfigCommon->initialUplinkBWP.pusch_ConfigCommon->choice.setup->pusch_TimeDomainAllocationList;
-    }
-    long mapping_type_ul = pusch_TimeDomainAllocationList ? pusch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeA;
-
-    NR_PDSCH_Config_t *pdsch_Config = mac->current_DL_BWP.pdsch_Config;
-    NR_PDSCH_TimeDomainResourceAllocationList_t *pdsch_TimeDomainAllocationList = mac->current_DL_BWP.tdaList_Common;
-    long mapping_type_dl = pdsch_TimeDomainAllocationList ? pdsch_TimeDomainAllocationList->list.array[0]->mappingType : NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA;
-
-    NR_DMRS_DownlinkConfig_t *NR_DMRS_dlconfig = NULL;
-    if (pdsch_Config) {
-      if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
-        NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup;
-      else
-        NR_DMRS_dlconfig = (NR_DMRS_DownlinkConfig_t *)pdsch_Config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
-    }
-
-    pdsch_dmrs_AdditionalPosition_t add_pos_dl = pdsch_dmrs_pos2;
-    if (NR_DMRS_dlconfig && NR_DMRS_dlconfig->dmrs_AdditionalPosition)
-      add_pos_dl = *NR_DMRS_dlconfig->dmrs_AdditionalPosition;
-
-    /* PDSCH decoding time N_1 for processing capability 1 */
-    int N_1;
-
-    if (add_pos_dl == pdsch_dmrs_pos0)
-      N_1 = pdsch_N_1_capability_1[numerology][1];
-    else if (add_pos_dl == pdsch_dmrs_pos1 || add_pos_dl == pdsch_dmrs_pos2)
-      N_1 = pdsch_N_1_capability_1[numerology][2];
-    else
-      N_1 = pdsch_N_1_capability_1[numerology][3];
-
-    /* PUSCH preapration time N_2 for processing capability 1 */
-    const int N_2 = pusch_N_2_timing_capability_1[numerology][1];
-
-    /* d_1_1 depending on the number of PDSCH symbols allocated */
-    const int d = 0; // TODO number of overlapping symbols of the scheduling PDCCH and the scheduled PDSCH
-    int d_1_1 = 0;
-    if (mapping_type_dl == NR_PDSCH_TimeDomainResourceAllocation__mappingType_typeA)
-     if (nb_symb_sch + start_symbol < 7)
-        d_1_1 = 7 - (nb_symb_sch + start_symbol);
-      else
-        d_1_1 = 0;
-    else // mapping type B
-      switch (nb_symb_sch){
-        case 7: d_1_1 = 0; break;
-        case 4: d_1_1 = 3; break;
-        case 2: d_1_1 = 3 + d; break;
-        default: break;
-      }
-
-    /* d_2_1 */
-    int d_2_1;
-    if (mapping_type_ul == NR_PUSCH_TimeDomainResourceAllocation__mappingType_typeB && start_symbol != 0)
-      d_2_1 = 0;
-    else
-      d_2_1 = 1;
-
-    /* d_2_2 */
-    const double d_2_2 = pusch_d_2_2_timing_capability_1[numerology][1];
-
-    /* N_t_1 time duration in msec of N_1 symbols corresponding to a PDSCH reception time
-    // N_t_2 time duration in msec of N_2 symbols corresponding to a PUSCH preparation time */
-    double N_t_1 = (N_1 + d_1_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
-    double N_t_2 = (N_2 + d_2_1) * (ofdm_symbol_size + nb_prefix_samples) * tc_factor;
-    if (N_t_2 < d_2_2) N_t_2 = d_2_2;
-
-    /* Time alignment procedure */
-    // N_t_1 + N_t_2 + N_TA_max must be in msec
-    const double t_subframe = 1.0; // subframe duration of 1 msec
-    const int ul_tx_timing_adjustment = 1 + (int)ceil(slots_per_subframe*(N_t_1 + N_t_2 + N_TA_max + 0.5)/t_subframe);
-
-    if (ul_time_alignment->apply_ta == 1){
-      ul_time_alignment->ta_slot = (nr_slot_rx + ul_tx_timing_adjustment) % slots_per_frame;
-      if (nr_slot_rx + ul_tx_timing_adjustment > slots_per_frame){
-        ul_time_alignment->ta_frame = (frame_rx + 1) % 1024;
-      } else {
-        ul_time_alignment->ta_frame = frame_rx;
-      }
-      // reset TA flag
-      ul_time_alignment->apply_ta = 0;
-      LOG_D(PHY,"Frame %d slot %d -- Starting UL time alignment procedures. TA update will be applied at frame %d slot %d\n",
-           frame_rx, nr_slot_rx, ul_time_alignment->ta_frame, ul_time_alignment->ta_slot);
-    }
-  }
   return dec;
 }
 

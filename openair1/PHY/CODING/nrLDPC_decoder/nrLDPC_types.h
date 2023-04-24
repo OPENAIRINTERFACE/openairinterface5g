@@ -34,6 +34,21 @@
 #include "time_meas.h"
 #endif
 #include "nrLDPCdecoder_defs.h"
+typedef struct {
+  uint8_t* d;
+  int dim1;
+  int dim2;
+} arr8_t;
+typedef struct {
+  uint16_t* d;
+  int dim1;
+  int dim2;
+} arr16_t;
+typedef struct {
+  uint32_t* d;
+  int dim1;
+  int dim2;
+} arr32_t;
 // ==============================================================================
 // TYPES
 
@@ -46,12 +61,12 @@ typedef struct nrLDPC_lut {
     const uint8_t*  numBnInBnGroups; /**< Number of CNs in every BN group */
     const uint32_t* startAddrBnGroups; /**< Start addresses for BN groups in BN processing buffer  */
     const uint16_t* startAddrBnGroupsLlr; /**< Start addresses for BN groups in LLR processing buffer  */
-    const uint16_t** circShift[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Zs */
-    const uint32_t** startAddrBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT of start addresses of CN groups in BN proc buffer */
-    const uint8_t**  bnPosBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT of BN positions in BG for CN groups */
+    arr16_t circShift[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for circular shift values for all CN groups and Zs */
+    arr32_t startAddrBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT of start addresses of CN groups in BN proc buffer */
+    arr8_t bnPosBnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT of BN positions in BG for CN groups */
     const uint16_t* llr2llrProcBufAddr; /**< LUT for transferring input LLRs to LLR processing buffer */
     const uint8_t*  llr2llrProcBufBnPos; /**< LUT BN position in BG */
-    const uint8_t** posBnInCnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for llr2cnProcBuf */
+    arr8_t posBnInCnProcBuf[NR_LDPC_NUM_CN_GROUPS_BG1]; /**< LUT for llr2cnProcBuf */
 } t_nrLDPC_lut;
 
 /**

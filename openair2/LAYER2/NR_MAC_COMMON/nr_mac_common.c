@@ -2764,8 +2764,8 @@ uint8_t get_L_ptrs(uint8_t mcs1, uint8_t mcs2, uint8_t mcs3, uint8_t I_mcs, uint
 *
 *********************************************************************/
 
-uint8_t get_K_ptrs(uint16_t nrb0, uint16_t nrb1, uint16_t N_RB) {
-
+uint8_t get_K_ptrs(uint32_t nrb0, uint32_t nrb1, uint32_t N_RB)
+{
   if (N_RB < nrb0) {
     LOG_D(PHY,"PUSH PT-RS is not present.\n");
     return -1;
@@ -3836,7 +3836,7 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
       if (*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256)
         return 1;
       else
-        return (2+(is_tp<<1));
+        return (2 + (is_tp << 1));
     }
     else {
       if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam256) &&
@@ -3847,14 +3847,12 @@ uint8_t get_pusch_mcs_table(long *mcs_Table,
       if ((*mcs_Table == NR_PUSCH_Config__mcs_Table_qam64LowSE) &&
           (target_ss == NR_SearchSpace__searchSpaceType_PR_ue_Specific) &&
           ((rnti_type == NR_RNTI_C ) || (rnti_type == NR_RNTI_SP_CSI)))
-        return (2+(is_tp<<1));
+        return (2 + (is_tp << 1));
       if (rnti_type == NR_RNTI_MCS_C)
-        return (2+(is_tp<<1));
-      AssertFatal(1==0,"Invalid configuration to set MCS table");
+        return (2 + (is_tp << 1));
     }
   }
-  else
-    return (0+(is_tp*3));
+  return (0 + (is_tp * 3));
 }
 
 

@@ -31,16 +31,14 @@ RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 COPY . .
 
-#only install address sanitizer and LLVM (clang, ...) for this container, the others don't need it
-RUN yum install -y libasan llvm-toolset
+#only install address and undefined behavior sanitizer for this container, the others don't need it
+RUN yum install -y libasan libubsan
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    export CC=/usr/bin/clang && \
-    export CXX=/usr/bin/clang++ && \
-    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --sanitize-address --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
+    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim
@@ -89,6 +87,7 @@ COPY --from=phy-sim-build \
     /lib64/libexslt.so.0 \
     /lib64/libxslt.so.1 \
     /usr/lib64/libasan.so.5 \
+    /usr/lib64/libubsan.so.1 \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \

@@ -4706,7 +4706,8 @@ unsigned short dlsch_extract_rbs_single(int **rxdataF,
         }
 
         if (rb_alloc_ind==1) {
-          *pmi_ext = (pmi>>((rb>>2)<<1))&3;
+          uint32_t tmp = (rb >> 2) << 1;
+          *pmi_ext = tmp >= 16 ? 0 : (pmi >> tmp) & 3;
           memcpy(dl_ch0_ext,dl_ch0,12*sizeof(int));
 
           /*

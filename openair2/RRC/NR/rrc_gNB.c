@@ -664,7 +664,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 //-----------------------------------------------------------------------------
 {
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  long drb_priority[1] = {13}; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
+  long drb_priority[NGAP_MAX_DRBS_PER_UE];
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
   int xid = -1;
 
@@ -696,6 +696,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
     }
 
     xid = ue_p->pduSession[j].xid;
+    drb_priority[DRB_config->drb_Identity - 1] = 13; // For now, we assume only one drb per pdu sessions with a default preiority (will be dynamique in future)
   }
 
   /* If list is empty free the list and reset the address */

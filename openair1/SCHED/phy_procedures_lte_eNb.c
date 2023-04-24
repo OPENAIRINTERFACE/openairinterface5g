@@ -1360,7 +1360,7 @@ void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {
            rb<=ulsch_harq->nb_rb;
            rb++) {
         int rb2 = rb+ulsch_harq->first_rb;
-        eNB->rb_mask_ul[rb2>>5] |= (1<<(rb2&31));
+        eNB->rb_mask_ul[rb2>>5] |= (1L<<(rb2&31));
       }
 
       LOG_D(PHY,"[eNB %d] frame %d, subframe %d: Scheduling ULSCH Reception for UE %d \n", eNB->Mod_id, frame, subframe, i);

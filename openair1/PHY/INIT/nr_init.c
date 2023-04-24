@@ -706,23 +706,24 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
     pusch->rxdataF_comp = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
     pusch->ul_ch_mag0 = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
     pusch->ul_ch_magb0 = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
+    pusch->ul_ch_magc0 = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
     pusch->ul_ch_mag = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
     pusch->ul_ch_magb = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
+    pusch->ul_ch_magc = (int32_t **)malloc16(n_buf * sizeof(int32_t *));
     pusch->rho = (int32_t ***)malloc16(Prx * sizeof(int32_t **));
     pusch->llr_layers = (int16_t **)malloc16(max_ul_mimo_layers * sizeof(int32_t *));
-
-    for (i=0; i<Prx; i++) {
+    for (i = 0; i < Prx; i++) {
       pusch->rxdataF_ext[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->rho[i] = (int32_t **)malloc16_clear(NR_MAX_NB_LAYERS * NR_MAX_NB_LAYERS * sizeof(int32_t *));
 
-      for (int j=0; j< max_ul_mimo_layers; j++) {
-        for (int k=0; k<max_ul_mimo_layers; k++) {
+      for (int j = 0; j < max_ul_mimo_layers; j++) {
+        for (int k = 0; k < max_ul_mimo_layers; k++) {
           pusch->rho[i][j * max_ul_mimo_layers + k] =
               (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
         }
       }
     }
-    for (i=0; i<n_buf; i++) {
+    for (i = 0; i < n_buf; i++) {
       pusch->ul_ch_estimates[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * fp->ofdm_symbol_size * fp->symbols_per_slot);
       pusch->ul_ch_estimates_ext[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->ul_ch_estimates_time[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * fp->ofdm_symbol_size);
@@ -730,8 +731,10 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
       pusch->rxdataF_comp[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->ul_ch_mag0[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->ul_ch_magb0[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
+      pusch->ul_ch_magc0[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->ul_ch_mag[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
       pusch->ul_ch_magb[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
+      pusch->ul_ch_magc[i] = (int32_t *)malloc16_clear(sizeof(int32_t) * nb_re_pusch2 * fp->symbols_per_slot);
     }
 
     for (i=0; i< max_ul_mimo_layers; i++) {
@@ -753,7 +756,9 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
   const int Prx = gNB->gNB_config.carrier_config.num_rx_ant.value;
   const int max_ul_mimo_layers = 4; // taken from phy_init_nr_gNB()
   const int n_buf = Prx * max_ul_mimo_layers;
-
+  PHY_MEASUREMENTS_gNB *meas=&gNB->measurements;
+  free_and_zero(meas->n0_subband_power);
+  free_and_zero(meas->n0_subband_power_dB);
   int max_dl_mimo_layers =(fp->nb_antennas_tx<NR_MAX_NB_LAYERS) ? fp->nb_antennas_tx : NR_MAX_NB_LAYERS;
   if (fp->nb_antennas_tx>1) {
     for (int nl = 0; nl < max_dl_mimo_layers; nl++) {
@@ -867,8 +872,10 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
       free_and_zero(pusch_vars->rxdataF_comp[i]);
       free_and_zero(pusch_vars->ul_ch_mag0[i]);
       free_and_zero(pusch_vars->ul_ch_magb0[i]);
+      free_and_zero(pusch_vars->ul_ch_magc0[i]);
       free_and_zero(pusch_vars->ul_ch_mag[i]);
       free_and_zero(pusch_vars->ul_ch_magb[i]);
+      free_and_zero(pusch_vars->ul_ch_magc[i]);
     }
     free_and_zero(pusch_vars->llr_layers);
     free_and_zero(pusch_vars->rxdataF_ext);
@@ -880,8 +887,10 @@ void phy_free_nr_gNB(PHY_VARS_gNB *gNB)
     free_and_zero(pusch_vars->rxdataF_comp);
     free_and_zero(pusch_vars->ul_ch_mag0);
     free_and_zero(pusch_vars->ul_ch_magb0);
+    free_and_zero(pusch_vars->ul_ch_magc0);
     free_and_zero(pusch_vars->ul_ch_mag);
     free_and_zero(pusch_vars->ul_ch_magb);
+    free_and_zero(pusch_vars->ul_ch_magc);
     free_and_zero(pusch_vars->rho);
 
     free_and_zero(pusch_vars->llr);
@@ -954,7 +963,8 @@ void nr_phy_config_request_sim(PHY_VARS_gNB *gNB,
   }
 
   fp->threequarter_fs = 0;
-  gNB_config->carrier_config.dl_bandwidth.value = config_bandwidth(mu, N_RB_DL, fp->nr_band);
+  int bw_index = get_supported_band_index(mu, fp->nr_band, N_RB_DL);
+  gNB_config->carrier_config.dl_bandwidth.value = get_supported_bw_mhz(fp->nr_band > 256 ? FR2 : FR1, bw_index);
 
   nr_init_frame_parms(gNB_config, fp);
 

@@ -35,14 +35,18 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
   pdu_session_establishment_accept_msg_t psea_msg;
   sec_nas_hdr.epd = *(buffer + (offset++));
   sec_nas_hdr.sht = *(buffer + (offset++));
-  sec_nas_hdr.mac = htonl(*(uint32_t *)(buffer + offset));
+  uint32_t tmp;
+  memcpy(&tmp, buffer + offset, sizeof(tmp));
+  sec_nas_hdr.mac = htonl(tmp);
   offset+=sizeof(sec_nas_hdr.mac);
   sec_nas_hdr.sqn = *(buffer + (offset++));
   sec_nas_msg.epd          = *(buffer + (offset++));
   sec_nas_msg.sht          = *(buffer + (offset++));
   sec_nas_msg.msg_type     = *(buffer + (offset++));
   sec_nas_msg.payload_type = *(buffer + (offset++));
-  sec_nas_msg.payload_len  = htons(*(uint16_t *)(buffer + offset));
+  uint16_t tmp16;
+  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
+  sec_nas_msg.payload_len = htons(tmp16);
   offset+=sizeof(sec_nas_msg.payload_len);
   /* Mandatory Presence IEs */
   psea_msg.epd      = *(buffer + (offset++));
@@ -51,12 +55,14 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
   psea_msg.msg_type = *(buffer + (offset++));
   psea_msg.pdu_type = *(buffer + offset) & 0x0f;
   psea_msg.ssc_mode = (*(buffer + (offset++)) & 0xf0) >> 4;
-  psea_msg.qos_rules.length = htons(*(uint16_t *)(buffer + offset));
+  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
+  psea_msg.qos_rules.length = htons(tmp16);
   offset+=sizeof(psea_msg.qos_rules.length);
   /* Supports the capture of only one QoS Rule, it should be changed for multiple QoS Rules */
   qos_rule_t qos_rule;
   qos_rule.id     =  *(buffer + (offset++));
-  qos_rule.length = htons(*(uint16_t *)(buffer + offset));
+  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
+  qos_rule.length = htons(tmp16);
   offset+=sizeof(qos_rule.length);
   qos_rule.oc     = (*(buffer + offset) & 0xE0) >> 5;
   qos_rule.dqr    = (*(buffer + offset) & 0x10) >> 4;

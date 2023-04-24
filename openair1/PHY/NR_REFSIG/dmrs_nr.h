@@ -72,7 +72,11 @@ void nr_chest_time_domain_avg(NR_DL_FRAME_PARMS *frame_parms,
                               uint16_t dmrs_bitmap,
                               uint16_t num_rbs);
 
-static inline uint8_t is_dmrs_symbol(uint8_t l, uint16_t dmrsSymbMask ) { return ((dmrsSymbMask >> l) & 0x1); }
+static inline uint8_t is_dmrs_symbol(uint8_t l, uint16_t dmrsSymbMask)
+{
+  DevAssert(l < 32);
+  return ((dmrsSymbMask >> l) & 0x1);
+}
 #undef EXTERN
 
 #endif /* DMRS_NR_H */

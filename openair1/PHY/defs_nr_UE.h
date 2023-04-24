@@ -151,9 +151,9 @@ typedef struct {
 
   // UE measurements
   //! estimated received spatial signal power (linear)
-  int            rx_spatial_power[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
+  fourDimArray_t *rx_spatial_power;
   //! estimated received spatial signal power (dB)
-  unsigned short rx_spatial_power_dB[NUMBER_OF_CONNECTED_gNB_MAX][2][2];
+  fourDimArray_t *rx_spatial_power_dB;
 
   /// estimated received signal power (sum over all TX antennas)
   int            rx_power[NUMBER_OF_CONNECTED_gNB_MAX][NB_ANTENNAS_RX];
@@ -358,18 +358,6 @@ typedef struct UE_NR_SCAN_INFO_s {
   int32_t freq_offset_Hz[3][10];
 } UE_NR_SCAN_INFO_t;
 
-typedef struct NR_UL_TIME_ALIGNMENT {
-  /// flag used by MAC to inform PHY about a TA to be applied
-  unsigned char    apply_ta;
-  /// frame and slot when to apply the TA as stated in TS 38.213 setion 4.2
-  int16_t          ta_frame;
-  char             ta_slot;
-  /// TA command and TAGID received from the gNB
-  uint16_t         ta_command;
-  uint32_t         ta_total;
-  uint8_t          tag_id;
-} NR_UL_TIME_ALIGNMENT_t;
-
 /// Top-level PHY Data Structure for UE
 typedef struct {
   /// \brief Module ID indicator for this instance
@@ -519,7 +507,6 @@ typedef struct {
   int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
   int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_gNB_MAX];
   int current_dlsch_cqi[NUMBER_OF_CONNECTED_gNB_MAX];
-  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_gNB_MAX];
   uint8_t               decode_SIB;
   uint8_t               decode_MIB;
   uint8_t               init_sync_frame;
@@ -533,9 +520,11 @@ typedef struct {
 
   /// Timing Advance updates variables
   /// Timing advance update computed from the TA command signalled from gNB
-  int                      timing_advance;
-  int                      N_TA_offset; ///timing offset used in TDD
-  NR_UL_TIME_ALIGNMENT_t   ul_time_alignment[NUMBER_OF_CONNECTED_gNB_MAX];
+  int timing_advance;
+  int N_TA_offset; ///timing offset used in TDD
+  int ta_frame;
+  int ta_slot;
+  int ta_command;
 
   /// Flag to tell if UE is secondary user (cognitive mode)
   unsigned char    is_secondary_ue;
@@ -545,9 +534,6 @@ typedef struct {
   int              **ul_precoder_S_UE;
   /// holds the maximum channel/precoder coefficient
   char             log2_maxp;
-
-  /// if ==0 enables phy only test mode
-  int mac_enabled;
 
   /// Flag to initialize averaging of PHY measurements
   int init_averaging;

@@ -154,7 +154,6 @@ void init_nr_ue_vars(PHY_VARS_NR_UE *ue,
   int nb_connected_gNB = 1;
 
   ue->Mod_id      = UE_id;
-  ue->mac_enabled = 1;
   ue->if_inst     = nr_ue_if_module_init(0);
   ue->dci_thres   = 0;
   ue->target_Nid_cell = -1;
@@ -259,8 +258,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
   reset_queue(&nr_ul_dci_req_queue);
   reset_queue(&nr_ul_tti_req_queue);
 
-  NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
-  memset(&ul_time_alignment, 0, sizeof(ul_time_alignment));
   int last_sfn_slot = -1;
   uint16_t sfn_slot = 0;
 
@@ -305,7 +302,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (get_softmodem_params()->sa && mac->mib == NULL) {
       LOG_D(NR_MAC, "We haven't gotten MIB. Lets see if we received it\n");
-      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+      nr_ue_dl_indication(&mac->dl_info);
       process_queued_nr_nfapi_msgs(mac, sfn_slot);
     }
     if (mac->scc == NULL && mac->scc_SIB == NULL) {
@@ -347,7 +344,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       mac->dl_info.slot = slot;
       mac->dl_info.dci_ind = NULL;
       mac->dl_info.rx_ind = NULL;
-      nr_ue_dl_indication(&mac->dl_info, &ul_time_alignment);
+      nr_ue_dl_indication(&mac->dl_info);
     }
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
@@ -628,7 +625,7 @@ nr_phy_data_t UE_dl_preprocessing(PHY_VARS_NR_UE *UE, UE_nr_rxtx_proc_t *proc) {
     if(UE->if_inst != NULL && UE->if_inst->dl_indication != NULL) {
       nr_downlink_indication_t dl_indication;
       nr_fill_dl_indication(&dl_indication, NULL, NULL, proc, UE, &phy_data);
-      UE->if_inst->dl_indication(&dl_indication, NULL);
+      UE->if_inst->dl_indication(&dl_indication);
     }
 
     uint64_t a=rdtsc_oai();

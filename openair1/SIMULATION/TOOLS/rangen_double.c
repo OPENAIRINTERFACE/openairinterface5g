@@ -190,7 +190,7 @@ void tableNor(unsigned long seed)
   return;
 }
 
-double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double variance)
+double __attribute__ ((no_sanitize("address", "undefined"))) gaussZiggurat(double mean, double variance)
 {
   if (!tableNordDone) {
     // let's make reasonnable constant tables
@@ -200,7 +200,7 @@ double __attribute__ ((no_sanitize_address)) gaussZiggurat(double mean, double v
   }
   hz = SHR3;
   iz = hz & 127;
-  return abs(hz) < kn[iz] ? hz * wn[iz] : nfix();
+  return hz != INT32_MIN && abs(hz) < kn[iz] ? hz * wn[iz] : nfix();
 }
 
 #ifdef MAIN
