@@ -39,7 +39,10 @@
 
 //#define SRS_IND_DEBUG
 
-const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot) {
+const int get_ul_tda(gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int frame, int slot)
+{
+  /* we assume that this function is mutex-protected from outside */
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
   /* there is a mixed slot only when in TDD */
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -492,17 +495,22 @@ void handle_nr_ul_harq(const int CC_idP,
                        sub_frame_t slot,
                        const nfapi_nr_crc_t *crc_pdu)
 {
-  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[mod_id]->UE_info, crc_pdu->rnti);
-  bool UE_waiting_CFRA_msg3 = get_UE_waiting_CFRA_msg3(RC.nrmac[mod_id], CC_idP, frame, slot);
+  gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
+
+  NR_UE_info_t *UE = find_nr_UE(&nrmac->UE_info, crc_pdu->rnti);
+  bool UE_waiting_CFRA_msg3 = get_UE_waiting_CFRA_msg3(nrmac, CC_idP, frame, slot);
 
   if (!UE || UE_waiting_CFRA_msg3 == true) {
     LOG_W(NR_MAC, "handle harq for rnti %04x, in RA process\n", crc_pdu->rnti);
     for (int i = 0; i < NR_NB_RA_PROC_MAX; ++i) {
-      NR_RA_t *ra = &RC.nrmac[mod_id]->common_channels[CC_idP].ra[i];
-      if (ra->state >= WAIT_Msg3 &&
-          ra->rnti == crc_pdu->rnti)
+      NR_RA_t *ra = &nrmac->common_channels[CC_idP].ra[i];
+      if (ra->state >= WAIT_Msg3 && ra->rnti == crc_pdu->rnti) {
+        NR_SCHED_UNLOCK(&nrmac->sched_lock);
         return;
+      }
     }
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     LOG_E(NR_MAC, "%s(): unknown RNTI 0x%04x in PUSCH\n", __func__, crc_pdu->rnti);
     return;
   }
@@ -515,8 +523,10 @@ void handle_nr_ul_harq(const int CC_idP,
           crc_pdu->harq_id,
           harq_pid,
           crc_pdu->rnti);
-    if (harq_pid < 0)
+    if (harq_pid < 0) {
+      NR_SCHED_UNLOCK(&nrmac->sched_lock);
       return;
+    }
 
     remove_front_nr_list(&sched_ctrl->feedback_ul_harq);
     sched_ctrl->ul_harq_processes[harq_pid].is_waiting = false;
@@ -556,22 +566,23 @@ void handle_nr_ul_harq(const int CC_idP,
           crc_pdu->rnti);
     add_tail_nr_list(&sched_ctrl->retrans_ul_harq, harq_pid);
   }
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 /*
 * When data are received on PHY and transmitted to MAC
 */
-void nr_rx_sdu(const module_id_t gnb_mod_idP,
-               const int CC_idP,
-               const frame_t frameP,
-               const sub_frame_t slotP,
-               const rnti_t rntiP,
-               uint8_t *sduP,
-               const uint16_t sdu_lenP,
-               const uint16_t timing_advance,
-               const uint8_t ul_cqi,
-               const uint16_t rssi){
-
+static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
+                       const int CC_idP,
+                       const frame_t frameP,
+                       const sub_frame_t slotP,
+                       const rnti_t rntiP,
+                       uint8_t *sduP,
+                       const uint16_t sdu_lenP,
+                       const uint16_t timing_advance,
+                       const uint8_t ul_cqi,
+                       const uint16_t rssi)
+{
   gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
 
   const int current_rnti = rntiP;
@@ -833,6 +844,23 @@ void nr_rx_sdu(const module_id_t gnb_mod_idP,
       ra->state = Msg3_retransmission;
     }
   }
+}
+
+void nr_rx_sdu(const module_id_t gnb_mod_idP,
+               const int CC_idP,
+               const frame_t frameP,
+               const sub_frame_t slotP,
+               const rnti_t rntiP,
+               uint8_t *sduP,
+               const uint16_t sdu_lenP,
+               const uint16_t timing_advance,
+               const uint8_t ul_cqi,
+               const uint16_t rssi)
+{
+  gNB_MAC_INST *gNB_mac = RC.nrmac[gnb_mod_idP];
+  NR_SCHED_LOCK(&gNB_mac->sched_lock);
+  _nr_rx_sdu(gnb_mod_idP, CC_idP, frameP, slotP, rntiP, sduP, sdu_lenP, timing_advance, ul_cqi, rssi);
+  NR_SCHED_UNLOCK(&gNB_mac->sched_lock);
 }
 
 static uint32_t calc_power_complex(const int16_t *x, const int16_t *y, const uint32_t size)
@@ -1169,6 +1197,8 @@ void handle_nr_srs_measurements(const module_id_t module_id,
                                 const sub_frame_t slot,
                                 nfapi_nr_srs_indication_pdu_t *srs_ind)
 {
+  gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
   LOG_D(NR_MAC, "(%d.%d) Received SRS indication for UE %04x\n", frame, slot, srs_ind->rnti);
 
 #ifdef SRS_IND_DEBUG
@@ -1184,11 +1214,13 @@ void handle_nr_srs_measurements(const module_id_t module_id,
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[module_id]->UE_info, srs_ind->rnti);
   if (!UE) {
     LOG_W(NR_MAC, "Could not find UE for RNTI %04x\n", srs_ind->rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return;
   }
 
   if (srs_ind->timing_advance_offset == 0xFFFF) {
     LOG_W(NR_MAC, "Invalid timing advance offset for RNTI %04x\n", srs_ind->rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return;
   }
 
@@ -1206,6 +1238,7 @@ void handle_nr_srs_measurements(const module_id_t module_id,
 
       if (nr_srs_bf_report.wide_band_snr == 0xFF) {
         LOG_W(NR_MAC, "Invalid wide_band_snr for RNTI %04x\n", srs_ind->rnti);
+        NR_SCHED_UNLOCK(&nrmac->sched_lock);
         return;
       }
 
@@ -1304,12 +1337,14 @@ void handle_nr_srs_measurements(const module_id_t module_id,
     default:
       AssertFatal(1 == 0, "Invalid SRS usage\n");
   }
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 long get_K2(NR_PUSCH_TimeDomainResourceAllocationList_t *tdaList,
             int time_domain_assignment,
             int mu) {
 
+  /* we assume that this function is mutex-protected from outside */
   NR_PUSCH_TimeDomainResourceAllocation_t *tda = tdaList->list.array[time_domain_assignment];
 
   if (tda->k2)
@@ -1974,6 +2009,7 @@ static bool nr_fr1_ulsch_preprocessor(module_id_t module_id, frame_t frame, sub_
 
 nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
 {
+  /* during initialization: no mutex needed */
   /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
    * This would include the number of DMRS symbols, which in turn depends on
    * the time domain allocation. In case we are in a mixed slot, we do not want
@@ -2005,6 +2041,9 @@ nr_pp_impl_ul nr_init_fr1_ulsch_preprocessor(int CC_id)
 void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, nfapi_nr_ul_dci_request_t *ul_dci_req)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&nr_mac->sched_lock);
+
   /* Uplink data ONLY can be scheduled when the current slot is downlink slot,
    * because we have to schedule the DCI0 first before schedule uplink data */
   if (!is_xlsch_in_slot(nr_mac->dlsch_slot_bitmap[slot / 64], slot)) {

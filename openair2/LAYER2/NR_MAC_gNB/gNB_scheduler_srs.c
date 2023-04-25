@@ -54,6 +54,9 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
                            const NR_UE_UL_BWP_t *current_BWP,
                            uint8_t *ul_ri)
 {
+  /* already mutex protected: held in handle_nr_srs_measurements() */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
+
   // If the gNB or UE has 1 antenna, the rank is always 1, i.e., *ul_ri = 0.
   // For 2x2 scenario, we compute the rank of channel.
   // The computation for 2x4, 4x2, 4x4, ... scenarios are not implemented yet. In these cases, the function sets *ul_ri = 0, which is always a valid value.
@@ -240,8 +243,10 @@ static void nr_fill_nfapi_srs(int module_id,
 *********************************************************************/
 void nr_schedule_srs(int module_id, frame_t frame, int slot)
  {
-
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   NR_UEs_t *UE_info = &nrmac->UE_info;
 
   UE_iterator(UE_info->list, UE) {

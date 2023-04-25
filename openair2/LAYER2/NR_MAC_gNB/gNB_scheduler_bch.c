@@ -108,6 +108,7 @@ static void fill_ssb_vrb_map(NR_COMMON_channels_t *cc, int rbStart, int ssb_subc
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, nfapi_nr_dl_tti_request_t *DL_req)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   NR_COMMON_channels_t *cc;
   nfapi_nr_dl_tti_request_body_t *dl_req;
   NR_MIB_t *mib = RC.nrrrc[module_idP]->carrier.mib->message.choice.mib;
@@ -513,7 +514,6 @@ static void nr_fill_nfapi_dl_sib1_pdu(int Mod_idP,
   LOG_D(MAC,"ShiftIndex: %i\n", pdcch_pdu_rel15->ShiftIndex);
   LOG_D(MAC,"precoderGranularity: %i\n", pdcch_pdu_rel15->precoderGranularity);
   LOG_D(MAC,"numDlDci: %i\n", pdcch_pdu_rel15->numDlDci);
-
 }
 
 void schedule_nr_sib1(module_id_t module_idP,
@@ -522,6 +522,7 @@ void schedule_nr_sib1(module_id_t module_idP,
                       nfapi_nr_dl_tti_request_t *DL_req,
                       nfapi_nr_tx_data_request_t *TX_req)
 {
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   // TODO: Get these values from RRC
   const int CC_id = 0;
   uint8_t candidate_idx = 0;

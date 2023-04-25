@@ -154,10 +154,12 @@ static int16_t ssb_index_from_prach(module_id_t module_idP,
   return index;
 }
 
-
 //Compute Total active SSBs and RO available
 void find_SSB_and_RO_available(gNB_MAC_INST *nrmac)
 {
+  /* already mutex protected through nr_mac_config_scc() */
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
@@ -257,6 +259,9 @@ void find_SSB_and_RO_available(gNB_MAC_INST *nrmac)
 void schedule_nr_prach(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
 {
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&gNB->sched_lock);
+
   NR_COMMON_channels_t *cc = gNB->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   int mu;
@@ -536,12 +541,13 @@ void nr_initiate_ra_proc(module_id_t module_idP,
                          uint16_t preamble_index,
                          uint8_t freq_index,
                          uint8_t symbol,
-                         int16_t timing_offset){
+                         int16_t timing_offset)
+{
+  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
+  NR_SCHED_LOCK(&nr_mac->sched_lock);
 
   uint8_t ul_carrier_id = 0; // 0 for NUL 1 for SUL
-
   uint16_t msg2_frame, msg2_slot,monitoring_slot_period,monitoring_offset;
-  gNB_MAC_INST *nr_mac = RC.nrmac[module_idP];
   NR_COMMON_channels_t *cc = &nr_mac->common_channels[CC_id];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   frame_type_t frame_type = cc->frame_type;
@@ -675,8 +681,11 @@ void nr_initiate_ra_proc(module_id_t module_idP,
           cc->ssb_index[beam_index],
           i);
 
+    NR_SCHED_UNLOCK(&nr_mac->sched_lock);
     return;
   }
+
+  NR_SCHED_UNLOCK(&nr_mac->sched_lock);
   LOG_E(NR_MAC, "[gNB %d][RAPROC] FAILURE: CC_id %d Frame %d initiating RA procedure for preamble index %d\n", module_idP, CC_id, frameP, preamble_index);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_INITIATE_RA_PROC, 0);
@@ -2090,7 +2099,10 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
   }
 }
 
-void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra){
+void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t *ra)
+{
+  /* we assume that this function is mutex-protected from outside */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_idP]->sched_lock);
   LOG_D(NR_MAC,"[gNB %d][RAPROC] CC_id %d Frame %d Clear Random access information rnti %x\n", module_idP, CC_id, frameP, ra->rnti);
   ra->state = RA_IDLE;
   ra->timing_offset = 0;
@@ -2237,6 +2249,8 @@ void nr_schedule_RA(module_id_t module_idP,
                     nfapi_nr_tx_data_request_t *TX_req)
 {
   gNB_MAC_INST *mac = RC.nrmac[module_idP];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
 
   start_meas(&mac->schedule_ra);
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {

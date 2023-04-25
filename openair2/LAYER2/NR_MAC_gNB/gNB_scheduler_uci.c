@@ -167,6 +167,9 @@ void nr_schedule_pucch(gNB_MAC_INST *nrmac,
                        frame_t frameP,
                        sub_frame_t slotP)
 {
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slotP / 64], slotP))
     return;
 
@@ -198,7 +201,10 @@ void nr_csi_meas_reporting(int Mod_idP,
                            frame_t frame,
                            sub_frame_t slot)
 {
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   UE_iterator(nrmac->UE_info.list, UE ) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
@@ -917,9 +923,12 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
                              sub_frame_t slot,
                              const nfapi_nr_uci_pucch_pdu_format_0_1_t *uci_01)
 {
-  NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[mod_id]->UE_info, uci_01->rnti);
+  gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
+  NR_UE_info_t * UE = find_nr_UE(&nrmac->UE_info, uci_01->rnti);
   if (!UE) {
     LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_01->rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return;
   }
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
@@ -929,7 +938,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
       const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
-      NR_UE_harq_t *harq = find_harq(frame, slot, UE, RC.nrmac[mod_id]->dl_bler.harq_round_max);
+      NR_UE_harq_t *harq = find_harq(frame, slot, UE, nrmac->dl_bler.harq_round_max);
       if (!harq) {
         LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
         break;
@@ -938,13 +947,13 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
       LOG_D(NR_MAC,"%4d.%2d bit %d pid %d ack/nack %d\n",frame, slot, harq_bit,pid,harq_value);
-      handle_dl_harq(UE, pid, harq_value == 0 && harq_confidence == 0, RC.nrmac[mod_id]->dl_bler.harq_round_max);
+      handle_dl_harq(UE, pid, harq_value == 0 && harq_confidence == 0, nrmac->dl_bler.harq_round_max);
       if (harq_confidence == 1)  UE->mac_stats.pucch0_DTX++;
     }
 
     // tpc (power control) only if we received AckNack
     if (uci_01->harq->harq_confidence_level==0)
-      sched_ctrl->tpc1 = nr_get_tpc(RC.nrmac[mod_id]->pucch_target_snrx10, uci_01->ul_cqi, 30);
+      sched_ctrl->tpc1 = nr_get_tpc(nrmac->pucch_target_snrx10, uci_01->ul_cqi, 30);
     else
       sched_ctrl->tpc1 = 3;
     sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
@@ -962,6 +971,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     }
     free(uci_01->sr);
   }
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
@@ -969,15 +979,21 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
                                sub_frame_t slot,
                                const nfapi_nr_uci_pucch_pdu_format_2_3_4_t *uci_234)
 {
-  NR_UE_info_t * UE = find_nr_UE(&RC.nrmac[mod_id]->UE_info, uci_234->rnti);
+  gNB_MAC_INST *nrmac = RC.nrmac[mod_id];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
+
+  NR_UE_info_t * UE = find_nr_UE(&nrmac->UE_info, uci_234->rnti);
   if (!UE) {
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     LOG_E(NR_MAC, "%s(): unknown RNTI %04x in PUCCH UCI\n", __func__, uci_234->rnti);
     return;
   }
 
   NR_CSI_MeasConfig_t *csi_MeasConfig = UE->current_UL_BWP.csi_MeasConfig;
-  if (csi_MeasConfig==NULL)
+  if (csi_MeasConfig==NULL) {
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return;
+  }
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
 
   // tpc (power control)
@@ -1002,13 +1018,13 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
       DevAssert(harq->is_waiting);
       const int8_t pid = sched_ctrl->feedback_dl_harq.head;
       remove_front_nr_list(&sched_ctrl->feedback_dl_harq);
-      handle_dl_harq(UE, pid, uci_234->harq.harq_crc != 1 && acknack, RC.nrmac[mod_id]->dl_bler.harq_round_max);
+      handle_dl_harq(UE, pid, uci_234->harq.harq_crc != 1 && acknack, nrmac->dl_bler.harq_round_max);
     }
     free(uci_234->harq.harq_payload);
   }
   if ((uci_234->pduBitmap >> 2) & 0x01) {
     //API to parse the csi report and store it into sched_ctrl
-    extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE, RC.nrmac[mod_id]->common_channels->ServingCellConfigCommon);
+    extract_pucch_csi_report(csi_MeasConfig, uci_234, frame, slot, UE, nrmac->common_channels->ServingCellConfigCommon);
     //TCI handling function
     tci_handling(UE,frame, slot);
     free(uci_234->csi_part1.csi_part1_payload);
@@ -1017,6 +1033,7 @@ void handle_nr_uci_pucch_2_3_4(module_id_t mod_id,
     //@TODO:Handle CSI Report 2
     // nothing to free (yet)
   }
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 static void set_pucch_allocation(const NR_UE_UL_BWP_t *ul_bwp, const int r_pucch, const int bwp_size, NR_sched_pucch_t *pucch)
@@ -1083,6 +1100,8 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
                           int r_pucch,
                           int is_common)
 {
+  /* we assume that this function is mutex-protected from outside. Since it is
+   * called often, don't try to lock every time */
 
   const int CC_id = 0;
   const int minfbtime = mac->minRXTXTIMEpdsch;
@@ -1187,6 +1206,9 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
 
 void nr_sr_reporting(gNB_MAC_INST *nrmac, frame_t SFN, sub_frame_t slot)
 {
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   if (!is_xlsch_in_slot(nrmac->ulsch_slot_bitmap[slot / 64], slot))
     return;
   const int CC_id = 0;

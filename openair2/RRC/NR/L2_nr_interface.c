@@ -55,12 +55,17 @@ void nr_rrc_mac_remove_ue(rnti_t rntiMaybeUEid)
   nr_rlc_remove_ue(rntiMaybeUEid);
 
   gNB_MAC_INST *nrmac = RC.nrmac[0];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
   mac_remove_nr_ue(nrmac, rntiMaybeUEid);
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc)
 {
-  nr_mac_update_cellgroup(RC.nrmac[0], rntiMaybeUEid, cgc);
+  gNB_MAC_INST *nrmac = RC.nrmac[0];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
+  nr_mac_update_cellgroup(nrmac, rntiMaybeUEid, cgc);
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,

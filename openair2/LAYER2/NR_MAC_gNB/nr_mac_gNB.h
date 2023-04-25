@@ -41,6 +41,25 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <pthread.h>
+
+#define NR_SCHED_LOCK(lock)                                        \
+  do {                                                             \
+    int rc = pthread_mutex_lock(lock);                             \
+    AssertFatal(rc == 0, "error while locking scheduler mutex\n"); \
+  } while (0)
+
+#define NR_SCHED_UNLOCK(lock)                                      \
+  do {                                                             \
+    int rc = pthread_mutex_unlock(lock);                           \
+    AssertFatal(rc == 0, "error while locking scheduler mutex\n"); \
+  } while (0)
+
+#define NR_SCHED_ENSURE_LOCKED(lock)\
+  do {\
+    int rc = pthread_mutex_trylock(lock); \
+    AssertFatal(rc == EBUSY, "this function should be called with the scheduler mutex locked\n");\
+  } while (0)
 
 /* Commmon */
 #include "radio/COMMON/common_lib.h"
@@ -794,6 +813,8 @@ typedef struct gNB_MAC_INST_s {
 
   int16_t frame;
   int16_t slot;
+
+  pthread_mutex_t sched_lock;
 
 } gNB_MAC_INST;
 
