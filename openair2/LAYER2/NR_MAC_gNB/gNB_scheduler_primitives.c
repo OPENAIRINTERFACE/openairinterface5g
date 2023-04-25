@@ -417,31 +417,31 @@ int find_pdcch_candidate(const gNB_MAC_INST *mac,
                          int nr_of_candidates,
                          const NR_sched_pdcch_t *pdcch,
                          const NR_ControlResourceSet_t *coreset,
-                         uint32_t Y){
-
+                         uint32_t Y)
+{
   const uint16_t *vrb_map = mac->common_channels[cc_id].vrb_map;
   const int N_ci = 0;
 
   const int N_rb = pdcch->n_rb;  // nb of rbs of coreset per symbol
   const int N_symb = coreset->duration; // nb of coreset symbols
-  const int N_regs = N_rb*N_symb; // nb of REGs per coreset
+  const int N_regs = N_rb * N_symb; // nb of REGs per coreset
   const int N_cces = N_regs / NR_NB_REG_PER_CCE; // nb of cces in coreset
   const int R = pdcch->InterleaverSize;
   const int L = pdcch->RegBundleSize;
-  const int C = R>0 ? N_regs/(L*R) : 0;
-  const int B_rb = L/N_symb; // nb of RBs occupied by each REG bundle
+  const int C = R > 0 ? N_regs / (L * R) : 0;
+  const int B_rb = L / N_symb; // nb of RBs occupied by each REG bundle
 
   // loop over all the available candidates
   // this implements TS 38.211 Sec. 7.3.2.2
-  for(int m=0; m<nr_of_candidates; m++) { // loop over candidates
+  for(int m = 0; m < nr_of_candidates; m++) { // loop over candidates
     bool taken = false; // flag if the resource for a given candidate are taken
-    int first_cce = aggregation * (( Y + CEILIDIV((m*N_cces),(aggregation*nr_of_candidates)) + N_ci ) % CEILIDIV(N_cces,aggregation));
+    int first_cce = aggregation * ((Y + ((m * N_cces) / (aggregation * nr_of_candidates)) + N_ci) % (N_cces / aggregation));
     LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", m, nr_of_candidates, first_cce, aggregation, N_cces, Y);
-    for (int j=first_cce; (j<first_cce+aggregation) && !taken; j++) { // loop over CCEs
-      for (int k=6*j/L; (k<(6*j/L+6/L)) && !taken; k++) { // loop over REG bundles
+    for (int j = first_cce; (j < first_cce + aggregation) && !taken; j++) { // loop over CCEs
+      for (int k = 6 * j / L; (k < (6 * j / L + 6 / L)) && !taken; k++) { // loop over REG bundles
         int f = cce_to_reg_interleaving(R, k, pdcch->ShiftIndex, C, L, N_regs);
-        for(int rb=0; rb<B_rb; rb++) { // loop over the RBs of the bundle
-          if(vrb_map[pdcch->BWPStart + f*B_rb + rb]&SL_to_bitmap(pdcch->StartSymbolIndex,N_symb)) {
+        for(int rb = 0; rb < B_rb; rb++) { // loop over the RBs of the bundle
+          if(vrb_map[pdcch->BWPStart + f * B_rb + rb] & SL_to_bitmap(pdcch->StartSymbolIndex,N_symb)) {
             taken = true;
             break;
           }
