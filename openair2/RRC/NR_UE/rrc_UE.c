@@ -286,8 +286,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
             nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
           }
           if (get_softmodem_params()->nsa) {
-            nr_rrc_mac_config_req_scg(0, 0, 0, cellGroupConfig);
-            LOG_D(NR_RRC, "Filled scc now \n");
+            nr_rrc_mac_config_req_scg(0, 0, cellGroupConfig);
           }
         }
         else
@@ -601,8 +600,8 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
 
     NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
     // if no sib1 because not acquired yet or expired, get a new one
-    bool get_sib1 = sib1 ? false : true;
-    nr_rrc_mac_config_req_mib(module_id, gNB_index, 0, NR_UE_rrc_inst[module_id].mib, get_sib1);
+    bool get_sib1 = sib1 == NULL;
+    nr_rrc_mac_config_req_mib(module_id, 0, NR_UE_rrc_inst[module_id].mib, get_sib1);
     ret = 0;
   }
   ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, bcch_message);
@@ -1212,7 +1211,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             }
             // take ServingCellConfigCommon and configure L1/L2
             NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-            nr_rrc_mac_config_req_sib1(module_id, 0, gNB_index, sib1->servingCellConfigCommon);
+            nr_rrc_mac_config_req_sib1(module_id, 0, sib1->servingCellConfigCommon);
             nr_rrc_ue_generate_ra_msg(module_id, gNB_index);
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
@@ -1341,23 +1340,23 @@ void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
                      sizeof(struct NR_MAC_CellGroupConfig));
   }
 
-  if( cellGroupConfig->sCellToReleaseList != NULL){
+  if(cellGroupConfig->sCellToReleaseList != NULL) {
     //TODO (perform SCell release as specified in 5.3.5.5.8)
   }
 
-  if( cellGroupConfig->spCellConfig != NULL){
+  if(cellGroupConfig->spCellConfig != NULL) {
     if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config &&
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
+        NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
       memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
              sizeof(struct NR_SpCellConfig));
     } else {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+          NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
       else
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
+        NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
     LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
-    nr_rrc_mac_config_req_mcg(ctxt_pP->module_id, 0, 0, cellGroupConfig);
+    nr_rrc_mac_config_req_mcg(ctxt_pP->module_id, 0, cellGroupConfig);
     //TODO (configure the SpCell as specified in 5.3.5.5.7)
   }
 

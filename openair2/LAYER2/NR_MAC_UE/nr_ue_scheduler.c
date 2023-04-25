@@ -118,12 +118,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
   int mu = mac->current_UL_BWP.scs;
   const int n = nr_slots_per_frame[mu];
   AssertFatal(fb_time < n, "Cannot schedule to a slot more than 1 frame away, ul_config_request is not big enough\n");
-  if (mac->ul_config_request)
-    return &mac->ul_config_request[slot];
-  else {
-    LOG_E(NR_MAC, "mac->ul_config_request not set\n");
-    return NULL;
-  }
+  AssertFatal(mac->ul_config_request != NULL, "mac->ul_config_request not initialized, logic bug\n");
+  return &mac->ul_config_request[slot];
 }
 
 /*
@@ -132,12 +128,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
  */
 fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot)
 {
-  if (mac->dl_config_request)
-    return &mac->dl_config_request[slot];
-  else {
-    LOG_E(NR_MAC, "mac->dl_config_request not set\n");
-    return NULL;
-  }
+  AssertFatal(mac->dl_config_request != NULL, "mac->dl_config_request not initialized, logic bug\n");
+  return &mac->dl_config_request[slot];
 }
 
 void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)

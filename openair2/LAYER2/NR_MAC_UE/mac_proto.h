@@ -93,23 +93,19 @@ int nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
 
 void nr_rrc_mac_config_req_scg(module_id_t module_id,
                                int cc_idP,
-                               uint8_t gNB_index,
                                NR_CellGroupConfig_t *scell_group_config);
 
 void nr_rrc_mac_config_req_mcg(module_id_t module_id,
                                int cc_idP,
-                               uint8_t gNB_index,
                                NR_CellGroupConfig_t *scell_group_config);
 
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
-                               uint8_t gNB_index,
                                int cc_idP,
                                NR_MIB_t *mibP,
                                bool sched_sib1);
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
-                                uint8_t gNB_index,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
@@ -424,6 +420,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, int slot, int rnti);
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
+
+void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs);
 
 void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,

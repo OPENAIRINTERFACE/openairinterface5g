@@ -693,23 +693,17 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
 
 }
 
-void init_config_request(NR_UE_MAC_INST_t *mac)
+void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs)
 {
-  if(mac->dl_config_request == NULL && mac->ul_config_request == NULL) {
-    int scs = mac->mib->subCarrierSpacingCommon;
-    if(mac->frequency_range == FR2)
-      scs += 2;
-    int slots_per_frame = nr_slots_per_frame[scs];
-    LOG_I(NR_MAC, "Initializing dl and ul config_request. num_slots = %d\n", slots_per_frame);
-    mac->dl_config_request = calloc(slots_per_frame, sizeof(*mac->dl_config_request));
-    mac->ul_config_request = calloc(slots_per_frame, sizeof(*mac->ul_config_request));
-    for (int i = 0; i < slots_per_frame; i++)
-      pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
-  }
+  int slots_per_frame = nr_slots_per_frame[scs];
+  LOG_I(NR_MAC, "Initializing dl and ul config_request. num_slots = %d\n", slots_per_frame);
+  mac->dl_config_request = calloc(slots_per_frame, sizeof(*mac->dl_config_request));
+  mac->ul_config_request = calloc(slots_per_frame, sizeof(*mac->ul_config_request));
+  for (int i = 0; i < slots_per_frame; i++)
+    pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
 }
 
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
-                               uint8_t gNB_index,
                                int cc_idP,
                                NR_MIB_t *mib,
                                bool sched_sib1)
@@ -718,7 +712,6 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
   AssertFatal(mib, "MIB should not be NULL\n");
   // initialize dl and ul config_request upon first reception of MIB
   mac->mib = mib;    //  update by every reception
-  init_config_request(mac);
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_idP;
   mac->get_sib1 = sched_sib1;
@@ -726,7 +719,6 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
-                                uint8_t gNB_index,
                                 NR_ServingCellConfigCommonSIB_t *scc)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
@@ -745,7 +737,6 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
 
 void nr_rrc_mac_config_req_mcg(module_id_t module_id,
                                int cc_idP,
-                               uint8_t gNB_index,
                                NR_CellGroupConfig_t *cell_group_config)
 {
   LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
@@ -777,7 +768,7 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
     mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
     mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
     if (mac->scc_SIB) {
-      free(mac->scc_SIB);
+      ASN_STRUCT_FREE(asn_DEF_NR_ServingCellConfigCommonSIB, mac->scc_SIB);
       mac->scc_SIB = NULL;
     }
     mac->state = UE_NOT_SYNC;
@@ -806,7 +797,6 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
 
 void nr_rrc_mac_config_req_scg(module_id_t module_id,
                                int cc_idP,
-                               uint8_t gNB_index,
                                NR_CellGroupConfig_t *scell_group_config)
 {
 
