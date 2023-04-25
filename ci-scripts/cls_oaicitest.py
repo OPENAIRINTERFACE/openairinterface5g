@@ -667,27 +667,11 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
 
-			#adding extra ping stats from local file
-			#ping_log_file variable is defined above in this function, depending on device/ue
-			ping_stat_msg=''
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
 			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 
-			if (ping_stat!=-1) and (len(ping_stat)!=0):
-				ping_stat_msg+='Ping stats before removing largest value : \n'
-				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_0'])) + 'ms \n'
-				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_0'])) + 'ms \n'
-				ping_stat_msg+='Max Index   : ' + str(ping_stat['max_loc']) + '\n'
-				ping_stat_msg+='Ping stats after removing largest value : \n'
-				ping_stat_msg+='RTT(Min)    : ' + str("{:.2f}".format(ping_stat['min_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Mean)   : ' + str("{:.2f}".format(ping_stat['mean_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Median) : ' + str("{:.2f}".format(ping_stat['median_1'])) + 'ms \n'
-				ping_stat_msg+='RTT(Max)    : ' + str("{:.2f}".format(ping_stat['max_1'])) + 'ms \n'
-
 			#building html message
-			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg + '\n'  + ping_stat_msg
+			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
 
 			#checking packet loss compliance
 			packetLossOK = True
