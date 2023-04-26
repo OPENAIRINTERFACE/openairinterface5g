@@ -592,6 +592,7 @@ typedef struct {
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
   int ul_failure;
+  int release_timer;
   struct CSI_Report CSI_report;
   bool SR;
   /// information about every HARQ process
