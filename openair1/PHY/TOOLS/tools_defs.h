@@ -851,6 +851,8 @@ c32_t dot_product(const c16_t *x,
 
 double interp(double x, double *xs, double *ys, int count);
 
+void simde_mm128_separate_real_imag_parts(__m128i *out_re, __m128i *out_im, __m128i in0, __m128i in1);
+void simde_mm256_separate_real_imag_parts(__m256i *out_re, __m256i *out_im, __m256i in0, __m256i in1);
 
 #ifdef __cplusplus
 }
