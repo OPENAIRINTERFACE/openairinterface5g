@@ -1003,6 +1003,11 @@ void *nas_nrue_task(void *args_p)
       case NAS_CONN_RELEASE_IND:
         LOG_I(NAS, "[UE %ld] Received %s: cause %u\n", instance, ITTI_MSG_NAME (msg_p),
               NAS_CONN_RELEASE_IND (msg_p).cause);
+        /* the following is not clean, but probably necessary: we need to give
+         * time to RLC to Ack the SRB1 PDU which contained the RRC release
+         * message. Hence, we just below wait some time, before finally
+         * unblocking the nr-uesoftmodem, which will terminate the process. */
+        usleep(100000);
         itti_wait_tasks_unblock(); /* will unblock ITTI to stop nr-uesoftmodem */
         break;
 
