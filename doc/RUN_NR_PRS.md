@@ -64,7 +64,7 @@ In our case the output is 0 and hence we use `numactl --cpunodebind=0 --membind=
 ## FR1 test
 Open a terminal on the host machine, and execute below command to launch gNB with **X310 USRPs**
 
-```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --phy-test```
+```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --phy-test```
 
 If **N310 USRPs** are used, then run above command `without -E option` i.e without 3/4 sampling rate.<br><br>
 
