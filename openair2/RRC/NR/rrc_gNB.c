@@ -1693,6 +1693,8 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
               // TODO: MAC structures should not be accessed directly from the RRC! An implementation using the F1 interface should be developed.
               if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
                 nr_rrc_mac_remove_ue(ue_context_p->ue_context.rnti);
+              } else {
+                AssertFatal(false, "not implemented: need to switch RNTI in MAC via DL RRC Message Transfer\n");
               }
 
               /* replace rnti in the context */
