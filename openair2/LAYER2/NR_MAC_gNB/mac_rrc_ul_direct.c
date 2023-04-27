@@ -57,7 +57,10 @@ static void ue_context_setup_response_direct(const f1ap_ue_context_setup_t *req,
 
 static void ue_context_release_request_direct(const f1ap_ue_context_release_req_t* req)
 {
-  AssertFatal(false, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
+  f1ap_ue_context_release_req_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
+  *f1ap_msg = *req;
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
 static void ue_context_release_complete_direct(const f1ap_ue_context_release_complete_t *complete)

@@ -591,7 +591,8 @@ typedef struct {
   uint8_t current_harq_pid;
   int pusch_consecutive_dtx_cnt;
   int pucch_consecutive_dtx_cnt;
-  int ul_failure;
+  bool ul_failure;
+  int ul_failure_timer;
   int release_timer;
   struct CSI_Report CSI_report;
   bool SR;

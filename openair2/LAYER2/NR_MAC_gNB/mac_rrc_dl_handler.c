@@ -153,7 +153,7 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
   gNB_MAC_INST *mac = RC.nrmac[0];
   pthread_mutex_lock(&mac->sched_lock);
   NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, cmd->rnti);
-  if (UE->UE_sched_ctrl.ul_failure > 0 || cmd->rrc_container_length == 0) {
+  if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
     /* The UE is already not connected anymore or we have nothing to forward*/
     nr_rlc_remove_ue(cmd->rnti);
     mac_remove_nr_ue(mac, cmd->rnti);

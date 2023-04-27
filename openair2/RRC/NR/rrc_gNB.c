@@ -2589,6 +2589,21 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance
    * messages (UE capability, to be specific) */
 }
 
+static void rrc_CU_process_ue_context_release_request(MessageDef *msg_p)
+{
+  const int instance = 0;
+  f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg_p);
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
+
+  /* TODO: marshall types correctly */
+  LOG_I(NR_RRC, "received UE Context Release Request for UE %04x, forwarding to AMF\n", req->rnti);
+  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(instance,
+                                           ue_context_p,
+                                           NGAP_CAUSE_RADIO_NETWORK,
+                                           NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
+}
+
 static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
 {
   const int instance = 0;
@@ -3178,7 +3193,7 @@ void *rrc_gnb_task(void *args_p) {
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ:
-        AssertFatal(false, "F1 UE context release request to be implemented\n");
+        rrc_CU_process_ue_context_release_request(msg_p);
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_COMPLETE:
