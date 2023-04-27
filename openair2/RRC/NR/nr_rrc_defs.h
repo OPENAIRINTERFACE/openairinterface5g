@@ -313,17 +313,6 @@ typedef struct gNB_RRC_UE_s {
   int nb_of_pdusessions;
   rrc_pdu_session_param_t pduSession[NGAP_MAX_PDU_SESSION];
   rrc_action_t xids[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint32_t                           ul_failure_timer;
-  uint32_t                           ue_release_timer;
-  uint32_t                           ue_release_timer_thres;
-  uint32_t                           ue_release_timer_s1;
-  uint32_t                           ue_release_timer_thres_s1;
-  uint32_t                           ue_release_timer_ng;
-  uint32_t                           ue_release_timer_thres_ng;
-  uint32_t                           ue_release_timer_rrc;
-  uint32_t                           ue_release_timer_thres_rrc;
-  uint32_t                           ue_reestablishment_timer;
-  uint32_t                           ue_reestablishment_timer_thres;
   uint8_t e_rab_release_command_flag;
   uint32_t ue_rrc_inactivity_timer;
   uint32_t                           ue_reestablishment_counter;

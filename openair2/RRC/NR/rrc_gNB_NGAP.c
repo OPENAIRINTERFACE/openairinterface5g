@@ -396,12 +396,7 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
     int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);
     if (ret != 0) {
       LOG_E(NR_RRC, "rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE %x\n", UE->rnti);
-      UE->ue_release_timer_ng = 1;
-      UE->ue_release_timer_thres_ng = 100;
-      UE->ue_release_timer = 0;
-      UE->ue_reestablishment_timer = 0;
-      UE->ul_failure_timer = 20000;
-      UE->ul_failure_timer = 0;
+      AssertFatal(false, "release timer not implemented\n");
       return (0);
     }
 
@@ -1157,8 +1152,6 @@ int rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(MessageDef *msg_p, instance_
   }
 
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-  UE->ue_release_timer_ng = 0;
-  UE->ue_release_timer_thres_rrc = 1000;
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rnti, 0, 0);
   ctxt.eNB_index = 0;
   rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);
