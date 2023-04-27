@@ -1899,9 +1899,6 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  unsigned char harq_pid)
 {
 
-  // Temporary flag: (true) ML receiver, (false) MMSE receiver
-  bool ml_rx = true;
-
   uint8_t aarx, aatx;
   uint32_t nb_re_pusch, bwp_start_subcarrier;
   int avgs = 0;
@@ -2001,6 +1998,15 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   int off = ((rel15_ul->rb_size&1) == 1)? 4:0;
   uint32_t rxdataF_ext_offset = 0;
   uint8_t shift_ch_ext = rel15_ul->nrOfLayers > 1 ? log2_approx(max_ch >> 11) : 0;
+
+  // Flag to select the receiver: (true) Nonlinear ML receiver, (false) Linear MMSE receiver
+  // By default, we are using the Nonlinear ML receiver, except
+  //  - for 256QAM as Nonlinear ML receiver is not implemented for 256QAM
+  //  - for 64QAM as Nonlinear ML receiver requires more processing time than MMSE, and many machines are not powerful enough
+  bool ml_rx = true;
+  if (rel15_ul->nrOfLayers != 2 || rel15_ul->qam_mod_order >= 6) {
+    ml_rx = false;
+  }
 
   int ad_shift = 0;
   if (rel15_ul->nrOfLayers == 1) {
