@@ -37,7 +37,6 @@
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "openair2/NR_PHY_INTERFACE/nr_sched_response.h"
 
-#define USE_MSGQ 1
 
 extern int oai_nfapi_dl_tti_req(nfapi_nr_dl_tti_request_t *dl_config_req);
 extern int oai_nfapi_tx_data_req(nfapi_nr_tx_data_request_t *tx_data_req);
@@ -159,18 +158,16 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
   if (NFAPI_MODE == NFAPI_MONOLITHIC){
 
     if (slot_type == NR_DOWNLINK_SLOT || slot_type == NR_MIXED_SLOT) {
-      notifiedFIFO_elt_t *res;
-#ifndef USE_MSGQ     
-      if (gNB->reorder_thread_disable) 
-        res = pullTpool(&gNB->L1_tx_out, &gNB->threadPool);
-      else
+      notifiedFIFO_elt_t *res=NULL;
+      processingData_L1tx_t *msgTx=NULL;
+      if (!gNB->reorder_thread_disable) {
 	res = pullTpool(&gNB->L1_tx_free, &gNB->threadPool);
-      if (res == NULL)
-        return; // Tpool has been stopped, nothing to process
-      processingData_L1tx_t *msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
-#else
-      processingData_L1tx_t *msgTx = gNB->msgDataTx; //newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0, &gNB->L1_tx_out,NULL);
-#endif
+        if (res == NULL)
+          return; // Tpool has been stopped, nothing to process
+        msgTx = (processingData_L1tx_t *)NotifiedFifoData(res);
+      } else {
+        msgTx = gNB->msgDataTx; //newNotifiedFIFO_elt(sizeof(processingData_L1tx_t),0, &gNB->L1_tx_out,NULL);
+      }
       /*const time_stats_t ts = exec_time_stats_NotifiedFIFO(res);
       merge_meas(&gNB->phy_proc_tx, &ts);
 */
@@ -225,12 +222,8 @@ void nr_schedule_response(NR_Sched_Rsp_t *Sched_INFO)
        * released only when both threads are done with it.
        */
       inc_ref_sched_response(Sched_INFO->sched_response_id);
-#ifndef USE_MSGQ      
-      if (gNB->reorder_thread_disable)
-        pushNotifiedFIFO(&gNB->L1_tx_out,res);
-      else
+      if (!gNB->reorder_thread_disable)
 	pushNotifiedFIFO(&gNB->L1_tx_filled,res);
-#endif
     }
 
     for (int i = 0; i < number_ul_tti_pdu; i++) {
