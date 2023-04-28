@@ -707,7 +707,7 @@ int main(int argc, char **argv)
 
   NR_UE_NR_Capability_t* UE_Capability_nr = CALLOC(1,sizeof(NR_UE_NR_Capability_t));
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
-                    N_RB_DL,g_mcsTableIdx);
+                    N_RB_DL,g_mcsTableIdx,0);
 
   // TODO do a UECAP for phy-sim
   const gNB_RrcConfigurationReq conf = {
@@ -831,6 +831,7 @@ int main(int argc, char **argv)
   PHY_vars_UE_g[0][0] = UE;
   memcpy(&UE->frame_parms,frame_parms,sizeof(NR_DL_FRAME_PARMS));
   UE->frame_parms.nb_antennas_rx = n_rx;
+  UE->frame_parms.nb_antenna_ports_gNB = n_tx;
   UE->max_ldpc_iterations = max_ldpc_iterations;
 
   if (run_initial_sync==1)
@@ -1372,16 +1373,11 @@ int main(int argc, char **argv)
 void update_ptrs_config(NR_CellGroupConfig_t *secondaryCellGroup, uint16_t *rbSize, uint8_t *mcsIndex, int8_t *ptrs_arg)
 {
   NR_BWP_Downlink_t *bwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[0];
-  int *ptrsFreqDenst = calloc(2, sizeof(long));
-  ptrsFreqDenst[0]= 25;
-  ptrsFreqDenst[1]= 115;
-  int *ptrsTimeDenst = calloc(3, sizeof(long));
-  ptrsTimeDenst[0]= 2;
-  ptrsTimeDenst[1]= 4;
-  ptrsTimeDenst[2]= 10;
+  long ptrsFreqDenst[] = {25, 115};
+  long ptrsTimeDenst[] = {2, 4, 10};
 
-  int epre_Ratio = 0;
-  int reOffset = 0;
+  long epre_Ratio = 0;
+  long reOffset = 0;
 
   if(ptrs_arg[0] ==0) {
     ptrsTimeDenst[2]= *mcsIndex -1;

@@ -605,6 +605,8 @@ class OaiCiTest():
 					Target = EPC.MmeIPAddress
 				elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
 					Target = EPC.MmeIPAddress
+				elif re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE):
+					Target = "172.21.6.100"
 				else:
 					Target = EPC.IPAddress
 				#ping from module NIC rather than IP address to make sure round trip is over the air	

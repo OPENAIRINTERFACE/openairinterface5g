@@ -232,11 +232,9 @@ uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp);
 @returns void
 */
 void nr_ue_send_sdu(nr_downlink_indication_t *dl_info,
-                    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
                     int pdu_id);
 
 void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
-                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
                            int pdu_id);
 
 int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
@@ -322,6 +320,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
 void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, void *phy_data);
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
 void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);
+void schedule_ta_command(fapi_nr_dl_config_request_t *dl_config, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
 
 /* \brief This function schedules the Msg3 transmission
 @param
@@ -356,7 +355,7 @@ random-access procedure
 @param selected_rar_buffer the output buffer for storing the selected RAR header and RAR payload
 @returns timing advance or 0xffff if preamble doesn't match
 */
-int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id);
+int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id);
 
 void nr_ue_contention_resolution(module_id_t module_id, int cc_id, frame_t frame, int slot, NR_PRACH_RESOURCES_t *prach_resources);
 

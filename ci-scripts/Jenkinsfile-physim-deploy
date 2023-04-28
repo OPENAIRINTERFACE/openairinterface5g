@@ -211,10 +211,16 @@ pipeline {
         script {
           dir ('ci-scripts') {
             // Zipping all archived log files
-            sh "zip -r -qq physim_deploytest_logs_${env.BUILD_ID}.zip physim_test_logs_*/*"
-            sh "rm -rf physim_test_logs_*/"
-            if (fileExists("physim_deploytest_logs_${env.BUILD_ID}.zip")) {
-              archiveArtifacts artifacts: "physim_deploytest_logs_${env.BUILD_ID}.zip"
+              sh "mkdir test_logs"
+              sh "mv *.log* test_logs || true"
+              sh "zip -r -qq test_logs_${env.BUILD_ID}.zip *test_log*/"
+              sh "rm -rf *test_log*/"
+              if (fileExists("test_logs_${env.BUILD_ID}.zip")) {
+                archiveArtifacts artifacts: "test_logs_${env.BUILD_ID}.zip"
+              }
+              if (fileExists("test_logs_CN.zip")){
+                sh "mv test_logs_CN.zip test_logs_CN_${env.BUILD_ID}.zip"
+                archiveArtifacts artifacts: "test_logs_CN_${env.BUILD_ID}.zip"
             }
             if (fileExists("test_results.html")) {
               sh "mv test_results.html test_results-${env.JOB_NAME}.html"

@@ -44,8 +44,8 @@ void prepare_sim_uecap(NR_UE_NR_Capability_t *cap,
                        NR_ServingCellConfigCommon_t *scc,
                        int numerology,
                        int rbsize,
-                       int mcs_table);
-
+                       int mcs_table_dl,
+                       int mcs_table_ul);
 
 NR_BCCH_BCH_Message_t *get_new_MIB_NR(const NR_ServingCellConfigCommon_t *scc);
 void free_MIB_NR(NR_BCCH_BCH_Message_t *mib);
@@ -79,6 +79,5 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
                                                      int servCellIndex,
                                                      const gNB_RrcConfigurationReq *configuration,
                                                      int uid);
-
 
 #endif

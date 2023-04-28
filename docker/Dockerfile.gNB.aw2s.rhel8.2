@@ -84,6 +84,7 @@ COPY --from=gnb-base \
     /lib64/
 
 RUN ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so && \
+    ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so && \
     ldconfig
 
 WORKDIR /opt/oai-gnb-aw2s

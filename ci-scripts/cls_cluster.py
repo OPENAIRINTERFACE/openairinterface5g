@@ -40,6 +40,29 @@ import cls_cmd
 
 IMAGE_REGISTRY_SERVICE_NAME = "image-registry.openshift-image-registry.svc"
 NAMESPACE = "oaicicd-ran"
+OCUrl = "https://api.oai.cs.eurecom.fr:6443"
+OCRegistry = "default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/"
+
+
+def OC_login(cmd, ocUserName, ocPassword, ocProjectName):
+	if ocUserName == '' or ocPassword == '' or ocProjectName == '':
+		HELP.GenericHelp(CONST.Version)
+		sys.exit('Insufficient Parameter: no OC Credentials')
+	if OCRegistry.startswith("http") and not self.OCRegistry.endswith("/"):
+		sys.exit(f'ocRegistry {OCRegistry} should not start with http:// or https:// and end on a slash /')
+	ret = cmd.run(f'oc login -u {ocUserName} -p {ocPassword} --server {OCUrl}')
+	if ret.returncode != 0:
+		logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+		return False
+	ret = cmd.run(f'oc project {ocProjectName}')
+	if ret.returncode != 0:
+		logging.error(f'\u001B[1mUnable to access OC project {ocProjectName}\u001B[0m')
+		OC_logout(cmd)
+		return False
+	return True
+
+def OC_logout(cmd):
+	cmd.run(f'oc logout')
 
 class Cluster:
 	def __init__(self):
@@ -57,7 +80,7 @@ class Cluster:
 		self.ranAllowMerge = False
 		self.ranTargetBranch = ""
 		self.cmd = None
-
+		self.imageToPull = ''
 
 	def _recreate_entitlements(self):
 		# recreating entitlements, don't care if deletion fails
@@ -170,11 +193,47 @@ class Cluster:
 	def _undeploy_pod(self, filename):
 		self.cmd.run(f'oc delete -f {filename}')
 
+	def PullClusterImage(self, HTML, RAN):
+		if self.imageToPull == '':
+			HELP.GenericHelp(CONST.Version)
+			HELP.EPCSrvHelp(self.imageToPull)
+			sys.exit('Insufficient eNB Parameters')
+		lIpAddr = self.eNBIPAddress
+		self.testCase_id = HTML.testCase_id
+		cmd = cls_cmd.getConnection(lIpAddr)
+		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, self.OCProjectName)
+		if not succeeded:
+			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+			return False
+		ret = cmd.run(f'oc whoami -t | docker login -u oaicicd --password-stdin {self.OCRegistry}')
+		if ret.returncode != 0:
+			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
+			OC_logout(cmd)
+			cmd.close()
+			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+			return False
+		for image in self.imageToPull:
+			imagePrefix = f'{self.OCRegistry}{self.OCProjectName}'
+			imageTag = cls_containerize.ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
+			ret = cmd.run(f'docker pull {imagePrefix}/{imageTag}')
+			if ret.returncode != 0:
+				logging.error(f'Could not pull {image} from local registry : {self.OCRegistry}')
+				OC_logout(cmd)
+				cmd.close()
+				HTML.CreateHtmlTestRow('msg', 'KO', CONST.ALL_PROCESSES_OK)
+				return False
+			cmd.run(f'docker tag {imagePrefix}/{imageTag} oai-ci/{imageTag}')
+			cmd.run(f'docker rmi {imagePrefix}/{imageTag}')
+		OC_logout(cmd)
+		cmd.close()
+		HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
+		return True
+
 	def BuildClusterImage(self, HTML):
 		if self.ranRepository == '' or self.ranBranch == '' or self.ranCommitID == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit(f'Insufficient Parameter: ranRepository {self.ranRepository} ranBranch {ranBranch} ranCommitID {self.ranCommitID}')
-
 		lIpAddr = self.eNBIPAddress
 		lSourcePath = self.eNBSourceCodePath
 		if lIpAddr == '' or lSourcePath == '':
@@ -204,7 +263,6 @@ class Cluster:
 
 		baseTag = 'develop'
 		forceBaseImageBuild = False
-		imageTag = 'develop'
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
 			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == 'develop':
@@ -214,6 +272,7 @@ class Cluster:
 					forceBaseImageBuild = True
 					baseTag = 'ci-temp'
 		else:
+			imageTag = f'develop-{self.ranCommitID[0:8]}'
 			forceBaseImageBuild = True
 
 		# logging to OC Cluster and then switch to corresponding project
@@ -273,11 +332,18 @@ class Cluster:
 			ranbuild_job = self._start_build('ran-build')
 			attemptedImages += ['ran-build']
 
-			wait = ranbuild_job is not None and physim_job is not None and self._wait_build_end([ranbuild_job, physim_job], 1200)
-			if not wait: logging.error('error during build of ranbuild_job or physim_job')
+			self._recreate_is_tag('oai-clang', imageTag, 'openshift/oai-clang-is.yaml')
+			self._recreate_bc('oai-clang', imageTag, 'openshift/oai-clang-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.clang.rhel8.2')
+			clang_job = self._start_build('oai-clang')
+			attemptedImages += ['oai-clang']
+
+			wait = ranbuild_job is not None and physim_job is not None and clang_job is not None and self._wait_build_end([ranbuild_job, physim_job, clang_job], 1200)
+			if not wait: logging.error('error during build of ranbuild_job or physim_job or clang_job')
 			status = status and wait
 			self.cmd.run(f'oc logs {ranbuild_job} &> cmake_targets/log/ran-build.log')
 			self.cmd.run(f'oc logs {physim_job} &> cmake_targets/log/oai-physim.log')
+			self.cmd.run(f'oc logs {clang_job} &> cmake_targets/log/oai-clang.log')
 			self.cmd.run(f'oc get pods.metrics.k8s.io &>> cmake_targets/log/build-metrics.log', '\$', 10)
 
 		if status:

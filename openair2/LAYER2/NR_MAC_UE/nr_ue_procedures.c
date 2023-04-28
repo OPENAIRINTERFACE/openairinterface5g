@@ -151,9 +151,8 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 };
 
 
-void nr_ue_init_mac(module_id_t module_idP) {
-  int i;
-
+void nr_ue_init_mac(module_id_t module_idP)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   // default values as deined in 38.331 sec 9.2.2
   LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
@@ -182,7 +181,7 @@ void nr_ue_init_mac(module_id_t module_idP) {
 //  mac->scheduling_info.PathlossChange_db = nr_get_db_dl_PathlossChange(mac->scheduling_info.PathlossChange);
 //  mac->PHR_reporting_active = 0;
 
-  for (i = 0; i < NR_MAX_NUM_LCID; i++) {
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
     LOG_D(NR_MAC, "[UE%d] Applying default logical channel config for LCGID %d\n",
                  module_idP, i);
     mac->scheduling_info.Bj[i] = -1;
@@ -196,8 +195,16 @@ void nr_ue_init_mac(module_id_t module_idP) {
 
     mac->scheduling_info.LCID_status[i] = LCID_EMPTY;
     mac->scheduling_info.LCID_buffer_remain[i] = 0;
-    for (int i=0;i<NR_MAX_HARQ_PROCESSES;i++) mac->first_ul_tx[i]=1;
+    for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++)
+      mac->first_ul_tx[i] = 1;
   }
+
+  mac->first_sync_frame = -1;
+  mac->sib1_decoded = false;
+  mac->phy_config_request_sent = false;
+  mac->state = UE_NOT_SYNC;
+  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
+  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
 }
 
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id) {
@@ -2609,6 +2616,7 @@ uint8_t get_ssb_rsrp_payload(NR_UE_MAC_INST_t *mac,
       int ssbri_bits = ceil(log2(nb_ssb));
 
       int ssb_rsrp[2][nb_meas]; // the array contains index and RSRP of each SSB to be reported (nb_meas highest RSRPs)
+      memset(ssb_rsrp, 0, sizeof(ssb_rsrp));
 
       //TODO replace the following 2 lines with a function to order the nb_meas highest SSB RSRPs
       for (int i=0; i<nb_ssb; i++) {
@@ -2808,8 +2816,8 @@ uint8_t get_rsrp_diff_index(int best_rsrp,int current_rsrp) {
 
 }
 
-void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
-
+void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, int pdu_id)
+{
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SEND_SDU, VCD_FUNCTION_IN);
 
   LOG_D(MAC, "In %s [%d.%d] Handling DLSCH PDU...\n", __FUNCTION__, dl_info->frame, dl_info->slot);
@@ -2818,10 +2826,10 @@ void nr_ue_send_sdu(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *u
   // it parses MAC CEs subheaders, MAC CEs, SDU subheaderds and SDUs
   switch (dl_info->rx_ind->rx_indication_body[pdu_id].pdu_type){
     case FAPI_NR_RX_PDU_TYPE_DLSCH:
-    nr_ue_process_mac_pdu(dl_info, ul_time_alignment, pdu_id);
+    nr_ue_process_mac_pdu(dl_info, pdu_id);
     break;
     case FAPI_NR_RX_PDU_TYPE_RAR:
-    nr_ue_process_rar(dl_info, ul_time_alignment, pdu_id);
+    nr_ue_process_rar(dl_info, pdu_id);
     break;
     default:
     break;
@@ -3535,8 +3543,8 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
 //  R:    Reserved bit, set to zero.
 ////////////////////////////////
 void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
-                           NR_UL_TIME_ALIGNMENT_t *ul_time_alignment,
-                           int pdu_id){
+                           int pdu_id)
+{
 
   module_id_t module_idP = dl_info->module_id;
   frame_t frameP         = dl_info->frame;
@@ -3656,11 +3664,14 @@ void nr_ue_process_mac_pdu(nr_downlink_indication_t *dl_info,
 
         const int ta = ((NR_MAC_CE_TA *)pduP)[1].TA_COMMAND;
         const int tag = ((NR_MAC_CE_TA *)pduP)[1].TAGID;
-        ul_time_alignment->apply_ta = 1;
-        ul_time_alignment->ta_command = ta; //here
+
+        NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &mac->ul_time_alignment;
         ul_time_alignment->ta_total += ta - 31;
         ul_time_alignment->tag_id = tag;
-
+        ul_time_alignment->ta_command = ta;
+        ul_time_alignment->frame = frameP;
+        ul_time_alignment->slot = slot;
+        ul_time_alignment->ta_apply = true;
         /*
         #ifdef DEBUG_HEADER_PARSING
         LOG_D(MAC, "[UE] CE %d : UE Timing Advance : %d\n", i, pduP[1]);
@@ -3943,8 +3954,8 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 // - b buffer
 // - ulsch power offset
 // - optimize: mu_pusch, j and table_6_1_2_1_1_2_time_dom_res_alloc_A are already defined in nr_ue_procedures
-int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment, int pdu_id){
-
+int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
+{
   module_id_t mod_id       = dl_info->module_id;
   frame_t frame            = dl_info->frame;
   int slot                 = dl_info->slot;
@@ -4029,12 +4040,12 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
 #endif
 
     // TA command
-    ul_time_alignment->apply_ta = 1;
+    NR_UL_TIME_ALIGNMENT_t *ul_time_alignment = &mac->ul_time_alignment;
     const int ta = rar->TA2 + (rar->TA1 << 5);
     ul_time_alignment->ta_command = 31 + ta;
     ul_time_alignment->ta_total = ta;
-    LOG_W(MAC, "received TA command %d\n", ul_time_alignment->ta_command);
-
+    ul_time_alignment->ta_apply = true;
+    LOG_W(MAC, "received TA command %d\n", 31 + ta);
 #ifdef DEBUG_RAR
     // CSI
     csi_req = (unsigned char) (rar->UL_GRANT_4 & 0x01);
@@ -4102,7 +4113,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
       mod_id,
       rar_grant.Msg3_t_alloc,
       rar_grant.Msg3_f_alloc,
-      ul_time_alignment->ta_command,
+      ta_command,
       rar_grant.mcs,
       rar_grant.freq_hopping,
       tpc_command,
@@ -4148,10 +4159,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t 
     }
 
   } else {
-
     ra->t_crnti = 0;
-    ul_time_alignment->ta_command = (0xffff);
-
   }
 
   return ret;

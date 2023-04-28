@@ -869,7 +869,6 @@ uint32_t tst_ue_get_SR(module_id_t module_idP,int CC_id,frame_t frameP,uint8_t e
 *********************************************************************/
 
 void tst_set_sr_config(PHY_VARS_NR_UE *ue, int gNB_id) {
-  ue->mac_enabled = 1;
   ue->scheduling_request_config[gNB_id].sr_ConfigIndex = 0;
   p_nr_ue_get_SR = tst_ue_get_SR;
 }

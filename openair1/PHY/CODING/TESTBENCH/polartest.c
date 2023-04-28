@@ -127,7 +127,7 @@ int main(int argc, char *argv[])
   time_t currentTime;
   char fileName[512], currentTimeInfo[25];
   char folderName[] = ".";
-  FILE *logFile;
+  FILE *logFile = NULL;
   /*folderName=getenv("HOME");
     strcat(folderName,"/Desktop/polartestResults");*/
 

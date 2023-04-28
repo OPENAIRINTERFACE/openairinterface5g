@@ -1,5 +1,6 @@
   - Build_Proxy
   - Build_Cluster_Image
+  - Pull_Cluster_Image
   - Build_PhySim
   - Run_LDPCTest
   - Run_LDPCt1Test

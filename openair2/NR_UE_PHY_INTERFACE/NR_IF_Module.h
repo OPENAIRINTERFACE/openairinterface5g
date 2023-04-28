@@ -195,7 +195,7 @@ typedef void (nr_ue_synch_request_f)(nr_synch_request_t *synch_request);
  *  -1: Failed to consume bytes. Abort the mission.
  * Non-negative return values indicate success, and ignored.
  */
-typedef int (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
+typedef int (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
 
 /*
  * Generic type of an application-defined callback to return various
@@ -256,7 +256,7 @@ int nr_ue_if_module_kill(uint32_t module_id);
 
 /**\brief interface between L1/L2, indicating the downlink related information, like dci_ind and rx_req
    \param dl_info including dci_ind and rx_request messages*/
-int nr_ue_dl_indication(nr_downlink_indication_t *dl_info, NR_UL_TIME_ALIGNMENT_t *ul_time_alignment);
+int nr_ue_dl_indication(nr_downlink_indication_t *dl_info);
 
 int nr_ue_ul_indication(nr_uplink_indication_t *ul_info);
 

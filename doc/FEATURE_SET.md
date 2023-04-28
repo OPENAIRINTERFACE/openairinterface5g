@@ -259,6 +259,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - PTRS support
    - Support for 1, 2 and 4 TX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
+   - Support for 256 QAM
 *  NR-CSIRS Generation of sequence at PHY
 *  NR-PUSCH (including Segmentation, LDPC encoding, rate matching, scrambling, modulation, RB mapping, etc).
    - PUSCH mapping type A and B
@@ -267,6 +268,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - PTRS support
    - Support for up to 2 RX antenna
    - Support for up to 2 layers
+   - Support for 256 QAM
 *  NR-PUCCH 
    - Format 0 (2 bits, for ACK/NACK and SR)
    - Format 2 (up to 11 bits, mainly for CSI feedback)

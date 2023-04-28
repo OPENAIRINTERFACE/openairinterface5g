@@ -515,7 +515,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   }
 
   // if stand alone and sync on ssb do sib1 detection as part of initial sync
-  if (sa==1 && ret==0) {
+  if (sa == 1 && ret == 0) {
     nr_ue_dlsch_init(phy_data.dlsch, 1, ue->max_ldpc_iterations);
     bool dec = false;
     proc->gNB_id = 0; //FIXME
@@ -524,7 +524,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
     int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
     __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
 
-    for(int n_ss = 0; n_ss<phy_pdcch_config->nb_search_space; n_ss++) {
+    for(int n_ss = 0; n_ss < phy_pdcch_config->nb_search_space; n_ss++) {
       proc->nr_slot_rx = phy_pdcch_config->slot; // setting PDCCH slot to proc
       uint8_t nb_symb_pdcch = phy_pdcch_config->pdcch_config[n_ss].coreset.duration;
       int start_symb = phy_pdcch_config->pdcch_config[n_ss].coreset.StartSymbolIndex;

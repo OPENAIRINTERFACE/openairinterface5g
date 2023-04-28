@@ -49,75 +49,75 @@ adb_ue_2:
 
 amarisoft_ue:
   Host: amariue
-  InitScript: nohup /root/NV18-06-2022/ue/lteue /root/NV18-06-2022/ue/config/oaicicd-ue-ci-test.cfg &
-  TermScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"quit"}'
+  InitScript: /root/NV18-06-2022/lteue-linux-2023-03-17/lteue /root/oaicicd/ran_sa_aw2s_asue/aw2s-asue.cfg &
+  TermScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"quit"}'
 amarisoft_ue_1:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":1}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":1}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":1}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":1}'
   UENetworkScript: ip netns exec ue1 ip a show dev pdn0
   CmdPrefix: ip netns exec ue1
   MTU: 1500
 amarisoft_ue_2:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":2}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":2}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":2}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":2}'
   UENetworkScript: ip netns exec ue2 ip a show dev pdn0
   CmdPrefix: ip netns exec ue2
   MTU: 1500
 amarisoft_ue_3:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":3}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":3}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":3}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":3}'
   UENetworkScript: ip netns exec ue3 ip a show dev pdn0
   CmdPrefix: ip netns exec ue3
   MTU: 1500
 amarisoft_ue_4:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":4}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":4}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":4}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":4}'
   UENetworkScript: ip netns exec ue4 ip a show dev pdn0
   CmdPrefix: ip netns exec ue4
   MTU: 1500
 amarisoft_ue_5:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":5}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":5}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":5}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":5}'
   UENetworkScript: ip netns exec ue5 ip a show dev pdn0
   CmdPrefix: ip netns exec ue5
   MTU: 1500
 amarisoft_ue_6:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":6}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":6}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":6}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":6}'
   UENetworkScript: ip netns exec ue6 ip a show dev pdn0
   CmdPrefix: ip netns exec ue6
   MTU: 1500
 amarisoft_ue_7:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":7}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":7}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":7}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":7}'
   UENetworkScript: ip netns exec ue7 ip a show dev pdn0
   CmdPrefix: ip netns exec ue7
   MTU: 1500
 amarisoft_ue_8:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":8}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":8}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":8}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":8}'
   UENetworkScript: ip netns exec ue8 ip a show dev pdn0
   CmdPrefix: ip netns exec ue8
   MTU: 1500
 amarisoft_ue_9:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":9}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":9}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":9}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":9}'
   UENetworkScript: ip netns exec ue9 ip a show dev pdn0
   CmdPrefix: ip netns exec ue9
   MTU: 1500
 amarisoft_ue_10:
   Host: amariue
-  AttachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":10}'
-  DetachScript: /root/NV18-06-2022/lteue-linux-2022-06-18/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":10}'
+  AttachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_on","ue_id":10}'
+  DetachScript: /root/NV18-06-2022/lteue-linux-2023-03-17/doc/ws.js 127.0.0.1:9002 '{"message":"power_off","ue_id":10}'
   UENetworkScript: ip netns exec ue10 ip a show dev pdn0
   CmdPrefix: ip netns exec ue10
   MTU: 1500
