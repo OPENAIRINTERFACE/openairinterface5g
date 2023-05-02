@@ -746,7 +746,7 @@ config_dedicated_scell(int Mod_idP,
                        LTE_SCellToAddMod_r10_t *sCellToAddMod_r10) {
 }
 
-int rrc_mac_config_req_eNB(module_id_t Mod_idP, rrc_mac_config_req_eNB_t *param)
+int rrc_mac_config_req_eNB(const module_id_t Mod_idP, const rrc_mac_config_req_eNB_t *param)
 {
   int i;
   int UE_id = -1;

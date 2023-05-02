@@ -27,15 +27,15 @@
 
 int errorCodeDecoder = 0;
 
-const char *errorCodeStringDecoder[] = {
-  "No error",
-  "Buffer NULL",
-  "Buffer too short",
-  "Unexpected IEI",
-  "Mandatory field not present",
-  "Wrong message type",
-  "EXT value doesn't match",
-  "Protocol not supported",
+static const char* const errorCodeStringDecoder[] = {
+    "No error",
+    "Buffer NULL",
+    "Buffer too short",
+    "Unexpected IEI",
+    "Mandatory field not present",
+    "Wrong message type",
+    "EXT value doesn't match",
+    "Protocol not supported",
 };
 
 void tlv_decode_perror(void)

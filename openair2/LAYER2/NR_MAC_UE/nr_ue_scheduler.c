@@ -1576,7 +1576,6 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
   uint8_t prach_conf_period_idx;
   uint8_t nb_of_frames_per_prach_conf_period;
   uint8_t prach_conf_period_frame_idx;
-  int64_t *prach_config_info_p;
 
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
@@ -1608,7 +1607,7 @@ static void build_ro_list(NR_UE_MAC_INST_t *mac) {
 
   int unpaired = mac->phy_config.config_req.cell_config.frame_duplex_type;
 
-  prach_config_info_p = get_prach_config_info(mac->frequency_range, config_index, unpaired);
+  const int64_t *prach_config_info_p = get_prach_config_info(mac->frequency_range, config_index, unpaired);
 
   // Identify the proper PRACH Configuration Index table according to the operating frequency
   LOG_D(NR_MAC,"mu = %u, PRACH config index  = %u, unpaired = %u\n", mu, config_index, unpaired);

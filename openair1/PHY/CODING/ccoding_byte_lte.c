@@ -28,10 +28,10 @@
 
 //#define DEBUG_CCODE 1
 
-unsigned short glte[] = { 0133, 0171, 0165 }; // {A,B}
-unsigned short glte_rev[] = { 0155, 0117, 0127 }; // {A,B}
-unsigned short gdab[] = { 0133, 0171, 0145 }; // {A,B}
-unsigned short gdab_rev[] = { 0155, 0117, 0123 }; // {A,B}
+static const unsigned short glte[] = {0133, 0171, 0165}; // {A,B}
+static const unsigned short glte_rev[] = {0155, 0117, 0127}; // {A,B}
+static const unsigned short gdab[] = {0133, 0171, 0145}; // {A,B}
+static const unsigned short gdab_rev[] = {0155, 0117, 0123}; // {A,B}
 unsigned char  ccodelte_table[128];      // for transmitter
 unsigned char  ccodelte_table_rev[128];  // for receiver
 

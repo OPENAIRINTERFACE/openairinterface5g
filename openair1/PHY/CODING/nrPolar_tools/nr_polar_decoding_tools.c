@@ -366,7 +366,7 @@ void applyGtoright(const t_nrPolar_params *pp,decoder_node_t *node) {
   }
 }
 
-int16_t all1[16] = {1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1};
+static const int16_t all1[16] = {1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1};
 
 void computeBeta(const t_nrPolar_params *pp,decoder_node_t *node) {
 

@@ -29,12 +29,12 @@
 
 #define DMRS_MOD_ORDER 2
 /*Precoding matices: W[pmi][antenna_port][layer]*/
-extern char nr_W_1l_2p[6][2][1];
-extern char nr_W_2l_2p[3][2][2];
-extern char nr_W_1l_4p[28][4][1];
-extern char nr_W_2l_4p[22][4][2];
-extern char nr_W_3l_4p[7][4][3];
-extern char nr_W_4l_4p[5][4][4];
+extern const char nr_W_1l_2p[6][2][1];
+extern const char nr_W_2l_2p[3][2][2];
+extern const char nr_W_1l_4p[28][4][1];
+extern const char nr_W_2l_4p[22][4][2];
+extern const char nr_W_3l_4p[7][4][3];
+extern const char nr_W_4l_4p[5][4][4];
 /*! \brief Perform NR modulation. TS 38.211 V15.4.0 subclause 5.1
   @param[in] in, Pointer to input bits
   @param[in] length, size of input bits
@@ -129,10 +129,7 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
   @param[in] prec_matrix, Pointer to precoding matrix
   @param[in] n_layers, number of DLSCH layers
 */
-int nr_layer_precoder(int16_t **datatx_F_precoding,
-		char *prec_matrix,
-		uint8_t n_layers,
-		int32_t re_offset);
+int nr_layer_precoder(int16_t **datatx_F_precoding, const char *prec_matrix, uint8_t n_layers, int32_t re_offset);
 
 int nr_layer_precoder_cm(int16_t **datatx_F_precoding,
                 int *prec_matrix,

@@ -315,8 +315,8 @@ void set_glog_filelog(int enable);
 void set_component_filelog(int comp);
 void close_component_filelog(int comp);
 void set_component_consolelog(int comp);
-int  map_str_to_int(mapping *map, const char *str);
-char *map_int_to_str(mapping *map, int val);
+int map_str_to_int(const mapping *map, const char *str);
+char *map_int_to_str(const mapping *map, const int val);
 void logClean (void);
 int  is_newline( char *str, int size);
 

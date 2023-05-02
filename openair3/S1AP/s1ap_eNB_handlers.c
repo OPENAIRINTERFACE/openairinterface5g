@@ -124,65 +124,66 @@ int s1ap_timer_setup(
   long         *timer_id);
 
 /* Handlers matrix. Only eNB related procedure present here */
-s1ap_message_decoded_callback messages_callback[][3] = {
-  { 0, 0, 0 }, /* HandoverPreparation */
-  { 0, 0, 0 }, /* HandoverResourceAllocation */
-  { 0, 0, 0 }, /* HandoverNotification */
-  { 0, s1ap_eNB_handle_s1_path_switch_request_ack, s1ap_eNB_handle_s1_path_switch_request_failure }, /* PathSwitchRequest */
-  { 0, 0, 0 }, /* HandoverCancel */
-  { s1ap_eNB_handle_e_rab_setup_request, 0, 0 }, /* E_RABSetup */
-  { s1ap_eNB_handle_e_rab_modify_request, 0, 0 }, /* E_RABModify */
-  { s1ap_eNB_handle_e_rab_release_command, 0, 0 }, /* E_RABRelease */
-  { 0, 0, 0 }, /* E_RABReleaseIndication */
-  { s1ap_eNB_handle_initial_context_request, 0, 0 }, /* InitialContextSetup */
-  { s1ap_eNB_handle_paging, 0, 0 }, /* Paging */
-  { s1ap_eNB_handle_nas_downlink, 0, 0 }, /* downlinkNASTransport */
-  { 0, 0, 0 }, /* initialUEMessage */
-  { 0, 0, 0 }, /* uplinkNASTransport */
-  { 0, 0, 0 }, /* Reset */
-  { s1ap_eNB_handle_error_indication, 0, 0 }, /* ErrorIndication */
-  { 0, 0, 0 }, /* NASNonDeliveryIndication */
-  { 0, s1ap_eNB_handle_s1_setup_response, s1ap_eNB_handle_s1_setup_failure }, /* S1Setup */
-  { 0, 0, 0 }, /* UEContextReleaseRequest */
-  { 0, 0, 0 }, /* DownlinkS1cdma2000tunneling */
-  { 0, 0, 0 }, /* UplinkS1cdma2000tunneling */
-  { 0, 0, 0 }, /* UEContextModification */
-  { 0, 0, 0 }, /* UECapabilityInfoIndication */
-  { s1ap_eNB_handle_ue_context_release_command, 0, 0 }, /* UEContextRelease */
-  { 0, 0, 0 }, /* eNBStatusTransfer */
-  { 0, 0, 0 }, /* MMEStatusTransfer */
-  { s1ap_eNB_handle_deactivate_trace, 0, 0 }, /* DeactivateTrace */
-  { s1ap_eNB_handle_trace_start, 0, 0 }, /* TraceStart */
-  { 0, 0, 0 }, /* TraceFailureIndication */
-  { 0, 0, 0 }, /* ENBConfigurationUpdate */
-  { 0, 0, 0 }, /* MMEConfigurationUpdate */
-  { 0, 0, 0 }, /* LocationReportingControl */
-  { 0, 0, 0 }, /* LocationReportingFailureIndication */
-  { 0, 0, 0 }, /* LocationReport */
-  { 0, 0, 0 }, /* OverloadStart */
-  { 0, 0, 0 }, /* OverloadStop */
-  { 0, 0, 0 }, /* WriteReplaceWarning */
-  { 0, 0, 0 }, /* eNBDirectInformationTransfer */
-  { 0, 0, 0 }, /* MMEDirectInformationTransfer */
-  { 0, 0, 0 }, /* PrivateMessage */
-  { 0, 0, 0 }, /* eNBConfigurationTransfer */
-  { 0, 0, 0 }, /* MMEConfigurationTransfer */
-  { 0, 0, 0 }, /* CellTrafficTrace */
-  { 0, 0, 0 }, /* Kill */
-  { 0, 0, 0 }, /* DownlinkUEAssociatedLPPaTransport  */
-  { 0, 0, 0 }, /* UplinkUEAssociatedLPPaTransport */
-  { 0, 0, 0 }, /* DownlinkNonUEAssociatedLPPaTransport */
-  { 0, 0, 0 }, /* UplinkNonUEAssociatedLPPaTransport */
-  { 0, 0, 0 }, /* UERadioCapabilityMatch */
-  { 0, 0, 0 }, /* PWSRestartIndication */
-  { 0, s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm, 0 }, /* E_RABModificationIndication */
+static const s1ap_message_decoded_callback messages_callback[][3] = {
+    {0, 0, 0}, /* HandoverPreparation */
+    {0, 0, 0}, /* HandoverResourceAllocation */
+    {0, 0, 0}, /* HandoverNotification */
+    {0, s1ap_eNB_handle_s1_path_switch_request_ack, s1ap_eNB_handle_s1_path_switch_request_failure}, /* PathSwitchRequest */
+    {0, 0, 0}, /* HandoverCancel */
+    {s1ap_eNB_handle_e_rab_setup_request, 0, 0}, /* E_RABSetup */
+    {s1ap_eNB_handle_e_rab_modify_request, 0, 0}, /* E_RABModify */
+    {s1ap_eNB_handle_e_rab_release_command, 0, 0}, /* E_RABRelease */
+    {0, 0, 0}, /* E_RABReleaseIndication */
+    {s1ap_eNB_handle_initial_context_request, 0, 0}, /* InitialContextSetup */
+    {s1ap_eNB_handle_paging, 0, 0}, /* Paging */
+    {s1ap_eNB_handle_nas_downlink, 0, 0}, /* downlinkNASTransport */
+    {0, 0, 0}, /* initialUEMessage */
+    {0, 0, 0}, /* uplinkNASTransport */
+    {0, 0, 0}, /* Reset */
+    {s1ap_eNB_handle_error_indication, 0, 0}, /* ErrorIndication */
+    {0, 0, 0}, /* NASNonDeliveryIndication */
+    {0, s1ap_eNB_handle_s1_setup_response, s1ap_eNB_handle_s1_setup_failure}, /* S1Setup */
+    {0, 0, 0}, /* UEContextReleaseRequest */
+    {0, 0, 0}, /* DownlinkS1cdma2000tunneling */
+    {0, 0, 0}, /* UplinkS1cdma2000tunneling */
+    {0, 0, 0}, /* UEContextModification */
+    {0, 0, 0}, /* UECapabilityInfoIndication */
+    {s1ap_eNB_handle_ue_context_release_command, 0, 0}, /* UEContextRelease */
+    {0, 0, 0}, /* eNBStatusTransfer */
+    {0, 0, 0}, /* MMEStatusTransfer */
+    {s1ap_eNB_handle_deactivate_trace, 0, 0}, /* DeactivateTrace */
+    {s1ap_eNB_handle_trace_start, 0, 0}, /* TraceStart */
+    {0, 0, 0}, /* TraceFailureIndication */
+    {0, 0, 0}, /* ENBConfigurationUpdate */
+    {0, 0, 0}, /* MMEConfigurationUpdate */
+    {0, 0, 0}, /* LocationReportingControl */
+    {0, 0, 0}, /* LocationReportingFailureIndication */
+    {0, 0, 0}, /* LocationReport */
+    {0, 0, 0}, /* OverloadStart */
+    {0, 0, 0}, /* OverloadStop */
+    {0, 0, 0}, /* WriteReplaceWarning */
+    {0, 0, 0}, /* eNBDirectInformationTransfer */
+    {0, 0, 0}, /* MMEDirectInformationTransfer */
+    {0, 0, 0}, /* PrivateMessage */
+    {0, 0, 0}, /* eNBConfigurationTransfer */
+    {0, 0, 0}, /* MMEConfigurationTransfer */
+    {0, 0, 0}, /* CellTrafficTrace */
+    {0, 0, 0}, /* Kill */
+    {0, 0, 0}, /* DownlinkUEAssociatedLPPaTransport  */
+    {0, 0, 0}, /* UplinkUEAssociatedLPPaTransport */
+    {0, 0, 0}, /* DownlinkNonUEAssociatedLPPaTransport */
+    {0, 0, 0}, /* UplinkNonUEAssociatedLPPaTransport */
+    {0, 0, 0}, /* UERadioCapabilityMatch */
+    {0, 0, 0}, /* PWSRestartIndication */
+    {0, s1ap_eNB_handle_s1_ENDC_e_rab_modification_confirm, 0}, /* E_RABModificationIndication */
 };
-char *s1ap_direction2String(int s1ap_dir) {
-  static char *s1ap_direction_String[] = {
-    "", /* Nothing */
-    "Originating message", /* originating message */
-    "Successfull outcome", /* successfull outcome */
-    "UnSuccessfull outcome", /* successfull outcome */
+const char *s1ap_direction2String(int s1ap_dir)
+{
+  const char *const s1ap_direction_String[] = {
+      "", /* Nothing */
+      "Originating message", /* originating message */
+      "Successfull outcome", /* successfull outcome */
+      "UnSuccessfull outcome", /* successfull outcome */
   };
   return(s1ap_direction_String[s1ap_dir]);
 }

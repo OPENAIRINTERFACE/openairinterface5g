@@ -131,8 +131,8 @@ void layer1prec2A(int32_t *antenna0_sample, int32_t *antenna1_sample, uint8_t pr
       ((int16_t *)antenna1_sample)[1] = (int16_t)((((int16_t *)antenna1_sample)[1]*ONE_OVER_SQRT2_Q15)>>15);  */
 }
 
-uint32_t FOUR[2]={0,4};
-uint32_t TWO[2]={0,2};
+static const uint32_t FOUR[2] = {0, 4};
+static const uint32_t TWO[2] = {0, 2};
 
 int allocate_REs_in_RB_no_pilots_QPSK_siso(PHY_VARS_eNB* phy_vars_eNB,
                                            int **txdataF,

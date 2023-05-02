@@ -38,8 +38,9 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "T.h"
-
-
+int16_t nr_ru[2 * 839]; // quantized roots of unity
+static uint32_t nr_ZC_inv[839]; // multiplicative inverse for roots u
+uint16_t nr_du[838];
 
 /*void dump_nr_prach_config(NR_DL_FRAME_PARMS *frame_parms,uint8_t subframe) {
 
@@ -78,7 +79,7 @@
 }*/
 
 // This function computes the du
-void nr_fill_du(uint16_t N_ZC,uint16_t *prach_root_sequence_map)
+void nr_fill_du(uint16_t N_ZC, const uint16_t *prach_root_sequence_map)
 {
 
   uint16_t iu,u,p;
@@ -105,7 +106,7 @@ void compute_nr_prach_seq(uint8_t short_sequence,
   unsigned int k,inv_u,i;
   int N_ZC;
 
-  uint16_t *prach_root_sequence_map;
+  const uint16_t *prach_root_sequence_map;
   uint16_t u;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_UE_COMPUTE_PRACH, VCD_FUNCTION_IN);

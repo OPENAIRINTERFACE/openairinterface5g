@@ -48,20 +48,20 @@
 #include "conversions.h"
 
 /* Handlers matrix. Only eNB related procedure present here */
-m2ap_message_decoded_callback m2ap_messages_callback[][3] = {
-  { eNB_handle_MBMS_SESSION_START_REQUEST, MCE_handle_MBMS_SESSION_START_RESPONSE, 0 }, /* MBMSSessionStart  */
-  { eNB_handle_MBMS_SESSION_STOP_REQUEST, MCE_handle_MBMS_SESSION_STOP_RESPONSE, 0 }, /* MBMSSessionStop */
-  { eNB_handle_MBMS_SCHEDULING_INFORMATION, MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE, 0 }, /* MBMSSchedulingInformation */
-  { 0, 0, 0 }, /* Error Indication */
-  { 0, 0, 0 }, /* Reset */
-  { MCE_handle_M2_SETUP_REQUEST,eNB_handle_M2_SETUP_RESPONSE,eNB_handle_M2_SETUP_FAILURE }, /* M2 Setup */
-  { 0, 0, 0 }, /* eNBConfigurationUpdate */
-  { 0, 0, 0 }, /* MCEConfigurationUpdate */
-  { 0, 0, 0 }, /* privateMessage */
-  { 0, 0, 0 }, /* MBMSSessionUpdate */
-  { 0, 0, 0 }, /* MBMSServiceCounting */
-  { 0, 0, 0 }, /* MBMSServiceCountingResultReport */
-  { 0, 0, 0 } /* MBMSOverloadNotification */
+static const m2ap_message_decoded_callback m2ap_messages_callback[][3] = {
+    {eNB_handle_MBMS_SESSION_START_REQUEST, MCE_handle_MBMS_SESSION_START_RESPONSE, 0}, /* MBMSSessionStart  */
+    {eNB_handle_MBMS_SESSION_STOP_REQUEST, MCE_handle_MBMS_SESSION_STOP_RESPONSE, 0}, /* MBMSSessionStop */
+    {eNB_handle_MBMS_SCHEDULING_INFORMATION, MCE_handle_MBMS_SCHEDULING_INFORMATION_RESPONSE, 0}, /* MBMSSchedulingInformation */
+    {0, 0, 0}, /* Error Indication */
+    {0, 0, 0}, /* Reset */
+    {MCE_handle_M2_SETUP_REQUEST, eNB_handle_M2_SETUP_RESPONSE, eNB_handle_M2_SETUP_FAILURE}, /* M2 Setup */
+    {0, 0, 0}, /* eNBConfigurationUpdate */
+    {0, 0, 0}, /* MCEConfigurationUpdate */
+    {0, 0, 0}, /* privateMessage */
+    {0, 0, 0}, /* MBMSSessionUpdate */
+    {0, 0, 0}, /* MBMSServiceCounting */
+    {0, 0, 0}, /* MBMSServiceCountingResultReport */
+    {0, 0, 0} /* MBMSOverloadNotification */
 };
 
 static char *m2ap_direction2String(int m2ap_dir) {

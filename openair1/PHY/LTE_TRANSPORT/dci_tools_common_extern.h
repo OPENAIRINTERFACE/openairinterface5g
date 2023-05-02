@@ -84,6 +84,6 @@ extern uint16_t RIV2nb_rb_LUT100[6000];
 extern uint16_t RIV2first_rb_LUT100[6000];
 extern uint16_t RIV_max100;
 
-extern int8_t *delta_PUCCH_lut;
-extern int8_t delta_PUSCH_acc[4];
-extern int8_t delta_PUSCH_abs[4];
+extern const int8_t *delta_PUCCH_lut;
+extern const int8_t delta_PUSCH_acc[4];
+extern const int8_t delta_PUSCH_abs[4];

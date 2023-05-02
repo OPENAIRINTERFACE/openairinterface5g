@@ -166,9 +166,7 @@ uint8_t get_pdsch_mcs_table(long *mcs_Table, int dci_format, int rnti_type, int 
 
 int get_format0(uint8_t index, uint8_t unpaired,frequency_range_t);
 
-int64_t *get_prach_config_info(frequency_range_t freq_range,
-                               uint8_t index,
-                               uint8_t unpaired);
+const int64_t *get_prach_config_info(frequency_range_t freq_range, uint8_t index, uint8_t unpaired);
 
 uint16_t get_NCS(uint8_t index, uint16_t format, uint8_t restricted_set_config);
 int compute_pucch_crc_size(int O_uci);

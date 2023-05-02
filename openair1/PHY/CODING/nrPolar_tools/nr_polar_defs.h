@@ -109,8 +109,8 @@ struct nrPolar_params {
   uint16_t *channel_interleaver_pattern;
   //uint32_t crc_polynomial;
 
-  uint8_t **crc_generator_matrix; //G_P
-  uint8_t **G_N;
+  const uint8_t **crc_generator_matrix; // G_P
+  const uint8_t **G_N;
   uint64_t **G_N_tab;
   int groupsize;
   int *rm_tab;
@@ -205,7 +205,7 @@ t_nrPolar_params *nr_polar_params (int8_t messageType,
 
 uint16_t nr_polar_aggregation_prime (uint8_t aggregation_level);
 
-uint8_t **nr_polar_kronecker_power_matrices(uint8_t n);
+const uint8_t **nr_polar_kronecker_power_matrices(uint8_t n);
 
 const uint16_t *nr_polar_sequence_pattern(uint8_t n);
 
@@ -270,11 +270,7 @@ void nr_byte2bit_uint8_32(uint8_t *in,
                           uint16_t arraySize,
                           uint32_t *out);
 
-uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
-
-uint8_t **crc11_generator_matrix(uint16_t payloadSizeBits);
-
-uint8_t **crc6_generator_matrix(uint16_t payloadSizeBits);
+const uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
 
 void nr_polar_bit_insertion(uint8_t *input,
                             uint8_t *output,
@@ -284,11 +280,11 @@ void nr_polar_bit_insertion(uint8_t *input,
                             int16_t *Q_PC_N,
                             uint8_t n_PC);
 
-void nr_matrix_multiplication_uint8_1D_uint8_2D(uint8_t *matrix1,
-    uint8_t **matrix2,
-    uint8_t *output,
-    uint16_t row,
-    uint16_t col);
+void nr_matrix_multiplication_uint8_1D_uint8_2D(const uint8_t *matrix1,
+                                                const uint8_t **matrix2,
+                                                uint8_t *output,
+                                                uint16_t row,
+                                                uint16_t col);
 
 void nr_sort_asc_double_1D_array_ind(double *matrix,
                                      uint8_t *ind,

@@ -24,61 +24,21 @@
 #include "common/utils/LOG/log.h"
 
 /// Subcarrier spacings in Hz indexed by numerology index
-uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
-uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
+static const uint32_t nr_subcarrier_spacing[MAX_NUM_SUBCARRIER_SPACING] = {15e3, 30e3, 60e3, 120e3, 240e3};
+static const uint16_t nr_slots_per_subframe[MAX_NUM_SUBCARRIER_SPACING] = {1, 2, 4, 8, 16};
 
 // Table 5.4.3.3-1 38-101
-int nr_ssb_table[48][3] = {
-  {1, 15, nr_ssb_type_A},
-  {2, 15, nr_ssb_type_A},
-  {3, 15, nr_ssb_type_A},
-  {5, 15, nr_ssb_type_A},
-  {5, 30, nr_ssb_type_B},
-  {7, 15, nr_ssb_type_A},
-  {8, 15, nr_ssb_type_A},
-  {12, 15, nr_ssb_type_A},
-  {14, 15, nr_ssb_type_A},
-  {18, 15, nr_ssb_type_A},
-  {20, 15, nr_ssb_type_A},
-  {25, 15, nr_ssb_type_A},
-  {26, 15, nr_ssb_type_A},
-  {28, 15, nr_ssb_type_A},
-  {29, 15, nr_ssb_type_A},
-  {30, 15, nr_ssb_type_A},
-  {34, 15, nr_ssb_type_A},
-  {34, 30, nr_ssb_type_C},
-  {38, 15, nr_ssb_type_A},
-  {38, 30, nr_ssb_type_C},
-  {39, 15, nr_ssb_type_A},
-  {39, 30, nr_ssb_type_C},
-  {40, 30, nr_ssb_type_C},
-  {41, 15, nr_ssb_type_A},
-  {41, 30, nr_ssb_type_C},
-  {46, 30, nr_ssb_type_C},
-  {48, 30, nr_ssb_type_C},
-  {50, 30, nr_ssb_type_C},
-  {51, 15, nr_ssb_type_A},
-  {53, 15, nr_ssb_type_A},
-  {65, 15, nr_ssb_type_A},
-  {66, 15, nr_ssb_type_A},
-  {66, 30, nr_ssb_type_B},
-  {70, 15, nr_ssb_type_A},
-  {71, 15, nr_ssb_type_A},
-  {74, 15, nr_ssb_type_A},
-  {75, 15, nr_ssb_type_A},
-  {76, 15, nr_ssb_type_A},
-  {77, 30, nr_ssb_type_C},
-  {78, 30, nr_ssb_type_C},
-  {79, 30, nr_ssb_type_C},
-  {90, 15, nr_ssb_type_A},
-  {90, 30, nr_ssb_type_C},
-  {91, 15, nr_ssb_type_A},
-  {92, 15, nr_ssb_type_A},
-  {93, 15, nr_ssb_type_A},
-  {94, 15, nr_ssb_type_A},
-  {96, 30, nr_ssb_type_C}
-};
-
+static const int nr_ssb_table[48][3] = {
+    {1, 15, nr_ssb_type_A},  {2, 15, nr_ssb_type_A},  {3, 15, nr_ssb_type_A},  {5, 15, nr_ssb_type_A},  {5, 30, nr_ssb_type_B},
+    {7, 15, nr_ssb_type_A},  {8, 15, nr_ssb_type_A},  {12, 15, nr_ssb_type_A}, {14, 15, nr_ssb_type_A}, {18, 15, nr_ssb_type_A},
+    {20, 15, nr_ssb_type_A}, {25, 15, nr_ssb_type_A}, {26, 15, nr_ssb_type_A}, {28, 15, nr_ssb_type_A}, {29, 15, nr_ssb_type_A},
+    {30, 15, nr_ssb_type_A}, {34, 15, nr_ssb_type_A}, {34, 30, nr_ssb_type_C}, {38, 15, nr_ssb_type_A}, {38, 30, nr_ssb_type_C},
+    {39, 15, nr_ssb_type_A}, {39, 30, nr_ssb_type_C}, {40, 30, nr_ssb_type_C}, {41, 15, nr_ssb_type_A}, {41, 30, nr_ssb_type_C},
+    {46, 30, nr_ssb_type_C}, {48, 30, nr_ssb_type_C}, {50, 30, nr_ssb_type_C}, {51, 15, nr_ssb_type_A}, {53, 15, nr_ssb_type_A},
+    {65, 15, nr_ssb_type_A}, {66, 15, nr_ssb_type_A}, {66, 30, nr_ssb_type_B}, {70, 15, nr_ssb_type_A}, {71, 15, nr_ssb_type_A},
+    {74, 15, nr_ssb_type_A}, {75, 15, nr_ssb_type_A}, {76, 15, nr_ssb_type_A}, {77, 30, nr_ssb_type_C}, {78, 30, nr_ssb_type_C},
+    {79, 30, nr_ssb_type_C}, {90, 15, nr_ssb_type_A}, {90, 30, nr_ssb_type_C}, {91, 15, nr_ssb_type_A}, {92, 15, nr_ssb_type_A},
+    {93, 15, nr_ssb_type_A}, {94, 15, nr_ssb_type_A}, {96, 30, nr_ssb_type_C}};
 
 void set_Lmax(NR_DL_FRAME_PARMS *fp) {
   // definition of Lmax according to ts 38.213 section 4.1
