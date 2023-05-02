@@ -295,10 +295,13 @@ class OaiCiTest():
 
 	def InitializeUE(self, HTML):
 		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		messages = []
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			futures = [executor.submit(ue.initialize) for ue in ues]
+			for f, ue in zip(futures, ues):
+				uename = f'UE {ue.getName()}'
+				messages.append(f'{uename}: initialized' if f.result() else f'{uename}: ERROR during Initialization')
 			[f.result() for f in futures]
-		messages = [f'UE {ue.getName()}: initialized' for ue in ues]
 		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
 
 

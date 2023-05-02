@@ -263,7 +263,7 @@ class RANManagement():
 		cmd = cls_cmd.getConnection(self.node)
 		ret = cmd.run(self.command)
 		cmd.close()
-		logging.debug(f'CustomCommand: {self.command} returnCode: {ret.returncode}')
+		logging.debug(f"Custum command : {self.command} on node : {self.node} returnCode : {ret.returncode}")
 		status = 'OK'
 		message = []
 		if ret.returncode != 0 and not self.command_fail:
