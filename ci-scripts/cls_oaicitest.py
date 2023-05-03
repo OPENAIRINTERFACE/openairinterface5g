@@ -49,6 +49,7 @@ import concurrent.futures
 #import our libs
 import helpreadme as HELP
 import constants as CONST
+import cls_cluster as OC
 import sshconnection
 
 import cls_module_ue
@@ -58,6 +59,7 @@ logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 import numpy as np
 
+OC_CN_PROJECT = "oaicicd-core-for-ci-ran"
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
@@ -230,7 +232,6 @@ class OaiCiTest():
 				messages.append(f'{uename}: initialized' if f.result() else f'{uename}: ERROR during Initialization')
 			[f.result() for f in futures]
 		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
-
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,CONTAINERS):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -995,7 +996,9 @@ class OaiCiTest():
 			cn_target_ip = result.group('trf_ip_addr')
 			SSH.close()
 			cn_iperf_prefix = "docker exec  prod-trf-gen" # -w /iperf-2.0.13  necessary?
-		else: # ltebox, sabox
+		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
+			cn_target_ip = EPC.IperfSrvIPAddress
+		else: # lteboix, sabox
 			cn_target_ip = "192.172.0.1"
 			cn_iperf_prefix = ""
 
@@ -1076,6 +1079,26 @@ class OaiCiTest():
 			cmd.close()
 
 			self.Iperf_analyzeV2BIDIR(lock, ue.getHost(), ue.getName(), statusQueue, server_filename, client_filename)
+
+		elif self.iperf_direction == "IPERF3":
+			logging.debug("Iperf3 requested")
+
+			cmd = cls_cmd.getConnection(ue.getHost())
+			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
+			port = f'-p {5002+idx}'
+			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} {port} {iperf_opt} &> /tmp/{server_filename}', timeout=iperf_time*1.5)
+			cmd.close()
+			time.sleep(1)
+			cmd = cls_cmd.getConnection(ue.getHost())
+			cmd.copyin(f'/tmp/{server_filename}', server_filename)
+			cmd.close()
+
+			if udpIperf:
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, iperf_opt, server_filename, 1)
+			else:
+				cmd = cls_cmd.getConnection(EPC.IPAddress)
+				self.Iperf_analyzeV2TCPOutput(lock, ue.getIP(), ue.getName(), statusQueue, iperf_opt, EPC, cmd, f'/tmp/{server_filename}')
+				cmd.close()
 
 		else :
 			raise Exception("Incorrect or missing IPERF direction in XML")
@@ -1216,6 +1239,25 @@ class OaiCiTest():
 		#result = re.search('iperf version 2.0.10', str(iperfStdout.strip()))
 		#if result is not None:
 		#	dummyIperfVersion = '2.0.10'
+		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
+			lOcProject = OC_CN_PROJECT
+			mySSH = cls_cmd.getConnection(EPC.IPAddress)
+			succeeded = OC.OC_login(mySSH, EPC.OCUserName, EPC.OCPassword, lOcProject)
+			if not succeeded:
+				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
+				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
+				HTML.CreateHtmlTabFooter(False)
+				return False
+			ret = mySSH.run('oc describe pod oai-traffic-server | grep -w "ips" -A 1 | tail -n 1 | awk \'{{print $1}}\' | sed \'s/"//g\'')
+			EPC.IperfSrvIPAddress = ret.stdout
+			if not EPC.IperfSrvIPAddress:
+				logging.debug('IP address of oai-traffic-server not found!')
+				OC.OC_logout(mySSH)
+				HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
+				HTML.CreateHtmlTabFooter(False)
+				raise Exception("could not obtain oai-traffic-server IP address")
+				return Fals
+			OC.OC_logout(mySSH)
 
 		multi_jobs = []
 		ue_num = len(ues)
