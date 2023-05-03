@@ -199,9 +199,10 @@ class Cluster:
 			HELP.EPCSrvHelp(self.imageToPull)
 			sys.exit('Insufficient eNB Parameters')
 		lIpAddr = self.eNBIPAddress
+		ocProjectName = NAMESPACE
 		self.testCase_id = HTML.testCase_id
 		cmd = cls_cmd.getConnection(lIpAddr)
-		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, self.OCProjectName)
+		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, ocProjectName)
 		if not succeeded:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -214,7 +215,7 @@ class Cluster:
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			return False
 		for image in self.imageToPull:
-			imagePrefix = f'{self.OCRegistry}{self.OCProjectName}'
+			imagePrefix = f'{self.OCRegistry}{ocProjectName}'
 			imageTag = cls_containerize.ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
 			ret = cmd.run(f'docker pull {imagePrefix}/{imageTag}')
 			if ret.returncode != 0:
