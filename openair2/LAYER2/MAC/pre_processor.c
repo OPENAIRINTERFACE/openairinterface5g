@@ -400,13 +400,11 @@ int pf_wbcqi_dl_run(module_id_t Mod_id,
 
   return n_rbg_sched;
 }
-default_sched_dl_algo_t proportional_fair_wbcqi_dl = {
-  .name  = "proportional_fair_wbcqi_dl",
-  .setup = pf_dl_setup,
-  .unset = pf_dl_unset,
-  .run   = pf_wbcqi_dl_run,
-  .data  = NULL
-};
+const default_sched_dl_algo_t proportional_fair_wbcqi_dl = {.name = "proportional_fair_wbcqi_dl",
+                                                            .setup = pf_dl_setup,
+                                                            .unset = pf_dl_unset,
+                                                            .run = pf_wbcqi_dl_run,
+                                                            .data = NULL};
 
 void *mt_dl_setup(void) {
   return NULL;
@@ -513,13 +511,11 @@ int mt_wbcqi_dl_run(module_id_t Mod_id,
 
   return n_rbg_sched;
 }
-default_sched_dl_algo_t maximum_throughput_wbcqi_dl = {
-  .name  = "maximum_throughput_wbcqi_dl",
-  .setup = mt_dl_setup,
-  .unset = mt_dl_unset,
-  .run   = mt_wbcqi_dl_run,
-  .data  = NULL
-};
+const default_sched_dl_algo_t maximum_throughput_wbcqi_dl = {.name = "maximum_throughput_wbcqi_dl",
+                                                             .setup = mt_dl_setup,
+                                                             .unset = mt_dl_unset,
+                                                             .run = mt_wbcqi_dl_run,
+                                                             .data = NULL};
 
 // This function stores the downlink buffer for all the logical channels
 void

@@ -116,10 +116,8 @@ int get_pucch0_cs_lut_index(PHY_VARS_gNB *gNB,nfapi_nr_pucch_pdu_t* pucch_pdu) {
   gNB->pucch0_lut.nb_id++;
   return(gNB->pucch0_lut.nb_id-1);
 }
-
-
   
-int16_t idft12_re[12][12] = {
+static const int16_t idft12_re[12][12] = {
   {23170,23170,23170,23170,23170,23170,23170,23170,23170,23170,23170,23170},
   {23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585,0,11585,20066},
   {23170,11585,-11585,-23170,-11585,11585,23170,11585,-11585,-23170,-11585,11585},
@@ -134,7 +132,7 @@ int16_t idft12_re[12][12] = {
   {23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585,0,11585,20066}
 };
 
-int16_t idft12_im[12][12] = {
+static const int16_t idft12_im[12][12] = {
   {0,0,0,0,0,0,0,0,0,0,0,0},
   {0,11585,20066,23170,20066,11585,0,-11585,-20066,-23170,-20066,-11585},
   {0,20066,20066,0,-20066,-20066,0,20066,20066,0,-20066,-20066},
@@ -975,15 +973,8 @@ __m256i pucch2_9bit[512*2];
 __m256i pucch2_10bit[1024*2];
 __m256i pucch2_11bit[2048*2];
 
-__m256i *pucch2_lut[9]={pucch2_3bit,
-			pucch2_4bit,
-			pucch2_5bit,
-			pucch2_6bit,
-			pucch2_7bit,
-			pucch2_8bit,
-			pucch2_9bit,
-			pucch2_10bit,
-			pucch2_11bit};
+static __m256i *const pucch2_lut[9] =
+    {pucch2_3bit, pucch2_4bit, pucch2_5bit, pucch2_6bit, pucch2_7bit, pucch2_8bit, pucch2_9bit, pucch2_10bit, pucch2_11bit};
 
 __m64 pucch2_polar_4bit[16];
 __m128i pucch2_polar_llr_num_lut[256],pucch2_polar_llr_den_lut[256];

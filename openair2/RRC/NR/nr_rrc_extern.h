@@ -39,10 +39,6 @@ extern UE_RRC_INST *UE_rrc_inst;
 
 extern uint8_t DRB2LCHAN[8];
 
-extern NR_LogicalChannelConfig_t NR_SRB1_logicalChannelConfig_defaultValue;
-extern NR_LogicalChannelConfig_t NR_SRB2_logicalChannelConfig_defaultValue;
-extern NR_LogicalChannelConfig_t NR_SRB3_logicalChannelConfig_defaultValue;
-
 extern int NB_UE_INST;
 extern void* bigphys_malloc(int);
 

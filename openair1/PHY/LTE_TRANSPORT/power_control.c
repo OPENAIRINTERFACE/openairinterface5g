@@ -28,10 +28,10 @@ double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
           { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};
 */
 
-double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
-                      { 0.96910,   0.00000,  -1.24939,  -3.01030}};
+static const double ratioPB[2][4] = {{0.00000, -0.96910, -2.21849, -3.97940}, // in db
+                                     {0.96910, 0.00000, -1.24939, -3.01030}};
 
-double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by higher layers
+static const double pa_values[8] = {-6.0, -4.77, -3.0, -1.77, 0.0, 1.0, 2.0, 3.0}; // reported by higher layers
 
 double get_pa_dB(uint8_t pa)
 {

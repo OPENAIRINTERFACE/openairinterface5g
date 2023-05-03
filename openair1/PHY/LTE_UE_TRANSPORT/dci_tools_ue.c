@@ -32,6 +32,7 @@
 
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_UE/sched_UE.h"
 #ifdef DEBUG_DCI_TOOLS
 #include "PHY/phy_vars.h"
@@ -62,10 +63,6 @@
 */
 
 int flag_LA=0;
-
-extern uint16_t beta_cqi[16];
-extern uint16_t beta_ri[16];
-extern uint16_t beta_ack[16];
 
 static const double p_qpsk[8] = {5982.42405670359,
                                  -21568.1135917693,

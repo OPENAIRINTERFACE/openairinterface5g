@@ -1642,19 +1642,10 @@ NR_BCCH_BCH_Message_t *get_new_MIB_NR(const NR_ServingCellConfigCommon_t *scc)
   mib->message.choice.mib->spare.bits_unused = 7; // This makes a spare of 1 bits
 
   AssertFatal(scc->ssbSubcarrierSpacing != NULL, "scc->ssbSubcarrierSpacing is null\n");
-  int band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-  frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
   int ssb_subcarrier_offset = 31; // default value for NSA
   if (get_softmodem_params()->sa) {
-    uint32_t absolute_diff = (*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB
-                              - scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
-    int scs_scaling = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-    ssb_subcarrier_offset = (absolute_diff / scs_scaling) % 24;
-    if (frequency_range == FR2) {
-      // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only
-      // option supported by OAI for now)
-      ssb_subcarrier_offset >>= 1;
-    }
+    ssb_subcarrier_offset = get_ssb_subcarrier_offset(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                                                      scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   }
   mib->message.choice.mib->ssb_SubcarrierOffset = ssb_subcarrier_offset & 15;
 
@@ -1839,32 +1830,17 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
         frequencyInfoDL->frequencyBandList.list.array[i];
   }
 
-  int scs_scaling0 = 1 << (configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing);
-  int scs_scaling = scs_scaling0;
-  int scs_scaling2 = scs_scaling0;
-  if (frequencyInfoDL->absoluteFrequencyPointA < 600000) {
-    scs_scaling = scs_scaling0 * 3;
-  }
-  if (frequencyInfoDL->absoluteFrequencyPointA > 2016666) {
-    scs_scaling = scs_scaling0 >> 2;
-    scs_scaling2 = scs_scaling0 >> 2;
-  }
-  uint32_t absolute_diff = (*frequencyInfoDL->absoluteFrequencySSB - frequencyInfoDL->absoluteFrequencyPointA);
-
-  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA =
-      scs_scaling2 * (absolute_diff / (12 * scs_scaling) - 10);
+  const NR_FreqBandIndicatorNR_t band = *configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  frequency_range_t frequency_range = band < 100 ? FR1 : FR2;
+  sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA = get_ssb_offset_to_pointA(*configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                               configuration->scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                               configuration->scc->downlinkConfigCommon->initialDownlinkBWP->genericParameters.subcarrierSpacing,
+                               frequency_range);
 
   LOG_I(NR_RRC,
-        "SIB1 freq: absoluteFrequencySSB %ld, absoluteFrequencyPointA %ld\n",
-        *frequencyInfoDL->absoluteFrequencySSB,
-        frequencyInfoDL->absoluteFrequencyPointA);
-  LOG_I(NR_RRC,
-        "SIB1 freq: absolute_diff %d, %d*(absolute_diff/(12*%d) - 10) %d\n",
-        absolute_diff,
-        scs_scaling2,
-        scs_scaling,
+	"SIB1 freq: offsetToPointA %d\n",
         (int)sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL.offsetToPointA);
-
+  
   for (int i = 0; i < frequencyInfoDL->scs_SpecificCarrierList.list.count; i++) {
     asn1cSeqAdd(&ServCellCom->downlinkConfigCommon.frequencyInfoDL.scs_SpecificCarrierList.list,
                 frequencyInfoDL->scs_SpecificCarrierList.list.array[i]);

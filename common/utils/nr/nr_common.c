@@ -706,3 +706,27 @@ void SLIV2SL(int SLIV,int *S,int *L) {
   }
 }
 
+int get_ssb_subcarrier_offset(uint32_t absoluteFrequencySSB, uint32_t absoluteFrequencyPointA)
+{
+  uint32_t absolute_diff = (absoluteFrequencySSB - absoluteFrequencyPointA);
+  const int scaling_5khz = absoluteFrequencyPointA < 600000 ? 3 : 1;
+  return ((absolute_diff / scaling_5khz) % 24);
+}
+
+uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
+                                  uint32_t absoluteFrequencyPointA,
+                                  int ssbSubcarrierSpacing,
+                                  int frequency_range)
+{
+  uint32_t absolute_diff = (absoluteFrequencySSB - absoluteFrequencyPointA);
+  const int scaling_5khz = absoluteFrequencyPointA < 600000 ? 3 : 1;
+  int sco = get_ssb_subcarrier_offset(absoluteFrequencySSB, absoluteFrequencyPointA);
+  const int scs_scaling = frequency_range == FR2 ? 1 << (ssbSubcarrierSpacing - 2) : 1 << ssbSubcarrierSpacing;
+  const int scaled_abs_diff = absolute_diff / scaling_5khz;
+  const int ssb_offset_point_a =
+      (scaled_abs_diff - sco) / 12
+      - 10 * scs_scaling; // absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
+  AssertFatal(ssb_offset_point_a % scs_scaling == 0, "PRB offset %d can create frequency offset\n", ssb_offset_point_a);
+  AssertFatal(sco % scs_scaling == 0, "ssb offset %d can create frequency offset\n", sco);
+  return ssb_offset_point_a;
+}

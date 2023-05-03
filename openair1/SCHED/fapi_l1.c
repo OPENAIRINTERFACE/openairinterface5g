@@ -429,7 +429,7 @@ void handle_nfapi_dlsch_pdu(PHY_VARS_eNB *eNB,int frame,int subframe,L1_rxtx_pro
   }
 }
 
-int16_t to_beta_offset_harqack[16]= {16,20,25,32,40,50,64,80,101,127,160,248,400,640,1008,8};
+static const int16_t to_beta_offset_harqack[16] = {16, 20, 25, 32, 40, 50, 64, 80, 101, 127, 160, 248, 400, 640, 1008, 8};
 
 void handle_ulsch_harq_pdu(
   PHY_VARS_eNB                           *eNB,
@@ -457,8 +457,8 @@ void handle_ulsch_harq_pdu(
   }
 }
 
-uint16_t to_beta_offset_ri[16]= {9,13,16,20,25,32,40,50,64,80,101,127,160,0,0,0};
-uint16_t to_beta_offset_cqi[16]= {0,0,9,10,11,13,14,16,18,20,23,25,28,32,40,50};
+static const uint16_t to_beta_offset_ri[16] = {9, 13, 16, 20, 25, 32, 40, 50, 64, 80, 101, 127, 160, 0, 0, 0};
+static const uint16_t to_beta_offset_cqi[16] = {0, 0, 9, 10, 11, 13, 14, 16, 18, 20, 23, 25, 28, 32, 40, 50};
 
 void handle_ulsch_cqi_ri_pdu(PHY_VARS_eNB *eNB,int UE_id,nfapi_ul_config_request_pdu_t *ul_config_pdu,uint16_t frame,uint8_t subframe) {
   nfapi_ul_config_cqi_ri_information_rel9_t *rel9 = &ul_config_pdu->ulsch_cqi_ri_pdu.cqi_ri_information.cqi_ri_information_rel9;

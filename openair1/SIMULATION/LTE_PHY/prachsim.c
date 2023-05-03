@@ -42,8 +42,6 @@ PHY_VARS_UE *UE;
 
 double cpuf;
 
-extern uint16_t prach_root_sequence_map0_3[838];
-
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
 int main(int argc, char **argv) {

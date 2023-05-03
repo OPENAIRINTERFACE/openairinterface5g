@@ -31,6 +31,9 @@ import subprocess as sp
 import os
 import paramiko
 import uuid
+import sys 
+
+SSHTIMEOUT=7
 
 # helper that returns either LocalCmd or RemoteCmd based on passed host name
 def getConnection(host, d=None):
@@ -123,13 +126,21 @@ class LocalCmd(Cmd):
 
 class RemoteCmd(Cmd):
 	def __init__(self, hostname, d=None):
+		cIdx = 0
 		logging.getLogger('paramiko').setLevel(logging.ERROR) # prevent spamming through Paramiko
 		self.client = paramiko.SSHClient()
 		self.client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
 		cfg = RemoteCmd._lookup_ssh_config(hostname)
-		self.client.connect(**cfg)
 		self.cwd = d
 		self.cp = sp.CompletedProcess(args='', returncode=0, stdout='')
+		while cIdx < 3:
+			try:
+				self.client.connect(**cfg)
+				return
+			except:
+				logging.error(f'Could not connect to {hostname}, tried for {cIdx} time')
+				cIdx +=1
+		raise Exception ("Error: max retries, did not connect to host")
 
 	def _lookup_ssh_config(hostname):
 		ssh_config = paramiko.SSHConfig()
@@ -142,7 +153,7 @@ class RemoteCmd(Cmd):
 		ucfg = ssh_config.lookup(hostname)
 		if 'identityfile' not in ucfg or 'user' not in ucfg:
 			raise KeyError(f'no identityfile or user in SSH config for host {hostname}')
-		cfg = {'hostname':hostname, 'username':ucfg['user'], 'key_filename':ucfg['identityfile']}
+		cfg = {'hostname':hostname, 'username':ucfg['user'], 'key_filename':ucfg['identityfile'], 'timeout':SSHTIMEOUT}
 		if 'hostname' in ucfg:
 			cfg['hostname'] = ucfg['hostname'] # override user-given hostname with what is in config
 		if 'port' in ucfg:

@@ -36,15 +36,10 @@
 #include <math.h>
 #include "nfapi/oai_integration/vendor_ext.h"
 #include <openair1/PHY/LTE_ESTIMATION/lte_estimation.h>
-extern uint32_t from_earfcn(int eutra_bandP,uint32_t dl_earfcn);
-extern int32_t get_uldl_offset(int eutra_bandP);
 
-extern uint16_t prach_root_sequence_map0_3[838];
-extern uint16_t prach_root_sequence_map4[138];
-uint8_t         dmrs1_tab[8] = { 0, 2, 3, 4, 6, 8, 9, 10 };
+const uint8_t dmrs1_tab[8] = {0, 2, 3, 4, 6, 8, 9, 10};
 
-
-int             N_RB_DL_array[6] = { 6, 15, 25, 50, 75, 100 };
+const int N_RB_DL_array[6] = {6, 15, 25, 50, 75, 100};
 
 #include "common/ran_context.h"
 extern RAN_CONTEXT_t RC;

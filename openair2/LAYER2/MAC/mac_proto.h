@@ -941,7 +941,7 @@ typedef struct {
   LTE_MBSFNAreaConfiguration_r9_t *mbms_AreaConfiguration;
 } rrc_mac_config_req_eNB_t;
 
-int rrc_mac_config_req_eNB(module_id_t module_idP, rrc_mac_config_req_eNB_t *);
+int rrc_mac_config_req_eNB(const module_id_t module_idP, const rrc_mac_config_req_eNB_t *);
 
 /** \brief RRC eNB Configuration primitive for PHY/MAC.  Allows configuration of PHY/MAC resources based on System Information (SI), RRCConnectionSetup and RRCConnectionReconfiguration messages.
 @param Mod_id Instance ID of ue

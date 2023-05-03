@@ -69,8 +69,8 @@
 		<class>Custom_Command</class>
 		<desc>Reset USRP</desc>
 		<node>nepes</node>
-		<command>sudo -S b2xx_fx3_utils --reset-device</command>
-  </testCase>
+		<command>sudo -S /usr/lib/uhd/utils/b2xx_fx3_utils --reset-device</command>
+	</testCase>
 
 	<testCase id="200000">
 		<class>Custom_Command</class>

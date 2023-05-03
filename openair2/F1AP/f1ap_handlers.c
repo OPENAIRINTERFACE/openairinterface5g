@@ -41,33 +41,34 @@
 #include "f1ap_du_paging.h"
 
 /* Handlers matrix. Only f1 related procedure present here */
-f1ap_message_processing_t f1ap_messages_processing[][3] = {
+static const f1ap_message_processing_t f1ap_messages_processing[][3] = {
 
-
-  { 0, 0, 0 }, /* Reset */
-  { CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE }, /* F1Setup */
-  { 0, 0, 0 }, /* ErrorIndication */
-  { 0, 0, 0 }, /* gNBDUConfigurationUpdate */
-  { DU_handle_gNB_CU_CONFIGURATION_UPDATE, CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE, CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE }, /* gNBCUConfigurationUpdate */
-  { DU_handle_UE_CONTEXT_SETUP_REQUEST, CU_handle_UE_CONTEXT_SETUP_RESPONSE, 0 }, /* UEContextSetup */
-  { DU_handle_UE_CONTEXT_RELEASE_COMMAND, CU_handle_UE_CONTEXT_RELEASE_COMPLETE, 0 }, /* UEContextRelease */
-  { DU_handle_UE_CONTEXT_MODIFICATION_REQUEST, CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE, 0 }, /* UEContextModification */
-  { 0, 0, 0 }, /* UEContextModificationRequired */
-  { 0, 0, 0 }, /* UEMobilityCommand */
-  { CU_handle_UE_CONTEXT_RELEASE_REQUEST, 0, 0 }, /* UEContextReleaseRequest */
-  { CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* InitialULRRCMessageTransfer */
-  { DU_handle_DL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* DLRRCMessageTransfer */
-  { CU_handle_UL_RRC_MESSAGE_TRANSFER, 0, 0 }, /* ULRRCMessageTransfer */
-  { 0, 0, 0 }, /* privateMessage */
-  { 0, 0, 0 }, /* UEInactivityNotification */
-  { 0, 0, 0 }, /* GNBDUResourceCoordination */
-  { 0, 0, 0 }, /* SystemInformationDeliveryCommand */
-  { DU_handle_Paging, 0, 0 }, /* Paging */
-  { 0, 0, 0 }, /* Notify */
-  { 0, 0, 0 }, /* WriteReplaceWarning */
-  { 0, 0, 0 }, /* PWSCancel */
-  { 0, 0, 0 }, /* PWSRestartIndication */
-  { 0, 0, 0 }, /* PWSFailureIndication */
+    {0, 0, 0}, /* Reset */
+    {CU_handle_F1_SETUP_REQUEST, DU_handle_F1_SETUP_RESPONSE, DU_handle_F1_SETUP_FAILURE}, /* F1Setup */
+    {0, 0, 0}, /* ErrorIndication */
+    {0, 0, 0}, /* gNBDUConfigurationUpdate */
+    {DU_handle_gNB_CU_CONFIGURATION_UPDATE,
+     CU_handle_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE,
+     CU_handle_gNB_CU_CONFIGURATION_UPDATE_FAILURE}, /* gNBCUConfigurationUpdate */
+    {DU_handle_UE_CONTEXT_SETUP_REQUEST, CU_handle_UE_CONTEXT_SETUP_RESPONSE, 0}, /* UEContextSetup */
+    {DU_handle_UE_CONTEXT_RELEASE_COMMAND, CU_handle_UE_CONTEXT_RELEASE_COMPLETE, 0}, /* UEContextRelease */
+    {DU_handle_UE_CONTEXT_MODIFICATION_REQUEST, CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE, 0}, /* UEContextModification */
+    {0, 0, 0}, /* UEContextModificationRequired */
+    {0, 0, 0}, /* UEMobilityCommand */
+    {CU_handle_UE_CONTEXT_RELEASE_REQUEST, 0, 0}, /* UEContextReleaseRequest */
+    {CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER, 0, 0}, /* InitialULRRCMessageTransfer */
+    {DU_handle_DL_RRC_MESSAGE_TRANSFER, 0, 0}, /* DLRRCMessageTransfer */
+    {CU_handle_UL_RRC_MESSAGE_TRANSFER, 0, 0}, /* ULRRCMessageTransfer */
+    {0, 0, 0}, /* privateMessage */
+    {0, 0, 0}, /* UEInactivityNotification */
+    {0, 0, 0}, /* GNBDUResourceCoordination */
+    {0, 0, 0}, /* SystemInformationDeliveryCommand */
+    {DU_handle_Paging, 0, 0}, /* Paging */
+    {0, 0, 0}, /* Notify */
+    {0, 0, 0}, /* WriteReplaceWarning */
+    {0, 0, 0}, /* PWSCancel */
+    {0, 0, 0}, /* PWSRestartIndication */
+    {0, 0, 0}, /* PWSFailureIndication */
 };
 
 const char *f1ap_direction2String(int f1ap_dir) {

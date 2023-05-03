@@ -351,24 +351,29 @@ void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_Antenn
   cfg->num_tlv++;
 
   // SSB Table Configuration
-  uint32_t absolute_diff = (*frequencyInfoDL->absoluteFrequencySSB - frequencyInfoDL->absoluteFrequencyPointA);
-  const int scaling_5khz = frequencyInfoDL->absoluteFrequencyPointA < 600000 ? 3 : 1;
-  int sco = (absolute_diff/scaling_5khz) % 24;
-  if(frequency_range == FR2)
-    sco >>= 1; // this assumes 120kHz SCS for SSB and subCarrierSpacingCommon (only option supported by OAI for
-  const int scs_scaling = frequency_range == FR2 ? 1 << (*scc->ssbSubcarrierSpacing - 2) : 1 << *scc->ssbSubcarrierSpacing;
-  cfg->ssb_table.ssb_offset_point_a.value = absolute_diff/(12*scaling_5khz) - 10*scs_scaling; //absoluteFrequencySSB is the central frequency of SSB which is made by 20RBs in total
+  
+  cfg->ssb_table.ssb_offset_point_a.value =
+      get_ssb_offset_to_pointA(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                               scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+                               *scc->ssbSubcarrierSpacing,
+                               frequency_range);
   cfg->ssb_table.ssb_offset_point_a.tl.tag = NFAPI_NR_CONFIG_SSB_OFFSET_POINT_A_TAG;
   cfg->num_tlv++;
   cfg->ssb_table.ssb_period.value = *scc->ssb_periodicityServingCell;
   cfg->ssb_table.ssb_period.tl.tag = NFAPI_NR_CONFIG_SSB_PERIOD_TAG;
   cfg->num_tlv++;
-  cfg->ssb_table.ssb_subcarrier_offset.value = sco;
+  cfg->ssb_table.ssb_subcarrier_offset.value =
+      get_ssb_subcarrier_offset(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+                                scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA);
   cfg->ssb_table.ssb_subcarrier_offset.tl.tag = NFAPI_NR_CONFIG_SSB_SUBCARRIER_OFFSET_TAG;
   cfg->num_tlv++;
 
   nrmac->ssb_SubcarrierOffset = cfg->ssb_table.ssb_subcarrier_offset.value;
   nrmac->ssb_OffsetPointA = cfg->ssb_table.ssb_offset_point_a.value;
+  LOG_I(NR_MAC,
+        "ssb_OffsetPointA %d, ssb_SubcarrierOffset %d\n",
+        cfg->ssb_table.ssb_offset_point_a.value,
+        cfg->ssb_table.ssb_subcarrier_offset.value);
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :

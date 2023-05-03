@@ -44,26 +44,20 @@
 
 #include "pucch_extern.h"
 
-int16_t cfo_pucch_np[24*7] = {20787,-25330,27244,-18205,31356,-9512,32767,0,31356,9511,27244,18204,20787,25329,
-                              27244,-18205,30272,-12540,32137,-6393,32767,0,32137,6392,30272,12539,27244,18204,
-                              31356,-9512,32137,-6393,32609,-3212,32767,0,32609,3211,32137,6392,31356,9511,
-                              32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,
-                              31356,9511,32137,6392,32609,3211,32767,0,32609,-3212,32137,-6393,31356,-9512,
-                              27244,18204,30272,12539,32137,6392,32767,0,32137,-6393,30272,-12540,27244,-18205,
-                              20787,25329,27244,18204,31356,9511,32767,0,31356,-9512,27244,-18205,20787,-25330
-                             };
+static const int16_t cfo_pucch_np[24 * 7] = {
+    20787,  -25330, 27244, -18205, 31356, -9512, 32767, 0,     31356, 9511,  27244,  18204, 20787, 25329,  27244, -18205, 30272,
+    -12540, 32137,  -6393, 32767,  0,     32137, 6392,  30272, 12539, 27244, 18204,  31356, -9512, 32137,  -6393, 32609,  -3212,
+    32767,  0,      32609, 3211,   32137, 6392,  31356, 9511,  32767, 0,     32767,  0,     32767, 0,      32767, 0,      32767,
+    0,      32767,  0,     32767,  0,     31356, 9511,  32137, 6392,  32609, 3211,   32767, 0,     32609,  -3212, 32137,  -6393,
+    31356,  -9512,  27244, 18204,  30272, 12539, 32137, 6392,  32767, 0,     32137,  -6393, 30272, -12540, 27244, -18205, 20787,
+    25329,  27244,  18204, 31356,  9511,  32767, 0,     31356, -9512, 27244, -18205, 20787, -25330};
 
-int16_t cfo_pucch_ep[24*6] = {24278,-22005,29621,-14010,32412,-4808,32412,4807,29621,14009,24278,22004,
-                              28897,-15447,31356,-9512,32609,-3212,32609,3211,31356,9511,28897,15446,
-                              31785,-7962,32412,-4808,32727,-1608,32727,1607,32412,4807,31785,7961,
-                              32767,0,32767,0,32767,0,32767,0,32767,0,32767,0,
-                              31785,7961,32412,4807,32727,1607,32727,-1608,32412,-4808,31785,-7962,
-                              28897,15446,31356,9511,32609,3211,32609,-3212,31356,-9512,28897,-15447,
-                              24278,22004,29621,14009,32412,4807,32412,-4808,29621,-14010,24278,-22005
-                             };
-
-
-
+static const int16_t cfo_pucch_ep[24 * 6] = {
+    24278, -22005, 29621, -14010, 32412, -4808, 32412, 4807,  29621, 14009, 24278, 22004, 28897, -15447, 31356, -9512, 32609,
+    -3212, 32609,  3211,  31356,  9511,  28897, 15446, 31785, -7962, 32412, -4808, 32727, -1608, 32727,  1607,  32412, 4807,
+    31785, 7961,   32767, 0,      32767, 0,     32767, 0,     32767, 0,     32767, 0,     32767, 0,      31785, 7961,  32412,
+    4807,  32727,  1607,  32727,  -1608, 32412, -4808, 31785, -7962, 28897, 15446, 31356, 9511,  32609,  3211,  32609, -3212,
+    31356, -9512,  28897, -15447, 24278, 22004, 29621, 14009, 32412, 4807,  32412, -4808, 29621, -14010, 24278, -22005};
 
 void dump_uci_stats(FILE *fd,PHY_VARS_eNB *eNB,int frame) {
 
@@ -194,10 +188,10 @@ uint16_t pucchfmt3_Baseseq_csh_remove( int16_t SubCarrierDeMapData[4][14][12][2]
 }
 
 #define MAXROW_TBL_SF5_OS_IDX    (5)    // Orthogonal sequence index
-const int16_t TBL_3_SF5_GEN_N_DASH_NS[MAXROW_TBL_SF5_OS_IDX] = {0,3,6,8,10};
+static const int16_t TBL_3_SF5_GEN_N_DASH_NS[MAXROW_TBL_SF5_OS_IDX] = {0, 3, 6, 8, 10};
 
 #define MAXROW_TBL_SF4_OS_IDX    (4)    // Orthogonal sequence index
-const int16_t TBL_3_SF4_GEN_N_DASH_NS[MAXROW_TBL_SF4_OS_IDX] = {0,3,6,9};
+static const int16_t TBL_3_SF4_GEN_N_DASH_NS[MAXROW_TBL_SF4_OS_IDX] = {0, 3, 6, 9};
 
 /* Channel estimation */
 uint16_t pucchfmt3_ChannelEstimation( int16_t SubCarrierDeMapData[4][14][12][2],
@@ -532,12 +526,10 @@ const int16_t TBL_3_SF5[MAXROW_TBL_SF5][MAXCLM_TBL_SF5][2] = {
 
 #define  MAXROW_TBL_SF4_fmt3 4
 #define  MAXCLM_TBL_SF4      4
-const int16_t TBL_3_SF4[MAXROW_TBL_SF4_fmt3][MAXCLM_TBL_SF4][2] = {
-  { {32767,0}, {32767,0}, {32767,0}, {32767,0}},
-  { {32767,0}, {-32767,0}, {32767,0}, {-32767,0}},
-  { {32767,0}, {32767,0}, {-32767,0}, {-32767,0}},
-  { {32767,0}, {-32767,0}, {-32767,0}, {32767,0}}
-};
+static const int16_t TBL_3_SF4[MAXROW_TBL_SF4_fmt3][MAXCLM_TBL_SF4][2] = {{{32767, 0}, {32767, 0}, {32767, 0}, {32767, 0}},
+                                                                          {{32767, 0}, {-32767, 0}, {32767, 0}, {-32767, 0}},
+                                                                          {{32767, 0}, {32767, 0}, {-32767, 0}, {-32767, 0}},
+                                                                          {{32767, 0}, {-32767, 0}, {-32767, 0}, {32767, 0}}};
 
 /* orthogonal sequence remove */
 uint16_t pucchfmt3_OrthSeqRemove( int16_t RemoveFrqDev_fmt3[4][2][5][12][2],
@@ -918,7 +910,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
   int16_t tmp_re,tmp_im,W_re=0,W_im=0;
   int16_t *rxptr;
   uint32_t symbol_offset;
-  int16_t stat0_ref_re[4],stat0_ref_im[4],stat1_ref_re[4],stat1_ref_im[4],*cfo;
+  int16_t stat0_ref_re[4], stat0_ref_im[4], stat1_ref_re[4], stat1_ref_im[4];
   int16_t chest0_re[4][12],chest0_im[4][12];
   int16_t chest1_re[4][12],chest1_im[4][12];
   int32_t chest_mag;
@@ -1214,7 +1206,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 	    stat1_re[aa]=0;
 	    stat1_im[aa]=0;
             off=re<<1;
-            cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase] : &cfo_pucch_ep[12*phase];
+            const int16_t *cfo = (frame_parms->Ncp == 0) ? &cfo_pucch_np[14 * phase] : &cfo_pucch_ep[12 * phase];
 
             for (l=0; l<(nsymb>>1); l++) {
               stat0_re[aa] += (((rxcomp[aa][off]*(int32_t)cfo[l<<1])>>15)     - ((rxcomp[aa][1+off]*(int32_t)cfo[1+(l<<1)])>>15))/nsymb;
@@ -1318,7 +1310,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             stat0_ref_re[aa]=0;
             stat0_ref_im[aa]=0;
             off=re<<1;
-            cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase] : &cfo_pucch_ep[12*phase];
+            const int16_t *cfo = (frame_parms->Ncp == 0) ? &cfo_pucch_np[14 * phase] : &cfo_pucch_ep[12 * phase];
 
             for (l=0; l<(nsymb>>1); l++) {
               if ((l<2)||(l>(nsymb>>1) - 3)) {  //data symbols
@@ -1398,7 +1390,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
       if (sigma2_dB<(dB_fixed(stat_max) - (IS_SOFTMODEM_IQPLAYER?0:pucch1_thres)) ) {//
         chL = (nsymb>>1)-4;
         chest_mag=0;
-        cfo =  (frame_parms->Ncp==0) ? &cfo_pucch_np[14*phase_max] : &cfo_pucch_ep[12*phase_max];
+        const int16_t *cfo = (frame_parms->Ncp == 0) ? &cfo_pucch_np[14 * phase_max] : &cfo_pucch_ep[12 * phase_max];
 
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
           for (re=0; re<12; re++) {

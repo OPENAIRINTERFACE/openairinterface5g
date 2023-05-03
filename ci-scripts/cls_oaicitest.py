@@ -295,10 +295,13 @@ class OaiCiTest():
 
 	def InitializeUE(self, HTML):
 		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
+		messages = []
 		with concurrent.futures.ThreadPoolExecutor() as executor:
 			futures = [executor.submit(ue.initialize) for ue in ues]
+			for f, ue in zip(futures, ues):
+				uename = f'UE {ue.getName()}'
+				messages.append(f'{uename}: initialized' if f.result() else f'{uename}: ERROR during Initialization')
 			[f.result() for f in futures]
-		messages = [f'UE {ue.getName()}: initialized' for ue in ues]
 		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
 
 
@@ -1273,7 +1276,7 @@ class OaiCiTest():
 			logging.debug("Iperf in UL requested")
 			cmd = cls_cmd.getConnection(EPC.IPAddress)
 			cmd.run(f'rm {EPC.SourceCodePath}/{server_filename}')
-			cmd.run(f'{cn_iperf_prefix} iperf -s {udpSwitch} -1 -t {iperf_time * 1.5} {port} &> {EPC.SourceCodePath}/{server_filename} &')
+			cmd.run(f'{cn_iperf_prefix} iperf -s {udpSwitch} -t {iperf_time * 1.5} {port} &> {EPC.SourceCodePath}/{server_filename} &')
 			cmd.close()
 
 			cmd = cls_cmd.getConnection(ue.getHost())

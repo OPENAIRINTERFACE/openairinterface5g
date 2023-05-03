@@ -1482,6 +1482,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   ue_p->masterCellGroup->spCellConfig = ue_p->spCellConfigReestablishment;
   ue_p->spCellConfigReestablishment = NULL;
   cellGroupConfig->spCellConfig = ue_p->masterCellGroup->spCellConfig;
+  cellGroupConfig->mac_CellGroupConfig = ue_p->masterCellGroup->mac_CellGroupConfig;
   cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
 
   uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;

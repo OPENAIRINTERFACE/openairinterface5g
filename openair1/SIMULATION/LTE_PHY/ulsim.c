@@ -54,6 +54,8 @@
 #include "common/ran_context.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "openair1/PHY/LTE_TRANSPORT/dlsch_tbs_full.h"
+#include "PHY/phy_extern.h"
+
 const char *__asan_default_options()
 {
   /* don't do leak checking in ulsim, not finished yet */
@@ -69,7 +71,6 @@ channel_desc_t *UE2eNB[NUMBER_OF_UE_MAX][NUMBER_OF_eNB_MAX];
 node_desc_t *enb_data[NUMBER_OF_eNB_MAX];
 node_desc_t *ue_data[NUMBER_OF_UE_MAX];
 
-extern uint16_t beta_ack[16],beta_ri[16],beta_cqi[16];
 THREAD_STRUCT thread_struct;
 nfapi_ue_release_request_body_t release_rntis;
 
