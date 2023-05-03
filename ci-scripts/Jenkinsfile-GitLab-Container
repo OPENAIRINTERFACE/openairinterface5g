@@ -425,6 +425,26 @@ pipeline {
             }
           }
         }
+        stage ("Interop-F1") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Interop-F1', 'Interop-F1')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Interop-F1')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
 
         //avra is offline, re-enable once it is available
         //stage ("T1-Offload-Test") {
