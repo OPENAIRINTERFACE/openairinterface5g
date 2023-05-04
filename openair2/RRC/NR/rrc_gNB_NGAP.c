@@ -320,6 +320,7 @@ static int decodePDUSessionResourceSetup(pdusession_t *session)
         /* mandatory PDUSessionType */
       case NGAP_ProtocolIE_ID_id_PDUSessionType:
         session->pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
+        AssertFatal(session->pdu_session_type == PDUSessionType_ipv4, "To be developped: support not IPv4 sessions\n");
         break;
 
         /* optional SecurityIndication */
@@ -681,7 +682,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
       tmp->pdusession_id = session->param.pdusession_id;
       tmp->nb_of_qos_flow = session->param.nb_qos;
       tmp->gtp_teid = session->param.gNB_teid_N3;
-      tmp->pdu_session_type = PDUSessionType_ipv4; // FixMe: IPv4 hardcoded here
+      tmp->pdu_session_type = session->param.pdu_session_type; // FixMe: IPv4 hardcoded here
       tmp->gNB_addr.length = session->param.gNB_addr_N3.length;
       memcpy(tmp->gNB_addr.buffer, session->param.gNB_addr_N3.buffer, tmp->gNB_addr.length);
       for (int qos_flow_index = 0; qos_flow_index < tmp->nb_of_qos_flow; qos_flow_index++) {
@@ -758,6 +759,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     pdusession_t *session = &pduSession->param;
     LOG_I(NR_RRC, "Adding pdusession %d, total nb of sessions %d\n", session->pdusession_id, UE->nb_of_pdusessions);
     session->pdusession_id = msg->pdusession_setup_params[i].pdusession_id;
+    session->pdu_session_type = msg->pdusession_setup_params[i].pdu_session_type;
     session->nas_pdu = msg->pdusession_setup_params[i].nas_pdu;
     session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
     decodePDUSessionResourceSetup(session);
@@ -1171,22 +1173,19 @@ void rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(
   itti_send_msg_to_task(TASK_NGAP, instance, msg);
 }
 
-void
-rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(
-  const protocol_ctxt_t    *const ctxt_pP,
-  rrc_gNB_ue_context_t     *const ue_context_pP,
-  NR_UL_DCCH_Message_t     *const ul_dcch_msg
-)
+void rrc_gNB_send_NGAP_UE_CAPABILITIES_IND(const protocol_ctxt_t *const ctxt_pP,
+                                           rrc_gNB_ue_context_t *const ue_context_pP,
+                                           const NR_UECapabilityInformation_t *const ue_cap_info)
 //------------------------------------------------------------------------------
 {
-    NR_UE_CapabilityRAT_ContainerList_t *ueCapabilityRATContainerList = ul_dcch_msg->message.choice.c1->choice.ueCapabilityInformation->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
-    /* 4096 is arbitrary, should be big enough */
-    void *buf;
-    NR_UERadioAccessCapabilityInformation_t rac = {0};
-    gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
+  NR_UE_CapabilityRAT_ContainerList_t *ueCapabilityRATContainerList =
+      ue_cap_info->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
+  void *buf;
+  NR_UERadioAccessCapabilityInformation_t rac = {0};
+  gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
 
-    if (ueCapabilityRATContainerList->list.count == 0) {
-      LOG_W(RRC, "[gNB %d][UE %x] bad UE capabilities\n", ctxt_pP->module_id, UE->rnti);
+  if (ueCapabilityRATContainerList->list.count == 0) {
+    LOG_W(RRC, "[gNB %d][UE %x] bad UE capabilities\n", ctxt_pP->module_id, UE->rnti);
     }
 
     int ret = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList, NULL, ueCapabilityRATContainerList, &buf);
