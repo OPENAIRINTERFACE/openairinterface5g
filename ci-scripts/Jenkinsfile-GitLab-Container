@@ -36,7 +36,6 @@ pipeline {
     label nodeExecutor
   }
   options {
-    disableConcurrentBuilds()
     timestamps()
     gitLabConnection('OAI GitLab')
     ansiColor('xterm')
