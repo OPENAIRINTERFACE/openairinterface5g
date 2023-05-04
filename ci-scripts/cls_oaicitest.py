@@ -59,79 +59,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 #-----------------------------------------------------------
-# Utility functions
-#-----------------------------------------------------------
-
-def GetPingTimeAnalysis(RAN,ping_log_file,ping_rttavg_threshold):
-	#ping time values read from file
-	t_ping=[]
-	#ping stats (dictionary) to be returned by the function
-	ping_stat={}
-	if (os.path.isfile(ping_log_file)):
-		with open(ping_log_file,"r") as f:
-			for line in f:
-				#looking for time=xxx ms field
-				result=re.match('^.+time=(?P<ping_time>[0-9\.]+)',line)
-				if result != None:
-					t_ping.append(float(result.group('ping_time')))
-
-		#initial stats
-		ping_stat['min_0']=min(t_ping)
-		ping_stat['mean_0']=stat.mean(t_ping)
-		ping_stat['median_0']=stat.median(t_ping)
-		ping_stat['max_0']=max(t_ping)
-
-		#get index of max value
-		
-		max_loc=t_ping.index(max(t_ping))
-		ping_stat['max_loc']=max_loc
-		#remove it
-		t_ping_post=t_ping.copy()
-		t_ping_post.pop(max_loc)
-		#new stats after removing max value
-		ping_stat['min_1']=min(t_ping_post)
-		ping_stat['mean_1']=stat.mean(t_ping_post)
-		ping_stat['median_1']=stat.median(t_ping_post)
-		ping_stat['max_1']=max(t_ping_post)
-
-		#plot ping over time and save png for artifacts
-		ticks = np.arange(0, len(t_ping), 1)
-		figure, axis = plt.subplots(figsize=(10, 10))
-		axis.plot(ticks,t_ping,marker='o')
-		axis.set_xlabel('Ping Events')
-		axis.set_ylabel("Ping RTT (in ms)")
-		axis.set_title(ping_log_file)
-		axis.set_xticks(ticks)
-		axis.set_xticklabels([])
-		YMAX=20 #base scale
-		if max(t_ping) > YMAX:
-			y_max=max(t_ping)+1
-		else:
-			y_max=YMAX+1
-		plt.ylim(0,y_max)
-		if ping_rttavg_threshold != '':
-			th_label="AVG Ping Fail Threshold="+ping_rttavg_threshold
-			plt.axhline(y=float(ping_rttavg_threshold), color='r', linestyle='-',label=th_label)
-			axis.legend()
-		plt.savefig(ping_log_file+'.png')
-
-		#copy the png file already to enb to move it move it later into the artifacts
-		try:
-			mySSH = sshconnection.SSHConnection()
-			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file+'.png', RAN.eNBSourceCodePath + '/cmake_targets/')
-			mySSH.copyout(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, ping_log_file, RAN.eNBSourceCodePath + '/cmake_targets/')
-		except:
-			logging.debug('\u001B[1;37;41m Ping PNG SCP to eNB FAILED\u001B[0m')
-
-		return ping_stat
-
-	else:
-		logging.error("GetPingTimeAnalysis : Ping log file does not exist")
-		return -1
-
-	
-
-#-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
 class OaiCiTest():
@@ -668,7 +595,6 @@ class OaiCiTest():
 			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
 
 			logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-			ping_stat=GetPingTimeAnalysis(RAN,ping_log_file,self.ping_rttavg_threshold)
 
 			#building html message
 			qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
