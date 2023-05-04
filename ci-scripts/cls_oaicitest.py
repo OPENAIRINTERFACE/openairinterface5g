@@ -503,10 +503,13 @@ class OaiCiTest():
 		statusQueue.put(message)
 		lock.release()
 
-	def Ping_common(self, lock, statusQueue,EPC, ue, RAN):
+	def Ping_common(self, EPC, ue, RAN):
 		# Launch ping on the EPC side (true for ltebox and old open-air-cn)
 		# But for OAI-Rel14-CUPS, we launch from python executor
 		ping_status = 0
+		ueIP = ue.getIP()
+		if not ueIP:
+			return (False, f"UE {ue.getName()} has no IP address")
 		launchFromEpc = False
 		ping_log_file = f'ping_{self.testCase_id}_{ue.getName()}.log'
 		if re.match('OAI-Rel14-CUPS', EPC.Type, re.IGNORECASE):
@@ -522,9 +525,9 @@ class OaiCiTest():
 			if (re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE)) or (re.match('OAICN5G', EPC.Type, re.IGNORECASE)):
 				launchFromTrfContainer = True
 			if launchFromTrfContainer:
-				ping_status = SSH.command(f'docker exec -it prod-trf-gen /bin/bash -c "ping {self.ping_args} {ue.getIP()}" 2>&1 | tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
+				ping_status = SSH.command(f'docker exec -it prod-trf-gen /bin/bash -c "ping {self.ping_args} {ueIP}" 2>&1 | tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
 			else:
-				ping_status = SSH.command(f'stdbuf -o0 ping {self.ping_args} {ue.getIP()} 2>&1 | stdbuf -o0 tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
+				ping_status = SSH.command(f'stdbuf -o0 ping {self.ping_args} {ueIP} 2>&1 | stdbuf -o0 tee {ping_log_file}', '\$', int(ping_time[0])*1.5)
 			#copy the ping log file to have it locally for analysis (ping stats)
 			SSH.copyin(EPC.IPAddress, EPC.UserName, EPC.Password, EPC.SourceCodePath + '/scripts/{ping_log_file}', '.')
 			SSH.close()
@@ -552,86 +555,67 @@ class OaiCiTest():
 			cmd.close()
 
 		# TIMEOUT CASE
+		ue_header = f'UE {ue.getName()} ({ueIP})'
 		if ping_status < 0:
-			message = 'Ping with UE (' + str(ue.getIP()) + ') crashed due to TIMEOUT!'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-			self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
-			return
+			message = ue_header + ': ping crashed: TIMEOUT?'
+			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			return (False, message)
 		#search is done on cat result
+		logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
 		with open(ping_log_file, 'r') as f:
 			ping_output = "".join(f.readlines())
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', ping_output)
 		if result is None:
-			message = 'Packet Loss Not Found!'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-			self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
-			return
+			message = ue_header + ': Packet Loss Not Found!'
+			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			return (False, message)
 		packetloss = result.group('packetloss')
-		if float(packetloss) == 100:
-			message = 'Packet Loss is 100%'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-			self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
-			return
 		result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', ping_output)
 		if result is None:
-			message = 'Ping RTT_Min RTT_Avg RTT_Max Not Found!'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
-			self.ping_iperf_wrong_exit(lock, ue.getIP(), ue.getName(), statusQueue, message)
-			return
+			message = ue_header + ': Ping RTT_Min RTT_Avg RTT_Max Not Found!'
+			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			return (False, message)
 		rtt_min = result.group('rtt_min')
 		rtt_avg = result.group('rtt_avg')
 		rtt_max = result.group('rtt_max')
-		pal_msg = 'Packet Loss : ' + packetloss + '%'
-		min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
-		avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
-		max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
 
-		lock.acquire()
-		logging.debug('\u001B[1;37;44m ping result (' + ue.getIP() + ') \u001B[0m')
-		logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
-		logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
-		logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
-		logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
+		pal_msg = f'Packet Loss: {packetloss}%'
+		min_msg = f'RTT(Min)   : {rtt_min} ms'
+		avg_msg = f'RTT(Avg)   : {rtt_avg} ms'
+		max_msg = f'RTT(Max)   : {rtt_max} ms'
 
-		logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
+		logging.info(f'\u001B[1;37;44m ping result for {ue_header} \u001B[0m')
+		logging.info(f'\u001B[1;34m    ' + pal_msg + '\u001B[0m')
+		logging.info(f'\u001B[1;34m    ' + min_msg + '\u001B[0m')
+		logging.info(f'\u001B[1;34m    ' + avg_msg + '\u001B[0m')
+		logging.info(f'\u001B[1;34m    ' + max_msg + '\u001B[0m')
 
-		#building html message
-		qMsg = pal_msg + '\n' + min_msg + '\n' + avg_msg + '\n' + max_msg
+		message = f'{ue_header}\n{pal_msg}\n{min_msg}\n{avg_msg}\n{max_msg}'
 
 		#checking packet loss compliance
-		packetLossOK = True
-		if (packetloss is not None) :
-			if float(packetloss) > float(self.ping_packetloss_threshold):
-				qMsg += '\nPacket Loss too high'
-				logging.debug('\u001B[1;37;41m Packet Loss too high; Target: '+ self.ping_packetloss_threshold + '%\u001B[0m')
-				packetLossOK = False
-			elif float(packetloss) > 0:
-				qMsg += '\nPacket Loss is not 0%'
-				logging.debug('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
+		if float(packetloss) > float(self.ping_packetloss_threshold):
+			message += '\nPacket Loss too high'
+			logging.error(f'\u001B[1;37;41m Packet Loss too high; Target: {self.ping_packetloss_threshold}%\u001B[0m')
+			return (False, message)
+		elif float(packetloss) > 0:
+			message += '\nPacket Loss is not 0%'
+			logging.info('\u001B[1;30;43m Packet Loss is not 0% \u001B[0m')
 
-		#checking RTT avg compliance
-		rttavgOK = True
 		if self.ping_rttavg_threshold != '':
-			if float(rtt_avg)>float(self.ping_rttavg_threshold):
-				ping_rttavg_error_msg = 'RTT(Avg) too high: ' + rtt_avg + ' ms; Target: '+ self.ping_rttavg_threshold+ ' ms'
-				qMsg += '\n'+ping_rttavg_error_msg
-				logging.debug('\u001B[1;37;41m'+ ping_rttavg_error_msg +' \u001B[0m')
-				rttavgOK = False
+			if float(rtt_avg) > float(self.ping_rttavg_threshold):
+				ping_rttavg_error_msg = f'RTT(Avg) too high: {rtt_avg} ms; Target: {self.ping_rttavg_threshold} ms'
+				message += '\n' + ping_rttavg_error_msg
+				logging.error('\u001B[1;37;41m'+ ping_rttavg_error_msg +' \u001B[0m')
+				return (False, message)
 
-		if packetLossOK and rttavgOK:
-			statusQueue.put(0)
-		else:
-			statusQueue.put(-1)
-		statusQueue.put(ue.getName())
-		statusQueue.put(ue.getIP())
-		statusQueue.put(qMsg)
-		lock.release()
+		return (True, message)
 
 	def PingNoS1_wrong_exit(self, qMsg,HTML):
 		message = 'OAI UE ping result\n{qMsg}'
 		HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', [message])
 
 	def PingNoS1(self,HTML,RAN,EPC,CONTAINERS):
+		raise Exception("PingNoS1 not supported!")
 		SSH=sshconnection.SSHConnection()
 		check_eNB = True
 		check_OAI_UE = True
@@ -724,56 +708,22 @@ class OaiCiTest():
 		if EPC.IPAddress == '' or EPC.UserName == '' or EPC.Password == '' or EPC.SourceCodePath == '':
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
-		check_eNB = True
-		if (len(self.UEDevices) == 1) and (self.UEDevices[0] == 'OAI-UE'):
-			check_OAI_UE = True
-		else:
-			check_OAI_UE = False
 
 		if self.ue_ids == []:
 			raise Exception("no module names in self.ue_ids provided")
-		ues = []
-		for ue_id in self.ue_ids:
-			ue = cls_module_ue.Module_UE(ue_id)
-			if not ue.getIP():
-				logging.error("no IP addresses returned")
-				HTML.CreateHtmlTestRow(self.ping_args, 'KO', len(self.UEDevices), html_queue)
-				self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
-			ues.append(ue)
+
+		ues = [cls_module_ue.Module_UE(n.strip()) for n in self.ue_ids]
 		logging.debug(ues)
-
-		multi_jobs = []
-		i = 0
-		lock = Lock()
-		status_queue = SimpleQueue()
-		for ue in ues:
-			p = Process(target = self.Ping_common, args = (lock,status_queue,EPC,ue,RAN,))
-			p.daemon = True
-			p.start()
-			multi_jobs.append(p)
-			i = i + 1
-		for job in multi_jobs:
-			job.join()
-
-		if (status_queue.empty()):
-			HTML.CreateHtmlTestRow(self.ping_args, 'KO', CONST.ALL_PROCESSES_OK)
-			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
+		with concurrent.futures.ThreadPoolExecutor() as executor:
+			futures = [executor.submit(self.Ping_common, EPC, ue, RAN) for ue in ues]
+			results = [f.result() for f in futures]
+			# each result in results is a tuple, first member goes to successes, second to messages
+			successes, messages = map(list, zip(*results))
+		if len(successes) == len(ues) and all(successes):
+			HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', messages)
 		else:
-			ping_status = True
-			messages = []
-			while (not status_queue.empty()):
-				count = status_queue.get()
-				if (count < 0):
-					ping_status = False
-				device_id = status_queue.get()
-				ip_addr = status_queue.get()
-				message = status_queue.get()
-				messages.append(f'UE ({device_id})\nIP Address  : {ip_addr}\n{message}')
-			if (ping_status):
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'OK', messages)
-			else:
-				HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', messages)
-				self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
+			HTML.CreateHtmlTestRowQueue(self.ping_args, 'KO', messages)
+			self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 
 	def Iperf_ComputeTime(self):
 		result = re.search('-t (?P<iperf_time>\d+)', str(self.iperf_args))
