@@ -112,7 +112,7 @@ ran-base            latest              5c9c02a5b4a8        1 minute ago        
 ...
 ```
 
-**Note that the steps are identical for `rocky-linux`.**
+Note that the steps are identical for `rocky-linux`.
 
 ## 3.3. Building any target image ##
 
@@ -139,7 +139,7 @@ Do not forget to remove the temporary image:
 docker image prune --force
 ```
 
-**Note that the steps are identical for `rocky-linux`.**
+Note that the steps are identical for `rocky-linux`.
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 
