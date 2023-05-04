@@ -82,6 +82,9 @@ Webhook
 - [RAN-gNB-N300-Timing-Phytest-LDPC](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-gNB-N300-Timing-Phytest-LDPC/)
   - caracal + N310
   - pure performance test through phy-test scheduler, see command line for more details
+- [RAN-Interop-F1](https://jenkins-oai.eurecom.fr/job/RAN-Interop-F1/)
+  - ofqot (DU, 1x UE)
+  - F1 interoperability testing: sets up connection to Accelleran CU, UE connection and connectivity test
 - [RAN-L2-Sim-Test-5G](https://jenkins-oai.eurecom.fr/job/RAN-L2-Sim-Test-4G/)
   - obelix (eNB, 1x UE, OAI EPC)
   - L2simulator: skips physical layer and uses proxy between eNB and UE
