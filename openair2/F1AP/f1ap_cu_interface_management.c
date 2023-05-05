@@ -105,12 +105,13 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   asn_INTEGER2ulong(&ie->value.choice.GNB_DU_ID, &req->gNB_DU_id);
   LOG_D(F1AP, "req->gNB_DU_id %lu \n", req->gNB_DU_id);
   /* gNB_DU_name */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
-                             F1AP_ProtocolIE_ID_id_gNB_DU_Name, true);
-  req->gNB_DU_name = calloc(ie->value.choice.GNB_DU_Name.size + 1, sizeof(char));
-  memcpy(req->gNB_DU_name, ie->value.choice.GNB_DU_Name.buf,
-         ie->value.choice.GNB_DU_Name.size);
-  LOG_D(F1AP, "req->gNB_DU_name %s \n", req->gNB_DU_name);
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container, F1AP_ProtocolIE_ID_id_gNB_DU_Name, false);
+  req->gNB_DU_name = NULL;
+  if (ie != NULL) {
+    req->gNB_DU_name = calloc(ie->value.choice.GNB_DU_Name.size + 1, sizeof(char));
+    memcpy(req->gNB_DU_name, ie->value.choice.GNB_DU_Name.buf, ie->value.choice.GNB_DU_Name.size);
+    LOG_D(F1AP, "req->gNB_DU_name %s \n", req->gNB_DU_name);
+  }
   /* GNB_DU_Served_Cells_List */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List, true);
