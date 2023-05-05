@@ -150,59 +150,49 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 /* 15  */ {  1,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
 };
 
-
 void nr_ue_init_mac(module_id_t module_idP)
 {
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  // default values as deined in 38.331 sec 9.2.2
   LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
-  //mac->scheduling_info.macConfig=NULL;
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  nr_ue_mac_default_configs(mac);
+  mac->first_sync_frame = -1;
+  mac->sib1_decoded = false;
+  mac->phy_config_request_sent = false;
+  mac->state = UE_NOT_SYNC;
+}
+
+void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
+{
+  // default values as defined in 38.331 sec 9.2.2
   mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf10240;
   mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_infinity;
-//  mac->scheduling_info.periodicPHR_Timer = NR_MAC_MainConfig__phr_Config__setup__periodicPHR_Timer_sf20;
-//  mac->scheduling_info.prohibitPHR_Timer = NR_MAC_MainConfig__phr_Config__setup__prohibitPHR_Timer_sf20;
-//  mac->scheduling_info.PathlossChange_db = NR_MAC_MainConfig__phr_Config__setup__dl_PathlossChange_dB1;
-//  mac->PHR_state = NR_MAC_MainConfig__phr_Config_PR_setup;
   mac->scheduling_info.SR_COUNTER = 0;
   mac->scheduling_info.sr_ProhibitTimer = 0;
   mac->scheduling_info.sr_ProhibitTimer_Running = 0;
-//  mac->scheduling_info.maxHARQ_Tx = NR_MAC_MainConfig__ul_SCH_Config__maxHARQ_Tx_n5;
-//  mac->scheduling_info.ttiBundling = 0;
-//  mac->scheduling_info.extendedBSR_Sizes_r10 = 0;
-//  mac->scheduling_info.extendedPHR_r10 = 0;
-//  mac->scheduling_info.drx_config = NULL;
-//  mac->scheduling_info.phr_config = NULL;
-  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value configured by the NW.
+
+  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
+  // configured by the NW.
   mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
   mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
   mac->BSR_reporting_active = BSR_TRIGGER_NONE;
-//  mac->scheduling_info.periodicPHR_SF = nr_get_sf_perioidicPHR_Timer(mac->scheduling_info.periodicPHR_Timer);
-//  mac->scheduling_info.prohibitPHR_SF = nr_get_sf_prohibitPHR_Timer(mac->scheduling_info.prohibitPHR_Timer);
-//  mac->scheduling_info.PathlossChange_db = nr_get_db_dl_PathlossChange(mac->scheduling_info.PathlossChange);
-//  mac->PHR_reporting_active = 0;
 
   for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
-    LOG_D(NR_MAC, "[UE%d] Applying default logical channel config for LCGID %d\n",
-                 module_idP, i);
+    LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
     mac->scheduling_info.Bj[i] = -1;
     mac->scheduling_info.bucket_size[i] = -1;
 
-    if (i < UL_SCH_LCID_DTCH) {   // initialize all control channels lcgid to 0
+    if (i < UL_SCH_LCID_DTCH) { // initialize all control channels lcgid to 0
       mac->scheduling_info.LCGID[i] = 0;
-    } else {    // initialize all the data channels lcgid to 1
+    } else { // initialize all the data channels lcgid to 1
       mac->scheduling_info.LCGID[i] = 1;
     }
 
     mac->scheduling_info.LCID_status[i] = LCID_EMPTY;
     mac->scheduling_info.LCID_buffer_remain[i] = 0;
-    for (int i = 0; i < NR_MAX_HARQ_PROCESSES; i++)
-      mac->first_ul_tx[i] = 1;
+    for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
+      mac->first_ul_tx[k] = 1;
   }
 
-  mac->first_sync_frame = -1;
-  mac->sib1_decoded = false;
-  mac->phy_config_request_sent = false;
-  mac->state = UE_NOT_SYNC;
   memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
 }

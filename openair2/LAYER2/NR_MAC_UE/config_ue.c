@@ -823,7 +823,7 @@ int nr_rrc_mac_config_req_ue(module_id_t module_id,
       mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
       LOG_I(MAC, "Configuring CRNTI %x\n", mac->crnti);
 
-      nr_ue_init_mac(module_id);
+      nr_ue_mac_default_configs(mac);
       if (!get_softmodem_params()->emulate_l1) {
         mac->if_module->phy_config_request(&mac->phy_config);
         mac->phy_config_request_sent = true;
