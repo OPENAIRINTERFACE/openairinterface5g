@@ -185,7 +185,6 @@ int test_ldpc(short max_iterations,
     }
   }
 
-
   //determine number of bits in codeword
   if (block_length>3840)
   {
@@ -270,6 +269,8 @@ int test_ldpc(short max_iterations,
   if (ntrials==0)
     encoder_orig(test_input,channel_input, Zc, BG, block_length, BG, &impp);
   impp.gen_code=0;
+  decode_abort_t dec_abort;
+  init_abort(&dec_abort);
   for (int trial=0; trial < ntrials; trial++)
   {
 	segment_bler = 0;
@@ -359,7 +360,12 @@ int test_ldpc(short max_iterations,
       }
       for(int j=0;j<n_segments;j++) {
         start_meas(time_decoder);
-        n_iter = nrLDPC_decoder(&decParams[j], (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], &decoder_profiler);
+        set_abort(&dec_abort, false);
+        n_iter = nrLDPC_decoder(&decParams[j],
+                                (int8_t *)channel_output_fixed[j],
+                                (int8_t *)estimated_output[j],
+                                &decoder_profiler,
+                                &dec_abort);
         stop_meas(time_decoder);
         //count errors
         if ( memcmp(estimated_output[j], test_input[j], block_length/8 ) != 0 ) {

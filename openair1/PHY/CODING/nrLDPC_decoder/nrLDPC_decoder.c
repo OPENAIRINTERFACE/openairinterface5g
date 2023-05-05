@@ -33,6 +33,7 @@
 #include "nrLDPC_mPass.h"
 #include "nrLDPC_cnProc.h"
 #include "nrLDPC_bnProc.h"
+#include "openair1/PHY/CODING/coding_defs.h"
 #define UNROLL_CN_PROC 1
 #define UNROLL_BN_PROC 1
 #define UNROLL_BN_PROC_PC 1
@@ -118,11 +119,20 @@
 #include "nrLDPC_tools/nrLDPC_debug.h"
 #endif
 
-static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, uint32_t numLLR, t_nrLDPC_lut* p_lut, t_nrLDPC_dec_params* p_decParams, t_nrLDPC_time_stats* p_profiler);
-int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type);
+static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
+                                           int8_t* p_out,
+                                           uint32_t numLLR,
+                                           t_nrLDPC_lut* p_lut,
+                                           t_nrLDPC_dec_params* p_decParams,
+                                           t_nrLDPC_time_stats* p_profiler,
+                                           decode_abort_t* ab);
 void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out) {
 }
-int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out, t_nrLDPC_time_stats* p_profiler)
+int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams,
+                     int8_t* p_llr,
+                     int8_t* p_out,
+                     t_nrLDPC_time_stats* p_profiler,
+                     decode_abort_t* ab)
 {
     uint32_t numLLR;
     uint32_t numIter = 0;
@@ -133,8 +143,9 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
     numLLR = nrLDPC_init(p_decParams, p_lut);
 
     // Launch LDPC decoder core for one segment
-    numIter = nrLDPC_decoder_core(p_llr, p_out, numLLR, p_lut, p_decParams, p_profiler);
-
+    numIter = nrLDPC_decoder_core(p_llr, p_out, numLLR, p_lut, p_decParams, p_profiler, ab);
+    if (numIter > p_decParams->numMaxIter)
+      set_abort(ab, true);
     return numIter;
 }
 
@@ -147,7 +158,13 @@ int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
    \param p_decParamsnrLDPC decoder parameters
    \param p_profilernrLDPC profiler statistics
 */
-static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, uint32_t numLLR, t_nrLDPC_lut* p_lut, t_nrLDPC_dec_params* p_decParams, t_nrLDPC_time_stats* p_profiler)
+static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr,
+                                           int8_t* p_out,
+                                           uint32_t numLLR,
+                                           t_nrLDPC_lut* p_lut,
+                                           t_nrLDPC_dec_params* p_decParams,
+                                           t_nrLDPC_time_stats* p_profiler,
+                                           decode_abort_t* ab)
 {
     uint16_t Z          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;
@@ -478,8 +495,9 @@ static inline uint32_t nrLDPC_decoder_core(int8_t* p_llr, int8_t* p_out, uint32_
     while ( (i < numMaxIter) && (pcRes != 0) ) {
         // Increase iteration counter
         i++;
-
-        // CN processing
+        if (check_abort(ab))
+          return numMaxIter + 2;
+          // CN processing
 #ifdef NR_LDPC_PROFILER_DETAIL
         start_meas(&p_profiler->cnProc);
 #endif

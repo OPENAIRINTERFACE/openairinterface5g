@@ -1228,7 +1228,8 @@ uci_procedures(PHY_VARS_eNB *eNB,
   } // end loop for (int i = 0; i < NUMBER_OF_UCI_MAX; i++) {
 }
 
-void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
+void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req)
+{
   turboDecode_t * rdata=(turboDecode_t *) NotifiedFifoData(req);
 
   LTE_eNB_ULSCH_t *ulsch = rdata->eNB->ulsch[rdata->UEid];
@@ -1244,19 +1245,7 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
   if (decodeSucess)  {
     int Fbytes=(rdata->segment_r==0) ? rdata->Fbits>>3 : 0;
     int sz=(rdata->Kr>>3) - Fbytes - ((ulsch_harq->C>1)?3:0);
-    memcpy(ulsch_harq->decodedBytes+rdata->offset,
-	   rdata->decoded_bytes+Fbytes,
-	   sz);
-  } else {
-    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpoolJob(proc->threadPool, req->key);
-      nb+=abortNotifiedFIFOJob(proc->respDecode, req->key);
-      proc->nbDecode-=nb;
-      LOG_D(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
-      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
-		  ulsch_harq->processedSegments, nb, rdata->nbSegments);
-      ulsch_harq->processedSegments=rdata->nbSegments;
-    }
+    memcpy(ulsch_harq->decodedBytes + rdata->offset, rdata->decoded_bytes + Fbytes, sz);
   }
 
   // if this UE segments are all done
@@ -1276,8 +1265,8 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	  }
 	}
       }
-	
-      if (!decodeSucess) {
+
+      if (check_abort(&ulsch_harq->abort_decode)) {
         T(T_ENB_PHY_ULSCH_UE_NACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
           T_INT(rdata->harq_pid));
 	fill_crc_indication(eNB,i,rdata->frame,rdata->subframe,1); // indicate NAK to MAC
@@ -1302,28 +1291,28 @@ void postDecode(L1_rxtx_proc_t *proc, notifiedFIFO_elt_t *req) {
 	 * locally in PHY.
 	 */
 	ulsch_harq->handled = 1;
-      }  // ulsch in error
-      else if(ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions){
-	fill_crc_indication(eNB,i,rdata->frame,rdata->subframe,0); // indicate ACK to MAC
-	fill_rx_indication(eNB,i,rdata->frame,rdata->subframe);  // indicate SDU to MAC
-	ulsch_harq->status = SCH_IDLE;
-	ulsch->harq_mask &= ~(1 << rdata->harq_pid);
-	for (int j=0;j<NUMBER_OF_ULSCH_MAX;j++) 
-           if (eNB->ulsch_stats[j].rnti == ulsch->rnti) {
-              eNB->ulsch_stats[j].total_bytes_rx+=ulsch_harq->TBS;
-              for (int aa=0;aa<eNB->frame_parms.nb_antennas_rx;aa++) {
-                eNB->ulsch_stats[j].ulsch_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_power[aa]);
-                eNB->ulsch_stats[j].ulsch_noise_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_noise_power[aa]); 
-              }
-              break;
-           }
+      } // ulsch in error
+      else if (ulsch_harq->repetition_number == ulsch_harq->total_number_of_repetitions) {
+        fill_crc_indication(eNB, i, rdata->frame, rdata->subframe, 0); // indicate ACK to MAC
+        fill_rx_indication(eNB, i, rdata->frame, rdata->subframe); // indicate SDU to MAC
+        ulsch_harq->status = SCH_IDLE;
+        ulsch->harq_mask &= ~(1 << rdata->harq_pid);
+        for (int j = 0; j < NUMBER_OF_ULSCH_MAX; j++)
+          if (eNB->ulsch_stats[j].rnti == ulsch->rnti) {
+            eNB->ulsch_stats[j].total_bytes_rx += ulsch_harq->TBS;
+            for (int aa = 0; aa < eNB->frame_parms.nb_antennas_rx; aa++) {
+              eNB->ulsch_stats[j].ulsch_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_power[aa]);
+              eNB->ulsch_stats[j].ulsch_noise_power[aa] = dB_fixed_x10(eNB->pusch_vars[rdata->UEid]->ulsch_noise_power[aa]);
+            }
+            break;
+          }
         T (T_ENB_PHY_ULSCH_UE_ACK, T_INT(eNB->Mod_id), T_INT(rdata->frame), T_INT(rdata->subframe), T_INT(ulsch->rnti),
            T_INT(rdata->harq_pid));
-      }  // ulsch not in error
-	
+      } // ulsch not in error
+
       if (ulsch_harq->O_ACK>0)
 	fill_ulsch_harq_indication(eNB,ulsch_harq,ulsch->rnti,rdata->frame,rdata->subframe,ulsch->bundling);
-  } 
+  }
 }
 
 void pusch_procedures(PHY_VARS_eNB *eNB,L1_rxtx_proc_t *proc) {

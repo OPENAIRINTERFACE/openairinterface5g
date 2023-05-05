@@ -197,31 +197,6 @@ static inline time_stats_t exec_time_stats_NotifiedFIFO(const notifiedFIFO_elt_t
   return ts;
 }
 
-// This function aborts all messages matching the key
-// If the queue is used in thread pools, it doesn't cancels already running processing
-// because the message has already been picked
-static inline int abortNotifiedFIFOJob(notifiedFIFO_t *nf, uint64_t key) {
-  mutexlock(nf->lockF);
-  int nbDeleted=0;
-  notifiedFIFO_elt_t **start=&nf->outF;
-
-  while(*start!=NULL) {
-    if ( (*start)->key == key ) {
-      notifiedFIFO_elt_t *request=*start;
-      *start=(*start)->next;
-      delNotifiedFIFO_elt(request);
-      nbDeleted++;
-    } else
-      start=&(*start)->next;
-  }
-
-  if (nf->outF == NULL)
-    nf->inF=NULL;
-
-  mutexunlock(nf->lockF);
-  return nbDeleted;
-}
-
 // This functions aborts all messages in the queue, and marks the queue as
 // "aborted", such that every call to it will return NULL
 static inline void abortNotifiedFIFO(notifiedFIFO_t *nf) {
@@ -317,39 +292,6 @@ static inline notifiedFIFO_elt_t *tryPullTpool(notifiedFIFO_t *responseFifo, tpo
   return msg;
 }
 
-static inline int abortTpoolJob(tpool_t *t, uint64_t key) {
-  int nbRemoved=0;
-  notifiedFIFO_t *nf=&t->incomingFifo;
-
-  mutexlock(nf->lockF);
-  notifiedFIFO_elt_t **start=&nf->outF;
-
-  while(*start!=NULL) {
-    if ( (*start)->key == key ) {
-      notifiedFIFO_elt_t *request=*start;
-      *start=(*start)->next;
-      delNotifiedFIFO_elt(request);
-      nbRemoved++;
-    } else
-      start=&(*start)->next;
-  }
-
-  if (t->incomingFifo.outF==NULL)
-    t->incomingFifo.inF=NULL;
-
-  struct one_thread *thread = t->allthreads;
-  while (thread != NULL) {
-    if (thread->runningOnKey == key) {
-      thread->dropJob = true;
-      nbRemoved++;
-    }
-
-    thread = thread->next;
-  }
-
-  mutexunlock(nf->lockF);
-  return nbRemoved;
-}
 static inline int abortTpool(tpool_t *t) {
   int nbRemoved=0;
   /* disables threading: if a message comes in now, we cannot have a race below

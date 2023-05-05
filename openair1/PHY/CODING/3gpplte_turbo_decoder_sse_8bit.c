@@ -792,7 +792,9 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
                                        time_stats_t *gamma_stats,
                                        time_stats_t *ext_stats,
                                        time_stats_t *intl1_stats,
-                                       time_stats_t *intl2_stats) {
+                                       time_stats_t *intl2_stats,
+                                       decode_abort_t *ab)
+{
   /*  y is a pointer to the input
       decoded_bytes is a pointer to the decoded output
       n is the size in bits of the coded block, with the tail */
@@ -1278,7 +1280,8 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
         return(iteration_cnt);
       }
     }
-
+    if (check_abort(ab))
+      return max_iterations + 2;
     // do a new iteration if it is not yet decoded
     if (iteration_cnt < max_iterations) {
       log_map8(systematic1,yparity1,m11,m10,alpha,beta,ext,n2,0,F,offset8_flag,alpha_stats,beta_stats,gamma_stats,ext_stats);
@@ -1303,6 +1306,7 @@ uint8_t phy_threegpplte_turbo_decoder8(int16_t *y,
       }
     }
   }
-
+  if (iteration_cnt > max_iterations)
+    set_abort(ab, true);
   return(iteration_cnt);
 }

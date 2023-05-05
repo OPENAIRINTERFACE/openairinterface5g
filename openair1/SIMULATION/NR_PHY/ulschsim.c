@@ -91,42 +91,24 @@ void deref_sched_response(int _)
   exit(1);
 }
 
-int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req) {
+int nr_postDecode_sim(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req, int *nb_ok)
+{
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
-  NR_gNB_ULSCH_t *ulsch = rdata->ulsch;
   int r = rdata->segment_r;
 
   bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
   ulsch_harq->processedSegments++;
-  gNB->nbDecode--;
 
   if (decodeSuccess) {
     memcpy(ulsch_harq->b+rdata->offset,
            ulsch_harq->c[r],
            rdata->Kr_bytes - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
-  } else {
-    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb=abortTpoolJob(&gNB->threadPool, req->key);
-      nb+=abortNotifiedFIFOJob(&gNB->respDecode, req->key);
-      gNB->nbDecode-=nb;
-      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
-      ulsch_harq->processedSegments, nb, rdata->nbSegments);
-      ulsch_harq->processedSegments=rdata->nbSegments;
-      return 1;
-    }
   }
 
-  // if all segments are done 
-  if (rdata->nbSegments == ulsch_harq->processedSegments) {
-    if (decodeSuccess) {
-      return 0;
-    } else {
-      return 1;
-      }
-
-    }
-    ulsch->last_iteration_cnt = rdata->decodeIterations;
+  // if all segments are done
+  if (rdata->nbSegments == ulsch_harq->processedSegments)
+    return *nb_ok == rdata->nbSegments;
   return 0;
 }
 
@@ -612,13 +594,15 @@ int main(int argc, char **argv)
                            rel15_ul->qam_mod_order,
                            rel15_ul->nrOfLayers);
 
-      nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul,
-                              frame, subframe, harq_pid, G);
-      while (gNB->nbDecode > 0) {
-        notifiedFIFO_elt_t *req=pullTpool(&gNB->respDecode, &gNB->threadPool);
-        ret = nr_postDecode_sim(gNB, req);
-        delNotifiedFIFO_elt(req);
-      }
+     int nbDecode = nr_ulsch_decoding(gNB, UE_id, channel_output_fixed, frame_parms, rel15_ul, frame, subframe, harq_pid, G);
+     int nb_ok = 0;
+     if (nbDecode > 0)
+       while (nbDecode > 0) {
+         notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
+         ret = nr_postDecode_sim(gNB, req, &nb_ok);
+         delNotifiedFIFO_elt(req);
+         nbDecode--;
+       }
 
       if (ret)
         n_errors++;
