@@ -2323,6 +2323,8 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
   return cellGroupConfig;
 }
 
+#include "common/ran_context.h"
+#include "nr_rrc_defs.h"
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
                             NR_UE_NR_Capability_t *uecap,
@@ -2337,6 +2339,13 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
   if (configuration == NULL)
     return;
   DevAssert(configuration->scc != NULL);
+
+  /* This is a hack and will be removed once the CellGroupConfig is fully
+   * handled at the DU */
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
+    LOG_W(RRC, "update of CellGroupConfig not yet supported in F1\n");
+    return;
+  }
 
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
   NR_ServingCellConfigCommon_t *scc = configuration->scc;

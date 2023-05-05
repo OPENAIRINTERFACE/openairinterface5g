@@ -11,6 +11,7 @@
     </td>
   </tr>
 </table>
+
 # 1. Introduction
 
 We use OpenAirInterface source code, and it's regular deployment scheme.
@@ -208,3 +209,46 @@ DU rlc north output goes to du_pdcp_data_ind() that push a outgoing packet reque
 CU pdcp south output calls cu_rlc_data_ind() that do the same symetric processing.
 
 
+# High-level F1-C code structure
+
+The F1 interface is used internally between CU (mostly RRC) and DU (mostly MAC)
+to exchange information. In DL, the CU sends messages as defined by the
+callbacks in `mac_rrc_dl.h`, whose implementation is defined in files
+`mac_rrc_dl_direct.c` (monolithic) and `mac_rrc_dl_f1ap.c` (for F1AP). In the
+monolithic case, the RRC calls directly into the message handler on the DU side
+(`mac_rrc_dl_handler.c`). In the F1 case, an ITTI message is sent to the CU
+task, sending an ASN.1-encoded F1AP message. The DU side's DU task decodes the
+message, and then calls the corresponding handler in `mac_rrc_dl_handler.c`.
+Thus, the message flow is the same in both F1 and monolithic cases, with the
+difference that F1AP encodes the messages using ASN.1 and sends over a socket.
+
+In UL, the callbacks defined in `mac_rrc_ul.h` are implemented by
+`mac_rrc_ul_direct.c` (monolithic) and `mac_rrc_ul_f1ap.c` (F1). In the direct
+case, an ITTI message is directly sent to the RRC task (hence, there is no
+dedicated handler). In F1, the DU task receives the ITTI message, encodes using
+ASN.1, and sends it over a network socket.  The CU task decodes, and sends the
+same ITTI message to the RRC task as done directly in the monolithic case.
+
+```
+                             +-------------+
+                             |             |
+                             |   CU/RRC    |
+                             |             |
+                             +-------------+
+                                |       ^
+     Callback def: mac_rrc_dl.h |       | No handler needed:
+     F1 impl: mac_rrc_dl_f1ap.c |       | RRC has ITTI
+Monolithic: mac_rrc_dl_direct.c |       |
+                                |       |
+                             DL |       | UL
+                                |       |
+                                |       | Callback def: mac_rrc_ul.h
+               Message handler: |       | F1 impl: mac_rrc_ul_f1ap.c
+           mac_rrc_dl_handler.c |       | Monolithic: mac_rrc_ul_direct.c
+                                v       |
+                             +-------------+
+                             |             |
+                             |   DU/MAC    |
+                             |             |
+                             +-------------+
+```

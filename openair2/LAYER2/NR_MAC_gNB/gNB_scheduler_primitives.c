@@ -509,7 +509,7 @@ void fill_pdcch_vrb_map(gNB_MAC_INST *mac,
   }
 }
 
-bool multiple_2_3_5(int rb)
+static bool multiple_2_3_5(int rb)
 {
   while (rb % 2 == 0)
     rb /= 2;
@@ -2369,7 +2369,7 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
 
   reset_srs_stats(UE);
 
-  pthread_mutex_lock(&UE_info->mutex);
+  NR_SCHED_LOCK(&UE_info->mutex);
   int i;
   for(i=0; i<MAX_MOBILES_PER_GNB; i++) {
     if (UE_info->list[i] == NULL) {
@@ -2380,10 +2380,10 @@ NR_UE_info_t *add_new_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rntiP, NR_CellGroupConf
   if (i == MAX_MOBILES_PER_GNB) {
     LOG_E(NR_MAC,"Try to add UE %04x but the list is full\n", rntiP);
     delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
-    pthread_mutex_unlock(&UE_info->mutex);
+    NR_SCHED_UNLOCK(&UE_info->mutex);
     return NULL;
   }
-  pthread_mutex_unlock(&UE_info->mutex);
+  NR_SCHED_UNLOCK(&UE_info->mutex);
 
   LOG_D(NR_MAC, "Add NR rnti %x\n", rntiP);
   dump_nr_list(UE_info->list);
@@ -2487,8 +2487,11 @@ void reset_ul_harq_list(NR_UE_sched_ctrl_t *sched_ctrl) {
 
 void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 {
+  /* already mutex protected */
+  NR_SCHED_ENSURE_LOCKED(&nr_mac->sched_lock);
+
   NR_UEs_t *UE_info = &nr_mac->UE_info;
-  pthread_mutex_lock(&UE_info->mutex);
+  NR_SCHED_LOCK(&UE_info->mutex);
   UE_iterator(UE_info->list, UE) {
     if (UE->rnti==rnti)
       break;
@@ -2496,7 +2499,7 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
 
   if (!UE) {
     LOG_W(NR_MAC,"Call to del rnti %04x, but not existing\n", rnti);
-    pthread_mutex_unlock(&UE_info->mutex);
+    NR_SCHED_UNLOCK(&UE_info->mutex);
     return;
   }
 
@@ -2506,7 +2509,7 @@ void mac_remove_nr_ue(gNB_MAC_INST *nr_mac, rnti_t rnti)
     if(UE_info->list[i] && UE_info->list[i]->rnti != rnti)
       newUEs[newListIdx++]=UE_info->list[i];
   memcpy(UE_info->list, newUEs, sizeof(UE_info->list));
-  pthread_mutex_unlock(&UE_info->mutex);
+  NR_SCHED_UNLOCK(&UE_info->mutex);
 
   delete_nr_ue_data(UE, nr_mac->common_channels, &UE_info->uid_allocator);
 }
@@ -2525,6 +2528,7 @@ uint8_t nr_get_tpc(int target, uint8_t cqi, int incr) {
 int get_pdsch_to_harq_feedback(NR_PUCCH_Config_t *pucch_Config,
                                 nr_dci_format_t dci_format,
                                 uint8_t *pdsch_to_harq_feedback) {
+  /* already mutex protected: held in nr_acknack_scheduling() */
 
   if (dci_format == NR_DL_DCI_FORMAT_1_0) {
     for (int i = 0; i < 8; i++)
@@ -2545,6 +2549,9 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
   int CC_id = 0;
   NR_UEs_t *UE_info = &RC.nrmac[Mod_idP]->UE_info;
   gNB_MAC_INST *gNB_mac = RC.nrmac[Mod_idP];
+
+  NR_SCHED_ENSURE_LOCKED(&gNB_mac->sched_lock);
+
   uint16_t *vrb_map = gNB_mac->common_channels[CC_id].vrb_map;
 
   UE_info->sched_csirs = false;
@@ -2770,7 +2777,10 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
 
 void nr_mac_update_timers(module_id_t module_id,
                           frame_t frame,
-                          sub_frame_t slot) {
+                          sub_frame_t slot)
+{
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_id]->sched_lock);
 
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
   UE_iterator(UE_info->list, UE) {
@@ -2824,7 +2834,10 @@ void nr_mac_update_timers(module_id_t module_id,
 
 void schedule_nr_bwp_switch(module_id_t module_id,
                             frame_t frame,
-                            sub_frame_t slot) {
+                            sub_frame_t slot)
+{
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[module_id]->sched_lock);
 
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
@@ -2887,6 +2900,7 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
   LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", sdu_len, rnti);
 
   NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
 
   uint8_t du2cu[1024];
   int encoded = encode_cellGroupConfig(UE->CellGroup, du2cu, sizeof(du2cu));
@@ -2904,6 +2918,7 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
 
 void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 {
+  NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
   /* create this UE's initial CellGroup */
   /* Note: relying on the RRC is a hack, as we are in the DU; there should be
    * no RRC, remove in the future */

@@ -99,73 +99,52 @@ static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddMo
 
 static void process_drx_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_DRX_Config_t *drx_Config)
 {
-
- if (!drx_Config) return;
- AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
-
- if (drx_Config->present == NR_SetupRelease_DRX_Config_PR_setup) {
-   LOG_I(NR_MAC,"Adding DRX config\n");
- }
- else {
-   LOG_I(NR_MAC,"Removing DRX config\n");
- }
+  AssertFatal(false, "%s() not implemented\n", __func__);
+  AssertFatal(drx_Config->present != NR_SetupRelease_DRX_Config_PR_NOTHING, "Cannot have NR_SetupRelease_DRX_Config_PR_NOTHING\n");
 }
 
 static void process_schedulingRequestConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_SchedulingRequestConfig_t *schedulingRequestConfig)
 {
- if (!schedulingRequestConfig) return;
-
-   LOG_I(NR_MAC,"Adding SchedulingRequestconfig\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_bsrConfig(NR_UE_sched_ctrl_t *sched_ctrl, NR_BSR_Config_t *bsr_Config)
 {
-  if (!bsr_Config) return;
-  LOG_I(NR_MAC,"Adding BSR config\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_tag_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_TAG_Config_t *tag_Config)
 {
-  if (!tag_Config) return;
-  LOG_I(NR_MAC,"Adding TAG config\n");
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 static void process_phr_Config(NR_UE_sched_ctrl_t *sched_ctrl, NR_SetupRelease_PHR_Config_t *phr_Config)
 {
-   if (!phr_Config) return;
-   AssertFatal(phr_Config->present != NR_SetupRelease_PHR_Config_PR_NOTHING, "Cannot have NR_SetupRelease_PHR_Config_PR_NOTHING\n");
-
-   if (phr_Config->present == NR_SetupRelease_PHR_Config_PR_setup) {
-     LOG_I(NR_MAC,"Adding PHR config\n");
-   }
-   else {
-     LOG_I(NR_MAC,"Removing PHR config\n");
-   }
+  AssertFatal(false, "%s() not implemented\n", __func__);
 }
 
 void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl)
 {
+  /* we assume that this function is mutex-protected from outside */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
+
    AssertFatal(CellGroup, "CellGroup is null\n");
    NR_MAC_CellGroupConfig_t *mac_CellGroupConfig = CellGroup->mac_CellGroupConfig;
 
    if (mac_CellGroupConfig) {
-     process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
-     process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
-     process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
-     process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
-     process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
-   }
-   else {
-     // apply defaults
-
+     //process_drx_Config(sched_ctrl,mac_CellGroupConfig->drx_Config);
+     //process_schedulingRequestConfig(sched_ctrl,mac_CellGroupConfig->schedulingRequestConfig);
+     //process_bsrConfig(sched_ctrl,mac_CellGroupConfig->bsr_Config);
+     //process_tag_Config(sched_ctrl,mac_CellGroupConfig->tag_Config);
+     //process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
    }
 
    process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList,CellGroup->rlc_BearerToReleaseList,sched_ctrl);
 
 }
 
-void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc) {
-
+static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc)
+{
   nfapi_nr_config_request_scf_t *cfg = &nrmac->config[0];
   nrmac->common_channels[0].ServingCellConfigCommon = scc;
 
@@ -460,19 +439,23 @@ void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_Antenn
   }
 }
 
-int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_SubcarrierSpacing_t subcarrierSpacing, uint32_t rrc_reconfiguration_delay) {
-
+int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_SubcarrierSpacing_t subcarrierSpacing, uint32_t rrc_reconfiguration_delay)
+{
   if (rrc_reconfiguration_delay == 0) {
     return -1;
   }
 
-  NR_UE_info_t *UE_info = find_nr_UE(&RC.nrmac[Mod_idP]->UE_info,rnti);
+  gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
+  NR_SCHED_LOCK(&nrmac->sched_lock);
+
+  NR_UE_info_t *UE_info = find_nr_UE(&nrmac->UE_info,rnti);
   if (!UE_info) {
     LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return -1;
   }
   NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
-  const uint16_t sl_ahead = RC.nrmac[Mod_idP]->if_inst->sl_ahead;
+  const uint16_t sl_ahead = nrmac->if_inst->sl_ahead;
   sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
   LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
 
@@ -480,8 +463,9 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   // processing timer. To prevent this, set a variable as if we would have just
   // sent it. This way, another TA command will for sure be sent in some
   // frames, after RRC processing timer.
-  sched_ctrl->ta_frame = (RC.nrmac[Mod_idP]->frame - 1 + 1024) % 1024;
+  sched_ctrl->ta_frame = (nrmac->frame - 1 + 1024) % 1024;
 
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
   return 0;
 }
 
@@ -494,6 +478,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
 {
   DevAssert(nrmac != NULL);
   AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon == NULL, "logic error: multiple configurations of SCC\n");
+  NR_SCHED_LOCK(&nrmac->sched_lock);
 
   DevAssert(scc != NULL);
   AssertFatal(scc->ssb_PositionsInBurst->present > 0 && scc->ssb_PositionsInBurst->present < 4,
@@ -573,26 +558,31 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
         ra->preambles.preamble_list[i] = i;
     }
   }
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib)
 {
   DevAssert(nrmac != NULL);
   DevAssert(mib != NULL);
+  NR_SCHED_LOCK(&nrmac->sched_lock);
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
 
   AssertFatal(cc->mib == NULL, "logic bug: updated MIB multiple times\n");
   cc->mib = mib;
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1)
 {
   DevAssert(nrmac != NULL);
   DevAssert(sib1 != NULL);
+  NR_SCHED_LOCK(&nrmac->sched_lock);
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
 
   AssertFatal(cc->sib1 == NULL, "logic bug: updated SIB1 multiple times\n");
   cc->sib1 = sib1;
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
@@ -600,16 +590,17 @@ bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t
   DevAssert(nrmac != NULL);
   DevAssert(CellGroup != NULL);
   DevAssert(get_softmodem_params()->phy_test);
+  NR_SCHED_LOCK(&nrmac->sched_lock);
 
   NR_UE_info_t* UE = add_new_nr_ue(nrmac, rnti, CellGroup);
   if (UE) {
     LOG_I(NR_MAC,"Force-added new UE %x with initial CellGroup\n", rnti);
+    process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
   } else {
     LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
-    return false;
   }
-  process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
-  return true;
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
+  return UE != NULL;
 }
 
 bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
@@ -617,6 +608,7 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
   DevAssert(nrmac != NULL);
   DevAssert(CellGroup != NULL);
   DevAssert(!get_softmodem_params()->phy_test);
+  NR_SCHED_LOCK(&nrmac->sched_lock);
 
   // NSA case: need to pre-configure CFRA
   const int CC_id = 0;
@@ -628,6 +620,7 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
   }
   if (ra_index == NR_NB_RA_PROC_MAX) {
     LOG_E(NR_MAC, "RA processes are not available for CFRA RNTI %04x\n", rnti);
+    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return false;
   }
   NR_RA_t *ra = &cc->ra[ra_index];
@@ -656,12 +649,16 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
     }
   }
   LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
+  NR_SCHED_UNLOCK(&nrmac->sched_lock);
   return true;
 }
 
 bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
 {
   DevAssert(nrmac != NULL);
+  /* we assume that this function is mutex-protected from outside */
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   DevAssert(CellGroup != NULL);
 
   NR_UE_info_t *UE = find_nr_UE(&nrmac->UE_info, rnti);
@@ -677,58 +674,7 @@ bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCon
     exit(1);
   }
 
-  nr_mac_update_RA(nrmac, rnti, CellGroup);
   process_CellGroup(CellGroup, &UE->UE_sched_ctrl);
-
-  return true;
-}
-
-bool nr_mac_update_RA(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
-{
-  // Checking for free RA process
-  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-  uint8_t ra_index = 0;
-  for (; ra_index < NR_NB_RA_PROC_MAX; ra_index++) {
-    if ((cc->ra[ra_index].state == RA_IDLE) && (!cc->ra[ra_index].cfra))
-      break;
-  }
-  if (ra_index == NR_NB_RA_PROC_MAX) {
-    LOG_E(NR_MAC, "%s() %s:%d RA processes are not available for CFRA RNTI :%x\n", __FUNCTION__, __FILE__, __LINE__, rnti);
-    return -1;
-  }
-
-  NR_RA_t *ra = &cc->ra[ra_index];
-  if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
-      && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated != NULL) {
-    if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
-      ra->cfra = true;
-      ra->rnti = rnti;
-      ra->CellGroup = CellGroup;
-      struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
-      uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-      ra->preambles.num_preambles = num_preamble;
-      ra->preambles.preamble_list = (uint8_t *)malloc(num_preamble * sizeof(uint8_t));
-      for (int i = 0; i < cc->num_active_ssb; i++) {
-        for (int j = 0; j < num_preamble; j++) {
-          if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
-            // One dedicated preamble for each beam
-            ra->preambles.preamble_list[i] = cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
-            break;
-          }
-        }
-      }
-    }
-  } else {
-    ra->cfra = false;
-    ra->rnti = 0;
-    if (ra->preambles.preamble_list == NULL) {
-      ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
-      ra->preambles.preamble_list = (uint8_t *)malloc(MAX_NUM_NR_PRACH_PREAMBLES * sizeof(uint8_t));
-      for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
-        ra->preambles.preamble_list[i] = i;
-    }
-  }
-  LOG_I(NR_MAC, "Added new %s process for UE RNTI %04x with initial CellGroup\n", ra->cfra ? "CFRA" : "CBRA", rnti);
 
   return true;
 }

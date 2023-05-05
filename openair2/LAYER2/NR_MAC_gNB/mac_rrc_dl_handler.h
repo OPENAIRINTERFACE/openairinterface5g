@@ -25,6 +25,8 @@
 #include "platform_types.h"
 #include "f1ap_messages_types.h"
 
+void ue_context_setup_request(const f1ap_ue_context_setup_t *req);
+
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc);
 
 #endif /* MAC_RRC_DL_HANDLER_H */

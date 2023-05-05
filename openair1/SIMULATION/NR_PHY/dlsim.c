@@ -1010,7 +1010,10 @@ int main(int argc, char **argv)
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].round = round;
 
+        // nr_schedule_ue_spec() requires the mutex to be locked
+        NR_SCHED_LOCK(&gNB_mac->sched_lock);
         nr_schedule_ue_spec(0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req);
+        NR_SCHED_UNLOCK(&gNB_mac->sched_lock);
         Sched_INFO->module_id = 0;
         Sched_INFO->CC_id = 0;
         Sched_INFO->frame = frame;
