@@ -352,12 +352,12 @@ void nr_ue_measurement_procedures(uint16_t l,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_OUT);
 }
 
-static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
-                                  UE_nr_rxtx_proc_t *proc,
-                                  int estimateSz,
-                                  struct complex16 dl_ch_estimates[][estimateSz],
-                                  nr_phy_data_t *phy_data,
-                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
+static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
+                                 UE_nr_rxtx_proc_t *proc,
+                                 int estimateSz,
+                                 struct complex16 dl_ch_estimates[][estimateSz],
+                                 nr_phy_data_t *phy_data,
+                                 c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int ret = 0;
   DevAssert(ue);
@@ -420,6 +420,7 @@ static void nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
 
   }
 
+ return ret;
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
 }
@@ -929,9 +930,9 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
           if(ssb_index == fp->ssb_index) {
 
             LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-            nr_ue_pbch_procedures(ue, proc, estimateSz, dl_ch_estimates, phy_data, rxdataF);
+            const int pbchSuccess = nr_ue_pbch_procedures(ue, proc, estimateSz, dl_ch_estimates, phy_data, rxdataF);
 
-            if (ue->no_timing_correction==0) {
+            if (ue->no_timing_correction==0 && pbchSuccess == 0) {
               LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);
               nr_adjust_synch_ue(fp,
                                  ue,
@@ -943,6 +944,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
                                  0,
                                  16384);
             }
+            ue->apply_timing_offset = true;
           }
           LOG_D(PHY, "Doing N0 measurements in %s\n", __FUNCTION__);
           nr_ue_rrc_measurements(ue, proc, rxdataF);

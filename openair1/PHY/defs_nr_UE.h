@@ -516,6 +516,7 @@ typedef struct {
   int              rx_offset;      /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
   int              max_pos_fil;    /// Timing offset IIR filter
+  bool             apply_timing_offset;     /// Do time sync for current frame
   int              time_sync_cell;
 
   /// Timing Advance updates variables
