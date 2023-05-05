@@ -411,11 +411,11 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
   tmp.from_gnb=1;
   LOG_D(RRC, "ue_context->ue_context.nb_of_e_rabs %d will be deleted for rnti %d\n", ue_context->ue_context.nb_of_e_rabs, rnti);
   for (e_rab = 0; e_rab < ue_context->ue_context.nb_of_e_rabs; e_rab++) {
-    tmp.eps_bearer_id[tmp.num_erab++]= ue_context->ue_context.gnb_gtp_ebi[e_rab];
+    tmp.eps_bearer_id[tmp.num_erab++]= ue_context->ue_context.nsa_gtp_ebi[e_rab];
     // erase data
-    ue_context->ue_context.gnb_gtp_teid[e_rab] = 0;
-    memset(&ue_context->ue_context.gnb_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.gnb_gtp_addrs[e_rab]));
-    ue_context->ue_context.gnb_gtp_ebi[e_rab] = 0;
+    ue_context->ue_context.nsa_gtp_teid[e_rab] = 0;
+    memset(&ue_context->ue_context.nsa_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.nsa_gtp_addrs[e_rab]));
+    ue_context->ue_context.nsa_gtp_ebi[e_rab] = 0;
   }
   gtpv1u_delete_s1u_tunnel(rrc->module_id,  &tmp);
   /* remove context */

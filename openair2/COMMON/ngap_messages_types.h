@@ -263,17 +263,6 @@ typedef enum pdu_session_type_e {
   PDUSessionType_unstructured = 4
 }pdu_session_type_t;
 
-typedef struct ngap_transport_layer_addr_s {
-  /* Length of the transport layer address buffer in bits. NGAP layer received a
-   * bit string<1..160> containing one of the following addresses: ipv4,
-   * ipv6, or ipv4 and ipv6. The layer doesn't interpret the buffer but
-   * silently forward it to NG-U.
-   */
-  uint8_t pdu_session_type;
-  uint8_t length;
-  uint8_t buffer[20]; // in network byte order
-} ngap_transport_layer_addr_t;
-
 typedef struct pdusession_s {
   /* Unique pdusession_id for the UE. */
   int pdusession_id;
@@ -283,11 +272,16 @@ typedef struct pdusession_s {
   /* Quality of service for this pdusession */
   pdusession_level_qos_parameter_t qos[QOSFLOW_MAX_VALUE];
   /* The transport layer address for the IP packets */
-  ngap_transport_layer_addr_t upf_addr;
+  pdu_session_type_t pdu_session_type;
+  transport_layer_addr_t upf_addr;
   /* S-GW Tunnel endpoint identifier */
   uint32_t gtp_teid;
   /* Stores the DRB ID of the DRBs used by this PDU Session */
   uint8_t used_drbs[NGAP_MAX_DRBS_PER_UE];
+  uint32_t gNB_teid_N3;
+  transport_layer_addr_t gNB_addr_N3;
+  uint32_t UPF_teid_N3;
+  transport_layer_addr_t UPF_addr_N3;
 } pdusession_t;
 
 typedef enum pdusession_qosflow_mapping_ind_e{
@@ -306,7 +300,8 @@ typedef struct pdusession_setup_s {
   uint8_t pdusession_id;
 
   /* The transport layer address for the IP packets */
-  ngap_transport_layer_addr_t gNB_addr;
+  uint8_t pdu_session_type;
+  transport_layer_addr_t gNB_addr;
 
   /* UPF Tunnel endpoint identifier */
   uint32_t gtp_teid;
@@ -323,7 +318,8 @@ typedef struct pdusession_tobeswitched_s {
   uint8_t pdusession_id;
 
   /* The transport layer address for the IP packets */
-  ngap_transport_layer_addr_t upf_addr;
+  uint8_t pdu_session_type;
+  transport_layer_addr_t upf_addr;
 
   /* S-GW Tunnel endpoint identifier */
   uint32_t gtp_teid;
