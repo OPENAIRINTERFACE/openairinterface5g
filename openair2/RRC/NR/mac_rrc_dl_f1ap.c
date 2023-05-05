@@ -30,7 +30,6 @@ static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
   f1ap_ue_context_setup_t *f1ap_msg = &F1AP_UE_CONTEXT_SETUP_REQ(msg);
   *f1ap_msg = *req;
   AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
-  f1ap_msg->cu_to_du_rrc_information = malloc(sizeof(*f1ap_msg->cu_to_du_rrc_information));
   if (req->rrc_container_length > 0) {
     f1ap_msg->rrc_container = calloc(req->rrc_container_length, sizeof(*f1ap_msg->rrc_container));
     AssertFatal(f1ap_msg->rrc_container != NULL, "out of memory\n");
