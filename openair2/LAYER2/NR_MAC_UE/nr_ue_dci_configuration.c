@@ -220,9 +220,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
         rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
 
-        if(mac->frequency_range == FR1)
-          rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-        else
+        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+        if(mac->frequency_range == FR2)
           rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
         break;
       case NR_RNTI_SFI:

@@ -1144,7 +1144,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
 
   if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
@@ -1179,6 +1178,7 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
         if (ret >= 0) {
           AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
           AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+          fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
           fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
           nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         }

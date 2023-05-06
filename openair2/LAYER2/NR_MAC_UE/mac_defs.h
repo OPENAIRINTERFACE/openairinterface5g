@@ -399,7 +399,7 @@ typedef struct {
   long                            physCellId;
   ////  MAC config
   int                             first_sync_frame;
-  bool                            sib1_decoded;
+  bool                            get_sib1;
   NR_DRX_Config_t                 *drx_Config;
   NR_SchedulingRequestConfig_t    *schedulingRequestConfig;
   NR_BSR_Config_t                 *bsr_Config;

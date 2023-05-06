@@ -744,10 +744,7 @@ int main(int argc, char **argv)
   
   UE_mac->if_module = nr_ue_if_module_init(0);
 
-//  nr_rrc_mac_config_req_ue(0,0,0,rrc.carrier.mib.message.choice.mib, NULL, NULL, secondaryCellGroup);
-
   nr_ue_phy_config_request(&UE_mac->phy_config);
-
 
   unsigned char harq_pid = 0;
 
