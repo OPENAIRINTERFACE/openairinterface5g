@@ -1554,8 +1554,9 @@ const int64_t *get_prach_config_info(frequency_range_t freq_range, uint8_t index
 void find_aggregation_candidates(uint8_t *aggregation_level,
                                  uint8_t *nr_of_candidates,
                                  const NR_SearchSpace_t *ss,
-                                 int L) {
-  AssertFatal(L>=1 && L<=16,"L %d not ok\n",L);
+                                 int L)
+{
+  AssertFatal(L>=1 && L<=16,"L %d not ok\n", L);
   *nr_of_candidates = 0;
   switch(L) {
     case 1:
