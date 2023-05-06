@@ -158,6 +158,15 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                                    dci_pdu_rel15_t *dci_pdu_rel15,
                                    int slot);
 
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                                   nr_dci_format_t dci_format,
+                                   uint8_t dci_size,
+                                   uint16_t rnti,
+                                   int ss_type,
+                                   uint64_t *dci_pdu,
+                                   dci_pdu_rel15_t *dci_pdu_rel15,
+                                   int slot);
+
 void nr_ue_init_mac(module_id_t module_idP)
 {
   LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);

@@ -124,7 +124,7 @@ static inline void cmac_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
   *re32 = simde_mm256_add_epi32(*re32,cmac_tmp_re32);
   *im32 = simde_mm256_add_epi32(*im32,cmac_tmp_im32);
 }
-
+#if 0
 static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32) __attribute__((always_inline));
 static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
 {
@@ -142,7 +142,7 @@ static inline void cmacc_256(__m256i a,__m256i b, __m256i *re32, __m256i *im32)
   *re32 = simde_mm256_add_epi32(*re32,cmac_tmp_re32);
   *im32 = simde_mm256_add_epi32(*im32,cmac_tmp_im32);
 }
-
+#endif
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32) __attribute__((always_inline));
 
 static inline void cmult(__m128i a,__m128i b, __m128i *re32, __m128i *im32)
@@ -262,7 +262,7 @@ static inline void packed_cmultc(__m128i a,__m128i b, __m128i *c)
   *c = cpack(cre,cim);
 
 }
-
+#if 0
 static inline void packed_cmultc_256(__m256i a,__m256i b, __m256i *c) __attribute__((always_inline));
 
 static inline void packed_cmultc_256(__m256i a,__m256i b, __m256i *c)
@@ -274,7 +274,7 @@ static inline void packed_cmultc_256(__m256i a,__m256i b, __m256i *c)
   *c = cpack_256(cre,cim);
 
 }
-
+#endif
 static inline __m128i packed_cmult2(__m128i a,__m128i b,__m128i b2) __attribute__((always_inline));
 
 static inline __m128i packed_cmult2(__m128i a,__m128i b,__m128i b2)
@@ -619,7 +619,7 @@ static inline void bfly2_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x
 #endif // defined(__x86_64__) || defined(__i386__)
  
 #if defined(__x86_64__) || defined(__i386__)
-
+#if 0
 static inline void bfly2_16(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1, __m128i *tw, __m128i *twb)__attribute__((always_inline));
 
 static inline void bfly2_16(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1, __m128i *tw, __m128i *twb)
@@ -640,7 +640,7 @@ static inline void bfly2_16(__m128i *x0, __m128i *x1, __m128i *y0, __m128i *y1, 
   /*  print_shorts("y0",(int16_t*)y0);
       print_shorts("y1",(int16_t*)y1);*/
 }
-
+#endif
 static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *y1, __m256i *tw, __m256i *twb)__attribute__((always_inline));
 
 static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *y1, __m256i *tw, __m256i *twb)
@@ -664,7 +664,7 @@ static inline void bfly2_16_256(__m256i *x0, __m256i *x1, __m256i *y0, __m256i *
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
-
+#if 0
 static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)__attribute__((always_inline));
 
 static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)
@@ -674,9 +674,11 @@ static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8
   *y1  = vqsubq_s16(*x0,*x1);
 
 }
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void ibfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m128i *tw)__attribute__((always_inline));
 
 static inline void ibfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m128i *tw)
@@ -702,7 +704,7 @@ static inline void ibfly2(__m128i *x0, __m128i *x1,__m128i *y0, __m128i *y1,__m1
   bfly2_tmp2 = _mm_unpackhi_epi32(dy1r,dy1i);
   *y1 = _mm_packs_epi32(bfly2_tmp1,bfly2_tmp2);
 }
-
+#endif
 static inline void ibfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)__attribute__((always_inline));
 
 static inline void ibfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,__m256i *tw)
@@ -730,6 +732,7 @@ static inline void ibfly2_256(__m256i *x0, __m256i *x1,__m256i *y0, __m256i *y1,
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
+#if 0
 static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t *y1,int16x8_t *tw)
 {
 
@@ -747,7 +750,7 @@ static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t 
   *y1 = cpack(dy1r,dy1i);
 
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 
@@ -855,7 +858,7 @@ static inline void ibfly3(__m128i *x0,__m128i *x1,__m128i *x2,
   *(y2) = cpack(tmpre,tmpim);
   *(y2) = _mm_adds_epi16(*(x0),*(y2));
 }
-
+#if 0
 static inline void ibfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
 			      __m256i *y0,__m256i *y1,__m256i *y2,
 			      __m256i *tw1,__m256i *tw2) __attribute__((always_inline));
@@ -879,7 +882,7 @@ static inline void ibfly3_256(__m256i *x0,__m256i *x1,__m256i *x2,
   *(y2) = cpack_256(tmpre,tmpim);
   *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
 }
-
+#endif
 #elif defined(__arm__) || defined(__aarch64__)
 static inline void ibfly3(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,
 			  int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,
@@ -1100,6 +1103,7 @@ static inline void bfly4(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
                           __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
                           __m128i *tw1,__m128i *tw2,__m128i *tw3)__attribute__((always_inline));
@@ -1129,7 +1133,7 @@ static inline void ibfly4(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   dy1i = _mm_sub_epi32(x1r_2,_mm_add_epi32(x2i_2,x3r_2));
   *(y1) = _mm_add_epi16(*(x0),cpack(dy1r,dy1i));
 }
-
+#endif
 static inline void ibfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
 			      __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
 			      __m256i *tw1,__m256i *tw2,__m256i *tw3)__attribute__((always_inline));
@@ -1161,7 +1165,7 @@ static inline void ibfly4_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
-
+#if 0
 static inline void ibfly4(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
                           int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3,
                           int16x8_t *tw1,int16x8_t *tw2,int16x8_t *tw3)__attribute__((always_inline));
@@ -1191,11 +1195,10 @@ static inline void ibfly4(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x
   dy1i  = vqsubq_s32(x1r_2,vqaddq_s32(x2i_2,x3r_2));
   *(y1) = vqaddq_s16(*(x0),cpack(dy1r,dy1i));
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
-
 static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
                              __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3)__attribute__((always_inline));
 
@@ -1229,7 +1232,6 @@ static inline void bfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y3)   = _mm_subs_epi16(*(x0),_mm_adds_epi16(x1_flip,_mm_subs_epi16(*(x2),x3_flip)));
   */
 }
-
 static inline void bfly4_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
 				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3)__attribute__((always_inline));
 
@@ -1254,7 +1256,6 @@ static inline void bfly4_tw1_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
-
 static inline void bfly4_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
                              int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3)__attribute__((always_inline));
 
@@ -1271,11 +1272,10 @@ static inline void bfly4_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t
   *(y2)   = vqsubq_s16(*(x0),vqsubq_s16(*(x1),vqsubq_s16(*(x2),*(x3))));
   *(y3)   = vqsubq_s16(*(x0),vqaddq_s16(x1_flip,vqsubq_s16(*(x2),x3_flip)));
 }
-
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
-
+#if 0
 static inline void ibfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
                               __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3)__attribute__((always_inline));
 
@@ -1299,9 +1299,10 @@ static inline void ibfly4_tw1(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y2)   = _mm_subs_epi16(*(x0),_mm_subs_epi16(*(x1),_mm_subs_epi16(*(x2),*(x3))));
   *(y3)   = _mm_adds_epi16(*(x0),_mm_subs_epi16(x1_flip,_mm_adds_epi16(*(x2),x3_flip)));
 }
-
+#endif
 
 #elif defined(__arm__) || defined(__aarch64__)
+#if 0
 static inline void ibfly4_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
 			      int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3)__attribute__((always_inline));
 
@@ -1318,10 +1319,11 @@ static inline void ibfly4_tw1(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_
   *(y2)   = vqsubq_s16(*(x0),vqsubq_s16(*(x1),vqsubq_s16(*(x2),*(x3))));
   *(y3)   = vqaddq_s16(*(x0),vqsubq_s16(x1_flip,vqaddq_s16(*(x2),x3_flip)));
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void bfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
                             __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
                             __m128i *tw1,__m128i *tw2,__m128i *tw3,
@@ -1369,7 +1371,7 @@ static inline void bfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y3)   = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
 
 }
-
+#endif
 static inline void bfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
 				__m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
 				__m256i *tw1,__m256i *tw2,__m256i *tw3,
@@ -1445,6 +1447,7 @@ static inline void bfly4_16(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t 
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void ibfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
                              __m128i *y0,__m128i *y1,__m128i *y2,__m128i *y3,
                              __m128i *tw1,__m128i *tw2,__m128i *tw3,
@@ -1492,7 +1495,7 @@ static inline void ibfly4_16(__m128i *x0,__m128i *x1,__m128i *x2,__m128i *x3,
   *(y1)   = _mm_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
 
 }
-
+#endif
 static inline void ibfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3,
 				 __m256i *y0,__m256i *y1,__m256i *y2,__m256i *y3,
 				 __m256i *tw1,__m256i *tw2,__m256i *tw3,
@@ -1533,6 +1536,7 @@ static inline void ibfly4_16_256(__m256i *x0,__m256i *x1,__m256i *x2,__m256i *x3
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
+#if 0
 static inline void ibfly4_16(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t *x3,
 			     int16x8_t *y0,int16x8_t *y1,int16x8_t *y2,int16x8_t *y3,
 			     int16x8_t *tw1,int16x8_t *tw2,int16x8_t *tw3,
@@ -1562,7 +1566,7 @@ static inline void ibfly4_16(int16x8_t *x0,int16x8_t *x1,int16x8_t *x2,int16x8_t
   *(y3)   = vqaddq_s16(x02t,x13t);  // x0 - x1f - x2 + x3f
   *(y1)   = vqsubq_s16(x02t,x13t);  // x0 + x1f - x2 - x3f
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
@@ -1615,7 +1619,7 @@ static inline void bfly5(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,__m1
 
 
 }
-
+#if 0
 static inline void bfly5_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
 			     __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4,
 			     __m256i *tw1,__m256i *tw2,__m256i *tw3,__m256i *tw4)__attribute__((always_inline));
@@ -1665,7 +1669,7 @@ static inline void bfly5_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,
 
 
 }
-
+#endif
 #elif defined(__arm__) || defined(__aarch64__)
 static inline void bfly5(int16x8_t *x0, int16x8_t *x1, int16x8_t *x2, int16x8_t *x3,int16x8_t *x4,
                          int16x8_t *y0, int16x8_t *y1, int16x8_t *y2, int16x8_t *y3,int16x8_t *y4,
@@ -1757,7 +1761,7 @@ static inline void bfly5_tw1(__m128i *x0, __m128i *x1, __m128i *x2, __m128i *x3,
   *(y4) = cpack(tmpre,tmpim);
   *(y4) = _mm_adds_epi16(*(x0),*(y4));
 }
-
+#if 0
 static inline void bfly5_tw1_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i *x3,__m256i *x4,
 				 __m256i *y0, __m256i *y1, __m256i *y2, __m256i *y3,__m256i *y4) __attribute__((always_inline));
 
@@ -1793,7 +1797,7 @@ static inline void bfly5_tw1_256(__m256i *x0, __m256i *x1, __m256i *x2, __m256i 
   *(y4) = cpack_256(tmpre,tmpim);
   *(y4) = simde_mm256_adds_epi16(*(x0),*(y4));
 }
-
+#endif
 #elif defined(__arm__) || defined(__aarch64__)
 static inline void bfly5_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *x2, int16x8_t *x3,int16x8_t *x4,
                              int16x8_t *y0, int16x8_t *y1, int16x8_t *y2, int16x8_t *y3,int16x8_t *y4) __attribute__((always_inline));
@@ -1837,6 +1841,7 @@ static inline void bfly5_tw1(int16x8_t *x0, int16x8_t *x1, int16x8_t *x2, int16x
 // i.e. x = [x0r x0i x1r x1i ... x15r x15i], y = [x0r x0i x4r x4i x8r x8i x12r x12i x1r x1i x5r x5i x9r x9i x13r x13i x2r x2i ... x15r x15i]
 
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void transpose16(__m128i *x,__m128i *y) __attribute__((always_inline));
 static inline void transpose16(__m128i *x,__m128i *y)
 {
@@ -1851,8 +1856,9 @@ static inline void transpose16(__m128i *x,__m128i *y)
   y[2]    = _mm_unpacklo_epi64(ytmp1,ytmp3);
   y[3]    = _mm_unpackhi_epi64(ytmp1,ytmp3);
 }
-
+#endif
 #elif defined(__arm__) || defined(__aarch64__)
+#if 0
 static inline void transpose16(int16x8_t *x,int16x8_t *y) __attribute__((always_inline));
 static inline void transpose16(int16x8_t *x,int16x8_t *y)
 {
@@ -1866,11 +1872,12 @@ static inline void transpose16(int16x8_t *x,int16x8_t *y)
   y[2]  = vcombine_s16(vget_low_s16((int16x8_t)ytmp0.val[1]),vget_low_s16((int16x8_t)ytmp1.val[1]));
   y[3]  = vcombine_s16(vget_high_s16((int16x8_t)ytmp0.val[1]),vget_high_s16((int16x8_t)ytmp1.val[1]));
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 // same as above but output is offset by off
 #if defined(__x86_64__) || defined(__i386__)
+#if 0
 static inline void transpose16_ooff(__m128i *x,__m128i *y,int off) __attribute__((always_inline));
 
 static inline void transpose16_ooff(__m128i *x,__m128i *y,int off)
@@ -1890,7 +1897,7 @@ static inline void transpose16_ooff(__m128i *x,__m128i *y,int off)
   y2+=off;
   *y2     = _mm_unpackhi_epi64(ytmp1,ytmp3); // x03 x13 x23 x33
 }
-
+#endif
 static inline void transpose16_ooff_simd256(__m256i *x,__m256i *y,int off) __attribute__((always_inline));
 static inline void transpose16_ooff_simd256(__m256i *x,__m256i *y,int off)
 {
@@ -1917,6 +1924,7 @@ static inline void transpose16_ooff_simd256(__m256i *x,__m256i *y,int off)
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
+#if 0
 static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off) __attribute__((always_inline));
 
 static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off)
@@ -1934,11 +1942,11 @@ static inline void transpose16_ooff(int16x8_t *x,int16x8_t *y,int off)
 
 
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 #if defined(__x86_64__) || defined(__i386__)
-
+#if 0
 static inline void transpose4_ooff(__m64 *x,__m64 *y,int off)__attribute__((always_inline));
 static inline void transpose4_ooff(__m64 *x,__m64 *y,int off)
 {
@@ -1950,7 +1958,7 @@ static inline void transpose4_ooff(__m64 *x,__m64 *y,int off)
   // y[0] = [x0 x2]
   // y[off] = [x1 x3]
 }
-
+#endif
 static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)__attribute__((always_inline));
 static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)
 {
@@ -1968,7 +1976,7 @@ static inline void transpose4_ooff_simd256(__m256i *x,__m256i *y,int off)
 }
 
 #elif defined(__arm__) || defined(__aarch64__)
-
+#if 0
 static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)__attribute__((always_inline));
 static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
 {
@@ -1977,7 +1985,7 @@ static inline void transpose4_ooff(int16x4_t *x,int16x4_t *y,int off)
   y[0]   = (int16x4_t)ytmp.val[0];
   y[off] = (int16x4_t)ytmp.val[1];
 }
-
+#endif
 #endif // defined(__x86_64__) || defined(__i386__)
 
 // 16-point optimized DFT kernel
@@ -1986,16 +1994,6 @@ const static int16_t tw16[24] __attribute__((aligned(32))) = { 32767,0,30272,-12
                                                   32767,0,23169,-23170,0     ,-32767,-23170,-23170,
                                                   32767,0,12539,-30273,-23170,-23170,-30273,12539
                                                 };
-
-const static int16_t tw16a[24] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
-                                                  32767,0,23169,23170,0     ,32767,-23170,23170,
-                                                  32767,0,12539,30273,-23170,23170,-30273,-12539
-                                                 };
-
-const static int16_t tw16b[24] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
-                                                   0,32767,-23170,23169,-32767,0     ,-23170,-23170,
-                                                   0,32767,-30273,12539,-23170,-23170,12539 ,-30273
-                                                 };
 
 const static int16_t tw16c[24] __attribute__((aligned(32))) = { 0,32767,12540,30272,23170,23169 ,30273 ,12539,
                                                    0,32767,23170,23169,32767,0     ,23170 ,-23170,
@@ -2021,6 +2019,17 @@ const static int16_t tw16crep[48] __attribute__((aligned(32))) = { 0,32767,12540
 						      0,32767,23170,23169,32767,0     ,23170 ,-23170,0,32767,23170,23169,32767,0     ,23170 ,-23170,
 						      0,32767,30273,12539,23170,-23170,-12539,-30273,0,32767,30273,12539,23170,-23170,-12539,-30273
                                                     };
+#if 0
+const static int16_t tw16a[24] __attribute__((aligned(32))) = {32767,0,30272,12540,23169 ,23170,12539 ,30273,
+                                                  32767,0,23169,23170,0     ,32767,-23170,23170,
+                                                  32767,0,12539,30273,-23170,23170,-30273,-12539
+                                                 };
+
+const static int16_t tw16b[24] __attribute__((aligned(32))) = { 0,32767,-12540,30272,-23170,23169 ,-30273,12539,
+                                                   0,32767,-23170,23169,-32767,0     ,-23170,-23170,
+                                                   0,32767,-30273,12539,-23170,-23170,12539 ,-30273
+                                                 };
+
 
 static inline void dft16(int16_t *x,int16_t *y) __attribute__((always_inline));
 
@@ -2160,6 +2169,7 @@ static inline void dft16(int16_t *x,int16_t *y)
 
 #endif // defined(__x86_64__) || defined(__i386__)
 }
+#endif
 
 #if defined(__x86_64__) || defined(__i386__)
 

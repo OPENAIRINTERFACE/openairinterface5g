@@ -2591,10 +2591,7 @@ uint32_t nr_get_code_rate_ul(uint8_t Imcs, uint8_t table_idx) {
   }
 }
 
-static inline uint8_t is_codeword_disabled(uint8_t format, uint8_t Imcs, uint8_t rv) {
-  return ((format==NFAPI_NR_DL_DCI_FORMAT_1_1)&&(Imcs==26)&&(rv==1));
-}
-
+#if 0
 static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8_t rnti_type, uint8_t ss_type) {
   if ((mcs_table == NFAPI_NR_MCS_TABLE_QAM256) && (dci_format == NFAPI_NR_DL_DCI_FORMAT_1_1) && ((rnti_type==NFAPI_NR_RNTI_C)||(rnti_type==NFAPI_NR_RNTI_CS)))
     return 2;
@@ -2610,7 +2607,7 @@ static inline uint8_t get_table_idx(uint8_t mcs_table, uint8_t dci_format, uint8
   else
     return 1;
 }
-
+#endif
 
 // Table 5.1.2.2.1-1 38.214
 uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config) {
