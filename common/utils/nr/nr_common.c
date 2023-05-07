@@ -449,6 +449,7 @@ void get_samplerate_and_bw(int mu,
         *tx_bw = 50e6;
         *rx_bw = 50e6;
       }
+      break;
     case 216:
       if (threequarter_fs) {
         *sample_rate=46.08e6;
@@ -474,6 +475,7 @@ void get_samplerate_and_bw(int mu,
         *tx_bw = 20e6;
         *rx_bw = 20e6;
       }
+      break;
     case 106:
       if (threequarter_fs) {
         *sample_rate=23.04e6;
@@ -501,6 +503,7 @@ void get_samplerate_and_bw(int mu,
         *tx_bw = 10e6;
         *rx_bw = 10e6;
       }
+      break;
     case 25:
       if (threequarter_fs) {
         *sample_rate=5.76e6;
