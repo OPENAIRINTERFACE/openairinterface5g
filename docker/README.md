@@ -77,6 +77,7 @@ The currently-supported OS are:
 
 - `rhel8.2` for Red Hat Entreprise Linux (including images for an OpenShift cluster)
 - `ubuntu20` for Ubuntu 20.04 LTS
+- `rocky` for Rocky-Linux 8.7
 
 For more details regarding the build on an Openshift Cluster, see [OpenShift README](../openshift/README.md).
 
@@ -111,6 +112,8 @@ ran-base            latest              5c9c02a5b4a8        1 minute ago        
 ...
 ```
 
+Note that the steps are identical for `rocky-linux`.
+
 ## 3.3. Building any target image ##
 
 For example, the eNB:
@@ -135,6 +138,8 @@ Do not forget to remove the temporary image:
 ```
 docker image prune --force
 ```
+
+Note that the steps are identical for `rocky-linux`.
 
 # 4. Building using `podman` under Red Hat Entreprise Linux 8.2 #
 

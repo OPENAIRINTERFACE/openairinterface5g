@@ -55,7 +55,6 @@ pipeline {
     label pythonExecutor
   }
   options {
-    disableConcurrentBuilds()
     timestamps()
     ansiColor('xterm')
     lock(extra: lockResources)

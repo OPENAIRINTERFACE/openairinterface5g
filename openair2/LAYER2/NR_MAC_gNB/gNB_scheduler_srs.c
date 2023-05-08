@@ -42,7 +42,8 @@ const uint16_t m_SRS[64] = { 4, 8, 12, 16, 16, 20, 24, 24, 28, 32, 36, 40, 48, 4
                              160, 160, 168, 176, 184, 192, 192, 192, 192, 208, 216, 224, 240, 240, 240, 240, 256, 256,
                              256, 264, 272, 272, 272 };
 
-uint32_t max4(uint32_t a, uint32_t b,uint32_t c,uint32_t d) {
+static uint32_t max4(uint32_t a, uint32_t b, uint32_t c, uint32_t d)
+{
   int x = max(a, b);
   x = max(x, c);
   x = max(x, d);
@@ -53,6 +54,9 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
                            const NR_UE_UL_BWP_t *current_BWP,
                            uint8_t *ul_ri)
 {
+  /* already mutex protected: held in handle_nr_srs_measurements() */
+  NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
+
   // If the gNB or UE has 1 antenna, the rank is always 1, i.e., *ul_ri = 0.
   // For 2x2 scenario, we compute the rank of channel.
   // The computation for 2x4, 4x2, 4x4, ... scenarios are not implemented yet. In these cases, the function sets *ul_ri = 0, which is always a valid value.
@@ -137,7 +141,14 @@ void nr_srs_ri_computation(const nfapi_nr_srs_normalized_channel_iq_matrix_t *nr
 
 }
 
-void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int CC_id, NR_UE_info_t *UE, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource, int buffer_index)
+static void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu,
+                             int slot,
+                             int module_id,
+                             int CC_id,
+                             NR_UE_info_t *UE,
+                             NR_SRS_ResourceSet_t *srs_resource_set,
+                             NR_SRS_Resource_t *srs_resource,
+                             int buffer_index)
 {
   NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;
 
@@ -196,7 +207,13 @@ void nr_configure_srs(nfapi_nr_srs_pdu_t *srs_pdu, int slot, int module_id, int 
     vrb_map_UL[i + srs_pdu->bwp_start] |= mask;
 }
 
-void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, int frame, int slot, NR_SRS_ResourceSet_t *srs_resource_set, NR_SRS_Resource_t *srs_resource)
+static void nr_fill_nfapi_srs(int module_id,
+                              int CC_id,
+                              NR_UE_info_t *UE,
+                              int frame,
+                              int slot,
+                              NR_SRS_ResourceSet_t *srs_resource_set,
+                              NR_SRS_Resource_t *srs_resource)
 {
 
   int index = ul_buffer_index(frame, slot, UE->current_UL_BWP.scs, RC.nrmac[module_id]->UL_tti_req_ahead_size);
@@ -226,8 +243,10 @@ void nr_fill_nfapi_srs(int module_id, int CC_id, NR_UE_info_t* UE, int frame, in
 *********************************************************************/
 void nr_schedule_srs(int module_id, frame_t frame, int slot)
  {
-
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   gNB_MAC_INST *nrmac = RC.nrmac[module_id];
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+
   NR_UEs_t *UE_info = &nrmac->UE_info;
 
   UE_iterator(UE_info->list, UE) {

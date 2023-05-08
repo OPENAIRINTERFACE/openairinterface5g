@@ -21,23 +21,38 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for Rocky 8.7
 #
 #---------------------------------------------------------------------
 
-FROM ran-base:latest AS oai-clang
+ARG BASE_IMAGE=docker.io/rockylinux:8.7
+FROM $BASE_IMAGE AS ran-base
 
-RUN rm -Rf /oai-ran
+ENV TZ=Europe/Paris
+ENV BUILD_UHD_FROM_SOURCE=True
+ENV UHD_VERSION=4.4.0.0
+
+RUN dnf install 'dnf-command(config-manager)' -y && \
+    dnf config-manager --set-enabled powertools && \
+    dnf install epel-release -y && crb enable && \
+    dnf update -y && \
+    dnf install -y \
+       #gcc needed for build_oai
+       gcc gcc-c++ \ 
+       diffutils \
+       file \
+       psmisc \
+       git \
+       # python3-pip and pyyaml are used for conf template generation
+       python3-pip && \
+    pip3 install --ignore-installed pyyaml
+
+#create the WORKDIR
 WORKDIR /oai-ran
 COPY . .
 
-#only install LLVM (clang, ...) for this container, the others don't need it
-RUN yum install -y llvm-toolset
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \
+#run build_oai -I to get the builder image
+RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    export CC=/usr/bin/clang && \
-    export CXX=/usr/bin/clang++ && \
-    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function
+    ./build_oai -I --install-optional-packages -w USRP

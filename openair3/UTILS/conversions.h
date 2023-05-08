@@ -116,6 +116,15 @@ do {                            \
         ((buf)[3]);             \
 } while(0)
 
+/* Convert an array of char containing vALUE to x */
+#define BUFFER_TO_UINT32(buf, x)    \
+  do {                              \
+ x = (((uint32_t)(buf)[0] << 24) |              \
+       (uint32_t)((buf)[1] << 16) |      \
+       (uint32_t)((buf)[2] << 8)  |      \
+       (uint32_t)((buf)[3]);        \
+  } while (0)
+
 /* Convert an integer on 32 bits to an octet string from aSN1c tool */
 #define INT32_TO_OCTET_STRING(x, aSN)           \
 do {                                            \
@@ -259,6 +268,12 @@ do {                                    \
     DevCheck((aSN)->size == 4, (aSN)->size, 0, 0);           \
     BUFFER_TO_INT32((aSN)->buf, x);    \
 } while(0)
+
+#define OCTET_STRING_TO_UINT32(aSN, x)             \
+  do {                                             \
+    DevCheck((aSN)->size == 4, (aSN)->size, 0, 0); \
+    BUFFER_TO_UINT32((aSN)->buf, x);               \
+  } while (0)
 
 #define BIT_STRING_TO_INT32(aSN, x)     \
 do {                                    \

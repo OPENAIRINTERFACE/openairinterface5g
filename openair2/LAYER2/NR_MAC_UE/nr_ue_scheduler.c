@@ -107,35 +107,19 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
  * This function returns the UL config corresponding to a given UL slot
  * from MAC instance .
  */
-fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot)
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot, int fb_time)
 {
 
   NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
 
   //Check if requested on the right slot
-  AssertFatal(is_nr_UL_slot(tdd_config, slot, mac->frame_type) != 0, "%s called at wrong slot %d\n", __func__, slot);
+  AssertFatal(is_nr_UL_slot(tdd_config, slot, mac->frame_type) != 0, "UL config_request called at wrong slot %d\n", slot);
 
-  // Calculate the index of the UL slot in mac->ul_config_request list. This is
-  // based on the TDD pattern (slot configuration period) and number of UL+mixed
-  // slots in the period. TS 38.213 Sec 11.1
   int mu = mac->current_UL_BWP.scs;
   const int n = nr_slots_per_frame[mu];
-  const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
-  const int num_slots_ul = tdd_config ? (tdd_config->pattern1.nrofUplinkSlots + (tdd_config->pattern1.nrofUplinkSymbols != 0)) : n;
-  int index = slot % num_slots_ul;
-
-  LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots %d, index %d\n",
-                __FUNCTION__,
-                tdd_config ? "TDD" : "FDD",
-                num_slots_per_tdd,
-                num_slots_ul,
-                index);
-
-  if (mac->ul_config_request) return &mac->ul_config_request[index];
-  else {
-    LOG_E(NR_MAC, "mac->ul_config_request not set\n");
-    return NULL;
-  }
+  AssertFatal(fb_time < n, "Cannot schedule to a slot more than 1 frame away, ul_config_request is not big enough\n");
+  AssertFatal(mac->ul_config_request != NULL, "mac->ul_config_request not initialized, logic bug\n");
+  return &mac->ul_config_request[slot];
 }
 
 /*
@@ -144,37 +128,8 @@ fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int sl
  */
 fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot)
 {
-  int index;
-  if (!mac->scc && !mac->scc_SIB)
-    index = 0;
-  else {
-    NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
-
-    //Check if requested on the right slot
-    AssertFatal(is_nr_DL_slot(tdd_config, slot) != 0, "%s called at wrong slot %d\n", __func__, slot);
-
-    // Calculate the index of the DL slot in mac->ul_config_request list. This is
-    // based on the TDD pattern (slot configuration period) and number of DL+mixed
-    // slots in the period. TS 38.213 Sec 11.1
-    int mu = mac->current_UL_BWP.scs;
-    const int n = nr_slots_per_frame[mu];
-    const int num_slots_per_tdd = tdd_config ? (n >> (7 - tdd_config->pattern1.dl_UL_TransmissionPeriodicity)) : n;
-    const int num_slots_dl = tdd_config ? (tdd_config->pattern1.nrofDownlinkSlots + (tdd_config->pattern1.nrofDownlinkSymbols != 0)) : n;
-
-    index = slot % num_slots_dl;
-    LOG_D(NR_MAC, "In %s slots per %s: %d, num_slots %d, index %d\n",
-                  __FUNCTION__,
-                  tdd_config ? "TDD" : "FDD",
-                  num_slots_per_tdd,
-                  num_slots_dl,
-                  index);
-  }
-
-  if (mac->dl_config_request) return &mac->dl_config_request[index];
-  else {
-    LOG_E(NR_MAC, "mac->dl_config_request not set\n");
-    return NULL;
-  }
+  AssertFatal(mac->dl_config_request != NULL, "mac->dl_config_request not initialized, logic bug\n");
+  return &mac->dl_config_request[slot];
 }
 
 void ul_layers_config(NR_UE_MAC_INST_t *mac, nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu, dci_pdu_rel15_t *dci, nr_dci_format_t dci_format)
@@ -928,7 +883,7 @@ void nr_ue_aperiodic_srs_scheduling(NR_UE_MAC_INST_t *mac, long resource_trigger
   }
   int sched_frame = frame + (slot + slot_offset >= n_slots_frame) % 1024;
 
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot);
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, sched_slot, slot_offset);
   fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].srs_config_pdu;
   configure_srs_pdu(mac, srs_resource, srs_config_pdu, 0, 0);
   fill_ul_config(ul_config, sched_frame, sched_slot, FAPI_NR_UL_CONFIG_TYPE_SRS);
@@ -981,7 +936,7 @@ bool nr_ue_periodic_srs_scheduling(module_id_t mod_id, frame_t frame, slot_t slo
     // Check if UE should transmit the SRS
     if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot);
+      fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot, 0);
       fapi_nr_ul_config_srs_pdu *srs_config_pdu = &ul_config->ul_config_list[ul_config->number_pdus].srs_config_pdu;
 
       configure_srs_pdu(mac, srs_resource, srs_config_pdu, period, offset);
@@ -1070,7 +1025,7 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
   NR_UE_MAC_INST_t *mac = get_mac_inst(mod_id);
   RA_config_t *ra       = &mac->ra;
 
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx);
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slot_tx, 0);
   if (!ul_config)
     LOG_E(NR_MAC, "mac->ul_config is null!\n");
 
@@ -2238,7 +2193,7 @@ void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, vo
 
   if (num_res > 1)
     multiplex_pucch_resource(mac, pucch, num_res);
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP, 0);
   pthread_mutex_lock(&ul_config->mutex_ul_config);
   for (int j = 0; j < num_res; j++) {
     if (pucch[j].n_harq + pucch[j].n_sr + pucch[j].n_csi != 0) {
@@ -2503,7 +2458,7 @@ void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t s
   if(ra->ra_state != GENERATE_PREAMBLE)
     return;
 
-  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP);
+  fapi_nr_ul_config_request_t *ul_config = get_ul_config_request(mac, slotP, 0);
   if (!ul_config) {
     LOG_E(NR_MAC, "mac->ul_config is null! \n");
     return;

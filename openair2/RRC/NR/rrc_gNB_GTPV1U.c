@@ -58,14 +58,14 @@ int rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_
     return -1;
   }
   for (int i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
-    ue_context_p->ue_context.gnb_gtp_teid[inde_list[i]] = create_tunnel_resp_pP->enb_S1u_teid[i];
-    ue_context_p->ue_context.gnb_gtp_addrs[inde_list[i]] = create_tunnel_resp_pP->enb_addr;
-    ue_context_p->ue_context.gnb_gtp_ebi[inde_list[i]] = create_tunnel_resp_pP->eps_bearer_id[i];
+    ue_context_p->ue_context.nsa_gtp_teid[inde_list[i]] = create_tunnel_resp_pP->enb_S1u_teid[i];
+    ue_context_p->ue_context.nsa_gtp_addrs[inde_list[i]] = create_tunnel_resp_pP->enb_addr;
+    ue_context_p->ue_context.nsa_gtp_ebi[inde_list[i]] = create_tunnel_resp_pP->eps_bearer_id[i];
     LOG_I(RRC,
           PROTOCOL_RRC_CTXT_UE_FMT " rrc_eNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u, %u) bearer UE context index %u, msg index %u, id %u, gtp addr len %d \n",
           PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP),
           create_tunnel_resp_pP->enb_S1u_teid[i],
-          ue_context_p->ue_context.gnb_gtp_teid[inde_list[i]],
+          ue_context_p->ue_context.nsa_gtp_teid[inde_list[i]],
           inde_list[i],
           i,
           create_tunnel_resp_pP->eps_bearer_id[i],
@@ -90,14 +90,14 @@ int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ct
   }
 
   for (int i = 0; i < create_tunnel_resp_pP->num_tunnels; i++) {
-    ue_context_p->ue_context.gnb_gtp_teid[i + offset] = create_tunnel_resp_pP->gnb_NGu_teid[i];
-    ue_context_p->ue_context.gnb_gtp_addrs[i + offset] = create_tunnel_resp_pP->gnb_addr;
-    ue_context_p->ue_context.gnb_gtp_psi[i + offset] = create_tunnel_resp_pP->pdusession_id[i];
+    ue_context_p->ue_context.pduSession[i + offset].param.gNB_teid_N3 = create_tunnel_resp_pP->gnb_NGu_teid[i];
+    ue_context_p->ue_context.pduSession[i + offset].param.gNB_addr_N3 = create_tunnel_resp_pP->gnb_addr;
+    AssertFatal(ue_context_p->ue_context.pduSession[i + offset].param.pdusession_id == create_tunnel_resp_pP->pdusession_id[i], "");
     LOG_I(NR_RRC,
-          PROTOCOL_NR_RRC_CTXT_UE_FMT " nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u, %u) bearer UE context index %u, id %u, gtp addr len %d \n",
+          PROTOCOL_NR_RRC_CTXT_UE_FMT
+          " nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP tunnel (%u) bearer UE context index %u, id %u, gtp addr len %d \n",
           PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
           create_tunnel_resp_pP->gnb_NGu_teid[i],
-          ue_context_p->ue_context.gnb_gtp_teid[i + offset],
           i,
           create_tunnel_resp_pP->pdusession_id[i],
           create_tunnel_resp_pP->gnb_addr.length);

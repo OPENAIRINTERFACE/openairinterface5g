@@ -164,8 +164,7 @@ void ue_cxt_mod_send_e1ap(MessageDef *msg,
 void ue_cxt_mod_direct(MessageDef *msg,
                        instance_t instance);
 
-void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP,
-                         rrc_gNB_ue_context_t *ue_context_pP);
+void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, uint8_t xid);
 
 void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_context_p,
                                                  e1ap_bearer_setup_resp_t *e1ap_resp);

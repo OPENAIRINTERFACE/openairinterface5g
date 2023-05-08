@@ -693,145 +693,133 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
 
 }
 
+void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs)
+{
+  int slots_per_frame = nr_slots_per_frame[scs];
+  LOG_I(NR_MAC, "Initializing dl and ul config_request. num_slots = %d\n", slots_per_frame);
+  mac->dl_config_request = calloc(slots_per_frame, sizeof(*mac->dl_config_request));
+  mac->ul_config_request = calloc(slots_per_frame, sizeof(*mac->ul_config_request));
+  for (int i = 0; i < slots_per_frame; i++)
+    pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
+}
 
-int nr_rrc_mac_config_req_ue(module_id_t module_id,
-                             int cc_idP,
-                             uint8_t gNB_index,
-                             NR_MIB_t *mibP,
-                             NR_ServingCellConfigCommonSIB_t *sccP,
-                             NR_CellGroupConfig_t *cell_group_config,
-                             NR_CellGroupConfig_t *scell_group_config)
+void nr_rrc_mac_config_req_mib(module_id_t module_id,
+                               int cc_idP,
+                               NR_MIB_t *mib,
+                               bool sched_sib1)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  AssertFatal(mib, "MIB should not be NULL\n");
+  // initialize dl and ul config_request upon first reception of MIB
+  mac->mib = mib;    //  update by every reception
+  mac->phy_config.Mod_id = module_id;
+  mac->phy_config.CC_id = cc_idP;
+  mac->get_sib1 = sched_sib1;
+}
+
+void nr_rrc_mac_config_req_sib1(module_id_t module_id,
+                                int cc_idP,
+                                NR_ServingCellConfigCommonSIB_t *scc)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  AssertFatal(scc, "SIB1 SCC should not be NULL\n");
+  mac->scc_SIB = scc;
+  mac->nr_band = *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
+  config_common_ue_sa(mac, module_id, cc_idP);
+  configure_current_BWP(mac, scc, NULL);
+
+  // Setup the SSB to Rach Occasionsif (cell_group_config->spCellConfig) { mapping according to the config
+  build_ssb_to_ro_map(mac);
+  if (!get_softmodem_params()->emulate_l1)
+    mac->if_module->phy_config_request(&mac->phy_config);
+  mac->phy_config_request_sent = true;
+}
+
+void nr_rrc_mac_config_req_mcg(module_id_t module_id,
+                               int cc_idP,
+                               NR_CellGroupConfig_t *cell_group_config)
+{
+  LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
+  AssertFatal(cell_group_config, "CellGroupConfig should not be NULL\n");
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  mac->cg = cell_group_config;
+  if (cell_group_config->spCellConfig)
+    mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
+  else
+    mac->servCellIndex = 0;
+
+  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
+  LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
+        module_id,
+        mac->scheduling_info.periodicBSR_SF,
+        mac->scheduling_info.retxBSR_SF);
+
+  configure_current_BWP(mac, NULL, cell_group_config);
+  config_control_ue(mac);
+
+  RA_config_t *ra = &mac->ra;
+  if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
+    LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
+    if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
+      ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+    }
+    mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+    mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    if (mac->scc_SIB) {
+      ASN_STRUCT_FREE(asn_DEF_NR_ServingCellConfigCommonSIB, mac->scc_SIB);
+      mac->scc_SIB = NULL;
+    }
+    mac->state = UE_NOT_SYNC;
+    mac->ra.ra_state = RA_UE_IDLE;
+    mac->physCellId = *mac->scc->physCellId;
+    if (!get_softmodem_params()->emulate_l1) {
+      mac->synch_request.Mod_id = module_id;
+      mac->synch_request.CC_id = cc_idP;
+      mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
+      mac->if_module->synch_request(&mac->synch_request);
+    }
+    config_common_ue(mac, module_id, cc_idP);
+    mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
+    LOG_I(MAC, "Configuring CRNTI %x\n", mac->crnti);
+
+    nr_ue_mac_default_configs(mac);
+    if (!get_softmodem_params()->emulate_l1) {
+      mac->if_module->phy_config_request(&mac->phy_config);
+      mac->phy_config_request_sent = true;
+    }
+
+    // Setup the SSB to Rach Occasions mapping according to the config
+    build_ssb_to_ro_map(mac);
+  }
+}
+
+void nr_rrc_mac_config_req_scg(module_id_t module_id,
+                               int cc_idP,
+                               NR_CellGroupConfig_t *scell_group_config)
 {
 
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   RA_config_t *ra = &mac->ra;
-  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
 
-  if (mac->dl_config_request == NULL) // for SIB1 reception
-    mac->dl_config_request = calloc(NR_MAX_SLOTS_PER_FRAME, sizeof(*mac->dl_config_request));
+  AssertFatal(scell_group_config, "scell_group_config cannot be NULL\n");
 
-  //  TODO do something FAPI-like P5 L1/L2 config interface in config_si, config_mib, etc.
-
-  if(mibP != NULL){
-    mac->mib = mibP;    //  update by every reception
-    mac->phy_config.Mod_id = module_id;
-    mac->phy_config.CC_id = cc_idP;
+  mac->cg = scell_group_config;
+  mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
+  if (scell_group_config->spCellConfig->reconfigurationWithSync) {
+    if (scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
+      ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+    }
+    mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
+    mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    mac->physCellId = *mac->scc->physCellId;
+    config_common_ue(mac,module_id,cc_idP);
+    mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
+    LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
   }
-  AssertFatal(scell_group_config == NULL || cell_group_config == NULL,
-              "both scell_group_config and cell_group_config cannot be non-NULL\n");
-
-  if (sccP != NULL) {
-
-    mac->scc_SIB = sccP;
-    mac->nr_band = *sccP->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
-    config_common_ue_sa(mac, module_id, cc_idP);
-    configure_current_BWP(mac, sccP, NULL);
-
-    int num_slots_ul = nr_slots_per_frame[mac->mib->subCarrierSpacingCommon];
-    if(cfg->cell_config.frame_duplex_type == TDD){
-      num_slots_ul = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
-        num_slots_ul++;
-      }
-    }
-    LOG_I(NR_MAC, "Initializing ul_config_request. num_slots_ul = %d\n", num_slots_ul);
-    mac->ul_config_request = calloc(num_slots_ul, sizeof(*mac->ul_config_request));
-    for (int i=0; i<num_slots_ul; i++)
-      pthread_mutex_init(&(mac->ul_config_request[i].mutex_ul_config), NULL);
-
-    int num_slots_dl = nr_slots_per_frame[mac->mib->subCarrierSpacingCommon];
-    if (cfg->cell_config.frame_duplex_type == TDD) {
-      num_slots_dl = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
-      if (mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSymbols > 0) {
-        num_slots_dl++;
-      }
-    }
-    LOG_I(NR_MAC, "Initializing dl_config_request. num_slots_dl = %d\n", num_slots_dl);
-    mac->dl_config_request = realloc(mac->dl_config_request, num_slots_dl*sizeof(*mac->dl_config_request));
-    memset(mac->dl_config_request, 0, num_slots_dl*sizeof(fapi_nr_dl_config_request_t));
-
-    // Setup the SSB to Rach Occasionsif (cell_group_config->spCellConfig) { mapping according to the config
-    build_ssb_to_ro_map(mac);//->scc, mac->phy_config.config_req.cell_config.frame_duplex_type);
-    if (!get_softmodem_params()->emulate_l1)
-      mac->if_module->phy_config_request(&mac->phy_config);
-    mac->phy_config_request_sent = true;
-  }
-  if(scell_group_config != NULL ){
-    mac->cg = scell_group_config;
-    mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
-    if (scell_group_config->spCellConfig->reconfigurationWithSync) {
-      if (scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-        ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-      }
-      mac->scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-      mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-      mac->physCellId = *mac->scc->physCellId;
-      config_common_ue(mac,module_id,cc_idP);
-      mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-      LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
-    }
-    configure_current_BWP(mac, NULL, scell_group_config);
-    config_control_ue(mac);
-    // Setup the SSB to Rach Occasions mapping according to the config
-    build_ssb_to_ro_map(mac);
-
-  } else if (cell_group_config != NULL) {
-    LOG_I(MAC,"Applying CellGroupConfig from gNodeB\n");
-    mac->cg = cell_group_config;
-    if (cell_group_config->spCellConfig)
-      mac->servCellIndex = cell_group_config->spCellConfig->servCellIndex ? *cell_group_config->spCellConfig->servCellIndex : 0;
-    else
-      mac->servCellIndex = 0;
-
-    mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-    mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-    mac->BSR_reporting_active = NR_BSR_TRIGGER_NONE;
-    LOG_D(MAC, "[UE %d]: periodic BSR %d (SF), retx BSR %d (SF)\n",
-          module_id,
-          mac->scheduling_info.periodicBSR_SF,
-          mac->scheduling_info.retxBSR_SF);
-
-    configure_current_BWP(mac, NULL, cell_group_config);
-    config_control_ue(mac);
-
-    if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
-      LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
-      if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-        ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-      }
-      mac->scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-      mac->nr_band = *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-      if (mac->scc_SIB) {
-        free(mac->scc_SIB);
-        mac->scc_SIB = NULL;
-      }
-      int num_slots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      if (mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols > 0) {
-        num_slots++;
-      }
-      mac->state = UE_NOT_SYNC;
-      mac->ra.ra_state = RA_UE_IDLE;
-      mac->physCellId = *mac->scc->physCellId;
-      if (!get_softmodem_params()->emulate_l1) {
-        mac->synch_request.Mod_id = module_id;
-        mac->synch_request.CC_id = cc_idP;
-        mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
-        mac->if_module->synch_request(&mac->synch_request);
-      }
-      mac->ul_config_request = calloc(num_slots, sizeof(*mac->ul_config_request));
-      config_common_ue(mac, module_id, cc_idP);
-      mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-      LOG_I(MAC, "Configuring CRNTI %x\n", mac->crnti);
-
-      nr_ue_init_mac(module_id);
-      if (!get_softmodem_params()->emulate_l1) {
-        mac->if_module->phy_config_request(&mac->phy_config);
-        mac->phy_config_request_sent = true;
-      }
-
-      // Setup the SSB to Rach Occasions mapping according to the config
-      build_ssb_to_ro_map(mac);
-    }
-  }
-  return 0;
+  configure_current_BWP(mac, NULL, scell_group_config);
+  config_control_ue(mac);
+  // Setup the SSB to Rach Occasions mapping according to the config
+  build_ssb_to_ro_map(mac);
 }

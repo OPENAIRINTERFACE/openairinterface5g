@@ -285,6 +285,9 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
             NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
             nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
           }
+          if (get_softmodem_params()->nsa) {
+            nr_rrc_mac_config_req_scg(0, 0, cellGroupConfig);
+          }
         }
         else
           nr_rrc_ue_decode_secondary_cellgroup_config(module_id,
@@ -312,7 +315,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
     default:
       break;
   }
-  //nr_rrc_mac_config_req_ue(); 
 
   return 0;
 }
@@ -340,10 +342,6 @@ int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupCon
   }else{
     //  maintain list
     if(cell_group_config->spCellConfig != NULL){
-      if (get_softmodem_params()->nsa) {
-        nr_rrc_mac_config_req_ue(0, 0, 0, NULL, NULL, cell_group_config, NULL);
-        LOG_D(NR_RRC, "Filled scc now \n");
-      }
       if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
         //  process element of list to be add by RRC message
         if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
@@ -600,7 +598,10 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
     NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
     bcch_message->message.choice.mib = NULL;
 
-    nr_rrc_mac_config_req_ue(0, 0, 0, NR_UE_rrc_inst[module_id].mib, NULL, NULL, NULL);
+    NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+    // if no sib1 because not acquired yet or expired, get a new one
+    bool get_sib1 = sib1 == NULL;
+    nr_rrc_mac_config_req_mib(module_id, 0, NR_UE_rrc_inst[module_id].mib, get_sib1);
     ret = 0;
   }
   ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, bcch_message);
@@ -1210,8 +1211,8 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
             }
             // take ServingCellConfigCommon and configure L1/L2
             NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-            nr_rrc_mac_config_req_ue(module_id,0,0,NULL,sib1->servingCellConfigCommon,NULL,NULL);
-            nr_rrc_ue_generate_ra_msg(module_id,gNB_index);
+            nr_rrc_mac_config_req_sib1(module_id, 0, sib1->servingCellConfigCommon);
+            nr_rrc_ue_generate_ra_msg(module_id, gNB_index);
           } else {
             LOG_E(NR_RRC, "SIB1 not decoded\n");
           }
@@ -1256,12 +1257,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
 }
 
 //-----------------------------------------------------------------------------
-void
-nr_rrc_ue_process_masterCellGroup(
-  const protocol_ctxt_t *const ctxt_pP,
-  uint8_t gNB_index,
-  OCTET_STRING_t *masterCellGroup
-)
+void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
+                                       uint8_t gNB_index,
+                                       OCTET_STRING_t *masterCellGroup)
 //-----------------------------------------------------------------------------
 {
   NR_CellGroupConfig_t *cellGroupConfig=NULL;
@@ -1342,23 +1340,23 @@ nr_rrc_ue_process_masterCellGroup(
                      sizeof(struct NR_MAC_CellGroupConfig));
   }
 
-  if( cellGroupConfig->sCellToReleaseList != NULL){
+  if(cellGroupConfig->sCellToReleaseList != NULL) {
     //TODO (perform SCell release as specified in 5.3.5.5.8)
   }
 
-  if( cellGroupConfig->spCellConfig != NULL){
+  if(cellGroupConfig->spCellConfig != NULL) {
     if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config &&
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
+        NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig) {
       memcpy(NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig,cellGroupConfig->spCellConfig,
              sizeof(struct NR_SpCellConfig));
     } else {
       if (NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config)
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
+          NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config->spCellConfig = cellGroupConfig->spCellConfig;
       else
-	      NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
+        NR_UE_rrc_inst[ctxt_pP->module_id].cell_group_config = cellGroupConfig;
     }
     LOG_D(RRC,"Sending CellGroupConfig to MAC\n");
-    nr_rrc_mac_config_req_ue(ctxt_pP->module_id,0,0,NULL,NULL,cellGroupConfig,NULL);
+    nr_rrc_mac_config_req_mcg(ctxt_pP->module_id, 0, cellGroupConfig);
     //TODO (configure the SpCell as specified in 5.3.5.5.7)
   }
 
@@ -2136,12 +2134,9 @@ nr_rrc_ue_establish_srb2(
  }
 
  //-----------------------------------------------------------------------------
- static void
- rrc_ue_process_rrcReconfiguration(
-   const protocol_ctxt_t *const  ctxt_pP,
-   NR_RRCReconfiguration_t       *rrcReconfiguration,
-   uint8_t                       gNB_index
- )
+ static void rrc_ue_process_rrcReconfiguration(const protocol_ctxt_t *const  ctxt_pP,
+                                               NR_RRCReconfiguration_t *rrcReconfiguration,
+                                               uint8_t gNB_index)
  //-----------------------------------------------------------------------------
  {
    LOG_I(NR_RRC, "[UE %d] Frame %d: Receiving from SRB1 (DL-DCCH), Processing RRCReconfiguration (gNB %d)\n",

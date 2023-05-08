@@ -36,7 +36,6 @@ pipeline {
     label nodeExecutor
   }
   options {
-    disableConcurrentBuilds()
     ansiColor('xterm')
     lock(extra: lockResources)
   }

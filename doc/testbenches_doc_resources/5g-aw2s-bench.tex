@@ -23,9 +23,11 @@
   \node[below right=-0.7cm and 0.35cm of b78o.east] (anto2)
     {\includegraphics[width=0.3cm]{antenna}} edge (b78o);
 
-  \node[right=4cm of aw2s, label=above:Amarisoft UE] (amariue)
+  \node[right=3.5cm of aw2s, label=above:amariue] (amariue)
     {\includegraphics[width=0.7cm]{amariue}};
-  \node[right=3cm of aw2s] (anto3)
+  \node[right=0.8cm of anto1] (anto3)
+    {\includegraphics[width=0.3cm]{antenna}} edge (amariue);
+  \node[right=0.8cm of anto2] (anto4)
     {\includegraphics[width=0.3cm]{antenna}} edge (amariue);
 
 \end{tikzpicture}

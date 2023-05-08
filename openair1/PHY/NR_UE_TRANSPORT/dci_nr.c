@@ -80,16 +80,17 @@ char nr_dci_format_string[8][30] = {
 
 
 static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
-                                       uint32_t *e_rx,
-                                       uint8_t coreset_time_dur,
-                                       uint8_t start_symbol,
-                                       uint32_t coreset_nbr_rb,
-                                       uint8_t reg_bundle_size_L,
-                                       uint8_t coreset_interleaver_size_R,
-                                       uint8_t n_shift,
-                                       uint8_t number_of_candidates,
-                                       uint16_t *CCE,
-                                       uint8_t *L) {
+                                              uint32_t *e_rx,
+                                              uint8_t coreset_time_dur,
+                                              uint8_t start_symbol,
+                                              uint32_t coreset_nbr_rb,
+                                              uint8_t reg_bundle_size_L,
+                                              uint8_t coreset_interleaver_size_R,
+                                              uint8_t n_shift,
+                                              uint8_t number_of_candidates,
+                                              uint16_t *CCE,
+                                              uint8_t *L)
+{
   /*
    * This function will do demapping and deinterleaving from llr containing demodulated symbols
    * Demapping will regroup in REG and bundles
@@ -130,7 +131,7 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   uint32_t coreset_C = 0;
   uint16_t index_z, index_llr;
   int coreset_interleaved = 0;
-  int N_regs = coreset_nbr_rb*coreset_time_dur;
+  int N_regs = coreset_nbr_rb * coreset_time_dur;
 
   if (reg_bundle_size_L != 0) { // interleaving will be done only if reg_bundle_size_L != 0
     coreset_interleaved = 1;
@@ -139,12 +140,11 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
     reg_bundle_size_L = 6;
   }
 
-  int B_rb = reg_bundle_size_L/coreset_time_dur; // nb of RBs occupied by each REG bundle
-  int num_bundles_per_cce = 6/reg_bundle_size_L;
-  int n_cce = N_regs/6;
-  int max_bundles = n_cce*num_bundles_per_cce;
+  int B_rb = reg_bundle_size_L / coreset_time_dur; // nb of RBs occupied by each REG bundle
+  int num_bundles_per_cce = 6 / reg_bundle_size_L;
+  int n_cce = N_regs / 6;
+  int max_bundles = n_cce * num_bundles_per_cce;
   int f_bundle_j_list[max_bundles];
-
   // for each bundle
   for (int nb = 0; nb < max_bundles; nb++) {
     if (coreset_interleaved == 0)
@@ -163,11 +163,11 @@ static void nr_pdcch_demapping_deinterleaving(uint32_t *llr,
   // Get cce_list indices by bundle index in ascending order
   int f_bundle_j_list_ord[number_of_candidates][max_bundles];
   for (int c_id = 0; c_id < number_of_candidates; c_id++ ) {
-    int start_bund_cand = CCE[c_id]*num_bundles_per_cce;
-    int max_bund_per_cand = L[c_id]*num_bundles_per_cce;
+    int start_bund_cand = CCE[c_id] * num_bundles_per_cce;
+    int max_bund_per_cand = L[c_id] * num_bundles_per_cce;
     int f_bundle_j_list_id = 0;
     for(int nb = 0; nb < max_bundles; nb++) {
-      for(int bund_cand = start_bund_cand; bund_cand < start_bund_cand+max_bund_per_cand; bund_cand++){
+      for(int bund_cand = start_bund_cand; bund_cand < start_bund_cand + max_bund_per_cand; bund_cand++){
         if (f_bundle_j_list[bund_cand] == nb) {
           f_bundle_j_list_ord[c_id][f_bundle_j_list_id] = nb;
           f_bundle_j_list_id++;

@@ -43,6 +43,10 @@
    \param module_id      module id */
 void nr_ue_init_mac(module_id_t module_idP);
 
+/**\brief apply default configuration values in nr_mac instance
+   \param mac           mac instance */
+void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
+
 /**\brief decode mib pdu in NR_UE, from if_module ul_ind with P7 tx_ind message
    \param module_id      module id
    \param cc_id          component carrier id
@@ -91,22 +95,22 @@ int nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id_t module_id,
                                                   long        logicalChannelIdentity,
                                                   bool        status);
 
-/**\brief primitive from RRC layer to MAC layer for configuration L1/L2, now supported 4 rrc messages: MIB, cell_group_config for MAC/PHY, spcell_config(serving cell config)
-   \param module_id                 module id
-   \param cc_id                     component carrier id
-   \param gNB_index                 gNB index
-   \param mibP                      pointer to RRC message MIB
-   \param sccP                      pointer to ServingCellConfigCommon structure,
-   \param spcell_configP            pointer to RRC message serving cell config*/
-int nr_rrc_mac_config_req_ue(
-    module_id_t                     module_id,
-    int                             cc_idP,
-    uint8_t                         gNB_index,
-    NR_MIB_t                        *mibP,
-    NR_ServingCellConfigCommonSIB_t *sccP,
-    NR_CellGroupConfig_t            *cell_group_config,
-    NR_CellGroupConfig_t            *scell_group_config
-);
+void nr_rrc_mac_config_req_scg(module_id_t module_id,
+                               int cc_idP,
+                               NR_CellGroupConfig_t *scell_group_config);
+
+void nr_rrc_mac_config_req_mcg(module_id_t module_id,
+                               int cc_idP,
+                               NR_CellGroupConfig_t *scell_group_config);
+
+void nr_rrc_mac_config_req_mib(module_id_t module_id,
+                               int cc_idP,
+                               NR_MIB_t *mibP,
+                               bool sched_sib1);
+
+void nr_rrc_mac_config_req_sib1(module_id_t module_id,
+                                int cc_idP,
+                                NR_ServingCellConfigCommonSIB_t *scc);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst);
@@ -421,6 +425,8 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pd
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
+void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs);
+
 void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,
                           NR_BWP_Id_t dl_bwp_id);
@@ -434,7 +440,7 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                                    dci_pdu_rel15_t *dci_pdu_rel15,
                                    int slot);
 
-fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot);
+fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot, int fb_time);
 fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot);
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type);

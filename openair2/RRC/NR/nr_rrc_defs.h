@@ -128,7 +128,7 @@ typedef enum UE_STATE_NR_e {
 #define NO_SECURITY_MODE                              0x20
 
 /* TS 36.331: RRC-TransactionIdentifier ::= INTEGER (0..3) */
-#define NR_RRC_TRANSACTION_IDENTIFIER_NUMBER             3
+#define NR_RRC_TRANSACTION_IDENTIFIER_NUMBER 4
 
 typedef struct {
   unsigned short                                      transport_block_size;      /*!< \brief Minimum PDU size in bytes provided by RLC to MAC layer interface */
@@ -258,14 +258,15 @@ typedef enum pdu_session_satus_e {
   PDU_SESSION_STATUS_DONE,
   PDU_SESSION_STATUS_ESTABLISHED,
   PDU_SESSION_STATUS_REESTABLISHED, // after HO
-  PDU_SESSION_STATUS_TOMODIFY,      // ENDC NSA
+  PDU_SESSION_STATUS_TOMODIFY, // ENDC NSA
   PDU_SESSION_STATUS_FAILED,
-  PDU_SESSION_STATUS_TORELEASE  // to release DRB between eNB and UE
+  PDU_SESSION_STATUS_TORELEASE, // to release DRB between eNB and UE
+  PDU_SESSION_STATUS_RELEASED
 } pdu_session_status_t;
 
 typedef struct pdu_session_param_s {
   pdusession_t param;
-  uint8_t status;
+  pdu_session_status_t status;
   uint8_t xid; // transaction_id
   ngap_Cause_t cause;
   uint8_t cause_value;
@@ -304,6 +305,19 @@ typedef struct drb_s {
     } ext1;
   } pdcp_config;
 } drb_t;
+
+typedef enum {
+  RRC_FIRST_RECONF,
+  RRC_SETUP,
+  RRC_SETUP_FOR_REESTABLISHMENT,
+  RRC_REESTABLISH,
+  RRC_REESTABLISH_COMPLETE,
+  RRC_DEFAULT_RECONF,
+  RRC_DEDICATED_RECONF,
+  RRC_PDUSESSION_ESTABLISH,
+  RRC_PDUSESSION_MODIFY,
+  RRC_PDUSESSION_RELEASE
+} rrc_action_t;
 
 typedef struct gNB_RRC_UE_s {
   uint8_t                            primaryCC_id;
@@ -369,38 +383,20 @@ typedef struct gNB_RRC_UE_s {
   nr_rrc_guami_t                     ue_guami;
 
   ngap_security_capabilities_t       security_capabilities;
-
-  /* Total number of e_rab already setup in the list */
-  uint8_t                           setup_e_rabs;
-  /* Number of e_rab to be setup in the list */
+  //NSA block
+  /* Number of NSA e_rab */
   uint8_t                            nb_of_e_rabs;
-  /* Number of e_rab to be modified in the list */
-  uint8_t                            nb_of_modify_e_rabs;
-  uint8_t                            nb_of_failed_e_rabs;
-  nr_e_rab_param_t                   modify_e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  /* Number of pdu session managed for the ue */
-  uint8_t                            nb_of_pdusessions;
-  /* Number of e_rab to be modified in the list */
-  uint8_t                            nb_of_modify_pdusessions;
-  uint8_t                            nb_of_failed_pdusessions;
-  rrc_pdu_session_param_t modify_pdusession[NR_NB_RB_MAX];
-  /* list of e_rab to be setup by RRC layers */
   /* list of pdu session to be setup by RRC layers */
   nr_e_rab_param_t                   e_rab[NB_RB_MAX];//[S1AP_MAX_E_RAB];
-  rrc_pdu_session_param_t pduSession[NGAP_MAX_PDU_SESSION];
-  //release e_rabs
-  uint8_t                            nb_release_of_e_rabs;
-  e_rab_failed_t                     e_rabs_release_failed[S1AP_MAX_E_RAB];
-  uint8_t                            nb_release_of_pdusessions;
-  pdusession_failed_t                pdusessions_release_failed[NGAP_MAX_PDUSESSION];
-  // LG: For GTPV1 TUNNELS
-  uint32_t                           gnb_gtp_teid[S1AP_MAX_E_RAB];
-  transport_layer_addr_t             gnb_gtp_addrs[S1AP_MAX_E_RAB];
-  rb_id_t                            gnb_gtp_ebi[S1AP_MAX_E_RAB];
-  rb_id_t                            gnb_gtp_psi[S1AP_MAX_E_RAB];
-  //GTPV1 F1-U TUNNELS
-  uint32_t                           incoming_teid[S1AP_MAX_E_RAB];
+  uint32_t                           nsa_gtp_teid[S1AP_MAX_E_RAB];
+  transport_layer_addr_t             nsa_gtp_addrs[S1AP_MAX_E_RAB];
+  rb_id_t                            nsa_gtp_ebi[S1AP_MAX_E_RAB];
+  rb_id_t                            nsa_gtp_psi[S1AP_MAX_E_RAB];
 
+  //SA block
+  int nb_of_pdusessions;
+  rrc_pdu_session_param_t pduSession[NGAP_MAX_PDU_SESSION];
+  rrc_action_t xids[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   uint32_t                           ul_failure_timer;
   uint32_t                           ue_release_timer;
   uint32_t                           ue_release_timer_thres;
@@ -412,11 +408,8 @@ typedef struct gNB_RRC_UE_s {
   uint32_t                           ue_release_timer_thres_rrc;
   uint32_t                           ue_reestablishment_timer;
   uint32_t                           ue_reestablishment_timer_thres;
-  uint8_t                            e_rab_release_command_flag;
-  uint8_t                            pdu_session_release_command_flag;
-  uint8_t                            established_pdu_sessions_flag;
-  uint32_t                           ue_rrc_inactivity_timer;
-  int8_t                             reestablishment_xid;
+  uint8_t e_rab_release_command_flag;
+  uint32_t ue_rrc_inactivity_timer;
   uint32_t                           ue_reestablishment_counter;
   uint32_t                           ue_reconfiguration_after_reestablishment_counter;
   NR_CellGroupId_t                                      cellGroupId;
@@ -481,6 +474,7 @@ typedef struct {
 
 typedef struct nr_mac_rrc_dl_if_s {
   /* TODO add other message types as necessary */
+  ue_context_setup_request_func_t ue_context_setup_request;
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
 } nr_mac_rrc_dl_if_t;
 

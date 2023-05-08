@@ -55,6 +55,7 @@
 
 const int get_dl_tda(const gNB_MAC_INST *nrmac, const NR_ServingCellConfigCommon_t *scc, int slot) {
 
+  /* we assume that this function is mutex-protected from outside */
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
   AssertFatal(tdd || nrmac->common_channels->frame_type == FDD, "Dynamic TDD not handled yet\n");
 
@@ -76,8 +77,12 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
                           const NR_UE_sched_ctrl_t *ue_sched_ctl,
                           unsigned char *mac_pdu,
                           unsigned char drx_cmd,
-                          unsigned char *ue_cont_res_id) {
+                          unsigned char *ue_cont_res_id)
+{
   gNB_MAC_INST *gNB = RC.nrmac[module_idP];
+  /* already mutex protected: called below and in _RA.c */
+  NR_SCHED_ENSURE_LOCKED(&gNB->sched_lock);
+
   NR_MAC_SUBHEADER_FIXED *mac_pdu_ptr = (NR_MAC_SUBHEADER_FIXED *) mac_pdu;
   uint8_t last_size = 0;
   int offset = 0, mac_ce_size, i, timing_advance_cmd, tag_id = 0;
@@ -311,10 +316,8 @@ int nr_write_ce_dlsch_pdu(module_id_t module_idP,
   return offset;
 }
 
-void nr_store_dlsch_buffer(module_id_t module_id,
-                           frame_t frame,
-                           sub_frame_t slot) {
-
+static void nr_store_dlsch_buffer(module_id_t module_id, frame_t frame, sub_frame_t slot)
+{
   UE_iterator(RC.nrmac[module_id]->UE_info.list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     sched_ctrl->num_total_bytes = 0;
@@ -363,8 +366,9 @@ void nr_store_dlsch_buffer(module_id_t module_id,
   }
 }
 
-void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid) {
-
+void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid)
+{
+  /* already mutex protected through handle_dl_harq() */
   NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   NR_UE_harq_t *harq = &sched_ctrl->harq_processes[harq_pid];
 
@@ -375,13 +379,13 @@ void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid) {
 
 }
 
-bool allocate_dl_retransmission(module_id_t module_id,
-                                frame_t frame,
-                                sub_frame_t slot,
-                                uint16_t *rballoc_mask,
-                                int *n_rb_sched,
-                                NR_UE_info_t *UE,
-                                int current_harq_pid)
+static bool allocate_dl_retransmission(module_id_t module_id,
+                                       frame_t frame,
+                                       sub_frame_t slot,
+                                       uint16_t *rballoc_mask,
+                                       int *n_rb_sched,
+                                       NR_UE_info_t *UE,
+                                       int current_harq_pid)
 {
 
   int CC_id = 0;
@@ -549,15 +553,14 @@ static int comparator(const void *p, const void *q) {
   return ((UEsched_t*)p)->coef < ((UEsched_t*)q)->coef;
 }
 
-void pf_dl(module_id_t module_id,
-           frame_t frame,
-           sub_frame_t slot,
-           NR_UE_info_t **UE_list,
-           int max_num_ue,
-           int n_rb_sched,
-           uint16_t *rballoc_mask)
+static void pf_dl(module_id_t module_id,
+                  frame_t frame,
+                  sub_frame_t slot,
+                  NR_UE_info_t **UE_list,
+                  int max_num_ue,
+                  int n_rb_sched,
+                  uint16_t *rballoc_mask)
 {
-
   gNB_MAC_INST *mac = RC.nrmac[module_id];
   NR_ServingCellConfigCommon_t *scc=mac->common_channels[0].ServingCellConfigCommon;
   // UEs that could be scheduled
@@ -784,7 +787,7 @@ void pf_dl(module_id_t module_id,
   }
 }
 
-void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
+static void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
 
@@ -843,6 +846,7 @@ void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_frame_t
 }
 
 nr_pp_impl_dl nr_init_fr1_dlsch_preprocessor(int CC_id) {
+  /* during initialization: no mutex needed */
   /* in the PF algorithm, we have to use the TBsize to compute the coefficient.
    * This would include the number of DMRS symbols, which in turn depends on
    * the time domain allocation. In case we are in a mixed slot, we do not want
@@ -876,6 +880,9 @@ void nr_schedule_ue_spec(module_id_t module_id,
                          nfapi_nr_tx_data_request_t *TX_req)
 {
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_id];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
+  AssertFatal(pthread_mutex_trylock(&gNB_mac->sched_lock) == EBUSY,
+              "this function should be called with the scheduler mutex locked\n");
 
   if (!is_xlsch_in_slot(gNB_mac->dlsch_slot_bitmap[slot / 64], slot))
     return;

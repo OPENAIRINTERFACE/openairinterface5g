@@ -36,7 +36,6 @@ pipeline {
     label nodeExecutor
   }
   options {
-    disableConcurrentBuilds()
     timestamps()
     gitLabConnection('OAI GitLab')
     ansiColor('xterm')
@@ -425,28 +424,26 @@ pipeline {
             }
           }
         }
-
-        //avra is offline, re-enable once it is available
-        //stage ("T1-Offload-Test") {
-        //  when { expression {do5Gtest} }
-        //  steps {
-        //    script {
-        //      triggerSlaveJob ('RAN-T1-Offload-Test', 'T1-Offload-Test')
-        //    }
-        //  }
-        //  post {
-        //    always {
-        //      script {
-        //        finalizeSlaveJob('RAN-T1-Offload-Test')
-        //      }
-        //    }
-        //    failure {
-        //      script {
-        //        currentBuild.result = 'FAILURE'
-        //      }
-        //    }
-        //  }
-        //}
+        stage ("Interop-F1") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Interop-F1', 'Interop-F1')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Interop-F1')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
     stage ("DockerHub-Push") {

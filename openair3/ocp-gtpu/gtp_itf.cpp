@@ -762,6 +762,7 @@ int gtpv1u_create_ngu_tunnel(const instance_t instance,
     create_tunnel_resp->gnb_NGu_teid[i]=teid;
     memcpy(create_tunnel_resp->gnb_addr.buffer,addr,sizeof(addr));
     create_tunnel_resp->gnb_addr.length= sizeof(addr);
+    create_tunnel_resp->pdusession_id[i] = create_tunnel_req->pdusession_id[i];
   }
 
   return !GTPNOK;

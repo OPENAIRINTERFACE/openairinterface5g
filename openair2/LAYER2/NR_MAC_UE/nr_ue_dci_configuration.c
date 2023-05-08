@@ -51,34 +51,34 @@
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,
                                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                                int slot, int rnti) {
-
+                                int slot, int rnti)
+{
   LOG_D(NR_MAC,"Filling search candidates for DCI\n");
 
   uint8_t aggregation;
-  uint8_t number_of_candidates=0;
-  rel15->number_of_candidates=0;
-  int i=0;
+  uint8_t number_of_candidates = 0;
+  rel15->number_of_candidates = 0;
   uint32_t Y = 0;
+  int i = 0;
   if (slot >= 0)
     Y = get_Y(ss, slot, rnti);
-  for (int maxL=16;maxL>0;maxL>>=1) {
+  for (int maxL = 16; maxL > 0; maxL >>= 1) {
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,
                                 ss,maxL);
 
     if (number_of_candidates>0) {
-      LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n",maxL,number_of_candidates,aggregation);
+      LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n", maxL, number_of_candidates, aggregation);
       rel15->number_of_candidates += number_of_candidates;
       int N_cce_sym = 0; // nb of rbs of coreset per symbol
-      for (int i=0;i<6;i++) {
-        for (int t=0;t<8;t++) {
-          N_cce_sym+=((rel15->coreset.frequency_domain_resource[i]>>t)&1);
+      for (int f = 0; f < 6; f++) {
+        for (int t = 0; t < 8; t++) {
+          N_cce_sym += ((rel15->coreset.frequency_domain_resource[f] >> t) & 1);
         }
       }
-      int N_cces = N_cce_sym*rel15->coreset.duration;
-      for (int j=0; j<number_of_candidates; i++,j++) {
-        int first_cce = aggregation * (( Y + CEILIDIV((j*N_cces),(aggregation*number_of_candidates)) + 0 ) % CEILIDIV(N_cces,aggregation));
+      int N_cces = N_cce_sym * rel15->coreset.duration;
+      for (int j = 0; j < number_of_candidates; i++, j++) {
+        int first_cce = aggregation * ((Y + ((j * N_cces) / (aggregation * number_of_candidates)) + 0) % (N_cces / aggregation));
         LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", j, number_of_candidates, first_cce, aggregation, N_cces, Y);
         rel15->CCE[i] = first_cce;
         rel15->L[i] = aggregation;
@@ -220,9 +220,8 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
 
         rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
 
-        if(mac->frequency_range == FR1)
-          rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-        else
+        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+        if(mac->frequency_range == FR2)
           rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
         break;
       case NR_RNTI_SFI:

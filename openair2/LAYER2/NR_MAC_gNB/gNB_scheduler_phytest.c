@@ -50,6 +50,7 @@ void nr_preprocessor_phytest(module_id_t module_id,
                              frame_t frame,
                              sub_frame_t slot)
 {
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   if (!is_xlsch_in_slot(dlsch_slot_bitmap, slot))
     return;
   NR_UE_info_t *UE = RC.nrmac[module_id]->UE_info.list[0];
@@ -192,6 +193,7 @@ uint64_t ulsch_slot_bitmap = (1 << 8);
 bool nr_ul_preprocessor_phytest(module_id_t module_id, frame_t frame, sub_frame_t slot)
 {
   gNB_MAC_INST *nr_mac = RC.nrmac[module_id];
+  /* already mutex protected: held in gNB_dlsch_ulsch_scheduler() */
   NR_COMMON_channels_t *cc = nr_mac->common_channels;
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;
   NR_UE_info_t *UE = nr_mac->UE_info.list[0];

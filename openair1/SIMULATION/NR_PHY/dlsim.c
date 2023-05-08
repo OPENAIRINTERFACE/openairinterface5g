@@ -861,6 +861,7 @@ int main(int argc, char **argv)
 
   nr_l2_init_ue(NULL);
   UE_mac = get_mac_inst(0);
+  ue_init_config_request(UE_mac, mu);
 
   UE->if_inst = nr_ue_if_module_init(0);
   UE->if_inst->scheduled_response = nr_ue_scheduled_response;
@@ -888,7 +889,8 @@ int main(int argc, char **argv)
 
   //Configure UE
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
-  nr_rrc_mac_config_req_ue(0, 0, 0, mib->message.choice.mib, NULL, NULL, secondaryCellGroup);
+  nr_rrc_mac_config_req_mib(0, 0, mib->message.choice.mib, false);
+  nr_rrc_mac_config_req_scg(0, 0, secondaryCellGroup);
 
   nr_dcireq_t dcireq;
   nr_scheduled_response_t scheduled_response;
@@ -1010,7 +1012,10 @@ int main(int argc, char **argv)
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].ndi = !(trial&1);
         UE_info->UE_sched_ctrl.harq_processes[harq_pid].round = round;
 
+        // nr_schedule_ue_spec() requires the mutex to be locked
+        NR_SCHED_LOCK(&gNB_mac->sched_lock);
         nr_schedule_ue_spec(0, frame, slot, &Sched_INFO->DL_req, &Sched_INFO->TX_req);
+        NR_SCHED_UNLOCK(&gNB_mac->sched_lock);
         Sched_INFO->module_id = 0;
         Sched_INFO->CC_id = 0;
         Sched_INFO->frame = frame;
