@@ -52,7 +52,6 @@ def StatusForDb = ""
 pipeline {
   agent {label pythonExecutor}
   options {
-    disableConcurrentBuilds()
     ansiColor('xterm')
     lock(extra: lockResources)
   }
