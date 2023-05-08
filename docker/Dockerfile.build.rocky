@@ -21,23 +21,18 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for Rocky 8.7
 #
 #---------------------------------------------------------------------
 
-FROM ran-base:latest AS oai-clang
+FROM ran-base:latest as ran-build
 
 RUN rm -Rf /oai-ran
 WORKDIR /oai-ran
 COPY . .
 
-#only install LLVM (clang, ...) for this container, the others don't need it
-RUN yum install -y llvm-toolset
-
 #run build_oai to build the target image
-RUN /bin/sh oaienv && \
+RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    export CC=/usr/bin/clang && \
-    export CXX=/usr/bin/clang++ && \
-    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function
+    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja --build-lib "telnetsrv enbscope uescope nrscope" -w USRP --verbose-ci --noavx512 -c
