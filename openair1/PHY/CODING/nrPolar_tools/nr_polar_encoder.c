@@ -33,6 +33,7 @@
 //#define DEBUG_POLAR_ENCODER
 //#define DEBUG_POLAR_ENCODER_DCI
 //#define DEBUG_POLAR_MATLAB
+//#define POLAR_CODING_DEBUG
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 #include "assertions.h"
@@ -262,6 +263,44 @@ void polar_encoder_dci(uint32_t *in,
   polarReturn;
 }
 
+/*
+ * Interleaving of coded bits implementation
+ * TS 138.212: Section 5.4.1.3 - Interleaving of coded bits
+ */
+void nr_polar_rm_interleaving_cb(void *in, void *out, uint16_t E)
+{
+  int T = ceil((sqrt(8 * E + 1) - 1) / 2);
+  int v[T][T];
+  int k = 0;
+  uint64_t *in64 = (uint64_t *)in;
+  for (int i = 0; i < T; i++) {
+    for (int j = 0; j < T - i; j++) {
+      if (k < E) {
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        v[i][j] = (in64[k1] >> k2) & 1;
+      } else {
+        v[i][j] = -1;
+      }
+      k++;
+    }
+  }
+
+  k = 0;
+  uint64_t *out64 = (uint64_t *)out;
+  memset(out64, 0, E >> 3);
+  for (int j = 0; j < T; j++) {
+    for (int i = 0; i < T - j; i++) {
+      if (v[i][j] != -1) {
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        out64[k1] |= (uint64_t)v[i][j] << k2;
+        k++;
+      }
+    }
+  }
+}
+
 static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) __attribute__((always_inline));
 
 static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void *in,void *out) {
@@ -309,6 +348,10 @@ static inline void polar_rate_matching(const t_nrPolar_params *polarParams,void 
     for (int i=0; i<polarParams->encoderLength>>4; i++) {
       ((uint16_t *)out)[i] = ((uint16_t *)in)[polarParams->rm_tab[i]];
     }
+
+  if (polarParams->i_bil == 1) {
+    nr_polar_rm_interleaving_cb(out, out, polarParams->encoderLength);
+  }
 }
 
 void build_polar_tables(t_nrPolar_params *polarParams) {
@@ -452,6 +495,21 @@ void polar_encoder_fast(uint64_t *A,
                         uint8_t aggregation_level) {
                         
   t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, false);
+
+#ifdef POLAR_CODING_DEBUG
+  printf("polarParams->payloadBits = %i\n", polarParams->payloadBits);
+  printf("polarParams->crcParityBits = %i\n", polarParams->crcParityBits);
+  printf("polarParams->K = %i\n", polarParams->K);
+  printf("polarParams->N = %i\n", polarParams->N);
+  printf("polarParams->encoderLength = %i\n", polarParams->encoderLength);
+  printf("polarParams->n_pc = %i\n", polarParams->n_pc);
+  printf("polarParams->n_pc_wm = %i\n", polarParams->n_pc_wm);
+  printf("polarParams->groupsize = %i\n", polarParams->groupsize);
+  printf("polarParams->i_il = %i\n", polarParams->i_il);
+  printf("polarParams->i_bil = %i\n", polarParams->i_bil);
+  printf("polarParams->n_max = %i\n", polarParams->n_max);
+#endif
+
   //  AssertFatal(polarParams->K > 32, "K = %d < 33, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->K < 129, "K = %d > 128, is not supported yet\n",polarParams->K);
   AssertFatal(polarParams->payloadBits < 65, "payload bits = %d > 64, is not supported yet\n",polarParams->payloadBits);
@@ -460,6 +518,23 @@ void polar_encoder_fast(uint64_t *A,
   AssertFatal(bitlen<129,"support for payloads <= 128 bits\n");
   //  AssertFatal(polarParams->crcParityBits == 24,"support for 24-bit crc only for now\n");
   //int bitlen0=bitlen;
+
+#ifdef POLAR_CODING_DEBUG
+  int A_array = (bitlen + 63) >> 6;
+  printf("\nTX\n");
+  printf("a: ");
+  for (int n = 0; n < bitlen; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    int alen = n1 == 0 ? bitlen - (A_array << 6) : 64;
+    printf("%lu", (A[A_array - 1 - n1] >> (alen - 1 - n2)) & 1);
+  }
+  printf("\n");
+#endif
+
   uint64_t tcrc=0;
   uint8_t offset = 0;
 
@@ -542,6 +617,22 @@ void polar_encoder_fast(uint64_t *A,
     else
       B[n] = (A[n-1]>>(64-polarParams->crcParityBits));
 
+#ifdef POLAR_CODING_DEBUG
+  int bitlen_B = bitlen + polarParams->crcParityBits;
+  int B_array = (bitlen_B + 63) >> 6;
+  int n_start = (B_array << 6) - bitlen_B;
+  printf("b: ");
+  for (int n = 0; n < bitlen_B; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    int n1 = (n + n_start) >> 6;
+    int n2 = (n + n_start) - (n1 << 6);
+    printf("%lu", (B[B_array - 1 - n1] >> (63 - n2)) & 1);
+  }
+  printf("\n");
+#endif
+
   uint8_t *Bbyte = (uint8_t *)B;
 
   // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
@@ -565,6 +656,19 @@ void polar_encoder_fast(uint64_t *A,
 #ifdef DEBUG_POLAR_MATLAB
   // Cprime = pbchCprime
   for (int i = 0; i < quadwlen; i++) printf("[polar_encoder_fast]C'[%d]= 0x%llx\n", i, (unsigned long long)(Cprime[i]));
+#endif
+
+#ifdef POLAR_CODING_DEBUG
+  printf("c: ");
+  for (int n = 0; n < bitlen_B; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    printf("%lu", (Cprime[n1] >> n2) & 1);
+  }
+  printf("\n");
 #endif
 
 #ifdef DEBUG_POLAR_ENCODER
@@ -726,6 +830,19 @@ void polar_encoder_fast(uint64_t *A,
   memset((void*)out,0,polarParams->encoderLength>>3);
   polar_rate_matching(polarParams,(void *)D, out);
 
-  polarReturn;
+#ifdef POLAR_CODING_DEBUG
+  uint64_t *out64 = (uint64_t *)out;
+  printf("rm:");
+  for (int n = 0; n < polarParams->encoderLength; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    printf("%lu", (out64[n1] >> n2) & 1);
+  }
+  printf("\n");
+#endif
 
+  polarReturn;
 }
