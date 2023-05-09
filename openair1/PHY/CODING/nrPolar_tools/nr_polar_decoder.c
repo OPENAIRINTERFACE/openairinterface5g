@@ -612,7 +612,7 @@ uint32_t polar_decoder_int16(int16_t *input,
 {
   t_nrPolar_params *polarParams=nr_polar_params(messageType, messageLength, aggregation_level, true);
   int16_t d_tilde[polarParams->N];// = malloc(sizeof(double) * polarParams->N);
-  nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength);
+  nr_polar_rate_matching_int16(input, d_tilde, polarParams->rate_matching_pattern, polarParams->K, polarParams->N, polarParams->encoderLength, polarParams->i_bil);
 
   for (int i=0; i<polarParams->N; i++) {
     if (d_tilde[i]<-128) d_tilde[i]=-128;

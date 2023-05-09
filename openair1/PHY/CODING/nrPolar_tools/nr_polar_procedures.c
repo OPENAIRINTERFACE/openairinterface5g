@@ -325,23 +325,75 @@ void nr_polar_rate_matching(double *input,
   }
 }
 
-void nr_polar_rate_matching_int16(int16_t *input,
-				  int16_t *output,
-				  uint16_t *rmp,
-				  uint16_t K,
-				  uint16_t N,
-				  uint16_t E)
+/*
+ * De-interleaving of coded bits implementation
+ * TS 138.212: Section 5.4.1.3 - Interleaving of coded bits
+ */
+void nr_polar_rm_deinterleaving_cb(const int16_t *in, int16_t *out, const uint16_t E)
 {
-  if (E>=N) { //repetition
-    memset((void*)output,0,N*sizeof(int16_t));
-    for (int i=0; i<=E-1; i++) output[rmp[i]]+=input[i];
+  int T = ceil((sqrt(8 * E + 1) - 1) / 2);
+  int v_tab[T][T];
+  int k = 0;
+  for (int i = 0; i < T; i++) {
+    memset(v_tab[i], 0, T * sizeof(int));
+    for (int j = 0; j < T - i; j++) {
+      if (k < E) {
+        v_tab[i][j] = k + 1;
+      }
+      k++;
+    }
+  }
+
+  int v[T][T];
+  k = 0;
+  for (int j = 0; j < T; j++) {
+    for (int i = 0; i < T - j; i++) {
+      if (k < E && v_tab[i][j] != 0) {
+        v[i][j] = in[E - 1 - k];
+        k++;
+      } else {
+        v[i][j] = INT_MAX;
+      }
+    }
+  }
+
+  k = 0;
+  memset(out, 0, E * sizeof(int16_t));
+  for (int i = 0; i < T; i++) {
+    for (int j = 0; j < T - i; j++) {
+      if (v[i][j] != INT_MAX) {
+        out[E - 1 - k] = v[i][j];
+        k++;
+      }
+    }
+  }
+}
+
+void nr_polar_rate_matching_int16(int16_t *input,
+                                  int16_t *output,
+                                  const uint16_t *rmp,
+                                  const uint16_t K,
+                                  const uint16_t N,
+                                  const uint16_t E,
+                                  const uint8_t i_bil)
+{
+  if (i_bil == 1) {
+    nr_polar_rm_deinterleaving_cb(input, input, E);
+  }
+
+  if (E >= N) { // repetition
+    memset((void *)output, 0, N * sizeof(int16_t));
+    for (int i = 0; i <= E - 1; i++)
+      output[rmp[i]] += input[i];
   } else {
-    if ( (K/(double)E) <= (7.0/16) ) memset((void*)output,0,N*sizeof(int16_t)); //puncturing
-    else { //shortening
-      for (int i=0; i<=N-1; i++) output[i]=32767;//instead of INFINITY, to prevent [-Woverflow]
+    if ((K / (double)E) <= (7.0 / 16))
+      memset((void *)output, 0, N * sizeof(int16_t)); // puncturing
+    else { // shortening
+      for (int i = 0; i <= N - 1; i++)
+        output[i] = 32767; // instead of INFINITY, to prevent [-Woverflow]
     }
 
-    for (int i=0; i<=E-1; i++) output[rmp[i]]=input[i];
-   
+    for (int i = 0; i <= E - 1; i++)
+      output[rmp[i]] = input[i];
   }
 }

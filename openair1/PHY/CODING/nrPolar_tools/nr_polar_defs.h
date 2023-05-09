@@ -238,10 +238,11 @@ void nr_polar_rate_matching(double *input,
 
 void nr_polar_rate_matching_int16(int16_t *input,
                                   int16_t *output,
-                                  uint16_t *rmp,
-                                  uint16_t K,
-                                  uint16_t N,
-                                  uint16_t E);
+                                  const uint16_t *rmp,
+                                  const uint16_t K,
+                                  const uint16_t N,
+                                  const uint16_t E,
+                                  const uint8_t i_bil);
 
 void nr_polar_interleaving_pattern(uint16_t K,
                                    uint8_t I_IL,
