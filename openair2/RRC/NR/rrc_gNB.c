@@ -707,9 +707,13 @@ rrc_gNB_generate_dedicatedRRCReconfiguration(
 
   if(cell_groupConfig_from_DU == NULL){
     cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities or
-    // bearer IDs for the DRBs
-    fill_mastercellGroupConfig(cellGroupConfig, ue_p->masterCellGroup, rrc->um_on_default_drb, (drb_id_to_setup_start < 2) ? 1 : 0, drb_id_to_setup_start, nb_drb_to_setup, drb_priority);
+    // FIXME: fill_mastercellGroupConfig() won't fill the right priorities
+    fill_mastercellGroupConfig(cellGroupConfig,
+                               ue_p->masterCellGroup,
+                               rrc->um_on_default_drb,
+                               (drb_id_to_setup_start < 2) ? 1 : 0,
+                               DRB_configList,
+                               drb_priority);
   }
   else{
     LOG_I(NR_RRC, "Master cell group originating from the DU \n");
@@ -1487,7 +1491,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
 
   uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
-  uint8_t nb_drb_to_setup = ue_p->DRB_configList ? ue_p->DRB_configList->list.count : ue_p->nb_of_pdusessions;
   /* TODO: hardcoded to 13 for the time being, to be changed? */
   long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
 
@@ -1495,8 +1498,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
                              ue_p->masterCellGroup,
                              rrc->um_on_default_drb,
                              (drb_id_to_setup_start < 2) ? 1 : 0,
-                             drb_id_to_setup_start,
-                             nb_drb_to_setup,
+                             ue_p->DRB_configList2[new_xid],
                              drb_priority);
 
   for (i = 0; i < cellGroupConfig->rlc_BearerToAddModList->list.count; i++) {
@@ -2481,7 +2483,12 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, in
 
   if(req->srbs_to_be_setup_length>0 || req->drbs_to_be_setup_length>0){
     cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
-    fill_mastercellGroupConfig(cellGroupConfig, UE->masterCellGroup, rrc->um_on_default_drb, drb_id_to_setup_start < 2 ? 1 : 0, drb_id_to_setup_start, req->drbs_to_be_setup_length, drb_priority);
+    fill_mastercellGroupConfig(cellGroupConfig,
+                               UE->masterCellGroup,
+                               rrc->um_on_default_drb,
+                               drb_id_to_setup_start < 2 ? 1 : 0,
+                               DRB_configList,
+                               drb_priority);
     apply_macrlc_config(rrc, ue_context_p, &ctxt);
   }
   if(req->ReconfigComplOutcome == RRCreconf_failure){
