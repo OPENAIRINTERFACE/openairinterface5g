@@ -1489,17 +1489,15 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   cellGroupConfig->spCellConfig = ue_p->masterCellGroup->spCellConfig;
   cellGroupConfig->mac_CellGroupConfig = ue_p->masterCellGroup->mac_CellGroupConfig;
   cellGroupConfig->physicalCellGroupConfig = ue_p->masterCellGroup->physicalCellGroupConfig;
+  cellGroupConfig->rlc_BearerToReleaseList = NULL;
+  cellGroupConfig->rlc_BearerToAddModList = calloc(1, sizeof(*cellGroupConfig->rlc_BearerToAddModList));
 
-  uint8_t drb_id_to_setup_start = ue_p->DRB_configList ? ue_p->DRB_configList->list.array[0]->drb_Identity : 1;
-  /* TODO: hardcoded to 13 for the time being, to be changed? */
-  long drb_priority[NGAP_MAX_DRBS_PER_UE] = {13};
-
-  fill_mastercellGroupConfig(cellGroupConfig,
-                             ue_p->masterCellGroup,
-                             rrc->um_on_default_drb,
-                             (drb_id_to_setup_start < 2) ? 1 : 0,
-                             ue_p->DRB_configList2[new_xid],
-                             drb_priority);
+  /*
+   * Get SRB2, DRB configuration from the existing UE context,
+   * also start from SRB2 (i=1) and not from SRB1 (i=0).
+   */
+  for (i = 1; i < ue_p->masterCellGroup->rlc_BearerToAddModList->list.count; ++i)
+    asn1cSeqAdd(&cellGroupConfig->rlc_BearerToAddModList->list, ue_p->masterCellGroup->rlc_BearerToAddModList->list.array[i]);
 
   for (i = 0; i < cellGroupConfig->rlc_BearerToAddModList->list.count; i++) {
     cellGroupConfig->rlc_BearerToAddModList->list.array[i]->reestablishRLC =
