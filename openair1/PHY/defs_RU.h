@@ -655,6 +655,8 @@ typedef struct RU_t_s {
   int txfh_core_id;
   /// number of RU interfaces
   int num_fd;
+  /// Core id of ru_thread
+  int ru_thread_core;
   /// list of cores for RU ThreadPool
   int tpcores[16];
   /// number of cores for RU ThreadPool

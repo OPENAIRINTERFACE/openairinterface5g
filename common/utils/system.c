@@ -231,7 +231,9 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
   int settingPriority = 1;
   ret=pthread_attr_init(&attr);
   AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
-  
+
+  LOG_I(UTIL,"Creating thread %s with affinity %d and priority %d\n",name,affinity,priority);
+
   if (checkIfFedoraDistribution())
     if (checkIfGenericKernelOnFedora())
       if (checkIfInsideContainer())

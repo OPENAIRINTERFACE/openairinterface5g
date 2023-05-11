@@ -314,9 +314,15 @@ void *trx_eth_write_udp_cmd(udpTXelem_t *udpTXelem) {
   uint64_t last_rxTS = fhstate->TS[0]-fhstate->TS0;
   uint64_t TS_advance=0;
   if (timestamp > last_rxTS) TS_advance = timestamp - last_rxTS;
-
-  if (TS_advance < (nsamps/2)) LOG_W(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
-  void *buff2;
+  else {
+    LOG_W(PHY,"TS_advance is < 0  TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n", (unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
+    free(buff);
+    return(NULL);
+  }
+  if (TS_advance < (nsamps/2)) {
+     LOG_W(PHY,"Starting TX FH for TS %llu absslot %llu(%llu) last_rxTS %llu TS_advance %llu samples\n",(unsigned long long)timestamp,(unsigned long long)timestamp/nsamps,((unsigned long long)timestamp/nsamps)%20,(unsigned long long)last_rxTS,(unsigned long long)TS_advance);
+  }
+     void *buff2;
 #if defined(__x86_64) || defined(__i386__)
   int nsamps2 = 256>>3;
   __m256i buff_tx[nsamps2+1];
@@ -445,7 +451,7 @@ void *udp_read_thread(void *arg) {
   char buffer[UDP_PACKET_SIZE_BYTES(256)];
   int first_read=0;
   while (oai_exit == 0) {
-    LOG_I(PHY,"UDP read thread %d, waiting for start sampling_rate_d %d, sampling_rate_n %d\n",u->thread_id,device->sampling_rate_ratio_n,device->sampling_rate_ratio_d);
+    LOG_I(PHY,"UDP read thread %d on core %d, waiting for start sampling_rate_d %d, sampling_rate_n %d\n",u->thread_id,sched_getcpu(),device->sampling_rate_ratio_n,device->sampling_rate_ratio_d);
     while (fhstate->active > 0) {
       ssize_t count = recvfrom(((eth_state_t*)device->priv)->sockfdd[0],
                                buffer,sizeof(buffer),0,
@@ -500,23 +506,23 @@ void *udp_read_thread(void *arg) {
 int trx_eth_read_udp(openair0_device *device, openair0_timestamp *timestamp, uint32_t **buff, int nsamps) {
   
   fhstate_t *fhstate = &device->fhstate;
-  openair0_timestamp prev_read_TS= fhstate->TS_read, min_TS;
+  openair0_timestamp prev_read_TS= fhstate->TS_read;
+  volatile openair0_timestamp min_TS;
   // block until FH is ready
   while (fhstate->r[0] == 0 || fhstate->r[1] == 0 || fhstate->r[2] == 0 || fhstate->r[3] == 0 ||
          fhstate->r[4] == 0 || fhstate->r[5] == 0 || fhstate->r[6] == 0 || fhstate->r[7] == 0) usleep(100);
 
   // get minimum TS over all antennas
-  min_TS = fhstate->TS[0];
+  min_TS = (volatile openair0_timestamp)fhstate->TS[0];
   for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
   // poll/sleep until we accumulated enough samples on each antenna port
   int count=0;
   while (fhstate->first_read == 1 && min_TS < (fhstate->TS0+prev_read_TS + nsamps)) {
-    usleep(50);
-    min_TS = fhstate->TS[0];
-    for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,fhstate->TS[i]);
+    usleep(10);
+    min_TS = (volatile openair0_timestamp)fhstate->TS[0];
+    for (int i=1;i<device->openair0_cfg->rx_num_channels;i++) min_TS = min(min_TS,(volatile openair0_timestamp)fhstate->TS[i]);
     count++;
   }
-
   if (fhstate->first_read == 0) {
      *timestamp = 0;
      fhstate->TS_read = *timestamp+nsamps;

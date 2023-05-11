@@ -491,7 +491,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
         for (int rb=0; rb<rel15->rbSize; rb++) {
           //get pmi info
           uint8_t pmi;
-          if (rel15->precodingAndBeamforming.prg_size > 0)
+          if (0 /*rel15->precodingAndBeamforming.prg_size > 0*/)
             pmi = rel15->precodingAndBeamforming.prgs_list[(int)rb/rel15->precodingAndBeamforming.prg_size].pm_idx;
           else
             pmi = 0;//no precoding
