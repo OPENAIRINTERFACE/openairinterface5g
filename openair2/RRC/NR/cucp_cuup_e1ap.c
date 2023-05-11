@@ -29,7 +29,8 @@
 #include "nr_rrc_extern.h"
 #include "cucp_cuup_if.h"
 #include "openair2/COMMON/e1ap_messages_types.h"
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/secu_defs.h"
+
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include "common/ran_context.h"
 

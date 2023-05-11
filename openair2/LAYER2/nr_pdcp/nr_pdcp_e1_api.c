@@ -52,8 +52,4 @@ void nr_pdcp_e1_add_drbs(eNB_flag_t enb_flag,
     }
   } else
     LOG_W(PDCP, "%s with void list\n", __FUNCTION__);
-  if (kUPenc)
-    free(kUPenc);
-  if (kUPint)
-    free(kUPint);
 }

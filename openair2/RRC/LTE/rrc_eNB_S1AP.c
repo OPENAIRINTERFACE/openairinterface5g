@@ -46,12 +46,14 @@
 #include "pdcp.h"
 #include "pdcp_primitives.h"
 
-#include "UTIL/OSA/osa_defs.h"
-
 #include "LTE_UERadioAccessCapabilityInformation.h"
 
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
+
+#include "openair3/SECU/secu_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
+
 #include "RRC/LTE/rrc_eNB_GTPV1U.h"
 
 #include "TLVDecoder.h"
@@ -485,9 +487,9 @@ rrc_pdcp_config_security(
 //------------------------------------------------------------------------------
 {
   LTE_SRB_ToAddModList_t             *SRB_configList = ue_context_pP->ue_context.SRB_configList;
-  uint8_t                            *kRRCenc = NULL;
-  uint8_t                            *kRRCint = NULL;
-  uint8_t                            *kUPenc = NULL;
+  uint8_t kRRCenc[32] = {0};
+  uint8_t kRRCint[32] = {0};
+  uint8_t kUPenc[32] = {0};
   pdcp_t                             *pdcp_p   = NULL;
   static int                          print_keys= 1;
   hashtable_rc_t                      h_rc;
@@ -495,19 +497,13 @@ rrc_pdcp_config_security(
 
   /* Derive the keys from kenb */
   if (SRB_configList != NULL) {
-    derive_key_up_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                      ue_context_pP->ue_context.kenb,
-                      &kUPenc);
+    derive_key_nas(UP_ENC_ALG, ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kenb, kUPenc);
   }
 
-  derive_key_rrc_enc(ue_context_pP->ue_context.ciphering_algorithm,
-                     ue_context_pP->ue_context.kenb,
-                     &kRRCenc);
-  derive_key_rrc_int(ue_context_pP->ue_context.integrity_algorithm,
-                     ue_context_pP->ue_context.kenb,
-                     &kRRCint);
- if (!IS_SOFTMODEM_IQPLAYER) {
-  SET_LOG_DUMP(DEBUG_SECURITY) ;
+  derive_key_nas(RRC_ENC_ALG, ue_context_pP->ue_context.ciphering_algorithm, ue_context_pP->ue_context.kenb, kRRCenc);
+  derive_key_nas(RRC_INT_ALG, ue_context_pP->ue_context.integrity_algorithm, ue_context_pP->ue_context.kenb, kRRCint);
+  if (!IS_SOFTMODEM_IQPLAYER) {
+    SET_LOG_DUMP(DEBUG_SECURITY);
  }
 
 
@@ -953,6 +949,7 @@ int rrc_eNB_process_S1AP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, const char
       &ctxt,
       ue_context_p,
       S1AP_INITIAL_CONTEXT_SETUP_REQ(msg_p).security_key);
+
     {
       uint8_t send_security_mode_command = true;
       rrc_pdcp_config_security(

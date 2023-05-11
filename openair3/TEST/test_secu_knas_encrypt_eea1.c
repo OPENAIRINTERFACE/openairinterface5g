@@ -52,8 +52,7 @@ void eea1_encrypt(uint8_t direction, uint32_t count,
   nas_cipher->blength    = length;
   nas_cipher->message    = message;
 
-  if (nas_stream_encrypt_eea1(nas_cipher, result) != 0)
-    fail("Fail: nas_stream_encrypt_eea1\n");
+  stream_compute_encrypt(EEA1_128_ALG_ID, nas_cipher, result);
 
   if (compare_buffer(result, byte_length, expected, byte_length) != 0) {
     fail("Fail: eea1_encrypt\n");
