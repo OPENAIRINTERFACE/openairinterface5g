@@ -53,6 +53,7 @@
 #include <executables/softmodem-common.h>
 
 #include "LAYER2/NR_MAC_COMMON/nr_mac_extern.h"
+#include "LAYER2/RLC/rlc.h"
 
 //#define SRS_DEBUG
 
@@ -1153,7 +1154,6 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
 
 bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t gNB_index)
 {
-  mac_rlc_status_resp_t rlc_status;
   bool bsr_regular_triggered = false;
   uint8_t lcid;
   uint8_t lcgid;
@@ -1196,7 +1196,7 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
         lcgid_buffer_remain[lcgid] += mac->scheduling_info.LCID_buffer_remain[lcid];
       }
 
-      rlc_status = mac_rlc_status_ind(module_idP, mac->crnti,gNB_index,frameP,slotP,ENB_FLAG_NO,MBMS_FLAG_NO, lcid, 0, 0);
+      mac_rlc_status_resp_t rlc_status = mac_rlc_status_ind(module_idP, mac->crnti,gNB_index,frameP,slotP,ENB_FLAG_NO,MBMS_FLAG_NO, lcid, 0, 0);
 
       lcid_bytes_in_buffer[lcid] = rlc_status.bytes_in_buffer;
 

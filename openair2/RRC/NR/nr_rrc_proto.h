@@ -45,7 +45,6 @@
 #include "NR_CellGroupConfig.h"
 
 #define NR_MAX_SUPPORTED_DL_LAYERS 2
-void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan);
 
 uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
                              const int         CC_id,
