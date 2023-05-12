@@ -776,10 +776,10 @@ int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_REQ);
+  f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
   F1AP_UEContextReleaseRequest_t    *container;
   F1AP_UEContextReleaseRequestIEs_t *ie;
   DevAssert(pdu);
@@ -789,6 +789,8 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   const rnti_t rnti = f1ap_get_rnti_by_cu_id(true, instance,
                       ie->value.choice.GNB_CU_UE_F1AP_ID);
+  req->rnti = rnti;
+
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
@@ -796,35 +798,42 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t       instance,
                        ie->value.choice.GNB_DU_UE_F1AP_ID);
   AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
               rnti2, rnti);
+
   /* Cause */
-  /* We don't care for the moment
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_Cause, true);
 
   switch(ie->value.choice.Cause.present)
   {
     case F1AP_Cause_PR_radioNetwork:
-      //ie->value.choice.Cause.choice.radioNetwork
+      req->cause = F1AP_CAUSE_RADIO_NETWORK;
+      req->cause_value = ie->value.choice.Cause.choice.radioNetwork;
       break;
     case F1AP_Cause_PR_transport:
-      //ie->value.choice.Cause.choice.transport
+      req->cause = F1AP_CAUSE_TRANSPORT;
+      req->cause_value = ie->value.choice.Cause.choice.transport;
       break;
     case F1AP_Cause_PR_protocol:
-      //ie->value.choice.Cause.choice.protocol
+      req->cause = F1AP_CAUSE_PROTOCOL;
+      req->cause_value = ie->value.choice.Cause.choice.protocol;
       break;
     case F1AP_Cause_PR_misc:
-      //ie->value.choice.Cause.choice.misc
+      req->cause = F1AP_CAUSE_MISC;
+      req->cause_value = ie->value.choice.Cause.choice.misc;
       break;
     case F1AP_Cause_PR_NOTHING:
     default:
+      req->cause = F1AP_CAUSE_NOTHING;
       break;
   }
-  */
-  LOG_I(F1AP, "Received UE CONTEXT RELEASE REQUEST: Trigger RRC for RNTI %x\n", rnti);
 
-  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
-    AssertFatal(false,"must be devlopped\n");
-  } 
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container, F1AP_ProtocolIE_ID_id_targetCellsToCancel, false);
+  if (ie != NULL) {
+    LOG_W(F1AP, "ignoring list of target cells to cancel in UE Context Release Request: implementation missing\n");
+  }
+
+  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg);
+
   return 0;
 }
 
