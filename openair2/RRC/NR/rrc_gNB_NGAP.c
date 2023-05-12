@@ -653,7 +653,7 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
         //               NGAP_UPLINK_NAS (msg_p).nas_pdu.length,
         //               ue_context_pP);
         itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
-        LOG_I(NR_RRC,"Send RRC GNB UL Information Transfer \n");
+        LOG_D(NR_RRC,"Send RRC GNB UL Information Transfer \n");
     }
 }
 

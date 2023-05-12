@@ -98,8 +98,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
 
   if(f1ap_ue_context_setup_req->rnti<0)
     LOG_E(F1AP, "Could not retrieve UE rnti based on the CU/DU UE id \n");
-  else
-    LOG_I(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_setup_req->rnti);
 
   /* SpCell_ID */
   F1AP_UEContextSetupRequestIEs_t *ieNet;
@@ -695,19 +693,15 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
       F1AP_ProtocolIE_ID_id_Cause, true);
   switch (ie->value.choice.Cause.present){
   case  F1AP_Cause_PR_radioNetwork:
-    LOG_W (F1AP, "UE context release command cause is due to radioNetwork with specific code: %ld\n",ie->value.choice.Cause.choice.radioNetwork);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
     break;
   case F1AP_Cause_PR_transport:
-    LOG_W (F1AP, "UE context release command cause is due to transport with specific code: %ld\n",ie->value.choice.Cause.choice.transport);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_TRANSPORT;
     break;
   case F1AP_Cause_PR_protocol:
-    LOG_W (F1AP, "UE context release command cause is due to protocol with specific code: %ld\n",ie->value.choice.Cause.choice.protocol);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_PROTOCOL;
     break;
   case F1AP_Cause_PR_misc:
-    LOG_W (F1AP, "UE context release command cause is misc with specific code: %ld \n",ie->value.choice.Cause.choice.misc);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_MISC;
     break;
   default:
