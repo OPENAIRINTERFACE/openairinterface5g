@@ -658,6 +658,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         UL_BWP->configuredGrantConfig =
             spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig ? spCellConfigDedicated->uplinkConfig->initialUplinkBWP->configuredGrantConfig->choice.setup : NULL;
         ul_genericParameters = bwp_ulcommon->genericParameters;
+        if (bwp_ulcommon->pucch_ConfigCommon)
+          UL_BWP->pucch_ConfigCommon = bwp_ulcommon->pucch_ConfigCommon->choice.setup;
         if (bwp_ulcommon->rach_ConfigCommon)
           UL_BWP->rach_ConfigCommon = bwp_ulcommon->rach_ConfigCommon->choice.setup;
       }
@@ -749,8 +751,6 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
         mac->scheduling_info.periodicBSR_SF,
         mac->scheduling_info.retxBSR_SF);
 
-  configure_current_BWP(mac, NULL, cell_group_config);
-
   RA_config_t *ra = &mac->ra;
   if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
     LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
@@ -772,11 +772,13 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
       mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
       mac->if_module->synch_request(&mac->synch_request);
     }
-    config_common_ue(mac, module_id, cc_idP);
     mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-    LOG_I(MAC, "Configuring CRNTI %x\n", mac->crnti);
+    LOG_I(NR_MAC, "Configuring CRNTI %x\n", mac->crnti);
 
+    configure_current_BWP(mac, NULL, cell_group_config);
+    config_common_ue(mac, module_id, cc_idP);
     nr_ue_mac_default_configs(mac);
+
     if (!get_softmodem_params()->emulate_l1) {
       mac->if_module->phy_config_request(&mac->phy_config);
       mac->phy_config_request_sent = true;
@@ -784,6 +786,8 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
 
     // Setup the SSB to Rach Occasions mapping according to the config
     build_ssb_to_ro_map(mac);
+  } else {
+    configure_current_BWP(mac, NULL, cell_group_config);
   }
 }
 

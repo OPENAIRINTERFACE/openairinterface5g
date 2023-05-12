@@ -147,7 +147,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
   /* TODO: need to apply after UE context reconfiguration confirmed? */
-  process_CellGroup(UE->CellGroup, &UE->UE_sched_ctrl);
+  process_CellGroup(UE->CellGroup, UE);
 
   NR_SCHED_UNLOCK(&mac->sched_lock);
 

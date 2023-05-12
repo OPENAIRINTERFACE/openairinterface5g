@@ -98,7 +98,7 @@ static void process_rlcBearerConfig(struct NR_CellGroupConfig__rlc_BearerToAddMo
 
 }
 
-void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sched_ctrl)
+void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_info_t *UE)
 {
   /* we assume that this function is mutex-protected from outside */
   NR_SCHED_ENSURE_LOCKED(&RC.nrmac[0]->sched_lock);
@@ -114,8 +114,8 @@ void process_CellGroup(NR_CellGroupConfig_t *CellGroup, NR_UE_sched_ctrl_t *sche
      //process_phr_Config(sched_ctrl,mac_CellGroupConfig->phr_Config);
    }
 
-   process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList,CellGroup->rlc_BearerToReleaseList,sched_ctrl);
-
+   nr_mac_prepare_ra_ue(RC.nrmac[0], UE->rnti, CellGroup);
+   process_rlcBearerConfig(CellGroup->rlc_BearerToAddModList, CellGroup->rlc_BearerToReleaseList, &UE->UE_sched_ctrl);
 }
 
 static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch_AntennaPorts, NR_ServingCellConfigCommon_t *scc)
@@ -570,7 +570,7 @@ bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t
   NR_UE_info_t* UE = add_new_nr_ue(nrmac, rnti, CellGroup);
   if (UE) {
     LOG_I(NR_MAC,"Force-added new UE %x with initial CellGroup\n", rnti);
-    process_CellGroup(CellGroup,&UE->UE_sched_ctrl);
+    process_CellGroup(CellGroup, UE);
   } else {
     LOG_E(NR_MAC,"Error adding UE %04x\n", rnti);
   }
@@ -578,12 +578,11 @@ bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t
   return UE != NULL;
 }
 
-bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
 {
   DevAssert(nrmac != NULL);
   DevAssert(CellGroup != NULL);
-  DevAssert(!get_softmodem_params()->phy_test);
-  NR_SCHED_LOCK(&nrmac->sched_lock);
+  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
   // NSA case: need to pre-configure CFRA
   const int CC_id = 0;
@@ -599,32 +598,37 @@ bool nr_mac_prepare_ra_nsa_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCo
     return false;
   }
   NR_RA_t *ra = &cc->ra[ra_index];
-  ra->CellGroup = CellGroup;
-  AssertFatal(CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
-                  && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated != NULL
-                  && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL,
-              "invalid CellGroup for RNTI %04x, cannot create RA occasion\n",
-              rnti);
-
-  ra->cfra = true;
-  ra->rnti = rnti;
-  struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
-  uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
-  AssertFatal(ra->preambles.num_preambles == 0 && ra->preambles.preamble_list == NULL,
-              "preamble_list already configured means logic bug, list is allocated here\n");
-  ra->preambles.num_preambles = num_preamble;
-  ra->preambles.preamble_list = calloc(ra->preambles.num_preambles, sizeof(*ra->preambles.preamble_list));
-  for (int i = 0; i < cc->num_active_ssb; i++) {
-    for (int j = 0; j < num_preamble; j++) {
-      if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
-        // one dedicated preamble for each beam
-        ra->preambles.preamble_list[i] = cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
-        break;
+  if (CellGroup->spCellConfig && CellGroup->spCellConfig->reconfigurationWithSync
+      && CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated != NULL) {
+    if (CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra != NULL) {
+      ra->cfra = true;
+      ra->rnti = rnti;
+      ra->CellGroup = CellGroup;
+      struct NR_CFRA *cfra = CellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra;
+      uint8_t num_preamble = cfra->resources.choice.ssb->ssb_ResourceList.list.count;
+      ra->preambles.num_preambles = num_preamble;
+      ra->preambles.preamble_list = calloc(ra->preambles.num_preambles, sizeof(*ra->preambles.preamble_list));
+      for (int i = 0; i < cc->num_active_ssb; i++) {
+        for (int j = 0; j < num_preamble; j++) {
+          if (cc->ssb_index[i] == cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ssb) {
+            // one dedicated preamble for each beam
+            ra->preambles.preamble_list[i] = cfra->resources.choice.ssb->ssb_ResourceList.list.array[j]->ra_PreambleIndex;
+            break;
+          }
+        }
       }
     }
+  } else {
+    ra->cfra = false;
+    ra->rnti = 0;
+    if (ra->preambles.preamble_list == NULL) {
+      ra->preambles.num_preambles = MAX_NUM_NR_PRACH_PREAMBLES;
+      ra->preambles.preamble_list = (uint8_t *)malloc(MAX_NUM_NR_PRACH_PREAMBLES * sizeof(uint8_t));
+      for (int i = 0; i < MAX_NUM_NR_PRACH_PREAMBLES; i++)
+        ra->preambles.preamble_list[i] = i;
+    }
   }
-  LOG_I(NR_MAC,"Added new RA process for UE RNTI %04x with initial CellGroup\n", rnti);
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
+  LOG_I(NR_MAC, "Added new %s process for UE RNTI %04x with initial CellGroup\n", ra->cfra ? "CFRA" : "CBRA", rnti);
   return true;
 }
 
@@ -649,7 +653,7 @@ bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupCon
     exit(1);
   }
 
-  process_CellGroup(CellGroup, &UE->UE_sched_ctrl);
+  process_CellGroup(CellGroup, UE);
 
   return true;
 }
