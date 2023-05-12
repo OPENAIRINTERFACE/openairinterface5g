@@ -821,6 +821,7 @@ static void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           evaluate_rsrp_report(UE,sched_ctrl,csi_report_id,payload,&cumul_bits,reportQuantity_type);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI:
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.print_report = true;
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
@@ -834,6 +835,7 @@ static void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,UE,cqi_table);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI:
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.print_report = true;
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
@@ -850,6 +852,7 @@ static void extract_pucch_csi_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
           evaluate_cqi_report(payload,csi_report,cumul_bits,r_index,UE,cqi_table);
           break;
         case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI:
+          sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.print_report = true;
           cri_bitlen = csi_report->csi_meas_bitlen.cri_bitlen;
           if(cri_bitlen)
             evaluate_cri_report(payload,cri_bitlen,cumul_bits,sched_ctrl);
