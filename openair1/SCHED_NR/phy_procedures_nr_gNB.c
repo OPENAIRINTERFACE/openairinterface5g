@@ -396,9 +396,11 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   stop_meas(&gNB->ulsch_decoding_stats);
 }
 
+
 void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id, uint8_t harq_pid, uint8_t crc_flag, int dtx_flag)
 {
-  pthread_mutex_lock(&gNB->UL_INFO_mutex);
+  if (!get_softmodem_params()->reorder_thread_disable) 
+    pthread_mutex_lock(&gNB->UL_INFO_mutex);
 
   NR_gNB_ULSCH_t *ulsch = &gNB->ulsch[ULSCH_id];
   NR_UL_gNB_HARQ_t *harq_process = ulsch->harq_process;
@@ -557,7 +559,8 @@ void nr_fill_indication(PHY_VARS_gNB *gNB, int frame, int slot_rx, int ULSCH_id,
 
   gNB->UL_INFO.rx_ind.number_of_pdus++;
 
-  pthread_mutex_unlock(&gNB->UL_INFO_mutex);
+  if (!get_softmodem_params()->reorder_thread_disable) 
+    pthread_mutex_unlock(&gNB->UL_INFO_mutex);
 }
 
 // Function to fill UL RB mask to be used for N0 measurements

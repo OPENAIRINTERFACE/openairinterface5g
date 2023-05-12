@@ -556,6 +556,7 @@ void *trx_usrp_write_thread(void * arg){
   signed char        last_packet;
   int                flags_gpio;
 
+  printf("trx_usrp_write_thread started on cpu %d\n",sched_getcpu());
   while(1){
     pthread_mutex_lock(&write_thread->mutex_write);
     while (write_thread->count_write == 0) {
@@ -664,7 +665,6 @@ int trx_usrp_write_init(openair0_device *device){
                (char*)"trx_usrp_write_thread",
                -1,
                OAI_PRIORITY_RT_MAX);
-
   return(0);
 }
 

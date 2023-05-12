@@ -45,18 +45,16 @@
 #include "NR_MeasConfig.h"
 #include "NR_UL-DCCH-Message.h"
 
-#include "rrc_list.h"
 #include "rrc_defs.h"
 #include "rrc_proto.h"
 #include "rrc_vars.h"
-#include "rrc_extern.h"
 #include "LAYER2/NR_MAC_UE/mac_proto.h"
+#include "COMMON/mac_rrc_primitives.h"
 
 #include "intertask_interface.h"
 
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "nr-uesoftmodem.h"
-#include "executables/softmodem-common.h"
 #include "plmn_data.h"
 #include "nr_pdcp/nr_pdcp_oai_api.h"
 #include "UTIL/OSA/osa_defs.h"
@@ -70,10 +68,8 @@
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
-#include <executables/softmodem-common.h>
 
 #include "nr_nas_msg_sim.h"
-#include <openair2/RRC/NR/nr_rrc_proto.h>
 
 NR_UE_RRC_INST_t *NR_UE_rrc_inst;
 /* NAS Attach request with IMSI */
@@ -233,13 +229,10 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
     return -1;
   }
 
-  if(NR_UE_rrc_inst[module_id].scell_group_config == NULL){
+  if(NR_UE_rrc_inst[module_id].scell_group_config == NULL)
     NR_UE_rrc_inst[module_id].scell_group_config = cell_group_config;
-    nr_rrc_ue_process_scg_config(module_id,cell_group_config);
-  }else{
-    nr_rrc_ue_process_scg_config(module_id,cell_group_config);
+  else
     SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 0);
-  }
 
   return 0;
 }
@@ -275,15 +268,13 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
             xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
           }
 
-          if(NR_UE_rrc_inst[module_id].cell_group_config == NULL){
+          if(NR_UE_rrc_inst[module_id].cell_group_config == NULL) {
             //  first time receive the configuration, just use the memory allocated from uper_decoder. TODO this is not good implementation, need to maintain RRC_INST own structure every time.
             NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
-            nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
-          }else{
+          }else {
             //  after first time, update it and free the memory after.
             SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)NR_UE_rrc_inst[module_id].cell_group_config, 0);
             NR_UE_rrc_inst[module_id].cell_group_config = cellGroupConfig;
-            nr_rrc_ue_process_scg_config(module_id,cellGroupConfig);
           }
           if (get_softmodem_params()->nsa) {
             nr_rrc_mac_config_req_scg(0, 0, cellGroupConfig);
@@ -324,47 +315,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
 int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 
     return 0;
-}
-
-int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupConfig_t *cell_group_config){
-  int i;
-  if(cell_group_config==NULL){
-    //  initial list
-    if(cell_group_config->spCellConfig != NULL){
-      if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
-        if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
-          for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count; ++i){
-            RRC_LIST_MOD_ADD(NR_UE_rrc_inst[module_id].BWP_Downlink_list, cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[i], bwp_Id);
-          }
-        }
-      }
-    }
-  }else{
-    //  maintain list
-    if(cell_group_config->spCellConfig != NULL){
-      if(cell_group_config->spCellConfig->spCellConfigDedicated != NULL){
-        //  process element of list to be add by RRC message
-        if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList != NULL){
-          for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.count; ++i){
-            RRC_LIST_MOD_ADD(NR_UE_rrc_inst[module_id].BWP_Downlink_list, cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[i], bwp_Id);
-          }
-        }
-
-        //  process element of list to be release by RRC message
-        if(cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList != NULL){
-          for(i=0; i<cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList->list.count; ++i){
-            NR_BWP_Downlink_t *freeP = NULL;
-            RRC_LIST_MOD_REL(NR_UE_rrc_inst[module_id].BWP_Downlink_list, bwp_Id, *cell_group_config->spCellConfig->spCellConfigDedicated->downlinkBWP_ToReleaseList->list.array[i], freeP);
-            if(freeP != NULL){
-              SEQUENCE_free(&asn_DEF_NR_BWP_Downlink, (void *)freeP, 0);
-            }
-          }
-        }
-      }
-    }
-  } 
-
-  return 0;
 }
 
 
@@ -450,60 +400,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
       NR_UE_rrc_inst[nr_ue].requested_SI_List.bits_unused= 0;
 
       NR_UE_rrc_inst[nr_ue].ra_trigger = RA_NOT_RUNNING;
-
-      //  init RRC lists
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RLC_Bearer_Config_list, NR_maxLC_ID);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SchedulingRequest_list, NR_maxNrofSR_ConfigPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TAG_list, NR_maxNrofTAGs);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TDD_UL_DL_SlotConfig_list, NR_maxNrofSlots);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].BWP_Downlink_list, NR_maxNrofBWPs);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ControlResourceSet_list[0], 3);   //  for init-dl-bwp
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ControlResourceSet_list[1], 3);   //  for dl-bwp id=0
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ControlResourceSet_list[2], 3);   //  for dl-bwp id=1
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ControlResourceSet_list[3], 3);   //  for dl-bwp id=2
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ControlResourceSet_list[4], 3);   //  for dl-bwp id=3
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SearchSpace_list[0], 10);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SearchSpace_list[1], 10);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SearchSpace_list[2], 10);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SearchSpace_list[3], 10);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SearchSpace_list[4], 10);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SlotFormatCombinationsPerCell_list[0], NR_maxNrofAggregatedCellsPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SlotFormatCombinationsPerCell_list[1], NR_maxNrofAggregatedCellsPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SlotFormatCombinationsPerCell_list[2], NR_maxNrofAggregatedCellsPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SlotFormatCombinationsPerCell_list[3], NR_maxNrofAggregatedCellsPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SlotFormatCombinationsPerCell_list[4], NR_maxNrofAggregatedCellsPerCellGroup);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TCI_State_list[0], NR_maxNrofTCI_States);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TCI_State_list[1], NR_maxNrofTCI_States);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TCI_State_list[2], NR_maxNrofTCI_States);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TCI_State_list[3], NR_maxNrofTCI_States);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].TCI_State_list[4], NR_maxNrofTCI_States);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RateMatchPattern_list[0], NR_maxNrofRateMatchPatterns);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RateMatchPattern_list[1], NR_maxNrofRateMatchPatterns);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RateMatchPattern_list[2], NR_maxNrofRateMatchPatterns);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RateMatchPattern_list[3], NR_maxNrofRateMatchPatterns);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].RateMatchPattern_list[4], NR_maxNrofRateMatchPatterns);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ZP_CSI_RS_Resource_list[0], NR_maxNrofZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ZP_CSI_RS_Resource_list[1], NR_maxNrofZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ZP_CSI_RS_Resource_list[2], NR_maxNrofZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ZP_CSI_RS_Resource_list[3], NR_maxNrofZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].ZP_CSI_RS_Resource_list[4], NR_maxNrofZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].Aperidic_ZP_CSI_RS_ResourceSet_list[0], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].Aperidic_ZP_CSI_RS_ResourceSet_list[1], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].Aperidic_ZP_CSI_RS_ResourceSet_list[2], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].Aperidic_ZP_CSI_RS_ResourceSet_list[3], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].Aperidic_ZP_CSI_RS_ResourceSet_list[4], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SP_ZP_CSI_RS_ResourceSet_list[0], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SP_ZP_CSI_RS_ResourceSet_list[1], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SP_ZP_CSI_RS_ResourceSet_list[2], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SP_ZP_CSI_RS_ResourceSet_list[3], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].SP_ZP_CSI_RS_ResourceSet_list[4], NR_maxNrofZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].NZP_CSI_RS_Resource_list, NR_maxNrofNZP_CSI_RS_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].NZP_CSI_RS_ResourceSet_list, NR_maxNrofNZP_CSI_RS_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_IM_Resource_list, NR_maxNrofCSI_IM_Resources);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_IM_ResourceSet_list, NR_maxNrofCSI_IM_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_SSB_ResourceSet_list, NR_maxNrofCSI_SSB_ResourceSets);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ResourceConfig_list, NR_maxNrofCSI_ResourceConfigurations);
-      RRC_LIST_INIT(NR_UE_rrc_inst[nr_ue].CSI_ReportConfig_list, NR_maxNrofCSI_ReportConfigurations);
     }
 
     NR_UE_rrc_inst->uecap_file = uecap_file;
@@ -598,7 +494,8 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
     NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
     bcch_message->message.choice.mib = NULL;
 
-    NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+    NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
+    NR_SIB1_t *sib1 = SI_info->sib1;
     // if no sib1 because not acquired yet or expired, get a new one
     bool get_sib1 = sib1 == NULL;
     nr_rrc_mac_config_req_mib(module_id, 0, NR_UE_rrc_inst[module_id].mib, get_sib1);
@@ -820,199 +717,170 @@ void nr_dump_sib3( NR_SIB3_t *sib3 ) {
     LOG_I( RRC, "lateNonCriticalExtension : not defined\n" );
 }
 
-int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index ) {
-  NR_SystemInformation_t **si = &NR_UE_rrc_inst[ctxt_pP->module_id].si[gNB_index];
+int nr_decode_SI(const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index)
+{
+  NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[ctxt_pP->module_id].SInfo[gNB_index];
+  NR_SystemInformation_t *si = SI_info->si;
   int new_sib = 0;
-  NR_SIB1_t *sib1 = NR_UE_rrc_inst[ctxt_pP->module_id].sib1[gNB_index];
+  NR_SIB1_t *sib1 = SI_info->sib1;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_IN );
 
   // Dump contents
-  if ((*si)->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_systemInformation ||
-      (*si)->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_criticalExtensionsFuture_r16) {
-    LOG_D( RRC, "[UE] (*si)->criticalExtensions.choice.NR_SystemInformation_t->sib_TypeAndInfo.list.count %d\n",
-           (*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count );
+  if (si->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_systemInformation ||
+      si->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_criticalExtensionsFuture_r16) {
+    LOG_D( RRC, "[UE] si->criticalExtensions.choice.NR_SystemInformation_t->sib_TypeAndInfo.list.count %d\n",
+           si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count );
   } else {
     LOG_D( RRC, "[UE] Unknown criticalExtension version (not Rel16)\n" );
     return -1;
   }
 
-  for (int i=0; i<(*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count; i++) {
+  for (int i = 0; i < si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count; i++) {
     SystemInformation_IEs__sib_TypeAndInfo__Member *typeandinfo;
-    typeandinfo = (*si)->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.array[i];
+    typeandinfo = si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.array[i];
 
     switch(typeandinfo->present) {
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib2:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&2) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=2;
+        if ((SI_info->SIStatus & 2) == 0) {
+          SI_info->SIStatus |= 2;
           //new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib2[gNB_index], &typeandinfo->choice.sib2, sizeof(NR_SIB2_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB2 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
-          nr_dump_sib2( NR_UE_rrc_inst[ctxt_pP->module_id].sib2[gNB_index] );
-          LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
-                 ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
+          memcpy(SI_info->sib2, &typeandinfo->choice.sib2, sizeof(NR_SIB2_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB2 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+          nr_dump_sib2(SI_info->sib2);
+          LOG_I(RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB2 params  gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+                ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id );
           //TODO rrc_mac_config_req_ue
 
           // After SI is received, prepare RRCConnectionRequest
-          if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) // see -Q option
-            if (get_softmodem_params()->sa) {
+          if (NR_UE_rrc_inst[ctxt_pP->module_id].MBMS_flag < 3) { // see -Q option
+            if (get_softmodem_params()->sa)
               nr_rrc_ue_generate_RRCSetupRequest( ctxt_pP->module_id, gNB_index );
-            }
-
-          if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State == NR_RRC_IDLE) {
-            LOG_I( RRC, "[UE %d] Received SIB1/SIB2/SIB3 Switching to RRC_SI_RECEIVED\n", ctxt_pP->module_id );
-            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_SI_RECEIVED;
-#if ENABLE_RAL
- /* TODO          {
-              MessageDef                            *message_ral_p = NULL;
-              rrc_ral_system_information_ind_t       ral_si_ind;
-              message_ral_p = itti_alloc_new_message (TASK_RRC_UE, 0, RRC_RAL_SYSTEM_INFORMATION_IND);
-              memset(&ral_si_ind, 0, sizeof(rrc_ral_system_information_ind_t));
-              ral_si_ind.plmn_id.MCCdigit2 = '0';
-              ral_si_ind.plmn_id.MCCdigit1 = '2';
-              ral_si_ind.plmn_id.MNCdigit3 = '0';
-              ral_si_ind.plmn_id.MCCdigit3 = '8';
-              ral_si_ind.plmn_id.MNCdigit2 = '9';
-              ral_si_ind.plmn_id.MNCdigit1 = '9';
-              ral_si_ind.cell_id        = 1;
-              ral_si_ind.dbm            = 0;
-              //ral_si_ind.dbm            = fifo_dump_emos_UE.PHY_measurements->rx_rssi_dBm[gNB_index];
-              // TO DO
-              ral_si_ind.sinr           = 0;
-              //ral_si_ind.sinr           = fifo_dump_emos_UE.PHY_measurements->subband_cqi_dB[gNB_index][phy_vars_ue->lte_frame_parms.nb_antennas_rx][0];
-              // TO DO
-              ral_si_ind.link_data_rate = 0;
-              memcpy (&message_ral_p->ittiMsg, (void *) &ral_si_ind, sizeof(rrc_ral_system_information_ind_t));
-#warning "ue_mod_idP ? for instance ?"
-              itti_send_msg_to_task (TASK_RAL_UE, UE_MODULE_ID_TO_INSTANCE(ctxt_pP->module_id), message_ral_p);
-            }*/
-#endif
           }
         }
 
         break; // case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&4) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=4;
+        if ((SI_info->SIStatus & 4) == 0) {
+          SI_info->SIStatus |= 4;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib3[gNB_index], &typeandinfo->choice.sib3, sizeof(LTE_SystemInformationBlockType3_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB3 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
-          nr_dump_sib3( NR_UE_rrc_inst[ctxt_pP->module_id].sib3[gNB_index] );
+          memcpy(SI_info->sib3, &typeandinfo->choice.sib3, sizeof(LTE_SystemInformationBlockType3_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB3 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          nr_dump_sib3(SI_info->sib3);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&8) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=8;
+        if ((SI_info->SIStatus & 8) == 0) {
+          SI_info->SIStatus |= 8;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib4[gNB_index], typeandinfo->choice.sib4, sizeof(NR_SIB4_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib4, typeandinfo->choice.sib4, sizeof(NR_SIB4_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&16) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=16;
+        if ((SI_info->SIStatus & 16) == 0) {
+          SI_info->SIStatus |= 16;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib5[gNB_index], typeandinfo->choice.sib5, sizeof(NR_SIB5_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
-          //dump_sib5(NR_UE_rrc_inst[ctxt_pP->module_id].sib5[gNB_index]);
+          memcpy(SI_info->sib5, typeandinfo->choice.sib5, sizeof(NR_SIB5_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&32) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=32;
+        if ((SI_info->SIStatus & 32) == 0) {
+          SI_info->SIStatus |= 32;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib6[gNB_index], typeandinfo->choice.sib6, sizeof(NR_SIB6_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib6, typeandinfo->choice.sib6, sizeof(NR_SIB6_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&64) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=64;
+        if ((SI_info->SIStatus & 64) == 0) {
+          SI_info->SIStatus |= 64;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib7[gNB_index], typeandinfo->choice.sib7, sizeof(NR_SIB7_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib7, typeandinfo->choice.sib7, sizeof(NR_SIB7_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&128) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=128;
+        if ((SI_info->SIStatus & 128) == 0) {
+          SI_info->SIStatus |= 128;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib8[gNB_index], typeandinfo->choice.sib8, sizeof(NR_SIB8_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib8, typeandinfo->choice.sib8, sizeof(NR_SIB8_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&256) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=256;
+        if ((SI_info->SIStatus & 256) == 0) {
+          SI_info->SIStatus |= 256;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib9[gNB_index], typeandinfo->choice.sib9, sizeof(NR_SIB9_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib9, typeandinfo->choice.sib9, sizeof(NR_SIB9_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&512) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=512;
+        if ((SI_info->SIStatus & 512) == 0) {
+          SI_info->SIStatus |= 512;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib10[gNB_index], typeandinfo->choice.sib10_v1610, sizeof(NR_SIB10_r16_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB10 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib10, typeandinfo->choice.sib10_v1610, sizeof(NR_SIB10_r16_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB10 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&1024) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=1024;
+        if ((SI_info->SIStatus & 1024) == 0) {
+          SI_info->SIStatus |= 1024;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib11[gNB_index], typeandinfo->choice.sib11_v1610, sizeof(NR_SIB11_r16_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB11 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib11, typeandinfo->choice.sib11_v1610, sizeof(NR_SIB11_r16_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB11 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&2048) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=2048;
+        if ((SI_info->SIStatus & 2048) == 0) {
+          SI_info->SIStatus |= 2048;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib12[gNB_index], typeandinfo->choice.sib12_v1610, sizeof(NR_SIB12_r16_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib12, typeandinfo->choice.sib12_v1610, sizeof(NR_SIB12_r16_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
 
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&4096) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=4096;
+        if ((SI_info->SIStatus & 4096) == 0) {
+          SI_info->SIStatus |= 4096;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib13[gNB_index], typeandinfo->choice.sib13_v1610, sizeof(NR_SIB13_r16_t) );
+          memcpy(SI_info->sib13, typeandinfo->choice.sib13_v1610, sizeof(NR_SIB13_r16_t));
           LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
-          //dump_sib13( NR_UE_rrc_inst[ctxt_pP->module_id].sib13[gNB_index] );
+          //dump_sib13(SI_info->sib13);
           // adding here function to store necessary parameters for using in decode_MCCH_Message + maybe transfer to PHY layer
-          LOG_I( RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
-                 ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
+          LOG_I(RRC, "[FRAME %05"PRIu32"][RRC_UE][MOD %02"PRIu8"][][--- MAC_CONFIG_REQ (SIB13 params gNB %"PRIu8") --->][MAC_UE][MOD %02"PRIu8"][]\n",
+                ctxt_pP->frame, ctxt_pP->module_id, gNB_index, ctxt_pP->module_id);
           // TODO rrc_mac_config_req_ue
         }
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
-        if ((NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus&8192) == 0) {
-          NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus|=8192;
+        if ((SI_info->SIStatus & 8192) == 0) {
+          SI_info->SIStatus |= 8192;
           new_sib=1;
-          memcpy( NR_UE_rrc_inst[ctxt_pP->module_id].sib12[gNB_index], typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t) );
-          LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB14 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+          memcpy(SI_info->sib12, typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t));
+          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB14 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
         }
       
       break;
@@ -1021,13 +889,13 @@ int nr_decode_SI( const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index 
         break;
     }
     if (new_sib == 1) {
-      NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt++;
-      if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
+      SI_info->SIcnt++;
+      if (SI_info->SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)
         nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
   
       LOG_I(NR_RRC,"SIStatus %x, SIcnt %d/%d\n",
-            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus,
-            NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIcnt,
+            SI_info->SIStatus,
+            SI_info->SIcnt,
             sib1->si_SchedulingInfo->schedulingInfoList.list.count);
     }
   }
@@ -1150,11 +1018,12 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
                                                const uint8_t rsrp) {
 
   NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-  NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+  NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
+  NR_SIB1_t *sib1 = SI_info->sib1;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN );
 
-  if (((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) && sib1->si_SchedulingInfo &&// SIB1 received
-      (NR_UE_rrc_inst[module_id].Info[gNB_index].SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)) {
+  if (((SI_info->SIStatus & 1) == 1) && sib1->si_SchedulingInfo &&// SIB1 received
+      (SI_info->SIcnt == sib1->si_SchedulingInfo->schedulingInfoList.list.count)) {
     // to prevent memory bloating
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
     return 0;
@@ -1186,17 +1055,16 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-        if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 0) {
-          NR_SIB1_t *sib1 = NR_UE_rrc_inst[module_id].sib1[gNB_index];
+        if ((SI_info->SIStatus & 1) == 0) {
           if(sib1 != NULL){
             SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)sib1, 1 );
           }
-	        NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus|=1;
+          SI_info->SIStatus |= 1;
           sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
           if (*(int64_t*)sib1 != 1) {
-            NR_UE_rrc_inst[module_id].sib1[gNB_index] = sib1;
+            SI_info->sib1 = sib1;
             if( g_log->log_component[NR_RRC].level >= OAILOG_DEBUG ) {
-              xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) NR_UE_rrc_inst[module_id].sib1[gNB_index]);
+              xer_fprint(stdout, &asn_DEF_NR_SIB1, (const void *) SI_info->sib1);
             }
             LOG_A(NR_RRC, "SIB1 decoded\n");
 
@@ -1220,7 +1088,7 @@ int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         break;
 
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-        if ((NR_UE_rrc_inst[module_id].Info[gNB_index].SIStatus&1) == 1) {
+        if ((SI_info->SIStatus & 1) == 1) {
           LOG_W(NR_RRC, "Decoding SI not implemented yet\n");
           // TODO: Decode SI
           /*
@@ -1279,31 +1147,32 @@ void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
     LOG_A(NR_RRC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
 
     NR_ReconfigurationWithSync_t *reconfigurationWithSync = cellGroupConfig->spCellConfig->reconfigurationWithSync;
-    NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_active = 1;
+    NR_UE_Timers_Constants_t *timers_and_constants = &NR_UE_rrc_inst[ctxt_pP->module_id].timers_and_constants;
+    timers_and_constants->T304_active = 1;
     switch (reconfigurationWithSync->t304) {
       case NR_ReconfigurationWithSync__t304_ms100:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 100;
+        timers_and_constants->T304_cnt = 100;
         break;
       case NR_ReconfigurationWithSync__t304_ms150:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 150;
+        timers_and_constants->T304_cnt = 150;
         break;
       case NR_ReconfigurationWithSync__t304_ms200:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 200;
+        timers_and_constants->T304_cnt = 200;
         break;
       case NR_ReconfigurationWithSync__t304_ms500:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 500;
+        timers_and_constants->T304_cnt = 500;
         break;
       case NR_ReconfigurationWithSync__t304_ms1000:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 1000;
+        timers_and_constants->T304_cnt = 1000;
         break;
       case NR_ReconfigurationWithSync__t304_ms2000:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 2000;
+        timers_and_constants->T304_cnt = 2000;
         break;
       case NR_ReconfigurationWithSync__t304_ms10000:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 10000;
+        timers_and_constants->T304_cnt = 10000;
         break;
       default:
-        NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T304_cnt = 50;
+        timers_and_constants->T304_cnt = 50;
     }
   }
 
@@ -1423,7 +1292,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
   int rval=0;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_CCCH, VCD_FUNCTION_IN);
   LOG_D(RRC,"[NR UE%d] Decoding DL-CCCH message (%d bytes), State %d\n",ctxt_pP->module_id,Srb_info->Rx_buffer.payload_size,
-      NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State);
+        NR_UE_rrc_inst[ctxt_pP->module_id].nrRrcState);
    dec_rval = uper_decode(NULL,
 			  &asn_DEF_NR_DL_CCCH_Message,
 			  (void **)&dl_ccch_msg,
@@ -1441,7 +1310,7 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
    }
 
    if (dl_ccch_msg->message.present == NR_DL_CCCH_MessageType_PR_c1) {
-     if (NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].SIStatus > 0) {
+     if (NR_UE_rrc_inst[ctxt_pP->module_id].SInfo[gNB_index].SIStatus > 0) {
        switch (dl_ccch_msg->message.choice.c1->present) {
        case NR_DL_CCCH_MessageType__c1_PR_NOTHING:
 	 LOG_I(NR_RRC, "[UE%d] Frame %d : Received PR_NOTHING on DL-CCCH-Message\n",
@@ -1463,13 +1332,13 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
 
          // Get configuration
          // Release T300 timer
-         NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].T300_active = 0;
+         NR_UE_rrc_inst[ctxt_pP->module_id].timers_and_constants.T300_active = 0;
 
          nr_rrc_ue_process_masterCellGroup(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup);
          nr_rrc_ue_process_RadioBearerConfig(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
          nr_rrc_set_state(ctxt_pP->module_id, RRC_STATE_CONNECTED_NR);
          nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED_NR);
-         NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].rnti = ctxt_pP->rntiMaybeUEid;
+         NR_UE_rrc_inst[ctxt_pP->module_id].rnti = ctxt_pP->rntiMaybeUEid;
          rrc_ue_generate_RRCSetupComplete(ctxt_pP, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier, NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
          rval = 0;
          break;
@@ -2129,7 +1998,7 @@ nr_rrc_ue_establish_srb2(
      }
    }
 
-   NR_UE_rrc_inst[ctxt_pP->module_id].Info[gNB_index].State = NR_RRC_CONNECTED;
+   NR_UE_rrc_inst[ctxt_pP->module_id].nrRrcState = RRC_STATE_CONNECTED_NR;
    LOG_I(NR_RRC,"[UE %d] State = NR_RRC_CONNECTED (gNB %d)\n", ctxt_pP->module_id, gNB_index);
  }
 
@@ -2446,7 +2315,7 @@ nr_rrc_ue_establish_srb2(
         /* Create message for PDCP (ULInformationTransfer_t) */
         length = do_NR_ULInformationTransfer(&buffer, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.length, NAS_UPLINK_DATA_REQ (msg_p).nasMsg.data);
         /* Transfer data to PDCP */
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_UE_rrc_inst[ue_mod_id].Info[0].rnti, 0, 0,0);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_UE_rrc_inst[ue_mod_id].rnti, 0, 0,0);
         // check if SRB2 is created, if yes request data_req on DCCH1 (SRB2)
         rb_id_t srb_id = NR_UE_rrc_inst[ue_mod_id].SRB2_config[0] == NULL ? DCCH : DCCH1;
         nr_pdcp_data_req_srb(ctxt.rntiMaybeUEid, srb_id, nr_rrc_mui++, length, buffer, deliver_pdu_srb_rlc, NULL);
@@ -2839,7 +2708,7 @@ void *nr_rrc_timers_update() {
 
     for (int mod_id = 0; mod_id < NB_NR_UE_INST; mod_id++) {
       for (int i = 0; i < NB_SIG_CNX_UE; i++) {
-        NR_UE_RRC_INFO *timers = &NR_UE_rrc_inst[mod_id].Info[i];
+        NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[mod_id].timers_and_constants;
 
         // T304
         if (timers->T304_active == 1) {

@@ -40,6 +40,7 @@
 #include "NR_CellGroupConfig.h"
 #include "NR_RadioBearerConfig.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"
+#include "common/utils/ocp_itti/intertask_interface.h"
 
 extern queue_t nr_rach_ind_queue;
 extern queue_t nr_rx_ind_queue;
@@ -81,11 +82,6 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
 /**\prief Process measurement config from NR RRC connection reconfiguration message
    \param meas_config   measurement configuration*/
 int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config);
-
-/**\prief Process secondary cell group config from NR RRC connection reconfiguration message or EN-DC primitives
-   \param cell_group_config   secondary cell group configuration*/
-//TODO check EN-DC function call flow.
-int8_t nr_rrc_ue_process_scg_config(const module_id_t module_id, NR_CellGroupConfig_t *cell_group_config);
 
 /**\prief Process radio bearer config from NR RRC connection reconfiguration message
    \param radio_bearer_config    radio bearer configuration*/

@@ -2017,10 +2017,18 @@ int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buff
   return (enc_rval.encoded + 7) / 8;
 }
 
+static NR_PhysicalCellGroupConfig_t *configure_phy_cellgroup(void)
+{
+  NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig = calloc(1, sizeof(*physicalCellGroupConfig));
+  AssertFatal(physicalCellGroupConfig != NULL, "Couldn't allocate physicalCellGroupConfig. Out of memory!\n");
+  physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
+  return physicalCellGroupConfig;
+}
+
 static NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void)
 {
   NR_MAC_CellGroupConfig_t * mac_CellGroupConfig = calloc(1, sizeof(*mac_CellGroupConfig));
-
+  AssertFatal(mac_CellGroupConfig != NULL, "Couldn't allocate mac-CellGroupConfig. Out of memory!\n");
   mac_CellGroupConfig->bsr_Config = calloc(1, sizeof(*mac_CellGroupConfig->bsr_Config));
   mac_CellGroupConfig->bsr_Config->periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_sf10;
   mac_CellGroupConfig->bsr_Config->retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf80;
@@ -2310,11 +2318,8 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
 
   /* mac CellGroup Config */
   cellGroupConfig->mac_CellGroupConfig = configure_mac_cellgroup();
-
-  NR_PhysicalCellGroupConfig_t *physicalCellGroupConfig = calloc(1, sizeof(*physicalCellGroupConfig));
-  physicalCellGroupConfig->p_NR_FR1 = NULL;
-  physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook = NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
-  cellGroupConfig->physicalCellGroupConfig = physicalCellGroupConfig;
+  
+  cellGroupConfig->physicalCellGroupConfig = configure_phy_cellgroup();
 
   cellGroupConfig->spCellConfig = get_initial_SpCellConfig(uid, scc, servingcellconfigdedicated, configuration);
 
@@ -2540,19 +2545,7 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
   asn1cSeqAdd(&secondaryCellGroup->rlc_BearerToAddModList->list, RLC_BearerConfig);
 
   secondaryCellGroup->mac_CellGroupConfig = configure_mac_cellgroup();
-
-  secondaryCellGroup->physicalCellGroupConfig = calloc(1, sizeof(*secondaryCellGroup->physicalCellGroupConfig));
-  secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUCCH = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->harq_ACK_SpatialBundlingPUSCH = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->p_NR_FR1 = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->pdsch_HARQ_ACK_Codebook =
-      NR_PhysicalCellGroupConfig__pdsch_HARQ_ACK_Codebook_dynamic;
-  secondaryCellGroup->physicalCellGroupConfig->tpc_SRS_RNTI = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->tpc_PUCCH_RNTI = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->tpc_PUSCH_RNTI = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->sp_CSI_RNTI = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->cs_RNTI = NULL;
-  secondaryCellGroup->physicalCellGroupConfig->ext1 = NULL;
+  secondaryCellGroup->physicalCellGroupConfig = configure_phy_cellgroup();
   secondaryCellGroup->spCellConfig = calloc(1, sizeof(*secondaryCellGroup->spCellConfig));
   secondaryCellGroup->spCellConfig->servCellIndex = calloc(1, sizeof(*secondaryCellGroup->spCellConfig->servCellIndex));
   *secondaryCellGroup->spCellConfig->servCellIndex = servCellIndex;

@@ -683,6 +683,8 @@ typedef struct PHY_VARS_gNB_s {
 
   int ldpc_offload_flag;
 
+  int reorder_thread_disable;
+
   int max_ldpc_iterations;
   /// indicate the channel estimation technique in time domain
   int chest_time;
@@ -765,6 +767,11 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t L1_tx_out;
   notifiedFIFO_t resp_RU_tx;
   tpool_t threadPool;
+  pthread_t L1_rx_thread;
+  int L1_rx_thread_core;
+  pthread_t L1_tx_thread;
+  int L1_tx_thread_core;
+  struct processingData_L1tx *msgDataTx;
   int nbDecode;
   void *scopeData;
   /// structure for analyzing high-level RT measurements

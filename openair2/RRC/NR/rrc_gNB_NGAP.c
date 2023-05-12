@@ -320,7 +320,7 @@ static int decodePDUSessionResourceSetup(pdusession_t *session)
         /* mandatory PDUSessionType */
       case NGAP_ProtocolIE_ID_id_PDUSessionType:
         session->pdu_session_type = (uint8_t)pdusessionTransfer_ies->value.choice.PDUSessionType;
-        AssertFatal(session->pdu_session_type == PDUSessionType_ipv4, "To be developped: support not IPv4 sessions\n");
+        AssertFatal(session->pdu_session_type == PDUSessionType_ipv4 || session->pdu_session_type == PDUSessionType_ipv4v6, "To be developped: support not IPv4 sessions\n");
         break;
 
         /* optional SecurityIndication */
@@ -682,7 +682,7 @@ rrc_gNB_send_NGAP_PDUSESSION_SETUP_RESP(
       tmp->pdusession_id = session->param.pdusession_id;
       tmp->nb_of_qos_flow = session->param.nb_qos;
       tmp->gtp_teid = session->param.gNB_teid_N3;
-      tmp->pdu_session_type = session->param.pdu_session_type; // FixMe: IPv4 hardcoded here
+      tmp->pdu_session_type = session->param.pdu_session_type;
       tmp->gNB_addr.length = session->param.gNB_addr_N3.length;
       memcpy(tmp->gNB_addr.buffer, session->param.gNB_addr_N3.buffer, tmp->gNB_addr.length);
       for (int qos_flow_index = 0; qos_flow_index < tmp->nb_of_qos_flow; qos_flow_index++) {
