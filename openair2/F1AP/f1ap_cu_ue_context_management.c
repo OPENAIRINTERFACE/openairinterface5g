@@ -900,6 +900,13 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     ie4->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_RRCContainer;
     OCTET_STRING_fromBuf(&ie4->value.choice.RRCContainer, (const char *)cmd->rrc_container,
                        cmd->rrc_container_length);
+
+    // conditionally have SRBID if RRC Container
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie5);
+    ie5->id = F1AP_ProtocolIE_ID_id_SRBID;
+    ie5->criticality = F1AP_Criticality_ignore;
+    ie5->value.present = F1AP_UEContextReleaseCommandIEs__value_PR_SRBID;
+    ie5->value.choice.SRBID = cmd->srb_id;
   }
 
   /* encode */

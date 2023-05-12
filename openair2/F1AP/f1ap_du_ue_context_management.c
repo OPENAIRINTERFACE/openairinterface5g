@@ -680,8 +680,16 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, false);
 
-  f1ap_ue_context_release_cmd->rrc_container = malloc(ie->value.choice.RRCContainer.size);
-  memcpy(f1ap_ue_context_release_cmd->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+  if (ie != NULL) {
+    f1ap_ue_context_release_cmd->rrc_container = malloc(ie->value.choice.RRCContainer.size);
+    AssertFatal(f1ap_ue_context_release_cmd->rrc_container != NULL, "out of memory\n");
+    memcpy(f1ap_ue_context_release_cmd->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+    f1ap_ue_context_release_cmd->rrc_container_length = ie->value.choice.RRCContainer.size;
+
+    // conditionally have SRB ID if there is RRC container
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container, F1AP_ProtocolIE_ID_id_SRBID, true);
+    f1ap_ue_context_release_cmd->srb_id = ie->value.choice.SRBID;
+  }
 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
       F1AP_ProtocolIE_ID_id_Cause, true);

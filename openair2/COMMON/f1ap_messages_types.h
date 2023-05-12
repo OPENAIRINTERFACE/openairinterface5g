@@ -425,6 +425,7 @@ typedef struct f1ap_ue_context_release_s {
   long          cause_value;
   uint8_t      *rrc_container;
   int           rrc_container_length;
+  int           srb_id;
 } f1ap_ue_context_release_req_t, f1ap_ue_context_release_cmd_t,
   f1ap_ue_context_release_cplt_t;
 
