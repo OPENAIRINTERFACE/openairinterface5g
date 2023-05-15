@@ -2633,7 +2633,6 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
   f1ap_srb_to_be_setup_t srbs[nb_srb];
   srbs[0].srb_id = 2;
   srbs[0].lcid = 2;
-  srbs[0].rlc_mode = RLC_MODE_AM;
 
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
     .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */

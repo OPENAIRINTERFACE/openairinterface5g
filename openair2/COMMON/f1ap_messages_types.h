@@ -341,7 +341,6 @@ typedef struct f1ap_drb_to_be_setup_s {
 
 typedef struct f1ap_srb_to_be_setup_s {
   long           srb_id;
-  rlc_mode_t     rlc_mode;
   uint8_t        lcid;
 } f1ap_srb_to_be_setup_t;
 
