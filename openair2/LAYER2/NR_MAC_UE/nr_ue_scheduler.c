@@ -2283,6 +2283,90 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   }
 }
 
+NR_CSI_ResourceConfigId_t find_CSI_resourceconfig(NR_CSI_MeasConfig_t *csi_measconfig,
+                                                  NR_BWP_Id_t dl_bwp_id,
+                                                  NR_NZP_CSI_RS_ResourceId_t csi_id)
+{
+  bool found = false;
+  for (int csi_list = 0; csi_list < csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
+    NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
+    if(csires->bwp_Id != dl_bwp_id)
+      continue;
+    struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList *resset = &csires->csi_RS_ResourceSetList;
+    if(resset->present != NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB)
+      continue;
+    if(!resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList)
+      continue;
+    for(int i = 0; i < resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.count; i++) {
+      NR_NZP_CSI_RS_ResourceSetId_t *res_id = resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[i];
+      AssertFatal(res_id, "NR_NZP_CSI_RS_ResourceSetId shouldn't be NULL\n");
+      struct NR_CSI_MeasConfig__nzp_CSI_RS_ResourceSetToAddModList *res_list = csi_measconfig->nzp_CSI_RS_ResourceSetToAddModList;
+      AssertFatal(res_list, "nzp_CSI_RS_ResourceSetToAddModList shouldn't be NULL\n");
+      for (int j = 0; j < res_list->list.count; j++) {
+        NR_NZP_CSI_RS_ResourceSet_t *csi_res = res_list->list.array[j];
+        if(*res_id != csi_res->nzp_CSI_ResourceSetId)
+          continue;
+        for (int k = 0; k < csi_res->nzp_CSI_RS_Resources.list.count; k++) {
+          AssertFatal(csi_res->nzp_CSI_RS_Resources.list.array[k],
+                      "NZP_CSI_RS_ResourceId shoulan't be NULL\n");
+          if (csi_id == *csi_res->nzp_CSI_RS_Resources.list.array[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (found && csi_res->trs_Info)
+          // CRI-RS for Tracking (not implemented yet)
+          // in this case we there is no associated CSI report
+          // therefore to signal this we return a value higher than
+          // maxNrofCSI-ResourceConfigurations
+          return NR_maxNrofCSI_ResourceConfigurations + 1;
+        else if (found)
+          return csires->csi_ResourceConfigId;
+      }
+    }
+  }
+  return -1; // not found any CSI-resource in current DL BWP associated with this CSI-RS ID
+}
+
+uint8_t set_csirs_measurement_bitmap(NR_CSI_MeasConfig_t *csi_measconfig,
+                                     NR_CSI_ResourceConfigId_t csi_res_id)
+{
+  uint8_t meas_bitmap = 0;
+  if (csi_res_id > NR_maxNrofCSI_ResourceConfigurations)
+    return meas_bitmap; // CSI-RS for tracking
+  for(int i = 0; i < csi_measconfig->csi_ReportConfigToAddModList->list.count; i++) {
+    struct NR_CSI_ReportConfig *report_config = csi_measconfig->csi_ReportConfigToAddModList->list.array[i];
+    if(report_config->resourcesForChannelMeasurement != csi_res_id)
+      continue;
+    // bit 0 RSRP bit 1 RI bit 2 LI bit 3 PMI bit 4 CQI bit 5 i1
+    switch (report_config->reportQuantity.present) {
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 3) + (1 << 4);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1 :
+        meas_bitmap += (1 << 1) + (1 << 5);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI :
+        meas_bitmap += (1 << 1) + (1 << 4) + (1 << 5);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 4);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP :
+        meas_bitmap += 1;
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 2) + (1 << 3) + (1 << 4);
+        break;
+      default :
+        AssertFatal(false, "Unexpected measurement report type %d\n",
+                    report_config->reportQuantity.present);
+    }
+  }
+  AssertFatal(meas_bitmap > 0, "Expected to have at least 1 measurement configured for CSI-RS\n");
+  return meas_bitmap;
+}
+
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
@@ -2296,8 +2380,6 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     return;
 
   fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
-  NR_NZP_CSI_RS_Resource_t *nzpcsi;
-  int period, offset;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
 
@@ -2305,30 +2387,21 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   uint16_t bwp_size = current_DL_BWP->BWPSize;
   uint16_t bwp_start = current_DL_BWP->BWPStart;
 
-  // looking for the correct CSI-RS resource in current BWP
-  NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;
-  for (int csi_list=0; csi_list<csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
-    NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
-    if(csires->bwp_Id == dl_bwp_id &&
-       csires->csi_RS_ResourceSetList.present == NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB &&
-       csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList) {
-      nzp = csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0];
-    }
-  }
-
-  if (nzp == NULL)
-    return; // no resource associated to current BWP
-
   for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
-    nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
-    // reception of CSI-RS only for current BWP
-    if (nzpcsi->nzp_CSI_RS_ResourceId != *nzp)
+    NR_NZP_CSI_RS_Resource_t *nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+    int period, offset;
+    csi_period_offset(NULL, nzpcsi->periodicityAndOffset, &period, &offset);
+    if((frame * nr_slots_per_frame[mu] + slot-offset) % period != 0)
       continue;
-    csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
-    if((frame*nr_slots_per_frame[mu]+slot-offset)%period != 0)
+    NR_CSI_ResourceConfigId_t csi_res_id = find_CSI_resourceconfig(csi_measconfig,
+                                                                   dl_bwp_id,
+                                                                   nzpcsi->nzp_CSI_RS_ResourceId);
+    // do not schedule reseption of this CSI-RS if not associated with current BWP
+    if(csi_res_id < 0)
       continue;
-    LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
+    LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n", frame, slot);
     fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
+    csirs_config_pdu->measurement_bitmap = set_csirs_measurement_bitmap(csi_measconfig, csi_res_id);
     NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
     csirs_config_pdu->subcarrier_spacing = mu;
     csirs_config_pdu->cyclic_prefix = current_DL_BWP->cyclicprefix ? *current_DL_BWP->cyclicprefix : 0;
