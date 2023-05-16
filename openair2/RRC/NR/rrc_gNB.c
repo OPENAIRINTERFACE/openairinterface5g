@@ -2794,17 +2794,6 @@ static int get_dl_mimo_layers(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability
   return(1);
 }
 
-void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
-
-  MessageDef *msg;
-
-  /* send a tick to x2ap */
-  if (is_x2ap_enabled()){
-    msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_SUBFRAME_PROCESS);
-    itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
-  }
-}
-
 int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
 
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
@@ -2991,10 +2980,6 @@ void *rrc_gnb_task(void *args_p) {
         /* only this one handled for now */
         DevAssert(TIMER_HAS_EXPIRED(msg_p).timer_id == stats_timer_id);
         write_rrc_stats(RC.nrrrc[0]);
-        break;
-
-      case RRC_SUBFRAME_PROCESS:
-        nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
         break;
 
       case F1AP_INITIAL_UL_RRC_MESSAGE:
@@ -3363,14 +3348,3 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
 
   return 0;
 }
-
-void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
-{
-  MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_RRC_GNB, 0, RRC_SUBFRAME_PROCESS);
-  RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt;
-  RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
-  LOG_D(NR_RRC, "Time in RRC: %u/ %u \n", frame, subframe);
-  itti_send_msg_to_task(TASK_RRC_GNB, ctxt->module_id, message_p);
-}
-
