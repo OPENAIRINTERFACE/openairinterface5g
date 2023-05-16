@@ -169,6 +169,14 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
 
 int get_from_lte_ue_fd();
 
+void configure_spcell(NR_UE_RRC_INST_t *rrc, NR_SpCellConfig_t *spcell_config);
+void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void nr_rrc_set_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
+void nr_rrc_set_T304(NR_UE_Timers_Constants_t *tac, NR_ReconfigurationWithSync_t *reconfigurationWithSync);
+void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
+                                                       struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
+
 /** @}*/
 #endif
 
