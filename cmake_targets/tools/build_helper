@@ -121,6 +121,8 @@ check_supported_distribution() {
         "rhel8.5")     return 0 ;;
         "rhel8.6")     return 0 ;;
         "rhel8.7")     return 0 ;;
+        "rhel8.8")     return 0 ;;
+        "rhel8.9")     return 0 ;;
         "rhel9.0")     return 0 ;;
         "rhel9.1")     return 0 ;;
         "rhel9.2")     return 0 ;;
