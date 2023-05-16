@@ -1286,7 +1286,6 @@ int rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(MessageDef *msg_p, instance_
       UE->pduSession[j].param.pdusession_id = cmd->pdusession_release_params[pdusession].pdusession_id;
       UE->pduSession[j].cause = NGAP_CAUSE_RADIO_NETWORK;
       UE->pduSession[j].cause_value = 30;
-      pduSession->xid = xid;
       continue;
     }
     if (pduSession->status == PDU_SESSION_STATUS_FAILED) {
