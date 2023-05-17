@@ -1014,13 +1014,20 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
   return 0;
 }
 
-int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
-                                               const uint8_t gNB_index,
-                                               uint8_t *const Sdu,
-                                               const uint8_t Sdu_len,
-                                               const uint8_t rsrq,
-                                               const uint8_t rsrp) {
-
+/**\brief decode NR BCCH-DLSCH (SI) messages
+   \param module_idP    module id
+   \param gNB_index     gNB index
+   \param sduP          pointer to buffer of ASN message BCCH-DLSCH
+   \param sdu_len       length of buffer
+   \param rsrq          RSRQ
+   \param rsrp          RSRP*/
+static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
+                                                      const uint8_t gNB_index,
+                                                      uint8_t *const Sdu,
+                                                      const uint8_t Sdu_len,
+                                                      const uint8_t rsrq,
+                                                      const uint8_t rsrp)
+{
   NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
   NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
   NR_SIB1_t *sib1 = SI_info->sib1;

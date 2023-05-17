@@ -22,7 +22,8 @@
 #include "nr_transport_common_proto.h"
 #include "PHY/NR_REFSIG/nr_refsig.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
-
+#define DEBUG_SCRAMBLING(a)
+//#define DEBUG_SCRAMBLING(a) a
 void nr_codeword_scrambling(uint8_t *in,
                             uint32_t size,
                             uint8_t q,
@@ -39,7 +40,7 @@ void nr_codeword_scrambling(uint8_t *in,
     __m256i c = ((__m256i*)in)[i];
     uint32_t in32 = simde_mm256_movemask_epi8(simde_mm256_slli_epi16(c,7));
     out[i]=(in32^s);
-    LOG_D(PHY,"in[%d] %x => %x\n",i,in32,out[i]);
+    DEBUG_SCRAMBLING(LOG_D(PHY, "in[%d] %x => %x\n", i, in32, out[i]));
     s=lte_gold_generic(&x1, &x2, 0);
   }
 }

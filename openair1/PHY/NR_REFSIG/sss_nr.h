@@ -38,13 +38,6 @@
 
 #include "pss_nr.h"
 
-#ifdef DEFINE_VARIABLES_SSS_NR_H
-#define EXTERN
-#define INIT_VARIABLES_SSS_NR_H
-#else
-#define EXTERN  extern
-#endif
-
 /************** DEFINE ********************************************/
 
 #define  SAMPLES_IQ                   (sizeof(int16_t)*2)
@@ -64,26 +57,7 @@
 /************** VARIABLES *****************************************/
 
 #define PHASE_HYPOTHESIS_NUMBER       (16)
-#define INDEX_NO_PHASE_DIFFERENCE     (3)          /* this is for no phase shift case */
-
-EXTERN const int16_t phase_re_nr[PHASE_HYPOTHESIS_NUMBER]
-#ifdef INIT_VARIABLES_SSS_NR_H
-// -pi/3 ---- pi/3
-= {16384,20173,23571,26509,28932,30791,32051,32687,32687,32051,30791,
-   28932,26509,23571,20173,16384}
-#endif
-;
-
-EXTERN const int16_t phase_im_nr[PHASE_HYPOTHESIS_NUMBER]
-#ifdef INIT_VARIABLES_SSS_NR_H
-// -pi/3 ---- pi/3
-= {-28377,-25821,-22762,-19260,-15383,-11207,-6813,-2286,2286,6813,11207,
-   15383,19260,22762,25821,28377}
-#endif
-;
-
-EXTERN int16_t d_sss[N_ID_2_NUMBER][N_ID_1_NUMBER][LENGTH_SSS_NR];
-
+#define INDEX_NO_PHASE_DIFFERENCE (3) /* this is for no phase shift case */
 /************** FUNCTION ******************************************/
 
 void init_context_sss_nr(int amp);
@@ -92,14 +66,11 @@ void free_context_sss_nr(void);
 void insert_sss_nr(int16_t *sss_time,
                    NR_DL_FRAME_PARMS *frame_parms);
 
-int pss_ch_est_nr(PHY_VARS_NR_UE *ue,
-                  int32_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR],
-                  int32_t sss_ext[NB_ANTENNAS_RX][LENGTH_SSS_NR]);
-
-int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, uint8_t *phase_max, int *freq_offset_sss, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
-
-#undef INIT_VARIABLES_SSS_NR_H
-#undef EXTERN
-
+int rx_sss_nr(PHY_VARS_NR_UE *ue,
+              UE_nr_rxtx_proc_t *proc,
+              int32_t *tot_metric,
+              uint8_t *phase_max,
+              int *freq_offset_sss,
+              c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
 #endif /* SSS_NR_H */
 

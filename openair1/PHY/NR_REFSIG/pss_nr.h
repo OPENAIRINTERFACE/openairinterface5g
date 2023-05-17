@@ -37,12 +37,6 @@
 
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 
-#ifdef DEFINE_VARIABLES_PSS_NR_H
-#define EXTERN
-#else
-#define EXTERN  extern
-#endif
-
 /************** CODE GENERATION ***********************************/
 
 //#define PSS_DECIMATOR                          /* decimation of sample is done between time correlation */
@@ -81,55 +75,10 @@
 #define SYNC_TMP_SIZE                  (NB_ANTENNAS_RX*SYNCHRO_FFT_SIZE_MAX*IQ_SIZE) /* to be aligned with existing lte synchro */
 #define SYNCF_TMP_SIZE                 (SYNCHRO_FFT_SIZE_MAX*IQ_SIZE)
 
-/************* STRUCTURES *****************************************/
-
-
-/************** VARIABLES *****************************************/
-
-//#define STATIC_SYNC_BUFFER
-
-#ifdef STATIC_SYNC_BUFFER
-/* buffer defined in file lte_sync_time */
-EXTERN int16_t synchro_tmp[SYNC_TMP_SIZE]   __attribute__((aligned(32)));
-EXTERN int16_t synchroF_tmp[SYNCF_TMP_SIZE] __attribute__((aligned(32)));
-#else
-EXTERN int16_t *synchro_tmp;
-EXTERN int16_t *synchroF_tmp;
-#endif
-
-EXTERN int16_t *primary_synchro_nr[NUMBER_PSS_SEQUENCE]
-#ifdef INIT_VARIABLES_PSS_NR_H
-= { NULL, NULL, NULL}
-#endif
-;
-EXTERN int16_t *primary_synchro_nr2[NUMBER_PSS_SEQUENCE]
-#ifdef INIT_VARIABLES_PSS_NR_H
-= { NULL, NULL, NULL}
-#endif
-;
-EXTERN int16_t *primary_synchro_time_nr[NUMBER_PSS_SEQUENCE]
-#ifdef INIT_VARIABLES_PSS_NR_H
-= { NULL, NULL, NULL}
-#endif
-;
-
-/* profiling structure */
-EXTERN time_stats_t generic_time[TIME_LAST];
-
-#ifndef DEFINE_HEADER_ONLY
-
-/************** FUNCTION ******************************************/
-
 void init_context_synchro_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
 void free_context_synchro_nr(void);
-void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue);
-void free_context_pss_nr(void);
-int set_pss_nr(int ofdm_symbol_size);
 int pss_synchro_nr(PHY_VARS_NR_UE *PHY_vars_UE, int is, int rate_change);
-int pss_search_time_nr(c16_t **rxdata, PHY_VARS_NR_UE *ue, int fo_flag, int is);
-
-#endif
-#undef EXTERN
+int16_t *get_primary_synchro_nr2(const int nid2);
 
 #endif /* PSS_NR_H */
 
