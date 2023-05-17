@@ -2241,15 +2241,33 @@ nr_rrc_ue_establish_srb2(
    return 0;
  }
 
- //-----------------------------------------------------------------------------
- void *rrc_nrue_task( void *args_p ) {
-   MessageDef   *msg_p;
-   instance_t    instance;
-   unsigned int  ue_mod_id;
-   int           result;
-   NR_SRB_INFO   *srb_info_p;
-   protocol_ctxt_t  ctxt;
-   itti_mark_task_ready (TASK_RRC_NRUE);
+
+void nr_rrc_handle_timers(unsigned int mod_id)
+{
+  NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[mod_id].timers_and_constants;
+  // T304
+  if (timers->T304_active == true) {
+    timers->T304_cnt += 10;
+    if(timers->T304_cnt >= timers->T304_k) {
+      // TODO
+      // For T304 of MCG, in case of the handover from NR or intra-NR
+      // handover, initiate the RRC re-establishment procedure;
+      // In case of handover to NR, perform the actions defined in the
+      // specifications applicable for the source RAT.
+    }
+  }
+}
+
+
+void *rrc_nrue_task(void *args_p)
+{
+   MessageDef *msg_p;
+   instance_t instance;
+   unsigned int ue_mod_id;
+   int result;
+   NR_SRB_INFO *srb_info_p;
+   protocol_ctxt_t ctxt;
+   itti_mark_task_ready(TASK_RRC_NRUE);
 
    while(1) {
      // Wait for a message
@@ -2267,16 +2285,22 @@ nr_rrc_ue_establish_srb2(
          LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
          break;
 
+       case NRRRC_SLOT_PROCESS:
+         LOG_D(NR_RRC, "[UE %d] Receided %s: frame %d slot %d\n",
+               ue_mod_id, ITTI_MSG_NAME (msg_p), NRRRC_SLOT_PROCESS (msg_p).frame, NRRRC_SLOT_PROCESS (msg_p).slot);
+         nr_rrc_handle_timers(ue_mod_id);
+         break;
+
        case NR_RRC_MAC_BCCH_DATA_IND:
          LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
                NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
          PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
          nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
-                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
-                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
+                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
+                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
+                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
+                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
          break;
 
        case NR_RRC_MAC_CCCH_DATA_IND:
@@ -2288,18 +2312,24 @@ nr_rrc_ue_establish_srb2(
                NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
          srb_info_p = &NR_UE_rrc_inst[ue_mod_id].Srb0[NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index];
          memcpy (srb_info_p->Rx_buffer.Payload, NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu,
-           NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size);
+         NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size);
          srb_info_p->Rx_buffer.payload_size = NR_RRC_MAC_CCCH_DATA_IND (msg_p).sdu_size;
          PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0);
-              // PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
-              nr_rrc_ue_decode_ccch (&ctxt,
-                                  srb_info_p,
-                                  NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+         // PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NR_RRC_MAC_CCCH_DATA_IND (msg_p).rnti, NR_RRC_MAC_CCCH_DATA_IND (msg_p).frame, 0, NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
+         nr_rrc_ue_decode_ccch (&ctxt,
+                                srb_info_p,
+                                NR_RRC_MAC_CCCH_DATA_IND (msg_p).gnb_index);
          break;
 
       /* PDCP messages */
       case NR_RRC_DCCH_DATA_IND:
-        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, NR_RRC_DCCH_DATA_IND (msg_p).module_id, GNB_FLAG_NO, NR_RRC_DCCH_DATA_IND (msg_p).rnti, NR_RRC_DCCH_DATA_IND (msg_p).frame, 0,NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
+        PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt,
+                                       NR_RRC_DCCH_DATA_IND (msg_p).module_id,
+                                       GNB_FLAG_NO,
+                                       NR_RRC_DCCH_DATA_IND (msg_p).rnti,
+                                       NR_RRC_DCCH_DATA_IND (msg_p).frame,
+                                       0,
+                                       NR_RRC_DCCH_DATA_IND (msg_p).gNB_index);
         LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, DCCH %d, gNB %d\n",
               NR_RRC_DCCH_DATA_IND (msg_p).module_id,
               ITTI_MSG_NAME (msg_p),
@@ -2735,23 +2765,12 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
     }
 }
 
-void *nr_rrc_timers_update() {
-
-  while (1) {
-    for (int mod_id = 0; mod_id < NB_NR_UE_INST; mod_id++) {
-      NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[mod_id].timers_and_constants;
-      // T304
-      if (timers->T304_active == true) {
-        timers->T304_cnt += 10;
-        if(timers->T304_cnt >= timers->T304_k) {
-          // TODO
-          // For T304 of MCG, in case of the handover from NR or intra-NR
-          // handover, initiate the RRC re-establishment procedure;
-          // In case of handover to NR, perform the actions defined in the
-          // specifications applicable for the source RAT.
-        }
-      }
-    }
-    usleep(10000); // update every 10ms (is this a correct implementation ?)
-  }
+void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot)
+{
+  MessageDef *message_p;
+  message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NRRRC_SLOT_PROCESS);
+  NRRRC_SLOT_PROCESS(message_p).frame = frame;
+  NRRRC_SLOT_PROCESS(message_p).slot = slot;
+  LOG_D(NR_RRC, "RRC timer trigger: frame %d slot %d \n", frame, slot);
+  itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
 }

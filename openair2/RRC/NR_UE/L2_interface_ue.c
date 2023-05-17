@@ -43,7 +43,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const int CC_id,
                               const uint8_t gNB_index,
                               const frame_t frame,
-                              const sub_frame_t sub_frame,
+                              const int slot,
                               const rnti_t rnti,
                               const channel_t channel,
                               const uint8_t* pduP,
@@ -75,7 +75,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
         memset(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, 0, BCCH_SDU_SIZE);
         memcpy(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
         NR_RRC_MAC_BCCH_DATA_IND (message_p).frame = frame; //frameP
-        NR_RRC_MAC_BCCH_DATA_IND (message_p).sub_frame = sub_frame; //sub_frameP
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).slot = slot;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size = sdu_size;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).gnb_index = gNB_index;
         itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
@@ -100,7 +100,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
         memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
         memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
         NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = frame; //frameP
-        NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = sub_frame; //sub_frameP
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).slot = slot;
         NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
         NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = gNB_index;
         NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;  //rntiP
