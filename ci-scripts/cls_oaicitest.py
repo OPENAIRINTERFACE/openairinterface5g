@@ -59,7 +59,6 @@ logging.getLogger("matplotlib").setLevel(logging.WARNING)
 import matplotlib.pyplot as plt
 import numpy as np
 
-OC_CN_PROJECT = "oaicicd-core-for-ci-ran"
 #-----------------------------------------------------------
 # OaiCiTest Class Definition
 #-----------------------------------------------------------
@@ -1081,18 +1080,12 @@ class OaiCiTest():
 			self.Iperf_analyzeV2BIDIR(lock, ue.getHost(), ue.getName(), statusQueue, server_filename, client_filename)
 
 		elif self.iperf_direction == "IPERF3":
-			logging.debug("Iperf3 requested")
-
 			cmd = cls_cmd.getConnection(ue.getHost())
 			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
 			port = f'-p {5002+idx}'
 			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} {port} {iperf_opt} &> /tmp/{server_filename}', timeout=iperf_time*1.5)
-			cmd.close()
-			time.sleep(1)
-			cmd = cls_cmd.getConnection(ue.getHost())
 			cmd.copyin(f'/tmp/{server_filename}', server_filename)
 			cmd.close()
-
 			if udpIperf:
 				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, iperf_opt, server_filename, 1)
 			else:
@@ -1240,9 +1233,8 @@ class OaiCiTest():
 		#if result is not None:
 		#	dummyIperfVersion = '2.0.10'
 		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
-			lOcProject = OC_CN_PROJECT
 			mySSH = cls_cmd.getConnection(EPC.IPAddress)
-			succeeded = OC.OC_login(mySSH, EPC.OCUserName, EPC.OCPassword, lOcProject)
+			succeeded = OC.OC_login(mySSH, EPC.OCUserName, EPC.OCPassword, OC.CI_OC_CORE_NAMESPACE)
 			if not succeeded:
 				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)

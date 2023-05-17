@@ -75,7 +75,6 @@ class EPCManagement():
 		self.OCRegistry = "default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/"
 		self.OCUserName = ''
 		self.OCPassword = ''
-		self.OCProjectName = ''
 		self.imageToPull = ''
 		self.eNBSourceCodePath = ''
 
@@ -299,9 +298,8 @@ class EPCManagement():
 			imageNames = ["oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr", "mysql","oai-traffic-server"]
 			logging.debug('Deploying OAI CN5G on Openshift Cluster')
 			lIpAddr = self.IPAddress
-			lOcProject = 'oaicicd-core-for-ci-ran'
 			lSourcePath = "/opt/oai-cn5g-fed-develop-2023-04-28-20897"
-			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, lOcProject)
+			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, OC.CI_OC_CORE_NAMESPACE)
 			if not succeeded:
 				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -596,12 +594,11 @@ class EPCManagement():
 		elif re.match('OC-OAI-CN5G', self.Type, re.IGNORECASE):
 			logging.debug('Terminating OAI CN5G on Openshift Cluster')
 			lIpAddr = self.IPAddress
-			lOcProject = 'oaicicd-core-for-ci-ran'
 			lSourcePath = self.SourceCodePath
 			mySSH.run(f'rm -Rf {lSourcePath}/logs')
 			mySSH.run(f'mkdir -p {lSourcePath}/logs')
 			logging.debug('OC OAI CN5G - Collecting Log files to workspace')
-			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, lOcProject)
+			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, OC.CI_OC_CORE_NAMESPACE)
 			if not succeeded:
 				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -620,7 +617,7 @@ class EPCManagement():
 			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq test_logs_CN.zip *.log')
 			mySSH.copyin(f'{lSourcePath}/logs/test_logs_CN.zip','test_logs_CN.zip')
 			ret = mySSH.run(f'oc get pods', silent=True)
-			res = re.search(f'No resources found in {lOcProject} namespace.', ret.stdout)
+			res = re.search(f'No resources found in {OC.CI_OC_CORE_NAMESPACE} namespace.', ret.stdout)
 			if res is not None:
 			       logging.debug('OC OAI CN5G components uninstalled')
 			       message = 'OC OAI CN5G components uninstalled'
