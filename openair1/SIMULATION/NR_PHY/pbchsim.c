@@ -191,7 +191,7 @@ int main(int argc, char **argv)
   double sigma2, sigma2_dB=10,SNR,snr0=-2.0,snr1=2.0;
   double cfo=0;
   uint8_t snr1set=0;
-  int **txdata;
+  c16_t **txdata;
   double **s_re,**s_im,**r_re,**r_im;
   //double iqim = 0.0;
   double ip =0.0;
@@ -586,7 +586,7 @@ int main(int argc, char **argv)
   s_im = malloc(2*sizeof(double*));
   r_re = malloc(2*sizeof(double*));
   r_im = malloc(2*sizeof(double*));
-  txdata = calloc(2,sizeof(int*));
+  txdata = calloc(2, sizeof(c16_t*));
 
   for (i=0; i<2; i++) {
 
@@ -596,7 +596,7 @@ int main(int argc, char **argv)
     r_re[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
     r_im[i] = malloc16_clear(frame_length_complex_samples*sizeof(double));
     printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
-    txdata[i] = malloc16_clear(frame_length_complex_samples*sizeof(int));
+    txdata[i] = malloc16_clear(frame_length_complex_samples * sizeof(c16_t));
   }
 
   if (pbch_file_fd!=NULL) {
@@ -655,7 +655,7 @@ int main(int argc, char **argv)
                               12);
 
             PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
-            &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
+            (int *)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
             frame_parms->ofdm_symbol_size,
             12,
             frame_parms->nb_prefix_samples,
@@ -726,8 +726,8 @@ int main(int argc, char **argv)
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-          r_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-          r_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+          r_re[aa][i] = (double)txdata[aa][i].r;
+          r_im[aa][i] = (double)txdata[aa][i].i;
         }
       }
 
@@ -761,8 +761,8 @@ int main(int argc, char **argv)
 
       for (i=0; i<frame_length_complex_samples; i++) {
         for (aa=0; aa<frame_parms->nb_antennas_rx; aa++) {
-          ((short*) UE->common_vars.rxdata[aa])[2*i]   = (short) ((r_re[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-          ((short*) UE->common_vars.rxdata[aa])[2*i+1] = (short) ((r_im[aa][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
+          UE->common_vars.rxdata[aa][i].r = (short)(r_re[aa][i] + sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0));
+          UE->common_vars.rxdata[aa][i].i = (short)(r_im[aa][i] + sqrt(sigma2 / 2) * gaussdouble(0.0, 1.0));
         }
       }
 
