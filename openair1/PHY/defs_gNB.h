@@ -644,6 +644,8 @@ typedef struct PHY_VARS_gNB_s {
   /// CSI variables
   nr_csi_info_t *nr_csi_info;
 
+  // reference amplitude for TX
+  int16_t TX_AMP;
   // PUCCH0 Look-up table for cyclic-shifts
   NR_gNB_PUCCH0_LUT_t pucch0_lut;
 
