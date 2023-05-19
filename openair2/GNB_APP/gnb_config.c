@@ -2259,3 +2259,23 @@ void nr_read_config_and_init(void) {
     nr_pdcp_layer_init();
   }
 }
+
+#ifdef E2_AGENT
+
+e2_agent_args_t RCconfig_NR_E2agent(void)
+{
+  paramdef_t e2agent_params[] = E2AGENT_PARAMS_DESC;
+  int ret = config_get(e2agent_params, sizeof(e2agent_params) / sizeof(paramdef_t), CONFIG_STRING_E2AGENT);
+  if (ret < 0) {
+    LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters from FlexRIC\n", CONFIG_STRING_E2AGENT);
+    return (e2_agent_args_t) { 0 };
+  }
+  e2_agent_args_t dst = {0};
+  if(e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr != NULL)
+    dst.ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr;
+  if(e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr != NULL)
+    dst.sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr;
+  return dst;
+}
+
+#endif // E2_AGENT

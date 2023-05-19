@@ -2929,3 +2929,25 @@ void read_config_and_init(void) {
     RCconfig_RRC(enb_id, RC.rrc[enb_id]);
   }
 }
+
+#ifdef E2_AGENT
+
+e2_agent_args_t RCconfig_E2agent(void)
+{
+  paramdef_t e2agent_params[] = E2AGENT_PARAMS_DESC;
+  int ret = config_get(e2agent_params, sizeof(e2agent_params) / sizeof(paramdef_t), CONFIG_STRING_E2AGENT);
+  if (ret < 0) {
+    LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters\n", CONFIG_STRING_E2AGENT);
+    return (e2_agent_args_t) {0}; 
+  }
+  return (e2_agent_args_t) {
+    .ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr,
+    .port = *e2agent_params[E2AGENT_CONFIG_PORT_IDX].u16ptr,
+    .sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr,
+  };
+}
+
+
+#endif
+
+
