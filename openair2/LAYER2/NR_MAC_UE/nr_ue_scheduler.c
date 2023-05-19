@@ -526,11 +526,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->tbslbrm = 0;
 
   } else if (dci) {
-    NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
-
-    int target_ss;
-    bool valid_ptrs_setup = 0;
-
     pusch_config_pdu->bwp_start = current_UL_BWP->BWPStart;
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
@@ -544,21 +539,21 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
 
     /*DCI format-related configuration*/
+    int target_ss;
     if (*dci_format == NR_UL_DCI_FORMAT_0_0) {
-
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-
+      if ((pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) &&
+          pusch_config_pdu->nr_of_symbols < 3)
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
+      else
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
-
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci, *dci_format);
       ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci, *dci_format);
-
     } else {
-
       LOG_E(NR_MAC, "In %s: UL grant from DCI format %d is not handled...\n", __FUNCTION__, *dci_format);
       return -1;
-
     }
 
     int mappingtype = tda_info->mapping_type;
@@ -576,8 +571,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
-
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
 
       uint32_t n_RS_Id = 0;
       if (NR_DMRS_ulconfig->transformPrecodingEnabled &&
@@ -664,18 +657,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
 
-    if (ul_bwp_id > 0 &&
-        mac->ULbwp[ul_bwp_id - 1] &&
-        pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled &&
-        *dci_format != NR_UL_DCI_FORMAT_0_1) {
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
-    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 ||
-               (ul_bwp_id > 0 &&
-                mac->ULbwp[ul_bwp_id-1] &&
-                pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-    }
-
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->xOverhead)
       N_PRB_oh = *current_UL_BWP->pusch_servingcellconfig->xOverhead;
@@ -699,17 +680,17 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
-        valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
-                                              pusch_config_pdu->rb_size,
-                                              pusch_config_pdu->mcs_index,
-                                              pusch_config_pdu->mcs_table,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_time_density,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,
-                                              &pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
-                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power,
-                                              pusch_config_pdu->nr_of_symbols);
-        if(valid_ptrs_setup==true) {
+        bool valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+                                                   pusch_config_pdu->rb_size,
+                                                   pusch_config_pdu->mcs_index,
+                                                   pusch_config_pdu->mcs_table,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_time_density,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,
+                                                   &pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
+                                                   &pusch_config_pdu->pusch_ptrs.ul_ptrs_power,
+                                                   pusch_config_pdu->nr_of_symbols);
+        if(valid_ptrs_setup == true) {
           pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
         }
         LOG_D(NR_MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);

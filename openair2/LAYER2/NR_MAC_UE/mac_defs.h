@@ -412,8 +412,6 @@ typedef struct {
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
 
-  NR_BWP_Downlink_t *DLbwp[MAX_NUM_BWP_UE];
-  NR_BWP_Uplink_t *ULbwp[MAX_NUM_BWP_UE];
   NR_ControlResourceSet_t *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
 
@@ -526,8 +524,6 @@ typedef struct ssb_list_info {
   ssb_info_t tx_ssb[MAX_NB_SSB];
   uint8_t   nb_tx_ssb;
 } ssb_list_info_t;
-
-void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

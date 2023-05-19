@@ -85,40 +85,19 @@ void init_RA(module_id_t mod_id,
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
   prach_resources->RA_SCALING_FACTOR_BI = 1;
 
-  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList;
-  NR_SearchSpaceId_t *ra_ss;
-  NR_SearchSpaceId_t ss_id = -1;
-  NR_SearchSpace_t *ss = NULL;
+  NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
+  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, dl_bwp_id);
+  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
+  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
+  NR_SearchSpaceId_t *ss_id = pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
+  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
 
-  if (mac->scc) {
-    NR_SearchSpaceId_t *ra_ss = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-    if (ra_ss) {
-      commonSearchSpaceList = mac->scc->downlinkConfigCommon->initialDownlinkBWP->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-      ss_id = *ra_ss;
-    }
-  } else if (mac->scc_SIB) {
-    NR_SearchSpaceId_t *ra_ss = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-    if (ra_ss) {
-      commonSearchSpaceList = mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP.pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-      ss_id = *ra_ss;
-    }
-  }
-  if (ss_id < 0) {
-    if (mac->current_DL_BWP.bwp_id>0) {
-      ra_ss = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-      if (ra_ss) {
-        commonSearchSpaceList = mac->DLbwp[mac->current_DL_BWP.bwp_id-1]->bwp_Common->pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-        ss_id = *ra_ss;
-      }
-    }
-  }
-
-  AssertFatal(ss_id>-1,"Didn't find ra-SearchSpace\n");
+  AssertFatal(ss_id, "Didn't find ra-SearchSpace\n");
   AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
   // Common searchspace list
   for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
-    ss = commonSearchSpaceList->list.array[i];
-    if (ss->searchSpaceId == ss_id)
+    NR_SearchSpace_t *ss = commonSearchSpaceList->list.array[i];
+    if (ss->searchSpaceId == *ss_id)
       ra->ss = ss;
   }
 

@@ -439,27 +439,10 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     @param NR_UE_MAC_INST_t mac: pointer to local MAC instance
     @returns void
     */
-void config_control_ue(NR_UE_MAC_INST_t *mac){
-
-  int bwp_id;
+void config_control_ue(NR_UE_MAC_INST_t *mac)
+{
   NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
   NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
-
-  // configure DLbwp
-  if (scd->downlinkBWP_ToAddModList) {
-    for (int i = 0; i < scd->downlinkBWP_ToAddModList->list.count; i++) {
-      bwp_id = scd->downlinkBWP_ToAddModList->list.array[i]->bwp_Id;
-      mac->DLbwp[bwp_id-1] = scd->downlinkBWP_ToAddModList->list.array[i];
-    }
-  }
-
-  // configure ULbwp
-  if (scd->uplinkConfig->uplinkBWP_ToAddModList) {
-    for (int i = 0; i < scd->uplinkConfig->uplinkBWP_ToAddModList->list.count; i++) {
-      bwp_id = scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i]->bwp_Id;
-      mac->ULbwp[bwp_id-1] = scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[i];
-    }
-  }
 
   configure_ss_coreset(mac, scd, dl_bwp_id);
 }

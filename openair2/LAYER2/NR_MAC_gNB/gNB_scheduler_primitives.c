@@ -2897,7 +2897,6 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
 
 void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE)
 {
-  LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", sdu_len, rnti);
 
   NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
   NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
