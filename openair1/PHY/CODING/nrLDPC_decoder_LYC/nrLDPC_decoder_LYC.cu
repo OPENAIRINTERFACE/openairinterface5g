@@ -56,13 +56,13 @@ __device__ char dev_dt [46*68*384];
 __device__ char dev_llr[68*384];
 __device__ unsigned char dev_tmp[68*384];
 
-h_element h_compact1 [46*19] = {};
+h_element h_compact1 [46*23] = {};
 h_element h_compact2 [68*30] = {};
 
-__device__  h_element dev_h_compact1[46*19];  // used in kernel 1
+__device__  h_element dev_h_compact1[46*23];  // used in kernel 1
 __device__  h_element dev_h_compact2[68*30];  // used in kernel 2
 
-// __device__ __constant__ h_element dev_h_compact1[46*19];  // used in kernel 1
+// __device__ __constant__ h_element dev_h_compact1[46*23];  // used in kernel 1
 // __device__ __constant__ h_element dev_h_compact2[68*30];  // used in kernel 2
 
 // row and col element count

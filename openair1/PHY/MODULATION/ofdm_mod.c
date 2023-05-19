@@ -45,16 +45,16 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
 
 
   
-  PHY_ofdm_mod(txdataF,        // input
-               txdata,         // output
-               frame_parms->ofdm_symbol_size,                
+  PHY_ofdm_mod((int *)txdataF,        // input
+               (int *)txdata,         // output
+               frame_parms->ofdm_symbol_size,
 
                1,                 // number of symbols
                frame_parms->nb_prefix_samples0,               // number of prefix samples
                CYCLIC_PREFIX);
-  PHY_ofdm_mod(txdataF+frame_parms->ofdm_symbol_size,        // input
-               txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
-               frame_parms->ofdm_symbol_size,                
+  PHY_ofdm_mod((int *)txdataF+frame_parms->ofdm_symbol_size,        // input
+               (int *)txdata+OFDM_SYMBOL_SIZE_COMPLEX_SAMPLES0,         // output
+               frame_parms->ofdm_symbol_size,
                nsymb-1,
                frame_parms->nb_prefix_samples,               // number of prefix samples
                CYCLIC_PREFIX);
@@ -280,7 +280,7 @@ void PHY_ofdm_mod(int *input,                       /// pointer to complex input
 }
 
 
-void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
+void do_OFDM_mod(c16_t **txdataF, c16_t **txdata, uint32_t frame,uint16_t next_slot, LTE_DL_FRAME_PARMS *frame_parms)
 {
 
   int aa, slot_offset, slot_offset_F;
@@ -292,39 +292,39 @@ void do_OFDM_mod(int32_t **txdataF, int32_t **txdata, uint32_t frame,uint16_t ne
     if (is_pmch_subframe(frame,next_slot>>1,frame_parms)) {
       if ((next_slot%2)==0) {
         LOG_D(PHY,"Frame %d, subframe %d: Doing MBSFN modulation (slot_offset %d)\n",frame,next_slot>>1,slot_offset);
-        PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
-                     &txdata[aa][slot_offset],         // output
+        PHY_ofdm_mod((int *)&txdataF[aa][slot_offset_F],        // input
+                     (int *)&txdata[aa][slot_offset],         // output
                      frame_parms->ofdm_symbol_size,                
                      12,                 // number of symbols
                      frame_parms->ofdm_symbol_size>>2,               // number of prefix samples
                      CYCLIC_PREFIX);
 
         if (frame_parms->Ncp == EXTENDED)
-          PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
-                       &txdata[aa][slot_offset],         // output
+          PHY_ofdm_mod((int *)&txdataF[aa][slot_offset_F],        // input
+                       (int *)&txdata[aa][slot_offset],         // output
                        frame_parms->ofdm_symbol_size,                
                        2,                 // number of symbols
                        frame_parms->nb_prefix_samples,               // number of prefix samples
                        CYCLIC_PREFIX);
         else {
           LOG_D(PHY,"Frame %d, subframe %d: Doing PDCCH modulation\n",frame,next_slot>>1);
-          normal_prefix_mod(&txdataF[aa][slot_offset_F],
-                            &txdata[aa][slot_offset],
+          normal_prefix_mod((int32_t *)&txdataF[aa][slot_offset_F],
+                            (int32_t *)&txdata[aa][slot_offset],
                             2,
                             frame_parms);
         }
       }
     } else {
       if (frame_parms->Ncp == EXTENDED)
-        PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
-                     &txdata[aa][slot_offset],         // output
+        PHY_ofdm_mod((int *)&txdataF[aa][slot_offset_F],        // input
+                     (int *)&txdata[aa][slot_offset],         // output
                      frame_parms->ofdm_symbol_size,                
                      6,                 // number of symbols
                      frame_parms->nb_prefix_samples,               // number of prefix samples
                      CYCLIC_PREFIX);
       else {
-        normal_prefix_mod(&txdataF[aa][slot_offset_F],
-                          &txdata[aa][slot_offset],
+        normal_prefix_mod((int32_t *)&txdataF[aa][slot_offset_F],
+                          (int32_t *)&txdata[aa][slot_offset],
                           7,
                           frame_parms);
       }
