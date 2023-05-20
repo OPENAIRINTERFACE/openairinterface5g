@@ -251,9 +251,8 @@ static OAIgraph_t nrUEcommonGraph( void (*funct) (scopeGraphData_t **data, OAIgr
 }
 #ifndef WEBSRVSCOPE
 static void setRange(OAIgraph_t *graph, float minX, float maxX, float minY, float maxY) {
-  if ( maxX > graph->maxX ||  minX < graph->minX ||
-       abs(maxX-graph->maxX)>abs(graph->maxX)/2 ||
-       abs(maxX-graph->maxX)>abs(graph->maxX)/2 ) {
+  if (maxX > graph->maxX || minX < graph->minX || fabs(maxX - graph->maxX) > fabs(graph->maxX) / 2
+      || fabs(maxX - graph->maxX) > fabs(graph->maxX) / 2) {
     graph->maxX/=2;
     graph->minX/=2;
     graph->maxX=max(graph->maxX,maxX);
@@ -261,9 +260,8 @@ static void setRange(OAIgraph_t *graph, float minX, float maxX, float minY, floa
     fl_set_xyplot_xbounds(graph->graph, graph->minX*1.2, graph->maxX*1.2);
   }
 
-  if ( maxY > graph->maxY || minY < graph->minY ||
-       abs(maxY-graph->maxY)>abs(graph->maxY)/2 ||
-       abs(maxY-graph->maxY)>abs(graph->maxY)/2 ) {
+  if (maxY > graph->maxY || minY < graph->minY || fabs(maxY - graph->maxY) > fabs(graph->maxY) / 2
+      || fabs(maxY - graph->maxY) > fabs(graph->maxY) / 2) {
     graph->maxY/=2;
     graph->minY/=2;
     graph->maxY=max(graph->maxY,maxY);

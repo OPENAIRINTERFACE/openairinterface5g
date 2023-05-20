@@ -1077,7 +1077,9 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
 
       //txptr = &txdataF[0][re_offset];
       int k=0;
+#ifdef DEBUG_NR_PUCCH_TX
       int kk=0;
+#endif
 
       for (int n=0; n<12; n++) {
         if ((n==6) && ((rb+startingPRB) == (frame_parms->N_RB_DL>>1)) && ((frame_parms->N_RB_DL & 1) == 1)) {
@@ -1089,9 +1091,21 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[0] = d_re[i+k];
           ((int16_t *)&txdataF[0][re_offset])[1] = d_im[i+k];
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-                 n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+k,re_offset,
-                 l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
+          printf(
+              "\t [nr_generate_pucch2] (n=%d,i=%d) mapping PUCCH to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d "
+              "\tfirst_carrier_offset=%d \tz_pucch[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+              n,
+              i,
+              amp,
+              frame_parms->ofdm_symbol_size,
+              frame_parms->N_RB_DL,
+              frame_parms->first_carrier_offset,
+              i + k,
+              re_offset,
+              l,
+              n,
+              ((int16_t *)&txdataF[0][re_offset])[0],
+              ((int16_t *)&txdataF[0][re_offset])[1]);
 #endif
           k++;
         }
@@ -1101,11 +1115,23 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
           ((int16_t *)&txdataF[0][re_offset])[1] = (int16_t)((int32_t)(amp*ONE_OVER_SQRT2*(1-(2*((uint8_t)((s>>((2*m)+1))&1)))))>>15);
           m++;
 #ifdef DEBUG_NR_PUCCH_TX
-          printf("\t [nr_generate_pucch2] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d \tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
-                 n,i,amp,frame_parms->ofdm_symbol_size,frame_parms->N_RB_DL,frame_parms->first_carrier_offset,i+kk,re_offset,
-                 l,n,((int16_t *)&txdataF[0][re_offset])[0],((int16_t *)&txdataF[0][re_offset])[1]);
-#endif
+          printf(
+              "\t [nr_generate_pucch2] (n=%d,i=%d) mapping DM-RS to RE \t amp=%d \tofdm_symbol_size=%d \tN_RB_DL=%d "
+              "\tfirst_carrier_offset=%d \tz_dm-rs[%d]=txptr(%u)=(x_n(l=%d,n=%d)=(%d,%d))\n",
+              n,
+              i,
+              amp,
+              frame_parms->ofdm_symbol_size,
+              frame_parms->N_RB_DL,
+              frame_parms->first_carrier_offset,
+              i + kk,
+              re_offset,
+              l,
+              n,
+              ((int16_t *)&txdataF[0][re_offset])[0],
+              ((int16_t *)&txdataF[0][re_offset])[1]);
           kk++;
+#endif
         }
 
         re_offset++;

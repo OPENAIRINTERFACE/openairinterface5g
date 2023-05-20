@@ -40,8 +40,6 @@
 #include <stdio.h>
 #include "nfapi_nr_interface.h"
 
-//#define DEBUG_DCI
-
 void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
                                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
                                 const uint32_t Y)

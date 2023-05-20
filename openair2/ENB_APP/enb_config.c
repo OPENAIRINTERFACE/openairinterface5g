@@ -252,8 +252,7 @@ void RCconfig_macrlc(void)
 int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
   int               num_enbs                      = 0;
   int               j,k                           = 0;
-  int32_t           enb_id                        = 0;
-  int               nb_cc                         = 0;
+  int32_t enb_id = 0;
   int32_t           offsetMaxLimit                = 0;
   int32_t           cycleNb                       = 0;
 
@@ -390,9 +389,8 @@ int RCconfig_RRC(uint32_t i, eNB_RRC_INST *rrc) {
             sprintf(ccspath,"%s.%s.[%i]",enbpath,ENB_CONFIG_STRING_COMPONENT_CARRIERS,j);
             LOG_I(RRC, "enb_config::RCconfig_RRC() parameter number: %d, total number of parameters: %zd, ccspath: %s \n \n", j, sizeof(CCsParams)/sizeof(paramdef_t), ccspath);
             config_get( CCsParams,sizeof(CCsParams)/sizeof(paramdef_t),ccspath);
-            //printf("Component carrier %d\n",component_carrier);
-            nb_cc++;
-            // Cell params, MIB/SIB1
+            // printf("Component carrier %d\n",component_carrier);
+            //  Cell params, MIB/SIB1
             RRCcfg->tdd_config[j] = ccparams_lte.tdd_config;
             AssertFatal (ccparams_lte.tdd_config <= LTE_TDD_Config__subframeAssignment_sa6,
                          "Failed to parse eNB configuration file %s, enb %u illegal tdd_config %d (should be 0-%d)!",
