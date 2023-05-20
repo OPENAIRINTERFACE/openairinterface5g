@@ -85,22 +85,6 @@ void init_RA(module_id_t mod_id,
   prach_resources->POWER_OFFSET_2STEP_RA = 0;
   prach_resources->RA_SCALING_FACTOR_BI = 1;
 
-  NR_BWP_Id_t dl_bwp_id = mac->current_DL_BWP.bwp_id;
-  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, dl_bwp_id);
-  AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
-  NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
-  NR_SearchSpaceId_t *ss_id = pdcch_ConfigCommon->choice.setup->ra_SearchSpace;
-  struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList = pdcch_ConfigCommon->choice.setup->commonSearchSpaceList;
-
-  AssertFatal(ss_id, "Didn't find ra-SearchSpace\n");
-  AssertFatal(commonSearchSpaceList->list.count > 0, "common SearchSpace list has 0 elements\n");
-  // Common searchspace list
-  for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
-    NR_SearchSpace_t *ss = commonSearchSpaceList->list.array[i];
-    if (ss->searchSpaceId == *ss_id)
-      ra->ss = ss;
-  }
-
   if (rach_ConfigDedicated) {
     if (rach_ConfigDedicated->cfra){
       LOG_I(MAC, "Initialization of 2-step contention-free random access procedure\n");

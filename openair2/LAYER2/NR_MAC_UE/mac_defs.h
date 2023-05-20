@@ -325,9 +325,6 @@ typedef struct {
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
-  /// RA SearchSpace
-  NR_SearchSpace_t *ss;
-
   NR_PRACH_RESOURCES_t prach_resources;
 } RA_config_t;
 
@@ -414,6 +411,9 @@ typedef struct {
 
   NR_ControlResourceSet_t *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
   NR_SearchSpace_t *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
+  NR_SearchSpace_t *otherSI_SS;
+  NR_SearchSpace_t *ra_SS;
+  NR_SearchSpace_t *paging_SS;
 
   bool phy_config_request_sent;
   frame_type_t frame_type;

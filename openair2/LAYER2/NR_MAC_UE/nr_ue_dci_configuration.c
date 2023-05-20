@@ -101,9 +101,10 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
   NR_ControlResourceSet_t *coreset;
   if(ss_id>=0) {
     if (rnti_type == NR_RNTI_TC || rnti_type == NR_RNTI_RA) {
-      ss = mac->ra.ss;
-      AssertFatal(mac->ra.ss->searchSpaceId == ss_id,"Search Space id %d does not correspond to the one in ra->ss %ld for RA procedures\n",
-                  ss_id,mac->ra.ss->searchSpaceId);
+      ss = mac->ra_SS;
+      AssertFatal(mac->ra_SS->searchSpaceId == ss_id,
+                  "Search Space id %d does not correspond to the one in ra_ss %ld for RA procedures\n",
+                  ss_id, mac->ra_SS->searchSpaceId);
     }
     else
       ss = mac->SSpace[dl_bwp_id][ss_id-1];

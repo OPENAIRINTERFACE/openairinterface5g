@@ -4119,7 +4119,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 
     // Schedule Msg3
     NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-    NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP, *ra->ss->controlResourceSetId, ra->ss->searchSpaceType->present, NR_RNTI_RA, rar_grant.Msg3_t_alloc);
+    NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP, *mac->ra_SS->controlResourceSetId, mac->ra_SS->searchSpaceType->present, NR_RNTI_RA, rar_grant.Msg3_t_alloc);
     if (tda_info.nrOfSymbols == 0) {
       LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");
       return -1;

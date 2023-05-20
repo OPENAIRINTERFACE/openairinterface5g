@@ -447,11 +447,48 @@ void config_control_ue(NR_UE_MAC_INST_t *mac)
   configure_ss_coreset(mac, scd, dl_bwp_id);
 }
 
+NR_SearchSpace_t *get_common_search_space(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList,
+                                          NR_UE_MAC_INST_t *mac,
+                                          NR_SearchSpaceId_t ss_id)
+{
+  if (ss_id == 0)
+    return mac->search_space_zero;
+
+  NR_SearchSpace_t *css = NULL;
+  for (int i = 0; i < commonSearchSpaceList->list.count; i++) {
+    if (commonSearchSpaceList->list.array[i]->searchSpaceId == ss_id) {
+      css = commonSearchSpaceList->list.array[i];
+      break;
+    }
+  }
+  AssertFatal(css, "Couldn't find CSS with Id %ld\n", ss_id);
+  return css;
+}
+
+void configure_common_ss(NR_UE_MAC_INST_t *mac,
+                         NR_PDCCH_ConfigCommon_t *pdcch_ConfigCommon)
+{
+  if (pdcch_ConfigCommon) {
+    mac->otherSI_SS = pdcch_ConfigCommon->searchSpaceOtherSystemInformation ?
+                      get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList, mac,
+                                              *pdcch_ConfigCommon->searchSpaceOtherSystemInformation) :
+                      NULL;
+    mac->ra_SS = pdcch_ConfigCommon->ra_SearchSpace ?
+                 get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList, mac,
+                                         *pdcch_ConfigCommon->ra_SearchSpace) :
+                 NULL;
+    mac->paging_SS = pdcch_ConfigCommon->pagingSearchSpace ?
+                     get_common_search_space(pdcch_ConfigCommon->commonSearchSpaceList, mac,
+                                             *pdcch_ConfigCommon->pagingSearchSpace) :
+                     NULL;
+  }
+}
+
 
 void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
                           NR_ServingCellConfig_t *scd,
-                          NR_BWP_Id_t dl_bwp_id) {
-
+                          NR_BWP_Id_t dl_bwp_id)
+{
   NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, dl_bwp_id);
   AssertFatal(bwp_Common != NULL, "bwp_Common is null\n");
 
@@ -564,6 +601,8 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
       UL_BWP->pucch_ConfigCommon = bwp_ulcommon->pucch_ConfigCommon->choice.setup;
     if (bwp_ulcommon->rach_ConfigCommon)
       UL_BWP->rach_ConfigCommon = bwp_ulcommon->rach_ConfigCommon->choice.setup;
+    if (bwp_dlcommon->pdcch_ConfigCommon)
+      configure_common_ss(mac, bwp_dlcommon->pdcch_ConfigCommon->choice.setup);
   }
 
   if(cell_group_config) {
@@ -609,11 +648,15 @@ void configure_current_BWP(NR_UE_MAC_INST_t *mac,
         dl_genericParameters = bwp_downlink->bwp_Common->genericParameters;
         DL_BWP->pdsch_Config = bwp_downlink->bwp_Dedicated->pdsch_Config->choice.setup;
         DL_BWP->tdaList_Common = bwp_downlink->bwp_Common->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        if (bwp_downlink->bwp_Common->pdcch_ConfigCommon)
+          configure_common_ss(mac, bwp_downlink->bwp_Common->pdcch_ConfigCommon->choice.setup);
       }
       else {
         dl_genericParameters = bwp_dlcommon->genericParameters;
         DL_BWP->pdsch_Config = spCellConfigDedicated->initialDownlinkBWP->pdsch_Config->choice.setup;
         DL_BWP->tdaList_Common = bwp_dlcommon->pdsch_ConfigCommon->choice.setup->pdsch_TimeDomainAllocationList;
+        if (bwp_dlcommon->pdcch_ConfigCommon)
+          configure_common_ss(mac, bwp_dlcommon->pdcch_ConfigCommon->choice.setup);
       }
 
       UL_BWP->msg3_DeltaPreamble = bwp_ulcommon->pusch_ConfigCommon->choice.setup->msg3_DeltaPreamble;
