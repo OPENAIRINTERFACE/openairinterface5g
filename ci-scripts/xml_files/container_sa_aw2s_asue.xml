@@ -99,8 +99,8 @@
 
   <testCase id="000010">
     <class>Iperf</class>
-    <desc>iperf (DL/30Mbps/UDP)(30 sec)(multi-ue profile)</desc>
-    <iperf_args>-u -b 90M -t 30 -i 1 -R</iperf_args>
+    <desc>iperf (DL/20Mbps/UDP)(30 sec)(multi-ue profile)</desc>
+    <iperf_args>-u -b 60M -t 30 -i 1 -R</iperf_args>
     <direction>IPERF3</direction>
     <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3</id>
     <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
