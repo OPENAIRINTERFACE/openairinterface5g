@@ -287,150 +287,121 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
   dl_config->number_pdus += 1;
 }
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot) {
 
-  RA_config_t *ra = &mac->ra;
-  uint8_t bwp_id = mac->current_DL_BWP.bwp_id;
-
-  NR_ServingCellConfig_t *scd = mac->cg->spCellConfig->spCellConfigDedicated;
-  NR_BWP_DownlinkDedicated_t *bwpd = bwp_id > 0 ? scd->downlinkBWP_ToAddModList->list.array[bwp_id - 1]->bwp_Dedicated:
-                                                  scd->initialDownlinkBWP;
-  NR_BWP_DownlinkCommon_t *bwp_Common = get_bwp_downlink_common(mac, bwp_id);
-
-  LOG_D(NR_MAC, "[DCI_CONFIG] ra_rnti %p (%x) crnti %p (%x) t_crnti %p (%x)\n", &ra->ra_rnti, ra->ra_rnti, &mac->crnti, mac->crnti, &ra->t_crnti, ra->t_crnti);
-
-  // loop over all available SS for bwp_id
-  if (bwpd) {
-      for (int ss_id = 0; ss_id < FAPI_NR_MAX_SS; ss_id++){
-
-        if(mac->BWP_searchspaces[ss_id]==NULL) {
-          continue;
-        }
-
-	LOG_D(NR_MAC, "[DCI_CONFIG] ss_id %d\n",ss_id);
-	NR_SearchSpace_t *ss = mac->BWP_searchspaces[ss_id];
-	NR_SetupRelease_PDCCH_ConfigCommon_t *pdcch_ConfigCommon = bwp_Common->pdcch_ConfigCommon;
-	struct NR_PhysicalCellGroupConfig *phy_cgc = mac->cg->physicalCellGroupConfig;
-	switch (ss->searchSpaceType->present){
-	case NR_SearchSpace__searchSpaceType_PR_common:
-	  // this is for CSSs, we use BWP common and pdcch_ConfigCommon
-
-	  if (ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0){
-	    // check available SS IDs
-	    if (pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
-	      if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->ra_SearchSpace){
-		switch(ra->ra_state){
-		case WAIT_RAR:
-		  LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg2)\n");
-		  if (get_softmodem_params()->sa) {
-		    config_dci_pdu(mac, dl_config, NR_RNTI_RA, slot, mac->ra_SS);
-		  } else {
-		    config_dci_pdu(mac, dl_config, NR_RNTI_RA, slot, ss);
-		  }
-		  break;
-		case WAIT_CONTENTION_RESOLUTION:
-		  LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg4)\n");
-		  config_dci_pdu(mac, dl_config, NR_RNTI_TC, slot, mac->ra_SS);
-		  break;
-		default:
-		  break;
-		}
-	      }
-	    }
-	    if (pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-	      if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceSIB1){
-		// Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG
-		//LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
-	      }
-	    }
-	    if (pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){
-	      if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->searchSpaceOtherSystemInformation){
-		// Configure monitoring of PDCCH candidates in Type0-PDCCH common search space on the MCG
-		//LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
-	      }
-	    }
-	    if (pdcch_ConfigCommon->choice.setup->pagingSearchSpace){
-	      if (ss->searchSpaceId == *pdcch_ConfigCommon->choice.setup->pagingSearchSpace){
-		// Configure monitoring of PDCCH candidates in Type2-PDCCH common search space on the MCG
-		//LOG_W(MAC, "[DCI_CONFIG] This seach space should not be configured yet...");
-	      }
-	    }
-	    if (phy_cgc){
-	      if (phy_cgc->cs_RNTI){
-		LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type3-PDCCH common search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by CS-RNTI...\n");
-		LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...\n");
-	      }
-	      if (phy_cgc->ext1){
-		if (phy_cgc->ext1->mcs_C_RNTI){
-		  LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by MCS-C-RNTI...\n");
-		  LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...\n");
-		}
-	      }
-	    }
-	  } // end DCI 00 and 01
-	  // DCI 2_0
-	  if (ss->searchSpaceType->choice.common->dci_Format2_0){
-	    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type3-PDCCH common search space for DCI format 2_0 with CRC scrambled by SFI-RNTI \n");
-	    LOG_W(MAC, "[DCI_CONFIG] This format should not be configured yet...\n");
-	  }
-	  // DCI 2_1
-	  if (ss->searchSpaceType->choice.common->dci_Format2_1){
-	    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type3-PDCCH common search space for DCI format 2_1 with CRC scrambled by INT-RNTI \n");
-	    LOG_W(MAC, "[DCI_CONFIG] This format should not be configured yet...\n");
-	  }
-	  // DCI 2_2
-	  if (ss->searchSpaceType->choice.common->dci_Format2_2){
-	    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type3-PDCCH common search space for DCI format 2_2 with CRC scrambled by TPC-RNTI \n");
-	    LOG_W(MAC, "[DCI_CONFIG] This format should not be configured yet...\n");
-	  }
-	  // DCI 2_3
-	  if (ss->searchSpaceType->choice.common->dci_Format2_3){
-	    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type3-PDCCH common search space for DCI format 2_3 with CRC scrambled by TPC-SRS-RNTI \n");
-	    LOG_W(MAC, "[DCI_CONFIG] This format should not be configured yet...\n");
-	  }
-
-	  break;
-	case NR_SearchSpace__searchSpaceType_PR_ue_Specific:
-	  // this is an USS
-	  if (ss->searchSpaceType->choice.ue_Specific &&
-	      ss->searchSpaceType->choice.ue_Specific->dci_Formats == NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_1_And_1_1 &&
-	      mac->state == UE_CONNECTED &&
-              mac->crnti > 0) {
-	      // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
-            LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
-            config_dci_pdu(mac, dl_config, NR_RNTI_C, slot, ss);
-
-//#ifdef DEBUG_DCI
-		LOG_D(NR_MAC, "[DCI_CONFIG] ss %d ue_Specific %p searchSpaceType->present %d dci_Formats %d\n",
-		      ss_id,
-		      ss->searchSpaceType->choice.ue_Specific,
-		      (int)ss->searchSpaceType->present,
-		      (int)ss->searchSpaceType->choice.ue_Specific->dci_Formats);
-//#endif
-	  }
-	  if (phy_cgc){
-            if (phy_cgc->cs_RNTI){
-		  LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by CS-RNTI...\n");
-		  LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-            }
-            if (phy_cgc->sp_CSI_RNTI){
-		  LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by SP-CSI-RNTI...\n");
-		  LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-            }
-	    if (phy_cgc->ext1 &&
-		phy_cgc->ext1->mcs_C_RNTI){
-		    LOG_D(MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in user specific search space for dci_Format0_0_AndFormat1_0 with CRC scrambled by MCS-C-RNTI...\n");
-		    LOG_W(MAC, "[DCI_CONFIG] This RNTI should not be configured yet...");
-            }
-	  }
-	  break;
-	default:
-	  AssertFatal(1 == 0, "[DCI_CONFIG] Unrecognized search space type...");
-	  break;
-	} // switch searchspace
-      } // for ss_id
+void get_monitoring_period_offset(NR_SearchSpace_t *ss, int *period, int *offset)
+{
+  switch(ss->monitoringSlotPeriodicityAndOffset->present) {
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
+      *period = 1;
+      *offset = 0;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2:
+      *period = 2;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl4:
+      *period = 4;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl4;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl5:
+      *period = 5;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl5;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl8:
+      *period = 8;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl8;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl10:
+      *period = 10;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl10;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl16:
+      *period = 16;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl16;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl20:
+      *period = 20;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl20;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl40:
+      *period = 40;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl40;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl80:
+      *period = 80;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl80;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl160:
+      *period = 160;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl160;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl320:
+      *period = 320;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl320;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl640:
+      *period = 640;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl640;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1280:
+      *period = 1280;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl1280;
+      break;
+    case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl2560:
+      *period = 2560;
+      *offset = ss->monitoringSlotPeriodicityAndOffset->choice.sl2560;
+      break;
+  default:
+    AssertFatal(1==0,"Invalid monitoring slot periodicity value\n");
+    break;
   }
-  else {
-    LOG_E(MAC,"Cannot handle DCI without dedicated BWP\n");
+}
+
+bool is_ss_monitor_occasion(int frame, int slot, int slots_per_frame, NR_SearchSpace_t *ss)
+{
+  int duration = ss->duration ? *ss->duration : 1;
+  bool monitor = false;
+  int period, offset;
+  get_monitoring_period_offset(ss, &period, &offset);
+  // The UE monitors PDCCH candidates for search space set ss for 'duration' consecutive slots
+  for (int i = 0; i < duration; i++) {
+    if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
+      monitor = true;
+      break;
+    }
+  }
+  return monitor;
+}
+
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot)
+{
+  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
+  if (mac->state == UE_PERFORMING_RA &&
+      mac->ra.ra_state >= WAIT_RAR) {
+    // if RA is ongoing use RA search space
+    if (is_ss_monitor_occasion(frame, slot, slots_per_frame, mac->ra_SS)) {
+      int rnti_type = mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC;
+      config_dci_pdu(mac, dl_config, rnti_type, slot, mac->ra_SS);
+    }
+  }
+  else if (mac->state == UE_CONNECTED) {
+    bool found = false;
+    for (int i = 0; i < FAPI_NR_MAX_SS; i++) {
+      if (mac->BWP_searchspaces[i] != NULL) {
+        found = true;
+        NR_SearchSpace_t *ss = mac->BWP_searchspaces[i];
+        if (is_ss_monitor_occasion(frame, slot, slots_per_frame, ss))
+          config_dci_pdu(mac, dl_config, NR_RNTI_C, slot, ss);
+      }
+    }
+    if (!found && mac->ra_SS) {
+      // If the UE has not been provided a Type3-PDCCH CSS set or a USS set and
+      // the UE has received a C-RNTI and has been provided a Type1-PDCCH CSS set,
+      // the UE monitors PDCCH candidates for DCI format 0_0 and DCI format 1_0
+      // with CRC scrambled by the C-RNTI in the Type1-PDCCH CSS set
+      if (is_ss_monitor_occasion(frame, slot, slots_per_frame, mac->ra_SS))
+        config_dci_pdu(mac, dl_config, NR_RNTI_C, slot, mac->ra_SS);
+    }
   }
 }
