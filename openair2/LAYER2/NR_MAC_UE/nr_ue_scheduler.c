@@ -978,9 +978,8 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
     if (mac->ra.ra_state >= WAIT_RAR) {
       if(mac->ul_time_alignment.ta_apply)
         schedule_ta_command(dl_config, &mac->ul_time_alignment);
-      fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-      config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , rx_slot, mac->ra_SS->searchSpaceId);
-      LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
+      config_dci_pdu(mac, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , rx_slot, mac->ra_SS);
+      LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response for type0_pdcch, num_pdus %d\n", mac->cg, dl_config->number_pdus);
       fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
@@ -2622,18 +2621,18 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
     frame_s = 0; // same frame as ssb
     slot_s = mac->type0_PDCCH_CSS_config.n_c;
   }
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request[0]; // Take the first dl_config_request for SIB1
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
 
-  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
-  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
-
+  if(mac->search_space_zero == NULL)
+    mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->coreset0 == NULL)
+    mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
   fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
   fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
-  rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, slot_s, -1);
 
-  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request[0]; // Take the first dl_config_request for SIB1
+  config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot_s, mac->search_space_zero);
+
+  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n", dl_config->number_pdus);
   fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, phy_data);
 
   if (dl_config->number_pdus) {

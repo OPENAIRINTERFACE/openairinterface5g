@@ -409,11 +409,13 @@ typedef struct {
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
 
-  NR_ControlResourceSet_t *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
   NR_SearchSpace_t *otherSI_SS;
   NR_SearchSpace_t *ra_SS;
   NR_SearchSpace_t *paging_SS;
+  NR_ControlResourceSet_t *BWP_coresets[FAPI_NR_MAX_CORESET_PER_BWP];
+  NR_ControlResourceSet_t *coreset0;
+  NR_SearchSpace_t *BWP_searchspaces[FAPI_NR_MAX_SS];
+  NR_SearchSpace_t *search_space_zero;
 
   bool phy_config_request_sent;
   frame_type_t frame_type;
@@ -467,8 +469,6 @@ typedef struct {
   uint8_t PHR_reporting_active;
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
-  NR_SearchSpace_t *search_space_zero;
-  NR_ControlResourceSet_t *coreset0;
   frequency_range_t frequency_range;
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
