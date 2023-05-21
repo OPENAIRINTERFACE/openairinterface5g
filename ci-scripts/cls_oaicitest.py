@@ -996,7 +996,7 @@ class OaiCiTest():
 			SSH.close()
 			cn_iperf_prefix = "docker exec  prod-trf-gen" # -w /iperf-2.0.13  necessary?
 		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
-			cn_target_ip = EPC.IperfSrvIPAddress
+			cn_target_ip = "172.21.6.102"
 		else: # lteboix, sabox
 			cn_target_ip = "192.172.0.1"
 			cn_iperf_prefix = ""
@@ -1082,8 +1082,8 @@ class OaiCiTest():
 		elif self.iperf_direction == "IPERF3":
 			cmd = cls_cmd.getConnection(ue.getHost())
 			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
-			port = f'-p {5002+idx}'
-			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} {port} {iperf_opt} &> /tmp/{server_filename}', timeout=iperf_time*1.5)
+			port = f'{5002+idx}'
+			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
 			cmd.copyin(f'/tmp/{server_filename}', server_filename)
 			cmd.close()
 			if udpIperf:
@@ -1232,25 +1232,6 @@ class OaiCiTest():
 		#result = re.search('iperf version 2.0.10', str(iperfStdout.strip()))
 		#if result is not None:
 		#	dummyIperfVersion = '2.0.10'
-		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
-			mySSH = cls_cmd.getConnection(EPC.IPAddress)
-			succeeded = OC.OC_login(mySSH, EPC.OCUserName, EPC.OCPassword, OC.CI_OC_CORE_NAMESPACE)
-			if not succeeded:
-				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
-				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
-				HTML.CreateHtmlTabFooter(False)
-				return False
-			ret = mySSH.run('oc describe pod oai-traffic-server | grep -w "ips" -A 1 | tail -n 1 | awk \'{{print $1}}\' | sed \'s/"//g\'')
-			EPC.IperfSrvIPAddress = ret.stdout
-			if not EPC.IperfSrvIPAddress:
-				logging.debug('IP address of oai-traffic-server not found!')
-				OC.OC_logout(mySSH)
-				HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
-				HTML.CreateHtmlTabFooter(False)
-				raise Exception("could not obtain oai-traffic-server IP address")
-				return Fals
-			OC.OC_logout(mySSH)
-
 		multi_jobs = []
 		ue_num = len(ues)
 		i = 0
