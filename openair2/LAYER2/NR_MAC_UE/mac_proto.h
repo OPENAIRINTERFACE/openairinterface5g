@@ -249,7 +249,12 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
                           NR_BSR_SHORT *short_bsr,
                           NR_BSR_LONG  *long_bsr);
 
-void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
+void config_dci_pdu(NR_UE_MAC_INST_t *mac,
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                    fapi_nr_dl_config_request_t *dl_config,
+                    int rnti_type,
+                    int slot,
+                    int ss_id);
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
 
@@ -419,8 +424,6 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
                                                       uint16_t riv);
-
-void fill_dci_search_candidates(NR_SearchSpace_t *ss,fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, int slot, int rnti);
 
 void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 

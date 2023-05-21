@@ -979,13 +979,7 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
       if(mac->ul_time_alignment.ta_apply)
         schedule_ta_command(dl_config, &mac->ul_time_alignment);
       fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-      rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
-      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-      if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
-        rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
-      config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , mac->ra_SS->searchSpaceId);
-      fill_dci_search_candidates(mac->ra_SS, rel15, -1 , -1);
-      dl_config->number_pdus = 1;
+      config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , rx_slot, mac->ra_SS->searchSpaceId);
       LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
       fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
@@ -2637,10 +2631,7 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
   fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
   fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
   rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-  rel15->num_dci_options = 1;
-  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-  fill_dci_search_candidates(mac->search_space_zero, rel15, -1, -1);
+  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, slot_s, -1);
 
   LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
   fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, phy_data);

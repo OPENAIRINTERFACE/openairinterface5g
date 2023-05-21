@@ -51,23 +51,19 @@
 
 void fill_dci_search_candidates(NR_SearchSpace_t *ss,
                                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                                int slot, int rnti)
+                                uint32_t Y)
 {
   LOG_D(NR_MAC,"Filling search candidates for DCI\n");
 
-  uint8_t aggregation;
-  uint8_t number_of_candidates = 0;
   rel15->number_of_candidates = 0;
-  uint32_t Y = 0;
   int i = 0;
-  if (slot >= 0)
-    Y = get_Y(ss, slot, rnti);
   for (int maxL = 16; maxL > 0; maxL >>= 1) {
+    uint8_t aggregation, number_of_candidates;
     find_aggregation_candidates(&aggregation,
                                 &number_of_candidates,
-                                ss,maxL);
-
-    if (number_of_candidates>0) {
+                                ss,
+                                maxL);
+    if (number_of_candidates > 0) {
       LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n", maxL, number_of_candidates, aggregation);
       rel15->number_of_candidates += number_of_candidates;
       int N_cce_sym = 0; // nb of rbs of coreset per symbol
@@ -87,7 +83,12 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,
   }
 }
 
-void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id)
+void config_dci_pdu(NR_UE_MAC_INST_t *mac,
+                    fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
+                    fapi_nr_dl_config_request_t *dl_config,
+                    int rnti_type,
+                    int slot,
+                    int ss_id)
 {
 
   uint16_t monitoringSymbolsWithinSlot = 0;
@@ -153,6 +154,29 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
     rel15->coreset.pdcch_dmrs_scrambling_id = mac->physCellId;
     rel15->coreset.scrambling_rnti = 0;
   }
+
+  rel15->num_dci_options = (mac->ra.ra_state == WAIT_RAR ||
+                           rnti_type == NR_RNTI_SI) ?
+                           1 : 2;
+
+  if (ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific) {
+    if (ss->searchSpaceType->choice.ue_Specific->dci_Formats ==
+        NR_SearchSpace__searchSpaceType__ue_Specific__dci_Formats_formats0_0_And_1_0) {
+      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+      rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0;
+    }
+    else {
+      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
+      rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
+    }
+  }
+  else { // common
+    AssertFatal(ss->searchSpaceType->choice.common->dci_Format0_0_AndFormat1_0,
+                "Only supporting format 10 and 00 for common SS\n");
+    rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
+    rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0;
+  }
+
   // loop over RNTI type and configure resource allocation for DCI
   for (int i = 0; i < rel15->num_dci_options; i++) {
     rel15->dci_type_options[i] = ss->searchSpaceType->present;
@@ -245,6 +269,11 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t 
       break;
     }
   }
+  uint32_t Y = 0;
+  if (ss->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_ue_Specific)
+    Y = get_Y(ss, slot, rel15->rnti);
+  fill_dci_search_candidates(ss, rel15, Y);
+
   #ifdef DEBUG_DCI
     LOG_D(MAC, "[DCI_CONFIG] Configure DCI PDU: rnti_type %d BWPSize %d BWPStart %d rel15->SubcarrierSpacing %d rel15->dci_format %d rel15->dci_length %d sps %d monitoringSymbolsWithinSlot %d \n",
       rnti_type,
@@ -299,21 +328,15 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 		switch(ra->ra_state){
 		case WAIT_RAR:
 		  LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg2)\n");
-		  rel15->num_dci_options = 1;
-		  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
 		  if (get_softmodem_params()->sa) {
-		    config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, -1);
+		    config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, slot, -1);
 		  } else {
-		    config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, ss_id);
+		    config_dci_pdu(mac, rel15, dl_config, NR_RNTI_RA, slot, ss_id);
 		  }
-		  fill_dci_search_candidates(ss, rel15, -1, -1);
 		  break;
 		case WAIT_CONTENTION_RESOLUTION:
 		  LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in Type1-PDCCH common random access search space (RA-Msg4)\n");
-		  rel15->num_dci_options = 1;
-		  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-		  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_TC, -1);
-		  fill_dci_search_candidates(ss, rel15, -1, -1);
+		  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_TC, slot, -1);
 		  break;
 		default:
 		  break;
@@ -381,11 +404,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
               mac->crnti > 0) {
 	      // Monitors DCI 01 and 11 scrambled with C-RNTI, or CS-RNTI(s), or SP-CSI-RNTI
             LOG_D(NR_MAC, "[DCI_CONFIG] Configure monitoring of PDCCH candidates in the user specific search space\n");
-            rel15->num_dci_options = 2;
-            rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_1;
-            rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_1;
-            config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, ss_id);
-            fill_dci_search_candidates(ss, rel15, slot, mac->crnti);
+            config_dci_pdu(mac, rel15, dl_config, NR_RNTI_C, slot, ss_id);
 
 //#ifdef DEBUG_DCI
 		LOG_D(NR_MAC, "[DCI_CONFIG] ss %d ue_Specific %p searchSpaceType->present %d dci_Formats %d\n",
