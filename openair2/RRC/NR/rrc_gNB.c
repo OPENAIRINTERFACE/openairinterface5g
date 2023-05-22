@@ -2029,6 +2029,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
   uint8_t xid = reconfig_complete->rrc_TransactionIdentifier;
   rrc_gNB_process_RRCReconfigurationComplete(ctxt_pP, ue_context_p, xid);
 
+  bool successful_reconfig = true;
   if (get_softmodem_params()->sa) {
     switch (UE->xids[xid]) {
       case RRC_PDUSESSION_RELEASE: {
@@ -2047,10 +2048,29 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
       case RRC_FIRST_RECONF:
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
+      case RRC_DEFAULT_RECONF:
+        /* nothing to do */
+        break;
       default:
         LOG_E(RRC, "Received unexpected xid: %d\n", xid);
+        successful_reconfig = false;
+        break;
     }
   }
+
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  f1ap_ue_context_modif_req_t ue_context_modif_req = {
+    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
+    .rnti = UE->rnti,
+    .mcc = rrc->configuration.mcc[0],
+    .mnc = rrc->configuration.mnc[0],
+    .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+    .nr_cellid = rrc->nr_cellid,
+    .servCellId = 0, /* TODO: correct value? */
+    .ReconfigComplOutcome = successful_reconfig ? RRCreconf_success : RRCreconf_failure,
+  };
+  rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
 }
 //-----------------------------------------------------------------------------
 int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
