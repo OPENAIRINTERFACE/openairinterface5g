@@ -133,7 +133,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = (uint8_t *)calloc(1,ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
       memcpy(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->buf, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
       f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size;
-      LOG_I(F1AP, "Size f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length: %d \n", f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
+      LOG_D(F1AP, "Size f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length: %d \n", f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     }
   }
 
@@ -831,7 +831,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
   if(f1ap_ue_context_modification_req->rnti<0)
       LOG_E(F1AP, "Could not retrieve UE rnti based on the DU UE id \n");
   else
-      LOG_I(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_modification_req->rnti);
+      LOG_D(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_modification_req->rnti);
 
   /* SRB */
   F1AP_UEContextModificationRequestIEs_t *ieSrb;
@@ -957,7 +957,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
       LOG_E(F1AP, " RRCContainer in UEContextModificationRequestIEs size id 0\n");
     }
   } else {
-    LOG_W(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
+    LOG_D(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
   ue_context_modification_request(f1ap_ue_context_modification_req);
