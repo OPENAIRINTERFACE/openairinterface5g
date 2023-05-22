@@ -37,29 +37,24 @@
 #include "f1ap_du_ue_context_management.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
-#include "rrc_extern.h"
-#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
-bool lteDURecvCb(protocol_ctxt_t  *ctxt_pP,
-                 const srb_flag_t     srb_flagP,
-                 const rb_id_t        rb_idP,
-                 const mui_t          muiP,
-                 const confirm_t      confirmP,
-                 const sdu_size_t     sdu_buffer_sizeP,
-                 unsigned char *const sdu_buffer_pP,
-                 const pdcp_transmission_mode_t modeP,
-                 const uint32_t *sourceL2Id,
-                 const uint32_t *destinationL2Id) {
+bool DURecvCb(protocol_ctxt_t *ctxt_pP,
+              const srb_flag_t srb_flagP,
+              const rb_id_t rb_idP,
+              const mui_t muiP,
+              const confirm_t confirmP,
+              const sdu_size_t sdu_buffer_sizeP,
+              unsigned char *const sdu_buffer_pP,
+              const pdcp_transmission_mode_t modeP,
+              const uint32_t *sourceL2Id,
+              const uint32_t *destinationL2Id)
+{
   // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
   mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
   memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
-  // weird rb id management in 4G, not fully understand (looks bad design)
-  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
-  // but it would be much simpler to use absolute numbering
-  // instead of this "srb flag" associated to these +/-4
-  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP-4,muiP, confirmP,  sdu_buffer_sizeP, sdu);
+  du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
   return true;
 }
 
@@ -1058,6 +1053,21 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
       drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
 
       for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+        f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
+        transport_layer_addr_t tl_addr = {0};
+        memcpy(tl_addr.buffer, &drb->up_ul_tnl[0].tl_address, sizeof(drb->up_ul_tnl[0].tl_address));
+        tl_addr.length = sizeof(drb->up_ul_tnl[0].tl_address) * 8;
+        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(false, instance)->gtpInst,
+                                                     resp->rnti,
+                                                     drb->drb_id,
+                                                     drb->drb_id,
+                                                     drb->up_ul_tnl[j].teid,
+                                                     -1, // no qfi
+                                                     tl_addr,
+                                                     drb->up_ul_tnl[0].port,
+                                                     DURecvCb,
+                                                     NULL);
+
         /* ADD */
         asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
           F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);

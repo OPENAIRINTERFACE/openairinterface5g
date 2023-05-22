@@ -111,23 +111,6 @@ mui_t rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-bool DURecvCb(protocol_ctxt_t  *ctxt_pP,
-              const srb_flag_t     srb_flagP,
-              const rb_id_t        rb_idP,
-              const mui_t          muiP,
-              const confirm_t      confirmP,
-              const sdu_size_t     sdu_buffer_sizeP,
-              unsigned char *const sdu_buffer_pP,
-              const pdcp_transmission_mode_t modeP,
-              const uint32_t *sourceL2Id,
-              const uint32_t *destinationL2Id) {
-  // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
-  mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
-  memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
-  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP,muiP, confirmP,  sdu_buffer_sizeP, sdu);
-  return true;
-}
-
 static void nr_rrc_addmod_srbs(int rnti,
                                const NR_SRB_ToAddModList_t *srb_list,
                                const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
