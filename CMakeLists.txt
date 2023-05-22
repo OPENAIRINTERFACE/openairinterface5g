@@ -46,6 +46,17 @@ include_directories(${CONFIG_INCLUDE_DIRS})
 pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
+# Check if asn1c is installed, and check if it supports all options we need
+# a user can provide ASN1C_EXEC to override an asn1c to use (e.g., parallel
+# installation)
+find_program(ASN1C_EXEC_PATH asn1c)
+set(ASN1C_EXEC ${ASN1C_EXEC_PATH} CACHE FILEPATH "path to asn1c executable")
+check_option(${ASN1C_EXEC} -gen-APER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-UPER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-JER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-BER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-OER ASN1C_EXEC)
+
 #uhd 4.0 and iris installs by default in /usr/local
 include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
