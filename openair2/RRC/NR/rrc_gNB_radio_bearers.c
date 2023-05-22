@@ -28,10 +28,12 @@ rrc_pdu_session_param_t *find_pduSession(gNB_RRC_UE_t *ue, int id, bool create)
   for (j = 0; j < ue->nb_of_pdusessions; j++)
     if (id == ue->pduSession[j].param.pdusession_id)
       break;
-  if (j == ue->nb_of_pdusessions && create)
-    ue->nb_of_pdusessions++;
-  else
-    return NULL;
+  if (j == ue->nb_of_pdusessions) {
+    if (create)
+      ue->nb_of_pdusessions++;
+    else
+      return NULL;
+  }
   return ue->pduSession + j;
 }
 
