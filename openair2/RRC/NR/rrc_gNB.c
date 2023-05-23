@@ -3060,10 +3060,12 @@ void *rrc_gnb_task(void *args_p) {
   int                                result;
   protocol_ctxt_t ctxt = {.module_id = 0, .enb_flag = 1, .instance = 0, .rntiMaybeUEid = 0, .frame = -1, .subframe = -1, .eNB_index = 0, .brOption = false};
 
-  /* timer to write stats to file */
   long stats_timer_id = 1;
-  timer_setup(1, 0, TASK_RRC_GNB, 0, TIMER_PERIODIC, NULL, &stats_timer_id);
-
+  if (!IS_SOFTMODEM_NOSTATS_BIT) {
+    /* timer to write stats to file */
+    timer_setup(1, 0, TASK_RRC_GNB, 0, TIMER_PERIODIC, NULL, &stats_timer_id);
+  }
+  
   itti_mark_task_ready(TASK_RRC_GNB);
   LOG_I(NR_RRC,"Entering main loop of NR_RRC message task\n");
 
