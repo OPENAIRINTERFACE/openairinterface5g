@@ -251,12 +251,14 @@ void nr_polar_interleaving_pattern(uint16_t K,
 void nr_polar_info_bit_pattern(uint8_t *ibp,
                                int16_t *Q_I_N,
                                int16_t *Q_F_N,
-                               uint16_t *J,
+                               int16_t *Q_PC_N,
+                               const uint16_t *J,
                                const uint16_t *Q_0_Nminus1,
                                uint16_t K,
                                uint16_t N,
                                uint16_t E,
-                               uint8_t n_PC);
+                               uint8_t n_PC,
+                               uint8_t n_pc_wm);
 
 void nr_polar_info_bit_extraction(uint8_t *input,
                                   uint8_t *output,

@@ -244,12 +244,15 @@ t_nrPolar_params *nr_polar_params(int8_t messageType, uint16_t messageLength, ui
   nr_polar_info_bit_pattern(newPolarInitNode->information_bit_pattern,
                             newPolarInitNode->Q_I_N,
                             newPolarInitNode->Q_F_N,
+                            newPolarInitNode->Q_PC_N,
                             J,
                             newPolarInitNode->Q_0_Nminus1,
                             newPolarInitNode->K,
                             newPolarInitNode->N,
                             newPolarInitNode->encoderLength,
-                            newPolarInitNode->n_pc);
+                            newPolarInitNode->n_pc,
+                            newPolarInitNode->n_pc_wm);
+
   // sort the Q_I_N array in ascending order (first K positions)
   qsort((void *)newPolarInitNode->Q_I_N,newPolarInitNode->K,sizeof(int16_t),intcmp);
   newPolarInitNode->channel_interleaver_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);
