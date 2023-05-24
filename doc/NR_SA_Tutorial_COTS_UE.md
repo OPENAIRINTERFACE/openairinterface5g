@@ -21,14 +21,14 @@ In this tutorial we describe how to configure and run a 5G end-to-end setup with
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
-    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.1-desktop-amd64.iso)
+    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.2-desktop-amd64.iso)
     - CPU: 8 cores x86_64 @ 3.5 GHz
     - RAM: 32 GB
 - Laptop for UE
     - Operating System: Microsoft Windows 10 x64
     - CPU: 4 cores x86_64
     - RAM: 8 GB
-    - Windows driver for Quectel MUST be equal or higher than version **2.2.4**
+    - Windows driver for Quectel MUST be equal or higher than version **2.4.6**
 - [USRP B210](https://www.ettus.com/all-products/ub210-kit/), [USRP N300](https://www.ettus.com/all-products/USRP-N300/) or [USRP X300](https://www.ettus.com/all-products/x300-kit/)
     - Please identify the network interface(s) on which the USRP is connected and update the gNB configuration file
 - Quectel RM500Q
