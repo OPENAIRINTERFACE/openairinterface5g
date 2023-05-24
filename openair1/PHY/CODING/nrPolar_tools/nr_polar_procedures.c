@@ -32,6 +32,84 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
+
+// TS 38.212 - Section 5.3.1.2 Polar encoding
+void nr_polar_generate_u(uint64_t *u,
+                         const uint64_t *Cprime,
+                         const uint8_t *information_bit_pattern,
+                         const uint8_t *parity_check_bit_pattern,
+                         uint16_t N,
+                         uint8_t n_pc)
+{
+  int N_array = N >> 6;
+  int k = 0;
+
+  if (n_pc > 0) {
+    uint64_t y0 = 0, y1 = 0, y2 = 0, y3 = 0, y4 = 0;
+
+    for (int n = 0; n < N; n++) {
+      uint64_t yt = y0;
+      y0 = y1;
+      y1 = y2;
+      y2 = y3;
+      y3 = y4;
+      y4 = yt;
+
+      if (information_bit_pattern[n] == 1) {
+        int n1 = n >> 6;
+        int n2 = n - (n1 << 6);
+        if (parity_check_bit_pattern[n] == 1) {
+          u[N_array - 1 - n1] |= y0 << (63 - n2);
+        } else {
+          int k1 = k >> 6;
+          int k2 = k - (k1 << 6);
+          uint64_t bit = (Cprime[k1] >> k2) & 1;
+          u[N_array - 1 - n1] |= bit << (63 - n2);
+          k++;
+          y0 = y0 ^ (int)bit;
+        }
+      }
+    }
+
+  } else {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        int n1 = n >> 6;
+        int n2 = n - (n1 << 6);
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        uint64_t bit = (Cprime[k1] >> k2) & 1;
+        u[N_array - 1 - n1] |= bit << (63 - n2);
+        k++;
+      }
+    }
+  }
+}
+
+void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint16_t N)
+{
+  int N_array = N >> 6;
+
+  for (int n = 0; n < N; n++) {
+    const uint64_t *Gn = G_N_tab[N - 1 - n];
+
+    int n_ones = 0;
+    for (int a = 0; a < N_array; a++) {
+      uint64_t uxG = u[a] & Gn[a];
+      for (int m = 0; m < 64; m++) {
+        if (((uxG >> m) & 1) == 1) {
+          n_ones++;
+        }
+      }
+    }
+    uint64_t bit = n_ones % 2;
+
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    D[n1] |= bit << n2;
+  }
+}
+
 void nr_polar_bit_insertion(uint8_t *input,
 			    uint8_t *output,
 			    uint16_t N,
@@ -138,6 +216,7 @@ void nr_polar_channel_interleaver_pattern(uint16_t *cip,
 
 
 void nr_polar_info_bit_pattern(uint8_t *ibp,
+                               uint8_t *pcbp,
                                int16_t *Q_I_N,
                                int16_t *Q_F_N,
                                int16_t *Q_PC_N,
@@ -235,16 +314,25 @@ void nr_polar_info_bit_pattern(uint8_t *ibp,
     }
   }
 
-  // Information Bit Pattern
+  // Information and Parity Chack Bit Pattern
   for (int n = 0; n <= N - 1; n++) {
-    ibp[n] = 0;
 
+    ibp[n] = 0;
     for (int m = 0; m <= (K + n_PC) - 1; m++) {
       if (n == Q_I_N[m]) {
         ibp[n] = 1;
         break;
       }
     }
+
+    pcbp[n] = 0;
+    for (int m = 0; m < n_PC - n_pc_wm; m++) {
+      if (n == Q_PC_N[m]) {
+        pcbp[n] = 1;
+        break;
+      }
+    }
+
   }
 
   free(Q_Ftmp_N);

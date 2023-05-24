@@ -387,28 +387,27 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
 
   AssertFatal(polarParams->N == 512 || polarParams->N == 256 || polarParams->N == 128 || polarParams->N == 64, "N = %d, not done yet\n", polarParams->N);
 
-  // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to 64 bit packed vectors.
-  // keep only rows of G which correspond to information/crc bits
-  polarParams->G_N_tab = (uint64_t **)calloc((polarParams->K + polarParams->n_pc),sizeof(int64_t *));
-  int k=0;
+  // build G bit vectors for information bit positions and convert the bit as bytes tables in nr_polar_kronecker_power_matrices.c to
+  // 64 bit packed vectors.
+  polarParams->G_N_tab = (uint64_t **)calloc(polarParams->N, sizeof(int64_t *));
 
-  for (int i=0; i<polarParams->N; i++) {
-    if (polarParams->information_bit_pattern[i] > 0) {
-      polarParams->G_N_tab[k] = (uint64_t *)memalign(32,(polarParams->N/64)*sizeof(uint64_t));
-      memset((void *)polarParams->G_N_tab[k],0,(polarParams->N/64)*sizeof(uint64_t));
+  for (int i = 0; i < polarParams->N; i++) {
+    polarParams->G_N_tab[i] = (uint64_t *)memalign(32, (polarParams->N / 64) * sizeof(uint64_t));
+    memset((void *)polarParams->G_N_tab[i], 0, (polarParams->N / 64) * sizeof(uint64_t));
 
-      for (int j=0; j<polarParams->N; j++)
-        polarParams->G_N_tab[k][j/64] |= ((uint64_t)polarParams->G_N[i][j])<<(j&63);
+    for (int j = 0; j < polarParams->N; j++)
+      polarParams->G_N_tab[i][j / 64] |= ((uint64_t)polarParams->G_N[i][j]) << (j & 63);
 
 #ifdef DEBUG_POLAR_ENCODER
-      printf("Bit %d Selecting row %d of G : ",k,i);
+    printf("Bit %d Selecting row %d of G : ", i, i);
 
-      for (int j=0; j<polarParams->N; j+=4) printf("%1x",polarParams->G_N[i][j]+(polarParams->G_N[i][j+1]*2)+(polarParams->G_N[i][j+2]*4)+(polarParams->G_N[i][j+3]*8));
+    for (int j = 0; j < polarParams->N; j += 4)
+      printf("%1x",
+             polarParams->G_N[i][j] + (polarParams->G_N[i][j + 1] * 2) + (polarParams->G_N[i][j + 2] * 4)
+                 + (polarParams->G_N[i][j + 3] * 8));
 
-      printf("\n");
+    printf("\n");
 #endif
-      k++;
-    }
   }
 
   // rate matching table
@@ -601,7 +600,6 @@ void polar_encoder_fast(uint64_t *A,
       tcrc = (uint64_t)((crcmask^(crc11(A128_flip,bitlen)>>21)))&0x7ff;
   }
 
-  int n;
   // this is number of quadwords in the bit string
   int quadwlen = (polarParams->K+63)/64;
 
@@ -611,7 +609,7 @@ void polar_encoder_fast(uint64_t *A,
   //??? b_{N'-1} b_{N'-2} ... b_{N'-A} b_{N'-A-1} ... b_{N'-A-Nparity} = a_{N-1} a_{N-2} ... a_{N-A} p_{N_parity-1} ... p_0
   uint64_t B[4]= {0};
   B[0] = (A[0] << polarParams->crcParityBits) | tcrc;
-  for (n=1; n<quadwlen; n++)
+  for (int n = 1; n < quadwlen; n++)
     if ((bitlen+63)/64 > n)
       B[n] = (A[n] << polarParams->crcParityBits) | (A[n-1]>>(64-polarParams->crcParityBits));
     else
@@ -633,21 +631,21 @@ void polar_encoder_fast(uint64_t *A,
   printf("\n");
 #endif
 
-  uint8_t *Bbyte = (uint8_t *)B;
-
-  // for each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
+  // TS 38.212 - Section 5.3.1.1 Interleaving
+  // For each byte of B, lookup in corresponding table for 64-bit word corresponding to that byte and its position
   uint64_t Cprime[4]= {0};
-  if (polarParams->K<65)
+  uint8_t *Bbyte = (uint8_t *)B;
+  if (polarParams->K < 65) {
     Cprime[0] = polarParams->cprime_tab0[0][Bbyte[0]] |
-      polarParams->cprime_tab0[1][Bbyte[1]] |
+                polarParams->cprime_tab0[1][Bbyte[1]] |
                 polarParams->cprime_tab0[2][Bbyte[2]] |
                 polarParams->cprime_tab0[3][Bbyte[3]] |
                 polarParams->cprime_tab0[4][Bbyte[4]] |
                 polarParams->cprime_tab0[5][Bbyte[5]] |
                 polarParams->cprime_tab0[6][Bbyte[6]] |
                 polarParams->cprime_tab0[7][Bbyte[7]];
-  else if (polarParams->K < 129) {
-    for (int i=0; i<1+(polarParams->K/8); i++) {
+  } else if (polarParams->K < 129) {
+    for (int i = 0; i < 1 + (polarParams->K / 8); i++) {
       Cprime[0] |= polarParams->cprime_tab0[i][Bbyte[i]];
       Cprime[1] |= polarParams->cprime_tab1[i][Bbyte[i]];
     }
@@ -671,162 +669,44 @@ void polar_encoder_fast(uint64_t *A,
   printf("\n");
 #endif
 
-#ifdef DEBUG_POLAR_ENCODER
+  uint64_t u[16] = {0};
+  nr_polar_generate_u(u,
+                      Cprime,
+                      polarParams->information_bit_pattern,
+                      polarParams->parity_check_bit_pattern,
+                      polarParams->N,
+                      polarParams->n_pc);
 
-  printf("Polar encoder: (N,K) : (%d,%d)\n",polarParams->N,polarParams->K);
-  if (polarParams->K<65)
-    printf("A %llx B %llx Cprime %llx (payload bits %d,crc %lx)\n",
-           (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
-           (unsigned long long)(B[0]),
-           (unsigned long long)(Cprime[0]),
-           polarParams->payloadBits,
-           tcrc);
-  else if (polarParams->K<129) {
-    if (bitlen<64)
-      printf("A %llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %lx)\n",
-             (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
-             (unsigned long long)(B[1]),(unsigned long long)(B[0]),
-             (unsigned long long)(Cprime[1]),(unsigned long long)(Cprime[0]),
-             polarParams->payloadBits,
-             tcrc);
-    else
-      printf("A %llx|%llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %x)\n",
-             (unsigned long long)(A[1]&(((uint64_t)1<<(bitlen-64))-1)),(unsigned long long)(A[0]),
-             (unsigned long long)(B[1]),(unsigned long long)(B[0]),
-             (unsigned long long)(Cprime[1]),(unsigned long long)(Cprime[0]),
-             polarParams->payloadBits,
-             crc24c((uint8_t *)A,bitlen)>>8);
+#ifdef POLAR_CODING_DEBUG
+  int N_array = polarParams->N >> 6;
+  printf("u: ");
+  for (int n = 0; n < polarParams->N; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    printf("%lu", (u[N_array - 1 - n1] >> (63 - n2)) & 1);
   }
+  printf("\n");
+#endif
 
- #endif
-  /*  printf("Bbytes : %x.%x.%x.%x.%x.%x.%x.%x\n",Bbyte[0],Bbyte[1],Bbyte[2],Bbyte[3],Bbyte[4],Bbyte[5],Bbyte[6],Bbyte[7]);
-  printf("%llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",polarParams->cprime_tab[0][Bbyte[0]] ,
-      polarParams->cprime_tab[1][Bbyte[1]] ,
-      polarParams->cprime_tab[2][Bbyte[2]] ,
-      polarParams->cprime_tab[3][Bbyte[3]] ,
-      polarParams->cprime_tab[4][Bbyte[4]] ,
-      polarParams->cprime_tab[5][Bbyte[5]] ,
-      polarParams->cprime_tab[6][Bbyte[6]] ,
-      polarParams->cprime_tab[7][Bbyte[7]]);*/
-  // now do Gu product (here using 64-bit XORs, we can also do with SIMD after)
-  // here we're reading out the bits LSB -> MSB, is this correct w.r.t. 3GPP ?
-  uint64_t Cprime_i;
-  /*  printf("%llx Cprime_0 (%llx) G %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",Cprime_i,Cprime &1,
-   polarParams->G_N_tab[0][0],
-   polarParams->G_N_tab[0][1],
-   polarParams->G_N_tab[0][2],
-   polarParams->G_N_tab[0][3],
-   polarParams->G_N_tab[0][4],
-   polarParams->G_N_tab[0][5],
-   polarParams->G_N_tab[0][6],
-   polarParams->G_N_tab[0][7]);*/
-  uint64_t D[8]= {0,0,0,0,0,0,0,0};
-  int off=0;
-  int len=polarParams->K;
+  uint64_t D[8] = {0};
+  nr_polar_uxG(D, u, (const uint64_t **)polarParams->G_N_tab, polarParams->N);
 
-  if (polarParams->N==512) {
-    for (int j=0; j<(1+(polarParams->K>>6)); j++,off+=64,len-=64) {
-      for (int i=0; i<((len>63) ? 64 : len); i++) {
-	Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
-	/*
-	  #ifdef DEBUG_POLAR_ENCODER
-	  printf("%llx Cprime_%d (%llx) G %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",
-	  Cprime_i,off+i,(Cprime[j]>>i) &1,
-	  polarParams->G_N_tab[off+i][0],
-	  polarParams->G_N_tab[off+i][1],
-	  polarParams->G_N_tab[off+i][2],
-	  polarParams->G_N_tab[off+i][3],
-	  polarParams->G_N_tab[off+i][4],
-	  polarParams->G_N_tab[off+i][5],
-	  polarParams->G_N_tab[off+i][6],
-	  polarParams->G_N_tab[off+i][7]);
-	  #endif
-	*/
-	uint64_t *Gi=polarParams->G_N_tab[off+i];
-	D[0] ^= (Cprime_i & Gi[0]);
-	D[1] ^= (Cprime_i & Gi[1]);
-	D[2] ^= (Cprime_i & Gi[2]);
-	D[3] ^= (Cprime_i & Gi[3]);
-	D[4] ^= (Cprime_i & Gi[4]);
-	D[5] ^= (Cprime_i & Gi[5]);
-	D[6] ^= (Cprime_i & Gi[6]);
-	D[7] ^= (Cprime_i & Gi[7]);
-      
-#ifdef DEBUG_POLAR_ENCODER
-	printf("D %llx,%llx,%llx,%llx,%llx,%llx,%llx,%llx\n",
-	       D[0],
-	       D[1],
-	       D[2],
-	       D[3],
-	       D[4],
-	       D[5],
-	       D[6],
-	       D[7]);
-#endif
-      }
+#ifdef POLAR_CODING_DEBUG
+  printf("d: ");
+  for (int n = 0; n < polarParams->N; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
     }
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    printf("%lu", (D[n1] >> n2) & 1);
   }
-  else if (polarParams->N==256) {
-    for (int j=0; j<(1+(polarParams->K>>6)); j++,off+=64,len-=64) {
-      for (int i=0; i<((len>63) ? 64 : len); i++) {
-	Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
-	/*
-	  #ifdef DEBUG_POLAR_ENCODER
-	  printf("%llx Cprime_%d (%llx) G %llx,%llx,%llx,%llx\n",
-	  Cprime_i,off+i,(Cprime[j]>>i) &1,
-	  polarParams->G_N_tab[off+i][0],
-	  polarParams->G_N_tab[off+i][1],
-	  polarParams->G_N_tab[off+i][2],
-	  polarParams->G_N_tab[off+i][3],
-	  #endif
-	*/
-	uint64_t *Gi=polarParams->G_N_tab[off+i];
-	D[0] ^= (Cprime_i & Gi[0]);
-	D[1] ^= (Cprime_i & Gi[1]);
-	D[2] ^= (Cprime_i & Gi[2]);
-	D[3] ^= (Cprime_i & Gi[3]);
-      
-	
-#ifdef DEBUG_POLAR_ENCODER
-	printf("D %llx,%llx,%llx,%llx\n",
-	  D[0],
-	  D[1],
-	  D[2],
-	  D[3]);
+  printf("\n");
 #endif
-      }
-    }
-  }
-  else if (polarParams->N==128) {
-    for (int j=0; j<(1+(polarParams->K>>6)); j++,off+=64,len-=64) {
-      for (int i=0; i<((len>63) ? 64 : len); i++) {
-	Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
-	
-	  #ifdef DEBUG_POLAR_ENCODER
-	  printf("%lx Cprime_%d (%d+%d) (%llx) G %llx,%llx\n",
-	  Cprime_i,off+i,off,i,(Cprime[j]>>i) &1,
-	  polarParams->G_N_tab[off+i][0],
-	  polarParams->G_N_tab[off+i][1]);
-	  #endif
-	
-	uint64_t *Gi=polarParams->G_N_tab[off+i];
-	D[0] ^= (Cprime_i & Gi[0]);
-	D[1] ^= (Cprime_i & Gi[1]);
-     
-      
-#ifdef DEBUG_POLAR_ENCODER
-	printf("D %llx,%llx\n",
-	  D[0],
-	  D[1]);
-#endif
-      }
-    }
-  } else if (polarParams->N == 64) {
-    for (int i = 0; i < ((len > 63) ? 64 : len); i++) {
-      Cprime_i = -((Cprime[0] >> i) & 1);
-      D[0] ^= (Cprime_i & polarParams->G_N_tab[off + i][0]);
-    }
-  }
+
   memset((void*)out,0,polarParams->encoderLength>>3);
   polar_rate_matching(polarParams,(void *)D, out);
 
