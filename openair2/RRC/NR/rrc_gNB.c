@@ -2359,7 +2359,7 @@ void rrc_gNB_process_dc_overall_timeout(const module_id_t gnb_mod_idP, x2ap_ENDC
 
 static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, instance_t instance)
 {
-  f1ap_ue_context_setup_t * req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
+  f1ap_ue_context_modif_req_t *req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = req->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   gNB_MAC_INST *mac = RC.nrmac[ctxt.module_id];
@@ -2367,7 +2367,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, in
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   MessageDef *message_p;
   message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_RESP);
-  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_MODIFICATION_RESP(message_p);
+  f1ap_ue_context_modif_resp_t *resp = &F1AP_UE_CONTEXT_MODIFICATION_RESP(message_p);
   uint32_t incoming_teid = 0;
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
 
@@ -2508,7 +2508,7 @@ static void rrc_DU_process_ue_context_modification_request(MessageDef *msg_p, in
 
 static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance_t instance)
 {
-  f1ap_ue_context_setup_t * resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  f1ap_ue_context_setup_t *resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   gNB_RRC_INST *rrc = RC.nrrrc[instance];
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
@@ -2566,7 +2566,7 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
 
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, instance_t instance)
 {
-  f1ap_ue_context_setup_t *resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
+  f1ap_ue_context_modif_resp_t *resp = &F1AP_UE_CONTEXT_MODIFICATION_RESP(msg_p);
   protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
@@ -2829,7 +2829,7 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
   // TODO: So many hard codings
   MessageDef *message_p;
   message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
-  f1ap_ue_context_setup_t *req=&F1AP_UE_CONTEXT_MODIFICATION_REQ(message_p);
+  f1ap_ue_context_modif_req_t *req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(message_p);
   req->rnti = UE->rnti;
   req->mcc              = RC.nrrrc[ctxt.module_id]->configuration.mcc[0];
   req->mnc              = RC.nrrrc[ctxt.module_id]->configuration.mnc[0];

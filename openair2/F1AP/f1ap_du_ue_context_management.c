@@ -820,7 +820,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
   int i;
   DevAssert(pdu);
   msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_MODIFICATION_REQ);
-  f1ap_ue_context_setup_t *f1ap_ue_context_modification_req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
+  f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextModificationRequest;
 
   /* mandatory */
@@ -975,7 +975,8 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
 }
 
 //void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(F1AP_UEContextModificationResponse_t *UEContextModificationResponse) {
-int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *resp) {
+int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_context_modif_resp_t *resp)
+{
   F1AP_F1AP_PDU_t                        pdu= {0};
   F1AP_UEContextModificationResponse_t    *out;
   uint8_t  *buffer=NULL;
