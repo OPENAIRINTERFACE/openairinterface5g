@@ -49,6 +49,7 @@ import concurrent.futures
 #import our libs
 import helpreadme as HELP
 import constants as CONST
+import cls_cluster as OC
 import sshconnection
 
 import cls_module_ue
@@ -230,7 +231,6 @@ class OaiCiTest():
 				messages.append(f'{uename}: initialized' if f.result() else f'{uename}: ERROR during Initialization')
 			[f.result() for f in futures]
 		HTML.CreateHtmlTestRowQueue('N/A', 'OK', messages)
-
 
 	def InitializeOAIUE(self,HTML,RAN,EPC,CONTAINERS):
 		if self.UEIPAddress == '' or self.UEUserName == '' or self.UEPassword == '' or self.UESourceCodePath == '':
@@ -995,7 +995,9 @@ class OaiCiTest():
 			cn_target_ip = result.group('trf_ip_addr')
 			SSH.close()
 			cn_iperf_prefix = "docker exec  prod-trf-gen" # -w /iperf-2.0.13  necessary?
-		else: # ltebox, sabox
+		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
+			cn_target_ip = "172.21.6.102"
+		else: # lteboix, sabox
 			cn_target_ip = "192.172.0.1"
 			cn_iperf_prefix = ""
 
@@ -1076,6 +1078,20 @@ class OaiCiTest():
 			cmd.close()
 
 			self.Iperf_analyzeV2BIDIR(lock, ue.getHost(), ue.getName(), statusQueue, server_filename, client_filename)
+
+		elif self.iperf_direction == "IPERF3":
+			cmd = cls_cmd.getConnection(ue.getHost())
+			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
+			port = f'{5002+idx}'
+			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
+			cmd.copyin(f'/tmp/{server_filename}', server_filename)
+			cmd.close()
+			if udpIperf:
+				self.Iperf_analyzeV2Server(lock, ue.getIP(), ue.getName(), statusQueue, iperf_opt, server_filename, 1)
+			else:
+				cmd = cls_cmd.getConnection(EPC.IPAddress)
+				self.Iperf_analyzeV2TCPOutput(lock, ue.getIP(), ue.getName(), statusQueue, iperf_opt, EPC, cmd, f'/tmp/{server_filename}')
+				cmd.close()
 
 		else :
 			raise Exception("Incorrect or missing IPERF direction in XML")
@@ -1216,7 +1232,6 @@ class OaiCiTest():
 		#result = re.search('iperf version 2.0.10', str(iperfStdout.strip()))
 		#if result is not None:
 		#	dummyIperfVersion = '2.0.10'
-
 		multi_jobs = []
 		ue_num = len(ues)
 		i = 0

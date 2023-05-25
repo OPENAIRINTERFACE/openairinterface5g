@@ -42,7 +42,8 @@ IMAGE_REGISTRY_SERVICE_NAME = "image-registry.openshift-image-registry.svc"
 NAMESPACE = "oaicicd-ran"
 OCUrl = "https://api.oai.cs.eurecom.fr:6443"
 OCRegistry = "default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/"
-
+CI_OC_RAN_NAMESPACE = "oaicicd-ran"
+CI_OC_CORE_NAMESPACE = "oaicicd-core-for-ci-ran"
 
 def OC_login(cmd, ocUserName, ocPassword, ocProjectName):
 	if ocUserName == '' or ocPassword == '' or ocProjectName == '':
@@ -198,23 +199,22 @@ class Cluster:
 			HELP.GenericHelp(CONST.Version)
 			HELP.EPCSrvHelp(self.imageToPull)
 			sys.exit('Insufficient eNB Parameters')
-		lIpAddr = self.eNBIPAddress
 		self.testCase_id = HTML.testCase_id
-		cmd = cls_cmd.getConnection(lIpAddr)
-		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, self.OCProjectName)
+		cmd = cls_cmd.getConnection(self.eNBIPAddress)
+		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, CI_OC_RAN_NAMESPACE)
 		if not succeeded:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			return False
 		ret = cmd.run(f'oc whoami -t | docker login -u oaicicd --password-stdin {self.OCRegistry}')
 		if ret.returncode != 0:
-			logging.error(f'\u001B[1m Unable to access OC project {ocProjectName}\u001B[0m')
+			logging.error(f'\u001B[1m Unable to access OC project {CI_OC_RAN_NAMESPACE}\u001B[0m')
 			OC_logout(cmd)
 			cmd.close()
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
 			return False
 		for image in self.imageToPull:
-			imagePrefix = f'{self.OCRegistry}{self.OCProjectName}'
+			imagePrefix = f'{self.OCRegistry}{CI_OC_RAN_NAMESPACE}'
 			imageTag = cls_containerize.ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
 			ret = cmd.run(f'docker pull {imagePrefix}/{imageTag}')
 			if ret.returncode != 0:
