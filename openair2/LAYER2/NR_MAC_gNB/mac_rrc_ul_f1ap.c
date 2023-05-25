@@ -62,12 +62,20 @@ static void ue_context_setup_response_f1ap(const f1ap_ue_context_setup_t *req, c
 
 static void ue_context_release_request_f1ap(const f1ap_ue_context_release_req_t* req)
 {
-  AssertFatal(false, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
+  f1ap_ue_context_release_req_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
+  *f1ap_msg = *req;
+  itti_send_msg_to_task(TASK_DU_F1, 0, msg);
 }
 
 static void ue_context_release_complete_f1ap(const f1ap_ue_context_release_complete_t *complete)
 {
-  AssertFatal(false, "not implemented\n");
+  newGtpuDeleteAllTunnels(0, complete->rnti);
+
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  f1ap_ue_context_release_complete_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg);
+  *f1ap_msg = *complete;
+  itti_send_msg_to_task(TASK_DU_F1, 0, msg);
 }
 
 static void initial_ul_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *ul_rrc)
