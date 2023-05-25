@@ -49,6 +49,7 @@
 #endif
 
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
+//#define POLAR_CODING_DEBUG
 
 void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
@@ -692,7 +693,19 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.1 scrambling format 2
    */
-  nr_pucch2_3_4_scrambling(M_bit,rnti,pucch_pdu->data_scrambling_id,&b[0],btilde);
+  nr_pucch2_3_4_scrambling(M_bit, rnti, pucch_pdu->data_scrambling_id, b, btilde);
+
+#ifdef POLAR_CODING_DEBUG
+  printf("bt:");
+  for (int n = 0; n < M_bit; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    printf("%u", btilde[n]);
+  }
+  printf("\n");
+#endif
+
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.2 modulation format 2
    * btilde shall be modulated as described in subclause 5.1 using QPSK

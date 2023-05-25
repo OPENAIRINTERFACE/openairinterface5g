@@ -86,6 +86,39 @@ void nr_polar_generate_u(uint64_t *u,
   }
 }
 
+void nr_polar_info_extraction_from_u(uint64_t *Cprime,
+                                     const uint8_t *u,
+                                     const uint8_t *information_bit_pattern,
+                                     const uint8_t *parity_check_bit_pattern,
+                                     uint16_t N,
+                                     uint8_t n_pc)
+{
+  int k = 0;
+
+  if (n_pc > 0) {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        if (parity_check_bit_pattern[n] == 0) {
+          int k1 = k >> 6;
+          int k2 = k - (k1 << 6);
+          Cprime[k1] |= (uint64_t)u[n] << k2;
+          k++;
+        }
+      }
+    }
+
+  } else {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        Cprime[k1] |= (uint64_t)u[n] << k2;
+        k++;
+      }
+    }
+  }
+}
+
 void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint16_t N)
 {
   int N_array = N >> 6;
@@ -446,7 +479,7 @@ void nr_polar_rm_deinterleaving_cb(const int16_t *in, int16_t *out, const uint16
   for (int j = 0; j < T; j++) {
     for (int i = 0; i < T - j; i++) {
       if (k < E && v_tab[i][j] != 0) {
-        v[i][j] = in[E - 1 - k];
+        v[i][j] = in[k];
         k++;
       } else {
         v[i][j] = INT_MAX;
@@ -459,7 +492,7 @@ void nr_polar_rm_deinterleaving_cb(const int16_t *in, int16_t *out, const uint16
   for (int i = 0; i < T; i++) {
     for (int j = 0; j < T - i; j++) {
       if (v[i][j] != INT_MAX) {
-        out[E - 1 - k] = v[i][j];
+        out[k] = v[i][j];
         k++;
       }
     }
