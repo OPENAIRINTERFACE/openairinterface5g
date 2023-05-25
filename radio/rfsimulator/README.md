@@ -136,7 +136,7 @@ Notes:
      * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
      * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
 4. To enable the noS1 mode, `--noS1` option should be added to the command line.
-5. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/TESTING_5GSA_setup.md#2-sa-setup-with-oai-nr-ue-softmodem).
+5. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/NR_SA_Tutorial_OAI_CN5G.md).
 
 
 In the UE, you can add `-d` option to get the softscope.
