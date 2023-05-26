@@ -675,8 +675,7 @@ static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
     req->ue_id = ue_id;
     req->bearer_id = rb_id;
-    LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
-	  __func__, rb_id, size);
+    LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {

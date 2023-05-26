@@ -1796,8 +1796,7 @@ static void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP,
   configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE, 0, 0);
 
   // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE
-  sched_ctrl->pusch_consecutive_dtx_cnt = 0;
-  sched_ctrl->ul_failure = 0;
+  nr_mac_reset_ul_failure(sched_ctrl);
 }
 
 static void nr_generate_Msg4(module_id_t module_idP,

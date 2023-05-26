@@ -55,6 +55,22 @@ static void ue_context_setup_response_direct(const f1ap_ue_context_setup_t *req,
   itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
+static void ue_context_release_request_direct(const f1ap_ue_context_release_req_t* req)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
+  f1ap_ue_context_release_req_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
+  *f1ap_msg = *req;
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
+}
+
+static void ue_context_release_complete_direct(const f1ap_ue_context_release_complete_t *complete)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  f1ap_ue_context_release_complete_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg);
+  *f1ap_msg = *complete;
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
+}
+
 static void initial_ul_rrc_message_transfer_direct(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *ul_rrc)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
@@ -78,5 +94,7 @@ static void initial_ul_rrc_message_transfer_direct(module_id_t module_id, const 
 void mac_rrc_ul_direct_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
   mac_rrc->ue_context_setup_response = ue_context_setup_response_direct;
+  mac_rrc->ue_context_release_request = ue_context_release_request_direct;
+  mac_rrc->ue_context_release_complete = ue_context_release_complete_direct;
   mac_rrc->initial_ul_rrc_message_transfer = initial_ul_rrc_message_transfer_direct;
 }

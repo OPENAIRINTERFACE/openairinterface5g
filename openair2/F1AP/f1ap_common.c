@@ -180,7 +180,7 @@ int f1ap_du_add_cu_ue_id(instance_t instanceP,
     return -1;
 
   f1_inst->f1ap_ue[f1ap_uid].cu_ue_f1ap_id = cu_ue_f1ap_id;
-  LOG_I(F1AP, "Adding cu_ue_f1ap_id %ld for UE with RNTI %x\n", cu_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
+  LOG_D(F1AP, "Adding cu_ue_f1ap_id %ld for UE with RNTI %x\n", cu_ue_f1ap_id, f1_inst->f1ap_ue[f1ap_uid].rnti);
   return 0;
 }
 

@@ -271,17 +271,6 @@ bool set_ul_ptrs_values(NR_PTRS_UplinkConfig_t *ul_ptrs_config,
 @returns                   transformPrecoding value */
 long get_transformPrecoding(const NR_UE_UL_BWP_t *current_UL_BWP, nr_dci_format_t dci_format, uint8_t configuredGrant);
 
-void nr_mac_gNB_rrc_ul_failure(const module_id_t Mod_instP,
-                               const int CC_idP,
-                               const frame_t frameP,
-                               const sub_frame_t subframeP,
-                               const rnti_t rntiP);
-
-void nr_mac_gNB_rrc_ul_failure_reset(const module_id_t Mod_instP,
-                                     const frame_t frameP,
-                                     const sub_frame_t subframeP,
-                                     const rnti_t rntiP);
-
 uint8_t number_of_bits_set(uint8_t buf);
 
 void compute_rsrp_bitlen(struct NR_CSI_ReportConfig *csi_reportconfig,

@@ -360,11 +360,6 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
               size,
               "[MSG] RRC Setup\n");
 
-  // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-  ue_context_pP->ue_context.ue_release_timer = 1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres = 1000;
-
   nr_pdcp_add_srbs(true, rnti, ue_context_pP->ue_context.SRB_configList, 0, NULL, NULL);
 
   f1ap_dl_rrc_message_t dl_rrc = {
@@ -415,19 +410,10 @@ static int rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t m
   nr_mac_config_sib1(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.siblock1);
 
   LOG_I(NR_RRC, " [RAPROC] rnti: %04x Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n", rnti, size);
-  // activate release timer, if RRCSetupComplete not received after 100 frames, remove UE
-  ue_context_pP->ue_context.ue_release_timer = 1;
-  // remove UE after 10 frames after RRCConnectionRelease is triggered
-  ue_context_pP->ue_context.ue_release_timer_thres = 1000;
   // configure MAC
   protocol_ctxt_t ctxt = {0};
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, 0, GNB_FLAG_YES, rnti, 0, 0);
   apply_macrlc_config(rrc_instance_p, ue_context_pP, &ctxt);
-
-  //nr_pdcp_add_srbs(ctxt_pP->enb_flag, ctxt_pP->rntiMaybeUEid, ue_context_pP->ue_context.SRB_configList, 0, NULL, NULL);
-  //apply_pdcp_config(ue_context_pP,ctxt_pP);
-  /* init timers */
-  //   ue_context_pP->ue_context.ue_rrc_inactivity_timer = 0;
 
   f1ap_dl_rrc_message_t dl_rrc = {
     .old_gNB_DU_ue_id = 0xFFFFFF,
@@ -1047,8 +1033,6 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
   //  uint8_t                             nr_DRB2LCHAN[8];
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
-  ue_p->ue_reestablishment_timer = 0;
-
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
     nr_derive_key(UP_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kUPenc);
@@ -1406,12 +1390,7 @@ void RRCReestablishmentComplete_update_ngu_tunnel(const protocol_ctxt_t *const c
 
     if (ret != 0) {
       LOG_E(NR_RRC, "RRC Reestablishment - gtpv1u_update_ngu_tunnel failed,start to release UE %x\n", reestablish_rnti);
-      ue_p->ue_release_timer_s1 = 1;
-      ue_p->ue_release_timer_thres_s1 = 100;
-      ue_p->ue_release_timer = 0;
-      ue_p->ue_reestablishment_timer = 0;
-      ue_p->ul_failure_timer = 20000; // set ul_failure to 20000 for triggering rrc_eNB_send_S1AP_UE_CONTEXT_RELEASE_REQ
-      ue_p->ul_failure_timer = 0;
+      AssertFatal(false, "not implemented\n");
       return;
     }
   }
@@ -1470,7 +1449,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   uint8_t new_xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   ue_p->xids[new_xid] = RRC_REESTABLISH_COMPLETE;
   ue_p->StatusRrc = NR_RRC_CONNECTED;
-  ue_p->ue_rrc_inactivity_timer = 1; // set rrc inactivity when UE goes into RRC_CONNECTED
   RRCReestablishmentComplete_fill_SRB2_configList(ctxt_pP, ue_context_pP, xid, new_xid);
   RRCReestablishmentComplete_fill_DRB_configList(ctxt_pP, ue_context_pP, new_xid);
   RRCReestablishmentComplete_update_ngu_tunnel(ctxt_pP, ue_context_pP, reestablish_rnti);
@@ -1665,9 +1643,8 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
              * the current one must be removed from MAC/PHY (zombie UE)
              */
             if ((ue_context_p = rrc_gNB_ue_context_random_exist(gnb_rrc_inst, random_value))) {
-              gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
               LOG_W(NR_RRC, "new UE rnti (coming with random value) is already there, removing UE %x from MAC/PHY\n", rnti);
-              UE->ul_failure_timer = 20000;
+              AssertFatal(false, "not implemented\n");
             }
 
             ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value);
@@ -1693,16 +1670,12 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
               // TODO: MAC structures should not be accessed directly from the RRC! An implementation using the F1 interface should be developed.
               if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
                 nr_rrc_mac_remove_ue(ue_context_p->ue_context.rnti);
+              } else {
+                AssertFatal(false, "not implemented: need to switch RNTI in MAC via DL RRC Message Transfer\n");
               }
 
               /* replace rnti in the context */
               UE->rnti = rnti;
-              /* reset timers */
-              UE->ul_failure_timer = 0;
-              UE->ue_release_timer = 0;
-              UE->ue_reestablishment_timer = 0;
-              UE->ue_release_timer_s1 = 0;
-              UE->ue_release_timer_rrc = 0;
             } else {
               LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", rnti, s_tmsi_part1);
 
@@ -1793,28 +1766,9 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
           break;
         }
 
-        if (UE->ue_reestablishment_timer > 0) {
-          LOG_E(NR_RRC, "RRRCReconfigurationComplete(Previous) don't receive, delete the Previous UE,\nprevious Status %d, new Status NR_RRC_RECONFIGURED\n", UE->StatusRrc);
-          UE->StatusRrc = NR_RRC_RECONFIGURED;
-          protocol_ctxt_t ctxt_old_p;
-          PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt_old_p, module_id, GNB_FLAG_YES, c_rnti, 0, 0);
-          rrc_gNB_process_RRCReconfigurationComplete(&ctxt_old_p, ue_context_p, xid);
+        /* TODO: start timer in ITTI and drop UE if it does not come back */
+        (void) xid; /* xid currently not used */
 
-          for (uint8_t pdusessionid = 0; pdusessionid < UE->nb_of_pdusessions; pdusessionid++) {
-            if (UE->pduSession[pdusessionid].status == PDU_SESSION_STATUS_DONE) {
-              UE->pduSession[pdusessionid].status = PDU_SESSION_STATUS_ESTABLISHED;
-            } else {
-              UE->pduSession[pdusessionid].status = PDU_SESSION_STATUS_FAILED;
-            }
-          }
-        }
-
-        /* reset timers */
-        UE->ul_failure_timer = 0;
-        UE->ue_release_timer = 0;
-        UE->ue_reestablishment_timer = 0;
-        // UE->ue_release_timer_s1 = 0;
-        UE->ue_release_timer_rrc = 0;
         // Insert C-RNTI to map
         for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
           nr_reestablish_rnti_map_t *nr_reestablish_rnti_map = &gnb_rrc_inst->nr_reestablish_rnti_map[i];
@@ -1942,11 +1896,6 @@ static int handle_rrcReestablishmentComplete(const protocol_ctxt_t *const ctxt_p
   nr_rrc_mac_remove_ue(reestablish_rnti);
 
   UE->ue_reestablishment_counter++;
-
-  // UE->ue_release_timer = 0;
-  UE->ue_reestablishment_timer = 1;
-  // remove UE after 100 frames after NR_RRCReestablishmentRelease is triggered
-  UE->ue_reestablishment_timer_thres = 1000;
   return 0;
 }
 
@@ -2104,8 +2053,6 @@ static int handle_rrcSetupComplete(const protocol_ctxt_t *const ctxt_pP,
 
   rrc_gNB_process_RRCSetupComplete(ctxt_pP, ue_context_p, setup_complete->criticalExtensions.choice.rrcSetupComplete);
   LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT " UE State = NR_RRC_CONNECTED \n", PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP));
-
-  UE->ue_release_timer = 0;
   return 0;
 }
 
@@ -2205,9 +2152,9 @@ int rrc_gNB_decode_dcch(const protocol_ctxt_t *const ctxt_pP,
         break;
 
       case NR_UL_DCCH_MessageType__c1_PR_ulInformationTransfer:
-        LOG_I(NR_RRC, "Recived RRC GNB UL Information Transfer \n");
+        LOG_D(NR_RRC, "Recived RRC GNB UL Information Transfer \n");
         if (!ue_context_p) {
-          LOG_I(NR_RRC, "Processing ulInformationTransfer UE %lx, ue_context_p is NULL\n", ctxt_pP->rntiMaybeUEid);
+          LOG_W(NR_RRC, "Processing ulInformationTransfer UE %lx, ue_context_p is NULL\n", ctxt_pP->rntiMaybeUEid);
           break;
         }
 
@@ -2587,6 +2534,36 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance
    * messages (UE capability, to be specific) */
 }
 
+static void rrc_CU_process_ue_context_release_request(MessageDef *msg_p)
+{
+  const int instance = 0;
+  f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg_p);
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
+
+  /* TODO: marshall types correctly */
+  LOG_I(NR_RRC, "received UE Context Release Request for UE %04x, forwarding to AMF\n", req->rnti);
+  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(instance,
+                                           ue_context_p,
+                                           NGAP_CAUSE_RADIO_NETWORK,
+                                           NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
+}
+
+static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
+{
+  const int instance = 0;
+  f1ap_ue_context_release_complete_t *complete = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_p);
+  gNB_RRC_INST *rrc = RC.nrrrc[instance];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, complete->rnti);
+  gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+
+  nr_pdcp_remove_UE(UE->rnti);
+  newGtpuDeleteAllTunnels(instance, UE->rnti);
+  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(instance, UE->gNB_ue_ngap_id);
+  LOG_I(NR_RRC, "removed UE %04x \n", UE->rnti);
+  rrc_gNB_remove_ue_context(rrc, ue_context_p);
+}
+
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_setup_t *resp=&F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
@@ -2817,90 +2794,6 @@ static int get_dl_mimo_layers(const gNB_RRC_INST *rrc, const NR_UE_NR_Capability
   return(1);
 }
 
-void nr_rrc_subframe_process(protocol_ctxt_t *const ctxt_pP, const int CC_id) {
-
-  MessageDef *msg;
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  rrc_gNB_ue_context_t *ue_context_p = NULL;
-  RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &rrc->rrc_ue_head)
-  {
-    gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-    ctxt_pP->rntiMaybeUEid = UE->rnti;
-
-    if (UE->ul_failure_timer > 0) {
-      UE->ul_failure_timer++;
-
-      if (UE->ul_failure_timer >= 20000) {
-        // remove UE after 20 seconds after MAC (or else) has indicated UL failure
-        LOG_I(RRC, "Removing UE %x instance, because of uplink failure timer timeout\n", UE->rnti);
-        if (UE->StatusRrc >= NR_RRC_CONNECTED) {
-          rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(
-                   ctxt_pP->module_id,
-                   ue_context_p,
-                   NGAP_CAUSE_RADIO_NETWORK,
-                   NGAP_CAUSE_RADIO_NETWORK_RADIO_CONNECTION_WITH_UE_LOST);
-        }
-
-        // Remove here the MAC and RRC context when RRC is not connected
-        if (UE->StatusRrc < NR_RRC_CONNECTED) {
-          if (!NODE_IS_CU(rrc->node_type)) {
-            nr_rrc_mac_remove_ue(ctxt_pP->rntiMaybeUEid);
-            rrc_rlc_remove_ue(ctxt_pP);
-            nr_pdcp_remove_UE(ctxt_pP->rntiMaybeUEid);
-
-            /* remove RRC UE Context */
-            ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, UE->rnti);
-            if (ue_context_p) {
-              LOG_I(NR_RRC, "remove UE %04x \n", UE->rnti);
-              rrc_gNB_remove_ue_context(rrc, ue_context_p);
-              break; // We must not access this UE context
-            }
-          }
-          // In case of CU trigger UE context release command towards the DU
-          else {
-            MessageDef *message_p;
-            message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
-            f1ap_ue_context_release_cmd_t *rel_cmd=&F1AP_UE_CONTEXT_RELEASE_CMD (message_p);
-            rel_cmd->rnti = UE->rnti;
-            rel_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
-            rel_cmd->cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-            itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, message_p);
-          }
-        }
-
-        break; // break RB_FOREACH
-      }
-    }
-
-    if (UE->ue_release_timer_rrc > 0) {
-      UE->ue_release_timer_rrc++;
-
-      if (UE->ue_release_timer_rrc >= UE->ue_release_timer_thres_rrc) {
-        LOG_I(NR_RRC, "Removing UE %x instance after UE_CONTEXT_RELEASE_Complete (ue_release_timer_rrc timeout)\n", UE->rnti);
-        UE->ue_release_timer_rrc = 0;
-        if (!NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-          nr_rrc_mac_remove_ue(ctxt_pP->rntiMaybeUEid);
-        }
-        rrc_rlc_remove_ue(ctxt_pP);
-        nr_pdcp_remove_UE(ctxt_pP->rntiMaybeUEid);
-        newGtpuDeleteAllTunnels(ctxt_pP->instance, UE->rnti);
-
-        /* remove RRC UE Context */
-        LOG_I(NR_RRC, "remove UE %04x \n", UE->rnti);
-
-        rrc_gNB_remove_ue_context(rrc, ue_context_p);
-        break; // break RB_FOREACH
-      }
-    }
-  }
-
-  /* send a tick to x2ap */
-  if (is_x2ap_enabled()){
-    msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_SUBFRAME_PROCESS);
-    itti_send_msg_to_task(TASK_X2AP, ctxt_pP->module_id, msg);
-  }
-}
-
 int rrc_gNB_process_e1_setup_req(e1ap_setup_req_t *req, instance_t instance) {
 
   AssertFatal(req->supported_plmns <= PLMN_LIST_MAX_SIZE, "Supported PLMNs is more than PLMN_LIST_MAX_SIZE\n");
@@ -3031,9 +2924,9 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
     fprintf(f, "NR RRC UE rnti %04x:", rnti);
 
     if (ue_ctxt->Initialue_identity_5g_s_TMSI.presence)
-      fprintf(f, " S-TMSI %x\n", ue_ctxt->Initialue_identity_5g_s_TMSI.fiveg_tmsi);
+      fprintf(f, " S-TMSI %x", ue_ctxt->Initialue_identity_5g_s_TMSI.fiveg_tmsi);
 
-    fprintf(f, " failure timer %d/8\n", ue_ctxt->ul_failure_timer);
+    fprintf(f, "\n");
 
     if (ue_ctxt->UE_Capability_nr) {
       fprintf(f,
@@ -3089,10 +2982,6 @@ void *rrc_gnb_task(void *args_p) {
         /* only this one handled for now */
         DevAssert(TIMER_HAS_EXPIRED(msg_p).timer_id == stats_timer_id);
         write_rrc_stats(RC.nrrrc[0]);
-        break;
-
-      case RRC_SUBFRAME_PROCESS:
-        nr_rrc_subframe_process(&RRC_SUBFRAME_PROCESS(msg_p).ctxt, RRC_SUBFRAME_PROCESS(msg_p).CC_id);
         break;
 
       case F1AP_INITIAL_UL_RRC_MESSAGE:
@@ -3162,9 +3051,12 @@ void *rrc_gnb_task(void *args_p) {
         rrc_DU_process_ue_context_modification_request(msg_p, instance);
         break;
 
-      case F1AP_UE_CONTEXT_RELEASE_CMD:
-        LOG_W(NR_RRC, "Received F1AP_UE_CONTEXT_RELEASE_CMD for processing at the RRC layer of the DU. Processing function "
-            "implementation is pending\n");
+      case F1AP_UE_CONTEXT_RELEASE_REQ:
+        rrc_CU_process_ue_context_release_request(msg_p);
+        break;
+
+      case F1AP_UE_CONTEXT_RELEASE_COMPLETE:
+        rrc_CU_process_ue_context_release_complete(msg_p);
         break;
 
       /* Messages from X2AP */
@@ -3292,6 +3184,24 @@ rrc_gNB_generate_UECapabilityEnquiry(
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
 }
 
+static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
+{
+  DevAssert(deliver_pdu_data != NULL);
+  gNB_RRC_INST *rrc = deliver_pdu_data;
+  uint8_t *rrc_container = malloc(size);
+  AssertFatal(rrc_container != NULL, "out of memory\n");
+  memcpy(rrc_container, buf, size);
+  f1ap_ue_context_release_cmd_t ue_context_release_cmd = {
+    .rnti = ue_id, /* TODO: proper IDs! */
+    .cause = F1AP_CAUSE_RADIO_NETWORK,
+    .cause_value = 10, // 10 = F1AP_CauseRadioNetwork_normal_release
+    .srb_id = srb_id,
+    .rrc_container = rrc_container,
+    .rrc_container_length = size,
+  };
+  rrc->mac_rrc.ue_context_release_command(&ue_context_release_cmd);
+}
+
 //-----------------------------------------------------------------------------
 /*
 * Generate the RRC Connection Release to UE.
@@ -3306,49 +3216,16 @@ rrc_gNB_generate_RRCRelease(
 {
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_NR_RRCRelease(buffer, RRC_BUF_SIZE, rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id));
-  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
-  ue_p->ue_reestablishment_timer = 0;
-  ue_p->ue_release_timer = 0;
-  ue_p->ul_failure_timer = 0;
-  ue_p->ue_release_timer_rrc = 0;
   LOG_I(NR_RRC,
         PROTOCOL_NR_RRC_CTXT_UE_FMT" Logical Channel DL-DCCH, Generate RRCRelease (bytes %d)\n",
         PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
         size);
-  LOG_D(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_UE_FMT" --- PDCP_DATA_REQ/%d Bytes (rrcRelease MUI %d) --->[PDCP][RB %u]\n",
-        PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP),
-        size,
-        rrc_gNB_mui,
-        DCCH);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, deliver_pdu_srb_f1, rrc);
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, rrc);
 
-  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(ctxt_pP->instance, ue_context_pP->ue_context.gNB_ue_ngap_id);
-  ue_context_pP->ue_context.ue_release_timer_rrc = 1;
-  /* TODO: 38.331 says for RRC Release that the UE should release everything
-   * after 60ms or if lower layers acked receipt of release. Hence, from the
-   * gNB POV, we can free the UE's RRC context as soon as we sent the msg.
-   * Currently, without the F1 interface, the ue_release timer expiration also
-   * triggers MAC, so we give it some time. If we send an F1 UE Context release
-   * message, we can free it immediately. The MAC should release it after these
-   * 60ms, or the ack of the DLSCH transmission. */
-  ue_context_pP->ue_context.ue_release_timer_thres_rrc = 5;
-  LOG_I(RRC, "delaying UE %ld context removal by 5ms\n", ctxt_pP->rntiMaybeUEid);
-
-  if (NODE_IS_CU(rrc->node_type)) {
-    uint8_t *message_buffer = itti_malloc (TASK_RRC_GNB, TASK_CU_F1, size);
-    memcpy (message_buffer, buffer, size);
-    MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).rnti = ctxt_pP->rntiMaybeUEid;
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause = F1AP_CAUSE_RADIO_NETWORK;
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).cause_value = 10; // 10 = F1AP_CauseRadioNetwork_normal_release
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container = message_buffer;
-    F1AP_UE_CONTEXT_RELEASE_CMD(m).rrc_container_length = size;
-    itti_send_msg_to_task(TASK_CU_F1, ctxt_pP->module_id, m);
-  }
+  /* UE will be freed after UE context release complete */
 }
 
 int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t instance, uint8_t CC_id){
@@ -3473,14 +3350,3 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
 
   return 0;
 }
-
-void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe)
-{
-  MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_RRC_GNB, 0, RRC_SUBFRAME_PROCESS);
-  RRC_SUBFRAME_PROCESS(message_p).ctxt  = *ctxt;
-  RRC_SUBFRAME_PROCESS(message_p).CC_id = CC_id;
-  LOG_D(NR_RRC, "Time in RRC: %u/ %u \n", frame, subframe);
-  itti_send_msg_to_task(TASK_RRC_GNB, ctxt->module_id, message_p);
-}
-

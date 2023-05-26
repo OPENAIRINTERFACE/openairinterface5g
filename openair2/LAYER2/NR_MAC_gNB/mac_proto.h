@@ -440,4 +440,11 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
 
 void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid);
 
+void nr_mac_trigger_release_timer(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing);
+bool nr_mac_check_release(NR_UE_sched_ctrl_t *sched_ctrl, int rnti);
+
+void nr_mac_trigger_ul_failure(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing);
+void nr_mac_reset_ul_failure(NR_UE_sched_ctrl_t *sched_ctrl);
+void nr_mac_check_ul_failure(const gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *sched_ctrl);
+
 #endif /*__LAYER2_NR_MAC_PROTO_H__*/

@@ -31,7 +31,6 @@ rx_func_implem[rx_func]
       --> handle_nr_ulsch
       subgraph gNB_dlsch_ulsch_scheduler
           run_pdcp
-          --> nr_rrc_trigger
           --> schedule_xxxx
       end
       handle_nr_ulsch --> gNB_dlsch_ulsch_scheduler

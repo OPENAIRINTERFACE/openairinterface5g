@@ -98,8 +98,6 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
 
   if(f1ap_ue_context_setup_req->rnti<0)
     LOG_E(F1AP, "Could not retrieve UE rnti based on the CU/DU UE id \n");
-  else
-    LOG_I(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_setup_req->rnti);
 
   /* SpCell_ID */
   F1AP_UEContextSetupRequestIEs_t *ieNet;
@@ -649,18 +647,13 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   return 0;
 }
 
-int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextReleaseCommand_t *container;
   F1AP_UEContextReleaseCommandIEs_t *ie;
 
-  /* ITTI message to NR-RRC for the case of gNB-DU */
-  MessageDef                      *msg_p; // message to NR-RRC
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_CMD);
-  f1ap_ue_context_release_req_t *f1ap_ue_context_release_cmd = &F1AP_UE_CONTEXT_RELEASE_CMD(msg_p);
-
+  f1ap_ue_context_release_req_t ue_context_release = {0};
+  f1ap_ue_context_release_req_t *f1ap_ue_context_release_cmd = &ue_context_release;
 
   DevAssert(pdu);
   container = &pdu->choice.initiatingMessage->value.choice.UEContextReleaseCommand;
@@ -680,26 +673,30 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, false);
 
-  f1ap_ue_context_release_cmd->rrc_container = malloc(ie->value.choice.RRCContainer.size);
-  memcpy(f1ap_ue_context_release_cmd->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+  if (ie != NULL) {
+    f1ap_ue_context_release_cmd->rrc_container = malloc(ie->value.choice.RRCContainer.size);
+    AssertFatal(f1ap_ue_context_release_cmd->rrc_container != NULL, "out of memory\n");
+    memcpy(f1ap_ue_context_release_cmd->rrc_container, ie->value.choice.RRCContainer.buf, ie->value.choice.RRCContainer.size);
+    f1ap_ue_context_release_cmd->rrc_container_length = ie->value.choice.RRCContainer.size;
+
+    // conditionally have SRB ID if there is RRC container
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container, F1AP_ProtocolIE_ID_id_SRBID, true);
+    f1ap_ue_context_release_cmd->srb_id = ie->value.choice.SRBID;
+  }
 
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
       F1AP_ProtocolIE_ID_id_Cause, true);
   switch (ie->value.choice.Cause.present){
   case  F1AP_Cause_PR_radioNetwork:
-    LOG_W (F1AP, "UE context release command cause is due to radioNetwork with specific code: %ld\n",ie->value.choice.Cause.choice.radioNetwork);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_RADIO_NETWORK;
     break;
   case F1AP_Cause_PR_transport:
-    LOG_W (F1AP, "UE context release command cause is due to transport with specific code: %ld\n",ie->value.choice.Cause.choice.transport);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_TRANSPORT;
     break;
   case F1AP_Cause_PR_protocol:
-    LOG_W (F1AP, "UE context release command cause is due to protocol with specific code: %ld\n",ie->value.choice.Cause.choice.protocol);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_PROTOCOL;
     break;
   case F1AP_Cause_PR_misc:
-    LOG_W (F1AP, "UE context release command cause is misc with specific code: %ld \n",ie->value.choice.Cause.choice.misc);
     f1ap_ue_context_release_cmd->cause = F1AP_CAUSE_MISC;
     break;
   default:
@@ -707,12 +704,13 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t       instance,
     break;
 
   }
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+
+  ue_context_release_command(f1ap_ue_context_release_cmd);
   return 0;
 }
 
-int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
-                                        f1ap_ue_context_release_cplt_t *cplt) {
+int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_release_complete_t *complete)
+{
   F1AP_F1AP_PDU_t                     pdu= {0};
   F1AP_UEContextReleaseComplete_t    *out;
   /* Create */
@@ -729,14 +727,14 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, cplt->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, complete->rnti);
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list,F1AP_UEContextReleaseCompleteIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, cplt->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, complete->rnti);
   /* optional -> currently not used */
   /* c3. CriticalityDiagnostics */
   //if (0) {
@@ -798,7 +796,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance,
                                buffer,
                                len,
                                getCxt(false, instance)->default_sctp_stream_id);
-  f1ap_remove_ue(DUtype, instance, cplt->rnti);
+  f1ap_remove_ue(DUtype, instance, complete->rnti);
   return 0;
 }
 

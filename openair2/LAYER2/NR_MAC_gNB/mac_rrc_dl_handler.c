@@ -147,9 +147,36 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   free(resp.du_to_cu_rrc_information);
 }
 
+void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
+{
+  /* mark UE as to be deleted after PUSCH failure */
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  pthread_mutex_lock(&mac->sched_lock);
+  NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, cmd->rnti);
+  if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
+    /* The UE is already not connected anymore or we have nothing to forward*/
+    nr_rlc_remove_ue(cmd->rnti);
+    mac_remove_nr_ue(mac, cmd->rnti);
+  } else {
+    /* UE is in sync: forward release message and mark to be deleted
+     * after UL failure */
+    nr_rlc_srb_recv_sdu(cmd->rnti, cmd->srb_id, cmd->rrc_container, cmd->rrc_container_length);
+    nr_mac_trigger_release_timer(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
+  }
+  pthread_mutex_unlock(&mac->sched_lock);
+
+  f1ap_ue_context_release_complete_t complete = {
+    .rnti = cmd->rnti,
+  };
+  mac->mac_rrc.ue_context_release_complete(&complete);
+
+  if (cmd->rrc_container)
+    free(cmd->rrc_container);
+}
+
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
 {
-  LOG_I(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
+  LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
 
   nr_rlc_srb_recv_sdu(dl_rrc->rnti, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
   return 0;

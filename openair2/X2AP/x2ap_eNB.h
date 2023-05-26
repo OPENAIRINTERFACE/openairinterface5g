@@ -47,6 +47,7 @@ int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
 void *x2ap_task(void *arg);
 
 int is_x2ap_enabled(void);
+void x2ap_trigger(void);
 
 #endif /* X2AP_H_ */
 
