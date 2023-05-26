@@ -476,7 +476,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
     .rnti = ue_p->rnti,
     .srb_id = CCCH
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(instance, &dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
 }
 
 //-----------------------------------------------------------------------------
@@ -532,7 +532,7 @@ static int rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t m
     .rnti = ue_p->rnti,
     .srb_id = CCCH
   };
-  rrc_instance_p->mac_rrc.dl_rrc_message_transfer(module_id, &dl_rrc);
+  rrc_instance_p->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
   return xid;
 }
 
@@ -565,7 +565,7 @@ static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context
     .execute_duplication  = 1,
     .RAT_frequency_priority_information.en_dc = 0
   };
-  rrc->mac_rrc.dl_rrc_message_transfer(module_id, &dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
 }
 
 //-----------------------------------------------------------------------------

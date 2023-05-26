@@ -140,7 +140,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
     .rnti = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id),
     .srb_id = srb_id
   };
-  dl_rrc_message(instance, &dl_rrc);
+  dl_rrc_message_transfer(&dl_rrc);
   return 0;
 }
 

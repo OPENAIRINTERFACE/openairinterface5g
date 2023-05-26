@@ -268,10 +268,10 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
   mac->mac_rrc.ue_context_release_complete(&complete);
 }
 
-int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
+void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
 {
   LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
 
+  /* the DU ue id is the RNTI */
   nr_rlc_srb_recv_sdu(dl_rrc->rnti, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-  return 0;
 }

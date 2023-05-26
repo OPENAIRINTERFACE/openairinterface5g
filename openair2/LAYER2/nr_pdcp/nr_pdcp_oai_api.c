@@ -750,7 +750,7 @@ void deliver_pdu_srb_f1(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
                                   .rrc_container_length = size,
                                   .rnti = ue_id,
                                   .srb_id = srb_id};
-  rrc->mac_rrc.dl_rrc_message_transfer(0, &dl_rrc);
+  rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
 }
 
 static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)

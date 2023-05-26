@@ -24,17 +24,10 @@
 #include "mac_rrc_dl.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
-static void dl_rrc_message_transfer_direct(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
-{
-  /* TODO how to manage inter-thread communication? */
-
-  dl_rrc_message(module_id, dl_rrc);
-}
-
 void mac_rrc_dl_direct_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
   mac_rrc->ue_context_setup_request = ue_context_setup_request;
   mac_rrc->ue_context_modification_request = ue_context_modification_request;
   mac_rrc->ue_context_release_command = ue_context_release_command;
-  mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer_direct;
+  mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer;
 }
