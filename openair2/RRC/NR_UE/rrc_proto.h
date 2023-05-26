@@ -56,16 +56,14 @@ extern queue_t nr_ul_tti_req_queue;
 //  main_rrc.c
 //
 /**\brief Layer 3 initialization*/
-NR_UE_RRC_INST_t* nr_l3_init_ue(char*,char*,char*,char*);
+NR_UE_RRC_INST_t *nr_l3_init_ue(char *, char *, char *, char *);
 
 //
 //  UE_rrc.c
 //
 
 /**\brief Initial the top level RRC structure instance*/
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char*,char*,char*,char*);
-
-
+NR_UE_RRC_INST_t *openair_rrc_top_init_ue_nr(char *, char *, char *, char *);
 
 /**\brief Decode RRC Connection Reconfiguration, sent from E-UTRA RRC Connection Reconfiguration v1510 carring EN-DC config
    \param buffer  encoded NR-RRC-Connection-Reconfiguration/Secondary-Cell-Group-Config message.

@@ -344,7 +344,6 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-
 NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path, char* reconfig_file, char* rbconfig_file)
 {
   if(NB_NR_UE_INST > 0) {
@@ -371,11 +370,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
       FILE *fd;
       char filename[1024];
       if (rrc_config_path && reconfig_file)
-        sprintf(filename,"%s/%s",rrc_config_path,reconfig_file);
+        sprintf(filename, "%s/%s", rrc_config_path, reconfig_file);
       else
         sprintf(filename,"reconfig.raw");
-      
-      LOG_I(NR_RRC, "using %s for rrc init[1/2]\n",filename);
+
+      LOG_I(NR_RRC, "using %s for rrc init[1/2]\n", filename);
       fd = fopen(filename,"r");
       char buffer[1024];
       AssertFatal(fd,
@@ -387,11 +386,11 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
       if (rrc_config_path && rbconfig_file)
-        sprintf(filename,"%s/%s",rrc_config_path,rbconfig_file);
+        sprintf(filename, "%s/%s", rrc_config_path, rbconfig_file);
       else
         sprintf(filename,"rbconfig.raw");
-      
-      LOG_I(NR_RRC, "using %s for rrc init[2/2]\n",filename);
+
+      LOG_I(NR_RRC, "using %s for rrc init[2/2]\n", filename);
       fd = fopen(filename,"r");
       AssertFatal(fd,
                   "cannot read file %s: errno %d, %s\n",
@@ -417,7 +416,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
 
   return NR_UE_rrc_inst;
 }
-
 
 int8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
 

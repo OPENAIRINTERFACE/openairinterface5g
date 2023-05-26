@@ -123,8 +123,8 @@ char             *usrp_args = NULL;
 char             *tx_subdev = NULL;
 char             *rx_subdev = NULL;
 char       *rrc_config_path = NULL;
-char         *reconfig_file = NULL;
-char         *rbconfig_file = NULL;
+char *reconfig_file = NULL;
+char *rbconfig_file = NULL;
 char            *uecap_file = NULL;
 int               dumpframe = 0;
 
@@ -474,7 +474,7 @@ int main( int argc, char **argv ) {
 #endif
   LOG_I(HW, "Version: %s\n", PACKAGE_VERSION);
 
-  init_NR_UE(1,uecap_file,rrc_config_path,reconfig_file,rbconfig_file);
+  init_NR_UE(1, uecap_file, rrc_config_path, reconfig_file, rbconfig_file);
 
   int mode_offset = get_softmodem_params()->nsa ? NUMBER_OF_UE_MAX : 1;
   uint16_t node_number = get_softmodem_params()->node_number;
