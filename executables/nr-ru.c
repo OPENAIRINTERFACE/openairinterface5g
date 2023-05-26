@@ -1829,18 +1829,30 @@ void stop_RU(int nb_ru) {
 
 /* --------------------------------------------------------*/
 /* from here function to use configuration module          */
-static void NRRCconfig_RU(void) {
-  int i = 0, j = 0;
+static void NRRCconfig_RU(void)
+{
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  config_getlist( &RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
+  config_getlist(&RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
 
-  if ( RUParamList.numelt > 0) {
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  paramdef_t GNBParams[] = GNBPARAMS_DESC;
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
+  config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal(num_gnbs > 0, "Failed to parse config file no gnbs %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
+  config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
+  int N1 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
+  int N2 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
+  int XP = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
+  int num_logical_antennas = N1 * N2 * XP;
+
+  if (RUParamList.numelt > 0) {
     RC.ru = (RU_t **)malloc(RC.nb_RU*sizeof(RU_t *));
-    RC.ru_mask=(1<<NB_RU) - 1;
+    RC.ru_mask = (1 << NB_RU) - 1;
     printf("Set RU mask to %lx\n",RC.ru_mask);
 
-    for (j = 0; j < RC.nb_RU; j++) {
+    for (int j = 0; j < RC.nb_RU; j++) {
       RC.ru[j]                                      = (RU_t *)malloc(sizeof(RU_t));
       memset((void *)RC.ru[j],0,sizeof(RU_t));
       RC.ru[j]->idx                                 = j;
@@ -1849,12 +1861,13 @@ static void NRRCconfig_RU(void) {
       printf("Creating RC.ru[%d]:%p\n", j, RC.ru[j]);
       RC.ru[j]->if_timing                           = synch_to_ext_device;
 
-      if (RC.nb_nr_L1_inst >0)
+      if (RC.nb_nr_L1_inst > 0)
         RC.ru[j]->num_gNB                           = RUParamList.paramarray[j][RU_ENB_LIST_IDX].numelt;
       else
         RC.ru[j]->num_gNB                           = 0;
 
-      for (i=0; i<RC.ru[j]->num_gNB; i++) RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]];
+      for (int i = 0; i < RC.ru[j]->num_gNB; i++)
+        RC.ru[j]->gNB_list[i] = RC.gNB[RUParamList.paramarray[j][RU_ENB_LIST_IDX].iptr[i]];
 
       if (config_isparamset(RUParamList.paramarray[j], RU_SDR_ADDRS)) {
         RC.ru[j]->openair0_cfg.sdr_addrs = strdup(*(RUParamList.paramarray[j][RU_SDR_ADDRS].strptr));
@@ -1909,7 +1922,7 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->openair0_cfg.tune_offset = get_softmodem_params()->tune_offset;
 
       if (strcmp(*(RUParamList.paramarray[j][RU_LOCAL_RF_IDX].strptr), "yes") == 0) {
-        if ( !(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX)) ) {
+        if (!(config_isparamset(RUParamList.paramarray[j],RU_LOCAL_IF_NAME_IDX))) {
           RC.ru[j]->if_south                        = LOCAL_RF;
           RC.ru[j]->function                        = gNodeB_3GPP;
           printf("Setting function for RU %d to gNodeB_3GPP\n",j);
@@ -1983,6 +1996,8 @@ static void NRRCconfig_RU(void) {
       }  /* strcmp(local_rf, "yes") != 0 */
 
       RC.ru[j]->nb_tx                             = *(RUParamList.paramarray[j][RU_NB_TX_IDX].uptr);
+      AssertFatal(RC.ru[j]->nb_tx >= num_logical_antennas,
+      "Number of logical antenna ports (set in config file with pdsch_AntennaPorts) cannot be larger than physical antennas (nb_tx)\n");
       RC.ru[j]->nb_rx                             = *(RUParamList.paramarray[j][RU_NB_RX_IDX].uptr);
       RC.ru[j]->att_tx                            = *(RUParamList.paramarray[j][RU_ATT_TX_IDX].uptr);
       RC.ru[j]->att_rx                            = *(RUParamList.paramarray[j][RU_ATT_RX_IDX].uptr);
@@ -1991,7 +2006,8 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->do_precoding                      = *(RUParamList.paramarray[j][RU_DO_PRECODING].iptr);
       RC.ru[j]->sl_ahead                          = *(RUParamList.paramarray[j][RU_SL_AHEAD].iptr);
       RC.ru[j]->num_bands                         = RUParamList.paramarray[j][RU_BAND_LIST_IDX].numelt;
-      for (i=0; i<RC.ru[j]->num_bands; i++) RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
+      for (int i = 0; i < RC.ru[j]->num_bands; i++)
+        RC.ru[j]->band[i] = RUParamList.paramarray[j][RU_BAND_LIST_IDX].iptr[i];
       RC.ru[j]->openair0_cfg.nr_flag              = *(RUParamList.paramarray[j][RU_NR_FLAG].iptr);
       RC.ru[j]->openair0_cfg.nr_band              = RC.ru[j]->band[0];
       RC.ru[j]->openair0_cfg.nr_scs_for_raster    = *(RUParamList.paramarray[j][RU_NR_SCS_FOR_RASTER].iptr);
@@ -2003,14 +2019,15 @@ static void NRRCconfig_RU(void) {
       RC.ru[j]->ru_thread_core                    = *(RUParamList.paramarray[j][RU_RU_THREAD_CORE].iptr);
       printf("[RU %d] Setting half-slot parallelization to %d\n",j,RC.ru[j]->half_slot_parallelization); 
       AssertFatal(RC.ru[j]->num_tpcores <= RUParamList.paramarray[j][RU_TP_CORES].numelt, "Number of TP cores should be <=16\n");
-      for (i=0; i<RC.ru[j]->num_tpcores; i++) RC.ru[j]->tpcores[i] = RUParamList.paramarray[j][RU_TP_CORES].iptr[i];
+      for (int i = 0; i < RC.ru[j]->num_tpcores; i++)
+        RC.ru[j]->tpcores[i] = RUParamList.paramarray[j][RU_TP_CORES].iptr[i];
       if (config_isparamset(RUParamList.paramarray[j], RU_BF_WEIGHTS_LIST_IDX)) {
         RC.ru[j]->nb_bfw = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].numelt;
 
-        for (i=0; i<RC.ru[j]->num_gNB; i++)  {
+        for (int i = 0; i < RC.ru[j]->num_gNB; i++)  {
           RC.ru[j]->bw_list[i] = (int32_t *)malloc16_clear((RC.ru[j]->nb_bfw)*sizeof(int32_t));
-
-          for (int b=0; b<RC.ru[j]->nb_bfw; b++) RC.ru[j]->bw_list[i][b] = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].iptr[b];
+          for (int b = 0; b < RC.ru[j]->nb_bfw; b++)
+            RC.ru[j]->bw_list[i][b] = RUParamList.paramarray[j][RU_BF_WEIGHTS_LIST_IDX].iptr[b];
         }
       }
     }// j=0..num_rus
