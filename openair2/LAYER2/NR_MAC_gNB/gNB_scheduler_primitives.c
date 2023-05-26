@@ -44,10 +44,6 @@
 
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
-/* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-#include "RRC/NR/nr_rrc_extern.h"
-#include "RRC/NR/rrc_gNB_UE_context.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "intertask_interface.h"
@@ -2943,12 +2939,6 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 
   UE->CellGroup = cellGroupConfig;
   nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);
-
-  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(rrc->node_type)) {
-    rrc_gNB_ue_context_t *ue = rrc_gNB_create_ue_context(UE->rnti, rrc, UE->rnti);
-    ue->ue_context.masterCellGroup = cellGroupConfig;
-  }
 
   /* activate SRB0 */
   nr_rlc_activate_srb0(UE->rnti, mac, UE, send_initial_ul_rrc_message);

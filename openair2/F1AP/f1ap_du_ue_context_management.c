@@ -37,29 +37,24 @@
 #include "f1ap_du_ue_context_management.h"
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
-#include "rrc_extern.h"
-#include "openair2/RRC/NR/rrc_gNB_UE_context.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
-bool lteDURecvCb(protocol_ctxt_t  *ctxt_pP,
-                 const srb_flag_t     srb_flagP,
-                 const rb_id_t        rb_idP,
-                 const mui_t          muiP,
-                 const confirm_t      confirmP,
-                 const sdu_size_t     sdu_buffer_sizeP,
-                 unsigned char *const sdu_buffer_pP,
-                 const pdcp_transmission_mode_t modeP,
-                 const uint32_t *sourceL2Id,
-                 const uint32_t *destinationL2Id) {
+bool DURecvCb(protocol_ctxt_t *ctxt_pP,
+              const srb_flag_t srb_flagP,
+              const rb_id_t rb_idP,
+              const mui_t muiP,
+              const confirm_t confirmP,
+              const sdu_size_t sdu_buffer_sizeP,
+              unsigned char *const sdu_buffer_pP,
+              const pdcp_transmission_mode_t modeP,
+              const uint32_t *sourceL2Id,
+              const uint32_t *destinationL2Id)
+{
   // The buffer comes from the stack in gtp-u thread, we have a make a separate buffer to enqueue in a inter-thread message queue
   mem_block_t *sdu=get_free_mem_block(sdu_buffer_sizeP, __func__);
   memcpy(sdu->data,  sdu_buffer_pP,  sdu_buffer_sizeP);
-  // weird rb id management in 4G, not fully understand (looks bad design)
-  // overcomplex: if i understand, on the interface DRB start at 4 because there can be SRB 0..3
-  // but it would be much simpler to use absolute numbering
-  // instead of this "srb flag" associated to these +/-4
-  du_rlc_data_req(ctxt_pP,srb_flagP, false,  rb_idP-4,muiP, confirmP,  sdu_buffer_sizeP, sdu);
+  du_rlc_data_req(ctxt_pP, srb_flagP, false, rb_idP, muiP, confirmP, sdu_buffer_sizeP, sdu);
   return true;
 }
 
@@ -138,7 +133,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList = (uint8_t *)calloc(1,ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
       memcpy(f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->buf, ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size);
       f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length = ieCuRrcInfo->value.choice.CUtoDURRCInformation.uE_CapabilityRAT_ContainerList->size;
-      LOG_I(F1AP, "Size f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length: %d \n", f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
+      LOG_D(F1AP, "Size f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length: %d \n", f1ap_ue_context_setup_req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     }
   }
 
@@ -810,17 +805,12 @@ static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, c
   return gtpv1Init(tmp);
 }
 
-int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
-
-  MessageDef                      *msg_p; // message to RRC
+int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextModificationRequest_t    *container;
   int i;
-  DevAssert(pdu);
-  msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_MODIFICATION_REQ);
-  f1ap_ue_context_setup_t *f1ap_ue_context_modification_req = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg_p);
+  f1ap_ue_context_modif_req_t ue_context_modification = {0};
+  f1ap_ue_context_modif_req_t *f1ap_ue_context_modification_req = &ue_context_modification;
   container = &pdu->choice.initiatingMessage->value.choice.UEContextModificationRequest;
 
   /* mandatory */
@@ -841,7 +831,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
   if(f1ap_ue_context_modification_req->rnti<0)
       LOG_E(F1AP, "Could not retrieve UE rnti based on the DU UE id \n");
   else
-      LOG_I(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_modification_req->rnti);
+      LOG_D(F1AP, "Retrieved rnti is: %d \n", f1ap_ue_context_modification_req->rnti);
 
   /* SRB */
   F1AP_UEContextModificationRequestIEs_t *ieSrb;
@@ -967,15 +957,16 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t       instance,
       LOG_E(F1AP, " RRCContainer in UEContextModificationRequestIEs size id 0\n");
     }
   } else {
-    LOG_W(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
+    LOG_D(F1AP, "can't find RRCContainer in UEContextModificationRequestIEs by id %ld \n", F1AP_ProtocolIE_ID_id_RRCContainer);
   }
 
-  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
+  ue_context_modification_request(f1ap_ue_context_modification_req);
   return 0;
 }
 
 //void DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(F1AP_UEContextModificationResponse_t *UEContextModificationResponse) {
-int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_context_setup_t *resp) {
+int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_context_modif_resp_t *resp)
+{
   F1AP_F1AP_PDU_t                        pdu= {0};
   F1AP_UEContextModificationResponse_t    *out;
   uint8_t  *buffer=NULL;
@@ -1062,6 +1053,21 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
       drbs_setupmod_item->dRBID = resp->drbs_to_be_setup[i].drb_id;
 
       for (int j=0;  j<resp->drbs_to_be_setup[i].up_dl_tnl_length; j++) {
+        f1ap_drb_to_be_setup_t *drb = &resp->drbs_to_be_setup[i];
+        transport_layer_addr_t tl_addr = {0};
+        memcpy(tl_addr.buffer, &drb->up_ul_tnl[0].tl_address, sizeof(drb->up_ul_tnl[0].tl_address));
+        tl_addr.length = sizeof(drb->up_ul_tnl[0].tl_address) * 8;
+        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(false, instance)->gtpInst,
+                                                     resp->rnti,
+                                                     drb->drb_id,
+                                                     drb->drb_id,
+                                                     drb->up_ul_tnl[j].teid,
+                                                     -1, // no qfi
+                                                     tl_addr,
+                                                     drb->up_ul_tnl[0].port,
+                                                     DURecvCb,
+                                                     NULL);
+
         /* ADD */
         asn1cSequenceAdd(drbs_setupmod_item->dLUPTNLInformation_ToBeSetup_List.list,
           F1AP_DLUPTNLInformation_ToBeSetup_Item_t, dLUPTNLInformation_ToBeSetup_Item);

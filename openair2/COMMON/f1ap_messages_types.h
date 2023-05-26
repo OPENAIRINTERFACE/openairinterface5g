@@ -341,7 +341,6 @@ typedef struct f1ap_drb_to_be_setup_s {
 
 typedef struct f1ap_srb_to_be_setup_s {
   long           srb_id;
-  rlc_mode_t     rlc_mode;
   uint8_t        lcid;
 } f1ap_srb_to_be_setup_t;
 
@@ -409,7 +408,7 @@ typedef struct f1ap_ue_context_setup_s {
   ReconfigurationCompl_t ReconfigComplOutcome;
   uint8_t *rrc_container;
   int      rrc_container_length;
-} f1ap_ue_context_setup_t;
+} f1ap_ue_context_setup_t, f1ap_ue_context_modif_req_t, f1ap_ue_context_modif_resp_t;
 
 typedef enum F1ap_Cause_e {
   F1AP_CAUSE_NOTHING,  /* No components present */
