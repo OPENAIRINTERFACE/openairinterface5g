@@ -36,6 +36,7 @@
 #include "oai_asn1.h"
 #include "nr_pdcp_oai_api.h"
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
 #include "nr_pdcp_e1_api.h"
@@ -710,7 +711,11 @@ srb_found:
     MessageDef *message_p = itti_alloc_new_message(TASK_PDCP_GNB, 0, F1AP_UL_RRC_MESSAGE);
     AssertFatal(message_p != NULL, "OUT OF MEMORY\n");
     f1ap_ul_rrc_message_t *ul_rrc = &F1AP_UL_RRC_MESSAGE(message_p);
-    ul_rrc->rnti = ue->rntiMaybeUEid;
+    ul_rrc->gNB_CU_ue_id = ue->rntiMaybeUEid;
+    /* look up the correct secondary UE ID to provide complete information to
+     * RRC, the RLC-PDCP interface does not transport this information */
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(ue->rntiMaybeUEid);
+    ul_rrc->gNB_DU_ue_id = ue_data.secondary_ue;
     ul_rrc->srb_id = srb_id;
     ul_rrc->rrc_container = malloc(size);
     AssertFatal(ul_rrc->rrc_container != NULL, "OUT OF MEMORY\n");

@@ -32,6 +32,7 @@
 
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
+#include "f1ap_ids.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "common/ran_context.h"
@@ -253,6 +254,15 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   LOG_D(F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n",
         du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, du_ue_f1ap_id));
+  /* the RLC-PDCP does not transport the DU UE ID (yet), so we drop it here.
+   * For the moment, let's hope this won't become relevant; to sleep in peace,
+   * let's put an assert to check that it is the expected DU UE ID. */
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(cu_ue_f1ap_id);
+  AssertFatal(ue_data.secondary_ue == du_ue_f1ap_id,
+              "unexpected DU UE ID %d received, expected it to be %ld\n",
+              ue_data.secondary_ue,
+              du_ue_f1ap_id);
+
   /* mandatory */
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
@@ -272,7 +282,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   protocol_ctxt_t ctxt={0};
   ctxt.instance = instance;
   ctxt.module_id = instance;
-  ctxt.rntiMaybeUEid = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
+  ctxt.rntiMaybeUEid = cu_ue_f1ap_id;
   ctxt.enb_flag = 1;
   ctxt.eNB_index = 0;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);

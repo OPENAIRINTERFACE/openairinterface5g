@@ -220,15 +220,19 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
   return 0;
 }
 
-int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
-                                       const f1ap_ul_rrc_message_t *msg) {
-  const rnti_t rnti = msg->rnti;
+int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_message_t *msg)
+{
   F1AP_F1AP_PDU_t                pdu= {0};
   F1AP_ULRRCMessageTransfer_t    *out;
   uint8_t *buffer = NULL;
   uint32_t len;
-  LOG_D(F1AP, "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
-        instance, __func__, msg->rrc_container_length, rnti, msg->srb_id);
+  LOG_D(F1AP,
+        "[DU %ld] %s: size %d UE RNTI %x in SRB %d\n",
+        instance,
+        __func__,
+        msg->rrc_container_length,
+        msg->gNB_DU_ue_id,
+        msg->srb_id);
   //for (int i = 0;i < msg->rrc_container_length; i++)
   //  printf("%02x ", msg->rrc_container[i]);
   //printf("\n");
@@ -246,14 +250,14 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = msg->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_ULRRCMessageTransferIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_ULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = msg->gNB_DU_ue_id;
   /* mandatory */
   /* c3. SRBID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_ULRRCMessageTransferIEs_t, ie3);

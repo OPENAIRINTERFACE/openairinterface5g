@@ -2754,7 +2754,7 @@ void *rrc_gnb_task(void *args_p) {
         PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt,
                                       instance,
                                       GNB_FLAG_YES,
-                                      F1AP_UL_RRC_MESSAGE(msg_p).rnti,
+                                      F1AP_UL_RRC_MESSAGE(msg_p).gNB_CU_ue_id,
                                       0,
                                       0);
         LOG_D(NR_RRC,
@@ -2764,6 +2764,7 @@ void *rrc_gnb_task(void *args_p) {
               instance,
               &ctxt,
               F1AP_UL_RRC_MESSAGE(msg_p).rrc_container_length);
+        DevAssert(F1AP_UL_RRC_MESSAGE(msg_p).gNB_CU_ue_id == F1AP_UL_RRC_MESSAGE(msg_p).gNB_DU_ue_id);
         rrc_gNB_decode_dcch(&ctxt,
                             F1AP_UL_RRC_MESSAGE(msg_p).srb_id,
                             F1AP_UL_RRC_MESSAGE(msg_p).rrc_container,
