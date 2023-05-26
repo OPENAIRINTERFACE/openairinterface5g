@@ -50,7 +50,7 @@ void nr_pdcp_security_nea2_cipher(void *security_context, unsigned char *buffer,
   memcpy(p.key, ciphering_key, 16);
   p.type = AES_INITIALIZATION_VECTOR_16;
   p.iv16.d.count = ntohl(count);
-  p.iv16.d.bearer = bearer;
+  p.iv16.d.bearer = bearer - 1;
   p.iv16.d.direction = direction;
 
   uint8_t out[length];
