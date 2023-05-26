@@ -145,19 +145,13 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 }
 
 /*  UL RRC Message Transfer */
-int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
-    int             CC_idP,
-    int             UE_id,
-    rnti_t          rntiP,
-    const uint8_t   *sduP,
-    sdu_size_t      sdu_lenP,
-    const uint8_t   *sdu2P,
-    sdu_size_t      sdu2_lenP) {
+int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_initial_ul_rrc_message_t *msg)
+{
   F1AP_F1AP_PDU_t                       pdu= {0};
   F1AP_InitialULRRCMessageTransfer_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  int f1ap_uid = f1ap_add_ue (DUtype, instanceP, rntiP);
+  int f1ap_uid = f1ap_add_ue(DUtype, instanceP, msg->crnti);
 
   if (f1ap_uid  < 0 ) {
     LOG_E(F1AP, "Failed to add UE \n");
@@ -178,7 +172,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie1->value.choice.GNB_DU_UE_F1AP_ID = getCxt(DUtype, instanceP)->f1ap_ue[f1ap_uid].du_ue_f1ap_id;
+  ie1->value.choice.GNB_DU_UE_F1AP_ID = msg->gNB_DU_ue_id;
   /* mandatory */
   /* c2. NRCGI */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie2);
@@ -193,25 +187,25 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
   ie3->id                             = F1AP_ProtocolIE_ID_id_C_RNTI;
   ie3->criticality                    = F1AP_Criticality_reject;
   ie3->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_C_RNTI;
-  ie3->value.choice.C_RNTI=rntiP;
+  ie3->value.choice.C_RNTI = msg->crnti;
   /* mandatory */
   /* c4. RRCContainer */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie4);
   ie4->id                            = F1AP_ProtocolIE_ID_id_RRCContainer;
   ie4->criticality                   = F1AP_Criticality_reject;
   ie4->value.present                 = F1AP_InitialULRRCMessageTransferIEs__value_PR_RRCContainer;
-  OCTET_STRING_fromBuf(&ie4->value.choice.RRCContainer, (const char *)sduP, sdu_lenP);
+  OCTET_STRING_fromBuf(&ie4->value.choice.RRCContainer, (const char *)msg->rrc_container, msg->rrc_container_length);
 
   /* optional */
   /* c5. DUtoCURRCContainer */
-  if (sdu2P) {
+  if (msg->du2cu_rrc_container != NULL) {
     asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie5);
     ie5->id                             = F1AP_ProtocolIE_ID_id_DUtoCURRCContainer;
     ie5->criticality                    = F1AP_Criticality_reject;
     ie5->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_DUtoCURRCContainer;
     OCTET_STRING_fromBuf(&ie5->value.choice.DUtoCURRCContainer,
-                         (const char *)sdu2P,
-                         sdu2_lenP);
+                         (const char *)msg->du2cu_rrc_container,
+                         msg->du2cu_rrc_container_length);
   }
   /* mandatory */
   /* c6. Transaction ID (integer value) */
@@ -230,7 +224,6 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t     instanceP,
   f1ap_itti_send_sctp_data_req(false, instanceP, buffer, len, getCxt(DUtype, instanceP)->default_sctp_stream_id);
   return 0;
 }
-
 
 int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance,
                                        const f1ap_ul_rrc_message_t *msg) {

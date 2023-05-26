@@ -51,6 +51,9 @@ rrc_gNB_ue_context_t* rrc_gNB_ue_context_random_exist(gNB_RRC_INST* rrc_instance
 
 rrc_gNB_ue_context_t* rrc_gNB_ue_context_5g_s_tmsi_exist(gNB_RRC_INST* rrc_instance_pP, const uint64_t s_TMSI);
 void rrc_gNB_update_ue_context_rnti(rnti_t rnti, gNB_RRC_INST* rrc_instance_pP, uint32_t gNB_ue_ngap_id);
-rrc_gNB_ue_context_t* rrc_gNB_create_ue_context(rnti_t rnti, gNB_RRC_INST* rrc_instance_pP, const uint64_t ue_identityP);
+rrc_gNB_ue_context_t* rrc_gNB_create_ue_context(rnti_t rnti,
+                                                gNB_RRC_INST* rrc_instance_pP,
+                                                const uint64_t ue_identityP,
+                                                uint32_t du_ue_id);
 
 #endif

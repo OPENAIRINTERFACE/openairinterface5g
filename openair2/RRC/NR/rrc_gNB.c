@@ -489,7 +489,11 @@ static int rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t m
   rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
   gNB_RRC_INST *rrc_instance_p = RC.nrrrc[module_id];
 
-  ue_context_pP = rrc_gNB_create_ue_context(rnti, rrc_instance_p, 0);
+  AssertFatal(!NODE_IS_CU(rrc_instance_p->node_type), "Not functional in F1-split: no DU UE ID available\n");
+  /* for creating a UE context, we need the DU ID to be able to indicate the
+   * DU. This is not yet implemented for Reestablishment. We know that in
+   * monolithic, the DU UE ID is the RNTI, so use that for the moment */
+  ue_context_pP = rrc_gNB_create_ue_context(rnti, rrc_instance_p, 0, rnti);
 
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
   unsigned char buf[1024];
@@ -1468,7 +1472,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 }
 
 /*------------------------------------------------------------------------------*/
-static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint8_t *buffer, int buffer_length, const uint8_t *du_to_cu_rrc_container, int du_to_cu_rrc_container_len)
+static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_rrc_message_t *msg)
 {
   module_id_t                                       Idx;
   asn_dec_rval_t                                    dec_rval;
@@ -1476,9 +1480,11 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
   gNB_RRC_INST *gnb_rrc_inst = RC.nrrrc[module_id];
   NR_RRCSetupRequest_IEs_t                         *rrcSetupRequest = NULL;
   NR_RRCReestablishmentRequest_IEs_t rrcReestablishmentRequest;
+  rnti_t rnti = msg->crnti;
 
-  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", rnti, buffer_length);
-  dec_rval = uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **) &ul_ccch_msg, buffer, buffer_length, 0, 0);
+  LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", rnti, msg->rrc_container_length);
+  dec_rval =
+      uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **)&ul_ccch_msg, msg->rrc_container, msg->rrc_container_length, 0, 0);
 
   if (dec_rval.code != RC_OK || dec_rval.consumed == 0) {
     LOG_E(NR_RRC, " FATAL Error in receiving CCCH\n");
@@ -1517,7 +1523,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
               AssertFatal(false, "not implemented\n");
             }
 
-            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value);
+            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
           } else if (NR_InitialUE_Identity_PR_ng_5G_S_TMSI_Part1 == rrcSetupRequest->ue_Identity.present) {
             /* TODO */
             /* <5G-S-TMSI> = <AMF Set ID><AMF Pointer><5G-TMSI> 48-bit */
@@ -1549,7 +1555,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
             } else {
               LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", rnti, s_tmsi_part1);
 
-              ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, s_tmsi_part1);
+              ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, s_tmsi_part1, msg->gNB_DU_ue_id);
               if (ue_context_p == NULL) {
                 LOG_E(NR_RRC, "rrc_gNB_get_next_free_ue_context returned NULL\n");
                 return -1;
@@ -1563,7 +1569,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
             uint64_t random_value = 0;
             memcpy(((uint8_t *)&random_value) + 3, rrcSetupRequest->ue_Identity.choice.randomValue.buf, rrcSetupRequest->ue_Identity.choice.randomValue.size);
 
-            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value);
+            ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
             LOG_E(NR_RRC, "RRCSetupRequest without random UE identity or S-TMSI not supported, let's reject the UE %04x\n", rnti);
             rrc_gNB_generate_RRCReject(module_id, ue_context_p);
             break;
@@ -1575,8 +1581,8 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
           rrc_gNB_generate_RRCSetup(module_id,
                                     rnti,
                                     rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, rnti),
-                                    du_to_cu_rrc_container,
-                                    du_to_cu_rrc_container_len);
+                                    msg->du2cu_rrc_container,
+                                    msg->du2cu_rrc_container_length);
         }
         break;
 
@@ -1585,7 +1591,11 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
         break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcReestablishmentRequest: {
-        LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)(buffer), buffer_length, "[MSG] RRC Reestablishment Request\n");
+        LOG_DUMPMSG(NR_RRC,
+                    DEBUG_RRC,
+                    (char *)(msg->rrc_container),
+                    msg->rrc_container_length,
+                    "[MSG] RRC Reestablishment Request\n");
         rrcReestablishmentRequest = ul_ccch_msg->message.choice.c1->choice.rrcReestablishmentRequest->rrcReestablishmentRequest;
         const NR_ReestablishmentCause_t cause = rrcReestablishmentRequest.reestablishmentCause;
         const long physCellId = rrcReestablishmentRequest.ue_Identity.physCellId;
@@ -1662,7 +1672,11 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, rnti_t rnti, const uint
         // SRB2: set  it to go through SRB1 with id 1 (DCCH)
         UE->Srb[2].Active = 1;
         protocol_ctxt_t ctxt = {.rntiMaybeUEid = rnti, .module_id = module_id, .instance = module_id, .enb_flag = 1, .eNB_index = module_id};
-        rrc_gNB_generate_RRCReestablishment(&ctxt, ue_context_p, du_to_cu_rrc_container, gnb_rrc_inst->carrier.servingcellconfigcommon, 0);
+        rrc_gNB_generate_RRCReestablishment(&ctxt,
+                                            ue_context_p,
+                                            msg->du2cu_rrc_container,
+                                            gnb_rrc_inst->carrier.servingcellconfigcommon,
+                                            0);
 
         LOG_I(NR_RRC, "CALLING RLC CONFIG SRB1 (rbid %d)\n", Idx);
       } break;
@@ -2224,7 +2238,7 @@ void rrc_gNB_process_initial_ul_rrc_message(const f1ap_initial_ul_rrc_message_t 
     i = 0;
     LOG_W(RRC, "initial UL RRC message nr_cellid %ld does not match RRC's %ld\n", ul_rrc->nr_cellid, RC.nrrrc[0]->nr_cellid);
   }
-  nr_rrc_gNB_decode_ccch(i, ul_rrc->crnti, ul_rrc->rrc_container, ul_rrc->rrc_container_length, ul_rrc->du2cu_rrc_container, ul_rrc->du2cu_rrc_container_length);
+  nr_rrc_gNB_decode_ccch(i, ul_rrc);
 
   if (ul_rrc->rrc_container)
     free(ul_rrc->rrc_container);
