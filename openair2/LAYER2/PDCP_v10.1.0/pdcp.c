@@ -50,14 +50,13 @@
 #include "common/openairinterface5g_limits.h"
 #include "executables/lte-softmodem.h"
 #include "SIMULATION/ETH_TRANSPORT/proto.h"
-#include "UTIL/OSA/osa_defs.h"
 #include "openair2/RRC/NAS/nas_config.h"
 #include "intertask_interface.h"
 #include "openair3/S1AP/s1ap_eNB.h"
 #include <pthread.h>
 #include "pdcp.h"
 
-#  include "openair3/ocp-gtpu/gtp_itf.h"
+#include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "ENB_APP/enb_config.h"
@@ -2028,19 +2027,6 @@ pdcp_config_req_asn1(const protocol_ctxt_t *const  ctxt_pP,
         // pdcp_remove_UE(ctxt_pP);
       }
 
-      /* Security keys */
-      if (pdcp_pP->kUPenc != NULL) {
-        free(pdcp_pP->kUPenc);
-      }
-
-      if (pdcp_pP->kRRCint != NULL) {
-        free(pdcp_pP->kRRCint);
-      }
-
-      if (pdcp_pP->kRRCenc != NULL) {
-        free(pdcp_pP->kRRCenc);
-      }
-
       memset(pdcp_pP, 0, sizeof(pdcp_t));
       break;
 
@@ -2105,9 +2091,11 @@ pdcp_config_set_security(
           PROTOCOL_PDCP_CTXT_ARGS(ctxt_pP,pdcp_pP),
           pdcp_pP->cipheringAlgorithm,
           pdcp_pP->integrityProtAlgorithm);
-    pdcp_pP->kRRCenc = kRRCenc;
-    pdcp_pP->kRRCint = kRRCint;
-    pdcp_pP->kUPenc  = kUPenc;
+
+    kRRCenc != NULL ? memcpy(pdcp_pP->kRRCenc, kRRCenc, 32) : memset(pdcp_pP->kRRCenc, 0, 32);
+    kRRCint != NULL ? memcpy(pdcp_pP->kRRCint, kRRCint, 32) : memset(pdcp_pP->kRRCint, 0, 32);
+    kUPenc != NULL ? memcpy(pdcp_pP->kUPenc, kUPenc, 32) : memset(pdcp_pP->kUPenc, 0, 32);
+
     /* Activate security */
     pdcp_pP->security_activated = 1;
   }
@@ -2328,18 +2316,6 @@ pdcp_free (
   pdcp_t *pdcp_p = (pdcp_t *)pdcp_pP;
 
   if (pdcp_p != NULL) {
-    if (pdcp_p->kUPenc != NULL) {
-      free(pdcp_p->kUPenc);
-    }
-
-    if (pdcp_p->kRRCint != NULL) {
-      free(pdcp_p->kRRCint);
-    }
-
-    if (pdcp_p->kRRCenc != NULL) {
-      free(pdcp_p->kRRCenc);
-    }
-
     memset(pdcp_pP, 0, sizeof(pdcp_t));
     free(pdcp_pP);
   }

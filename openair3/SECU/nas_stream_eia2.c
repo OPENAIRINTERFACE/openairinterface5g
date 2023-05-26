@@ -25,7 +25,7 @@
 #include <stdint.h>
 #include <string.h>
 
-#include "secu_defs.h"
+#include "nas_stream_eia2.h"
 
 #include <arpa/inet.h>
 #include "aes_128_cbc_cmac.h"
@@ -40,7 +40,7 @@
  * @param[out] out For EIA2 the output string is 32 bits long
  */
 
-int nas_stream_encrypt_eia2(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
+void nas_stream_encrypt_eia2(nas_stream_cipher_t const *stream_cipher, uint8_t out[4])
 {
   DevAssert(stream_cipher != NULL);
   DevAssert(stream_cipher->message != NULL);
@@ -49,7 +49,7 @@ int nas_stream_encrypt_eia2(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
   DevAssert((stream_cipher->blength & 0x7) == 0); 
 
   aes_128_t k_iv = {0};
-  memcpy(&k_iv.key, stream_cipher->key, sizeof(k_iv.key));
+  memcpy(k_iv.key, stream_cipher->key, sizeof(k_iv.key));
   k_iv.type = AES_INITIALIZATION_VECTOR_8;
   k_iv.iv8.d.bearer = stream_cipher->bearer;
   k_iv.iv8.d.direction = stream_cipher->direction;
@@ -59,8 +59,7 @@ int nas_stream_encrypt_eia2(nas_stream_cipher_t *stream_cipher, uint8_t out[4])
   uint8_t result[16] = {0};
   byte_array_t msg = {.buf = stream_cipher->message, .len = m_length };
   aes_128_cbc_cmac(&k_iv, msg, sizeof(result), result);
-  
+
   memcpy(out, result, 4);
-  return 0;
 }
 

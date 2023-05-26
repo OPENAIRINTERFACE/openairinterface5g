@@ -28,9 +28,9 @@
 #include "aes_128_ctr.h"
 #include "assertions.h"
 #include "conversions.h"
-#include "secu_defs.h"
+#include "nas_stream_eea2.h"
 
-int nas_stream_encrypt_eea2(nas_stream_cipher_t *stream_cipher, uint8_t *out)
+void nas_stream_encrypt_eea2(nas_stream_cipher_t const *stream_cipher, uint8_t *out)
 {
   DevAssert(stream_cipher != NULL);
   DevAssert(stream_cipher->key != NULL);
@@ -53,6 +53,4 @@ int nas_stream_encrypt_eea2(nas_stream_cipher_t *stream_cipher, uint8_t *out)
   const size_t len_out = byte_lenght;
   byte_array_t msg = {.buf =  stream_cipher->message, .len = byte_lenght};
   aes_128_ctr(&p, msg, len_out, out);
-
-  return 0;
 }

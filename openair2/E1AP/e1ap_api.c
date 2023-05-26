@@ -23,11 +23,12 @@
 
 #include <arpa/inet.h>
 #include "e1ap_api.h"
-#include "UTIL/OSA/osa_defs.h"
+
 #include "nr_pdcp/nr_pdcp_entity.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_e1_api.h"
 #include "openair2/RRC/NR/cucp_cuup_if.h"
 #include "openair2/RRC/LTE/MESSAGES/asn1_msg.h"
+#include "openair3/SECU/key_nas_deriver.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include "e1ap_asnc.h"
 #include "e1ap_common.h"
@@ -120,12 +121,12 @@ static int drb_config_N3gtpu_create(e1ap_bearer_setup_req_t * const req,
   }
 
   // Configure DRBs
-  uint8_t *kUPenc = NULL;
-  uint8_t *kUPint = NULL;
+  uint8_t kUPenc[16] = {0};
+  uint8_t kUPint[16] = {0};
 
-  nr_derive_key(UP_ENC_ALG, req->cipheringAlgorithm, (uint8_t *)req->encryptionKey, &kUPenc);
+  nr_derive_key(UP_ENC_ALG, req->cipheringAlgorithm, (uint8_t *)req->encryptionKey, kUPenc);
 
-  nr_derive_key(UP_INT_ALG, req->integrityProtectionAlgorithm, (uint8_t *)req->integrityProtectionKey, &kUPint);
+  nr_derive_key(UP_INT_ALG, req->integrityProtectionAlgorithm, (uint8_t *)req->integrityProtectionKey, kUPint);
 
   nr_pdcp_e1_add_drbs(true, // set this to notify PDCP that his not UE
                       create_tunnel_req.ue_id,

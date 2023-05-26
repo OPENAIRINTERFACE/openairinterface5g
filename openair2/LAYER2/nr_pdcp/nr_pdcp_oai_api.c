@@ -920,10 +920,6 @@ void nr_pdcp_add_srbs(eNB_flag_t enb_flag, ue_id_t rntiMaybeUEid, NR_SRB_ToAddMo
     }
   } else
     LOG_W(PDCP, "nr_pdcp_add_srbs() with void list\n");
-  if (kRRCenc)
-    free(kRRCenc);
-  if (kRRCint)
-    free(kRRCint);
 }
 
 void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
@@ -941,10 +937,6 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
     }
   } else
     LOG_W(PDCP, "nr_pdcp_add_drbs() with void list\n");
-  if (kUPenc)
-    free(kUPenc);
-  if (kUPint)
-    free(kUPint);
 }
 
 /* Dummy function due to dependency from LTE libraries */

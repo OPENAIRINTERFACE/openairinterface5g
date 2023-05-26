@@ -40,6 +40,7 @@
 #include "aka_functions.h"
 #include "secu_defs.h"
 #include "kdf.h"
+#include "key_nas_deriver.h"
 #include "PduSessionEstablishRequest.h"
 #include "PduSessionEstablishmentAccept.h"
 #include "RegistrationAccept.h"
@@ -50,6 +51,7 @@
 #include <openair1/PHY/phy_extern_nr_ue.h>
 #include <openair1/SIMULATION/ETH_TRANSPORT/proto.h>
 #include "openair2/SDAP/nr_sdap/nr_sdap.h"
+#include "openair3/SECU/nas_stream_eia2.h"
 
 uint8_t  *registration_request_buf;
 uint32_t  registration_request_len;
@@ -597,9 +599,7 @@ static void generateSecurityModeComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
   stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
 
   // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
-  nas_stream_encrypt_eia2(
-    &stream_cipher,
-    mac);
+  stream_compute_integrity(EIA2_128_ALG_ID, &stream_cipher, mac);
 
   printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
   for(int i = 0; i < 4; i++){
@@ -702,9 +702,7 @@ static void generateRegistrationComplete(nr_ue_nas_t *nas, as_nas_info_t *initia
   stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
 
   // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
-  nas_stream_encrypt_eia2(
-    &stream_cipher,
-    mac);
+  stream_compute_integrity(EIA2_128_ALG_ID, &stream_cipher, mac);
 
   printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
   for(int i = 0; i < 4; i++){
@@ -861,9 +859,7 @@ static void generatePduSessionEstablishRequest(nr_ue_nas_t *nas, as_nas_info_t *
   stream_cipher.blength    = (initialNasMsg->length - 6) << 3;
 
   // only for Type of integrity protection algorithm: 128-5G-IA2 (2)
-  nas_stream_encrypt_eia2(
-    &stream_cipher,
-    mac);
+  stream_compute_integrity(EIA2_128_ALG_ID, &stream_cipher, mac);
 
   printf("mac %x %x %x %x \n", mac[0], mac[1], mac[2], mac[3]);
   for(int i = 0; i < 4; i++){

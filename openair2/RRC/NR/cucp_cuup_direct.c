@@ -29,7 +29,8 @@
 #include "nr_rrc_proto.h"
 #include "nr_rrc_extern.h"
 #include "openair2/COMMON/e1ap_messages_types.h"
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
+
 #include "nr_pdcp/nr_pdcp_entity.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_e1_api.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
@@ -38,6 +39,7 @@
 #include "common/ran_context.h"
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/E1AP/e1ap_common.h"
+
 extern RAN_CONTEXT_t RC;
 
 void fill_e1ap_bearer_setup_resp(e1ap_bearer_setup_resp_t *resp,
@@ -134,18 +136,19 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
 
   nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(ctxt_p, &create_tunnel_resp, 0);
 
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kRRCint = NULL;
-  uint8_t *kUPenc = NULL;
-  uint8_t *kUPint = NULL;
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
+  uint8_t kUPint[16] = {0};
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-    nr_derive_key_up_enc(UE->ciphering_algorithm, UE->kgnb, &kUPenc);
-    nr_derive_key_up_int(UE->integrity_algorithm, UE->kgnb, &kUPint);
+    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kUPenc);
+    nr_derive_key(UP_INT_ALG, UE->integrity_algorithm, UE->kgnb, kUPint);
   }
 
-  nr_derive_key_rrc_enc(UE->ciphering_algorithm, UE->kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(UE->integrity_algorithm, UE->kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
+
   /* Refresh SRBs/DRBs */
 
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %x\n", UE->rnti);

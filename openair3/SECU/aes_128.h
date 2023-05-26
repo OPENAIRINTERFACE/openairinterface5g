@@ -62,9 +62,10 @@ typedef struct{
  }; 
 } iv8_t;
 
-typedef enum{
+typedef enum {
   AES_INITIALIZATION_VECTOR_8,
   AES_INITIALIZATION_VECTOR_16,
+  NONE_INITIALIZATION_VECTOR,
 
   AES_INITIALIZATION_VECTOR_END,
 } iv_e;

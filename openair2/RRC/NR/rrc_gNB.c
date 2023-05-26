@@ -75,7 +75,7 @@
 #include "RRC/NAS/nas_config.h"
 #include "RRC/NAS/rb_config.h"
 
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/secu_defs.h"
 
 #include "rrc_gNB_NGAP.h"
 
@@ -90,6 +90,7 @@
 #include "executables/softmodem-common.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
 #include <openair2/X2AP/x2ap_eNB.h>
+#include <openair3/SECU/key_nas_deriver.h>
 #include <openair3/ocp-gtpu/gtp_itf.h>
 #include <openair2/RRC/NR/nr_rrc_proto.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_e1_api.h"
@@ -1035,31 +1036,30 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, const uint8_t xid)
 {
   int                                 drb_id;
-  uint8_t                            *kRRCenc = NULL;
-  uint8_t                            *kRRCint = NULL;
-  uint8_t                            *kUPenc = NULL;
-  uint8_t                            *kUPint = NULL;
-  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  NR_DRB_ToAddModList_t *DRB_configList = ue_p->DRB_configList2[xid];
-  NR_SRB_ToAddModList_t *SRB_configList = ue_p->SRB_configList2[xid];
-  NR_DRB_ToReleaseList_t *DRB_Release_configList2 = ue_p->DRB_Release_configList2[xid];
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
+  uint8_t kUPint[16] = {0};
+  NR_DRB_ToAddModList_t *DRB_configList = ue_context_pP->ue_context.DRB_configList2[xid];
+  NR_SRB_ToAddModList_t *SRB_configList = ue_context_pP->ue_context.SRB_configList2[xid];
+  NR_DRB_ToReleaseList_t *DRB_Release_configList2 = ue_context_pP->ue_context.DRB_Release_configList2[xid];
   NR_DRB_Identity_t                  *drb_id_p      = NULL;
   //  uint8_t                             nr_DRB2LCHAN[8];
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
   ue_p->ue_reestablishment_timer = 0;
 
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-    nr_derive_key_up_enc(ue_p->ciphering_algorithm, ue_p->kgnb, &kUPenc);
-    nr_derive_key_up_int(ue_p->integrity_algorithm, ue_p->kgnb, &kUPint);
+    nr_derive_key(UP_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kUPenc);
+    nr_derive_key(UP_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kUPint);
   }
 
-  nr_derive_key_rrc_enc(ue_p->ciphering_algorithm, ue_p->kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(ue_p->integrity_algorithm, ue_p->kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kRRCint);
+
   /* Refresh SRBs/DRBs */
-
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_p->rnti);
-
   ue_id_t reestablish_ue_id = 0;
   if (DRB_configList && DRB_configList->list.array[0]->reestablishPDCP && *DRB_configList->list.array[0]->reestablishPDCP == NR_DRB_ToAddMod__reestablishPDCP_true) {
     for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
@@ -1226,16 +1226,16 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
 
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n", ue_p->rnti, size);
 
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kRRCint = NULL;
-  uint8_t *kUPenc = NULL;
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
   /* Derive the keys from kgnb */
   if (SRB_configList != NULL) {
-    nr_derive_key_up_enc(ue_p->ciphering_algorithm, ue_p->kgnb, &kUPenc);
+    nr_derive_key(UP_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kUPenc);
   }
 
-  nr_derive_key_rrc_enc(ue_p->ciphering_algorithm, ue_p->kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(ue_p->integrity_algorithm, ue_p->kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, ue_p->ciphering_algorithm, ue_p->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, ue_p->integrity_algorithm, ue_p->kgnb, kRRCint);
 
   /* Configure SRB1 for UE */
   if (*SRB_configList != NULL) {

@@ -26,13 +26,12 @@
 #include <stdint.h>
 #include <openssl/cmac.h>
 
-#include "UTIL/OSA/osa_defs.h"
-
-int stream_compute_integrity_eia1(stream_cipher_t *stream_cipher, uint8_t out[4]);
+#include "openair3/SECU/secu_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
 
 void *nr_pdcp_integrity_nia1_init(unsigned char *integrity_key)
 {
-  stream_cipher_t *ret;
+  nas_stream_cipher_t *ret;
 
   ret = calloc(1, sizeof(*ret)); if (ret == NULL) abort();
   ret->key = malloc(16); if (ret->key == NULL) abort();
@@ -47,7 +46,7 @@ void nr_pdcp_integrity_nia1_integrity(void *integrity_context,
                             unsigned char *buffer, int length,
                             int bearer, int count, int direction)
 {
-  stream_cipher_t *ctx = integrity_context;
+  nas_stream_cipher_t *ctx = integrity_context;
 
   ctx->message = buffer;
   ctx->count = count;
@@ -55,12 +54,12 @@ void nr_pdcp_integrity_nia1_integrity(void *integrity_context,
   ctx->direction = direction;
   ctx->blength = length * 8;
 
-  stream_compute_integrity_eia1(ctx, out);
+  stream_compute_integrity(EIA1_128_ALG_ID, ctx, out);
 }
 
 void nr_pdcp_integrity_nia1_free_integrity(void *integrity_context)
 {
-  stream_cipher_t *ctx = integrity_context;
+  nas_stream_cipher_t *ctx = integrity_context;
   free(ctx->key);
   free(ctx);
 }

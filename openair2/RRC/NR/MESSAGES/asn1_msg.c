@@ -46,7 +46,9 @@
 #include "LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "asn1_msg.h"
 #include "../nr_rrc_proto.h"
-#include "UTIL/OSA/osa_defs.h"
+
+#include "openair3/SECU/key_nas_deriver.h"
+
 #include "RRC/NR/nr_rrc_extern.h"
 #include "NR_DL-CCCH-Message.h"
 #include "NR_UL-CCCH-Message.h"
