@@ -175,7 +175,7 @@ void gNB_dlsch_ulsch_scheduler(module_id_t module_idP, frame_t frame, sub_frame_
     nr_rlc_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     nr_pdcp_tick(frame, slot >> *scc->ssbSubcarrierSpacing);
     if (is_x2ap_enabled())
-      x2ap_trigger(); /* if none of the above options, it must be NSA */
+      x2ap_trigger();
   }
 
   for (int CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
