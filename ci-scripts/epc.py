@@ -75,7 +75,6 @@ class EPCManagement():
 		self.OCRegistry = "default-route-openshift-image-registry.apps.oai.cs.eurecom.fr/"
 		self.OCUserName = ''
 		self.OCPassword = ''
-		self.OCProjectName = ''
 		self.imageToPull = ''
 		self.eNBSourceCodePath = ''
 
@@ -240,9 +239,9 @@ class EPCManagement():
 		HTML.CreateHtmlTestRow(self.Type, 'OK', CONST.ALL_PROCESSES_OK)
 
 	def Initialize5GCN(self, HTML):
-		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.SourceCodePath == '' or self.Type == '':
+		if self.IPAddress == '' or self.UserName == '' or self.Password == '' or self.Type == '':
 			HELP.GenericHelp(CONST.Version)
-			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.SourceCodePath, self.Type)
+			HELP.EPCSrvHelp(self.IPAddress, self.UserName, self.Password, self.Type)
 			sys.exit('Insufficient EPC Parameters')
 		mySSH = cls_cmd.getConnection(self.IPAddress)
 		html_cell = ''
@@ -299,8 +298,8 @@ class EPCManagement():
 			imageNames = ["oai-nrf", "oai-amf", "oai-smf", "oai-spgwu-tiny", "oai-ausf", "oai-udm", "oai-udr", "mysql","oai-traffic-server"]
 			logging.debug('Deploying OAI CN5G on Openshift Cluster')
 			lIpAddr = self.IPAddress
-			lSourcePath = self.SourceCodePath
-			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, self.OCProjectName)
+			lSourcePath = "/opt/oai-cn5g-fed-develop-2023-04-28-20897"
+			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, OC.CI_OC_CORE_NAMESPACE)
 			if not succeeded:
 				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -599,7 +598,7 @@ class EPCManagement():
 			mySSH.run(f'rm -Rf {lSourcePath}/logs')
 			mySSH.run(f'mkdir -p {lSourcePath}/logs')
 			logging.debug('OC OAI CN5G - Collecting Log files to workspace')
-			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, self.OCProjectName)
+			succeeded = OC.OC_login(mySSH, self.OCUserName, self.OCPassword, OC.CI_OC_CORE_NAMESPACE)
 			if not succeeded:
 				logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
 				HTML.CreateHtmlTestRow('N/A', 'KO', CONST.OC_LOGIN_FAIL)
@@ -618,7 +617,7 @@ class EPCManagement():
 			mySSH.run(f'cd {lSourcePath}/logs && zip -r -qq test_logs_CN.zip *.log')
 			mySSH.copyin(f'{lSourcePath}/logs/test_logs_CN.zip','test_logs_CN.zip')
 			ret = mySSH.run(f'oc get pods', silent=True)
-			res = re.search('No resources found in oaicicd-ran namespace.', ret.stdout)
+			res = re.search(f'No resources found in {OC.CI_OC_CORE_NAMESPACE} namespace.', ret.stdout)
 			if res is not None:
 			       logging.debug('OC OAI CN5G components uninstalled')
 			       message = 'OC OAI CN5G components uninstalled'

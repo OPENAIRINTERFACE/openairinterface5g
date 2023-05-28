@@ -26,13 +26,10 @@
 
 #include "assertions.h"
 #include "conversions.h"
-#include "secu_defs.h"
+#include "nas_stream_eea1.h"
 #include "snow3g.h"
 
-// #define SECU_DEBUG
-
-
-int nas_stream_encrypt_eea1(nas_stream_cipher_t *stream_cipher, uint8_t *out)
+void nas_stream_encrypt_eea1(nas_stream_cipher_t const *stream_cipher, uint8_t *out)
 {
   snow_3g_context_t snow_3g_context;
   int       n ;
@@ -106,6 +103,4 @@ int nas_stream_encrypt_eea1(nas_stream_cipher_t *stream_cipher, uint8_t *out)
   if (zero_bit > 0) {
     out[ceil_index - 1] = stream_cipher->message[ceil_index - 1];
   }
-
-  return 0;
 }

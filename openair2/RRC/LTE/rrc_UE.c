@@ -73,7 +73,7 @@
   #include "rrc_UE_ral.h"
 #endif
 
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
 
 #include "pdcp.h"
 #include "plmn_data.h"
@@ -1246,12 +1246,11 @@ rrc_ue_process_radioResourceConfigDedicated(
   // Establish SRBs if present
   // loop through SRBToAddModList
   if (radioResourceConfigDedicated->srb_ToAddModList) {
-    uint8_t *kRRCenc = NULL;
-    uint8_t *kRRCint = NULL;
-    derive_key_rrc_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
-                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCenc);
-    derive_key_rrc_int(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
-                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCint);
+    uint8_t kRRCenc[32] = {0};
+    uint8_t kRRCint[32] = {0};
+    derive_key_nas(RRC_ENC_ALG, UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kRRCenc);
+    derive_key_nas(RRC_INT_ALG, UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kRRCint);
+
     // Refresh SRBs
     rrc_pdcp_config_asn1_req(ctxt_pP,
                              radioResourceConfigDedicated->srb_ToAddModList,
@@ -1397,9 +1396,9 @@ rrc_ue_process_radioResourceConfigDedicated(
       LOG_I(RRC,"[UE %d] default DRB = %ld\n",ctxt_pP->module_id, *UE_rrc_inst[ctxt_pP->module_id].defaultDRB);
     }
 
-    uint8_t *kUPenc = NULL;
-    derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
-                      UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
+    uint8_t kUPenc[32] = {0};
+    derive_key_nas(UP_ENC_ALG, UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kUPenc);
+
     // Refresh DRBs
     rrc_pdcp_config_asn1_req(ctxt_pP,
                              (LTE_SRB_ToAddModList_t *)NULL,
@@ -1549,9 +1548,9 @@ rrc_ue_process_securityModeCommand(
     ul_dcch_msg.message.choice.c1.present = LTE_UL_DCCH_MessageType__c1_PR_securityModeFailure;
   }
 
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kUPenc = NULL;
-  uint8_t *kRRCint = NULL;
+  uint8_t kRRCenc[32] = {0};
+  uint8_t kUPenc[32] = {0};
+  uint8_t kRRCint[32] = {0};
   pdcp_t *pdcp_p = NULL;
   hash_key_t key = HASHTABLE_NOT_A_KEY_VALUE;
   hashtable_rc_t h_rc;
@@ -1577,12 +1576,10 @@ rrc_ue_process_securityModeCommand(
           UE_rrc_inst[ctxt_pP->module_id].kenb[20], UE_rrc_inst[ctxt_pP->module_id].kenb[21], UE_rrc_inst[ctxt_pP->module_id].kenb[22], UE_rrc_inst[ctxt_pP->module_id].kenb[23],
           UE_rrc_inst[ctxt_pP->module_id].kenb[24], UE_rrc_inst[ctxt_pP->module_id].kenb[25], UE_rrc_inst[ctxt_pP->module_id].kenb[26], UE_rrc_inst[ctxt_pP->module_id].kenb[27],
           UE_rrc_inst[ctxt_pP->module_id].kenb[28], UE_rrc_inst[ctxt_pP->module_id].kenb[29], UE_rrc_inst[ctxt_pP->module_id].kenb[30], UE_rrc_inst[ctxt_pP->module_id].kenb[31]);
-    derive_key_rrc_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
-                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCenc);
-    derive_key_rrc_int(UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm,
-                       UE_rrc_inst[ctxt_pP->module_id].kenb, &kRRCint);
-    derive_key_up_enc(UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm,
-                      UE_rrc_inst[ctxt_pP->module_id].kenb, &kUPenc);
+
+    derive_key_nas(RRC_ENC_ALG, UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kRRCenc);
+    derive_key_nas(RRC_INT_ALG, UE_rrc_inst[ctxt_pP->module_id].integrity_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kRRCint);
+    derive_key_nas(UP_ENC_ALG, UE_rrc_inst[ctxt_pP->module_id].ciphering_algorithm, UE_rrc_inst[ctxt_pP->module_id].kenb, kUPenc);
 
     if (securityMode != 0xff) {
       pdcp_config_set_security(ctxt_pP, pdcp_p, 0, 0,

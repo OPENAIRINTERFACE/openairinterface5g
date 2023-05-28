@@ -25,7 +25,6 @@
 #include <unistd.h>
 
 #include "test_util.h"
-
 #include "secu_defs.h"
 
 static
@@ -52,8 +51,7 @@ void eea2_encrypt(uint8_t direction, uint32_t count,
   nas_cipher->blength    = length;
   nas_cipher->message    = message;
 
-  if (nas_stream_encrypt_eea2(nas_cipher, result) != 0)
-    fail("Fail: nas_stream_encrypt_eea2\n");
+  nas_stream_encrypt_eea2(nas_cipher, result);
 
   if (compare_buffer(result, byte_length, expected, byte_length) != 0) {
     fail("Fail: eea2_encrypt\n");

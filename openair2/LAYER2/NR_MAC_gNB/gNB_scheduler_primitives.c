@@ -44,10 +44,6 @@
 
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 
-/* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-#include "RRC/NR/nr_rrc_extern.h"
-#include "RRC/NR/rrc_gNB_UE_context.h"
-#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "intertask_interface.h"
@@ -2785,6 +2781,19 @@ void nr_mac_update_timers(module_id_t module_id,
   NR_UEs_t *UE_info = &RC.nrmac[module_id]->UE_info;
   UE_iterator(UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+
+    if (nr_mac_check_release(sched_ctrl, UE->rnti)) {
+      nr_rlc_remove_ue(UE->rnti);
+      mac_remove_nr_ue(RC.nrmac[module_id], UE->rnti);
+      // go back to examine the next UE, which is at the position the
+      // current UE was
+      UE--;
+      continue;
+    }
+
+    /* check if UL failure and trigger release request if necessary */
+    nr_mac_check_ul_failure(RC.nrmac[module_id], UE->rnti, sched_ctrl);
+
     if (sched_ctrl->rrc_processing_timer > 0) {
       sched_ctrl->rrc_processing_timer--;
       if (sched_ctrl->rrc_processing_timer == 0) {
@@ -2931,12 +2940,6 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   UE->CellGroup = cellGroupConfig;
   nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);
 
-  /* TODO REMOVE_DU_RRC: the RRC in the DU is a hack and should be taken out in the future */
-  if (NODE_IS_DU(rrc->node_type)) {
-    rrc_gNB_ue_context_t *ue = rrc_gNB_create_ue_context(UE->rnti, rrc, UE->rnti);
-    ue->ue_context.masterCellGroup = cellGroupConfig;
-  }
-
   /* activate SRB0 */
   nr_rlc_activate_srb0(UE->rnti, mac, UE, send_initial_ul_rrc_message);
 
@@ -2945,4 +2948,54 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
   const NR_RLC_BearerConfig_t *bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[0];
   DevAssert(bearer->servedRadioBearer->choice.srb_Identity == 1);
   nr_rlc_add_srb(UE->rnti, DCCH, bearer);
+}
+
+void nr_mac_trigger_release_timer(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing)
+{
+  // trigger 60ms
+  sched_ctrl->release_timer = 60 << subcarrier_spacing;
+}
+
+bool nr_mac_check_release(NR_UE_sched_ctrl_t *sched_ctrl, int rnti)
+{
+  if (sched_ctrl->release_timer == 0)
+    return false;
+  sched_ctrl->release_timer--;
+  return sched_ctrl->release_timer == 0;
+}
+
+void nr_mac_trigger_ul_failure(NR_UE_sched_ctrl_t *sched_ctrl, NR_SubcarrierSpacing_t subcarrier_spacing)
+{
+  if (sched_ctrl->ul_failure) {
+    /* already running */
+    return;
+  }
+  sched_ctrl->ul_failure = true;
+  // 30 seconds till triggering release request
+  sched_ctrl->ul_failure_timer = 30000 << subcarrier_spacing;
+}
+
+void nr_mac_reset_ul_failure(NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  sched_ctrl->ul_failure = false;
+  sched_ctrl->ul_failure_timer = 0;
+  sched_ctrl->pusch_consecutive_dtx_cnt = 0;
+}
+
+void nr_mac_check_ul_failure(const gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  if (!sched_ctrl->ul_failure)
+    return;
+  if (sched_ctrl->ul_failure_timer > 0)
+    sched_ctrl->ul_failure_timer--;
+  /* to trigger only once: trigger when ul_failure_timer == 1, but timer will
+   * stop at 0 and we wait for a UE release command from upper layers */
+  if (sched_ctrl->ul_failure_timer == 1) {
+    f1ap_ue_context_release_complete_t complete = {
+      .rnti = rnti,
+      .cause = F1AP_CAUSE_RADIO_NETWORK,
+      .cause_value = 12, // F1AP_CauseRadioNetwork_rl_failure_others
+    };
+    nrmac->mac_rrc.ue_context_release_request(&complete);
+  }
 }

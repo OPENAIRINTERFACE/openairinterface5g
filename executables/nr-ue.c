@@ -734,16 +734,6 @@ void syncInFrame(PHY_VARS_NR_UE *UE, openair0_timestamp *timestamp) {
     }
 }
 
-int computeSamplesShift(PHY_VARS_NR_UE *UE) {
-  int samples_shift = -(UE->rx_offset>>1);
-  if (samples_shift != 0) {
-    LOG_I(NR_PHY,"Adjusting frame in time by %i samples\n", samples_shift);
-    UE->rx_offset = 0; // reset so that it is not applied falsely in case of SSB being only in every second frame
-    UE->max_pos_fil += samples_shift << 15; // reset IIR filter when sample shift is applied
-  }
-  return samples_shift;
-}
-
 static inline int get_firstSymSamp(uint16_t slot, NR_DL_FRAME_PARMS *fp) {
   if (fp->numerology_index == 0)
     return fp->nb_prefix_samples0 + fp->ofdm_symbol_size;
@@ -904,14 +894,13 @@ void *UE_thread(void *arg) {
 
     int readBlockSize, writeBlockSize;
 
-    if (slot_nr<(nb_slot_frame - 1)) {
-      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX) % nb_slot_frame, &UE->frame_parms);
-    } else {
-      UE->rx_offset_diff = computeSamplesShift(UE);
-      readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms) -
-                    UE->rx_offset_diff;
-      writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX) % nb_slot_frame, &UE->frame_parms)- UE->rx_offset_diff;
+    readBlockSize=get_readBlockSize(slot_nr, &UE->frame_parms);
+    writeBlockSize=UE->frame_parms.get_samples_per_slot((slot_nr + DURATION_RX_TO_TX) % nb_slot_frame, &UE->frame_parms);
+    if (UE->apply_timing_offset && (slot_nr == nb_slot_frame-1)) {
+      const int sampShift = -(UE->rx_offset>>1);
+      readBlockSize  -= sampShift;
+      writeBlockSize -= sampShift;
+      UE->apply_timing_offset = false;
     }
 
     AssertFatal(readBlockSize ==

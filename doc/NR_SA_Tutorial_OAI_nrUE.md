@@ -21,11 +21,11 @@ In this tutorial we describe how to configure and run a 5G end-to-end setup with
 
 Minimum hardware requirements:
 - Laptop/Desktop/Server for OAI CN5G and OAI gNB
-    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.1-desktop-amd64.iso)
+    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.2-desktop-amd64.iso)
     - CPU: 8 cores x86_64 @ 3.5 GHz
     - RAM: 32 GB
 - Laptop for UE
-    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.1-desktop-amd64.iso)
+    - Operating System: [Ubuntu 22.04 LTS](https://releases.ubuntu.com/22.04/ubuntu-22.04.2-desktop-amd64.iso)
     - CPU: 8 cores x86_64 @ 3.5 GHz
     - RAM: 8 GB
 - [USRP B210](https://www.ettus.com/all-products/ub210-kit/), [USRP N300](https://www.ettus.com/all-products/USRP-N300/) or [USRP X300](https://www.ettus.com/all-products/x300-kit/)
@@ -155,7 +155,7 @@ Run OAI nrUE
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --ue-fo-compensation --sa -E --uicc0.imsi 001010000000001
 ```
 
 ## 5.2 Testing OAI nrUE with RFsimulator
@@ -168,7 +168,7 @@ Run OAI nrUE with RFsimulator
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --rfsim --sa --uicc0.imsi 001010000000001
+sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001
 ```
 
 ### 5.2.1 Ping test

@@ -29,10 +29,11 @@
 
 #ifndef MILENAGE_H
 #define MILENAGE_H
+
 #include <openssl/aes.h>
 
+#include "openair3/SECU/aes_128_ecb.h"
 
-#define u8 uint8_t
 /**
    milenage_f1 - Milenage f1 and f1* algorithms
    @opc: OPc = 128-bit value derived from OP and K
@@ -45,16 +46,29 @@
    Returns: true on success, false on failure
 */
 
-void aes_128_encrypt_block(const u8* key, const u8* in, u8* out) {
-   AES_KEY k;
-  u8 tmp[16];
-  AES_set_encrypt_key(key, 128, &k);
-  AES_encrypt(in, tmp, &k); 
+void aes_128_encrypt_block(const uint8_t *key, const uint8_t *in, uint8_t *out)
+{
+  abort();
+  assert(0 != 0 && "Here we are!");
+  // Precondition: key, in and out occupy 16 bytes
+  aes_128_t k_iv = {.type = NONE_INITIALIZATION_VECTOR};
+  memcpy(k_iv.key, key, sizeof(k_iv.key));
+
+  byte_array_t msg = {.buf = (uint8_t *)in, .len = 16};
+  uint8_t tmp[16] = {0};
+  aes_128_ecb(&k_iv, msg, sizeof(tmp), tmp);
   memcpy(out, tmp, sizeof(tmp));
 }
-static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
-                 const u8 *sqn, const u8 *amf, u8 *mac_a, u8 *mac_s) {
-  u8 tmp1[16], tmp2[16], tmp3[16];
+
+static bool milenage_f1(const uint8_t *opc,
+                        const uint8_t *k,
+                        const uint8_t *_rand,
+                        const uint8_t *sqn,
+                        const uint8_t *amf,
+                        uint8_t *mac_a,
+                        uint8_t *mac_s)
+{
+  uint8_t tmp1[16], tmp2[16], tmp3[16];
   int i;
 
   /* tmp1 = TEMP = E_K(RAND XOR OP_C) */
@@ -62,10 +76,10 @@ static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
     tmp1[i] = _rand[i] ^ opc[i];
 
   aes_128_encrypt_block(k, tmp1, tmp1);
-  AES_KEY kTab;
-  uint8_t cyphered[16];
-  AES_set_encrypt_key(k, 128, &kTab);
-  AES_encrypt(tmp1, cyphered, &kTab);
+
+  uint8_t cyphered[16] = {0};
+  aes_128_encrypt_block(k, tmp1, cyphered);
+
   /* tmp2 = IN1 = SQN || AMF || SQN || AMF */
   memcpy(tmp2, sqn, 6);
   memcpy(tmp2 + 6, amf, 2);
@@ -97,7 +111,6 @@ static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
   return true;
 }
 
-
 /**
    milenage_f2345 - Milenage f2, f3, f4, f5, f5* algorithms
    @opc: OPc = 128-bit value derived from OP and K
@@ -110,9 +123,16 @@ static bool milenage_f1(const u8 *opc, const u8 *k, const u8 *_rand,
    @akstar: Buffer for AK = 48-bit anonymity key (f5*), or %NULL
    Returns: true on success, false on failure
 */
-static bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
-                    u8 *res, u8 *ck, u8 *ik, u8 *ak, u8 *akstar) {
-  u8 tmp1[16], tmp2[16], tmp3[16];
+static bool milenage_f2345(const uint8_t *opc,
+                           const uint8_t *k,
+                           const uint8_t *_rand,
+                           uint8_t *res,
+                           uint8_t *ck,
+                           uint8_t *ik,
+                           uint8_t *ak,
+                           uint8_t *akstar)
+{
+  uint8_t tmp1[16], tmp2[16], tmp3[16];
   int i;
 
   /* tmp2 = TEMP = E_K(RAND XOR OP_C) */
@@ -186,7 +206,6 @@ static bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
   return true;
 }
 
-
 /**
    milenage_generate - Generate AKA AUTN,IK,CK,RES
    @opc: OPc = 128-bit operator variant algorithm configuration field (encr.)
@@ -200,11 +219,18 @@ static bool milenage_f2345(const u8 *opc, const u8 *k, const u8 *_rand,
    @res: Buffer for RES = 64-bit signed response (f2), or %NULL
    @res_len: Max length for res; set to used length or 0 on failure
 */
-static bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
-                       const u8 *sqn, const u8 *_rand, u8 *autn, u8 *ik,
-                       u8 *ck, u8 *res) {
+static bool milenage_generate(const uint8_t *opc,
+                              const uint8_t *amf,
+                              const uint8_t *k,
+                              const uint8_t *sqn,
+                              const uint8_t *_rand,
+                              uint8_t *autn,
+                              uint8_t *ik,
+                              uint8_t *ck,
+                              uint8_t *res)
+{
   int i;
-  u8 mac_a[8], ak[6];
+  uint8_t mac_a[8], ak[6];
 
   if (!milenage_f1(opc, k, _rand, sqn, amf, mac_a, NULL) ||
       !milenage_f2345(opc, k, _rand, res, ck, ik, ak, NULL))
@@ -219,7 +245,6 @@ static bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
   return true;
 }
 
-
 /**
    milenage_auts - Milenage AUTS validation
    @opc: OPc = 128-bit operator variant algorithm configuration field (encr.)
@@ -232,10 +257,10 @@ static bool milenage_generate(const u8 *opc, const u8 *amf, const u8 *k,
 #define p(a) printf("%02hhx:%02hhx:%02hhx:%02hhx:%02hhx:%02hhx\n", (int)((a)[0]), (int)((a)[1]), (int)((a)[2]), (int)((a)[3]),(int)((a)[4]), (int)((a)[5]));
 // valid code but put in comment as it is not used right now
 #if 0
-static bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 *auts,
-                   u8 *sqn) {
-  u8 amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
-  u8 ak[6], mac_s[8];
+static bool milenage_auts(const uint8_t *opc, const uint8_t *k, const uint8_t *_rand, const uint8_t *auts,
+                   uint8_t *sqn) {
+  uint8_t amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
+  uint8_t ak[6], mac_s[8];
   int i;
 
   if (!milenage_f2345(opc, k, _rand, NULL, NULL, NULL, NULL, ak))
@@ -262,8 +287,8 @@ static bool milenage_auts(const u8 *opc, const u8 *k, const u8 *_rand, const u8 
    @kc: Buffer for Kc = 64-bit Kc
    Returns: 0 on success, -1 on failure
 */
-static bool gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, u8 *kc) {
-  u8 res[8], ck[16], ik[16];
+static bool gsm_milenage(const uint8_t *opc, const uint8_t *k, const uint8_t *_rand, uint8_t *sres, uint8_t *kc) {
+  uint8_t res[8], ck[16], ik[16];
   int i;
 
   if (milenage_f2345(opc, k, _rand, res, ck, ik, NULL, NULL))
@@ -298,12 +323,12 @@ static bool gsm_milenage(const u8 *opc, const u8 *k, const u8 *_rand, u8 *sres, 
    @auts: 112-bit buffer for AUTS
    Returns: 0 on success, -1 on failure, or -2 on synchronization failure
 */
-static int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_rand,
-                   const u8 *autn, u8 *ik, u8 *ck, u8 *res, size_t *res_len,
-                   u8 *auts) {
+static int milenage_check(const uint8_t *opc, const uint8_t *k, const uint8_t *sqn, const uint8_t *_rand,
+                   const uint8_t *autn, uint8_t *ik, uint8_t *ck, uint8_t *res, size_t *res_len,
+                   uint8_t *auts) {
   int i;
-  u8 mac_a[8], ak[6], rx_sqn[6];
-  const u8 *amf;
+  uint8_t mac_a[8], ak[6], rx_sqn[6];
+  const uint8_t *amf;
 
   if (milenage_f2345(opc, k, _rand, res, ck, ik, ak, NULL))
     return -1;
@@ -315,7 +340,7 @@ static int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_
     rx_sqn[i] = autn[i] ^ ak[i];
 
   if (memcmp(rx_sqn, sqn, 6) <= 0) {
-    u8 auts_amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
+    uint8_t auts_amf[2] = { 0x00, 0x00 }; /* TS 33.102 v7.0.0, 6.3.3 */
 
     if (milenage_f2345(opc, k, _rand, NULL, NULL, NULL, NULL, ak))
       return -1;
@@ -342,7 +367,7 @@ static int milenage_check(const u8 *opc, const u8 *k, const u8 *sqn, const u8 *_
   return 0;
 }
 
-static void milenage_opc_gen(const u8 *k, const u8 *op, u8 *opc) {
+static void milenage_opc_gen(const uint8_t *k, const uint8_t *op, uint8_t *opc) {
   int i;
   /* Encrypt OP using K */
   aes_128_encrypt_block(k, op, opc);

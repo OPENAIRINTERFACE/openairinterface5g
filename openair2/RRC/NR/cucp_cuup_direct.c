@@ -29,7 +29,8 @@
 #include "nr_rrc_proto.h"
 #include "nr_rrc_extern.h"
 #include "openair2/COMMON/e1ap_messages_types.h"
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
+
 #include "nr_pdcp/nr_pdcp_entity.h"
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_e1_api.h"
 #include <openair2/RRC/NR/rrc_gNB_UE_context.h>
@@ -38,6 +39,7 @@
 #include "common/ran_context.h"
 #include "openair2/F1AP/f1ap_common.h"
 #include "openair2/E1AP/e1ap_common.h"
+
 extern RAN_CONTEXT_t RC;
 
 void fill_e1ap_bearer_setup_resp(e1ap_bearer_setup_resp_t *resp,
@@ -134,18 +136,19 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
 
   nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(ctxt_p, &create_tunnel_resp, 0);
 
-  uint8_t *kRRCenc = NULL;
-  uint8_t *kRRCint = NULL;
-  uint8_t *kUPenc = NULL;
-  uint8_t *kUPint = NULL;
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
+  uint8_t kUPint[16] = {0};
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
-    nr_derive_key_up_enc(UE->ciphering_algorithm, UE->kgnb, &kUPenc);
-    nr_derive_key_up_int(UE->integrity_algorithm, UE->kgnb, &kUPint);
+    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kUPenc);
+    nr_derive_key(UP_INT_ALG, UE->integrity_algorithm, UE->kgnb, kUPint);
   }
 
-  nr_derive_key_rrc_enc(UE->ciphering_algorithm, UE->kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(UE->integrity_algorithm, UE->kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
+
   /* Refresh SRBs/DRBs */
 
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %x\n", UE->rnti);
@@ -187,6 +190,19 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, UE->rnti, 0, 0, 0);
 
   fill_DRB_configList(&ctxt, ue_context_p, xid);
+  e1ap_bearer_setup_resp_t resp = {0};
+  resp.numPDUSessions = req->numPDUSessions;
+  for (int i = 0; i < resp.numPDUSessions; ++i) {
+    resp.pduSession[i].numDRBSetup = req->pduSession[i].numDRB2Setup;
+    for (int j = 0; j < req->pduSession[i].numDRB2Setup; j++) {
+      DRB_nGRAN_to_setup_t *req_drb = req->pduSession[i].DRBnGRanList + j;
+      DRB_nGRAN_setup_t *resp_drb = resp.pduSession[i].DRBnGRanList + j;
+      resp_drb->id = req_drb->id;
+      resp_drb->numQosFlowSetup = req_drb->numQosFlow2Setup;
+      for (int k = 0; k < resp_drb->numQosFlowSetup; k++)
+        resp_drb->qosFlows[k].id = req_drb->qosFlows[k].id;
+    }
+  }
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   // Fixme: xid not random, but almost!
@@ -195,21 +211,26 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, UE->DRB_configList, *SRB_configList2, rrc->e1_inst);
   if (ret < 0) AssertFatal(false, "Unable to configure DRB or to create GTP Tunnel\n");
 
+  // Used to store teids: if monolithic, will simply be NULL
   if(!NODE_IS_CU(RC.nrrrc[ctxt.module_id]->node_type)) {
-    rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p, NULL);
+    // intentionally empty
   } else {
-    e1ap_bearer_setup_resp_t resp; // Used to store teids
     int remote_port = RC.nrrrc[ctxt.module_id]->eth_params_s.remote_portd;
     in_addr_t my_addr = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.my_addr);
     instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
     // GTP tunnel for DL
     fill_e1ap_bearer_setup_resp(&resp, req, gtpInst, UE->rnti, remote_port, my_addr);
-
-    prepare_and_send_ue_context_modification_f1(ue_context_p, &resp);
   }
+  // actually, we should receive the corresponding context setup response
+  // message at the RRC and always react to this one. So in the following, we
+  // just call the corresponding message handler
+  prepare_and_send_ue_context_modification_f1(ue_context_p, &resp);
 }
 
 static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const req, instance_t instance, uint8_t xid) {
+  // only update GTP tunnels if it is really a CU
+  if (!NODE_IS_CU(RC.nrrrc[0]->node_type))
+    return;
   instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
   CU_update_UP_DL_tunnel(req, gtpInst, req->rnti);
 }

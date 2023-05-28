@@ -284,7 +284,7 @@ void nr_processDLSegment(void* arg) {
       if (no_iteration_ldpc > dlsch->max_ldpc_iterations)
         no_iteration_ldpc = dlsch->max_ldpc_iterations;
     } else {
-      LOG_I(PHY,"%d.%d CRC NOT OK\n",rdata->proc->frame_rx,rdata->proc->nr_slot_rx);
+      LOG_D(PHY,"%d.%d CRC NOT OK\n",rdata->proc->frame_rx,rdata->proc->nr_slot_rx);
       no_iteration_ldpc = dlsch->max_ldpc_iterations + 1;
     }
 

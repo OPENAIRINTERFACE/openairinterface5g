@@ -47,7 +47,8 @@
 
 #include "S1AP_NAS-PDU.h"
 #include "executables/softmodem-common.h"
-#include "UTIL/OSA/osa_defs.h"
+#include "openair3/SECU/key_nas_deriver.h"
+
 #include "ngap_gNB_defs.h"
 #include "ngap_gNB_ue_context.h"
 #include "ngap_gNB_management_procedures.h"
@@ -126,20 +127,21 @@ nr_rrc_pdcp_config_security(
 {
   NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList;
   (void)SRB_configList;
-  uint8_t                            *kRRCenc = NULL;
-  uint8_t                            *kRRCint = NULL;
-  uint8_t                            *kUPenc = NULL;
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  uint8_t kUPenc[16] = {0};
   //uint8_t                            *k_kdf  = NULL;
   static int                          print_keys= 1;
   gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
 
   /* Derive the keys from kgnb */
   if (UE->Srb[1].Active || UE->Srb[2].Active) {
-    nr_derive_key_up_enc(UE->ciphering_algorithm, UE->kgnb, &kUPenc);
+    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kUPenc);
   }
 
-  nr_derive_key_rrc_enc(UE->ciphering_algorithm, UE->kgnb, &kRRCenc);
-  nr_derive_key_rrc_int(UE->integrity_algorithm, UE->kgnb, &kRRCint);
+  nr_derive_key(RRC_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, kRRCenc);
+  nr_derive_key(RRC_INT_ALG, UE->integrity_algorithm, UE->kgnb, kRRCint);
+
   if (!IS_SOFTMODEM_IQPLAYER) {
     SET_LOG_DUMP(DEBUG_SECURITY) ;
   }
@@ -396,12 +398,7 @@ int rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ(MessageDef *msg_p, instance_t
     int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, &create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);
     if (ret != 0) {
       LOG_E(NR_RRC, "rrc_gNB_process_NGAP_INITIAL_CONTEXT_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE %x\n", UE->rnti);
-      UE->ue_release_timer_ng = 1;
-      UE->ue_release_timer_thres_ng = 100;
-      UE->ue_release_timer = 0;
-      UE->ue_reestablishment_timer = 0;
-      UE->ul_failure_timer = 20000;
-      UE->ul_failure_timer = 0;
+      AssertFatal(false, "release timer not implemented\n");
       return (0);
     }
 
@@ -653,7 +650,7 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
         //               NGAP_UPLINK_NAS (msg_p).nas_pdu.length,
         //               ue_context_pP);
         itti_send_msg_to_task (TASK_NGAP, ctxt_pP->instance, msg_p);
-        LOG_I(NR_RRC,"Send RRC GNB UL Information Transfer \n");
+        LOG_D(NR_RRC,"Send RRC GNB UL Information Transfer \n");
     }
 }
 
@@ -1157,8 +1154,6 @@ int rrc_gNB_process_NGAP_UE_CONTEXT_RELEASE_COMMAND(MessageDef *msg_p, instance_
   }
 
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
-  UE->ue_release_timer_ng = 0;
-  UE->ue_release_timer_thres_rrc = 1000;
   PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, instance, GNB_FLAG_YES, UE->rnti, 0, 0);
   ctxt.eNB_index = 0;
   rrc_gNB_generate_RRCRelease(&ctxt, ue_context_p);

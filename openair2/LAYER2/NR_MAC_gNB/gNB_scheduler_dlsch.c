@@ -577,7 +577,7 @@ static void pf_dl(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
-    if (sched_ctrl->ul_failure==1)
+    if (sched_ctrl->ul_failure)
       continue;
 
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.dl;
@@ -898,7 +898,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     NR_UE_DL_BWP_t *current_BWP = &UE->current_DL_BWP;
 
-    if (sched_ctrl->ul_failure==1 && get_softmodem_params()->phy_test==0) continue;
+    if (sched_ctrl->ul_failure && !get_softmodem_params()->phy_test)
+      continue;
 
     NR_sched_pdsch_t *sched_pdsch = &sched_ctrl->sched_pdsch;
     UE->mac_stats.dl.current_bytes = 0;

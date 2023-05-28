@@ -313,17 +313,6 @@ typedef struct gNB_RRC_UE_s {
   int nb_of_pdusessions;
   rrc_pdu_session_param_t pduSession[NGAP_MAX_PDU_SESSION];
   rrc_action_t xids[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
-  uint32_t                           ul_failure_timer;
-  uint32_t                           ue_release_timer;
-  uint32_t                           ue_release_timer_thres;
-  uint32_t                           ue_release_timer_s1;
-  uint32_t                           ue_release_timer_thres_s1;
-  uint32_t                           ue_release_timer_ng;
-  uint32_t                           ue_release_timer_thres_ng;
-  uint32_t                           ue_release_timer_rrc;
-  uint32_t                           ue_release_timer_thres_rrc;
-  uint32_t                           ue_reestablishment_timer;
-  uint32_t                           ue_reestablishment_timer_thres;
   uint8_t e_rab_release_command_flag;
   uint32_t ue_rrc_inactivity_timer;
   uint32_t                           ue_reestablishment_counter;
@@ -389,8 +378,9 @@ typedef struct {
 } nr_security_configuration_t;
 
 typedef struct nr_mac_rrc_dl_if_s {
-  /* TODO add other message types as necessary */
   ue_context_setup_request_func_t ue_context_setup_request;
+  ue_context_modification_request_func_t ue_context_modification_request;
+  ue_context_release_command_func_t ue_context_release_command;
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
 } nr_mac_rrc_dl_if_t;
 

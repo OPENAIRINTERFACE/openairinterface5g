@@ -19,38 +19,26 @@
  *      contact@openairinterface.org
  */
 
-/*! \file x2ap_eNB.h
- * \brief x2ap tasks for eNB
- * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
- * \date 2018
- * \version 1.0
- */
+#include "nas_stream_eea0.h"
 
-#include <stdio.h>
-#include <stdint.h>
+#include "common/utils/assertions.h"
+#include "common/utils/LOG/log.h"
 
-/** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
- * @ingroup _ref_implementation_
- * @{
- */
+#include <string.h>
 
-#ifndef X2AP_H_
-#define X2AP_H_
+void nas_stream_encrypt_eea0(nas_stream_cipher_t const *stream_cipher, uint8_t *out)
+{
+  DevAssert(stream_cipher != NULL);
+  DevAssert(out != NULL);
 
-#define X2AP_SCTP_PPID   (27)    ///< X2AP SCTP Payload Protocol Identifier (PPID)
-#include "x2ap_eNB_defs.h"
+  LOG_D(OSA,
+        "Entering stream_encrypt_eea0, bits length %u, bearer %u, "
+        "count %u, direction %s\n",
+        stream_cipher->blength,
+        stream_cipher->bearer,
+        stream_cipher->count,
+        stream_cipher->direction == SECU_DIRECTION_DOWNLINK ? "Downlink" : "Uplink");
 
-int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
-                        net_ip_address_t    *local_ip_addr,
-                        uint32_t enb_port_for_X2C);
-
-void *x2ap_task(void *arg);
-
-int is_x2ap_enabled(void);
-void x2ap_trigger(void);
-
-#endif /* X2AP_H_ */
-
-/**
- * @}
- */
+  uint32_t byte_length = (stream_cipher->blength + 7) >> 3;
+  memcpy(out, stream_cipher->message, byte_length);
+}

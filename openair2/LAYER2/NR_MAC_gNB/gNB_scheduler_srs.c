@@ -260,8 +260,7 @@ void nr_schedule_srs(int module_id, frame_t frame, int slot)
       sched_ctrl->sched_srs.srs_scheduled = false;
     }
 
-    if((sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) ||
-       sched_ctrl->rrc_processing_timer > 0) {
+    if ((sched_ctrl->ul_failure && !get_softmodem_params()->phy_test) || sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
 

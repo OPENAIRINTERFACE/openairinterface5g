@@ -45,6 +45,7 @@
 #include "LTE_MBMS-SessionInfoList-r9.h"
 #include "LTE_PMCH-InfoList-r9.h"
 
+#include "openair3/SECU/secu_defs.h"
 
 typedef rlc_op_status_t  (*send_rlc_data_req_func_t)(const protocol_ctxt_t *const,
 						     const srb_flag_t, const MBMS_flag_t,
@@ -161,17 +162,17 @@ typedef struct pdcp_s {
   bool is_srb;
 
   /* Configured security algorithms */
-  uint8_t cipheringAlgorithm;
-  uint8_t integrityProtAlgorithm;
+  eea_alg_id_e cipheringAlgorithm;
+  eia_alg_id_e integrityProtAlgorithm;
 
   /* User-Plane encryption key
    * Control-Plane RRC encryption key
    * Control-Plane RRC integrity key
    * These keys are configured by RRC layer
    */
-  uint8_t *kUPenc;
-  uint8_t *kRRCint;
-  uint8_t *kRRCenc;
+  uint8_t kUPenc[32];
+  uint8_t kRRCint[32];
+  uint8_t kRRCenc[32];
 
   uint8_t security_activated;
 

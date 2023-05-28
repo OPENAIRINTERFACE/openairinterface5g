@@ -671,9 +671,7 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
       if (!get_softmodem_params()->phy_test && UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt >= pusch_failure_thres) {
          LOG_W(NR_MAC,"Detected UL Failure on PUSCH after %d PUSCH DTX, stopping scheduling\n",
                UE->UE_sched_ctrl.pusch_consecutive_dtx_cnt);
-         UE->UE_sched_ctrl.ul_failure = 1;
-
-         nr_mac_gNB_rrc_ul_failure(gnb_mod_idP,CC_idP,frameP,slotP,rntiP);
+         nr_mac_trigger_ul_failure(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
       }
     }
   } else if(sduP) {
@@ -757,11 +755,9 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
         LOG_D(NR_MAC, "[UE %04x] PUSCH TPC %d and TA %d\n", UE_msg3_stage->rnti, UE_scheduling_control->tpc0, UE_scheduling_control->ta_update);
         if (ra->cfra) {
           LOG_A(NR_MAC, "(rnti 0x%04x) CFRA procedure succeeded!\n", ra->rnti);
-          nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->rnti);
+          nr_mac_reset_ul_failure(UE_scheduling_control);
           reset_dl_harq_list(UE_scheduling_control);
           reset_ul_harq_list(UE_scheduling_control);
-          UE_scheduling_control->pusch_consecutive_dtx_cnt = 0;
-          UE_scheduling_control->ul_failure = 0;
           UE_msg3_stage->ra_timer = 0;
           nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
           process_CellGroup(ra->CellGroup, UE_scheduling_control);
@@ -793,8 +789,7 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB
-                // Reset uplink failure flags/counters/timers at RRC
-                nr_mac_gNB_rrc_ul_failure_reset(gnb_mod_idP, frameP, slotP, ra->crnti);
+                nr_mac_reset_ul_failure(&UE_C->UE_sched_ctrl);
 
                 // Reset HARQ processes
                 reset_dl_harq_list(&UE_C->UE_sched_ctrl);
@@ -1638,7 +1633,7 @@ static void pf_ul(module_id_t module_id,
   UE_iterator(UE_list, UE) {
 
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    if (UE->Msg4_ACKed != true || sched_ctrl->ul_failure == 1)
+    if (UE->Msg4_ACKed != true || sched_ctrl->ul_failure)
       continue;
 
     LOG_D(NR_MAC,"pf_ul: preparing UL scheduling for UE %04x\n",UE->rnti);
@@ -2067,7 +2062,8 @@ void nr_schedule_ulsch(module_id_t module_id, frame_t frame, sub_frame_t slot, n
   const NR_SIB1_t *sib1 = nr_mac->common_channels[0].sib1 ? nr_mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1 : NULL;
   UE_iterator( UE_info->list, UE) {
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-    if (sched_ctrl->ul_failure == 1 && get_softmodem_params()->phy_test==0) continue;
+    if (sched_ctrl->ul_failure && !get_softmodem_params()->phy_test)
+      continue;
 
     NR_CellGroupConfig_t *cg = UE->CellGroup;
     NR_UE_UL_BWP_t *current_BWP = &UE->current_UL_BWP;

@@ -42,14 +42,6 @@
 #define AUTN_LENGTH_BITS       (128)
 #define AUTN_LENGTH_OCTETS     (AUTN_LENGTH_BITS/8)
 
-/* Some methods to convert a string to an int64_t */
-/*
-#define STRING_TO_64BITS(sTRING, cONTAINER)    \
-    sscanf(sTRING, "%" SCN64, cONTAINER)
-#define STRING_TO_U64BITS(sTRING, cONTAINER)    \
-    sscanf(sTRING, "%" SCNu64, cONTAINER)
-*/
-
 /* Converts a string to 128 bits gmplib integer holder */
 # define STRING_TO_XBITS(sTRING, lENGTH, cONTAINER, rET)        \
 do {                                                            \
@@ -62,18 +54,6 @@ STRING_TO_XBITS(sTRING, 16, cONTAINER, rET)
 
 # define STRING_TO_256BITS(sTRING, cONTAINER, rET)  \
 STRING_TO_XBITS(sTRING, 32, cONTAINER, rET)
-
-# define STRING_TO_RAND      STRING_TO_128BITS
-# define STRING_TO_AUTH_KEY  STRING_TO_128BITS
-# define STRING_TO_AUTH_RES  STRING_TO_128BITS
-# define STRING_TO_AUTN      STRING_TO_128BITS
-# define STRING_TO_KASME     STRING_TO_256BITS
-# define STRING_TO_XRES(sTRING, lENGTH, cONTAINER, rET)         \
-do {                                                            \
-    STRING_TO_XBITS(sTRING, lENGTH, (cONTAINER)->data, rET);    \
-    if (rET != -1)                                              \
-        (cONTAINER)->size = lENGTH;                             \
-} while(0)
 
 /* RES amd XRES can have a variable length of 4-16 octets */
 typedef struct {
@@ -106,29 +86,5 @@ typedef struct eutran_vector_s {
   uint8_t autn[AUTN_LENGTH_OCTETS];
   uint8_t kasme[KASME_LENGTH_OCTETS];
 } eutran_vector_t;
-
-#define FC_KASME        (0x10)
-#define FC_KENB         (0x11)
-#define FC_NH           (0x12)
-#define FC_KENB_STAR    (0x13)
-/* 33401 #A.7 Algorithm for key derivation function.
- * This FC should be used for:
- * - NAS Encryption algorithm
- * - NAS Integrity algorithm
- * - RRC Encryption algorithm
- * - RRC Integrity algorithm
- * - User Plane Encryption algorithm
- */
-#define FC_ALG_KEY_DER  (0x15)
-#define FC_KASME_TO_CK  (0x16)
-
-typedef enum {
-  NAS_ENC_ALG = 0x01,
-  NAS_INT_ALG = 0x02,
-  RRC_ENC_ALG = 0x03,
-  RRC_INT_ALG = 0x04,
-  UP_ENC_ALG  = 0x05,
-  UP_INT_ALG  = 0x06
-} algorithm_type_dist_t;
 
 #endif /* SECURITY_TYPES_H_ */

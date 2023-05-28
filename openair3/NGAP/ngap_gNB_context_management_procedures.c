@@ -138,6 +138,11 @@ int ngap_ue_context_release_req(instance_t instance,
     /* The context for this gNB ue ngap id doesn't exist in the map of gNB UEs */
     NGAP_WARN("Failed to find ue context associated with gNB ue ngap id: %u\n",
               ue_release_req_p->gNB_ue_ngap_id);
+    /* send response to free the UE: we don't know it, but it should be
+     * released since RRC seems to know it (e.g., there is no AMF) */
+    MessageDef *msg = itti_alloc_new_message(TASK_NGAP, 0, NGAP_UE_CONTEXT_RELEASE_COMMAND);
+    NGAP_UE_CONTEXT_RELEASE_COMMAND(msg).gNB_ue_ngap_id = ue_release_req_p->gNB_ue_ngap_id;
+    itti_send_msg_to_task(TASK_RRC_GNB, ngap_gNB_instance_p->instance, msg);
     return -1;
   }
 

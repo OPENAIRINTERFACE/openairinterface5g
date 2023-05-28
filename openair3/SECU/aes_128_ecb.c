@@ -19,38 +19,35 @@
  *      contact@openairinterface.org
  */
 
-/*! \file x2ap_eNB.h
- * \brief x2ap tasks for eNB
- * \author Konstantinos Alexandris <Konstantinos.Alexandris@eurecom.fr>, Cedric Roux <Cedric.Roux@eurecom.fr>, Navid Nikaein <Navid.Nikaein@eurecom.fr>
- * \date 2018
- * \version 1.0
- */
+#include "aes_128_ecb.h"
+#include "common/utils/assertions.h"
+#include <openssl/aes.h>
+#include <openssl/err.h>
+#include <openssl/evp.h>
 
-#include <stdio.h>
-#include <stdint.h>
+void aes_128_ecb(const aes_128_t* k_iv, byte_array_t msg, size_t len_out, uint8_t out[len_out])
+{
+  DevAssert(k_iv != NULL);
+  DevAssert(k_iv->type == NONE_INITIALIZATION_VECTOR);
 
-/** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
- * @ingroup _ref_implementation_
- * @{
- */
+  // Create and initialise the context
+  EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
+  DevAssert(ctx != NULL);
 
-#ifndef X2AP_H_
-#define X2AP_H_
+  // Initialise the encryption operation.
+  int rc = EVP_EncryptInit_ex(ctx, EVP_aes_128_ecb(), NULL, k_iv->key, NULL);
+  DevAssert(rc == 1);
 
-#define X2AP_SCTP_PPID   (27)    ///< X2AP SCTP Payload Protocol Identifier (PPID)
-#include "x2ap_eNB_defs.h"
+  int len_ev = 0;
+  rc = EVP_EncryptUpdate(ctx, out, &len_ev, msg.buf, msg.len);
+  DevAssert(!(len_ev > len_out) && "Buffer overflow");
 
-int x2ap_eNB_init_sctp (x2ap_eNB_instance_t *instance_p,
-                        net_ip_address_t    *local_ip_addr,
-                        uint32_t enb_port_for_X2C);
+  // Finalise the encryption. Normally ciphertext bytes may be written at
+  // this stage, but this does not occur in GCM mode
+  rc = EVP_EncryptFinal_ex(ctx, out + len_ev, &len_ev);
+  DevAssert(rc == 1);
 
-void *x2ap_task(void *arg);
-
-int is_x2ap_enabled(void);
-void x2ap_trigger(void);
-
-#endif /* X2AP_H_ */
-
-/**
- * @}
- */
+  // Get the tag
+  // rc == EVP_CIPHER_CTX_ctrl(ctx, EVP_CTRL_GCM_GET_TAG, 16, tag))
+  EVP_CIPHER_CTX_free(ctx);
+}

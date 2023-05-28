@@ -111,9 +111,6 @@ rrc_gNB_generate_RRCRelease(
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_gnb_task(void *args_p);
 
-/* Trigger RRC periodic processing. To be called once per ms. */
-void nr_rrc_trigger(protocol_ctxt_t *ctxt, int CC_id, int frame, int subframe);
-
 /**\ Function to set or overwrite PTRS DL RRC parameters.
    \ *bwp Pointer to dedicated RC config structure
    \ *ptrsNrb Pointer to K_ptrs N_RB related parameters
@@ -145,11 +142,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
     uint32_t                 nas_length,
     uint8_t                 *nas_buffer);
 
-void 
-rrc_gNB_generate_dedicatedRRCReconfiguration(
-    const protocol_ctxt_t     *const ctxt_pP,
-    rrc_gNB_ue_context_t      *ue_context_pP,
-    NR_CellGroupConfig_t      *cell_groupConfig_from_DU);
+void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP);
 
 void bearer_context_setup_direct(e1ap_bearer_setup_req_t *req,
                                  instance_t instance);

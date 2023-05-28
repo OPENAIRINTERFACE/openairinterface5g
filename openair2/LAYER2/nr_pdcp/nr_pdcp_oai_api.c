@@ -675,8 +675,7 @@ static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
     req->ue_id = ue_id;
     req->bearer_id = rb_id;
-    LOG_I(PDCP, "%s() (drb %d) sending message to gtp size %d\n",
-	  __func__, rb_id, size);
+    LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
     extern instance_t CUuniqInstance;
     itti_send_msg_to_task(TASK_GTPV1_U, CUuniqInstance, message_p);
   } else {
@@ -920,10 +919,6 @@ void nr_pdcp_add_srbs(eNB_flag_t enb_flag, ue_id_t rntiMaybeUEid, NR_SRB_ToAddMo
     }
   } else
     LOG_W(PDCP, "nr_pdcp_add_srbs() with void list\n");
-  if (kRRCenc)
-    free(kRRCenc);
-  if (kRRCint)
-    free(kRRCint);
 }
 
 void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
@@ -941,10 +936,6 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
     }
   } else
     LOG_W(PDCP, "nr_pdcp_add_drbs() with void list\n");
-  if (kUPenc)
-    free(kUPenc);
-  if (kUPint)
-    free(kUPint);
 }
 
 /* Dummy function due to dependency from LTE libraries */
