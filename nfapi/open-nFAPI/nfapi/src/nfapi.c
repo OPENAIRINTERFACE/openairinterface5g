@@ -220,9 +220,9 @@ uint8_t pulls16(uint8_t **in, int16_t *out, uint8_t *end) {
 uint8_t pull32(uint8_t **in, uint32_t *out, uint8_t *end) {
   uint8_t *pIn = *in;
 
-  if((end - pIn) >=4 ) {
-    *out = (pIn[0] << 24) | (pIn[1] << 16) | (pIn[2] << 8) | pIn[3];
-    (*in)+=4;
+  if((end - pIn) >= 4) {
+    *out = ((uint32_t)pIn[0] << 24) | (pIn[1] << 16) | (pIn[2] << 8) | pIn[3];
+    (*in) += 4;
     return 4;
   } else {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s no space in buffer\n",  __FUNCTION__);

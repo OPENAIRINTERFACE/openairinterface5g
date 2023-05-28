@@ -1162,7 +1162,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
                                 dl_info->frame,
                                 dl_info->slot,
                                 dl_info->dci_ind->dci_list+i);
-
+        if (ret < 0)
+          continue;
         fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
 
         /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
@@ -1175,13 +1176,11 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
         LOG_T(NR_MAC, "Setting harq_pid = %d and dci_index = %d (based on format)\n", g_harq_pid, dci_index->dci_format);
 
         ret_mask |= (ret << FAPI_NR_DCI_IND);
-        if (ret >= 0) {
-          AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
-          AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
-          fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
-          fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
-          nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
-        }
+        AssertFatal( nr_ue_if_module_inst[module_id] != NULL, "IF module is NULL!\n" );
+        AssertFatal( nr_ue_if_module_inst[module_id]->scheduled_response != NULL, "scheduled_response is NULL!\n" );
+        fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, dl_info->slot);
+        fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, dl_info->module_id, dl_info->cc_id, dl_info->frame, dl_info->slot, dl_info->phy_data);
+        nr_ue_if_module_inst[module_id]->scheduled_response(&scheduled_response);
         memset(def_dci_pdu_rel15, 0, sizeof(*def_dci_pdu_rel15));
       }
       dl_info->dci_ind = NULL;
