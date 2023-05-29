@@ -979,6 +979,7 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
       if(mac->ul_time_alignment.ta_apply)
         schedule_ta_command(dl_config, &mac->ul_time_alignment);
       config_dci_pdu(mac, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , rx_slot, mac->ra_SS);
+      dl_config->number_pdus = 1;
       LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response for type0_pdcch, num_pdus %d\n", mac->cg, dl_config->number_pdus);
       fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
