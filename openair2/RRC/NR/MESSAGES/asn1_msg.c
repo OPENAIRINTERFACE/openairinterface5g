@@ -506,89 +506,56 @@ void fill_mastercellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
 }
 
 //------------------------------------------------------------------------------
-int do_RRCSetup(rrc_gNB_ue_context_t         *const ue_context_pP,
-                uint8_t                      *const buffer,
-                const uint8_t                transaction_id,
-                const uint8_t                *masterCellGroup,
-                int                          masterCellGroup_len,
-                const gNB_RrcConfigurationReq *configuration)
+int do_RRCSetup(rrc_gNB_ue_context_t *const ue_context_pP,
+                uint8_t *const buffer,
+                const uint8_t transaction_id,
+                const uint8_t *masterCellGroup,
+                int masterCellGroup_len,
+                const gNB_RrcConfigurationReq *configuration,
+                NR_SRB_ToAddModList_t *SRBs)
 //------------------------------------------------------------------------------
 {
-    asn_enc_rval_t                                   enc_rval;
-    NR_DL_CCCH_Message_t                             dl_ccch_msg;
-    NR_RRCSetup_t                                    *rrcSetup;
-    NR_RRCSetup_IEs_t                                *ie;
-    NR_SRB_ToAddMod_t                                *SRB1_config          = NULL;
-    NR_PDCP_Config_t                                 *pdcp_Config          = NULL;
+  AssertFatal(ue_context_pP != NULL, "ue_context_p is null\n");
+  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
-    AssertFatal(ue_context_pP != NULL,"ue_context_p is null\n");
-    gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-    NR_SRB_ToAddModList_t        **SRB_configList = &ue_p->SRB_configList;
+  NR_DL_CCCH_Message_t dl_ccch_msg = {0};
+  dl_ccch_msg.message.present = NR_DL_CCCH_MessageType_PR_c1;
+  asn1cCalloc(dl_ccch_msg.message.choice.c1, dl_msg);
+  dl_msg->present = NR_DL_CCCH_MessageType__c1_PR_rrcSetup;
+  asn1cCalloc(dl_msg->choice.rrcSetup, rrcSetup);
+  rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
+  rrcSetup->rrc_TransactionIdentifier = transaction_id;
+  rrcSetup->criticalExtensions.choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_IEs_t));
+  NR_RRCSetup_IEs_t *ie = rrcSetup->criticalExtensions.choice.rrcSetup;
 
+  /****************************** radioBearerConfig ******************************/
+  ie->radioBearerConfig.srb_ToAddModList = SRBs;
+  ie->radioBearerConfig.srb3_ToRelease = NULL;
+  ie->radioBearerConfig.drb_ToAddModList = NULL;
+  ie->radioBearerConfig.drb_ToReleaseList = NULL;
+  ie->radioBearerConfig.securityConfig = NULL;
 
+  /****************************** masterCellGroup ******************************/
+  DevAssert(masterCellGroup && masterCellGroup_len > 0);
+  ie->masterCellGroup.buf = malloc(masterCellGroup_len);
+  AssertFatal(ie->masterCellGroup.buf != NULL, "could not allocate memory for masterCellGroup\n");
+  memcpy(ie->masterCellGroup.buf, masterCellGroup, masterCellGroup_len);
+  ie->masterCellGroup.size = masterCellGroup_len;
 
-    memset((void *)&dl_ccch_msg, 0, sizeof(NR_DL_CCCH_Message_t));
-    dl_ccch_msg.message.present            = NR_DL_CCCH_MessageType_PR_c1;
-    dl_ccch_msg.message.choice.c1          = CALLOC(1, sizeof(struct NR_DL_CCCH_MessageType__c1));
-    dl_ccch_msg.message.choice.c1->present = NR_DL_CCCH_MessageType__c1_PR_rrcSetup;
-    dl_ccch_msg.message.choice.c1->choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_t));
+  // decode masterCellGroup OCTET_STRING received from DU and place in ue context
+  ue_p->masterCellGroup = decode_cellGroupConfig(masterCellGroup, masterCellGroup_len);
 
-    rrcSetup = dl_ccch_msg.message.choice.c1->choice.rrcSetup;
-    rrcSetup->criticalExtensions.present = NR_RRCSetup__criticalExtensions_PR_rrcSetup;
-    rrcSetup->rrc_TransactionIdentifier  = transaction_id;
-    rrcSetup->criticalExtensions.choice.rrcSetup = calloc(1, sizeof(NR_RRCSetup_IEs_t));
-    ie = rrcSetup->criticalExtensions.choice.rrcSetup;
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
+    xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
+  }
 
-    /****************************** radioBearerConfig ******************************/
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message, NULL, (void *)&dl_ccch_msg, buffer, 1000);
 
-    /* Configure SRB1 */
-    if (*SRB_configList) {
-        free(*SRB_configList);
-    }
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
 
-    *SRB_configList = calloc(1, sizeof(NR_SRB_ToAddModList_t));
-    // SRB1
-    /* TODO */
-    SRB1_config = calloc(1, sizeof(NR_SRB_ToAddMod_t));
-    SRB1_config->srb_Identity = 1;
-    // pdcp_Config->t_Reordering
-    SRB1_config->pdcp_Config = pdcp_Config;
-    ie->radioBearerConfig.srb_ToAddModList = *SRB_configList;
-    asn1cSeqAdd(&(*SRB_configList)->list, SRB1_config);
-
-    ie->radioBearerConfig.srb3_ToRelease    = NULL;
-    ie->radioBearerConfig.drb_ToAddModList  = NULL;
-    ie->radioBearerConfig.drb_ToReleaseList = NULL;
-    ie->radioBearerConfig.securityConfig    = NULL;
-    
-    /****************************** masterCellGroup ******************************/
-    DevAssert(masterCellGroup && masterCellGroup_len > 0);
-    ie->masterCellGroup.buf = malloc(masterCellGroup_len);
-    AssertFatal(ie->masterCellGroup.buf != NULL, "could not allocate memory for masterCellGroup\n");
-    memcpy(ie->masterCellGroup.buf, masterCellGroup, masterCellGroup_len);
-    ie->masterCellGroup.size = masterCellGroup_len;
-
-    // decode masterCellGroup OCTET_STRING received from DU and place in ue context
-    ue_p->masterCellGroup = decode_cellGroupConfig(masterCellGroup, masterCellGroup_len);
-
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
-      xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
-    }
-
-    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message,
-				     NULL,
-				     (void *)&dl_ccch_msg,
-				     buffer,
-				     1000);
-
-
-    AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
-	    enc_rval.failed_type->name, enc_rval.encoded);
-
-    LOG_D(NR_RRC,"RRCSetup Encoded %zd bits (%zd bytes)\n",
-            enc_rval.encoded,(enc_rval.encoded+7)/8);
-    return((enc_rval.encoded+7)/8);
+  LOG_D(NR_RRC, "RRCSetup Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded + 7) / 8);
+  return ((enc_rval.encoded + 7) / 8);
 }
 
 uint8_t do_NR_SecurityModeCommand(
@@ -1134,67 +1101,26 @@ uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c
 
 //------------------------------------------------------------------------------
 int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
-                              rrc_gNB_ue_context_t *const ue_context_pP,
-                              int CC_id,
-                              uint8_t *const buffer,
-                              size_t buffer_size,
-                              const uint8_t Transaction_id,
-                              NR_SRB_ToAddModList_t **SRB_configList,
-                              const uint8_t *masterCellGroup_from_DU,
-                              NR_ServingCellConfigCommon_t *scc,
-                              rrc_gNB_carrier_data_t *carrier)
+                          rrc_gNB_ue_context_t *const ue_context_pP,
+                          int CC_id,
+                          uint8_t *const buffer,
+                          size_t buffer_size,
+                          const uint8_t Transaction_id,
+                          NR_SRB_ToAddModList_t *SRB_configList,
+                          const uint8_t *masterCellGroup_from_DU,
+                          NR_ServingCellConfigCommon_t *scc,
+                          rrc_gNB_carrier_data_t *carrier)
 {
   asn_enc_rval_t enc_rval;
-  struct NR_SRB_ToAddMod *SRB1_config = NULL;
-  struct NR_SRB_ToAddMod *SRB2_config = NULL;
   NR_DL_DCCH_Message_t dl_dcch_msg = {0};
   NR_RRCReestablishment_t *rrcReestablishment = NULL;
-  NR_SRB_ToAddModList_t **SRB_configList2 = NULL;
-  SRB_configList2 = &ue_context_pP->ue_context.SRB_configList2[Transaction_id];
 
-  if (*SRB_configList2) {
-    free(*SRB_configList2);
-  }
-
-  *SRB_configList2 = CALLOC(1, sizeof(NR_SRB_ToAddModList_t));
   dl_dcch_msg.message.present = NR_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1 = calloc(1, sizeof(struct NR_DL_DCCH_MessageType__c1));
   dl_dcch_msg.message.choice.c1->present = NR_DL_DCCH_MessageType__c1_PR_rrcReestablishment;
   dl_dcch_msg.message.choice.c1->choice.rrcReestablishment = CALLOC(1, sizeof(NR_RRCReestablishment_t));
   rrcReestablishment = dl_dcch_msg.message.choice.c1->choice.rrcReestablishment;
 
-  // get old configuration of SRB2
-  if (*SRB_configList != NULL) {
-    for (int i = 0; (i < (*SRB_configList)->list.count) && (i < 3); i++) {
-      LOG_D(NR_RRC, "(*SRB_configList)->list.array[%d]->srb_Identity=%ld\n", i, (*SRB_configList)->list.array[i]->srb_Identity);
-      if ((*SRB_configList)->list.array[i]->srb_Identity == 2) {
-        SRB2_config = (*SRB_configList)->list.array[i];
-      } else if ((*SRB_configList)->list.array[i]->srb_Identity == 1) {
-        SRB1_config = (*SRB_configList)->list.array[i];
-      }
-    }
-  }
-
-  if (SRB1_config == NULL) {
-    // default SRB1 configuration
-    LOG_W(NR_RRC, "SRB1 configuration does not exist in SRB configuration list, use default\n");
-    /// SRB1
-    SRB1_config = CALLOC(1, sizeof(*SRB1_config));
-    SRB1_config->srb_Identity = 1;
-  }
-
-  if (SRB2_config == NULL) {
-    LOG_W(NR_RRC, "SRB2 configuration does not exist in SRB configuration list\n");
-  } else {
-    asn1cSeqAdd(&(*SRB_configList2)->list, SRB2_config);
-  }
-
-  if (*SRB_configList) {
-    free(*SRB_configList);
-  }
-
-  *SRB_configList = CALLOC(1, sizeof(NR_SRB_ToAddModList_t));
-  asn1cSeqAdd(&(*SRB_configList)->list, SRB1_config);
   /****************************** masterCellGroup ******************************/
   rrcReestablishment->rrc_TransactionIdentifier = Transaction_id;
   rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
