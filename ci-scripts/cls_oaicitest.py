@@ -995,7 +995,7 @@ class OaiCiTest():
 			cn_target_ip = result.group('trf_ip_addr')
 			SSH.close()
 			cn_iperf_prefix = "docker exec  prod-trf-gen" # -w /iperf-2.0.13  necessary?
-		if (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
+		elif (re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE)):
 			cn_target_ip = "172.21.6.102"
 		else: # lteboix, sabox
 			cn_target_ip = "192.172.0.1"
