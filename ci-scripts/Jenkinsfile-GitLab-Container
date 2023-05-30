@@ -444,6 +444,26 @@ pipeline {
             }
           }
         }
+        stage ("Sanity-Check OAI-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerCN5GSlaveJob ('OAI-CN5G-COTS-UE-Test', 'OAI-CN5G-COTS-UE-Test')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('OAI-CN5G-COTS-UE-Test')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
     stage ("DockerHub-Push") {
@@ -538,8 +558,36 @@ def triggerSlaveJob (jobName, gitlabStatusName) {
     if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
        echo "${jobName} Slave Job is OK"
     } else {
-       echo "${jobName} Slave Job is KO"
-       sh "ci-scripts/fail.sh"
+       error "${jobName} Slave Job is KO"
+    }
+  }
+}
+
+def triggerCN5GSlaveJob (jobName, gitlabStatusName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.gitlabMergeRequestLastCommit
+    shortenShaOne = shortenShaOne.trim()
+    fullRanTag = 'porcepix.sboai.cs.eurecom.fr/oai-gnb:' + env.gitlabSourceBranch + '-' + shortenShaOne
+  } else {
+    shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.GIT_COMMIT
+    shortenShaOne = shortenShaOne.trim()
+    fullRanTag = 'porcepix.sboai.cs.eurecom.fr/oai-gnb:develop-' + shortenShaOne
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'FULL_RAN_TAG', value: String.valueOf(fullRanTag))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  gitlabCommitStatus(name: gitlabStatusName) {
+    if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+       echo "${jobName} Slave Job is OK"
+    } else {
+       error "${jobName} Slave Job is KO"
     }
   }
 }
@@ -568,15 +616,18 @@ def triggerSlaveJobNoGitLab (jobName) {
   if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
      echo "${jobName} Slave Job is OK"
   } else {
-     echo "${jobName} Slave Job is KO"
-     sh "ci-scripts/fail.sh"
+     error "${jobName} Slave Job is KO"
   }
 }
 
 def finalizeSlaveJob(jobName) {
   // In case of any non-success, we are retrieving the HTML report of the last completed
   // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
-  fileName = "test_results-${jobName}.html"
+  if (jobName == 'OAI-CN5G-COTS-UE-Test') {
+    fileName = "test_results_oai_cn5g_cots_ue.html"
+  } else {
+    fileName = "test_results-${jobName}.html"
+  }
   if (!fileExists(fileName)) {
     copyArtifacts(projectName: jobName,
       filter: 'test_results*.html',
