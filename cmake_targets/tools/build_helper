@@ -684,7 +684,7 @@ install_asn1c_from_source(){
     cd /tmp/asn1c
     git checkout vlm_master
     autoreconf -iv
-    ./configure
+    ./configure --prefix /opt/asn1c/
     make -j`nproc`
     $SUDO make install
     cd -

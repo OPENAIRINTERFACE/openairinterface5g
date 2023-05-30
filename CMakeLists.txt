@@ -49,8 +49,15 @@ include_directories(${CRYPTO_INCLUDE_DIRS})
 # Check if asn1c is installed, and check if it supports all options we need
 # a user can provide ASN1C_EXEC to override an asn1c to use (e.g., parallel
 # installation)
-find_program(ASN1C_EXEC_PATH asn1c)
+find_program(ASN1C_EXEC_PATH asn1c HINTS /opt/asn1c/bin)
 set(ASN1C_EXEC ${ASN1C_EXEC_PATH} CACHE FILEPATH "path to asn1c executable")
+if(NOT ASN1C_EXEC)
+    message(FATAL_ERROR "No asn1c found!
+You might want to re-run ./build_oai -I
+Or provide a path to asn1c using
+./build_oai ... --cmake-opt -DASN1C_EXEC=/path/to/asn1c
+")
+endif()
 check_option(${ASN1C_EXEC} -gen-APER ASN1C_EXEC)
 check_option(${ASN1C_EXEC} -no-gen-UPER ASN1C_EXEC)
 check_option(${ASN1C_EXEC} -no-gen-JER ASN1C_EXEC)
