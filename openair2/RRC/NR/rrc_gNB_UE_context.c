@@ -66,7 +66,7 @@ rrc_gNB_ue_context_t *rrc_gNB_allocate_new_ue_context(gNB_RRC_INST *rrc_instance
     LOG_E(NR_RRC, "Cannot allocate new ue context\n");
     return NULL;
   }
-  new_p->ue_context.gNB_ue_ngap_id = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
+  new_p->ue_context.gNB_ue_ngap_id = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator) + 1;
 
   for(int i = 0; i < NB_RB_MAX; i++)
     new_p->ue_context.pduSession[i].xid = -1;
@@ -120,7 +120,7 @@ void rrc_gNB_remove_ue_context(gNB_RRC_INST *rrc_instance_pP, rrc_gNB_ue_context
   }
 
   RB_REMOVE(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
-  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.gNB_ue_ngap_id);
+  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.gNB_ue_ngap_id - 1);
   rrc_gNB_free_mem_ue_context(ue_context_pP);
   LOG_I(NR_RRC, "Removed UE context\n");
 }
