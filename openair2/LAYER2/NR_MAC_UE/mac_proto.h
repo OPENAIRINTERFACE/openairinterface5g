@@ -251,11 +251,11 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac,
                     fapi_nr_dl_config_request_t *dl_config,
-                    int rnti_type,
-                    int slot,
-                    NR_SearchSpace_t *ss);
+                    const int rnti_type,
+                    const int slot,
+                    const NR_SearchSpace_t *ss);
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot);
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, const frame_t frame, const int slot);
 
 NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
 

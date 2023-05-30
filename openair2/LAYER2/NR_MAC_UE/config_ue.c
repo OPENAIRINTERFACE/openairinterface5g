@@ -435,9 +435,9 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 }
 
 
-NR_SearchSpace_t *get_common_search_space(struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList,
-                                          NR_UE_MAC_INST_t *mac,
-                                          NR_SearchSpaceId_t ss_id)
+NR_SearchSpace_t *get_common_search_space(const struct NR_PDCCH_ConfigCommon__commonSearchSpaceList *commonSearchSpaceList,
+                                          const NR_UE_MAC_INST_t *mac,
+                                          const NR_SearchSpaceId_t ss_id)
 {
   if (ss_id == 0)
     return mac->search_space_zero;
@@ -454,8 +454,8 @@ NR_SearchSpace_t *get_common_search_space(struct NR_PDCCH_ConfigCommon__commonSe
 }
 
 void configure_ss_coreset(NR_UE_MAC_INST_t *mac,
-                          NR_PDCCH_ConfigCommon_t *pdcch_ConfigCommon,
-                          NR_PDCCH_Config_t *pdcch_Config)
+                          const NR_PDCCH_ConfigCommon_t *pdcch_ConfigCommon,
+                          const NR_PDCCH_Config_t *pdcch_Config)
 {
 
   // configuration of search spaces

@@ -49,9 +49,9 @@
 
 //#define DEBUG_DCI
 
-void fill_dci_search_candidates(NR_SearchSpace_t *ss,
+void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
                                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
-                                uint32_t Y)
+                                const uint32_t Y)
 {
   LOG_D(NR_MAC,"Filling search candidates for DCI\n");
 
@@ -83,7 +83,7 @@ void fill_dci_search_candidates(NR_SearchSpace_t *ss,
   }
 }
 
-NR_ControlResourceSet_t *ue_get_coreset(NR_UE_MAC_INST_t *mac, int coreset_id)
+NR_ControlResourceSet_t *ue_get_coreset(const NR_UE_MAC_INST_t *mac, const int coreset_id)
 {
   NR_ControlResourceSet_t *coreset = NULL;
   for (int i = 0; i < FAPI_NR_MAX_CORESET_PER_BWP; i++) {
@@ -100,21 +100,21 @@ NR_ControlResourceSet_t *ue_get_coreset(NR_UE_MAC_INST_t *mac, int coreset_id)
 
 void config_dci_pdu(NR_UE_MAC_INST_t *mac,
                     fapi_nr_dl_config_request_t *dl_config,
-                    int rnti_type,
-                    int slot,
-                    NR_SearchSpace_t *ss)
+                    const int rnti_type,
+                    const int slot,
+                    const NR_SearchSpace_t *ss)
 {
 
   uint16_t monitoringSymbolsWithinSlot = 0;
   int sps = 0;
 
-  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
+  const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  const NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP ? current_DL_BWP->bwp_id : 0;
 
   fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
 
-  int coreset_id = *ss->controlResourceSetId;
+  const int coreset_id = *ss->controlResourceSetId;
   NR_ControlResourceSet_t *coreset;
   if(coreset_id > 0) {
     coreset = ue_get_coreset(mac, coreset_id);
@@ -288,7 +288,7 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
 }
 
 
-void get_monitoring_period_offset(NR_SearchSpace_t *ss, int *period, int *offset)
+void get_monitoring_period_offset(const NR_SearchSpace_t *ss, int *period, int *offset)
 {
   switch(ss->monitoringSlotPeriodicityAndOffset->present) {
     case NR_SearchSpace__monitoringSlotPeriodicityAndOffset_PR_sl1:
@@ -357,9 +357,9 @@ void get_monitoring_period_offset(NR_SearchSpace_t *ss, int *period, int *offset
   }
 }
 
-bool is_ss_monitor_occasion(int frame, int slot, int slots_per_frame, NR_SearchSpace_t *ss)
+bool is_ss_monitor_occasion(const int frame, const int slot, const int slots_per_frame, const NR_SearchSpace_t *ss)
 {
-  int duration = ss->duration ? *ss->duration : 1;
+  const int duration = ss->duration ? *ss->duration : 1;
   bool monitor = false;
   int period, offset;
   get_monitoring_period_offset(ss, &period, &offset);
@@ -373,10 +373,10 @@ bool is_ss_monitor_occasion(int frame, int slot, int slots_per_frame, NR_SearchS
   return monitor;
 }
 
-void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, frame_t frame, int slot)
+void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, const frame_t frame, const int slot)
 {
-  NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
+  const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
+  const int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
   if (mac->state == UE_PERFORMING_RA &&
       mac->ra.ra_state >= WAIT_RAR) {
     // if RA is ongoing use RA search space
