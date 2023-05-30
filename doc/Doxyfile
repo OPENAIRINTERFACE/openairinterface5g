@@ -1010,12 +1010,10 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_rrc_message_transfer.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_default_values.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_rrc_message_transfer.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_decoder.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_encoder.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_itti_messaging.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_itti_messaging.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_ue_context_management.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_decoder.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_cu_paging.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_du_warning_message_transmission.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../openair2/F1AP/f1ap_encoder.h \
