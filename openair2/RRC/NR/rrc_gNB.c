@@ -595,12 +595,9 @@ void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_contex
 
   if (!ue_p->DRB_configList)
     ue_p->DRB_configList = CALLOC(1, sizeof(*ue_p->DRB_configList));
-  else
-    memset(ue_p->DRB_configList, 0, sizeof(*ue_p->DRB_configList));
   if (!ue_p->DRB_configList2[xid])
     ue_p->DRB_configList2[xid] = CALLOC(1, sizeof(**ue_p->DRB_configList2));
-  else
-    memset(ue_p->DRB_configList2[xid], 0, sizeof(**ue_p->DRB_configList2));
+
   for (i = 0; i < ue_p->nb_of_pdusessions; i++) {
     if (ue_p->pduSession[i].status >= PDU_SESSION_STATUS_DONE) {
       continue;
