@@ -74,11 +74,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   uint32_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
-  if (f1ap_du_add_cu_ue_id(instance,du_ue_f1ap_id, cu_ue_f1ap_id) < 0 ) {
-    LOG_E(F1AP, "Failed to find the F1AP UID \n");
-    //return -1;
-  }
-
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
   if (0) {
@@ -146,12 +141,6 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
   F1AP_InitialULRRCMessageTransfer_t    *out;
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
-  int f1ap_uid = f1ap_add_ue(DUtype, instanceP, msg->crnti);
-
-  if (f1ap_uid  < 0 ) {
-    LOG_E(F1AP, "Failed to add UE \n");
-    return -1;
-  }
 
   /* Create */
   /* 0. Message Type */

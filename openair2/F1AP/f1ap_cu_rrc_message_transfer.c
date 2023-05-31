@@ -88,13 +88,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, du2cu, container,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);
 
-  int f1ap_uid = f1ap_add_ue(CUtype, instance, rnti);
-
-  if (f1ap_uid  < 0 ) {
-    LOG_E(F1AP, "Failed to add UE \n");
-    return -1;
-  }
-
   // create an ITTI message and copy SDU
   AssertFatal(f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB, "illegal cell type %d\n", f1ap_req(true, instance)->cell_type);
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
@@ -246,14 +239,10 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  LOG_D(F1AP, "cu_ue_f1ap_id %lu associated with RNTI %x\n",
-        cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id));
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n",
-        du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, du_ue_f1ap_id));
   /* the RLC-PDCP does not transport the DU UE ID (yet), so we drop it here.
    * For the moment, let's hope this won't become relevant; to sleep in peace,
    * let's put an assert to check that it is the expected DU UE ID. */

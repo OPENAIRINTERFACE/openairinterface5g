@@ -776,7 +776,6 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_rel
                                buffer,
                                len,
                                getCxt(false, instance)->default_sctp_stream_id);
-  f1ap_remove_ue(DUtype, instance, complete->gNB_DU_ue_id);
   return 0;
 }
 
