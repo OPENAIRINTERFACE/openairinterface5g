@@ -2335,17 +2335,16 @@ uint64_t from_nrarfcn(int nr_bandP,
   AssertFatal(nrarfcn >= N_OFFs,"nrarfcn %u < N_OFFs[%d] %llu\n", nrarfcn, nr_bandtable[i].band, (long long unsigned int)N_OFFs);
   get_delta_arfcn(i, nrarfcn, N_OFFs);
 
-  frequency = 1000*(F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
+  frequency = 1000 * (F_REF_Offs_khz + (nrarfcn - N_REF_Offs) * deltaFglobal);
 
-  LOG_I(NR_MAC, "Computing frequency (pointA %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
-    (unsigned long long)nrarfcn,
-    (unsigned long long)frequency/1000,
-    (unsigned long long)freq_min,
-    nr_bandP,
-    (unsigned long long)N_OFFs);
+  LOG_D(NR_MAC, "Computing frequency (nrarfcn %llu => %llu KHz (freq_min %llu KHz, NR band %d N_OFFs %llu))\n",
+        (unsigned long long)nrarfcn,
+        (unsigned long long)frequency/1000,
+        (unsigned long long)freq_min,
+        nr_bandP,
+        (unsigned long long)N_OFFs);
 
   return frequency;
-
 }
 
 void nr_get_tbs_dl(nfapi_nr_dl_tti_pdsch_pdu *pdsch_pdu,

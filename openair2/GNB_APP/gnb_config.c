@@ -1117,7 +1117,7 @@ void config_security(gNB_RRC_INST *rrc)
 }
 
 // Section 5.4.3 of 38.101-1 and -2
-void check_ssb_raster(long absolutefreqssb, int band, int scs)
+void check_ssb_raster(uint64_t freq, int band, int scs)
 {
   int start_GSCN = 0, step_GSCN = 0, end_GSCN = 0;
   for (int i = 0; i < sizeof(sync_raster) / 20; i++) {
@@ -1130,7 +1130,6 @@ void check_ssb_raster(long absolutefreqssb, int band, int scs)
     }
   }
   AssertFatal(start_GSCN != 0, "Couldn't find band %d with SCS %d\n", band, scs);
-  uint64_t freq = from_nrarfcn(band, scs, absolutefreqssb);
   int GSCN;
   if (freq <= 3000000000) {
     int N = 0;
@@ -1142,29 +1141,29 @@ void check_ssb_raster(long absolutefreqssb, int band, int scs)
         break;
       }
     }
-    AssertFatal(N != 0, "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (N * 1200kHz + M * 50 kHz)\n",
-                absolutefreqssb, freq);
+    AssertFatal(N != 0, "SSB frequency %lu Hz not on the synchronization raster (N * 1200kHz + M * 50 kHz)\n",
+                freq);
     GSCN = (3 * N) + (M - 3) / 2;
   }
   else if (freq <= 24250000000) {
     AssertFatal((freq - 3000000000) % 1440000 == 0,
-                "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (3000 MHz + N * 1.44 MHz)\n",
-                absolutefreqssb, freq);
+                "SSB frequency %lu Hz not on the synchronization raster (3000 MHz + N * 1.44 MHz)\n",
+                freq);
     GSCN = ((freq - 3000000000) / 1440000) + 7499;
   }
   else {
     AssertFatal((freq - 24250080000) % 17280000 == 0,
-                "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (24250.08 MHz + N * 17.28 MHz)\n",
-                absolutefreqssb, freq);
+                "SSB frequency %lu Hz not on the synchronization raster (24250.08 MHz + N * 17.28 MHz)\n",
+                freq);
     GSCN = ((freq - 24250080000) / 17280000) + 22256;
   }
   AssertFatal(GSCN >= start_GSCN && GSCN <= end_GSCN,
-              "GSCN %d corresponding to absoluteFrequencySSB %ld does not belong to GSCN range for band %d\n",
-              GSCN, absolutefreqssb, band);
+              "GSCN %d corresponding to SSB frequency %lu does not belong to GSCN range for band %d\n",
+              GSCN, freq, band);
   int rel_GSCN = GSCN - start_GSCN;
   AssertFatal(rel_GSCN % step_GSCN == 0,
-              "GSCN %d corresponding to absoluteFrequencySSB %ld not in accordance with GSCN step for band %d\n",
-               GSCN, absolutefreqssb, band);
+              "GSCN %d corresponding to SSB freqyency %lu not in accordance with GSCN step for band %d\n",
+               GSCN, freq, band);
 }
 
 void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
@@ -1232,8 +1231,13 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
 	    (int)scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
 	    (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower);
       // SSB of the PCell is always on the sync raster
+      uint64_t ssb_freq = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                                       *scc->ssbSubcarrierSpacing,
+                                       *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
+      LOG_I(RRC, "absoluteFrequencySSB %ld corresponds to %lu Hz\n",
+            *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB, ssb_freq);
       if (get_softmodem_params()->sa)
-        check_ssb_raster(*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+        check_ssb_raster(ssb_freq,
                          *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
                          *scc->ssbSubcarrierSpacing);
       fix_scc(scc, ssb_bitmap);
