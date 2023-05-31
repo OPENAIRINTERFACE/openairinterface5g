@@ -378,9 +378,8 @@ typedef enum ReconfigurationCompl_e {
 } ReconfigurationCompl_t;
 
 typedef struct f1ap_ue_context_setup_s {
-  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
+  uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
-  uint16_t rnti; 
   // SpCell Info
   uint16_t mcc;
   uint16_t mnc;

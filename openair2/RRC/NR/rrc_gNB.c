@@ -2002,10 +2002,10 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
   }
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rnti);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
-    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .rnti = UE->rnti,
+    .gNB_CU_ue_id = UE->cu_ue_id,
+    .gNB_DU_ue_id = ue_data.secondary_ue,
     .mcc = rrc->configuration.mcc[0],
     .mnc = rrc->configuration.mnc[0],
     .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
@@ -2286,7 +2286,7 @@ static void rrc_CU_process_ue_context_setup_response(MessageDef *msg_p, instance
 {
   f1ap_ue_context_setup_t *resp = &F1AP_UE_CONTEXT_SETUP_RESP(msg_p);
   gNB_RRC_INST *rrc = RC.nrrrc[instance];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->gNB_CU_ue_id);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   NR_CellGroupConfig_t *cellGroupConfig = NULL;
@@ -2343,9 +2343,9 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
 static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, instance_t instance)
 {
   f1ap_ue_context_modif_resp_t *resp = &F1AP_UE_CONTEXT_MODIFICATION_RESP(msg_p);
-  protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->rnti, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
+  protocol_ctxt_t ctxt = {.rntiMaybeUEid = resp->gNB_CU_ue_id, .module_id = instance, .instance = instance, .enb_flag = 1, .eNB_index = instance};
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, resp->gNB_CU_ue_id);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   if (resp->drbs_to_be_setup_length > 0) {
@@ -2601,10 +2601,10 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
     srbs[0].lcid = 2;
   }
 
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rnti);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
-    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .rnti = UE->rnti,
+    .gNB_CU_ue_id = UE->cu_ue_id,
+    .gNB_DU_ue_id = ue_data.secondary_ue,
     .mcc = rrc->configuration.mcc[0],
     .mnc = rrc->configuration.mnc[0],
     .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
@@ -2868,25 +2868,17 @@ void *rrc_gnb_task(void *args_p) {
   }
 }
 
+typedef struct deliver_ue_ctxt_setup_data_t {
+  gNB_RRC_INST *rrc;
+  f1ap_ue_context_setup_t *setup_req;
+} deliver_ue_ctxt_setup_data_t;
 static void rrc_deliver_ue_ctxt_setup_req(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
   DevAssert(deliver_pdu_data != NULL);
-  gNB_RRC_INST *rrc = deliver_pdu_data;
-  f1ap_ue_context_setup_t ue_context_setup_req = {
-    .gNB_CU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .gNB_DU_ue_id = 0xffffffff, /* filled by F1 for the moment */
-    .rnti = ue_id,
-    .mcc = rrc->configuration.mcc[0],
-    .mnc = rrc->configuration.mnc[0],
-    .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
-    .nr_cellid = rrc->nr_cellid,
-    .servCellId = 0, /* TODO: correct value? */
-    .srbs_to_be_setup = 0, /* no new SRBs */
-    .drbs_to_be_setup = 0, /* no new DRBs */
-    .rrc_container = (uint8_t*) buf, /* security mode command */
-    .rrc_container_length = size,
-  };
-  rrc->mac_rrc.ue_context_setup_request(&ue_context_setup_req);
+  deliver_ue_ctxt_setup_data_t *data = deliver_pdu_data;
+  data->setup_req->rrc_container = (uint8_t*)buf;
+  data->setup_req->rrc_container_length = size;
+  data->rrc->mac_rrc.ue_context_setup_request(data->setup_req);
 }
 
 //-----------------------------------------------------------------------------
@@ -2911,7 +2903,20 @@ rrc_gNB_generate_SecurityModeCommand(
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
   /* the callback will fill the UE context setup request and forward it */
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, rrc);
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rnti);
+  f1ap_ue_context_setup_t ue_context_setup_req = {
+    .gNB_CU_ue_id = ue_p->cu_ue_id,
+    .gNB_DU_ue_id = ue_data.secondary_ue,
+    .mcc = rrc->configuration.mcc[0],
+    .mnc = rrc->configuration.mnc[0],
+    .mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+    .nr_cellid = rrc->nr_cellid,
+    .servCellId = 0, /* TODO: correct value? */
+    .srbs_to_be_setup = 0, /* no new SRBs */
+    .drbs_to_be_setup = 0, /* no new DRBs */
+  };
+  deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req};
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, &data);
 }
 
 void

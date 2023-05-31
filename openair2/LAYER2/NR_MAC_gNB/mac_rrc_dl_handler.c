@@ -101,7 +101,6 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   f1ap_ue_context_setup_t resp = {
     .gNB_CU_ue_id = req->gNB_CU_ue_id,
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
-    .rnti = req->rnti,
   };
 
   if (req->cu_to_du_rrc_information != NULL) {
@@ -112,11 +111,11 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 
   NR_SCHED_LOCK(&mac->sched_lock);
 
-  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->rnti);
-  AssertFatal(UE != NULL, "did not find UE with RNTI %04x, but UE Context Setup Failed not implemented\n", req->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
+  AssertFatal(UE != NULL, "did not find UE with RNTI %04x, but UE Context Setup Failed not implemented\n", req->gNB_DU_ue_id);
 
   if (req->srbs_to_be_setup_length > 0) {
-    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->rnti,
+    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
@@ -124,7 +123,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   }
 
   if (req->drbs_to_be_setup_length > 0) {
-    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->rnti,
+    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->gNB_DU_ue_id,
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
@@ -132,7 +131,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   }
 
   if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->rnti, DCCH, req->rrc_container, req->rrc_container_length);
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
 
   //nr_mac_update_cellgroup()
   resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
@@ -172,7 +171,6 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   f1ap_ue_context_modif_resp_t resp = {
     .gNB_CU_ue_id = req->gNB_CU_ue_id,
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
-    .rnti = req->rnti,
   };
 
   if (req->cu_to_du_rrc_information != NULL) {
@@ -182,10 +180,10 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   NR_SCHED_LOCK(&mac->sched_lock);
-  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
 
   if (req->srbs_to_be_setup_length > 0) {
-    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->rnti,
+    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
@@ -193,7 +191,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->drbs_to_be_setup_length > 0) {
-    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->rnti,
+    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->gNB_DU_ue_id,
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
@@ -201,7 +199,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->rnti, DCCH, req->rrc_container, req->rrc_container_length);
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
 
   if (req->ReconfigComplOutcome != RRCreconf_info_not_present && req->ReconfigComplOutcome != RRCreconf_success) {
     LOG_E(NR_MAC,
@@ -225,7 +223,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
     /* works? */
-    nr_mac_update_cellgroup(RC.nrmac[0], req->rnti, UE->CellGroup);
+    nr_mac_update_cellgroup(RC.nrmac[0], req->gNB_DU_ue_id, UE->CellGroup);
   }
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
