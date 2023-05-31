@@ -418,7 +418,8 @@ typedef enum F1ap_Cause_e {
 } f1ap_Cause_t;
 
 typedef struct f1ap_ue_context_release_s {
-  uint16_t      rnti;
+  uint32_t gNB_CU_ue_id;
+  uint32_t gNB_DU_ue_id;
   f1ap_Cause_t  cause;
   long          cause_value;
   uint8_t      *rrc_container;

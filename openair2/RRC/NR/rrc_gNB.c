@@ -2315,10 +2315,10 @@ static void rrc_CU_process_ue_context_release_request(MessageDef *msg_p)
   const int instance = 0;
   f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg_p);
   gNB_RRC_INST *rrc = RC.nrrrc[instance];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, req->gNB_CU_ue_id); //here
 
   /* TODO: marshall types correctly */
-  LOG_I(NR_RRC, "received UE Context Release Request for UE %04x, forwarding to AMF\n", req->rnti);
+  LOG_I(NR_RRC, "received UE Context Release Request for UE %u, forwarding to AMF\n", req->gNB_CU_ue_id);
   rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_REQ(instance,
                                            ue_context_p,
                                            NGAP_CAUSE_RADIO_NETWORK,
@@ -2330,7 +2330,7 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
   const int instance = 0;
   f1ap_ue_context_release_complete_t *complete = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_p);
   gNB_RRC_INST *rrc = RC.nrrrc[instance];
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, complete->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc, complete->gNB_CU_ue_id); // here
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
 
   nr_pdcp_remove_UE(UE->rnti);
@@ -2946,22 +2946,17 @@ rrc_gNB_generate_UECapabilityEnquiry(
   nr_rrc_transfer_protected_rrc_message(rrc, ue, DCCH, buffer, size);
 }
 
+typedef struct deliver_ue_ctxt_release_data_t {
+  gNB_RRC_INST *rrc;
+  f1ap_ue_context_release_cmd_t *release_cmd;
+} deliver_ue_ctxt_release_data_t;
 static void rrc_deliver_ue_ctxt_release_cmd(void *deliver_pdu_data, ue_id_t ue_id, int srb_id, char *buf, int size, int sdu_id)
 {
   DevAssert(deliver_pdu_data != NULL);
-  gNB_RRC_INST *rrc = deliver_pdu_data;
-  uint8_t *rrc_container = malloc(size);
-  AssertFatal(rrc_container != NULL, "out of memory\n");
-  memcpy(rrc_container, buf, size);
-  f1ap_ue_context_release_cmd_t ue_context_release_cmd = {
-    .rnti = ue_id, /* TODO: proper IDs! */
-    .cause = F1AP_CAUSE_RADIO_NETWORK,
-    .cause_value = 10, // 10 = F1AP_CauseRadioNetwork_normal_release
-    .srb_id = srb_id,
-    .rrc_container = rrc_container,
-    .rrc_container_length = size,
-  };
-  rrc->mac_rrc.ue_context_release_command(&ue_context_release_cmd);
+  deliver_ue_ctxt_release_data_t *data = deliver_pdu_data;
+  data->release_cmd->rrc_container = (uint8_t*) buf;
+  data->release_cmd->rrc_container_length = size;
+  data->rrc->mac_rrc.ue_context_release_command(data->release_cmd);
 }
 
 //-----------------------------------------------------------------------------
@@ -2985,7 +2980,17 @@ rrc_gNB_generate_RRCRelease(
         size);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
-  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, rrc);
+  const gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rnti);
+  f1ap_ue_context_release_cmd_t ue_context_release_cmd = {
+    .gNB_CU_ue_id = UE->cu_ue_id,
+    .gNB_DU_ue_id = ue_data.secondary_ue,
+    .cause = F1AP_CAUSE_RADIO_NETWORK,
+    .cause_value = 10, // 10 = F1AP_CauseRadioNetwork_normal_release
+    .srb_id = DCCH,
+  };
+  deliver_ue_ctxt_release_data_t data = {.rrc = rrc, .release_cmd = &ue_context_release_cmd};
+  nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_release_cmd, &data);
 
   /* UE will be freed after UE context release complete */
 }

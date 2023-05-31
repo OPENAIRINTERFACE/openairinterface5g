@@ -574,14 +574,14 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, req->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = req->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseRequestIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextReleaseRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, req->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = req->gNB_DU_ue_id;
   /* mandatory */
   /* c3. Cause */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseRequestIEs_t, ie3);
@@ -642,13 +642,11 @@ int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t instance, uint32_t assoc_id,
   // GNB_CU_UE_F1AP_ID
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  f1ap_ue_context_release_cmd->rnti = f1ap_get_rnti_by_cu_id(DUtype, instance, ie->value.choice.GNB_CU_UE_F1AP_ID);
+  f1ap_ue_context_release_cmd->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
   // GNB_DU_UE_F1AP_ID
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCommandIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_du_id(DUtype, instance,
-                      ie->value.choice.GNB_DU_UE_F1AP_ID);
-  AssertFatal(f1ap_ue_context_release_cmd->rnti == rnti, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n", rnti, f1ap_ue_context_release_cmd->rnti);
+  f1ap_ue_context_release_cmd->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   // We don't need the Cause
   // Optional RRC Container: if present, send to UE
@@ -709,14 +707,14 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_rel
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(DUtype, instance, complete->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = complete->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list,F1AP_UEContextReleaseCompleteIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextReleaseCompleteIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(DUtype, instance, complete->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = complete->gNB_DU_ue_id;
   /* optional -> currently not used */
   /* c3. CriticalityDiagnostics */
   //if (0) {
@@ -778,7 +776,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_rel
                                buffer,
                                len,
                                getCxt(false, instance)->default_sctp_stream_id);
-  f1ap_remove_ue(DUtype, instance, complete->rnti);
+  f1ap_remove_ue(DUtype, instance, complete->gNB_DU_ue_id);
   return 0;
 }
 
