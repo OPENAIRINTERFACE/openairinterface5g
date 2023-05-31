@@ -76,6 +76,12 @@ static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t 
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
   f1ap_ue_context_release_cmd_t *msg = &F1AP_UE_CONTEXT_RELEASE_CMD(message_p);
   *msg = *cmd;
+  if (cmd->rrc_container_length > 0) {
+    msg->rrc_container = calloc(cmd->rrc_container_length, sizeof(*msg->rrc_container));
+    AssertFatal(msg->rrc_container != NULL, "out of memory\n");
+    msg->rrc_container_length = cmd->rrc_container_length;
+    memcpy(msg->rrc_container, cmd->rrc_container, cmd->rrc_container_length);
+  }
   itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
 }
 
