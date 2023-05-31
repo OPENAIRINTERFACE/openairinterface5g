@@ -926,19 +926,18 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   F1AP_UEContextReleaseComplete_t    *container;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
   DevAssert(pdu);
+  MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  f1ap_ue_context_release_complete_t *complete = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextReleaseComplete;
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(CUtype, instance,
-                      ie->value.choice.GNB_CU_UE_F1AP_ID);
+  complete->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(CUtype, instance,
-                       ie->value.choice.GNB_DU_UE_F1AP_ID);
-  AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
-              rnti2, rnti);
+  complete->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+
   /* Optional*/
   /* CriticalityDiagnostics */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
@@ -952,24 +951,8 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     // F1AP_CriticalityDiagnostics_IE_List
   }
 
-  protocol_ctxt_t ctxt;
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, GNB_FLAG_YES, rnti, 0, 0, instance);
+  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
 
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[instance], rnti);
-
-  if (ue_context_p) {
-    MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
-    NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.rrc_ue_id;
-    itti_send_msg_to_task(TASK_NGAP, instance, msg);
-    rrc_gNB_remove_ue_context(RC.nrrrc[instance], ue_context_p);
-  } else {
-    LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
-  }
-
-  nr_pdcp_remove_UE(ctxt.rntiMaybeUEid);
-
-  LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
-  f1ap_remove_ue(CUtype, instance, rnti);
   return 0;
 }
 
