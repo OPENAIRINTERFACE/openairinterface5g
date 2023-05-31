@@ -1142,19 +1142,19 @@ void check_ssb_raster(long absolutefreqssb, int band, int scs)
         break;
       }
     }
-    AssertFatal(N != 0, "absoluteFrequencySSB %ld (%lu) not on the synchronization raster (N * 1200kHz + M * 50 kHz)\n",
+    AssertFatal(N != 0, "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (N * 1200kHz + M * 50 kHz)\n",
                 absolutefreqssb, freq);
     GSCN = (3 * N) + (M - 3) / 2;
   }
   else if (freq <= 24250000000) {
     AssertFatal((freq - 3000000000) % 1440000 == 0,
-                "absoluteFrequencySSB %ld (%lu) not on the synchronization raster (3000 MHz + N * 1.44 MHz)\n",
+                "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (3000 MHz + N * 1.44 MHz)\n",
                 absolutefreqssb, freq);
     GSCN = ((freq - 3000000000) / 1440000) + 7499;
   }
   else {
     AssertFatal((freq - 24250080000) % 17280000 == 0,
-                "absoluteFrequencySSB %ld (%lu) not on the synchronization raster (24250.08 MHz + N * 17.28 MHz)\n",
+                "absoluteFrequencySSB %ld (%lu Hz) not on the synchronization raster (24250.08 MHz + N * 17.28 MHz)\n",
                 absolutefreqssb, freq);
     GSCN = ((freq - 24250080000) / 17280000) + 22256;
   }
