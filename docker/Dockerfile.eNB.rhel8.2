@@ -102,6 +102,7 @@ WORKDIR /usr/local/share/uhd/rfnoc
 COPY --from=enb-base /usr/local/share/uhd/rfnoc/ .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so" && \
     ldconfig
 
 # Copy the relevant configuration files for eNB

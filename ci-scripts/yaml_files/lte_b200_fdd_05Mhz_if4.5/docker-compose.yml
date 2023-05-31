@@ -1,0 +1,57 @@
+version: '3.8'
+
+services:
+    rru_fdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: lte-b200-rru-fdd-05Mhz-tm1
+        network_mode: "host"
+        environment:
+            - USE_B2XX='yes'
+            - USE_FDD_RRU=True
+            - RRU_IF4P5_IF_NAME=lo
+            - RCC_REMOTE_IP_ADDRESS=127.0.0.3
+            - RRU_LOCAL_IP_ADDRESS=127.0.0.2
+            - UTRA_BAND_ID=7
+            - THREAD_PARALLEL_CONFIG=PARALLEL_SINGLE_THREAD
+            - USE_ADDITIONAL_OPTIONS=--RUs.[0].max_rxgain 125 --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - /dev:/dev
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    rcc_fdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: lte-b200-rcc-fdd-05Mhz-tm1
+        network_mode: "host"
+        environment:
+            - USE_FDD_IF4P5_RCC=True
+            - ENB_NAME=rcc-in-docker
+            - MCC=208
+            - MNC=92
+            - MNC_LENGTH=2
+            - TAC=1
+            - UTRA_BAND_ID=7
+            - DL_FREQUENCY_IN_MHZ=2680
+            - UL_FREQUENCY_OFFSET_IN_MHZ=120
+            - NID_CELL=0
+            - NB_PRB=25
+            - MME_S1C_IP_ADDRESS=172.21.18.48
+            - RCC_IF_NAME=eno1
+            - RCC_S1C_IP_ADDRESS=172.21.18.46
+            - RCC_IP_ADDRESS=172.21.18.46
+            - IF4P5_IF_NAME=lo
+            - IF4P5_RRU_IP_ADDRESS=127.0.0.2
+            - IF4P5_RCC_IP_ADDRESS=127.0.0.3
+            - THREAD_PARALLEL_CONFIG=PARALLEL_SINGLE_THREAD
+            - USE_ADDITIONAL_OPTIONS=--log_config.global_log_options level,nocolor,time,line_num,function
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
