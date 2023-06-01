@@ -54,7 +54,6 @@ COPY --from=gnb-build \
     ./
 
 COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
@@ -68,7 +67,6 @@ COPY --from=gnb-base \
 
 RUN ldconfig && \
     echo "ldd on nr-cuup" && ldd /opt/oai-gnb/bin/nr-cuup && \
-    echo "ldd on librfsimulator" && ldd /usr/local/lib/librfsimulator.so && \
     echo "ldd on libparams_libconfig" && ldd /usr/local/lib/libparams_libconfig.so && \
     echo "ldd on libtelnetsrv" && ldd /usr/local/lib/libtelnetsrv.so
 
