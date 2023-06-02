@@ -10,7 +10,7 @@ include(ASN1/38455.cmake)
 #endif()
 
 add_custom_command(OUTPUT ${nrppa_source} ${nrppa_headers}
-  COMMAND ASN1C_PREFIX=NRPPA_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${NRPPA_GRAMMAR}
+  COMMAND ASN1C_PREFIX=NRPPA_ ${ASN1C_EXEC} -gen-APER -gen-UPER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${NRPPA_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${NRPPA_GRAMMAR}
   COMMENT "Generating NRPPA source files from ${CMAKE_CURRENT_SOURCE_DIR}/${NRPPA_GRAMMAR}"
 )

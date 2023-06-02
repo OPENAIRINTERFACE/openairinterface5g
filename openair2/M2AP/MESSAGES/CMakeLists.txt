@@ -19,7 +19,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT ${m2ap_source} ${m2ap_headers}
-  COMMAND ASN1C_PREFIX=M2AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${M2AP_GRAMMAR}
+  COMMAND ASN1C_PREFIX=M2AP_ ${ASN1C_EXEC} -gen-APER -no-gen-BER -no-gen-JER -no-gen-OER -gen-UPER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${M2AP_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${M2AP_GRAMMAR}
   COMMENT "Generating M2AP source files from ${CMAKE_CURRENT_SOURCE_DIR}/${M2AP_GRAMMAR}"
 )

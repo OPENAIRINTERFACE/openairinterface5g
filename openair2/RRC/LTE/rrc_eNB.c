@@ -31,7 +31,8 @@
 #define RRC_ENB_C
 #include "oai_asn1.h"
 #include <asn_application.h>
-#include <per_encoder.h>
+#include "uper_encoder.h"
+#include "uper_decoder.h"
 #include "rrc_defs.h"
 #include "rrc_extern.h"
 #include "assertions.h"

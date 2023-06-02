@@ -10,7 +10,7 @@ include(ASN1/37355-g60.cmake)
 #endif()
 
 add_custom_command(OUTPUT ${lpp_source} ${lpp_headers}
-  COMMAND ASN1C_PREFIX=LPP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${LPP_GRAMMAR}
+  COMMAND ASN1C_PREFIX=LPP_ ${ASN1C_EXEC} -gen-UPER -no-gen-BER -no-gen-JER -no-gen-OER -gen-APER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${LPP_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${LPP_GRAMMAR}
   COMMENT "Generating LPP source files from ${CMAKE_CURRENT_SOURCE_DIR}/${LPP_GRAMMAR}"
 )

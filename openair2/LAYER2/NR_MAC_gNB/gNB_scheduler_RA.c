@@ -28,6 +28,7 @@
  */
 
 #include "platform_types.h"
+#include "uper_decoder.h"
 
 /* MAC */
 #include "nr_mac_gNB.h"

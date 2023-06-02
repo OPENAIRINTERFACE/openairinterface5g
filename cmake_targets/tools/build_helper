@@ -674,19 +674,18 @@ check_install_oai_software() {
 }
 
 install_asn1c_from_source(){
+    mkdir -p $OPENAIR_DIR/cmake_targets/log
     asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
+    $SUDO $INSTALLER -y install bison flex
     $SUDO rm -rf /tmp/asn1c
     # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone https://github.com/mouse07410/asn1c /tmp/asn1c
     cd /tmp/asn1c
-    # better to use a given commit than a branch in case the branch
-    # is updated and requires modifications in the source of OAI
-    #git checkout velichkov_s1ap_plus_option_group
-    git checkout f12568d617dbf48497588f8e227d70388fa217c9
+    git checkout vlm_master
     autoreconf -iv
-    ./configure
+    ./configure --prefix /opt/asn1c/
     make -j`nproc`
     $SUDO make install
     cd -

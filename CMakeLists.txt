@@ -46,6 +46,24 @@ include_directories(${CONFIG_INCLUDE_DIRS})
 pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
+# Check if asn1c is installed, and check if it supports all options we need
+# a user can provide ASN1C_EXEC to override an asn1c to use (e.g., parallel
+# installation)
+find_program(ASN1C_EXEC_PATH asn1c HINTS /opt/asn1c/bin)
+set(ASN1C_EXEC ${ASN1C_EXEC_PATH} CACHE FILEPATH "path to asn1c executable")
+if(NOT ASN1C_EXEC)
+    message(FATAL_ERROR "No asn1c found!
+You might want to re-run ./build_oai -I
+Or provide a path to asn1c using
+./build_oai ... --cmake-opt -DASN1C_EXEC=/path/to/asn1c
+")
+endif()
+check_option(${ASN1C_EXEC} -gen-APER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-UPER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-JER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-BER ASN1C_EXEC)
+check_option(${ASN1C_EXEC} -no-gen-OER ASN1C_EXEC)
+
 #uhd 4.0 and iris installs by default in /usr/local
 include_directories("/usr/local/include/")
 #use native cmake method as this package is not in pkg-config
@@ -306,6 +324,9 @@ target_link_libraries(ITTI PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 if (DEBUG_ASN1C)
   add_definitions(-DHAVE_CONFIG_H)
 endif()
+
+# asn1c skeletons need this
+add_definitions(-DHAVE_NETINET_IN_H)
 
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
@@ -2087,9 +2108,6 @@ add_custom_target (
   generate_T
   DEPENDS ${OPENAIR_DIR}/common/utils/T/T_IDs.h
 )
-
-# Hack on a test of asn1c version (already dirty)
-add_definitions(-DASN1_MINIMUM_VERSION=924)
 
 #################################
 # add executables for operation

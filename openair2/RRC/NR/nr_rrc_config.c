@@ -34,6 +34,9 @@
 #include "oai_asn1.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus();
 
+#include "uper_decoder.h"
+#include "uper_encoder.h"
+
 const uint8_t slotsperframe[5] = {10, 20, 40, 80, 160};
 
 static NR_SearchSpace_t *rrc_searchspace_config(bool is_common, int searchspaceid, int coresetid)

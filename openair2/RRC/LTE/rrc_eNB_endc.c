@@ -25,6 +25,7 @@
 #include "common/ran_context.h"
 #include "oai_asn1.h"
 #include "LTE_DL-DCCH-Message.h"
+#include "uper_encoder.h"
 
 #include <stdio.h>
 #include <stdlib.h>

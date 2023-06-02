@@ -37,6 +37,8 @@
 
 #include "f1ap_du_rrc_message_transfer.h"
 
+#include "uper_decoder.h"
+
 #include "NR_DL-CCCH-Message.h"
 #include "NR_UL-CCCH-Message.h"
 #include "NR_DL-DCCH-Message.h"

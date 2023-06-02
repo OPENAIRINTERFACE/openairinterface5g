@@ -36,6 +36,7 @@
 #   include "intertask_interface.h"
 # include "common/ran_context.h"
 #include "pdcp.h"
+#include "uper_encoder.h"
 
 extern RAN_CONTEXT_t RC;
 

@@ -83,6 +83,8 @@
 #include "NR_SearchSpace.h"
 #include "NR_ControlResourceSet.h"
 #include "NR_EUTRA-MBSFN-SubframeConfig.h"
+#include "uper_decoder.h"
+#include "uper_encoder.h"
 
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 #include "RRC/NR/nr_rrc_extern.h"

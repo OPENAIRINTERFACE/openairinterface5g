@@ -44,6 +44,7 @@
 #include "rrc_eNB_UE_context.h"
 #include "pdcp.h"
 #include "common/ran_context.h"
+#include "uper_encoder.h"
 
 #include "intertask_interface.h"
 

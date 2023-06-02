@@ -1,33 +1,91 @@
 set(S1AP_GRAMMAR ASN1/R15/s1ap-15.6.0.asn1)
 
 set(s1ap_source
+    ANY_aper.c
     ANY.c
+    ANY_uper.c
+    ANY_xer.c
+    aper_decoder.c
+    aper_encoder.c
+    aper_opentype.c
+    aper_support.c
     asn_application.c
     asn_bit_data.c
     asn_codecs_prim.c
+    asn_codecs_prim_xer.c
     asn_internal.c
     asn_random_fill.c
     asn_SEQUENCE_OF.c
     asn_SET_OF.c
-    ber_decoder.c
     ber_tlv_length.c
     ber_tlv_tag.c
     BIT_STRING.c
-    BOOLEAN.c
+    BIT_STRING_print.c
+    BIT_STRING_rfill.c
+    BIT_STRING_uper.c
+    BIT_STRING_xer.c
     constraints.c
+    constr_CHOICE_aper.c
     constr_CHOICE.c
+    constr_CHOICE_print.c
+    constr_CHOICE_rfill.c
+    constr_CHOICE_uper.c
+    constr_CHOICE_xer.c
+    constr_SEQUENCE_aper.c
     constr_SEQUENCE.c
+    constr_SEQUENCE_OF_aper.c
     constr_SEQUENCE_OF.c
+    constr_SEQUENCE_OF_uper.c
+    constr_SEQUENCE_OF_xer.c
+    constr_SEQUENCE_print.c
+    constr_SEQUENCE_rfill.c
+    constr_SEQUENCE_uper.c
+    constr_SEQUENCE_xer.c
+    constr_SET_OF_aper.c
     constr_SET_OF.c
+    constr_SET_OF_print.c
+    constr_SET_OF_rfill.c
+    constr_SET_OF_uper.c
+    constr_SET_OF_xer.c
     constr_TYPE.c
-    der_encoder.c
+    GraphicString.c
+    INTEGER_aper.c
     INTEGER.c
+    INTEGER_print.c
+    INTEGER_rfill.c
+    INTEGER_uper.c
+    INTEGER_xer.c
+    NativeEnumerated_aper.c
     NativeEnumerated.c
+    NativeEnumerated_uper.c
+    NativeEnumerated_xer.c
+    NativeInteger_aper.c
     NativeInteger.c
+    NativeInteger_print.c
+    NativeInteger_rfill.c
+    NativeInteger_uper.c
+    NativeInteger_xer.c
+    NULL_aper.c
     NULL.c
+    NULL_print.c
+    NULL_rfill.c
+    NULL_uper.c
+    NULL_xer.c
+    ObjectDescriptor.c
     OBJECT_IDENTIFIER.c
+    OBJECT_IDENTIFIER_print.c
+    OBJECT_IDENTIFIER_rfill.c
+    OBJECT_IDENTIFIER_xer.c
+    OCTET_STRING_aper.c
     OCTET_STRING.c
+    OCTET_STRING_print.c
+    OCTET_STRING_rfill.c
+    OCTET_STRING_uper.c
+    OCTET_STRING_xer.c
+    OPEN_TYPE_aper.c
     OPEN_TYPE.c
+    OPEN_TYPE_uper.c
+    OPEN_TYPE_xer.c
     per_decoder.c
     per_encoder.c
     per_opentype.c
@@ -265,6 +323,7 @@ set(s1ap_source
     S1AP_ExtendedRepetitionPeriod.c
     S1AP_ExtendedRNC-ID.c
     S1AP_Extended-UEIdentityIndexValue.c
+    S1AP_EXTERNAL.c
     S1AP_FailureEventReport.c
     S1AP_FailureEventReportingCause.c
     S1AP_FiveGSTAC.c
@@ -673,6 +732,10 @@ set(s1ap_source
     S1AP_WriteReplaceWarningRequest.c
     S1AP_WriteReplaceWarningResponse.c
     S1AP_X2TNLConfigurationInfo.c
+    uper_decoder.c
+    uper_encoder.c
+    uper_opentype.c
+    uper_support.c
     xer_decoder.c
     xer_encoder.c
     xer_support.c
@@ -680,32 +743,36 @@ set(s1ap_source
 
 set(s1ap_headers
     ANY.h
+    aper_decoder.h
+    aper_encoder.h
+    aper_opentype.h
+    aper_support.h
     asn_application.h
     asn_bit_data.h
     asn_codecs.h
     asn_codecs_prim.h
+    asn_config.h
     asn_internal.h
     asn_ioc.h
     asn_random_fill.h
     asn_SEQUENCE_OF.h
     asn_SET_OF.h
     asn_system.h
-    ber_decoder.h
     ber_tlv_length.h
     ber_tlv_tag.h
     BIT_STRING.h
-    BOOLEAN.h
     constraints.h
     constr_CHOICE.h
     constr_SEQUENCE.h
     constr_SEQUENCE_OF.h
     constr_SET_OF.h
     constr_TYPE.h
-    der_encoder.h
+    GraphicString.h
     INTEGER.h
     NativeEnumerated.h
     NativeInteger.h
     NULL.h
+    ObjectDescriptor.h
     OBJECT_IDENTIFIER.h
     OCTET_STRING.h
     OPEN_TYPE.h
@@ -947,6 +1014,7 @@ set(s1ap_headers
     S1AP_ExtendedRepetitionPeriod.h
     S1AP_ExtendedRNC-ID.h
     S1AP_Extended-UEIdentityIndexValue.h
+    S1AP_EXTERNAL.h
     S1AP_FailureEventReport.h
     S1AP_FailureEventReportingCause.h
     S1AP_FiveGSTAC.h
@@ -1355,6 +1423,10 @@ set(s1ap_headers
     S1AP_WriteReplaceWarningRequest.h
     S1AP_WriteReplaceWarningResponse.h
     S1AP_X2TNLConfigurationInfo.h
+    uper_decoder.h
+    uper_encoder.h
+    uper_opentype.h
+    uper_support.h
     xer_decoder.h
     xer_encoder.h
     xer_support.h

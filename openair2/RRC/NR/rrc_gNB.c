@@ -65,6 +65,8 @@
 #include "NR_RRCSetupComplete-IEs.h"
 #include "NR_RRCReestablishmentRequest-IEs.h"
 #include "NR_MIB.h"
+#include "uper_encoder.h"
+#include "uper_decoder.h"
 
 #include "rlc.h"
 #include "platform_types.h"
