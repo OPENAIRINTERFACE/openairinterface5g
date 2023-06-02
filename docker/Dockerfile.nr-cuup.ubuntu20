@@ -50,7 +50,6 @@ COPY --from=gnb-build \
     ./
 
 COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
