@@ -1045,7 +1045,15 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
       }
     }
   }
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
 
+  nr_pdcp_add_srbs(ctxt_pP->enb_flag,
+                   ctxt_pP->rntiMaybeUEid,
+                   SRBs,
+                   (ue_p->integrity_algorithm << 4) | ue_p->ciphering_algorithm,
+                   kRRCenc,
+                   kRRCint);
+  freeSRBlist(SRBs);
   nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                    ctxt_pP->rntiMaybeUEid,
                    reestablish_ue_id,
