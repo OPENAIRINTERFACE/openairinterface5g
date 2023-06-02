@@ -428,15 +428,6 @@ void build_ssb_to_ro_map(NR_UE_MAC_INST_t *mac);
 
 void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs);
 
-static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
-                                   nr_dci_format_t dci_format,
-                                   uint8_t dci_size,
-                                   uint16_t rnti,
-                                   int ss_type,
-                                   uint64_t *dci_pdu,
-                                   dci_pdu_rel15_t *dci_pdu_rel15,
-                                   int slot);
-
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot, int fb_time);
 fapi_nr_dl_config_request_t *get_dl_config_request(NR_UE_MAC_INST_t *mac, int slot);
 

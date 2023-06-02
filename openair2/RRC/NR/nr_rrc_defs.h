@@ -236,9 +236,7 @@ typedef enum {
 } rrc_action_t;
 
 typedef struct gNB_RRC_UE_s {
-  uint8_t                            primaryCC_id;
-  NR_SRB_ToAddModList_t             *SRB_configList;
-  NR_SRB_ToAddModList_t             *SRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
+  uint8_t primaryCC_id;
   NR_DRB_ToAddModList_t             *DRB_configList;
   NR_DRB_ToAddModList_t             *DRB_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];
   NR_DRB_ToReleaseList_t            *DRB_Release_configList2[NR_RRC_TRANSACTION_IDENTIFIER_NUMBER];

@@ -149,6 +149,14 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 /* 14  */ {  1,       0,                 14,                   4,            4,       {    0,   3,    6,    9  }   },
 /* 15  */ {  1,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
 };
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                                   nr_dci_format_t dci_format,
+                                   uint8_t dci_size,
+                                   uint16_t rnti,
+                                   int ss_type,
+                                   uint64_t *dci_pdu,
+                                   dci_pdu_rel15_t *dci_pdu_rel15,
+                                   int slot);
 
 void nr_ue_init_mac(module_id_t module_idP)
 {

@@ -128,8 +128,6 @@ nr_rrc_pdcp_config_security(
 )
 //------------------------------------------------------------------------------
 {
-  NR_SRB_ToAddModList_t              *SRB_configList = ue_context_pP->ue_context.SRB_configList;
-  (void)SRB_configList;
   uint8_t kRRCenc[16] = {0};
   uint8_t kRRCint[16] = {0};
   uint8_t kUPenc[16] = {0};
@@ -783,7 +781,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     for (int j=0; j < pdu->numDRB2Setup; j++) {
       DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
 
-      drb->id = i + j + 1;
+      drb->id = i + j + UE->nb_of_pdusessions;
 
       drb->defaultDRB = E1AP_DefaultDRB_true;
 
