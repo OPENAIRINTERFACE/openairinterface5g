@@ -470,7 +470,6 @@ add_library(f1ap
             ${F1AP_DIR}/f1ap_cu_task.c
             ${F1AP_DIR}/f1ap_cu_ue_context_management.c
             ${F1AP_DIR}/f1ap_cu_warning_message_transmission.c
-            ${F1AP_DIR}/f1ap_decoder.c
             ${F1AP_DIR}/f1ap_du_interface_management.c
             ${F1AP_DIR}/f1ap_du_paging.c
             ${F1AP_DIR}/f1ap_du_rrc_message_transfer.c
