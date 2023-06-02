@@ -302,7 +302,7 @@ unsigned int rrc_gNB_get_next_transaction_identifier(module_id_t gnb_mod_idP)
   return tmp;
 }
 
-static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue)
+static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
 {
   if (!ue->Srb[1].Active) {
     LOG_E(NR_RRC, "Call SRB list while SRB1 doesn't exist\n");
@@ -313,6 +313,9 @@ static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue)
     if (ue->Srb[i].Active) {
       asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
       srb->srb_Identity = i;
+      if (reestablish && i == 2) {
+        asn1cCallocOne(srb->reestablishPDCP, NR_SRB_ToAddMod__reestablishPDCP_true);
+      }
     }
   return list;
 }
@@ -359,7 +362,7 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
   unsigned char buf[1024];
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(instance);
   ue_p->xids[xid] = RRC_SETUP;
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
 
   int size = do_RRCSetup(ue_context_pP, buf, xid, masterCellGroup, masterCellGroup_len, &rrc->configuration, SRBs);
   AssertFatal(size > 0, "do_RRCSetup failed\n");
@@ -396,7 +399,7 @@ static int rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t m
   unsigned char buf[1024];
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_SETUP_FOR_REESTABLISHMENT;
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
 
   int size = do_RRCSetup(ue_context_pP, buf, xid, NULL, 0, &rrc_instance_p->configuration, SRBs);
   AssertFatal(size > 0, "do_RRCSetup failed\n");
@@ -698,7 +701,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   AssertFatal(xid > -1, "Invalid xid %d. No PDU sessions setup to configure.\n", xid);
   uint8_t buffer[RRC_BUF_SIZE] = {0};
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
                                    RRC_BUF_SIZE,
@@ -1045,7 +1048,7 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
       }
     }
   }
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
 
   nr_pdcp_add_srbs(ctxt_pP->enb_flag,
                    ctxt_pP->rntiMaybeUEid,
@@ -1168,7 +1171,7 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_REESTABLISH;
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
   int size = do_RRCReestablishment(ctxt_pP,
                                    ue_context_pP,
                                    CC_id,
@@ -1338,7 +1341,6 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   ue_p->xids[new_xid] = RRC_REESTABLISH_COMPLETE;
   ue_p->StatusRrc = NR_RRC_CONNECTED;
 
-  //*SRB2_config->reestablishPDCP = NR_SRB_ToAddMod__reestablishPDCP_true;
   ue_p->Srb[1].Active = 1;
   if (get_softmodem_params()->sa) {
     uint8_t send_security_mode_command = false;
@@ -1379,7 +1381,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
   }
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p);
+  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
                                    RRC_BUF_SIZE,
