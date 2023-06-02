@@ -3798,7 +3798,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
     mac_ce++;
 
     // C-RNTI MAC CE (2 octets)
-    *(uint16_t *) mac_ce = (*crnti);
+    memcpy(mac_ce, crnti, sizeof(*crnti));
 
     // update pointer and length
     mac_ce_size = sizeof(uint16_t);

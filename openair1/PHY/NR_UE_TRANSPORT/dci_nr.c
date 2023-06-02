@@ -315,11 +315,10 @@ void nr_pdcch_channel_level(int32_t rx_size,
       */
     }
 
-    DevAssert( nb_rb );
-    avg[aarx] = (((int32_t *)&avg128P)[0] +
-                 ((int32_t *)&avg128P)[1] +
-                 ((int32_t *)&avg128P)[2] +
-                 ((int32_t *)&avg128P)[3])/(nb_rb*9);
+    DevAssert(nb_rb);
+    avg[aarx] = 0;
+    for (int i = 0; i < 4; i++)
+      avg[aarx] += ((int32_t *)&avg128P)[i] / (nb_rb * 9);
     LOG_DDD("Channel level : %d\n",avg[aarx]);
   }
 

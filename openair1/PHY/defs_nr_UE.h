@@ -515,7 +515,7 @@ typedef struct {
   uint16_t         symbol_offset;  /// offset in terms of symbols for detected ssb in sync
   int              rx_offset;      /// Timing offset
   int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
-  int              max_pos_fil;    /// Timing offset IIR filter
+  int64_t          max_pos_fil;    /// Timing offset IIR filter
   bool             apply_timing_offset;     /// Do time sync for current frame
   int              time_sync_cell;
 
