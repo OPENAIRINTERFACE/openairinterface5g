@@ -1937,7 +1937,6 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
       return UE;
     }
   }
-  LOG_W(NR_MAC,"Search for not existing rnti (ignore for RA): %04x\n", rntiP);
   return NULL;
 }
 
