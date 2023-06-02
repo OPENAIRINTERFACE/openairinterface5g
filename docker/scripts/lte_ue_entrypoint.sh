@@ -46,7 +46,7 @@ while [[ $# -gt 0 ]]; do
   new_args+=("$1")
   shift
 done
-if [[ -f "$FILE"  ]]; then
+if [[ -f "$CONFIGFILE"  ]]; then
   new_args+=("-O")
   new_args+=("$CONFIGFILE")
 fi
