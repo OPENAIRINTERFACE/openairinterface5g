@@ -674,6 +674,7 @@ check_install_oai_software() {
 }
 
 install_asn1c_from_source(){
+    mkdir -p $OPENAIR_DIR/cmake_targets/log
     asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
