@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
@@ -33,11 +33,11 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_paramete
     cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-ue
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-nr-ue
 ENV TZ=Europe/Paris
 
 RUN yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
+    yum install -y --enablerepo="ubi-9-codeready-builder" \
         lksctp-tools \
         procps-ng \
         tzdata \
@@ -83,25 +83,25 @@ COPY --from=nr-ue-build \
     /usr/local/lib/
 
 COPY --from=nr-ue-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/libforms.so.2 \
-    /lib64/libboost_chrono.so.1.66.0 \
-    /lib64/libboost_date_time.so.1.66.0 \
-    /lib64/libboost_filesystem.so.1.66.0 \
-    /lib64/libboost_program_options.so.1.66.0 \
-    /lib64/libboost_serialization.so.1.66.0 \
-    /lib64/libboost_thread.so.1.66.0 \
-    /lib64/libboost_system.so.1.66.0 \
-    /lib64/libboost_unit_test_framework.so.1.66.0 \
-    /lib64/libboost_atomic.so.1.66.0 \
-    /lib64/libboost_timer.so.1.66.0 \
-    /lib64/libboost_regex.so.1.66.0 \
-    /lib64/libicudata.so.60 \
-    /lib64/libicui18n.so.60 \
-    /lib64/libicuuc.so.60 \
+    /lib64/libboost_chrono.so.1.75.0 \
+    /lib64/libboost_date_time.so.1.75.0 \
+    /lib64/libboost_filesystem.so.1.75.0 \
+    /lib64/libboost_program_options.so.1.75.0 \
+    /lib64/libboost_serialization.so.1.75.0 \
+    /lib64/libboost_thread.so.1.75.0 \
+    /lib64/libboost_system.so.1.75.0 \
+    /lib64/libboost_unit_test_framework.so.1.75.0 \
+    /lib64/libboost_atomic.so.1.75.0 \
+    /lib64/libboost_timer.so.1.75.0 \
+    /lib64/libboost_regex.so.1.75.0 \
+    /lib64/libicudata.so.67 \
+    /lib64/libicui18n.so.67 \
+    /lib64/libicuuc.so.67 \
     /lib64/
 
 # Now we are copying from builder-image the UHD files.

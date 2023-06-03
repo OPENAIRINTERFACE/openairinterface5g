@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
@@ -38,12 +38,12 @@ RUN /bin/sh oaienv && \
     ninja aw2sori_transpro
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-gnb-aw2s
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-gnb-aw2s
 ENV TZ=Europe/Paris
 
 RUN yum repolist --disablerepo=* && \
     yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
+    yum install -y --enablerepo="ubi-9-codeready-builder" \
         procps-ng \
         libXpm \
         libX11 \
@@ -76,7 +76,7 @@ COPY --from=gnb-build \
     /usr/local/lib/
 
 COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
     /lib64/liblapack.so.3 \

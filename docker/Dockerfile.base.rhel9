@@ -21,12 +21,12 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-base
+FROM registry.access.redhat.com/ubi9/ubi:latest AS ran-base
 ARG NEEDED_GIT_PROXY
 ENV TZ=Europe/Paris
 ENV BUILD_UHD_FROM_SOURCE=True
@@ -42,7 +42,8 @@ COPY ./rhsm-ca /etc/rhsm/ca
 #install developers pkg/repo
 RUN rm -f /etc/rhsm-host && \
     yum repolist --disablerepo=* && \
-    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+    subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
+    dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y && \
     yum update -y && \
     yum install -y \
        #gcc needed for build_oai
@@ -51,6 +52,7 @@ RUN rm -f /etc/rhsm-host && \
        file \
        psmisc \
        git \
+       zlib-devel \
        # python3-pip and pyyaml are used for conf template generation
        python3-pip && \
     pip3 install --ignore-installed pyyaml && \

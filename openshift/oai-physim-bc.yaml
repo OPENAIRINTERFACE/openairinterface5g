@@ -32,7 +32,7 @@ spec:
         type: "Binary"
     strategy:
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.phySim.rhel8.2"
+            dockerfilePath: "docker/Dockerfile.phySim.rhel9"
     output:
         to:
             kind: "ImageStreamTag"

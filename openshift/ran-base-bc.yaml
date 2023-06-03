@@ -43,7 +43,7 @@ spec:
             destinationDir: rhsm-ca
     strategy:
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.base.rhel8.2"
+            dockerfilePath: "docker/Dockerfile.base.rhel9"
     output:
         to:
             kind: "ImageStreamTag"
