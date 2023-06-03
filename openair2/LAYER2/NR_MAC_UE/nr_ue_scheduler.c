@@ -526,11 +526,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->tbslbrm = 0;
 
   } else if (dci) {
-    NR_BWP_Id_t ul_bwp_id = mac->current_UL_BWP.bwp_id;
-
-    int target_ss;
-    bool valid_ptrs_setup = 0;
-
     pusch_config_pdu->bwp_start = current_UL_BWP->BWPStart;
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
@@ -544,21 +539,21 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
 
     /*DCI format-related configuration*/
+    int target_ss;
     if (*dci_format == NR_UL_DCI_FORMAT_0_0) {
-
       target_ss = NR_SearchSpace__searchSpaceType_PR_common;
-
+      if ((pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) &&
+          pusch_config_pdu->nr_of_symbols < 3)
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
+      else
+        pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
     } else if (*dci_format == NR_UL_DCI_FORMAT_0_1) {
-
       target_ss = NR_SearchSpace__searchSpaceType_PR_ue_Specific;
       ul_layers_config(mac, pusch_config_pdu, dci, *dci_format);
       ul_ports_config(mac, &dmrslength, pusch_config_pdu, dci, *dci_format);
-
     } else {
-
       LOG_E(NR_MAC, "In %s: UL grant from DCI format %d is not handled...\n", __FUNCTION__, *dci_format);
       return -1;
-
     }
 
     int mappingtype = tda_info->mapping_type;
@@ -576,8 +571,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
 
     /* TRANSFORM PRECODING ------------------------------------------------------------------------------------------*/
     if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled) {
-
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
 
       uint32_t n_RS_Id = 0;
       if (NR_DMRS_ulconfig->transformPrecodingEnabled &&
@@ -664,18 +657,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                                pusch_config_pdu->start_symbol_index,
                                mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
 
-    if (ul_bwp_id > 0 &&
-        mac->ULbwp[ul_bwp_id - 1] &&
-        pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled &&
-        *dci_format != NR_UL_DCI_FORMAT_0_1) {
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 1;
-    } else if (*dci_format == NR_UL_DCI_FORMAT_0_0 ||
-               (ul_bwp_id > 0 &&
-                mac->ULbwp[ul_bwp_id-1] &&
-                pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_enabled)) {
-      pusch_config_pdu->num_dmrs_cdm_grps_no_data = 2;
-    }
-
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->xOverhead)
       N_PRB_oh = *current_UL_BWP->pusch_servingcellconfig->xOverhead;
@@ -699,17 +680,17 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
       if (pusch_config_pdu->transform_precoding == NR_PUSCH_Config__transformPrecoder_disabled) {
         nfapi_nr_ue_ptrs_ports_t ptrs_ports_list;
         pusch_config_pdu->pusch_ptrs.ptrs_ports_list = &ptrs_ports_list;
-        valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
-                                              pusch_config_pdu->rb_size,
-                                              pusch_config_pdu->mcs_index,
-                                              pusch_config_pdu->mcs_table,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_time_density,
-                                              &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,
-                                              &pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
-                                              &pusch_config_pdu->pusch_ptrs.ul_ptrs_power,
-                                              pusch_config_pdu->nr_of_symbols);
-        if(valid_ptrs_setup==true) {
+        bool valid_ptrs_setup = set_ul_ptrs_values(pusch_Config->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup,
+                                                   pusch_config_pdu->rb_size,
+                                                   pusch_config_pdu->mcs_index,
+                                                   pusch_config_pdu->mcs_table,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_freq_density,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_time_density,
+                                                   &pusch_config_pdu->pusch_ptrs.ptrs_ports_list->ptrs_re_offset,
+                                                   &pusch_config_pdu->pusch_ptrs.num_ptrs_ports,
+                                                   &pusch_config_pdu->pusch_ptrs.ul_ptrs_power,
+                                                   pusch_config_pdu->nr_of_symbols);
+        if(valid_ptrs_setup == true) {
           pusch_config_pdu->pdu_bit_map |= PUSCH_PDU_BITMAP_PUSCH_PTRS;
         }
         LOG_D(NR_MAC, "UL PTRS values: PTRS time den: %d, PTRS freq den: %d\n", pusch_config_pdu->pusch_ptrs.ptrs_time_density, pusch_config_pdu->pusch_ptrs.ptrs_freq_density);
@@ -997,15 +978,9 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
     if (mac->ra.ra_state >= WAIT_RAR) {
       if(mac->ul_time_alignment.ta_apply)
         schedule_ta_command(dl_config, &mac->ul_time_alignment);
-      fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-      rel15->num_dci_options = mac->ra.ra_state == WAIT_RAR ? 1 : 2;
-      rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-      if (mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
-        rel15->dci_format_options[1] = NR_UL_DCI_FORMAT_0_0; // msg3 retransmission
-      config_dci_pdu(mac, rel15, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , mac->ra.ss->searchSpaceId);
-      fill_dci_search_candidates(mac->ra.ss, rel15, -1 , -1);
+      config_dci_pdu(mac, dl_config, mac->ra.ra_state == WAIT_RAR ? NR_RNTI_RA : NR_RNTI_TC , rx_slot, mac->ra_SS);
       dl_config->number_pdus = 1;
-      LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response rnti %x, type0_pdcch, num_pdus %d\n",mac->cg,rel15->rnti,dl_config->number_pdus);
+      LOG_D(MAC,"mac->cg %p: Calling fill_scheduled_response for type0_pdcch, num_pdus %d\n", mac->cg, dl_config->number_pdus);
       fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, mod_id, cc_id, rx_frame, rx_slot, dl_info->phy_data);
       if(mac->if_module != NULL && mac->if_module->scheduled_response != NULL)
         mac->if_module->scheduled_response(&scheduled_response);
@@ -2283,6 +2258,90 @@ void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   }
 }
 
+NR_CSI_ResourceConfigId_t find_CSI_resourceconfig(NR_CSI_MeasConfig_t *csi_measconfig,
+                                                  NR_BWP_Id_t dl_bwp_id,
+                                                  NR_NZP_CSI_RS_ResourceId_t csi_id)
+{
+  bool found = false;
+  for (int csi_list = 0; csi_list < csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
+    NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
+    if(csires->bwp_Id != dl_bwp_id)
+      continue;
+    struct NR_CSI_ResourceConfig__csi_RS_ResourceSetList *resset = &csires->csi_RS_ResourceSetList;
+    if(resset->present != NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB)
+      continue;
+    if(!resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList)
+      continue;
+    for(int i = 0; i < resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.count; i++) {
+      NR_NZP_CSI_RS_ResourceSetId_t *res_id = resset->choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[i];
+      AssertFatal(res_id, "NR_NZP_CSI_RS_ResourceSetId shouldn't be NULL\n");
+      struct NR_CSI_MeasConfig__nzp_CSI_RS_ResourceSetToAddModList *res_list = csi_measconfig->nzp_CSI_RS_ResourceSetToAddModList;
+      AssertFatal(res_list, "nzp_CSI_RS_ResourceSetToAddModList shouldn't be NULL\n");
+      for (int j = 0; j < res_list->list.count; j++) {
+        NR_NZP_CSI_RS_ResourceSet_t *csi_res = res_list->list.array[j];
+        if(*res_id != csi_res->nzp_CSI_ResourceSetId)
+          continue;
+        for (int k = 0; k < csi_res->nzp_CSI_RS_Resources.list.count; k++) {
+          AssertFatal(csi_res->nzp_CSI_RS_Resources.list.array[k],
+                      "NZP_CSI_RS_ResourceId shoulan't be NULL\n");
+          if (csi_id == *csi_res->nzp_CSI_RS_Resources.list.array[k]) {
+            found = true;
+            break;
+          }
+        }
+        if (found && csi_res->trs_Info)
+          // CRI-RS for Tracking (not implemented yet)
+          // in this case we there is no associated CSI report
+          // therefore to signal this we return a value higher than
+          // maxNrofCSI-ResourceConfigurations
+          return NR_maxNrofCSI_ResourceConfigurations + 1;
+        else if (found)
+          return csires->csi_ResourceConfigId;
+      }
+    }
+  }
+  return -1; // not found any CSI-resource in current DL BWP associated with this CSI-RS ID
+}
+
+uint8_t set_csirs_measurement_bitmap(NR_CSI_MeasConfig_t *csi_measconfig,
+                                     NR_CSI_ResourceConfigId_t csi_res_id)
+{
+  uint8_t meas_bitmap = 0;
+  if (csi_res_id > NR_maxNrofCSI_ResourceConfigurations)
+    return meas_bitmap; // CSI-RS for tracking
+  for(int i = 0; i < csi_measconfig->csi_ReportConfigToAddModList->list.count; i++) {
+    struct NR_CSI_ReportConfig *report_config = csi_measconfig->csi_ReportConfigToAddModList->list.array[i];
+    if(report_config->resourcesForChannelMeasurement != csi_res_id)
+      continue;
+    // bit 0 RSRP bit 1 RI bit 2 LI bit 3 PMI bit 4 CQI bit 5 i1
+    switch (report_config->reportQuantity.present) {
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_PMI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 3) + (1 << 4);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1 :
+        meas_bitmap += (1 << 1) + (1 << 5);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_i1_CQI :
+        meas_bitmap += (1 << 1) + (1 << 4) + (1 << 5);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 4);
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RSRP :
+        meas_bitmap += 1;
+        break;
+      case NR_CSI_ReportConfig__reportQuantity_PR_cri_RI_LI_PMI_CQI :
+        meas_bitmap += (1 << 1) + (1 << 2) + (1 << 3) + (1 << 4);
+        break;
+      default :
+        AssertFatal(false, "Unexpected measurement report type %d\n",
+                    report_config->reportQuantity.present);
+    }
+  }
+  AssertFatal(meas_bitmap > 0, "Expected to have at least 1 measurement configured for CSI-RS\n");
+  return meas_bitmap;
+}
+
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 
   NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
@@ -2296,8 +2355,6 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
     return;
 
   fapi_nr_dl_config_request_t *dl_config = get_dl_config_request(mac, slot);
-  NR_NZP_CSI_RS_Resource_t *nzpcsi;
-  int period, offset;
   NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP->bwp_id;
 
@@ -2305,30 +2362,21 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
   uint16_t bwp_size = current_DL_BWP->BWPSize;
   uint16_t bwp_start = current_DL_BWP->BWPStart;
 
-  // looking for the correct CSI-RS resource in current BWP
-  NR_NZP_CSI_RS_ResourceSetId_t *nzp = NULL;
-  for (int csi_list=0; csi_list<csi_measconfig->csi_ResourceConfigToAddModList->list.count; csi_list++) {
-    NR_CSI_ResourceConfig_t *csires = csi_measconfig->csi_ResourceConfigToAddModList->list.array[csi_list];
-    if(csires->bwp_Id == dl_bwp_id &&
-       csires->csi_RS_ResourceSetList.present == NR_CSI_ResourceConfig__csi_RS_ResourceSetList_PR_nzp_CSI_RS_SSB &&
-       csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList) {
-      nzp = csires->csi_RS_ResourceSetList.choice.nzp_CSI_RS_SSB->nzp_CSI_RS_ResourceSetList->list.array[0];
-    }
-  }
-
-  if (nzp == NULL)
-    return; // no resource associated to current BWP
-
   for (int id = 0; id < csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.count; id++){
-    nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
-    // reception of CSI-RS only for current BWP
-    if (nzpcsi->nzp_CSI_RS_ResourceId != *nzp)
+    NR_NZP_CSI_RS_Resource_t *nzpcsi = csi_measconfig->nzp_CSI_RS_ResourceToAddModList->list.array[id];
+    int period, offset;
+    csi_period_offset(NULL, nzpcsi->periodicityAndOffset, &period, &offset);
+    if((frame * nr_slots_per_frame[mu] + slot-offset) % period != 0)
       continue;
-    csi_period_offset(NULL,nzpcsi->periodicityAndOffset,&period,&offset);
-    if((frame*nr_slots_per_frame[mu]+slot-offset)%period != 0)
+    NR_CSI_ResourceConfigId_t csi_res_id = find_CSI_resourceconfig(csi_measconfig,
+                                                                   dl_bwp_id,
+                                                                   nzpcsi->nzp_CSI_RS_ResourceId);
+    // do not schedule reseption of this CSI-RS if not associated with current BWP
+    if(csi_res_id < 0)
       continue;
-    LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n",frame,slot);
+    LOG_D(MAC,"Scheduling reception of CSI-RS in frame %d slot %d\n", frame, slot);
     fapi_nr_dl_config_csirs_pdu_rel15_t *csirs_config_pdu = &dl_config->dl_config_list[dl_config->number_pdus].csirs_config_pdu.csirs_config_rel15;
+    csirs_config_pdu->measurement_bitmap = set_csirs_measurement_bitmap(csi_measconfig, csi_res_id);
     NR_CSI_RS_ResourceMapping_t  resourceMapping = nzpcsi->resourceMapping;
     csirs_config_pdu->subcarrier_spacing = mu;
     csirs_config_pdu->cyclic_prefix = current_DL_BWP->cyclicprefix ? *current_DL_BWP->cyclicprefix : 0;
@@ -2647,21 +2695,18 @@ void nr_ue_sib1_scheduler(module_id_t module_idP,
     frame_s = 0; // same frame as ssb
     slot_s = mac->type0_PDCCH_CSS_config.n_c;
   }
-  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request[0]; // Take the first dl_config_request for SIB1
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15;
 
-  if(mac->search_space_zero == NULL) mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
-  if(mac->coreset0 == NULL) mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
-
+  if(mac->search_space_zero == NULL)
+    mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+  if(mac->coreset0 == NULL)
+    mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
   fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
   fill_searchSpaceZero(mac->search_space_zero, &mac->type0_PDCCH_CSS_config);
-  rel15 = &dl_config->dl_config_list[dl_config->number_pdus].dci_config_pdu.dci_config_rel15;
-  rel15->num_dci_options = 1;
-  rel15->dci_format_options[0] = NR_DL_DCI_FORMAT_1_0;
-  config_dci_pdu(mac, rel15, dl_config, NR_RNTI_SI, -1);
-  fill_dci_search_candidates(mac->search_space_zero, rel15, -1, -1);
 
-  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n",dl_config->number_pdus);
+  fapi_nr_dl_config_request_t *dl_config = &mac->dl_config_request[0]; // Take the first dl_config_request for SIB1
+  config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot_s, mac->search_space_zero);
+
+  LOG_D(MAC,"Calling fill_scheduled_response, type0_pdcch, num_pdus %d\n", dl_config->number_pdus);
   fill_scheduled_response(&scheduled_response, dl_config, NULL, NULL, module_idP, cc_id, frame_s, slot_s, phy_data);
 
   if (dl_config->number_pdus) {

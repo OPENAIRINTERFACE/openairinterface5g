@@ -188,7 +188,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_gNB_PDSCH_MODULATION, 0);
       stop_meas(dlsch_modulation_stats);
 #ifdef DEBUG_DLSCH
-      printf("PDSCH Modulation: Qm %d(%d)\n", Qm, nb_re);
+      printf("PDSCH Modulation: Qm %d(%u)\n", Qm, nb_re);
       for (int i=0; i<nb_re>>3; i++) {
         for (int j=0; j<8; j++) {
           printf("%d %d\t", mod_symbs[0][((i<<3)+j)<<1], mod_symbs[0][(((i<<3)+j)<<1)+1]);
@@ -231,7 +231,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
       txdataF_precoding[layer] = (int16_t *)malloc16(2*14*frame_parms->ofdm_symbol_size*sizeof(int16_t));
 
 #ifdef DEBUG_DLSCH_MAPPING
-    printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %d,nb_layers %d)\n",
+    printf("PDSCH resource mapping started (start SC %d\tstart symbol %d\tN_PRB %d\tnb_re %u,nb_layers %d)\n",
            start_sc, rel15->StartSymbolIndex, rel15->rbSize, nb_re,rel15->nrOfLayers);
 #endif
 
@@ -337,7 +337,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)     ] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[dmrs_idx<<1]) >> 15;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1 ] = (Wt[l_prime]*Wf[k_prime]*amp*mod_dmrs[(dmrs_idx<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-              printf("dmrs_idx %d\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
+              printf("dmrs_idx %u\t l %d \t k %d \t k_prime %d \t n %d \t txdataF: %d %d\n",
                      dmrs_idx, l, k, k_prime, n, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)],
                      txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
 #endif
@@ -362,7 +362,7 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)    ] = (amp * tx_layers[nl][m<<1]) >> 15;
               txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1] = (amp * tx_layers[nl][(m<<1) + 1]) >> 15;
 #ifdef DEBUG_DLSCH_MAPPING
-              printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
+              printf("m %u\t l %d \t k %d \t txdataF: %d %d\n",
                      m, l, k, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1)],
                      txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + k)<<1) + 1]);
 #endif
@@ -414,12 +414,9 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
               _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
               if ((i&1) > 0)
-                printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                       m,
-                       l,
-                       start_sc + (i >> 1),
-                       txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc + (i >> 1)) << 1)],
-                       txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + start_sc + (i >> 1)) << 1) + 1]);
+                  printf("m %u\t l %d \t k %d \t txdataF: %d %d\n",
+                         m, l, start_sc+(i>>1), txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1)],
+                         txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + start_sc+(i>>1))<<1) + 1]);
 #endif
               /* handle this, mute RE */
               /*else {
@@ -444,13 +441,10 @@ void nr_generate_pdsch(processingData_L1tx_t *msgTx,
                 const __m128i txL = _mm_loadu_si128(txl + i);
                 _mm_storeu_si128(txF + i, _mm_mulhrs_epi16(amp64, txL));
 #ifdef DEBUG_DLSCH_MAPPING
-                if ((i & 1) > 0)
-                  printf("m %d\t l %d \t k %d \t txdataF: %d %d\n",
-                         m,
-                         l,
-                         i >> 1,
-                         txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + (i >> 1)) << 1)],
-                         txdataF_precoding[nl][((l * frame_parms->ofdm_symbol_size + (i >> 1)) << 1) + 1]);
+                 if ((i&1) > 0)
+                   printf("m %u\t l %d \t k %d \t txdataF: %d %d\n",
+                          m, l, i>>1, txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) ],
+                          txdataF_precoding[nl][((l*frame_parms->ofdm_symbol_size + (i>>1))<<1) + 1]);
 #endif
                 /* handle this, mute RE */
                 /*else {

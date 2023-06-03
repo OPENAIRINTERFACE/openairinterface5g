@@ -267,7 +267,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_ULSCH_CODING
     for (int i =0; i<16; i++)
-      printf("output ratematching e[%d]= %d r_offset %d\n", i,harq_process->e[i+r_offset], r_offset);
+      printf("output ratematching e[%d]= %d r_offset %u\n", i,harq_process->e[i+r_offset], r_offset);
 #endif
 
 ///////////
@@ -295,7 +295,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
 
 #ifdef DEBUG_ULSCH_CODING
     for (int i =0; i<16; i++)
-      printf("output interleaving f[%d]= %d r_offset %d\n", i,harq_process->f[i+r_offset], r_offset);
+      printf("output interleaving f[%d]= %d r_offset %u\n", i,harq_process->f[i+r_offset], r_offset);
 
     if (r==harq_process->C-1)
       write_output("enc_output.m","enc",harq_process->f,G,1,4);

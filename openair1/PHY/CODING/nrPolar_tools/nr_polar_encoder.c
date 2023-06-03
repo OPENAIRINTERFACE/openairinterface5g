@@ -80,7 +80,7 @@ void polar_encoder(uint32_t *in,
 
     for (int i = 0; i<polarParams->K; i++) B2 = B2 | ((uint64_t)polarParams->nr_polar_B[i] << i);
 
-    printf("polar_B %llx\n",B2);
+    printf("polar_B %lx\n",B2);
     for (int i=0; i< polarParams->payloadBits; i++) printf("a[%d]=%d\n", i, polarParams->nr_polar_A[i]);
     for (int i=0; i< polarParams->K; i++) printf("b[%d]=%d\n", i, polarParams->nr_polar_B[i]);
 #endif
@@ -103,10 +103,10 @@ void polar_encoder(uint32_t *in,
   for (int i = 0; i<polarParams->K; i++) {
     Cprime = Cprime | ((uint64_t)polarParams->nr_polar_CPrime[i] << i);
 
-    if (polarParams->nr_polar_CPrime[i] == 1) printf("pos %d : %llx\n",i,Cprime);
+    if (polarParams->nr_polar_CPrime[i] == 1) printf("pos %d : %lx\n",i,Cprime);
   }
 
-  printf("polar_Cprime %llx\n",Cprime);
+  printf("polar_Cprime %lx\n",Cprime);
 #endif
   //Bit insertion (c' to u)
   nr_polar_bit_insertion(polarParams->nr_polar_CPrime,
@@ -569,7 +569,7 @@ void polar_encoder_fast(uint64_t *A,
 
   printf("Polar encoder: (N,K) : (%d,%d)\n",polarParams->N,polarParams->K);
   if (polarParams->K<65)
-    printf("A %llx B %llx Cprime %llx (payload bits %d,crc %x)\n",
+    printf("A %llx B %llx Cprime %llx (payload bits %d,crc %lx)\n",
            (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
            (unsigned long long)(B[0]),
            (unsigned long long)(Cprime[0]),
@@ -577,7 +577,7 @@ void polar_encoder_fast(uint64_t *A,
            tcrc);
   else if (polarParams->K<129) {
     if (bitlen<64)
-      printf("A %llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %x)\n",
+      printf("A %llx B %llx|%llx Cprime %llx|%llx (payload bits %d,crc %lx)\n",
              (unsigned long long)(A[0]&(((uint64_t)1<<bitlen)-1)),
              (unsigned long long)(B[1]),(unsigned long long)(B[0]),
              (unsigned long long)(Cprime[1]),(unsigned long long)(Cprime[0]),
@@ -697,7 +697,7 @@ void polar_encoder_fast(uint64_t *A,
 	Cprime_i = -((Cprime[j]>>i)&1); // this converts bit 0 as, 0 => 0000x00, 1 => 1111x11
 	
 	  #ifdef DEBUG_POLAR_ENCODER
-	  printf("%llx Cprime_%d (%d+%d) (%llx) G %llx,%llx\n",
+	  printf("%lx Cprime_%d (%d+%d) (%llx) G %llx,%llx\n",
 	  Cprime_i,off+i,off,i,(Cprime[j]>>i) &1,
 	  polarParams->G_N_tab[off+i][0],
 	  polarParams->G_N_tab[off+i][1]);

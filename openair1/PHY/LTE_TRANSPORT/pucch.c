@@ -1123,7 +1123,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
           zptr[n<<1] = (tmp_re*W_re - tmp_im*W_im)>>15;
           zptr[1+(n<<1)] = -(tmp_re*W_im + tmp_im*W_re)>>15;
 #ifdef DEBUG_PUCCH_RX
-          printf("[eNB] PUCCH subframe %d z(%d,%d) => %d,%d, alpha(%d) => %d,%d\n",subframe,l,n,zptr[n<<1],zptr[(n<<1)+1],
+          printf("[eNB] PUCCH subframe %d z(%d,%u) => %d,%d, alpha(%d) => %d,%d\n",subframe,l,n,zptr[n<<1],zptr[(n<<1)+1],
                  alpha_ind,alpha_re[alpha_ind],alpha_im[alpha_ind]);
 #endif
           alpha_ind = (alpha_ind + n_cs)%12;
@@ -1249,7 +1249,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
       stat_max /= 12;
 #ifdef DEBUG_PUCCH_RX
-      printf("[eNB] PUCCH: stat %d, stat_max %d, phase_max %d\n", stat,stat_max,phase_max);
+      printf("[eNB] PUCCH: stat %d, stat_max %u, phase_max %d\n", stat,stat_max,phase_max);
 #endif
 #ifdef DEBUG_PUCCH_RX
       LOG_I(PHY,"[eNB] PUCCH fmt1:  stat_max : %d, sigma2_dB %d (%d, %d), phase_max : %d\n",dB_fixed(stat_max),sigma2_dB,eNB->measurements.n0_subband_power_tot_dBm[6],pucch1_thres,phase_max);
@@ -1358,7 +1358,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             }
 
 #ifdef DEBUG_PUCCH_RX
-            printf("aa%d re %d : phase %d : stat %d\n",aa,re,phase,stat);
+            printf("aa%u re %d : phase %d : stat %d\n",aa,re,phase,stat);
 #endif
             stat1[aa] += ((((stat1_re[aa]*stat1_re[aa])) + ((stat1_im[aa]*stat1_im[aa])) +
                       ((stat1_ref_re[aa]*stat1_ref_re[aa])) + ((stat1_ref_im[aa]*stat1_ref_im[aa])))/nsymb);
@@ -1433,7 +1433,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
 
           for (re=0; re<12; re++) {
 #ifdef DEBUG_PUCCH_RX
-            printf("[eNB] PUCCH subframe %d chest0[%d][%d] => (%d,%d)\n",subframe,aa,re,
+            printf("[eNB] PUCCH subframe %d chest0[%u][%d] => (%d,%d)\n",subframe,aa,re,
                    chest0_re[aa][re],chest0_im[aa][re]);
 #endif
 
@@ -1472,7 +1472,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             }
 
 #ifdef DEBUG_PUCCH_RX
-            printf("[eNB] PUCCH subframe %d chest1[%d][%d] => (%d,%d)\n",subframe,aa,re,
+            printf("[eNB] PUCCH subframe %d chest1[%u][%d] => (%d,%d)\n",subframe,aa,re,
                    chest0_re[aa][re],chest0_im[aa][re]);
 #endif
 
@@ -1511,7 +1511,7 @@ uint32_t rx_pucch(PHY_VARS_eNB *eNB,
             }
 
 #ifdef DEBUG_PUCCH_RX
-            printf("aa%d re %d : stat %d,%d\n",aa,re,stat_re,stat_im);
+            printf("aa%u re %d : stat %d,%d\n",aa,re,stat_re,stat_im);
 #endif
           } //re
           stat_re+=stat0_re[aa]+stat1_re[aa];

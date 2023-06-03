@@ -32,10 +32,11 @@
 
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
-#include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 
 #include "f1ap_du_rrc_message_transfer.h"
+
+#include "uper_decoder.h"
 
 #include "NR_DL-CCCH-Message.h"
 #include "NR_UL-CCCH-Message.h"

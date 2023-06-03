@@ -65,7 +65,7 @@ void init_ncs_cell(LTE_DL_FRAME_PARMS *frame_parms,uint8_t ncs_cell[20][7])
       }
 
 #ifdef DEBUG_PUCCH_TX
-      printf("[PHY] PUCCH ncs_cell init (j %d): Ns %d, l %d => ncs_cell %d\n",j,ns,l,ncs_cell[ns][l]);
+      printf("[PHY] PUCCH ncs_cell init (j %u): Ns %d, l %d => ncs_cell %d\n",j,ns,l,ncs_cell[ns][l]);
 #endif
     }
 

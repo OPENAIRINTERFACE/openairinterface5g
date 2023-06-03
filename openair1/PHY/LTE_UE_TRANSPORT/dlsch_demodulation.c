@@ -2239,7 +2239,7 @@ void dlsch_channel_compensation_TM56(int **rxdataF_ext,
 
     for (rb=0; rb<nb_rb; rb++) {
 #ifdef DEBUG_DLSCH_DEMOD
-      printf("mode 6 prec: rb %d, pmi->%u\n",rb,pmi_ext[rb]);
+      printf("mode 6 prec: rb %u, pmi->%u\n",rb,pmi_ext[rb]);
 #endif
       prec2A_TM56_128(pmi_ext[rb],&dl_ch0_128b[0],&dl_ch1_128b[0]);
       prec2A_TM56_128(pmi_ext[rb],&dl_ch0_128b[1],&dl_ch1_128b[1]);

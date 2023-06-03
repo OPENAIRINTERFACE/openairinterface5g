@@ -146,7 +146,7 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
 
     //txptr = &txdataF[0][re_offset];
 #ifdef DEBUG_NR_PUCCH_TX
-    printf("\t [nr_generate_pucch0] symbol %d PRB %d (%d)\n",l,prb_offset[l],re_offset);
+    printf("\t [nr_generate_pucch0] symbol %d PRB %d (%u)\n",l,prb_offset[l],re_offset);
 #endif    
     for (int n=0; n<12; n++) {
 

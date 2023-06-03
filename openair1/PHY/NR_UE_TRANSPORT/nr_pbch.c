@@ -232,10 +232,8 @@ int nr_pbch_channel_level(struct complex16 dl_ch_estimates_ext[][PBCH_MAX_RE_PER
       }*/
     }
 
-    avg1 = (((int *)&avg128)[0] +
-            ((int *)&avg128)[1] +
-            ((int *)&avg128)[2] +
-            ((int *)&avg128)[3])/(nb_rb*12);
+    for (int i = 0; i < 4; i++)
+      avg1 += ((int *)&avg128)[i] / (nb_rb * 12);
 
     if (avg1>avg2)
       avg2 = avg1;

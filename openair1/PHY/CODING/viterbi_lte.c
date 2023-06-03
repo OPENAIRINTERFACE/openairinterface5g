@@ -449,7 +449,7 @@ int test_viterbi(uint8_t dabflag)
   printf("Optimized Viterbi :");
 
   for (i =0 ; i<8 ; i++)
-    printf("input %d : %x => %x\n",i,inPtr[i],decoded_output[i]);
+    printf("input %u : %x => %x\n",i,inPtr[i],decoded_output[i]);
 }
 
 

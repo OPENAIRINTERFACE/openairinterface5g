@@ -307,7 +307,7 @@ static int trx_sodera_read(openair0_device *device, openair0_timestamp *ptimesta
      else { // check the timestamp
        if (i==0) {
 	 if ((s->rx_timestamp + ind) != p->counter) {
-	   printf("Error, RX timestamp error, got %llu, should be %llu\n",p->counter,s->rx_timestamp+ind);
+	   printf("Error, RX timestamp error, got %lu, should be %llu\n",p->counter,s->rx_timestamp+ind);
 	   return(ind);
 	 }
        }

@@ -109,14 +109,15 @@ size_t dump_mac_stats(gNB_MAC_INST *gNB, char *output, size_t strlen, bool reset
                        avg_rsrp,
                        stats->num_rsrp_meas);
 
-    output += snprintf(output,
-                       end - output,
-                       "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
-                       UE->rnti,
-                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
-                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
-                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
-                       sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
+    if(sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.print_report)
+      output += snprintf(output,
+                         end - output,
+                         "UE %04x: CQI %d, RI %d, PMI (%d,%d)\n",
+                         UE->rnti,
+                         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.wb_cqi_1tb,
+                         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.ri+1,
+                         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x1,
+                         sched_ctrl->CSI_report.cri_ri_li_pmi_cqi_report.pmi_x2);
 
     if (stats->srs_stats[0] != '\0') {
       output += snprintf(output, end - output, "UE %04x: %s\n", UE->rnti, stats->srs_stats);

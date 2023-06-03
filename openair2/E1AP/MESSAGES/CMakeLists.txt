@@ -10,7 +10,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT ${e1ap_source} ${e1ap_headers}
-  COMMAND ASN1C_PREFIX=E1AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${E1AP_GRAMMAR}
+  COMMAND ASN1C_PREFIX=E1AP_ ${ASN1C_EXEC} -gen-APER -gen-UPER -no-gen-JER -no-gen-BER -no-gen-OER -fcompound-names -no-gen-example -findirect-choice -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${E1AP_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${E1AP_GRAMMAR}
   COMMENT "Generating E1AP source files from ${CMAKE_CURRENT_SOURCE_DIR}/${E1AP_GRAMMAR}"
 )

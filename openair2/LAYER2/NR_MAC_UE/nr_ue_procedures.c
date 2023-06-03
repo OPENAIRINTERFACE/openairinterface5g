@@ -149,6 +149,14 @@ const initial_pucch_resource_t initial_pucch_resource[16] = {
 /* 14  */ {  1,       0,                 14,                   4,            4,       {    0,   3,    6,    9  }   },
 /* 15  */ {  1,       0,                 14,                   0,            4,       {    0,   3,    6,    9  }   },
 };
+static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
+                                   nr_dci_format_t dci_format,
+                                   uint8_t dci_size,
+                                   uint16_t rnti,
+                                   int ss_type,
+                                   uint64_t *dci_pdu,
+                                   dci_pdu_rel15_t *dci_pdu_rel15,
+                                   int slot);
 
 void nr_ue_init_mac(module_id_t module_idP)
 {
@@ -3798,7 +3806,7 @@ int nr_write_ce_ulsch_pdu(uint8_t *mac_ce,
     mac_ce++;
 
     // C-RNTI MAC CE (2 octets)
-    *(uint16_t *) mac_ce = (*crnti);
+    memcpy(mac_ce, crnti, sizeof(*crnti));
 
     // update pointer and length
     mac_ce_size = sizeof(uint16_t);
@@ -4119,7 +4127,7 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 
     // Schedule Msg3
     NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
-    NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP, *ra->ss->controlResourceSetId, ra->ss->searchSpaceType->present, NR_RNTI_RA, rar_grant.Msg3_t_alloc);
+    NR_tda_info_t tda_info = get_ul_tda_info(current_UL_BWP, *mac->ra_SS->controlResourceSetId, mac->ra_SS->searchSpaceType->present, NR_RNTI_RA, rar_grant.Msg3_t_alloc);
     if (tda_info.nrOfSymbols == 0) {
       LOG_E(MAC, "Cannot schedule Msg3. Something wrong in TDA information\n");
       return -1;

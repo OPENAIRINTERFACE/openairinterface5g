@@ -47,6 +47,7 @@
 #include "pdcp_primitives.h"
 
 #include "LTE_UERadioAccessCapabilityInformation.h"
+#include "uper_encoder.h"
 
 #include "openair3/ocp-gtpu/gtp_itf.h"
 #include <openair3/ocp-gtpu/gtp_itf.h>

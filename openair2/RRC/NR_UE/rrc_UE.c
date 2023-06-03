@@ -44,6 +44,8 @@
 #include "NR_RRCReconfiguration.h"
 #include "NR_MeasConfig.h"
 #include "NR_UL-DCCH-Message.h"
+#include "uper_encoder.h"
+#include "uper_decoder.h"
 
 #include "rrc_defs.h"
 #include "rrc_proto.h"
@@ -1651,8 +1653,7 @@ nr_rrc_ue_establish_srb1(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
-  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].Srb_info.Srb_id = 1;
+  NR_UE_rrc_inst[ue_mod_idP].Srb1[gNB_index].status = RADIO_CONFIG_OK; // RADIO CFG
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB1 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH, gNB_index);
   return(0);
 }
@@ -1669,8 +1670,7 @@ nr_rrc_ue_establish_srb2(
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
-  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK;//RADIO CFG
-  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Srb_info.Srb_id = 2;
+  NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].status = RADIO_CONFIG_OK; // RADIO CFG
   LOG_I(NR_RRC, "[UE %d], CONFIG_SRB2 %d corresponding to gNB_index %d\n", ue_mod_idP, DCCH1, gNB_index);
   return(0);
 }
@@ -2678,7 +2678,7 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
             uint32_t nr_RadioBearer_size = hdr.RadioBearer_size;
             uint32_t nr_SecondaryCellGroup_size = hdr.SecondaryCellGroup_size;
             AssertFatal(sizeof(hdr) + nr_RadioBearer_size + nr_SecondaryCellGroup_size <= msg_len,
-                      "nr_RadioBearerConfig1_r15 size %d nr_SecondaryCellGroupConfig_r15 size %d sizeof(hdr) %zu, msg_len = %d\n",
+                      "nr_RadioBearerConfig1_r15 size %u nr_SecondaryCellGroupConfig_r15 size %u sizeof(hdr) %zu, msg_len = %d\n",
                       nr_RadioBearer_size,
                       nr_SecondaryCellGroup_size,
                       sizeof(hdr), msg_len);

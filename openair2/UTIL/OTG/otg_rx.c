@@ -447,12 +447,12 @@ int rx_check_loss(
   int lost_packet=0;
 
   if (seq_num==*seq_num_rx) {
-    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
+    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) packet seq_num TX=%d, seq_num RX=%u \n",src,dst,flag, seq_num, *seq_num_rx);
     *seq_num_rx+=1;
   }
   /* (2) Receieved packet with a sequence number higher than the expected sequence number (there is a gap): packet loss */
   else if (seq_num>*seq_num_rx) { // out of sequence packet:  previous packet lost
-    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
+    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: out of sequence :: packet seq_num TX=%d > seq_num RX=%u \n",src,dst,flag, seq_num, *seq_num_rx);
     *nb_loss_pkts+=seq_num-(*seq_num_rx);
     *seq_num_rx=seq_num+1;
     lost_packet=1;
@@ -460,9 +460,9 @@ int rx_check_loss(
   /* (3) Receieved packet with a sequence number less than the expected sequence number: recovery after loss/out of sequence  */
   else if (seq_num< *seq_num_rx) { //the received packet arrived late
     *nb_loss_pkts-=1;
-    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: recovery after loss or out of sequence :: packet seq_num TX=%d < seq_num RX=%d \n",src,dst,flag, seq_num, *seq_num_rx);
+    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) :: recovery after loss or out of sequence :: packet seq_num TX=%d < seq_num RX=%u \n",src,dst,flag, seq_num, *seq_num_rx);
   } else {
-    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) ::  packet seq_num TX=%d , seq_num RX=%d (ERROR)\n",src,dst,flag, seq_num, *seq_num_rx);
+    LOG_D(OTG,"check_packet :: (src=%d,dst=%d, flag=0x%x) ::  packet seq_num TX=%d , seq_num RX=%u (ERROR)\n",src,dst,flag, seq_num, *seq_num_rx);
     lost_packet=1;
   }
 

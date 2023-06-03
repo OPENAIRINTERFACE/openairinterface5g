@@ -933,7 +933,7 @@ uint8_t subframe2harq_pid(LTE_DL_FRAME_PARMS *frame_parms,uint32_t frame,uint8_t
     }
   }
 
-  AssertFatal(ret != 255, "invalid harq_pid(%d) at SFN/SF = %d/%d\n", (int8_t)ret, frame, subframe);
+  AssertFatal(ret != 255, "invalid harq_pid(%u) at SFN/SF = %u/%u\n", ret, frame, subframe);
   return ret;
 }
 

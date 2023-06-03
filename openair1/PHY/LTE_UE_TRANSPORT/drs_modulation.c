@@ -104,7 +104,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
     drs_offset = 0;
 #ifdef DEBUG_DRS
-    printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%d,v=%d\n",Msc_RS, Msc_RS_idx,u,v);
+    printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%u,v=%u\n",Msc_RS, Msc_RS_idx,u,v);
 #endif
 
 
@@ -143,7 +143,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
             alpha_ind-=12;
 
 #ifdef DEBUG_DRS
-          printf("symbol_offset %d, alpha_ind %d , re_offset %d : (%d,%d)\n",
+          printf("symbol_offset %d, alpha_ind %u , re_offset %d : (%d,%d)\n",
               symbol_offset,
               alpha_ind,
               re_offset,

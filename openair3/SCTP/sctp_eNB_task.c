@@ -651,7 +651,7 @@ static void sctp_send_data(sctp_data_req_t *sctp_data_req_p)
         return;
     }
     free(sctp_data_req_p->buffer); // assuming it has been malloced
-    SCTP_DEBUG("Successfully sent %u bytes on stream %d for assoc_id %u\n",
+    SCTP_DEBUG("Successfully sent %u bytes on stream %d for assoc_id %d\n",
                sctp_data_req_p->buffer_length, sctp_data_req_p->stream,
                sctp_cnx->assoc_id);
 }
@@ -673,7 +673,7 @@ static int sctp_close_association(sctp_close_association_t *close_association_p)
     } else {
         close(sctp_cnx->sd);
         STAILQ_REMOVE(&sctp_cnx_list, sctp_cnx, sctp_cnx_list_elm_s, entries);
-        SCTP_DEBUG("Removed assoc_id %u (closed socket %u)\n",
+        SCTP_DEBUG("Removed assoc_id %d (closed socket %u)\n",
                    sctp_cnx->assoc_id, (unsigned int)sctp_cnx->sd);
     }
 

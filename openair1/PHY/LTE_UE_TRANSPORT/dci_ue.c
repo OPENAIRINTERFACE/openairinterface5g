@@ -1873,7 +1873,7 @@ void dci_decoding_procedure0(LTE_UE_PDCCH **pdcch_vars,
       CCEmap = CCEmap2;
     else {
       AssertFatal(1==0,
-		  "Illegal CCEind %d (Yk %d, m %d, nCCE %d, L2 %d\n",CCEind,Yk,m,nCCE,L2);
+		  "Illegal CCEind %u (Yk %u, m %u, nCCE %u, L2 %d\n",CCEind,Yk,m,nCCE,L2);
     }
 
     switch (L2) {

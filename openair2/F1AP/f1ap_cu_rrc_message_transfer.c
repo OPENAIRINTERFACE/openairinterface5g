@@ -32,7 +32,6 @@
 
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
-#include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "common/ran_context.h"

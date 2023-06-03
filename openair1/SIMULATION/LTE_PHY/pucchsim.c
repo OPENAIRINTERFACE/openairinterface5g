@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
   frame_parms = &eNB->frame_parms;
   txdata = eNB->common_vars.txdata[eNB_id];
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   printf("[SIM] Using SCM/101\n");
   UE2eNB = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -548,14 +548,14 @@ int main(int argc, char **argv) {
     }
 
     if (pucch_format==pucch_format1)
-      printf("pucch_trials %d : pucch1_false %d,pucch1_missed %d, N0 %d dB, stat_no_sig %f dB, stat_sig %f dB\n",pucch_tx,pucch1_false,pucch1_missed,eNB->measurements[0].n0_power_tot_dB,
+      printf("pucch_trials %u : pucch1_false %u,pucch1_missed %u, N0 %d dB, stat_no_sig %f dB, stat_sig %f dB\n",pucch_tx,pucch1_false,pucch1_missed,eNB->measurements[0].n0_power_tot_dB,
              10*log10(stat_no_sig),10*log10(stat_sig));
     else if (pucch_format==pucch_format1a)
-      printf("pucch_trials %d : pucch1a_errors %d\n",pucch_tx,pucch1_false);
+      printf("pucch_trials %u : pucch1a_errors %u\n",pucch_tx,pucch1_false);
     else if (pucch_format==pucch_format1b)
-      printf("pucch_trials %d : pucch1b_errors %d\n",pucch_tx,pucch1_false);
+      printf("pucch_trials %u : pucch1b_errors %u\n",pucch_tx,pucch1_false);
     else if (pucch_format==pucch_format3)
-      printf("pucch_trials %d : pucch3_errors %d\n",pucch_tx,pucch3_false);
+      printf("pucch_trials %u : pucch3_errors %u\n",pucch_tx,pucch3_false);
   }
 
   if (n_frames==1) {

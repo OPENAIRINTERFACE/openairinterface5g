@@ -66,7 +66,7 @@ int nr_generate_pbch_dmrs(uint32_t *gold_pbch_dmrs,
     mod_dmrs[m<<1] = nr_qpsk_mod_table[idx<<1];
     mod_dmrs[(m<<1)+1] = nr_qpsk_mod_table[(idx<<1) + 1];
 #ifdef DEBUG_PBCH_DMRS
-    printf("m %d idx %d gold seq %d b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pbch_dmrs[(m<<1)>>5], (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
+    printf("m %d idx %d gold seq %u b0-b1 %d-%d mod_dmrs %d %d\n", m, idx, gold_pbch_dmrs[(m<<1)>>5], (((gold_pbch_dmrs[(m<<1)>>5])>>((m<<1)&0x1f))&1),
            (((gold_pbch_dmrs[((m<<1)+1)>>5])>>(((m<<1)+1)&0x1f))&1), mod_dmrs[(m<<1)], mod_dmrs[(m<<1)+1]);
 #endif
   }

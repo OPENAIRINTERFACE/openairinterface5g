@@ -62,7 +62,7 @@ inline uint16_t threegpplte_interleaver(uint16_t f1,
     threegpplte_interleaver_output-=K;
   */
 #ifdef DEBUG_TURBO_ENCODER
-  printf("pi(i) %d : 2*f2 * i = %d, f1 %d f2 %d, K %d, pi(i-1) %d \n",threegpplte_interleaver_output,threegpplte_interleaver_tmp,f1,f2,K,threegpplte_interleaver_output);
+  printf("pi(i) %u : 2*f2 * i = %u, f1 %u f2 %u, K %u, pi(i-1) %u \n",threegpplte_interleaver_output,threegpplte_interleaver_tmp,f1,f2,K,threegpplte_interleaver_output);
 #endif
   return(threegpplte_interleaver_output);
 }

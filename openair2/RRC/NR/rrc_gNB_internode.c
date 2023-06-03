@@ -37,6 +37,8 @@
 #include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "LTE_UE-CapabilityRAT-ContainerList.h"
 #include "NR_CG-Config.h"
+#include "uper_encoder.h"
+#include "uper_decoder.h"
 #include "executables/softmodem-common.h"
 
 int parse_CG_ConfigInfo(gNB_RRC_INST *rrc, NR_CG_ConfigInfo_t *CG_ConfigInfo, x2ap_ENDC_sgnb_addition_req_t *m) {

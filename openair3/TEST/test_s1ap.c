@@ -132,7 +132,7 @@ static int compare_buffer(uint8_t *buffer, uint32_t length_buffer,
   int i;
 
   if (length_buffer != length_pattern) {
-    printf("Length mismatch, expecting %d bytes, got %d bytes\n", length_pattern,
+    printf("Length mismatch, expecting %u bytes, got %u bytes\n", length_pattern,
            length_buffer);
     hexprint(buffer, length_buffer);
     return -1;

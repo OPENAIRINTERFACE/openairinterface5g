@@ -50,6 +50,9 @@
 
 #include "T.h"
 
+#include "uper_encoder.h"
+#include "uper_decoder.h"
+
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_gNB_SCHEDULER 1
 
@@ -1937,7 +1940,6 @@ NR_UE_info_t *find_nr_UE(NR_UEs_t *UEs, rnti_t rntiP)
       return UE;
     }
   }
-  LOG_W(NR_MAC,"Search for not existing rnti (ignore for RA): %04x\n", rntiP);
   return NULL;
 }
 
@@ -2906,7 +2908,6 @@ void UL_tti_req_ahead_initialization(gNB_MAC_INST * gNB, NR_ServingCellConfigCom
 
 void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE)
 {
-  LOG_W(MAC, "[RAPROC] Received SDU for CCCH length %d for UE %04x\n", sdu_len, rnti);
 
   NR_UE_info_t *UE = (NR_UE_info_t *)rawUE;
   NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);

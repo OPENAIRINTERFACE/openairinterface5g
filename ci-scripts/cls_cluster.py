@@ -376,6 +376,13 @@ class Cluster:
 			self.cmd.run(f'oc logs {gnb_job} &> cmake_targets/log/oai-gnb.log')
 			self.cmd.run(f'oc logs {gnb_aw2s_job} &> cmake_targets/log/oai-gnb-aw2s.log')
 
+			self._recreate_is_tag('oai-nr-cuup', imageTag, 'openshift/oai-nr-cuup-is.yaml')
+			self._recreate_bc('oai-nr-cuup', imageTag, 'openshift/oai-nr-cuup-bc.yaml')
+			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.nr-cuup.rhel8.2')
+			self._retag_image_statement('ran-build', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-build', imageTag, 'docker/Dockerfile.nr-cuup.rhel8.2')
+			nr_cuup_job = self._start_build('oai-nr-cuup')
+			attemptedImages += ['oai-nr-cuup']
+
 			self._recreate_is_tag('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-is.yaml')
 			self._recreate_bc('oai-lte-ue', imageTag, 'openshift/oai-lte-ue-bc.yaml')
 			self._retag_image_statement('ran-base', 'image-registry.openshift-image-registry.svc:5000/oaicicd-ran/ran-base', baseTag, 'docker/Dockerfile.lteUE.rhel8.2')
@@ -390,10 +397,11 @@ class Cluster:
 			nrue_job = self._start_build('oai-nr-ue')
 			attemptedImages += ['oai-nr-ue']
 
-			wait = lteue_job is not None and nrue_job is not None and self._wait_build_end([lteue_job, nrue_job], 600)
-			if not wait: logging.error('error during build of lteUE/nrUE')
+			wait = nr_cuup_job is not None and lteue_job is not None and nrue_job is not None and self._wait_build_end([nr_cuup_job, lteue_job, nrue_job], 600)
+			if not wait: logging.error('error during build of nr-cuup/lteUE/nrUE')
 			status = status and wait
 			# recover logs
+			self.cmd.run(f'oc logs {nr_cuup_job} &> cmake_targets/log/oai-nr-cuup.log')
 			self.cmd.run(f'oc logs {lteue_job} &> cmake_targets/log/oai-lte-ue.log')
 			self.cmd.run(f'oc logs {nrue_job} &> cmake_targets/log/oai-nr-ue.log')
 			self.cmd.run(f'oc get pods.metrics.k8s.io &>> cmake_targets/log/build-metrics.log', '\$', 10)

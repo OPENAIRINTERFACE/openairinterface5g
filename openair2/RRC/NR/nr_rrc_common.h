@@ -61,31 +61,16 @@ typedef struct RB_INFO_NR_s {
 } NR_RB_INFO;
 
 typedef struct NR_SRB_INFO_s {
-  uint16_t                                            Srb_id;         //=Lchan_id
-  NR_RRC_BUFFER                                          Rx_buffer;
-  NR_RRC_BUFFER                                          Tx_buffer;
-  NR_LCHAN_DESC                                          Lchan_desc[2];
-  unsigned int                                        Trans_id;
-  uint8_t                                             Active;
+  NR_RRC_BUFFER Rx_buffer;
+  NR_RRC_BUFFER Tx_buffer;
 } NR_SRB_INFO;
-
-
-typedef struct RB_INFO_TABLE_ENTRY_NR_s {
-  NR_RB_INFO                                          Rb_info;
-  uint8_t                                             Active;
-  uint32_t                                            Next_check_frame;
-  uint8_t                                             status;
-} NR_RB_INFO_TABLE_ENTRY;
 
 typedef struct SRB_INFO_TABLE_ENTRY_NR_s {
   NR_SRB_INFO                                         Srb_info;
   uint8_t                                             Active;
-  uint8_t                                             status;
-  uint32_t                                            Next_check_frame;
+  uint8_t status;
 } NR_SRB_INFO_TABLE_ENTRY;
 
 void rrc_init_nr_srb_param(NR_LCHAN_DESC *chan);
-void rrc_config_nr_buffer(NR_SRB_INFO* Srb_info,
-                          uint8_t Lchan_type,
-                          uint8_t Role);
+
 #endif

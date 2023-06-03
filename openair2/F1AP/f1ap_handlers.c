@@ -31,7 +31,6 @@
  */
 
 #include "f1ap_common.h"
-#include "f1ap_decoder.h"
 #include "f1ap_cu_interface_management.h"
 #include "f1ap_du_interface_management.h"
 #include "f1ap_cu_rrc_message_transfer.h"
@@ -81,41 +80,66 @@ const char *f1ap_direction2String(int f1ap_dir) {
   return(f1ap_direction_String[f1ap_dir]);
 }
 
-int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                        const uint8_t *const data, const uint32_t data_length) {
-  F1AP_F1AP_PDU_t pdu= {0};
-  int ret;
+static F1AP_F1AP_PDU_t *f1ap_decode_pdu(const uint8_t *const buffer, uint32_t length)
+{
+  DevAssert(buffer != NULL);
+  asn_codec_ctx_t st = {.max_stack_size = 100 * 1000};
+  F1AP_F1AP_PDU_t *pdu = NULL;
+  asn_dec_rval_t dec_ret = aper_decode(&st, &asn_DEF_F1AP_F1AP_PDU, (void **)&pdu, buffer, length, 0, 0);
+
+  if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+    LOG_E(F1AP, "----------------- ASN1 DECODER PRINT START----------------- \n");
+    xer_fprint(stdout, &asn_DEF_F1AP_F1AP_PDU, pdu);
+    LOG_E(F1AP, "----------------- ASN1 DECODER PRINT END ----------------- \n");
+  }
+
+  return dec_ret.code == RC_OK ? pdu : NULL;
+}
+
+int f1ap_handle_message(instance_t instance,
+                        uint32_t assoc_id,
+                        int32_t stream,
+                        const uint8_t *const data,
+                        const uint32_t data_length)
+{
   DevAssert(data != NULL);
 
-  if (f1ap_decode_pdu(&pdu, data, data_length) < 0) {
+  F1AP_F1AP_PDU_t *pdu = f1ap_decode_pdu(data, data_length);
+  if (pdu == NULL) {
     LOG_E(F1AP, "Failed to decode PDU\n");
     return -1;
   }
 
   /* Checking procedure Code and direction of message */
-  if (pdu.choice.initiatingMessage->procedureCode >=
-      sizeof(f1ap_messages_processing) /
-      (3 * sizeof(f1ap_message_processing_t))
-      || (pdu.present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
-    LOG_E(F1AP, "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
-          assoc_id, pdu.choice.initiatingMessage->procedureCode, pdu.present);
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
+  if (pdu->choice.initiatingMessage->procedureCode >= sizeof(f1ap_messages_processing) / (3 * sizeof(f1ap_message_processing_t))
+      || (pdu->present > F1AP_F1AP_PDU_PR_unsuccessfulOutcome)) {
+    LOG_E(F1AP,
+          "[SCTP %d] Either procedureCode %ld or direction %d exceed expected\n",
+          assoc_id,
+          pdu->choice.initiatingMessage->procedureCode,
+          pdu->present);
+    ASN_STRUCT_FREE(asn_DEF_F1AP_F1AP_PDU, pdu);
     return -1;
   }
 
-  if (f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1] == NULL) {
+  int ret;
+  if (f1ap_messages_processing[pdu->choice.initiatingMessage->procedureCode][pdu->present - 1] == NULL) {
     // No handler present. This can mean not implemented or no procedure for eNB (wrong direction).
-    LOG_E(F1AP, "[SCTP %d] No handler for procedureCode %ld in %s\n",
-          assoc_id, pdu.choice.initiatingMessage->procedureCode,
-          f1ap_direction2String(pdu.present - 1));
+    LOG_E(F1AP,
+          "[SCTP %d] No handler for procedureCode %ld in %s\n",
+          assoc_id,
+          pdu->choice.initiatingMessage->procedureCode,
+          f1ap_direction2String(pdu->present - 1));
     ret=-1;
   } else {
     /* Calling the right handler */
     LOG_D(F1AP, "Calling handler with instance %ld\n",instance);
-    ret = (*f1ap_messages_processing[pdu.choice.initiatingMessage->procedureCode][pdu.present - 1])
-          (instance, assoc_id, stream, &pdu);
+    ret = (*f1ap_messages_processing[pdu->choice.initiatingMessage->procedureCode][pdu->present - 1])(instance,
+                                                                                                      assoc_id,
+                                                                                                      stream,
+                                                                                                      pdu);
   }
 
-  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_F1AP_F1AP_PDU, &pdu);
+  ASN_STRUCT_FREE(asn_DEF_F1AP_F1AP_PDU, pdu);
   return ret;
 }

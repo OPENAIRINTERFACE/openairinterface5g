@@ -74,7 +74,7 @@ void configure_nr_rrc(uint32_t gnb_id)
     itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
 
   }
-  else AssertFatal(0,"NRRRC context for gNB %d not allocated\n",gnb_id);
+  else AssertFatal(0,"NRRRC context for gNB %u not allocated\n",gnb_id);
 }
 
 /*------------------------------------------------------------------------------*/

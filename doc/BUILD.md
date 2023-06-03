@@ -12,6 +12,8 @@
   </tr>
 </table>
 
+[[_TOC_]]
+
 This page is valid on tags starting from **`2019.w09`**.
 
 # Overview
@@ -72,31 +74,35 @@ cd openairinterface5g/cmake_targets/
 
 Note the section on installing UHD further down for more information.
 
-## Building PHY Simulators
+## Installing (new) asn1c from source
 
-The PHY layer simulators (LTE and NR) can be built as follows:  
+With tag 2023.w22, we switch from our [own
+`asn1c`](https://gitlab.eurecom.fr/oai/asn1c.git) to a [community-maintained
+`asn1c`](https://github.com/mouse07410/asn1c). This new version has many
+bugfixes, but is incompatible with the previous version. To ease the
+transition, both versions can be installed in parallel. Assuming you installed
+`asn1c` using `build_oai`, tags before 2023.w22 will use the version under
+`/usr/local/`; tag 2023.w22 and newer will use the version under `/opt/asn1c/`
+(if present) or any system directory (e.g., also `/usr/local/`), and
+additionally check that all command line options of the new `asn1c` are
+supported.
 
-```bash
-cd openairinterface5g/cmake_targets/
-./build_oai --phy_simulators
+To install the new `asn1c`, either run `build_oai -I`. To not re-install all
+packages, you can also just install `asn1c` like this:
+```
+cd openairinterface5g
+sudo ls                               # open sudo session, required by install_asn1c_from_source
+. oaienv                              # read of default variables
+. cmake_targets/tools/build_helper    # read in function
+install_asn1c_from_source             # install under `/opt/asn1c`
 ```
 
-After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
-
-Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
-
-# Building UEs, eNodeB and gNodeB Executables
-
-After downloading the source files, a single build command can be used to get the binaries supporting all the oai softmodem use cases (UE and [eg]NodeB):
-
-```bash
-cd openairinterface5g/cmake_targets/
-./build_oai -w USRP --eNB --UE --nrUE --gNB
+Additionally, you can also point to a specific `asn1c` to use if you chose to
+install elsewhere, using one of these two methods:
 ```
-
-You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
-
-After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
+./build_oai --ninja <other-options> --cmake-opt -DASN1C_EXEC=/opt/asn1c/bin/asn1c
+cmake .. -GNinja -DASN1C_EXEC=/opt/asn1c/bin/asn1c
+```
 
 ## Installing UHD from source
 
@@ -129,6 +135,32 @@ See:
 * `cmake_targets/tools/uhd-3.15-tdd-patch.diff`
 * `cmake_targets/tools/uhd-4.x-tdd-patch.diff`
 * `cmake_targets/tools/build_helper` --> function `install_usrp_uhd_driver_from_source`
+
+## Building PHY Simulators
+
+The PHY layer simulators (LTE and NR) can be built as follows:
+
+```bash
+cd openairinterface5g/cmake_targets/
+./build_oai --phy_simulators
+```
+
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
+
+Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
+
+## Building UEs, eNodeB and gNodeB Executables
+
+After downloading the source files, a single build command can be used to get the binaries supporting all the oai softmodem use cases (UE and [eg]NodeB):
+
+```bash
+cd openairinterface5g/cmake_targets/
+./build_oai -w USRP --eNB --UE --nrUE --gNB
+```
+
+You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
+
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 ## Building Optional Binaries
 

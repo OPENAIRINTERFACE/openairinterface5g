@@ -518,7 +518,7 @@ static int _process_dump(char* buffer, int len, const char* msg, int size)
                                            len - index, "\\n");
 
     index += snprintf(buffer + index, len - index,
-                      " %.2hx", (unsigned char)(msg[i]));
+                      " %.2hhx", (unsigned char)msg[i]);
   }
 
   buffer[index] = '\0';

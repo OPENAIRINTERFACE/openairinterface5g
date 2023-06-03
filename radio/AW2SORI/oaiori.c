@@ -124,7 +124,7 @@ uint32_t to_earfcn_DL_aw2s(int eutra_bandP, long long int dl_CarrierFreq, uint32
                 printf("Band %d, bw %u : DL carrier frequency %u .1MHz > %d\n",
                 eutra_bandtable[i].band, bw, dl_CarrierFreq_by_100k,
                 eutra_bandtable[i].dl_max - bw); i++;continue; }
-    printf("AW2S: dl_CarrierFreq_by_100k %d, dl_min %d\n",dl_CarrierFreq_by_100k,eutra_bandtable[i].dl_min);
+    printf("AW2S: dl_CarrierFreq_by_100k %u, dl_min %d\n",dl_CarrierFreq_by_100k,eutra_bandtable[i].dl_min);
 
     return (dl_CarrierFreq_by_100k - eutra_bandtable[i].dl_min +
             (eutra_bandtable[i].N_OFFs_DL / 10));
@@ -690,7 +690,7 @@ int aw2s_oriinit(openair0_device *device) {
     rxParams.RxEUtraTDD.chanBW = txParams.TxEUtraTDD.chanBW;
     rxParams.RxEUtraTDD.earfcn = txParams.TxEUtraTDD.earfcn;
 
-    printf("AW2S: Creating RX0 for EARFCN %d\n",rxParams.RxEUtraTDD.earfcn);
+    printf("AW2S: Creating RX0 for EARFCN %u\n",rxParams.RxEUtraTDD.earfcn);
  
     result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
 
@@ -702,7 +702,7 @@ int aw2s_oriinit(openair0_device *device) {
     rxParams.RxNRTDD.chanBW = txParams.TxNRTDD.chanBW;
     rxParams.RxNRTDD.AWS_arfcn = txParams.TxNRTDD.AWS_arfcn;
 
-    printf("AW2S: Creating RX0 for NRARFCN %d\n",rxParams.RxNRTDD.AWS_arfcn);
+    printf("AW2S: Creating RX0 for NRARFCN %u\n",rxParams.RxNRTDD.AWS_arfcn);
  
     result = ORI_ObjectCreation(ori, rxTypeRef, rxParams, rxParamList, num_rxparams, rxParamResult, &rx0, &RE_result);
 

@@ -17,7 +17,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT ${m3ap_source} ${m3ap_headers}
-  COMMAND ASN1C_PREFIX=M3AP_ asn1c -gen-PER -no-gen-OER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${M3AP_GRAMMAR}
+  COMMAND ASN1C_PREFIX=M3AP_ ${ASN1C_EXEC} -gen-APER -no-gen-BER -no-gen-JER -no-gen-OER -gen-UPER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${M3AP_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${M3AP_GRAMMAR}
   COMMENT "Generating M3AP source files from ${CMAKE_CURRENT_SOURCE_DIR}/${M3AP_GRAMMAR}"
 )

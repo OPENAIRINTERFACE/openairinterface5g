@@ -315,11 +315,10 @@ void nr_pdcch_channel_level(int32_t rx_size,
       */
     }
 
-    DevAssert( nb_rb );
-    avg[aarx] = (((int32_t *)&avg128P)[0] +
-                 ((int32_t *)&avg128P)[1] +
-                 ((int32_t *)&avg128P)[2] +
-                 ((int32_t *)&avg128P)[3])/(nb_rb*9);
+    DevAssert(nb_rb);
+    avg[aarx] = 0;
+    for (int i = 0; i < 4; i++)
+      avg[aarx] += ((int32_t *)&avg128P)[i] / (nb_rb * 9);
     LOG_DDD("Channel level : %d\n",avg[aarx]);
   }
 
@@ -777,7 +776,7 @@ int32_t nr_rx_pdcch(PHY_VARS_NR_UE *ue,
     
 #endif
 #ifdef DEBUG_DCI_DECODING
-    printf("demapping: slot %d, mi %d\n",slot,get_mi(frame_parms,slot));
+    printf("demapping: slot %u, mi %d\n",slot,get_mi(frame_parms,slot));
 #endif
   }
 

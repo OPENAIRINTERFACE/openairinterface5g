@@ -21,11 +21,10 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for Rocky 8.7
+#   Valid for RHEL 8.2
 #
 #---------------------------------------------------------------------
 
-ARG BASE_IMAGE=docker.io/rockylinux:8.7
 FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
@@ -33,11 +32,12 @@ FROM ran-build:latest AS gnb-build
 RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
-FROM $BASE_IMAGE as oai-nr-cuup
+FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-cuup
 ENV TZ=Europe/Paris
 
-RUN dnf update -y && \
-    dnf install -y \
+RUN yum repolist --disablerepo=* && \
+    yum update -y && \
+    yum install -y --enablerepo="ubi-8-codeready-builder" \
         procps-ng \
         lksctp-tools \
         tzdata \

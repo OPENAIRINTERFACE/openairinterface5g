@@ -106,7 +106,7 @@ void dump_tracking_area_identity_list_xml(TrackingAreaIdentityList *trackingarea
   printf("    <Type of list>%u</Type of list>\n", trackingareaidentitylist->typeoflist);
   /* LW: number of elements is coded as N-1 (0 -> 1 element, 1 -> 2 elements...),
    *  see 3GPP TS 24.301, section 9.9.3.33.1 */
-  printf("    <Number of elements>%u</Number of elements>\n", trackingareaidentitylist->numberofelements + 1);
+  printf("    <Number of elements>%d</Number of elements>\n", trackingareaidentitylist->numberofelements + 1);
   printf("    <MCC digit 2>%u</MCC digit 2>\n", trackingareaidentitylist->mccdigit2);
   printf("    <MCC digit 1>%u</MCC digit 1>\n", trackingareaidentitylist->mccdigit1);
   printf("    <MNC digit 3>%u</MNC digit 3>\n", trackingareaidentitylist->mncdigit3);

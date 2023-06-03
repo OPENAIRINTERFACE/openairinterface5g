@@ -308,9 +308,9 @@ uint32_t ulsch_encoding(uint8_t *a,
 
         Kr_bytes = Kr>>3;
 #ifdef DEBUG_ULSCH_CODING
-        printf("Generating Code Segment %d (%d bits)\n",r,Kr);
+        printf("Generating Code Segment %u (%u bits)\n",r,Kr);
         // generate codewords
-        printf("bits_per_codeword (Kr)= %d\n",Kr);
+        printf("bits_per_codeword (Kr)= %u\n",Kr);
         printf("N_RB = %d\n",ulsch->harq_processes[harq_pid]->nb_rb);
         printf("Ncp %d\n",frame_parms->Ncp);
         printf("Qm %d\n",Q_m);
@@ -469,7 +469,7 @@ uint32_t ulsch_encoding(uint8_t *a,
 
     for (r=0; r<ulsch->harq_processes[harq_pid]->C; r++) {
 #ifdef DEBUG_ULSCH_CODING
-      printf("Rate Matching, Code segment %d (coded bits (G) %d,unpunctured/repeated bits per code segment %d,mod_order %d, nb_rb %d)...\n",
+      printf("Rate Matching, Code segment %u (coded bits (G) %u,unpunctured/repeated bits per code segment %u,mod_order %d, nb_rb %d)...\n",
              r,
              G,
              Kr*3,
@@ -567,7 +567,7 @@ uint32_t ulsch_encoding(uint8_t *a,
   //  Do ACK coding, Section 5.2.2.6 36.213 (p.23-24 in v8.6)
   wACK_idx = (ulsch->bundling==0) ? 4 : ((Nbundled-1)&3);
 #ifdef DEBUG_ULSCH_CODING
-  printf("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %d\n",
+  printf("ulsch_coding.c: Bundling %d, Nbundled %d, wACK_idx %u\n",
          ulsch->bundling,Nbundled,wACK_idx);
 #endif
 
@@ -784,7 +784,7 @@ uint32_t ulsch_encoding(uint8_t *a,
     for (q=0; q<Q_m; q++) {
       y[q+(Q_m*((r*Cmux) + columnset[j]))]  = ulsch->q_ACK[(q+(Q_m*i))%len_ACK];
 #ifdef DEBUG_ULSCH_CODING
-      printf("ulsch_coding.c: ACK %d => y[%d]=%d (i %d, r*Cmux %d, columnset %d)\n",q+(Q_m*i),
+      printf("ulsch_coding.c: ACK %u => y[%u]=%d (i %d, r*Cmux %u, columnset %d)\n",q+(Q_m*i),
              q+(Q_m*((r*Cmux) + columnset[j])),ulsch->q_ACK[(q+(Q_m*i))%len_ACK],
              i,r*Cmux,columnset[j]);
 #endif

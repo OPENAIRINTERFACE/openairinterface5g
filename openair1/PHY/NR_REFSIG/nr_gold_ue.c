@@ -54,19 +54,16 @@ void nr_gold_pbch(PHY_VARS_NR_UE* ue)
 void nr_gold_pdcch(PHY_VARS_NR_UE* ue,
                    unsigned short nid)
 {
-  unsigned char ns,l;
   unsigned int n = 0, x1 = 0, x2 = 0, x2tmp0 = 0;
   uint8_t reset;
-  int pdcch_dmrs_init_length =  (((ue->frame_parms.N_RB_DL<<1)*3)>>5)+1;
+  int pdcch_dmrs_init_length = (((ue->frame_parms.N_RB_DL << 1) * 3) >> 5) + 1;
 
-  for (ns=0; ns<ue->frame_parms.slots_per_frame; ns++) {
-
-    for (l=0; l<ue->frame_parms.symbols_per_slot; l++) {
-
+  for (int ns = 0; ns < ue->frame_parms.slots_per_frame; ns++) {
+    for (int l = 0; l < ue->frame_parms.symbols_per_slot; l++) {
       reset = 1;
-      x2tmp0 = ((ue->frame_parms.symbols_per_slot*ns+l+1)*((nid<<1)+1))<<17;
-      x2 = (x2tmp0+(nid<<1))%(1U<<31);  //cinit
-      
+      x2tmp0 = ((ue->frame_parms.symbols_per_slot * ns + l + 1) * ((nid << 1) + 1));
+      x2tmp0 <<= 17;
+      x2 = (x2tmp0 + (nid << 1)) % (1U << 31);  //cinit
       for (n=0; n<pdcch_dmrs_init_length; n++) {
         ue->nr_gold_pdcch[0][ns][l][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;
@@ -104,18 +101,15 @@ void nr_init_pusch_dmrs(PHY_VARS_NR_UE* ue,
                         uint8_t n_scid)
 {
   uint32_t x1 = 0, x2 = 0, n = 0;
-  uint8_t reset, slot, symb;
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   uint32_t ****pusch_dmrs = ue->nr_gold_pusch_dmrs;
-  int pusch_dmrs_init_length =  ((fp->N_RB_UL*12)>>5)+1;
+  int pusch_dmrs_init_length = ((fp->N_RB_UL * 12) >> 5) + 1;
 
-  for (slot=0; slot<fp->slots_per_frame; slot++) {
-
-    for (symb=0; symb<fp->symbols_per_slot; symb++) {
-
-      reset = 1;
-      x2 = ((1<<17) * (fp->symbols_per_slot*slot+symb+1) * ((N_n_scid<<1)+1) +((N_n_scid<<1)+n_scid));
-      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n",slot,symb,x2);
+  for (int slot = 0; slot < fp->slots_per_frame; slot++) {
+    for (int symb = 0; symb < fp->symbols_per_slot; symb++) {
+      int reset = 1;
+      x2 = ((1U << 17) * (fp->symbols_per_slot*slot + symb + 1) * ((N_n_scid << 1) + 1) + ((N_n_scid << 1) + n_scid));
+      LOG_D(PHY,"DMRS slot %d, symb %d x2 %x\n", slot, symb, x2);
       for (n=0; n<pusch_dmrs_init_length; n++) {
         pusch_dmrs[slot][symb][n_scid][n] = lte_gold_generic(&x1, &x2, reset);
         reset = 0;

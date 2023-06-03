@@ -108,7 +108,7 @@ int config_check_band_frequencies(    int ind,
                      "enb %d uplink frequency %u too high (%u) for band %d!",
                      ind, uplink_frequency, eutra_bands[band_index].ul_max, band);
         AssertError (eutra_bands[band_index].frame_type == frame_type, errors ++,
-                     "enb %d invalid frame type (%d/%d) for band %d!",
+                     "enb %d invalid frame type (%u/%u) for band %d!",
                      ind, eutra_bands[band_index].frame_type, frame_type, band);
       }
     }

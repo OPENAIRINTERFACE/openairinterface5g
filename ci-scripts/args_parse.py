@@ -220,10 +220,10 @@ def ArgsParse(argvs,CiTestObj,RAN,HTML,EPC,ldpc,CONTAINERS,HELP,SCA,PHYSIM,CLUST
             EPC.SourceCodePath=matchReg.group(1)
         elif re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-EPCType=(.+)$', myArgv, re.IGNORECASE)
-            if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-CUPS', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE) or re.match('OC-OAI-CN5G', matchReg.group(1), re.IGNORECASE):
+            if re.match('OAI', matchReg.group(1), re.IGNORECASE) or re.match('ltebox', matchReg.group(1), re.IGNORECASE) or re.match('OAI-Rel14-Docker', matchReg.group(1), re.IGNORECASE) or re.match('OC-OAI-CN5G', matchReg.group(1), re.IGNORECASE):
                 EPC.Type=matchReg.group(1)
             else:
-                sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-CUPS or OAI-Rel14-Docker or OC-OAI-CN5G)')
+                sys.exit('Invalid EPC Type: ' + matchReg.group(1) + ' -- (should be OAI or ltebox or OAI-Rel14-Docker or OC-OAI-CN5G)')
         elif re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE):
             matchReg = re.match('^\-\-EPCContainerPrefix=(.+)$', myArgv, re.IGNORECASE)
             EPC.ContainerPrefix=matchReg.group(1)

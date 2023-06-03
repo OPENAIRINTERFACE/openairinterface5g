@@ -1009,8 +1009,8 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
     yp1[(n<<1)+i+8] = *yp_cw2;
     yp_cw2++;
 #ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"Term 1 (%d): %d %d\n",n+i,s[(n<<1)+i],yp1[(n<<1)+i]);
-    fprintf(fdavx2b,"Term 1 (%d): %d %d\n",n+i,s[(n<<1)+i+8],yp1[(n<<1)+i+8]);
+    fprintf(fdavx2,"Term 1 (%u): %d %d\n",n+i,s[(n<<1)+i],yp1[(n<<1)+i]);
+    fprintf(fdavx2b,"Term 1 (%u): %d %d\n",n+i,s[(n<<1)+i+8],yp1[(n<<1)+i+8]);
 #endif //DEBUG_LOGMAP
   }
 
@@ -1029,8 +1029,8 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
     yp2[(n<<1)+i-16+8] = *yp_cw2;
     yp_cw2++;
 #ifdef DEBUG_LOGMAP
-    fprintf(fdavx2,"Term 2 (%d): %d %d\n",n+i-3-8,s[(n<<1)+i],yp2[(n<<1)+i-16]);
-    fprintf(fdavx2b,"Term 2 (%d): %d %d\n",n+i-3-8,s[(n<<1)+i+8],yp2[(n<<1)+i-16+8]);
+    fprintf(fdavx2,"Term 2 (%u): %d %d\n",n+i-3-8,s[(n<<1)+i],yp2[(n<<1)+i-16]);
+    fprintf(fdavx2b,"Term 2 (%u): %d %d\n",n+i-3-8,s[(n<<1)+i+8],yp2[(n<<1)+i-16+8]);
 #endif //DEBUG_LOGMAP
   }
 
@@ -1144,8 +1144,8 @@ unsigned char phy_threegpplte_turbo_decoder16avx2(int16_t *y,
 	decoded_bytes2[i]=(uint8_t)(db>>16)&0xff;
 #ifdef DEBUG_LOGMAP
 	print_shorts("tmp",(int16_t*)&tmp);
-	fprintf(fdavx2,"decoded_bytes[%d] %x (%x)\n",i,decoded_bytes[i],db);
-	fprintf(fdavx2b,"decoded_bytes[%d] %x (%x)\n",i,decoded_bytes2[i],db);
+	fprintf(fdavx2,"decoded_bytes[%u] %x (%x)\n",i,decoded_bytes[i],db);
+	fprintf(fdavx2b,"decoded_bytes[%u] %x (%x)\n",i,decoded_bytes2[i],db);
 #endif
       }
     }

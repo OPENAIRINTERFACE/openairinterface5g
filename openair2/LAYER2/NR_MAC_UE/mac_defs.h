@@ -325,9 +325,6 @@ typedef struct {
   /// BeamfailurerecoveryConfig
   NR_BeamFailureRecoveryConfig_t RA_BeamFailureRecoveryConfig;
 
-  /// RA SearchSpace
-  NR_SearchSpace_t *ss;
-
   NR_PRACH_RESOURCES_t prach_resources;
 } RA_config_t;
 
@@ -412,10 +409,13 @@ typedef struct {
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_UL_TIME_ALIGNMENT_t ul_time_alignment;
 
-  NR_BWP_Downlink_t *DLbwp[MAX_NUM_BWP_UE];
-  NR_BWP_Uplink_t *ULbwp[MAX_NUM_BWP_UE];
-  NR_ControlResourceSet_t *coreset[MAX_NUM_BWP_UE][FAPI_NR_MAX_CORESET_PER_BWP];
-  NR_SearchSpace_t *SSpace[MAX_NUM_BWP_UE][FAPI_NR_MAX_SS];
+  NR_SearchSpace_t *otherSI_SS;
+  NR_SearchSpace_t *ra_SS;
+  NR_SearchSpace_t *paging_SS;
+  NR_ControlResourceSet_t *BWP_coresets[FAPI_NR_MAX_CORESET_PER_BWP];
+  NR_ControlResourceSet_t *coreset0;
+  NR_SearchSpace_t *BWP_searchspaces[FAPI_NR_MAX_SS];
+  NR_SearchSpace_t *search_space_zero;
 
   bool phy_config_request_sent;
   frame_type_t frame_type;
@@ -469,8 +469,6 @@ typedef struct {
   uint8_t PHR_reporting_active;
 
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config;
-  NR_SearchSpace_t *search_space_zero;
-  NR_ControlResourceSet_t *coreset0;
   frequency_range_t frequency_range;
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
@@ -526,8 +524,6 @@ typedef struct ssb_list_info {
   ssb_info_t tx_ssb[MAX_NB_SSB];
   uint8_t   nb_tx_ssb;
 } ssb_list_info_t;
-
-void config_dci_pdu(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15, fapi_nr_dl_config_request_t *dl_config, int rnti_type, int ss_id);
 
 /*@}*/
 #endif /*__LAYER2_MAC_DEFS_H__ */

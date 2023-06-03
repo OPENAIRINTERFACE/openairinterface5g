@@ -10,7 +10,7 @@ else()
 endif()
 
 add_custom_command(OUTPUT ${x2ap_source} ${x2ap_headers}
-  COMMAND ASN1C_PREFIX=X2AP_ asn1c -pdu=all -gen-PER -no-gen-OER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${X2AP_GRAMMAR}
+  COMMAND ASN1C_PREFIX=X2AP_ ${ASN1C_EXEC} -pdu=all -gen-APER -no-gen-BER -no-gen-JER -no-gen-OER -gen-UPER -fcompound-names -no-gen-example -fno-include-deps -D ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR}/${X2AP_GRAMMAR}
   DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/${X2AP_GRAMMAR}
   COMMENT "Generating X2AP source files from ${CMAKE_CURRENT_SOURCE_DIR}/${X2AP_GRAMMAR}"
 )
