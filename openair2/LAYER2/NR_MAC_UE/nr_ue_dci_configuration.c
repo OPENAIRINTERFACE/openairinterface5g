@@ -96,9 +96,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
                     const NR_SearchSpace_t *ss)
 {
 
-  uint16_t monitoringSymbolsWithinSlot = 0;
-  int sps = 0;
-
   const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   const NR_UE_UL_BWP_t *current_UL_BWP = &mac->current_UL_BWP;
   NR_BWP_Id_t dl_bwp_id = current_DL_BWP ? current_DL_BWP->bwp_id : 0;
@@ -187,70 +184,72 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
                                                mac->cg,
                                                &mac->def_dci_pdu_rel15[dl_config->slot][dci_format],
                                                dci_format,
-                                               NR_RNTI_TC,
+                                               rnti_type,
                                                coreset,
                                                dl_bwp_id,
                                                ss->searchSpaceType->present,
                                                mac->type0_PDCCH_CSS_config.num_rbs,
                                                alt_size);
-
-    rel15->BWPStart = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.cset_start_rb : current_DL_BWP->BWPStart;
-    rel15->BWPSize = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->BWPSize;
-
-    switch(rnti_type) {
-      case NR_RNTI_C:
-        // we use DL BWP dedicated
-        sps = current_DL_BWP->cyclicprefix ? 12 : 14;
-        // for SPS=14 8 MSBs in positions 13 down to 6
-        monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-        rel15->rnti = mac->crnti;
-        rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        break;
-      case NR_RNTI_RA:
-        // we use the initial DL BWP
-        sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
-        monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-        rel15->rnti = mac->ra.ra_rnti;
-        rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        break;
-      case NR_RNTI_P:
-        break;
-      case NR_RNTI_CS:
-        break;
-      case NR_RNTI_TC:
-        // we use the initial DL BWP
-        sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
-        monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-        rel15->rnti = mac->ra.t_crnti;
-        rel15->SubcarrierSpacing = current_DL_BWP->scs;
-        break;
-      case NR_RNTI_SP_CSI:
-        break;
-      case NR_RNTI_SI:
-        sps=14;
-        // for SPS=14 8 MSBs in positions 13 down to 6
-        monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
-
-        rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
-
-        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
-        if(mac->frequency_range == FR2)
-          rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
-        break;
-      case NR_RNTI_SFI:
-        break;
-      case NR_RNTI_INT:
-        break;
-      case NR_RNTI_TPC_PUSCH:
-        break;
-      case NR_RNTI_TPC_PUCCH:
-        break;
-      case NR_RNTI_TPC_SRS:
-        break;
-      default:
-        break;
-    }
   }
+
+  rel15->BWPStart = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.cset_start_rb : current_DL_BWP->BWPStart;
+  rel15->BWPSize = coreset_id == 0 ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->BWPSize;
+
+  uint16_t monitoringSymbolsWithinSlot = 0;
+  int sps = 0;
+
+  switch(rnti_type) {
+    case NR_RNTI_C:
+      // we use DL BWP dedicated
+      sps = current_DL_BWP->cyclicprefix ? 12 : 14;
+      // for SPS=14 8 MSBs in positions 13 down to 6
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = mac->crnti;
+      rel15->SubcarrierSpacing = current_DL_BWP->scs;
+      break;
+    case NR_RNTI_RA:
+      // we use the initial DL BWP
+      sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = mac->ra.ra_rnti;
+      rel15->SubcarrierSpacing = current_DL_BWP->scs;
+      break;
+    case NR_RNTI_P:
+      break;
+    case NR_RNTI_CS:
+      break;
+    case NR_RNTI_TC:
+      // we use the initial DL BWP
+      sps = current_DL_BWP->cyclicprefix == NULL ? 14 : 12;
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = mac->ra.t_crnti;
+      rel15->SubcarrierSpacing = current_DL_BWP->scs;
+      break;
+    case NR_RNTI_SP_CSI:
+      break;
+    case NR_RNTI_SI:
+      sps=14;
+      // for SPS=14 8 MSBs in positions 13 down to 6
+      monitoringSymbolsWithinSlot = (ss->monitoringSymbolsWithinSlot->buf[0]<<(sps-8)) | (ss->monitoringSymbolsWithinSlot->buf[1]>>(16-sps));
+      rel15->rnti = SI_RNTI; // SI-RNTI - 3GPP TS 38.321 Table 7.1-1: RNTI values
+      rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
+      if(mac->frequency_range == FR2)
+        rel15->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
+      break;
+    case NR_RNTI_SFI:
+      break;
+    case NR_RNTI_INT:
+      break;
+    case NR_RNTI_TPC_PUSCH:
+      break;
+    case NR_RNTI_TPC_PUCCH:
+      break;
+    case NR_RNTI_TPC_SRS:
+      break;
+    default:
+      break;
+  }
+
   for (int i = 0; i < sps; i++) {
     if ((monitoringSymbolsWithinSlot >> (sps - 1 - i)) & 1) {
       rel15->coreset.StartSymbolIndex = i;
@@ -263,15 +262,17 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
   fill_dci_search_candidates(ss, rel15, Y);
 
   #ifdef DEBUG_DCI
-    LOG_D(MAC, "[DCI_CONFIG] Configure DCI PDU: rnti_type %d BWPSize %d BWPStart %d rel15->SubcarrierSpacing %d rel15->dci_format %d rel15->dci_length %d sps %d monitoringSymbolsWithinSlot %d \n",
-      rnti_type,
-      rel15->BWPSize,
-      rel15->BWPStart,
-      rel15->SubcarrierSpacing,
-      rel15->dci_format_options[0],
-      rel15->dci_length_options[0],
-      sps,
-      monitoringSymbolsWithinSlot);
+    for (int i = 0; i < rel15->num_dci_options; i++) {
+      LOG_D(MAC, "[DCI_CONFIG] Configure DCI PDU: rnti_type %d BWPSize %d BWPStart %d rel15->SubcarrierSpacing %d rel15->dci_format %d rel15->dci_length %d sps %d monitoringSymbolsWithinSlot %d \n",
+            rnti_type,
+            rel15->BWPSize,
+            rel15->BWPStart,
+            rel15->SubcarrierSpacing,
+            rel15->dci_format_options[i],
+            rel15->dci_length_options[i],
+            sps,
+            monitoringSymbolsWithinSlot);
+    }
   #endif
   // add DCI
   dl_config->dl_config_list[dl_config->number_pdus].pdu_type = FAPI_NR_DL_CONFIG_TYPE_DCI;
