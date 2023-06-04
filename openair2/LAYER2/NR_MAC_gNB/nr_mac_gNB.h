@@ -660,6 +660,7 @@ typedef struct NR_bler_options {
 typedef struct nr_mac_rrc_ul_if_s {
   ue_context_setup_response_func_t ue_context_setup_response;
   ue_context_modification_response_func_t ue_context_modification_response;
+  ue_context_modification_required_func_t ue_context_modification_required;
   ue_context_release_request_func_t ue_context_release_request;
   ue_context_release_complete_func_t ue_context_release_complete;
   initial_ul_rrc_message_transfer_func_t initial_ul_rrc_message_transfer;

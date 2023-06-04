@@ -243,6 +243,18 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 }
 
+void ue_context_modification_confirm(const f1ap_ue_context_modif_confirm_t *confirm)
+{
+  (void) confirm;
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+}
+
+void ue_context_modification_refuse(const f1ap_ue_context_modif_refuse_t *refuse)
+{
+  (void) refuse;
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+}
+
 void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
 {
   /* mark UE as to be deleted after PUSCH failure */

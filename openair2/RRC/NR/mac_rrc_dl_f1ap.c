@@ -71,6 +71,18 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
   itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
+static void ue_context_modification_confirm_f1ap(const f1ap_ue_context_modif_confirm_t *confirm)
+{
+  (void)confirm;
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+}
+
+static void ue_context_modification_refuse_f1ap(const f1ap_ue_context_modif_refuse_t *refuse)
+{
+  (void)refuse;
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+}
+
 static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t *cmd)
 {
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
@@ -110,6 +122,8 @@ void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
   mac_rrc->ue_context_setup_request = ue_context_setup_request_f1ap;
   mac_rrc->ue_context_modification_request = ue_context_modification_request_f1ap;
+  mac_rrc->ue_context_modification_confirm = ue_context_modification_confirm_f1ap;
+  mac_rrc->ue_context_modification_refuse = ue_context_modification_refuse_f1ap;
   mac_rrc->ue_context_release_command = ue_context_release_command_f1ap;
   mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer_f1ap;
 }

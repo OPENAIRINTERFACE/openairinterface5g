@@ -111,6 +111,11 @@ static void ue_context_modification_response_direct(const f1ap_ue_context_modif_
   itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
+static void ue_context_modification_required_direct(const f1ap_ue_context_modif_required_t *required)
+{
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+}
+
 static void ue_context_release_request_direct(const f1ap_ue_context_release_req_t* req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
@@ -151,6 +156,7 @@ void mac_rrc_ul_direct_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
   mac_rrc->ue_context_setup_response = ue_context_setup_response_direct;
   mac_rrc->ue_context_modification_response = ue_context_modification_response_direct;
+  mac_rrc->ue_context_modification_required = ue_context_modification_required_direct;
   mac_rrc->ue_context_release_request = ue_context_release_request_direct;
   mac_rrc->ue_context_release_complete = ue_context_release_complete_direct;
   mac_rrc->initial_ul_rrc_message_transfer = initial_ul_rrc_message_transfer_direct;

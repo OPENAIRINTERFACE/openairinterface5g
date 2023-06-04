@@ -28,6 +28,7 @@
 typedef void (*ue_context_setup_response_func_t)(const f1ap_ue_context_setup_t* req, const f1ap_ue_context_setup_t *resp);
 typedef void (*ue_context_modification_response_func_t)(const f1ap_ue_context_modif_req_t *req,
                                                         const f1ap_ue_context_modif_resp_t *resp);
+typedef void (*ue_context_modification_required_func_t)(const f1ap_ue_context_modif_required_t *t);
 typedef void (*ue_context_release_request_func_t)(const f1ap_ue_context_release_req_t* req);
 typedef void (*ue_context_release_complete_func_t)(const f1ap_ue_context_release_complete_t *complete);
 

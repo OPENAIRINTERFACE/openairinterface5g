@@ -169,6 +169,10 @@ void *F1AP_DU_task(void *arg) {
         DU_send_UE_CONTEXT_RELEASE_COMPLETE(myInstance, &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg));
         break;
 
+      case F1AP_UE_CONTEXT_MODIFICATION_REQUIRED:
+        DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(myInstance, &F1AP_UE_CONTEXT_MODIFICATION_REQUIRED(msg));
+        break;
+
       case TERMINATE_MESSAGE:
         LOG_W(F1AP, " *** Exiting F1AP thread\n");
         itti_exit_task();

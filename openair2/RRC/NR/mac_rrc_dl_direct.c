@@ -28,6 +28,8 @@ void mac_rrc_dl_direct_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
   mac_rrc->ue_context_setup_request = ue_context_setup_request;
   mac_rrc->ue_context_modification_request = ue_context_modification_request;
+  mac_rrc->ue_context_modification_confirm = ue_context_modification_confirm;
+  mac_rrc->ue_context_modification_refuse = ue_context_modification_refuse;
   mac_rrc->ue_context_release_command = ue_context_release_command;
   mac_rrc->dl_rrc_message_transfer = dl_rrc_message_transfer;
 }

@@ -365,6 +365,8 @@ typedef struct {
 typedef struct nr_mac_rrc_dl_if_s {
   ue_context_setup_request_func_t ue_context_setup_request;
   ue_context_modification_request_func_t ue_context_modification_request;
+  ue_context_modification_confirm_func_t ue_context_modification_confirm;
+  ue_context_modification_refuse_func_t ue_context_modification_refuse;
   ue_context_release_command_func_t ue_context_release_command;
   dl_rrc_message_transfer_func_t dl_rrc_message_transfer;
 } nr_mac_rrc_dl_if_t;

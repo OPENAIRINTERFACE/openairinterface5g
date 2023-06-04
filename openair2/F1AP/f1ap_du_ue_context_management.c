@@ -1285,12 +1285,21 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
 int DU_send_UE_CONTEXT_MODIFICATION_FAILURE(instance_t instance) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
-int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance) {
-  AssertFatal(1==0,"Not implemented yet\n");
+
+int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, f1ap_ue_context_modif_required_t *required)
+{
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+  return 0;
 }
-int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+
+int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+  return 0;
+}
+
+int DU_handle_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
+  AssertFatal(false, "%s() not implemented yet\n", __func__);
+  return 0;
 }
