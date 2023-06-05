@@ -629,7 +629,7 @@ check_install_oai_software() {
 	libtool  \
 	patch \
 	openssl \
-        zlib1bg-dev \
+        zlib1g-dev \
         xxd
 
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
