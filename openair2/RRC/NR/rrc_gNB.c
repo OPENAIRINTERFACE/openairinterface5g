@@ -1189,6 +1189,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(ctxt_pP->module_id);
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
+  ue_p->xids[xid] = RRC_DEDICATED_RECONF;
 
   NR_CellGroupConfig_t *masterCellGroup = ue_p->masterCellGroup;
   if (dl_bwp_id > 0) {
@@ -1681,6 +1682,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
       case RRC_REESTABLISH_COMPLETE:
+      case RRC_DEDICATED_RECONF:
         /* do nothing */
         break;
       default:
@@ -2099,6 +2101,69 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
 
     rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
   }
+}
+
+static void rrc_CU_process_ue_modification_required(MessageDef *msg_p)
+{
+  f1ap_ue_context_modif_required_t *required = &F1AP_UE_CONTEXT_MODIFICATION_REQUIRED(msg_p);
+  protocol_ctxt_t ctxt = {.rntiMaybeUEid = required->gNB_CU_ue_id, .module_id = 0, .instance = 0, .enb_flag = 1, .eNB_index = 0};
+  gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc, required->gNB_CU_ue_id);
+  if (ue_context_p == NULL) {
+    LOG_E(RRC, "Could not find UE context for CU UE ID %d, cannot handle UE context modification request\n", required->gNB_CU_ue_id);
+    f1ap_ue_context_modif_refuse_t refuse = {
+      .gNB_CU_ue_id = required->gNB_CU_ue_id,
+      .gNB_DU_ue_id = required->gNB_DU_ue_id,
+      .cause = F1AP_CAUSE_RADIO_NETWORK,
+      .cause_value = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_cu_ue_f1ap_id,
+    };
+    rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+    return;
+  }
+
+  if (required->du_to_cu_rrc_information && required->du_to_cu_rrc_information->cellGroupConfig) {
+    gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+    LOG_I(RRC,
+          "UE Context Modification Required: new CellGroupConfig for UE ID %d/RNTI %04x, triggering reconfiguration\n",
+          UE->rrc_ue_id,
+          UE->rnti);
+
+    NR_CellGroupConfig_t *cellGroupConfig = NULL;
+    asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
+                                                   &asn_DEF_NR_CellGroupConfig,
+                                                   (void **)&cellGroupConfig,
+                                                   (uint8_t *)required->du_to_cu_rrc_information->cellGroupConfig,
+                                                   required->du_to_cu_rrc_information->cellGroupConfig_length);
+    if (dec_rval.code != RC_OK && dec_rval.consumed == 0) {
+      LOG_E(RRC, "Cell group config decode error, refusing reconfiguration\n");
+      f1ap_ue_context_modif_refuse_t refuse = {
+        .gNB_CU_ue_id = required->gNB_CU_ue_id,
+        .gNB_DU_ue_id = required->gNB_DU_ue_id,
+        .cause = F1AP_CAUSE_PROTOCOL,
+        .cause_value = F1AP_CauseProtocol_transfer_syntax_error,
+      };
+      rrc->mac_rrc.ue_context_modification_refuse(&refuse);
+      return;
+    }
+
+    if (UE->masterCellGroup) {
+      ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
+      LOG_I(RRC, "UE %d/RNTI %04x replacing existing CellGroupConfig with new one received from DU\n", UE->rrc_ue_id, UE->rnti);
+    }
+    UE->masterCellGroup = cellGroupConfig;
+    if (LOG_DEBUGFLAG(DEBUG_ASN1))
+      xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->masterCellGroup);
+
+    /* trigger reconfiguration */
+    nr_rrc_reconfiguration_req(ue_context_p, &ctxt, 0, 0);
+    //rrc_gNB_generate_dedicatedRRCReconfiguration(&ctxt, ue_context_p);
+    //rrc_gNB_generate_defaultRRCReconfiguration(&ctxt, ue_context_p);
+    return;
+  }
+  LOG_W(RRC,
+        "nothing to be done after UE Context Modification Required for UE ID %d/RNTI %04x\n",
+        required->gNB_CU_ue_id,
+        required->gNB_DU_ue_id);
 }
 
 unsigned int mask_flip(unsigned int x) {
@@ -2566,6 +2631,10 @@ void *rrc_gnb_task(void *args_p) {
 
       case F1AP_UE_CONTEXT_MODIFICATION_RESP:
         rrc_CU_process_ue_context_modification_response(msg_p, instance);
+        break;
+
+      case F1AP_UE_CONTEXT_MODIFICATION_REQUIRED:
+        rrc_CU_process_ue_modification_required(msg_p);
         break;
 
       case F1AP_UE_CONTEXT_RELEASE_REQ:
