@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL 8.2
+#   Valid for RHEL 9
 #
 #---------------------------------------------------------------------
 
@@ -32,12 +32,12 @@ FROM ran-build:latest AS gnb-build
 RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-cuup
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-nr-cuup
 ENV TZ=Europe/Paris
 
 RUN yum repolist --disablerepo=* && \
     yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
+    yum install -y \
         procps-ng \
         lksctp-tools \
         tzdata \
@@ -59,7 +59,7 @@ COPY --from=gnb-build \
     /usr/local/lib/
 
 COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
