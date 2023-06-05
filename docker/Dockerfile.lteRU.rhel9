@@ -36,8 +36,8 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/enb_parameters
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-lte-ru
 ENV TZ=Europe/Paris
 
-RUN yum update -y && \
-    yum install -y --enablerepo="ubi-9-codeready-builder" \
+RUN dnf update -y && \
+    dnf install -y --enablerepo="ubi-9-codeready-builder" \
         tzdata \
         procps-ng \
         atlas \

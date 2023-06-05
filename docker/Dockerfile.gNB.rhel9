@@ -36,9 +36,9 @@ RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/gnb_parameters
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-gnb
 ENV TZ=Europe/Paris
 
-RUN yum repolist --disablerepo=* && \
-    yum update -y && \
-    yum install -y --enablerepo="ubi-9-codeready-builder" \
+RUN dnf repolist --disablerepo=* && \
+    dnf update -y && \
+    dnf install -y --enablerepo="ubi-9-codeready-builder" \
         procps-ng \
         libXpm \
         libX11 \

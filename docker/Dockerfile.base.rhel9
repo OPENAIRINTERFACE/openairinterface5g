@@ -42,11 +42,11 @@ COPY ./rhsm-ca /etc/rhsm/ca
 ENV SMDEV_CONTAINER_OFF=1
 #install developers pkg/repo
 RUN rm -f /etc/rhsm-host && \
-    yum repolist --disablerepo=* && \
+    dnf repolist --disablerepo=* && \
     subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
     dnf install https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm -y && \
-    yum update -y && \
-    yum install -y \
+    dnf update -y && \
+    dnf install -y \
        #gcc needed for build_oai
        gcc gcc-c++ \ 
        diffutils \

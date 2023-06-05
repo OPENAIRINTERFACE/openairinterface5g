@@ -32,7 +32,7 @@ WORKDIR /oai-ran
 COPY . .
 
 #only install address and undefined behavior sanitizer for this container, the others don't need it
-RUN yum install -y libasan libubsan
+RUN dnf install -y libasan libubsan
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
@@ -43,8 +43,8 @@ RUN /bin/sh oaienv && \
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-physim
 
-RUN yum update -y && \
-    yum install -y --enablerepo="ubi-9-codeready-builder" \
+RUN dnf update -y && \
+    dnf install -y --enablerepo="ubi-9-codeready-builder" \
         lksctp-tools \
         tzdata \
         atlas \

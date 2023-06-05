@@ -32,7 +32,7 @@ WORKDIR /oai-ran
 COPY . .
 
 #only install LLVM (clang, ...) for this container, the others don't need it
-RUN yum install -y llvm-toolset
+RUN dnf install -y llvm-toolset
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \
