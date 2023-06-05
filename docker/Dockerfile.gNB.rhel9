@@ -37,7 +37,7 @@ FROM registry.access.redhat.com/ubi9/ubi:latest as oai-gnb
 ENV TZ=Europe/Paris
 
 RUN dnf update -y && \
-    dnf install -y --enablerepo="codeready-builder-for-rhel-9-x86_64-rpms" \
+    dnf install -y \
         procps-ng \
         libXpm \
         libX11 \

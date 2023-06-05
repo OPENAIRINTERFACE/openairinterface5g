@@ -44,7 +44,7 @@ RUN /bin/sh oaienv && \
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-physim
 
 RUN dnf update -y && \
-    dnf install -y --enablerepo="codeready-builder-for-rhel-9-x86_64-rpms" \
+    dnf install -y \
         lksctp-tools \
         tzdata \
         atlas \
