@@ -37,7 +37,7 @@ FROM registry.access.redhat.com/ubi9/ubi:latest as oai-nr-ue
 ENV TZ=Europe/Paris
 
 RUN dnf update -y && \
-    dnf install -y --enablerepo="ubi-9-codeready-builder" \
+    dnf install -y --enablerepo="codeready-builder-for-rhel-9-x86_64-rpms" \
         lksctp-tools \
         procps-ng \
         tzdata \

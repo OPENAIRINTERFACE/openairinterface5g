@@ -42,7 +42,6 @@ COPY ./rhsm-ca /etc/rhsm/ca
 ENV SMDEV_CONTAINER_OFF=1
 #install developers pkg/repo
 RUN rm -f /etc/rhsm-host && \
-    dnf repolist --disablerepo=* && \
     subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
     dnf update -y && \
     dnf install -y \
