@@ -39,6 +39,7 @@ COPY ./etc-pki-entitlement /etc/pki/entitlement
 COPY ./rhsm-conf /etc/rhsm
 COPY ./rhsm-ca /etc/rhsm/ca
 
+ENV SMDEV_CONTAINER_OFF=1
 #install developers pkg/repo
 RUN rm -f /etc/rhsm-host && \
     yum repolist --disablerepo=* && \
