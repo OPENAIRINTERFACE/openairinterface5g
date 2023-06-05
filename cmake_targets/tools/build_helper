@@ -629,6 +629,7 @@ check_install_oai_software() {
 	libtool  \
 	patch \
 	openssl \
+        zlib1bg-dev \
         xxd
 
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
@@ -666,7 +667,8 @@ check_install_oai_software() {
       lapack-devel \
       blas \
       blas-devel \
-      vim-common
+      vim-common \
+      zlib-devel
   fi
 
     install_asn1c_from_source $1
