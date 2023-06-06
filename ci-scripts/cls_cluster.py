@@ -306,7 +306,7 @@ class Cluster:
 			self._recreate_bc('ran-base', baseTag, 'openshift/ran-base-bc.yaml')
 			ranbase_job = self._start_build('ran-base')
 			attemptedImages += ['ran-base']
-			status = ranbase_job is not None and self._wait_build_end([ranbase_job], 600)
+			status = ranbase_job is not None and self._wait_build_end([ranbase_job], 800)
 			if not status: logging.error('failure during build of ran-base')
 			self.cmd.run(f'oc logs {ranbase_job} &> cmake_targets/log/ran-base.log') # cannot use cmd.run because of redirect
 			# recover logs by mounting image

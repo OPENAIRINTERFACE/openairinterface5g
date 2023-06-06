@@ -44,6 +44,7 @@ ENV SMDEV_CONTAINER_OFF=1
 RUN rm -f /etc/rhsm-host && \
     subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
     dnf update -y && \
+    cat /etc/os-release && \
     dnf install -y \
        #gcc needed for build_oai
        gcc gcc-c++ \ 
