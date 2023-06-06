@@ -653,6 +653,8 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.rnti = rnti;
     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu_1_0 = &dl_config->dl_config_list[dl_config->number_pdus].dlsch_config_pdu.dlsch_config_rel15;
 
+    dlsch_config_pdu_1_0->pduBitmap = 0;
+
     NR_PDSCH_Config_t *pdsch_config = current_DL_BWP ? current_DL_BWP->pdsch_Config : NULL;
     if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
       dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
