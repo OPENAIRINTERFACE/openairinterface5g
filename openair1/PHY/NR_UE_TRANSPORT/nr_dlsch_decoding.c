@@ -113,7 +113,7 @@ static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
         int A = dlsch->dlsch_config.TBS;
         int crc_length = A > 3824 ? 3 : 2;
         int crc_type   = A > 3824 ? CRC24_A : CRC16;
-        if (!check_crc(b, A + crc_length*8, 0 /* F - unused */, crc_type)) {
+        if (!check_crc(b, A + crc_length * 8, crc_type)) {
           harq_process->ack = 0;
           dlsch->last_iteration_cnt = dlsch->max_ldpc_iterations + 1;
           LOG_E(PHY, " Frame %d.%d LDPC global CRC fails, but individual LDPC CRC succeeded. %d segs\n", proc->frame_rx, proc->nr_slot_rx, harq_process->C);
@@ -269,24 +269,11 @@ static void nr_processDLSegment(void *arg)
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_IN);
     p_decoderParms->block_length=length_dec;
     nrLDPC_initcall(p_decoderParms, (int8_t*)&pl[0], LDPCoutput);
+    p_decoderParms->crc_type = crc_type;
     rdata->decodeIterations = nrLDPC_decoder(p_decoderParms, (int8_t *)&pl[0], LDPCoutput, &procTime, &harq_process->abort_decode);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
     LOG_W(PHY,"rdata->decodeIterations = %d\n", rdata->decodeIterations);
-    if (rdata->decodeIterations < dlsch->max_ldpc_iterations + 2) {
-      // We have not aborted the decoding
-      if (check_crc((uint8_t *)LDPCoutput, length_dec, harq_process->F, crc_type)) {
-        LOG_D(PHY, "Segment %u CRC OK\n", r);
-        if (rdata->decodeIterations > dlsch->max_ldpc_iterations) {
-          LOG_W(PHY, "force ok\n");
-          rdata->decodeIterations = dlsch->max_ldpc_iterations;
-        }
-      } else {
-        LOG_D(PHY, "%d.%d CRC NOT OK, iter %d\n", rdata->proc->frame_rx, rdata->proc->nr_slot_rx, rdata->decodeIterations);
-        rdata->decodeIterations = dlsch->max_ldpc_iterations + 1;
-      }
-    } else
-      LOG_D(PHY, "%d.%d another segment failure aborted this decode\n", rdata->proc->frame_rx, rdata->proc->nr_slot_rx);
 
     if (rdata->decodeIterations <= dlsch->max_ldpc_iterations)
       memcpy(harq_process->c[r], LDPCoutput, Kr >> 3);

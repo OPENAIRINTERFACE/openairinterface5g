@@ -435,7 +435,9 @@ int main(int argc, char *argv[])
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
-  char *ldpc_version=NULL; /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
+  // default to check output inside ldpc, the NR version checks the outer CRC defined by 3GPP
+  char *ldpc_version = "_parityCheck";
+  /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
   short max_iterations=5;
   int n_segments=1;
   //double rate=0.333;
@@ -535,11 +537,7 @@ int main(int argc, char *argv[])
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
 
-
-  if (ldpc_version != NULL)
-    load_nrLDPClib(ldpc_version);
-  else
-    load_nrLDPClib(NULL); 
+  load_nrLDPClib(ldpc_version);
   load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 

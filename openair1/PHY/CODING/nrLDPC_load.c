@@ -49,26 +49,23 @@ static loader_shlibfunc_t shlib_fdesc[3];
 char *arg[64]={"ldpctest",NULL};
 
 int load_nrLDPClib(char *version) {
-	 char *ptr = (char*)config_get_if();
-	 char libname[64]="ldpc";
+  char *ptr = (char *)config_get_if();
+  char libname[64] = "ldpc";
 
-     if ( ptr==NULL )  {// phy simulators, config module possibly not loaded
-     	 load_configmodule(1,arg,CONFIG_ENABLECMDLINEONLY) ;
-     	 logInit();
-     }	 
-     shlib_fdesc[0].fname = "nrLDPC_decod";
-     shlib_fdesc[1].fname = "nrLDPC_encod";
-     shlib_fdesc[2].fname = "nrLDPC_initcall";
-     int ret;
-     if (version)
-       ret=load_module_version_shlib(libname,version,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
-     else
-       ret=load_module_shlib(libname,shlib_fdesc,sizeof(shlib_fdesc)/sizeof(loader_shlibfunc_t),NULL);
-     AssertFatal( (ret >= 0),"Error loading ldpc decoder");
-     nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
-     nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
-     nrLDPC_initcall = (nrLDPC_initcallfunc_t)shlib_fdesc[2].fptr;
-return 0;
+  if (ptr == NULL) { // phy simulators, config module possibly not loaded
+    load_configmodule(1, arg, CONFIG_ENABLECMDLINEONLY);
+    logInit();
+  }
+  shlib_fdesc[0].fname = "nrLDPC_decod";
+  shlib_fdesc[1].fname = "nrLDPC_encod";
+  shlib_fdesc[2].fname = "nrLDPC_initcall";
+  int ret;
+  ret = load_module_version_shlib(libname, version, shlib_fdesc, sizeofArray(shlib_fdesc), NULL);
+  AssertFatal((ret >= 0), "Error loading ldpc decoder");
+  nrLDPC_decoder = (nrLDPC_decoderfunc_t)shlib_fdesc[0].fptr;
+  nrLDPC_encoder = (nrLDPC_encoderfunc_t)shlib_fdesc[1].fptr;
+  nrLDPC_initcall = (nrLDPC_initcallfunc_t)shlib_fdesc[2].fptr;
+  return 0;
 }
 
 int load_nrLDPClib_offload(void) {

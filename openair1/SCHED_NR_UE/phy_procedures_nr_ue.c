@@ -424,10 +424,8 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
     */
 
   }
-
- return ret;
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
+  return ret;
 }
 
 
