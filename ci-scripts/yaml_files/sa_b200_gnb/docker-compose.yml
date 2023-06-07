@@ -6,22 +6,10 @@ services:
         privileged: true
         container_name: sa-b200-gnb
         environment:
-            USE_SA_TDD_MONO_B2XX: 'yes'
             USE_B2XX: 'yes'
-            GNB_NAME: gNB-in-docker
-            MCC: '222'
-            MNC: '01'
-            MNC_LENGTH: 2
-            TAC: 1
-            NSSAI_SST: 1
-            NSSAI_SD0: 1
-            AMF_IP_ADDRESS: 172.21.16.137
-            GNB_NGA_IF_NAME: eth0
-            GNB_NGA_IP_ADDRESS: 192.168.68.194
-            GNB_NGU_IF_NAME: eth0
-            GNB_NGU_IP_ADDRESS: 192.168.68.194
             USE_ADDITIONAL_OPTIONS: --sa --RUs.[0].sdr_addrs serial=30C51D4 --telnetsrv --telnetsrv.shrmod ci --continuous-tx --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
+            - ../../conf_files/gnb.sa.band78.51prb.usrpb200.conf:/opt/oai-gnb/etc/gnb.conf
             - /dev:/dev
         networks:
             public_net:

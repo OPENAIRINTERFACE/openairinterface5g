@@ -7,10 +7,9 @@ services:
         container_name: oai-gnb-aw2s
         environment:
             TZ: Europe/Paris
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa
         volumes:
-            - ../../conf_files/gnb.sa.band78.51prb.aw2s.ddsuu.conf:/opt/oai-gnb-aw2s/etc/mounted.conf
+            - ../../conf_files/gnb.sa.band78.51prb.aw2s.ddsuu.conf:/opt/oai-gnb-aw2s/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s

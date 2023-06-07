@@ -29,8 +29,6 @@ FROM ran-base:latest AS nr-ue-base
 
 FROM ran-build:latest AS nr-ue-build
 
-RUN python3 ./docker/scripts/generateTemplate.py ./docker/scripts/nr_ue_parameters.yaml && \
-    cp /oai-ran/docker/scripts/nr_ue_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 #start from scratch for target executable
 FROM ubuntu:focal as oai-nr-ue
@@ -63,13 +61,12 @@ RUN apt-get update && \
 WORKDIR /opt/oai-nr-ue/bin
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/nr-uesoftmodem \
-    /oai-ran/docker/scripts/entrypoint.sh \
     ./
 
+COPY ./docker/scripts/nr_ue_entrypoint.sh ./entrypoint.sh
 WORKDIR /opt/oai-nr-ue/etc
 COPY --from=nr-ue-build \
     /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
-    /oai-ran/docker/etc/nr-ue.nfapi.conf \
     ./
 
 COPY --from=nr-ue-build \

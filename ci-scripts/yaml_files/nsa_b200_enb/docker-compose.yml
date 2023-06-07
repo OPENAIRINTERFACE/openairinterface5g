@@ -6,30 +6,10 @@ services:
         privileged: true
         container_name: nsa-b200-enb
         environment:
-            USE_FDD_MONO: 'yes'
             USE_B2XX: 'yes'
-            ENB_NAME: eNB-in-docker
-            MCC: '222'
-            MNC: '01'
-            MNC_LENGTH: 2
-            TAC: 1
-            UTRA_BAND_ID: 7
-            DL_FREQUENCY_IN_MHZ: 2680
-            UL_FREQUENCY_OFFSET_IN_MHZ: 120
-            NID_CELL: 0
-            NB_PRB: 25
-            ENABLE_MEASUREMENT_REPORTS: 'yes'
-            ENABLE_X2: 'yes'
-            MME_S1C_IP_ADDRESS: 172.21.16.137
-            ENB_S1C_IF_NAME: eth0
-            ENB_S1C_IP_ADDRESS: 192.168.68.130
-            ENB_S1U_IF_NAME: eth0
-            ENB_S1U_IP_ADDRESS: 192.168.68.130
-            ENB_X2_IP_ADDRESS: 192.168.68.130
-            RRC_INACTIVITY_THRESHOLD: 0
-            THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
             USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
+            - ../../conf_files/enb.nsa.band7.25prb.usrpb200.conf:/opt/oai-enb/etc/enb.conf
             - /dev:/dev
         networks:
             public_net:

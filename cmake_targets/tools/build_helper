@@ -32,7 +32,7 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum"; CMAKE="cmake3" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
   rocky)  OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
   centos) OS_BASEDISTRO="centos"; INSTALLER="yum"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
@@ -629,6 +629,7 @@ check_install_oai_software() {
 	libtool  \
 	patch \
 	openssl \
+        zlib1g-dev \
         xxd
 
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
@@ -637,7 +638,7 @@ check_install_oai_software() {
         echo "EPEL repos already present. Good."
       else
         echo "EPEL repos not present. Installing them."
-        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-8.noarch.rpm
+        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
       fi
     fi
 
@@ -666,7 +667,8 @@ check_install_oai_software() {
       lapack-devel \
       blas \
       blas-devel \
-      vim-common
+      vim-common \
+      zlib-devel
   fi
 
     install_asn1c_from_source $1
