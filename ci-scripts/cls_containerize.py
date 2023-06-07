@@ -358,7 +358,7 @@ class Containerize():
 			self.cliBuildOptions = '--no-cache'
 		elif self.host == 'Red Hat':
 			self.cli = 'sudo podman'
-			self.dockerfileprefix = '.rhel8.2'
+			self.dockerfileprefix = '.rhel9'
 			self.cliBuildOptions = '--no-cache --disable-compression'
 
 		# we always build the ran-build image with all targets

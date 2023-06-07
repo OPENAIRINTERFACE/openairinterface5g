@@ -30,7 +30,7 @@ spec:
         type: "Binary"
     strategy:
         dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.gNB.rhel8.2"
+            dockerfilePath: "docker/Dockerfile.gNB.rhel9"
     output:
         to:
             kind: "ImageStreamTag"

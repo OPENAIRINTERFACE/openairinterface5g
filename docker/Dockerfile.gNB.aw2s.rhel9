@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL 8.2
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
@@ -29,50 +29,64 @@ FROM ran-base:latest AS gnb-base
 
 FROM ran-build:latest AS gnb-build
 
-RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+COPY ./libori.so /usr/local/lib
+
+# build AW2S fronthaul lib
+WORKDIR /oai-ran
+RUN /bin/sh oaienv && \
+    cd cmake_targets/ran_build/build && \
+    ninja aw2sori_transpro
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-nr-cuup
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-gnb-aw2s
 ENV TZ=Europe/Paris
 
-RUN yum repolist --disablerepo=* && \
-    yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
+RUN dnf update -y && \
+    dnf install -y \
         procps-ng \
+        libXpm \
+        libX11 \
+        atlas \
         lksctp-tools \
         tzdata \
-        atlas \
         net-tools \
         iputils && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
-WORKDIR /opt/oai-gnb/bin
-COPY --from=gnb-build \
-    /oai-ran/cmake_targets/ran_build/build/nr-cuup \
-    /oai-ran/docker/scripts/entrypoint.sh \
-    ./
+COPY ./libori.so /usr/local/lib
+
+WORKDIR /opt/oai-gnb-aw2s/bin
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
+COPY ./docker/scripts/gnb-aw2s_entrypoint.sh /opt/oai-gnb-aw2s/bin/entrypoint.sh
 
 COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/libaw2sori_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/libcoding.so \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
 
 COPY --from=gnb-base \
-    /lib64/libconfig.so.9 \
+    /lib64/libconfig.so.11 \
+    /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/
 
-RUN ldconfig && \
-    echo "ldd on nr-cuup" && ldd /opt/oai-gnb/bin/nr-cuup && \
-    echo "ldd on libparams_libconfig" && ldd /usr/local/lib/libparams_libconfig.so && \
-    echo "ldd on libtelnetsrv" && ldd /usr/local/lib/libtelnetsrv.so
+RUN ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so && \
+    ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so && \
+    ldconfig
 
-WORKDIR /opt/oai-gnb/etc
+WORKDIR /opt/oai-gnb-aw2s
 
-WORKDIR /opt/oai-gnb
-
-ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
-CMD ["/opt/oai-gnb/bin/nr-cuup", "-O", "/opt/oai-gnb/etc/gnb.conf"]
+ENTRYPOINT ["/opt/oai-gnb-aw2s/bin/entrypoint.sh"]
+CMD ["/opt/oai-gnb-aw2s/bin/nr-softmodem", "-O", "/opt/oai-gnb-aw2s/etc/gnb.conf"]

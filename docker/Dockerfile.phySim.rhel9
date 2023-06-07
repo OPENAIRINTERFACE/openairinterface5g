@@ -21,7 +21,7 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
@@ -32,7 +32,7 @@ WORKDIR /oai-ran
 COPY . .
 
 #only install address and undefined behavior sanitizer for this container, the others don't need it
-RUN yum install -y libasan libubsan
+RUN dnf install -y libasan libubsan
 
 #run build_oai to build the target image
 RUN /bin/sh oaienv && \ 
@@ -41,10 +41,10 @@ RUN /bin/sh oaienv && \
     ./build_oai --phy_simulators --ninja --verbose-ci --sanitize --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function
 
 #start from scratch for target executable
-FROM registry.access.redhat.com/ubi8/ubi:latest as oai-physim
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-physim
 
-RUN yum update -y && \
-    yum install -y --enablerepo="ubi-8-codeready-builder" \
+RUN dnf update -y && \
+    dnf install -y \
         lksctp-tools \
         tzdata \
         atlas \
@@ -86,7 +86,7 @@ COPY --from=phy-sim-build \
     /lib64/liblapack.so.3 \
     /lib64/libexslt.so.0 \
     /lib64/libxslt.so.1 \
-    /usr/lib64/libasan.so.5 \
+    /usr/lib64/libasan.so.6 \
     /usr/lib64/libubsan.so.1 \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
     /oai-ran/cmake_targets/ran_build/build/libldpc.so \

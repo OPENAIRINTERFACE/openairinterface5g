@@ -20,18 +20,24 @@
 # */
 #---------------------------------------------------------------------
 #
-kind: BuildConfig
-apiVersion: build.openshift.io/v1
-metadata:
-    name: "oai-enb"
-spec:
-    runPolicy: "Serial"
-    source:
-        type: "Binary"
-    strategy:
-        dockerStrategy:
-            dockerfilePath: "docker/Dockerfile.eNB.rhel9"
-    output:
-        to:
-            kind: "ImageStreamTag"
-            name: "oai-enb:latest"
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for RHEL9
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest AS oai-clang
+
+RUN rm -Rf /oai-ran
+WORKDIR /oai-ran
+COPY . .
+
+#only install LLVM (clang, ...) for this container, the others don't need it
+RUN dnf install -y llvm-toolset
+
+#run build_oai to build the target image
+RUN /bin/sh oaienv && \
+    cd cmake_targets && \
+    mkdir -p log && \
+    export CC=/usr/bin/clang && \
+    export CXX=/usr/bin/clang++ && \
+    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function

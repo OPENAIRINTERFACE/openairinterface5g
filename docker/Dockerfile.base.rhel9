@@ -21,23 +21,53 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL9
 #
 #---------------------------------------------------------------------
 
-FROM ran-base:latest AS oai-clang
 
-RUN rm -Rf /oai-ran
+FROM registry.access.redhat.com/ubi9/ubi:latest AS ran-base
+ARG NEEDED_GIT_PROXY
+ENV TZ=Europe/Paris
+ENV BUILD_UHD_FROM_SOURCE=True
+ENV UHD_VERSION=4.4.0.0
+
+# Copy the entitlements
+COPY ./etc-pki-entitlement /etc/pki/entitlement
+
+# Copy the subscription manager configurations
+COPY ./rhsm-conf /etc/rhsm
+COPY ./rhsm-ca /etc/rhsm/ca
+
+ENV SMDEV_CONTAINER_OFF=1
+#install developers pkg/repo
+RUN rm -f /etc/rhsm-host && \
+    subscription-manager repos --enable codeready-builder-for-rhel-9-x86_64-rpms && \
+    dnf update -y && \
+    cat /etc/os-release && \
+    dnf install -y \
+       #gcc needed for build_oai
+       gcc gcc-c++ \ 
+       diffutils \
+       file \
+       psmisc \
+       git \
+       # python3-pip and pyyaml are used for conf template generation
+       python3-pip && \
+    pip3 install --ignore-installed pyyaml && \
+    echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
+    echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
+
+# In some network environments, GIT proxy is required
+RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
+
+#create the WORKDIR
 WORKDIR /oai-ran
 COPY . .
 
-#only install LLVM (clang, ...) for this container, the others don't need it
-RUN yum install -y llvm-toolset
-
-#run build_oai to build the target image
-RUN /bin/sh oaienv && \
+#run build_oai -I to get the builder image
+RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    export CC=/usr/bin/clang && \
-    export CXX=/usr/bin/clang++ && \
-    ./build_oai --phy_simulators --gNB --eNB --nrUE --UE --ninja --verbose-ci --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function
+    ./build_oai -I --install-optional-packages -w USRP && \
+    rm /etc/pki/entitlement/*pem

@@ -21,52 +21,58 @@
 #---------------------------------------------------------------------
 #
 # Dockerfile for the Open-Air-Interface BUILD service
-#   Valid for RHEL8
+#   Valid for RHEL 9
 #
 #---------------------------------------------------------------------
 
+FROM ran-base:latest AS gnb-base
 
-FROM registry.access.redhat.com/ubi8/ubi:latest AS ran-base
-ARG NEEDED_GIT_PROXY
+FROM ran-build:latest AS gnb-build
+
+RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
+
+#start from scratch for target executable
+FROM registry.access.redhat.com/ubi9/ubi:latest as oai-nr-cuup
 ENV TZ=Europe/Paris
-ENV BUILD_UHD_FROM_SOURCE=True
-ENV UHD_VERSION=4.4.0.0
 
-# Copy the entitlements
-COPY ./etc-pki-entitlement /etc/pki/entitlement
-
-# Copy the subscription manager configurations
-COPY ./rhsm-conf /etc/rhsm
-COPY ./rhsm-ca /etc/rhsm/ca
-
-#install developers pkg/repo
-RUN rm -f /etc/rhsm-host && \
-    yum repolist --disablerepo=* && \
-    subscription-manager repos --enable codeready-builder-for-rhel-8-x86_64-rpms && \
+RUN yum repolist --disablerepo=* && \
     yum update -y && \
     yum install -y \
-       #gcc needed for build_oai
-       gcc gcc-c++ \ 
-       diffutils \
-       file \
-       psmisc \
-       git \
-       # python3-pip and pyyaml are used for conf template generation
-       python3-pip && \
-    pip3 install --ignore-installed pyyaml && \
+        procps-ng \
+        lksctp-tools \
+        tzdata \
+        atlas \
+        net-tools \
+        iputils && \
     echo "/usr/local/lib" > /etc/ld.so.conf.d/local-lib.conf && \
     echo "/usr/local/lib64" >> /etc/ld.so.conf.d/local-lib.conf
 
-# In some network environments, GIT proxy is required
-RUN /bin/bash -c "if [[ -v NEEDED_GIT_PROXY ]]; then git config --global http.proxy $NEEDED_GIT_PROXY; fi"
+WORKDIR /opt/oai-gnb/bin
+COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/nr-cuup \
+    /oai-ran/docker/scripts/entrypoint.sh \
+    ./
 
-#create the WORKDIR
-WORKDIR /oai-ran
-COPY . .
+COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /usr/local/lib/
 
-#run build_oai -I to get the builder image
-RUN /bin/sh oaienv && \ 
-    cd cmake_targets && \
-    mkdir -p log && \
-    ./build_oai -I --install-optional-packages -w USRP && \
-    rm /etc/pki/entitlement/*pem
+COPY --from=gnb-base \
+    /lib64/libconfig.so.11 \
+    /lib64/libblas.so.3 \
+    /lib64/liblapack.so.3 \
+    /lib64/liblapacke.so.3 \
+    /lib64/
+
+RUN ldconfig && \
+    echo "ldd on nr-cuup" && ldd /opt/oai-gnb/bin/nr-cuup && \
+    echo "ldd on libparams_libconfig" && ldd /usr/local/lib/libparams_libconfig.so && \
+    echo "ldd on libtelnetsrv" && ldd /usr/local/lib/libtelnetsrv.so
+
+WORKDIR /opt/oai-gnb/etc
+
+WORKDIR /opt/oai-gnb
+
+ENTRYPOINT ["/opt/oai-gnb/bin/entrypoint.sh"]
+CMD ["/opt/oai-gnb/bin/nr-cuup", "-O", "/opt/oai-gnb/etc/gnb.conf"]
