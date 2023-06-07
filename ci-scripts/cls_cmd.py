@@ -118,11 +118,14 @@ class LocalCmd(Cmd):
 	def getBefore(self):
 		return self.cp.stdout
 
-	def copyin(self, scpIp, scpUser, scpPw, src, tgt):
-		self.run(f'cp -r {src} {tgt}')
+	def copyin(self, src, tgt, recursive=False):
+		if src[0] != '/' or tgt[0] != '/':
+			raise Exception('support only absolute file paths!')
+		opt = '-r' if recursive else ''
+		self.run(f'cp {opt} {src} {tgt}')
 
-	def copyout(self, scpIp, scpUser, scpPw, src, tgt):
-		self.run(f'cp -r {src} {tgt}')
+	def copyout(self, src, tgt, recursive=False):
+		self.copyin(src, tgt, recursive)
 
 class RemoteCmd(Cmd):
 	def __init__(self, hostname, d=None):
