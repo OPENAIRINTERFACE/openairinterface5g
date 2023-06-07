@@ -168,29 +168,14 @@ services:
         container_name: rfsim5g-oai-cu
         environment: 
             RFSIMULATOR: server
-            USE_SA_CU: 'yes'
-            GNB_NAME: cu-rfsim
-            TAC: 1
-            MCC: '208'
-            MNC: '99'
-            MNC_LENGTH: 2
-            NSSAI_SST: 1
-            AMF_IP_ADDRESS: 192.168.71.132
-            GNB_NGA_IF_NAME: eth0
-            GNB_NGA_IP_ADDRESS: 192.168.71.140
-            GNB_NGU_IF_NAME: eth0
-            GNB_NGU_IP_ADDRESS: 192.168.71.140
-            F1_IF_NAME: eth0
-            F1_CU_IP_ADDRESS: 192.168.71.140
-            F1_DU_IP_ADDRESS: 192.168.71.142
-            F1_CU_D_PORT: 2153
-            F1_DU_D_PORT: 2153
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-ext-dn
         networks:
             public_net:
                 ipv4_address: 192.168.71.140
+        volumes:
+          - ../../conf_files/gnb-cu.sa.band78.106prb.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -202,29 +187,14 @@ services:
         container_name: rfsim5g-oai-du
         environment: 
             RFSIMULATOR: server
-            USE_SA_TDD_DU: 'yes'
-            GNB_NAME: du-rfsim
-            TAC: 1
-            MCC: '208'
-            MNC: '99'
-            MNC_LENGTH: 2
-            NSSAI_SST: 1
-            AMF_IP_ADDRESS: 192.168.71.132
-            GNB_NGA_IF_NAME: eth0
-            GNB_NGA_IP_ADDRESS: 192.168.71.142
-            GNB_NGU_IF_NAME: eth0
-            GNB_NGU_IP_ADDRESS: 192.168.71.142
-            F1_IF_NAME: eth0
-            F1_CU_IP_ADDRESS: 192.168.71.140
-            F1_DU_IP_ADDRESS: 192.168.71.142
-            F1_CU_D_PORT: 2153
-            F1_DU_D_PORT: 2153
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-cu
         networks:
             public_net:
                 ipv4_address: 192.168.71.142
+        volumes:
+            - ../../conf_files/gnb-du.sa.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -236,17 +206,14 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment: 
             RFSIMULATOR: 192.168.71.142
-            FULL_IMSI: '208990100001100'
-            FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'C42449363BBAD02B66D16BC975D77CC1'
-            DNN: oai
-            NSSAI_SST: 1
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001100 -C 3619200000 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-du
         networks:
             public_net:
                 ipv4_address: 192.168.71.150
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s

@@ -169,7 +169,6 @@ services:
         privileged: true
         container_name: rfsim5g-oai-cucp
         environment:
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-ext-dn
@@ -179,7 +178,7 @@ services:
             ran_net:
                 ipv4_address: 192.168.72.140
         volumes:
-            - ../../conf_files/gnb-cucp.sa.f1.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb-cucp.sa.f1.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -191,7 +190,6 @@ services:
         privileged: true
         container_name: rfsim5g-oai-cuup
         environment:
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --rfsim
             #--log_config.global_log_options level,nocolor,time
         depends_on:
@@ -202,7 +200,7 @@ services:
             ran_net:
                 ipv4_address: 192.168.72.141
         volumes:
-            - ../../conf_files/gnb-cuup.sa.f1.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb-cuup.sa.f1.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-cuup"
             interval: 10s
@@ -215,13 +213,12 @@ services:
         container_name: rfsim5g-oai-du
         environment:
             RFSIMULATOR: server
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         networks:
             ran_net:
                 ipv4_address: 192.168.72.142
         volumes:
-            - ../../conf_files/gnb-du.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb-du.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s
@@ -234,17 +231,14 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment:
             RFSIMULATOR: 192.168.72.142
-            FULL_IMSI: '208990100001100'
-            FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'C42449363BBAD02B66D16BC975D77CC1'
-            DNN: oai
-            NSSAI_SST: 1
             USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-du
         networks:
             ran_net:
                 ipv4_address: 192.168.72.150
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-uesoftmodem"
             interval: 10s

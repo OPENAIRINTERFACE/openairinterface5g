@@ -6,13 +6,12 @@ services:
         container_name: rfsim5g-oai-gnb
         environment:
             RFSIMULATOR: server
-            USE_VOLUMED_CONF: 'yes'
             USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --rfsimulator.wait_timeout 20 --noS1 --log_config.global_log_options level,nocolor,time
         networks:
             public_net:
                 ipv4_address: 192.168.71.140
         volumes:
-            - ../../conf_files/gnb.band78.tm1.106PRB.usrpn300.conf:/opt/oai-gnb/etc/mounted.conf
+            - ../../conf_files/gnb.band78.tm1.106PRB.usrpn300.conf:/opt/oai-gnb/etc/gnb.conf
             - rrc.config:/opt/oai-gnb/
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
@@ -26,14 +25,10 @@ services:
         container_name: rfsim5g-oai-nr-ue
         environment:
             RFSIMULATOR: 192.168.71.140
-            FULL_IMSI: '208930100001100'
-            FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'C42449363BBAD02B66D16BC975D77CC1'
-            DNN: oai
-            NSSAI_SST: 1
             USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --noS1 --rrc_config_path etc/rrc/ --log_config.global_log_options level,nocolor,time
         volumes:
-          - rrc.config:/opt/oai-nr-ue/etc/rrc/
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+            - rrc.config:/opt/oai-nr-ue/etc/rrc/
         depends_on:
             - oai-gnb
         networks:

@@ -174,12 +174,11 @@ services:
         privileged: true
         container_name: sa-b200-gnb
         environment:
-            USE_VOLUMED_CONF: 'yes'
             USE_B2XX: 'yes'
             USE_ADDITIONAL_OPTIONS: --sa -E --continuous-tx
         volumes:
             - /dev:/dev
-            - /tmp/gnb.conf:/opt/oai-gnb/etc/mounted.conf
+            - /tmp/gnb.conf:/opt/oai-gnb/etc/gnb.conf
         networks:
             public_net:
                 ipv4_address: 192.168.68.194

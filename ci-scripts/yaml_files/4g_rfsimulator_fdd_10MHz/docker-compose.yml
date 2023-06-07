@@ -188,25 +188,10 @@ services:
                 ipv4_address: 192.168.61.20
         environment:
             TZ: Europe/Paris
-            USE_FDD_MONO: 'yes'
             RFSIMULATOR: enb
-            ENB_NAME: eNB-rf-sim
-            MCC: '208'
-            MNC: '96'
-            MNC_LENGTH: 2
-            TAC: 1
-            UTRA_BAND_ID: 7
-            DL_FREQUENCY_IN_MHZ: 2680
-            UL_FREQUENCY_OFFSET_IN_MHZ: 120
-            NID_CELL: 10
-            NB_PRB: 50
-            MME_S1C_IP_ADDRESS: 192.168.61.3
-            ENB_S1C_IF_NAME: eth0
-            ENB_S1C_IP_ADDRESS: 192.168.61.20
-            ENB_S1U_IF_NAME: eth0
-            ENB_S1U_IP_ADDRESS: 192.168.61.20
-            ENB_X2_IP_ADDRESS: 192.168.61.20
             USE_ADDITIONAL_OPTIONS: --rfsim --log_config.global_log_options level,nocolor,time
+        volumes:
+            - ../../conf_files/enb.band7.50prb.rfsim.conf:/opt/oai-enb/etc/enb.conf
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s
@@ -224,16 +209,10 @@ services:
             - "10000"
         environment:
             TZ: Europe/Paris
-            HOSTNAME: oai_ue0
             RFSIMULATOR: 192.168.61.20
-            MCC: '208'
-            MNC: '96'
-            SHORT_IMSI: '0100000001'
-            LTE_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'c42449363bbad02b66d16bc975d77cc1'
-            MSISDN: '001011234561010'
-            HPLMN: 20896
             USE_ADDITIONAL_OPTIONS: --rfsim -C 2680000000 -r 50 --ue-rxgain 140 --ue-txgain 120 --log_config.global_log_options level,nocolor,time
+        volumes: 
+            - ../../conf_files/lteue.usim-ci.conf:/opt/oai-lte-ue/etc/ue_usim.conf
         healthcheck:
             test: /bin/bash -c "pgrep lte-uesoftmodem"
             interval: 10s

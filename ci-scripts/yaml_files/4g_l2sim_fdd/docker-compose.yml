@@ -186,27 +186,9 @@ services:
         network_mode: "host"
         environment:
             TZ: Europe/Paris
-            USE_NFAPI_VNF: 'yes'
-            ENB_NAME: enb-l2sim-vnf
-            MCC: '208'
-            MNC: '96'
-            MNC_LENGTH: 2
-            TAC: 1
-            UTRA_BAND_ID: 7
-            DL_FREQUENCY_IN_MHZ: 2680
-            UL_FREQUENCY_OFFSET_IN_MHZ: 120
-            NID_CELL: 10
-            NB_PRB: 25
-            MME_S1C_IP_ADDRESS: 192.168.61.3
-            ENB_INTERFACE_NAME_FOR_S1_MME: eth0
-            ENB_IPV4_ADDRESS_FOR_S1_MME: 192.168.61.1
-            ENB_INTERFACE_NAME_FOR_S1U: eth0
-            ENB_IPV4_ADDRESS_FOR_S1U: 192.168.61.1
-            ENB_IPV4_ADDRESS_FOR_X2C: 192.168.61.1
-            LOCAL_S_IF_NAME: 'lo:'
-            REMOTE_S_ADDRESS: 127.0.0.1
-            LOCAL_S_ADDRESS: 127.0.0.2
             USE_ADDITIONAL_OPTIONS: --MACRLCs.[0].scheduler_mode "default" --log_config.global_log_options level,nocolor,time
+        volumes:
+          - ../../conf_files/enb.band7.25prb.l2sim.conf:/opt/oai-enb/etc/enb.conf
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s
@@ -236,20 +218,11 @@ services:
         network_mode: "host"
         environment:
             TZ: Europe/Paris
-            USE_NFAPI: 'yes'
             OPENAIR_DIR: /opt/oai-nr-ue
-            MCC: '208'
-            MNC: '96'
-            SHORT_IMSI: '0100000001'
-            LTE_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'c42449363bbad02b66d16bc975d77cc1'
-            MSISDN: '001011234561010'
-            HPLMN: 20896
-            UE_NFAPI_IF_NAME: eno1
-            ENB_IP_ADDRESS: 127.0.0.1
-            LTE_UE_IP_ADDRESS: 127.0.0.1
             USE_ADDITIONAL_OPTIONS: --L2-emul 5 --num-ues 1 --node-number 2 --log_config.global_log_options level,nocolor,time
         volumes:
+            - ../../conf_files/lteue.band7.25prb.l2sim.conf:/opt/oai-lte-ue/etc/ue.conf
+            - ../../conf_files/lteue.usim-ci.conf:/opt/oai-lte-ue/etc/ue_usim.conf
             - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
         healthcheck:
             test: /bin/bash -c "pgrep lte-uesoftmodem"
@@ -264,20 +237,11 @@ services:
         network_mode: "host"
         environment:
             TZ: Europe/Paris
-            USE_NFAPI: 'yes'
             OPENAIR_DIR: /opt/oai-nr-ue
-            MCC: '208'
-            MNC: '96'
-            SHORT_IMSI: '0100000002'
-            LTE_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
-            OPC: 'c42449363bbad02b66d16bc975d77cc1'
-            MSISDN: '001011234561010'
-            HPLMN: 20896
-            UE_NFAPI_IF_NAME: eno1
-            ENB_IP_ADDRESS: 127.0.0.1
-            LTE_UE_IP_ADDRESS: 127.0.0.1
             USE_ADDITIONAL_OPTIONS: --L2-emul 5 --num-ues 1 --node-number 3 --log_config.global_log_options level,nocolor,time
         volumes:
+            - ../../conf_files/lteue.band7.25prb.l2sim.conf:/opt/oai-lte-ue/etc/ue.conf
+            - ../../conf_files/lte-ue.usim.conf:/opt/oai-lte-ue/etc/ue_usim.conf
             - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
         healthcheck:
             test: /bin/bash -c "pgrep lte-uesoftmodem"

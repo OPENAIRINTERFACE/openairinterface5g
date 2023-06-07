@@ -3,43 +3,31 @@
 set -uo pipefail
 
 PREFIX=/opt/oai-lte-ue
+USIM_CONFIGFILE=$PREFIX/etc/ue_usim.conf
 
-# Based another env var, pick one template to use
-if [[ -v USE_NFAPI ]]; then cp $PREFIX/etc/ue.nfapi.conf $PREFIX/etc/ue.conf; fi
+if [ ! -f $USIM_CONFIGFILE ]; then
+  echo "No ue_usim.conf configuration file found: please mount at $USIM_CONFIGFILE"
+  exit 255
+fi
 
-# Only this template will be manipulated and the USIM one!
-CONFIG_FILES=`ls $PREFIX/etc/ue.conf $PREFIX/etc/ue_usim.conf || true`
-
-for c in ${CONFIG_FILES}; do
-    # grep variable names (format: ${VAR}) from template to be rendered
-    VARS=$(grep -oP '@[a-zA-Z0-9_]+@' ${c} | sort | uniq | xargs)
-
-    # create sed expressions for substituting each occurrence of ${VAR}
-    # with the value of the environment variable "VAR"
-    EXPRESSIONS=""
-    for v in ${VARS}; do
-        NEW_VAR=`echo $v | sed -e "s#@##g"`
-        if [[ "${!NEW_VAR}x" == "x" ]]; then
-            echo "Error: Environment variable '${NEW_VAR}' is not set." \
-                "Config file '$(basename $c)' requires all of $VARS."
-            exit 1
-        fi
-        EXPRESSIONS="${EXPRESSIONS};s|${v}|${!NEW_VAR}|g"
-    done
-    EXPRESSIONS="${EXPRESSIONS#';'}"
-
-    # render template and inline replace config file
-    sed -i "${EXPRESSIONS}" ${c}
-
-    echo "=================================="
-    echo "== Configuration file: ${c}"
-    cat ${c}
-done
+echo "=================================="
+echo "== USIM Configuration file:"
+cat $USIM_CONFIGFILE
 
 #now generate USIM files
 # At this point all operations will be run from $PREFIX!
 cd $PREFIX
-$PREFIX/bin/conf2uedata -c $PREFIX/etc/ue_usim.conf -o $PREFIX
+$PREFIX/bin/conf2uedata -c $USIM_CONFIGFILE -o $PREFIX
+
+CONFIGFILE=$PREFIX/etc/ue.conf
+
+if [ ! -f $CONFIGFILE ]; then
+  echo "No ue.conf configuration file found"
+else
+  echo "=================================="
+  echo "== UE Configuration file:"
+  cat $CONFIGFILE
+fi
 
 # Load the USRP binaries
 echo "=================================="
@@ -58,9 +46,9 @@ while [[ $# -gt 0 ]]; do
   new_args+=("$1")
   shift
 done
-if [[ -v USE_NFAPI ]]; then
+if [[ -f "$CONFIGFILE"  ]]; then
   new_args+=("-O")
-  new_args+=("$PREFIX/etc/ue.conf")
+  new_args+=("$CONFIGFILE")
 fi
 
 # enable printing of stack traces on assert

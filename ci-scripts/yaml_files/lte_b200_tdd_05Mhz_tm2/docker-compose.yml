@@ -6,29 +6,11 @@ services:
         privileged: true
         container_name: lte-b200-enb-tdd-05Mhz-tm2
         environment:
-            USE_TDD_MONO: 'yes'
             USE_B2XX: 'yes'
-            ENB_NAME: eNB-in-docker
-            MCC: '208'
-            MNC: '92'
-            MNC_LENGTH: 2
-            TAC: 1
-            UTRA_BAND_ID: 40
-            DL_FREQUENCY_IN_MHZ: 2350
-            UL_FREQUENCY_OFFSET_IN_MHZ: 0
-            NID_CELL: 0
-            NB_PRB: 25
-            ENABLE_MEASUREMENT_REPORTS: 'no'
-            ENABLE_X2: 'no'
-            MME_S1C_IP_ADDRESS: 172.21.18.48
-            S1C_IF_NAME: eth0
-            F1_CU_IP_ADDRESS: 172.21.18.45
-            S1U_IF_NAME: eth0
-            ENB_X2_IP_ADDRESS: 172.21.18.45
-            THREAD_PARALLEL_CONFIG: PARALLEL_SINGLE_THREAD
             USE_ADDITIONAL_OPTIONS: --RUs.[0].max_rxgain 115 --RUs.[0].nb_tx 2 --RUs.[0].nb_rx 2 --eNBs.[0].component_carriers.[0].nb_antenna_ports 2 --log_config.global_log_options level,nocolor,time,line_num,function
             #USE_ADDITIONAL_OPTIONS: --RUs.[0].max_rxgain 115 --RUs.[0].nb_tx 2 --RUs.[0].nb_rx 2 --eNBs.[0].component_carriers.[0].nb_antenna_ports 2 --eNBs.[0].component_carriers.[0].nb_antennas_tx 2 --eNBs.[0].component_carriers.[0].nb_antennas_rx 2 --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
+            - ../../conf_files/enb.band40.25prb.usrpb200.conf:/opt/oai-enb/etc/enb.conf
             - /dev:/dev
         network_mode: "host"
         healthcheck:

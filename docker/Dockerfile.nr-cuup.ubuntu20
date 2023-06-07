@@ -29,7 +29,6 @@ FROM ran-base:latest as gnb-base
 
 FROM ran-build:latest AS gnb-build
 
-RUN cp /oai-ran/docker/scripts/gnb_entrypoint.sh /oai-ran/docker/scripts/entrypoint.sh
 
 FROM ubuntu:focal as oai-nr-cuup
 ENV DEBIAN_FRONTEND=noninteractive
@@ -46,9 +45,8 @@ RUN apt-get update && \
 WORKDIR /opt/oai-gnb/bin
 COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/nr-cuup \
-    /oai-ran/docker/scripts/entrypoint.sh \
     ./
-
+COPY ./docker/scripts/gnb_entrypoint.sh ./entrypoint.sh
 COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \

@@ -3,39 +3,16 @@
 set -uo pipefail
 
 PREFIX=/opt/oai-lte-ru
+CONFIGFILE=$PREFIX/etc/rru.conf
 
-# Based another env var, pick one template to use
-if [[ -v USE_FDD_RRU ]]; then cp $PREFIX/etc/rru.fdd.conf $PREFIX/etc/rru.conf; fi
-if [[ -v USE_TDD_RRU ]]; then cp $PREFIX/etc/rru.tdd.conf $PREFIX/etc/rru.conf; fi
+if [ ! -f $CONFIGFILE ]; then
+  echo "No configuration file found: please mount at $CONFIGFILE"
+  exit 255
+fi
 
-# Only this template will be manipulated
-CONFIG_FILES=`ls $PREFIX/etc/rru.conf || true`
-
-for c in ${CONFIG_FILES}; do
-    # grep variable names (format: ${VAR}) from template to be rendered
-    VARS=$(grep -oP '@[a-zA-Z0-9_]+@' ${c} | sort | uniq | xargs)
-
-    # create sed expressions for substituting each occurrence of ${VAR}
-    # with the value of the environment variable "VAR"
-    EXPRESSIONS=""
-    for v in ${VARS}; do
-        NEW_VAR=`echo $v | sed -e "s#@##g"`
-        if [[ "${!NEW_VAR}x" == "x" ]]; then
-            echo "Error: Environment variable '${NEW_VAR}' is not set." \
-                "Config file '$(basename $c)' requires all of $VARS."
-            exit 1
-        fi
-        EXPRESSIONS="${EXPRESSIONS};s|${v}|${!NEW_VAR}|g"
-    done
-    EXPRESSIONS="${EXPRESSIONS#';'}"
-
-    # render template and inline replace config file
-    sed -i "${EXPRESSIONS}" ${c}
-
-    echo "=================================="
-    echo "== Configuration file: ${c}"
-    cat ${c}
-done
+echo "=================================="
+echo "== Configuration file:"
+cat $CONFIGFILE
 
 # Load the USRP binaries
 echo "=================================="
