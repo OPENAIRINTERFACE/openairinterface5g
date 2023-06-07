@@ -110,7 +110,7 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1.xml
     <testCase id="040501">
         <class>Ping</class>
         <desc>ping (5MHz - 20 sec)</desc>
-        <ping_args>-c 20</ping_args>
+        <ping_args>-c 20 %cn_ip%</ping_args>
         <ping_packetloss_threshold>5</ping_packetloss_threshold>
         <id>adb_ue_1 adb_ue_2</id>
     </testCase>
