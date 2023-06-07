@@ -95,6 +95,7 @@ COPY --from=enb-base \
      /usr/lib/x86_64-linux-gnu/
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so" && \
     ldconfig
 
 # Copy the relevant configuration files for eNB
