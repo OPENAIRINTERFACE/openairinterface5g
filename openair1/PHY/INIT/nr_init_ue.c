@@ -572,16 +572,17 @@ void nr_init_dl_harq_processes(NR_DL_UE_HARQ_t harq_list[2][NR_MAX_DLSCH_HARQ_PR
 
       harq_list[j][i].c = malloc16(a_segments*sizeof(uint8_t *));
       harq_list[j][i].d = malloc16(a_segments*sizeof(int16_t *));
+      const int sz=5*8448*sizeof(int16_t);
       for (int r=0; r<a_segments; r++) {
         harq_list[j][i].c[r] = malloc16(1056);
-        harq_list[j][i].d[r] = malloc16(5*8448*sizeof(int16_t));
+        harq_list[j][i].d[r] = malloc16(sz);
         if (harq_list[j][i].c[r])
           memset(harq_list[j][i].c[r],0,1056);
         else
           AssertFatal(true, "Unable to reset harq memory \"c\"\n");
 
         if (harq_list[j][i].d[r])
-          memset(harq_list[j][i].d[r],0,5*8448);
+          memset(harq_list[j][i].d[r], 0, sz);
         else
           AssertFatal(true, "Unable to reset harq memory \"d\"\n");
       }
