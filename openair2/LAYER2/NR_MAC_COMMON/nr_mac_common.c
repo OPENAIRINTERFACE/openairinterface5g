@@ -2234,13 +2234,12 @@ static const uint16_t table_7_3_1_1_2_32[3][15] = {
     {0, 1, 2, 3, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0},
 };
 
-void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs){
-
+void get_delta_arfcn(int i, uint32_t nrarfcn, uint64_t N_OFFs)
+{
   uint32_t delta_arfcn = nrarfcn - N_OFFs;
 
-  if(delta_arfcn%(nr_bandtable[i].step_size)!=0)
-    AssertFatal(1==0, "nrarfcn %u is not on the channel raster for step size %lu", nrarfcn, nr_bandtable[i].step_size);
-
+  if(delta_arfcn % (nr_bandtable[i].step_size) != 0)
+    LOG_E(NR_MAC, "nrarfcn %u is not on the channel raster for step size %lu\n", nrarfcn, nr_bandtable[i].step_size);
 }
 
 uint32_t to_nrarfcn(int nr_bandP,
