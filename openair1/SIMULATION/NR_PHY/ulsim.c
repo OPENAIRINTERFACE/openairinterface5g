@@ -705,7 +705,7 @@ int main(int argc, char **argv)
   }
 
   // Configure UE
-  UE = calloc(sizeof(PHY_VARS_NR_UE), 1);
+  UE = calloc(1, sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
