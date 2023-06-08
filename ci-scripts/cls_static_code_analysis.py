@@ -163,7 +163,7 @@ class StaticCodeAnalysis():
 				xmlStart = False
 				with open('./cppcheck-'+ variant + '.txt', 'r') as logfile:
 					for line in logfile:
-						ret = re.search('Unpacking cppcheck \((?P<version>[0-9\.]+)', str(line))
+						ret = re.search('cppcheck version="(?P<version>[0-9\.]+)"', str(line))
 						if ret is not None:
 						   CCR.versions[vId] = ret.group('version')
 						if re.search('RUN cat cmake_targets/log/cppcheck.xml', str(line)) is not None:
