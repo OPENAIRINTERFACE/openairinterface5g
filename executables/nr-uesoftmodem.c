@@ -214,10 +214,6 @@ int create_tasks_nrue(uint32_t ue_nb) {
 
   itti_wait_ready(0);
 
-  // Thread to update the RRC timers (in msec) at UE
-  pthread_t timers_update;
-  threadCreate(&timers_update, nr_rrc_timers_update, NULL, "nr_rrc_timer_update", -1, OAI_PRIORITY_RT_LOW);
-
   return 0;
 }
 

@@ -39,91 +39,90 @@
 
 typedef uint32_t channel_t;
 
-int8_t
-nr_mac_rrc_data_ind_ue(
-    const module_id_t     module_id,
-    const int             CC_id,
-    const uint8_t         gNB_index,
-    const frame_t         frame,
-    const sub_frame_t     sub_frame,
-    const rnti_t          rnti,
-    const channel_t       channel,
-    const uint8_t*        pduP,
-    const sdu_size_t      pdu_len){
-    sdu_size_t      sdu_size = 0;
+int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
+                              const int CC_id,
+                              const uint8_t gNB_index,
+                              const frame_t frame,
+                              const int slot,
+                              const rnti_t rnti,
+                              const channel_t channel,
+                              const uint8_t* pduP,
+                              const sdu_size_t pdu_len)
+{
+  sdu_size_t sdu_size = 0;
 
-    switch(channel){
-      case NR_BCCH_BCH:
-        AssertFatal( nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
-        break;
+  switch(channel){
+    case NR_BCCH_BCH:
+      AssertFatal(nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
+      break;
 
-      case NR_BCCH_DL_SCH:
-        if (pdu_len>0) {
-          LOG_T(NR_RRC, "[UE %d] Received SDU for NR-BCCH-DL-SCH on SRB %u from gNB %d\n", module_id, channel & RAB_OFFSET,
-                gNB_index);
+    case NR_BCCH_DL_SCH:
+      if (pdu_len>0) {
+        LOG_T(NR_RRC, "[UE %d] Received SDU for NR-BCCH-DL-SCH on SRB %u from gNB %d\n", module_id, channel & RAB_OFFSET,
+              gNB_index);
 
-          MessageDef *message_p;
-          int msg_sdu_size = BCCH_SDU_SIZE;
+        MessageDef *message_p;
+        int msg_sdu_size = BCCH_SDU_SIZE;
 
-          if (pdu_len > msg_sdu_size) {
-            LOG_E(NR_RRC, "SDU larger than NR-BCCH-DL-SCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
-            sdu_size = msg_sdu_size;
-          } else {
-            sdu_size = pdu_len;
-          }
-
-          message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_BCCH_DATA_IND);
-          memset(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, 0, BCCH_SDU_SIZE);
-          memcpy(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
-          NR_RRC_MAC_BCCH_DATA_IND (message_p).frame = frame; //frameP
-          NR_RRC_MAC_BCCH_DATA_IND (message_p).sub_frame = sub_frame; //sub_frameP
-          NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size = sdu_size;
-          NR_RRC_MAC_BCCH_DATA_IND (message_p).gnb_index = gNB_index;
-          itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
+        if (pdu_len > msg_sdu_size) {
+          LOG_E(NR_RRC, "SDU larger than NR-BCCH-DL-SCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
+          sdu_size = msg_sdu_size;
+        } else {
+          sdu_size = pdu_len;
         }
-        break;
 
-      case CCCH:
-        if (pdu_len>0) {
-          LOG_T(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
+        message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_BCCH_DATA_IND);
+        memset(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, 0, BCCH_SDU_SIZE);
+        memcpy(NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).frame = frame; //frameP
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).slot = slot;
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size = sdu_size;
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).gnb_index = gNB_index;
+        itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
+      }
+      break;
 
-          MessageDef *message_p;
-          int msg_sdu_size = CCCH_SDU_SIZE;
+    case CCCH:
+      if (pdu_len>0) {
+        LOG_T(NR_RRC,"[UE %d] Received SDU for CCCH on SRB %u from gNB %d\n",module_id,channel & RAB_OFFSET,gNB_index);
 
-          if (pdu_len > msg_sdu_size) {
-            LOG_E(NR_RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
-            sdu_size = msg_sdu_size;
-          } else {
-            sdu_size =  pdu_len;
-          }
+        MessageDef *message_p;
+        int msg_sdu_size = CCCH_SDU_SIZE;
 
-          message_p = itti_alloc_new_message (TASK_MAC_UE, 0, NR_RRC_MAC_CCCH_DATA_IND);
-          memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-          memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
-          NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = frame; //frameP
-          NR_RRC_MAC_CCCH_DATA_IND (message_p).sub_frame = sub_frame; //sub_frameP
-          NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
-          NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = gNB_index;
-          NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;  //rntiP
-          itti_send_msg_to_task (TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE( module_id ), message_p);
+        if (pdu_len > msg_sdu_size) {
+          LOG_E(NR_RRC, "SDU larger than CCCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
+          sdu_size = msg_sdu_size;
+        } else {
+          sdu_size =  pdu_len;
         }
-        break;
 
-      default:
-        break;
-    }
+        message_p = itti_alloc_new_message (TASK_MAC_UE, 0, NR_RRC_MAC_CCCH_DATA_IND);
+        memset (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
+        memcpy (NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).frame     = frame; //frameP
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).slot = slot;
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = sdu_size;
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).gnb_index = gNB_index;
+        NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti      = rnti;  //rntiP
+        itti_send_msg_to_task (TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE( module_id ), message_p);
+      }
+      break;
 
-    return(0);
+    default:
+      break;
+  }
+
+  return(0);
 }
 
 int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
-                              const int         CC_id,
-                              const uint8_t     gNB_id,
-                              const frame_t     frameP,
-                              const rb_id_t     Srb_id,
-                              uint8_t           *buffer_pP){
-
-  switch(Srb_id){
+                              const int CC_id,
+                              const uint8_t gNB_id,
+                              const frame_t frameP,
+                              const rb_id_t Srb_id,
+                              uint8_t *buffer_pP)
+{
+  switch(Srb_id) {
 
     case CCCH:
 
@@ -148,9 +147,9 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
 
 int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index)
 {
-  if (NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active == 1) {
+  if (NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active == true) {
     LOG_W(NR_RRC, "T304 was stoped with value %i\n", NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt);
-    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active = 0;
+    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active = false;
     NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt = 0;
   }
   return 0;

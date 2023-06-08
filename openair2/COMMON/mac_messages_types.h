@@ -91,7 +91,7 @@ typedef struct RrcMacBcchDataInd_s {
 
 typedef struct NRRrcMacBcchDataInd_s {
   uint32_t  frame;
-  uint8_t   sub_frame;
+  uint8_t   slot;
   uint32_t  sdu_size;
   uint8_t   sdu[BCCH_SDU_SIZE];
   uint8_t   gnb_index;
@@ -140,7 +140,7 @@ typedef struct RrcMacCcchDataInd_s {
 
 typedef struct NRRrcMacCcchDataInd_s {
   uint32_t  frame;
-  uint8_t   sub_frame;
+  uint8_t   slot;
   uint16_t  rnti;
   uint32_t  sdu_size;
   uint8_t   sdu[CCCH_SDU_SIZE];

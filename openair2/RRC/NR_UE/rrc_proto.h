@@ -107,7 +107,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const int CC_id,
                               const uint8_t gNB_index,
                               const frame_t frame,
-                              const sub_frame_t sub_frame,
+                              const int slot,
                               const rnti_t rnti,
                               const channel_t channel,
                               const uint8_t* pduP,
@@ -154,6 +154,16 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
 
 int get_from_lte_ue_fd();
+
+void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot);
+
+void configure_spcell(NR_UE_RRC_INST_t *rrc, NR_SpCellConfig_t *spcell_config);
+void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void nr_rrc_set_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
+void nr_rrc_set_T304(NR_UE_Timers_Constants_t *tac, NR_ReconfigurationWithSync_t *reconfigurationWithSync);
+void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
+                                                       struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
 
 /** @}*/
 #endif
