@@ -4225,11 +4225,11 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
     case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz60:
       AssertFatal(index_4msb < 12, "38.213 Table 13-7 4 MSB out of range\n");
-      if(index_4msb & 0x7){
+      if (index_4msb < 8) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
-      }else if(index_4msb & 0x18){
+      } else if (index_4msb < 12) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
-      }else{ ; }
+      }
 
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_7_c2[index_4msb];
       type0_PDCCH_CSS_config->num_symbols = table_38213_13_7_c3[index_4msb];
@@ -4242,9 +4242,9 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
     case (NR_SubcarrierSpacing_kHz120 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-8 4 MSB out of range\n");
-      if(index_4msb & 0x3){
+      if (index_4msb < 4) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
-      }else if(index_4msb & 0x0c){
+      } else if (index_4msb < 8) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 3;
       }
 
@@ -4267,9 +4267,9 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
     case (NR_SubcarrierSpacing_kHz240 << 3) | NR_SubcarrierSpacing_kHz120:
       AssertFatal(index_4msb < 8, "38.213 Table 13-10 4 MSB out of range\n");
-      if(index_4msb & 0x3){
+      if (index_4msb < 4) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 1;
-      }else if(index_4msb & 0x0c){
+      } else if (index_4msb < 8) {
         type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern = 2;
       }
       type0_PDCCH_CSS_config->num_rbs     = table_38213_13_10_c2[index_4msb];
