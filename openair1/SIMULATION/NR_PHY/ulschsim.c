@@ -504,10 +504,6 @@ int main(int argc, char **argv)
   short channel_output_fixed[16 * 68 * 384];
   short channel_output_uncoded[16 * 68 * 384];
   unsigned int errors_bit_uncoded = 0;
-  unsigned int errors_bit = 0;
-
-  unsigned char test_input_bit[16 * 68 * 384];
-  unsigned char estimated_output_bit[16 * 68 * 384];
 
   /////////////////////////[adk] preparing UL harq_process parameters/////////////////////////
   ///////////
@@ -626,25 +622,6 @@ int main(int argc, char **argv)
 
       if (ret)
         n_errors++;
-
-      //count errors
-      errors_bit = 0;
-
-      for (i = 0; i < TBS; i++) {
-        estimated_output_bit[i] = (ulsch_gNB->harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
-        test_input_bit[i] = (test_input[i / 8] & (1 << (i & 7))) >> (i & 7); // Further correct for multiple segments
-
-        if (estimated_output_bit[i] != test_input_bit[i]) {
-          errors_bit++;
-        }
-      }
-/*
-      if (errors_bit > 0) {
-        n_false_positive++;
-        if (n_trials == 1)
-          printf("errors_bit %u (trial %d)\n", errors_bit, trial);
-      }
-      printf("\n");*/
     }
     
     printf("*****************************************\n");

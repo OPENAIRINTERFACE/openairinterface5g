@@ -793,7 +793,6 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
                              int8_t *soft_input) {
   uint32_t ind=0,k;
   uint16_t Kw = 3*(RCC<<5);
-  uint32_t acc=1;
   int16_t w16[Kw];
 #ifdef RM_DEBUG_CC
   uint32_t nulled=0;
@@ -827,13 +826,11 @@ void lte_rate_matching_cc_rx(uint32_t RCC,
 
     if (ind==Kw) {
       ind=0;
-      acc++;
     }
   }
 
   // rescale
   for (ind=0; ind<Kw; ind++) {
-    //    w16[ind]=(w16[ind]/acc);
     if (w16[ind]>7)
       w[ind]=7;
     else if (w16[ind]<-8)

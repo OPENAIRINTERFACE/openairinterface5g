@@ -241,7 +241,6 @@ void rlc_entity_um_recv_pdu(rlc_entity_t *_entity, char *buffer, int size)
   int data_e;
   int data_li;
 
-  int packet_count;
   int data_size;
   int data_start;
   int indicated_data_size;
@@ -277,7 +276,6 @@ void rlc_entity_um_recv_pdu(rlc_entity_t *_entity, char *buffer, int size)
     return;
   }
 
-  packet_count = 1;
 
   /* go to start of data */
   indicated_data_size = 0;
@@ -292,7 +290,6 @@ void rlc_entity_um_recv_pdu(rlc_entity_t *_entity, char *buffer, int size)
       return;
     }
     indicated_data_size += data_li;
-    packet_count++;
   }
   rlc_pdu_decoder_align(&data_decoder);
 

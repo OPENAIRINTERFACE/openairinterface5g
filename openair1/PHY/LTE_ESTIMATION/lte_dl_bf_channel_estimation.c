@@ -34,8 +34,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
                                  unsigned char p,
                                  unsigned char symbol)
 {
-  
-  unsigned short rb,nb_rb=0;
+  unsigned short rb;
   unsigned char aarx,l,lprime,nsymb,skip_half=0,sss_symb,pss_symb=0,rb_alloc_ind,harq_pid,uespec_pilots=0;
   int beamforming_mode, ch_offset;
   uint8_t subframe;
@@ -241,7 +240,6 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
               LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c): transmission mode not supported.\n");
             }
           }
-          nb_rb++;
         }
 
         rxF+=24;
@@ -395,8 +393,7 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
            } else {
 	      LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
            }
-         }       
-         nb_rb++;
+          }
        }
 
         rxF+=24;
@@ -645,7 +642,6 @@ int lte_dl_bf_channel_estimation(PHY_VARS_UE *phy_vars_ue,
               LOG_E(PHY,"lte_dl_bf_channel_estimation(lte_dl_bf_channel_estimation.c):transmission mode not supported.\n");
             }
           }
-          nb_rb++;
         }
 
         rxF+=24;

@@ -371,8 +371,8 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
   // rate matching table
   int iplast=polarParams->rate_matching_pattern[0];
   int ccnt=0;
-  int groupcnt=0;
 #ifdef DEBUG_POLAR_ENCODER
+  int groupcnt=0;
   int firstingroup_out=0;
   int firstingroup_in=iplast;
 #endif
@@ -386,8 +386,8 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
 #endif
     if ((ip - iplast) == 1) ccnt++;
     else {
-      groupcnt++;
 #ifdef DEBUG_POLAR_ENCODER
+      groupcnt++;
       printf("group %d (size %d): (%d:%d) => (%d:%d)\n",groupcnt,ccnt+1,
              firstingroup_in,firstingroup_in+ccnt,
              firstingroup_out,firstingroup_out+ccnt);
@@ -404,7 +404,9 @@ void build_polar_tables(t_nrPolar_params *polarParams) {
 
     iplast=ip;
   }
+#ifdef DEBUG_POLAR_ENCODER
   groupcnt++;
+  #endif
   if ((ccnt+1)<mingroupsize) mingroupsize=ccnt+1;
 #ifdef DEBUG_POLAR_ENCODER
   printf("group %d (size %d): (%d:%d) => (%d:%d)\n",groupcnt,ccnt+1,

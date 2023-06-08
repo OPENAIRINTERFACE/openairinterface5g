@@ -359,11 +359,6 @@ static struct complexd R_sqrt_22_EPA_medium[16] = {{0.8375,0.0}, {0.5249,0.0}, {
 void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS_TDL, channel_desc_t *chan_desc ) {
   int nb_rx=chan_desc-> nb_rx;
   int nb_tx=chan_desc-> nb_tx;
-  int tdl_pathsby3 = tdl_paths/3;
-
-  if ((tdl_paths%3)>0)
-    tdl_pathsby3++;
-
   chan_desc->nb_taps        = tdl_paths;
   chan_desc->Td             = tdl_delays[tdl_paths-1]*DS_TDL;
   printf("last path (%d) at %f * %e = %e\n",tdl_paths-1,tdl_delays[tdl_paths-1],DS_TDL,chan_desc->Td);
