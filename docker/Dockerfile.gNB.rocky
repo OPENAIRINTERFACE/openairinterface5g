@@ -68,10 +68,7 @@ COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libcoding.so \
     /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
     /oai-ran/cmake_targets/ran_build/build/libdfts.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_optim.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_optim8seg.so \
-    /oai-ran/cmake_targets/ran_build/build/libldpc_orig.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc*.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv_ci.so \
     /usr/local/lib/
@@ -107,21 +104,8 @@ WORKDIR /usr/local/share/uhd/rfnoc
 COPY --from=gnb-base /usr/local/share/uhd/rfnoc/ .
 
 RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
-    ldconfig && \
-    echo "ldd on nr-softmodem" && ldd /opt/oai-gnb/bin/nr-softmodem && \
-    echo "ldd on liboai_eth_transpro" && ldd /usr/local/lib/liboai_eth_transpro.so && \
-    echo "ldd on librfsimulator" && ldd /usr/local/lib/librfsimulator.so && \
-    echo "ldd on liboai_usrpdevif" && ldd /usr/local/lib/liboai_usrpdevif.so && \
-    echo "ldd on libcoding" && ldd /usr/local/lib/libcoding.so && \
-    echo "ldd on libparams_libconfig" && ldd /usr/local/lib/libparams_libconfig.so && \
-    echo "ldd on libdfts" && ldd /usr/local/lib/libdfts.so && \
-    echo "ldd on libldpc" && ldd /usr/local/lib/libldpc.so && \
-    echo "ldd on libldpc_optim" && ldd /usr/local/lib/libldpc_optim.so && \
-    echo "ldd on libldpc_optim8seg" && ldd /usr/local/lib/libldpc_optim8seg.so && \
-    echo "ldd on libldpc_orig" && ldd /usr/local/lib/libldpc_orig.so && \
-    echo "ldd on libtelnetsrv" && ldd /usr/local/lib/libtelnetsrv.so && \
-    echo "ldd on libtelnetsrv_ci" && ldd /usr/local/lib/libtelnetsrv_ci.so
-
+    ldconfig
+    
 # Copy the relevant configuration files for gNB
 WORKDIR /opt/oai-gnb/etc
 COPY --from=gnb-build /oai-ran/docker/etc .
