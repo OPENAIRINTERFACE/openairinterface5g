@@ -1052,14 +1052,6 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
 
 }
 
-void handle_bch_failure(NR_UE_MAC_INST_t *mac)
-{
-  mac->ssb_measurements.consecutive_bch_failures++;
-  //TODO handle this properly by scheduling re-synchronization
-  AssertFatal(mac->ssb_measurements.consecutive_bch_failures < 100,
-              "Radio link failure caused by 100 consecutive PBCH detection failures.\n");
-}
-
 //  L2 Abstraction Layer
 int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len){
   return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, ack_nack, pduP, pdu_len);
@@ -1098,7 +1090,17 @@ int8_t handle_dlsch(nr_downlink_indication_t *dl_info, int pdu_id)
   return 0;
 }
 
-int8_t handle_csirs_measurements(module_id_t module_id, frame_t frame, int slot, fapi_nr_csirs_measurements_t *csirs_measurements) {
+void handle_rlm(rlm_t rlm_result, int frame, module_id_t module_id)
+{
+  if (rlm_result == RLM_no_monitoring)
+    return;
+  bool is_sync = rlm_result == RLM_in_sync ? true : false;
+  nr_mac_rrc_sync_ind(module_id, frame, is_sync);
+}
+
+int8_t handle_csirs_measurements(module_id_t module_id, frame_t frame, int slot, fapi_nr_csirs_measurements_t *csirs_measurements)
+{
+  handle_rlm(csirs_measurements->radiolink_monitoring, frame, module_id);
   return nr_ue_process_csirs_measurements(module_id, frame, slot, csirs_measurements);
 }
 
@@ -1197,6 +1199,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
 
         switch(rx_indication_body.pdu_type){
           case FAPI_NR_RX_PDU_TYPE_SSB:
+            handle_rlm(rx_indication_body.ssb_pdu.radiolink_monitoring,
+                       dl_info->frame,
+                       dl_info->module_id);
             if(rx_indication_body.ssb_pdu.decoded_pdu) {
               handle_ssb_meas(mac,
                               rx_indication_body.ssb_pdu.ssb_index,
@@ -1209,8 +1214,6 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
                                            rx_indication_body.ssb_pdu.ssb_start_subcarrier,
                                            rx_indication_body.ssb_pdu.cell_id)) << FAPI_NR_RX_PDU_TYPE_SSB;
             }
-            else
-              handle_bch_failure(mac);
             break;
           case FAPI_NR_RX_PDU_TYPE_SIB:
             ret_mask |= (handle_bcch_dlsch(dl_info->module_id,

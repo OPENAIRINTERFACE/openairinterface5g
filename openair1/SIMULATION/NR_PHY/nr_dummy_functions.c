@@ -28,6 +28,10 @@ int nfapi_nr_p7_message_pack(void *pMessageBuf, void *pPackedBuf, uint32_t packe
 int nfapi_nr_p7_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p7_codec_config_t* config) { return 0; }
 int nfapi_p7_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p7_codec_config_t *config) { return 0; }
 
+void nr_mac_rrc_sync_ind(const module_id_t module_id,
+                         const frame_t frame,
+                         const bool in_sync) {}
+
 void rrc_data_ind(const protocol_ctxt_t *const ctxt_pP,
                   const rb_id_t                Srb_id,
                   const sdu_size_t             sdu_sizeP,
