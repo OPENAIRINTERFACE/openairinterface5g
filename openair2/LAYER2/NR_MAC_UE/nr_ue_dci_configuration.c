@@ -40,15 +40,6 @@
 #include <stdio.h>
 #include "nfapi_nr_interface.h"
 
-#ifdef NR_PDCCH_DCI_TOOLS_DEBUG
-#define LOG_DCI_D(a...) printf("\t\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_extract_dci_info) ->" a)
-#else 
-#define LOG_DCI_D(a...)
-#endif
-#define LOG_DCI_PARM(a...) LOG_D(PHY,"\t<-NR_PDCCH_DCI_TOOLS_DEBUG (nr_generate_ue_ul_dlsch_params_from_dci)" a)
-
-//#define DEBUG_DCI
-
 void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
                                 fapi_nr_dl_config_dci_dl_pdu_rel15_t *rel15,
                                 const uint32_t Y)

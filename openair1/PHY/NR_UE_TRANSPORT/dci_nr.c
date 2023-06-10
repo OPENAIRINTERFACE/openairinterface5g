@@ -364,7 +364,7 @@ void nr_pdcch_extract_rbs_single(uint32_t rxdataF_sz,
 #define NBR_RE_PER_RB_WITH_DMRS           12
   // after removing the 3 DMRS RE, the RB contains 9 RE with PDCCH
 #define NBR_RE_PER_RB_WITHOUT_DMRS         9
-  uint16_t c_rb, nb_rb = 0;
+  uint16_t c_rb;
   //uint8_t rb_count_bit;
   uint8_t i, j, aarx;
   int32_t *dl_ch0, *dl_ch0_ext, *rxF, *rxF_ext;
@@ -484,7 +484,6 @@ void nr_pdcch_extract_rbs_single(uint32_t rxdataF_sz,
           }
         }
 
-        nb_rb++;
         dl_ch0_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         rxF_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         dl_ch0 += 12;
@@ -506,7 +505,6 @@ void nr_pdcch_extract_rbs_single(uint32_t rxdataF_sz,
           }
         }
 
-        nb_rb++;
         dl_ch0_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         rxF_ext += NBR_RE_PER_RB_WITHOUT_DMRS;
         dl_ch0 += 12;

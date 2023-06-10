@@ -512,9 +512,7 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
                               uint32_t high_speed_flag,
                               LTE_DL_FRAME_PARMS *frame_parms)
 {
-
-
-  uint16_t rb,nb_rb=0;
+  uint16_t rb;
   uint8_t i,j,aarx;
   int32_t *dl_ch0,*dl_ch0_ext,*rxF,*rxF_ext;
 
@@ -558,7 +556,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
 
           }
 
-          nb_rb++;
           dl_ch0_ext+=12;
           rxF_ext+=12;
 
@@ -579,7 +576,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           rxF_ext+=8;
 
@@ -596,7 +592,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
           for (i=0; i<12; i++)
             rxF_ext[i]=rxF[i];
 
-          nb_rb++;
           dl_ch0_ext+=12;
           rxF_ext+=12;
 
@@ -617,7 +612,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           rxF_ext+=8;
 
@@ -652,8 +646,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
           }
         }
 
-
-        nb_rb++;
         dl_ch0_ext+=8;
         rxF_ext+=8;
         dl_ch0+=12;
@@ -672,8 +664,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
           rxF_ext[i]=rxF[(1+i-6)];
         }
 
-
-        nb_rb++;
         dl_ch0_ext+=12;
         rxF_ext+=12;
         dl_ch0+=12;
@@ -688,7 +678,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
           for (i=0; i<12; i++)
             rxF_ext[i]=rxF[i];
 
-          nb_rb++;
           dl_ch0_ext+=12;
           rxF_ext+=12;
 
@@ -708,7 +697,6 @@ void pdcch_extract_rbs_single(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           rxF_ext+=8;
 
@@ -728,9 +716,7 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
                             uint32_t high_speed_flag,
                             LTE_DL_FRAME_PARMS *frame_parms)
 {
-
-
-  uint16_t rb,nb_rb=0;
+  uint16_t rb;
   uint8_t i,aarx,j;
   int32_t *dl_ch0,*dl_ch0_ext,*dl_ch1,*dl_ch1_ext,*rxF,*rxF_ext;
   uint8_t symbol_mod;
@@ -785,7 +771,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
             //  ((int16_t*)&rxF[i<<1])[0],((int16_t*)&rxF[i<<1])[0]);
           }
 
-          nb_rb++;
           dl_ch0_ext+=12;
           dl_ch1_ext+=12;
           rxF_ext+=12;
@@ -804,7 +789,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           dl_ch1_ext+=8;
           rxF_ext+=8;
@@ -827,7 +811,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
           for (i=0; i<12; i++)
             rxF_ext[i]=rxF[i];
 
-          nb_rb++;
           dl_ch0_ext+=12;
           dl_ch1_ext+=12;
           rxF_ext+=12;
@@ -852,7 +835,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           dl_ch1_ext+=8;
           rxF_ext+=8;
@@ -881,7 +863,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
           rxF_ext[i]=rxF[(1+i)];
         }
 
-        nb_rb++;
         dl_ch0_ext+=12;
         dl_ch1_ext+=12;
         rxF_ext+=12;
@@ -915,8 +896,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
           }
         }
 
-
-        nb_rb++;
         dl_ch0_ext+=8;
         dl_ch1_ext+=8;
         rxF_ext+=8;
@@ -936,7 +915,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
           for (i=0; i<12; i++)
             rxF_ext[i]=rxF[i];
 
-          nb_rb++;
           dl_ch0_ext+=12;
           dl_ch1_ext+=12;
           rxF_ext+=12;
@@ -959,7 +937,6 @@ void pdcch_extract_rbs_dual(int32_t **rxdataF,
             }
           }
 
-          nb_rb++;
           dl_ch0_ext+=8;
           dl_ch1_ext+=8;
           rxF_ext+=8;

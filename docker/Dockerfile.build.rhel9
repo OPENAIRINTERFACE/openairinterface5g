@@ -35,4 +35,4 @@ COPY . .
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja --build-lib "telnetsrv enbscope uescope nrscope" -w USRP --verbose-ci --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Wno-unused-function --cmake-opt -DCMAKE_CXX_FLAGS=-Wno-unused-function
+    ./build_oai --eNB --gNB --RU --UE --nrUE --ninja --build-lib "telnetsrv enbscope uescope nrscope" -w USRP --verbose-ci --noavx512 -c

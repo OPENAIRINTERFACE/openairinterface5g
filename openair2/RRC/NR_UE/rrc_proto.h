@@ -94,20 +94,6 @@ int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_beare
    \param sdu_len       length of buffer*/
 int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len);
 
-/**\brief decode NR BCCH-DLSCH (SI) messages
-   \param module_idP    module id
-   \param gNB_index     gNB index
-   \param sduP          pointer to buffer of ASN message BCCH-DLSCH
-   \param sdu_len       length of buffer
-   \param rsrq          RSRQ
-   \param rsrp          RSRP*/
-int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(const module_id_t module_id, const uint8_t gNB_index, uint8_t *const bufferP, const uint8_t buffer_len, const uint8_t rsrq, const uint8_t rsrp);
-
-/**\brief Decode NR DCCH from gNB, sent from lower layer through SRB3
-   \param module_id  module id
-   \param gNB_index  gNB index
-   \param buffer     encoded DCCH bytes stream message
-   \param size       length of buffer*/
 int8_t nr_rrc_ue_decode_NR_DL_DCCH_Message(const module_id_t module_id, const uint8_t gNB_index, const uint8_t *buffer, const uint32_t size);
 
 /**\brief interface between MAC and RRC thru SRB0 (RLC TM/no PDCP)
@@ -121,7 +107,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const int CC_id,
                               const uint8_t gNB_index,
                               const frame_t frame,
-                              const sub_frame_t sub_frame,
+                              const int slot,
                               const rnti_t rnti,
                               const channel_t channel,
                               const uint8_t* pduP,
@@ -168,6 +154,16 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
 void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
 
 int get_from_lte_ue_fd();
+
+void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot);
+
+void configure_spcell(NR_UE_RRC_INST_t *rrc, NR_SpCellConfig_t *spcell_config);
+void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac);
+void nr_rrc_set_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
+void nr_rrc_set_T304(NR_UE_Timers_Constants_t *tac, NR_ReconfigurationWithSync_t *reconfigurationWithSync);
+void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
+                                                       struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
 
 /** @}*/
 #endif

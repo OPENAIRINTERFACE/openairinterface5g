@@ -206,8 +206,6 @@ typedef int (nr_ue_dl_indication_f)(nr_downlink_indication_t *dl_info);
  */
 typedef int (nr_ue_ul_indication_f)(nr_uplink_indication_t *ul_info);
 
-typedef int (nr_ue_dcireq_f)(nr_dcireq_t *ul_info);
-
 //  TODO check this stuff can be reuse of need modification
 typedef struct nr_ue_if_module_s {
   nr_ue_scheduled_response_f *scheduled_response;
@@ -215,7 +213,6 @@ typedef struct nr_ue_if_module_s {
   nr_ue_synch_request_f      *synch_request;
   nr_ue_dl_indication_f      *dl_indication;
   nr_ue_ul_indication_f      *ul_indication;
-  //nr_ue_dcireq_f             *dcireq;
   uint32_t cc_mask;
   uint32_t current_frame;
   uint32_t current_slot;

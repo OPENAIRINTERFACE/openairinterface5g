@@ -11,7 +11,7 @@ static inline void set_parallel_conf(char *parallel_conf) {
     {NULL,-1}
   };
   thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
-  if (thread_struct.parallel_conf == -1 ) {
+  if (thread_struct.parallel_conf == (unsigned int)-1) {
     LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
     thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
   }
@@ -24,7 +24,7 @@ static inline void set_worker_conf(char *worker_conf) {
     {NULL, -1}
   };
   thread_struct.worker_conf = (WORKER_CONF_t)map_str_to_int(config, worker_conf);
-  if (thread_struct.worker_conf == -1 ) {
+  if (thread_struct.worker_conf == (unsigned int)-1) {
     LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
     thread_struct.worker_conf = WORKER_DISABLE ;
   }
