@@ -647,7 +647,7 @@ int main(int argc, char **argv)
   AssertFatal(scg_fd != NULL,"no reconfig.raw file\n");
   char buffer[1024];
   int msg_len=fread(buffer,1,1024,scg_fd);
-  NR_RRCReconfiguration_t *NR_RRCReconfiguration;
+  NR_RRCReconfiguration_t *NR_RRCReconfiguration = NULL;
 
   printf("Decoding NR_RRCReconfiguration (%d bytes)\n",msg_len);
   asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
@@ -667,7 +667,7 @@ int main(int argc, char **argv)
   AssertFatal(NR_RRCReconfiguration->criticalExtensions.present == NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration,"wrong NR_RRCReconfiguration->criticalExstions.present type\n");
 
   NR_RRCReconfiguration_IEs_t *reconfig_ies = NR_RRCReconfiguration->criticalExtensions.choice.rrcReconfiguration;
-  NR_CellGroupConfig_t *secondaryCellGroup;
+  NR_CellGroupConfig_t *secondaryCellGroup = NULL;
   dec_rval = uper_decode_complete( NULL,
 				   &asn_DEF_NR_CellGroupConfig,
 				   (void **)&secondaryCellGroup,
