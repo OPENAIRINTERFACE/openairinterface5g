@@ -367,7 +367,7 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
                                      2/(M_PI*M_PI)*log(4*M_PI*chan_desc->sampling_rate*chan_desc->Td));
   printf("TDL : %f Ms/s, nb_taps %d, Td %e, channel_length %d\n",chan_desc->sampling_rate,tdl_paths,chan_desc->Td,chan_desc->channel_length);
   double sum_amps = 0;
-  chan_desc->amps           = (double *) malloc(chan_desc->nb_taps*sizeof(double));
+  chan_desc->amps           = calloc(chan_desc->nb_taps, sizeof(double));
 
   for (int i = 0; i<chan_desc->nb_taps; i++) {
     chan_desc->amps[i]      = pow(10,.1*tdl_amps_dB[i]);
@@ -382,19 +382,19 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
   chan_desc->delays         = tdl_delays;
   chan_desc->aoa            = 0;
   chan_desc->random_aoa     = 0;
-  chan_desc->ch             = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
-  chan_desc->chF            = (struct complexd **) malloc(nb_tx*nb_rx*sizeof(struct complexd *));
-  chan_desc->a              = (struct complexd **) malloc(chan_desc->nb_taps*sizeof(struct complexd *));
+  chan_desc->ch             = calloc(nb_tx*nb_rx, sizeof(struct complexd *));
+  chan_desc->chF            = calloc(nb_tx*nb_rx, sizeof(struct complexd *));
+  chan_desc->a              = calloc(chan_desc->nb_taps, sizeof(struct complexd *));
   chan_desc->ricean_factor  = 1.0;
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->ch[i] = (struct complexd *) malloc(chan_desc->channel_length * sizeof(struct complexd));
+    chan_desc->ch[i] = calloc(chan_desc->channel_length, sizeof(struct complexd));
 
   for (int i = 0; i<nb_tx*nb_rx; i++)
-    chan_desc->chF[i] = (struct complexd *) malloc((2+(275*12)) * sizeof(struct complexd));
+    chan_desc->chF[i] = calloc(2+(275*12), sizeof(struct complexd));
 
   for (int i = 0; i<chan_desc->nb_taps; i++)
-    chan_desc->a[i]         = (struct complexd *) malloc(nb_tx*nb_rx * sizeof(struct complexd));
+    chan_desc->a[i]         = calloc(nb_tx*nb_rx, sizeof(struct complexd));
 
   int matrix_size = nb_tx*nb_rx;
   double *correlation_matrix[matrix_size];
@@ -446,9 +446,9 @@ void tdlModel(int  tdl_paths, double *tdl_delays, double *tdl_amps_dB, double DS
     }
   }
 
-  chan_desc->R_sqrt = (struct complexd **) malloc(matrix_size*sizeof(struct complexd **));
+  chan_desc->R_sqrt = calloc(matrix_size, sizeof(*chan_desc->R_sqrt));
   for (int row = 0; row < matrix_size; row++) {
-    chan_desc->R_sqrt[row] = (struct complexd *) calloc(1, matrix_size*sizeof(struct complexd));
+    chan_desc->R_sqrt[row] = calloc(matrix_size, sizeof(**chan_desc->R_sqrt));
     if (correlation_matrix[row] == NULL) {
       // TS 38.104 - Table G.2.3.1.2-4: MIMO correlation matrices for low correlation
       chan_desc->R_sqrt[row][row].r = 1.0;
