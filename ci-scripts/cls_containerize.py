@@ -1341,62 +1341,6 @@ class Containerize():
 
 		HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', [message])
 
-	def PingFromContainer(self, HTML, RAN, UE):
-		myCmd = cls_cmd.LocalCmd()
-		self.exitStatus = 0
-		ymlPath = self.yamlPath[0].split('/')
-		logPath = '../cmake_targets/log/' + ymlPath[1]
-		cmd = f'mkdir -p {logPath}'
-		myCmd.run(cmd, silent=True)
-
-		cmd = f'docker exec {self.pingContName} /bin/bash -c "ping {self.pingOptions}" 2>&1 | tee {logPath}/ping_{HTML.testCase_id}.log'
-		pingStatus = myCmd.run(cmd, timeout=100, reportNonZero=False)
-		myCmd.close()
-
-		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', pingStatus.stdout)
-		if result is None:
-			self.PingExit(HTML, RAN, UE, False, 'Packet Loss Not Found')
-			return
-
-		packetloss = result.group('packetloss')
-		if float(packetloss) == 100:
-			self.PingExit(HTML, RAN, UE, False, 'Packet Loss is 100%')
-			return
-
-		result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', pingStatus.stdout)
-		if result is None:
-			self.PingExit(HTML, RAN, UE, False, 'Ping RTT_Min RTT_Avg RTT_Max Not Found!')
-			return
-
-		rtt_min = result.group('rtt_min')
-		rtt_avg = result.group('rtt_avg')
-		rtt_max = result.group('rtt_max')
-		pal_msg = 'Packet Loss : ' + packetloss + '%'
-		min_msg = 'RTT(Min)    : ' + rtt_min + ' ms'
-		avg_msg = 'RTT(Avg)    : ' + rtt_avg + ' ms'
-		max_msg = 'RTT(Max)    : ' + rtt_max + ' ms'
-
-		message = 'ping result\n'
-		message += '    ' + pal_msg + '\n'
-		message += '    ' + min_msg + '\n'
-		message += '    ' + avg_msg + '\n'
-		message += '    ' + max_msg + '\n'
-		packetLossOK = True
-		if float(packetloss) > float(self.pingLossThreshold):
-			message += '\nPacket Loss too high'
-			packetLossOK = False
-		elif float(packetloss) > 0:
-			message += '\nPacket Loss is not 0%'
-		self.PingExit(HTML, RAN, UE, packetLossOK, message)
-
-		if packetLossOK:
-			logging.debug('\u001B[1;37;44m ping result \u001B[0m')
-			logging.debug('\u001B[1;34m    ' + pal_msg + '\u001B[0m')
-			logging.debug('\u001B[1;34m    ' + min_msg + '\u001B[0m')
-			logging.debug('\u001B[1;34m    ' + avg_msg + '\u001B[0m')
-			logging.debug('\u001B[1;34m    ' + max_msg + '\u001B[0m')
-			logging.info('\u001B[1m Ping Test PASS\u001B[0m')
-
 	def PingExit(self, HTML, RAN, UE, status, message):
 		if status:
 			HTML.CreateHtmlTestRowQueue(self.pingOptions, 'OK', [message])

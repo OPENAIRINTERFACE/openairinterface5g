@@ -374,17 +374,6 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.ran_checkers['u_retx_th'] = [float(x) for x in string_field.split(',')]
 
-	elif action == 'PingFromContainer':
-		string_field = test.findtext('container_name')
-		if (string_field is not None):
-			CONTAINERS.pingContName = string_field
-		string_field = test.findtext('options')
-		if (string_field is not None):
-			CONTAINERS.pingOptions = string_field
-		string_field = test.findtext('loss_threshold')
-		if (string_field is not None):
-			CONTAINERS.pingLossThreshold = string_field
-
 	elif action == 'IperfFromContainer':
 		string_field = test.findtext('server_container_name')
 		if (string_field is not None):
@@ -879,10 +868,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
 					CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
-					if CONTAINERS.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'PingFromContainer':
-					CONTAINERS.PingFromContainer(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'IperfFromContainer':

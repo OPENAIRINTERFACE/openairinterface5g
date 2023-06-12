@@ -40,7 +40,6 @@
   - Deploy_Run_PhySim
   - DeployGenObject
   - UndeployGenObject
-  - PingFromContainer
   - IperfFromContainer
   - StatsFromGenObject
   - LicenceAndFormattingCheck
