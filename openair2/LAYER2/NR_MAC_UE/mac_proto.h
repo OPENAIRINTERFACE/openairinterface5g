@@ -175,6 +175,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue();
    \param module_id index of MAC instance(s)*/
 NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 
+void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac);
+
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.
    \param dl_info     DL indication

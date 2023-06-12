@@ -78,6 +78,58 @@ NR_UE_MAC_INST_t * nr_l2_init_ue()
     return (nr_ue_mac_inst);
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id){
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id)
+{
     return &nr_ue_mac_inst[(int)module_id];
+}
+
+void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
+{
+  // MAC reset according to 38.321 Section 5.12
+
+  nr_ue_mac_default_configs(nr_mac);
+  // initialize Bj for each logical channel to zero
+  // Done in default config but to -1 (is that correct?)
+
+  // stop all running timers
+  // TODO
+
+  // consider all timeAlignmentTimers as expired and perform the corresponding actions in clause 5.2
+  // TODO
+
+  // set the NDIs for all uplink HARQ processes to the value 0
+  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
+    nr_mac->UL_ndi[k] = -1; // initialize to invalid value
+
+  // stop any ongoing RACH procedure
+  if (nr_mac->ra.ra_state < RA_SUCCEEDED)
+    nr_mac->ra.ra_state = RA_UE_IDLE;
+
+  // discard explicitly signalled contention-free Random Access Resources
+  // TODO not sure what needs to be done here
+
+  // flush Msg3 buffer
+  // TODO we don't have a Msg3 buffer
+
+  // cancel any triggered Scheduling Request procedure
+  // Done in default config
+
+  // cancel any triggered Buffer Status Reporting procedure
+  // Done in default config
+
+  // cancel any triggered Power Headroom Reporting procedure
+  // TODO PHR not implemented yet
+
+  // flush the soft buffers for all DL HARQ processes
+  for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
+    memset(&nr_mac->dl_harq_info[k], 0, sizeof(NR_UE_HARQ_STATUS_t));
+
+  // for each DL HARQ process, consider the next received transmission for a TB as the very first transmission
+  // TODO there is nothing in the MAC indicating first transmission
+
+  // release, if any, Temporary C-RNTI
+  nr_mac->ra.t_crnti = 0;
+
+  // reset BFI_COUNTER
+  // TODO beam failure procedure not implemented
 }
