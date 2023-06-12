@@ -253,7 +253,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uint8_t index=0;
 
   int nb_re_pucch = 12*pucch_pdu->prb_size;  // prb size is 1
-  int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch],*tmp_rp;
+  int32_t rp[frame_parms->nb_antennas_rx][pucch_pdu->nr_of_symbols][nb_re_pucch];
+  memset(rp, 0, sizeof(rp));
+  int32_t *tmp_rp = NULL;
 
   for (int l=0; l<pucch_pdu->nr_of_symbols; l++) {
     uint8_t l2 = l + pucch_pdu->start_symbol_index;
@@ -1169,7 +1171,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 
   int nb_re_pucch = 12*pucch_pdu->prb_size;
 
-  int16_t rp[Prx2][2][nb_re_pucch*2],*tmp_rp;
+  int16_t rp[Prx2][2][nb_re_pucch*2];
+  memset(rp, 0, sizeof(rp));
+  int16_t *tmp_rp = NULL;
   __m64 dmrs_re,dmrs_im;
 
   for (int aa=0;aa<Prx;aa++){
