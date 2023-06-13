@@ -93,9 +93,9 @@ int nr_prs_channel_estimation(uint8_t gNB_id,
 
   int16_t *rxF, *pil, mod_prs[NR_MAX_PRS_LENGTH << 1];
   const int16_t *fl, *fm, *fmm, *fml, *fmr, *fr;
-  int16_t ch[2] = {0};
+  int16_t ch[2] = {0}, noiseFig[2] = {0};
   int16_t k_prime = 0, k = 0;
-  int32_t ch_pwr = 0, snr = 0, noiseFig[2] = {0}, rsrp = 0, mean_val = 0, prs_toa = 0;
+  int32_t ch_pwr = 0, snr = 0,  rsrp = 0, mean_val = 0, prs_toa = 0;
   double ch_pwr_dbm = 0.0f;
 #ifdef DEBUG_PRS_CHEST
   char filename[64] = {0}, varname[64] = {0};
