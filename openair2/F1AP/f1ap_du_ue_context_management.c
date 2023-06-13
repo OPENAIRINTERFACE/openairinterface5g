@@ -161,7 +161,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetup_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
       F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
-      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
+      OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
       // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
       drb_p->up_ul_tnl[0].port=getCxt(false,instance)->setupReq.CUport;
 
@@ -877,7 +877,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
       F1AP_ULUPTNLInformation_ToBeSetup_Item_t *ul_up_tnl_info_p = (F1AP_ULUPTNLInformation_ToBeSetup_Item_t *)drbs_tobesetupmod_item_p->uLUPTNLInformation_ToBeSetup_List.list.array[0];
       F1AP_GTPTunnel_t *ul_up_tnl0 = ul_up_tnl_info_p->uLUPTNLInformation.choice.gTPTunnel;
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
-      OCTET_STRING_TO_INT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
+      OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
       drb_p->up_ul_tnl[0].port=getCxt(false,instance)->setupReq.CUport;
 

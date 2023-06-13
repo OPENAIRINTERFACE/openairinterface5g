@@ -36,7 +36,7 @@ static f1ap_cudu_inst_t *f1_du_inst[NUMBER_OF_gNB_MAX]= {0};
 static f1ap_cudu_inst_t *f1_cu_inst[NUMBER_OF_gNB_MAX]= {0};
 
 uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_mod_idP) {
-  static uint8_t transaction_identifier[NUMBER_OF_gNB_MAX];
+  static uint8_t transaction_identifier[NUMBER_OF_gNB_MAX] = {0};
   transaction_identifier[mod_idP+cu_mod_idP] =
     (transaction_identifier[mod_idP+cu_mod_idP] + 1) % F1AP_TRANSACTION_IDENTIFIER_NUMBER;
   return transaction_identifier[mod_idP+cu_mod_idP];
