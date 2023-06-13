@@ -126,3 +126,59 @@ oai_ue_obelix:
   Host: obelix
   NetworkScript: ip a show dev oaitun_ue1
   IF: oaitun_ue1
+
+rfsim5g_gnb_nos1:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-gnb ip a show dev oaitun_enb1
+  CmdPrefix: docker exec rfsim5g-oai-gnb
+  IF: oaitun_enb1
+
+rfsim5g_ue:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-nr-ue ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim5g-oai-nr-ue
+  IF: oaitun_ue1
+
+rfsim5g_ext_dn:
+  Host: localhost
+  NetworkScript: docker exec rfsim5g-oai-ext-dn ip a show dev eth0
+  CmdPrefix: docker exec rfsim5g-oai-ext-dn
+
+rfsim4g_ue:
+  Host: localhost
+  NetworkScript: docker exec rfsim4g-oai-lte-ue0 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec rfsim4g-oai-lte-ue0
+  IF: oaitun_ue1
+
+rfsim4g_ext_dn:
+  Host: localhost
+  NetworkScript: docker exec rfsim4g-trf-gen ip a show dev eth0
+  CmdPrefix: docker exec rfsim4g-trf-gen
+
+rfsim4g_enb_nos1:
+  Host: localhost
+  NetworkScript: docker exec rfsim4g-oai-enb ip a show dev oaitun_enb1
+  CmdPrefix: docker exec rfsim4g-oai-enb
+  IF: oaitun_enb1
+
+l2sim5g_ue:
+  Host: localhost
+  NetworkScript: docker exec l2sim-oai-nr-ue0 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec l2sim-oai-nr-ue0
+  IF: oaitun_ue1
+
+l2sim5g_ext_dn:
+  Host: localhost
+  NetworkScript: docker exec l2sim-oai-ext-dn ip a show dev eth0
+  CmdPrefix: docker exec l2sim-oai-ext-dn
+
+l2sim4g_ue:
+  Host: localhost
+  NetworkScript: docker exec l2sim4g-oai-lte-ue1 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec l2sim4g-oai-lte-ue1
+  IF: oaitun_ue1
+
+l2sim4g_ext_dn:
+  Host: localhost
+  NetworkScript: docker exec l2sim4g-trf-gen ip a show dev eth0
+  CmdPrefix: docker exec l2sim4g-trf-gen
