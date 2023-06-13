@@ -472,13 +472,6 @@ typedef struct {
   bool phy_config_request_sent;
   frame_type_t frame_type;
 
-  ///     Type0-PDCCH seach space
-  fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
-  uint32_t type0_pdcch_ss_mux_pattern;
-  int type0_pdcch_ss_sfn_c;
-  uint32_t type0_pdcch_ss_n_c;
-  uint32_t type0_pdcch_consecutive_slots;
-
   /* PDUs */
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;

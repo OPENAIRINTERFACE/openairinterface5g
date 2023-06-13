@@ -958,13 +958,11 @@ bool pdcp_remove_UE(const protocol_ctxt_t *const ctxt_pP)
   abort();
 }
 
-bool nr_pdcp_remove_UE(ue_id_t ue_id)
+void nr_pdcp_remove_UE(ue_id_t ue_id)
 {
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_manager_remove_ue(nr_pdcp_ue_manager, ue_id);
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
-
-  return 1;
 }
 
 /* hack: dummy function needed due to LTE dependencies */

@@ -158,53 +158,6 @@ static uint8_t nr_extract_dci_info(NR_UE_MAC_INST_t *mac,
                                    dci_pdu_rel15_t *dci_pdu_rel15,
                                    int slot);
 
-void nr_ue_init_mac(module_id_t module_idP)
-{
-  LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
-  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
-  nr_ue_mac_default_configs(mac);
-  mac->first_sync_frame = -1;
-  mac->get_sib1 = false;
-  mac->get_otherSI = false;
-  mac->phy_config_request_sent = false;
-  memset(&mac->phy_config, 0, sizeof(mac->phy_config));
-  mac->state = UE_NOT_SYNC;
-  mac->si_window_start = -1;
-  mac->servCellIndex = 0;
-}
-
-void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
-{
-  // default values as defined in 38.331 sec 9.2.2
-  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf10240;
-  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_infinity;
-  mac->scheduling_info.SR_COUNTER = 0;
-  mac->scheduling_info.SR_pending = 0;
-  mac->scheduling_info.sr_ProhibitTimer = 0;
-  mac->scheduling_info.sr_ProhibitTimer_Running = 0;
-  mac->scheduling_info.sr_id = -1; // invalid init value
-
-  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
-  // configured by the NW.
-  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
-  mac->BSR_reporting_active = BSR_TRIGGER_NONE;
-
-  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
-    LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
-    mac->scheduling_info.lc_sched_info[i].Bj = -1;
-    mac->scheduling_info.lc_sched_info[i].bucket_size = -1;
-    mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
-    mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
-    mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
-    for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
-      mac->UL_ndi[k] = -1; // initialize to invalid value
-  }
-
-  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
-  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
-}
-
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
 {
 

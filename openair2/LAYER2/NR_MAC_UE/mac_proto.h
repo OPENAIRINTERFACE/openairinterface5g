@@ -136,6 +136,8 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
 
 void nr_ue_decode_mib(module_id_t module_id, int cc_id);
 
+void release_common_ss_cset(NR_BWP_PDCCH_t *pdcch);
+
 /**\brief decode SIB1 and other SIs pdus in NR_UE, from if_module dl_ind
    \param module_id      module id
    \param cc_id          component carrier id
@@ -168,6 +170,9 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 NR_SI_SchedulingInfo_t *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
+void nr_rrc_mac_config_req_reset(module_id_t module_id);
+void nr_rrc_mac_config_req_release(module_id_t module_id);
+
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
 NR_UE_MAC_INST_t * nr_l2_init_ue();
 
@@ -176,6 +181,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue();
 NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id);
 
 void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac);
+void reset_ra(RA_config_t *ra);
+void release_mac_configuration(NR_UE_MAC_INST_t *mac);
 
 /**\brief called at each slot, slot length based on numerology. now use u=0, scs=15kHz, slot=1ms
           performs BSR/SR/PHR procedures, random access procedure handler and DLSCH/ULSCH procedures.

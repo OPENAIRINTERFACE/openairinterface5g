@@ -60,27 +60,72 @@ void send_msg3_rrc_request(module_id_t mod_id, int rnti)
   nr_mac_rrc_msg3_ind(mod_id, rnti);
 }
 
-NR_UE_MAC_INST_t * nr_l2_init_ue()
+void nr_ue_init_mac(module_id_t module_idP)
 {
-    LOG_I(NR_MAC, "MAIN: init UE MAC functions \n");
-    //init mac here
-    nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
-
-    for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
-      nr_ue_init_mac(j);
-
-    if (get_softmodem_params()->sa)
-      ue_init_config_request(nr_ue_mac_inst, get_softmodem_params()->numerology);
-
-    int rc = rlc_module_init(0);
-    AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
-
-    return (nr_ue_mac_inst);
+  LOG_I(NR_MAC, "[UE%d] Applying default macMainConfig\n", module_idP);
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
+  nr_ue_mac_default_configs(mac);
+  mac->first_sync_frame = -1;
+  mac->get_sib1 = false;
+  mac->get_otherSI = false;
+  mac->phy_config_request_sent = false;
+  memset(&mac->phy_config, 0, sizeof(mac->phy_config));
+  mac->state = UE_NOT_SYNC;
+  mac->si_window_start = -1;
+  mac->servCellIndex = 0;
 }
 
-NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id)
+void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
 {
-    return &nr_ue_mac_inst[(int)module_id];
+  // default values as defined in 38.331 sec 9.2.2
+  mac->scheduling_info.retxBSR_Timer = NR_BSR_Config__retxBSR_Timer_sf10240;
+  mac->scheduling_info.periodicBSR_Timer = NR_BSR_Config__periodicBSR_Timer_infinity;
+  mac->scheduling_info.SR_COUNTER = 0;
+  mac->scheduling_info.SR_pending = 0;
+  mac->scheduling_info.sr_ProhibitTimer = 0;
+  mac->scheduling_info.sr_ProhibitTimer_Running = 0;
+  mac->scheduling_info.sr_id = -1; // invalid init value
+
+  // set init value 0xFFFF, make sure periodic timer and retx time counters are NOT active, after bsr transmission set the value
+  // configured by the NW.
+  mac->scheduling_info.periodicBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->scheduling_info.retxBSR_SF = MAC_UE_BSR_TIMER_NOT_RUNNING;
+  mac->BSR_reporting_active = BSR_TRIGGER_NONE;
+
+  for (int i = 0; i < NR_MAX_NUM_LCID; i++) {
+    LOG_D(NR_MAC, "Applying default logical channel config for LCGID %d\n", i);
+    mac->scheduling_info.lc_sched_info[i].Bj = -1;
+    mac->scheduling_info.lc_sched_info[i].bucket_size = -1;
+    mac->scheduling_info.lc_sched_info[i].LCGID = 0; // defaults to 0 irrespective of SRB or DRB
+    mac->scheduling_info.lc_sched_info[i].LCID_status = LCID_EMPTY;
+    mac->scheduling_info.lc_sched_info[i].LCID_buffer_remain = 0;
+    for (int k = 0; k < NR_MAX_HARQ_PROCESSES; k++)
+      mac->UL_ndi[k] = -1; // initialize to invalid value
+  }
+
+  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
+  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
+}
+
+NR_UE_MAC_INST_t *nr_l2_init_ue()
+{
+  //init mac here
+  nr_ue_mac_inst = (NR_UE_MAC_INST_t *)calloc(NB_NR_UE_MAC_INST, sizeof(NR_UE_MAC_INST_t));
+
+  for (int j = 0; j < NB_NR_UE_MAC_INST; j++)
+    nr_ue_init_mac(j);
+
+  if (get_softmodem_params()->sa)
+    ue_init_config_request(nr_ue_mac_inst, get_softmodem_params()->numerology);
+
+  int rc = rlc_module_init(0);
+  AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
+
+  return (nr_ue_mac_inst);
+}
+
+NR_UE_MAC_INST_t *get_mac_inst(module_id_t module_id) {
+  return &nr_ue_mac_inst[(int)module_id];
 }
 
 void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
@@ -132,4 +177,29 @@ void reset_mac_inst(NR_UE_MAC_INST_t *nr_mac)
 
   // reset BFI_COUNTER
   // TODO beam failure procedure not implemented
+}
+
+void release_mac_configuration(NR_UE_MAC_INST_t *mac)
+{
+  if(mac->mib)
+    ASN_STRUCT_FREE(asn_DEF_NR_MIB, mac->mib);
+  for (int i = 0; i < 5; i++) {
+    NR_BWP_PDCCH_t *pdcch = &mac->config_BWP_PDCCH[5];
+    release_common_ss_cset(pdcch);
+    for (int j = 0; j < pdcch->list_Coreset.count; j++)
+      asn_sequence_del(&pdcch->list_Coreset, j, 1);
+    for (int j = 0; j < pdcch->list_SS.count; j++)
+      asn_sequence_del(&pdcch->list_SS, j, 1);
+  }
+
+  memset(&mac->ssb_measurements, 0, sizeof(mac->ssb_measurements));
+  memset(&mac->csirs_measurements, 0, sizeof(mac->csirs_measurements));
+  memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
+}
+
+void reset_ra(RA_config_t *ra)
+{
+  if(ra->rach_ConfigDedicated)
+    ASN_STRUCT_FREE(asn_DEF_NR_RACH_ConfigDedicated, ra->rach_ConfigDedicated);
+  memset(ra, 0, sizeof(RA_config_t));
 }

@@ -1351,6 +1351,32 @@ static void configure_common_BWP_ul(NR_UE_MAC_INST_t *mac, int bwp_id, NR_BWP_Up
   }
 }
 
+void nr_rrc_mac_config_req_reset(module_id_t module_id)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  reset_mac_inst(mac);
+}
+
+void nr_rrc_mac_config_req_release(module_id_t module_id)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+  reset_ra(&mac->ra);
+  release_mac_configuration(mac);
+
+  mac->first_sync_frame = -1;
+  mac->get_sib1 = false;
+  mac->phy_config_request_sent = false;
+  mac->state = UE_NOT_SYNC;
+
+  // Sending to PHY a request to resync
+  // with no target cell ID
+  mac->synch_request.Mod_id = module_id;
+  mac->synch_request.CC_id = 0;
+  mac->synch_request.synch_req.target_Nid_cell = -1;
+  mac->if_module->synch_request(&mac->synch_request);
+}
+
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
                                 NR_SI_SchedulingInfo_t *si_SchedulingInfo,
