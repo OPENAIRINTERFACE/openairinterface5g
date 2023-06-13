@@ -404,6 +404,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
 
       rrc->bwpd = NULL;
       rrc->ubwpd = NULL;
+      rrc->as_security_activated = false;
 
       // TODO: Put the appropriate list of SIBs
       rrc->requested_SI_List.buf = CALLOC(1,4);
@@ -1572,7 +1573,7 @@ void nr_rrc_ue_process_securityModeCommand(const protocol_ctxt_t *const ctxt_pP,
                 ue_rrc->kgnb,
                 kRRCenc);
   nr_derive_key(RRC_INT_ALG,
-                ue_rrc->cipheringAlgorithm,
+                ue_rrc->integrityProtAlgorithm,
                 ue_rrc->kgnb,
                 kRRCint);
 
@@ -1627,6 +1628,10 @@ void nr_rrc_ue_process_securityModeCommand(const protocol_ctxt_t *const ctxt_pP,
       LOG_T(NR_RRC, "%02x.", buffer[i]);
     }
     LOG_T(NR_RRC, "\n");
+
+    //TODO the SecurityModeCommand message needs to pass the integrity protection check
+    // for the UE to declare AS security to be activated
+    ue_rrc->as_security_activated = true;
 
     nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
   } else
