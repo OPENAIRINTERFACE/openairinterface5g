@@ -33,7 +33,7 @@ Replaces xml_files/enb_usrp210_band7_test_10mhz_tm1.xml
 030112
 040301 040302 040512 040612 040650 040401
 040201
-030201
+030212
 200000
     </TestCaseRequestedList>
     <TestCaseExclusionList></TestCaseExclusionList>
@@ -65,7 +65,7 @@ Replaces xml_files/enb_usrp210_band7_test_10mhz_tm1.xml
         <eNB_serverId>0</eNB_serverId>
     </testCase>
 
-    <testCase id="030201">
+    <testCase id="030212">
         <class>Undeploy_Object</class>
         <desc>Undeploy eNB</desc>
         <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_tm1_cdrx</yaml_path>
