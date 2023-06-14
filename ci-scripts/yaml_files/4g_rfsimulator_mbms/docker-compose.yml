@@ -13,7 +13,7 @@ services:
             RFSIMULATOR: enb
             USE_ADDITIONAL_OPTIONS: --rfsim --noS1 --log_config.global_log_options level,nocolor,time
         volumes:
-            - ../../conf_files/enb.band7.tm1.25PRB.rfsim.mbms.conf:/opt/oai-enb/etc/enb.conf
+            - ../../conf_files/enb.band7.tm1.25prb.rfsim.mbms.conf:/opt/oai-enb/etc/enb.conf
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
             interval: 10s

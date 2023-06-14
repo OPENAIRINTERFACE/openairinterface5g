@@ -8,7 +8,7 @@ services:
             TZ: Europe/Paris
             USE_ADDITIONAL_OPTIONS: --usrp-tx-thread-config 1 --thread-pool 0,2,4,6
         volumes:
-            - ../../conf_files/enb.band38.lte_2x2_tm2.100PRB.usrpn310.conf:/opt/oai-enb/etc/enb.conf
+            - ../../conf_files/enb.band38.lte_2x2_tm2.100prb.usrpn310.conf:/opt/oai-enb/etc/enb.conf
         network_mode: "host"
         healthcheck:
             test: /bin/bash -c "pgrep lte-softmodem"
