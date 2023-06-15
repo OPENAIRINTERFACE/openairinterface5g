@@ -99,10 +99,9 @@ static void fill_ssb_vrb_map(NR_COMMON_channels_t *cc, int rbStart, int ssb_subc
               "240kHZ subcarrier won't work with current VRB map because a single SSB might be across 2 slots\n");
 
   uint16_t *vrb_map = cc[CC_id].vrb_map;
-
   const int extra_prb = ssb_subcarrier_offset > 0;
-  for (int rb = 0; rb < 20+extra_prb; rb++)
-    vrb_map[rbStart + rb] = SL_to_bitmap(symStart, 4);
+  for (int rb = 0; rb < 20 + extra_prb; rb++)
+    vrb_map[rbStart + rb] = SL_to_bitmap(symStart % 14, 4);
 }
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, nfapi_nr_dl_tti_request_t *DL_req)

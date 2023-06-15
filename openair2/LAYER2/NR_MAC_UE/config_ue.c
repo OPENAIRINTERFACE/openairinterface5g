@@ -355,7 +355,7 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   switch (scc->ssb_PositionsInBurst->present) {
   case 1 :
-    cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0]<<24;
+    cfg->ssb_table.ssb_mask_list[0].ssb_mask = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] << 24;
     cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
     break;
   case 2 :
@@ -366,8 +366,8 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
     cfg->ssb_table.ssb_mask_list[0].ssb_mask = 0;
     cfg->ssb_table.ssb_mask_list[1].ssb_mask = 0;
     for (int i = 0; i < 4; i++) {
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
-      cfg->ssb_table.ssb_mask_list[1].ssb_mask += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask += ((uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[3 - i] << i * 8);
+      cfg->ssb_table.ssb_mask_list[1].ssb_mask += ((uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[7 - i] << i * 8);
     }
     break;
   default:
