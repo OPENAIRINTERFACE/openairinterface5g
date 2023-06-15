@@ -387,12 +387,6 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
     //  if (dtx_det==0) {
     int16_t z_ol[68 * 384];
     int8_t l_ol[68 * 384];
-
-    int16_t z[68 * 384 + 16] __attribute__((aligned(16)));
-    int8_t l[68 * 384 + 16] __attribute__((aligned(16)));
-
-    __m128i *pv = (__m128i *)&z;
-    __m128i *pl = (__m128i *)&l;
     int crc_type;
     int length_dec;
 
