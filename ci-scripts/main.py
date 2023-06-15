@@ -431,10 +431,12 @@ def GetParametersFromXML(action):
 		RAN.command = test.findtext('command')
 		RAN.command_fail = test.findtext('command_fail') in ['True', 'true', 'Yes', 'yes']
 	elif action == 'Pull_Cluster_Image':
-		# CLUSTER.imageToPull.clear()
 		string_field = test.findtext('images_to_pull')
 		if (string_field is not None):
 			CLUSTER.imageToPull = string_field.split()
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CLUSTER.testSvrId = string_field
 	else:
 		logging.warning(f"unknown action {action} from option-parsing point-of-view")
 

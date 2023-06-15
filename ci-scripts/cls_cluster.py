@@ -82,6 +82,7 @@ class Cluster:
 		self.ranTargetBranch = ""
 		self.cmd = None
 		self.imageToPull = ''
+		self.testSvrId = None
 
 	def _recreate_entitlements(self):
 		# recreating entitlements, don't care if deletion fails
@@ -195,12 +196,13 @@ class Cluster:
 		self.cmd.run(f'oc delete -f {filename}')
 
 	def PullClusterImage(self, HTML, RAN):
+		if self.testSvrId == None: self.testSvrId = self.eNBIPAddress
 		if self.imageToPull == '':
 			HELP.GenericHelp(CONST.Version)
-			HELP.EPCSrvHelp(self.imageToPull)
-			sys.exit('Insufficient eNB Parameters')
+			sys.exit('Insufficient Parameter')
+		logging.debug(f'Pull OC image {self.imageToPull} to server {self.testSvrId}')
 		self.testCase_id = HTML.testCase_id
-		cmd = cls_cmd.getConnection(self.eNBIPAddress)
+		cmd = cls_cmd.getConnection(self.testSvrId)
 		succeeded = OC_login(cmd, self.OCUserName, self.OCPassword, CI_OC_RAN_NAMESPACE)
 		if not succeeded:
 			logging.error('\u001B[1m OC Cluster Login Failed\u001B[0m')
