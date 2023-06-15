@@ -256,15 +256,6 @@ typedef struct {
 } ulsch_measurements_gNB;
 
 typedef struct {
-  /// Time shift in number of samples estimated based on DMRS-PUSCH
-  int pusch_est_delay;
-  /// Max position in OFDM symbol related to time shift estimation based on DMRS-PUSCH
-  int pusch_delay_max_pos;
-  /// Max value related to time shift estimation based on DMRS-PUSCH
-  int pusch_delay_max_val;
-} NR_ULSCH_delay_t;
-
-typedef struct {
   uint32_t frame;
   uint32_t slot;
   /// Pointers to 16 HARQ processes for the ULSCH
@@ -281,7 +272,7 @@ typedef struct {
   bool active;
   /// Flag to indicate that the UL configuration has been handled. Used to remove a stale ULSCH when frame wraps around
   uint8_t handled;
-  NR_ULSCH_delay_t delay;
+  delay_t delay;
   ulsch_measurements_gNB ulsch_measurements;
 } NR_gNB_ULSCH_t;
 

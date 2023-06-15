@@ -72,6 +72,15 @@ typedef enum frequency_range_e {
   FR2
 } frequency_range_t;
 
+typedef struct {
+  /// Time shift in number of samples estimated based on DMRS-PDSCH/PUSCH
+  int est_delay;
+  /// Max position in OFDM symbol related to time shift estimation based on DMRS-PDSCH/PUSCH
+  int delay_max_pos;
+  /// Max value related to time shift estimation based on DMRS-PDSCH/PUSCH
+  int delay_max_val;
+} delay_t;
+
 extern const nr_bandentry_t nr_bandtable[];
 
 static inline int get_num_dmrs(uint16_t dmrs_mask ) {
@@ -114,6 +123,7 @@ uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
                                   int ssbSubcarrierSpacing,
                                   int frequency_range);
 int get_ssb_subcarrier_offset(uint32_t absoluteFrequencySSB, uint32_t absoluteFrequencyPointA);
+
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 

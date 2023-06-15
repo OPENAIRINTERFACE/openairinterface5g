@@ -1540,9 +1540,9 @@ int main(int argc, char **argv)
       if (!crc_status)
         effRate += ((double)TBS) / (double)round;
 
-      sum_pusch_delay += ulsch_gNB->delay.pusch_est_delay;
-      min_pusch_delay = ulsch_gNB->delay.pusch_est_delay < min_pusch_delay ? ulsch_gNB->delay.pusch_est_delay : min_pusch_delay;
-      max_pusch_delay = ulsch_gNB->delay.pusch_est_delay > max_pusch_delay ? ulsch_gNB->delay.pusch_est_delay : max_pusch_delay;
+      sum_pusch_delay += ulsch_gNB->delay.est_delay;
+      min_pusch_delay = min(ulsch_gNB->delay.est_delay, min_pusch_delay);
+      max_pusch_delay = max(ulsch_gNB->delay.est_delay, max_pusch_delay);
       delay_pusch_est_count++;
 
     } // trial loop
