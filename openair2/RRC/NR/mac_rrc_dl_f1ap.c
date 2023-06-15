@@ -73,14 +73,27 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
 
 static void ue_context_modification_confirm_f1ap(const f1ap_ue_context_modif_confirm_t *confirm)
 {
-  (void)confirm;
-  AssertFatal(false, "%s() not implemented yet\n", __func__);
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_CONFIRM);
+  f1ap_ue_context_modif_confirm_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_CONFIRM(msg);
+  f1ap_msg->gNB_CU_ue_id = confirm->gNB_CU_ue_id;
+  f1ap_msg->gNB_DU_ue_id = confirm->gNB_DU_ue_id;
+  f1ap_msg->rrc_container = NULL;
+  f1ap_msg->rrc_container_length = 0;
+  if (confirm->rrc_container != NULL) {
+    f1ap_msg->rrc_container = calloc(1, sizeof(*f1ap_msg->rrc_container));
+    AssertFatal(f1ap_msg->rrc_container != NULL, "out of memory\n");
+    memcpy(f1ap_msg->rrc_container, confirm->rrc_container, confirm->rrc_container_length);
+    f1ap_msg->rrc_container_length = confirm->rrc_container_length;
+  }
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
 static void ue_context_modification_refuse_f1ap(const f1ap_ue_context_modif_refuse_t *refuse)
 {
-  (void)refuse;
-  AssertFatal(false, "%s() not implemented yet\n", __func__);
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REFUSE);
+  f1ap_ue_context_modif_refuse_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REFUSE(msg);
+  *f1ap_msg = *refuse;
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
 static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t *cmd)
