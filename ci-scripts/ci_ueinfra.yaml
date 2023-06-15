@@ -126,3 +126,11 @@ oai_ue_obelix:
   Host: obelix
   UENetworkScript: ip a show dev oaitun_ue1
   IF: oaitun_ue1
+
+oai_ue_caracal:
+  Host: caracal
+  AttachScript: 'docker start oai-nr-ue'
+  DetachScript: 'docker stop oai-nr-ue'
+  UENetworkScript: ip a show dev oaitun_ue1
+  IF: oaitun_ue1
+  MTU: 1500
