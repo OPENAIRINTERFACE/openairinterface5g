@@ -225,7 +225,6 @@ static int nr_process_mac_pdu(instance_t module_idP,
           if (ra->state >= WAIT_Msg3 && ra->rnti == UE->rnti) {
             ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
             ra->state = Msg3_dcch_dtch;
-            LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x\n", ra->crnti);
             break;
           }
         }
@@ -786,6 +785,7 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 // Let's abort the current RA, so the UE will trigger a new RA later but using RRCSetupRequest instead. A better solution may be implemented
                 mac_remove_nr_ue(gNB_mac, ra->rnti);
                 nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
+		LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->crnti);
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB
@@ -794,9 +794,11 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
                 // Reset HARQ processes
                 reset_dl_harq_list(&UE_C->UE_sched_ctrl);
                 reset_ul_harq_list(&UE_C->UE_sched_ctrl);
+
+                // Trigger RRC Reconfiguration
+                LOG_I(NR_MAC, "Received UL_SCH_LCID_C_RNTI with C-RNTI 0x%04x, triggering RRC Reconfiguration\n", UE_C->rnti);
+                nr_mac_trigger_reconfiguration(RC.nrmac[gnb_mod_idP], UE_C);
               }
-              LOG_I(NR_MAC, "Activating scheduling response to MSG3 with DCCH/DTCCH and RNTI 0x%04x (state %d)\n",
-                    ra->crnti, ra->state);
             }
             else {
               LOG_I(NR_MAC, "Activating scheduling RA-Msg4 for TC_RNTI 0x%04x (state %d)\n",
