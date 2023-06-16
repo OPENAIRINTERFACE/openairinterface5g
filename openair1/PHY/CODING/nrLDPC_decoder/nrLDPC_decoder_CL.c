@@ -334,8 +334,12 @@ void nrLDPC_initcall(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_
 //	init_LLR_DMA(p_decParams, p_llr,  p_out);
 }
 
-
-int32_t nrLDPC_decod(t_nrLDPC_dec_params* p_decParams, int8_t* p_llr, int8_t* p_out,t_nrLDPC_procBuf* p_procBuf, t_nrLDPC_time_stats *time_decoder)
+int32_t nrLDPC_decod(t_nrLDPC_dec_params *p_decParams,
+                     int8_t *p_llr,
+                     int8_t *p_out,
+                     t_nrLDPC_procBuf *p_procBuf,
+                     t_nrLDPC_time_stats *time_decoder,
+                     decode_abort_t *ab)
 {
     uint16_t Zc          = p_decParams->Z;
     uint8_t  BG         = p_decParams->BG;

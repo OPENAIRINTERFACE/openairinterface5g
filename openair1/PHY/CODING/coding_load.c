@@ -58,21 +58,22 @@ decoder_if_t    *decoder8;
 encoder_if_t    *encoder;
 
 extern int _may_i_use_cpu_feature(unsigned __int64);
-uint8_t  nodecod(int16_t *y,
-                               int16_t *y2,
-                               uint8_t *decoded_bytes,
-                               uint8_t *decoded_bytes2,
-                               uint16_t n,
-                               uint8_t max_iterations,
-                               uint8_t crc_type,
-                               uint8_t F,
-                               time_stats_t *init_stats,
-                               time_stats_t *alpha_stats,
-                               time_stats_t *beta_stats,
-                               time_stats_t *gamma_stats,
-                               time_stats_t *ext_stats,
-                               time_stats_t *intl1_stats,
-                               time_stats_t *intl2_stats)
+uint8_t nodecod(int16_t *y,
+                int16_t *y2,
+                uint8_t *decoded_bytes,
+                uint8_t *decoded_bytes2,
+                uint16_t n,
+                uint8_t max_iterations,
+                uint8_t crc_type,
+                uint8_t F,
+                time_stats_t *init_stats,
+                time_stats_t *alpha_stats,
+                time_stats_t *beta_stats,
+                time_stats_t *gamma_stats,
+                time_stats_t *ext_stats,
+                time_stats_t *intl1_stats,
+                time_stats_t *intl2_stats,
+                decode_abort_t *ab)
 {
  return max_iterations+1;
 };

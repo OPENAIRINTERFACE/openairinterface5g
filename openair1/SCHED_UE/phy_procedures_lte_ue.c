@@ -2995,6 +2995,8 @@ void ue_pmch_procedures(PHY_VARS_UE *ue,
 
 void copy_harq_proc_struct(LTE_DL_UE_HARQ_t *harq_processes_dest,
                            LTE_DL_UE_HARQ_t *current_harq_processes) {
+  init_abort(&harq_processes_dest->abort_decode);
+  set_abort(&harq_processes_dest->abort_decode, check_abort(&current_harq_processes->abort_decode));
   harq_processes_dest->B              = current_harq_processes->B              ;
   harq_processes_dest->C              = current_harq_processes->C              ;
   harq_processes_dest->Cminus         = current_harq_processes->Cminus         ;

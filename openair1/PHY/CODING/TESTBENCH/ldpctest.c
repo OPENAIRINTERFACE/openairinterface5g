@@ -185,7 +185,6 @@ int test_ldpc(short max_iterations,
     }
   }
 
-
   //determine number of bits in codeword
   if (block_length>3840)
   {
@@ -270,6 +269,8 @@ int test_ldpc(short max_iterations,
   if (ntrials==0)
     encoder_orig(test_input,channel_input, Zc, BG, block_length, BG, &impp);
   impp.gen_code=0;
+  decode_abort_t dec_abort;
+  init_abort(&dec_abort);
   for (int trial=0; trial < ntrials; trial++)
   {
 	segment_bler = 0;
@@ -359,7 +360,12 @@ int test_ldpc(short max_iterations,
       }
       for(int j=0;j<n_segments;j++) {
         start_meas(time_decoder);
-        n_iter = nrLDPC_decoder(&decParams[j], (int8_t*)channel_output_fixed[j], (int8_t*)estimated_output[j], &decoder_profiler);
+        set_abort(&dec_abort, false);
+        n_iter = nrLDPC_decoder(&decParams[j],
+                                (int8_t *)channel_output_fixed[j],
+                                (int8_t *)estimated_output[j],
+                                &decoder_profiler,
+                                &dec_abort);
         stop_meas(time_decoder);
         //count errors
         if ( memcmp(estimated_output[j], test_input[j], block_length/8 ) != 0 ) {
@@ -429,7 +435,9 @@ int main(int argc, char *argv[])
   unsigned int errors, errors_bit, crc_misses;
   double errors_bit_uncoded;
   short block_length=8448; // decoder supports length: 1201 -> 1280, 2401 -> 2560
-  char *ldpc_version=NULL; /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
+  // default to check output inside ldpc, the NR version checks the outer CRC defined by 3GPP
+  char *ldpc_version = "_parityCheck";
+  /* version of the ldpc decoder library to use (XXX suffix to use when loading libldpc_XXX.so */
   short max_iterations=5;
   int n_segments=1;
   //double rate=0.333;
@@ -529,11 +537,7 @@ int main(int argc, char *argv[])
   printf("n_trials %d: \n", n_trials);
   printf("SNR0 %f: \n", SNR0);
 
-
-  if (ldpc_version != NULL)
-    load_nrLDPClib(ldpc_version);
-  else
-    load_nrLDPClib(NULL); 
+  load_nrLDPClib(ldpc_version);
   load_nrLDPClib_ref("_orig", &encoder_orig);
   //for (block_length=8;block_length<=MAX_BLOCK_LENGTH;block_length+=8)
 

@@ -960,7 +960,36 @@ extern int sync_var;
 #define MBSFN_FDD_SF6 0x10
 #define MBSFN_FDD_SF7 0x08
 #define MBSFN_FDD_SF8 0x04
+typedef struct {
+  pthread_mutex_t mutex_failure;
+  bool failed;
+} decode_abort_t;
 
+static inline void init_abort(decode_abort_t *ab)
+{
+  int ret = pthread_mutex_init(&ab->mutex_failure, NULL);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  ab->failed = false;
+}
+
+static inline bool check_abort(decode_abort_t *ab)
+{
+  int ret = pthread_mutex_lock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  bool failed = ab->failed;
+  ret = pthread_mutex_unlock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  return failed;
+}
+
+static inline void set_abort(decode_abort_t *ab, bool v)
+{
+  int ret = pthread_mutex_lock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  ab->failed = v;
+  ret = pthread_mutex_unlock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+}
 
 typedef uint8_t(decoder_if_t)(int16_t *y,
                               int16_t *y2,
@@ -976,7 +1005,8 @@ typedef uint8_t(decoder_if_t)(int16_t *y,
                               time_stats_t *gamma_stats,
                               time_stats_t *ext_stats,
                               time_stats_t *intl1_stats,
-                              time_stats_t *intl2_stats);
+                              time_stats_t *intl2_stats,
+                              decode_abort_t *abort_decode);
 
 typedef uint8_t(encoder_if_t)(uint8_t *input,
                               uint16_t input_length_bytes,

@@ -73,7 +73,7 @@ typedef int(*nrLDPC_encoderfunc_t)(unsigned char **,unsigned char **,int,int,sho
    \param p_profiler LDPC profiler statistics
 */
 
-typedef int32_t(*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params* , int8_t*, int8_t* , t_nrLDPC_time_stats* );
+typedef int32_t (*nrLDPC_decoderfunc_t)(t_nrLDPC_dec_params *, int8_t *, int8_t *, t_nrLDPC_time_stats *, decode_abort_t *ab);
 typedef int32_t(*nrLDPC_decoffloadfunc_t)(t_nrLDPC_dec_params* , uint8_t, uint8_t, uint8_t , uint8_t, uint16_t, uint32_t, uint8_t, int8_t*, int8_t* ,uint8_t);
 typedef int32_t(*nrLDPC_dectopfunc_t)(void);
 

@@ -106,9 +106,10 @@ LTE_UE_DLSCH_t *new_ue_dlsch(uint8_t Kmimo,uint8_t Mdlharq,uint32_t Nsoft,uint8_
     for (i=0; i<Mdlharq; i++) {
       //      printf("new_ue_dlsch: Harq process %d\n",i);
       dlsch->harq_processes[i] = (LTE_DL_UE_HARQ_t *)malloc16(sizeof(LTE_DL_UE_HARQ_t));
-
       if (dlsch->harq_processes[i]) {
         memset(dlsch->harq_processes[i],0,sizeof(LTE_DL_UE_HARQ_t));
+        init_abort(&dlsch->harq_processes[i]->abort_decode);
+
         dlsch->harq_processes[i]->first_tx=1;
         dlsch->harq_processes[i]->b = (uint8_t *)malloc16(MAX_DLSCH_PAYLOAD_BYTES/bw_scaling);
 
@@ -277,7 +278,7 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
   printf("Segmentation: C %d, Cminus %d, Kminus %d, Kplus %d\n",harq_process->C,harq_process->Cminus,harq_process->Kminus,harq_process->Kplus);
 #endif
   opp_enabled=1;
-
+  set_abort(&harq_process->abort_decode, false);
   for (r=0; r<harq_process->C; r++) {
     // Get Turbo interleaver parameters
     if (r<harq_process->Cminus)
@@ -381,7 +382,8 @@ uint32_t dlsch_decoding(PHY_VARS_UE *phy_vars_ue,
                &phy_vars_ue->dlsch_tc_gamma_stats,
                &phy_vars_ue->dlsch_tc_ext_stats,
                &phy_vars_ue->dlsch_tc_intl1_stats,
-               &phy_vars_ue->dlsch_tc_intl2_stats); //(is_crnti==0)?harq_pid:harq_pid+1);
+               &phy_vars_ue->dlsch_tc_intl2_stats,
+               &harq_process->abort_decode); //(is_crnti==0)?harq_pid:harq_pid+1);
       stop_UE_TIMING(phy_vars_ue->dlsch_turbo_decoding_stats);
     }
 

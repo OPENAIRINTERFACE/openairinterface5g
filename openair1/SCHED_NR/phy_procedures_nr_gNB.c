@@ -232,7 +232,7 @@ void phy_procedures_gNB_TX(processingData_L1tx_t *msgTx,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_gNB_TX+offset,0);
 }
 
-void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
+static void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
 {
   ldpcDecode_t *rdata = (ldpcDecode_t*) NotifiedFifoData(req);
   NR_UL_gNB_HARQ_t *ulsch_harq = rdata->ulsch_harq;
@@ -241,32 +241,22 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
   nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[rdata->ulsch_id].harq_process->ulsch_pdu;
   bool decodeSuccess = (rdata->decodeIterations <= rdata->decoderParms.numMaxIter);
   ulsch_harq->processedSegments++;
-  LOG_D(PHY, "processing result of segment: %d, processed %d/%d\n",
-	rdata->segment_r, ulsch_harq->processedSegments, rdata->nbSegments);
-  gNB->nbDecode--;
-  LOG_D(PHY,"remain to decoded in subframe: %d\n", gNB->nbDecode);
+  LOG_D(PHY,
+        "processing result of segment: %d, processed %d/%d\n",
+        rdata->segment_r,
+        ulsch_harq->processedSegments,
+        rdata->nbSegments);
   if (decodeSuccess) {
-    memcpy(ulsch_harq->b+rdata->offset,
-           ulsch_harq->c[r],
-           rdata->Kr_bytes - (ulsch_harq->F>>3) -((ulsch_harq->C>1)?3:0));
+    memcpy(ulsch_harq->b + rdata->offset, ulsch_harq->c[r], rdata->Kr_bytes - (ulsch_harq->F >> 3) - ((ulsch_harq->C > 1) ? 3 : 0));
 
   } else {
-    if ( rdata->nbSegments != ulsch_harq->processedSegments ) {
-      int nb = abortTpoolJob(&gNB->threadPool, req->key);
-      nb += abortNotifiedFIFOJob(&gNB->respDecode, req->key);
-      gNB->nbDecode-=nb;
-      LOG_D(PHY,"uplink segment error %d/%d, aborted %d segments\n",rdata->segment_r,rdata->nbSegments, nb);
-      LOG_D(PHY, "ULSCH %d in error\n",rdata->ulsch_id);
-      AssertFatal(ulsch_harq->processedSegments+nb == rdata->nbSegments,"processed: %d, aborted: %d, total %d\n",
-		  ulsch_harq->processedSegments, nb, rdata->nbSegments);
-      ulsch_harq->processedSegments=rdata->nbSegments;
-    }
+    LOG_D(PHY, "ULSCH %d in error\n", rdata->ulsch_id);
   }
 
   //int dumpsig=0;
   // if all segments are done
   if (rdata->nbSegments == ulsch_harq->processedSegments) {
-    if (decodeSuccess && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
+    if (!check_abort(&ulsch_harq->abort_decode) && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
       LOG_D(PHY,
             "[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (rnti %x, pid %d, ndi %d, status %d, round %d, TBS %d, Max interation "
             "(all seg) %d)\n",
@@ -306,6 +296,7 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
       nr_fill_indication(gNB, ulsch->frame, ulsch->slot, rdata->ulsch_id, rdata->harq_pid, 1, 0);
       //      dumpsig=1;
     }
+    ulsch->last_iteration_cnt = rdata->decodeIterations;
     /*
         if (ulsch_harq->ulsch_pdu.mcs_index == 0 && dumpsig==1) {
           int off = ((ulsch_harq->ulsch_pdu.rb_size&1) == 1)? 4:0;
@@ -348,13 +339,12 @@ void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
   }
 }
 
-void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
+static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH_id, uint8_t harq_pid)
 {
   NR_DL_FRAME_PARMS *frame_parms = &gNB->frame_parms;
   nfapi_nr_pusch_pdu_t *pusch_pdu = &gNB->ulsch[ULSCH_id].harq_process->ulsch_pdu;
 
   uint16_t nb_re_dmrs;
-  uint8_t enable_ldpc_offload = gNB->ldpc_offload_flag;
   uint16_t start_symbol = pusch_pdu->start_symbol_index;
   uint16_t number_symbols = pusch_pdu->nr_of_symbols;
 
@@ -407,17 +397,10 @@ void nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int ULSCH
   //----------------------------------------------------------
 
   start_meas(&gNB->ulsch_decoding_stats);
-  nr_ulsch_decoding(gNB, ULSCH_id, gNB->pusch_vars[ULSCH_id].llr, frame_parms, pusch_pdu, frame_rx, slot_rx, harq_pid, G);
-  if (enable_ldpc_offload == 0) {
-    while (gNB->nbDecode > 0) {
-      notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
-      if (req == NULL)
-	break; // Tpool has been stopped
-      nr_postDecode(gNB, req);
-      delNotifiedFIFO_elt(req);
-    }
-  }
+  int nbDecode =
+      nr_ulsch_decoding(gNB, ULSCH_id, gNB->pusch_vars[ULSCH_id].llr, frame_parms, pusch_pdu, frame_rx, slot_rx, harq_pid, G);
   stop_meas(&gNB->ulsch_decoding_stats);
+  return nbDecode;
 }
 
 
@@ -848,6 +831,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
     }
   }
 
+  int totalDecode = 0;
   for (int ULSCH_id = 0; ULSCH_id < gNB->max_nb_pusch; ULSCH_id++) {
     NR_gNB_ULSCH_t *ulsch = &gNB->ulsch[ULSCH_id];
     NR_UL_gNB_HARQ_t *ulsch_harq = ulsch->harq_process;
@@ -944,11 +928,20 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       // LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
       // LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 1);
-      nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, ulsch->harq_pid);
+      totalDecode += nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, ulsch->harq_pid);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 0);
     }
   }
-
+  if (totalDecode > 0 && gNB->ldpc_offload_flag == 0) {
+    while (totalDecode > 0) {
+      notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
+      if (req == NULL)
+        break; // Tpool has been stopped
+      nr_postDecode(gNB, req);
+      delNotifiedFIFO_elt(req);
+      totalDecode--;
+    }
+  }
   for (int i = 0; i < gNB->max_nb_srs; i++) {
     NR_gNB_SRS_t *srs = &gNB->srs[i];
     if (srs) {
