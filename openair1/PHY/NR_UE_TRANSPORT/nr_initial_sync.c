@@ -300,7 +300,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               i,
                               is * fp->samples_per_frame + ue->ssb_offset,
                               false,
-                              rxdataF);
+                              rxdataF,
+                              link_type_dl);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
@@ -534,7 +535,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
                               is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                               true,
-                              rxdataF);
+                              rxdataF,
+                              link_type_dl);
 
         nr_pdcch_channel_estimation(ue,
                                     proc,
@@ -560,7 +562,8 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
                                   m,
                                   is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
                                   true,
-                                  rxdataF);
+                                  rxdataF,
+                                  link_type_dl);
           }
 
           uint8_t nb_re_dmrs;

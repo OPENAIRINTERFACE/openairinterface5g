@@ -33,6 +33,7 @@ This section deals with basic functions for OFDM Modulation.
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_gNB.h"
 #include "PHY/impl_defs_top.h"
+#include "PHY/impl_defs_nr.h"
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "modulation_common.h"
@@ -337,11 +338,13 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
                        c16_t *txdataF,
                        int slot,
                        int first_symbol,
-                       int nsymb)
+                       int nsymb,
+                       int link_type)
 {
   int symb_offset = (slot%fp->slots_per_subframe)*fp->symbols_per_slot;
 
-  c16_t *symbol_rotation = fp->symbol_rotation[0] + symb_offset;
+  c16_t *symbol_rotation = fp->symbol_rotation[link_type] + symb_offset;
+  int N_RB = (link_type == link_type_sl) ? fp->N_RB_SL : fp->N_RB_DL;
 
   for (int sidx = first_symbol; sidx < first_symbol + nsymb; sidx++) {
     c16_t *this_rotation = symbol_rotation + sidx;
@@ -354,20 +357,20 @@ void apply_nr_rotation(NR_DL_FRAME_PARMS *fp,
       this_rotation->r,
       this_rotation->i);
 
-    if (fp->N_RB_DL & 1) {
+    if (N_RB & 1) {
       rotate_cpx_vector(this_symbol, this_rotation, this_symbol,
-                        (fp->N_RB_DL + 1) * 6, 15);
+                        (N_RB + 1) * 6, 15);
       rotate_cpx_vector(this_symbol + fp->first_carrier_offset - 6,
                         this_rotation,
                         this_symbol + fp->first_carrier_offset - 6,
-                        (fp->N_RB_DL + 1) * 6, 15);
+                        (N_RB + 1) * 6, 15);
     } else {
       rotate_cpx_vector(this_symbol, this_rotation, this_symbol,
-                        fp->N_RB_DL * 6, 15);
+                        N_RB * 6, 15);
       rotate_cpx_vector(this_symbol + fp->first_carrier_offset,
                         this_rotation,
                         this_symbol + fp->first_carrier_offset,
-                        fp->N_RB_DL * 6, 15);
+                        N_RB * 6, 15);
     }
   }
 }

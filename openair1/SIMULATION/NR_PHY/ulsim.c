@@ -1276,7 +1276,8 @@ int main(int argc, char **argv)
                                gNB->common_vars.rxdataF[aa],
                                slot,
                                0,
-                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14);
+                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14,
+                               link_type_ul);
         }
 
         ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
