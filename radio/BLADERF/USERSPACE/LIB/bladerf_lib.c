@@ -1115,6 +1115,12 @@ int device_init(openair0_device *device,
 
     // calibrate
 
+#if 0
+    /* those calls fail for "Nuand bladeRF 2.0 (bladerf2)", so commented,
+     * but let's keep the code in case it's needed (for other boards,
+     * for anything, unfortunately we don't have other boards to test
+     * right now)
+     */
     if ((status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_LPF_TUNING)) != 0 ||
             (status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_TX_LPF)) != 0 ||
             (status=bladerf_calibrate_dc(brf->dev, BLADERF_DC_CAL_RX_LPF)) != 0 ||
@@ -1123,6 +1129,7 @@ int device_init(openair0_device *device,
         brf_error(status);
     } else
         printf("[BRF] calibration OK\n");
+#endif
 
     bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg->log_level));
 
