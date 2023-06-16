@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include "assertions.h"
 #include "nr_common.h"
+#include <complex.h>
 
 const char *duplex_mode[]={"FDD","TDD"};
 
@@ -737,4 +738,28 @@ uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
   AssertFatal(ssb_offset_point_a % scs_scaling == 0, "PRB offset %d can create frequency offset\n", ssb_offset_point_a);
   AssertFatal(sco % scs_scaling == 0, "ssb offset %d can create frequency offset\n", sco);
   return ssb_offset_point_a;
+}
+
+int get_delay_idx(int delay, int max_delay_comp)
+{
+  int delay_idx = max_delay_comp + delay;
+  // If the measured delay is less than -MAX_DELAY_COMP, a -MAX_DELAY_COMP delay is compensated.
+  delay_idx = max(delay_idx, 0);
+  // If the measured delay is greater than +MAX_DELAY_COMP, a +MAX_DELAY_COMP delay is compensated.
+  delay_idx = min(delay_idx, max_delay_comp << 1);
+  return delay_idx;
+}
+
+void init_delay_table(uint16_t ofdm_symbol_size,
+                      int max_delay_comp,
+                      int max_ofdm_symbol_size,
+                      c16_t delay_table[][max_ofdm_symbol_size])
+{
+  for (int delay = -max_delay_comp; delay <= max_delay_comp; delay++) {
+    for (int k = 0; k < ofdm_symbol_size; k++) {
+      double complex delay_cexp = cexp(I * (2.0 * M_PI * k * delay / ofdm_symbol_size));
+      delay_table[max_delay_comp + delay][k].r = (int16_t)round(256 * creal(delay_cexp));
+      delay_table[max_delay_comp + delay][k].i = (int16_t)round(256 * cimag(delay_cexp));
+    }
+  }
 }

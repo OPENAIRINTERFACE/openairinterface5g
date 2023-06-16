@@ -123,6 +123,7 @@ uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
                                   int ssbSubcarrierSpacing,
                                   int frequency_range);
 int get_ssb_subcarrier_offset(uint32_t absoluteFrequencySSB, uint32_t absoluteFrequencyPointA);
+int get_delay_idx(int delay, int max_delay_comp);
 
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
