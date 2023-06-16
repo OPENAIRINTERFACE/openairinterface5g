@@ -109,12 +109,12 @@ git submodule update
 ```bash
 git clone https://gitlab.eurecom.fr/mosaic5g/flexric flexric
 cd flexric/
-git checkout mir_dev
+git checkout d3ff879135d036632d7938c2085dbf4577759225
 ```
 
 ### 2.2.2 Build FlexRIC
 ```bash
-mkdir build && cd build && cmake .. && make
+mkdir build && cd build && cmake .. && make -j8
 ```
 
 ### 2.2.3 Installation of Service Models (SMs)
