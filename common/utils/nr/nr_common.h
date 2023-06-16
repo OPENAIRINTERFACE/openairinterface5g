@@ -59,6 +59,14 @@ typedef struct nr_bandentry_s {
   uint8_t deltaf_raster;
 } nr_bandentry_t;
 
+typedef struct {
+  int band;
+  int scs_index;
+  int first_gscn;
+  int step_gscn;
+  int last_gscn;
+} sync_raster_t;
+
 typedef enum frequency_range_e {
   FR1 = 0,
   FR2
