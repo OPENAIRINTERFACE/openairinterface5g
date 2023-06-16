@@ -273,8 +273,6 @@ static void nr_processDLSegment(void *arg)
     rdata->decodeIterations = nrLDPC_decoder(p_decoderParms, (int8_t *)&pl[0], LDPCoutput, &procTime, &harq_process->abort_decode);
     //VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DLSCH_LDPC, VCD_FUNCTION_OUT);
 
-    LOG_W(PHY,"rdata->decodeIterations = %d\n", rdata->decodeIterations);
-
     if (rdata->decodeIterations <= dlsch->max_ldpc_iterations)
       memcpy(harq_process->c[r], LDPCoutput, Kr >> 3);
     stop_meas(&rdata->ts_ldpc_decode);
