@@ -150,7 +150,8 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           unsigned char symbol,
                           int sample_offset,
                           bool pbch_decoded,
-                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
+                          int link_type)
 {
   NR_DL_FRAME_PARMS *frame_parms = &ue->frame_parms;
   NR_UE_COMMON *common_vars   = &ue->common_vars;
@@ -230,7 +231,7 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
     stop_meas(&ue->rx_dft_stats);
 
     int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    c16_t rot2 = frame_parms->symbol_rotation[0][symbol + symb_offset];
+    c16_t rot2 = frame_parms->symbol_rotation[link_type][symbol + symb_offset];
     rot2.i=-rot2.i;
 
 #ifdef DEBUG_FEP
@@ -314,14 +315,15 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  c16_t *rxdataF,
 			  int slot,
 			  int first_symbol,
-			  int nsymb)
+			  int nsymb,
+			  int link_type)
 {
   int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
   int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
 
   for (int symbol=first_symbol;symbol<nsymb;symbol++) {
     
-    c16_t rot2 = frame_parms->symbol_rotation[1][symbol + symb_offset];
+    c16_t rot2 = frame_parms->symbol_rotation[link_type][symbol + symb_offset];
     rot2.i=-rot2.i;
     LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
 

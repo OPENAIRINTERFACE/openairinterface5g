@@ -80,7 +80,10 @@ void init_downlink_harq_status(NR_DL_UE_HARQ_t *dl_harq) { }
 
 /* temporary dummy implem of get_softmodem_optmask, till basic simulators implemented as device */
 uint64_t get_softmodem_optmask(void) {return 0;}
-softmodem_params_t *get_softmodem_params(void) {return 0;}
+static softmodem_params_t softmodem_params;
+softmodem_params_t *get_softmodem_params(void) {
+  return &softmodem_params;
+}
 //Fixme: Uniq dirty DU instance, by global var, datamodel need better management
 instance_t DUuniqInstance=0;
 instance_t CUuniqInstance=0;
@@ -138,7 +141,7 @@ int NB_UE_INST = 1;
 int main(int argc, char **argv){
 
   char c;
-
+  get_softmodem_params()->sl_mode = 0;
   double sigma2, sigma2_dB = 0, SNR, snr0 = -2.0, snr1 = 0.0, ue_speed0 = 0.0, ue_speed1 = 0.0;
   double **s_re, **s_im, **r_re, **r_im, iqim = 0.0, delay_avg = 0, ue_speed = 0, fs=-1, bw;
   int i, l, aa, aarx, trial, n_frames = 1, prach_start, rx_prach_start; //, ntrials=1;

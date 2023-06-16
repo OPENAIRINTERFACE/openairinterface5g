@@ -147,6 +147,8 @@ struct NR_DL_FRAME_PARMS {
   int N_RB_DL;
   /// Number of resource blocks (RB) in UL
   int N_RB_UL;
+  /// Number of resource blocks (RB) in SL
+  int N_RB_SL;
   ///  total Number of Resource Block Groups: this is ceil(N_PRB/P)
   uint8_t N_RBG;
   /// Total Number of Resource Block Groups SubSets: this is P
@@ -157,6 +159,8 @@ struct NR_DL_FRAME_PARMS {
   uint64_t dl_CarrierFreq;
   /// UL carrier frequency
   uint64_t ul_CarrierFreq;
+  /// SL carrier frequency
+  uint64_t sl_CarrierFreq;
   /// TX attenuation
   uint32_t att_tx;
   /// RX attenuation
@@ -216,8 +220,8 @@ struct NR_DL_FRAME_PARMS {
   /// Cyclic Prefix for DL (0=Normal CP, 1=Extended CP)
   lte_prefix_type_t Ncp;
   /// sequence which is computed based on carrier frequency and numerology to rotate/derotate each OFDM symbol according to Section 5.3 in 38.211
-  /// First dimension is for the direction of the link (0 DL, 1 UL)
-  c16_t symbol_rotation[2][224];
+  /// First dimension is for the direction of the link (0 DL, 1 UL, 2 SL)
+  c16_t symbol_rotation[3][224];
   /// sequence used to compensate the phase rotation due to timeshifted OFDM symbols
   /// First dimenstion is for different CP lengths
   c16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
