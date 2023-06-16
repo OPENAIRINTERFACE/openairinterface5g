@@ -277,7 +277,7 @@ static void fill_qos(NGAP_QosFlowSetupRequestList_t *qos, pdusession_t *session)
 
 static int decodePDUSessionResourceSetup(pdusession_t *session)
 {
-  NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer;
+  NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer = NULL;
   for (int i=0; i<session->pdusessionTransfer.length; i++)
     printf("%02x:",session->pdusessionTransfer.buffer[i]);
   printf("\n");
@@ -852,7 +852,7 @@ static void fill_qos2(NGAP_QosFlowAddOrModifyRequestList_t *qos, pdusession_t *s
 
 static void decodePDUSessionResourceModify(pdusession_t *param, const ngap_pdu_t pdu)
 {
-  NGAP_PDUSessionResourceModifyRequestTransfer_t *pdusessionTransfer;
+  NGAP_PDUSessionResourceModifyRequestTransfer_t *pdusessionTransfer = NULL;
   asn_dec_rval_t dec_rval = aper_decode(NULL, &asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer, (void **)&pdusessionTransfer, pdu.buffer, pdu.length, 0, 0);
 
   if (dec_rval.code != RC_OK) {
