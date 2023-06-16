@@ -20,6 +20,7 @@
 - [GET_SOURCES.md](./GET_SOURCES.md): how to download the sources
 - [BUILD.md](./BUILD.md): how to build the sources
 - [clang-format.md](./clang-format.md): how to format the code
+- [environment-variables.md](./environment-variables.md): the environment variables used by OAI
 
 There is some general information in the [OpenAirInterface Gitlab Wiki](https://gitlab.eurecom.fr/oai/openairinterface5g/-/wikis/home)
 
