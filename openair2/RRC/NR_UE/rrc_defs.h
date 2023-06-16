@@ -183,62 +183,62 @@ typedef struct NR_UE_Timers_Constants_s {
 } NR_UE_Timers_Constants_t;
 
 typedef struct NR_UE_RRC_INST_s {
+  NR_MeasConfig_t        *meas_config;
+  NR_CellGroupConfig_t   *cell_group_config;
+  NR_ServingCellConfigCommonSIB_t *servingCellConfigCommonSIB;
+  NR_CellGroupConfig_t   *scell_group_config;
+  NR_RadioBearerConfig_t *radio_bearer_config;
 
-    NR_MeasConfig_t        *meas_config;
-    NR_CellGroupConfig_t   *cell_group_config;
-    NR_ServingCellConfigCommonSIB_t *servingCellConfigCommonSIB;
-    NR_CellGroupConfig_t   *scell_group_config;
-    NR_RadioBearerConfig_t *radio_bearer_config;
+  NR_MeasObjectToAddMod_t        *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
+  NR_ReportConfigToAddMod_t      *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
+  NR_QuantityConfig_t            *QuantityConfig[NB_CNX_UE];
+  NR_MeasIdToAddMod_t            *MeasId[NB_CNX_UE][MAX_MEAS_ID];
+  NR_MeasGapConfig_t             *measGapConfig[NB_CNX_UE];
+  NR_RSRP_Range_t                s_measure;
+  NR_SRB_ToAddMod_t              *SRB1_config[NB_CNX_UE];
+  NR_SRB_ToAddMod_t              *SRB2_config[NB_CNX_UE];
+  NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
+  rb_id_t                        *defaultDRB; // remember the ID of the default DRB
 
-    NR_MeasObjectToAddMod_t        *MeasObj[NB_CNX_UE][MAX_MEAS_OBJ];
-    NR_ReportConfigToAddMod_t      *ReportConfig[NB_CNX_UE][MAX_MEAS_CONFIG];
-    NR_QuantityConfig_t            *QuantityConfig[NB_CNX_UE];
-    NR_MeasIdToAddMod_t            *MeasId[NB_CNX_UE][MAX_MEAS_ID];
-    NR_MeasGapConfig_t             *measGapConfig[NB_CNX_UE];
-    NR_RSRP_Range_t                s_measure;
-    NR_SRB_ToAddMod_t              *SRB1_config[NB_CNX_UE];
-    NR_SRB_ToAddMod_t              *SRB2_config[NB_CNX_UE];
-    NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
-    rb_id_t                        *defaultDRB; // remember the ID of the default DRB
+  char                           *uecap_file;
+  rnti_t                         rnti;
 
-    char                           *uecap_file;
-    rnti_t                         rnti;
+  NR_SRB_INFO                    Srb0[NB_SIG_CNX_UE];
+  NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
+  NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
-    NR_SRB_INFO                    Srb0[NB_SIG_CNX_UE];
-    NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
-    NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
+  uint8_t                        MBMS_flag;
+  OAI_NR_UECapability_t          *UECap;
+  uint8_t                        *UECapability;
+  uint16_t                       UECapability_size;
 
-    uint8_t                        MBMS_flag;
-    OAI_NR_UECapability_t          *UECap;
-    uint8_t 			   *UECapability;
-    uint16_t                       UECapability_size;
+  NR_UE_Timers_Constants_t timers_and_constants;
 
-    NR_UE_Timers_Constants_t timers_and_constants;
+  RA_trigger_t                   ra_trigger;
 
-    RA_trigger_t                   ra_trigger;
+  plmn_t                         plmnID;
 
-    plmn_t                         plmnID;
+  BIT_STRING_t requested_SI_List;
+  NR_UE_RRC_SI_INFO              SInfo[NB_SIG_CNX_UE];
 
-    BIT_STRING_t requested_SI_List;
-    NR_UE_RRC_SI_INFO              SInfo[NB_SIG_CNX_UE];
+  NR_MIB_t *mib;
 
-    NR_MIB_t *mib;
+  // active BWPs
+  NR_BWP_DownlinkDedicated_t *bwpd;
+  NR_BWP_UplinkDedicated_t *ubwpd;
 
-    // active BWPs
-    NR_BWP_DownlinkDedicated_t *bwpd;
-    NR_BWP_UplinkDedicated_t *ubwpd;
+  /* KeNB as computed from parameters within USIM card */
+  uint8_t kgnb[32];
+  /* Used integrity/ciphering algorithms */
+  //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
+  NR_CipheringAlgorithm_t  cipheringAlgorithm;
+  e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
+  bool as_security_activated;
 
-    /* KeNB as computed from parameters within USIM card */
-    uint8_t kgnb[32];
-    /* Used integrity/ciphering algorithms */
-    //RRC_LIST_TYPE(NR_SecurityAlgorithmConfig_t, NR_SecurityAlgorithmConfig) SecurityAlgorithmConfig_list;
-    NR_CipheringAlgorithm_t  cipheringAlgorithm;
-    e_NR_IntegrityProtAlgorithm  integrityProtAlgorithm;
-
-    long               selected_plmn_identity;
-    Rrc_State_NR_t     nrRrcState;
-    Rrc_Sub_State_NR_t nrRrcSubState;
-    as_nas_info_t      initialNasMsg;
+  long               selected_plmn_identity;
+  Rrc_State_NR_t     nrRrcState;
+  Rrc_Sub_State_NR_t nrRrcSubState;
+  as_nas_info_t      initialNasMsg;
 } NR_UE_RRC_INST_t;
 
 #endif
