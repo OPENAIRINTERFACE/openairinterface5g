@@ -88,13 +88,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
 
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-pkg_search_module(OPENPGM openpgm-5.1 openpgm-5.2)
-if(NOT ${OPENPGM_FOUND})
-  message("PACKAGE openpgm-5.1 is required by binaries such as oaisim: will fail later if this target is built")
-else()
-  include_directories(${OPENPGM_INCLUDE_DIRS})
-endif()
-
 pkg_search_module(XPM xpm)
 if(NOT ${XPM_FOUND})
   message("PACKAGE xpm not found: some targets will fail")
