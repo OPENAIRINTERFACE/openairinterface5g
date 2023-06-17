@@ -88,13 +88,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
 
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-pkg_search_module(XPM xpm)
-if(NOT ${XPM_FOUND})
-  message("PACKAGE xpm not found: some targets will fail")
-else()
-  include_directories(${XPM_INCLUDE_DIRS})
-endif()
-
 # Atlas is required by some packages, but not found in pkg-config
 # So, here are some hacks here. Hope this gets fixed in future!
 if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
