@@ -8,10 +8,10 @@ OAI uses/supports a number of environment variables, documented in the following
 - `NVRAM_DIR`: directory to read/write NVRAM data in (5G) `nvram` tool; if not defined, will use `PWD` (working directory)
 - `OAI_CONFIGMODULE`: can be used to pass the configuration file instead of `-O`
 - `OAI_GDBSTACKS`: if defined when hitting an assertion (`DevAssert()`, `AssertFatal()`, ...), OAI will load `gdb` and provide a backtrace for every thread
+- `OAI_THREADPOOLMEASUREMENTS`: path to a file to store thread pool debugging information, see the [thread pool documentation](..common/utils/threadPool/thread-pool.md)
 - `OPENAIR_DIR`: should point to the root directory of OpenAirInterface; some code relies on this to get a filename, e.g., BLER curves for L2sim channel emulation
 - `RFSIMULATOR`: the RFsimulator's work mode, can be either `server` (for server mode) or a valid IP address (for client mode)
 - `USIM_DIR`: directory to read/write USIM data in (4G) `usim` tool; if not defined, will use `PWD` (working directory)
-- `threadPoolMeasurements`: path to a file to store thread pool debugging information, see the [thread pool documentation](..common/utils/threadPool/thread-pool.md)
 
 Furthermore, these variables appear in code that is not maintained and maybe not even compiled anywhere:
 - `HOST`: alternative host to connect to, for CLI, if neither `REMADDR` nor `SSH_CLIENT` are defined
