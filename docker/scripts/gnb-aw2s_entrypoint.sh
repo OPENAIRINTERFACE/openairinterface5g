@@ -15,7 +15,7 @@ echo "== Configuration file:"
 cat $CONFIGFILE
 
 # enable printing of stack traces on assert
-export gdbStacks=1
+export OAI_GDBSTACKS=1
 
 echo "=================================="
 echo "== Starting gNB soft modem with AW2S"
