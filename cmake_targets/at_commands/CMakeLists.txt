@@ -102,8 +102,6 @@ find_package(Threads REQUIRED)
 set (FIRMWARE_VERSION "No svn information")
 add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
 
-add_boolean_option(LINUX   True  "????")
-
 ##########################
 # NAS LAYER OPTIONS
 ##########################

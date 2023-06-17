@@ -450,10 +450,11 @@ add_library(CONFIG_LIB
 target_link_libraries(CONFIG_LIB PRIVATE dl UTIL)
 add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
 target_link_libraries(params_libconfig config)
+
 # shared library loader
-set (SHLIB_LOADER_SOURCES
-  ${OPENAIR_DIR}/common/utils/load_module_shlib.c
-)
+add_library(shlib_loader OBJECT common/utils/load_module_shlib.c)
+target_link_libraries(shlib_loader PRIVATE CONFIG_LIB)
+
 # include RF devices / transport protocols library modules
 ######################################################################
 
@@ -1910,11 +1911,6 @@ set (NBIOT_SOURCES
   )
 add_library(NB_IoT MODULE ${NBIOT_SOURCES} )
 
-# shared library loader
-set (SHLIB_LOADER_SOURCES
-  ${OPENAIR_DIR}/common/utils/load_module_shlib.c
-  )
-
 add_library(LIB_5GNAS_GNB
   ${NAS_SRC}/COMMON/nr_common.c
   ${NAS_SRC}/gNB/network_process_nas.c
@@ -2076,7 +2072,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 add_dependencies(lte-softmodem oai_iqplayer)
 
@@ -2084,7 +2079,7 @@ target_link_libraries(lte-softmodem PRIVATE
   -Wl,--start-group
   lte_rrc nr_rrc s1ap m2ap x2ap m3ap GTPV1U SECURITY UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_LIB SCHED_RU_LIB
   PHY_COMMON PHY PHY_RU  L2 L2_LTE NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI SIMU SIMU_ETH
+  ${NAS_UE_LIB} ITTI SIMU SIMU_ETH shlib_loader
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
@@ -2101,12 +2096,10 @@ add_executable(oairu
   ${OPENAIR_DIR}/executables/main_ru.c
   ${T_SOURCE}
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
-  ${SHLIB_LOADER_SOURCES}
 )
 target_link_libraries(oairu PRIVATE
   -Wl,--start-group
-  SCHED_RU_LIB
-  PHY_COMMON PHY_RU UTIL
+  SCHED_RU_LIB PHY_COMMON PHY_RU UTIL shlib_loader
   -Wl,--end-group z dl)
 
 target_link_libraries(oairu PRIVATE pthread m CONFIG_LIB rt ${T_LIB})
@@ -2134,7 +2127,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 
 if (NOT ${NOS1})
@@ -2145,7 +2137,7 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   lte_rrc nr_rrc s1ap x2ap m2ap m3ap
   SECURITY UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU SIMU_ETH NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI
+  ${NAS_UE_LIB} ITTI shlib_loader
   -Wl,--end-group z dl)
 
 target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
@@ -2178,7 +2170,6 @@ add_executable(nr-softmodem
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 
 target_link_libraries(nr-softmodem PRIVATE
@@ -2186,7 +2177,7 @@ target_link_libraries(nr-softmodem PRIVATE
   UTIL HASHTABLE SCTP_CLIENT SCHED_LIB SCHED_RU_LIB SCHED_NR_LIB PHY_NR PHY PHY_COMMON PHY_NR_COMMON PHY_RU GTPV1U SECURITY
   ITTI ${NAS_UE_LIB} lte_rrc nr_rrc
   ngap s1ap L2_LTE_NR L2_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_VNF_LIB NFAPI_PNF_LIB NFAPI_USER_LIB SIMU SIMU_ETH
-  x2ap f1ap m2ap m3ap e1ap
+  x2ap f1ap m2ap m3ap e1ap shlib_loader
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
@@ -2212,13 +2203,12 @@ add_executable(nr-cuup
   ${NR_PDCP_SRC}
   ${NR_SDAP_SRC}
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 
 target_link_libraries(nr-cuup PRIVATE
                       CONFIG_LIB ITTI SCTP_CLIENT
                       GTPV1U e1ap e1_pdcp_if f1ap SIMU_ETH
-                      z sctp dl pthread)
+                      z sctp dl pthread shlib_loader)
 target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
                      
 # nr-uesoftmodem is  UE implementation
@@ -2240,7 +2230,6 @@ add_executable(nr-uesoftmodem
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 
 target_link_libraries(nr-uesoftmodem PRIVATE
@@ -2248,7 +2237,7 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   nr_rrc SECURITY UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB
-  ITTI LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH
+  ITTI LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH shlib_loader
   -Wl,--end-group z dl)
 
 target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES})
@@ -2289,16 +2278,14 @@ add_executable(rftest
   ${OPENAIR_DIR}/openair1/PHY/TOOLS/calibration_scope.c
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
-  ${SHLIB_LOADER_SOURCES}
 )
-target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m ${T_LIB} )
+target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL pthread dl m ${T_LIB} shlib_loader)
 target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(polartest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
@@ -2309,12 +2296,11 @@ add_executable(smallblocktest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
 )
 
 target_link_libraries(smallblocktest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread dl
+  m pthread dl shlib_loader
 )
 
 
@@ -2322,7 +2308,6 @@ add_executable(ldpctest
    ${PHY_NR_CODINGIF}
    ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
    ${T_SOURCE}
-   ${SHLIB_LOADER_SOURCES}
    )
 
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_parityCheck)
@@ -2330,8 +2315,8 @@ if (ENABLE_LDPC_CUDA)
   add_dependencies(ldpctest ldpc_cuda)
 endif()
 target_link_libraries(ldpctest PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread dl
+  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON -Wl,--end-group
+  m pthread dl shlib_loader
   )
 
 add_executable(nr_dlschsim
@@ -2339,11 +2324,10 @@ add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_dlschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
   )
 target_link_libraries(nr_dlschsim PRIVATE asn1_nr_rrc_hdrs)
 
@@ -2352,11 +2336,10 @@ add_executable(nr_pbchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_pbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
 )
 target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2367,11 +2350,10 @@ add_executable(nr_pucchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_pucchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
 )
 target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2386,11 +2368,10 @@ add_executable(nr_dlsim
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_dlsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
   )
 target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2399,10 +2380,10 @@ add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES})
+)
 target_link_libraries(nr_prachsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB CONFIG_LIB -lz -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl)
+  m pthread ${T_LIB} ITTI dl shlib_loader)
 target_link_libraries(nr_prachsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_ulschsim
@@ -2411,11 +2392,10 @@ add_executable(nr_ulschsim
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 target_link_libraries(nr_ulschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
 )
 target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2430,7 +2410,6 @@ add_executable(nr_ulsim
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${T_SOURCE}
-  ${SHLIB_LOADER_SOURCES}
   )
 
 if (ENABLE_LDPC_T1)
@@ -2439,7 +2418,7 @@ endif()
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
-  m pthread ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl shlib_loader
   )
 target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2451,12 +2430,11 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
     ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
     ${T_SOURCE}
-    ${SHLIB_LOADER_SOURCES}
     ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe} PRIVATE
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
-    pthread m rt CONFIG_LIB ${T_LIB} dl
+    pthread m rt CONFIG_LIB ${T_LIB} dl shlib_loader
     )
   target_link_libraries(${myExe} PRIVATE asn1_lte_rrc_hdrs)
 
