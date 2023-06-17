@@ -37,9 +37,6 @@ include("cmake_targets/macros.cmake")
 ###################################
 include(FindPkgConfig)
 
-pkg_search_module(CONFIG libconfig REQUIRED)
-include_directories(${CONFIG_INCLUDE_DIRS})
-
 pkg_search_module(CRYPTO libcrypto REQUIRED)
 include_directories(${CRYPTO_INCLUDE_DIRS})
 
@@ -440,16 +437,20 @@ target_link_libraries(f1ap PRIVATE ngap nr_rrc)
 add_list1_option(NB_ANTENNAS_RX "4" "Number of antennas in reception" "1" "2" "4")
 add_list1_option(NB_ANTENNAS_TX "4" "Number of antennas in transmission" "1" "2" "4")
 
-#NOKIA config enhancement
 set (CONFIG_ROOTDIR ${OPENAIR_DIR}/common/config)
 add_library(CONFIG_LIB
   ${CONFIG_ROOTDIR}/config_load_configmodule.c
   ${CONFIG_ROOTDIR}/config_userapi.c
   ${CONFIG_ROOTDIR}/config_cmdline.c
 )
+
+# CONFIG_LIB is a wrapper around a particular config implementation, default is
+# libconfig in params_libconfig below
+pkg_check_modules(libconfig REQUIRED libconfig)
 target_link_libraries(CONFIG_LIB PRIVATE dl UTIL)
 add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
-target_link_libraries(params_libconfig config)
+target_include_directories(params_libconfig PRIVATE ${libconfig_INCLUDE_DIRS})
+target_link_libraries(params_libconfig PRIVATE ${libconfig_LIBRARIES})
 
 # shared library loader
 add_library(shlib_loader OBJECT common/utils/load_module_shlib.c)
@@ -1234,7 +1235,7 @@ set(PHY_MEX_UE
   ${OPENAIR_DIR}/common/utils/T/T.c
   ${OPENAIR_DIR}/common/utils/T/local_tracer.c
   )
-add_library(PHY_MEX ${PHY_MEX_UE} ${CONFIG_LIB})
+add_library(PHY_MEX ${PHY_MEX_UE})
 target_link_libraries(PHY_MEX PRIVATE asn1_lte_rrc_hdrs)
 
 #Layer 2 library
@@ -2029,7 +2030,7 @@ add_library(minimal_lib
   ${OPENAIR_DIR}/common/utils/minimal_stub.c
   ${T_SOURCE}
   )
-target_link_libraries(minimal_lib pthread dl ${T_LIB} CONFIG_LIB)
+target_link_libraries(minimal_lib pthread dl ${T_LIB})
 
 add_executable(nfapi_test
   ${OPENAIR_DIR}/openair2/NR_PHY_INTERFACE/nfapi_5g_test.c
@@ -2047,7 +2048,7 @@ target_link_libraries (measurement_display minimal_lib)
 add_executable(test5Gnas
   ${OPENAIR_DIR}/openair3/TEST/test5Gnas.c
 )
-target_link_libraries (test5Gnas LIB_5GNAS_GNB CONFIG_LIB minimal_lib )
+target_link_libraries (test5Gnas LIB_5GNAS_GNB minimal_lib )
 
 
 # lte-softmodem is both eNB and UE implementation
@@ -2279,7 +2280,7 @@ add_executable(rftest
   ${OPENAIR_DIR}/radio/COMMON/common_lib.c
   ${OPENAIR_DIR}/executables/softmodem-common.c
 )
-target_link_libraries(rftest PRIVATE minimal_lib CONFIG_LIB PHY_NR_COMMON UTIL forms pthread dl m ${T_LIB} shlib_loader)
+target_link_libraries(rftest PRIVATE minimal_lib PHY_NR_COMMON UTIL forms pthread dl m ${T_LIB} shlib_loader)
 target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 add_executable(polartest
@@ -2299,7 +2300,7 @@ add_executable(smallblocktest
 )
 
 target_link_libraries(smallblocktest PRIVATE
-  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
+  -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON -Wl,--end-group
   m pthread dl shlib_loader
 )
 
