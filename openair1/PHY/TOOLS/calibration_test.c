@@ -50,7 +50,6 @@ int main(int argc, char **argv) {
 
     
   int N_RB=50;
-  int subCarrierFreq=30e3;
   int sampling_rate=30.72e6;
   int DFT=2048;
   int TxAdvanceInDFTSize=12;
@@ -325,17 +324,8 @@ int main(int argc, char **argv) {
   while(!oai_exit) {
     for (int i=0; i<antennas; i++)
       read(fd, samplesTx[i], DFT*sizeof(c16_t));
-    int readBlockSize = rfdevice.trx_read_func(&rfdevice,
-					       &timestamp,
-					       samplesRx,
-					       DFT,
-					       antennas);
-    int txs = rfdevice.trx_write_func(&rfdevice,
-					    timestamp+TxAdvanceInDFTSize*DFT,
-					    samplesTx,
-					    DFT,
-					    antennas,
-					    0);
+    rfdevice.trx_read_func(&rfdevice, &timestamp, samplesRx, DFT, antennas);
+    rfdevice.trx_write_func(&rfdevice, timestamp + TxAdvanceInDFTSize * DFT, samplesTx, DFT, antennas, 0);
   }
 
   return 0;
