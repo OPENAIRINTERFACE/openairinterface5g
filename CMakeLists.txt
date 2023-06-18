@@ -37,9 +37,6 @@ include("cmake_targets/macros.cmake")
 ###################################
 include(FindPkgConfig)
 
-pkg_search_module(CRYPTO libcrypto REQUIRED)
-include_directories(${CRYPTO_INCLUDE_DIRS})
-
 # Check if asn1c is installed, and check if it supports all options we need
 # a user can provide ASN1C_EXEC to override an asn1c to use (e.g., parallel
 # installation)
@@ -291,6 +288,9 @@ add_library(nr_rrc ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
 target_link_libraries(nr_rrc PUBLIC asn1_nr_rrc asn1_lte_rrc)
 
 
+# S1AP and NGAP need crypt library
+pkg_check_modules(libcrypt REQUIRED libcrypt)
+
 # S1AP
 ##############
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
@@ -312,6 +312,8 @@ add_library(s1ap
   )
 target_link_libraries(s1ap PUBLIC asn1_s1ap)
 target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc)
+target_include_directories(s1ap PRIVATE ${libcrypt_INCLUDE_DIRS})
+target_link_libraries(s1ap PUBLIC ${libcrypt_LIBRARIES})
 
 # NGAP
 ##############
@@ -333,6 +335,8 @@ add_library(ngap
   )
 target_link_libraries(ngap PUBLIC asn1_ngap)
 target_link_libraries(ngap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+target_include_directories(ngap PRIVATE ${libcrypt_INCLUDE_DIRS})
+target_link_libraries(ngap PRIVATE ${libcrypt_LIBRARIES})
 
 #M2AP
 ##############
@@ -1920,7 +1924,7 @@ add_library(LIB_5GNAS_GNB
   )
 
 target_include_directories(LIB_5GNAS_GNB PRIVATE ${OPENAIR_DIR}/common/utils/ds/)
-target_link_libraries(LIB_5GNAS_GNB PRIVATE SECURITY ${CRYPTO_LIBRARIES})
+target_link_libraries(LIB_5GNAS_GNB PRIVATE SECURITY)
 target_link_libraries(LIB_5GNAS_GNB PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 # Simulation library
@@ -2083,7 +2087,7 @@ target_link_libraries(lte-softmodem PRIVATE
   ${NAS_UE_LIB} ITTI SIMU SIMU_ETH shlib_loader
   -Wl,--end-group z dl)
 
-target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
+target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt sctp)
 target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2141,7 +2145,7 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   ${NAS_UE_LIB} ITTI shlib_loader
   -Wl,--end-group z dl)
 
-target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
+target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt sctp)
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2181,7 +2185,7 @@ target_link_libraries(nr-softmodem PRIVATE
   x2ap f1ap m2ap m3ap e1ap shlib_loader
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
+target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt sctp)
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2241,7 +2245,7 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   ITTI LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH shlib_loader
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES})
+target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt)
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2456,7 +2460,7 @@ foreach(myExe s1ap
     ${OPENAIR3_DIR}/TEST/test_${myExe}.c
     )
   target_link_libraries (test_${myExe}
-    -Wl,--start-group SECURITY UTIL -Wl,--end-group m rt crypt ${CRYPTO_LIBRARIES} CONFIG_LIB
+    -Wl,--start-group SECURITY UTIL -Wl,--end-group m rt CONFIG_LIB
     )
 endforeach(myExe)
 
