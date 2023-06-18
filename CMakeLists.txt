@@ -642,8 +642,6 @@ add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSIO
 add_boolean_option(ENABLE_USE_CPU_EXECUTION_TIME False "Add data in vcd traces: disable it if perf issues" ON)
 add_boolean_option(ENABLE_VCD              False  "always true now, time measurements of proc calls and var displays" ON)
 add_boolean_option(ENABLE_VCD_FIFO         False  "time measurements of proc calls and var displays sent to FIFO (one more thread)" ON)
-add_boolean_option(LINUX                   False "used in weird memcpy() in pdcp.c ???" ON)
-add_boolean_option(LINUX_LIST              False "used only in lists.c: either use OAI implementation of lists or Linux one (should be ON, but it is False" ON)
 
 ##########################
 # PHY options
@@ -653,7 +651,6 @@ add_integer_option(MAX_NUM_CCs             1     "????" ON)
 add_boolean_option(SMBV                    False "Rohde&Schwarz SMBV100A vector signal generator" ON)
 add_boolean_option(DEBUG_PHY               False "Enable PHY layer debugging options" ON)
 add_boolean_option(DEBUG_PHY_PROC          False "Enable debugging of PHY layer procedures" ON)
-add_boolean_option(DEBUG_DLSCH             False "Enable debugging of DLSCH physical layer channel" ON)
 add_boolean_option(MEX                     False "Enabling compilation with mex" ON)
 
 ##########################
@@ -665,21 +662,9 @@ add_boolean_option(NAS_UE                  True  "NAS UE INSTANCE (<> NAS_MME)" 
 
 
 ##########################
-# PDCP LAYER OPTIONS
-##########################
-#add_boolean_option(LINK_ENB_PDCP_TO_IP_DRIVER  False "For eNB, PDCP communicate with a IP driver")
-#add_boolean_option(LINK_ENB_PDCP_TO_GTPV1U     True  "For eNB, PDCP communicate with GTP-U protocol (eNB<->S-GW)")
-
-##########################
 # RRC LAYER OPTIONS
 ##########################
-add_boolean_option(RRC_DEFAULT_RAB_IS_AM       True   "set the RLC mode to AM for the default bearer, otherwise it is UM." ON)
-
-
-##########################
-# S1AP LAYER OPTIONS
-##########################
-# none
+add_boolean_option(RRC_DEFAULT_RAB_IS_AM       True   "set the LTE RLC mode to AM for the default bearer, otherwise it is UM." ON)
 
 # add the binary tree to the search path for include files
 #######################################################
@@ -1340,12 +1325,6 @@ set(NR_PDCP_SRC
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia2.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_integrity_nia1.c
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/asn1_utils.c
-  #hack: include these files to compile the nr phy simulators
-  #these files should not be here, will be removed at some point when the
-  #computation is done directly inside nr_pdcp_integrity_nia1.c instead
-  #of reusing code of osa_stream_eia.c
-  #${OPENAIR2_DIR}/UTIL/OSA/osa_stream_eia.c
-  #${OPENAIR2_DIR}/UTIL/OSA/osa_snow3g.c
   )
 
 set(NR_SDAP_SRC
