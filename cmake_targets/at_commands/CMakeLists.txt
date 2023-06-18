@@ -103,7 +103,6 @@ set (FIRMWARE_VERSION "No svn information")
 add_definitions("-DFIRMWARE_VERSION=\"${FIRMWARE_VERSION}\"")
 
 add_boolean_option(LINUX   True  "????")
-add_boolean_option(ENB_MODE   True  "????") # to avoid backtrace
 
 ##########################
 # NAS LAYER OPTIONS

@@ -33,6 +33,7 @@
 
 #include "sctp_eNB_defs.h"
 
+#include "m3ap_default_values.h"
 #include "m3ap_ids.h" //looks X2AP specific for HO
 #include "m3ap_timers.h"
 

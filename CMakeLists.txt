@@ -636,11 +636,6 @@ add_boolean_option(PHY_TX_THREAD            False         "enable UE_EXPANSION w
 add_boolean_option(PRE_SCD_THREAD           False         "enable UE_EXPANSION with max 256 UE" ON)
 add_boolean_option(UESIM_EXPANSION          False         "enable UESIM_EXPANSION with max 256 UE" ON)
 
-########################
-# Include order
-##########################
-add_boolean_option(ENB_MODE True "Swap the include directories between openair2 and openair3" ON)
-
 ##########################
 # SCHEDULING/REAL-TIME/PERF options
 ##########################
@@ -701,19 +696,11 @@ include_directories("${OPENAIR_BIN_DIR}")
 # Legacy exact order
 
 include_directories("${OPENAIR_DIR}/executables")
-if(ENB_MODE)
-  include_directories("${OPENAIR2_DIR}/COMMON")
-  include_directories("${OPENAIR2_DIR}/UTIL")
-  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
-  include_directories("${OPENAIR3_DIR}/COMMON")
-  include_directories("${OPENAIR3_DIR}/UTILS")
-else()
-  include_directories("${OPENAIR3_DIR}/COMMON")
-  include_directories("${OPENAIR3_DIR}/UTILS")
-  include_directories("${OPENAIR2_DIR}/COMMON")
-  include_directories("${OPENAIR2_DIR}/UTIL")
-  include_directories("${OPENAIR2_DIR}/UTIL/LOG")
-endif()
+include_directories("${OPENAIR2_DIR}/COMMON")
+include_directories("${OPENAIR2_DIR}/UTIL")
+include_directories("${OPENAIR2_DIR}/UTIL/LOG")
+include_directories("${OPENAIR3_DIR}/COMMON")
+include_directories("${OPENAIR3_DIR}/UTILS")
 include_directories("${NFAPI_DIR}/nfapi/public_inc")
 include_directories("${NFAPI_DIR}/common/public_inc")
 include_directories("${NFAPI_DIR}/pnf/public_inc")
