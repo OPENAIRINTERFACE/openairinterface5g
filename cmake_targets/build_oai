@@ -49,11 +49,9 @@ RUN_GROUP=0
 TEST_CASE_GROUP=""
 BUILD_DIR=ran_build
 BUILD_DOXYGEN=0
-BUILD_COVERITY_SCAN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-MAKE_CMD=make
 BUILD_ECLIPSE=0
 NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope nrqtscope ldpc_cuda ldpc_t1 websrv oai_iqplayer"
@@ -340,10 +338,6 @@ function main() {
             BUILD_DOXYGEN=1
             echo_info "Will build doxygen support"
             shift;;     
-       --build-coverity-scan)
-            BUILD_COVERITY_SCAN=1
-            echo_info "Will build Coverity-Scan objects for upload"
-            shift;;
        --disable-T-Tracer)
             CMAKE_CMD="$CMAKE_CMD -DT_TRACER=False"
             echo_info "Disabling the T tracer"
@@ -409,7 +403,6 @@ function main() {
             shift;;
         --ninja)
             CMAKE_CMD="$CMAKE_CMD -GNinja"
-            MAKE_CMD=ninja
             shift;;
         --sanitize)
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_ADDRESS=True -DSANITIZE_UNDEFINED=True"
@@ -430,19 +423,6 @@ function main() {
             break;;
    esac
   done
-
-  ###################################
-  # Check if cov-build is installed #
-  ###################################
-  if [ "$BUILD_COVERITY_SCAN" == "1" ] ; then
-      echo_info "Checking cov-build is installed"
-      IS_INSTALLED=`which cov-build | grep -c cov-build || true`
-      if [ $IS_INSTALLED -eq 1 ] ; then
-          echo_info "Found cov-build"
-      else
-          echo_fatal "Did NOT find cov-build in PATH!"
-      fi
-  fi
 
   #######################################################
   # Setting and printing OAI envs, we should check here #
@@ -612,7 +592,7 @@ function main() {
     echo_info "Doxygen generation log is located here: $doxygen_log"
     echo_info "Generating Doxygen files....please wait"
     (
-    $MAKE_CMD doc
+      cmake --build . --target doc
     ) >& $doxygen_log
   fi
 
