@@ -85,42 +85,6 @@ elseif (${RF_BOARD} STREQUAL "OAI_AW2SORI")
 
 endif (${RF_BOARD} STREQUAL "OAI_USRP")
 
-# Atlas is required by some packages, but not found in pkg-config
-# So, here are some hacks here. Hope this gets fixed in future!
-if(EXISTS "/usr/include/atlas/cblas.h" OR EXISTS "/usr/include/cblas.h")
-  include_directories("/usr/include/atlas")
-  LINK_DIRECTORIES("/usr/lib/lapack")
-  LINK_DIRECTORIES("/usr/lib64")
-  LINK_DIRECTORIES("/usr/lib64/atlas") #Added because atlas libraries in CentOS 7 are here!
-
-  if(EXISTS "/usr/lib64/libblas.so" OR EXISTS "/usr/lib/libblas.so") #Case for CentOS7
-     list(APPEND ATLAS_LIBRARIES blas)
-
-  else() # Case for Ubuntu
-     list(APPEND ATLAS_LIBRARIES cblas)
-  endif()
-
-  if(EXISTS "/usr/lib/atlas/libtatlas.so" OR EXISTS "/usr/lib64/atlas/libtatlas.so") #Case for CentOS7
-     list(APPEND ATLAS_LIBRARIES tatlas)
-  else()
-     list(APPEND ATLAS_LIBRARIES atlas) #Case for Ubuntu
-  endif()
-
-  list(APPEND ATLAS_LIBRARIES lapack)
-
-# for ubuntu 17.10, directories are different
-elseif(EXISTS "/usr/include/x86_64-linux-gnu/cblas.h")
-  
-  include_directories("/usr/include/x86_64-linux-gnu")
-  LINK_DIRECTORIES("/usr/lib/x86_64-linux-gnu")
-  list(APPEND ATLAS_LIBRARIES cblas)
-  list(APPEND ATLAS_LIBRARIES atlas)
-  list(APPEND ATLAS_LIBRARIES lapack)
-  
-else()
-  message("No Blas/Atlas libs found, some targets will fail")
-endif()
-
 #########################################################
 # Base directories, compatible with legacy OAI building #
 #########################################################
@@ -1228,8 +1192,16 @@ target_link_libraries(PHY_COMMON PRIVATE asn1_lte_rrc_hdrs)
 add_library(PHY ${PHY_SRC})
 target_link_libraries(PHY PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
+pkg_check_modules(blas REQUIRED blas)
+pkg_check_modules(lapacke REQUIRED lapacke)
+
 add_library(PHY_UE ${PHY_SRC_UE})
 target_link_libraries(PHY_UE PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+# RHEL needs also cblas, but Ubuntu does not have it. So `cblas_LIBRARIES` will
+# be empty for Ubuntu, a no-op
+pkg_check_modules(cblas cblas)
+target_link_libraries(PHY_UE PRIVATE ${blas_LIBRARIES} ${cblas_LIBRARIES} ${lapacke_LIBRARIES})
+target_include_directories(PHY_UE PRIVATE ${blas_INCLUDE_DIRS} ${lapacke_INCLUDE_DIRS})
 
 add_library(PHY_NR_COMMON ${PHY_NR_SRC_COMMON})
 
@@ -1971,6 +1943,8 @@ set (SIMUSRC
 )
 add_library(SIMU STATIC ${SIMUSRC} )
 target_include_directories(SIMU PUBLIC ${OPENAIR1_DIR}/SIMULATION/TOOLS ${OPENAIR1_DIR}/SIMULATION/RF)
+target_link_libraries(SIMU PRIVATE ${blas_LIBRARIES} ${cblas_LIBRARIES} ${lapacke_LIBRARIES})
+target_include_directories(SIMU PRIVATE ${blas_INCLUDE_DIRS} ${lapacke_INCLUDE_DIRS})
 
 # Qt-based scope
 add_boolean_option(ENABLE_NRQTSCOPE OFF "Build the Qt-Scope" OFF)
@@ -2001,15 +1975,12 @@ include_directories("${NFAPI_DIR}/nfapi/inc")
 include_directories("${NFAPI_DIR}/sim_common/inc")
 include_directories("${NFAPI_DIR}/pnf_sim/inc")
 
-list(APPEND ATLAS_LIBRARIES lapack lapacke)
-
-
 add_library(rfsimulator MODULE
   ${OPENAIR_DIR}/radio/rfsimulator/simulator.c
   ${OPENAIR_DIR}/radio/rfsimulator/apply_channelmod.c
   ${OPENAIR1_DIR}/PHY/TOOLS/signal_energy.c
 	)
-target_link_libraries(rfsimulator PRIVATE SIMU ${ATLAS_LIBRARIES})
+target_link_libraries(rfsimulator PRIVATE SIMU)
 
 add_library(oai_iqplayer MODULE
 	${OPENAIR_DIR}/radio/iqplayer/iqplayer_lib.c
@@ -2174,10 +2145,10 @@ target_link_libraries(lte-uesoftmodem PRIVATE
   lte_rrc nr_rrc s1ap x2ap m2ap m3ap
   SECURITY UTIL HASHTABLE SCTP_CLIENT MME_APP SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON
   PHY_UE PHY_RU L2_UE L2_LTE SIMU SIMU_ETH NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_USER_LIB MISC_NFAPI_LTE_LIB
-  ${NAS_UE_LIB} ITTI ${ATLAS_LIBRARIES}
+  ${NAS_UE_LIB} ITTI
   -Wl,--end-group z dl)
 
-target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp ${ATLAS_LIBRARIES})
+target_link_libraries(lte-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
 target_link_libraries(lte-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2218,7 +2189,7 @@ target_link_libraries(nr-softmodem PRIVATE
   x2ap f1ap m2ap m3ap e1ap
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp ${ATLAS_LIBRARIES})
+target_link_libraries(nr-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} sctp)
 target_link_libraries(nr-softmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2277,10 +2248,10 @@ target_link_libraries(nr-uesoftmodem PRIVATE
   nr_rrc SECURITY UTIL HASHTABLE SCHED_RU_LIB SCHED_NR_UE_LIB
   PHY_COMMON PHY_NR_COMMON PHY_NR_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB
   NFAPI_USER_LIB MISC_NFAPI_NR_LIB
-  ITTI ${ATLAS_LIBRARIES} LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH
+  ITTI LIB_5GNAS_GNB LIB_NAS_SIMUE ${NAS_SIM_LIB} SIMU SIMU_ETH
   -Wl,--end-group z dl)
 
-target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES} ${ATLAS_LIBRARIES})
+target_link_libraries(nr-uesoftmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYPTO_LIBRARIES})
 target_link_libraries(nr-uesoftmodem PRIVATE ${T_LIB})
 target_link_libraries(nr-uesoftmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2310,7 +2281,7 @@ add_executable(dlsim_tm4
   )
 target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY ITTI -Wl,--end-group
-  pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES} ${T_LIB}
+  pthread m rt CONFIG_LIB ${T_LIB}
   )
 
 add_executable(rftest
@@ -2331,7 +2302,7 @@ add_executable(polartest
   )
 target_link_libraries(polartest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread dl
   )
 
 add_executable(smallblocktest
@@ -2343,7 +2314,7 @@ add_executable(smallblocktest
 
 target_link_libraries(smallblocktest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread dl
 )
 
 
@@ -2360,7 +2331,7 @@ if (ENABLE_LDPC_CUDA)
 endif()
 target_link_libraries(ldpctest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON CONFIG_LIB -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} dl
+  m pthread dl
   )
 
 add_executable(nr_dlschsim
@@ -2372,7 +2343,7 @@ add_executable(nr_dlschsim
   )
 target_link_libraries(nr_dlschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
   )
 target_link_libraries(nr_dlschsim PRIVATE asn1_nr_rrc_hdrs)
 
@@ -2385,7 +2356,7 @@ add_executable(nr_pbchsim
   )
 target_link_libraries(nr_pbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
 )
 target_link_libraries(nr_pbchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2400,7 +2371,7 @@ add_executable(nr_pucchsim
   )
 target_link_libraries(nr_pucchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
 )
 target_link_libraries(nr_pucchsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2419,7 +2390,7 @@ add_executable(nr_dlsim
   )
 target_link_libraries(nr_dlsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
   )
 target_link_libraries(nr_dlsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2431,7 +2402,7 @@ add_executable(nr_prachsim
   ${SHLIB_LOADER_SOURCES})
 target_link_libraries(nr_prachsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB CONFIG_LIB -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl)
+  m pthread ${T_LIB} ITTI dl)
 target_link_libraries(nr_prachsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 add_executable(nr_ulschsim
@@ -2444,7 +2415,7 @@ add_executable(nr_ulschsim
   )
 target_link_libraries(nr_ulschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
 )
 target_link_libraries(nr_ulschsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2468,7 +2439,7 @@ endif()
 
 target_link_libraries(nr_ulsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
-  m pthread ${ATLAS_LIBRARIES} ${T_LIB} ITTI dl
+  m pthread ${T_LIB} ITTI dl
   )
 target_link_libraries(nr_ulsim PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
@@ -2485,7 +2456,7 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     )
   target_link_libraries (${myExe} PRIVATE
     -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB SCHED_UE_LIB PHY_COMMON PHY_NR_COMMON PHY PHY_UE PHY_RU ITTI -Wl,--end-group
-    pthread m rt CONFIG_LIB ${ATLAS_LIBRARIES} ${T_LIB} dl
+    pthread m rt CONFIG_LIB ${T_LIB} dl
     )
   target_link_libraries(${myExe} PRIVATE asn1_lte_rrc_hdrs)
 

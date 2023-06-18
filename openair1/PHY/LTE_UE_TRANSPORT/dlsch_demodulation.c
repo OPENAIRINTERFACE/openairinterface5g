@@ -41,14 +41,8 @@
 #include <stdlib.h>
 #include <string.h>
 #include <linux/version.h>
-#if defined RHEL_RELEASE_CODE && RHEL_RELEASE_CODE >= 1796 && RHEL_RELEASE_CODE != 2403
-  #include <lapacke/lapacke_utils.h>
-  #include <lapacke/lapacke.h>
-#else
-  #include <lapacke_utils.h>
-  #include <lapacke.h>
-#endif
-#include <cblas.h>
+#include <lapacke_utils.h>
+#include <lapacke.h>
 #include "linear_preprocessing_rec.h"
 
 //#define DEBUG_MMSE
