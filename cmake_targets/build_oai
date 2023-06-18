@@ -448,11 +448,11 @@ function main() {
   # Setting and printing OAI envs, we should check here #
   #######################################################
 
-  cecho "OPENAIR_DIR    = $OPENAIR_DIR" $green
+  echo "OPENAIR_DIR    = $OPENAIR_DIR"
 
   if [ "$CLEAN_ALL" = "1" ] ; then
     clean_all_files
-    echo_info "Erased all previously producted files"
+    echo "Erased all previously producted files"
   fi
 
   dlog=$OPENAIR_DIR/cmake_targets/log
@@ -512,11 +512,10 @@ function main() {
   # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
   # e.g., cmake_targets/ran_build/build, hence the ../../..
   CMAKE_CMD="$CMAKE_CMD ../../.."
-  echo_info "running $CMAKE_CMD"
+  echo_info "Running \"$CMAKE_CMD\""
   eval $CMAKE_CMD
   
   if [[ "$execlist" != "" ]]; then
-    echo_info "Compiling $execlist..."
     compilations $BUILD_DIR all.txt $execlist
   fi
   

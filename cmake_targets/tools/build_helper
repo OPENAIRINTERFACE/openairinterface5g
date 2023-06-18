@@ -222,6 +222,7 @@ compilations() {
   shift 1
   local targets=$@
   cd $OPENAIR_DIR/cmake_targets/$dir/build
+  cecho "Running \"$MAKE_CMD $targets\"" $green
   echo_info "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
