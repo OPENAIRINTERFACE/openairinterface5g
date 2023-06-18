@@ -629,7 +629,6 @@ include_directories ("${OPENAIR_DIR}/radio/COMMON")
 ##############################################################
 
 add_boolean_option(OAI_NW_DRIVER_TYPE_ETHERNET False "????" ON)
-add_boolean_option(NAS_NETLINK False "useless ??? Must be True to compile nasmesh driver without rtai ????" ON)
 add_boolean_option(OAI_NW_DRIVER_USE_NETLINK True "????" ON)
 
 add_boolean_option(UE_EXPANSION             False         "enable UE_EXPANSION with max 256 UE" ON)
