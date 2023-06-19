@@ -318,17 +318,16 @@ void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
 			  int nsymb,
 			  int link_type)
 {
-  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
+  int symb_offset = (slot % frame_parms->slots_per_subframe) * frame_parms->symbols_per_slot;
+  int soffset = (slot & 3) * frame_parms->symbols_per_slot * frame_parms->ofdm_symbol_size;
 
-  for (int symbol=first_symbol;symbol<nsymb;symbol++) {
+  for (int symbol = first_symbol; symbol < first_symbol + nsymb; symbol++) {
     
     c16_t rot2 = frame_parms->symbol_rotation[link_type][symbol + symb_offset];
-    rot2.i=-rot2.i;
-    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
-
+    rot2.i = -rot2.i;
+    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n", slot, symb_offset, rot2.r, rot2.i);
     c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = &rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)];
+    c16_t *this_symbol = &rxdataF[soffset + (frame_parms->ofdm_symbol_size * symbol)];
 
     if (frame_parms->N_RB_UL & 1) {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,
