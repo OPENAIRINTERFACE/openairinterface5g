@@ -288,6 +288,9 @@ void apply_nr_rotation_RX(NR_DL_FRAME_PARMS *frame_parms,
 			  int first_symbol,
 			  int nsymb)
 {
+  AssertFatal(first_symbol + nsymb <= NR_NUMBER_OF_SYMBOLS_PER_SLOT,
+              "First symbol %d and number of symbol %d not compatible with number of symbols in a slot %d\n",
+              first_symbol, nsymb, NR_NUMBER_OF_SYMBOLS_PER_SLOT);
   int symb_offset = (slot % frame_parms->slots_per_subframe) * frame_parms->symbols_per_slot;
 
   for (int symbol = first_symbol; symbol < first_symbol + nsymb; symbol++) {
