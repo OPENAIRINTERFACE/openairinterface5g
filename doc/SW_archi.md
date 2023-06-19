@@ -33,7 +33,7 @@ rx_func_implem[rx_func]
       handle_nr_slot_ind
       --> rnti_to_remove-mgmt
       --> L1_nr_prach_procedures
-      --> apply_nr_rotation_ul
+      --> apply_nr_rotation_RX
     end 
     subgraph phy_procedures_gNB_uespec_RX
       fill_ul_rb_mask
@@ -67,7 +67,7 @@ subgraph tx
        phy_procedures_gNB_TX
        --> dcitop[nr_generate dci top]
        --> nr_generate_csi_rs
-       --> apply_nr_rotation
+       --> apply_nr_rotation_TX
        -- send_msg --> end_tx_func((L1_tx_out))
     end
     subgraph tx_reorder_thread
