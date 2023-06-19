@@ -1564,54 +1564,28 @@ void NFAPI_NR_DMRS_TYPE2_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
   c16_t *dl_delay_table = frame_parms->delay_table[delay_idx];
 
   for (int pilot_cnt = 0; pilot_cnt < 6 * nb_rb_pdsch; pilot_cnt++) {
+    int k = (pilot_cnt / 3) * 6;
+    c16_t ch = c16mulShift(dl_ls_est[k], dl_delay_table[k], 8);
     if (pilot_cnt == 0) { // Treat first pilot
-      c16multaddVectRealComplex(filt16_dl_first, &dl_ls_est[pilot_cnt << 1], dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_p0, &ch, dl_ch, 16);
+    } else if (pilot_cnt == 1 || pilot_cnt == 2) {
+      c16multaddVectRealComplex(filt16_ul_p1p2, &ch, dl_ch, 16);
     } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) { // Treat last pilot
-      c16multaddVectRealComplex(filt16_dl_last, &dl_ls_est[pilot_cnt << 1], dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_last, &ch, dl_ch, 16);
     } else { // Treat middle pilots
-      c16multaddVectRealComplex(filt16_dl_middle, &dl_ls_est[pilot_cnt << 1], dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_middle, &ch, dl_ch, 16);
       if (pilot_cnt % 2 == 0) {
         dl_ch += 4;
       }
     }
   }
 
-  // check if PRB crosses DC and improve estimates around DC
-  if ((bwp_start_subcarrier < frame_parms->ofdm_symbol_size) && (bwp_start_subcarrier + nb_rb_pdsch * 12 >= frame_parms->ofdm_symbol_size) && (p < 2)) {
-    dl_ch = dl_ch0;
-    uint16_t idxDC = 2 * (frame_parms->ofdm_symbol_size - bwp_start_subcarrier);
-    dl_ch += (idxDC / 2 - 4);
-    dl_ch = memset(dl_ch, 0, sizeof(c16_t) * 10);
-
-    dl_ch--;
-    c16_t ch_r = *dl_ch;
-    dl_ch += 11;
-    c16_t ch_l = *dl_ch;
-
-    // for proper allignment of SIMD vectors
-    if ((frame_parms->N_RB_DL & 1) == 0) {
-      dl_ch -= 10;
-      // Interpolate fdcrl1 with ch_r
-      c16multaddVectRealComplex(filt8_dcrl1, &ch_r, dl_ch, 8);
-      // Interpolate fdclh1 with ch_l
-      c16multaddVectRealComplex(filt8_dclh1, &ch_l, dl_ch, 8);
-      dl_ch += 8;
-      // Interpolate fdcrh1 with ch_r
-      c16multaddVectRealComplex(filt8_dcrh1, &ch_r, dl_ch, 8);
-      // Interpolate fdcll1 with ch_l
-      c16multaddVectRealComplex(filt8_dcll1, &ch_l, dl_ch, 8);
-    } else {
-      dl_ch -= 14;
-      // Interpolate fdcrl1 with ch_r
-      c16multaddVectRealComplex(filt8_dcrl2, &ch_r, dl_ch, 8);
-      // Interpolate fdclh1 with ch_l
-      c16multaddVectRealComplex(filt8_dclh2, &ch_l, dl_ch, 8);
-      dl_ch += 8;
-      // Interpolate fdcrh1 with ch_r
-      c16multaddVectRealComplex(filt8_dcrh2, &ch_r, dl_ch, 8);
-      // Interpolate fdcll1 with ch_l
-      c16multaddVectRealComplex(filt8_dcll2, &ch_l, dl_ch, 8);
-    }
+  // Revert delay
+  dl_ch = dl_ch0;
+  int inv_delay_idx = get_delay_idx(-delay->est_delay, MAX_DELAY_COMP);
+  c16_t *dl_inv_delay_table = frame_parms->delay_table[inv_delay_idx];
+  for (int k = 0; k < 12 * nb_rb_pdsch; k++) {
+    dl_ch[k] = c16mulShift(dl_ch[k], dl_inv_delay_table[k], 8);
   }
 }
 
