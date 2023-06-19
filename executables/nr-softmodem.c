@@ -697,14 +697,16 @@ int main( int argc, char **argv ) {
 //////////////////////////////////
 //////////////////////////////////
 //// Init the E2 Agent
- 
+
   sm_io_ag_ran_t io = init_ran_func_ag();
-  fr_args_t args = init_fr_args(0, NULL);
   
   // OAI Wrapper 
   e2_agent_args_t oai_args = RCconfig_NR_E2agent();
-  if(oai_args.sm_dir != NULL)
-    memcpy(args.libs_dir, oai_args.sm_dir, 128);
+  AssertFatal(oai_args.sm_dir != NULL , "Please, specify the directory where the SMs are located in the config file, i.e., e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\");} ");
+  AssertFatal(oai_args.ip != NULL , "Please, specify the IP address of the nearRT-RIC in the config file, i.e., e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\"");
+
+  fr_args_t args = {.ip = oai_args.ip}; // init_fr_args(0, NULL);
+  memcpy(args.libs_dir, oai_args.sm_dir, 128);
 
   sleep(1);
   const gNB_RRC_INST* rrc = RC.nrrrc[0];

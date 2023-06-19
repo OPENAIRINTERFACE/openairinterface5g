@@ -1322,7 +1322,7 @@ typedef struct srb1_params_s {
 /* E2 Agent configuration */
 #define CONFIG_STRING_E2AGENT "e2_agent"
 
-#define E2AGENT_CONFIG_IP    "ip"
+#define E2AGENT_CONFIG_IP    "near_ric_ip_addr"
 //#define E2AGENT_CONFIG_PORT  "port"
 #define E2AGENT_CONFIG_SMDIR "sm_dir"
 

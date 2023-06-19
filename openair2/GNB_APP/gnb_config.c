@@ -2271,10 +2271,13 @@ e2_agent_args_t RCconfig_NR_E2agent(void)
     return (e2_agent_args_t) { 0 };
   }
   e2_agent_args_t dst = {0};
-  if(e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr != NULL)
-    dst.ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr;
-  if(e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr != NULL)
+
+  if (e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr != NULL)
     dst.sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr;
+
+  if (e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr != NULL)
+    dst.ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr;
+
   return dst;
 }
 
