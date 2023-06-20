@@ -221,6 +221,7 @@ typedef struct {
   uint32_t E;
   /// Number of segments processed so far
   uint32_t processedSegments;
+  decode_abort_t abort_decode;
   /// Last index of LLR buffer that contains information.
   /// Used for computing LDPC decoder R
   int llrLen;
@@ -774,7 +775,6 @@ typedef struct PHY_VARS_gNB_s {
   pthread_t L1_tx_thread;
   int L1_tx_thread_core;
   struct processingData_L1tx *msgDataTx;
-  int nbDecode;
   void *scopeData;
   /// structure for analyzing high-level RT measurements
   rt_L1_profiling_t rt_L1_profiling; 

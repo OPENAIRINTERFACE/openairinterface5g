@@ -313,7 +313,7 @@ uint32_t crc6(unsigned char* inptr, int bitlen)
   return crc;
 }
 
-int check_crc(uint8_t* decoded_bytes, uint32_t n, uint32_t F, uint8_t crc_type)
+int check_crc(uint8_t* decoded_bytes, uint32_t n, uint8_t crc_type)
 {
   uint32_t crc=0,oldcrc=0;
   uint8_t crc_len=0;

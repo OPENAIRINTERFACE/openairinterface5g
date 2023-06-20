@@ -1791,9 +1791,10 @@ static void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP,
                 (UE->enc_rval.encoded+7)/8, 0, 0);
   }
 
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-  process_CellGroup(UE->CellGroup, sched_ctrl);
+  process_CellGroup(UE->CellGroup, UE);
+
   // switching to initial BWP
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
   configure_UE_BWP(nr_mac, scc, sched_ctrl, NULL, UE, 0, 0);
 
   // Reset uplink failure flags/counters/timers at MAC so gNB will resume again scheduling resources for this UE

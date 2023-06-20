@@ -327,6 +327,7 @@ typedef struct {
   uint32_t repetition_number ;
   // PUSCH Total number of repetitions
   uint32_t total_number_of_repetitions;
+  decode_abort_t abort_decode;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {

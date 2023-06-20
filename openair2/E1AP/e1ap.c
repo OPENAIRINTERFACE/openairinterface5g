@@ -531,11 +531,11 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_setup_req_t *setup, e1ap_beare
   ieC2->value.present              = E1AP_BearerContextSetupRequestIEs__value_PR_SecurityInformation;
   ieC2->value.choice.SecurityInformation.securityAlgorithm.cipheringAlgorithm = bearerCxt->cipheringAlgorithm;
   OCTET_STRING_fromBuf(&ieC2->value.choice.SecurityInformation.uPSecuritykey.encryptionKey,
-                       bearerCxt->encryptionKey, strlen(bearerCxt->encryptionKey));
+                       bearerCxt->encryptionKey, 16);
 
   asn1cCallocOne(ieC2->value.choice.SecurityInformation.securityAlgorithm.integrityProtectionAlgorithm, bearerCxt->integrityProtectionAlgorithm);
   asn1cCalloc(ieC2->value.choice.SecurityInformation.uPSecuritykey.integrityProtectionKey, protKey);
-  OCTET_STRING_fromBuf(protKey, bearerCxt->integrityProtectionKey, strlen(bearerCxt->integrityProtectionKey));
+  OCTET_STRING_fromBuf(protKey, bearerCxt->integrityProtectionKey, 16);
   /* mandatory */
   /* c3. UE DL Aggregate Maximum Bit Rate */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextSetupRequestIEs_t, ieC3);

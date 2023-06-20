@@ -63,60 +63,55 @@ void loader_init(void) {
 }
 
 /* build the full shared lib name from the module name */
-char *loader_format_shlibpath(char *modname, char *version)
+static char *loader_format_shlibpath(char *modname, char *version)
 {
-
-char *tmpstr;
-char *shlibpath   =NULL;
-char *shlibversion=NULL;
-// clang-format off
-paramdef_t LoaderParams[] = {
+  char *tmpstr;
+  char *shlibpath = NULL;
+  char *shlibversion = NULL;
+  // clang-format off
+  paramdef_t LoaderParams[] = {
     {"shlibpath",    NULL, 0, .strptr = &shlibpath,    .defstrval = NULL, TYPE_STRING, 0, NULL},
     {"shlibversion", NULL, 0, .strptr = &shlibversion, .defstrval = "",   TYPE_STRING, 0, NULL}
-};
-// clang-format on
+  };
+  // clang-format on
 
-int ret;
+  int ret;
 
-
-
-
-/* looks for specific path for this module in the config file */
-/* specific value for a module path and version is located in a modname subsection of the loader section */
-/* shared lib name is formatted as lib<module name><module version>.so */
+  /* looks for specific path for this module in the config file */
+  /* specific value for a module path and version is located in a modname subsection of the loader section */
+  /* shared lib name is formatted as lib<module name><module version>.so */
   char cfgprefix[sizeof(LOADER_CONFIG_PREFIX)+strlen(modname)+16];
   sprintf(cfgprefix,LOADER_CONFIG_PREFIX ".%s",modname);
-  ret = config_get( LoaderParams,sizeof(LoaderParams)/sizeof(paramdef_t),cfgprefix);
+  ret = config_get(LoaderParams, sizeofArray(LoaderParams), cfgprefix);
   if (ret <0) {
-      fprintf(stderr,"[LOADER]  %s %d couldn't retrieve config from section %s\n",__FILE__, __LINE__,cfgprefix);
-   }
-/* no specific path, use loader default shared lib path */
-   if (shlibpath == NULL) {
-       shlibpath =  loader_data.shlibpath ;
-   } 
-/* no specific shared lib version */
-   if (version != NULL) {    // version specified as a function parameter
-	   shlibversion=version;
-   }
-   if (shlibversion == NULL) {  // no specific version specified, neither as a config param or as a function param
-       shlibversion = "" ;
-   } 
-/* alloc memory for full module shared lib file name */
-   tmpstr = malloc(strlen(shlibpath)+strlen(modname)+strlen(shlibversion)+16);
-   if (tmpstr == NULL) {
-      fprintf(stderr,"[LOADER] %s %d malloc error loading module %s, %s\n",__FILE__, __LINE__, modname, strerror(errno));
-      exit_fun("[LOADER] unrecoverable error");
-   }
-   if(shlibpath[0] != 0) {
-       ret=sprintf(tmpstr,"%s/",shlibpath);
-   } else {
-       ret = 0;
-   }
+    fprintf(stderr, "[LOADER]  %s %d couldn't retrieve config from section %s\n", __FILE__, __LINE__, cfgprefix);
+  }
+  /* no specific path, use loader default shared lib path */
+  if (shlibpath == NULL) {
+    shlibpath = loader_data.shlibpath;
+  }
+  /* no specific shared lib version */
+  if (version != NULL) { // version specified as a function parameter
+    shlibversion = version;
+  }
+  if (shlibversion == NULL) { // no specific version specified, neither as a config param or as a function param
+    shlibversion = "";
+  }
+  /* alloc memory for full module shared lib file name */
+  tmpstr = malloc(strlen(shlibpath) + strlen(modname) + strlen(shlibversion) + 16);
+  if (tmpstr == NULL) {
+    fprintf(stderr, "[LOADER] %s %d malloc error loading module %s, %s\n", __FILE__, __LINE__, modname, strerror(errno));
+    exit_fun("[LOADER] unrecoverable error");
+  }
+  if (shlibpath[0] != 0) {
+    ret = sprintf(tmpstr, "%s/", shlibpath);
+  } else {
+    ret = 0;
+  }
 
-   sprintf(tmpstr+ret,"lib%s%s.so",modname,shlibversion);
-   
-  
-   return tmpstr; 
+  sprintf(tmpstr + ret, "lib%s%s.so", modname, shlibversion);
+
+  return tmpstr;
 }
 
 int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *farray, int numf, void *autoinit_arg)

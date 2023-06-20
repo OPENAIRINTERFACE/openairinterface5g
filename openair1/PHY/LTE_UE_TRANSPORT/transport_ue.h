@@ -269,6 +269,7 @@ typedef struct {
   uint32_t errors[8];
   /// codeword this transport block is mapped to
   uint8_t codeword;
+  decode_abort_t abort_decode;
 } LTE_DL_UE_HARQ_t;
 
 

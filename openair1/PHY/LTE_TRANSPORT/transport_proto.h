@@ -538,20 +538,6 @@ unsigned int  ulsch_decoding(PHY_VARS_eNB *phy_vars_eNB,
                              uint8_t Nbundled,
                              uint8_t llr8_flag);
 
-/*!
-  \brief Decoding of ULSCH data component from 36-212. This one is single thread.
-  @param phy_vars_eNB Pointer to eNB top-level descriptor
-  @param UE_id ID of UE transmitting this PUSCH
-  @param harq_pid HARQ process ID
-  @param llr8_flag If 1, indicate that the 8-bit turbo decoder should be used
-  @returns 0 on success
-*/
-int ulsch_decoding_data(PHY_VARS_eNB *eNB,
-                        L1_rxtx_proc_t *proc,
-                        int UE_id,
-                        int harq_pid,
-                        int llr8_flag);
-
 void generate_phich_top(PHY_VARS_eNB *phy_vars_eNB,
                         L1_rxtx_proc_t *proc,
                         int16_t amp);

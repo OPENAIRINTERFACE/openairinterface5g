@@ -404,6 +404,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
 
       rrc->bwpd = NULL;
       rrc->ubwpd = NULL;
+      rrc->as_security_activated = false;
 
       // TODO: Put the appropriate list of SIBs
       rrc->requested_SI_List.buf = CALLOC(1,4);
@@ -1485,161 +1486,158 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
  }
 
 
- //-----------------------------------------------------------------------------
- void
- nr_rrc_ue_process_securityModeCommand(
-   const protocol_ctxt_t *const ctxt_pP,
-   NR_SecurityModeCommand_t *const securityModeCommand,
-   const uint8_t                gNB_index
- )
- //-----------------------------------------------------------------------------
- {
-   asn_enc_rval_t enc_rval;
-   NR_UL_DCCH_Message_t ul_dcch_msg;
-   uint8_t buffer[200];
-   int i, securityMode;
-   LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), Processing securityModeCommand (eNB %d)\n",
-	 ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index);
+void nr_rrc_ue_process_securityModeCommand(const protocol_ctxt_t *const ctxt_pP,
+                                           NR_SecurityModeCommand_t *const securityModeCommand,
+                                           const uint8_t gNB_index)
+{
+  asn_enc_rval_t enc_rval;
+  NR_UL_DCCH_Message_t ul_dcch_msg;
+  uint8_t buffer[200];
+  int i, securityMode;
+  LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), Processing securityModeCommand (eNB %d)\n",
+        ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index);
 
-   switch (securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm) {
-     case NR_CipheringAlgorithm_nea0:
-       LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea0\n",
-	     ctxt_pP->module_id);
-       securityMode= NR_CipheringAlgorithm_nea0;
-       break;
+  NR_SecurityConfigSMC_t *securityConfigSMC = &securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC;
+  NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
 
-     case NR_CipheringAlgorithm_nea1:
-       LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea1\n",ctxt_pP->module_id);
-       securityMode= NR_CipheringAlgorithm_nea1;
-       break;
+  switch (securityConfigSMC->securityAlgorithmConfig.cipheringAlgorithm) {
+    case NR_CipheringAlgorithm_nea0:
+      LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea0\n",
+            ctxt_pP->module_id);
+      securityMode= NR_CipheringAlgorithm_nea0;
+      break;
 
-     case NR_CipheringAlgorithm_nea2:
-       LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea2\n",
-	     ctxt_pP->module_id);
-       securityMode = NR_CipheringAlgorithm_nea2;
-       break;
+    case NR_CipheringAlgorithm_nea1:
+      LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea1\n",ctxt_pP->module_id);
+      securityMode= NR_CipheringAlgorithm_nea1;
+      break;
 
-     default:
-       LOG_I(NR_RRC,"[UE %d] Security algorithm is set to none\n",ctxt_pP->module_id);
-       securityMode = NR_CipheringAlgorithm_spare1;
-       break;
-   }
-   NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm =
-   securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.cipheringAlgorithm;
+    case NR_CipheringAlgorithm_nea2:
+      LOG_I(NR_RRC,"[UE %d] Security algorithm is set to nea2\n",
+            ctxt_pP->module_id);
+      securityMode = NR_CipheringAlgorithm_nea2;
+      break;
 
-   if (securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm != NULL)
-   {
-     switch (*securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm) {
-       case NR_IntegrityProtAlgorithm_nia1:
-         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
-         securityMode |= 1 << 5;
-         break;
+    default:
+      LOG_I(NR_RRC,"[UE %d] Security algorithm is set to none\n",ctxt_pP->module_id);
+      securityMode = NR_CipheringAlgorithm_spare1;
+      break;
+  }
+  ue_rrc->cipheringAlgorithm = securityConfigSMC->securityAlgorithmConfig.cipheringAlgorithm;
 
-       case NR_IntegrityProtAlgorithm_nia2:
-         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
-         securityMode |= 1 << 6;
-         break;
+  if (securityConfigSMC->securityAlgorithmConfig.integrityProtAlgorithm != NULL) {
+    switch (*securityConfigSMC->securityAlgorithmConfig.integrityProtAlgorithm) {
+      case NR_IntegrityProtAlgorithm_nia1:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia1\n",ctxt_pP->module_id);
+        securityMode |= 1 << 5;
+        break;
 
-       default:
-         LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
-         securityMode |= 0x70 ;
-         break;
-     }
+      case NR_IntegrityProtAlgorithm_nia2:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to nia2\n",ctxt_pP->module_id);
+        securityMode |= 1 << 6;
+        break;
 
-     NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm =
-     *securityModeCommand->criticalExtensions.choice.securityModeCommand->securityConfigSMC.securityAlgorithmConfig.integrityProtAlgorithm;
+      default:
+        LOG_I(NR_RRC,"[UE %d] Integrity protection algorithm is set to none\n",ctxt_pP->module_id);
+        securityMode |= 0x70 ;
+        break;
+    }
 
-   }
+    ue_rrc->integrityProtAlgorithm = *securityConfigSMC->securityAlgorithmConfig.integrityProtAlgorithm;
+  }
 
-   LOG_D(NR_RRC,"[UE %d] security mode is %x \n",ctxt_pP->module_id, securityMode);
-   memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
-   //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
-   ul_dcch_msg.message.present           = NR_UL_DCCH_MessageType_PR_c1;
-   ul_dcch_msg.message.choice.c1         = calloc(1, sizeof(*ul_dcch_msg.message.choice.c1));
+  LOG_D(NR_RRC,"[UE %d] security mode is %x \n",ctxt_pP->module_id, securityMode);
+  memset((void *)&ul_dcch_msg,0,sizeof(NR_UL_DCCH_Message_t));
+  //memset((void *)&SecurityModeCommand,0,sizeof(SecurityModeCommand_t));
+  ul_dcch_msg.message.present = NR_UL_DCCH_MessageType_PR_c1;
+  ul_dcch_msg.message.choice.c1 = calloc(1, sizeof(*ul_dcch_msg.message.choice.c1));
 
-   if (securityMode >= NO_SECURITY_MODE) {
-     LOG_I(NR_RRC, "rrc_ue_process_securityModeCommand, security mode complete case \n");
-     ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
-   } else {
-     LOG_I(NR_RRC, "rrc_ue_process_securityModeCommand, security mode failure case \n");
-     ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeFailure;
-     ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
-   }
+  if (securityMode >= NO_SECURITY_MODE) {
+    LOG_I(NR_RRC, "rrc_ue_process_securityModeCommand, security mode complete case \n");
+    ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
+  } else {
+    LOG_I(NR_RRC, "rrc_ue_process_securityModeCommand, security mode failure case \n");
+    ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeFailure;
+    ul_dcch_msg.message.choice.c1->present = NR_UL_DCCH_MessageType__c1_PR_securityModeComplete;
+  }
 
-   uint8_t kRRCenc[16] = {0};
-   uint8_t kUPenc[16] = {0};
-   uint8_t kRRCint[16] = {0};
-   nr_derive_key(UP_ENC_ALG,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                 kUPenc);
-   nr_derive_key(RRC_ENC_ALG,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                 kRRCenc);
-   nr_derive_key(RRC_INT_ALG,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm,
-                 NR_UE_rrc_inst[ctxt_pP->module_id].kgnb,
-                 kRRCint);
+  uint8_t kRRCenc[16] = {0};
+  uint8_t kUPenc[16] = {0};
+  uint8_t kRRCint[16] = {0};
+  nr_derive_key(UP_ENC_ALG,
+                ue_rrc->cipheringAlgorithm,
+                ue_rrc->kgnb,
+                kUPenc);
+  nr_derive_key(RRC_ENC_ALG,
+                ue_rrc->cipheringAlgorithm,
+                ue_rrc->kgnb,
+                kRRCenc);
+  nr_derive_key(RRC_INT_ALG,
+                ue_rrc->integrityProtAlgorithm,
+                ue_rrc->kgnb,
+                kRRCint);
 
-   LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x"
-   "%02x%02x%02x%02x\n",
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[0],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[1],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[2],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[3],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[4],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[5],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[6],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[7],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[8],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[9],  NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[10], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[11],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[12], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[13], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[14], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[15],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[16], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[17], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[18], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[19],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[20], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[21], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[22], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[23],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[24], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[25], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[26], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[27],
-   NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[28], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[29], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[30], NR_UE_rrc_inst[ctxt_pP->module_id].kgnb[31]);
+  LOG_I(NR_RRC, "driving kRRCenc, kRRCint and kUPenc from KgNB="
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x"
+        "%02x%02x%02x%02x\n",
+        ue_rrc->kgnb[0],  ue_rrc->kgnb[1],  ue_rrc->kgnb[2],  ue_rrc->kgnb[3],
+        ue_rrc->kgnb[4],  ue_rrc->kgnb[5],  ue_rrc->kgnb[6],  ue_rrc->kgnb[7],
+        ue_rrc->kgnb[8],  ue_rrc->kgnb[9],  ue_rrc->kgnb[10], ue_rrc->kgnb[11],
+        ue_rrc->kgnb[12], ue_rrc->kgnb[13], ue_rrc->kgnb[14], ue_rrc->kgnb[15],
+        ue_rrc->kgnb[16], ue_rrc->kgnb[17], ue_rrc->kgnb[18], ue_rrc->kgnb[19],
+        ue_rrc->kgnb[20], ue_rrc->kgnb[21], ue_rrc->kgnb[22], ue_rrc->kgnb[23],
+        ue_rrc->kgnb[24], ue_rrc->kgnb[25], ue_rrc->kgnb[26], ue_rrc->kgnb[27],
+        ue_rrc->kgnb[28], ue_rrc->kgnb[29], ue_rrc->kgnb[30], ue_rrc->kgnb[31]);
 
-   if (securityMode != 0xff) {
-     uint8_t security_mode =
-         NR_UE_rrc_inst[ctxt_pP->module_id].cipheringAlgorithm | (NR_UE_rrc_inst[ctxt_pP->module_id].integrityProtAlgorithm << 4);
-     nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid, DCCH, security_mode, kRRCenc, kRRCint, kUPenc);
-   } else {
-     LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
-   }
+  if (securityMode != 0xff) {
+    uint8_t security_mode = ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4);
+    nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid, DCCH, security_mode, kRRCenc, kRRCint, kUPenc);
+  } else {
+    LOG_I(NR_RRC, "skipped pdcp_config_set_security() as securityMode == 0x%02x", securityMode);
+  }
 
-   if (securityModeCommand->criticalExtensions.present == NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand) {
-     ul_dcch_msg.message.choice.c1->choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_t));
-     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
-     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.present = NR_SecurityModeComplete__criticalExtensions_PR_securityModeComplete;
-     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_IEs_t));
-     ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
-     LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (gNB %d), rrc_TransactionIdentifier: %ld\n",
-	   ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
-     enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
-                                      NULL,
-                                      (void *)&ul_dcch_msg,
-                                      buffer,
-                                      100);
-     AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
-		  enc_rval.failed_type->name, enc_rval.encoded);
+  if (securityModeCommand->criticalExtensions.present == NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand) {
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_t));
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->rrc_TransactionIdentifier = securityModeCommand->rrc_TransactionIdentifier;
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.present = NR_SecurityModeComplete__criticalExtensions_PR_securityModeComplete;
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete = CALLOC(1, sizeof(NR_SecurityModeComplete_IEs_t));
+    ul_dcch_msg.message.choice.c1->choice.securityModeComplete->criticalExtensions.choice.securityModeComplete->nonCriticalExtension =NULL;
+    LOG_I(NR_RRC,"[UE %d] SFN/SF %d/%d: Receiving from SRB1 (DL-DCCH), encoding securityModeComplete (gNB %d), rrc_TransactionIdentifier: %ld\n",
+          ctxt_pP->module_id,ctxt_pP->frame, ctxt_pP->subframe, gNB_index, securityModeCommand->rrc_TransactionIdentifier);
+    enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UL_DCCH_Message,
+                                     NULL,
+                                     (void *)&ul_dcch_msg,
+                                     buffer,
+                                     100);
+    AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %jd)!\n",
+                 enc_rval.failed_type->name, enc_rval.encoded);
 
-    if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
+    if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
       xer_fprint(stdout, &asn_DEF_NR_UL_DCCH_Message, (void *)&ul_dcch_msg);
     }
-     log_dump(MAC, buffer, 16, LOG_DUMP_CHAR, "securityModeComplete payload: ");
-     LOG_D(NR_RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
+    log_dump(NR_RRC, buffer, 16, LOG_DUMP_CHAR, "securityModeComplete payload: ");
+    LOG_D(NR_RRC, "securityModeComplete Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded+7)/8);
 
-     for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
-       LOG_T(NR_RRC, "%02x.", buffer[i]);
-     }
+    for (i = 0; i < (enc_rval.encoded + 7) / 8; i++) {
+      LOG_T(NR_RRC, "%02x.", buffer[i]);
+    }
+    LOG_T(NR_RRC, "\n");
 
-     LOG_T(NR_RRC, "\n");
-     nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
-   } else
-     LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
-		  securityModeCommand->criticalExtensions.present);
- }
+    //TODO the SecurityModeCommand message needs to pass the integrity protection check
+    // for the UE to declare AS security to be activated
+    ue_rrc->as_security_activated = true;
+
+    nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, nr_rrc_mui++, (enc_rval.encoded + 7) / 8, buffer, deliver_pdu_srb_rlc, NULL);
+  } else
+    LOG_W(NR_RRC,"securityModeCommand->criticalExtensions.present (%d) != NR_SecurityModeCommand__criticalExtensions_PR_securityModeCommand\n",
+          securityModeCommand->criticalExtensions.present);
+}
 
  //-----------------------------------------------------------------------------
  void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB_index) {
@@ -1698,15 +1696,10 @@ nr_rrc_ue_establish_srb1(
   return(0);
 }
 
-//-----------------------------------------------------------------------------
-int32_t
-nr_rrc_ue_establish_srb2(
-    module_id_t       ue_mod_idP,
-    frame_t           frameP,
-    uint8_t           gNB_index,
-    NR_SRB_ToAddMod_t *SRB_config
-)
-//-----------------------------------------------------------------------------
+int32_t nr_rrc_ue_establish_srb2(module_id_t ue_mod_idP,
+                                 frame_t frameP,
+                                 uint8_t gNB_index,
+                                 NR_SRB_ToAddMod_t *SRB_config)
 {
   // add descriptor from RRC PDU
   NR_UE_rrc_inst[ue_mod_idP].Srb2[gNB_index].Active = 1;
@@ -1715,24 +1708,19 @@ nr_rrc_ue_establish_srb2(
   return(0);
 }
 
- //-----------------------------------------------------------------------------
- int32_t
- nr_rrc_ue_establish_drb(
-     module_id_t       ue_mod_idP,
-     frame_t           frameP,
-     uint8_t           gNB_index,
-     NR_DRB_ToAddMod_t *DRB_config
- )
- //-----------------------------------------------------------------------------
- {
-   // add descriptor from RRC PDU
-   int oip_ifup = 0, ip_addr_offset3 = 0, ip_addr_offset4 = 0;
-   /* avoid gcc warnings */
-   (void)oip_ifup;
-   (void)ip_addr_offset3;
-   (void)ip_addr_offset4;
-   LOG_I(NR_RRC,"[UE %d] Frame %d: processing RRCReconfiguration: reconfiguring DRB %ld\n",
-	 ue_mod_idP, frameP, DRB_config->drb_Identity);
+int32_t nr_rrc_ue_establish_drb(module_id_t ue_mod_idP,
+                                frame_t frameP,
+                                uint8_t gNB_index,
+                                NR_DRB_ToAddMod_t *DRB_config)
+{
+  // add descriptor from RRC PDU
+  int oip_ifup = 0, ip_addr_offset3 = 0, ip_addr_offset4 = 0;
+  /* avoid gcc warnings */
+  (void)oip_ifup;
+  (void)ip_addr_offset3;
+  (void)ip_addr_offset4;
+  LOG_I(NR_RRC,"[UE %d] Frame %d: processing RRCReconfiguration: reconfiguring DRB %ld\n",
+        ue_mod_idP, frameP, DRB_config->drb_Identity);
 
   if(!get_softmodem_params()->sa) {
     ip_addr_offset3 = 0;
@@ -1759,9 +1747,8 @@ nr_rrc_ue_establish_srb2(
       LOG_D(NR_RRC,"[UE %d] State = Attached (gNB %d)\n",ue_mod_idP,gNB_index);
     }
   }
-
-   return(0);
- }
+  return(0);
+}
 
  //-----------------------------------------------------------------------------
  void
@@ -2253,11 +2240,9 @@ nr_rrc_ue_establish_srb2(
        case NR_DL_DCCH_MessageType__c1_PR_securityModeCommand:
          LOG_I(NR_RRC, "[UE %d] Received securityModeCommand (gNB %d)\n",
                ctxt_pP->module_id, gNB_indexP);
-         nr_rrc_ue_process_securityModeCommand(
-             ctxt_pP,
-             dl_dcch_msg->message.choice.c1->choice.securityModeCommand,
-             gNB_indexP);
-
+         nr_rrc_ue_process_securityModeCommand(ctxt_pP,
+                                               dl_dcch_msg->message.choice.c1->choice.securityModeCommand,
+                                               gNB_indexP);
          break;
      }
    }

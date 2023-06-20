@@ -2820,9 +2820,8 @@ void nr_mac_update_timers(module_id_t module_id,
         NR_ServingCellConfigCommon_t *scc = RC.nrmac[module_id]->common_channels[0].ServingCellConfigCommon;
 
         LOG_I(NR_MAC,"Modified rnti %04x with CellGroup\n", UE->rnti);
-        process_CellGroup(cg,&UE->UE_sched_ctrl);
+        process_CellGroup(cg, UE);
         NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
-
         configure_UE_BWP(RC.nrmac[module_id], scc, sched_ctrl, NULL, UE, -1, -1);
 
         if (get_softmodem_params()->sa) {

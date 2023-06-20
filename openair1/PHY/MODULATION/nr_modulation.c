@@ -21,6 +21,7 @@
 
 #include "nr_modulation.h"
 #include "PHY/NR_REFSIG/nr_mod_table.h"
+#include "executables/softmodem-common.h"
 
 //Table 6.3.1.5-1 Precoding Matrix W 1 layer 2 antenna ports 'n' = -1 and 'o' = -j
 const char nr_W_1l_2p[6][2][1] = {
@@ -599,6 +600,7 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
 
   uint64_t dl_CarrierFreq = fp->dl_CarrierFreq;
   uint64_t ul_CarrierFreq = fp->ul_CarrierFreq;
+  uint64_t sl_CarrierFreq = fp->sl_CarrierFreq;
   double f[2] = {(double)dl_CarrierFreq, (double)ul_CarrierFreq};
 
   const int nsymb = fp->symbols_per_slot * fp->slots_per_frame/10;
@@ -612,6 +614,10 @@ void init_symbol_rotation(NR_DL_FRAME_PARMS *fp) {
     double f0 = f[ll];
     LOG_D(PHY, "Doing symbol rotation calculation for gNB TX/RX, f0 %f Hz, Nsymb %d\n", f0, nsymb);
     c16_t *symbol_rotation = fp->symbol_rotation[ll];
+    if (get_softmodem_params()->sl_mode == 2) {
+      f0 = (double)sl_CarrierFreq;
+      symbol_rotation = fp->symbol_rotation[link_type_sl];
+    }
 
     double tl = 0.0;
     double poff = 0.0;

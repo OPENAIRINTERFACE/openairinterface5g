@@ -101,6 +101,12 @@ SystemInformationBlockType1_nr_t;
 
 #define FRAME_DURATION_MICRO_SEC           (10000)  /* frame duration in microsecond */
 
+enum nr_Link {
+  link_type_dl,
+  link_type_ul,
+  link_type_sl,
+};
+
 typedef enum {
   ms0p5    = 500,                 /* duration is given in microsecond */
   ms0p625  = 625,

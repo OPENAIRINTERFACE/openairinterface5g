@@ -680,7 +680,7 @@ int main(int argc, char **argv)
   c16_t **rxdata;
   rxdata = malloc(n_rx * sizeof(*rxdata));
   for (int i = 0; i < n_rx; ++i)
-    rxdata[i] = malloc(gNB->frame_parms.samples_per_frame * sizeof(**rxdata));
+    rxdata[i] = calloc(gNB->frame_parms.samples_per_frame, sizeof(**rxdata));
 
   NR_BWP_Uplink_t *ubwp=secondaryCellGroup->spCellConfig->spCellConfigDedicated->uplinkConfig->uplinkBWP_ToAddModList->list.array[0];
 
@@ -705,8 +705,7 @@ int main(int argc, char **argv)
   }
 
   // Configure UE
-  UE = malloc(sizeof(PHY_VARS_NR_UE));
-  memset((void*)UE,0,sizeof(PHY_VARS_NR_UE));
+  UE = calloc(1, sizeof(PHY_VARS_NR_UE));
   PHY_vars_UE_g = malloc(sizeof(PHY_VARS_NR_UE**));
   PHY_vars_UE_g[0] = malloc(sizeof(PHY_VARS_NR_UE*));
   PHY_vars_UE_g[0][0] = UE;
@@ -756,21 +755,11 @@ int main(int argc, char **argv)
 
   nr_phy_data_tx_t phy_data = {0};
 
-  unsigned char *estimated_output_bit;
-  unsigned char *test_input_bit;
   uint32_t errors_decoding = 0;
-  
 
-  test_input_bit       = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-  estimated_output_bit = (unsigned char *) malloc16(sizeof(unsigned char) * 16 * 68 * 384);
-
-  nr_scheduled_response_t scheduled_response;
-  fapi_nr_ul_config_request_t ul_config;
-  fapi_nr_tx_request_t tx_req;
-
-  memset(&scheduled_response, 0, sizeof(scheduled_response));
-  memset(&ul_config, 0, sizeof(ul_config));
-  memset(&tx_req, 0, sizeof(tx_req));
+  nr_scheduled_response_t scheduled_response={0};
+  fapi_nr_ul_config_request_t ul_config={0};
+  fapi_nr_tx_request_t tx_req={0};
 
   uint8_t ptrs_mcs1 = 2;
   uint8_t ptrs_mcs2 = 4;
@@ -851,7 +840,7 @@ int main(int argc, char **argv)
 
   ulsch_input_buffer[0] = 0x31;
   for (i = 1; i < TBS/8; i++) {
-    ulsch_input_buffer[i] = (unsigned char) rand();
+    ulsch_input_buffer[i] = (unsigned char) uniformrandom();
   }
 
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
@@ -1053,7 +1042,7 @@ int main(int argc, char **argv)
         pusch_pdu->maintenance_parms_v3.tbSizeLbrmBytes = tbslbrm;
         pusch_pdu->pusch_data.rv_index = rv_index;
         pusch_pdu->pusch_data.harq_process_id = 0;
-        pusch_pdu->pusch_data.new_data_indicator = round == 0 ? 1 : 0;
+        pusch_pdu->pusch_data.new_data_indicator = round == 0 ? true : false;
         pusch_pdu->pusch_data.num_cb = 0;
         pusch_pdu->pusch_ptrs.ptrs_time_density = ptrs_time_density;
         pusch_pdu->pusch_ptrs.ptrs_freq_density = ptrs_freq_density;
@@ -1276,7 +1265,8 @@ int main(int argc, char **argv)
                                gNB->common_vars.rxdataF[aa],
                                slot,
                                0,
-                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14);
+                               gNB->frame_parms.Ncp == EXTENDED ? 12 : 14,
+                               link_type_ul);
         }
 
         ul_proc_error = phy_procedures_gNB_uespec_RX(gNB, frame, slot);
@@ -1524,10 +1514,10 @@ int main(int argc, char **argv)
       }
 
       for (i = 0; i < TBS; i++) {
-        estimated_output_bit[i] = (ulsch_gNB->harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
-        test_input_bit[i] = (UE->ul_harq_processes[harq_pid].b[i / 8] & (1 << (i & 7))) >> (i & 7);
+        uint8_t estimated_output_bit = (ulsch_gNB->harq_process->b[i / 8] & (1 << (i & 7))) >> (i & 7);
+        uint8_t test_input_bit = (UE->ul_harq_processes[harq_pid].b[i / 8] & (1 << (i & 7))) >> (i & 7);
       
-        if (estimated_output_bit[i] != test_input_bit[i]) {
+        if (estimated_output_bit != test_input_bit) {
           /*if(errors_decoding == 0)
               printf("\x1B[34m""[frame %d][trial %d]\t1st bit in error in decoding     = %d\n" "\x1B[0m", frame, trial, i);*/
           errors_decoding++;
@@ -1662,8 +1652,6 @@ int main(int argc, char **argv)
           num_dmrs_cdm_grps_no_data);
 
   free_MIB_NR(mib);
-  free(test_input_bit);
-  free(estimated_output_bit);
   if (gNB->ldpc_offload_flag)
     free_nrLDPClib_offload();
 

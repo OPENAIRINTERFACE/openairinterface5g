@@ -83,8 +83,7 @@ static void fill_DRB_configList_e1(NR_DRB_ToAddModList_t *DRB_configList, pdu_se
       asn1cCallocOne(drbCfg->integrityProtection, NR_PDCP_Config__drb__integrityProtection_enabled);
     }
 
-    if (pdu->confidentialityProtectionIndication == 0 || // Required
-        pdu->confidentialityProtectionIndication == 1) { // Preferred
+    if (pdu->confidentialityProtectionIndication == 2) { // Not Needed
       asn1cCalloc(pdcp_config->ext1, ext1);
       asn1cCallocOne(ext1->cipheringDisabled, NR_PDCP_Config__ext1__cipheringDisabled_true);
     }
@@ -121,19 +120,12 @@ static int drb_config_N3gtpu_create(e1ap_bearer_setup_req_t * const req,
   }
 
   // Configure DRBs
-  uint8_t kUPenc[16] = {0};
-  uint8_t kUPint[16] = {0};
-
-  nr_derive_key(UP_ENC_ALG, req->cipheringAlgorithm, (uint8_t *)req->encryptionKey, kUPenc);
-
-  nr_derive_key(UP_INT_ALG, req->integrityProtectionAlgorithm, (uint8_t *)req->integrityProtectionKey, kUPint);
-
   nr_pdcp_e1_add_drbs(true, // set this to notify PDCP that his not UE
                       create_tunnel_req.ue_id,
                       &DRB_configList,
                       (req->integrityProtectionAlgorithm << 4) | req->cipheringAlgorithm,
-                      kUPenc,
-                      kUPint);
+                      (uint8_t *)req->encryptionKey,
+                      (uint8_t *)req->integrityProtectionKey);
   return ret;
 }
 

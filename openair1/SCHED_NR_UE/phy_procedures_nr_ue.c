@@ -127,11 +127,16 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
   NR_DL_UE_HARQ_t *dl_harq0 = NULL;
 
   if ((pdu_type !=  FAPI_NR_RX_PDU_TYPE_SSB) && dlsch0) {
+    int t=WS_C_RNTI;
+    if (pdu_type == FAPI_NR_RX_PDU_TYPE_RAR)
+      t=WS_RA_RNTI;
+    if  (pdu_type == FAPI_NR_RX_PDU_TYPE_SIB)
+      t=WS_SI_RNTI;
     dl_harq0 = &ue->dl_harq_processes[0][dlsch0->dlsch_config.harq_process_nbr];
     trace_NRpdu(DIRECTION_DOWNLINK,
 		b,
 		dlsch0->dlsch_config.TBS / 8,
-		WS_C_RNTI,
+		t,
 		dlsch0->rnti,
 		proc->frame_rx,
 		proc->nr_slot_rx,
@@ -419,10 +424,8 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
     */
 
   }
-
- return ret;
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
+  return ret;
 }
 
 

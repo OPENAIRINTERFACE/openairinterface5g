@@ -551,7 +551,8 @@ int nr_rate_matching_ldpc_rx(uint32_t Tbslbrm,
   printf("nr_rate_matching_ldpc_rx: Clear %d, E %u, k0 %u, Ncb %u, rvidx %d, Tbslbrm %u\n", clear, E, ind, Ncb, rvidx, Tbslbrm);
 #endif
 
-  if (clear==1) memset(w,0,Ncb*sizeof(int16_t));
+  if (clear == 1)
+    memset(w, 0, Ncb * sizeof(int16_t));
 
   k=0;
 

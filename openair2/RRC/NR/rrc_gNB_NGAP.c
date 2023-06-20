@@ -277,7 +277,7 @@ static void fill_qos(NGAP_QosFlowSetupRequestList_t *qos, pdusession_t *session)
 
 static int decodePDUSessionResourceSetup(pdusession_t *session)
 {
-  NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer;
+  NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer = NULL;
   for (int i=0; i<session->pdusessionTransfer.length; i++)
     printf("%02x:",session->pdusessionTransfer.buffer[i]);
   printf("\n");
@@ -764,9 +764,9 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     bearer_req.gNB_cu_cp_ue_id = msg->gNB_ue_ngap_id;
     bearer_req.rnti = UE->rnti;
     bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
-    memcpy(bearer_req.encryptionKey, UE->kgnb, sizeof(UE->kgnb));
     bearer_req.integrityProtectionAlgorithm = UE->integrity_algorithm;
-    memcpy(bearer_req.integrityProtectionKey, UE->kgnb, sizeof(UE->kgnb));
+    nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, (uint8_t *)bearer_req.encryptionKey);
+    nr_derive_key(UP_INT_ALG, UE->integrity_algorithm, UE->kgnb, (uint8_t *)bearer_req.integrityProtectionKey);
     bearer_req.ueDlAggMaxBitRate = msg->ueAggMaxBitRateDownlink;
     pdu_session_to_setup_t *pdu = bearer_req.pduSession + bearer_req.numPDUSessions;
     bearer_req.numPDUSessions++;
@@ -852,7 +852,7 @@ static void fill_qos2(NGAP_QosFlowAddOrModifyRequestList_t *qos, pdusession_t *s
 
 static void decodePDUSessionResourceModify(pdusession_t *param, const ngap_pdu_t pdu)
 {
-  NGAP_PDUSessionResourceModifyRequestTransfer_t *pdusessionTransfer;
+  NGAP_PDUSessionResourceModifyRequestTransfer_t *pdusessionTransfer = NULL;
   asn_dec_rval_t dec_rval = aper_decode(NULL, &asn_DEF_NGAP_PDUSessionResourceModifyRequestTransfer, (void **)&pdusessionTransfer, pdu.buffer, pdu.length, 0, 0);
 
   if (dec_rval.code != RC_OK) {

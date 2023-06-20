@@ -58,7 +58,8 @@ int nr_slot_fep_init_sync(PHY_VARS_NR_UE *ue,
                           unsigned char symbol,
                           int sample_offset,
                           bool pbch_decoded,
-                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]);
+                          c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP],
+                          int link_type);
 
 int slot_fep_mbsfn(PHY_VARS_UE *phy_vars_ue,
                    unsigned char l,

@@ -652,7 +652,8 @@ int main(int argc, char **argv)
                               gNB->common_vars.txdataF[aa],
                               slot,
                               0,
-                              12);
+                              12,
+                              link_type_dl);
 
             PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
             (int *)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
@@ -665,7 +666,8 @@ int main(int argc, char **argv)
                               gNB->common_vars.txdataF[aa],
                               slot,
                               0,
-                              14);
+                              14,
+                              link_type_dl);
 
             /*nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
               &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
