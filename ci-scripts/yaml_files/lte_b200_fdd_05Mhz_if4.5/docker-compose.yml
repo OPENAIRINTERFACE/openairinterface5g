@@ -10,7 +10,7 @@ services:
             USE_B2XX: 'yes'
             USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
-            - ../../conf_files/rru.fdd.band7.conf:/opt/oai-enb/etc/enb.conf
+            - ../../conf_files/enb-rru.band7.usrpb210.tm1.conf:/opt/oai-enb/etc/enb.conf
             - /dev:/dev
         healthcheck:
             # pgrep does NOT work
@@ -26,7 +26,7 @@ services:
         environment:
             USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
         volumes:
-            - ../../conf_files/rcc.band7.tm1.if4p5.lo.25PRB.usrpb210.conf:/opt/oai-enb/etc/enb.conf
+            - ../../conf_files/enb-rcc.band7.25prb.tm1.if4p5.conf:/opt/oai-enb/etc/enb.conf
         healthcheck:
             # pgrep does NOT work
             test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"

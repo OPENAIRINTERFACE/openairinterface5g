@@ -29,7 +29,8 @@ Examples:
 - standard monolithic gNB, 2x2 configuration, with SDAP: `gnb.sa.band78.162prb.usrpn310.2x2-sdap.conf`
 - gNB-CU: `gnb-cu.sa.f1.conf`
 - monolithic gNB, L2sim: `gnb.sa.band77.106prb.l2sim.conf`
-- RCC (4G eNB with IF4.5 split): `enb.band40.25prb.if45.tm1-fairscheduler.conf`
+- monolithic eNB: `enb.band7.25prb.usrpb200.conf`
+- RCC (4G eNB with IF4.5 split): `enb-rcc.band7.25prb.tm1.if4p5.conf`
 
 Notes:
 - there is no need for TDD/FDD, this is encoded in the band number
