@@ -2249,6 +2249,18 @@ int32_t nr_rrc_ue_establish_drb(module_id_t ue_mod_idP,
    return 0;
  }
 
+void nr_rrc_handle_ra_indication(unsigned int mod_id, bool ra_succeeded)
+{
+  NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[mod_id].timers_and_constants;
+  if (ra_succeeded && timers->T304_active == true) {
+    // successful Random Access procedure triggered by reconfigurationWithSync
+    timers->T304_active = false;
+    timers->T304_cnt = 0;
+    // TODO handle the rest of procedures as described in 5.3.5.3 for when
+    // reconfigurationWithSync is included in spCellConfig
+  }
+}
+
 void *rrc_nrue_task(void *args_p)
 {
    MessageDef *msg_p;
@@ -2291,6 +2303,15 @@ void *rrc_nrue_task(void *args_p)
                ue_mod_id, ITTI_MSG_NAME (msg_p), NRRRC_SLOT_PROCESS (msg_p).frame, NRRRC_SLOT_PROCESS (msg_p).slot);
          NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[ue_mod_id].timers_and_constants;
          nr_rrc_handle_timers(timers);
+         break;
+
+       case NR_RRC_MAC_RA_IND:
+         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d\n RA %s",
+               ue_mod_id,
+               ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_RA_IND (msg_p).frame,
+               NR_RRC_MAC_RA_IND (msg_p).RA_succeeded ? "successful" : "failed");
+         nr_rrc_handle_ra_indication(ue_mod_id, NR_RRC_MAC_RA_IND (msg_p).RA_succeeded);
          break;
 
        case NR_RRC_MAC_BCCH_DATA_IND:

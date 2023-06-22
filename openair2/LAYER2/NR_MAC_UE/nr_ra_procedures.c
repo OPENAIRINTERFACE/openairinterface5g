@@ -896,7 +896,6 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
 
   if (ra->cfra) {
     LOG_I(MAC, "[UE %d][%d.%d][RAPROC] RA procedure succeeded. CF-RA: RAR successfully received.\n", mod_id, frame, slot);
-    nr_rrc_RA_succeeded(mod_id, gNB_index);
     mac->state = UE_CONNECTED;
     ra->RA_window_cnt = -1;
   } else {
@@ -911,6 +910,7 @@ void nr_ra_succeeded(const module_id_t mod_id, const uint8_t gNB_index, const fr
   LOG_D(MAC, "In %s: [UE %d] clearing RA_active flag...\n", __FUNCTION__, mod_id);
   ra->RA_active = 0;
   ra->ra_state = RA_SUCCEEDED;
+  nr_mac_rrc_ra_ind(mod_id, frame, true);
 }
 
 // Handling failure of RA procedure @ MAC layer
