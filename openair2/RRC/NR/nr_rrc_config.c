@@ -1893,6 +1893,23 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
 
   asn1cCallocOne(UL->frequencyInfoUL.p_Max, *frequencyInfoUL->p_Max);
 
+  frame_type_t frame_type =
+      get_frame_type((int)*configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                     *configuration->scc->ssbSubcarrierSpacing);
+
+  if (frame_type == FDD) {
+    UL->frequencyInfoUL.absoluteFrequencyPointA = malloc(sizeof(*UL->frequencyInfoUL.absoluteFrequencyPointA));
+    AssertFatal(UL->frequencyInfoUL.absoluteFrequencyPointA != NULL, "out of memory\n");
+    *UL->frequencyInfoUL.absoluteFrequencyPointA =
+        *configuration->scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA;
+    UL->frequencyInfoUL.frequencyBandList = calloc(1, sizeof(*UL->frequencyInfoUL.frequencyBandList));
+    AssertFatal(UL->frequencyInfoUL.frequencyBandList != NULL, "out of memory\n");
+    for (int i = 0; i < frequencyInfoUL->frequencyBandList->list.count; i++) {
+      asn1cSequenceAdd(UL->frequencyInfoUL.frequencyBandList->list, struct NR_NR_MultiBandInfo, nrMultiBandInfo);
+      nrMultiBandInfo->freqBandIndicatorNR = frequencyInfoUL->frequencyBandList->list.array[i];
+    }
+  }
+
   UL->initialUplinkBWP.genericParameters = configuration->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   UL->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
   UL->initialUplinkBWP.pusch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
