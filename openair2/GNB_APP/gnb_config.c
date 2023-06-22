@@ -114,7 +114,7 @@ const sync_raster_t sync_raster[] = {
   {39, 0, 4706, 1, 4795},
   {40, 0, 5756, 1, 5995},
   {41, 0, 6246, 3, 6717},
-  {41, 1, 6254, 3, 6714},
+  {41, 1, 6252, 3, 6714},
   {50, 0, 3584, 1, 3787},
   {51, 0, 3572, 1, 3574},
   {66, 0, 5279, 1, 5494},
@@ -1162,7 +1162,7 @@ void check_ssb_raster(uint64_t freq, int band, int scs)
               gscn, freq, band);
   int rel_gscn = gscn - start_gscn;
   AssertFatal(rel_gscn % step_gscn == 0,
-              "GSCN %d corresponding to SSB freqyency %lu not in accordance with GSCN step for band %d\n",
+              "GSCN %d corresponding to SSB frequency %lu not in accordance with GSCN step for band %d\n",
                gscn, freq, band);
 }
 
