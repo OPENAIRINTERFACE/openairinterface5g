@@ -133,14 +133,11 @@ Usage with RFsimulator:
 **gNB**
 
 ```bash
-sudo RFSIMULATOR=server ./nr-softmodem -O \
-../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf \
---parallel-config PARALLEL\_SINGLE\_THREAD
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78.tm1.106PRB.usrpn300.conf --parallel-config PARALLEL\_SINGLE\_THREAD
 ```
 
 **nrUE**
 
 ```bash
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --numerology 1 -r 106 -C \
-3510000000 -d
+sudo ./nr-uesoftmodem --numerology 1 -r 106 -C 3510000000 -d --rfsimulator.serveraddr 127.0.0.1
 ```

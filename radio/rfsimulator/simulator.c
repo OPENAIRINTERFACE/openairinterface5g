@@ -219,14 +219,6 @@ static void socketError(rfsimulator_state_t *bridge, int sock) {
   }
 }
 
-#define helpTxt "\
-\x1b[31m\
-rfsimulator: error: you have to run one UE and one eNB\n\
-For this, export RFSIMULATOR=enb (eNB case) or \n\
-                 RFSIMULATOR=<an ip address> (UE case)\n\
-                 or use rfsimulator.serveraddr configuration option\n\
-\x1b[m"
-
 enum  blocking_t {
   notBlocking,
   blocking

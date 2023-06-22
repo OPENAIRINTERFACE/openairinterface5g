@@ -212,7 +212,6 @@ services:
         privileged: true
         container_name: rfsim5g-oai-du
         environment:
-            RFSIMULATOR: server
             USE_ADDITIONAL_OPTIONS: --sa --rfsim --log_config.global_log_options level,nocolor,time
         networks:
             ran_net:
@@ -230,8 +229,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment:
-            RFSIMULATOR: 192.168.72.142
-            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr 192.168.72.142 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-du
         networks:

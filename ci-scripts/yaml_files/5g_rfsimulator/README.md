@@ -244,13 +244,12 @@ Create entry for Second UE in docker-compose.yaml file as follows:
         privileged: true
         container_name: rfsim5g-oai-nr-ue2
         environment:
-            RFSIMULATOR: 192.168.71.140
             FULL_IMSI: '208990100001101'
             FULL_KEY: 'fec86ba6eb707ed08905757b1bb44b8f'
             OPC: 'C42449363BBAD02B66D16BC975D77CC1'
             DNN: oai
             NSSAI_SST: 1
-            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-gnb
         networks:
