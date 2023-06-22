@@ -367,12 +367,9 @@ typedef struct {
 } PUCCH_sched_t;
 
 typedef struct {
-
   uint32_t ssb_index;
   /// SSB RSRP in dBm
   short ssb_rsrp_dBm;
-  int consecutive_bch_failures;
-
 } NR_SSB_meas_t;
 
 typedef struct NR_UL_TIME_ALIGNMENT {

@@ -263,8 +263,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     
   AssertFatal(mac->mib != NULL, "nr_ue_decode_mib() mac->mib == NULL\n");
 
-  mac->ssb_measurements.consecutive_bch_failures = 0; // resetting decoding failures
-
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
 

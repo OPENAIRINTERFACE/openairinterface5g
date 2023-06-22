@@ -182,6 +182,11 @@ typedef struct NR_UE_Timers_Constants_s {
   uint32_t T319_k;
 } NR_UE_Timers_Constants_t;
 
+typedef enum {
+  OUT_OF_SYNC = 0,
+  IN_SYNC = 1
+} nr_sync_msg_t;
+
 typedef struct NR_UE_RRC_INST_s {
   NR_MeasConfig_t        *meas_config;
   NR_CellGroupConfig_t   *cell_group_config;

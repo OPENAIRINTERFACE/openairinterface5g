@@ -113,6 +113,10 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
                               const uint8_t* pduP,
                               const sdu_size_t pdu_len);
 
+void nr_mac_rrc_sync_ind(const module_id_t module_id,
+                         const frame_t frame,
+                         const bool in_sync);
+
 /**\brief
    \param module_id  module id
    \param CC_id      component carrier id
@@ -133,8 +137,7 @@ int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index);
    \param void *args_p Pointer on arguments to start the task. */
 void *rrc_nrue_task(void *args_p);
 
-/**\brief RRC timers update at UE. */
-void *nr_rrc_timers_update();
+void nr_rrc_handle_timers(NR_UE_Timers_Constants_t *timers);
 
 /**\brief RRC NSA UE task.
    \param void *args_p Pointer on arguments to start the task. */
@@ -162,6 +165,8 @@ void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);
 void set_default_timers_and_constants(NR_UE_Timers_Constants_t *tac);
 void nr_rrc_set_sib1_timers_and_constants(NR_UE_Timers_Constants_t *tac, NR_SIB1_t *sib1);
 void nr_rrc_set_T304(NR_UE_Timers_Constants_t *tac, NR_ReconfigurationWithSync_t *reconfigurationWithSync);
+void handle_rlf_sync(NR_UE_Timers_Constants_t *tac,
+                     nr_sync_msg_t sync_msg);
 void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
                                                        struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
 
