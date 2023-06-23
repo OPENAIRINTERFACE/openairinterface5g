@@ -763,7 +763,9 @@ static int ngap_gNB_handle_initial_context_request(uint32_t assoc_id, uint32_t s
         NGAP_PDUSessionResourceSetupItemCxtReq_t *item_p = ie->value.choice.PDUSessionResourceSetupListCxtReq.list.array[i];
         msg->pdusession_param[i].pdusession_id = item_p->pDUSessionID;
 
-        allocCopy(&msg->pdusession_param[i].nas_pdu, *item_p->nAS_PDU);
+        if (item_p->nAS_PDU) {
+          allocCopy(&msg->pdusession_param[i].nas_pdu, *item_p->nAS_PDU);
+        }
         allocCopy(&msg->pdusession_param[i].pdusessionTransfer, item_p->pDUSessionResourceSetupRequestTransfer);
       }
     }
