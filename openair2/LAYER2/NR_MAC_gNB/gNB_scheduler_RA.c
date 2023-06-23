@@ -2224,7 +2224,7 @@ static void nr_fill_rar(uint8_t Mod_idP, NR_RA_t *ra, uint8_t *dlsch_buffer, nfa
 
   int mcs = (unsigned char) (rar->UL_GRANT_4 >> 4);
   // time alloc
-  int Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x07);
+  int Msg3_t_alloc = (unsigned char) (rar->UL_GRANT_3 & 0x0f);
   // frequency alloc
   int Msg3_f_alloc = (uint16_t) ((rar->UL_GRANT_3 >> 4) | (rar->UL_GRANT_2 << 4) | ((rar->UL_GRANT_1 & 0x03) << 12));
   // frequency hopping
