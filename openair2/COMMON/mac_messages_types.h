@@ -36,13 +36,14 @@
 // Defines to access message fields.
 #define RRC_MAC_IN_SYNC_IND(mSGpTR)             (mSGpTR)->ittiMsg.rrc_mac_in_sync_ind
 #define RRC_MAC_OUT_OF_SYNC_IND(mSGpTR)         (mSGpTR)->ittiMsg.rrc_mac_out_of_sync_ind
+#define NR_RRC_MAC_SYNC_IND(mSGpTR)             (mSGpTR)->ittiMsg.nr_rrc_mac_sync_ind
 
 #define RRC_MAC_BCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_req
 #define RRC_MAC_BCCH_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_data_ind
 #define NR_RRC_MAC_BCCH_DATA_IND(mSGpTR)        (mSGpTR)->ittiMsg.nr_rrc_mac_bcch_data_ind
 
-#define RRC_MAC_BCCH_MBMS_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_req
-#define RRC_MAC_BCCH_MBMS_DATA_IND(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_ind
+#define RRC_MAC_BCCH_MBMS_DATA_REQ(mSGpTR)      (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_req
+#define RRC_MAC_BCCH_MBMS_DATA_IND(mSGpTR)      (mSGpTR)->ittiMsg.rrc_mac_bcch_mbms_data_ind
 
 #define RRC_MAC_CCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_req
 #define RRC_MAC_CCCH_DATA_CNF(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_ccch_data_cnf
@@ -71,6 +72,11 @@ typedef struct RrcMacInSyncInd_s {
 } RrcMacInSyncInd;
 
 typedef RrcMacInSyncInd RrcMacOutOfSyncInd;
+
+typedef struct NRRrcMacSyncInd_s {
+  uint32_t frame;
+  bool in_sync;
+} NRRrcMacSyncInd;
 
 typedef struct RrcMacBcchDataReq_s {
   uint32_t  frame;

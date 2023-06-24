@@ -231,13 +231,16 @@ void rx_func(void *param)
     //WA: comment rotation in tx/rx
     if((gNB->num_RU == 1) && (gNB->RU_list[0]->if_south != REMOTE_IF4p5)) {
       //apply the rx signal rotation here
+      int soffset = (slot_rx & 3) * gNB->frame_parms.symbols_per_slot * gNB->frame_parms.ofdm_symbol_size;
       for (int aa = 0; aa < gNB->frame_parms.nb_antennas_rx; aa++) {
-        apply_nr_rotation_ul(&gNB->frame_parms,
-            gNB->common_vars.rxdataF[aa],
-            slot_rx,
-            0,
-            gNB->frame_parms.Ncp == EXTENDED ? 12 : 14,
-            link_type_ul);
+        apply_nr_rotation_RX(&gNB->frame_parms,
+                             gNB->common_vars.rxdataF[aa],
+                             gNB->frame_parms.symbol_rotation[1],
+                             slot_rx,
+                             gNB->frame_parms.N_RB_UL,
+                             soffset,
+                             0,
+                             gNB->frame_parms.Ncp == EXTENDED ? 12 : 14);
       }
     }
     phy_procedures_gNB_uespec_RX(gNB, frame_rx, slot_rx);

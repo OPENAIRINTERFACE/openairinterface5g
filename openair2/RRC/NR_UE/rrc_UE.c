@@ -2249,24 +2249,6 @@ int32_t nr_rrc_ue_establish_drb(module_id_t ue_mod_idP,
    return 0;
  }
 
-
-void nr_rrc_handle_timers(unsigned int mod_id)
-{
-  NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[mod_id].timers_and_constants;
-  // T304
-  if (timers->T304_active == true) {
-    timers->T304_cnt += 10;
-    if(timers->T304_cnt >= timers->T304_k) {
-      // TODO
-      // For T304 of MCG, in case of the handover from NR or intra-NR
-      // handover, initiate the RRC re-establishment procedure;
-      // In case of handover to NR, perform the actions defined in the
-      // specifications applicable for the source RAT.
-    }
-  }
-}
-
-
 void *rrc_nrue_task(void *args_p)
 {
    MessageDef *msg_p;
@@ -2293,10 +2275,22 @@ void *rrc_nrue_task(void *args_p)
          LOG_D(NR_RRC, "[UE %d] Received %s\n", ue_mod_id, ITTI_MSG_NAME (msg_p));
          break;
 
+       case NR_RRC_MAC_SYNC_IND:
+         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d\n",
+               ue_mod_id,
+               ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_SYNC_IND (msg_p).frame);
+         nr_sync_msg_t sync_msg = NR_RRC_MAC_SYNC_IND (msg_p).in_sync ?
+                                  IN_SYNC : OUT_OF_SYNC;
+         NR_UE_Timers_Constants_t *tac = &NR_UE_rrc_inst[ue_mod_id].timers_and_constants;
+         handle_rlf_sync(tac, sync_msg);
+         break;
+
        case NRRRC_SLOT_PROCESS:
          LOG_D(NR_RRC, "[UE %d] Receided %s: frame %d slot %d\n",
                ue_mod_id, ITTI_MSG_NAME (msg_p), NRRRC_SLOT_PROCESS (msg_p).frame, NRRRC_SLOT_PROCESS (msg_p).slot);
-         nr_rrc_handle_timers(ue_mod_id);
+         NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[ue_mod_id].timers_and_constants;
+         nr_rrc_handle_timers(timers);
          break;
 
        case NR_RRC_MAC_BCCH_DATA_IND:

@@ -1,6 +1,6 @@
 #include "PHY/sse_intrin.h"
 // generated code for Zc=224, byte encoding
-static inline void ldpc_BG2_Zc224_byte(uint8_t *c,uint8_t *d) {
+static inline __attribute__ ((no_sanitize("address", "undefined"))) void ldpc_BG2_Zc224_byte(uint8_t *c,uint8_t *d) {
   __m256i *csimd=(__m256i *)c,*dsimd=(__m256i *)d;
 
   __m256i *c2,*d2;

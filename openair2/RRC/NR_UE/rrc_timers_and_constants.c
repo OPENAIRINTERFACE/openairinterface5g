@@ -21,6 +21,29 @@
 
 #include "openair2/RRC/NR_UE/rrc_proto.h"
 
+void nr_rrc_handle_timers(NR_UE_Timers_Constants_t *timers)
+{
+  // T304
+  if (timers->T304_active == true) {
+    timers->T304_cnt += 10;
+    if(timers->T304_cnt >= timers->T304_k) {
+      // TODO
+      // For T304 of MCG, in case of the handover from NR or intra-NR
+      // handover, initiate the RRC re-establishment procedure;
+      // In case of handover to NR, perform the actions defined in the
+      // specifications applicable for the source RAT.
+    }
+  }
+  if (timers->T310_active == true) {
+    timers->T310_cnt += 10;
+    if(timers->T310_cnt >= timers->T310_k) {
+      // TODO
+      // handle detection of radio link failure
+      // as described in 5.3.10.3 of 38.331
+      AssertFatal(false, "Radio link failure! Not handled yet!\n");
+    }
+  }
+}
 
 void nr_rrc_set_T304(NR_UE_Timers_Constants_t *tac, NR_ReconfigurationWithSync_t *reconfigurationWithSync)
 {
@@ -399,6 +422,43 @@ void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
       break;
     default :
       AssertFatal(false, "Invalid rlf_TimersAndConstants\n");
+  }
+}
+
+void handle_rlf_sync(NR_UE_Timers_Constants_t *tac,
+                     nr_sync_msg_t sync_msg)
+{
+  if (sync_msg == IN_SYNC) {
+    tac->N310_cnt = 0;
+    if (tac->T310_active) {
+      tac->N311_cnt++;
+      // Upon receiving N311 consecutive "in-sync" indications
+      if (tac->N311_cnt >= tac->N311_k) {
+        // stop timer T310
+        tac->T310_active = false;
+        tac->T310_cnt = 0;
+        tac->N311_cnt = 0;
+      }
+    }
+  }
+  else {
+    // OUT_OF_SYNC
+    tac->N311_cnt = 0;
+    if(tac->T300_active ||
+       tac->T301_active ||
+       tac->T304_active ||
+       tac->T310_active ||
+       tac->T311_active ||
+       tac->T319_active)
+      return;
+    tac->N310_cnt++;
+    // upon receiving N310 consecutive "out-of-sync" indications
+    if (tac->N310_cnt >= tac->N310_k) {
+      // start timer T310
+        tac->T310_active = true;
+        tac->T310_cnt = 0;
+        tac->N310_cnt = 0;
+    }
   }
 }
 

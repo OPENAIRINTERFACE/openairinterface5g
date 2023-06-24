@@ -140,11 +140,12 @@ static uint64_t get_ssb_bitmap(const NR_ServingCellConfigCommon_t *scc)
   return bitmap;
 }
 
-static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, int nb_slots_per_period, int nb_dl_slots_period)
+static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int id, int nb_slots_per_period, int nb_dl_slots_period)
 {
   nzpcsi0->periodicityAndOffset = calloc(1,sizeof(*nzpcsi0->periodicityAndOffset));
-  const int ideal_period = nb_slots_per_period * MAX_MOBILES_PER_GNB;
-  const int offset = nb_slots_per_period * uid;
+  // TODO ideal period to be set according to estimation by the gNB on how fast the channel changes
+  const int ideal_period = 320;
+  const int offset = nb_slots_per_period * id;
 
   if (ideal_period < 5) {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots4;
@@ -184,14 +185,13 @@ static void set_csirs_periodicity(NR_NZP_CSI_RS_Resource_t *nzpcsi0, int uid, in
   }
   else {
     nzpcsi0->periodicityAndOffset->present = NR_CSI_ResourcePeriodicityAndOffset_PR_slots320;
-    AssertFatal(offset / 320 < nb_dl_slots_period, "Cannot allocate %dth UE. Not enough resources for CSI-RS\n", uid);
+    AssertFatal(offset / 320 < nb_dl_slots_period, "Cannot allocate CSI-RS for BWP %d. Not enough resources for CSI-RS\n", id);
     nzpcsi0->periodicityAndOffset->choice.slots320 = (offset % 320) + (offset / 320);
   }
 }
 
 static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                          NR_CSI_MeasConfig_t *csi_MeasConfig,
-                         int uid,
                          int num_dl_antenna_ports,
                          int curr_bwp,
                          int do_csirs,
@@ -266,7 +266,7 @@ static void config_csirs(const NR_ServingCellConfigCommon_t *servingcellconfigco
     nzpcsi0->powerControlOffsetSS = calloc(1,sizeof(*nzpcsi0->powerControlOffsetSS));
     *nzpcsi0->powerControlOffsetSS = NR_NZP_CSI_RS_Resource__powerControlOffsetSS_db0;
     nzpcsi0->scramblingID = *servingcellconfigcommon->physCellId;
-    set_csirs_periodicity(nzpcsi0, uid, nb_slots_per_period, nb_dl_slots_period);
+    set_csirs_periodicity(nzpcsi0, id, nb_slots_per_period, nb_dl_slots_period);
     nzpcsi0->qcl_InfoPeriodicCSI_RS = calloc(1,sizeof(*nzpcsi0->qcl_InfoPeriodicCSI_RS));
     *nzpcsi0->qcl_InfoPeriodicCSI_RS = 0;
     asn1cSeqAdd(&csi_MeasConfig->nzp_CSI_RS_ResourceToAddModList->list,nzpcsi0);
@@ -1893,6 +1893,23 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
 
   asn1cCallocOne(UL->frequencyInfoUL.p_Max, *frequencyInfoUL->p_Max);
 
+  frame_type_t frame_type =
+      get_frame_type((int)*configuration->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                     *configuration->scc->ssbSubcarrierSpacing);
+
+  if (frame_type == FDD) {
+    UL->frequencyInfoUL.absoluteFrequencyPointA = malloc(sizeof(*UL->frequencyInfoUL.absoluteFrequencyPointA));
+    AssertFatal(UL->frequencyInfoUL.absoluteFrequencyPointA != NULL, "out of memory\n");
+    *UL->frequencyInfoUL.absoluteFrequencyPointA =
+        *configuration->scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA;
+    UL->frequencyInfoUL.frequencyBandList = calloc(1, sizeof(*UL->frequencyInfoUL.frequencyBandList));
+    AssertFatal(UL->frequencyInfoUL.frequencyBandList != NULL, "out of memory\n");
+    for (int i = 0; i < frequencyInfoUL->frequencyBandList->list.count; i++) {
+      asn1cSequenceAdd(UL->frequencyInfoUL.frequencyBandList->list, struct NR_NR_MultiBandInfo, nrMultiBandInfo);
+      nrMultiBandInfo->freqBandIndicatorNR = frequencyInfoUL->frequencyBandList->list.array[i];
+    }
+  }
+
   UL->initialUplinkBWP.genericParameters = configuration->scc->uplinkConfigCommon->initialUplinkBWP->genericParameters;
   UL->initialUplinkBWP.rach_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon;
   UL->initialUplinkBWP.pusch_ConfigCommon = configuration->scc->uplinkConfigCommon->initialUplinkBWP->pusch_ConfigCommon;
@@ -2226,7 +2243,7 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
       bwp_id = bwp->bwp_Id;
     }
 
-    config_csirs(scc, csi_MeasConfig, uid, pdsch_AntennaPorts, curr_bwp, configuration->do_CSIRS, bwp_loop);
+    config_csirs(scc, csi_MeasConfig, pdsch_AntennaPorts, curr_bwp, configuration->do_CSIRS, bwp_loop);
     config_csiim(configuration->do_CSIRS, pdsch_AntennaPorts, curr_bwp, csi_MeasConfig, bwp_loop);
 
     NR_CSI_ResourceConfig_t *csires1 = calloc(1, sizeof(*csires1));
@@ -2780,7 +2797,7 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
         secondaryCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[bwp_loop];
     int curr_bwp = NRRIV2BW(bwp->bwp_Common->genericParameters.locationAndBandwidth, MAX_BWP_SIZE);
 
-    config_csirs(servingcellconfigcommon, csi_MeasConfig, uid, dl_antenna_ports, curr_bwp, do_csirs, bwp_loop);
+    config_csirs(servingcellconfigcommon, csi_MeasConfig, dl_antenna_ports, curr_bwp, do_csirs, bwp_loop);
     config_csiim(do_csirs, dl_antenna_ports, curr_bwp, csi_MeasConfig, bwp_loop);
 
     if (do_csirs) {

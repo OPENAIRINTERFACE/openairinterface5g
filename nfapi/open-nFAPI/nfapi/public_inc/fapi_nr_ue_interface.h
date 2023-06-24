@@ -49,6 +49,12 @@ typedef struct {
   uint32_t sr;
 } fapi_nr_uci_pdu_rel15_t;
 
+typedef enum {
+ RLM_no_monitoring = 0,
+ RLM_out_of_sync = 1,
+ RLM_in_sync = 2
+} rlm_t;
+
 typedef struct {
   uint32_t rsrp;
   int rsrp_dBm;
@@ -56,6 +62,7 @@ typedef struct {
   uint8_t i1;
   uint8_t i2;
   uint8_t cqi;
+  rlm_t radiolink_monitoring;
 } fapi_nr_csirs_measurements_t;
 
 typedef struct {
@@ -125,6 +132,7 @@ typedef struct {
   uint16_t cell_id;
   uint16_t ssb_start_subcarrier;
   short rsrp_dBm;
+  rlm_t radiolink_monitoring; // -1 no monitoring, 0 out_of_sync, 1 in_sync
 } fapi_nr_ssb_pdu_t;
 
 typedef struct {
