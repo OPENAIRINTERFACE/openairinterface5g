@@ -31,6 +31,25 @@ set (OPENAIR_DIR     ${CMAKE_SOURCE_DIR})
 
 include("cmake_targets/macros.cmake")
 
+##############################
+### CCache: reduce compilation time
+##############################
+#use ccache if available
+option(CCACHE_ACTIVE "CCache" ON)
+find_program(CCACHE_FOUND ccache)
+if(CCACHE_FOUND AND CCACHE_ACTIVE)
+  if(${CMAKE_VERSION} VERSION_LESS "3.4.0") 
+    set_property(GLOBAL PROPERTY RULE_LAUNCH_COMPILE "${CCACHE_PROGRAM}")
+    message(STATUS "Found ccache in ${CCACHE_FOUND}. Using ccache. CMake < 3.4")
+  else()
+    set(CMAKE_C_COMPILER_LAUNCHER "${CCACHE_FOUND}")
+    set(CMAKE_CXX_COMPILER_LAUNCHER "${CCACHE_FOUND}")
+    message(STATUS "Found ccache in ${CCACHE_FOUND}. Using ccache. CMake >= 3.4")
+  endif()
+else()
+  message(STATUS "Ccache not found. Consider installing it for faster compilation. Command: sudo apt/dnf install ccache")
+endif()
+
 # System packages that are required
 # We use either the cmake buildin, in ubuntu are in: /usr/share/cmake*/Modules/
 # or cmake provide a generic interface to pkg-config that widely used
