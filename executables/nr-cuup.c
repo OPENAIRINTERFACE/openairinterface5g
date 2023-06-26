@@ -111,9 +111,10 @@ f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP)
   return NULL;
 }
 
-void fill_DRB_configList(const protocol_ctxt_t *const ctxt_pP, rrc_gNB_ue_context_t *ue_context_pP, uint8_t xid)
+NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
 {
   abort();
+  return NULL;
 }
 
 int main(int argc, char **argv)
