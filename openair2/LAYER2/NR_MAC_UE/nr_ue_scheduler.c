@@ -951,7 +951,7 @@ void nr_ue_dl_scheduler(nr_downlink_indication_t *dl_info)
   nr_scheduled_response_t scheduled_response;
   nr_dcireq_t dcireq;
 
-    if(mac->state > UE_NOT_SYNC) {
+  if(mac->state > UE_NOT_SYNC) {
 
     dcireq.module_id = mod_id;
     dcireq.gNB_index = gNB_index;
