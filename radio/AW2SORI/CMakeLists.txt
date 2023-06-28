@@ -11,3 +11,6 @@ add_library(aw2sori_transpro MODULE oaiori.c)
 target_compile_options(aw2sori_transpro PRIVATE -shared -fPIC -msse4 -g -ggdb -DLITE_COMPILATION)
 target_link_libraries(aw2sori_transpro PRIVATE ori oai_eth_transpro)
 set_target_properties(aw2sori_transpro PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+add_custom_command(TARGET aw2sori_transpro POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E create_symlink libaw2sori_transpro.so libthirdparty_transpro.so
+                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

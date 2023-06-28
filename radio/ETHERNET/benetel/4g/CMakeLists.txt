@@ -15,3 +15,6 @@ target_include_directories(benetel_4g PRIVATE ${libdpdk_INCLUDE_DIRS})
 target_link_libraries(benetel_4g PRIVATE ${libdpdk_LIBRARIES})
 target_link_libraries(benetel_4g PRIVATE pthread dl rt m numa)
 set_target_properties(benetel_4g PROPERTIES LIBRARY_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR})
+add_custom_command(TARGET benetel_4g POST_BUILD
+                   COMMAND ${CMAKE_COMMAND} -E create_symlink libbenetel_4g.so liboai_transpro.so
+                   WORKING_DIRECTORY ${CMAKE_BINARY_DIR})

@@ -537,47 +537,28 @@ function main() {
   # Build RF device and transport protocol libraries #
   ####################################################
   if [ "$HW" != "None" ] ; then
-    rm -f liboai_device.so
-
     if [ "$HW" == "OAI_USRP" ] ; then
       compilations $BUILD_DIR oai_usrpdevif.txt oai_usrpdevif
-      ln -sf liboai_usrpdevif.so liboai_device.so
-      echo "liboai_device.so symlinks to liboai_usrpdevif.so"
     elif [ "$HW" == "OAI_BLADERF" ] ; then
       compilations $BUILD_DIR oai_bladerfdevif.txt oai_bladerfdevif
-      ln -sf liboai_bladerfdevif.so liboai_device.so
-      echo "liboai_device.so symlinks liboai_bladerfdevif.so"
     elif [ "$HW" == "OAI_LMSSDR" ] ; then
       compilations $BUILD_DIR oai_lmssdrdevif.txt oai_lmssdrdevif
-      ln -sf liboai_lmssdrdevif.so liboai_device.so
-      echo "liboai_device.so symlinks to liboai_lmssdrdevif.so"
     elif [ "$HW" == "OAI_IRIS" ] ; then
       compilations $BUILD_DIR oai_irisdevif.txt oai_irisdevif
-      ln -s liboai_irisdevif.so liboai_device.so
-      echo "liboai_device.so symlinks to liboai_irisdevif.so"
     elif [ "$HW" == "OAI_AW2SORI" ] ; then
       compilations $BUILD_DIR aw2sori_transpro.txt aw2sori_transpro
-      ln -sf libaw2sori_transpro.so libthirdparty_transpro.so
-      echo "libthirdparty_transpro.so symlinks to libaw2sori_transpro.so"
     else
       echo_fatal "illegal HW option $HW"
     fi
   fi
 
   if [ "$TP" != "None" ]; then
-    rm -f liboai_transpro.so
     if [ "$TP" == "Ethernet" ]; then
       compilations $BUILD_DIR oai_eth_transpro.txt oai_eth_transpro
-      ln -sf liboai_eth_transpro.so liboai_transpro.so
-      echo_info "liboai_transpro.so symlinks to liboai_eth_transpro.so"
     elif [ "$TP" == "benetel4g" ]; then
       compilations $BUILD_DIR benetel_4g.txt benetel4g
-      ln -sf libbenetel_4g.so liboai_transpro.so
-      echo_info "liboai_transpro.so symlinks to libbenetel_4g.so"
     elif [ "$TP" == "benetel5g" ]; then
       compilations $BUILD_DIR benetel_5g.txt benetel_5g
-      ln -sf libbenetel_5g.so liboai_transpro.so
-      echo_info "liboai_transpro.so symlinks to libbenetel_5g.so"
     else
       echo_fatal "illegal TP option $TP"
     fi
