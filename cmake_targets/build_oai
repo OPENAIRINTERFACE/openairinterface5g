@@ -37,12 +37,8 @@ set_openair_env
 gen_nvram_path=$OPENAIR_DIR/cmake_targets/ran_build/build
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
-XFORMS="True"
-SKIP_SHARED_LIB_FLAG="False"
-PRINT_STATS="False"
 HW="None"
 TP="None"
-EPC=0
 VERBOSE_CI=0
 VERBOSE_COMPILE=0
 RUN_GROUP=0
@@ -52,12 +48,8 @@ BUILD_DOXYGEN=0
 DISABLE_HARDWARE_DEPENDENCY="False"
 CMAKE_BUILD_TYPE="RelWithDebInfo"
 CMAKE_CMD="$CMAKE"
-BUILD_ECLIPSE=0
-NR="False"
 OPTIONAL_LIBRARIES="telnetsrv enbscope uescope nrscope nrqtscope ldpc_cuda ldpc_t1 websrv oai_iqplayer"
 RU=0
-CMAKE_C_FLAGS=()
-CMAKE_CXX_FLAGS=()
 
 function print_help() {
   echo_info "
@@ -81,9 +73,6 @@ Options:
    This option will require root password
 --install-optional-packages
    Install useful but not mandatory packages such as valgrind
--i | --install-system-files
-   Install OpenAirInterface required files in Linux system
-   This option will require root password
 -g | --run-with-gdb <Release | RelWithDebInfo | MinSizeRel | Debug
   specify the build mode used by cmake. defaults to Debug mode if -g is used alone, with no mode parameter
   if -g is not specifies, Release mode is used.
@@ -176,8 +165,7 @@ function main() {
   do
     case "$1" in
        --arch-native)
-            CMAKE_C_FLAGS+=("-march=native")
-            CMAKE_CXX_FLAGS+=("-march=native")
+            echo_fatal "Error: specify --arch-native on the command line to cmake directly: ./build_oai --cmake-opt \"-DCMAKE_C_FLAGS=-march=native -DCMAKE_CXX_FLAGS=-march=native\""
             shift;;
        -c | --clean)
             CLEAN=1
@@ -202,10 +190,6 @@ function main() {
        --install-optional-packages)
             INSTALL_OPTIONAL=1
             echo_info "Will install optional packages"
-            shift;;
-       -i | --install-system-files)
-            INSTALL_SYSTEM_FILES=1
-            echo_info "Will copy OpenAirInterface files in Linux directories"
             shift;;
        -g | --run-with-gdb)
             case "$2" in
@@ -258,7 +242,6 @@ function main() {
             shift;;
        --nrUE)
             nrUE=1
-            rfsimNas=1
             echo_info "Will compile NR UE"
             shift;;
        --mu)
@@ -318,11 +301,8 @@ function main() {
        -V | --vcd)
             echo_info "Setting gtk-wave output"
             CMAKE_CMD="$CMAKE_CMD -DENABLE_VCD_FIFO=True"
-            EXE_ARGUMENTS="$EXE_ARGUMENTS -V"
             shift;;
        -x | --xforms)
-            XFORMS=1
-            EXE_ARGUMENTS="$EXE_ARGUMENTS -d"
             echo_info "Will generate the software oscilloscope features"
             shift;;
        --verbose-ci)
@@ -363,7 +343,6 @@ function main() {
             echo_info "Downloading UHD images in the indicated location"
             shift 2;;
        --build-eclipse)
-            BUILD_ECLIPSE=1
             CMAKE_CMD="$CMAKE_CMD"' -DCMAKE_ECLIPSE_GENERATE_SOURCE_PROJECT=TRUE -G"Eclipse CDT4 - Unix Makefiles"'
             echo_info "Enabling build eclipse project support"
             shift 1;;
@@ -397,10 +376,6 @@ function main() {
             CMAKE_CMD="$CMAKE_CMD -DAVX2=OFF"
             echo_info "Disabling AVX2 instructions"
             shift 1;;
-        -k | --skip-shared-libraries)
-            SKIP_SHARED_LIB_FLAG="True"
-            echo_info "Skipping build of shared libraries, rfsimulator and transport protocol libraries"
-            shift;;
         --ninja)
             CMAKE_CMD="$CMAKE_CMD -GNinja"
             shift;;
@@ -486,8 +461,6 @@ function main() {
   mkdir -p $DIR/$BUILD_DIR/build
 
   cd  $DIR/$BUILD_DIR/build
-  if [[ ${#CMAKE_C_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_C_FLAGS=\"${CMAKE_C_FLAGS[*]}\""; fi
-  if [[ ${#CMAKE_CXX_FLAGS[@]} > 0 ]]; then CMAKE_CMD="$CMAKE_CMD -DCMAKE_CXX_FLAGS=\"${CMAKE_CXX_FLAGS[*]}\""; fi
 
   # for historical reasons we build in a subdirectory cmake_targets/XYZ/build,
   # e.g., cmake_targets/ran_build/build, hence the ../../..
