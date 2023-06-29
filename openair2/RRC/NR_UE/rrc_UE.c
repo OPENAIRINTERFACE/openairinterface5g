@@ -451,6 +451,10 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
     {
       LOG_D(NR_RRC, "In NSA mode \n");
     }
+
+    if (get_softmodem_params()->sl_mode) {
+      configure_NR_SL_Preconfig();
+    }
   }
   else{
     NR_UE_rrc_inst = NULL;
