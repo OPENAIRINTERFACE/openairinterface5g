@@ -1882,43 +1882,19 @@ add_library(oai_iqplayer MODULE
 	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
-#include T directory even if the T is off because T macros are in the code
-#no matter what
-include_directories("${OPENAIR_DIR}/common/utils/T")
+# include T directory even if the T is off because T macros are in the code
+# no matter what. Note: sone files are generated, so we have both source and
+# binary directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common/utils/T
+                    ${CMAKE_CURRENT_BINARY_DIR}/common/utils/T)
 
 if (${T_TRACER})
   set(T_SOURCE
-      ${OPENAIR_DIR}/common/utils/T/T_IDs.h
       ${OPENAIR_DIR}/common/utils/T/T.c
       ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
   set(T_LIB "rt")
 endif (${T_TRACER})
 
-#Some files in the T directory are generated.
-#This rule and the following deal with it.
-add_custom_command (
-  OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-  COMMAND make check_vcd
-  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
-  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
-          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
-          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.h
-  )
-
-execute_process (
-  COMMAND make check_vcd
-  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
-)
-#This rule is specifically needed to generate T files
-#before anything else in a project that uses the T.
-#See below, there are some 'add_dependencies' showing that.
-#Basically we create a custom target and we make other
-#targets depend on it. That forces cmake to generate
-#T files before anything else.
-add_custom_target (
-  generate_T
-  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-)
 
 #################################
 # add executables for operation
@@ -2380,6 +2356,7 @@ if (${T_TRACER})
         oai_eth_transpro oai_mobipass coding HASHTABLE UTIL OMG_SUMO
         SECURITY SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
+        MISC_NFAPI_LTE_LIB MISC_NFAPI_NR_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_LTE_NR L2_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON MAC_NR MAC_UE_NR ngap
         CN_UTILS GTPV1U SCTP_CLIENT MME_APP LIB_NAS_UE NB_IoT SIMU SIMU_ETH OPENAIR0_LIB
