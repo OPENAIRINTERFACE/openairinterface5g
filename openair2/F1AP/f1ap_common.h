@@ -408,7 +408,6 @@ typedef struct f1ap_cudu_inst_s {
   f1ap_setup_req_t setupReq;
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
-  uint16_t default_sctp_stream_id;
   instance_t gtpInst;
   uint64_t gNB_DU_id;
   uint16_t num_ues;

@@ -118,8 +118,6 @@ typedef struct f1ap_setup_req_s {
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
 
-  uint16_t default_sctp_stream_id;
-
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
   char *gNB_DU_name;

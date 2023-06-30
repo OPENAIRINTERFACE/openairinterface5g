@@ -544,10 +544,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance,
-                               buffer,
-                               len,
-                               getCxt(false, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
 
@@ -622,10 +619,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance,
-                               buffer,
-                               len,
-                               getCxt(false, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
 
@@ -772,10 +766,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_rel
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance,
-                               buffer,
-                               len,
-                               getCxt(false, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
 
@@ -1278,7 +1269,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, getCxt(false, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
 
@@ -1402,7 +1393,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, f1ap_ue_contex
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, getCxt(false, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
 

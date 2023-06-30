@@ -366,7 +366,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }
 
@@ -436,7 +436,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   }
 
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true,instance, buffer, len);
   return 0;
 }
 
@@ -552,7 +552,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
 
   LOG_DUMPMSG(F1AP, LOG_DUMP_CHAR, buffer, len, "F1AP gNB-CU CONFIGURATION UPDATE : ");
   ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
-  f1ap_itti_send_sctp_data_req(true,instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true,instance, buffer, len);
   return 0;
 }
 

@@ -628,7 +628,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   //   return -1;
   // }
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0 /* BK: fix me*/);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }
 
@@ -916,7 +916,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
@@ -1562,7 +1562,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT_MODIFICATION REQUEST\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0 /* BK: fix me*/);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }
 
@@ -1892,7 +1892,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Confirm\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }
 
@@ -1959,6 +1959,6 @@ int CU_send_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, f1ap_ue_context_
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Refuse\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len, 0);
+  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
   return 0;
 }

@@ -213,7 +213,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instanceP, buffer, len, getCxt(DUtype, instanceP)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instanceP, buffer, len);
   return 0;
 }
 
@@ -279,6 +279,6 @@ int DU_send_UL_NR_RRC_MESSAGE_TRANSFER(instance_t instance, const f1ap_ul_rrc_me
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, getCxt(DUtype, instance)->default_sctp_stream_id);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
   return 0;
 }
