@@ -483,19 +483,13 @@ typedef enum nr_ssb_and_cset_mux_pattern_type_e {
   NR_SSB_AND_CSET_MUX_PATTERN_TYPE3
 } nr_ssb_and_cset_mux_pattern_type_t;
 
-typedef enum {
-  SFN_C_MOD_2_EQ_0,
-  SFN_C_MOD_2_EQ_1,
-  SFN_C_IMPOSSIBLE
-} SFN_C_TYPE;
-
 typedef struct Type0_PDCCH_CSS_config_s {
   int32_t num_rbs;
   int32_t num_symbols;
   int32_t rb_offset; // Offset from SSB RB0
   uint32_t type0_pdcch_ss_mux_pattern;
   uint16_t frame;
-  SFN_C_TYPE sfn_c;
+  int sfn_c;
   uint32_t n_c;
   uint32_t n_0;
   uint32_t number_of_search_space_per_slot;
