@@ -263,13 +263,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   return 0;
 }
 
-int CU_send_F1_SETUP_RESPONSE(instance_t instance,
-                              f1ap_setup_resp_t *f1ap_setup_resp) {
-  instance_t enb_mod_idP;
-  instance_t cu_mod_idP;
-  // This should be fixed
-  enb_mod_idP = (instance_t)0;
-  cu_mod_idP  = (instance_t)0;
+int CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup_resp)
+{
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -287,7 +282,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_F1SetupResponseIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
 
   /* optional */
   /* c2. GNB_CU_Name */
@@ -372,9 +367,6 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance,
 
 int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   LOG_D(F1AP, "CU_send_F1_SETUP_FAILURE\n");
-  instance_t enb_mod_idP=0;
-  instance_t cu_mod_idP=0;
-  // This should be fixed
   F1AP_F1AP_PDU_t           pdu= {0};
   uint8_t  *buffer=NULL;
   uint32_t  len=0;
@@ -392,7 +384,7 @@ int CU_send_F1_SETUP_FAILURE(instance_t instance) {
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_F1SetupFailureIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, cu_mod_idP);
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
   /* mandatory */
   /* c2. Cause */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_F1SetupFailureIEs_t, ie2);
@@ -484,7 +476,7 @@ int CU_send_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, f1ap_gnb_cu_configu
   ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality               = F1AP_Criticality_reject;
   ieC1->value.present             = F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID;
-  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, 0);
+  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
 
   // mandatory
   // c2. Cells_to_be_Activated_List

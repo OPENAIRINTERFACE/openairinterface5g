@@ -93,9 +93,8 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 */
 
 // SETUP REQUEST
-int DU_send_F1_SETUP_REQUEST(instance_t instance) {
-  instance_t nb_mod_idP=0;
-  instance_t du_mod_idP=0;
+int DU_send_F1_SETUP_REQUEST(instance_t instance)
+{
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
   uint32_t  len;
@@ -113,7 +112,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
   ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ieC1->criticality               = F1AP_Criticality_reject;
   ieC1->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
-  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(nb_mod_idP, du_mod_idP);
+  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
   /* mandatory */
   /* c2. GNB_DU_ID (integer value) */
   asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC2);
@@ -569,7 +568,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
   ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
   ie1->criticality               = F1AP_Criticality_reject;
   ie1->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_TransactionID;
-  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
   /* mandatory */
   /* c2. Served_Cells_To_Add */
   asn1cSequenceAdd(out, F1AP_GNBDUConfigurationUpdateIEs_t, ie2);
