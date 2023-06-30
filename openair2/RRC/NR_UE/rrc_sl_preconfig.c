@@ -36,6 +36,8 @@
 #include "oai_asn1.h"
 #include "NR_SL-PreconfigurationNR-r16.h"
 #include "common/utils/LOG/log.h"
+#include "sl_preconfig_paramvalues.h"
+#include "common/config/config_userapi.h"
 
 static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig) {
 
@@ -370,6 +372,127 @@ NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_p
   return sl_preconfiguration;
 }
 
+static void get_NR_SL_Preconfig_params(NR_SL_PreconfigurationNR_r16_t *sl_preconfig) {
+
+    char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
+
+    NR_TDD_UL_DL_ConfigCommon_t *sl_tdd_uldl_cfg =
+            sl_preconfig->sidelinkPreconfigNR_r16.sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16;
+    paramdef_t SLTDDCFG_PARAMS[] = SL_TDDCONFIGPARAMS_DESC(sl_tdd_uldl_cfg);
+    config_get(SLTDDCFG_PARAMS,sizeof(SLTDDCFG_PARAMS)/sizeof(paramdef_t),aprefix);
+
+    NR_SL_FreqConfigCommon_r16_t *sl_fcc = sl_preconfig->sidelinkPreconfigNR_r16.sl_PreconfigFreqInfoList_r16->list.array[0];
+    paramdef_t SL_FCCPARAMS[] = SL_FCCPARAMS_DESC(sl_fcc);
+    paramlist_def_t SL_FCCParamList = {SL_CONFIG_STRING_SL_FCC_LIST, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
+    config_getlist(&SL_FCCParamList, NULL, 0, aprefix);
+    LOG_I(RRC, "NUM SL-FCC elem in cfg file:%d\n", SL_FCCParamList.numelt);
+    if (SL_FCCParamList.numelt > 0) {
+      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0, SL_CONFIG_STRING_SL_FCC_LIST, 0);
+      config_get( SL_FCCPARAMS,sizeof(SL_FCCPARAMS)/sizeof(paramdef_t),aprefix);
+    }
+
+    NR_SL_BWP_ConfigCommon_r16_t *sl_bwp = sl_fcc->sl_BWP_List_r16->list.array[0];
+    paramdef_t SL_BWPPARAMS[] = SL_BWPPARAMS_DESC(sl_bwp);
+    paramlist_def_t SL_BWPParamList = {SL_CONFIG_STRING_SL_BWP_LIST, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+    config_getlist(&SL_BWPParamList, NULL, 0, aprefix);
+    LOG_I(RRC, "NUM SL-BWP elem in cfg file:%d\n", SL_BWPParamList.numelt);
+    if (SL_BWPParamList.numelt > 0) {
+      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0, SL_CONFIG_STRING_SL_BWP_LIST, 0);
+      config_get( SL_BWPPARAMS,sizeof(SL_BWPPARAMS)/sizeof(paramdef_t),aprefix);
+    }
+
+    sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->subcarrierSpacing =
+                          sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
+    sl_tdd_uldl_cfg->referenceSubcarrierSpacing =
+                          sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
+
+    NR_SL_SyncConfig_r16_t *sl_synccfg = sl_fcc->sl_SyncConfigList_r16->list.array[0];
+    paramdef_t SL_SYNCCFGPARAMS[] = SL_SYNCPARAMS_DESC(sl_synccfg);
+    paramlist_def_t SL_SYNCFGParamList = {SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+    config_getlist(&SL_SYNCFGParamList, NULL, 0, aprefix);
+    LOG_I(RRC, "NUM SL-SYNCCFG elem in cfg file:%d\n", SL_SYNCFGParamList.numelt);
+    if (SL_SYNCFGParamList.numelt > 0) {
+      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, 0);
+      config_get(SL_SYNCCFGPARAMS,sizeof(SL_SYNCCFGPARAMS)/sizeof(paramdef_t),aprefix);
+    }
+
+    paramlist_def_t SL_RxPoolParamList = {SL_CONFIG_STRING_SL_RX_RPOOL_LIST, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+    config_getlist(&SL_RxPoolParamList, NULL, 0, aprefix);
+    LOG_I(RRC, "NUM Rx RPOOLs in cfg file:%d\n", SL_RxPoolParamList.numelt);
+    AssertFatal(SL_RxPoolParamList.numelt <= 1, "Only Max 1 RX Respool Supported now\n");
+
+    if (SL_RxPoolParamList.numelt > 0) {
+
+      NR_SL_ResourcePool_r16_t *rxpool = NULL;
+
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16 == NULL)
+        sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16));
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 == NULL)
+        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16));
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.count == 0) {
+        rxpool = calloc(1, sizeof(NR_SL_ResourcePool_r16_t));
+        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16));
+        ASN_SEQUENCE_ADD(&sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list, rxpool);
+        // Fill RX resource pool
+        prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.array[0], 0, 0);
+      }
+
+      rxpool = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.array[0];
+      paramdef_t SL_RXPOOLPARAMS[] = SL_RESPOOLPARAMS_DESC(rxpool);
+      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_RX_RPOOL_LIST, 0);
+      config_get(SL_RXPOOLPARAMS,sizeof(SL_RXPOOLPARAMS)/sizeof(paramdef_t),aprefix);
+
+    } else {
+
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16)
+        ASN_STRUCT_FREE(asn_DEF_NR_SL_BWP_ConfigCommon_r16, sl_bwp->sl_BWP_PoolConfigCommon_r16);
+    }
+
+    paramlist_def_t SL_TxPoolParamList = {SL_CONFIG_STRING_SL_TX_RPOOL_LIST, NULL, 0};
+    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+    config_getlist(&SL_TxPoolParamList, NULL, 0, aprefix);
+    LOG_I(RRC, "NUM Tx RPOOL in cfg file:%d\n", SL_TxPoolParamList.numelt);
+    AssertFatal(SL_TxPoolParamList.numelt <= 1, "Only Max 1 TX Respool Supported now\n");
+
+    if (SL_TxPoolParamList.numelt > 0) {
+
+      NR_SL_ResourcePool_r16_t *txpool = NULL;
+
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16 == NULL)
+        sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16));
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 == NULL)
+        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 =
+                                calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16));
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.count == 0) {
+        NR_SL_ResourcePoolConfig_r16_t *respoolcfg = calloc(1, sizeof(*respoolcfg));
+        respoolcfg->sl_ResourcePoolID_r16 = 0;
+        respoolcfg->sl_ResourcePool_r16 = calloc(1, sizeof(NR_SL_ResourcePool_r16_t));
+        ASN_SEQUENCE_ADD(&sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list, respoolcfg);
+        // Fill TX resource pool
+        prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16, 1, 0);
+      }
+
+      txpool = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16;
+      paramdef_t SL_TXPOOLPARAMS[] = SL_RESPOOLPARAMS_DESC(txpool);
+      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_TX_RPOOL_LIST, 0);
+      config_get(SL_TXPOOLPARAMS,sizeof(SL_TXPOOLPARAMS)/sizeof(paramdef_t),aprefix);
+    } else {
+
+      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16) {
+        ASN_STRUCT_FREE(asn_DEF_NR_SL_ResourcePoolConfig_r16, sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]);
+        free(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16);
+        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 = NULL;
+      }
+    }
+
+  return;
+}
 
 static void dump_NR_SL_ResourcePoolParams(NR_SL_ResourcePool_r16_t *respool) {
 
@@ -564,6 +687,11 @@ int configure_NR_SL_Preconfig() {
   NR_SL_PreconfigurationNR_r16_t *sl_preconfig = prepare_NR_SL_PRECONFIGURATION(1,1,0);
   dump_NR_SL_Preconfiguration(sl_preconfig);
 
+  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
+    get_NR_SL_Preconfig_params(sl_preconfig);
+    dump_NR_SL_Preconfiguration(sl_preconfig);
+  }
+
   ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
   sl_preconfig = NULL;
   //END.......
@@ -572,6 +700,11 @@ int configure_NR_SL_Preconfig() {
   sl_preconfig = prepare_NR_SL_PRECONFIGURATION(1,0,1);
   dump_NR_SL_Preconfiguration(sl_preconfig);
 
+  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
+    get_NR_SL_Preconfig_params(sl_preconfig);
+    dump_NR_SL_Preconfiguration(sl_preconfig);
+  }
+
   ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
   sl_preconfig = NULL;
   //END
@@ -579,6 +712,11 @@ int configure_NR_SL_Preconfig() {
   //SL-Preconfiguration with 0 txpool, 1 rxpool and UE is not a syncsource
   sl_preconfig = prepare_NR_SL_PRECONFIGURATION(0,1,0);
   dump_NR_SL_Preconfiguration(sl_preconfig);
+
+  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
+    get_NR_SL_Preconfig_params(sl_preconfig);
+    dump_NR_SL_Preconfiguration(sl_preconfig);
+  }
 
   ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
   sl_preconfig = NULL;
