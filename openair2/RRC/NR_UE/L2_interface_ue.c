@@ -155,12 +155,10 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
   return 0;
 }
 
-int8_t nr_rrc_RA_succeeded(const module_id_t mod_id, const uint8_t gNB_index)
+void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success)
 {
-  if (NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active == true) {
-    LOG_W(NR_RRC, "T304 was stoped with value %i\n", NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt);
-    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_active = false;
-    NR_UE_rrc_inst[mod_id].timers_and_constants.T304_cnt = 0;
-  }
-  return 0;
+  MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_RA_IND);
+  NR_RRC_MAC_RA_IND (message_p).frame = frame;
+  NR_RRC_MAC_RA_IND (message_p).RA_succeeded = success;
+  itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(mod_id), message_p);
 }

@@ -32,6 +32,8 @@ void nr_mac_rrc_sync_ind(const module_id_t module_id,
                          const frame_t frame,
                          const bool in_sync) {}
 
+void nr_mac_rrc_ra_ind(const module_id_t mod_id, int frame, bool success) {}
+
 void rrc_data_ind(const protocol_ctxt_t *const ctxt_pP,
                   const rb_id_t                Srb_id,
                   const sdu_size_t             sdu_sizeP,
