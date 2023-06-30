@@ -162,8 +162,8 @@ extern int usrp_tx_thread;
   {"d" ,                    CONFIG_HLP_SOFTS,         PARAMFLAG_BOOL, .uptr=&do_forms,                        .defintval=0,             TYPE_UINT,   0},  \
   {"dqt" ,                  CONFIG_HLP_SOFTS_QT,      PARAMFLAG_BOOL, .uptr=&do_forms_qt,                     .defintval=0,             TYPE_UINT,   0},  \
   {"q" ,                    CONFIG_HLP_STMON,         PARAMFLAG_BOOL, .iptr=&opp_enabled,                     .defintval=0,             TYPE_INT,    0},  \
-  {"numerology" ,           CONFIG_HLP_NUMEROLOGY,    PARAMFLAG_BOOL, .iptr=&NUMEROLOGY,                      .defintval=1,             TYPE_INT,    0},  \
-  {"band" ,                 CONFIG_HLP_BAND,          PARAMFLAG_BOOL, .iptr=&BAND,                            .defintval=78,            TYPE_INT,    0},  \
+  {"numerology" ,           CONFIG_HLP_NUMEROLOGY,    0,              .iptr=&NUMEROLOGY,                      .defintval=1,             TYPE_INT,    0},  \
+  {"band" ,                 CONFIG_HLP_BAND,          0,              .iptr=&BAND,                            .defintval=78,            TYPE_INT,    0},  \
   {"emulate-rf" ,           CONFIG_HLP_EMULATE_RF,    PARAMFLAG_BOOL, .iptr=&EMULATE_RF,                      .defintval=0,             TYPE_INT,    0},  \
   {"parallel-config",       CONFIG_HLP_PARALLEL_CMD,  0,              .strptr=&parallel_config,               .defstrval=NULL,          TYPE_STRING, 0},  \
   {"worker-config",         CONFIG_HLP_WORKER_CMD,    0,              .strptr=&worker_config,                 .defstrval=NULL,          TYPE_STRING, 0},  \
