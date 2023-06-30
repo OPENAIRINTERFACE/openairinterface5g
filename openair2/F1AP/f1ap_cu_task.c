@@ -48,11 +48,12 @@ static instance_t cu_task_create_gtpu_instance(eth_params_t *IPaddrs) {
   return gtpv1Init(tmp);
 }
 
-static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
-    eth_params_t *IPaddrs) {
-  createF1inst(instance, NULL);
+static void cu_task_handle_sctp_association_ind(instance_t instance,
+                                                sctp_new_association_ind_t *sctp_new_association_ind,
+                                                eth_params_t *IPaddrs)
+{
   // save the assoc id
-  f1ap_setup_req_t *f1ap_cu_data = &getCxt(instance)->setupReq;
+  f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
   f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;

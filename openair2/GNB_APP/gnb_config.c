@@ -47,6 +47,7 @@
 #include "sctp_eNB_task.h"
 #include "sctp_default_values.h"
 #include "F1AP_CauseRadioNetwork.h"
+#include "f1ap_common.h"
 // #include "SystemInformationBlockType2.h"
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
@@ -1881,6 +1882,32 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
+static f1ap_net_config_t read_DU_IP_config(const eth_params_t* f1_params)
+{
+  f1ap_net_config_t nc = {0};
+
+  nc.CU_f1_ip_address.ipv6 = 0;
+  nc.CU_f1_ip_address.ipv4 = 1;
+  strcpy(nc.CU_f1_ip_address.ipv4_address, f1_params->remote_addr);
+  nc.CUport = f1_params->remote_portd;
+  LOG_I(GNB_APP,
+        "FIAP: CU_ip4_address in DU %p, strlen %d\n",
+        nc.CU_f1_ip_address.ipv4_address,
+        (int)strlen(f1_params->remote_addr));
+
+  nc.DU_f1_ip_address.ipv6 = 0;
+  nc.DU_f1_ip_address.ipv4 = 1;
+  strcpy(nc.DU_f1_ip_address.ipv4_address, f1_params->my_addr);
+  nc.DUport = f1_params->my_portd;
+  LOG_I(GNB_APP,
+        "FIAP: DU_ip4_address in DU %p, strlen %ld\n",
+        nc.DU_f1_ip_address.ipv4_address,
+        strlen(f1_params->my_addr));
+
+  // sctp_in_streams/sctp_out_streams are given by SCTP layer
+  return nc;
+}
+
 int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
   int k;
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
@@ -1896,7 +1923,7 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
     config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
     AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
                 "gNB id %u is not defined in configuration file\n",i);
-    f1ap_setup_req_t * f1Setup=&F1AP_SETUP_REQ(msg_p);
+    f1ap_setup_req_t *f1Setup = &F1AP_DU_REGISTER_REQ(msg_p).setup_req;
     f1Setup->num_cells_available = 0;
 
     for (k=0; k <num_gnbs ; k++) {
@@ -1912,7 +1939,6 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
         config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
-        paramdef_t SCTPParams[]  = SCTPPARAMS_DESC;
         f1Setup->num_cells_available++;
         f1Setup->gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
         LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,f1Setup->gNB_DU_id);
@@ -1933,26 +1959,9 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
         LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,f1Setup->cell[k].nr_cellid);
         LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
-        LOG_I(GNB_APP,"FIAP: CU_ip4_address in DU %p, strlen %d\n",f1Setup->CU_f1_ip_address.ipv4_address,(int)strlen(RC.nrmac[k]->eth_params_n.remote_addr));
-        f1Setup->CU_f1_ip_address.ipv6 = 0;
-        f1Setup->CU_f1_ip_address.ipv4 = 1;
-        //strcpy(f1Setup->CU_f1_ip_address.ipv6_address, "");
-        strcpy(f1Setup->CU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.remote_addr);
-        LOG_I(GNB_APP,"F1AP: DU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.my_addr);
-        LOG_I(GNB_APP,"FIAP: DU_ip4_address in DU %p, strlen %ld\n",
-	      f1Setup->DU_f1_ip_address.ipv4_address,
-	      strlen(RC.nrmac[k]->eth_params_n.my_addr));
-        f1Setup->DU_f1_ip_address.ipv6 = 0;
-        f1Setup->DU_f1_ip_address.ipv4 = 1;
-        //strcpy(f1Setup->DU_f1_ip_address.ipv6_address, "");
-        strcpy(f1Setup->DU_f1_ip_address.ipv4_address, RC.nrmac[k]->eth_params_n.my_addr);
-	f1Setup->DUport= RC.nrmac[k]->eth_params_n.my_portd;
-	f1Setup->CUport= RC.nrmac[k]->eth_params_n.remote_portd;
-        //strcpy(f1Setup->CU_ip_address[l].ipv6_address,*(F1ParamList.paramarray[l][ENB_CU_IPV6_ADDRESS_IDX].strptr));
-        sprintf(aprefix,"%s.[%i].%s",GNB_CONFIG_STRING_GNB_LIST,k,GNB_CONFIG_STRING_SCTP_CONFIG);
-        config_get(SCTPParams,sizeof(SCTPParams)/sizeof(paramdef_t),aprefix);
-        f1Setup->sctp_in_streams = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
-        f1Setup->sctp_out_streams = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
+
+        F1AP_DU_REGISTER_REQ(msg_p).net_config = read_DU_IP_config(&RC.nrmac[k]->eth_params_n);
+
         gNB_RRC_INST *rrc = RC.nrrrc[k];
         // wait until RRC cell information is configured
         int cell_info_configured = 0;

@@ -30,6 +30,8 @@
 
 #define F1AP_CU_SCTP_REQ(mSGpTR)                   (mSGpTR)->ittiMsg.f1ap_cu_sctp_req
 
+#define F1AP_DU_REGISTER_REQ(mSGpTR)               (mSGpTR)->ittiMsg.f1ap_du_register_req
+
 #define F1AP_SETUP_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.f1ap_setup_req
 #define F1AP_SETUP_RESP(mSGpTR)                    (mSGpTR)->ittiMsg.f1ap_setup_resp
 #define F1AP_GNB_CU_CONFIGURATION_UPDATE(mSGpTR)   (mSGpTR)->ittiMsg.f1ap_gnb_cu_configuration_update
@@ -75,6 +77,13 @@ typedef struct f1ap_net_ip_address_s {
   char ipv6_address[46];
 } f1ap_net_ip_address_t;
 
+typedef struct f1ap_net_config_t {
+  f1ap_net_ip_address_t CU_f1_ip_address;
+  f1ap_net_ip_address_t DU_f1_ip_address;
+  uint16_t CUport;
+  uint16_t DUport;
+} f1ap_net_config_t;
+
 typedef struct cellIDs_s {
 
   // Served Cell Information
@@ -99,24 +108,6 @@ typedef struct cellIDs_s {
 } cellIDs_t;
 
 typedef struct f1ap_setup_req_s {
-
-  // Midhaul networking parameters
-
-  /* Connexion id used between SCTP/F1AP */
-  uint16_t cnx_id;
-
-  /* SCTP association id */
-  int32_t  assoc_id;
-
-  /* The eNB IP address to bind */
-  f1ap_net_ip_address_t CU_f1_ip_address;
-  f1ap_net_ip_address_t DU_f1_ip_address;
-  uint16_t CUport;
-  uint16_t DUport;
-
-  /* Number of SCTP streams used for a mme association */
-  uint16_t sctp_in_streams;
-  uint16_t sctp_out_streams;
 
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
@@ -183,6 +174,11 @@ typedef struct f1ap_setup_req_s {
 
 
 } f1ap_setup_req_t;
+
+typedef struct f1ap_du_register_req_t {
+  f1ap_setup_req_t setup_req;
+  f1ap_net_config_t net_config;
+} f1ap_du_register_req_t;
 
 typedef struct served_cells_to_activate_s {
   /// mcc of DU cells

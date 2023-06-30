@@ -181,7 +181,7 @@ void *gNB_app_task(void *args_p)
       }
       // configure F1AP here for F1C
       LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_SETUP_REQ);
+      msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_DU_REGISTER_REQ);
       RCconfig_NR_DU_F1(msg_p, 0);
 
       itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);

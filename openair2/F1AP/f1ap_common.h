@@ -406,8 +406,16 @@ typedef struct f1ap_cudu_ue_inst_s {
 
 typedef struct f1ap_cudu_inst_s {
   f1ap_setup_req_t setupReq;
+
+  /* The eNB IP address to bind */
+  f1ap_net_config_t net_config;
+
+  /* SCTP information */
+  int32_t assoc_id;
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
+
+  /* GTP instance used by F1 */
   instance_t gtpInst;
   uint64_t gNB_DU_id;
   uint16_t num_ues;
@@ -420,7 +428,7 @@ uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_m
 
 f1ap_cudu_inst_t *getCxt(instance_t instanceP);
 
-void createF1inst(instance_t instanceP, f1ap_setup_req_t *req);
+void createF1inst(instance_t instanceP, f1ap_setup_req_t *req, f1ap_net_config_t *nc);
 
 //lts: C struct type is not homogeneous, so we need macros instead of functions
 #define addnRCGI(nRCGi, servedCelL) \

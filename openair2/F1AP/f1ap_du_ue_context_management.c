@@ -150,7 +150,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
       // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
-      drb_p->up_ul_tnl[0].port = getCxt(instance)->setupReq.CUport;
+      drb_p->up_ul_tnl[0].port = getCxt(instance)->net_config.CUport;
 
       switch (drbs_tobesetup_item_p->rLCMode) {
         case F1AP_RLCMode_rlc_am:
@@ -332,7 +332,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
             &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
@@ -458,7 +458,9 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
       F1AP_SCell_FailedtoSetup_Item_t *sCell_FailedtoSetup_item=
         &sCell_FailedtoSetup_item_ies->value.choice.SCell_FailedtoSetup_Item;
       /* sCell_ID */
-      addnRCGI(sCell_FailedtoSetup_item->sCell_ID, getCxt(instance)->setupReq.cell+i);
+      AssertFatal(false, "handle correct CellID\n");
+      cellIDs_t cellID = {0};
+      addnRCGI(sCell_FailedtoSetup_item->sCell_ID, &cellID);
       /* cause */
       asn1cCalloc(sCell_FailedtoSetup_item->cause, tmp);
       // dummy value
@@ -848,7 +850,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
-      drb_p->up_ul_tnl[0].port = getCxt(instance)->setupReq.CUport;
+      drb_p->up_ul_tnl[0].port = getCxt(instance)->net_config.CUport;
 
       extern instance_t DUuniqInstance;
       if (DUuniqInstance == 0) {
@@ -861,9 +863,9 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
                  (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
                  (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
         getCxt(instance)->gtpInst = du_create_gtpu_instance_to_cu(gtp_tunnel_ip_address,
-                                                                  getCxt(instance)->setupReq.CUport,
-                                                                  getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address,
-                                                                  getCxt(instance)->setupReq.DUport);
+                                                                  getCxt(instance)->net_config.CUport,
+                                                                  getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address,
+                                                                  getCxt(instance)->net_config.DUport);
         AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
         // Fixme: fully inconsistent instances management
         // dirty global var is a bad fix
@@ -1043,7 +1045,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
           &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
@@ -1081,7 +1083,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel, gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->net_config.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
         INT32_TO_OCTET_STRING(resp->drbs_to_be_modified[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
