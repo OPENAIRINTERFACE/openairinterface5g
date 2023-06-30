@@ -81,7 +81,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
                                uint32_t stream,
                                F1AP_F1AP_PDU_t *pdu) {
   LOG_D(F1AP, "CU_handle_F1_SETUP_REQUEST\n");
-  MessageDef                         *message_p;
   F1AP_F1SetupRequest_t              *container;
   F1AP_F1SetupRequestIEs_t           *ie;
   int i = 0;
@@ -94,9 +93,8 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
           assoc_id, stream);
   }
 
-  /* assoc_id */
-  f1ap_setup_req_t *req=&getCxt(true, instance)->setupReq;
-  req->assoc_id = assoc_id;
+  MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  f1ap_setup_req_t *req = &F1AP_SETUP_REQ(message_p);
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupRequestIEs_t, ie, container,
@@ -245,12 +243,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   //     uint16_t nr_sul_band[32];
   //   } tdd;
   // } nr_mode_info[F1AP_MAX_NB_CELLS];
-
-
-  
-  // We copy and store in F1 task data, RRC will free "req" as it frees all itti received messages
-  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
-  memcpy(&F1AP_SETUP_REQ(message_p), req, sizeof(f1ap_setup_req_t) );
   
   if (req->num_cells_available > 0) {
       itti_send_msg_to_task(TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(instance), message_p);

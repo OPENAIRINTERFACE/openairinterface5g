@@ -93,7 +93,7 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 */
 
 // SETUP REQUEST
-int DU_send_F1_SETUP_REQUEST(instance_t instance)
+int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
 {
   F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
@@ -119,16 +119,16 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
   ieC2->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_ID;
   ieC2->criticality               = F1AP_Criticality_reject;
   ieC2->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_ID;
-  asn_int642INTEGER(&ieC2->value.choice.GNB_DU_ID, f1ap_req(false, instance)->gNB_DU_id);
+  asn_int642INTEGER(&ieC2->value.choice.GNB_DU_ID, setup_req->gNB_DU_id);
 
   /* optional */
   /* c3. GNB_DU_Name */
-  if (f1ap_req(false,instance)->gNB_DU_name != NULL) {
+  if (setup_req->gNB_DU_name != NULL) {
     asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC3);
     ieC3->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Name;
     ieC3->criticality               = F1AP_Criticality_ignore;
     ieC3->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Name;
-    char *gNB_DU_name=f1ap_req(false, instance)->gNB_DU_name;
+    char *gNB_DU_name=setup_req->gNB_DU_name;
     OCTET_STRING_fromBuf(&ieC3->value.choice.GNB_DU_Name, gNB_DU_name, strlen(gNB_DU_name));
   }
 
@@ -138,13 +138,13 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
   ieCells->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List;
   ieCells->criticality               = F1AP_Criticality_reject;
   ieCells->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Served_Cells_List;
-  int num_cells_available = f1ap_req(false, instance)->num_cells_available;
+  int num_cells_available = setup_req->num_cells_available;
   LOG_D(F1AP, "num_cells_available = %d \n", num_cells_available);
 
   for (int i=0; i<num_cells_available; i++) {
     /* mandatory */
     /* 4.1 served cells item */
-    cellIDs_t *cell=&f1ap_req(false, instance)->cell[i];
+    cellIDs_t *cell=&setup_req->cell[i];
     asn1cSequenceAdd(ieCells->value.choice.GNB_DU_Served_Cells_List.list,
                      F1AP_GNB_DU_Served_Cells_ItemIEs_t, duServedCell);
     duServedCell->id = F1AP_ProtocolIE_ID_id_GNB_DU_Served_Cells_Item;
@@ -204,12 +204,12 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
       }
     }
 
-    if (f1ap_req(false, instance)->fdd_flag) { // FDD
+    if (setup_req->fdd_flag) { // FDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
       asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
       /* FDD.1 UL NRFreqInfo */
       /* FDD.1.1 UL NRFreqInfo ARFCN */
-      fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
+      fDD_Info->uL_NRFreqInfo.nRARFCN = setup_req->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
 
       /* FDD.1.2 F1AP_SUL_Information */
       if(0) { // Optional
@@ -220,27 +220,27 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
       }
 
       /* FDD.1.3 freqBandListNr */
-      int fdd_ul_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_num_frequency_bands;
+      int fdd_ul_num_available_freq_Bands = setup_req->nr_mode_info[i].fdd.ul_num_frequency_bands;
       LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
 
       for (int fdd_ul_j=0; fdd_ul_j<fdd_ul_num_available_freq_Bands; fdd_ul_j++) {
         asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
         /* FDD.1.3.1 freqBandIndicatorNr*/
-        nr_freqBandNrItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
+        nr_freqBandNrItem->freqBandIndicatorNr = setup_req->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
         /* FDD.1.3.2 supportedSULBandList*/
-        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
+        int num_available_supported_SULBands = setup_req->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
         LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
         for (int fdd_ul_k=0; fdd_ul_k<num_available_supported_SULBands; fdd_ul_k++) {
           asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
           /* FDD.1.3.2.1 freqBandIndicatorNr */
-          nr_supportedSULFreqBandItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = setup_req->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
         } // for FDD : UL supported_SULBands
       } // for FDD : UL freq_Bands
 
       /* FDD.2 DL NRFreqInfo */
       /* FDD.2.1 DL NRFreqInfo ARFCN */
-      fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
+      fDD_Info->dL_NRFreqInfo.nRARFCN = setup_req->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
 
       /* FDD.2.2 F1AP_SUL_Information */
       if(0) { // Optional
@@ -251,36 +251,36 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
       }
 
       /* FDD.2.3 freqBandListNr */
-      int fdd_dl_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_num_frequency_bands;
+      int fdd_dl_num_available_freq_Bands = setup_req->nr_mode_info[i].fdd.dl_num_frequency_bands;
       LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
 
       for (int fdd_dl_j=0; fdd_dl_j<fdd_dl_num_available_freq_Bands; fdd_dl_j++) {
         asn1cSequenceAdd(fDD_Info->dL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
         /* FDD.2.3.1 freqBandIndicatorNr*/
-        nr_freqBandNrItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
+        nr_freqBandNrItem->freqBandIndicatorNr = setup_req->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
         /* FDD.2.3.2 supportedSULBandList*/
-        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
+        int num_available_supported_SULBands = setup_req->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
         LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
         for (int fdd_dl_k=0; fdd_dl_k<num_available_supported_SULBands; fdd_dl_k++) {
           asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
           /* FDD.2.3.2.1 freqBandIndicatorNr */
-          nr_supportedSULFreqBandItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = setup_req->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
         } // for FDD : DL supported_SULBands
       } // for FDD : DL freq_Bands
 
       /* FDD.3 UL Transmission Bandwidth */
-      fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_scs;
-      fDD_Info->uL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nrb);
+      fDD_Info->uL_Transmission_Bandwidth.nRSCS = setup_req->nr_mode_info[i].fdd.ul_scs;
+      fDD_Info->uL_Transmission_Bandwidth.nRNRB = to_NRNRB(setup_req->nr_mode_info[i].fdd.ul_nrb);
       /* FDD.4 DL Transmission Bandwidth */
-      fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_scs;
-      fDD_Info->dL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nrb);
+      fDD_Info->dL_Transmission_Bandwidth.nRSCS = setup_req->nr_mode_info[i].fdd.dl_scs;
+      fDD_Info->dL_Transmission_Bandwidth.nRNRB = to_NRNRB(setup_req->nr_mode_info[i].fdd.dl_nrb);
     } else { // TDD
       nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
       asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
       /* TDD.1 nRFreqInfo */
       /* TDD.1.1 nRFreqInfo ARFCN */
-      tDD_Info->nRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_arfcn; // Integer
+      tDD_Info->nRFreqInfo.nRARFCN = setup_req->nr_mode_info[i].tdd.nr_arfcn; // Integer
 
       /* TDD.1.2 F1AP_SUL_Information */
       if(0) { // Optional
@@ -291,42 +291,42 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance)
       }
 
       /* TDD.1.3 freqBandListNr */
-      int tdd_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].tdd.num_frequency_bands;
+      int tdd_num_available_freq_Bands = setup_req->nr_mode_info[i].tdd.num_frequency_bands;
       LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
 
       for (int j=0; j<tdd_num_available_freq_Bands; j++) {
         asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
         /* TDD.1.3.1 freqBandIndicatorNr*/
-        nr_freqBandNrItem->freqBandIndicatorNr = *f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_band; //
+        nr_freqBandNrItem->freqBandIndicatorNr = *setup_req->nr_mode_info[i].tdd.nr_band; //
         /* TDD.1.3.2 supportedSULBandList*/
-        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].tdd.num_sul_frequency_bands;
+        int num_available_supported_SULBands = setup_req->nr_mode_info[i].tdd.num_sul_frequency_bands;
         LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
         for (int k=0; k<num_available_supported_SULBands; k++) {
           asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list,F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
           /* TDD.1.3.2.1 freqBandIndicatorNr */
-          nr_supportedSULFreqBandItem->freqBandIndicatorNr = *f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_sul_band; //
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = *setup_req->nr_mode_info[i].tdd.nr_sul_band; //
         } // for TDD : supported_SULBands
       } // for TDD : freq_Bands
 
       /* TDD.2 transmission_Bandwidth */
-      tDD_Info->transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].tdd.scs;
-      tDD_Info->transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].tdd.nrb);
+      tDD_Info->transmission_Bandwidth.nRSCS = setup_req->nr_mode_info[i].tdd.scs;
+      tDD_Info->transmission_Bandwidth.nRNRB = to_NRNRB(setup_req->nr_mode_info[i].tdd.nrb);
     } // if nR_Mode_Info
 
     /* - measurementTimingConfiguration */
-    char *measurementTimingConfiguration = f1ap_req(false,instance)->measurement_timing_information[i]; // sept. 2018
+    char *measurementTimingConfiguration = setup_req->measurement_timing_information[i]; // sept. 2018
     OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
     asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
     /* 4.1.2 gNB-DU System Information */
     OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                         (const char *)f1ap_req(false,instance)->mib[i], //f1ap_du_data->mib,
-                         f1ap_req(false,instance)->mib_length[i]);
+                         (const char *)setup_req->mib[i], //f1ap_du_data->mib,
+                         setup_req->mib_length[i]);
     OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                         (const char *)f1ap_req(false,instance)->sib1[i],
-                         f1ap_req(false,instance)->sib1_length[i]);
+                         (const char *)setup_req->sib1[i],
+                         setup_req->sib1_length[i]);
   }
 
   /* mandatory */
@@ -588,7 +588,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     addnRCGI(served_cell_information->nRCGI, &f1ap_setup_req->cell[j]);
     /* - nRPCI */
     /* 2.1.1 serverd cell Information */
-    cellIDs_t *cell=&f1ap_req(false, instance)->cell[j];
+    cellIDs_t *cell = &f1ap_setup_req->cell[j];
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
     uint32_t tac=htonl(cell->tac);
@@ -667,7 +667,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
   for (int i=0; i<1; i++) {
     //
-    cellIDs_t *cell=&f1ap_req(false, instance)->cell[i];
+    cellIDs_t *cell = &f1ap_setup_req->cell[i];
     asn1cSequenceAdd(ie3->value.choice.Served_Cells_To_Modify_List.list, F1AP_Served_Cells_To_Modify_ItemIEs_t, served_cells_to_modify_item_ies);
     served_cells_to_modify_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_Item;
     served_cells_to_modify_item_ies->criticality   = F1AP_Criticality_reject;

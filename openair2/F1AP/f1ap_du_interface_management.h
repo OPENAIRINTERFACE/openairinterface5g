@@ -60,7 +60,7 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 /*
  * F1 Setup
  */
-int DU_send_F1_SETUP_REQUEST(instance_t instance);
+int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req);
 
 int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                                 uint32_t assoc_id,
