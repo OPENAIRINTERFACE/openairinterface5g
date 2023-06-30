@@ -318,6 +318,22 @@ typedef struct {
   fapi_nr_dl_config_dci_dl_pdu_rel15_t pdcch_config[FAPI_NR_MAX_SS];
 } NR_UE_PDCCH_CONFIG;
 
+#define NR_PSBCH_MAX_NB_CARRIERS 132
+#define NR_PSBCH_MAX_NB_MOD_SYMBOLS 99
+#define NR_PSBCH_DMRS_LENGTH 297 // in mod symbols
+#define NR_PSBCH_DMRS_LENGTH_DWORD 20 // ceil(2(QPSK)*NR_PBCH_DMRS_LENGTH/32)
+
+/* NR Sidelink PSBCH payload fields
+   TODO: This will be removed in the future and
+   filled in by the upper layers once developed. */
+typedef struct {
+  uint32_t coverageIndicator : 1;
+  uint32_t tddConfig : 12;
+  uint32_t DFN : 10;
+  uint32_t slotIndex : 7;
+  uint32_t reserved : 2;
+} PSBCH_payload;
+
 #define PBCH_A 24
 
 typedef struct {
@@ -378,8 +394,12 @@ typedef struct {
   int if_freq_off;
   /// \brief Indicator that UE is synchronized to a gNB
   int is_synchronized;
+  /// \brief Indicator that UE is synchronized to a SyncRef UE on Sidelink
+  int is_synchronized_sl;
   /// \brief Target gNB Nid_cell when UE is resynchronizing
   int target_Nid_cell;
+  /// \brief Indicator that UE is an SynchRef UE
+  int sync_ref;
   /// Data structure for UE process scheduling
   UE_nr_proc_t proc;
   /// Flag to indicate the UE shouldn't do timing correction at all
@@ -660,6 +680,7 @@ typedef struct nr_rxtx_thread_data_s {
   UE_nr_rxtx_proc_t proc;
   PHY_VARS_NR_UE    *UE;
   int writeBlockSize;
+  notifiedFIFO_t txFifo;
   nr_phy_data_t phy_data;
   int tx_wait_for_dlsch;
 } nr_rxtx_thread_data_t;

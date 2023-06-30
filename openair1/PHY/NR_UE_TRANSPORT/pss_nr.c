@@ -73,7 +73,7 @@ int16_t *get_primary_synchro_nr2(const int nid2)
 *
 *********************************************************************/
 
-void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
+void generate_pss_nr(NR_DL_FRAME_PARMS *fp, int N_ID_2)
 {
   AssertFatal(fp->ofdm_symbol_size > 127,"Illegal ofdm_symbol_size %d\n",fp->ofdm_symbol_size);
   AssertFatal(N_ID_2>=0 && N_ID_2 <=2,"Illegal N_ID_2 %d\n",N_ID_2);
@@ -88,9 +88,8 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   assert(N_ID_2 < NUMBER_PSS_SEQUENCE);
   memcpy(x, x_initial, sizeof(x_initial));
 
-  for (int i=0; i < (LENGTH_PSS_NR - INITIAL_PSS_NR); i++) {
-    x[i+INITIAL_PSS_NR] = (x[i + 4] + x[i])%(2);
-  }
+  for (int i = 0; i < (LENGTH_PSS_NR - INITIAL_PSS_NR); i++)
+    x[i + INITIAL_PSS_NR] = (x[i + 4] + x[i]) % (2);
 
   for (int n=0; n < LENGTH_PSS_NR; n++) {
     const int m = (n + 43 * N_ID_2) % (LENGTH_PSS_NR);
@@ -139,7 +138,8 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
   * sample 0 is for continuous frequency which is used here
   */
 
-  unsigned int  k = fp->first_carrier_offset + fp->ssb_start_subcarrier + 56; //and
+  unsigned int subcarrier_start = get_softmodem_params()->sl_mode == 0 ? PSS_SSS_SUB_CARRIER_START : PSS_SSS_SUB_CARRIER_START_SL;
+  unsigned int  k = fp->first_carrier_offset + fp->ssb_start_subcarrier + subcarrier_start;
   if (k>= fp->ofdm_symbol_size) k-=fp->ofdm_symbol_size;
   c16_t synchroF_tmp[fp->ofdm_symbol_size] __attribute__((aligned(32)));
   memset(synchroF_tmp, 0, sizeof(synchroF_tmp));
@@ -237,7 +237,8 @@ void generate_pss_nr(NR_DL_FRAME_PARMS *fp,int N_ID_2)
 static void init_context_pss_nr(NR_DL_FRAME_PARMS *frame_parms_ue)
 {
   AssertFatal(frame_parms_ue->ofdm_symbol_size > 127, "illegal ofdm_symbol_size %d\n", frame_parms_ue->ofdm_symbol_size);
-  for (int i = 0; i < NUMBER_PSS_SEQUENCE; i++) {
+  int pss_sequence = get_softmodem_params()->sl_mode == 0 ? NUMBER_PSS_SEQUENCE : NUMBER_PSS_SEQUENCE_SL;
+  for (int i = 0; i < pss_sequence; i++) {
     primary_synchro_nr2[i] = malloc16_clear(LENGTH_PSS_NR * sizeof(int16_t));
     AssertFatal(primary_synchro_nr2[i], "Fatal memory allocation problem \n");
     primary_synchro_time_nr[i] = malloc16_clear(frame_parms_ue->ofdm_symbol_size * sizeof(c16_t));
@@ -583,7 +584,8 @@ static int pss_search_time_nr(c16_t **rxdata, PHY_VARS_NR_UE *ue, int fo_flag, i
   pss_source = 0;
 
   int maxval=0;
-  for (int j = 0; j < NUMBER_PSS_SEQUENCE; j++)
+  int max_size = get_softmodem_params()->sl_mode == 0 ?  NUMBER_PSS_SEQUENCE : NUMBER_PSS_SEQUENCE_SL;
+  for (int j = 0; j < max_size; j++)
     for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
       maxval = max(maxval, abs(primary_synchro_time_nr[j][i].r));
       maxval = max(maxval, abs(primary_synchro_time_nr[j][i].i));
@@ -595,7 +597,7 @@ static int pss_search_time_nr(c16_t **rxdata, PHY_VARS_NR_UE *ue, int fo_flag, i
   /* Correlation computation is based on a a dot product which is realized thank to SIMS extensions */
 
   uint16_t pss_index_start = 0;
-  uint16_t pss_index_end = NUMBER_PSS_SEQUENCE;
+  uint16_t pss_index_end = get_softmodem_params()->sl_mode == 0 ? NUMBER_PSS_SEQUENCE : NUMBER_PSS_SEQUENCE_SL;
   if (ue->target_Nid_cell != -1) {
     pss_index_start = GET_NID2(ue->target_Nid_cell);
     pss_index_end = pss_index_start + 1;
