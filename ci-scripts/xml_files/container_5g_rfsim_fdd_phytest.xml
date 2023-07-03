@@ -62,19 +62,19 @@
         </testCase>
 
         <testCase id="020011">
-                <class>PingFromContainer</class>
+                <class>Ping</class>
                 <desc>Ping gNB from NR-UE</desc>
-                <container_name>rfsim5g-oai-nr-ue</container_name>
-                <options>-c20 -i0.2 10.0.1.1</options>
-                <loss_threshold>0</loss_threshold>
+                <id>rfsim5g_ue</id>
+                <ping_args>-c20 -i0.2 10.0.1.1</ping_args>
+                <ping_packetloss_threshold>0</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="020012">
-                <class>PingFromContainer</class>
+                <class>Ping</class>
                 <desc>Ping NR-UE from gNB</desc>
-                <container_name>rfsim5g-oai-gnb</container_name>
-                <options>-c20 -i0.2 10.0.1.2</options>
-                <loss_threshold>0</loss_threshold>
+                <id>rfsim5g_gnb_nos1</id>
+                <ping_args>-c20 -i0.2 10.0.1.2</ping_args>
+                <ping_packetloss_threshold>0</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="030011">
