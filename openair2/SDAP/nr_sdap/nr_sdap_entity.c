@@ -468,23 +468,21 @@ nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id)
   return NULL;
 }
 
-void delete_nr_sdap_entity(ue_id_t ue_id)
+int nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id)
 {
-  nr_sdap_entity_t *entityPtr, *entityPrev = NULL;
-  entityPtr = sdap_info.sdap_entity_llist;
-
-  if (entityPtr->ue_id == ue_id) {
-    sdap_info.sdap_entity_llist = sdap_info.sdap_entity_llist->next_entity;
-    free(entityPtr);
-  } else {
-    while (entityPtr->ue_id != ue_id && entityPtr->next_entity != NULL) {
-      entityPrev = entityPtr;
-      entityPtr = entityPtr->next_entity;
-    }
-
-    if (entityPtr->ue_id != ue_id) {
-      entityPrev->next_entity = entityPtr->next_entity;
+  nr_sdap_entity_t *entityPtr = sdap_info.sdap_entity_llist;
+  int pos = 0;
+  while (entityPtr != NULL) {
+    if (entityPtr->ue_id == ue_id && entityPtr->pdusession_id == pdusession_id) {
+      if (pos == 0) {
+        sdap_info.sdap_entity_llist = sdap_info.sdap_entity_llist->next_entity;
+      }
+      LOG_I(SDAP, "Deleting SDAP entity for UE %lx and PDU Session id %d\n", ue_id, entityPtr->pdusession_id);
       free(entityPtr);
+      return 1;
     }
+    entityPtr = entityPtr->next_entity;
+    pos++;
   }
+  return 0;
 }
