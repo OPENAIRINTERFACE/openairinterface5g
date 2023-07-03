@@ -75,7 +75,7 @@ Legacy unmaintained files:
 
 ## General
 
-- The [T tracer](https://gitlab.eurecom.fr/oai/openairinterface5g/-/wikis/T/): a generic tracing tool (VCD, Wireshark, GUI, to save for later, ...)
+- The [T tracer](../common/utils/T/DOC/T.md): a generic tracing tool (VCD, Wireshark, GUI, to save for later, ...)
 - [OPT](../openair2/UTIL/OPT/README.txt): how to trace to wireshark
 - The [configuration module](../common/config/DOC/config.md)
 - The [logging module](../common/utils/LOG/DOC/log.md)
