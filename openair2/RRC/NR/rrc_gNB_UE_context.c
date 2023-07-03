@@ -101,8 +101,8 @@ rrc_gNB_ue_context_t *rrc_gNB_get_ue_context_by_rnti(gNB_RRC_INST *rrc_instance_
 void rrc_gNB_free_mem_ue_context(rrc_gNB_ue_context_t *const ue_context_pP)
 //-----------------------------------------------------------------------------
 {
-  free(ue_context_pP);
   LOG_T(NR_RRC, " Clearing UE context 0x%p (free internal structs)\n", ue_context_pP);
+  free(ue_context_pP);
 }
 
 //------------------------------------------------------------------------------

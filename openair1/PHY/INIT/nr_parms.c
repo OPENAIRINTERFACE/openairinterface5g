@@ -173,7 +173,7 @@ void set_scs_parameters (NR_DL_FRAME_PARMS *fp, int mu, int N_RB_DL)
         N_RB_DL,fp->first_carrier_offset,fp->nb_prefix_samples,fp->nb_prefix_samples0, fp->ofdm_symbol_size);
 }
 
-uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
+uint32_t get_samples_per_slot(int slot, const NR_DL_FRAME_PARMS *fp)
 {
   uint32_t samp_count;
 
@@ -185,7 +185,7 @@ uint32_t get_samples_per_slot(int slot, NR_DL_FRAME_PARMS* fp)
   return samp_count;
 }
 
-uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PARMS* fp)
+uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, const NR_DL_FRAME_PARMS *fp)
 {
    uint32_t slot_idx = 0;
    int samples_till_the_slot = fp->get_samples_per_slot(slot_idx,fp)-1;
@@ -198,7 +198,7 @@ uint32_t get_slot_from_timestamp(openair0_timestamp timestamp_rx, NR_DL_FRAME_PA
    return slot_idx; 
 }
 
-uint32_t get_samples_slot_timestamp(int slot, NR_DL_FRAME_PARMS* fp, uint8_t sl_ahead)
+uint32_t get_samples_slot_timestamp(int slot, const NR_DL_FRAME_PARMS *fp, uint8_t sl_ahead)
 {
   uint32_t samp_count = 0;
 

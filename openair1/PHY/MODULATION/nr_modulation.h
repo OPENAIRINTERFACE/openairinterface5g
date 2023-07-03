@@ -108,9 +108,9 @@ int nr_beam_precoding(c16_t **txdataF,
                       int offset
 );
 
-void apply_nr_rotation_TX(NR_DL_FRAME_PARMS *fp,
+void apply_nr_rotation_TX(const NR_DL_FRAME_PARMS *fp,
                           c16_t *txdataF,
-                          c16_t *symbol_rotation,
+                          const c16_t *symbol_rotation,
                           int slot,
                           int nb_rb,
                           int first_symbol,

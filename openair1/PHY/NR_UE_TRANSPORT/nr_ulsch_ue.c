@@ -107,12 +107,13 @@ void nr_pusch_codeword_scrambling(uint8_t *in,
 }
 
 void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
-                            unsigned char harq_pid,
-                            uint32_t frame,
-                            uint8_t slot,
-                            int gNB_id,
-                            nr_phy_data_tx_t *phy_data) {
-
+                            const unsigned char harq_pid,
+                            const uint32_t frame,
+                            const uint8_t slot,
+                            const int gNB_id,
+                            nr_phy_data_tx_t *phy_data,
+                            c16_t **txdataF)
+{
   LOG_D(PHY,"nr_ue_ulsch_procedures hard_id %d %d.%d\n",harq_pid,frame,slot);
 
   int8_t Wf[2], Wt[2];
@@ -122,14 +123,13 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   int sample_offsetF, N_RE_prime;
 
   NR_DL_FRAME_PARMS *frame_parms = &UE->frame_parms;
-  c16_t **txdataF = UE->common_vars.txdataF;
 
   int      N_PRB_oh = 0; // higher layer (RRC) parameter xOverhead in PUSCH-ServingCellConfig
   uint16_t number_dmrs_symbols = 0;
 
   NR_UE_ULSCH_t *ulsch_ue = &phy_data->ulsch;
   NR_UL_UE_HARQ_t *harq_process_ul_ue = &UE->ul_harq_processes[harq_pid];
-  nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch_ue->pusch_pdu;
+  const nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch_ue->pusch_pdu;
 
   int start_symbol          = pusch_pdu->start_symbol_index;
   uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
@@ -585,30 +585,17 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   ///////////
   ////////////////////////////////////////////////////////////////////////
-
 }
 
-
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
-                                      uint8_t slot,
-                                      NR_DL_FRAME_PARMS *frame_parms,
-                                      uint8_t n_antenna_ports)
+                                      const uint8_t slot,
+                                      const NR_DL_FRAME_PARMS *frame_parms,
+                                      const uint8_t n_antenna_ports,
+                                      c16_t **txdataF)
 {
-  /////////////////////////IFFT///////////////////////
-  ///////////
+  const int tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
 
-  int tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
-
-  // clear the transmit data array for the current subframe
-  /*for (int aa=0; aa<UE->frame_parms.nb_antennas_tx; aa++) {
-	  memset(&UE->common_vars.txdata[aa][tx_offset],0,UE->frame_parms.samples_per_slot*sizeof(int32_t));
-	  //memset(&UE->common_vars.txdataF[aa][tx_offset],0,UE->frame_parms.samples_per_slot*sizeof(int32_t));
-  }*/
-
-
-  c16_t **txdata = UE->common_vars.txdata;
-  c16_t **txdataF = UE->common_vars.txdataF;
-
+  c16_t **txdata = UE->common_vars.txData;
   for(int ap = 0; ap < n_antenna_ports; ap++) {
     apply_nr_rotation_TX(frame_parms,
                          txdataF[ap],

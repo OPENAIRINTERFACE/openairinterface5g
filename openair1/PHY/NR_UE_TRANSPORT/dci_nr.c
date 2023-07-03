@@ -889,7 +889,8 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
            break;
         }
       }
-      if (dci_found==1) continue;
+      if (dci_found == 1)
+        continue;
       int dci_length = rel15->dci_length_options[k];
       uint64_t dci_estimation[2]= {0};
 
@@ -923,8 +924,7 @@ uint8_t nr_dci_decoding_procedure(PHY_VARS_NR_UE *ue,
         if (mb > (ue->dci_thres+30)) {
           LOG_W(PHY,"DCI false positive. Dropping DCI index %d. Mismatched bits: %d/%d. Current DCI threshold: %d\n",j,mb,L*108,ue->dci_thres);
           continue;
-        }
-        else {
+        } else {
           dci_ind->SFN = proc->frame_rx;
           dci_ind->slot = proc->nr_slot_rx;
           dci_ind->dci_list[dci_ind->number_of_dcis].rnti = n_rnti;

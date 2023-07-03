@@ -455,6 +455,9 @@ static void timeSignal (OAIgraph_t *graph, PHY_VARS_gNB *phy_vars_gnb, RU_t *phy
 
 static void timeResponse (OAIgraph_t *graph, scopeData_t *p, int nb_UEs) {
   const int len = p->gNB->frame_parms.ofdm_symbol_size;
+  if (!len)
+    // gnb not yet initialized, many race conditions in the scope
+    return;
 #ifdef WEBSRVSCOPE
   websrv_scopedata_msg_t *msg = NULL;
   websrv_nf_getdata(graph->graph, 0, &msg);
