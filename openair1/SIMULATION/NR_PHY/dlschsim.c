@@ -412,7 +412,7 @@ int main(int argc, char **argv)
 	}
 
 	//configure UE
-	UE = malloc(sizeof(PHY_VARS_NR_UE));
+	UE = calloc(1, sizeof(*UE));
 	memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
 	//phy_init_nr_top(frame_parms);

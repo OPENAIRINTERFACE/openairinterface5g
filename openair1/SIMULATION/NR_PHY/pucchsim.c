@@ -123,7 +123,7 @@ int main(int argc, char **argv)
   int16_t amp=0x7FFF;
   int nr_slot_tx=0;
   int nr_frame_tx=0;
-  uint64_t actual_payload=0,payload_received;
+  uint64_t actual_payload = 0, payload_received = 0;
   bool random_payload = true;
   int nr_bit=1; // maximum value possible is 2
   uint8_t m0=0;// higher layer paramater initial cyclic shift
