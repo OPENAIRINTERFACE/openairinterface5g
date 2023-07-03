@@ -486,3 +486,23 @@ int nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id)
   }
   return 0;
 }
+
+void nr_sdap_delete_ue_entities(ue_id_t ue_id)
+{
+  nr_sdap_entity_t *entityPtr = sdap_info.sdap_entity_llist;
+  int pos = 0;
+  while (entityPtr != NULL) {
+    if (entityPtr->ue_id == ue_id) {
+      if (pos == 0) {
+        sdap_info.sdap_entity_llist = sdap_info.sdap_entity_llist->next_entity;
+      }
+      LOG_I(SDAP, "Deleting SDAP entity for UE %lx and PDU Session id %d\n", ue_id, entityPtr->pdusession_id);
+      nr_sdap_entity_t *entityPrev = entityPtr;
+      free(entityPtr);
+      entityPtr = entityPrev->next_entity;
+    } else {
+      entityPtr = entityPtr->next_entity;
+    }
+    pos++;
+  }
+}
