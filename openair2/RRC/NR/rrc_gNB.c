@@ -1218,18 +1218,22 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                        NULL,
                                        masterCellGroup);
 
-  nr_rrc_mac_update_cellgroup(ue_context_pP->ue_context.rnti, masterCellGroup);
-
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
 
   if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
+    nr_rrc_mac_update_cellgroup(ue_context_pP->ue_context.rnti, masterCellGroup);
+
+    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig
+                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
                                 && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
                             ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
                             : NR_RRC_RECONFIGURATION_DELAY_MS;
 
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing, delay_ms);
+    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id,
+                                          ue_p->rnti,
+                                          *rrc->carrier.servingcellconfigcommon->ssbSubcarrierSpacing,
+                                          delay_ms);
   }
 
   return 0;
