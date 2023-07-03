@@ -97,6 +97,7 @@
 #include <openair2/RRC/NR/nr_rrc_proto.h>
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_e1_api.h"
 #include "openair2/F1AP/f1ap_common.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/SDAP/nr_sdap/nr_sdap_entity.h"
 #include "cucp_cuup_if.h"
 
@@ -310,6 +311,7 @@ static void rrc_gNB_CU_DU_init(gNB_RRC_INST *rrc)
       AssertFatal(0 == 1, "Unknown node type %d\n", rrc->node_type);
       break;
   }
+  cu_init_f1_ue_data();
 }
 
 static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration)

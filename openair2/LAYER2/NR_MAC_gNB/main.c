@@ -40,6 +40,7 @@
 #include "nr_rlc/nr_rlc_oai_api.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 //#include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
+#include "openair2/F1AP/f1ap_ids.h"
 
 #include "common/ran_context.h"
 #include "executables/softmodem-common.h"
@@ -300,6 +301,8 @@ void mac_top_init_gNB(ngran_node_t node_type)
     nrmac->if_inst = NR_IF_Module_init(i);
     memset(&nrmac->UE_info, 0, sizeof(nrmac->UE_info));
   }
+
+  du_init_f1_ue_data();
 
   srand48(0);
 }
