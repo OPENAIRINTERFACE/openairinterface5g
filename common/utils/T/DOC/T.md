@@ -17,3 +17,4 @@ It is made of two main parts:
 * [MAC PDUs and wireshark](./T/wireshark.md)
 * [The *enb* tracer](./T/enb.md)
 * [The *to_vcd* tracer](./T/to_vcd.md)
+* [Tutorial: how to create a new trace](./T/howto_new_trace.md)
