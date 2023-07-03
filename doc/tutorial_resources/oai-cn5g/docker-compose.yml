@@ -36,7 +36,7 @@ services:
                 ipv4_address: 192.168.70.139
     oai-udr:
         container_name: "oai-udr"
-        image: oaisoftwarealliance/oai-udr:develop
+        image: oaisoftwarealliance/oai-udr:v1.5.1
         environment:
             - TZ=Europe/Paris
             - UDR_NAME=OAI_UDR
@@ -58,7 +58,7 @@ services:
                 ipv4_address: 192.168.70.136
     oai-udm:
         container_name: "oai-udm"
-        image: oaisoftwarealliance/oai-udm:develop
+        image: oaisoftwarealliance/oai-udm:v1.5.1
         environment:
             - TZ=Europe/Paris
             - UDM_NAME=OAI_UDM
@@ -77,7 +77,7 @@ services:
                 ipv4_address: 192.168.70.137
     oai-ausf:
         container_name: "oai-ausf"
-        image: oaisoftwarealliance/oai-ausf:develop
+        image: oaisoftwarealliance/oai-ausf:v1.5.1
         environment:
             - TZ=Europe/Paris
             - AUSF_NAME=OAI_AUSF
@@ -96,7 +96,7 @@ services:
                 ipv4_address: 192.168.70.138
     oai-nrf:
         container_name: "oai-nrf"
-        image: oaisoftwarealliance/oai-nrf:develop
+        image: oaisoftwarealliance/oai-nrf:v1.5.1
         environment:
             - TZ=Europe/Paris
             - NRF_INTERFACE_NAME_FOR_SBI=eth0
@@ -105,7 +105,7 @@ services:
                 ipv4_address: 192.168.70.130
     oai-amf:
         container_name: "oai-amf"
-        image: oaisoftwarealliance/oai-amf:develop
+        image: oaisoftwarealliance/oai-amf:v1.5.1
         environment:
             - TZ=Europe/Paris
             # PLMN informations
@@ -151,7 +151,7 @@ services:
                 ipv4_address: 192.168.70.132
     oai-smf:
         container_name: "oai-smf"
-        image: oaisoftwarealliance/oai-smf:develop
+        image: oaisoftwarealliance/oai-smf:v1.5.1
         environment:
             - TZ=Europe/Paris
             - SMF_INTERFACE_NAME_FOR_N4=eth0
@@ -202,7 +202,7 @@ services:
                 ipv4_address: 192.168.70.133
     oai-spgwu-tiny:
         container_name: "oai-spgwu-tiny"
-        image: oaisoftwarealliance/oai-spgwu-tiny:develop
+        image: oaisoftwarealliance/oai-spgwu-tiny:v1.5.1
         environment:
             - TZ=Europe/Paris
             - SGW_INTERFACE_NAME_FOR_S1U_S12_S4_UP=eth0

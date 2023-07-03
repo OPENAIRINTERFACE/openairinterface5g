@@ -351,9 +351,17 @@ void applyGtoright(const t_nrPolar_params *pp,decoder_node_t *node) {
       ((__m64 *)alpha_r)[0] = _mm_subs_pi16(((__m64 *)alpha_v)[1],_mm_sign_pi16(((__m64 *)alpha_v)[0],((__m64 *)betal)[0]));	
     }
     else
-      {// equivalent scalar code to above, activated only on non x86/ARM architectures or Nv=1,2
-	for (int i=0;i<node->Nv/2;i++) {
-	  alpha_r[i] = alpha_v[i+(node->Nv/2)] - (betal[i]*alpha_v[i]);
+      {
+        int temp_alpha_r;
+	for (int i = 0; i < node->Nv / 2; i++) {
+	  temp_alpha_r = alpha_v[i + (node->Nv / 2)] - (betal[i] * alpha_v[i]);
+          if (temp_alpha_r > SHRT_MAX) {
+            alpha_r[i] = SHRT_MAX;
+          } else if (temp_alpha_r < -SHRT_MAX) {
+            alpha_r[i] = -SHRT_MAX;
+          } else {
+            alpha_r[i] = temp_alpha_r;
+          }
 	}
       }
     if (node->Nv == 2) { // apply hard decision on right node

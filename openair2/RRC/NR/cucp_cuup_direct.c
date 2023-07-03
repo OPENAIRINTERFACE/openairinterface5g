@@ -85,16 +85,13 @@ void CU_update_UP_DL_tunnel(e1ap_bearer_setup_req_t *const req, instance_t insta
     for (int j=0; j < req->pduSessionMod[i].numDRB2Modify; j++) {
       DRB_nGRAN_to_setup_t *drb_p = req->pduSessionMod[i].DRBnGRanModList + j;
 
-      transport_layer_addr_t newRemoteAddr;
-      newRemoteAddr.length = 32; // IPv4
-      memcpy(newRemoteAddr.buffer,
-             &drb_p->DlUpParamList[0].tlAddress,
-             sizeof(in_addr_t));
+      in_addr_t addr = {0};
+      memcpy(&addr, &drb_p->DlUpParamList[0].tlAddress, sizeof(in_addr_t));
 
       GtpuUpdateTunnelOutgoingAddressAndTeid(instance,
                                              (ue_id & 0xFFFF),
                                              (ebi_t)drb_p->id,
-                                             *(in_addr_t*)&newRemoteAddr.buffer,
+                                             addr,
                                              drb_p->DlUpParamList[0].teId);
     }
   }

@@ -119,14 +119,15 @@ void test_synchro_pss_nr(PHY_VARS_NR_UE *PHY_VARS_NR_UE, int position_symbol, in
 
   /* search pss */
   synchro_position = pss_synchro_nr(PHY_VARS_NR_UE, rate_change);
+  int pss_sequence = get_softmodem_params()->sl_mode == 0 ? NUMBER_PSS_SEQUENCE : NUMBER_PSS_SEQUENCE_SL;
 
-  if (pss_sequence_number < NUMBER_PSS_SEQUENCE) {
+  if (pss_sequence_number < pss_sequence) {
     NID2_value = pss_sequence_number;
   } else {
-    NID2_value = NUMBER_PSS_SEQUENCE;
+    NID2_value = pss_sequence;
   }
 
-  if (NID2_value < NUMBER_PSS_SEQUENCE) {
+  if (NID2_value < pss_sequence) {
     test->number_of_tests++;
     /* position should be adjusted with i&q samples which are successively stored as int16 in the received buffer */
     int test_margin = PSS_DETECTION_MARGIN_MAX; /* warning correlation results give an offset position between 0 and 12 */
@@ -213,9 +214,10 @@ int main(int argc, char *argv[])
   test_synchro_pss_nr(PHY_vars_UE, 0, INVALID_PSS_SEQUENCE, &test);
 
 #endif
+  int pss_sequence = get_softmodem_params()->sl_mode == 0 ? NUMBER_PSS_SEQUENCE : NUMBER_PSS_SEQUENCE_SL;
 
   for (int index_position = 0; index_position < size_test_position; index_position++) {
-    for (int number_pss_sequence = 0; number_pss_sequence < NUMBER_PSS_SEQUENCE; number_pss_sequence++) {
+    for (int number_pss_sequence = 0; number_pss_sequence < pss_sequence; number_pss_sequence++) {
 
       p_test_synchro_pss(PHY_vars_UE, test_position[index_position], number_pss_sequence, &test);
 

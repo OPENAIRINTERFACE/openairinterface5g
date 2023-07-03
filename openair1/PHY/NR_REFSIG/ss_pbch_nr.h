@@ -41,6 +41,9 @@
 
 /* PSS parameters */
 #define  NUMBER_PSS_SEQUENCE          (3)
+#define  NUMBER_PSS_SEQUENCE_SL       (2)
+#define  PSS_SSS_SUB_CARRIER_START    (56)
+#define  PSS_SSS_SUB_CARRIER_START_SL (2)
 #define  INVALID_PSS_SEQUENCE         (NUMBER_PSS_SEQUENCE)
 #define  LENGTH_PSS_NR                (127)
 #define  N_SC_RB                      (12)     /* Resource block size in frequency domain expressed as a number if subcarriers */
@@ -61,6 +64,13 @@
 #define  PBCH_SYMBOL_NB               ((1) + OFFSET_SS_PBCH)
 #define  SSS_SYMBOL_NB                ((2) + OFFSET_SS_PBCH)
 #define  PBCH_LAST_SYMBOL_NB          ((3) + OFFSET_SS_PBCH)
+
+
+#define  OFFSET_SS_PSBCH              -1
+#define  PSS0_SL_SYMBOL_NB            ((1) + OFFSET_SS_PSBCH)
+#define  PSS1_SL_SYMBOL_NB            ((2) + OFFSET_SS_PSBCH)
+#define  SSS0_SL_SYMBOL_NB            ((3) + OFFSET_SS_PSBCH)
+#define  SSS1_SL_SYMBOL_NB            ((4) + OFFSET_SS_PSBCH)
 
 /* SS/PBCH parameters */
 #define  N_RB_SS_PBCH_BLOCK           (20)

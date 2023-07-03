@@ -12,6 +12,7 @@
 //#define DEBUG_CH_COMP
 //#define DEBUG_RB_EXT
 //#define DEBUG_CH_MAG
+//#define ML_DEBUG
 
 #define INVALID_VALUE 255
 
@@ -636,7 +637,7 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
       QAM_amp128 = _mm_set1_epi16(QAM16_n1);  // 2/sqrt(10)
       QAM_amp128b = _mm_setzero_si128();
       QAM_amp128c = _mm_setzero_si128();
-    } 
+    }
     else if (mod_order == 6) {
       QAM_amp128  = _mm_set1_epi16(QAM64_n1); //
       QAM_amp128b = _mm_set1_epi16(QAM64_n2);
@@ -1081,7 +1082,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
                 int32_t **ul_ch_mag,
                 int32_t **ul_ch_magb,
                 int32_t **ul_ch_magc,
-                int32_t ***rho,                
+                int32_t ***rho,
                 uint8_t  nrOfLayers,
                 uint8_t symbol,
                 uint16_t nb_rb,
@@ -1100,8 +1101,10 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
 
   if (n_rx > 1) {
     #if defined(__x86_64__) || defined(__i386__)
-    for (int aatx=0; aatx<nrOfLayers; aatx++) {
-      int nb_re = nb_rb*12;
+
+    int nb_re = nb_rb * 12;
+
+    for (int aatx = 0; aatx < nrOfLayers; aatx++) {
 
       rxdataF_comp128[0]   = (__m128i *)&rxdataF_comp[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
       ul_ch_mag128[0]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx][(symbol*(nb_re + off))];
@@ -1113,7 +1116,7 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
         ul_ch_mag128[1]      = (__m128i *)&ul_ch_mag[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128b[1]     = (__m128i *)&ul_ch_magb[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
         ul_ch_mag128c[1]     = (__m128i *)&ul_ch_magc[aatx*frame_parms->nb_antennas_rx+aa][(symbol*(nb_re + off))];
-      
+
         // MRC on each re of rb, both on MF output and magnitude (for 16QAM/64QAM llr computation)
         for (i=0; i<nb_rb_0*3; i++) {
             rxdataF_comp128[0][i] = _mm_adds_epi16(rxdataF_comp128[0][i],rxdataF_comp128[1][i]);
@@ -1123,6 +1126,20 @@ void nr_ulsch_detection_mrc(NR_DL_FRAME_PARMS *frame_parms,
             //rxdataF_comp128[0][i] = _mm_add_epi16(rxdataF_comp128_0[i],(*(__m128i *)&jitterc[0]));
         }
       }
+
+      if (rho) {
+        __m128i *rho128[2];
+        for (int aatx2 = 0; aatx2 < nrOfLayers; aatx2++) {
+          rho128[0] = (__m128i *) &rho[0][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
+          for (int aa = 1; aa < n_rx; aa++) {
+            rho128[1] = (__m128i *) &rho[aa][aatx * nrOfLayers + aatx2][(symbol * (nb_re + off))];
+            for (i = 0; i < nb_rb_0 * 3; i++) {
+              rho128[0][i] = _mm_adds_epi16(rho128[0][i], rho128[1][i]);
+            }
+          }
+        }
+      }
+
     }
     #elif defined(__arm__) || defined(__aarch64__)
     rxdataF_comp128_0   = (int16x8_t *)&rxdataF_comp[0][symbol*frame_parms->N_RB_DL*12];
@@ -1982,11 +1999,20 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
   uint32_t rxdataF_ext_offset = 0;
   uint8_t shift_ch_ext = rel15_ul->nrOfLayers > 1 ? log2_approx(max_ch >> 11) : 0;
 
+  // Flag to select the receiver: (true) Nonlinear ML receiver, (false) Linear MMSE receiver
+  // By default, we are using the Nonlinear ML receiver, except
+  //  - for 256QAM as Nonlinear ML receiver is not implemented for 256QAM
+  //  - for 64QAM as Nonlinear ML receiver requires more processing time than MMSE, and many machines are not powerful enough
+  bool ml_rx = true;
+  if (rel15_ul->nrOfLayers != 2 || rel15_ul->qam_mod_order >= 6) {
+    ml_rx = false;
+  }
+
   int ad_shift = 0;
   if (rel15_ul->nrOfLayers == 1) {
     ad_shift = 1 + log2_approx(frame_parms->nb_antennas_rx >> 2);
-  } else {
-    ad_shift = -3; // For 2-layers, we are already doing a bit shift in the nr_ulsch_zero_forcing_rx_2layers() function, so we can use more bits
+  } else if (ml_rx == false) {
+    ad_shift = -3; // For 2-layers, we are already doing a bit shift in the nr_ulsch_mmse_2layers() function, so we can use more bits
   }
 
   for(uint8_t symbol = rel15_ul->start_symbol_index; symbol < (rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols); symbol++) {
@@ -2092,7 +2118,7 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                              nb_re_pusch);
 
       // Apply MMSE for 2 Tx layers
-      if (rel15_ul->nrOfLayers == 2) {
+      if (ml_rx == false && rel15_ul->nrOfLayers == 2) {
         nr_ulsch_mmse_2layers(frame_parms,
                               pusch_vars->rxdataF_comp,
                               pusch_vars->ul_ch_mag0,
@@ -2143,16 +2169,46 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
       /*--------------------  LLRs computation  -------------------------------------------------------------*/
       /*-----------------------------------------------------------------------------------------------------*/
       start_meas(&gNB->ulsch_llr_stats);
-      for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
-        nr_ulsch_compute_llr(&pusch_vars->rxdataF_comp[aatx*frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
-                             pusch_vars->ul_ch_mag0[aatx*frame_parms->nb_antennas_rx],
-                             pusch_vars->ul_ch_magb0[aatx*frame_parms->nb_antennas_rx],
-                             pusch_vars->ul_ch_magc0[aatx*frame_parms->nb_antennas_rx],
-                             &pusch_vars->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
-                             rel15_ul->rb_size,
-                             pusch_vars->ul_valid_re_per_slot[symbol],
-                             symbol,
-                             rel15_ul->qam_mod_order);
+      if (ml_rx == false || rel15_ul->nrOfLayers == 1) {
+        for (aatx=0; aatx < rel15_ul->nrOfLayers; aatx++) {
+          nr_ulsch_compute_llr(&pusch_vars->rxdataF_comp[aatx * frame_parms->nb_antennas_rx][symbol * (off + rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                               pusch_vars->ul_ch_mag0[aatx * frame_parms->nb_antennas_rx],
+                               pusch_vars->ul_ch_magb0[aatx * frame_parms->nb_antennas_rx],
+                               pusch_vars->ul_ch_magc0[aatx * frame_parms->nb_antennas_rx],
+                               &pusch_vars->llr_layers[aatx][rxdataF_ext_offset * rel15_ul->qam_mod_order],
+                               rel15_ul->rb_size,
+                               pusch_vars->ul_valid_re_per_slot[symbol],
+                               symbol,
+                               rel15_ul->qam_mod_order);
+        }
+      } else {
+        nr_ulsch_compute_ML_llr(pusch_vars->rxdataF_comp,
+                                pusch_vars->ul_ch_mag0,
+                                pusch_vars->rho,
+                                pusch_vars->llr_layers,
+                                frame_parms->nb_antennas_rx,
+                                rel15_ul->rb_size,
+                                nb_re_pusch,
+                                symbol,
+                                rxdataF_ext_offset,
+                                rel15_ul->qam_mod_order);
+
+        if (rel15_ul->qam_mod_order == 2) {
+          nr_ulsch_shift_llr(pusch_vars->llr_layers, nb_re_pusch, rxdataF_ext_offset, rel15_ul->qam_mod_order, 4);
+        }
+
+#ifdef ML_DEBUG
+        c16_t *llr_layers0 = (c16_t *)&pusch_vars->llr_layers[0][rxdataF_ext_offset * rel15_ul->qam_mod_order];
+        c16_t *llr_layers1 = (c16_t *)&pusch_vars->llr_layers[1][rxdataF_ext_offset * rel15_ul->qam_mod_order];
+        printf("===============================\n");
+        printf("AFTER nr_ulsch_compute_ML_llr()\n");
+        printf("===============================\n");
+        for (int k = 0; k < nb_re_pusch; k++) {
+          printf("[%3i] llr_layers0 = (%6i, %6i), llr_layers1 = (%6i, %6i)\n",
+                 k, llr_layers0[k].r, llr_layers0[k].i, llr_layers1[k].r, llr_layers1[k].i);
+        }
+        printf("\n");
+#endif
       }
       stop_meas(&gNB->ulsch_llr_stats);
       rxdataF_ext_offset += pusch_vars->ul_valid_re_per_slot[symbol];
