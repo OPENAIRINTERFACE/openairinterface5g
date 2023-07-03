@@ -256,7 +256,9 @@ int main(int argc, char *argv[])
       err("%s is not correct in T_messages.txt", name);
     i++;
   }
+  free(l);
   fclose(in);
+  free_database(database);
   if (i != last_fun + 1) err("VCD FUNCTIONS wrong in T_messages.txt");
 
   return 0;
