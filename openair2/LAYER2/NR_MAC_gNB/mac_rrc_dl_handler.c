@@ -266,9 +266,6 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
     .rnti = cmd->rnti,
   };
   mac->mac_rrc.ue_context_release_complete(&complete);
-
-  if (cmd->rrc_container)
-    free(cmd->rrc_container);
 }
 
 int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
