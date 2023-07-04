@@ -476,7 +476,7 @@ rb_found:
 	memcpy(req->buffer,buf,size);
 	req->length=size;
 	req->offset=0;
-	req->ue_id=ctx.rntiMaybeUEid;
+	req->ue_id=ue->rnti; // use RNTI here, which GTP will use to look up TEID
 	req->bearer_id=rb_id;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
 	extern instance_t DUuniqInstance;

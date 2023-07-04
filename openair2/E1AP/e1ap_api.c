@@ -109,7 +109,7 @@ static int drb_config_N3gtpu_create(e1ap_bearer_setup_req_t * const req,
     fill_DRB_configList_e1(&DRB_configList, pdu);
   }
   create_tunnel_req.num_tunnels = req->numPDUSessions;
-  create_tunnel_req.ue_id = (req->gNB_cu_cp_ue_id & 0xFFFF);
+  create_tunnel_req.ue_id = req->gNB_cu_cp_ue_id;
 
   // Create N3 tunnel
   int ret = gtpv1u_create_ngu_tunnel(instance, &create_tunnel_req, create_tunnel_resp, nr_pdcp_data_req_drb, sdap_data_req);

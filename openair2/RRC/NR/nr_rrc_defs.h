@@ -271,7 +271,6 @@ typedef struct gNB_RRC_UE_s {
   e_NR_IntegrityProtAlgorithm        integrity_algorithm;
 
   NR_UE_STATE_t                      StatusRrc;
-  uint32_t cu_ue_id;
   rnti_t                             rnti;
   uint64_t                           random_ue_identity;
 

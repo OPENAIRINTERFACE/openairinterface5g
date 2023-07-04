@@ -122,7 +122,7 @@ void rrc_gNB_remove_ue_context(gNB_RRC_INST *rrc_instance_pP, rrc_gNB_ue_context
 
   RB_REMOVE(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
   uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.rrc_ue_id - 1);
-  cu_remove_f1_ue_data(ue_context_pP->ue_context.cu_ue_id);
+  cu_remove_f1_ue_data(ue_context_pP->ue_context.rrc_ue_id);
   rrc_gNB_free_mem_ue_context(ue_context_pP);
   LOG_I(NR_RRC, "Removed UE context\n");
 }
@@ -175,6 +175,8 @@ rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti,
 {
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc_instance_pP, rnti);
 
+  /* TODO: this should not matter, we can have multiple UEs at different DUs
+   * with the same RNTI! */
   if (ue_context_p) {
     LOG_E(NR_RRC, "Cannot create new UE context, already exist rnti: %04x\n", rnti);
     return ue_context_p;
@@ -185,19 +187,18 @@ rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti,
     return NULL;
 
   gNB_RRC_UE_t *ue = &ue_context_p->ue_context;
-  ue->cu_ue_id = rnti;
   ue->rnti = rnti;
   ue->random_ue_identity = ue_identityP;
   f1_ue_data_t ue_data = {.secondary_ue = du_ue_id};
-  AssertFatal(!cu_exists_f1_ue_data(ue->cu_ue_id),
+  AssertFatal(!cu_exists_f1_ue_data(ue->rrc_ue_id),
               "UE F1 Context for ID %d already exists, logic bug\n",
-              ue->cu_ue_id);
-  cu_add_f1_ue_data(ue->cu_ue_id, &ue_data);
+              ue->rrc_ue_id);
+  cu_add_f1_ue_data(ue->rrc_ue_id, &ue_data);
 
   RB_INSERT(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_p);
   LOG_I(NR_RRC,
         "Created new UE context: CU UE ID %u DU UE ID %u (rnti: %04x, random ue id %lx)\n",
-        ue->cu_ue_id,
+        ue->rrc_ue_id,
         du_ue_id,
         ue->rnti,
         ue->random_ue_identity);

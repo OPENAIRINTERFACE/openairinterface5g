@@ -288,7 +288,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
               create_tunnel_req.sgw_S1u_teid[i]);
       }
 
-      create_tunnel_req.rnti = ue_context_p->ue_context.rnti;
+      create_tunnel_req.rnti = ue_context_p->ue_context.rrc_ue_id;
       create_tunnel_req.num_tunnels    = m->nb_e_rabs_tobeadded;
       RB_INSERT(rrc_nr_ue_tree_s, &RC.nrrrc[rrc->module_id]->rrc_ue_head, ue_context_p);
       PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0, rrc->module_id);
@@ -347,12 +347,13 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   // layers use different IDs (MAC/RLC use RNTI as DU UE ID, above use NGAP ID
   // as CU UE ID.
   uint32_t du_ue_id = ue_context_p->ue_context.rnti;
-  uint32_t cu_ue_id = ue_context_p->ue_context.rnti;
-  f1_ue_data_t du_ue_data = {.secondary_ue = cu_ue_id};
+  static uint32_t rrc_ue_id = 0;
+  rrc_ue_id++;
+  f1_ue_data_t du_ue_data = {.secondary_ue = rrc_ue_id};
   du_add_f1_ue_data(du_ue_id, &du_ue_data);
   f1_ue_data_t cu_ue_data = {.secondary_ue = du_ue_id};
-  cu_add_f1_ue_data(cu_ue_id, &cu_ue_data);
-  LOG_I(RRC, "Assign CU UE ID %d and DU UE ID %d to UE RNTI %04x\n", cu_ue_id, du_ue_id, ue_context_p->ue_context.rnti);
+  cu_add_f1_ue_data(rrc_ue_id, &cu_ue_data);
+  LOG_I(RRC, "Assign CU UE ID %d and DU UE ID %d to UE RNTI %04x\n", rrc_ue_id, du_ue_id, ue_context_p->ue_context.rnti);
 
   // configure MAC and RLC
   bool ret = false;
@@ -366,7 +367,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   }
   AssertFatal(ret, "cannot add NSA UE in MAC, aborting\n");
 
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, cu_ue_id, 0, 0, rrc->module_id);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rrc_ue_id, 0, 0, rrc->module_id);
   if (get_softmodem_params()->do_ra) ctxt.enb_flag = 0;
   LOG_W(RRC,
         "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %lx, frame %d, subframe %d eNB_index %d \n",
@@ -378,7 +379,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
         ctxt.eNB_index);
 
   nr_pdcp_add_drbs(ctxt.enb_flag,
-                   cu_ue_id,
+                   rrc_ue_id,
                    0,
                    ue_context_p->ue_context.rb_config->drb_ToAddModList,
                    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
