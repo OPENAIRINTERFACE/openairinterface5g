@@ -654,11 +654,24 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
   }
 }
 
-static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
-                            char *buf, int size, int sdu_id)
+static void deliver_pdu_drb_ue(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
+                               char *buf, int size, int sdu_id)
 {
   DevAssert(deliver_pdu_data == NULL);
-  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_id };
+  protocol_ctxt_t ctxt = { .enb_flag = 0, .rntiMaybeUEid = ue_id };
+
+  mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
+  memcpy(memblock->data, buf, size);
+  LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d UE %ld/%04lx\n", __func__, rb_id, size, ctxt.rntiMaybeUEid, ctxt.rntiMaybeUEid);
+  enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
+}
+
+static void deliver_pdu_drb_gnb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
+                                char *buf, int size, int sdu_id)
+{
+  DevAssert(deliver_pdu_data == NULL);
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_id);
+  protocol_ctxt_t ctxt = { .enb_flag = 1, .rntiMaybeUEid = ue_data.secondary_ue };
 
   if (NODE_IS_CU(node_type)) {
     MessageDef  *message_p = itti_alloc_new_message_sized(TASK_PDCP_ENB, 0,
@@ -669,12 +682,11 @@ static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
     AssertFatal(message_p != NULL, "OUT OF MEMORY");
     gtpv1u_tunnel_data_req_t *req=&GTPV1U_TUNNEL_DATA_REQ(message_p);
     uint8_t *gtpu_buffer_p = (uint8_t*)(req+1);
-    memcpy(gtpu_buffer_p+GTPU_HEADER_OVERHEAD_MAX, 
-	   buf, size);
+    memcpy(gtpu_buffer_p + GTPU_HEADER_OVERHEAD_MAX, buf, size);
     req->buffer        = gtpu_buffer_p;
     req->length        = size;
     req->offset        = GTPU_HEADER_OVERHEAD_MAX;
-    req->ue_id = ue_id;
+    req->ue_id = ctxt.rntiMaybeUEid;
     req->bearer_id = rb_id;
     LOG_D(PDCP, "%s() (drb %d) sending message to gtp size %d\n", __func__, rb_id, size);
     extern instance_t CUuniqInstance;
@@ -683,8 +695,6 @@ static void deliver_pdu_drb(void *deliver_pdu_data, ue_id_t ue_id, int rb_id,
     mem_block_t *memblock = get_free_mem_block(size, __FUNCTION__);
     memcpy(memblock->data, buf, size);
     LOG_D(PDCP, "%s(): (drb %d) calling rlc_data_req size %d\n", __func__, rb_id, size);
-    //for (i = 0; i < size; i++) printf(" %2.2x", (unsigned char)memblock->data[i]);
-    //printf("\n");
     enqueue_rlc_data_req(&ctxt, 0, MBMS_FLAG_NO, rb_id, sdu_id, 0, size, memblock);
   }
 }
@@ -852,8 +862,10 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, ue_id_t reestablish_ue_id, st
     LOG_W(PDCP, "%s:%d:%s: warning DRB %d already exist for UE ID/RNTI %ld, do nothing\n", __FILE__, __LINE__, __FUNCTION__, drb_id, rntiMaybeUEid);
   } else {
     pdcp_drb = new_nr_pdcp_entity(NR_PDCP_DRB_AM, is_gnb, drb_id, pdusession_id,
-                                  has_sdap_rx, has_sdap_tx,
-                                  deliver_sdu_drb, ue, deliver_pdu_drb, ue,
+                                  has_sdap_rx, has_sdap_tx, deliver_sdu_drb, ue,
+                                  is_gnb ?
+                                    deliver_pdu_drb_gnb : deliver_pdu_drb_ue,
+                                  ue,
                                   sn_size_dl, t_reordering, discard_timer,
                                   has_ciphering ? ciphering_algorithm : 0,
                                   has_integrity ? integrity_algorithm : 0,
