@@ -283,11 +283,6 @@ typedef struct gNB_RRC_UE_s {
   /* Information from UE RRCReestablishmentRequest */
   NR_ReestablishmentCause_t          reestablishment_cause;
 
-  /* UE id for initial connection to S1AP */
-  uint16_t                           ue_initial_id;
-
-  /* Information from S1AP initial_context_setup_req */
-  uint32_t                           gNB_ue_s1ap_id :24;
   uint32_t                           gNB_ue_ngap_id;
   uint64_t amf_ue_ngap_id;
   nr_rrc_guami_t                     ue_guami;
