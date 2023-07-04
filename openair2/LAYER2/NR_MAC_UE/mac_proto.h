@@ -106,7 +106,7 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,
                                NR_MIB_t *mibP,
-                               bool sched_sib1);
+                               int sched_sib1);
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,

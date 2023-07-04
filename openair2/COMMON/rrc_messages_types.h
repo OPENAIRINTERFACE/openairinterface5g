@@ -467,6 +467,7 @@ typedef struct rrc_subframe_process_s {
 typedef struct nrrrc_slot_process_s {
   int frame;
   int slot;
+  int gnb_id;
 } NRRrcSlotProcess;
 
 // eNB: RLC -> RRC messages

@@ -369,6 +369,15 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
 {
   const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   const int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
+  if (mac->get_otherSI) {
+    // If searchSpaceOtherSystemInformation is set to zero,
+    // PDCCH monitoring occasions for SI message reception in SI-window
+    // are same as PDCCH monitoring occasions for SIB1
+    const NR_SearchSpace_t *ss = mac->otherSI_SS ? mac->otherSI_SS : mac->search_space_zero;
+    // TODO configure SI-window
+    if (is_ss_monitor_occasion(frame, slot, slots_per_frame, ss))
+      config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot, ss);
+  }
   if (mac->state == UE_PERFORMING_RA &&
       mac->ra.ra_state >= WAIT_RAR) {
     // if RA is ongoing use RA search space
