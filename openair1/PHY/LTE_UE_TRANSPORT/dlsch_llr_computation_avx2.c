@@ -35,6 +35,8 @@
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
 
+#if defined(__x86_64__)
+
  static const int16_t ones256[16] __attribute__((aligned(32))) = {0xffff,
                                                                   0xffff,
                                                                   0xffff,
@@ -3500,3 +3502,5 @@ void qam64_qam64_avx2(int32_t *stream0_in,
   simde_mm_empty();
   simde_m_empty();
 }
+
+#endif

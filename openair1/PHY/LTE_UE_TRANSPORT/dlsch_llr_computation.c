@@ -8001,6 +8001,7 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
   memcpy(ch_mag_i_256i, ch_mag_i, len*4);
   memcpy(rho_256i, rho, len*4);
 
+#if  defined(__x86_64__)
   qam64_qam64_avx2((int32_t *)rxF_256i,
                    (int32_t *)rxF_i_256i,
                    (int32_t *)ch_mag_256i,
@@ -8008,6 +8009,15 @@ int dlsch_64qam_64qam_llr(LTE_DL_FRAME_PARMS *frame_parms,
                    (int16_t *)llr16,
                    (int32_t *) rho_256i,
                    len);
+#else // defined(__arm__) || defined(__aarch64__)
+  qam64_qam64((int32_t *)rxF_256i,
+                   (int32_t *)rxF_i_256i,
+                   (int32_t *)ch_mag_256i,
+                   (int32_t *)ch_mag_i_256i,
+                   (int16_t *)llr16,
+                   (int32_t *) rho_256i,
+                   len);
+#endif
 
   free16(rxF_256i, sizeof(rxF_256i));
   free16(rxF_i_256i, sizeof(rxF_i_256i));
