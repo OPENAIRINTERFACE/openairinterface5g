@@ -131,13 +131,13 @@ By default the service model libraries will be installed in the path /usr/local/
 * start the gNB
 ```bash
 cd oai/cmake_targets/ran_build/build
-sudo ./nr-softmodem RFSIMULATOR=server -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa --rfsimulator.serveraddr server
 ```
 
 * start the nrUE
 ```bash
 cd oai/cmake_targets/ran_build/build
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --nokrnmod --rfsim --sa --uicc0.imsi 001010000000001
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001 --rfsimulator.serveraddr 127.0.0.1
 ```
 
 * start the nearRT-RIC
