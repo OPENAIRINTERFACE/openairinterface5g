@@ -404,7 +404,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 int32_t *log2_maxhrx_size_symbol,
                 int rx_size_symbol,
                 int nbRx,
-                int32_t rxdataF_comp[][nbRx][rx_size_symbol],
+                int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                 c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
                 int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT]);
 

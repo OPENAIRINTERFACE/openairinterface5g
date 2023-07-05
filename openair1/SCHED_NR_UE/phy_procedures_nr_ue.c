@@ -1078,7 +1078,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC_C, VCD_FUNCTION_OUT);
 
-    UEscopeCopy(ue, pdschLlr, llr[0], sizeof(int16_t), 1, rx_llr_size);
+    UEscopeCopy(ue, pdschLlr, llr[0], sizeof(int16_t), 1, rx_llr_size, 0);
 
     LOG_D(PHY, "DLSCH data reception at nr_slot_rx: %d\n", nr_slot_rx);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PDSCH_PROC, VCD_FUNCTION_IN);
@@ -1179,7 +1179,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
     LOG_D(PHY, "------FULL RX PROC [SFN %d]: %5.2f ------\n",nr_slot_rx,ue->phy_proc_rx.p_time/(cpuf*1000.0));
 
   LOG_D(PHY," ****** end RX-Chain  for AbsSubframe %d.%d ******  \n", frame_rx%1024, nr_slot_rx);
-  UEscopeCopy(ue, commonRxdataF, rxdataF, sizeof(int32_t), ue->frame_parms.nb_antennas_rx, rxdataF_sz);
+  UEscopeCopy(ue, commonRxdataF, rxdataF, sizeof(int32_t), ue->frame_parms.nb_antennas_rx, rxdataF_sz, 0);
 }
 
 
