@@ -147,6 +147,16 @@ uint8_t next_available_drb(gNB_RRC_UE_t *ue, rrc_pdu_session_param_t *pdusession
 {
   uint8_t drb_id;
 
+  drb_id = pdusession->param.pdusession_id;
+  LOG_W(NR_RRC,
+        "%s: %d Current implementation configures one DRB per PDUSession, pdusession_id %d, drb_id %d\n",
+        __FUNCTION__,
+        __LINE__,
+        pdusession->param.pdusession_id,
+        drb_id);
+
+  return drb_id;
+
   if(!is_gbr) { /* Find if Non-GBR DRB exists in the same PDU Session */
     for (drb_id = 0; drb_id < NGAP_MAX_DRBS_PER_UE; drb_id++)
       if (pdusession->param.used_drbs[drb_id] == DRB_ACTIVE_NONGBR)

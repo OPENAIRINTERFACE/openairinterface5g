@@ -113,6 +113,44 @@ mui_t rrc_gNB_mui = 0;
 
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
+
+static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
+{
+  if (!ue->Srb[1].Active) {
+    LOG_E(NR_RRC, "Call SRB list while SRB1 doesn't exist\n");
+    return NULL;
+  }
+  NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
+  for (int i = 0; i < maxSRBs; i++) {
+    if (ue->Srb[i].Active) {
+      asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
+      srb->srb_Identity = i;
+      if (reestablish && i == 2) {
+        asn1cCallocOne(srb->reestablishPDCP, NR_SRB_ToAddMod__reestablishPDCP_true);
+      }
+    }
+  }
+  return list;
+}
+
+static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
+{
+  NR_DRB_ToAddMod_t *DRB_config = NULL;
+  NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
+
+  for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
+    if (ue->established_drbs[i].status != DRB_INACTIVE) {
+      ue->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
+      DRB_config = generateDRB_ASN1(&ue->established_drbs[i]);
+      if (reestablish) {
+        asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
+      }
+      asn1cSeqAdd(&DRB_configList->list, DRB_config);
+    }
+  }
+  return DRB_configList;
+}
+
 NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -372,24 +410,6 @@ unsigned int rrc_gNB_get_next_transaction_identifier(module_id_t gnb_mod_idP)
   tmp %= NR_RRC_TRANSACTION_IDENTIFIER_NUMBER;
   LOG_T(NR_RRC, "generated xid is %d\n", tmp);
   return tmp;
-}
-
-static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
-{
-  if (!ue->Srb[1].Active) {
-    LOG_E(NR_RRC, "Call SRB list while SRB1 doesn't exist\n");
-    return NULL;
-  }
-  NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
-  for (int i = 0; i < maxSRBs; i++)
-    if (ue->Srb[i].Active) {
-      asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
-      srb->srb_Identity = i;
-      if (reestablish && i == 2) {
-        asn1cCallocOne(srb->reestablishPDCP, NR_SRB_ToAddMod__reestablishPDCP_true);
-      }
-    }
-  return list;
 }
 
 static void freeSRBlist(NR_SRB_ToAddModList_t *l)
@@ -702,6 +722,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
     ue_p->pduSession[j].xid = xid;
   }
+  freeDRBlist(DRB_configList);
 
   /* If list is empty free the list and reset the address */
   if (dedicatedNAS_MessageList->list.count == 0) {
@@ -709,16 +730,27 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
     dedicatedNAS_MessageList = NULL;
   }
 
+  /* Free all NAS PDUs */
+  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
+    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
+      /* Free the NAS PDU buffer and invalidate it */
+      free(ue_p->pduSession[i].param.nas_pdu.buffer);
+      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
+    }
+  }
+
   NR_CellGroupConfig_t *cellGroupConfig = ue_p->masterCellGroup;
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
+  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
+
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
                                    SRBs,
-                                   DRB_configList,
+                                   DRBs,
                                    NULL,
                                    NULL,
                                    NULL,
@@ -731,15 +763,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
                                    cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
   freeSRBlist(SRBs);
-  /* Free all NAS PDUs */
-  for (int i = 0; i < ue_p->nb_of_pdusessions; i++) {
-    if (ue_p->pduSession[i].param.nas_pdu.buffer != NULL) {
-      /* Free the NAS PDU buffer and invalidate it */
-      free(ue_p->pduSession[i].param.nas_pdu.buffer);
-      ue_p->pduSession[i].param.nas_pdu.buffer = NULL;
-    }
-  }
-  freeDRBlist(DRB_configList);
+  freeDRBlist(DRBs);
   LOG_I(NR_RRC, "[gNB %d] Frame %d, Logical Channel DL-DCCH, Generate RRCReconfiguration (bytes %d, UE RNTI %x)\n", ctxt_pP->module_id, ctxt_pP->frame, size, ue_p->rnti);
   LOG_D(NR_RRC,
         "[FRAME %05d][RRC_gNB][MOD %u][][--- PDCP_DATA_REQ/%d Bytes (rrcReconfiguration to UE %x MUI %d) --->][PDCP][MOD %u][RB %u]\n",

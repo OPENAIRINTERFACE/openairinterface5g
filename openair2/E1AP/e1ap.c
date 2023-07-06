@@ -589,7 +589,14 @@ static int fill_BEARER_CONTEXT_SETUP_REQUEST(e1ap_setup_req_t *setup, e1ap_beare
 
     for (DRB_nGRAN_to_setup_t *j=i->DRBnGRanList; j < i->DRBnGRanList+i->numDRB2Setup; j++) {
       asn1cSequenceAdd(ieC6_1->dRB_To_Setup_List_NG_RAN.list, E1AP_DRB_To_Setup_Item_NG_RAN_t, ieC6_1_1);
-      ieC6_1_1->dRB_ID = j->id;
+
+      ieC6_1_1->dRB_ID = ieC6_1->pDU_Session_ID;
+      LOG_W(E1AP,
+            "%s: %d Current implementation configures one DRB per PDUSession, ieC6_1->pDU_Session_ID %ld, ieC6_1_1->dRB_ID %ld\n",
+            __FUNCTION__,
+            __LINE__,
+            ieC6_1->pDU_Session_ID,
+            ieC6_1_1->dRB_ID);
 
       ieC6_1_1->sDAP_Configuration.defaultDRB = j->defaultDRB;
       ieC6_1_1->sDAP_Configuration.sDAP_Header_UL = j->sDAP_Header_UL;

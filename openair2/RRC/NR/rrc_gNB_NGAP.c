@@ -778,7 +778,13 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     for (int j=0; j < pdu->numDRB2Setup; j++) {
       DRB_nGRAN_to_setup_t *drb = pdu->DRBnGRanList + j;
 
-      drb->id = i + j + UE->nb_of_pdusessions;
+      drb->id = session->pdusession_id;
+      LOG_W(NR_RRC,
+            "%s: %d Current implementation configures one DRB per PDUSession, session->pdusession_id %d, drb->id %ld\n",
+            __FUNCTION__,
+            __LINE__,
+            session->pdusession_id,
+            drb->id);
 
       drb->defaultDRB = E1AP_DefaultDRB_true;
 
