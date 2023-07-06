@@ -187,6 +187,8 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(UE);
   int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, DRB_configList, rrc->e1_inst);
   if (ret < 0) AssertFatal(false, "Unable to configure DRB or to create GTP Tunnel\n");
+  // the code is very badly organized, it is not possible here to call freeDRBlist() 
+  ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList,DRB_configList );
 
   // Used to store teids: if monolithic, will simply be NULL
   if(!NODE_IS_CU(RC.nrrrc[ctxt.module_id]->node_type)) {

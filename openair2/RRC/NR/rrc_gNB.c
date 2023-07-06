@@ -133,7 +133,10 @@ static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
   return list;
 }
 
-static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
+// not clear what this function do against fill_DRB_configList()
+// it sets reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true
+// else it should probably be removed and merged into fill_DRB_configList
+static NR_DRB_ToAddModList_t *createDRBlistReestablish(gNB_RRC_UE_t *ue)
 {
   NR_DRB_ToAddMod_t *DRB_config = NULL;
   NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
@@ -142,9 +145,6 @@ static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
     if (ue->established_drbs[i].status != DRB_INACTIVE) {
       ue->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
       DRB_config = generateDRB_ASN1(&ue->established_drbs[i]);
-      if (reestablish) {
-        asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
-      }
       asn1cSeqAdd(&DRB_configList->list, DRB_config);
     }
   }
@@ -220,6 +220,7 @@ NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
 
 static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 {
+  //ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList, list);
   return;
 }
 static void nr_rrc_addmod_srbs(int rnti,
@@ -743,7 +744,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
-  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
+  NR_DRB_ToAddModList_t *DRBs = createDRBlistReestablish(ue_p);
 
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
