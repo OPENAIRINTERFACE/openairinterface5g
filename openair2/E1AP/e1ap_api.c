@@ -30,6 +30,7 @@
 #include "openair2/RRC/LTE/MESSAGES/asn1_msg.h"
 #include "openair3/SECU/key_nas_deriver.h"
 #include "openair3/ocp-gtpu/gtp_itf.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include "e1ap_asnc.h"
 #include "e1ap_common.h"
 #include "e1ap.h"
@@ -136,6 +137,11 @@ void process_e1_bearer_context_setup_req(instance_t instance, e1ap_bearer_setup_
   AssertFatal(inst, "");
   gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp_N3={0};
 
+  uint32_t gNB_cu_up_ue_id = req ->gNB_cu_cp_ue_id;
+  LOG_I(E1AP, "adding UE with CU-CP UE ID %d and CU-UP UE ID %d\n", req->gNB_cu_cp_ue_id, gNB_cu_up_ue_id);
+  f1_ue_data_t ue_data = {.secondary_ue = req->gNB_cu_cp_ue_id};
+  cu_add_f1_ue_data(gNB_cu_up_ue_id, &ue_data);
+
   // GTP tunnel for UL
   drb_config_N3gtpu_create(req, &create_tunnel_resp_N3, inst->gtpInstN3);
 
@@ -148,6 +154,7 @@ void process_e1_bearer_context_setup_req(instance_t instance, e1ap_bearer_setup_
   fill_e1ap_bearer_setup_resp(resp, req, inst->gtpInstF1U, req->gNB_cu_cp_ue_id, inst->setupReq.remotePortF1U, my_addr);
 
   resp->gNB_cu_cp_ue_id = req->gNB_cu_cp_ue_id;
+  resp->gNB_cu_up_ue_id = gNB_cu_up_ue_id;
   resp->numPDUSessions = req->numPDUSessions;
   for (int i=0; i < req->numPDUSessions; i++) {
     pdu_session_setup_t *pduSetup = resp->pduSession + i;

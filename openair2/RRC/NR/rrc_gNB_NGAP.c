@@ -760,7 +760,6 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
     session->pdusessionTransfer = msg->pdusession_setup_params[i].pdusessionTransfer;
     decodePDUSessionResourceSetup(session);
     bearer_req.gNB_cu_cp_ue_id = msg->gNB_ue_ngap_id;
-    bearer_req.rnti = UE->rnti;
     bearer_req.cipheringAlgorithm = UE->ciphering_algorithm;
     bearer_req.integrityProtectionAlgorithm = UE->integrity_algorithm;
     nr_derive_key(UP_ENC_ALG, UE->ciphering_algorithm, UE->kgnb, (uint8_t *)bearer_req.encryptionKey);

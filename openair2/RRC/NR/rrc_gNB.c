@@ -2375,7 +2375,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
     e1ap_bearer_setup_req_t req = {0};
     req.numPDUSessionsMod = UE->nb_of_pdusessions;
     req.gNB_cu_cp_ue_id = UE->rrc_ue_id;
-    req.rnti = UE->rnti;
+    req.gNB_cu_up_ue_id = UE->rrc_ue_id;
     for (int i = 0; i < req.numPDUSessionsMod; i++) {
       req.pduSessionMod[i].numDRB2Modify = resp->drbs_to_be_setup_length;
       for (int j = 0; j < resp->drbs_to_be_setup_length; j++) {
@@ -2648,6 +2648,13 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   AssertFatal(ue_context_p != NULL, "did not find UE with CU UE ID %d\n", resp->gNB_cu_cp_ue_id);
   protocol_ctxt_t ctxt = {0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, resp->gNB_cu_cp_ue_id, 0, 0, 0);
+
+  // currently: we don't have "infrastructure" to save the CU-UP UE ID, so we
+  // assume (and below check) that CU-UP UE ID == CU-CP UE ID
+  AssertFatal(resp->gNB_cu_cp_ue_id == resp->gNB_cu_up_ue_id,
+              "cannot handle CU-UP UE ID different from CU-CP UE ID (%d vs %d)\n",
+              resp->gNB_cu_cp_ue_id,
+              resp->gNB_cu_up_ue_id);
 
   gtpv1u_gnb_create_tunnel_resp_t create_tunnel_resp={0};
   create_tunnel_resp.num_tunnels = resp->numPDUSessions;
