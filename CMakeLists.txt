@@ -328,6 +328,12 @@ endif()
 # asn1c skeletons need this
 add_definitions(-DHAVE_NETINET_IN_H)
 
+#########################
+##### E2 AGENT
+#########################
+set(E2_AGENT "OFF" CACHE STRING "O-RAN-compliant E2 Agent")
+set_property(CACHE E2_AGENT PROPERTY STRINGS "ON" "OFF")
+
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
 ##################################################
@@ -1575,6 +1581,11 @@ add_library(L2
   )
 target_link_libraries(L2 PRIVATE x2ap s1ap lte_rrc m2ap)
 target_link_libraries(L2 PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
+if(E2_AGENT)
+  target_link_libraries(L2 PUBLIC e2_agent e2_ran_func)
+  target_compile_definitions(L2 PRIVATE E2_AGENT)
+endif()
+
 
 add_library(MAC_NR ${MAC_NR_SRC})
 target_link_libraries(MAC_NR PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
@@ -1605,6 +1616,11 @@ add_library(e1_pdcp_if
 target_link_libraries(e1_pdcp_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
 target_link_libraries(L2_NR PRIVATE f1ap x2ap s1ap ngap nr_rrc e1ap)
+if(E2_AGENT)
+  target_link_libraries(L2_NR PUBLIC e2_agent e2_ran_func)
+  target_compile_definitions(L2_NR PRIVATE E2_AGENT)
+endif()
+
 
 add_library(L2_LTE_NR
   ${L2_RRC_SRC}
@@ -2182,6 +2198,10 @@ target_link_libraries(lte-softmodem PRIVATE pthread m CONFIG_LIB rt crypt ${CRYP
 target_link_libraries(lte-softmodem PRIVATE ${T_LIB})
 target_link_libraries(lte-softmodem PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs)
 
+if(E2_AGENT)
+  target_compile_definitions(lte-softmodem PRIVATE E2_AGENT)
+endif()
+
 add_executable(oairu
   ${OPENAIR_DIR}/executables/lte-ru.c
   ${OPENAIR_DIR}/executables/ru_control.c
@@ -2293,6 +2313,10 @@ endif()
 # force the generation of ASN.1 so that we don't need to wait during the build
 target_link_libraries(nr-softmodem PRIVATE
   asn1_lte_rrc asn1_nr_rrc asn1_s1ap asn1_ngap asn1_m2ap asn1_m3ap asn1_x2ap asn1_f1ap asn1_lpp)
+if(E2_AGENT)
+  target_compile_definitions(nr-softmodem PRIVATE E2_AGENT)
+endif()
+
 
 add_executable(nr-cuup
   executables/nr-cuup.c
