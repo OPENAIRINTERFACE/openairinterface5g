@@ -33,7 +33,7 @@ while [[ $# -gt 0 ]]; do
 done
 
 # enable printing of stack traces on assert
-export gdbStacks=1
+export OAI_GDBSTACKS=1
 
 echo "=================================="
 echo "== Starting NR UE soft modem"

@@ -31,7 +31,7 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/oaiL1.nfap
 ```
 ### UE command
 ```
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path . -d
+sudo ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path . -d --rfsimulator.serveraddr 127.0.0.1
 
 ```
 ## Procedure to run NR nFAPI using Hardware (tested with USRP x310)
