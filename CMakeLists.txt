@@ -331,14 +331,8 @@ add_definitions(-DHAVE_NETINET_IN_H)
 #########################
 ##### E2 AGENT
 #########################
-#add_boolean_option() does not work -- why?
 set(E2_AGENT "OFF" CACHE STRING "O-RAN-compliant E2 Agent")
 set_property(CACHE E2_AGENT PROPERTY STRINGS "ON" "OFF")
-
-if(E2_AGENT)
-  set(E2AP_DIR ${OPENAIR2_DIR}/E2AP)
-  add_subdirectory ("${E2AP_DIR}")
-endif()
 
 ##################################################
 # ASN.1 grammar C code generation & dependencies #
