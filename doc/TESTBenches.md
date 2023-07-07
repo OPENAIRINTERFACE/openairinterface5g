@@ -145,9 +145,6 @@ Webhook
 - [RAN-SA-Module-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G/)
   - asterix + N310 (gNB), nrmodule2 + Quectel, porcepix w/ OAI 5GC
   - NR 2x2 (standalone)
-- [RAN-SA-OAIUE-N310-X300-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-OAIUE-N310-X300-CN5G/)
-  - asterix + N310 (gNB), obelix + N310 or X300 (5G UE), porcepix w/ OAI 5GC
-  - OTA test with OAIUE using both N310 and X300
 - [RAN-SA-AmariS-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-AmariS-CN5G/)
   - asterix + N310, amariue (1x UE), porcepix w/ OAI 5GC
   - Amarisoft UE simulator: expected to be increased to more UEs
