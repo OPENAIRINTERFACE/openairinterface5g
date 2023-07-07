@@ -675,7 +675,11 @@ typedef struct {
   NR_UE_DL_BWP_t current_DL_BWP;
   NR_UE_UL_BWP_t current_UL_BWP;
   NR_mac_stats_t mac_stats;
+  /// currently active CellGroupConfig
   NR_CellGroupConfig_t *CellGroup;
+  /// CellGroupConfig that is to be activated after the next reconfiguration
+  NR_CellGroupConfig_t *reconfigCellGroup;
+  bool expect_reconfiguration;
   char cg_buf[32768]; /* arbitrary size */
   asn_enc_rval_t enc_rval;
   // UE selected beam index

@@ -284,7 +284,7 @@ void mac_top_init_gNB(ngran_node_t node_type)
        * will output the packets at a local interface, which is in line with
        * the noS1 mode.  Hence, below, we simply hardcode ENB_FLAG_NO */
       // setup PDCP, RLC
-      nr_pdcp_add_drbs(ENB_FLAG_NO, 0x1234, 0, rbconfig->drb_ToAddModList, 0, NULL, NULL, &rlc_bearer_list);
+      nr_pdcp_add_drbs(ENB_FLAG_NO, 0x1234, rbconfig->drb_ToAddModList, 0, NULL, NULL, &rlc_bearer_list);
       nr_rlc_add_drb(0x1234, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
 
       // free memory

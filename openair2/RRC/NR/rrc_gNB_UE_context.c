@@ -155,16 +155,6 @@ rrc_gNB_ue_context_t *rrc_gNB_ue_context_5g_s_tmsi_exist(gNB_RRC_INST *rrc_insta
     return NULL;
 }
 
-void rrc_gNB_update_ue_context_rnti(rnti_t rnti, gNB_RRC_INST *rrc_instance_pP, uint32_t rrc_ue_id)
-{
-  // rnti will need to be a fast access key, with indexing, today it is sequential search
-  // This function will update the index when it will be made
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc_instance_pP, rrc_ue_id);
-  if (ue_context_p)
-    ue_context_p->ue_context.rnti = rnti;
-  else
-    LOG_E(NR_RRC, "update rnti on a wrong UE id\n");
-}
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, rnti not found in collection
 rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti,

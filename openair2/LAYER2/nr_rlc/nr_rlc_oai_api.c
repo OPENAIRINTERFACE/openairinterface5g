@@ -1010,6 +1010,27 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
   return RLC_OP_STATUS_OK;
 }
 
+bool nr_rlc_update_rnti(int from_rnti, int to_rnti)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, from_rnti);
+  if (ue == NULL) {
+    nr_rlc_manager_unlock(nr_rlc_ue_manager);
+    LOG_E(RLC, "Cannot find RLC entity for UE %04x\n", from_rnti);
+    return false;
+  }
+  ue->rnti = to_rnti;
+  LOG_I(RLC, "Update old UE RNTI %04x context to RNTI %04x\n", from_rnti, to_rnti);
+  for (int i = 0; i < sizeof(ue->srb) / sizeof(ue->srb[0]); ++i)
+    if (ue->srb[i])
+      ue->srb[i]->reestablishment(ue->srb[i]);
+  for (int i = 0; i < sizeof(ue->drb) / sizeof(ue->drb[0]); ++i)
+    if (ue->drb[i])
+      ue->drb[i]->reestablishment(ue->drb[i]);
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+  return true;
+}
+
 /* This function is for testing purposes. At least on a COTS UE, it will
  * trigger a reestablishment. */
 void nr_rlc_test_trigger_reestablishment(int rnti)

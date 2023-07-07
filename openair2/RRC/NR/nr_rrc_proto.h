@@ -119,7 +119,6 @@ void *rrc_gnb_task(void *args_p);
    \ *reOffset Pointer to RE Offset Value */
 void rrc_config_dl_ptrs_params(NR_BWP_Downlink_t *bwp, long *ptrsNrb, long *ptrsMcs, long *epre_Ratio, long *reOffset);
 
-void nr_rrc_mac_remove_ue(rnti_t rntiP);
 void nr_rrc_mac_update_cellgroup(rnti_t rntiMaybeUEid, NR_CellGroupConfig_t *cgc);
 
 int8_t nr_mac_rrc_bwp_switch_req(const module_id_t     module_idP,
@@ -164,7 +163,6 @@ void nr_pdcp_add_srbs(eNB_flag_t enb_flag, ue_id_t rntiMaybeUEid, NR_SRB_ToAddMo
 
 void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       ue_id_t rntiMaybeUEid,
-                      ue_id_t reestablish_ue_id,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,

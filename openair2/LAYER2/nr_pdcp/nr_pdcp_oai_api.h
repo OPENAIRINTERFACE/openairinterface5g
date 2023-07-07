@@ -48,7 +48,6 @@ bool pdcp_data_ind(const protocol_ctxt_t *const  ctxt_pP,
 
 void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       ue_id_t rntiMaybeUEid,
-                      ue_id_t reestablish_ue_id,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,

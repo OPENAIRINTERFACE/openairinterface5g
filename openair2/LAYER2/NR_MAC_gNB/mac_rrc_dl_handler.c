@@ -295,7 +295,52 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
     du_add_f1_ue_data(dl_rrc->gNB_DU_ue_id, &new_ue_data);
   }
 
-  AssertFatal(dl_rrc->old_gNB_DU_ue_id == NULL, "changing RNTI not implemented yet\n");
+  if (UE->expect_reconfiguration && dl_rrc->srb_id == DCCH) {
+    /* we expected a reconfiguration, and this is on DCCH. We assume this is
+     * the reconfiguration; nr_mac_update_cellgroup() brings the config into
+     * the form expected by nr_mac_update_timers(), and we set the timer to
+     * apply the real configuration at expiration.
+     * Calling it nr_mac_update_cellgroup() is misleading, and using an
+     * intermediate buffer seems not necessary. This is for historical reasons,
+     * when we only had pointer to an RRC structure, and wanted to duplicate
+     * the contents to be applied later. The actually interesting function here
+     * is also configure_UE_BWP(), only called in nr_mac_update_timers().
+     * TODO: This should be cleaned up when the whole CellGroupConfig is
+     * handled entirely at the DU: no intermediate buffer, trigger the timer
+     * from a function (there is nr_mac_enable_ue_rrc_processing_timer(), which
+     * is called from the RRC, hence locks the scheduler, which we cannot use). */
+    LOG_I(NR_MAC, "triggering rrc_processing_timer time UE %04x\n", UE->rnti);
+    pthread_mutex_lock(&mac->sched_lock);
+    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->reconfigCellGroup);
+    pthread_mutex_unlock(&mac->sched_lock);
+    const uint16_t sl_ahead = mac->if_inst->sl_ahead;
+    NR_SubcarrierSpacing_t scs = 1;
+    int delay = 10;
+    UE->UE_sched_ctrl.rrc_processing_timer = (delay << scs) + sl_ahead;
+  }
+
+  if (dl_rrc->old_gNB_DU_ue_id != NULL) {
+    AssertFatal(*dl_rrc->old_gNB_DU_ue_id != dl_rrc->gNB_DU_ue_id,
+                "logic bug: current and old gNB DU UE ID cannot be the same\n");
+    /* 38.401 says: "Find UE context based on old gNB-DU UE F1AP ID, replace
+     * old C-RNTI/PCI with new C-RNTI/PCI". So we delete the new contexts
+     * below, then change the C-RNTI of the old one to the new one */
+    NR_UE_info_t *oldUE = find_nr_UE(&mac->UE_info, *dl_rrc->old_gNB_DU_ue_id);
+    DevAssert(oldUE);
+    pthread_mutex_lock(&mac->sched_lock);
+    /* 38.331 5.3.7.2 says that the UE releases the spCellConfig, so we drop it
+     * from the current configuration. Also, expect the reconfiguration from
+     * the CU, so save the old UE's CellGroup for the new UE */
+    UE->CellGroup->spCellConfig = NULL;
+    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->CellGroup);
+    UE->reconfigCellGroup = oldUE->CellGroup;
+    UE->expect_reconfiguration = true;
+    oldUE->CellGroup = NULL;
+    mac_remove_nr_ue(mac, *dl_rrc->old_gNB_DU_ue_id);
+    pthread_mutex_unlock(&mac->sched_lock);
+    nr_rlc_remove_ue(dl_rrc->gNB_DU_ue_id);
+    nr_rlc_update_rnti(*dl_rrc->old_gNB_DU_ue_id, dl_rrc->gNB_DU_ue_id);
+  }
 
   /* the DU ue id is the RNTI */
   nr_rlc_srb_recv_sdu(dl_rrc->gNB_DU_ue_id, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);

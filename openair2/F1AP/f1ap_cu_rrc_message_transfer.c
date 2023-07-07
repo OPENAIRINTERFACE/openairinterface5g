@@ -146,13 +146,14 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
 
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
-  /* if (f1ap_dl_rrc->old_gNB_DU_ue_id != 0xFFFFFFFF) {
-     asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie3);
-     ie3->id                                = F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID;
-     ie3->criticality                       = F1AP_Criticality_reject;
-     ie3->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_NOTHING;
-     ie3->value.choice.oldgNB_DU_UE_F1AP_ID = f1ap_dl_rrc->old_gNB_DU_ue_id;
-   }*/
+  if (f1ap_dl_rrc->old_gNB_DU_ue_id != NULL) {
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie3);
+    ie3->id                                = F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID;
+    ie3->criticality                       = F1AP_Criticality_reject;
+    ie3->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID_1;
+    ie3->value.choice.GNB_DU_UE_F1AP_ID_1 = *f1ap_dl_rrc->old_gNB_DU_ue_id;
+  }
+
   /* mandatory */
   /* c4. SRBID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie4);

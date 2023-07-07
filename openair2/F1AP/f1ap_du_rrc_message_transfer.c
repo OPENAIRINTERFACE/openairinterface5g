@@ -50,6 +50,7 @@
 #include "asn1_msg.h"
 #include "intertask_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
+#include <openair3/ocp-gtpu/gtp_itf.h>
 
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
@@ -76,9 +77,15 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
 
   /* optional */
   /* oldgNB_DU_UE_F1AP_ID */
-  if (0) {
-    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
-                               F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID, true);
+  uint32_t *old_gNB_DU_ue_id = NULL;
+  uint32_t old_gNB_DU_ue_id_stack = 0;
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
+                             F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID, false);
+  if (ie) {
+    /* strange: it is not named OLD_GNB_DU_UE... */
+    old_gNB_DU_ue_id_stack = ie->value.choice.GNB_DU_UE_F1AP_ID_1;
+    old_gNB_DU_ue_id = &old_gNB_DU_ue_id_stack;
+    gtpv1u_update_ue_id(getCxt(false, instance)->gtpInst, old_gNB_DU_ue_id_stack, du_ue_f1ap_id);
   }
 
   /* mandatory */
@@ -126,6 +133,7 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   f1ap_dl_rrc_message_t dl_rrc = {
     .gNB_CU_ue_id = cu_ue_f1ap_id,
     .gNB_DU_ue_id = du_ue_f1ap_id,
+    .old_gNB_DU_ue_id = old_gNB_DU_ue_id,
     .rrc_container_length = ie->value.choice.RRCContainer.size,
     .rrc_container = ie->value.choice.RRCContainer.buf,
     .srb_id = srb_id

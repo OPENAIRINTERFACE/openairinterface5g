@@ -254,8 +254,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->secondaryCellGroup);
 
   fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.rrc_ue_id);
-  // the UE context is not yet inserted in the RRC UE manager
-  // rrc_gNB_update_ue_context_rnti(UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, rrc, UE->rrc_ue_id);
   UE->rnti = UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));
@@ -379,7 +377,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 
   nr_pdcp_add_drbs(ctxt.enb_flag,
                    rrc_ue_id,
-                   0,
                    ue_context_p->ue_context.rb_config->drb_ToAddModList,
                    (ue_context_p->ue_context.integrity_algorithm << 4) | ue_context_p->ue_context.ciphering_algorithm,
                    kUPenc,
