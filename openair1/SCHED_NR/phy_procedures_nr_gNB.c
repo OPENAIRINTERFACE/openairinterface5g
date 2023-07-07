@@ -934,7 +934,10 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       // LOG_M("rxdataF_comp.m","rxF_comp",gNB->pusch_vars[0]->rxdataF_comp[0],6900,1,1);
       // LOG_M("rxdataF_ext.m","rxF_ext",gNB->pusch_vars[0]->rxdataF_ext[0],6900,1,1);
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 1);
-      totalDecode += nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, ulsch->harq_pid);
+      int const tasks_added = nr_ulsch_procedures(gNB, frame_rx, slot_rx, ULSCH_id, ulsch->harq_pid);
+      if (tasks_added > 0)
+        totalDecode += tasks_added; 
+
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 0);
     }
   }
