@@ -1005,6 +1005,7 @@ class Containerize():
 			HTML.htmleNBFailureMsg='Could not copy logfile to analyze it!'
 			HTML.CreateHtmlTestRow('N/A', 'KO', CONST.ENB_PROCESS_NOLOGFILE_TO_ANALYZE)
 			self.exitStatus = 1
+                # use function for UE log analysis, when oai-nr-ue container is used
 		elif 'oai-nr-ue' in services:
 			self.exitStatus == 0
 			logging.debug('\u001B[1m Analyzing UE logfile ' + filename + ' \u001B[0m')
