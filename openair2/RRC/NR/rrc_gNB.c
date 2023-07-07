@@ -114,43 +114,6 @@ mui_t rrc_gNB_mui = 0;
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
-{
-  if (!ue->Srb[1].Active) {
-    LOG_E(NR_RRC, "Call SRB list while SRB1 doesn't exist\n");
-    return NULL;
-  }
-  NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
-  for (int i = 0; i < maxSRBs; i++) {
-    if (ue->Srb[i].Active) {
-      asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
-      srb->srb_Identity = i;
-      if (reestablish && i == 2) {
-        asn1cCallocOne(srb->reestablishPDCP, NR_SRB_ToAddMod__reestablishPDCP_true);
-      }
-    }
-  }
-  return list;
-}
-
-// not clear what this function do against fill_DRB_configList()
-// it sets reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true
-// else it should probably be removed and merged into fill_DRB_configList
-static NR_DRB_ToAddModList_t *createDRBlistReestablish(gNB_RRC_UE_t *ue)
-{
-  NR_DRB_ToAddMod_t *DRB_config = NULL;
-  NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
-
-  for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
-    if (ue->established_drbs[i].status != DRB_INACTIVE) {
-      ue->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
-      DRB_config = generateDRB_ASN1(&ue->established_drbs[i]);
-      asn1cSeqAdd(&DRB_configList->list, DRB_config);
-    }
-  }
-  return DRB_configList;
-}
-
 NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
@@ -411,6 +374,42 @@ unsigned int rrc_gNB_get_next_transaction_identifier(module_id_t gnb_mod_idP)
   tmp %= NR_RRC_TRANSACTION_IDENTIFIER_NUMBER;
   LOG_T(NR_RRC, "generated xid is %d\n", tmp);
   return tmp;
+}
+
+static NR_SRB_ToAddModList_t *createSRBlist(gNB_RRC_UE_t *ue, bool reestablish)
+{
+  if (!ue->Srb[1].Active) {
+    LOG_E(NR_RRC, "Call SRB list while SRB1 doesn't exist\n");
+    return NULL;
+  }
+  NR_SRB_ToAddModList_t *list = CALLOC(sizeof(*list), 1);
+  for (int i = 0; i < maxSRBs; i++)
+    if (ue->Srb[i].Active) {
+      asn1cSequenceAdd(list->list, NR_SRB_ToAddMod_t, srb);
+      srb->srb_Identity = i;
+      if (reestablish && i == 2) {
+        asn1cCallocOne(srb->reestablishPDCP, NR_SRB_ToAddMod__reestablishPDCP_true);
+      }
+    }
+  return list;
+}
+
+static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
+{
+  NR_DRB_ToAddMod_t *DRB_config = NULL;
+  NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
+
+  for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
+    if (ue->established_drbs[i].status != DRB_INACTIVE) {
+      DRB_config = generateDRB_ASN1(&ue->established_drbs[i]);
+      if (reestablish) {
+        ue->established_drbs[i].reestablishPDCP = NR_DRB_ToAddMod__reestablishPDCP_true;
+        asn1cCallocOne(DRB_config->reestablishPDCP, NR_DRB_ToAddMod__reestablishPDCP_true);
+      }
+      asn1cSeqAdd(&DRB_configList->list, DRB_config);
+    }
+  }
+  return DRB_configList;
 }
 
 static void freeSRBlist(NR_SRB_ToAddModList_t *l)
@@ -744,7 +743,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
-  NR_DRB_ToAddModList_t *DRBs = createDRBlistReestablish(ue_p);
+  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
 
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
@@ -1034,7 +1033,7 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
   uint8_t kUPenc[16] = {0};
   uint8_t kUPint[16] = {0};
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(ue_p);
+  NR_DRB_ToAddModList_t *DRB_configList = createDRBlist(ue_p, false);
 
   /* Derive the keys from kgnb */
   if (DRB_configList != NULL) {
@@ -1048,18 +1047,20 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
   /* Refresh SRBs/DRBs */
   LOG_D(NR_RRC, "Configuring PDCP DRBs/SRBs for UE %04x\n", ue_p->rnti);
   ue_id_t reestablish_ue_id = 0;
-  if (DRB_configList && DRB_configList->list.array[0]->reestablishPDCP && *DRB_configList->list.array[0]->reestablishPDCP == NR_DRB_ToAddMod__reestablishPDCP_true) {
-    for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
-      nr_reestablish_rnti_map_t *nr_reestablish_rnti_map = &(RC.nrrrc[ctxt_pP->module_id])->nr_reestablish_rnti_map[i];
-      if (nr_reestablish_rnti_map->ue_id == ctxt_pP->rntiMaybeUEid) {
-        ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
-        reestablish_ue_id = nr_reestablish_rnti_map[i].c_rnti;
-        LOG_D(NR_RRC, "Removing reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n", i, nr_reestablish_rnti_map->ue_id, nr_reestablish_rnti_map->c_rnti);
-        // clear current C-RNTI from map
-        nr_reestablish_rnti_map->ue_id = 0;
-        nr_reestablish_rnti_map->c_rnti = 0;
-        break;
-      }
+  for (int i = 0; i < MAX_MOBILES_PER_GNB; i++) {
+    nr_reestablish_rnti_map_t *nr_reestablish_rnti_map = &(RC.nrrrc[ctxt_pP->module_id])->nr_reestablish_rnti_map[i];
+    if (nr_reestablish_rnti_map->ue_id == ctxt_pP->rntiMaybeUEid) {
+      ue_context_pP->ue_context.ue_reconfiguration_after_reestablishment_counter++;
+      reestablish_ue_id = nr_reestablish_rnti_map[i].c_rnti;
+      LOG_D(NR_RRC,
+            "Removing reestablish_rnti_map[%d] UEid %lx, RNTI %04x\n",
+            i,
+            nr_reestablish_rnti_map->ue_id,
+            nr_reestablish_rnti_map->c_rnti);
+      // clear current C-RNTI from map
+      nr_reestablish_rnti_map->ue_id = 0;
+      nr_reestablish_rnti_map->c_rnti = 0;
+      break;
     }
   }
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
@@ -1346,15 +1347,16 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
                    NR_RLC_BearerConfig__reestablishRLC_true);
   }
 
-  NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(ue_p);
-  uint8_t buffer[RRC_BUF_SIZE] = {0};
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
+  NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, true);
+
+  uint8_t buffer[RRC_BUF_SIZE] = {0};
   int size = do_RRCReconfiguration(ctxt_pP,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    new_xid,
                                    SRBs,
-                                   DRB_configList,
+                                   DRBs,
                                    NULL,
                                    NULL,
                                    NULL,
@@ -1366,7 +1368,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
                                    NULL,
                                    cellGroupConfig);
   freeSRBlist(SRBs);
-  freeDRBlist(DRB_configList);
+  freeDRBlist(DRBs);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
   RRCReestablishmentComplete_nas_pdu_free(ue_context_pP);
