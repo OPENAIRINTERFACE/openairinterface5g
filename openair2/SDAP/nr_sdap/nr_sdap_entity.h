@@ -44,6 +44,8 @@
 #define SDAP_CTRL_PDU_MAP_DEF_DRB   (0)
 #define SDAP_CTRL_PDU_MAP_RULE_DRB  (1)
 #define SDAP_MAX_PDU                (9000)
+#define SDAP_MAX_NUM_OF_ENTITIES    (NGAP_MAX_DRBS_PER_UE * MAX_MOBILES_PER_ENB)
+#define SDAP_MAX_UE_ID              (65536)
 
 /*
  * The values of QoS Flow ID (QFI) and Reflective QoS Indication,
@@ -167,7 +169,21 @@ nr_sdap_entity_t *new_nr_sdap_entity(int is_gnb, bool has_sdap_rx, bool has_sdap
 /* Entity Handling Related Functions */
 nr_sdap_entity_t *nr_sdap_get_entity(ue_id_t ue_id, int pdusession_id);
 
-/* Entity Handling Related Functions */
-void delete_nr_sdap_entity(ue_id_t ue_id);
+/**
+ * @brief Function to delete a single SDAP Entity based on the ue_id and pdusession_id.
+ * @note  1. SDAP entities may have the same ue_id.
+ * @note  2. SDAP entities may have the same pdusession_id, but not with the same ue_id.
+ * @note  3. The combination of ue_id and pdusession_id, is unique for each SDAP entity.
+ * @param[in] ue_id         Unique identifier for the User Equipment. ID Range [0, 65536].
+ * @param[in] pdusession_id Unique identifier for the Packet Data Unit Session. ID Range [0, 256].
+ * @return                  True, if successfully deleted entity, false otherwise.
+ */
+bool nr_sdap_delete_entity(ue_id_t ue_id, int pdusession_id);
 
+/**
+ * @brief Function to delete all SDAP Entities based on the ue_id.
+ * @param[in] ue_id         Unique identifier for the User Equipment. ID Range [0, 65536].
+ * @return                  True, it deleted at least one entity, false otherwise.
+ */
+bool nr_sdap_delete_ue_entities(ue_id_t ue_id);
 #endif
