@@ -633,7 +633,9 @@ static void deliver_sdu_drb(void *_ue, nr_pdcp_entity_t *entity,
 
   if (IS_SOFTMODEM_NOS1 || UE_NAS_USE_TUN) {
     LOG_D(PDCP, "IP packet received with size %d, to be sent to SDAP interface, UE ID/RNTI: %ld\n", size, ue->rntiMaybeUEid);
-    sdap_data_ind(entity->rb_id, entity->is_gnb, entity->has_sdap_rx, entity->pdusession_id, ue->rntiMaybeUEid, buf, size);
+    // in NoS1 mode: the SDAP should write() packets to an FD (TUN interface),
+    // so below, set is_gnb == 0 to do that
+    sdap_data_ind(entity->rb_id, 0, entity->has_sdap_rx, entity->pdusession_id, ue->rntiMaybeUEid, buf, size);
   }
   else{
     for (i = 0; i < MAX_DRBS_PER_UE; i++) {

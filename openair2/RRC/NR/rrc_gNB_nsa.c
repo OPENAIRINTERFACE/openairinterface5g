@@ -368,7 +368,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   AssertFatal(ret, "cannot add NSA UE in MAC, aborting\n");
 
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, rrc->module_id, GNB_FLAG_YES, rrc_ue_id, 0, 0, rrc->module_id);
-  if (get_softmodem_params()->do_ra) ctxt.enb_flag = 0;
   LOG_W(RRC,
         "Calling RRC PDCP/RLC ASN1 request functions for protocol context %p with module_id %d, rnti %lx, frame %d, subframe %d eNB_index %d \n",
         &ctxt,
