@@ -736,7 +736,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         nr_rrc_set_sib1_timers_and_constants(&NR_UE_rrc_inst[module_id].timers_and_constants, sib1);
         // take ServingCellConfigCommon and configure L1/L2
         NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
-        nr_rrc_mac_config_req_sib1(module_id, 0, sib1->servingCellConfigCommon);
+        nr_rrc_mac_config_req_sib1(module_id, 0, sib1->si_SchedulingInfo, sib1->servingCellConfigCommon);
         nr_rrc_ue_generate_ra_msg(module_id, gNB_index);
       break;
 

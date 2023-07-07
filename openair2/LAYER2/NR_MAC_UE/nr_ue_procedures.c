@@ -168,6 +168,7 @@ void nr_ue_init_mac(module_id_t module_idP)
   mac->get_otherSI = false;
   mac->phy_config_request_sent = false;
   mac->state = UE_NOT_SYNC;
+  mac->si_window_start = -1;
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
