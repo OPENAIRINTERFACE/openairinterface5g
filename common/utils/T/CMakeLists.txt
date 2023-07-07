@@ -1,4 +1,5 @@
 add_executable(genids genids.c)
+set_target_properties(genids PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
 
 add_custom_command(OUTPUT T_IDs.h
                    COMMAND ./genids ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt T_IDs.h
@@ -17,6 +18,7 @@ target_include_directories(_check_vcd PRIVATE
                            ${CMAKE_CURRENT_BINARY_DIR} ${CMAKE_CURRENT_SOURCE_DIR})
 target_compile_options(_check_vcd PRIVATE -Wall)
 target_link_libraries(_check_vcd PRIVATE m pthread)
+set_target_properties(_check_vcd PROPERTIES RUNTIME_OUTPUT_DIRECTORY .)
 
 add_custom_target(check_vcd
                   COMMAND _check_vcd ${CMAKE_CURRENT_SOURCE_DIR}/T_messages.txt ${CMAKE_CURRENT_SOURCE_DIR}/../LOG/vcd_signal_dumper.h
@@ -43,4 +45,6 @@ if(T_TRACER)
   add_library(T STATIC T.c local_tracer.c T_IDs.h T_messages.txt.h)
   target_link_libraries(T PUBLIC rt)
   target_link_libraries(T PRIVATE CONFIG_LIB T_headers)
+
+  add_subdirectory(tracer)
 endif()
