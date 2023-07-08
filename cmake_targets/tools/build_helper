@@ -216,35 +216,26 @@ check_errors() {
 }
 
 compilations() {
+  [[ $# -gt 2 ]] || echo_fatal "compilations needs more than three arguments"
   local dir=$1
   shift 1
   local logfile=$1
   shift 1
   local targets=$@
+  local verbose=$([ "$VERBOSE_COMPILE" == "1" ] && echo "-v" || echo "")
+  echo cd $OPENAIR_DIR/cmake_targets/$dir/build
   cd $OPENAIR_DIR/cmake_targets/$dir/build
-  echo_info "Log file for compilation is being written to: $dlog/$logfile"
+  echo_info "Running \"cmake --build . $verbose --target $targets -- -j$(nproc)\"" $green
+  echo "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
-    if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
-        COV_SCAN_PREFIX="cov-build --dir cov-int"
-    else
-        COV_SCAN_PREFIX=""
-    fi
-    if [ "$MAKE_CMD" != "" ]; then
-       $MAKE_CMD $targets
-    else 
-    if [ "$VERBOSE_COMPILE" == "1" ]; then
-       $COV_SCAN_PREFIX make -j`nproc` $targets VERBOSE=$VERBOSE_COMPILE
-    else
-       $COV_SCAN_PREFIX make -j`nproc` $targets
-    fi
-    fi
+    cmake --build . $verbose --target $targets -- -j$(nproc)
     ret=$?
   } > $dlog/$logfile 2>&1
   if [ "$VERBOSE_CI" == "1" ]; then
-     echo_info "====== Start of log for $logfile ======"
+     echo "====== Start of log for $logfile ======"
      cat $dlog/$logfile
-     echo_info "====== End of log for $logfile ======"
+     echo "====== End of log for $logfile ======"
   fi
   check_warnings "$dlog/$logfile"
   if [[ $ret -eq 0 ]]; then

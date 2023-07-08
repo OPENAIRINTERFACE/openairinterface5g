@@ -83,6 +83,7 @@ COPY --from=phy-sim-build \
     /lib64/libXau.so.6 \
     /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/libexslt.so.0 \
     /lib64/libxslt.so.1 \

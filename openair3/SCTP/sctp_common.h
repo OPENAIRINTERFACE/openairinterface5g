@@ -34,16 +34,10 @@
 #include <stdint.h>
 #include <sys/socket.h>
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# define SCTP_ERROR(x, args...) LOG_E(SCTP, x, ##args)
-# define SCTP_DEBUG(x, args...) LOG_D(SCTP, x, ##args)
-# define SCTP_WARN(x, args...)  LOG_W(SCTP, x, ##args)
-#else
-# define SCTP_ERROR(x, args...) do { fprintf(stderr, "[SCTP][E]"x, ##args); } while(0)
-# define SCTP_DEBUG(x, args...) do { fprintf(stdout, "[SCTP][D]"x, ##args); } while(0)
-# define SCTP_WARN(x, args...)  do { fprintf(stdout, "[SCTP][W]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#define SCTP_ERROR(x, args...) LOG_E(SCTP, x, ##args)
+#define SCTP_DEBUG(x, args...) LOG_D(SCTP, x, ##args)
+#define SCTP_WARN(x, args...)  LOG_W(SCTP, x, ##args)
 
 int sctp_set_init_opt(int sd, uint16_t instreams, uint16_t outstreams,
                       uint16_t max_attempts, uint16_t init_timeout);

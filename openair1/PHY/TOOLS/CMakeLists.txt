@@ -29,6 +29,13 @@
 #* \warning
 #*/
 
+find_library(forms NAMES forms)
+if(NOT forms)
+  message(FATAL_ERROR "required library forms not found for building scopes")
+else()
+  message(STATUS "libforms library, required for scopes, found at ${forms}")
+endif()
+
 include_directories ("/usr/include/X11")
 add_library(xforms_common OBJECT
             lte_phy_scope.c

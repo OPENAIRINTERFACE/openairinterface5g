@@ -34,8 +34,8 @@ COPY ./libori.so /usr/local/lib
 # build AW2S fronthaul lib
 WORKDIR /oai-ran
 RUN /bin/sh oaienv && \
-    cd cmake_targets/ran_build/build && \
-    ninja aw2sori_transpro
+    cd cmake_targets/ && \
+    ./build_oai -w AW2SORI -t Ethernet
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-gnb-aw2s
@@ -75,6 +75,7 @@ COPY --from=gnb-base \
     /lib64/libconfig.so.11 \
     /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/

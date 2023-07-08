@@ -73,6 +73,7 @@ COPY --from=gnb-base \
     /lib64/libconfig.so.11 \
     /lib64/libforms.so.2 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/libboost_chrono.so.1.75.0 \

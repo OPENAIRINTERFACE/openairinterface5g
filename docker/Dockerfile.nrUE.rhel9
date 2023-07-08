@@ -78,6 +78,7 @@ COPY --from=nr-ue-build \
 COPY --from=nr-ue-base \
     /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/libforms.so.2 \

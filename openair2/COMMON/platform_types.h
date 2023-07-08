@@ -30,13 +30,8 @@
 #ifndef __PLATFORM_TYPES_H__
 #define __PLATFORM_TYPES_H__
 
-#if !defined(NAS_NETLINK)
 #include <stdint.h>
 #include <stdbool.h>
-#else
-#include <linux/types.h>
-typedef void * intptr_t;
-#endif
 
 //-----------------------------------------------------------------------------
 // GENERIC ACCESS STRATUM TYPES

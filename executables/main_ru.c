@@ -46,7 +46,7 @@
 
 
 #include "radio/COMMON/common_lib.h"
-#include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "radio/ETHERNET/if_defs.h"
 
 #include "PHY/phy_vars.h"
 #include "PHY/phy_extern.h"
