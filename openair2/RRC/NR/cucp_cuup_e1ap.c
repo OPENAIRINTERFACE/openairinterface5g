@@ -36,13 +36,8 @@
 
 extern RAN_CONTEXT_t RC;
 
-static void cucp_cuup_bearer_context_setup_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance, uint8_t xid)
+static void cucp_cuup_bearer_context_setup_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance)
 {
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[instance], req->rnti);
-  protocol_ctxt_t ctxt = {0};
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, ue_context_p->ue_context.rnti, 0, 0, 0);
-
-  fill_DRB_configList(&ctxt, ue_context_p, xid);
   MessageDef *msg_p = itti_alloc_new_message(TASK_CUCP_E1, instance, E1AP_BEARER_CONTEXT_SETUP_REQ);
   e1ap_bearer_setup_req_t *bearer_req = &E1AP_BEARER_CONTEXT_SETUP_REQ(msg_p);
   memcpy(bearer_req, req, sizeof(e1ap_bearer_setup_req_t));
@@ -50,7 +45,7 @@ static void cucp_cuup_bearer_context_setup_e1ap(e1ap_bearer_setup_req_t *const r
   itti_send_msg_to_task (TASK_CUCP_E1, instance, msg_p);
 }
 
-static void cucp_cuup_bearer_context_mod_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance, uint8_t xid)
+static void cucp_cuup_bearer_context_mod_e1ap(e1ap_bearer_setup_req_t *const req, instance_t instance)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_CUCP_E1, instance, E1AP_BEARER_CONTEXT_MODIFICATION_REQ);
   e1ap_bearer_setup_req_t *req_msg = &E1AP_BEARER_CONTEXT_SETUP_REQ(msg);

@@ -125,7 +125,8 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
                                      sdap_data_req);
 
   if (ret != 0) {
-    LOG_E(NR_RRC,"rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ : gtpv1u_create_ngu_tunnel failed,start to release UE rnti %ld\n",
+    LOG_E(NR_RRC,
+          "drb_config_gtpu_create=>gtpv1u_create_ngu_tunnel failed, cannot set up GTP tunnel for data transmissions of UE %ld\n",
           create_tunnel_req.ue_id);
     return ret;
   }
@@ -160,14 +161,13 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
   return ret;
 }
 
-static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const req, instance_t instance, uint8_t xid)
+static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const req, instance_t instance)
 {
   rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[instance], req->rnti);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   protocol_ctxt_t ctxt = {0};
   PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, UE->rnti, 0, 0, 0);
 
-  fill_DRB_configList(&ctxt, ue_context_p, xid);
   e1ap_bearer_setup_resp_t resp = {0};
   resp.numPDUSessions = req->numPDUSessions;
   for (int i = 0; i < resp.numPDUSessions; ++i) {
@@ -184,8 +184,11 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt.module_id];
   // GTP tunnel for UL
-  int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, UE->DRB_configList, rrc->e1_inst);
+  NR_DRB_ToAddModList_t *DRB_configList = fill_DRB_configList(UE);
+  int ret = drb_config_gtpu_create(&ctxt, ue_context_p, req, DRB_configList, rrc->e1_inst);
   if (ret < 0) AssertFatal(false, "Unable to configure DRB or to create GTP Tunnel\n");
+  // the code is very badly organized, it is not possible here to call freeDRBlist() 
+  ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList,DRB_configList );
 
   // Used to store teids: if monolithic, will simply be NULL
   if(!NODE_IS_CU(RC.nrrrc[ctxt.module_id]->node_type)) {
@@ -203,7 +206,8 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
   prepare_and_send_ue_context_modification_f1(ue_context_p, &resp);
 }
 
-static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const req, instance_t instance, uint8_t xid) {
+static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const req, instance_t instance)
+{
   // only update GTP tunnels if it is really a CU
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type))
     return;

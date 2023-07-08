@@ -278,9 +278,6 @@ static void fill_qos(NGAP_QosFlowSetupRequestList_t *qos, pdusession_t *session)
 static int decodePDUSessionResourceSetup(pdusession_t *session)
 {
   NGAP_PDUSessionResourceSetupRequestTransfer_t *pdusessionTransfer = NULL;
-  for (int i=0; i<session->pdusessionTransfer.length; i++)
-    printf("%02x:",session->pdusessionTransfer.buffer[i]);
-  printf("\n");
   asn_codec_ctx_t st = {.max_stack_size = 100 * 1000};
   asn_dec_rval_t dec_rval =
       aper_decode(&st, &asn_DEF_NGAP_PDUSessionResourceSetupRequestTransfer, (void **)&pdusessionTransfer, session->pdusessionTransfer.buffer, session->pdusessionTransfer.length, 0, 0);
@@ -819,7 +816,7 @@ void rrc_gNB_process_NGAP_PDUSESSION_SETUP_REQ(MessageDef *msg_p, instance_t ins
   }
   int xid = rrc_gNB_get_next_transaction_identifier(instance);
   UE->xids[xid] = RRC_PDUSESSION_ESTABLISH;
-  rrc->cucp_cuup.bearer_context_setup(&bearer_req, instance, xid);
+  rrc->cucp_cuup.bearer_context_setup(&bearer_req, instance);
   return;
 }
 
