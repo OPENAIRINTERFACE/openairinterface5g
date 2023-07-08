@@ -365,11 +365,11 @@ bool is_ss_monitor_occasion(const int frame, const int slot, const int slots_per
   return monitor;
 }
 
-bool montior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
-                              const NR_SearchSpace_t *ss,
-                              const int slots_per_frame,
-                              const int frame,
-                              const int slot)
+bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
+                               const NR_SearchSpace_t *ss,
+                               const int slots_per_frame,
+                               const int frame,
+                               const int slot)
 {
   const struct NR_SI_SchedulingInfo *si_SchedulingInfo = mac->si_SchedulingInfo;
   // 5.2.2.3.2 in 331
@@ -432,7 +432,7 @@ void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl
     // are same as PDCCH monitoring occasions for SIB1
     const NR_SearchSpace_t *ss = mac->otherSI_SS ? mac->otherSI_SS : mac->search_space_zero;
     // TODO configure SI-window
-    if (montior_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
+    if (monitior_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
       LOG_D(NR_MAC, "Monitoring DCI for other SIs in frame %d slot %d\n", frame, slot);
       config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot, ss);
     }

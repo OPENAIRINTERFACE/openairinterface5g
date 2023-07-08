@@ -532,9 +532,9 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
   return ret;
 }
 
-int nr_decode_SI(const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, NR_SystemInformation_t *si)
+int nr_decode_SI(const module_id_t module_id, const uint8_t gNB_index, NR_SystemInformation_t *si)
 {
-  NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[ctxt_pP->module_id].SInfo[gNB_index];
+  NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_IN );
 
   // Dump contents
@@ -553,86 +553,112 @@ int nr_decode_SI(const protocol_ctxt_t *const ctxt_pP, const uint8_t gNB_index, 
 
     switch(typeandinfo->present) {
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib2:
-        memcpy(SI_info->sib2, &typeandinfo->choice.sib2, sizeof(NR_SIB2_t));
+        if(!SI_info->sib2)
+          SI_info->sib2 = calloc(1, sizeof(*SI_info->sib2));
+        memcpy(SI_info->sib2, typeandinfo->choice.sib2, sizeof(NR_SIB2_t));
         SI_info->sib2_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB2 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB2 from gNB %"PRIu8"\n", module_id, gNB_index);
         break; // case SystemInformation_r8_IEs__sib_TypeAndInfo__Member_PR_sib2
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
-        memcpy(SI_info->sib3, &typeandinfo->choice.sib3, sizeof(LTE_SystemInformationBlockType3_t));
+        if(!SI_info->sib3)
+          SI_info->sib3 = calloc(1, sizeof(*SI_info->sib3));
+        memcpy(SI_info->sib3, typeandinfo->choice.sib3, sizeof(NR_SIB3_t));
         SI_info->sib3_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB3 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB3 from gNB %"PRIu8"\n", module_id, gNB_index );
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
+        if(!SI_info->sib4)
+          SI_info->sib4 = calloc(1, sizeof(*SI_info->sib4));
         memcpy(SI_info->sib4, typeandinfo->choice.sib4, sizeof(NR_SIB4_t));
         SI_info->sib4_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB4 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB4 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
+        if(!SI_info->sib5)
+          SI_info->sib5 = calloc(1, sizeof(*SI_info->sib5));
         memcpy(SI_info->sib5, typeandinfo->choice.sib5, sizeof(NR_SIB5_t));
         SI_info->sib5_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB5 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB5 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
+        if(!SI_info->sib6)
+          SI_info->sib6 = calloc(1, sizeof(*SI_info->sib6));
         memcpy(SI_info->sib6, typeandinfo->choice.sib6, sizeof(NR_SIB6_t));
         SI_info->sib6_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB6 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB6 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
+        if(!SI_info->sib7)
+          SI_info->sib7 = calloc(1, sizeof(*SI_info->sib7));
         memcpy(SI_info->sib7, typeandinfo->choice.sib7, sizeof(NR_SIB7_t));
         SI_info->sib7_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB7 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB7 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
+        if(!SI_info->sib8)
+          SI_info->sib8 = calloc(1, sizeof(*SI_info->sib8));
         memcpy(SI_info->sib8, typeandinfo->choice.sib8, sizeof(NR_SIB8_t));
         SI_info->sib8_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB8 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB8 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
+        if(!SI_info->sib9)
+          SI_info->sib9 = calloc(1, sizeof(*SI_info->sib9));
         memcpy(SI_info->sib9, typeandinfo->choice.sib9, sizeof(NR_SIB9_t));
         SI_info->sib9_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB9 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB9 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
+        if(!SI_info->sib10)
+          SI_info->sib10 = calloc(1, sizeof(*SI_info->sib10));
         memcpy(SI_info->sib10, typeandinfo->choice.sib10_v1610, sizeof(NR_SIB10_r16_t));
         SI_info->sib10_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB10 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB10 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
+        if(!SI_info->sib11)
+          SI_info->sib11 = calloc(1, sizeof(*SI_info->sib11));
         memcpy(SI_info->sib11, typeandinfo->choice.sib11_v1610, sizeof(NR_SIB11_r16_t));
         SI_info->sib11_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB11 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB11 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
+        if(!SI_info->sib12)
+          SI_info->sib12 = calloc(1, sizeof(*SI_info->sib12));
         memcpy(SI_info->sib12, typeandinfo->choice.sib12_v1610, sizeof(NR_SIB12_r16_t));
         SI_info->sib12_timer = 0;
-        LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB12 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB12 from gNB %"PRIu8"\n", module_id, gNB_index);
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
+        if(!SI_info->sib13)
+          SI_info->sib13 = calloc(1, sizeof(*SI_info->sib13));
         memcpy(SI_info->sib13, typeandinfo->choice.sib13_v1610, sizeof(NR_SIB13_r16_t));
         SI_info->sib13_timer = 0;
-        LOG_I( RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB13 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index );
+        LOG_I( RRC, "[UE %"PRIu8"] Found SIB13 from gNB %"PRIu8"\n", module_id, gNB_index );
         break;
 
       case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
-          memcpy(SI_info->sib12, typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t));
-          SI_info->sib14_timer = 0;
-          LOG_I(RRC, "[UE %"PRIu8"] Frame %"PRIu32" Found SIB14 from gNB %"PRIu8"\n", ctxt_pP->module_id, ctxt_pP->frame, gNB_index);
+        if(!SI_info->sib14)
+          SI_info->sib14 = calloc(1, sizeof(*SI_info->sib14));
+        memcpy(SI_info->sib12, typeandinfo->choice.sib14_v1610, sizeof(NR_SIB14_r16_t));
+        SI_info->sib14_timer = 0;
+        LOG_I(RRC, "[UE %"PRIu8"] Found SIB14 from gNB %"PRIu8"\n", module_id, gNB_index);
       break;
       default:
         break;
     }
-    nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
+    nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_OUT);
   return 0;
@@ -710,7 +736,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
            dec_rval.consumed);
     log_dump(NR_RRC, Sdu, Sdu_len, LOG_DUMP_CHAR,"   Received bytes:\n");
     // free the memory
-    SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1 );
+    SEQUENCE_free(&asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1);
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
     return -1;
   }
@@ -730,7 +756,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         if(nr_rrc_get_state(module_id) <= RRC_STATE_IDLE_NR) {
           NR_UE_rrc_inst[module_id].ra_trigger = INITIAL_ACCESS_FROM_RRC_IDLE;
           LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
-          nr_rrc_set_state (module_id, RRC_STATE_IDLE_NR);
+          nr_rrc_set_state(module_id, RRC_STATE_IDLE_NR);
         }
         // configure timers and constant
         nr_rrc_set_sib1_timers_and_constants(&NR_UE_rrc_inst[module_id].timers_and_constants, sib1);
@@ -738,24 +764,13 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         NR_UE_rrc_inst[module_id].servingCellConfigCommonSIB = sib1->servingCellConfigCommon;
         nr_rrc_mac_config_req_sib1(module_id, 0, sib1->si_SchedulingInfo, sib1->servingCellConfigCommon);
         nr_rrc_ue_generate_ra_msg(module_id, gNB_index);
-      break;
-
-      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-        LOG_W(NR_RRC, "Decoding SI not implemented yet\n");
-        // TODO: Decode SI
-        /*
-        // SIB1 with schedulingInfoList is available
-        NR_SystemInformation_t *si;
-        memcpy( si,
-                bcch_message->message.choice.c1->choice.systemInformation,
-                sizeof(NR_SystemInformation_t) );
-        LOG_I(NR_RRC, "[UE %"PRIu8"] Decoding SI\n", module_id);
-        nr_decode_SI( ctxt_pP, gNB_index, si );
-        if (nfapi_mode == 3)
-          UE_mac_inst[ctxt_pP->module_id].SI_Decoded = 1;
-         */
         break;
-
+      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
+        LOG_I(NR_RRC, "[UE %"PRIu8"] Decoding SI\n", module_id);
+        NR_SystemInformation_t *si = bcch_message->message.choice.c1->choice.systemInformation;
+        nr_decode_SI(module_id, gNB_index, si);
+        SEQUENCE_free(&asn_DEF_NR_BCCH_DL_SCH_Message, (void *)bcch_message, 1);
+        break;
       case NR_BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
       default:
         break;
