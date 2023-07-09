@@ -1059,7 +1059,7 @@ class OaiCiTest():
 			cmd = cls_cmd.getConnection(ue.getHost())
 			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
 			port = f'{5002+idx}'
-			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
+			cmd.run(f'{ue.getCmdPrefix()} iperf3 -B {ue.getIP()} -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
 			cmd.copyin(f'/tmp/{server_filename}', server_filename)
 			cmd.close()
 			if udpIperf:

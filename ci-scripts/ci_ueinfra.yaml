@@ -122,10 +122,13 @@ amarisoft_ue_10:
   CmdPrefix: ip netns exec ue10
   MTU: 1500
 
-oai_ue_obelix:
-  Host: obelix
+oai_ue_caracal:
+  Host: caracal
+  AttachScript: 'docker start oai-nr-ue'
+  DetachScript: 'docker stop oai-nr-ue'
   NetworkScript: ip a show dev oaitun_ue1
   IF: oaitun_ue1
+  MTU: 1500
 
 rfsim5g_gnb_nos1:
   Host: localhost
