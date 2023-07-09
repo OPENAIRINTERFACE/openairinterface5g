@@ -10,7 +10,7 @@ services:
             public_net:
                 ipv4_address: 192.168.71.140
         volumes:
-            - ../../conf_files/gnb.band78.tm1.106PRB.usrpn300.conf:/opt/oai-gnb/etc/gnb.conf
+            - ../../conf_files/gnb.band78.106prb.rfsim.phytest-dora.conf:/opt/oai-gnb/etc/gnb.conf
             - rrc.config:/opt/oai-gnb/
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
