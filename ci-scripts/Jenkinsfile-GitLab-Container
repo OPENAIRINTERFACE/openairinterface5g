@@ -468,7 +468,7 @@ pipeline {
           when { expression {do5Gtest} }
           steps {
             script {
-              triggerCN5GSlaveJob ('RAN-SA-OAIUE-CN5G', 'RAN-SA-OAIUE-CN5G')
+              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'RAN-SA-OAIUE-CN5G')
             }
           }
           post {
