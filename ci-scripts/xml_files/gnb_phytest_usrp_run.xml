@@ -45,7 +45,7 @@
 	<testCase id="090101">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB USRP</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.tm1.106PRB.usrpn300.conf --phy-test -q -U 787200 -T 106 -t 23 -D 130175 -m 28 -M 106 --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.106prb.usrpn300.phytest-dora.conf --phy-test -q -U 787200 -T 106 -t 23 -D 130175 -m 28 -M 106 --usrp-tx-thread-config 1 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
     <rt_stats_cfg>datalog_rt_stats.default.yaml</rt_stats_cfg>
 		<air_interface>NR</air_interface>
 		<USRP_IPAddress>192.168.20.2</USRP_IPAddress>

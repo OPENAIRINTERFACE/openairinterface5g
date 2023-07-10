@@ -1,4 +1,7 @@
 add_subdirectory(E1AP)
+if(E2_AGENT)
+  add_subdirectory(E2AP)
+endif()
 add_subdirectory(F1AP)
 add_subdirectory(M2AP)
 add_subdirectory(X2AP)

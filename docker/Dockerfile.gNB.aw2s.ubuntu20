@@ -34,8 +34,8 @@ COPY ./libori.so /usr/local/lib/
 # build AW2S fronthaul lib
 WORKDIR /oai-ran
 RUN /bin/sh oaienv && \
-    cd cmake_targets/ran_build/build && \
-    ninja aw2sori_transpro
+    cd cmake_targets/ && \
+    ./build_oai -w AW2SORI -t Ethernet
 
 #start from scratch for target executable
 FROM ubuntu:bionic as oai-gnb-aw2s

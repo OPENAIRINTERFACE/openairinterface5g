@@ -36,7 +36,7 @@
 
 #include "PHY/defs_nr_UE.h"
 #include "PHY/MODULATION/modulation_UE.h"
-
+#include "executables/softmodem-common.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 
 #define DEFINE_VARIABLES_SSS_NR_H
@@ -78,31 +78,25 @@ void init_context_sss_nr(int amp)
   int16_t x1[LENGTH_SSS_NR];
   int16_t dss_current;
   int m0, m1;
+  int nid_2_num = get_softmodem_params()->sl_mode == 0 ? N_ID_2_NUMBER : N_ID_2_NUMBER_SL;
 
   const int x0_initial[INITIAL_SSS_NR] = { 1, 0, 0, 0, 0, 0, 0 };
   const int x1_initial[INITIAL_SSS_NR] = { 1, 0, 0, 0, 0, 0, 0 };
-
-  for (int i=0; i < INITIAL_SSS_NR; i++) {
+  for (int i = 0; i < INITIAL_SSS_NR; i++) {
     x0[i] = x0_initial[i];
     x1[i] = x1_initial[i];
   }
-
-  for (int i=0; i < (LENGTH_SSS_NR - INITIAL_SSS_NR); i++) {
-    x0[i+7] = (x0[i + 4] + x0[i])%(2);
-    x1[i+7] = (x1[i + 1] + x1[i])%(2);
+  for (int i = 0; i < (LENGTH_SSS_NR - INITIAL_SSS_NR); i++) {
+    x0[i + 7] = (x0[i + 4] + x0[i]) % (2);
+    x1[i + 7] = (x1[i + 1] + x1[i]) % (2);
   }
 
-  for (int N_ID_2 = 0; N_ID_2 < N_ID_2_NUMBER; N_ID_2++) {
-
+  for (int N_ID_2 = 0; N_ID_2 < nid_2_num; N_ID_2++) {
     for (int N_ID_1 = 0; N_ID_1 < N_ID_1_NUMBER; N_ID_1++) {
-
-      m0 = 15*(N_ID_1/112) + (5*N_ID_2);
-      m1 = N_ID_1%112;
-
+      m0 = 15 * (N_ID_1 / 112) + (5 * N_ID_2);
+      m1 = N_ID_1 % 112;
       for (int n = 0; n < LENGTH_SSS_NR; n++) {
-
-        dss_current = (1 - 2*x0[(n + m0)%(LENGTH_SSS_NR)])*(1 - 2*x1[(n + m1)%(LENGTH_SSS_NR)]);
-
+        dss_current = (1 - 2 * x0 [(n + m0) % (LENGTH_SSS_NR)]) * (1 - 2 * x1[(n + m1) % (LENGTH_SSS_NR)]);
       /* Modulation of SSS is a BPSK TS 36.211 chapter 5.1.2 BPSK */
 #if 1
         d_sss[N_ID_2][N_ID_1][n]   = dss_current;// * amp;
@@ -276,8 +270,9 @@ static int do_pss_sss_extract_nr(
 
   for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
     int pss_symbol = 0;
-    int sss_symbol = SSS_SYMBOL_NB - PSS_SYMBOL_NB;
-
+    int sss_symbol = get_softmodem_params()->sl_mode == 0 ?
+                     (SSS_SYMBOL_NB - PSS_SYMBOL_NB) :
+                     (SSS0_SL_SYMBOL_NB - PSS0_SL_SYMBOL_NB) ;
     unsigned int ofdm_symbol_size = frame_parms->ofdm_symbol_size;
 
     c16_t *pss_rxF = rxdataF[aarx] + pss_symbol * ofdm_symbol_size;
@@ -286,12 +281,16 @@ static int do_pss_sss_extract_nr(
     c16_t *pss_rxF_ext = pss_ext[aarx];
     c16_t *sss_rxF_ext = sss_ext[aarx];
 
-    unsigned int k = frame_parms->first_carrier_offset + frame_parms->ssb_start_subcarrier + 56;
+    unsigned int k = frame_parms->first_carrier_offset +
+                     frame_parms->ssb_start_subcarrier +
+                     ((get_softmodem_params()->sl_mode == 0) ?
+                     PSS_SSS_SUB_CARRIER_START :
+                     PSS_SSS_SUB_CARRIER_START_SL);
 
     if (k>= frame_parms->ofdm_symbol_size) k-=frame_parms->ofdm_symbol_size;
 
     for (int i=0; i < LENGTH_PSS_NR; i++) {
-      if (doPss) {		  
+      if (doPss) {
         pss_rxF_ext[i] = pss_rxF[k];
       }
 
@@ -300,9 +299,7 @@ static int do_pss_sss_extract_nr(
       }
 
       k++;
-
-      if (k == ofdm_symbol_size) k=0;
-      
+      if (k == frame_parms->ofdm_symbol_size) k = 0;
     }
   }
 
@@ -365,7 +362,12 @@ static int pss_sss_extract_nr(PHY_VARS_NR_UE *phy_vars_ue,
 *
 *********************************************************************/
 
-int rx_sss_nr(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, int32_t *tot_metric, uint8_t *phase_max, int *freq_offset_sss, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+int rx_sss_nr(PHY_VARS_NR_UE *ue,
+              UE_nr_rxtx_proc_t *proc,
+              int32_t *tot_metric,
+              uint8_t *phase_max,
+              int *freq_offset_sss,
+              c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   uint8_t i;
   c16_t pss_ext[NB_ANTENNAS_RX][LENGTH_PSS_NR];

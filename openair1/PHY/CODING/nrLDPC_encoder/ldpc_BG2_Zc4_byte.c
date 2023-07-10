@@ -1,7 +1,7 @@
 #include "PHY/sse_intrin.h"
 #define scalar_xor(a,b) ((a)^(b))
 // generated code for Zc=4, byte encoding
-static inline void ldpc_BG2_Zc4_byte(uint8_t *c,uint8_t *d) {
+static inline __attribute__ ((no_sanitize("address", "undefined"))) void ldpc_BG2_Zc4_byte(uint8_t *c,uint8_t *d) {
   uint8_t *csimd=(uint8_t *)c,*dsimd=(uint8_t *)d;
 
   uint8_t *c2,*d2;

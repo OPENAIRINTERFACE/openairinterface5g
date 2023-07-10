@@ -168,7 +168,7 @@ Run OAI nrUE with RFsimulator
 cd ~/openairinterface5g
 source oaienv
 cd cmake_targets/ran_build/build
-sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001
+sudo ./nr-uesoftmodem -r 106 --numerology 1 --band 78 -C 3619200000 --rfsim --sa --uicc0.imsi 001010000000001 --rfsimulator.serveraddr 127.0.0.1
 ```
 
 ### 5.2.1 Ping test

@@ -96,46 +96,14 @@ int nr_slot_fep(PHY_VARS_NR_UE *ue,
 
     stop_meas(&ue->rx_dft_stats);
 
-    int symb_offset = (Ns%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-    c16_t rot2 = frame_parms->symbol_rotation[0][symbol+symb_offset];
-    rot2.i=-rot2.i;
-
-#ifdef DEBUG_FEP
-    //  if (ue->frame <100)
-    printf("slot_fep: slot %d, symbol %d rx_offset %u, rotation symbol %d %d.%d\n", Ns,symbol, rx_offset,
-	   symbol+symb_offset,rot2.r,rot2.i);
-#endif
-
-    c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = &rxdataF[aa][frame_parms->ofdm_symbol_size*symbol];
-
-    if (frame_parms->N_RB_DL & 1) {
-      rotate_cpx_vector(this_symbol, &rot2, this_symbol,
-                        (frame_parms->N_RB_DL + 1) * 6, 15);
-      rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset - 6,
-                        &rot2,
-                        this_symbol + frame_parms->first_carrier_offset - 6,
-                        (frame_parms->N_RB_DL + 1) * 6, 15);
-      multadd_cpx_vector((int16_t *)this_symbol, (int16_t *)shift_rot, (int16_t *)this_symbol,
-                         1, (frame_parms->N_RB_DL + 1) * 6, 15);
-      multadd_cpx_vector((int16_t *)(this_symbol + frame_parms->first_carrier_offset - 6),
-                         (int16_t *)(shift_rot   + frame_parms->first_carrier_offset - 6),
-                         (int16_t *)(this_symbol + frame_parms->first_carrier_offset - 6),
-                         1, (frame_parms->N_RB_DL + 1) * 6, 15);
-    } else {
-      rotate_cpx_vector(this_symbol, &rot2, this_symbol,
-                        frame_parms->N_RB_DL * 6, 15);
-      rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset,
-                        &rot2,
-                        this_symbol + frame_parms->first_carrier_offset,
-                        frame_parms->N_RB_DL * 6, 15);
-      multadd_cpx_vector((int16_t *)this_symbol, (int16_t *)shift_rot, (int16_t *)this_symbol,
-                         1, frame_parms->N_RB_DL * 6, 15);
-      multadd_cpx_vector((int16_t *)(this_symbol + frame_parms->first_carrier_offset),
-                         (int16_t *)(shift_rot   + frame_parms->first_carrier_offset),
-                         (int16_t *)(this_symbol + frame_parms->first_carrier_offset),
-                         1, frame_parms->N_RB_DL * 6, 15);
-    }
+    apply_nr_rotation_RX(frame_parms,
+                         rxdataF[aa],
+                         frame_parms->symbol_rotation[0],
+                         Ns,
+                         frame_parms->N_RB_DL,
+                         0,
+                         symbol,
+                         1);
   }
 
 #ifdef DEBUG_FEP
@@ -311,51 +279,54 @@ int nr_slot_fep_ul(NR_DL_FRAME_PARMS *frame_parms,
   return 0;
 }
 
-void apply_nr_rotation_ul(NR_DL_FRAME_PARMS *frame_parms,
+void apply_nr_rotation_RX(NR_DL_FRAME_PARMS *frame_parms,
 			  c16_t *rxdataF,
+                          c16_t *rot,
 			  int slot,
+                          int nb_rb,
+                          int soffset,
 			  int first_symbol,
-			  int nsymb,
-			  int link_type)
+			  int nsymb)
 {
-  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
+  AssertFatal(first_symbol + nsymb <= NR_NUMBER_OF_SYMBOLS_PER_SLOT,
+              "First symbol %d and number of symbol %d not compatible with number of symbols in a slot %d\n",
+              first_symbol, nsymb, NR_NUMBER_OF_SYMBOLS_PER_SLOT);
+  int symb_offset = (slot % frame_parms->slots_per_subframe) * frame_parms->symbols_per_slot;
 
-  for (int symbol=first_symbol;symbol<nsymb;symbol++) {
+  for (int symbol = first_symbol; symbol < first_symbol + nsymb; symbol++) {
     
-    c16_t rot2 = frame_parms->symbol_rotation[link_type][symbol + symb_offset];
-    rot2.i=-rot2.i;
-    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n",slot,symb_offset,rot2.r,rot2.i);
-
+    c16_t rot2 = rot[symbol + symb_offset];
+    rot2.i = -rot2.i;
+    LOG_D(PHY,"slot %d, symb_offset %d rotating by %d.%d\n", slot, symb_offset, rot2.r, rot2.i);
     c16_t *shift_rot = frame_parms->timeshift_symbol_rotation;
-    c16_t *this_symbol = &rxdataF[soffset+(frame_parms->ofdm_symbol_size*symbol)];
+    c16_t *this_symbol = &rxdataF[soffset + (frame_parms->ofdm_symbol_size * symbol)];
 
-    if (frame_parms->N_RB_UL & 1) {
+    if (nb_rb & 1) {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,
-                        (frame_parms->N_RB_UL + 1) * 6, 15);
+                        (nb_rb + 1) * 6, 15);
       rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset - 6,
                         &rot2,
                         this_symbol + frame_parms->first_carrier_offset - 6,
-                        (frame_parms->N_RB_UL + 1) * 6, 15);
+                        (nb_rb + 1) * 6, 15);
       multadd_cpx_vector((int16_t *)this_symbol, (int16_t *)shift_rot, (int16_t *)this_symbol,
-                         1, (frame_parms->N_RB_UL+1) * 6, 15);
+                         1, (nb_rb + 1) * 6, 15);
       multadd_cpx_vector((int16_t *)(this_symbol + frame_parms->first_carrier_offset - 6),
                          (int16_t *)(shift_rot   + frame_parms->first_carrier_offset - 6),
                          (int16_t *)(this_symbol + frame_parms->first_carrier_offset - 6),
-                         1, (frame_parms->N_RB_UL+1) * 6, 15);
+                         1, (nb_rb + 1) * 6, 15);
     } else {
       rotate_cpx_vector(this_symbol, &rot2, this_symbol,
-                        frame_parms->N_RB_UL * 6, 15);
+                        nb_rb * 6, 15);
       rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset,
                         &rot2,
                         this_symbol + frame_parms->first_carrier_offset,
-                        frame_parms->N_RB_UL * 6, 15);
+                        nb_rb * 6, 15);
       multadd_cpx_vector((int16_t *)this_symbol, (int16_t *)shift_rot, (int16_t *)this_symbol,
-                         1, frame_parms->N_RB_UL * 6, 15);
+                         1, nb_rb * 6, 15);
       multadd_cpx_vector((int16_t *)(this_symbol + frame_parms->first_carrier_offset),
                          (int16_t *)(shift_rot   + frame_parms->first_carrier_offset),
                          (int16_t *)(this_symbol + frame_parms->first_carrier_offset),
-                         1, frame_parms->N_RB_UL * 6, 15);
+                         1, nb_rb * 6, 15);
     }
   }
 }

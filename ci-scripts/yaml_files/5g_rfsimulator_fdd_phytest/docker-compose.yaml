@@ -5,13 +5,12 @@ services:
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment:
-            RFSIMULATOR: server
             USE_ADDITIONAL_OPTIONS: --phy-test --rfsim --rfsimulator.wait_timeout 20 --noS1 --log_config.global_log_options level,nocolor,time
         networks:
             public_net:
                 ipv4_address: 192.168.71.140
         volumes:
-            - ../../conf_files/gnb.band66.tm1.106PRB.usrpn300.conf:/opt/oai-gnb/etc/gnb.conf
+            - ../../conf_files/gnb.band66.106prb.rfsim.phytest-dora.conf:/opt/oai-gnb/etc/gnb.conf
             - rrc.config:/opt/oai-gnb/
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
@@ -24,8 +23,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment:
-            RFSIMULATOR: 192.168.71.140
-            USE_ADDITIONAL_OPTIONS: --phy-test --rfsim --noS1 --rrc_config_path etc/rrc/ --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --phy-test --rfsim --noS1 --rrc_config_path etc/rrc/ --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
         volumes:
             - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
             - rrc.config:/opt/oai-nr-ue/etc/rrc/

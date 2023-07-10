@@ -196,7 +196,7 @@ Last, the S1 interface shall be properly set.
 ```bash
 $ ssh sudousername@machineB
 cd ue_folder
-# Edit ci-scripts/conf_files/ue.nfapi.conf with your preferred editor
+# Edit ci-scripts/conf_files/nrue.uicc.conf with your preferred editor
 ```
 
 Verify the nFAPI interface setup on the loopback interface.
@@ -252,9 +252,9 @@ In the second terminal (the one you used to build the UE):
 $ ssh sudousername@machineC
 cd ue_folder/cmake_targets
 # Test 64 UEs, 1 thread in FDD mode
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/nrue.uicc.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
 # Test 64 UEs, 1 thread in TDD mode
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 -T 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/nrue.uicc.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 -T 1 > ue.log 2>&1
 # The "-T 1" option means TDD config
 ```
 
@@ -268,7 +268,7 @@ For example, running with 4 UEs:
 ```bash
 $ ssh sudousername@machineC
 cd ue_folder/cmake_targets
-sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/ue.nfapi.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
+sudo -E ./ran_build/build/lte-uesoftmodem -O ../ci-scripts/conf_files/nrue.uicc.conf --L2-emul 3 --num-ues 64 --nums_ue_thread 1 > ue.log 2>&1
 sleep 10
 ifconfig
 ens3      Link encap:Ethernet  HWaddr XX:XX:XX:XX:XX:XX

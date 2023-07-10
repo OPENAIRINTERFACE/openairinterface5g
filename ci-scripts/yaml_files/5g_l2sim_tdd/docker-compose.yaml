@@ -174,7 +174,7 @@ services:
             - oai-spgwu
             - oai-amf
         volumes:
-            - ../../conf_files/gnb.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
+            - ../../conf_files/gnb.sa.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
         healthcheck:
             test: /bin/bash -c "pgrep nr-softmodem"
             interval: 10s

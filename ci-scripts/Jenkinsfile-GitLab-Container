@@ -464,6 +464,26 @@ pipeline {
             }
           }
         }
+        stage ("SA-OAIUE-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerCN5GSlaveJob ('RAN-SA-OAIUE-CN5G', 'RAN-SA-OAIUE-CN5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-OAIUE-CN5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
       }
     }
     stage ("DockerHub-Push") {

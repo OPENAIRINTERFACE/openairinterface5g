@@ -340,6 +340,8 @@
 #include "F1AP_Cells-To-Be-Broadcast-Item.h"
 #include "F1AP_QCI.h"
 
+#include "f1ap_default_values.h"
+
 #include "conversions.h"
 #include "platform_types.h"
 #include "common/utils/LOG/log.h"
@@ -359,22 +361,13 @@
 
 #include "assertions.h"
 
-#if defined(ENB_MODE)
-  #include "common/utils/LOG/log.h"
-  #include "f1ap_default_values.h"
-  #define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
-  #define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
-  #define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
-  #define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
-  #define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
-#else
-  //# include "mme_default_values.h"
-  #define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
-  #define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
-  #define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
-  #define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
-  #define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "f1ap_default_values.h"
+#define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
+#define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
+#define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
+#define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
+#define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
 
 //Forward declaration
 #define F1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \

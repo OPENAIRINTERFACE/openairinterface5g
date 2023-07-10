@@ -2552,17 +2552,22 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
 
   uint16_t *vrb_map = gNB_mac->common_channels[CC_id].vrb_map;
 
-  UE_info->sched_csirs = false;
+  UE_info->sched_csirs = 0;
 
   UE_iterator(UE_info->list, UE) {
+    NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
 
+    // CSI-RS is common to all UEs in a given BWP
+    // therefore we need to schedule only once per BWP
+    // the following condition verifies if CSI-RS
+    // has been already scheduled in this BWP
+    if (UE_info->sched_csirs & (1 << dl_bwp->bwp_id))
+      continue;
     NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
     if (sched_ctrl->rrc_processing_timer > 0) {
       continue;
     }
-
-    NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
-    NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
 
     if (!ul_bwp->csi_MeasConfig) continue;
 
@@ -2598,8 +2603,9 @@ void nr_csirs_scheduling(int Mod_idP, frame_t frame, sub_frame_t slot, int n_slo
 
         if((frame*n_slots_frame+slot-offset)%period == 0) {
 
-          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n",frame,slot,nzpcsi->nzp_CSI_RS_ResourceId);
-          UE_info->sched_csirs = true;
+          LOG_D(NR_MAC,"Scheduling CSI-RS in frame %d slot %d Resource ID %ld\n",
+                frame, slot, nzpcsi->nzp_CSI_RS_ResourceId);
+          UE_info->sched_csirs |= (1 << dl_bwp->bwp_id);
 
           nfapi_nr_dl_tti_request_pdu_t *dl_tti_csirs_pdu = &dl_req->dl_tti_pdu_list[dl_req->nPDUs];
           memset((void*)dl_tti_csirs_pdu,0,sizeof(nfapi_nr_dl_tti_request_pdu_t));

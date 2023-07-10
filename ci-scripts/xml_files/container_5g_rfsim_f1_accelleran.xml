@@ -58,11 +58,11 @@
         </testCase>
 
         <testCase id="020021">
-                <class>PingFromContainer</class>
+                <class>Ping</class>
                 <desc>Test Connectivity (ping)</desc>
-                <container_name>rfsim5g-oai-nr-ue</container_name>
-                <options>-I oaitun_ue1 -c 20 12.1.1.1</options>
-                <loss_threshold>0</loss_threshold>
+                <id>rfsim5g_ue</id>
+                <ping_args>-c 20 12.1.1.1</ping_args>
+                <ping_packetloss_threshold>0</ping_packetloss_threshold>
         </testCase>
 
         <testCase id="100022">

@@ -20,6 +20,7 @@
 - [GET_SOURCES.md](./GET_SOURCES.md): how to download the sources
 - [BUILD.md](./BUILD.md): how to build the sources
 - [clang-format.md](./clang-format.md): how to format the code
+- [environment-variables.md](./environment-variables.md): the environment variables used by OAI
 
 There is some general information in the [OpenAirInterface Gitlab Wiki](https://gitlab.eurecom.fr/oai/openairinterface5g/-/wikis/home)
 
@@ -43,6 +44,7 @@ There is some general information in the [OpenAirInterface Gitlab Wiki](https://
 - [How to run OAI-VNF and OAI-PNF](./RUN_NR_NFAPI.md) _Note: does not work currently_
 - [How to use the positioning reference signal (PRS)](./RUN_NR_PRS.md)
 - [How to use device-to-device communication (D2D, 4G)](./d2d_emulator_setup.txt)
+- [How to run with E2 agent](../openair2/E2AP/README.md)
 
 Legacy unmaintained files:
 - `L2NFAPI_NOS1.md`, `L2NFAPI_S1.md`: old L2simulator, not valid anymore

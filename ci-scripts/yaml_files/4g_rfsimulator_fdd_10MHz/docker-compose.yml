@@ -188,7 +188,6 @@ services:
                 ipv4_address: 192.168.61.20
         environment:
             TZ: Europe/Paris
-            RFSIMULATOR: enb
             USE_ADDITIONAL_OPTIONS: --rfsim --log_config.global_log_options level,nocolor,time
         volumes:
             - ../../conf_files/enb.band7.50prb.rfsim.conf:/opt/oai-enb/etc/enb.conf
@@ -209,8 +208,7 @@ services:
             - "10000"
         environment:
             TZ: Europe/Paris
-            RFSIMULATOR: 192.168.61.20
-            USE_ADDITIONAL_OPTIONS: --rfsim -C 2680000000 -r 50 --ue-rxgain 140 --ue-txgain 120 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: --rfsim -C 2680000000 -r 50 --ue-rxgain 140 --ue-txgain 120 --rfsimulator.serveraddr 192.168.61.20 --log_config.global_log_options level,nocolor,time
         volumes: 
             - ../../conf_files/lteue.usim-ci.conf:/opt/oai-lte-ue/etc/ue_usim.conf
         healthcheck:

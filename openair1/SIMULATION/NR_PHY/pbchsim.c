@@ -648,12 +648,13 @@ int main(int argc, char **argv)
 
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
           if (cyclic_prefix_type == 1) {
-            apply_nr_rotation(frame_parms,
-                              gNB->common_vars.txdataF[aa],
-                              slot,
-                              0,
-                              12,
-                              link_type_dl);
+            apply_nr_rotation_TX(frame_parms,
+                                 gNB->common_vars.txdataF[aa],
+                                 frame_parms->symbol_rotation[0],
+                                 slot,
+                                 frame_parms->N_RB_DL,
+                                 0,
+                                 12);
 
             PHY_ofdm_mod((int *)gNB->common_vars.txdataF[aa],
             (int *)&txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],
@@ -662,12 +663,13 @@ int main(int argc, char **argv)
             frame_parms->nb_prefix_samples,
             CYCLIC_PREFIX);
           } else {
-            apply_nr_rotation(frame_parms,
-                              gNB->common_vars.txdataF[aa],
-                              slot,
-                              0,
-                              14,
-                              link_type_dl);
+            apply_nr_rotation_TX(frame_parms,
+                                 gNB->common_vars.txdataF[aa],
+                                 frame_parms->symbol_rotation[0],
+                                 slot,
+                                 frame_parms->N_RB_DL,
+                                 0,
+                                 14);
 
             /*nr_normal_prefix_mod(gNB->common_vars.txdataF[aa],
               &txdata[aa][frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)],

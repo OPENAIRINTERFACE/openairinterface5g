@@ -59,9 +59,6 @@ COPY --from=nr-ue-build \
     ./
 COPY ./docker/scripts/nr_ue_entrypoint.sh ./entrypoint.sh
 WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build \
-    /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
-    ./
 
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
@@ -78,6 +75,7 @@ COPY --from=nr-ue-build \
 COPY --from=nr-ue-base \
     /lib64/libconfig.so.11 \
     /lib64/libblas.so.3 \
+    /lib64/libcblas.so.3 \
     /lib64/liblapack.so.3 \
     /lib64/liblapacke.so.3 \
     /lib64/libforms.so.2 \

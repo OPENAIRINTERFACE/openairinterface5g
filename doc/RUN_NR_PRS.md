@@ -71,7 +71,7 @@ If **N310 USRPs** are used, then run above command `without -E option` i.e witho
 
 To run using **rfsimulator**, execute following command:  
 
-```sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
+```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
 
 ## FR2 test
 In FR2 mode, we need RF beamforming module to transmit signal in mmWave frequency range. **X310 USRPs** can be used with BasicTx daughtercard to transmit baseband signal at **Intermediate Frequncy(IF)** and then RF beamforming module would perform beamforming and the upconversion to FR2 frequencies. IF can be specified using `if_freq` in the RU section of gNB config.
@@ -83,7 +83,7 @@ If RF beamforming module is NOT present, gNB can still be launched with USRP alo
 
 To run using **rfsimulator**, execute following command:  
 
-```sudo RFSIMULATOR=server ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band261.fr2.64PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
+```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band261.fr2.64PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
 
 ## Multiple gNB scenario
 PRS is primarily used for positioning and localization of the UE with multiple gNBs transmitting simultaneously. OAI PRS implementation supports multiple gNB transmission provided all the gNBs are tightely synchronized using GPSDO clock. Therefore before running this scenario, make sure the USRPs has built-in GPSDO and the GPS antennas are connected with good satellite visibility. Also every time a gNB is launched, wait until `GPS LOCKED` is printed on the terminal during gNB startup. If USRP fails to lock with GPSDO, try again until its locked.
@@ -112,7 +112,9 @@ If **N310 USRPs** are used, then run above command `without -E option` i.e witho
 
 To run using **rfsimulator** with local ETH IF `127.0.0.1`, execute following command:  
 
-```sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --rfsim --phy-test --noS1 -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/ue.nr.prs.fr1.106prb.conf```  
+```
+sudo ./nr-uesoftmodem --rfsim --phy-test --noS1 -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/ue.nr.prs.fr1.106prb.conf --rfsimulator.serveraddr 127.0.0.1
+```
 
 ## FR2 test
 Like gNB, RF beamforming module is receiving at mmWave frequencies and then **X310 USRPs** with BasicRx daughtercard to receive the signal at intermediate frequncy(IF) from RF beamforming module. IF can be specified using `--if_freq` option in nrUE command line.
@@ -124,7 +126,9 @@ If RF beamforming module is NOT present, nrUE can still be launched with USRP al
 
 To run using **rfsimulator** with local ETH IF `127.0.0.1`, execute following command:  
 
-```sudo RFSIMULATOR=127.0.0.1 ./nr-uesoftmodem --rfsim --phy-test --noS1 -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/ue.nr.prs.fr2.64prb.conf```
+```
+sudo ./nr-uesoftmodem --rfsim --phy-test --noS1 -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/ue.nr.prs.fr2.64prb.conf --rfsimulator.serveraddr 127.0.0.1
+```
 
 ## Multiple gNB scenario
 In nrUE prs config file, change `Active_gNBs` to the actual number of gNBs launched. Also verify the parameter in `prs_config` sections of nrUE config is matching with that of gNB config used. And launch nrUE using one of the above commands depending on FR1/FR2 test scenario.

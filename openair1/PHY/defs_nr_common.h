@@ -169,6 +169,8 @@ struct NR_DL_FRAME_PARMS {
   /// Frame type (0 FDD, 1 TDD)
   frame_type_t frame_type;
   uint8_t tdd_config;
+  /// Sidelink Cell ID
+  uint16_t Nid_SL;
   /// Cell ID
   uint16_t Nid_cell;
   /// subcarrier spacing (15,30,60,120)
@@ -260,6 +262,8 @@ struct NR_DL_FRAME_PARMS {
   uint8_t ssb_index;
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;
+  uint16_t tdd_slot_config;
+  uint8_t tdd_period;
 };
 
 // PRS config structures

@@ -167,7 +167,6 @@ services:
         privileged: true
         container_name: rfsim5g-oai-gnb
         environment:
-            RFSIMULATOR: server
             USE_ADDITIONAL_OPTIONS: --sa -E --rfsim --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-ext-dn
@@ -186,8 +185,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue
         environment: 
-            RFSIMULATOR: 192.168.71.140
-            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001100 -C 3619200000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001100 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-gnb
         networks:
@@ -206,8 +204,7 @@ services:
         privileged: true
         container_name: rfsim5g-oai-nr-ue2
         environment: 
-            RFSIMULATOR: 192.168.71.140
-            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --log_config.global_log_options level,nocolor,time
+            USE_ADDITIONAL_OPTIONS: -E --sa --rfsim -r 106 --numerology 1 --uicc0.imsi 208990100001101 -C 3619200000 --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
         depends_on:
             - oai-gnb
         networks:

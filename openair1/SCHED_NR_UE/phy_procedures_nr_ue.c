@@ -164,15 +164,18 @@ void nr_fill_rx_indication(fapi_nr_rx_indication_t *rx_ind,
           fapiPbch_t *pbch = (fapiPbch_t *)typeSpecific;
           memcpy(ssb_pdu->pdu, pbch->decoded_output, sizeof(pbch->decoded_output));
           ssb_pdu->additional_bits = pbch->xtra_byte;
-          ssb_pdu->ssb_index = (frame_parms->ssb_index)&0x7;
+          ssb_pdu->ssb_index = (frame_parms->ssb_index) & 0x7;
           ssb_pdu->ssb_length = frame_parms->Lmax;
           ssb_pdu->cell_id = frame_parms->Nid_cell;
           ssb_pdu->ssb_start_subcarrier = frame_parms->ssb_start_subcarrier;
           ssb_pdu->rsrp_dBm = ue->measurements.ssb_rsrp_dBm[frame_parms->ssb_index];
+          ssb_pdu->radiolink_monitoring = RLM_in_sync; // TODO to be removed from here
           ssb_pdu->decoded_pdu = true;
         }
-        else
+        else {
+          ssb_pdu->radiolink_monitoring = RLM_out_of_sync; // TODO to be removed from here
           ssb_pdu->decoded_pdu = false;
+        }
       }
     break;
     case FAPI_NR_CSIRS_IND:

@@ -103,7 +103,7 @@ Replaces xml_files/enb_usrp210_band40_test_20mhz_tm1_default_scheduler.xml
     <testCase id="040522">
         <class>Ping</class>
         <desc>ping (20MHz - 20 sec)</desc>
-        <ping_args>-c 20</ping_args>
+        <ping_args>-c 20 %cn_ip%</ping_args>
         <ping_packetloss_threshold>25</ping_packetloss_threshold>
         <id>adb_ue_1 adb_ue_2</id>
     </testCase>

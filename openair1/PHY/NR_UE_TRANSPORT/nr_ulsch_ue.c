@@ -592,16 +592,12 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
                                       uint8_t slot,
                                       NR_DL_FRAME_PARMS *frame_parms,
-                                      uint8_t n_antenna_ports) {
-
-  int tx_offset, ap;
-  c16_t **txdata;
-  c16_t **txdataF;
-
+                                      uint8_t n_antenna_ports)
+{
   /////////////////////////IFFT///////////////////////
   ///////////
 
-  tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
+  int tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
 
   // clear the transmit data array for the current subframe
   /*for (int aa=0; aa<UE->frame_parms.nb_antennas_tx; aa++) {
@@ -610,38 +606,20 @@ uint8_t nr_ue_pusch_common_procedures(PHY_VARS_NR_UE *UE,
   }*/
 
 
-  txdata = UE->common_vars.txdata;
-  txdataF = UE->common_vars.txdataF;
+  c16_t **txdata = UE->common_vars.txdata;
+  c16_t **txdataF = UE->common_vars.txdataF;
 
-  int symb_offset = (slot%frame_parms->slots_per_subframe)*frame_parms->symbols_per_slot;
-  for(ap = 0; ap < n_antenna_ports; ap++) {
-    for (int s=0;s<NR_NUMBER_OF_SYMBOLS_PER_SLOT;s++){
-      c16_t *this_symbol = &txdataF[ap][frame_parms->ofdm_symbol_size * s];
-      c16_t rot=frame_parms->symbol_rotation[link_type_ul][s + symb_offset];
-      LOG_D(PHY,"rotating txdataF symbol %d (%d) => (%d.%d)\n",
-	    s,
-	    s + symb_offset,
-	    rot.r, rot.i);
-
-      if (frame_parms->N_RB_UL & 1) {
-        rotate_cpx_vector(this_symbol, &rot, this_symbol,
-                          (frame_parms->N_RB_UL + 1) * 6, 15);
-        rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset - 6,
-                          &rot,
-                          this_symbol + frame_parms->first_carrier_offset - 6,
-                          (frame_parms->N_RB_UL + 1) * 6, 15);
-      } else {
-        rotate_cpx_vector(this_symbol, &rot, this_symbol,
-                          frame_parms->N_RB_UL * 6, 15);
-        rotate_cpx_vector(this_symbol + frame_parms->first_carrier_offset,
-                          &rot,
-                          this_symbol + frame_parms->first_carrier_offset,
-                          frame_parms->N_RB_UL * 6, 15);
-      }
-    }
+  for(int ap = 0; ap < n_antenna_ports; ap++) {
+    apply_nr_rotation_TX(frame_parms,
+                         txdataF[ap],
+                         frame_parms->symbol_rotation[1],
+                         slot,
+                         frame_parms->N_RB_UL,
+                         0,
+                         NR_NUMBER_OF_SYMBOLS_PER_SLOT);
   }
 
-  for (ap = 0; ap < n_antenna_ports; ap++) {
+  for (int ap = 0; ap < n_antenna_ports; ap++) {
     if (frame_parms->Ncp == 1) { // extended cyclic prefix
       PHY_ofdm_mod((int *)txdataF[ap],
                    (int *)&txdata[ap][tx_offset],

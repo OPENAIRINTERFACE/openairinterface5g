@@ -219,14 +219,6 @@ static void socketError(rfsimulator_state_t *bridge, int sock) {
   }
 }
 
-#define helpTxt "\
-\x1b[31m\
-rfsimulator: error: you have to run one UE and one eNB\n\
-For this, export RFSIMULATOR=enb (eNB case) or \n\
-                 RFSIMULATOR=<an ip address> (UE case)\n\
-                 or use rfsimulator.serveraddr configuration option\n\
-\x1b[m"
-
 enum  blocking_t {
   notBlocking,
   blocking
@@ -312,6 +304,9 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
   /* for compatibility keep environment variable usage */
   if ( getenv("RFSIMULATOR") != NULL ) {
     rfsimulator->ip=getenv("RFSIMULATOR");
+    LOG_W(HW, "The RFSIMULATOR environment variable is deprecated and support will be removed in the future. Instead, add parameter --rfsimulator.serveraddr %s to set the server address. Note: the default is \"server\"; for the gNB/eNB, you don't have to set any configuration.\n", rfsimulator->ip);
+    LOG_I(HW, "Remove RFSIMULATOR environment variable to get rid of this message and the sleep.\n");
+    sleep(10);
   }
 
   if ( strncasecmp(rfsimulator->ip,"enb",3) == 0 ||

@@ -367,12 +367,9 @@ typedef struct {
 } PUCCH_sched_t;
 
 typedef struct {
-
   uint32_t ssb_index;
   /// SSB RSRP in dBm
   short ssb_rsrp_dBm;
-  int consecutive_bch_failures;
-
 } NR_SSB_meas_t;
 
 typedef struct NR_UL_TIME_ALIGNMENT {
@@ -423,7 +420,7 @@ typedef struct {
   ///     Type0-PDCCH seach space
   fapi_nr_dl_config_dci_dl_pdu_rel15_t type0_pdcch_dci_config;
   uint32_t type0_pdcch_ss_mux_pattern;
-  SFN_C_TYPE type0_pdcch_ss_sfn_c;
+  int type0_pdcch_ss_sfn_c;
   uint32_t type0_pdcch_ss_n_c;
   uint32_t type0_pdcch_consecutive_slots;
 

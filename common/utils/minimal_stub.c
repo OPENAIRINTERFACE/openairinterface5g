@@ -1,3 +1,5 @@
+#include <stdlib.h>
+
 #ifndef T_TRACER
 int T_stdout;
 #endif

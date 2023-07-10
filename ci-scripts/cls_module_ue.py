@@ -54,7 +54,7 @@ class Module_UE:
 				"detach": m.get('DetachScript'),
 				"initialize": m.get('InitScript'),
 				"terminate": m.get('TermScript'),
-				"getNetwork": m.get('UENetworkScript'),
+				"getNetwork": m.get('NetworkScript'),
 				"check": m.get('CheckStatusScript'),
 				"dataEnable": m.get('DataEnableScript'),
 				"dataDisable": m.get('DataDisableScript'),
