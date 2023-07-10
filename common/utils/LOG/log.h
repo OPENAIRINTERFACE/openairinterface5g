@@ -51,7 +51,6 @@
   #define _GNU_SOURCE
 #endif
 #include <pthread.h>
-#include "T.h"
 #include <common/utils/utils.h>
 /*----------------------------------------------------------------------------*/
 #include <assert.h>
@@ -414,6 +413,7 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
 
 #  if T_TRACER
+#include "T.h"
 /* per component, level dependent macros */
 #    define LOG_E(c, x...) do { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR     ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} } while (0)
 #    define LOG_W(c, x...) do { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)); if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} } while (0)
