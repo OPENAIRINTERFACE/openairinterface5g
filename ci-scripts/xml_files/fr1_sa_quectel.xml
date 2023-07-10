@@ -86,7 +86,7 @@
 	<testCase id="040000">
 		<class>Initialize_eNB</class>
 		<desc>Initialize gNB</desc>
-		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.band78.sa.fr1.106PRB.ddsuu.2x2.usrpn310.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --tune-offset 30000000 --thread-pool 1,3,5,7,9,11,13,15 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.sa.band78.106prb.usrpn310.ddsuu-2x2.conf --sa -q --usrp-tx-thread-config 1 --T_stdout 2 --tune-offset 30000000 --thread-pool 1,3,5,7,9,11,13,15 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
 		<eNB_instance>0</eNB_instance>
 		<eNB_serverId>0</eNB_serverId>
 		<air_interface>nr</air_interface>
@@ -114,7 +114,7 @@
 		<class>Ping</class>
 		<desc>Ping: 40pings in 40sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 40</ping_args>
+		<ping_args>-c 40 %cn_ip%</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
 		<ping_rttavg_threshold>10</ping_rttavg_threshold>
 	</testCase>
@@ -123,7 +123,7 @@
 		<class>Ping</class>
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>nrmodule2_quectel</id>
-		<ping_args>-c 100 -i 0,2</ping_args>
+		<ping_args>-c 100 -i 0,2 %cn_ip%</ping_args>
 		<ping_packetloss_threshold>1</ping_packetloss_threshold>
 		<ping_rttavg_threshold>10</ping_rttavg_threshold>
 	</testCase>

@@ -511,37 +511,34 @@ class OaiCiTest():
 			return (False, f"UE {ue.getName()} has no IP address")
 		ping_log_file = f'ping_{self.testCase_id}_{ue.getName()}.log'
 		ping_time = re.findall("-c *(\d+)",str(self.ping_args))
-		#target address is different depending on EPC type
-		if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
-			Target = EPC.MmeIPAddress
-		elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
-			Target = EPC.MmeIPAddress
-		elif re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE):
-			Target = "172.21.6.100"
-		else:
-			Target = EPC.IPAddress
+		local_ping_log_file = f'{os.getcwd()}/{ping_log_file}'
+		# if has pattern %cn_ip%, replace with core IP address, else we assume the IP is present
+		if re.search('%cn_ip%', self.ping_args):
+			#target address is different depending on EPC type
+			if re.match('OAI-Rel14-Docker', EPC.Type, re.IGNORECASE):
+				self.ping_args = re.sub('%cn_ip%', EPC.MmeIPAddress, self.ping_args)
+			elif re.match('OAICN5G', EPC.Type, re.IGNORECASE):
+				self.ping_args = re.sub('%cn_ip%', EPC.MmeIPAddress, self.ping_args)
+			elif re.match('OC-OAI-CN5G', EPC.Type, re.IGNORECASE):
+				self.ping_args = re.sub('%cn_ip%', '172.21.6.100', self.ping_args)
+			else:
+				self.ping_args = re.sub('%cn_ip%', EPC.IPAddress, self.ping_args)
 		#ping from module NIC rather than IP address to make sure round trip is over the air
 		interface = f'-I {ue.getIFName()}' if ue.getIFName() else ''
-		ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {self.ping_args} {Target} &> /tmp/{ping_log_file}'
+		ping_cmd = f'{ue.getCmdPrefix()} ping {interface} {self.ping_args} 2>&1 | tee /tmp/{ping_log_file}'
 		cmd = cls_cmd.getConnection(ue.getHost())
 		response = cmd.run(ping_cmd, timeout=int(ping_time[0])*1.5)
 		if response.returncode != 0:
-			ping_status = -1
-		else:
-			#copy the ping log file to have it locally for analysis (ping stats)
-			cmd.copyin(src=f'/tmp/{ping_log_file}', tgt=ping_log_file)
-
-		cmd.close()
-
-		# TIMEOUT CASE
-		ue_header = f'UE {ue.getName()} ({ueIP})'
-		if ping_status < 0:
 			message = ue_header + ': ping crashed: TIMEOUT?'
 			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
 			return (False, message)
-		#search is done on cat result
-		logging.debug('Analyzing Ping log file : ' + os.getcwd() + '/' + ping_log_file)
-		with open(ping_log_file, 'r') as f:
+
+		#copy the ping log file to have it locally for analysis (ping stats)
+		cmd.copyin(src=f'/tmp/{ping_log_file}', tgt=local_ping_log_file)
+		cmd.close()
+
+		ue_header = f'UE {ue.getName()} ({ueIP})'
+		with open(local_ping_log_file, 'r') as f:
 			ping_output = "".join(f.readlines())
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', ping_output)
 		if result is None:
@@ -1062,7 +1059,7 @@ class OaiCiTest():
 			cmd = cls_cmd.getConnection(ue.getHost())
 			cmd.run(f'rm /tmp/{server_filename}', reportNonZero=False)
 			port = f'{5002+idx}'
-			cmd.run(f'{ue.getCmdPrefix()} iperf3 -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
+			cmd.run(f'{ue.getCmdPrefix()} iperf3 -B {ue.getIP()} -c {cn_target_ip} -p {port} {iperf_opt} --get-server-output &> /tmp/{server_filename}', timeout=iperf_time*1.5)
 			cmd.copyin(f'/tmp/{server_filename}', server_filename)
 			cmd.close()
 			if udpIperf:

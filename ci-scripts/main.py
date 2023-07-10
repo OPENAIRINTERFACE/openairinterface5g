@@ -374,17 +374,6 @@ def GetParametersFromXML(action):
 		if (string_field is not None):
 			CONTAINERS.ran_checkers['u_retx_th'] = [float(x) for x in string_field.split(',')]
 
-	elif action == 'PingFromContainer':
-		string_field = test.findtext('container_name')
-		if (string_field is not None):
-			CONTAINERS.pingContName = string_field
-		string_field = test.findtext('options')
-		if (string_field is not None):
-			CONTAINERS.pingOptions = string_field
-		string_field = test.findtext('loss_threshold')
-		if (string_field is not None):
-			CONTAINERS.pingLossThreshold = string_field
-
 	elif action == 'IperfFromContainer':
 		string_field = test.findtext('server_container_name')
 		if (string_field is not None):
@@ -431,10 +420,12 @@ def GetParametersFromXML(action):
 		RAN.command = test.findtext('command')
 		RAN.command_fail = test.findtext('command_fail') in ['True', 'true', 'Yes', 'yes']
 	elif action == 'Pull_Cluster_Image':
-		# CLUSTER.imageToPull.clear()
 		string_field = test.findtext('images_to_pull')
 		if (string_field is not None):
 			CLUSTER.imageToPull = string_field.split()
+		string_field = test.findtext('test_svr_id')
+		if (string_field is not None):
+			CLUSTER.testSvrId = string_field
 	else:
 		logging.warning(f"unknown action {action} from option-parsing point-of-view")
 
@@ -879,10 +870,6 @@ elif re.match('^TesteNB$', mode, re.IGNORECASE) or re.match('^TestUE$', mode, re
 						RAN.prematureExit = True
 				elif action == 'UndeployGenObject':
 					CONTAINERS.UndeployGenObject(HTML, RAN, CiTestObj)
-					if CONTAINERS.exitStatus==1:
-						RAN.prematureExit = True
-				elif action == 'PingFromContainer':
-					CONTAINERS.PingFromContainer(HTML, RAN, CiTestObj)
 					if CONTAINERS.exitStatus==1:
 						RAN.prematureExit = True
 				elif action == 'IperfFromContainer':

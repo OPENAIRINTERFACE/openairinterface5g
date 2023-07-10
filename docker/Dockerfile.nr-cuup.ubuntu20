@@ -52,6 +52,8 @@ COPY --from=gnb-build \
     /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
     /usr/local/lib/
 
+RUN ldconfig && ldd /opt/oai-gnb/bin/nr-cuup
+
 # Create directory for configuration files
 WORKDIR /opt/oai-gnb/etc
 

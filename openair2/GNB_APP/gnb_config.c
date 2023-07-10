@@ -51,7 +51,7 @@
 // #include "LAYER2/MAC/extern.h"
 // #include "LAYER2/MAC/proto.h"
 #include "PHY/INIT/nr_phy_init.h"
-#include "radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "radio/ETHERNET/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 #include "nr_pdcp/nr_pdcp_oai_api.h"
@@ -115,6 +115,7 @@ const sync_raster_t sync_raster[] = {
   {40, 0, 5756, 1, 5995},
   {41, 0, 6246, 3, 6717},
   {41, 1, 6252, 3, 6714},
+  {48, 1, 7884, 1, 7982},
   {50, 0, 3584, 1, 3787},
   {51, 0, 3572, 1, 3574},
   {66, 0, 5279, 1, 5494},
@@ -2363,3 +2364,26 @@ void nr_read_config_and_init(void) {
     nr_pdcp_layer_init();
   }
 }
+
+#ifdef E2_AGENT
+
+e2_agent_args_t RCconfig_NR_E2agent(void)
+{
+  paramdef_t e2agent_params[] = E2AGENT_PARAMS_DESC;
+  int ret = config_get(e2agent_params, sizeof(e2agent_params) / sizeof(paramdef_t), CONFIG_STRING_E2AGENT);
+  if (ret < 0) {
+    LOG_W(GNB_APP, "configuration file does not contain a \"%s\" section, applying default parameters from FlexRIC\n", CONFIG_STRING_E2AGENT);
+    return (e2_agent_args_t) { 0 };
+  }
+  e2_agent_args_t dst = {0};
+
+  if (e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr != NULL)
+    dst.sm_dir = *e2agent_params[E2AGENT_CONFIG_SMDIR_IDX].strptr;
+
+  if (e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr != NULL)
+    dst.ip = *e2agent_params[E2AGENT_CONFIG_IP_IDX].strptr;
+
+  return dst;
+}
+
+#endif // E2_AGENT

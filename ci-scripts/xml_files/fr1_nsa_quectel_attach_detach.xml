@@ -109,7 +109,7 @@
 		<class>Ping</class>
 		<desc>Ping: 20pings in 20sec</desc>
 		<id>idefix</id>
-		<ping_args>-c 20</ping_args>
+		<ping_args>-c 20 %cn_ip%</ping_args>
 		<ping_packetloss_threshold>50</ping_packetloss_threshold>
 	</testCase>
 
@@ -117,7 +117,7 @@
 		<class>Ping</class>
 		<desc>Ping: 100pings in 20sec</desc>
 		<id>idefix</id>
-		<ping_args>-c 100 -i 0.2</ping_args>
+		<ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
 		<ping_packetloss_threshold>50</ping_packetloss_threshold>
 	</testCase>
 

@@ -182,7 +182,7 @@ Returns the total number of jobs that were aborted, i.e., waiting for execution 
 
 ## Performance measurements
 
-A performance measurement is integrated: the pool will automacillay fill timestamps if you set the environement variable `threadPoolMeasurements` to a valid file name.  The following measurements will be written to Linux pipe on a per-job basis:
+A performance measurement is integrated: the pool will automacillay fill timestamps if you set the environement variable `OAI_THREADPOOLMEASUREMENTS` to a valid file name.  The following measurements will be written to Linux pipe on a per-job basis:
 
 * `creationTime`: time the request is push to the pool;
 * `startProcessingTime`: time a worker start to run on the job
@@ -193,6 +193,6 @@ The `measurement_display` tool to read the Linux pipe and display it in ASCII is
 In the cmake build directory, type `make/ninja measurement_display`. Use as
 follows:
 ```
-sudo threadPoolMeasurements=tpool.meas ./nr-softmodem ...
+sudo OAI_THREADPOOLMEASUREMENTS=tpool.meas ./nr-softmodem ...
 ./measurement_display tpool.meas
 ```

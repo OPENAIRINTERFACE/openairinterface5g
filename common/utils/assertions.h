@@ -33,7 +33,7 @@
 #define OAI_EXIT_ASSERT 1
 
 #define _Assert_Exit_							\
-  if (getenv("gdbStacks")) {						\
+  if (getenv("OAI_GDBSTACKS")) {						\
     char tmp [1000];							\
     sprintf(tmp,"gdb -ex='set confirm off' -ex 'thread apply all bt' -ex q -p %d < /dev/null", getpid());  \
     __attribute__((unused)) int dummy=system(tmp);						\

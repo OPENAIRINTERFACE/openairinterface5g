@@ -61,6 +61,14 @@ Note: The available resources, and their current usage, is indicated here:
 
 [PDF version](testbenches_doc_resources/5g-aw2s-bench.pdf) | [LaTeX/TikZ version](testbenches_doc_resources/5g-aw2s-bench.tex) if you want to modify to reflect your setup
 
+### 5G UE OTA Testbench
+
+**Purpose**: Over-the-air 5G tests with OAI UE
+
+![OAI UE Testbench](testbenches_doc_resources/5g-nrue-bench.png)
+
+[PDF version](testbenches_doc_resources/5g-nrue-bench.pdf) | [LaTeX/TikZ version](testbenches_doc_resources/5g-nrue-bench.tex) if you want to modify to reflect your setup
+
 ### 4G Testbench(es)
 
 **Purpose**: 4G/LTE testbenches
@@ -121,6 +129,9 @@ Webhook
 - [RAN-SA-B200-Module-SABOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-SA-B200-Module-SABOX-Container/)
   - ofqot + B200, idefix + Quectel, nepes w/ sabox
   - basic SA test (20 MHz TDD), F1, reestablishment, ...
+- [RAN-SA-OAIUE-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-OAIUE-CN5G/)
+  - 5G-NR SA test setup: gNB on avra(RHEL9.2) + N310, OAIUE on caracal(RHEL9.1) + N310, OAI CN5G
+  - OpenShift cluster for CN deployment and container images for gNB and UE deployment
 - [RAN-Ubuntu18-Image-Builder](https://jenkins-oai.eurecom.fr/job/RAN-Ubuntu18-Image-Builder/)
   - obelix: Ubuntu 20 image build using docker (Note: builds U20 images while pipeline is named U18!)
 
@@ -134,9 +145,6 @@ Webhook
 - [RAN-SA-Module-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-Module-CN5G/)
   - asterix + N310 (gNB), nrmodule2 + Quectel, porcepix w/ OAI 5GC
   - NR 2x2 (standalone)
-- [RAN-SA-OAIUE-N310-X300-CN5G](https://jenkins-oai.eurecom.fr/job/RAN-SA-OAIUE-N310-X300-CN5G/)
-  - asterix + N310 (gNB), obelix + N310 or X300 (5G UE), porcepix w/ OAI 5GC
-  - OTA test with OAIUE using both N310 and X300
 - [RAN-SA-AmariS-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-AmariS-CN5G/)
   - asterix + N310, amariue (1x UE), porcepix w/ OAI 5GC
   - Amarisoft UE simulator: expected to be increased to more UEs

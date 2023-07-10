@@ -52,21 +52,13 @@
 
 extern int asn1_xer_print;
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "s1ap_eNB_default_values.h"
-# define S1AP_ERROR(x, args...) LOG_E(S1AP, x, ##args)
-# define S1AP_WARN(x, args...)  LOG_W(S1AP, x, ##args)
-# define S1AP_TRAF(x, args...)  LOG_I(S1AP, x, ##args)
-# define S1AP_INFO(x, args...) LOG_I(S1AP, x, ##args)
-# define S1AP_DEBUG(x, args...) LOG_I(S1AP, x, ##args)
-#else
-# define S1AP_ERROR(x, args...) do { fprintf(stdout, "[S1AP][E]"x, ##args); } while(0)
-# define S1AP_WARN(x, args...)  do { fprintf(stdout, "[S1AP][W]"x, ##args); } while(0)
-# define S1AP_TRAF(x, args...)  do { fprintf(stdout, "[S1AP][T]"x, ##args); } while(0)
-# define S1AP_INFO(x, args...) do { fprintf(stdout, "[S1AP][I]"x, ##args); } while(0)
-# define S1AP_DEBUG(x, args...) do { fprintf(stdout, "[S1AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "s1ap_eNB_default_values.h"
+#define S1AP_ERROR(x, args...) LOG_E(S1AP, x, ##args)
+#define S1AP_WARN(x, args...)  LOG_W(S1AP, x, ##args)
+#define S1AP_TRAF(x, args...)  LOG_I(S1AP, x, ##args)
+#define S1AP_INFO(x, args...) LOG_I(S1AP, x, ##args)
+#define S1AP_DEBUG(x, args...) LOG_I(S1AP, x, ##args)
 
 
 #define S1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \

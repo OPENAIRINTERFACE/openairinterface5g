@@ -55,6 +55,8 @@ void randominit(unsigned long seed_init)
   unsigned long seed = seed_init;
   if (seed_init == 0)
     fill_random(&seed, sizeof(seed));
+  if (getenv("OAI_RNGSEED"))
+    seed = atoi(getenv("OAI_RNGSEED"));
   printf("Initializing random number generator, seed %lu\n", seed);
 
   // initialize uniformrandom RNG

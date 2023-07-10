@@ -40,7 +40,7 @@
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
 #include "radio/COMMON/common_lib.h"
-#include "radio/ETHERNET/USERSPACE/LIB/if_defs.h"
+#include "radio/ETHERNET/if_defs.h"
 
 //#undef FRAME_LENGTH_COMPLEX_SAMPLES //there are two conflicting definitions, so we better make sure we don't use it at all
 
@@ -81,6 +81,12 @@ unsigned short config_frames[4] = {2,9,11,13};
 #include "gnb_config.h"
 #include "openair2/E1AP/e1ap_common.h"
 #include "openair2/E1AP/e1ap_api.h"
+
+#ifdef E2_AGENT
+#include "openair2/E2AP/flexric/src/agent/e2_agent_api.h"
+#include "openair2/E2AP/RAN_FUNCTION/init_ran_func.h"
+#endif
+
 
 pthread_cond_t nfapi_sync_cond;
 pthread_mutex_t nfapi_sync_mutex;
@@ -682,6 +688,55 @@ int main( int argc, char **argv ) {
   }
 
   config_sync_var=0;
+
+
+
+
+#ifdef E2_AGENT
+
+//////////////////////////////////
+//////////////////////////////////
+//// Init the E2 Agent
+
+  sm_io_ag_ran_t io = init_ran_func_ag();
+  
+  // OAI Wrapper 
+  e2_agent_args_t oai_args = RCconfig_NR_E2agent();
+  AssertFatal(oai_args.sm_dir != NULL , "Please, specify the directory where the SMs are located in the config file, i.e., e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\");} ");
+  AssertFatal(oai_args.ip != NULL , "Please, specify the IP address of the nearRT-RIC in the config file, i.e., e2_agent = {near_ric_ip_addr = \"127.0.0.1\"; sm_dir = \"/usr/local/lib/flexric/\"");
+
+  fr_args_t args = {.ip = oai_args.ip}; // init_fr_args(0, NULL);
+  memcpy(args.libs_dir, oai_args.sm_dir, 128);
+
+  sleep(1);
+  const gNB_RRC_INST* rrc = RC.nrrrc[0];
+  assert(rrc != NULL && "rrc cannot be NULL");
+
+  const int mcc = rrc->configuration.mcc[0];
+  const int mnc = rrc->configuration.mnc[0];
+  const int mnc_digit_len = rrc->configuration.mnc_digit_length[0];
+  const ngran_node_t node_type = rrc->node_type;
+  int nb_id = 0;
+  int cu_du_id = 0;
+  if (node_type == ngran_gNB) {
+    nb_id = rrc->configuration.cell_identity;
+  } else if (node_type == ngran_gNB_DU) {
+    cu_du_id = rrc->node_id + 1; // Hack to avoid been 0
+    nb_id = rrc->configuration.cell_identity;
+  } else if (node_type == ngran_gNB_CU) {
+    cu_du_id = rrc->node_id + 1;
+    nb_id = rrc->configuration.cell_identity;
+  } else {
+    LOG_E(NR_RRC, "not supported ran type detect\n");
+  }
+     
+  printf("[E2 NODE]: mcc = %d mnc = %d mnc_digit = %d nb_id = %d \n", mcc, mnc, mnc_digit_len, nb_id);
+
+  init_agent_api(mcc, mnc, mnc_digit_len, nb_id, cu_du_id, node_type, io, &args);
+//   }
+
+#endif // E2_AGENT
+
 
   if (NFAPI_MODE==NFAPI_MODE_PNF) {
     wait_nfapi_init("main?");

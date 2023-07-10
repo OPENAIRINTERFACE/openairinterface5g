@@ -1,0 +1,146 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+  <htmlTabRef>TEST-5G-NRUE</htmlTabRef>
+  <htmlTabName>40 MHz TDD SA</htmlTabName>
+  <htmlTabIcon>tasks</htmlTabIcon>
+  <repeatCount>1</repeatCount>
+  <TestCaseRequestedList>
+    010000 010001
+    020000 020001
+    000001
+    001000
+    002000
+    000100
+    000200
+    040001 040000
+  </TestCaseRequestedList>
+  <TestCaseExclusionList></TestCaseExclusionList>
+
+  <testCase id="010000">
+    <class>Pull_Cluster_Image</class>
+    <desc>Pull Images from Cluster</desc>
+    <images_to_pull>oai-gnb</images_to_pull>
+    <test_svr_id>avra</test_svr_id>
+  </testCase>
+
+  <testCase id="010001">
+    <class>Pull_Cluster_Image</class>
+    <desc>Pull Images from Cluster</desc>
+    <images_to_pull>oai-nr-ue</images_to_pull>
+    <test_svr_id>caracal</test_svr_id>
+  </testCase>
+
+  <testCase id = "030000">
+    <class>Custom_Command</class>
+    <desc>Reboot USRP N310</desc>
+    <node>avra</node>
+    <command>ssh root@192.168.80.52 reboot ; sleep 45</command>
+  </testCase>
+
+  <testCase id = "030001">
+    <class>Custom_Command</class>
+    <desc>Reboot USRP N310</desc>
+    <node>caracal</node>
+    <command>ssh root@192.168.20.2 reboot ; sleep 45</command>
+  </testCase>
+
+  <testCase id="020000">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB (TDD/Band78/40MHz/N310) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/5g_sa_n310_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+  </testCase>
+
+  <testCase id="020001">
+    <class>Deploy_Object</class>
+    <desc>Deploy nrUE (TDD/Band78/40MHz/N310) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/5g_sa_n310_nrue</yaml_path>
+    <eNB_instance>1</eNB_instance>
+    <eNB_serverId>1</eNB_serverId>
+  </testCase>
+ 
+  <testCase id="000001">
+    <class>Attach_UE</class>
+    <desc>Attach OAIUE</desc>
+    <id>oai_ue_caracal</id>
+  </testCase>
+
+  <testCase id="000100">
+    <class>Iperf</class>
+    <desc>iperf (DL/20Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 20M -t 30 -i 1 -R</iperf_args>
+    <direction>IPERF3</direction>
+    <id>oai_ue_caracal</id>
+    <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+  </testCase>
+
+  <testCase id="000200">
+    <class>Iperf</class>
+    <desc>iperf (UL/5Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 5M -t 30 -i 1 </iperf_args>
+    <direction>IPERF3</direction>
+    <id>oai_ue_caracal</id>
+    <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+  </testCase>
+
+  <testCase id="001000">
+    <class>Ping</class>
+    <desc>Ping: 20pings in 20sec</desc>
+    <id>oai_ue_caracal</id>
+    <ping_args>-c 20 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>25</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="002000">
+    <class>Ping</class>
+    <desc>Ping: 100pings in 20sec</desc>
+    <id>oai_ue_caracal</id>
+    <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>30</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="040000">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy gNB</desc>
+    <yaml_path>ci-scripts/yaml_files/5g_sa_n310_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <d_retx_th>20,100,100,100</d_retx_th>
+    <u_retx_th>20,100,100,100</u_retx_th>
+  </testCase>
+  
+  <testCase id="040001">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy nr UE</desc>
+    <yaml_path>ci-scripts/yaml_files/5g_sa_n310_nrue</yaml_path>
+    <eNB_instance>1</eNB_instance>
+    <eNB_serverId>1</eNB_serverId>
+  </testCase>
+
+</testCaseList>

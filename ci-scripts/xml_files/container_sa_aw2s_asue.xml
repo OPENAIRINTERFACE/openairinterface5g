@@ -123,7 +123,7 @@
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec, multi-ue</desc>
     <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
-    <ping_args>-c 20</ping_args>
+    <ping_args>-c 20 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>25</ping_rttavg_threshold>
   </testCase>
@@ -132,7 +132,7 @@
     <class>Ping</class>
     <desc>Ping: 100pings in 20sec, multi-ue</desc>
     <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
-    <ping_args>-c 100 -i 0.2</ping_args>
+    <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
     <ping_packetloss_threshold>1</ping_packetloss_threshold>
     <ping_rttavg_threshold>30</ping_rttavg_threshold>
   </testCase>
@@ -161,8 +161,6 @@
     <yaml_path>ci-scripts/yaml_files/sa_aw2s_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
-    <d_retx_th>20,100,100,100</d_retx_th>
-    <u_retx_th>20,100,100,100</u_retx_th>
   </testCase>
 
 </testCaseList>

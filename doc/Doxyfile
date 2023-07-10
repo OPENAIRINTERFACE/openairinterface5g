@@ -874,11 +874,11 @@ INPUT                  = \
 @CMAKE_CURRENT_SOURCE_DIR@/../radio/rfsimulator/rfsimulator.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../radio/rfsimulator/simulator.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../radio/rfsimulator/apply_channelmod.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/USERSPACE/LIB/if_defs.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/USERSPACE/LIB/ethernet_lib.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/USERSPACE/LIB/eth_udp.c \
-@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/USERSPACE/LIB/ethernet_lib.h \
-@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/USERSPACE/LIB/eth_raw.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/if_defs.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/ethernet_lib.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/eth_udp.c \
+@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/ethernet_lib.h \
+@CMAKE_CURRENT_SOURCE_DIR@/../radio/ETHERNET/eth_raw.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/config_cmdline.c \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/config_paramdesc.h \
 @CMAKE_CURRENT_SOURCE_DIR@/../common/config/config_userapi.h \

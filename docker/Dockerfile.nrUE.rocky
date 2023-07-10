@@ -63,10 +63,6 @@ COPY --from=nr-ue-build \
     ./
 
 WORKDIR /opt/oai-nr-ue/etc
-COPY --from=nr-ue-build \
-    /oai-ran/ci-scripts/conf_files/nr-ue-sim.conf \
-    /oai-ran/docker/etc/nr-ue.nfapi.conf \
-    ./
 
 COPY --from=nr-ue-build \
     /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \

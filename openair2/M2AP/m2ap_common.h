@@ -52,19 +52,12 @@
 
 extern int asn1_xer_print;
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "m2ap_default_values.h"
-# define M2AP_INFO(x, args...) LOG_I(M2AP, x, ##args)
-# define M2AP_ERROR(x, args...) LOG_E(M2AP, x, ##args)
-# define M2AP_WARN(x, args...)  LOG_W(M2AP, x, ##args)
-# define M2AP_DEBUG(x, args...) LOG_D(M2AP, x, ##args)
-#else
-# define M2AP_INFO(x, args...) do { fprintf(stdout, "[M2AP][I]"x, ##args); } while(0)
-# define M2AP_ERROR(x, args...) do { fprintf(stdout, "[M2AP][E]"x, ##args); } while(0)
-# define M2AP_WARN(x, args...)  do { fprintf(stdout, "[M2AP][W]"x, ##args); } while(0)
-# define M2AP_DEBUG(x, args...) do { fprintf(stdout, "[M2AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "m2ap_default_values.h"
+#define M2AP_INFO(x, args...) LOG_I(M2AP, x, ##args)
+#define M2AP_ERROR(x, args...) LOG_E(M2AP, x, ##args)
+#define M2AP_WARN(x, args...)  LOG_W(M2AP, x, ##args)
+#define M2AP_DEBUG(x, args...) LOG_D(M2AP, x, ##args)
 
 #define M2AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
   do {\
