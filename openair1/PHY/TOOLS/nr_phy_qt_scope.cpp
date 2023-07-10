@@ -1234,7 +1234,7 @@ void *nrUEQtscopeThread(void *arg)
 // gNB scope initialization
 void nrgNBinitQtScope(scopeParms_t *p)
 {
-  scopeData_t *scope = (scopeData_t *)calloc(sizeof(scopeData_t), 1);
+  scopeData_t *scope = (scopeData_t *)calloc(1, sizeof(scopeData_t));
 
   scope->gNB = p->gNB;
   scope->argc = p->argc;
@@ -1252,7 +1252,7 @@ void nrgNBinitQtScope(scopeParms_t *p)
 // UE scope initialization
 void nrUEinitQtScope(PHY_VARS_NR_UE *ue)
 {
-  scopeData_t *scope = (scopeData_t *)calloc(sizeof(scopeData_t), 1);
+  scopeData_t *scope = (scopeData_t *)calloc(1, sizeof(scopeData_t));
 
   scope->copyData = copyData;
   copyDataMutexInit(scope);
