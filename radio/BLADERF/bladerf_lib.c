@@ -1131,7 +1131,16 @@ int device_init(openair0_device *device,
         printf("[BRF] calibration OK\n");
 #endif
 
-    bladerf_log_set_verbosity(get_brf_log_level(openair0_cfg->log_level));
+    /* set log to info, available log levels are:
+     * - BLADERF_LOG_LEVEL_VERBOSE
+     * - BLADERF_LOG_LEVEL_DEBUG
+     * - BLADERF_LOG_LEVEL_INFO
+     * - BLADERF_LOG_LEVEL_WARNING
+     * - BLADERF_LOG_LEVEL_ERROR
+     * - BLADERF_LOG_LEVEL_CRITICAL
+     * - BLADERF_LOG_LEVEL_SILENT
+     */
+    bladerf_log_set_verbosity(BLADERF_LOG_LEVEL_INFO);
 
     printf("BLADERF: Initializing openair0_device\n");
     device->Mod_id         = num_devices++;
@@ -1207,39 +1216,5 @@ struct bladerf * open_bladerf_from_serial(const char *serial)
     } else {
         return dev;
     }
-}
-
-
-/*! \brief Get BladeRF log level
- * \param log_level log level
- * \returns log level of BLADERF device
- */
-int get_brf_log_level(int log_level)
-{
-    int level=BLADERF_LOG_LEVEL_INFO;
-    return  BLADERF_LOG_LEVEL_INFO;
-    switch(log_level) {
-    case LOG_DEBUG:
-        level=BLADERF_LOG_LEVEL_DEBUG;
-        break;
-    case LOG_INFO:
-        level= BLADERF_LOG_LEVEL_INFO;
-        break;
-    case LOG_WARNING:
-        level=BLADERF_LOG_LEVEL_WARNING;
-        break;
-    case LOG_ERR:
-        level=BLADERF_LOG_LEVEL_ERROR;
-        break;
-    case LOG_CRIT:
-        level=BLADERF_LOG_LEVEL_CRITICAL;
-        break;
-    case LOG_EMERG:
-        level = BLADERF_LOG_LEVEL_SILENT;
-        break;
-    default:
-        break;
-    }
-    return level;
 }
 /*@}*/
