@@ -477,6 +477,7 @@ typedef struct {
   RA_config_t ra;
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
+  uint32_t mib_additional_bits;
 
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
 
@@ -510,6 +511,7 @@ typedef struct {
   frequency_range_t frequency_range;
   uint16_t nr_band;
   uint8_t ssb_subcarrier_offset;
+  int ssb_start_subcarrier;
 
   NR_SSB_meas_t ssb_measurements;
 

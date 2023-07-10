@@ -515,6 +515,7 @@ int main( int argc, char **argv ) {
       if (get_softmodem_params()->sa) { // set frame config to initial values from command line and assume that the SSB is centered on the grid
         uint16_t nr_band = get_softmodem_params()->band;
         mac->nr_band = nr_band;
+        mac->ssb_start_subcarrier = UE[CC_id]->frame_parms.ssb_start_subcarrier;
         nr_init_frame_parms_ue_sa(&UE[CC_id]->frame_parms,
                                   downlink_frequency[CC_id][0],
                                   uplink_frequency_offset[CC_id][0],

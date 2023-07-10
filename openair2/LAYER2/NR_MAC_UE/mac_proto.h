@@ -57,17 +57,7 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
    \param pduP           pointer to pdu
    \param pdu_length     length of pdu
    \param cell_id        cell id */
-int8_t nr_ue_decode_mib(
-    module_id_t module_id, 
-    int cc_id, 
-    uint8_t gNB_index,
-    void *phy_data, 
-    uint8_t extra_bits, 
-    uint32_t ssb_length, 
-    uint32_t ssb_index,
-    void *pduP,
-    uint16_t ssb_start_subcarrier,
-    uint16_t cell_id );
+int8_t nr_ue_decode_mib(module_id_t module_id, int cc_id, void *phy_data);
 
 /**\brief decode SIB1 and other SIs pdus in NR_UE, from if_module dl_ind
    \param module_id      module id

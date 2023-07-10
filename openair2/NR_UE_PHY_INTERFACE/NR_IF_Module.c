@@ -1037,19 +1037,18 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
                     unsigned int gNB_index, void *phy_data, uint8_t *pduP,
                     unsigned int additional_bits,
                     uint32_t ssb_index, uint32_t ssb_length,
-                    uint16_t ssb_start_subcarrier, uint16_t cell_id){
-
-  return nr_ue_decode_mib(module_id,
-                          cc_id,
-                          gNB_index,
-                          phy_data,
-                          additional_bits,
-                          ssb_length,  //  Lssb = 64 is not support
-                          ssb_index,
-                          pduP,
-                          ssb_start_subcarrier,
-                          cell_id);
-
+                    uint16_t ssb_start_subcarrier, uint16_t cell_id)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  mac->mib_ssb = ssb_index;
+  mac->physCellId = cell_id;
+  mac->mib_additional_bits = additional_bits;
+  if(ssb_length == 64)
+    mac->frequency_range = FR2;
+  else
+    mac->frequency_range = FR1;
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3);    //  fixed 3 bytes MIB PDU
+  return 0;
 }
 
 //  L2 Abstraction Layer
