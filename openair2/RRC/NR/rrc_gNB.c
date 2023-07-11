@@ -2694,6 +2694,36 @@ static void print_rrc_meas(FILE *f, const NR_MeasResults_t *measresults)
   }
 }
 
+static const char *get_rrc_connection_status_text(NR_UE_STATE_t state)
+{
+  switch (state) {
+    case NR_RRC_INACTIVE: return "inactive";
+    case NR_RRC_IDLE: return "idle";
+    case NR_RRC_SI_RECEIVED: return "SI-received";
+    case NR_RRC_CONNECTED: return "connected";
+    case NR_RRC_RECONFIGURED: return "reconfigured";
+    case NR_RRC_HO_EXECUTION: return "HO-execution";
+    default: AssertFatal(false, "illegal RRC state %d\n", state); return "illegal";
+  }
+  return "illegal";
+}
+
+static const char *get_pdusession_status_text(pdu_session_status_t status)
+{
+  switch (status) {
+    case PDU_SESSION_STATUS_NEW: return "new";
+    case PDU_SESSION_STATUS_DONE: return "done";
+    case PDU_SESSION_STATUS_ESTABLISHED: return "established";
+    case PDU_SESSION_STATUS_REESTABLISHED: return "reestablished";
+    case PDU_SESSION_STATUS_TOMODIFY: return "to-modify";
+    case PDU_SESSION_STATUS_FAILED: return "failed";
+    case PDU_SESSION_STATUS_TORELEASE: return "to-release";
+    case PDU_SESSION_STATUS_RELEASED: return "released";
+    default: AssertFatal(false, "illegal PDU status code %d\n", status); return "illegal";
+  }
+  return "illegal";
+}
+
 static void write_rrc_stats(const gNB_RRC_INST *rrc)
 {
   const char *filename = "nrRRC_stats.log";
@@ -2703,19 +2733,33 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
     return;
   }
 
+  int i = 0;
   rrc_gNB_ue_context_t *ue_context_p = NULL;
   /* cast is necessary to eliminate warning "discards ‘const’ qualifier" */
   RB_FOREACH(ue_context_p, rrc_nr_ue_tree_s, &((gNB_RRC_INST *)rrc)->rrc_ue_head)
   {
     const gNB_RRC_UE_t *ue_ctxt = &ue_context_p->ue_context;
-    const rnti_t rnti = ue_ctxt->rnti;
+    f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_ctxt->rrc_ue_id);
 
-    fprintf(f, "NR RRC UE rnti %04x:", rnti);
-
+    fprintf(f,
+            "UE %d CU UE ID %d DU UE ID %d RNTI %04x random identity %016lx",
+            i,
+            ue_ctxt->rrc_ue_id,
+            ue_data.secondary_ue,
+            ue_ctxt->rnti,
+            ue_ctxt->random_ue_identity);
     if (ue_ctxt->Initialue_identity_5g_s_TMSI.presence)
       fprintf(f, " S-TMSI %x", ue_ctxt->Initialue_identity_5g_s_TMSI.fiveg_tmsi);
+    fprintf(f, ":\n");
 
-    fprintf(f, "\n");
+    fprintf(f, "    RRC status %s\n", get_rrc_connection_status_text(ue_ctxt->StatusRrc));
+
+    if (ue_ctxt->nb_of_pdusessions == 0)
+      fprintf(f, "    (no PDU sessions)\n");
+    for (int nb_pdu = 0; nb_pdu < ue_ctxt->nb_of_pdusessions; ++nb_pdu) {
+      const rrc_pdu_session_param_t *pdu = &ue_ctxt->pduSession[nb_pdu];
+      fprintf(f, "    PDU session %d ID %d status %s\n", nb_pdu, pdu->param.pdusession_id, get_pdusession_status_text(pdu->status));
+    }
 
     if (ue_ctxt->UE_Capability_nr) {
       fprintf(f,
@@ -2729,6 +2773,7 @@ static void write_rrc_stats(const gNB_RRC_INST *rrc)
 
     if (ue_ctxt->measResults)
       print_rrc_meas(f, ue_ctxt->measResults);
+    ++i;
   }
 
   fclose(f);
