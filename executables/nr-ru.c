@@ -502,7 +502,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
-  openair0_timestamp timestamp_tx;
+  openair0_timestamp timestamp_tx = 0;
   AssertFatal(1==0,"Shouldn't get here\n");
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;

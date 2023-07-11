@@ -793,7 +793,7 @@ main (int argc, char *argv[]) {
   char y_area[20];
   char z_area[20];
   char fname[64], vname[64];
-  Data_Flow_Unit omv_data;
+  Data_Flow_Unit omv_data = {0};
 
   //default parameters
   for (node_type = eNB; node_type < MAX_NUM_NODE_TYPES; node_type++) {
