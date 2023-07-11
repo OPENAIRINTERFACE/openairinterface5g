@@ -419,7 +419,7 @@ function main() {
             shift;;
         --sanitize-memory | -fsanitize=memory)
             echo_warning "Note: memory sanitizer\n* requires clang (tested: v17)\n* is incompatible with address/undefined behavior sanitizer\n* requires cmake_targets/tools/memsan.patch"
-            sleep 5
+            sleep 2
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_MEMORY=ON -DSANITIZE_ADDRESS=OFF -DSANITIZE_UNDEFINED=OFF"
             shift;;
         -h | --help)
