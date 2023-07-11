@@ -39,6 +39,12 @@
  020004
  030001
  030002
+ 444444
+ 333333
+ 020005
+ 444444
+ 333333
+ 020005
  100001
         </TestCaseRequestedList>
         <TestCaseExclusionList></TestCaseExclusionList>
@@ -122,6 +128,14 @@
                 <ping_packetloss_threshold>5</ping_packetloss_threshold>
         </testCase>
 
+        <testCase id="020005">
+                <class>Ping</class>
+                <desc>Ping ext-dn from both UEs</desc>
+                <id>rfsim5g_ue rfsim5g_ue2</id>
+                <ping_args>-c 20 192.168.72.135</ping_args>
+                <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        </testCase>
+
         <testCase id="030001">
                 <class>IperfFromContainer</class>
                 <desc>Iperf UDP Downlink</desc>
@@ -138,6 +152,18 @@
                 <client_container_name>rfsim5g-oai-nr-ue</client_container_name>
                 <server_options>-u -i 1 -s</server_options>
                 <client_options>-B 12.1.1.2 -c 192.168.72.135 -u -i 1 -t 30 -b 1M</client_options>
+        </testCase>
+
+        <testCase id="333333">
+                <class>Attach_UE</class>
+                <desc>Attach OAI UE 1 and 2</desc>
+                <id>rfsim5g_ue rfsim5g_ue2</id>
+        </testCase>
+
+        <testCase id="444444">
+                <class>Detach_UE</class>
+                <desc>Detach OAI UE 1 and 2</desc>
+                <id>rfsim5g_ue rfsim5g_ue2</id>
         </testCase>
 
         <testCase id="100001">
