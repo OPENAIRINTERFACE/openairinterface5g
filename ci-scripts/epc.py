@@ -166,6 +166,8 @@ class EPCManagement():
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./run_mme 2>&1 | stdbuf -o0 tee -a mme_' + self.testCase_id + '.log &', 'MME app initialization complete', 100)
 		elif re.match('ltebox', self.Type, re.IGNORECASE):
 			mySSH.command('cd /opt/ltebox/tools', '\$', 5)
+			# Clean-up the logs from previous runs
+			mySSH.command('echo ' + self.Password + ' | sudo -S rm -f ../var/log/*.0', '\$', 5)
 			mySSH.command('echo ' + self.Password + ' | sudo -S ./start_mme', '\$', 5)
 		else:
 			logging.error('This option should not occur!')
