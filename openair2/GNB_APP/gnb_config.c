@@ -1940,25 +1940,27 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
         f1Setup->num_cells_available++;
-        f1Setup->gNB_DU_id        = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
-        LOG_I(GNB_APP,"F1AP: gNB_DU_id[%d] %ld\n",k,f1Setup->gNB_DU_id);
-        f1Setup->gNB_DU_name      = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
-        LOG_I(GNB_APP,"F1AP: gNB_DU_name[%d] %s\n",k,f1Setup->gNB_DU_name);
-        f1Setup->cell[k].tac              = *GNBParamList.paramarray[i][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: tac[%d] %d\n",k,f1Setup->cell[k].tac);
-        f1Setup->cell[k].mcc              = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mcc[%d] %d\n",k,f1Setup->cell[k].mcc);
-        f1Setup->cell[k].mnc              = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        LOG_I(GNB_APP,"F1AP: mnc[%d] %d\n",k,f1Setup->cell[k].mnc);
-        f1Setup->cell[k].mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        LOG_I(GNB_APP,"F1AP: mnc_digit_length[%d] %d\n",k,f1Setup->cell[k].mnc_digit_length);
+        f1Setup->gNB_DU_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
+        f1Setup->gNB_DU_name = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
+        f1Setup->cell[k].tac = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        f1Setup->cell[k].mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        f1Setup->cell[k].mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        f1Setup->cell[k].mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
         AssertFatal((f1Setup->cell[k].mnc_digit_length == 2) ||
                     (f1Setup->cell[k].mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
                     f1Setup->cell[k].mnc_digit_length);
         f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-        LOG_I(GNB_APP,"F1AP: nr_cellid[%d] %ld\n",k,f1Setup->cell[k].nr_cellid);
-        LOG_I(GNB_APP,"F1AP: CU_ip4_address in DU %s\n",RC.nrmac[k]->eth_params_n.remote_addr);
+        LOG_I(GNB_APP,
+              "F1AP: gNB idx %d gNB_DU_id %ld, gNB_DU_name %s, TAC %d MCC/MNC/length %d/%d/%d cellID %ld\n",
+              k,
+              f1Setup->gNB_DU_id,
+              f1Setup->gNB_DU_name,
+              f1Setup->cell[k].tac,
+              f1Setup->cell[k].mcc,
+              f1Setup->cell[k].mnc,
+              f1Setup->cell[k].mnc_digit_length,
+              f1Setup->cell[k].nr_cellid);
 
         F1AP_DU_REGISTER_REQ(msg_p).net_config = read_DU_IP_config(&RC.nrmac[k]->eth_params_n);
 
