@@ -1000,16 +1000,3 @@ void init_NR_UE_threads(int nb_inst) {
     }
   }
 }
-
-/* HACK: this function is needed to compile the UE
- * fix it somehow
- */
-int find_dlsch(uint16_t rnti,
-                  PHY_VARS_eNB *eNB,
-                  find_type_t type)
-{
-  printf("you cannot read this\n");
-  abort();
-}
-
-void multicast_link_write_sock(int groupP, char *dataP, uint32_t sizeP) {}
