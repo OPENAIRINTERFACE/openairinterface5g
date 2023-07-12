@@ -49,7 +49,7 @@ void test_1(void)
                         0xb2, 0x0e, 0xd7, 0xda, 0xd2, 0xf2, 0x33, 0xdc, 0x3c, 0x22, 0xd7, 0xbd, 0xee, 0xed, 0x8e, 0x78};
 
   int rc = memcmp(out, result, 32);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   uint8_t text_decipher[32] = {0};
 
@@ -57,7 +57,7 @@ void test_1(void)
   aes_128_ctr(&p, 32, out, 32, text_decipher);
 
   rc = memcmp(text, text_decipher, 32);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Error: Text and deciphered text do not match\n");
 }
 
 void test_2(void)
@@ -83,13 +83,13 @@ void test_2(void)
                          0x92, 0x23, 0x95, 0x87, 0xb8, 0x95, 0x60, 0x86, 0xbc, 0xab, 0x18, 0x83, 0x60, 0x42, 0xe2, 0xe6, 0xce, 0x42, 0x43, 0x2a, 0x17, 0x10, 0x5c, 0x53, 0xd0};
 
   int rc = memcmp(out, result, 99);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   uint8_t text_decipher[100] = {0};
   aes_128_ctr(&p, 99, out, 99, text_decipher);
 
   rc = memcmp(text, text_decipher, 99);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Text and deciphered text do not match");
 }
 
 void test_3(void)
@@ -110,14 +110,14 @@ void test_3(void)
                         0xa4, 0x81, 0x38, 0xa3, 0xb0, 0xc4, 0x71, 0xe2, 0xa7, 0x04, 0x1a, 0x57, 0x64, 0x23, 0xd2, 0x92, 0x72, 0x87, 0xf0, 0x00};
 
   int rc = memcmp(out, result, 39);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   // Decipher
   uint8_t text_decipher[40] = {0};
   aes_128_ctr(&p, 40, out, 40, text_decipher);
 
   rc = memcmp(text, text_decipher, 39);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Text and deciphered text do not match");
 }
 
 void test_4(void)
@@ -144,14 +144,14 @@ void test_4(void)
                          0x10, 0xfe, 0xb3, 0x24, 0xba, 0x74, 0xc4, 0xc1, 0x56, 0xe0, 0x4d, 0x39, 0x09, 0x72, 0x09, 0x65, 0x3a, 0xc3, 0x3e, 0x5a, 0x5f, 0x2d, 0x88, 0x64};
 
   int rc = memcmp(out, result, 127);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   // Decipher
   uint8_t text_decipher[128] = {0};
   aes_128_ctr(&p, 128, out, 128, text_decipher);
 
   rc = memcmp(text, text_decipher, 127);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Text and deciphered text do not match");
 }
 
 void test_5(void)
@@ -180,14 +180,14 @@ void test_5(void)
                          0x3f, 0x95, 0x62, 0x33, 0x71, 0xd4, 0x9b, 0x14, 0x7c, 0x0a, 0xf4, 0x86, 0x17, 0x1f, 0x22, 0xcd, 0x04, 0xb1, 0xcb, 0xeb, 0x26, 0x58, 0x22, 0x3e, 0x69, 0x38};
 
   int rc = memcmp(out, result, 155);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   // Decipher
   uint8_t text_decipher[156] = {0};
   aes_128_ctr(&p, 156, out, 156, text_decipher);
 
   rc = memcmp(text, text_decipher, 155);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Text and deciphered text do not match");
 }
 
 void test_6(void)
@@ -238,14 +238,14 @@ void test_6(void)
                          0x7a, 0xb3, 0xb6, 0x72, 0x5d, 0x1a, 0x6f, 0x3f, 0x98, 0xb9, 0xc9, 0xda, 0xa8, 0x98, 0x2a, 0xff, 0x06, 0x78, 0x28, 0x00};
 
   int rc = memcmp(out, result, 483);
-  DevAssert(rc == 0 && "Ciphering did not produce the expected results");
+  AssertFatal(rc == 0, "Ciphering did not produce the expected results");
 
   // Decipher
   uint8_t text_decipher[512] = {0};
   aes_128_ctr(&p, 512, out, 512, text_decipher);
 
   rc = memcmp(text, text_decipher, 483);
-  DevAssert(rc == 0 && "Text and deciphered text do not match");
+  AssertFatal(rc == 0, "Text and deciphered text do not match");
 }
 
 void doit(void)

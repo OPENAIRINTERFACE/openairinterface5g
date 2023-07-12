@@ -43,7 +43,7 @@ void stream_compute_integrity(eia_alg_id_e alg, nas_stream_cipher_t const* strea
     nas_stream_encrypt_eia2(stream_cipher, out);
   } else {
     LOG_E(OSA, "Provided integrity algorithm is currently not supported = %u\n", alg);
-    DevAssert(0 != 0 && "Unknown Algorithm type");
+    AssertFatal(0 != 0, "Unknown Algorithm type");
   }
 }
 
@@ -60,7 +60,7 @@ void stream_compute_encrypt(eea_alg_id_e alg, nas_stream_cipher_t const* stream_
     nas_stream_encrypt_eea2(stream_cipher, out);
   } else {
     LOG_E(OSA, "Provided encrypt algorithm is currently not supported = %u\n", alg);
-    DevAssert(0 != 0 && "Unknown Algorithm type");
+    AssertFatal(0 != 0, "Unknown Algorithm type");
   }
 }
 

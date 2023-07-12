@@ -49,7 +49,7 @@ void aes_128_ctr(const aes_128_t* k_iv, byte_array_t msg, size_t len_out, uint8_
 
   int len_ev = 0;
   rc = EVP_EncryptUpdate(ctx, out, &len_ev, msg.buf, msg.len);
-  DevAssert(!(len_ev > len_out) && "Buffer overflow");
+  AssertFatal(!(len_ev > len_out), "Buffer overflow");
 
   // Finalise the encryption. Normally ciphertext bytes may be written at
   // this stage, but this does not occur in GCM mode
