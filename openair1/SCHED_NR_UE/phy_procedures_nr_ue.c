@@ -75,10 +75,6 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "intertask_interface.h"
 #include "T.h"
 
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
-#endif
-
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 
 void nr_fill_dl_indication(nr_downlink_indication_t *dl_ind,

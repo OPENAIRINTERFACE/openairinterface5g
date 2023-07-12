@@ -444,13 +444,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     }
 
-
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
-	  ue->Mod_id,
-	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
-	  ue->common_vars.freq_offset);
-#endif
+    LOG_I(PHY,
+          "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+          ue->Mod_id,
+          openair0_cfg[0].rx_freq[0] + ue->common_vars.freq_offset,
+          ue->common_vars.freq_offset);
   } else {
 #ifdef DEBUG_INITIAL_SYNC
     LOG_I(PHY,"[UE%d] Initial sync : PBCH not ok\n",ue->Mod_id);
@@ -484,29 +482,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
 #ifdef DEBUG_INITIAL_SYNCH
   LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
-#endif
-
-#ifndef OAI_USRP
-#ifndef OAI_BLADERF
-#ifndef OAI_LMSSDR
-#ifndef OAI_ADRV9371_ZC706
-  //phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
-#endif
-#endif
-#endif
-#endif
-
-  }
-  else {
-
-#ifndef OAI_USRP
-#ifndef OAI_BLADERF
-#ifndef OAI_LMSSDR
-#ifndef OAI_ADRV9371_ZC706
-  //phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
-#endif
-#endif
-#endif
 #endif
 
   }
