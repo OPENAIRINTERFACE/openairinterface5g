@@ -40,6 +40,7 @@
 #include "UTIL/OPT/opt.h"
 #include "RRC/NR/nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
+#include "openair1/PHY/defs_nr_common.h"
 
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
@@ -101,7 +102,7 @@ static void fill_ssb_vrb_map(NR_COMMON_channels_t *cc, int rbStart, int ssb_subc
   uint16_t *vrb_map = cc[CC_id].vrb_map;
   const int extra_prb = ssb_subcarrier_offset > 0;
   for (int rb = 0; rb < 20 + extra_prb; rb++)
-    vrb_map[rbStart + rb] = SL_to_bitmap(symStart % 14, 4);
+    vrb_map[rbStart + rb] = SL_to_bitmap(symStart % NR_SYMBOLS_PER_SLOT, 4);
 }
 
 void schedule_nr_mib(module_id_t module_idP, frame_t frameP, sub_frame_t slotP, nfapi_nr_dl_tti_request_t *DL_req)

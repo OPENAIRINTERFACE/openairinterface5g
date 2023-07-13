@@ -342,8 +342,8 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       for (int i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += ((uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[3 - i] << i * 8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += ((uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[7 - i] << i * 8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[3 - i] << i * 8;
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[7 - i] << i * 8;
       }
       break;
     default:
