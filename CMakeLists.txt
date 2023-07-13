@@ -407,7 +407,6 @@ add_library(x2ap
 target_link_libraries(x2ap PUBLIC asn1_x2ap)
 target_link_libraries(x2ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
-
 # F1AP
 ##############
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
