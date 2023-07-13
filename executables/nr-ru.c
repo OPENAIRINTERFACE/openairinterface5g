@@ -776,7 +776,7 @@ void tx_rf(RU_t *ru,int frame,int slot, uint64_t timestamp) {
       } else if (nextslot_type == NR_UPLINK_SLOT) {
         flags_burst = TX_BURST_END;
       } else {
-        flags_burst = TX_BURST_MIDDLE;
+        flags_burst = proc->first_tx == 1 ? TX_BURST_START : TX_BURST_MIDDLE;
       }
     }
   } else { // FDD
