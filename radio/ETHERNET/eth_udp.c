@@ -45,7 +45,6 @@
 #include <netinet/ether.h>
 #include <unistd.h>
 #include <errno.h>
-#include "common/utils/LOG/vcd_signal_dumper.h"
 #include <sched.h>
 
 #include "common_lib.h"

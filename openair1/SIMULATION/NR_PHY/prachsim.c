@@ -411,7 +411,6 @@ int main(int argc, char **argv){
   // Configure log
   logInit();
   set_glog(loglvl);
-  T_stdout = 1;
   SET_LOG_DEBUG(PRACH); 
 
   // Configure gNB and RU

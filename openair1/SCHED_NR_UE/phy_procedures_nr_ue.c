@@ -314,7 +314,6 @@ void nr_ue_measurement_procedures(uint16_t l,
                                   int32_t dl_ch_estimates[][pdsch_est_size]) {
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  int frame_rx   = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int gNB_id = proc->gNB_id;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
@@ -331,14 +330,18 @@ void nr_ue_measurement_procedures(uint16_t l,
 
 #if T_TRACER
     if(nr_slot_rx == 0)
-      T(T_UE_PHY_MEAS, T_INT(gNB_id),  T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_slot_rx),
-	T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
-	T_INT((int)ue->measurements.rx_rssi_dBm[0]),
-	T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
-	T_INT((int)ue->measurements.rx_power_avg_dB[0]),
-	T_INT((int)ue->measurements.n0_power_avg_dB),
-	T_INT((int)ue->measurements.wideband_cqi_avg[0]),
-	T_INT((int)ue->common_vars.freq_offset));
+      T(T_UE_PHY_MEAS,
+        T_INT(gNB_id),
+        T_INT(ue->Mod_id),
+        T_INT(proc->frame_rx % 1024),
+        T_INT(nr_slot_rx),
+        T_INT((int)(10 * log10(ue->measurements.rsrp[0]) - ue->rx_total_gain_dB)),
+        T_INT((int)ue->measurements.rx_rssi_dBm[0]),
+        T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
+        T_INT((int)ue->measurements.rx_power_avg_dB[0]),
+        T_INT((int)ue->measurements.n0_power_avg_dB),
+        T_INT((int)ue->measurements.wideband_cqi_avg[0]),
+        T_INT((int)ue->common_vars.freq_offset));
 #endif
   }
 

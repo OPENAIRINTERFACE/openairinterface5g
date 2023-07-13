@@ -597,6 +597,15 @@ include_directories("${OPENAIR_DIR}")
 # Utilities
 ###############
 
+# include T directory even if the T is off because T macros are in the code
+# no matter what. Note: sone files are generated, so we have both source and
+# binary directories
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/common/utils/T
+                    ${CMAKE_CURRENT_BINARY_DIR}/common/utils/T)
+
+# set the T_LIB name to T if the target exists, otherwise leave empty
+set(T_LIB $<TARGET_NAME_IF_EXISTS:T>)
+
 add_library(HASHTABLE
   ${OPENAIR_DIR}/common/utils/hashtable/hashtable.c
   ${OPENAIR_DIR}/common/utils/hashtable/obj_hashtable.c
@@ -614,6 +623,7 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
+target_link_libraries(UTIL PUBLIC ${T_LIB})
 
 set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/secu_defs.c
@@ -1146,8 +1156,6 @@ set(PHY_MEX_UE
   ${OPENAIR1_DIR}/PHY/LTE_UE_TRANSPORT/dlsch_llr_computation_avx2.c
   ${OPENAIR1_DIR}/PHY/LTE_ESTIMATION/lte_ue_measurements.c
   ${OPENAIR_DIR}/common/utils/LOG/log.c
-  ${OPENAIR_DIR}/common/utils/T/T.c
-  ${OPENAIR_DIR}/common/utils/T/local_tracer.c
   )
 add_library(PHY_MEX ${PHY_MEX_UE})
 target_link_libraries(PHY_MEX PRIVATE asn1_lte_rrc_hdrs)
@@ -1901,51 +1909,12 @@ add_library(oai_iqplayer MODULE
 	)
 set(CMAKE_MODULE_PATH "${OPENAIR_DIR}/cmake_targets/tools/MODULES" "${CMAKE_MODULE_PATH}")
 
-#include T directory even if the T is off because T macros are in the code
-#no matter what
-include_directories("${OPENAIR_DIR}/common/utils/T")
-
-if (${T_TRACER})
-  set(T_SOURCE
-      ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-      ${OPENAIR_DIR}/common/utils/T/T.c
-      ${OPENAIR_DIR}/common/utils/T/local_tracer.c)
-  set(T_LIB "rt")
-endif (${T_TRACER})
-
-#Some files in the T directory are generated.
-#This rule and the following deal with it.
-add_custom_command (
-  OUTPUT ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-  COMMAND make check_vcd
-  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
-  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_messages.txt
-          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.c
-          ${OPENAIR_DIR}/common/utils/LOG/vcd_signal_dumper.h
-  )
-
-execute_process (
-  COMMAND make check_vcd
-  WORKING_DIRECTORY ${OPENAIR_DIR}/common/utils/T
-)
-#This rule is specifically needed to generate T files
-#before anything else in a project that uses the T.
-#See below, there are some 'add_dependencies' showing that.
-#Basically we create a custom target and we make other
-#targets depend on it. That forces cmake to generate
-#T files before anything else.
-add_custom_target (
-  generate_T
-  DEPENDS ${OPENAIR_DIR}/common/utils/T/T_IDs.h
-)
-
 #################################
 # add executables for operation
 #################################
 add_library(minimal_lib
   ${OPENAIR_DIR}/common/utils/LOG/log.c
   ${OPENAIR_DIR}/common/utils/minimal_stub.c
-  ${T_SOURCE}
   )
 target_link_libraries(minimal_lib pthread dl ${T_LIB})
 
@@ -1984,7 +1953,6 @@ add_executable(lte-softmodem
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
   )
 add_dependencies(lte-softmodem oai_iqplayer)
 
@@ -2011,7 +1979,6 @@ add_executable(oairu
   ${OPENAIR_DIR}/executables/softmodem-common.c
   ${OPENAIR_DIR}/openair1/SCHED/phy_procedures_lte_common.c
   ${OPENAIR_DIR}/executables/main_ru.c
-  ${T_SOURCE}
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
 )
 target_link_libraries(oairu PRIVATE
@@ -2043,7 +2010,6 @@ add_executable(lte-uesoftmodem
   ${OPENAIR_DIR}/common/utils/lte/ue_power.c
   ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
   )
 
 if (NOT ${NOS1})
@@ -2086,7 +2052,6 @@ add_executable(nr-softmodem
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${PHY_INTERFACE_DIR}/queue_t.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
   )
 
 target_link_libraries(nr-softmodem PRIVATE
@@ -2123,13 +2088,12 @@ add_executable(nr-cuup
   ${OPENAIR2_DIR}/E1AP/e1ap_setup.c
   ${NR_PDCP_SRC}
   ${NR_SDAP_SRC}
-  ${T_SOURCE}
   )
 
 target_link_libraries(nr-cuup PRIVATE
                       CONFIG_LIB ITTI SCTP_CLIENT
                       GTPV1U e1ap e1_pdcp_if f1ap SIMU_ETH
-                      z sctp dl pthread shlib_loader)
+                      z sctp dl pthread shlib_loader ${T_LIB})
 target_link_libraries(nr-cuup PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
                      
 # nr-uesoftmodem is  UE implementation
@@ -2150,7 +2114,6 @@ add_executable(nr-uesoftmodem
   ${OPENAIR3_DIR}/NAS/UE/nas_ue_task.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${OPENAIR1_DIR}/PHY/TOOLS/phy_scope_interface.c
-  ${T_SOURCE}
   )
 
 target_link_libraries(nr-uesoftmodem PRIVATE
@@ -2187,7 +2150,6 @@ target_link_libraries(nr-uesoftmodem PRIVATE
 add_executable(dlsim_tm4
   ${OPENAIR1_DIR}/SIMULATION/LTE_PHY/dlsim_tm4.c
   ${OPENAIR1_DIR}/PHY/TOOLS/lte_phy_scope_tm4.c
-  ${T_SOURCE}
   )
 target_link_libraries (dlsim_tm4
   -Wl,--start-group SIMU UTIL SCHED_LIB SCHED_RU_LIB PHY ITTI -Wl,--end-group
@@ -2206,29 +2168,26 @@ target_link_libraries(rftest PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 add_executable(polartest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/polartest.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
   )
 target_link_libraries(polartest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR PHY_NR_COMMON PHY_NR_UE CONFIG_LIB -Wl,--end-group
-  m pthread dl
+  m pthread dl ${T_LIB}
   )
 
 add_executable(smallblocktest
   ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/smallblocktest.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
 )
 
 target_link_libraries(smallblocktest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON -Wl,--end-group
-  m pthread dl shlib_loader
+  m pthread dl shlib_loader ${T_LIB}
 )
 
 
 add_executable(ldpctest
    ${PHY_NR_CODINGIF}
    ${OPENAIR1_DIR}/PHY/CODING/TESTBENCH/ldpctest.c
-   ${T_SOURCE}
    )
 
 add_dependencies( ldpctest ldpc_orig ldpc_optim ldpc_optim8seg ldpc ldpc_parityCheck)
@@ -2237,14 +2196,13 @@ if (ENABLE_LDPC_CUDA)
 endif()
 target_link_libraries(ldpctest PRIVATE
   -Wl,--start-group UTIL SIMU PHY_NR PHY_COMMON PHY_NR_COMMON -Wl,--end-group
-  m pthread dl shlib_loader
+  m pthread dl shlib_loader ${T_LIB}
   )
 
 add_executable(nr_dlschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/dlschsim.c
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
   )
 target_link_libraries(nr_dlschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
@@ -2256,7 +2214,6 @@ add_executable(nr_pbchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pbchsim.c
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
   )
 target_link_libraries(nr_pbchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
@@ -2270,7 +2227,6 @@ add_executable(nr_pucchsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/pucchsim.c
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
   )
 target_link_libraries(nr_pucchsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
@@ -2288,7 +2244,6 @@ add_executable(nr_dlsim
   ${NFAPI_USER_DIR}/nfapi.c
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
-  ${T_SOURCE}
   )
 target_link_libraries(nr_dlsim PRIVATE
   -Wl,--start-group UTIL SIMU SIMU_ETH PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB SCHED_NR_UE_LIB MAC_NR MAC_UE_NR MAC_NR_COMMON nr_rrc CONFIG_LIB L2_NR HASHTABLE x2ap SECURITY ngap -lz -Wl,--end-group
@@ -2300,7 +2255,6 @@ add_executable(nr_prachsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/prachsim.c
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
-  ${T_SOURCE}
 )
 target_link_libraries(nr_prachsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_RU PHY_NR_UE MAC_NR_COMMON SCHED_NR_LIB CONFIG_LIB -lz -Wl,--end-group
@@ -2312,7 +2266,6 @@ add_executable(nr_ulschsim
   ${OPENAIR1_DIR}/SIMULATION/NR_PHY/nr_dummy_functions.c
   ${OPENAIR_DIR}/common/utils/nr/nr_common.c
   ${PHY_INTERFACE_DIR}/queue_t.c
-  ${T_SOURCE}
   )
 target_link_libraries(nr_ulschsim PRIVATE
   -Wl,--start-group UTIL SIMU PHY_COMMON PHY_NR_COMMON PHY_NR PHY_NR_UE SCHED_NR_LIB CONFIG_LIB MAC_NR_COMMON -Wl,--end-group
@@ -2330,7 +2283,6 @@ add_executable(nr_ulsim
   ${NFAPI_USER_DIR}/nfapi.c
   ${NFAPI_USER_DIR}/gnb_ind_vars.c
   ${PHY_INTERFACE_DIR}/queue_t.c
-  ${T_SOURCE}
   )
 
 if (ENABLE_LDPC_T1)
@@ -2350,7 +2302,6 @@ foreach(myExe dlsim dlsim_tm7 ulsim pbchsim scansim mbmssim pdcchsim pucchsim pr
     ${OPENAIR_DIR}/common/utils/lte/ue_power.c
     ${OPENAIR_DIR}/common/utils/lte/prach_utils.c
     ${OPENAIR1_DIR}/PHY/INIT/lte_param_init.c
-    ${T_SOURCE}
     ${NFAPI_USER_DIR}/nfapi.c
     )
   target_link_libraries (${myExe} PRIVATE
@@ -2399,6 +2350,7 @@ if (${T_TRACER})
         oai_eth_transpro oai_mobipass coding HASHTABLE UTIL OMG_SUMO
         SECURITY SCHED_LIB SCHED_NR_LIB SCHED_RU_LIB SCHED_UE_LIB SCHED_NR_UE_LIB default_sched remote_sched RAL
         NFAPI_COMMON_LIB NFAPI_LIB NFAPI_PNF_LIB NFAPI_VNF_LIB NFAPI_USER_LIB
+        MISC_NFAPI_LTE_LIB MISC_NFAPI_NR_LIB
         PHY_COMMON PHY PHY_UE PHY_NR PHY_NR_COMMON PHY_NR_UE PHY_RU PHY_MEX
         L2 L2_LTE L2_NR L2_LTE_NR L2_UE NR_L2_UE L2_UE_LTE_NR MAC_NR_COMMON MAC_NR MAC_UE_NR ngap
         CN_UTILS GTPV1U SCTP_CLIENT MME_APP LIB_NAS_UE NB_IoT SIMU SIMU_ETH OPENAIR0_LIB

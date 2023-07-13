@@ -618,6 +618,7 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
+        libxft-dev \
 	patch \
 	openssl \
         zlib1g-dev \
@@ -647,6 +648,7 @@ check_install_oai_software() {
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
+      libXft-devel \
       ninja-build \
       make \
       openssl \

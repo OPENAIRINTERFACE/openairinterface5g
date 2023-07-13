@@ -478,7 +478,6 @@ int main(int argc, char **argv)
 
   logInit();
   set_glog(loglvl);
-  T_stdout = 1;
 
   if (snr1set==0)
     snr1 = snr0+10;

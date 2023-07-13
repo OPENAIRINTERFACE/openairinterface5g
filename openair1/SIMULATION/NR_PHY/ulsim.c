@@ -561,7 +561,6 @@ int main(int argc, char **argv)
   
   logInit();
   set_glog(loglvl);
-  T_stdout = 1;
 
   get_softmodem_params()->phy_test = 1;
   get_softmodem_params()->do_ra = 0;

@@ -2731,6 +2731,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,
                                              CBA_RNTI,
                                              eNB_id,
                                              0)==0)) {
+#if T_TRACER
         int harq_pid = subframe2harq_pid(&ue->frame_parms,
                                          pdcch_alloc2ul_frame(&ue->frame_parms,proc->frame_rx,proc->subframe_rx),
                                          pdcch_alloc2ul_subframe(&ue->frame_parms,proc->subframe_rx));
@@ -2749,6 +2750,7 @@ int ue_pdcch_procedures(uint8_t eNB_id,
                                                pdcch_alloc2ul_subframe(&ue->frame_parms,proc->subframe_rx));
           LOG_D(PHY,"[UE  %d] Generate UE ULSCH C_RNTI format 0 (subframe %d)\n",ue->Mod_id,subframe_rx);
         }
+#endif
       }
     } else if( (dci_alloc_rx[i].rnti == ue->ulsch[eNB_id]->cba_rnti[0]) &&
                (dci_alloc_rx[i].format == format0)) {

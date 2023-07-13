@@ -8,3 +8,4 @@ if(ENABLE_WEBSRV)
   add_subdirectory(websrv)
 endif()
 
+add_subdirectory(T)
