@@ -339,9 +339,6 @@ int history_cmd(char *buff, int debug, telnet_printfunc_t prnt) {
   memset(cmds,0,sizeof(cmds));
   sscanf(buff,"%9s %9s %9s %9s %9s", cmds[0],cmds[1],cmds[2],cmds[3],cmds[4]  );
 
-  if (cmds[0] == NULL)
-    return CMDSTATUS_VARNOTFOUND;
-
   if (strncasecmp(cmds[0],"list",4) == 0) {
     HIST_ENTRY **hist = history_list();
 

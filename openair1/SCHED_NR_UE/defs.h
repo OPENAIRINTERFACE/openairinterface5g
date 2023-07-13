@@ -96,7 +96,7 @@ typedef struct {
   @param proc Pointer to RXn-TXnp4 proc information
   @param eNB_id Local id of eNB on which to act
 */
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc, nr_phy_data_tx_t *phy_data);
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_tx_t *phy_data);
 
 void send_slot_ind(notifiedFIFO_t *nf, int slot);
 
@@ -117,7 +117,7 @@ void processSlotTX(void *arg);
     @param
     @param
  */
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc);
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc);
 
 int8_t nr_find_ue(uint16_t rnti, PHY_VARS_eNB *phy_vars_eNB);
 

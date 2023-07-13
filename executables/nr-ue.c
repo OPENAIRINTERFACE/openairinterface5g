@@ -505,8 +505,7 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
 
   void *txp[NB_ANTENNAS_TX];
   for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    txp[i] = (void *)&UE->common_vars.txdata[i][UE->frame_parms.get_samples_slot_timestamp(
-             proc->nr_slot_tx, &UE->frame_parms, 0)];
+    txp[i] = (void *)&UE->common_vars.txData[i][UE->frame_parms.get_samples_slot_timestamp(proc->nr_slot_tx, &UE->frame_parms, 0)];
 
   radio_tx_burst_flag_t flags = TX_BURST_INVALID;
 
@@ -868,7 +867,6 @@ void *UE_thread(void *arg) {
     nr_rxtx_thread_data_t curMsg = {0};
     curMsg.UE=UE;
     // update thread index for received subframe
-    curMsg.proc.CC_id       = UE->CC_id;
     curMsg.proc.nr_slot_rx  = slot_nr;
     curMsg.proc.nr_slot_tx  = (absolute_slot + DURATION_RX_TO_TX) % nb_slot_frame;
     curMsg.proc.frame_rx    = (absolute_slot/nb_slot_frame) % MAX_FRAME_NUMBER;

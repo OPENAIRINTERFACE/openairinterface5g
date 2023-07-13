@@ -596,7 +596,7 @@ int main(int argc, char **argv){
 
   ue_prach_pdu           = &UE->prach_vars[0]->prach_pdu;
   ue_prach_config        = &UE->nrUE_config.prach_config;
-  txdata                 = UE->common_vars.txdata;
+  txdata = UE->common_vars.txData;
 
   UE->prach_vars[0]->amp        = AMP;
   ue_prach_pdu->root_seq_id     = rootSequenceIndex;

@@ -221,7 +221,7 @@ typedef struct {
   /// For IFFT_FPGA this points to the same memory as PHY_vars->tx_vars[a].TX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
   /// - second index: sample [0..FRAME_LENGTH_COMPLEX_SAMPLES[
-  c16_t **txdata;
+  c16_t **txData;
   /// \brief Holds the transmit data in the frequency domain.
   /// For IFFT_FPGA this points to the same memory as PHY_vars->rx_vars[a].RX_DMA_BUFFER.
   /// - first index: tx antenna [0..nb_antennas_tx[
@@ -485,8 +485,8 @@ typedef struct {
 
   // PRS sequence per gNB, per resource
   uint32_t *****nr_gold_prs;
-  
-  uint32_t X_u[64][839];
+
+  c16_t X_u[64][839];
 
   // flag to activate PRB based averaging of channel estimates
   // when off, defaults to frequency domain interpolation
@@ -663,6 +663,24 @@ typedef struct {
   notifiedFIFO_t *tx_resume_ind_fifo[NR_MAX_SLOTS_PER_FRAME];
   int tx_wait_for_dlsch[NR_MAX_SLOTS_PER_FRAME];
 } PHY_VARS_NR_UE;
+
+typedef struct {
+  openair0_timestamp timestamp_tx;
+  int gNB_id;
+  /// NR slot index within frame_tx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_tx;
+  int rx_slot_type;
+  /// NR slot index within frame_rx [0 .. slots_per_frame - 1] to act upon for transmission
+  int nr_slot_rx;
+  int tx_slot_type;
+  //#endif
+  /// frame to act upon for transmission
+  int frame_tx;
+  /// frame to act upon for reception
+  int frame_rx;
+  int frame_number_4lsb;
+  int decoded_frame_rx;
+} UE_nr_rxtx_proc_t;
 
 typedef struct nr_phy_data_tx_s {
   NR_UE_ULSCH_t ulsch;

@@ -198,18 +198,14 @@ void nr_generate_pucch3_4(int32_t **txdataF,
 *
 *********************************************************************/
 
-void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, 
-                            UE_nr_rxtx_proc_t *proc,
-                            nr_phy_data_tx_t *phy_data) {
-
-  int nr_slot_tx = proc->nr_slot_tx;
-  fapi_nr_ul_config_pucch_pdu *pucch_pdu;
+void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_tx_t *phy_data, c16_t **txdataF)
+{
+  const int nr_slot_tx = proc->nr_slot_tx;
   NR_UE_PUCCH *pucch_vars = &phy_data->pucch_vars;
 
   for (int i=0; i<2; i++) {
     if(pucch_vars->active[i]) {
-
-      pucch_pdu = &pucch_vars->pucch_pdu[i];
+      const fapi_nr_ul_config_pucch_pdu *pucch_pdu = &pucch_vars->pucch_pdu[i];
       uint16_t nb_of_prbs = pucch_pdu->prb_size;
       /* Generate PUCCH signal according to its format and parameters */
 
@@ -238,45 +234,23 @@ void pucch_procedures_ue_nr(PHY_VARS_NR_UE *ue,
 
       switch(pucch_pdu->format_type) {
         case 0:
-          nr_generate_pucch0(ue,
-                             ue->common_vars.txdataF,
-                             &ue->frame_parms,
-                             tx_amp,
-                             nr_slot_tx,
-                             pucch_pdu);
+          nr_generate_pucch0(ue, txdataF, &ue->frame_parms, tx_amp, nr_slot_tx, pucch_pdu);
           break;
         case 1:
-          nr_generate_pucch1(ue,
-                             ue->common_vars.txdataF,
-                             &ue->frame_parms,
-                             tx_amp,
-                             nr_slot_tx,
-                             pucch_pdu);
+          nr_generate_pucch1(ue, txdataF, &ue->frame_parms, tx_amp, nr_slot_tx, pucch_pdu);
           break;
         case 2:
-          nr_generate_pucch2(ue,
-                             ue->common_vars.txdataF,
-                             &ue->frame_parms,
-                             tx_amp,
-                             nr_slot_tx,
-                             pucch_pdu);
+          nr_generate_pucch2(ue, txdataF, &ue->frame_parms, tx_amp, nr_slot_tx, pucch_pdu);
           break;
         case 3:
         case 4:
-          nr_generate_pucch3_4(ue,
-                               ue->common_vars.txdataF,
-                               &ue->frame_parms,
-                               tx_amp,
-                               nr_slot_tx,
-                               pucch_pdu);
+          nr_generate_pucch3_4(ue, txdataF, &ue->frame_parms, tx_amp, nr_slot_tx, pucch_pdu);
           break;
       }
     }
     pucch_vars->active[i] = false;
   }
 }
-
-
 
 int      dummy_csi_status = 0;
 uint32_t dummy_csi_payload = 0;

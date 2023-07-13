@@ -50,12 +50,12 @@
 
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
 
-void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch0(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] start function at slot(nr_slot_tx)=%d\n",nr_slot_tx);
@@ -168,12 +168,12 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   }
 }
 
-void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch1(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
   uint16_t m0 = pucch_pdu->initial_cyclic_shift;
   uint64_t payload = pucch_pdu->payload;
@@ -652,12 +652,13 @@ static void nr_uci_encoding(uint64_t payload,
   
 }
 //#if 0
-void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch2(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+{
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch2] start function at slot(nr_slot_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
@@ -848,12 +849,13 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   free(btilde);
 }
 //#if 0
-void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
                           c16_t **txdataF,
-                          NR_DL_FRAME_PARMS *frame_parms,
-                          int16_t amp,
-                          int nr_slot_tx,
-                          fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
+                          const NR_DL_FRAME_PARMS *frame_parms,
+                          const int16_t amp,
+                          const int nr_slot_tx,
+                          const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+{
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch3_4] start function at slot(nr_slot_tx)=%d with payload=%lu and nr_bit=%d\n", nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
@@ -1317,4 +1319,3 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   free(z_im);
   free(btilde);
 }
-

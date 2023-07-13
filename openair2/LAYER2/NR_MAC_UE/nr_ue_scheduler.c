@@ -59,6 +59,7 @@
 
 static prach_association_pattern_t prach_assoc_pattern;
 static ssb_list_info_t ssb_list;
+static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 
 void fill_ul_config(fapi_nr_ul_config_request_t *ul_config, frame_t frame_tx, int slot_tx, uint8_t pdu_type){
 
@@ -2488,8 +2489,8 @@ void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot) {
 // PRACH formats 9, 10, 11 are corresponding to dual PRACH format configurations A1/B1, A2/B2, A3/B3.
 // - todo:
 // - Partial configuration is actually already stored in (fapi_nr_prach_config_t) &mac->phy_config.config_req->prach_config
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP) {
-
+static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP)
+{
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
   RA_config_t *ra = &mac->ra;
   ra->RA_offset = 2; // to compensate the rx frame offset at the gNB

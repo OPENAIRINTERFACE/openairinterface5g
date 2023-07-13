@@ -515,15 +515,14 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   stop_meas(&ue->generic_stat_bis[slot]);
   }
     if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY,
-          "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d channel_level %d: Channel Comp  %5.2f \n",
-          frame,
-          nr_slot_rx,
-          slot,
-          symbol,
-          *log2_maxh,
-          proc->channel_level,
-          ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+      LOG_D(PHY,
+            "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d Channel Comp  %5.2f \n",
+            frame,
+            nr_slot_rx,
+            slot,
+            symbol,
+            *log2_maxh,
+            ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
 
     start_meas(&ue->generic_stat_bis[slot]);
 

@@ -301,13 +301,12 @@ int8_t nr_ue_scheduled_response_stub(nr_scheduled_response_t *scheduled_response
   return 0;
 }
 
-
-void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
-                     NR_DL_UE_HARQ_t *harq_list,
-                     fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
-                     module_id_t module_id,
-                     int rnti) {
-
+static void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
+                            NR_DL_UE_HARQ_t *harq_list,
+                            fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                            module_id_t module_id,
+                            int rnti)
+{
   const uint8_t current_harq_pid = dlsch_config_pdu->harq_process_nbr;
   dlsch0->active = true;
   dlsch0->rnti = rnti;
@@ -330,7 +329,6 @@ void configure_dlsch(NR_UE_DLSCH_t *dlsch0,
     update_harq_status(module_id, current_harq_pid, dlsch0_harq->ack);
   }
 }
-
 
 void configure_ta_command(PHY_VARS_NR_UE *ue, fapi_nr_ta_command_pdu *ta_command_pdu)
 {

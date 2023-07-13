@@ -738,9 +738,7 @@ uint8_t nr_ue_get_rach(module_id_t mod_id,
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->R = 0;
           ((NR_MAC_SUBHEADER_FIXED *) pdu)->LCID = UL_SCH_LCID_PADDING;
           pdu += sizeof(NR_MAC_SUBHEADER_FIXED);
-          for (int j = 0; j < TBS_max - ra->Msg3_size - sizeof(NR_MAC_SUBHEADER_FIXED); j++) {
-            pdu[j] = 0;
-          }
+          memset(pdu, 0, TBS_max - ra->Msg3_size - sizeof(NR_MAC_SUBHEADER_FIXED));
         }
 
         // Dumping ULSCH payload

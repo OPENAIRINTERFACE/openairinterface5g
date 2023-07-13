@@ -83,11 +83,7 @@ void multadd_real_vector_complex_scalar(const int16_t *x, const int16_t *alpha, 
   }
 }
 
-void rotate_cpx_vector(c16_t *x,
-                       c16_t *alpha,
-                       c16_t *y,
-                       uint32_t N,
-                       uint16_t output_shift)
+void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y, uint32_t N, uint16_t output_shift)
 {
   // multiply a complex vector with a complex value (alpha)
   // stores result in y
@@ -98,12 +94,41 @@ void rotate_cpx_vector(c16_t *x,
     // output is 32 bytes aligned, but not the input
     
     const c16_t for_re={alpha->r, -alpha->i};
-    __m256i const alpha_for_real =  simde_mm256_set1_epi32(*(uint32_t*)&for_re);
+    const __m256i alpha_for_real = simde_mm256_set1_epi32(*(uint32_t *)&for_re);
     const c16_t for_im={alpha->i, alpha->r};
-    __m256i const alpha_for_im= simde_mm256_set1_epi32(*(uint32_t*)&for_im);
-    __m256i const perm_mask =
-      simde_mm256_set_epi8(31,30,23,22,29,28,21,20,27,26,19,18,25,24,17,16,
-			   15,14,7,6,13,12,5,4,11,10,3,2,9,8,1,0);
+    const __m256i alpha_for_im = simde_mm256_set1_epi32(*(uint32_t *)&for_im);
+    const __m256i perm_mask = simde_mm256_set_epi8(31,
+                                                   30,
+                                                   23,
+                                                   22,
+                                                   29,
+                                                   28,
+                                                   21,
+                                                   20,
+                                                   27,
+                                                   26,
+                                                   19,
+                                                   18,
+                                                   25,
+                                                   24,
+                                                   17,
+                                                   16,
+                                                   15,
+                                                   14,
+                                                   7,
+                                                   6,
+                                                   13,
+                                                   12,
+                                                   5,
+                                                   4,
+                                                   11,
+                                                   10,
+                                                   3,
+                                                   2,
+                                                   9,
+                                                   8,
+                                                   1,
+                                                   0);
     __m256i* xd= (__m256i*)x;
     const __m256i *end=xd+N/8;
     for( __m256i* yd = (__m256i *)y; xd<end ; yd++, xd++) {
