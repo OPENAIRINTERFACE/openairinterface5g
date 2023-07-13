@@ -850,7 +850,7 @@ static void config_pucch_resset1(NR_PUCCH_Config_t *pucch_Config, const NR_UE_NR
   pucchfmt2->interslotFrequencyHopping = NULL;
   pucchfmt2->additionalDMRS = NULL;
   pucchfmt2->maxCodeRate = calloc(1,sizeof(*pucchfmt2->maxCodeRate));
-  *pucchfmt2->maxCodeRate = NR_PUCCH_MaxCodeRate_zeroDot35;
+  *pucchfmt2->maxCodeRate = NR_PUCCH_MaxCodeRate_zeroDot15;
   pucchfmt2->nrofSlots = NULL;
   pucchfmt2->pi2BPSK = NULL;
 

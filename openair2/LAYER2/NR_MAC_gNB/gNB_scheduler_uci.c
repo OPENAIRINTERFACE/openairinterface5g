@@ -1154,9 +1154,6 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
       if(curr_pucch->csi_bits > 0 &&
          !curr_pucch->simultaneous_harqcsi)
         continue;
-      // TODO we can't schedule more than 11 bits in PUCCH2 for now
-      if (curr_pucch->csi_bits + curr_pucch->dai_c >= 10)
-        continue;
 
       // otherwise we can schedule in this active PUCCH
       // no need to check VRB occupation because already done when PUCCH has been activated
