@@ -516,10 +516,9 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     uint16_t pdsch_nb_rb    = dlsch0->dlsch_config.number_rbs;
     uint16_t s0             = dlsch0->dlsch_config.start_symbol;
     uint16_t s1             = dlsch0->dlsch_config.number_symbols;
-    bool is_SI              = dlsch0->rnti_type == _SI_RNTI_;
 
-    LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
-          ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
+    LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), BWP start %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
+          ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,BWPStart,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
     const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot * ue->frame_parms.ofdm_symbol_size + 15) / 16) * 16;
     __attribute__((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx * dlsch0->Nl][pdsch_est_size];
@@ -541,13 +540,13 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
           LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_slot_rx,m);
           nr_pdsch_channel_estimation(ue,
                                       proc,
-                                      is_SI,
                                       get_dmrs_port(aatx,dlsch0->dlsch_config.dmrs_ports),
                                       m,
                                       dlsch0->dlsch_config.nscid,
                                       dlsch0->dlsch_config.dlDmrsScramblingId,
                                       BWPStart,
                                       dlsch0->dlsch_config.dmrsConfigType,
+                                      dlsch0->dlsch_config.rb_offset,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb,
                                       pdsch_est_size,

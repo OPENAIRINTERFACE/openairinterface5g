@@ -701,7 +701,7 @@ void ue_init_config_request(NR_UE_MAC_INST_t *mac, int scs)
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,
                                NR_MIB_t *mib,
-                               bool sched_sib1)
+                               int sched_sib)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   AssertFatal(mib, "MIB should not be NULL\n");
@@ -709,16 +709,21 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
   mac->mib = mib;    //  update by every reception
   mac->phy_config.Mod_id = module_id;
   mac->phy_config.CC_id = cc_idP;
-  mac->get_sib1 = sched_sib1;
+  if (sched_sib == 1)
+    mac->get_sib1 = true;
+  else if (sched_sib == 2)
+    mac->get_otherSI = true;
 }
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
+                                struct NR_SI_SchedulingInfo *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   AssertFatal(scc, "SIB1 SCC should not be NULL\n");
   mac->scc_SIB = scc;
+  mac->si_SchedulingInfo = si_SchedulingInfo;
   mac->nr_band = *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
   config_common_ue_sa(mac, module_id, cc_idP);
   configure_current_BWP(mac, scc, NULL);

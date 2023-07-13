@@ -165,8 +165,10 @@ void nr_ue_init_mac(module_id_t module_idP)
   nr_ue_mac_default_configs(mac);
   mac->first_sync_frame = -1;
   mac->get_sib1 = false;
+  mac->get_otherSI = false;
   mac->phy_config_request_sent = false;
   mac->state = UE_NOT_SYNC;
+  mac->si_window_start = -1;
 }
 
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
@@ -354,13 +356,17 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
                                 unsigned int gNB_index,
                                 uint8_t ack_nack,
                                 uint8_t *pduP,
-                                uint32_t pdu_len) {
+                                uint32_t pdu_len)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
   if(ack_nack) {
     LOG_D(NR_MAC, "Decoding NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
     nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_DL_SCH, (uint8_t *) pduP, pdu_len);
   }
   else
-    LOG_E(NR_MAC, "Got NACK on NR-BCCH-DL-SCH-Message (SIB1 or SI)\n");
+    LOG_E(NR_MAC, "Got NACK on NR-BCCH-DL-SCH-Message (%s)\n", mac->get_sib1 ? "SIB1" : "other SI");
+  mac->get_sib1 = false;
+  mac->get_otherSI = false;
   return 0;
 }
 
@@ -655,7 +661,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
 
     dlsch_config_pdu_1_0->pduBitmap = 0;
 
-    NR_PDSCH_Config_t *pdsch_config = current_DL_BWP ? current_DL_BWP->pdsch_Config : NULL;
+    NR_PDSCH_Config_t *pdsch_config = (current_DL_BWP || !mac->get_sib1)  ? current_DL_BWP->pdsch_Config : NULL;
     if (dci_ind->ss_type == NR_SearchSpace__searchSpaceType_PR_common) {
       dlsch_config_pdu_1_0->BWPSize = mac->type0_PDCCH_CSS_config.num_rbs ? mac->type0_PDCCH_CSS_config.num_rbs : current_DL_BWP->initial_BWPSize;
       dlsch_config_pdu_1_0->BWPStart = dci_ind->cset_start;
@@ -672,7 +678,6 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon;
       if(mac->frequency_range == FR2)
         dlsch_config_pdu_1_0->SubcarrierSpacing = mac->mib->subCarrierSpacingCommon + 2;
-      if (pdsch_config) pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup->dmrs_AdditionalPosition = NULL; // For PDSCH with mapping type A, the UE shall assume dmrs-AdditionalPosition='pos2'
     } else {
       dlsch_config_pdu_1_0->SubcarrierSpacing = current_DL_BWP->scs;
       if (ra->RA_window_cnt >= 0 && rnti == ra->ra_rnti){
@@ -688,19 +693,23 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+    dlsch_config_pdu_1_0->rb_offset = dlsch_config_pdu_1_0->start_rb + dlsch_config_pdu_1_0->BWPStart;
+    if (mac->get_sib1)
+      dlsch_config_pdu_1_0->rb_offset -= dlsch_config_pdu_1_0->BWPStart;
 
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
-    // TODO need to differentiate SI_RNTI between SIB1 and other SIB
     NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
-                                             dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, rnti == SI_RNTI);
+                                             dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, mac->get_sib1);
 
     dlsch_config_pdu_1_0->number_symbols = tda_info.nrOfSymbols;
     dlsch_config_pdu_1_0->start_symbol = tda_info.startSymbolIndex;
 
     struct NR_DMRS_DownlinkConfig *dl_dmrs_config = NULL;
     if (pdsch_config)
-      dl_dmrs_config = (tda_info.mapping_type == typeA) ? pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup : pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
+      dl_dmrs_config = (tda_info.mapping_type == typeA) ?
+                       pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeA->choice.setup :
+                       pdsch_config->dmrs_DownlinkForPDSCH_MappingTypeB->choice.setup;
 
     dlsch_config_pdu_1_0->nscid = 0;
     if(dl_dmrs_config && dl_dmrs_config->scramblingID0)
@@ -908,6 +917,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
       return -1;
     }
+    dlsch_config_pdu_1_1->rb_offset = dlsch_config_pdu_1_1->start_rb + dlsch_config_pdu_1_1->BWPStart;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
     int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
     NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
