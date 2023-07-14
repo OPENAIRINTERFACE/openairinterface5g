@@ -1016,10 +1016,10 @@ void ru_tx_func(void *param) {
   char filename[40];
  
   int cumul_samples = fp->get_samples_per_slot(0, fp);
-  int i = 0;
-  for (i = 1; i < fp->slots_per_subframe / 2; i++)
+  int i = 1;
+  for (; i < fp->slots_per_subframe / 2; i++)
     cumul_samples += fp->get_samples_per_slot(i, fp);
-  int samples = cumul_samples / (i + 1);
+  int samples = cumul_samples / i;
   int absslot_tx = info->timestamp_tx / samples;
   int absslot_rx = absslot_tx - ru->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;

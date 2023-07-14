@@ -117,10 +117,10 @@ void tx_func(void *param)
   int frame_tx = info->frame;
   int slot_tx = info->slot;
   int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
-  int i = 0;
-  for (i = 1; i < gNB->frame_parms.slots_per_subframe / 2; i++)
+  int i = 1;
+  for (; i < gNB->frame_parms.slots_per_subframe / 2; i++)
     cumul_samples += gNB->frame_parms.get_samples_per_slot(i, &gNB->frame_parms);
-  int samples = cumul_samples / (i + 1);
+  int samples = cumul_samples / i;
   int absslot_tx = info->timestamp_tx / samples;
   int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
@@ -182,12 +182,11 @@ void rx_func(void *param)
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-
   int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
-  int i = 0;
-  for (i = 1; i < gNB->frame_parms.slots_per_subframe / 2; i++)
+  int i = 1;
+  for (; i < gNB->frame_parms.slots_per_subframe / 2; i++)
     cumul_samples += gNB->frame_parms.get_samples_per_slot(i, &gNB->frame_parms);
-  int samples = cumul_samples / (i + 1);
+  int samples = cumul_samples / i;
   int absslot_tx = info->timestamp_tx / samples;
   int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
