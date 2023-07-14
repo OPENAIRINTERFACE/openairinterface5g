@@ -134,6 +134,7 @@ typedef enum RA_trigger_e {
 } RA_trigger_t;
 
 typedef struct UE_RRC_SI_INFO_NR_s {
+  uint32_t default_otherSI_map;
   NR_SIB1_t *sib1;
   int sib1_timer;
   NR_SIB2_t *sib2;
