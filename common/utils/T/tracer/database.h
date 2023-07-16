@@ -3,6 +3,7 @@
 
 /* returns an opaque pointer - truly a 'database *', see database.c */
 void *parse_database(char *filename);
+void free_database(void *database);
 void dump_database(void *database);
 void list_ids(void *database);
 void list_groups(void *database);

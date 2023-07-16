@@ -49,9 +49,9 @@ static void nr_polar_delete_list(t_nrPolar_params * polarParams) {
   
   delete_decoder_tree(polarParams);
   //From build_polar_tables()
-  for (int k=0; k < polarParams->K + polarParams->n_pc; k++)
-    if (polarParams->G_N_tab[k]) 
-      free(polarParams->G_N_tab[k]);
+  for (int n=0; n < polarParams->N; n++)
+    if (polarParams->G_N_tab[n])
+      free(polarParams->G_N_tab[n]);
   free(polarParams->G_N_tab);
   free(polarParams->rm_tab);
   if (polarParams->crc_generator_matrix)
@@ -71,6 +71,7 @@ static void nr_polar_delete_list(t_nrPolar_params * polarParams) {
   free(polarParams->deinterleaving_pattern);
   free(polarParams->rate_matching_pattern);
   free(polarParams->information_bit_pattern);
+  free(polarParams->parity_check_bit_pattern);
   free(polarParams->Q_I_N);
   free(polarParams->Q_F_N);
   free(polarParams->Q_PC_N);
@@ -234,6 +235,7 @@ t_nrPolar_params *nr_polar_params(int8_t messageType, uint16_t messageLength, ui
                                  newPolarInitNode->N,
                                  newPolarInitNode->encoderLength);
   newPolarInitNode->information_bit_pattern = malloc(sizeof(uint8_t) * newPolarInitNode->N);
+  newPolarInitNode->parity_check_bit_pattern = malloc(sizeof(uint8_t) * newPolarInitNode->N);
   newPolarInitNode->Q_I_N = malloc(sizeof(int16_t) * (newPolarInitNode->K + newPolarInitNode->n_pc));
   newPolarInitNode->Q_F_N = malloc( sizeof(int16_t) * (newPolarInitNode->N + 1)); // Last element shows the final array index assigned a value.
   newPolarInitNode->Q_PC_N = malloc( sizeof(int16_t) * (newPolarInitNode->n_pc));
@@ -242,14 +244,18 @@ t_nrPolar_params *nr_polar_params(int8_t messageType, uint16_t messageLength, ui
     newPolarInitNode->Q_F_N[i] = -1; // Empty array.
 
   nr_polar_info_bit_pattern(newPolarInitNode->information_bit_pattern,
+                            newPolarInitNode->parity_check_bit_pattern,
                             newPolarInitNode->Q_I_N,
                             newPolarInitNode->Q_F_N,
+                            newPolarInitNode->Q_PC_N,
                             J,
                             newPolarInitNode->Q_0_Nminus1,
                             newPolarInitNode->K,
                             newPolarInitNode->N,
                             newPolarInitNode->encoderLength,
-                            newPolarInitNode->n_pc);
+                            newPolarInitNode->n_pc,
+                            newPolarInitNode->n_pc_wm);
+
   // sort the Q_I_N array in ascending order (first K positions)
   qsort((void *)newPolarInitNode->Q_I_N,newPolarInitNode->K,sizeof(int16_t),intcmp);
   newPolarInitNode->channel_interleaver_pattern = malloc(sizeof(uint16_t) * newPolarInitNode->encoderLength);

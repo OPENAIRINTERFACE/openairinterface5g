@@ -107,7 +107,7 @@ void send_event(gui *_gui, enum event_type type, ...)
   struct gui *g = _gui;
   int do_write = 0;
   va_list ap;
-  struct event *e;
+  struct event *e = NULL;  /* initialization not necessary but gcc is not happy */
 
   if (g->queued_events == NULL) do_write = 1;
 

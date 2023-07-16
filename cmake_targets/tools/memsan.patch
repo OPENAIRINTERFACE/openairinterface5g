@@ -1,0 +1,53 @@
+commit bf7f0c4f0f1bfce586667b50050640b67a7a747a
+Author: Robert Schmidt <robert.schmidt@openairinterface.org>
+Date:   Wed Jun 7 18:24:50 2023 +0200
+
+    Fix dlopen() linker errors in dfts, ldpc, ldpc_parityCheck, and params_libconfig
+
+diff --git a/CMakeLists.txt b/CMakeLists.txt
+index c29105d503..3b9e7d1246 100644
+--- a/CMakeLists.txt
++++ b/CMakeLists.txt
+@@ -508,7 +508,7 @@ add_library(CONFIG_LIB
+ )
+ target_link_libraries(CONFIG_LIB PRIVATE dl UTIL)
+ add_library(params_libconfig MODULE ${CONFIG_ROOTDIR}/libconfig/config_libconfig.c)
+-target_link_libraries(params_libconfig config)
++target_link_libraries(params_libconfig config CONFIG_LIB minimal_lib)
+ # shared library loader
+ set (SHLIB_LOADER_SOURCES
+   ${OPENAIR_DIR}/common/utils/load_module_shlib.c
+@@ -1018,16 +1018,19 @@ if (ENABLE_LDPC_CUDA)
+   endif()
+ endif()
+ 
+-add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
++add_library(ldpc MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} ${OPENAIR1_DIR}/PHY/CODING/crc_byte.c)
+ target_link_libraries(ldpc PRIVATE ldpc_gen_HEADERS)
++target_link_libraries(ldpc PRIVATE UTIL)
+ 
+ add_library(ldpc_parityCheck MODULE ${PHY_LDPC_OPTIM8SEGMULTI_SRC} )
+ target_compile_definitions(ldpc_parityCheck PUBLIC NR_LDPC_ENABLE_PARITY_CHECK)
+ target_link_libraries(ldpc_parityCheck  PRIVATE ldpc_gen_HEADERS)
++target_link_libraries(ldpc_parityCheck PRIVATE UTIL minimal_lib)
+ 
+ add_library(coding MODULE ${PHY_TURBOSRC} )
+ 
+ add_library(dfts MODULE ${OPENAIR1_DIR}/PHY/TOOLS/oai_dfts.c )
++target_link_libraries(dfts PRIVATE minimal_lib)
+ 
+ 
+ set(PHY_SRC_COMMON
+diff --git a/common/utils/minimal_stub.c b/common/utils/minimal_stub.c
+index be9c1b399d..7ad0df4d56 100644
+--- a/common/utils/minimal_stub.c
++++ b/common/utils/minimal_stub.c
+@@ -1,6 +1,8 @@
++#include <stdlib.h>
+ #ifndef T_TRACER
+ int T_stdout;
+ #endif
++int oai_exit = 0;
+ 
+ void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+ {

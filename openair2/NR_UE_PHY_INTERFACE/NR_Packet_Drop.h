@@ -23,7 +23,6 @@
 
 #include <platform_types.h>
 #include <nfapi_nr_interface_scf.h>
-#include <openair1/PHY/thread_NR_UE.h>
 #include "openair2/NR_PHY_INTERFACE/NR_IF_Module.h"
 
 #define NR_NUM_MCS 29

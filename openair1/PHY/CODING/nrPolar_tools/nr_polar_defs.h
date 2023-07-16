@@ -106,6 +106,7 @@ struct nrPolar_params {
   int16_t *Q_F_N;
   int16_t *Q_PC_N;
   uint8_t *information_bit_pattern;
+  uint8_t *parity_check_bit_pattern;
   uint16_t *channel_interleaver_pattern;
   //uint32_t crc_polynomial;
 
@@ -238,24 +239,28 @@ void nr_polar_rate_matching(double *input,
 
 void nr_polar_rate_matching_int16(int16_t *input,
                                   int16_t *output,
-                                  uint16_t *rmp,
-                                  uint16_t K,
-                                  uint16_t N,
-                                  uint16_t E);
+                                  const uint16_t *rmp,
+                                  const uint16_t K,
+                                  const uint16_t N,
+                                  const uint16_t E,
+                                  const uint8_t i_bil);
 
 void nr_polar_interleaving_pattern(uint16_t K,
                                    uint8_t I_IL,
                                    uint16_t *PI_k_);
 
 void nr_polar_info_bit_pattern(uint8_t *ibp,
+                               uint8_t *pcbp,
                                int16_t *Q_I_N,
                                int16_t *Q_F_N,
-                               uint16_t *J,
+                               int16_t *Q_PC_N,
+                               const uint16_t *J,
                                const uint16_t *Q_0_Nminus1,
                                uint16_t K,
                                uint16_t N,
                                uint16_t E,
-                               uint8_t n_PC);
+                               uint8_t n_PC,
+                               uint8_t n_pc_wm);
 
 void nr_polar_info_bit_extraction(uint8_t *input,
                                   uint8_t *output,
@@ -271,6 +276,22 @@ void nr_byte2bit_uint8_32(uint8_t *in,
                           uint32_t *out);
 
 const uint8_t **crc24c_generator_matrix(uint16_t payloadSizeBits);
+
+void nr_polar_generate_u(uint64_t *u,
+                         const uint64_t *Cprime,
+                         const uint8_t *information_bit_pattern,
+                         const uint8_t *parity_check_bit_pattern,
+                         uint16_t N,
+                         uint8_t n_pc);
+
+void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint16_t N);
+
+void nr_polar_info_extraction_from_u(uint64_t *Cprime,
+                                     const uint8_t *u,
+                                     const uint8_t *information_bit_pattern,
+                                     const uint8_t *parity_check_bit_pattern,
+                                     uint16_t N,
+                                     uint8_t n_pc);
 
 void nr_polar_bit_insertion(uint8_t *input,
                             uint8_t *output,

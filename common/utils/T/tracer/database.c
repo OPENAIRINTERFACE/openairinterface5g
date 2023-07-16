@@ -43,6 +43,14 @@ typedef struct {
   buffer value;
 } parser;
 
+void *my_bsearch(const void *key, const void *base,
+                 size_t nmemb, size_t size,
+                 int (*compar)(const void *, const void *))
+{
+  if (nmemb == 0) return NULL;
+  return bsearch(key, base, nmemb, size, compar);
+}
+
 void put(buffer *b, int c)
 {
   if (b->size == b->maxsize) {
@@ -125,7 +133,7 @@ int string_cmp(const void *_p1, const void *_p2)
 
 id *add_id(database *r, char *idname, int i)
 {
-  if (bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp) != NULL)
+  if (my_bsearch(&(id){.name=idname}, r->i, r->isize, sizeof(id), id_cmp) != NULL)
     { printf("ERROR: ID '%s' declared more than once\n", idname); exit(1); }
   if ((r->isize & 1023) == 0) {
     r->i = realloc(r->i, (r->isize + 1024) * sizeof(id));
@@ -143,14 +151,14 @@ id *add_id(database *r, char *idname, int i)
   r->i[r->isize].id = i;
   r->isize++;
   qsort(r->i, r->isize, sizeof(id), id_cmp);
-  return (id*)bsearch(&(id){name:idname}, r->i, r->isize, sizeof(id), id_cmp);
+  return (id*)my_bsearch(&(id){.name=idname}, r->i, r->isize, sizeof(id), id_cmp);
 }
 
 group *get_group(database *r, char *group_name)
 {
   group *ret;
 
-  ret = bsearch(&(group){name:group_name},
+  ret = my_bsearch(&(group){.name=group_name},
                 r->g, r->gsize, sizeof(group), group_cmp);
   if (ret != NULL) return ret;
 
@@ -166,7 +174,7 @@ group *get_group(database *r, char *group_name)
 
   qsort(r->g, r->gsize, sizeof(group), group_cmp);
 
-  return bsearch(&(group){name:group_name},
+  return my_bsearch(&(group){.name=group_name},
                  r->g, r->gsize, sizeof(group), group_cmp);
 }
 
@@ -182,7 +190,7 @@ void group_add_id(group *g, char *id)
 
 void id_add_group(id *i, char *group)
 {
-  char *g = bsearch(&group, i->groups, i->gsize, sizeof(char *), string_cmp);
+  char *g = my_bsearch(&group, i->groups, i->gsize, sizeof(char *), string_cmp);
   if (g != NULL) return;
 
   if ((i->gsize & 1023) == 0) {
@@ -392,7 +400,7 @@ void list_groups(void *_d)
 static int onoff_id(database *d, char *name, int *a, int onoff)
 {
   id *i;
-  i = bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
+  i = my_bsearch(&(id){.name=name}, d->i, d->isize, sizeof(id), id_cmp);
   if (i == NULL) return 0;
   a[i->id] = onoff;
   printf("turning %s %s\n", onoff ? "ON" : "OFF", name);
@@ -403,7 +411,7 @@ static int onoff_group(database *d, char *name, int *a, int onoff)
 {
   group *g;
   int i;
-  g = bsearch(&(group){name:name}, d->g, d->gsize, sizeof(group), group_cmp);
+  g = my_bsearch(&(group){.name=name}, d->g, d->gsize, sizeof(group), group_cmp);
   if (g == NULL) return 0;
   for (i = 0; i < g->size; i++) onoff_id(d, g->ids[i], a, onoff);
   return 1;
@@ -442,7 +450,7 @@ char *event_vcd_name_from_id(void *_database, int id)
 int event_id_from_name(void *_database, char *name)
 {
   database *d = _database;
-  id *i = (id*)bsearch(&(id){name:name}, d->i, d->isize, sizeof(id), id_cmp);
+  id *i = (id*)my_bsearch(&(id){.name=name}, d->i, d->isize, sizeof(id), id_cmp);
   if (i == NULL)
     { printf("%s:%d: '%s' not found\n", __FILE__, __LINE__, name); abort(); }
   return i->id;
@@ -515,4 +523,32 @@ void database_get_generic_description(void *_d, int id,
   }
   PUTC(&o, 0);
   *desc = o.obuf;
+}
+
+void free_database(void *_d)
+{
+  database *d = _d;
+  int i;
+  int j;
+  free(d->name);
+  for (i = 0; i < d->isize; i++) {
+    free(d->i[i].name);
+    free(d->i[i].desc);
+    free(d->i[i].groups);
+    for (j = 0; j < d->i[i].asize; j++) {
+      free(d->i[i].arg_type[j]);
+      free(d->i[i].arg_name[j]);
+    }
+    free(d->i[i].arg_type);
+    free(d->i[i].arg_name);
+    free(d->i[i].vcd_name);
+  }
+  free(d->i);
+  for (i = 0; i < d->gsize; i++) {
+    free(d->g[i].name);
+    free(d->g[i].ids);
+  }
+  free(d->g);
+  free(d->id_to_pos);
+  free(d);
 }

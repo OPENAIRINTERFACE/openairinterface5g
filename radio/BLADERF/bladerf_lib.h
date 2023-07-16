@@ -24,10 +24,12 @@
  * Author: navid nikaein
  */
 
+#ifndef BLADERF_LIB_H
+#define BLADERF_LIB_H
+
 #include <libbladeRF.h>
 
 #include "common_lib.h"
-#include "LOG/log.h"
 
 /** @addtogroup _BLADERF_PHY_RF_INTERFACE_
  * @{
@@ -109,12 +111,6 @@ int trx_brf_init(openair0_device *device);
  */
 openair0_timestamp trx_get_timestamp(openair0_device *device, bladerf_module module);
 
-/*! \brief Get BladeRF log level
- * \param log_level log level
- * \returns log level of BLADERF device
- */
-int get_brf_log_level(int log_level);
-
 /*! \brief bladeRF error report 
  * \param status 
  * \returns 0 on success
@@ -122,3 +118,5 @@ int get_brf_log_level(int log_level);
 int brf_error(int status);
 
 /*@}*/
+
+#endif /* BLADERF_LIB_H */

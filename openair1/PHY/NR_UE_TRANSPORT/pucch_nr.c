@@ -49,13 +49,14 @@
 #endif
 
 //#define ONE_OVER_SQRT2 23170 // 32767/sqrt(2) = 23170 (ONE_OVER_SQRT2)
+//#define POLAR_CODING_DEBUG
 
-void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch0(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch0] start function at slot(nr_slot_tx)=%d\n",nr_slot_tx);
@@ -168,12 +169,12 @@ void nr_generate_pucch0(PHY_VARS_NR_UE *ue,
   }
 }
 
-void nr_generate_pucch1(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch1(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
 {
   uint16_t m0 = pucch_pdu->initial_cyclic_shift;
   uint64_t payload = pucch_pdu->payload;
@@ -652,12 +653,13 @@ static void nr_uci_encoding(uint64_t payload,
   
 }
 //#if 0
-void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch2(const PHY_VARS_NR_UE *ue,
                         c16_t **txdataF,
-                        NR_DL_FRAME_PARMS *frame_parms,
-                        int16_t amp,
-                        int nr_slot_tx,
-                        fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
+                        const NR_DL_FRAME_PARMS *frame_parms,
+                        const int16_t amp,
+                        const int nr_slot_tx,
+                        const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+{
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch2] start function at slot(nr_slot_tx)=%d  with payload=%lu and nr_bit=%d\n",nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
@@ -692,7 +694,19 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.1 scrambling format 2
    */
-  nr_pucch2_3_4_scrambling(M_bit,rnti,pucch_pdu->data_scrambling_id,&b[0],btilde);
+  nr_pucch2_3_4_scrambling(M_bit, rnti, pucch_pdu->data_scrambling_id, b, btilde);
+
+#ifdef POLAR_CODING_DEBUG
+  printf("bt:");
+  for (int n = 0; n < M_bit; n++) {
+    if (n % 4 == 0) {
+      printf(" ");
+    }
+    printf("%u", btilde[n]);
+  }
+  printf("\n");
+#endif
+
   /*
    * Implementing TS 38.211 Subclause 6.3.2.5.2 modulation format 2
    * btilde shall be modulated as described in subclause 5.1 using QPSK
@@ -848,12 +862,13 @@ void nr_generate_pucch2(PHY_VARS_NR_UE *ue,
   free(btilde);
 }
 //#if 0
-void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
+void nr_generate_pucch3_4(const PHY_VARS_NR_UE *ue,
                           c16_t **txdataF,
-                          NR_DL_FRAME_PARMS *frame_parms,
-                          int16_t amp,
-                          int nr_slot_tx,
-                          fapi_nr_ul_config_pucch_pdu *pucch_pdu) {
+                          const NR_DL_FRAME_PARMS *frame_parms,
+                          const int16_t amp,
+                          const int nr_slot_tx,
+                          const fapi_nr_ul_config_pucch_pdu *pucch_pdu)
+{
 #ifdef DEBUG_NR_PUCCH_TX
   printf("\t [nr_generate_pucch3_4] start function at slot(nr_slot_tx)=%d with payload=%lu and nr_bit=%d\n", nr_slot_tx, pucch_pdu->payload, pucch_pdu->n_bit);
 #endif
@@ -1317,4 +1332,3 @@ void nr_generate_pucch3_4(PHY_VARS_NR_UE *ue,
   free(z_im);
   free(btilde);
 }
-

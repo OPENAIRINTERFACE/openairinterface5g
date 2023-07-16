@@ -32,6 +32,117 @@
 
 #include "PHY/CODING/nrPolar_tools/nr_polar_defs.h"
 
+
+// TS 38.212 - Section 5.3.1.2 Polar encoding
+void nr_polar_generate_u(uint64_t *u,
+                         const uint64_t *Cprime,
+                         const uint8_t *information_bit_pattern,
+                         const uint8_t *parity_check_bit_pattern,
+                         uint16_t N,
+                         uint8_t n_pc)
+{
+  int N_array = N >> 6;
+  int k = 0;
+
+  if (n_pc > 0) {
+    uint64_t y0 = 0, y1 = 0, y2 = 0, y3 = 0, y4 = 0;
+
+    for (int n = 0; n < N; n++) {
+      uint64_t yt = y0;
+      y0 = y1;
+      y1 = y2;
+      y2 = y3;
+      y3 = y4;
+      y4 = yt;
+
+      if (information_bit_pattern[n] == 1) {
+        int n1 = n >> 6;
+        int n2 = n - (n1 << 6);
+        if (parity_check_bit_pattern[n] == 1) {
+          u[N_array - 1 - n1] |= y0 << (63 - n2);
+        } else {
+          int k1 = k >> 6;
+          int k2 = k - (k1 << 6);
+          uint64_t bit = (Cprime[k1] >> k2) & 1;
+          u[N_array - 1 - n1] |= bit << (63 - n2);
+          k++;
+          y0 = y0 ^ (int)bit;
+        }
+      }
+    }
+
+  } else {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        int n1 = n >> 6;
+        int n2 = n - (n1 << 6);
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        uint64_t bit = (Cprime[k1] >> k2) & 1;
+        u[N_array - 1 - n1] |= bit << (63 - n2);
+        k++;
+      }
+    }
+  }
+}
+
+void nr_polar_info_extraction_from_u(uint64_t *Cprime,
+                                     const uint8_t *u,
+                                     const uint8_t *information_bit_pattern,
+                                     const uint8_t *parity_check_bit_pattern,
+                                     uint16_t N,
+                                     uint8_t n_pc)
+{
+  int k = 0;
+
+  if (n_pc > 0) {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        if (parity_check_bit_pattern[n] == 0) {
+          int k1 = k >> 6;
+          int k2 = k - (k1 << 6);
+          Cprime[k1] |= (uint64_t)u[n] << k2;
+          k++;
+        }
+      }
+    }
+
+  } else {
+    for (int n = 0; n < N; n++) {
+      if (information_bit_pattern[n] == 1) {
+        int k1 = k >> 6;
+        int k2 = k - (k1 << 6);
+        Cprime[k1] |= (uint64_t)u[n] << k2;
+        k++;
+      }
+    }
+  }
+}
+
+void nr_polar_uxG(uint64_t *D, const uint64_t *u, const uint64_t **G_N_tab, uint16_t N)
+{
+  int N_array = N >> 6;
+
+  for (int n = 0; n < N; n++) {
+    const uint64_t *Gn = G_N_tab[N - 1 - n];
+
+    int n_ones = 0;
+    for (int a = 0; a < N_array; a++) {
+      uint64_t uxG = u[a] & Gn[a];
+      for (int m = 0; m < 64; m++) {
+        if (((uxG >> m) & 1) == 1) {
+          n_ones++;
+        }
+      }
+    }
+    uint64_t bit = n_ones % 2;
+
+    int n1 = n >> 6;
+    int n2 = n - (n1 << 6);
+    D[n1] |= bit << n2;
+  }
+}
+
 void nr_polar_bit_insertion(uint8_t *input,
 			    uint8_t *output,
 			    uint16_t N,
@@ -138,14 +249,17 @@ void nr_polar_channel_interleaver_pattern(uint16_t *cip,
 
 
 void nr_polar_info_bit_pattern(uint8_t *ibp,
-			       int16_t *Q_I_N,
-			       int16_t *Q_F_N,
-			       uint16_t *J,
-			       const uint16_t *Q_0_Nminus1,
-			       uint16_t K,
-			       uint16_t N,
-			       uint16_t E,
-			       uint8_t n_PC)
+                               uint8_t *pcbp,
+                               int16_t *Q_I_N,
+                               int16_t *Q_F_N,
+                               int16_t *Q_PC_N,
+                               const uint16_t *J,
+                               const uint16_t *Q_0_Nminus1,
+                               uint16_t K,
+                               uint16_t N,
+                               uint16_t E,
+                               uint8_t n_PC,
+                               uint8_t n_pc_wm)
 {
   int16_t *Q_Ftmp_N = malloc(sizeof(int16_t) * (N + 1)); // Last element shows the final
   int16_t *Q_Itmp_N = malloc(sizeof(int16_t) * (N + 1)); // array index assigned a value.
@@ -159,44 +273,44 @@ void nr_polar_info_bit_pattern(uint8_t *ibp,
   uint16_t limit, ind;
 
   if (E < N) {
-    if ((K / (double) E) <= (7.0 / 16)) { //puncturing
+    if ((K / (double)E) <= (7.0 / 16)) { // puncturing
       for (int n = 0; n <= N - E - 1; n++) {
-	ind = Q_Ftmp_N[N] + 1;
-	Q_Ftmp_N[ind] = J[n];
-	Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
+        ind = Q_Ftmp_N[N] + 1;
+        Q_Ftmp_N[ind] = J[n];
+        Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
       }
 
-      if ((E / (double) N) >= (3.0 / 4)) {
-	limit = ceil((double) (3 * N - 2 * E) / 4);
-	for (int n = 0; n <= limit - 1; n++) {
-	  ind = Q_Ftmp_N[N] + 1;
-	  Q_Ftmp_N[ind] = n;
-	  Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
-	}
+      if ((E / (double)N) >= (3.0 / 4)) {
+        limit = ceil((double)(3 * N - 2 * E) / 4);
+        for (int n = 0; n <= limit - 1; n++) {
+          ind = Q_Ftmp_N[N] + 1;
+          Q_Ftmp_N[ind] = n;
+          Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
+        }
       } else {
-	limit = ceil((double) (9 * N - 4 * E) / 16);
-	for (int n = 0; n <= limit - 1; n++) {
-	  ind = Q_Ftmp_N[N] + 1;
-	  Q_Ftmp_N[ind] = n;
-	  Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
-	}
+        limit = ceil((double)(9 * N - 4 * E) / 16);
+        for (int n = 0; n <= limit - 1; n++) {
+          ind = Q_Ftmp_N[N] + 1;
+          Q_Ftmp_N[ind] = n;
+          Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
+        }
       }
-    } else { //shortening
+    } else { // shortening
       for (int n = E; n <= N - 1; n++) {
-	ind = Q_Ftmp_N[N] + 1;
-	Q_Ftmp_N[ind] = J[n];
-	Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
+        ind = Q_Ftmp_N[N] + 1;
+        Q_Ftmp_N[ind] = J[n];
+        Q_Ftmp_N[N] = Q_Ftmp_N[N] + 1;
       }
     }
   }
 
-  //Q_I,tmp_N = Q_0_N-1 \ Q_F,tmp_N
+  // Q_I,tmp_N = Q_0_N-1 \ Q_F,tmp_N
   for (int n = 0; n <= N - 1; n++) {
     flag = 1;
     for (int m = 0; m <= Q_Ftmp_N[N]; m++) {
       if (Q_0_Nminus1[n] == Q_Ftmp_N[m]) {
-	flag = 0;
-	break;
+        flag = 0;
+        break;
       }
     }
     if (flag) {
@@ -205,19 +319,26 @@ void nr_polar_info_bit_pattern(uint8_t *ibp,
     }
   }
 
-  //Q_I_N comprises (K+n_PC) most reliable bit indices in Q_I,tmp_N
+  // Q_I_N comprises (K+n_PC) most reliable bit indices in Q_I,tmp_N
   for (int n = 0; n <= (K + n_PC) - 1; n++) {
     ind = Q_Itmp_N[N] + n - ((K + n_PC) - 1);
     Q_I_N[n] = Q_Itmp_N[ind];
   }
 
-  //Q_F_N = Q_0_N-1 \ Q_I_N
+  if (n_PC > 0) {
+    AssertFatal(n_pc_wm == 0, "Q_PC_N computation for n_pc_wm = %i is not implemented yet!\n", n_pc_wm);
+    for (int n = 0; n < n_PC - n_pc_wm; n++) {
+      Q_PC_N[n] = Q_I_N[n];
+    }
+  }
+
+  // Q_F_N = Q_0_N-1 \ Q_I_N
   for (int n = 0; n <= N - 1; n++) {
     flag = 1;
     for (int m = 0; m <= (K + n_PC) - 1; m++) {
       if (Q_0_Nminus1[n] == Q_I_N[m]) {
-	flag = 0;
-	break;
+        flag = 0;
+        break;
       }
     }
     if (flag) {
@@ -226,16 +347,25 @@ void nr_polar_info_bit_pattern(uint8_t *ibp,
     }
   }
 
-  //Information Bit Pattern
+  // Information and Parity Chack Bit Pattern
   for (int n = 0; n <= N - 1; n++) {
-    ibp[n] = 0;
 
+    ibp[n] = 0;
     for (int m = 0; m <= (K + n_PC) - 1; m++) {
       if (n == Q_I_N[m]) {
-	ibp[n] = 1;
-	break;
+        ibp[n] = 1;
+        break;
       }
     }
+
+    pcbp[n] = 0;
+    for (int m = 0; m < n_PC - n_pc_wm; m++) {
+      if (n == Q_PC_N[m]) {
+        pcbp[n] = 1;
+        break;
+      }
+    }
+
   }
 
   free(Q_Ftmp_N);
@@ -325,23 +455,75 @@ void nr_polar_rate_matching(double *input,
   }
 }
 
-void nr_polar_rate_matching_int16(int16_t *input,
-				  int16_t *output,
-				  uint16_t *rmp,
-				  uint16_t K,
-				  uint16_t N,
-				  uint16_t E)
+/*
+ * De-interleaving of coded bits implementation
+ * TS 138.212: Section 5.4.1.3 - Interleaving of coded bits
+ */
+void nr_polar_rm_deinterleaving_cb(const int16_t *in, int16_t *out, const uint16_t E)
 {
-  if (E>=N) { //repetition
-    memset((void*)output,0,N*sizeof(int16_t));
-    for (int i=0; i<=E-1; i++) output[rmp[i]]+=input[i];
+  int T = ceil((sqrt(8 * E + 1) - 1) / 2);
+  int v_tab[T][T];
+  int k = 0;
+  for (int i = 0; i < T; i++) {
+    memset(v_tab[i], 0, T * sizeof(int));
+    for (int j = 0; j < T - i; j++) {
+      if (k < E) {
+        v_tab[i][j] = k + 1;
+      }
+      k++;
+    }
+  }
+
+  int v[T][T];
+  k = 0;
+  for (int j = 0; j < T; j++) {
+    for (int i = 0; i < T - j; i++) {
+      if (k < E && v_tab[i][j] != 0) {
+        v[i][j] = in[k];
+        k++;
+      } else {
+        v[i][j] = INT_MAX;
+      }
+    }
+  }
+
+  k = 0;
+  memset(out, 0, E * sizeof(int16_t));
+  for (int i = 0; i < T; i++) {
+    for (int j = 0; j < T - i; j++) {
+      if (v[i][j] != INT_MAX) {
+        out[k] = v[i][j];
+        k++;
+      }
+    }
+  }
+}
+
+void nr_polar_rate_matching_int16(int16_t *input,
+                                  int16_t *output,
+                                  const uint16_t *rmp,
+                                  const uint16_t K,
+                                  const uint16_t N,
+                                  const uint16_t E,
+                                  const uint8_t i_bil)
+{
+  if (i_bil == 1) {
+    nr_polar_rm_deinterleaving_cb(input, input, E);
+  }
+
+  if (E >= N) { // repetition
+    memset((void *)output, 0, N * sizeof(int16_t));
+    for (int i = 0; i <= E - 1; i++)
+      output[rmp[i]] += input[i];
   } else {
-    if ( (K/(double)E) <= (7.0/16) ) memset((void*)output,0,N*sizeof(int16_t)); //puncturing
-    else { //shortening
-      for (int i=0; i<=N-1; i++) output[i]=32767;//instead of INFINITY, to prevent [-Woverflow]
+    if ((K / (double)E) <= (7.0 / 16))
+      memset((void *)output, 0, N * sizeof(int16_t)); // puncturing
+    else { // shortening
+      for (int i = 0; i <= N - 1; i++)
+        output[i] = 32767; // instead of INFINITY, to prevent [-Woverflow]
     }
 
-    for (int i=0; i<=E-1; i++) output[rmp[i]]=input[i];
-   
+    for (int i = 0; i <= E - 1; i++)
+      output[rmp[i]] = input[i];
   }
 }

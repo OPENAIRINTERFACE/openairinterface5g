@@ -342,7 +342,6 @@ int main(int argc, char **argv)
 
 	logInit();
 	set_glog(loglvl);
-	T_stdout = 1;
 
 	if (snr1set == 0)
 		snr1 = snr0 + 10;
@@ -412,7 +411,7 @@ int main(int argc, char **argv)
 	}
 
 	//configure UE
-	UE = malloc(sizeof(PHY_VARS_NR_UE));
+	UE = calloc(1, sizeof(*UE));
 	memcpy(&UE->frame_parms, frame_parms, sizeof(NR_DL_FRAME_PARMS));
 
 	//phy_init_nr_top(frame_parms);

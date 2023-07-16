@@ -62,20 +62,18 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
   uint16_t rootSequenceIndex, prach_fmt_id, NCS, preamble_offset = 0;
   const uint16_t *prach_root_sequence_map;
   uint16_t preamble_shift = 0, preamble_index0, n_shift_ra, n_shift_ra_bar, d_start=INT16_MAX, numshift, N_ZC, u, offset, offset2, first_nonzero_root_idx;
-  int16_t prach_tmp[(4688+4*24576)*4*2] __attribute__((aligned(32))) = {0};
+  c16_t prach[(4688 + 4 * 24576) * 2] __attribute__((aligned(32))) = {0};
   int16_t prachF_tmp[(4688+4*24576)*4*2] __attribute__((aligned(32))) = {0};
 
-  int16_t Ncp = 0, amp, *prach, *prach2, *prachF, *Xu;
-  int32_t Xu_re, Xu_im;
+  int16_t Ncp = 0;
   int prach_start, prach_sequence_length, i, prach_len, dftlen, mu, kbar, K, n_ra_prb, k, prachStartSymbol, sample_offset_slot;
 
   fd_occasion             = 0;
   prach_len               = 0;
   dftlen                  = 0;
-  first_nonzero_root_idx  = 0;
-  prach                   = prach_tmp;
-  amp                     = ue->prach_vars[gNB_id]->amp;
-  prachF                  = prachF_tmp;
+  first_nonzero_root_idx = 0;
+  int16_t amp = ue->prach_vars[gNB_id]->amp;
+  int16_t *prachF = prachF_tmp;
   Mod_id                  = ue->Mod_id;
   prach_sequence_length   = nrUE_config->prach_config.prach_sequence_length;
   N_ZC                    = (prach_sequence_length == 0) ? 839:139;
@@ -390,9 +388,9 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
    *
    *********************************************************/
 
-  Xu = (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx];
+    c16_t *Xu = ue->X_u[preamble_offset - first_nonzero_root_idx];
 
-  #if defined (PRACH_WRITE_OUTPUT_DEBUG)
+#if defined (PRACH_WRITE_OUTPUT_DEBUG)
     LOG_M("X_u.m", "X_u", (int16_t*)ue->X_u[preamble_offset-first_nonzero_root_idx], N_ZC, 1, 1);
   #endif
 
@@ -400,11 +398,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
 
     if (offset2 >= N_ZC)
       offset2 -= N_ZC;
-
-    Xu_re = (((int32_t)Xu[offset<<1]*amp)>>15);
-    Xu_im = (((int32_t)Xu[1+(offset<<1)]*amp)>>15);
-    prachF[k++]= ((Xu_re*nr_ru[offset2<<1]) - (Xu_im*nr_ru[1+(offset2<<1)]))>>15;
-    prachF[k++]= ((Xu_im*nr_ru[offset2<<1]) + (Xu_re*nr_ru[1+(offset2<<1)]))>>15;
+    const int32_t Xu_re = (Xu[offset].r * amp) >> 15;
+    const int32_t Xu_im = (Xu[offset].i * amp) >> 15;
+    prachF[k++] = (Xu_re * nr_ru[offset2].r - Xu_im * nr_ru[offset2].i) >> 15;
+    prachF[k++] = (Xu_im * nr_ru[offset2].r + Xu_re * nr_ru[offset2].i) >> 15;
 
     if (k==dftlen) k=0;
   }
@@ -415,78 +412,78 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
   #endif
 
   // This is after cyclic prefix
-  prach2 = prach+(2*Ncp); // times 2 for complex samples
-  const idft_size_idx_t idft_size = get_idft(dftlen);
-  idft(idft_size, prachF, prach, 1);
-  memmove(prach2, prach, (dftlen<<2));
+    c16_t *prach2 = prach + Ncp;
+    const idft_size_idx_t idft_size = get_idft(dftlen);
+    idft(idft_size, prachF, (int16_t *)prach, 1);
+    memmove(prach2, prach, (dftlen << 2));
 
-  if (prach_sequence_length == 0) {
-    if (prach_fmt_id == 0) {
-      // here we have | empty  | Prach |
-      memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
-      // here we have | Prefix | Prach |
-      prach_len = dftlen+Ncp;
-    } else if (prach_fmt_id == 1) {
-      // here we have | empty  | Prach | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
-      // here we have | empty  | Prach | Prach |
-      memcpy(prach, prach+(dftlen<<2), (Ncp<<2));
-      // here we have | Prefix | Prach | Prach |
-      prach_len = (dftlen*2)+Ncp;
-    } else if (prach_fmt_id == 2 || prach_fmt_id == 3) {
-      // here we have | empty  | Prach | empty | empty | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
-      // here we have | empty  | Prach | Prach | empty | empty |
-      memcpy(prach2+(dftlen<<2), prach2, (dftlen<<3));
-      // here we have | empty  | Prach | Prach | Prach | Prach |
-      memcpy(prach, prach+(dftlen<<3), (Ncp<<2));
-      // here we have | Prefix | Prach | Prach | Prach | Prach |
-      prach_len = (dftlen*4)+Ncp;
-    }
+    if (prach_sequence_length == 0) {
+      if (prach_fmt_id == 0) {
+        // here we have | empty  | Prach |
+        memcpy(prach, prach + dftlen, (Ncp << 2));
+        // here we have | Prefix | Prach |
+        prach_len = dftlen + Ncp;
+      } else if (prach_fmt_id == 1) {
+        // here we have | empty  | Prach | empty |
+        memcpy(prach2 + dftlen, prach2, (dftlen << 2));
+        // here we have | empty  | Prach | Prach |
+        memcpy(prach, prach + dftlen * 2, (Ncp << 2));
+        // here we have | Prefix | Prach | Prach |
+        prach_len = (dftlen * 2) + Ncp;
+      } else if (prach_fmt_id == 2 || prach_fmt_id == 3) {
+        // here we have | empty  | Prach | empty | empty | empty |
+        memcpy(prach2 + dftlen, prach2, (dftlen << 2));
+        // here we have | empty  | Prach | Prach | empty | empty |
+        memcpy(prach2 + dftlen * 2, prach2, (dftlen << 3));
+        // here we have | empty  | Prach | Prach | Prach | Prach |
+        memcpy(prach, prach + dftlen * 4, (Ncp << 2));
+        // here we have | Prefix | Prach | Prach | Prach | Prach |
+        prach_len = (dftlen * 4) + Ncp;
+      }
   } else { // short PRACH sequence
     if (prach_fmt_id == 9) {
       // here we have | empty  | Prach |
-      memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
+      memcpy(prach, prach + dftlen, (Ncp << 2));
       // here we have | Prefix | Prach |
       prach_len = (dftlen*1)+Ncp;
     } else if (prach_fmt_id == 4 || prach_fmt_id == 7) {
       // here we have | empty  | Prach | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
+      memcpy(prach2 + dftlen, prach2, (dftlen << 2));
       // here we have | empty  | Prach | Prach |
       memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
       // here we have | Prefix | Prach | Prach |
       prach_len = (dftlen*2)+Ncp;
     } else if (prach_fmt_id == 5 || prach_fmt_id == 10) { // 4xdftlen
       // here we have | empty  | Prach | empty | empty | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
+      memcpy(prach2 + dftlen, prach2, (dftlen << 2));
       // here we have | empty  | Prach | Prach | empty | empty |
-      memcpy(prach2+(dftlen<<2), prach2, (dftlen<<3));
+      memcpy(prach2 + dftlen * 2, prach2, (dftlen << 3));
       // here we have | empty  | Prach | Prach | Prach | Prach |
-      memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
+      memcpy(prach, prach + dftlen, (Ncp << 2));
       // here we have | Prefix | Prach | Prach | Prach | Prach |
       prach_len = (dftlen*4)+Ncp;
     } else if (prach_fmt_id == 6) { // 6xdftlen
       // here we have | empty  | Prach | empty | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
+      memcpy(prach2 + dftlen, prach2, (dftlen << 2));
       // here we have | empty  | Prach | Prach | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<2), prach2, (dftlen<<3));
+      memcpy(prach2 + dftlen * 2, prach2, (dftlen << 3));
       // here we have | empty  | Prach | Prach | Prach | Prach | empty | empty |
-      memcpy(prach2+(dftlen<<3), prach2, (dftlen<<3));
+      memcpy(prach2 + dftlen * 4, prach2, (dftlen << 3));
       // here we have | empty  | Prach | Prach | Prach | Prach | Prach | Prach |
-      memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
+      memcpy(prach, prach + dftlen, (Ncp << 2));
       // here we have | Prefix | Prach | Prach | Prach | Prach | Prach | Prach |
       prach_len = (dftlen*6)+Ncp;
     } else if (prach_fmt_id == 8) { // 12xdftlen
       // here we have | empty  | Prach | empty | empty | empty | empty | empty | empty | empty | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<1), prach2, (dftlen<<2));
+      memcpy(prach2 + dftlen, prach2, (dftlen << 2));
       // here we have | empty  | Prach | Prach | empty | empty | empty | empty | empty | empty | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<2), prach2, (dftlen<<3));
+      memcpy(prach2 + dftlen * 2, prach2, (dftlen << 3));
       // here we have | empty  | Prach | Prach | Prach | Prach | empty | empty | empty | empty | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<3), prach2, (dftlen<<3));
+      memcpy(prach2 + dftlen * 4, prach2, (dftlen << 3));
       // here we have | empty  | Prach | Prach | Prach | Prach | Prach | Prach | empty | empty | empty | empty | empty | empty |
-      memcpy(prach2+(dftlen<<1)*6, prach2, (dftlen<<2)*6);
+      memcpy(prach2 + dftlen * 6, prach2, (dftlen << 2) * 6);
       // here we have | empty  | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach |
-      memcpy(prach, prach+(dftlen<<1), (Ncp<<2));
+      memcpy(prach, prach + dftlen, (Ncp << 2));
       // here we have | Prefix | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach | Prach |
       prach_len = (dftlen*12)+Ncp;
     }
@@ -499,18 +496,10 @@ int32_t generate_nr_prach(PHY_VARS_NR_UE *ue, uint8_t gNB_id, int frame, uint8_t
       prach_len);
   #endif
 
-  for (i=0; i<prach_len; i++) {
-    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i] = prach[2*i];
-    ((int16_t*)(&ue->common_vars.txdata[0][prach_start]))[2*i+1] = prach[2*i+1];
-  }
+    for (i = 0; i < prach_len; i++)
+      ue->common_vars.txData[0][prach_start + i] = prach[i];
 
-  //printf("----------------------\n");
-  //for(int ii = prach_start; ii<2*(prach_start + prach_len); ii++){
-  //  printf("PRACH rx data[%d] = %d\n", ii, ue->common_vars.txdata[0][ii]);
-  //}
-  //printf(" \n");
-
-  #ifdef PRACH_WRITE_OUTPUT_DEBUG
+#ifdef PRACH_WRITE_OUTPUT_DEBUG
     LOG_M("prach_tx0.m", "prachtx0", prach+(Ncp<<1), prach_len-Ncp, 1, 1);
     LOG_M("Prach_txsig.m","txs",(int16_t*)(&ue->common_vars.txdata[0][prach_start]), 2*(prach_start+prach_len), 1, 1)
   #endif

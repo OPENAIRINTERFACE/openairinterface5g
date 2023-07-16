@@ -610,7 +610,6 @@ int main(int argc, char **argv)
 
   logInit();
   set_glog(loglvl);
-  T_stdout = 1;
   /* initialize the sin table */
   InitSinLUT();
 
@@ -708,13 +707,11 @@ int main(int argc, char **argv)
                     N_RB_DL,g_mcsTableIdx,0);
 
   // TODO do a UECAP for phy-sim
-  const gNB_RrcConfigurationReq conf = {
-    .pdsch_AntennaPorts = pdsch_AntennaPorts,
-    .minRXTXTIME = 6,
-    .do_CSIRS = 0,
-    .do_SRS = 0,
-    .force_256qam_off = false
-  };
+  const gNB_RrcConfigurationReq conf = {.pdsch_AntennaPorts = pdsch_AntennaPorts,
+                                        .minRXTXTIME = 6,
+                                        .do_CSIRS = 0,
+                                        .do_SRS = 0,
+                                        .force_256qam_off = false};
   NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, UE_Capability_nr, 0, 1, &conf, 0);
 
   /* RRC parameter validation for secondaryCellGroup */

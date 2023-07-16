@@ -103,6 +103,7 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu23.10") return 0 ;;
         "ubuntu22.04") return 0 ;;
         "ubuntu21.04") return 0 ;;
         "ubuntu20.04") return 0 ;;
@@ -618,6 +619,7 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
+        libxft-dev \
 	patch \
 	openssl \
         zlib1g-dev \
@@ -647,6 +649,7 @@ check_install_oai_software() {
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
+      libXft-devel \
       ninja-build \
       make \
       openssl \

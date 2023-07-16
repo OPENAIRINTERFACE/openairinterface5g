@@ -561,7 +561,6 @@ int main(int argc, char **argv)
   
   logInit();
   set_glog(loglvl);
-  T_stdout = 1;
 
   get_softmodem_params()->phy_test = 1;
   get_softmodem_params()->do_ra = 0;
@@ -634,14 +633,12 @@ int main(int argc, char **argv)
                     N_RB_UL,0,mcs_table);
 
   // TODO do a UECAP for phy-sim
-  const gNB_RrcConfigurationReq conf = {
-    .pdsch_AntennaPorts = { .N1 = 1, .N2 = 1, .XP = 1 },
-    .pusch_AntennaPorts = n_rx,
-    .minRXTXTIME = 0,
-    .do_CSIRS = 0,
-    .do_SRS = 0,
-    .force_256qam_off = false
-  };
+  const gNB_RrcConfigurationReq conf = {.pdsch_AntennaPorts = {.N1 = 1, .N2 = 1, .XP = 1},
+                                        .pusch_AntennaPorts = n_rx,
+                                        .minRXTXTIME = 0,
+                                        .do_CSIRS = 0,
+                                        .do_SRS = 0,
+                                        .force_256qam_off = false};
 
   NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, UE_Capability_nr, 0, 1, &conf, 0);
 
@@ -1186,14 +1183,14 @@ int main(int argc, char **argv)
           phy_procedures_nrUE_TX(UE, &UE_proc, &phy_data);
 
           if (n_trials == 1) {
-            LOG_M("txsig0.m", "txs0", &UE->common_vars.txdata[0][slot_offset], slot_length, 1, 1);
+            LOG_M("txsig0.m", "txs0", &UE->common_vars.txData[0][slot_offset], slot_length, 1, 1);
             LOG_M("txsig0F.m", "txs0F", UE->common_vars.txdataF[0], frame_parms->ofdm_symbol_size * 14, 1, 1);
             if (precod_nbr_layers > 1) {
-              LOG_M("txsig1.m", "txs1", &UE->common_vars.txdata[1][slot_offset], slot_length, 1, 1);
+              LOG_M("txsig1.m", "txs1", &UE->common_vars.txData[1][slot_offset], slot_length, 1, 1);
               LOG_M("txsig1F.m", "txs1F", UE->common_vars.txdataF[1], frame_parms->ofdm_symbol_size * 14, 1, 1);
               if (precod_nbr_layers == 4) {
-                LOG_M("txsig2.m", "txs2", &UE->common_vars.txdata[2][slot_offset], slot_length, 1, 1);
-                LOG_M("txsig3.m", "txs3", &UE->common_vars.txdata[3][slot_offset], slot_length, 1, 1);
+                LOG_M("txsig2.m", "txs2", &UE->common_vars.txData[2][slot_offset], slot_length, 1, 1);
+                LOG_M("txsig3.m", "txs3", &UE->common_vars.txData[3][slot_offset], slot_length, 1, 1);
                 LOG_M("txsig2F.m", "txs2F", UE->common_vars.txdataF[2], frame_parms->ofdm_symbol_size * 14, 1, 1);
                 LOG_M("txsig3F.m", "txs3F", UE->common_vars.txdataF[3], frame_parms->ofdm_symbol_size * 14, 1, 1);
               }
@@ -1204,8 +1201,10 @@ int main(int argc, char **argv)
           tx_offset = frame_parms->get_samples_slot_timestamp(slot, frame_parms, 0);
           txlev_sum = 0;
           for (int aa = 0; aa < UE->frame_parms.nb_antennas_tx; aa++) {
-            atxlev[aa] = signal_energy((int32_t *)&UE->common_vars.txdata[aa][tx_offset + 5 * frame_parms->ofdm_symbol_size + 4 * frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
-                                       frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
+            atxlev[aa] = signal_energy(
+                (int32_t *)&UE->common_vars.txData[aa][tx_offset + 5 * frame_parms->ofdm_symbol_size
+                                                       + 4 * frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+                frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
 
             txlev_sum += atxlev[aa];
 
@@ -1226,8 +1225,8 @@ int main(int argc, char **argv)
 
           for (i = 0; i < slot_length; i++) {
             for (int aa = 0; aa < UE->frame_parms.nb_antennas_tx; aa++) {
-              s_re[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i << 1)]);
-              s_im[aa][i] = ((double)(((short *)&UE->common_vars.txdata[aa][slot_offset]))[(i << 1) + 1]);
+              s_re[aa][i] = (double)UE->common_vars.txData[aa][slot_offset + i].r;
+              s_im[aa][i] = (double)UE->common_vars.txData[aa][slot_offset + i].i;
             }
           }
 

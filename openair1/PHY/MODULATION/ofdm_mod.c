@@ -64,7 +64,7 @@ void normal_prefix_mod(int32_t *txdataF,int32_t *txdata,uint8_t nsymb,LTE_DL_FRA
   
 }
 
-void nr_normal_prefix_mod(c16_t *txdataF, c16_t *txdata, uint8_t nsymb, NR_DL_FRAME_PARMS *frame_parms, uint32_t slot)
+void nr_normal_prefix_mod(c16_t *txdataF, c16_t *txdata, uint8_t nsymb, const NR_DL_FRAME_PARMS *frame_parms, uint32_t slot)
 {
   // This function works only slot wise. For more generic symbol generation refer nr_feptx0()
   if (frame_parms->numerology_index != 0) { // case where numerology != 0
@@ -334,9 +334,9 @@ void do_OFDM_mod(c16_t **txdataF, c16_t **txdata, uint32_t frame,uint16_t next_s
 
 }
 
-void apply_nr_rotation_TX(NR_DL_FRAME_PARMS *fp,
+void apply_nr_rotation_TX(const NR_DL_FRAME_PARMS *fp,
                           c16_t *txdataF,
-                          c16_t *symbol_rotation,
+                          const c16_t *symbol_rotation,
                           int slot,
                           int nb_rb,
                           int first_symbol,
@@ -347,7 +347,7 @@ void apply_nr_rotation_TX(NR_DL_FRAME_PARMS *fp,
   symbol_rotation += symb_offset;
 
   for (int sidx = first_symbol; sidx < first_symbol + nsymb; sidx++) {
-    c16_t *this_rotation = symbol_rotation + sidx;
+    const c16_t *this_rotation = symbol_rotation + sidx;
     c16_t *this_symbol = (txdataF) + sidx * fp->ofdm_symbol_size;
 
     LOG_D(PHY,"Rotating symbol %d, slot %d, symbol_subframe_index %d (%d,%d)\n",

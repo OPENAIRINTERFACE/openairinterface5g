@@ -679,7 +679,7 @@ typedef struct PHY_VARS_gNB_s {
   uint32_t ****nr_gold_prs;
 
   /// PRACH root sequence
-  uint32_t X_u[64][839];
+  c16_t X_u[64][839];
 
   /// OFDM symbol offset divisor for UL
   uint32_t ofdm_offset_divisor;

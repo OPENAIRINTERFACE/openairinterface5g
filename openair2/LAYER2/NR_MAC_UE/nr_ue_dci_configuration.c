@@ -365,10 +365,78 @@ bool is_ss_monitor_occasion(const int frame, const int slot, const int slots_per
   return monitor;
 }
 
+bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
+                               const NR_SearchSpace_t *ss,
+                               const int slots_per_frame,
+                               const int frame,
+                               const int slot)
+{
+  const struct NR_SI_SchedulingInfo *si_SchedulingInfo = mac->si_SchedulingInfo;
+  // 5.2.2.3.2 in 331
+  if (!si_SchedulingInfo)
+    return false;
+  const int si_window_slots = 5 << si_SchedulingInfo->si_WindowLength;
+  const int abs_slot = frame * slots_per_frame + slot;
+  for (int n = 0; n < si_SchedulingInfo->schedulingInfoList.list.count; n++) {
+    struct NR_SchedulingInfo *sched_Info = si_SchedulingInfo->schedulingInfoList.list.array[n];
+    if(mac->si_window_start == -1) {
+      int x = n * si_window_slots;
+      int T = 8 << sched_Info->si_Periodicity; // radio frame periodicity
+      if ((frame % T) == (x / slots_per_frame) &&
+          (x % slots_per_frame == 0))
+        mac->si_window_start = abs_slot; // in terms of absolute slot number
+    }
+    if (mac->si_window_start == -1) {
+      // out of window
+      return false;
+    }
+    else if (abs_slot > mac->si_window_start + si_window_slots) {
+      // window expired
+      mac->si_window_start = -1;
+      return false;
+    }
+    else {
+      const int duration = ss->duration ? *ss->duration : 1;
+      int period, offset;
+      get_monitoring_period_offset(ss, &period, &offset);
+      for (int i = 0; i < duration; i++) {
+        if (((frame * slots_per_frame + slot - offset - i) % period) == 0) {
+          int N = mac->ssb_list.nb_tx_ssb;
+          int K = 0; // k_th transmitted SSB
+          for (int i = 0; i < mac->mib_ssb; i++) {
+            if(mac->ssb_list.tx_ssb[i].transmitted)
+              K++;
+          }
+          // numbering current frame and slot in terms of monitoring occasions in window
+          int current_monitor_occasion = ((abs_slot - mac->si_window_start) % period) +
+                                         (duration * (abs_slot - mac->si_window_start) / period);
+          if (current_monitor_occasion % N == K)
+            return true;
+          else
+           return false;
+        }
+      }
+    }
+  }
+  return false;
+}
+
+
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, const frame_t frame, const int slot)
 {
   const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
   const int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
+  if (mac->get_otherSI) {
+    // If searchSpaceOtherSystemInformation is set to zero,
+    // PDCCH monitoring occasions for SI message reception in SI-window
+    // are same as PDCCH monitoring occasions for SIB1
+    const NR_SearchSpace_t *ss = mac->otherSI_SS ? mac->otherSI_SS : mac->search_space_zero;
+    // TODO configure SI-window
+    if (monitior_dci_for_other_SI(mac, ss, slots_per_frame, frame, slot)) {
+      LOG_D(NR_MAC, "Monitoring DCI for other SIs in frame %d slot %d\n", frame, slot);
+      config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot, ss);
+    }
+  }
   if (mac->state == UE_PERFORMING_RA &&
       mac->ra.ra_state >= WAIT_RAR) {
     // if RA is ongoing use RA search space

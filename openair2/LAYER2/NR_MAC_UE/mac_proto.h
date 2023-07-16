@@ -106,10 +106,11 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
 void nr_rrc_mac_config_req_mib(module_id_t module_id,
                                int cc_idP,
                                NR_MIB_t *mibP,
-                               bool sched_sib1);
+                               int sched_sib1);
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,
                                 int cc_idP,
+                                struct NR_SI_SchedulingInfo *si_SchedulingInfo,
                                 NR_ServingCellConfigCommonSIB_t *scc);
 
 /**\brief initialization NR UE MAC instance(s), total number of MAC instance based on NB_NR_UE_MAC_INST*/
@@ -324,7 +325,6 @@ and fills the PRACH PDU per each FD occasion.
 @param slotP Slot index
 @returns void
 */
-void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_frame_t slotP);
 void nr_ue_pucch_scheduler(module_id_t module_idP, frame_t frameP, int slotP, void *phy_data);
 void nr_schedule_csirs_reception(NR_UE_MAC_INST_t *mac, int frame, int slot);
 void nr_schedule_csi_for_im(NR_UE_MAC_INST_t *mac, int frame, int slot);

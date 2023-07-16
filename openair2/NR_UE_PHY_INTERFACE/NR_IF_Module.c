@@ -674,6 +674,7 @@ static void fill_dci_from_dl_config(nr_downlink_indication_t*dl_ind, fapi_nr_dl_
   }
 }
 
+// This piece of code is not used in "normal" ue, but in "fapi mode"
 void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
                            nfapi_nr_tx_data_request_t *tx_data_request,
                            nfapi_nr_ul_dci_request_t *ul_dci_request,
@@ -734,25 +735,24 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     nr_ue_dl_scheduler(&mac->dl_info);
     nr_ue_dl_indication(&mac->dl_info);
 
-    if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
-
-    // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
-    nr_uplink_indication_t ul_info;
-    memset(&ul_info, 0, sizeof(ul_info));
+    if (pthread_mutex_unlock(&mac->mutex_dl_info))
+      abort();
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
-    ul_info.frame_rx = frame;
-    ul_info.slot_rx = slot;
-    ul_info.slot_tx = (slot + slot_ahead) % slots_per_frame;
-    ul_info.frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx;
+
     if (mac->scc || mac->scc_SIB) {
-        if (is_nr_UL_slot(mac->scc ?
-                          mac->scc->tdd_UL_DL_ConfigurationCommon :
-                          mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
-                          ul_info.slot_tx,
-                          mac->frame_type) && mac->ra.ra_state != RA_SUCCEEDED) {
-            nr_ue_ul_scheduler(&ul_info);
-        }
+      if (is_nr_UL_slot(mac->scc ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+                        (slot + slot_ahead) % slots_per_frame,
+                        mac->frame_type)
+          && mac->ra.ra_state != RA_SUCCEEDED) {
+        // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
+        nr_uplink_indication_t ul_info = {
+            .frame_rx = frame,
+            .slot_rx = slot,
+            .slot_tx = (slot + slot_ahead) % slots_per_frame,
+            .frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx};
+        nr_ue_ul_scheduler(&ul_info);
+      }
     }
 }
 
@@ -1053,7 +1053,8 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
 }
 
 //  L2 Abstraction Layer
-int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len){
+int handle_bcch_dlsch(module_id_t module_id, int cc_id, unsigned int gNB_index, uint8_t ack_nack, uint8_t *pduP, uint32_t pdu_len)
+{
   return nr_ue_decode_BCCH_DL_SCH(module_id, cc_id, gNB_index, ack_nack, pduP, pdu_len);
 }
 
@@ -1131,7 +1132,9 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
   LOG_T(NR_MAC, "In %s():%d not calling scheduler mac->ra.ra_state = %d\n",
         __FUNCTION__, __LINE__, mac->ra.ra_state);
 
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon = mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon =
+      mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon
+                       : (mac->scc_SIB ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : NULL);
   if (mac->phy_config_request_sent && is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_ul_scheduler(ul_info);
 
@@ -1227,6 +1230,10 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
             break;
           case FAPI_NR_RX_PDU_TYPE_RAR:
             ret_mask |= (handle_dlsch(dl_info, i)) << FAPI_NR_RX_PDU_TYPE_RAR;
+            if (!dl_info->rx_ind->rx_indication_body[i].pdsch_pdu.ack_nack)
+              LOG_W(PHY, "Received a RAR-Msg2 but LDPC decode failed\n");
+            else
+              LOG_I(PHY, "RAR-Msg2 decoded\n");
             break;
           case FAPI_NR_CSIRS_IND:
             ret_mask |= (handle_csirs_measurements(dl_info->module_id,

@@ -208,8 +208,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   int32_t sync_pos, sync_pos_frame; // k_ssb, N_ssb_crb, sync_pos2,
   int32_t metric_tdd_ncp=0;
   uint8_t phase_tdd_ncp;
-  double im, re;
-  int is;
+  int frame_id;
 
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
@@ -244,14 +243,13 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
    // initial sync performed on two successive frames, if pbch passes on first frame, no need to process second frame 
    // only one frame is used for symulation tools
-   for(is=0; is<n_frames;is++) {
+   for (frame_id = 0; frame_id < n_frames; frame_id++) {
+     /* process pss search on received buffer */
+     sync_pos = pss_synchro_nr(ue, frame_id, NO_RATE_CHANGE);
+     if (sync_pos < fp->nb_prefix_samples)
+       continue;
 
-    /* process pss search on received buffer */
-    sync_pos = pss_synchro_nr(ue, is, NO_RATE_CHANGE);
-    if (sync_pos < fp->nb_prefix_samples)
-      continue;
-
-    ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
+     ue->ssb_offset = sync_pos - fp->nb_prefix_samples;
 
 #ifdef DEBUG_INITIAL_SYNCH
     LOG_I(PHY, "[UE%d] Initial sync : Estimated PSS position %d, Nid2 %d\n", ue->Mod_id, sync_pos, ue->common_vars.nid2);
@@ -269,23 +267,17 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
         // and we do not know yet in which slot it goes.
 
-        // start for offset correction
-        int start = is*fp->samples_per_frame;
-
-        // loop over samples
-        int end = start + fp->samples_per_frame;
-
-        for(int n=start; n<end; n++){
+        for (int n = frame_id * fp->samples_per_frame; n < (frame_id + 1) * fp->samples_per_frame; n++) {
           for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-            re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-            im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-            ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
-            ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+            const double re = ue->common_vars.rxdata[ar][n].r;
+            const double im = ue->common_vars.rxdata[ar][n].i;
+            ue->common_vars.rxdata[ar][n].r = (short)(round(re * cos(n * off_angle) - im * sin(n * off_angle)));
+            ue->common_vars.rxdata[ar][n].i = (short)(round(re * sin(n * off_angle) + im * cos(n * off_angle)));
           }
         }
       }
 
-      /* slop_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
+      /* slot_fep function works for lte and takes into account begining of frame with prefix for subframe 0 */
       /* for NR this is not the case but slot_fep is still used for computing FFT of samples */
       /* in order to achieve correct processing for NR prefix samples is forced to 0 and then restored after function call */
       /* symbol number are from beginning of SS/PBCH blocks as below:  */
@@ -295,21 +287,15 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
       /* rxdataF stores SS/PBCH from beginning of buffers in the same symbol order as in time domain */
 
       for (int i = 0; i < NR_N_SYMBOLS_SSB; i++)
-        nr_slot_fep_init_sync(ue,
-                              proc,
-                              i,
-                              is * fp->samples_per_frame + ue->ssb_offset,
-                              false,
-                              rxdataF,
-                              link_type_dl);
+        nr_slot_fep_init_sync(ue, proc, i, frame_id * fp->samples_per_frame + ue->ssb_offset, false, rxdataF, link_type_dl);
 
 #ifdef DEBUG_INITIAL_SYNCH
       LOG_I(PHY,"Calling sss detection (normal CP)\n");
 #endif
 
       int freq_offset_sss = 0;
-      ret = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss, rxdataF);
-
+      bool ret_sss = rx_sss_nr(ue, proc, &metric_tdd_ncp, &phase_tdd_ncp, &freq_offset_sss, rxdataF);
+      ret = !ret_sss;
       // digital compensation of FFO for SSB symbols
       if (ue->UE_fo_compensation){
         double s_time = 1/(1.0e3*fp->samples_per_subframe);  // sampling time
@@ -317,19 +303,12 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
         // In SA we need to perform frequency offset correction until the end of buffer because we need to decode SIB1
         // and we do not know yet in which slot it goes.
-
-        // start for offset correction
-        int start = is*fp->samples_per_frame;
-
-        // loop over samples
-        int end = start + fp->samples_per_frame;
-
-        for(int n=start; n<end; n++){
+        for (int n = frame_id * fp->samples_per_frame; n < (frame_id + 1) * fp->samples_per_frame; n++) {
           for (int ar=0; ar<fp->nb_antennas_rx; ar++) {
-            re = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n]);
-            im = ((double)(((short *)ue->common_vars.rxdata[ar]))[2*n+1]);
-            ((short *)ue->common_vars.rxdata[ar])[2*n] = (short)(round(re*cos(n*off_angle) - im*sin(n*off_angle)));
-            ((short *)ue->common_vars.rxdata[ar])[2*n+1] = (short)(round(re*sin(n*off_angle) + im*cos(n*off_angle)));
+            const double re = ue->common_vars.rxdata[ar][n].r;
+            const double im = ue->common_vars.rxdata[ar][n].i;
+            ue->common_vars.rxdata[ar][n].r = (short)(round(re * cos(n * off_angle) - im * sin(n * off_angle)));
+            ue->common_vars.rxdata[ar][n].i = (short)(round(re * sin(n * off_angle) + im * cos(n * off_angle)));
           }
         }
 
@@ -351,7 +330,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         int n_symb_prefix0 = (ue->symbol_offset/(7*(1<<mu)))+1;
         sync_pos_frame = n_symb_prefix0*(fp->ofdm_symbol_size + fp->nb_prefix_samples0)+(ue->symbol_offset-n_symb_prefix0)*(fp->ofdm_symbol_size + fp->nb_prefix_samples);
         // for a correct computation of frame number to sync with the one decoded at MIB we need to take into account in which of the n_frames we got sync
-        ue->init_sync_frame = n_frames - 1 - is;
+        ue->init_sync_frame = n_frames - 1 - frame_id;
 
         // compute the scramblingID_pdcch and the gold pdcch
         ue->scramblingID_pdcch = fp->Nid_cell;
@@ -409,7 +388,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 #endif
       }
       if (ret == 0) break;
-    }
+   }
   }
   else {
     ret = -1;
@@ -444,13 +423,11 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
     }
 
-
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-    LOG_I(PHY, "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
-	  ue->Mod_id,
-	  openair0_cfg[0].rx_freq[0]+ue->common_vars.freq_offset,
-	  ue->common_vars.freq_offset);
-#endif
+    LOG_I(PHY,
+          "[UE %d] Measured Carrier Frequency %.0f Hz (offset %d Hz)\n",
+          ue->Mod_id,
+          openair0_cfg[0].rx_freq[0] + ue->common_vars.freq_offset,
+          ue->common_vars.freq_offset);
   } else {
 #ifdef DEBUG_INITIAL_SYNC
     LOG_I(PHY,"[UE%d] Initial sync : PBCH not ok\n",ue->Mod_id);
@@ -486,29 +463,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 #endif
 
-#ifndef OAI_USRP
-#ifndef OAI_BLADERF
-#ifndef OAI_LMSSDR
-#ifndef OAI_ADRV9371_ZC706
-  //phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
-#endif
-#endif
-#endif
-#endif
-
-  }
-  else {
-
-#ifndef OAI_USRP
-#ifndef OAI_BLADERF
-#ifndef OAI_LMSSDR
-#ifndef OAI_ADRV9371_ZC706
-  //phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
-#endif
-#endif
-#endif
-#endif
-
   }
 
   if (ue->target_Nid_cell != -1) {
@@ -533,7 +487,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
         nr_slot_fep_init_sync(ue,
                               proc,
                               l, // the UE PHY has no notion of the symbols to be monitored in the search space
-                              is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
+                              frame_id * fp->samples_per_frame + phy_pdcch_config->sfn * fp->samples_per_frame + ue->rx_offset,
                               true,
                               rxdataF,
                               link_type_dl);
@@ -560,7 +514,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
             nr_slot_fep_init_sync(ue,
                                   proc,
                                   m,
-                                  is*fp->samples_per_frame+phy_pdcch_config->sfn*fp->samples_per_frame+ue->rx_offset,
+                                  frame_id * fp->samples_per_frame + phy_pdcch_config->sfn * fp->samples_per_frame + ue->rx_offset,
                                   true,
                                   rxdataF,
                                   link_type_dl);

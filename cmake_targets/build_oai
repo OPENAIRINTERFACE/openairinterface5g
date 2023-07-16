@@ -155,6 +155,10 @@ Options:
   Enable the address sanitizer on all targets
 --sanitize-undefined | -fsanitize=undefined
   Enable the undefined behavior sanitizer on all targets
+--sanitize-memory | -fsanitize=memory
+  Enable the memory sanitizer on all targets. Requires clang, and is
+  incompatible with ASan/UBSan. To build, issue:
+  CC=/usr/bin/clang CXX=/usr/bin/clang++ ./build_oai ... --sanitize-memory
 -h | --help
    Print this help"
 }
@@ -269,9 +273,14 @@ function main() {
             shift;;
        -w | --hardware)
             case "$2" in
-                "USRP" | "BLADERF" | "LMSSDR" | "IRIS" | "SIMU")
+                "USRP" | "BLADERF" | "LMSSDR" | "IRIS")
                     HW="OAI_"$2
                     TARGET_LIST="$TARGET_LIST oai_${2,,}devif" # ,, makes lowercase
+                    CMAKE_CMD="$CMAKE_CMD -DOAI_$2=ON"
+                    ;;
+                "SIMU")
+                    HW="OAI_"$2
+                    TARGET_LIST="$TARGET_LIST rfsimulator"
                     CMAKE_CMD="$CMAKE_CMD -DOAI_$2=ON"
                     ;;
                 "AW2SORI")
@@ -401,6 +410,11 @@ function main() {
             shift;;
         --sanitize-undefined | -fundefined=address)
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_UNDEFINED=True"
+            shift;;
+        --sanitize-memory | -fsanitize=memory)
+            echo_warning "Note: memory sanitizer\n* requires clang (tested: v17)\n* is incompatible with address/undefined behavior sanitizer\n* requires cmake_targets/tools/memsan.patch"
+            sleep 2
+            CMAKE_CMD="$CMAKE_CMD -DSANITIZE_MEMORY=ON -DSANITIZE_ADDRESS=OFF -DSANITIZE_UNDEFINED=OFF"
             shift;;
         -h | --help)
             print_help

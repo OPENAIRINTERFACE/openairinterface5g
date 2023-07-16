@@ -134,23 +134,34 @@ typedef enum RA_trigger_e {
 } RA_trigger_t;
 
 typedef struct UE_RRC_SI_INFO_NR_s {
-  uint32_t SIStatus;
-  uint32_t SIcnt;
-  NR_SystemInformation_t *si;
   NR_SIB1_t *sib1;
+  int sib1_timer;
   NR_SIB2_t *sib2;
+  int sib2_timer;
   NR_SIB3_t *sib3;
+  int sib3_timer;
   NR_SIB4_t *sib4;
+  int sib4_timer;
   NR_SIB5_t *sib5;
+  int sib5_timer;
   NR_SIB6_t *sib6;
+  int sib6_timer;
   NR_SIB7_t *sib7;
+  int sib7_timer;
   NR_SIB8_t *sib8;
+  int sib8_timer;
   NR_SIB9_t *sib9;
+  int sib9_timer;
   NR_SIB10_r16_t *sib10;
+  int sib10_timer;
   NR_SIB11_r16_t *sib11;
+  int sib11_timer;
   NR_SIB12_r16_t *sib12;
+  int sib12_timer;
   NR_SIB13_r16_t *sib13;
+  int sib13_timer;
   NR_SIB14_r16_t *sib14;
+  int sib14_timer;
 } __attribute__ ((__packed__)) NR_UE_RRC_SI_INFO;
 
 typedef struct NR_UE_Timers_Constants_s {
@@ -212,7 +223,6 @@ typedef struct NR_UE_RRC_INST_s {
   NR_SRB_INFO_TABLE_ENTRY        Srb1[NB_CNX_UE];
   NR_SRB_INFO_TABLE_ENTRY        Srb2[NB_CNX_UE];
 
-  uint8_t                        MBMS_flag;
   OAI_NR_UECapability_t          *UECap;
   uint8_t                        *UECapability;
   uint16_t                       UECapability_size;
@@ -223,7 +233,6 @@ typedef struct NR_UE_RRC_INST_s {
 
   plmn_t                         plmnID;
 
-  BIT_STRING_t requested_SI_List;
   NR_UE_RRC_SI_INFO              SInfo[NB_SIG_CNX_UE];
 
   NR_MIB_t *mib;

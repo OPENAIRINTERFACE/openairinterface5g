@@ -54,7 +54,6 @@
 #include <openair1/PHY/TOOLS/phy_scope_interface.h>
 
 //#define DEBUG_PHY_PROC
-#define NR_PDCCH_SCHED
 //#define NR_PDCCH_SCHED_DEBUG
 //#define NR_PUCCH_SCHED
 //#define NR_PUCCH_SCHED_DEBUG
@@ -74,10 +73,6 @@ fifo_dump_emos_UE emos_dump_UE;
 #include "UTIL/OPT/opt.h"
 #include "intertask_interface.h"
 #include "T.h"
-
-#if defined(OAI_USRP) || defined(OAI_BLADERF) || defined(OAI_LMSSDR) || defined(OAI_ADRV9371_ZC706)
-extern uint64_t downlink_frequency[MAX_NUM_CCs][4];
-#endif
 
 unsigned int gain_table[31] = {100,112,126,141,158,178,200,224,251,282,316,359,398,447,501,562,631,708,794,891,1000,1122,1258,1412,1585,1778,1995,2239,2512,2818,3162};
 
@@ -264,43 +259,43 @@ void ue_ta_procedures(PHY_VARS_NR_UE *ue, int slot_tx, int frame_tx)
   }
 }
 
-void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue,
-                            UE_nr_rxtx_proc_t *proc,
-                            nr_phy_data_tx_t *phy_data) {
-
-  int slot_tx = proc->nr_slot_tx;
-  int frame_tx = proc->frame_tx;
-  int gNB_id = proc->gNB_id;
+void phy_procedures_nrUE_TX(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc, nr_phy_data_tx_t *phy_data)
+{
+  const int slot_tx = proc->nr_slot_tx;
+  const int frame_tx = proc->frame_tx;
+  const int gNB_id = proc->gNB_id;
 
   AssertFatal(ue->CC_id == 0, "Transmission on secondary CCs is not supported yet\n");
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX,VCD_FUNCTION_IN);
 
+  const int samplesF_per_slot = NR_SYMBOLS_PER_SLOT * ue->frame_parms.ofdm_symbol_size;
+  c16_t txdataF_buf[ue->frame_parms.nb_antennas_tx * samplesF_per_slot] __attribute__((aligned(32)));
+  memset(txdataF_buf, 0, sizeof(txdataF_buf));
+  c16_t *txdataF[ue->frame_parms.nb_antennas_tx]; /* workaround to be compatible with current txdataF usage in all tx procedures. */
   for(int i=0; i< ue->frame_parms.nb_antennas_tx; ++i)
-    memset(ue->common_vars.txdataF[i], 0, sizeof(int)*14*ue->frame_parms.ofdm_symbol_size);
+    txdataF[i] = &txdataF_buf[i * samplesF_per_slot];
 
   LOG_D(PHY,"****** start TX-Chain for AbsSubframe %d.%d ******\n", frame_tx, slot_tx);
 
   start_meas(&ue->phy_proc_tx);
 
   for (uint8_t harq_pid = 0; harq_pid < NR_MAX_ULSCH_HARQ_PROCESSES; harq_pid++) {
-    if (ue->ul_harq_processes[harq_pid].status == ACTIVE)
-      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id, phy_data);
+    if (ue->ul_harq_processes[harq_pid].status == ACTIVE) {
+      nr_ue_ulsch_procedures(ue, harq_pid, frame_tx, slot_tx, gNB_id, phy_data, (c16_t **)&txdataF);
+    }
   }
 
-  ue_srs_procedures_nr(ue, proc);
+  ue_srs_procedures_nr(ue, proc, (c16_t **)&txdataF);
 
-  pucch_procedures_ue_nr(ue, proc, phy_data);
+  pucch_procedures_ue_nr(ue, proc, phy_data, (c16_t **)&txdataF);
 
   LOG_D(PHY, "Sending Uplink data \n");
-  nr_ue_pusch_common_procedures(ue,
-                                proc->nr_slot_tx,
-                                &ue->frame_parms,
-                                ue->frame_parms.nb_antennas_tx);
+  nr_ue_pusch_common_procedures(ue, proc->nr_slot_tx, &ue->frame_parms, ue->frame_parms.nb_antennas_tx, (c16_t **)txdataF);
 
   nr_ue_prach_procedures(ue, proc);
 
-  LOG_D(PHY,"****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
+  LOG_D(PHY, "****** end TX-Chain for AbsSubframe %d.%d ******\n", proc->frame_tx, proc->nr_slot_tx);
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX, VCD_FUNCTION_OUT);
   stop_meas(&ue->phy_proc_tx);
@@ -314,7 +309,6 @@ void nr_ue_measurement_procedures(uint16_t l,
                                   int32_t dl_ch_estimates[][pdsch_est_size]) {
 
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
-  int frame_rx   = proc->frame_rx;
   int nr_slot_rx = proc->nr_slot_rx;
   int gNB_id = proc->gNB_id;
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_MEASUREMENT_PROCEDURES, VCD_FUNCTION_IN);
@@ -331,14 +325,18 @@ void nr_ue_measurement_procedures(uint16_t l,
 
 #if T_TRACER
     if(nr_slot_rx == 0)
-      T(T_UE_PHY_MEAS, T_INT(gNB_id),  T_INT(ue->Mod_id), T_INT(frame_rx%1024), T_INT(nr_slot_rx),
-	T_INT((int)(10*log10(ue->measurements.rsrp[0])-ue->rx_total_gain_dB)),
-	T_INT((int)ue->measurements.rx_rssi_dBm[0]),
-	T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
-	T_INT((int)ue->measurements.rx_power_avg_dB[0]),
-	T_INT((int)ue->measurements.n0_power_avg_dB),
-	T_INT((int)ue->measurements.wideband_cqi_avg[0]),
-	T_INT((int)ue->common_vars.freq_offset));
+      T(T_UE_PHY_MEAS,
+        T_INT(gNB_id),
+        T_INT(ue->Mod_id),
+        T_INT(proc->frame_rx % 1024),
+        T_INT(nr_slot_rx),
+        T_INT((int)(10 * log10(ue->measurements.rsrp[0]) - ue->rx_total_gain_dB)),
+        T_INT((int)ue->measurements.rx_rssi_dBm[0]),
+        T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
+        T_INT((int)ue->measurements.rx_power_avg_dB[0]),
+        T_INT((int)ue->measurements.n0_power_avg_dB),
+        T_INT((int)ue->measurements.wideband_cqi_avg[0]),
+        T_INT((int)ue->common_vars.freq_offset));
 #endif
   }
 
@@ -402,36 +400,11 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
 #endif
 
   } else {
-    LOG_E(PHY,"[UE %d] frame %d, nr_slot_rx %d, Error decoding PBCH!\n",
-	  ue->Mod_id,frame_rx, nr_slot_rx);
-    /*FILE *fd;
-    if ((fd = fopen("rxsig_frame0.dat","w")) != NULL) {
-                  fwrite((void *)&ue->common_vars.rxdata[0][0],
-                         sizeof(int32_t),
-                         ue->frame_parms.samples_per_frame,
-                         fd);
-                  LOG_I(PHY,"Dummping Frame ... bye bye \n");
-                  fclose(fd);
-                  exit(0);
-                }*/
-
-    /*
-    write_output("rxsig0.m","rxs0", ue->common_vars.rxdata[0],ue->frame_parms.samples_per_subframe,1,1);
-
-
-      write_output("H00.m","h00",&(ue->common_vars.dl_ch_estimates[0][0][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
-      write_output("H10.m","h10",&(ue->common_vars.dl_ch_estimates[0][2][0]),((ue->frame_parms.Ncp==0)?7:6)*(ue->frame_parms.ofdm_symbol_size),1,1);
-
-      write_output("rxsigF0.m","rxsF0", ue->common_vars.rxdataF[0],8*ue->frame_parms.ofdm_symbol_size,1,1);
-      exit(-1);
-    */
-
+    LOG_E(PHY, "[UE %d] frame %d, nr_slot_rx %d, Error decoding PBCH!\n", ue->Mod_id, frame_rx, nr_slot_rx);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PBCH_PROCEDURES, VCD_FUNCTION_OUT);
   return ret;
 }
-
-
 
 unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb_rb)
 {
@@ -449,8 +422,6 @@ unsigned int nr_get_tx_amp(int power_dBm, int power_max_dBm, int N_RB_UL, int nb
   }
   return(0);
 }
-
-#ifdef NR_PDCCH_SCHED
 
 int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
@@ -478,7 +449,7 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_IN);
   nr_rx_pdcch(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, pdcch_e_rx, rel15, rxdataF);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RX_PDCCH, VCD_FUNCTION_OUT);
-  
+
 
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_IN);
 
@@ -492,9 +463,8 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
 #ifdef NR_PDCCH_SCHED_DEBUG
   LOG_I(PHY,"<-NR_PDCCH_PHY_PROCEDURES_LTE_UE (nr_ue_pdcch_procedures)-> Ending function nr_dci_decoding_procedure() -> dci_cnt=%u\n",dci_cnt);
 #endif
-  
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_DCI_DECODING, VCD_FUNCTION_OUT);
-  //LOG_D(PHY,"[UE  %d][PUSCH] Frame %d nr_slot_rx %d PHICH RX\n",ue->Mod_id,frame_rx,nr_slot_rx);
 
   for (int i=0; i<dci_cnt; i++) {
     LOG_D(PHY,"[UE  %d] AbsSubFrame %d.%d: DCI %i of %d total DCIs found --> rnti %x : format %d\n",
@@ -512,13 +482,11 @@ int nr_ue_pdcch_procedures(PHY_VARS_NR_UE *ue,
   //  send to mac
   ue->if_inst->dl_indication(&dl_indication);
 
-
   stop_meas(&ue->dlsch_rx_pdcch_stats);
-    
+
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_PDCCH_PROCEDURES, VCD_FUNCTION_OUT);
   return(dci_cnt);
 }
-#endif // NR_PDCCH_SCHED
 
 int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
                            UE_nr_rxtx_proc_t *proc,
@@ -544,10 +512,9 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
     uint16_t pdsch_nb_rb    = dlsch0->dlsch_config.number_rbs;
     uint16_t s0             = dlsch0->dlsch_config.start_symbol;
     uint16_t s1             = dlsch0->dlsch_config.number_symbols;
-    bool is_SI              = dlsch0->rnti_type == _SI_RNTI_;
 
-    LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
-          ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
+    LOG_D(PHY,"[UE %d] nr_slot_rx %d, harq_pid %d (%d), BWP start %d, rb_start %d, nb_rb %d, symbol_start %d, nb_symbols %d, DMRS mask %x, Nl %d\n",
+          ue->Mod_id,nr_slot_rx,harq_pid,dlsch0_harq->status,BWPStart,pdsch_start_rb,pdsch_nb_rb,s0,s1,dlsch0->dlsch_config.dlDmrsSymbPos, dlsch0->Nl);
 
     const uint32_t pdsch_est_size = ((ue->frame_parms.symbols_per_slot * ue->frame_parms.ofdm_symbol_size + 15) / 16) * 16;
     __attribute__((aligned(32))) int32_t pdsch_dl_ch_estimates[ue->frame_parms.nb_antennas_rx * dlsch0->Nl][pdsch_est_size];
@@ -569,13 +536,13 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
           LOG_D(PHY,"PDSCH Channel estimation gNB id %d, PDSCH antenna port %d, slot %d, symbol %d\n",0,aatx,nr_slot_rx,m);
           nr_pdsch_channel_estimation(ue,
                                       proc,
-                                      is_SI,
                                       get_dmrs_port(aatx,dlsch0->dlsch_config.dmrs_ports),
                                       m,
                                       dlsch0->dlsch_config.nscid,
                                       dlsch0->dlsch_config.dlDmrsScramblingId,
                                       BWPStart,
                                       dlsch0->dlsch_config.dmrsConfigType,
+                                      dlsch0->dlsch_config.rb_offset,
                                       ue->frame_parms.first_carrier_offset+(BWPStart + pdsch_start_rb)*12,
                                       pdsch_nb_rb,
                                       pdsch_est_size,
@@ -658,10 +625,12 @@ int nr_ue_pdsch_procedures(PHY_VARS_NR_UE *ue,
 
       stop_meas(&ue->dlsch_llr_stats_parallelization[slot]);
       if (cpumeas(CPUMEAS_GETSTATE))
-        LOG_D(PHY, "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",frame_rx,nr_slot_rx,m,ue->dlsch_llr_stats_parallelization[slot].p_time/(cpuf*1000.0));
-      if(first_symbol_flag) {
-        proc->first_symbol_available = 1;
-      }
+        LOG_D(PHY,
+              "[AbsSFN %d.%d] LLR Computation Symbol %d %5.2f \n",
+              frame_rx,
+              nr_slot_rx,
+              m,
+              ue->dlsch_llr_stats_parallelization[slot].p_time / (cpuf * 1000.0));
     } // CRNTI active
     stop_meas(&ue->rx_pdsch_stats);
   }
@@ -1004,8 +973,6 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
     LOG_I(NR_PHY,"============================================\n");
   }
 
-#ifdef NR_PDCCH_SCHED
-
   LOG_D(PHY," ------ --> PDCCH ChannelComp/LLR Frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_SLOT_FEP_PDCCH, VCD_FUNCTION_IN);
 
@@ -1058,7 +1025,6 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
   int gNB_id = proc->gNB_id;
 
   NR_UE_DLSCH_t *dlsch = &phy_data->dlsch[0];
-#endif //NR_PDCCH_SCHED
   start_meas(&ue->generic_stat);
   // do procedures for C-RNTI
   int ret_pdsch = 0;
@@ -1199,7 +1165,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
 
   stop_meas(&ue->generic_stat);
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY,"after tubo until end of Rx %5.2f \n",ue->generic_stat.p_time/(cpuf*1000.0));
+    LOG_D(PHY, "after ldpc decode until end of Rx %5.2f \n", ue->generic_stat.p_time / (cpuf * 1000.0));
 
 #ifdef EMOS
   phy_procedures_emos_UE_RX(ue,slot,gNB_id);
@@ -1219,8 +1185,8 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
 
 // todo:
 // - power control as per 38.213 ch 7.4
-void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc) {
-
+void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, const UE_nr_rxtx_proc_t *proc)
+{
   int gNB_id = proc->gNB_id;
   int frame_tx = proc->frame_tx, nr_slot_tx = proc->nr_slot_tx, prach_power; // tx_amp
   uint8_t mod_id = ue->Mod_id;
@@ -1228,7 +1194,6 @@ void nr_ue_prach_procedures(PHY_VARS_NR_UE *ue, UE_nr_rxtx_proc_t *proc) {
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_PROCEDURES_UE_TX_PRACH, VCD_FUNCTION_IN);
 
   if (ue->prach_vars[gNB_id]->active) {
-
     fapi_nr_ul_config_prach_pdu *prach_pdu = &ue->prach_vars[gNB_id]->prach_pdu;
     ue->tx_power_dBm[nr_slot_tx] = prach_pdu->prach_tx_power;
 

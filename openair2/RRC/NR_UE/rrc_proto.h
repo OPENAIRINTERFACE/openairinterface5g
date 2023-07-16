@@ -159,7 +159,9 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len);
 
 int get_from_lte_ue_fd();
 
-void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot);
+void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo);
+
+void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot, int gnb_id);
 
 void configure_spcell(NR_UE_RRC_INST_t *rrc, NR_SpCellConfig_t *spcell_config);
 void reset_rlf_timers_and_constants(NR_UE_Timers_Constants_t *tac);

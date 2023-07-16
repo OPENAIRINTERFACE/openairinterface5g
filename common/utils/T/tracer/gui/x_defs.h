@@ -2,7 +2,7 @@
 #define _X_DEFS_H_
 
 #include <X11/Xlib.h>
-#include <Xft.h>
+#include <X11/Xft/Xft.h>
 
 struct x_connection {
   Display *d;

@@ -34,7 +34,6 @@
 #define __NR_IF_MODULE_H__
 
 #include "platform_types.h"
-#include <openair1/PHY/thread_NR_UE.h>
 #include <semaphore.h>
 #include "fapi_nr_ue_interface.h"
 #include "openair2/PHY_INTERFACE/queue_t.h"
