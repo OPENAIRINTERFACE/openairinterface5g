@@ -425,7 +425,39 @@ bool monitior_dci_for_other_SI(NR_UE_MAC_INST_t *mac,
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, const frame_t frame, const int slot)
 {
   const NR_UE_DL_BWP_t *current_DL_BWP = &mac->current_DL_BWP;
-  const int slots_per_frame = nr_slots_per_frame[current_DL_BWP->scs];
+  int scs = mac->get_sib1 ? get_softmodem_params()->numerology : current_DL_BWP->scs;
+  const int slots_per_frame = nr_slots_per_frame[scs];
+  if (mac->get_sib1) {
+    int ssb_sc_offset_norm;
+    if (mac->ssb_subcarrier_offset < 24 && mac->frequency_range == FR1)
+      ssb_sc_offset_norm = mac->ssb_subcarrier_offset >> scs;
+    else
+      ssb_sc_offset_norm = mac->ssb_subcarrier_offset;
+    uint16_t ssb_offset_point_a = (mac->ssb_start_subcarrier - ssb_sc_offset_norm) / 12;
+    int ssb_start_symbol = get_ssb_start_symbol(mac->nr_band, scs, mac->mib_ssb);
+    get_type0_PDCCH_CSS_config_parameters(&mac->type0_PDCCH_CSS_config,
+                                          mac->mib_frame,
+                                          mac->mib,
+                                          slots_per_frame,
+                                          ssb_sc_offset_norm,
+                                          ssb_start_symbol,
+                                          scs,
+                                          mac->frequency_range,
+                                          mac->nr_band,
+                                          mac->mib_ssb,
+                                          1, // If the UE is not configured with a periodicity, the UE assumes a periodicity of a half frame
+                                          ssb_offset_point_a);
+    if(mac->search_space_zero == NULL)
+      mac->search_space_zero=calloc(1,sizeof(*mac->search_space_zero));
+    if(mac->coreset0 == NULL)
+      mac->coreset0 = calloc(1,sizeof(*mac->coreset0));
+    fill_coresetZero(mac->coreset0, &mac->type0_PDCCH_CSS_config);
+    fill_searchSpaceZero(mac->search_space_zero, slots_per_frame, &mac->type0_PDCCH_CSS_config);
+    if (is_ss_monitor_occasion(frame, slot, slots_per_frame, mac->search_space_zero)) {
+      LOG_D(NR_MAC, "Monitoring DCI for SIB1 in frame %d slot %d\n", frame, slot);
+      config_dci_pdu(mac, dl_config, NR_RNTI_SI, slot, mac->search_space_zero);
+    }
+  }
   if (mac->get_otherSI) {
     // If searchSpaceOtherSystemInformation is set to zero,
     // PDCCH monitoring occasions for SI message reception in SI-window

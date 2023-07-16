@@ -361,7 +361,6 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                                  UE_nr_rxtx_proc_t *proc,
                                  int estimateSz,
                                  struct complex16 dl_ch_estimates[][estimateSz],
-                                 nr_phy_data_t *phy_data,
                                  c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP]) {
 
   int ret = 0;
@@ -382,7 +381,6 @@ static int nr_ue_pbch_procedures(PHY_VARS_NR_UE *ue,
                    &ue->frame_parms,
                    (ue->frame_parms.ssb_index)&7,
                    SISO,
-                   phy_data,
                    &result,
                    rxdataF);
 
@@ -904,7 +902,7 @@ void pbch_pdcch_processing(PHY_VARS_NR_UE *ue,
           if(ssb_index == fp->ssb_index) {
 
             LOG_D(PHY," ------  Decode MIB: frame.slot %d.%d ------  \n", frame_rx%1024, nr_slot_rx);
-            const int pbchSuccess = nr_ue_pbch_procedures(ue, proc, estimateSz, dl_ch_estimates, phy_data, rxdataF);
+            const int pbchSuccess = nr_ue_pbch_procedures(ue, proc, estimateSz, dl_ch_estimates, rxdataF);
 
             if (ue->no_timing_correction==0 && pbchSuccess == 0) {
               LOG_D(PHY,"start adjust sync slot = %d no timing %d\n", nr_slot_rx, ue->no_timing_correction);

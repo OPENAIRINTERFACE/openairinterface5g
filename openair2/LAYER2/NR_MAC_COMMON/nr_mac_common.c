@@ -4106,8 +4106,8 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
                                            int nr_band,
                                            uint32_t ssb_index,
                                            uint32_t ssb_period,
-                                           uint32_t ssb_offset_point_a) {
-
+                                           uint32_t ssb_offset_point_a)
+{
   NR_SubcarrierSpacing_t scs_pdcch;
 
   channel_bandwidth_t min_channel_bw;
@@ -4303,7 +4303,6 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   float big_m = 0.0f;
   type0_PDCCH_CSS_config->sfn_c = -1;   //  only valid for mux=1
   type0_PDCCH_CSS_config->n_c = UINT_MAX;
-  type0_PDCCH_CSS_config->number_of_search_space_per_slot = UINT_MAX;
   type0_PDCCH_CSS_config->first_symbol_index = UINT_MAX;
   type0_PDCCH_CSS_config->search_space_duration = 0;  //  element of search space
   //  38.213 table 10.1-1
@@ -4311,7 +4310,6 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
   /// MUX PATTERN 1
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR1){
     big_o = table_38213_13_11_c1[index_4lsb];
-    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_11_c2[index_4lsb];
     big_m = table_38213_13_11_c3[index_4lsb];
 
     uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
@@ -4331,7 +4329,6 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
 
   if(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 && frequency_range == FR2){
     big_o = table_38213_13_12_c1[index_4lsb];
-    type0_PDCCH_CSS_config->number_of_search_space_per_slot = table_38213_13_12_c2[index_4lsb];
     big_m = table_38213_13_12_c3[index_4lsb];
 
     uint32_t temp = (uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m);
@@ -4448,25 +4445,11 @@ void get_type0_PDCCH_CSS_config_parameters(NR_Type0_PDCCH_CSS_config_t *type0_PD
     type0_PDCCH_CSS_config->search_space_frame_period = ssb_period*nr_slots_per_frame[scs_ssb];
   }
 
-  AssertFatal(type0_PDCCH_CSS_config->number_of_search_space_per_slot!=UINT_MAX,"");
-
-//  uint32_t coreset_duration = num_symbols * number_of_search_space_per_slot;
-//    mac->type0_pdcch_dci_config.number_of_candidates[0] = table_38213_10_1_1_c2[0];
-//    mac->type0_pdcch_dci_config.number_of_candidates[1] = table_38213_10_1_1_c2[1];
-//    mac->type0_pdcch_dci_config.number_of_candidates[2] = table_38213_10_1_1_c2[2];   //  CCE aggregation level = 4
-//    mac->type0_pdcch_dci_config.number_of_candidates[3] = table_38213_10_1_1_c2[3];   //  CCE aggregation level = 8
-//    mac->type0_pdcch_dci_config.number_of_candidates[4] = table_38213_10_1_1_c2[4];   //  CCE aggregation level = 16
-//    mac->type0_pdcch_dci_config.duration = search_space_duration;
-//    mac->type0_pdcch_dci_config.coreset.duration = coreset_duration;   //  coreset
-//    AssertFatal(first_symbol_index!=UINT_MAX,"");
-//    mac->type0_pdcch_dci_config.monitoring_symbols_within_slot = (0x3fff << first_symbol_index) & (0x3fff >> (14-coreset_duration-first_symbol_index)) & 0x3fff;
-
   AssertFatal(type0_PDCCH_CSS_config->sfn_c >= 0, "");
   AssertFatal(type0_PDCCH_CSS_config->n_c != UINT_MAX, "");
 
   type0_PDCCH_CSS_config->n_0 = ((uint32_t)(big_o*(1<<scs_pdcch)) + (uint32_t)(type0_PDCCH_CSS_config->ssb_index*big_m))%num_slot_per_frame;
   type0_PDCCH_CSS_config->cset_start_rb = ssb_offset_point_a - type0_PDCCH_CSS_config->rb_offset;
-
 }
 
 void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
@@ -4522,7 +4505,10 @@ void fill_coresetZero(NR_ControlResourceSet_t *coreset0, NR_Type0_PDCCH_CSS_conf
 
 }
 
-void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config) {
+void fill_searchSpaceZero(NR_SearchSpace_t *ss0,
+                          int slots_per_frame,
+                          NR_Type0_PDCCH_CSS_config_t *type0_PDCCH_CSS_config)
+{
 
   if(ss0 == NULL) ss0=calloc(1,sizeof(*ss0));
   if(ss0->controlResourceSetId == NULL) ss0->controlResourceSetId=calloc(1,sizeof(*ss0->controlResourceSetId));
@@ -4537,8 +4523,9 @@ void fill_searchSpaceZero(NR_SearchSpace_t *ss0, NR_Type0_PDCCH_CSS_config_t *ty
   AssertFatal(type0_PDCCH_CSS_config!=NULL,"No type0 CSS configuration\n");
 
   const uint32_t periodicity = type0_PDCCH_CSS_config->search_space_frame_period;
-  const uint32_t offset = type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1
-      ? type0_PDCCH_CSS_config->n_0 : type0_PDCCH_CSS_config->n_c;
+  const uint32_t offset = type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern == 1 ?
+                          type0_PDCCH_CSS_config->n_0 + (slots_per_frame * type0_PDCCH_CSS_config->sfn_c) :
+                          type0_PDCCH_CSS_config->n_c;
 
   ss0->searchSpaceId = 0;
   *ss0->controlResourceSetId = 0;

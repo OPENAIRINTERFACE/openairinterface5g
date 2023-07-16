@@ -782,7 +782,6 @@ int main(int argc, char **argv)
       }
       else {
         UE_nr_rxtx_proc_t proc={0};
-        nr_phy_data_t phy_data={0};
 
 	UE->rx_offset=0;
 	uint8_t ssb_index = 0;
@@ -814,7 +813,6 @@ int main(int argc, char **argv)
                          frame_parms,
                          ssb_index%8,
                          SISO,
-                         &phy_data,
                          &result,
                          rxdataF);
 

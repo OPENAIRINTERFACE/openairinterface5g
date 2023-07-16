@@ -246,8 +246,7 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
 
 
 int8_t nr_ue_decode_mib(module_id_t module_id,
-                        int cc_id,
-                        void *phy_data)
+                        int cc_id)
 {
   LOG_D(MAC,"[L2][MAC] decode mib\n");
 
@@ -264,7 +263,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
   uint8_t ssb_subcarrier_offset = (uint8_t)mac->mib->ssb_SubcarrierOffset;
 
   frame = frame << 4;
-  frame = frame | frame_number_4lsb;
+  mac->mib_frame = frame | frame_number_4lsb;
   if (mac->frequency_range == FR2) {
     for (int i = 0; i < 3; i++)
       mac->mib_ssb += (((extra_bits >> (7 - i)) & 0x01) << (3 + i));
@@ -276,7 +275,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 #ifdef DEBUG_MIB
   uint8_t half_frame_bit = (extra_bits >> 4) & 0x1; //	extra bits[4]
   LOG_I(MAC,"system frame number(6 MSB bits): %d\n",  mac->mib->systemFrameNumber.buf[0]);
-  LOG_I(MAC,"system frame number(with LSB): %d\n", (int)frame);
+  LOG_I(MAC,"system frame number(with LSB): %d\n", (int) mac->mib_frame);
   LOG_I(MAC,"subcarrier spacing (0=15or60, 1=30or120): %d\n", (int)mac->mib->subCarrierSpacingCommon);
   LOG_I(MAC,"ssb carrier offset(with MSB):  %d\n", (int)ssb_subcarrier_offset);
   LOG_I(MAC,"dmrs type A position (0=pos2,1=pos3): %d\n", (int)mac->mib->dmrs_TypeA_Position);
@@ -290,42 +289,8 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 
   mac->ssb_subcarrier_offset = ssb_subcarrier_offset;
 
-  uint8_t scs_ssb;
-  uint32_t band;
-  uint16_t ssb_start_symbol;
-
-  if (get_softmodem_params()->sa == 1) {
-
-    scs_ssb = get_softmodem_params()->numerology;
-    band = mac->nr_band;
-    ssb_start_symbol = get_ssb_start_symbol(band, scs_ssb, mac->mib_ssb);
-    int ssb_sc_offset_norm;
-    if (ssb_subcarrier_offset < 24 && mac->frequency_range == FR1)
-      ssb_sc_offset_norm = ssb_subcarrier_offset >> scs_ssb;
-    else
-      ssb_sc_offset_norm = ssb_subcarrier_offset;
-
-    if (mac->get_sib1) {
-      nr_ue_sib1_scheduler(module_id,
-                           cc_id,
-                           ssb_start_symbol,
-                           frame,
-                           ssb_sc_offset_norm,
-                           mac->mib_ssb,
-                           mac->ssb_start_subcarrier,
-                           mac->frequency_range,
-                           phy_data);
-      mac->first_sync_frame = frame;
-    }
-  }
-  else {
-    NR_ServingCellConfigCommon_t *scc = mac->scc;
-    scs_ssb = *scc->ssbSubcarrierSpacing;
-    band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-    ssb_start_symbol = get_ssb_start_symbol(band, scs_ssb, mac->mib_ssb);
-    if (mac->first_sync_frame == -1)
-      mac->first_sync_frame = frame;
-  }
+  if (mac->first_sync_frame == -1)
+    mac->first_sync_frame = frame;
 
   if(get_softmodem_params()->phy_test)
     mac->state = UE_CONNECTED;

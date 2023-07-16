@@ -714,8 +714,7 @@ void nr_rrc_mac_config_req_mib(module_id_t module_id,
   else if (sched_sib == 2)
     mac->get_otherSI = true;
   nr_ue_decode_mib(module_id,
-                   cc_idP,
-                   NULL);
+                   cc_idP);
 }
 
 void nr_rrc_mac_config_req_sib1(module_id_t module_id,

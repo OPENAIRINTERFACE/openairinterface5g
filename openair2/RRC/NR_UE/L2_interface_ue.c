@@ -61,7 +61,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
 {
   sdu_size_t sdu_size = 0;
 
-  switch(channel){
+  switch(channel) {
     case NR_BCCH_BCH:
     case NR_BCCH_DL_SCH:
       if (pdu_len>0) {

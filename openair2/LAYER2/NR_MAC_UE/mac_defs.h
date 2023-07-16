@@ -478,6 +478,7 @@ typedef struct {
   /// SSB index from MIB decoding
   uint8_t mib_ssb;
   uint32_t mib_additional_bits;
+  int mib_frame;
 
   nr_csi_report_t csi_report_template[MAX_CSI_REPORTCONFIG];
 

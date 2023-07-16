@@ -665,8 +665,6 @@ typedef struct {
   int frame_tx;
   /// frame to act upon for reception
   int frame_rx;
-  int frame_number_4lsb;
-  int decoded_frame_rx;
 } UE_nr_rxtx_proc_t;
 
 typedef struct nr_phy_data_tx_s {

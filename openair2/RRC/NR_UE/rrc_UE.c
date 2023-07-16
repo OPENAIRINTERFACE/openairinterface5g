@@ -482,6 +482,8 @@ int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *ph
 
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
+  if (!get_softmodem_params()->sa)
+    return 0;
   // schedule reception of SIB1
   if (!SI_info->sib1)
     return 1;
@@ -1961,21 +1963,22 @@ void *rrc_nrue_task(void *args_p)
          break;
 
        case NR_RRC_MAC_BCCH_DATA_IND:
-         LOG_I(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
-               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-         if (NR_RRC_MAC_BCCH_DATA_IND (msg_p).is_bch)
+         LOG_D(NR_RRC, "[UE %d] Received %s: gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
+         NRRrcMacBcchDataInd *bcch = &NR_RRC_MAC_BCCH_DATA_IND (msg_p);
+         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, bcch->frame, 0, bcch->gnb_index);
+         if (bcch->is_bch)
            nr_rrc_ue_decode_NR_BCCH_BCH_Message(ue_mod_id,
-                                                NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
-                                                NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                                                NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size);
+                                                bcch->gnb_index,
+                                                bcch->sdu,
+                                                bcch->sdu_size);
          else
            nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(ctxt.module_id,
-                                                   NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
-                                                   NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                                                   NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                                                   NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                                                   NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+                                                   bcch->gnb_index,
+                                                   bcch->sdu,
+                                                   bcch->sdu_size,
+                                                   bcch->rsrq,
+                                                   bcch->rsrp);
          break;
 
        case NR_RRC_MAC_CCCH_DATA_IND:
@@ -2065,7 +2068,7 @@ void *rrc_nrue_task(void *args_p)
         break;
     }
     LOG_D(NR_RRC, "[UE %d] RRC Status %d\n", ue_mod_id, nr_rrc_get_state(ue_mod_id));
-    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+    result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     msg_p = NULL;
   }
