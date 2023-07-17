@@ -321,8 +321,6 @@ add_library(s1ap
   )
 target_link_libraries(s1ap PUBLIC asn1_s1ap)
 target_link_libraries(s1ap PRIVATE nr_rrc asn1_nr_rrc_hdrs lte_rrc)
-target_include_directories(s1ap PRIVATE ${libcrypt_INCLUDE_DIRS})
-target_link_libraries(s1ap PUBLIC ${libcrypt_LIBRARIES})
 
 # NGAP
 ##############
@@ -344,8 +342,6 @@ add_library(ngap
   )
 target_link_libraries(ngap PUBLIC asn1_ngap)
 target_link_libraries(ngap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
-target_include_directories(ngap PRIVATE ${libcrypt_INCLUDE_DIRS})
-target_link_libraries(ngap PRIVATE ${libcrypt_LIBRARIES})
 
 #M2AP
 ##############
@@ -1442,7 +1438,7 @@ add_library(e1_if
   ${NR_RRC_DIR}/cucp_cuup_e1ap.c
   )
 
-target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap SECURITY ${OPENSSL_LIBRARIES} crypt e1ap GTPV1U)
+target_link_libraries(e1_if PRIVATE asn1_nr_rrc_hdrs asn1_lte_rrc_hdrs asn1_f1ap SECURITY ${OPENSSL_LIBRARIES} e1ap GTPV1U)
 
 add_library(e1_pdcp_if
   ${OPENAIR2_DIR}/LAYER2/nr_pdcp/nr_pdcp_e1_api.c
