@@ -33,7 +33,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <crypt.h>
+#include "openair3/SECU/kdf.h"
 
 #include "tree.h"
 #include "queue.h"
@@ -71,17 +71,20 @@ void ngap_gNB_handle_register_gNB(instance_t instance, ngap_register_gnb_req_t *
 
 void ngap_gNB_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp);
 
-uint32_t ngap_generate_gNB_id(void) {
-  char    *out;
-  char     hostname[50];
-  int      ret;
-  uint32_t gNB_id;
+uint32_t ngap_generate_gNB_id(void)
+{
   /* Retrieve the host name */
-  ret = gethostname(hostname, sizeof(hostname));
+  char hostname[32] = {0};
+  int const ret = gethostname(hostname, sizeof(hostname));
   DevAssert(ret == 0);
-  out = crypt(hostname, "eurecom");
-  DevAssert(out != NULL);
-  gNB_id = ((out[0] << 24) | (out[1] << 16) | (out[2] << 8) | out[3]);
+
+  uint8_t key[32] = {"eurecom"};
+  byte_array_t data = {.len = 32, .buf = (uint8_t *)hostname};
+
+  uint8_t out[32] = {0};
+  kdf(key, data, 32, out);
+
+  uint32_t const gNB_id = ((out[0] << 24) | (out[1] << 16) | (out[2] << 8) | out[3]);
   return gNB_id;
 }
 

@@ -300,10 +300,6 @@ target_link_libraries(lte_rrc PRIVATE nr_rrc)
 add_library(nr_rrc ${OPENAIR2_DIR}/RRC/NR/MESSAGES/asn1_msg.c)
 target_link_libraries(nr_rrc PUBLIC asn1_nr_rrc asn1_lte_rrc)
 
-
-# S1AP and NGAP need crypt library
-pkg_check_modules(libcrypt REQUIRED libcrypt)
-
 # S1AP
 ##############
 set(S1AP_DIR ${OPENAIR3_DIR}/S1AP)
