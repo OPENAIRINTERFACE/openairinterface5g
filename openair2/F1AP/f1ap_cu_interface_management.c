@@ -146,53 +146,45 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
 
     // FDD Cells
     if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_fDD) {
-      struct fdd_s *FDDs=&req->nr_mode_info[i].fdd;
+      req->cell[i].info.mode = F1AP_MODE_FDD;
+      f1ap_fdd_info_t *FDDs = &req->cell[i].info.fdd;
       F1AP_FDD_Info_t * fDD_Info=servedCellInformation->nR_Mode_Info.choice.fDD;
-      FDDs->ul_nr_arfcn=fDD_Info->uL_NRFreqInfo.nRARFCN;
-      FDDs->ul_num_frequency_bands=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count;
+      FDDs->ul_freqinfo.arfcn = fDD_Info->uL_NRFreqInfo.nRARFCN;
+      AssertFatal(fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count == 1, "cannot handle more than one frequency band\n");
       for (int f=0; f < fDD_Info->uL_NRFreqInfo.freqBandListNr.list.count; f++) {
-	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.array[f];
-	FDDs->ul_nr_band[f]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-          F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->uL_NRFreqInfo.freqBandListNr.list.array[f];
+        FDDs->ul_freqinfo.band = FreqItem->freqBandIndicatorNr;
+        AssertFatal(FreqItem->supportedSULBandList.list.count == 0, "cannot handle SUL bands!\n");
       }
-      FDDs->dl_nr_arfcn=fDD_Info->dL_NRFreqInfo.nRARFCN;
+      FDDs->dl_freqinfo.arfcn = fDD_Info->dL_NRFreqInfo.nRARFCN;
       int dlBands=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.count;
+      AssertFatal(dlBands == 0, "cannot handled more than one frequency band\n");
       for (int dlB=0; dlB < dlBands; dlB++) {
 	F1AP_FreqBandNrItem_t * FreqItem=fDD_Info->dL_NRFreqInfo.freqBandListNr.list.array[dlB];
-	FDDs->dl_nr_band[dlB]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-	  F1AP_SupportedSULFreqBandItem_t * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  FDDs->ul_nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        FDDs->dl_freqinfo.band = FreqItem->freqBandIndicatorNr;
+        int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
+        AssertFatal(num_available_supported_SULBands == 0, "cannot handle SUL bands!\n");
       }
-      FDDs->ul_scs=fDD_Info->uL_Transmission_Bandwidth.nRSCS;
-      FDDs->ul_nrb=nrb_lut[fDD_Info->uL_Transmission_Bandwidth.nRNRB];
-      FDDs->dl_scs=fDD_Info->dL_Transmission_Bandwidth.nRSCS;
-      FDDs->dl_nrb=nrb_lut[fDD_Info->dL_Transmission_Bandwidth.nRNRB]; 
-    }
-    
-    // TDD
-    if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_tDD) {
-      struct tdd_s *TDDs=&req->nr_mode_info[i].tdd;
-      F1AP_TDD_Info_t * tDD_Info=servedCellInformation->nR_Mode_Info.choice.tDD;
-      TDDs->nr_arfcn=tDD_Info->nRFreqInfo.nRARFCN;
-      TDDs->num_frequency_bands=tDD_Info->nRFreqInfo.freqBandListNr.list.count;
+      FDDs->ul_tbw.scs = fDD_Info->uL_Transmission_Bandwidth.nRSCS;
+      FDDs->ul_tbw.nrb = nrb_lut[fDD_Info->uL_Transmission_Bandwidth.nRNRB];
+      FDDs->dl_tbw.scs = fDD_Info->dL_Transmission_Bandwidth.nRSCS;
+      FDDs->dl_tbw.nrb = nrb_lut[fDD_Info->dL_Transmission_Bandwidth.nRNRB];
+    } else if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_tDD) {
+      req->cell[i].info.mode = F1AP_MODE_TDD;
+      f1ap_tdd_info_t *TDDs = &req->cell[i].info.tdd;
+      F1AP_TDD_Info_t *tDD_Info = servedCellInformation->nR_Mode_Info.choice.tDD;
+      TDDs->freqinfo.arfcn = tDD_Info->nRFreqInfo.nRARFCN;
+      AssertFatal(tDD_Info->nRFreqInfo.freqBandListNr.list.count == 1, "cannot handle more than one frequency band\n");
       for (int f=0; f < tDD_Info->nRFreqInfo.freqBandListNr.list.count; f++) {
-	struct F1AP_FreqBandNrItem * FreqItem=tDD_Info->nRFreqInfo.freqBandListNr.list.array[f];
-	TDDs->nr_band[f]=FreqItem->freqBandIndicatorNr;
-	int num_available_supported_SULBands=FreqItem->supportedSULBandList.list.count;
-	for (int sul=0; sul < num_available_supported_SULBands; sul ++ ) {
-          struct F1AP_SupportedSULFreqBandItem * SulItem= FreqItem->supportedSULBandList.list.array[sul];
-	  TDDs->nr_sul_band[sul]=SulItem->freqBandIndicatorNr;
-	}
+        struct F1AP_FreqBandNrItem * FreqItem=tDD_Info->nRFreqInfo.freqBandListNr.list.array[f];
+        TDDs->freqinfo.band = FreqItem->freqBandIndicatorNr;
+        int num_available_supported_SULBands = FreqItem->supportedSULBandList.list.count;
+        AssertFatal(num_available_supported_SULBands == 0, "cannot hanlde SUL bands!\n");
       }
-      TDDs->scs=tDD_Info->transmission_Bandwidth.nRSCS;
-      TDDs->nrb=nrb_lut[tDD_Info->transmission_Bandwidth.nRNRB];
+      TDDs->tbw.scs = tDD_Info->transmission_Bandwidth.nRSCS;
+      TDDs->tbw.nrb = nrb_lut[tDD_Info->transmission_Bandwidth.nRNRB];
+    } else {
+      AssertFatal(false, "unknown NR Mode info %d\n", servedCellInformation->nR_Mode_Info.present);
     }
 	
     struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;

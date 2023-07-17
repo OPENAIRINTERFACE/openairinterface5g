@@ -90,6 +90,30 @@ typedef struct f1ap_plmn_t {
   uint8_t  mnc_digit_length;
 } f1ap_plmn_t;
 
+typedef enum f1ap_mode_t { F1AP_MODE_TDD = 0, F1AP_MODE_FDD = 1 } f1ap_mode_t;
+
+typedef struct f1ap_nr_frequency_info_t {
+  uint32_t arfcn;
+  int band;
+} f1ap_nr_frequency_info_t;
+
+typedef struct f1ap_transmission_bandwidth_t {
+  uint8_t scs;
+  uint16_t nrb;
+} f1ap_transmission_bandwidth_t;
+
+typedef struct f1ap_fdd_info_t {
+  f1ap_nr_frequency_info_t ul_freqinfo;
+  f1ap_nr_frequency_info_t dl_freqinfo;
+  f1ap_transmission_bandwidth_t ul_tbw;
+  f1ap_transmission_bandwidth_t dl_tbw;
+} f1ap_fdd_info_t;
+
+typedef struct f1ap_tdd_info_t {
+  f1ap_nr_frequency_info_t freqinfo;
+  f1ap_transmission_bandwidth_t tbw;
+} f1ap_tdd_info_t;
+
 typedef struct f1ap_served_cell_info_t {
   // NR CGI
   f1ap_plmn_t plmn;
@@ -105,6 +129,12 @@ typedef struct f1ap_served_cell_info_t {
   uint16_t num_ssi;
   uint8_t sst;
   uint8_t sd;
+
+  f1ap_mode_t mode;
+  union {
+    f1ap_fdd_info_t fdd;
+    f1ap_tdd_info_t tdd;
+  };
 } f1ap_served_cell_info_t;
 
 typedef struct f1ap_setup_req_s {
@@ -119,52 +149,6 @@ typedef struct f1ap_setup_req_s {
     f1ap_served_cell_info_t info;
   } cell[F1AP_MAX_NB_CELLS];
 
-  // fdd_flag = 1 means FDD, 0 means TDD
-  int  fdd_flag;
-
-  union {
-    struct fdd_s {
-      uint32_t ul_nr_arfcn;
-      uint8_t ul_scs;
-      uint16_t ul_nrb;
-
-      uint32_t dl_nr_arfcn;
-      uint8_t dl_scs;
-      uint16_t dl_nrb;
-
-      uint32_t sul_active;
-      uint32_t sul_nr_arfcn;
-      uint8_t sul_scs;
-      uint16_t sul_nrb;
-
-      uint8_t ul_num_frequency_bands;
-      uint16_t ul_nr_band[32];
-      uint8_t ul_num_sul_frequency_bands;
-      uint16_t ul_nr_sul_band[32];
-
-      uint8_t dl_num_frequency_bands;
-      uint16_t dl_nr_band[32];
-      uint8_t dl_num_sul_frequency_bands;
-      uint16_t dl_nr_sul_band[32];
-    } fdd;
-    struct tdd_s {
-
-      uint32_t nr_arfcn;
-      uint8_t scs;
-      uint16_t nrb;
-
-      uint32_t sul_active;
-      uint32_t sul_nr_arfcn;
-      uint8_t sul_scs;
-      uint16_t sul_nrb;
-
-      uint8_t num_frequency_bands;
-      uint16_t nr_band[32];
-      uint8_t num_sul_frequency_bands;
-      uint16_t nr_sul_band[32];
-
-    } tdd;
-  } nr_mode_info[F1AP_MAX_NB_CELLS];
 
   char *measurement_timing_information[F1AP_MAX_NB_CELLS];
   uint8_t ranac[F1AP_MAX_NB_CELLS];

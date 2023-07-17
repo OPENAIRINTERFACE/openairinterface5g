@@ -1987,35 +1987,25 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-          f1Setup->fdd_flag = 0;
-          f1Setup->nr_mode_info[k].tdd.nr_arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          f1Setup->nr_mode_info[k].tdd.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          f1Setup->nr_mode_info[k].tdd.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          f1Setup->nr_mode_info[k].tdd.num_frequency_bands = 1;
-          f1Setup->nr_mode_info[k].tdd.nr_band[0] = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-          f1Setup->nr_mode_info[k].tdd.sul_active              = 0;
+          f1Setup->cell[k].info.mode = F1AP_MODE_TDD;
+          f1ap_tdd_info_t *tdd = &f1Setup->cell[k].info.tdd;
+          tdd->freqinfo.arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          tdd->tbw.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          tdd->tbw.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          tdd->freqinfo.band = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
         } else {
           /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-          f1Setup->fdd_flag = 1;
-          f1Setup->nr_mode_info[k].fdd.dl_nr_arfcn             = 26200UL;
-          f1Setup->nr_mode_info[k].fdd.ul_nr_arfcn             = 26200UL;
-          // For LTE use scs field to carry prefix type and number of antennas
-          f1Setup->nr_mode_info[k].fdd.dl_scs                  = 0;
-          f1Setup->nr_mode_info[k].fdd.ul_scs                  = 0;
-          // use nrb field to hold LTE N_RB_DL (0...5)
-          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
-          f1Setup->nr_mode_info[k].fdd.ul_nrb                  = 3;
-          // RK: we need to check there value for FDD's frequency_bands DL/UL
-          f1Setup->nr_mode_info[k].fdd.ul_num_frequency_bands  = 1;
-          f1Setup->nr_mode_info[k].fdd.ul_nr_band[0]           = 7;
-          f1Setup->nr_mode_info[k].fdd.dl_num_frequency_bands  = 1;
-          f1Setup->nr_mode_info[k].fdd.dl_nr_band[0]           = 7;
-          f1Setup->nr_mode_info[k].fdd.ul_num_sul_frequency_bands  = 0;
-          f1Setup->nr_mode_info[k].fdd.ul_nr_sul_band[0]           = 7;
-          f1Setup->nr_mode_info[k].fdd.dl_num_sul_frequency_bands  = 0;
-          f1Setup->nr_mode_info[k].fdd.dl_nr_sul_band[0]           = 7;
-          f1Setup->nr_mode_info[k].fdd.sul_active              = 0;
+          f1Setup->cell[k].info.mode = F1AP_MODE_FDD;
+          f1ap_fdd_info_t *fdd = &f1Setup->cell[k].info.fdd;
+          fdd->dl_freqinfo.arfcn = 26200UL;
+          fdd->ul_freqinfo.arfcn = 26200UL;
+          fdd->dl_tbw.scs = 0;
+          fdd->ul_tbw.scs = 0;
+          fdd->dl_tbw.nrb = 3;
+          fdd->ul_tbw.nrb = 3;
+          fdd->dl_freqinfo.band = 7;
+          fdd->ul_freqinfo.band = 7;
           /***************** for test *****************/
         }
 
