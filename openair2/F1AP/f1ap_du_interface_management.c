@@ -157,9 +157,11 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
     /* - nRPCI */
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
-    uint32_t tac=htonl(cell->tac);
-    asn1cCalloc(served_cell_information->fiveGS_TAC, netOrder);
-    OCTET_STRING_fromBuf(netOrder, ((char *)&tac)+1, 3);
+    if (cell->tac != NULL) {
+      uint32_t tac=htonl(*cell->tac);
+      asn1cCalloc(served_cell_information->fiveGS_TAC, netOrder);
+      OCTET_STRING_fromBuf(netOrder, ((char *)&tac)+1, 3);
+    }
 
     /* - Configured_EPS_TAC */
     if(0) {
@@ -597,9 +599,11 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     cellIDs_t *cell = &f1ap_setup_req->cell[j];
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
-    uint32_t tac=htonl(cell->tac);
-    served_cell_information->fiveGS_TAC=(F1AP_FiveGS_TAC_t *) calloc(1,sizeof(F1AP_FiveGS_TAC_t *));
-    OCTET_STRING_fromBuf(served_cell_information->fiveGS_TAC, ((char *)&tac)+1, 3);
+    if (cell->tac != NULL) {
+      uint32_t tac = htonl(*cell->tac);
+      served_cell_information->fiveGS_TAC = calloc(1, sizeof(*served_cell_information->fiveGS_TAC));
+      OCTET_STRING_fromBuf(served_cell_information->fiveGS_TAC, ((char *)&tac)+1, 3);
+    }
 
     /* - Configured_EPS_TAC */
     if(1) {

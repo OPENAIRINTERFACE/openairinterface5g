@@ -93,7 +93,7 @@ typedef struct f1ap_plmn_t {
 typedef struct cellIDs_s {
   // Served Cell Information
   /* Tracking area code */
-  uint32_t tac;
+  uint32_t *tac;
 
   // NR CGI
   f1ap_plmn_t plmn;

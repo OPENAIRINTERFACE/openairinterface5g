@@ -122,8 +122,10 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     F1AP_Served_Cell_Information_t *servedCellInformation= &served_cells_item->served_Cell_Information;
     /* tac */
     if (servedCellInformation->fiveGS_TAC) {
-      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, req->cell[i].tac);
-      LOG_D(F1AP, "req->tac[%d] %d \n", i, req->cell[i].tac);
+      req->cell[i].tac = malloc(sizeof(*req->cell[i].tac));
+      AssertFatal(req->cell[i].tac != NULL, "out of memory\n");
+      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, *req->cell[i].tac);
+      LOG_D(F1AP, "req->tac[%d] %d \n", i, *req->cell[i].tac);
     }
     
     /* - nRCGI */
