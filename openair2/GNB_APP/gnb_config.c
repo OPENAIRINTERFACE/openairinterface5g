@@ -2009,8 +2009,8 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           /***************** for test *****************/
         }
 
-        f1Setup->measurement_timing_information[k]             = "0";
-        f1Setup->ranac[k]                                      = 0;
+        f1Setup->cell[k].info.measurement_timing_information = "0";
+
         DevAssert(rrc->carrier.mib != NULL);
         int buf_len = 3; // this is what we assume in monolithic
         f1Setup->mib[k]                                        = calloc(buf_len, sizeof(*f1Setup->mib[k]));

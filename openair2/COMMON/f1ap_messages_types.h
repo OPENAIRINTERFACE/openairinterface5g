@@ -135,6 +135,8 @@ typedef struct f1ap_served_cell_info_t {
     f1ap_fdd_info_t fdd;
     f1ap_tdd_info_t tdd;
   };
+
+  char *measurement_timing_information;
 } f1ap_served_cell_info_t;
 
 typedef struct f1ap_setup_req_s {
@@ -149,9 +151,6 @@ typedef struct f1ap_setup_req_s {
     f1ap_served_cell_info_t info;
   } cell[F1AP_MAX_NB_CELLS];
 
-
-  char *measurement_timing_information[F1AP_MAX_NB_CELLS];
-  uint8_t ranac[F1AP_MAX_NB_CELLS];
 
   // System Information
   uint8_t *mib[F1AP_MAX_NB_CELLS];

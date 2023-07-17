@@ -275,7 +275,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
     }
 
     /* - measurementTimingConfiguration */
-    char *measurementTimingConfiguration = setup_req->measurement_timing_information[i]; // sept. 2018
+    char *measurementTimingConfiguration = cell->measurement_timing_information; // sept. 2018
     OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
                          measurementTimingConfiguration,
                          strlen(measurementTimingConfiguration));
