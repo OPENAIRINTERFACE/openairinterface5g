@@ -64,9 +64,7 @@ static void ue_context_modification_response_direct(const f1ap_ue_context_modif_
 
   f1ap_msg->gNB_CU_ue_id = resp->gNB_CU_ue_id;
   f1ap_msg->gNB_DU_ue_id = resp->gNB_DU_ue_id;
-  f1ap_msg->mcc = resp->mcc;
-  f1ap_msg->mnc = resp->mnc;
-  f1ap_msg->mnc_digit_length = resp->mnc_digit_length;
+  f1ap_msg->plmn = resp->plmn;
   f1ap_msg->nr_cellid = resp->nr_cellid;
   f1ap_msg->servCellIndex = resp->servCellIndex;
   AssertFatal(resp->cellULConfigured == NULL, "not handled\n");

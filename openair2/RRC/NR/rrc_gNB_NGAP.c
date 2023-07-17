@@ -1333,9 +1333,9 @@ int rrc_gNB_process_PAGING_IND(MessageDef *msg_p, instance_t instance)
         for (uint8_t CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
           if (NODE_IS_CU(RC.nrrrc[instance]->node_type)) {
             MessageDef *m = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_PAGING_IND);
-            F1AP_PAGING_IND (m).mcc              = RC.nrrrc[j]->configuration.mcc[0];
-            F1AP_PAGING_IND (m).mnc              = RC.nrrrc[j]->configuration.mnc[0];
-            F1AP_PAGING_IND (m).mnc_digit_length = RC.nrrrc[j]->configuration.mnc_digit_length[0];
+            F1AP_PAGING_IND(m).plmn.mcc = RC.nrrrc[j]->configuration.mcc[0];
+            F1AP_PAGING_IND(m).plmn.mnc = RC.nrrrc[j]->configuration.mnc[0];
+            F1AP_PAGING_IND(m).plmn.mnc_digit_length = RC.nrrrc[j]->configuration.mnc_digit_length[0];
             F1AP_PAGING_IND (m).nr_cellid        = RC.nrrrc[j]->nr_cellid;
             F1AP_PAGING_IND (m).ueidentityindexvalue = (uint16_t)(NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi%1024);
             F1AP_PAGING_IND (m).fiveg_s_tmsi = NGAP_PAGING_IND(msg_p).ue_paging_identity.s_tmsi.m_tmsi;

@@ -84,21 +84,21 @@ typedef struct f1ap_net_config_t {
   uint16_t DUport;
 } f1ap_net_config_t;
 
-typedef struct cellIDs_s {
+typedef struct f1ap_plmn_t {
+  uint16_t mcc;
+  uint16_t mnc;
+  uint8_t  mnc_digit_length;
+} f1ap_plmn_t;
 
+typedef struct cellIDs_s {
   // Served Cell Information
   /* Tracking area code */
   uint32_t tac;
 
-  /* Mobile Country Codes
-   * Mobile Network Codes
-   */
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  // NR CGI
+  f1ap_plmn_t plmn;
+  uint64_t nr_cellid; // NR Global Cell Id
 
-  // NR Global Cell Id
-  uint64_t nr_cellid;
   // NR Physical Cell Ids
   uint16_t nr_pci;
   // Number of slide support items (max 16, could be increased to as much as 1024)
@@ -181,12 +181,7 @@ typedef struct f1ap_du_register_req_t {
 } f1ap_du_register_req_t;
 
 typedef struct served_cells_to_activate_s {
-  /// mcc of DU cells
-  uint16_t mcc;
-  /// mnc of DU cells
-  uint16_t mnc;
-  /// mnc digit length of DU cells
-  uint8_t mnc_digit_length;
+  f1ap_plmn_t plmn;
   // NR Global Cell Id
   uint64_t nr_cellid;
   /// NRPCI
@@ -243,9 +238,7 @@ typedef struct f1ap_setup_failure_s {
 
 typedef struct f1ap_gnb_cu_configuration_update_acknowledge_s {
   uint16_t num_cells_failed_to_be_activated;
-  uint16_t mcc[F1AP_MAX_NB_CELLS];
-  uint16_t mnc[F1AP_MAX_NB_CELLS];
-  uint8_t mnc_digit_length[F1AP_MAX_NB_CELLS];
+  f1ap_plmn_t plmn[F1AP_MAX_NB_CELLS];
   uint64_t nr_cellid[F1AP_MAX_NB_CELLS];
   uint16_t cause[F1AP_MAX_NB_CELLS];
   int have_criticality;
@@ -258,9 +251,7 @@ typedef struct f1ap_gnb_cu_configuration_update_acknowledge_s {
   uint16_t cause_failed[F1AP_MAX_NO_OF_TNL_ASSOCIATIONS];
   uint16_t noofDedicatedSIDeliveryNeededUEs;
   uint32_t gNB_CU_ue_id[F1AP_MAX_NO_UE_ID]; 
-  uint16_t ue_mcc[F1AP_MAX_NO_UE_ID]; 
-  uint16_t ue_mnc[F1AP_MAX_NO_UE_ID]; 
-  uint8_t  ue_mnc_digit_length[F1AP_MAX_NO_UE_ID]; 
+  f1ap_plmn_t ue_plmn[F1AP_MAX_NO_UE_ID];
   uint64_t ue_nr_cellid[F1AP_MAX_NO_UE_ID];  
 } f1ap_gnb_cu_configuration_update_acknowledge_t;
 
@@ -288,12 +279,7 @@ typedef struct f1ap_dl_rrc_message_s {
 
 typedef struct f1ap_initial_ul_rrc_message_s {
   uint32_t gNB_DU_ue_id;
-  /// mcc of DU cell
-  uint16_t mcc;
-  /// mnc of DU cell
-  uint16_t mnc;
-  /// mnc digit length of DU cells
-  uint8_t mnc_digit_length;
+  f1ap_plmn_t plmn;
   /// nr cell id
   uint64_t nr_cellid;
   /// crnti
@@ -369,9 +355,7 @@ typedef struct f1ap_ue_context_setup_s {
   uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
   // SpCell Info
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  f1ap_plmn_t plmn;
   uint64_t nr_cellid;
   uint8_t servCellIndex;
   uint8_t *cellULConfigured;
@@ -441,9 +425,7 @@ typedef struct f1ap_paging_ind_s {
   uint16_t ueidentityindexvalue;
   uint64_t fiveg_s_tmsi;
   uint8_t  fiveg_s_tmsi_length;
-  uint16_t mcc;
-  uint16_t mnc;
-  uint8_t  mnc_digit_length;
+  f1ap_plmn_t plmn;
   uint64_t nr_cellid;
   uint8_t  paging_drx;
 } f1ap_paging_ind_t;

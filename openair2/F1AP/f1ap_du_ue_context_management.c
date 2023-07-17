@@ -85,9 +85,9 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupRequestIEs_t, ieNet, container,
                              F1AP_ProtocolIE_ID_id_SpCell_ID, true);
   PLMNID_TO_MCC_MNC(&ieNet->value.choice.NRCGI.pLMN_Identity,
-                    f1ap_ue_context_setup_req->mcc,
-                    f1ap_ue_context_setup_req->mnc,
-                    f1ap_ue_context_setup_req->mnc_digit_length);
+                    f1ap_ue_context_setup_req->plmn.mcc,
+                    f1ap_ue_context_setup_req->plmn.mnc,
+                    f1ap_ue_context_setup_req->plmn.mnc_digit_length);
   BIT_STRING_TO_NR_CELL_IDENTITY(&ieNet->value.choice.NRCGI.nRCellIdentity, f1ap_ue_context_setup_req->nr_cellid);
   /* ServCellIndex */
   F1AP_UEContextSetupRequestIEs_t *ieCell;

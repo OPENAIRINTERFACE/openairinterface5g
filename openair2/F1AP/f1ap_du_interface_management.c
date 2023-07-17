@@ -169,7 +169,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
 
     /* servedPLMN information */
     asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t,servedPLMN_item);
-    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    MCC_MNC_TO_PLMNID(cell->plmn.mcc, cell->plmn.mnc, cell->plmn.mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info= &served_cell_information->nR_Mode_Info;
     F1AP_ProtocolExtensionContainer_10696P34_t *p = calloc(1, sizeof(*p));
@@ -420,8 +420,10 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
           AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
                       "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
-          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
-                          F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc_digit_length);
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity,
+                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mcc,
+                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc,
+                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc_digit_length);
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
                 cell->nRCGI.nRCellIdentity.buf[1],
@@ -452,9 +454,13 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
-                      i, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
-                      F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI);
+                LOG_D(F1AP,
+                      "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                      i,
+                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mcc,
+                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc,
+                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].nr_cellid,
+                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].num_SI);
 
                 for (int si = 0; si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count; si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
@@ -602,7 +608,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     }
 
     asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
-    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    MCC_MNC_TO_PLMNID(cell->plmn.mcc, cell->plmn.mnc, cell->plmn.mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info=&served_cell_information->nR_Mode_Info;
     LOG_E(F1AP,"Here hardcoded values instead of values from configuration file\n");
@@ -696,7 +702,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     }
 
     asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
-    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    MCC_MNC_TO_PLMNID(cell->plmn.mcc, cell->plmn.mnc, cell->plmn.mnc_digit_length, &servedPLMN_item->pLMN_Identity);
     // // /* - CHOICE NR-MODE-Info */
     F1AP_NR_Mode_Info_t *nR_Mode_Info= &served_cell_information->nR_Mode_Info;
 
@@ -847,8 +853,10 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
           AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
                       "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
-          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
-                          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc_digit_length);
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity,
+                          F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].plmn.mcc,
+                          F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].plmn.mnc,
+                          F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].plmn.mnc_digit_length);
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
                 cell->nRCGI.nRCellIdentity.buf[1],
@@ -879,9 +887,13 @@ int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
                 F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
-                      i, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
-                      F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI);
+                LOG_D(F1AP,
+                      "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                      i,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].plmn.mcc,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].plmn.mnc,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].nr_cellid,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p).cells_to_activate[i].num_SI);
 
                 for (int si = 0; si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count; si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];

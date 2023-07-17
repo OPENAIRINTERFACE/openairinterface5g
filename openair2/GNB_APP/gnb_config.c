@@ -1943,13 +1943,13 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->gNB_DU_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
         f1Setup->gNB_DU_name = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
         f1Setup->cell[k].tac = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        f1Setup->cell[k].mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        f1Setup->cell[k].mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        f1Setup->cell[k].mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        AssertFatal((f1Setup->cell[k].mnc_digit_length == 2) ||
-                    (f1Setup->cell[k].mnc_digit_length == 3),
+        f1Setup->cell[k].plmn.mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        f1Setup->cell[k].plmn.mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        f1Setup->cell[k].plmn.mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        AssertFatal((f1Setup->cell[k].plmn.mnc_digit_length == 2) ||
+                    (f1Setup->cell[k].plmn.mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    f1Setup->cell[k].mnc_digit_length);
+                    f1Setup->cell[k].plmn.mnc_digit_length);
         f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
         LOG_I(GNB_APP,
               "F1AP: gNB idx %d gNB_DU_id %ld, gNB_DU_name %s, TAC %d MCC/MNC/length %d/%d/%d cellID %ld\n",
@@ -1957,9 +1957,9 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
               f1Setup->gNB_DU_id,
               f1Setup->gNB_DU_name,
               f1Setup->cell[k].tac,
-              f1Setup->cell[k].mcc,
-              f1Setup->cell[k].mnc,
-              f1Setup->cell[k].mnc_digit_length,
+              f1Setup->cell[k].plmn.mcc,
+              f1Setup->cell[k].plmn.mnc,
+              f1Setup->cell[k].plmn.mnc_digit_length,
               f1Setup->cell[k].nr_cellid);
 
         F1AP_DU_REGISTER_REQ(msg_p).net_config = read_DU_IP_config(&RC.nrmac[k]->eth_params_n);
@@ -1976,8 +1976,8 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured == 0);
 
-        rrc->configuration.mcc[0] = f1Setup->cell[k].mcc;
-        rrc->configuration.mnc[0] = f1Setup->cell[k].mnc;
+        rrc->configuration.mcc[0] = f1Setup->cell[k].plmn.mcc;
+        rrc->configuration.mnc[0] = f1Setup->cell[k].plmn.mnc;
         rrc->configuration.tac    = f1Setup->cell[k].tac;
         rrc->nr_cellid = f1Setup->cell[k].nr_cellid;
         f1Setup->cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
@@ -2225,9 +2225,13 @@ int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
       LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
             j, i, RC.nrrrc[i]->nr_cellid, resp->cells_to_activate[j].nr_cellid);
 
-      if (RC.nrrrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid &&
-          (du_check_plmn_identity(carrier, resp->cells_to_activate[j].mcc, resp->cells_to_activate[j].mnc, resp->cells_to_activate[j].mnc_digit_length)>0 &&
-           resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
+      if (RC.nrrrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid
+          && (du_check_plmn_identity(carrier,
+                                     resp->cells_to_activate[j].plmn.mcc,
+                                     resp->cells_to_activate[j].plmn.mnc,
+                                     resp->cells_to_activate[j].plmn.mnc_digit_length)
+                  > 0
+              && resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
         // copy system information and decode it
         for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
 
@@ -2257,11 +2261,15 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
       LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, gnb_cu_cfg_updatenr_cellid %lx\n",
             j, i, RC.nrrrc[i]->nr_cellid, gnb_cu_cfg_update->cells_to_activate[j].nr_cellid);
 
-      if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid &&
-          (du_check_plmn_identity(carrier, gnb_cu_cfg_update->cells_to_activate[j].mcc, gnb_cu_cfg_update->cells_to_activate[j].mnc, gnb_cu_cfg_update->cells_to_activate[j].mnc_digit_length)>0 &&
-           gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId)) {
-        // copy system information and decode it
-        for (si_ind=0; si_ind<gnb_cu_cfg_update->cells_to_activate[j].num_SI; si_ind++)  {
+      if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid
+          && (du_check_plmn_identity(carrier,
+                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mcc,
+                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mnc,
+                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mnc_digit_length)
+                  > 0
+              && gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId)) {
+         // copy system information and decode it
+         for (si_ind = 0; si_ind < gnb_cu_cfg_update->cells_to_activate[j].num_SI; si_ind++) {
 
           du_extract_and_decode_SI(i,
                                    si_ind,

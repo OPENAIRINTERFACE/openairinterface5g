@@ -127,14 +127,16 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
     
     /* - nRCGI */
-    TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity), req->cell[i].mcc,
-                    req->cell[i].mnc,req->cell[i].mnc_digit_length);
+    TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity),
+                    req->cell[i].plmn.mcc,
+                    req->cell[i].plmn.mnc,
+                    req->cell[i].plmn.mnc_digit_length);
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&servedCellInformation->nRCGI.nRCellIdentity,
                                    req->cell[i].nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
-          req->cell[i].mcc,
-          req->cell[i].mnc,
+          req->cell[i].plmn.mcc,
+          req->cell[i].plmn.mnc,
           (long long unsigned int)req->cell[i].nr_cellid);
     /* - nRPCI */
     req->cell[i].nr_pci = servedCellInformation->nRPCI;
