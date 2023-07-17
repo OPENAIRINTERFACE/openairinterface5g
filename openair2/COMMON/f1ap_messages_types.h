@@ -75,12 +75,6 @@ typedef struct f1ap_net_ip_address_s {
   char ipv6_address[46];
 } f1ap_net_ip_address_t;
 
-typedef struct f1ap_cu_setup_req_s {
-  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
-  // To be removed if the structure is filled
-  uint32_t dummy;
-} f1ap_cu_setup_req_t;
-
 typedef struct cellIDs_s {
 
   // Served Cell Information
@@ -129,9 +123,6 @@ typedef struct f1ap_setup_req_s {
   // F1_Setup_Req payload
   uint64_t gNB_DU_id;
   char *gNB_DU_name;
-
-  /* The type of the cell */
-  enum cell_type_e cell_type;
   
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;

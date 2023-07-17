@@ -19,9 +19,6 @@
  *      contact@openairinterface.org
  */
 
-/* F1AP -> SCTP */
-MESSAGE_DEF(F1AP_CU_SCTP_REQ        , MESSAGE_PRIORITY_MED, f1ap_cu_setup_req_t       , f1ap_cu_setup_req)
-
 /* eNB_DU application layer -> F1AP messages or CU F1AP -> RRC*/
 MESSAGE_DEF(F1AP_SETUP_REQ          , MESSAGE_PRIORITY_MED, f1ap_setup_req_t          , f1ap_setup_req)
 MESSAGE_DEF(F1AP_GNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE         , MESSAGE_PRIORITY_MED, f1ap_gnb_cu_configuration_update_acknowledge_t          , f1ap_gnb_cu_configuration_update_acknowledge)

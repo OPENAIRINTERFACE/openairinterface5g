@@ -89,7 +89,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);
 
   // create an ITTI message and copy SDU
-  AssertFatal(f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB, "illegal cell type %d\n", f1ap_req(true, instance)->cell_type);
   message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
   f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
   ul_rrc->gNB_DU_ue_id = du_ue_id;

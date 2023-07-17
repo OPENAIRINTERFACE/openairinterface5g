@@ -141,9 +141,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     /* - nRPCI */
     req->cell[i].nr_pci = servedCellInformation->nRPCI;
     LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].nr_pci);
-    
-    // LTS: FIXME cell_type is not a attribute of a cell in the data structure !!!!!!!!!!
-    f1ap_req(true, instance)->cell_type = CELL_MACRO_GNB;
 
     // FDD Cells
     if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_fDD) {
@@ -197,7 +194,6 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     }
 	
     struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;
-    LOG_I(F1AP, "Received Cell in %d context\n", f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB);
     // System Information
     /* mib */
     req->mib[i] = calloc(DUsi->mIB_message.size + 1, sizeof(char));
