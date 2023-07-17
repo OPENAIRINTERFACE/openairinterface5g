@@ -1955,7 +1955,7 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
         rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
       case RRC_DEFAULT_RECONF:
-        /* nothing to do */
+        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
       default:
         LOG_E(RRC, "Received unexpected xid: %d\n", xid);
