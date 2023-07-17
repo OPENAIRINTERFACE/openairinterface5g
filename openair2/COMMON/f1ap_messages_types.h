@@ -90,22 +90,22 @@ typedef struct f1ap_plmn_t {
   uint8_t  mnc_digit_length;
 } f1ap_plmn_t;
 
-typedef struct cellIDs_s {
-  // Served Cell Information
-  /* Tracking area code */
-  uint32_t *tac;
-
+typedef struct f1ap_served_cell_info_t {
   // NR CGI
   f1ap_plmn_t plmn;
   uint64_t nr_cellid; // NR Global Cell Id
 
   // NR Physical Cell Ids
   uint16_t nr_pci;
+
+  /* Tracking area code */
+  uint32_t *tac;
+
   // Number of slide support items (max 16, could be increased to as much as 1024)
   uint16_t num_ssi;
   uint8_t sst;
   uint8_t sd;
-} cellIDs_t;
+} f1ap_served_cell_info_t;
 
 typedef struct f1ap_setup_req_s {
 
@@ -115,7 +115,10 @@ typedef struct f1ap_setup_req_s {
   
   /// number of DU cells available
   uint16_t num_cells_available; //0< num_cells_available <= 512;
-  cellIDs_t cell[F1AP_MAX_NB_CELLS];
+  struct {
+    f1ap_served_cell_info_t info;
+  } cell[F1AP_MAX_NB_CELLS];
+
   // fdd_flag = 1 means FDD, 0 means TDD
   int  fdd_flag;
 

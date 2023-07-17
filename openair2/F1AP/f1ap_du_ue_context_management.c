@@ -459,7 +459,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         &sCell_FailedtoSetup_item_ies->value.choice.SCell_FailedtoSetup_Item;
       /* sCell_ID */
       AssertFatal(false, "handle correct CellID\n");
-      cellIDs_t cellID = {0};
+      f1ap_served_cell_info_t cellID = {0};
       addnRCGI(sCell_FailedtoSetup_item->sCell_ID, &cellID);
       /* cause */
       asn1cCalloc(sCell_FailedtoSetup_item->cause, tmp);
@@ -1158,7 +1158,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
       /* 8.1 SCell_ToBeSetup_Item */
       F1AP_SCell_FailedtoSetupMod_Item_t *scell_failedtoSetupMod_item=&scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item;
       /* - sCell_ID */
-      addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &getCxt(instance)->setupReq.cell[i]);
+      addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &getCxt(instance)->setupReq.cell[i].info);
       asn1cCalloc(scell_failedtoSetupMod_item->cause, tmp);
       tmp->present = F1AP_Cause_PR_radioNetwork;
       tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;

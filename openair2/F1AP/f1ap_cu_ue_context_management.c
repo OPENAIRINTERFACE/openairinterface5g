@@ -964,7 +964,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   uint32_t  len=0;
   // for test
   LOG_W(F1AP, "UE Context Modification Request PLMN is hardcoded!\n");
-  cellIDs_t hardCoded= { .plmn.mcc=208, .plmn.mnc=93, .plmn.mnc_digit_length=2};
+  f1ap_served_cell_info_t hardCoded= { .plmn.mcc=208, .plmn.mnc=93, .plmn.mnc_digit_length=2};
   /* Create */
   /* 0. Message Type */
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;

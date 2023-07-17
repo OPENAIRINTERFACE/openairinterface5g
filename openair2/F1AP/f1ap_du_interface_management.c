@@ -144,7 +144,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
   for (int i=0; i<num_cells_available; i++) {
     /* mandatory */
     /* 4.1 served cells item */
-    cellIDs_t *cell=&setup_req->cell[i];
+    f1ap_served_cell_info_t *cell = &setup_req->cell[i].info;
     asn1cSequenceAdd(ieCells->value.choice.GNB_DU_Served_Cells_List.list,
                      F1AP_GNB_DU_Served_Cells_ItemIEs_t, duServedCell);
     duServedCell->id = F1AP_ProtocolIE_ID_id_GNB_DU_Served_Cells_Item;
@@ -153,7 +153,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
     F1AP_GNB_DU_Served_Cells_Item_t  *gnb_du_served_cells_item=&duServedCell->value.choice.GNB_DU_Served_Cells_Item;
     /* 4.1.1 served cell Information */
     F1AP_Served_Cell_Information_t *served_cell_information= &gnb_du_served_cells_item->served_Cell_Information;
-    addnRCGI(served_cell_information->nRCGI,cell);
+    addnRCGI(served_cell_information->nRCGI, cell);
     /* - nRPCI */
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
@@ -593,10 +593,10 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     F1AP_Served_Cells_To_Add_Item_t *served_cells_to_add_item= &served_cells_to_add_item_ies->value.choice.Served_Cells_To_Add_Item;
     F1AP_Served_Cell_Information_t  *served_cell_information=&served_cells_to_add_item->served_Cell_Information;
     /* - nRCGI */
-    addnRCGI(served_cell_information->nRCGI, &f1ap_setup_req->cell[j]);
+    addnRCGI(served_cell_information->nRCGI, &f1ap_setup_req->cell[j].info);
     /* - nRPCI */
     /* 2.1.1 serverd cell Information */
-    cellIDs_t *cell = &f1ap_setup_req->cell[j];
+    f1ap_served_cell_info_t *cell = &f1ap_setup_req->cell[j].info;
     served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
     if (cell->tac != NULL) {
@@ -677,7 +677,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
 
   for (int i=0; i<1; i++) {
     //
-    cellIDs_t *cell = &f1ap_setup_req->cell[i];
+    f1ap_served_cell_info_t *cell = &f1ap_setup_req->cell[i].info;
     asn1cSequenceAdd(ie3->value.choice.Served_Cells_To_Modify_List.list, F1AP_Served_Cells_To_Modify_ItemIEs_t, served_cells_to_modify_item_ies);
     served_cells_to_modify_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_Item;
     served_cells_to_modify_item_ies->criticality   = F1AP_Criticality_reject;
@@ -690,11 +690,11 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     /* - nRCGI */
     //addnRGCI(served_cell_information->nRCGI,f1ap_setup_req->cell[i]);
     /* - nRPCI */
-    served_cell_information->nRPCI = f1ap_setup_req->cell[i].nr_pci;  // int 0..1007
+    served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
     /* - fiveGS_TAC */
     asn1cCalloc(served_cell_information->fiveGS_TAC, tac );
     OCTET_STRING_fromBuf(tac,
-                         (const char *) &f1ap_setup_req->cell[i].tac,
+                         (const char *) &cell->tac,
                          3);
 
     /* - Configured_EPS_TAC */
@@ -777,7 +777,7 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
     served_cells_to_delete_item_ies->value.present = F1AP_Served_Cells_To_Delete_ItemIEs__value_PR_Served_Cells_To_Delete_Item;
     F1AP_Served_Cells_To_Delete_Item_t *served_cells_to_delete_item=&served_cells_to_delete_item_ies->value.choice.Served_Cells_To_Delete_Item;
     /* 3.1 oldNRCGI */
-    addnRCGI(served_cells_to_delete_item->oldNRCGI, &f1ap_setup_req->cell[i]);
+    addnRCGI(served_cells_to_delete_item->oldNRCGI, &f1ap_setup_req->cell[i].info);
   }
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {

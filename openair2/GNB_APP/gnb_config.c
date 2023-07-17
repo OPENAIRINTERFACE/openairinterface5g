@@ -1942,27 +1942,27 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         f1Setup->num_cells_available++;
         f1Setup->gNB_DU_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
         f1Setup->gNB_DU_name = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
-        f1Setup->cell[k].tac = malloc(sizeof(*f1Setup->cell[k].tac));
-        AssertFatal(f1Setup->cell[k].tac != NULL, "out of memory\n");
-        *f1Setup->cell[k].tac = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        f1Setup->cell[k].plmn.mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        f1Setup->cell[k].plmn.mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        f1Setup->cell[k].plmn.mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        AssertFatal((f1Setup->cell[k].plmn.mnc_digit_length == 2) ||
-                    (f1Setup->cell[k].plmn.mnc_digit_length == 3),
+        f1Setup->cell[k].info.tac = malloc(sizeof(*f1Setup->cell[k].info.tac));
+        AssertFatal(f1Setup->cell[k].info.tac != NULL, "out of memory\n");
+        *f1Setup->cell[k].info.tac = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
+        f1Setup->cell[k].info.plmn.mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+        f1Setup->cell[k].info.plmn.mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+        f1Setup->cell[k].info.plmn.mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
+        AssertFatal((f1Setup->cell[k].info.plmn.mnc_digit_length == 2) ||
+                    (f1Setup->cell[k].info.plmn.mnc_digit_length == 3),
                     "BAD MNC DIGIT LENGTH %d",
-                    f1Setup->cell[k].plmn.mnc_digit_length);
-        f1Setup->cell[k].nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
+                    f1Setup->cell[k].info.plmn.mnc_digit_length);
+        f1Setup->cell[k].info.nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
         LOG_I(GNB_APP,
               "F1AP: gNB idx %d gNB_DU_id %ld, gNB_DU_name %s, TAC %d MCC/MNC/length %d/%d/%d cellID %ld\n",
               k,
               f1Setup->gNB_DU_id,
               f1Setup->gNB_DU_name,
-              *f1Setup->cell[k].tac,
-              f1Setup->cell[k].plmn.mcc,
-              f1Setup->cell[k].plmn.mnc,
-              f1Setup->cell[k].plmn.mnc_digit_length,
-              f1Setup->cell[k].nr_cellid);
+              *f1Setup->cell[k].info.tac,
+              f1Setup->cell[k].info.plmn.mcc,
+              f1Setup->cell[k].info.plmn.mnc,
+              f1Setup->cell[k].info.plmn.mnc_digit_length,
+              f1Setup->cell[k].info.nr_cellid);
 
         F1AP_DU_REGISTER_REQ(msg_p).net_config = read_DU_IP_config(&RC.nrmac[k]->eth_params_n);
 
@@ -1978,12 +1978,12 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           pthread_mutex_unlock(&rrc->cell_info_mutex);
         } while (cell_info_configured == 0);
 
-        rrc->configuration.mcc[0] = f1Setup->cell[k].plmn.mcc;
-        rrc->configuration.mnc[0] = f1Setup->cell[k].plmn.mnc;
-        rrc->configuration.tac    = *f1Setup->cell[k].tac;
-        rrc->nr_cellid = f1Setup->cell[k].nr_cellid;
-        f1Setup->cell[k].nr_pci    = *rrc->configuration.scc->physCellId;
-        f1Setup->cell[k].num_ssi = 0;
+        rrc->configuration.mcc[0] = f1Setup->cell[k].info.plmn.mcc;
+        rrc->configuration.mnc[0] = f1Setup->cell[k].info.plmn.mnc;
+        rrc->configuration.tac    = *f1Setup->cell[k].info.tac;
+        rrc->nr_cellid = f1Setup->cell[k].info.nr_cellid;
+        f1Setup->cell[k].info.nr_pci    = *rrc->configuration.scc->physCellId;
+        f1Setup->cell[k].info.num_ssi = 0;
 
         if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);

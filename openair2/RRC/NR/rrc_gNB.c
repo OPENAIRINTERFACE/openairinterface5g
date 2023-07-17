@@ -1867,9 +1867,9 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
     for (int j=0; j<RC.nb_nr_inst; j++) {
       gNB_RRC_INST *rrc = RC.nrrrc[j];
 
-      if (rrc->configuration.mcc[0] == f1_setup_req->cell[i].plmn.mcc &&
-          rrc->configuration.mnc[0] == f1_setup_req->cell[i].plmn.mnc &&
-          rrc->nr_cellid == f1_setup_req->cell[i].nr_cellid) {
+      if (rrc->configuration.mcc[0] == f1_setup_req->cell[i].info.plmn.mcc &&
+          rrc->configuration.mnc[0] == f1_setup_req->cell[i].info.plmn.mnc &&
+          rrc->nr_cellid == f1_setup_req->cell[i].info.nr_cellid) {
 	//fixme: multi instance is not consistent here
 	F1AP_SETUP_RESP (msg_p).gNB_CU_name  = rrc->node_name;
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
@@ -1902,14 +1902,14 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
           xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)rrc->carrier.sib1);
         }
 
-        rrc->carrier.physCellId = f1_setup_req->cell[i].nr_pci;
+        rrc->carrier.physCellId = f1_setup_req->cell[i].info.nr_pci;
 
 	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).gNB_CU_name                                = rrc->node_name;
         F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[cu_cell_ind].plmn.mcc = rrc->configuration.mcc[0];
         F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[cu_cell_ind].plmn.mnc = rrc->configuration.mnc[0];
         F1AP_GNB_CU_CONFIGURATION_UPDATE(msg_p2).cells_to_activate[cu_cell_ind].plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0];
         F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nr_cellid = rrc->nr_cellid;
-	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->cell[i].nr_pci;
+	F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p2).cells_to_activate[cu_cell_ind].nrpci                         = f1_setup_req->cell[i].info.nr_pci;
         int num_SI= 0;
 
         if (rrc->carrier.SIB23) {
@@ -1925,9 +1925,9 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         break;
       } else {// setup_req mcc/mnc match rrc internal list element
         LOG_W(NR_RRC,"[Inst %d] No matching MCC/MNC: rrc->mcc/f1_setup_req->mcc %d/%d rrc->mnc/f1_setup_req->mnc %d/%d rrc->nr_cellid/f1_setup_req->nr_cellid %ld/%ld \n",
-              j, rrc->configuration.mcc[0], f1_setup_req->cell[i].plmn.mcc,
-                 rrc->configuration.mnc[0], f1_setup_req->cell[i].plmn.mnc,
-                 rrc->nr_cellid, f1_setup_req->cell[i].nr_cellid);
+              j, rrc->configuration.mcc[0], f1_setup_req->cell[i].info.plmn.mcc,
+                 rrc->configuration.mnc[0], f1_setup_req->cell[i].info.plmn.mnc,
+                 rrc->nr_cellid, f1_setup_req->cell[i].info.nr_cellid);
       }
     }// for (int j=0;j<RC.nb_inst;j++)
 

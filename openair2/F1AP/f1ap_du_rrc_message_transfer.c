@@ -172,7 +172,7 @@ int DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instanceP, const f1ap_ini
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_InitialULRRCMessageTransferIEs__value_PR_NRCGI;
   //Fixme: takes always the first cell
-  addnRCGI(ie2->value.choice.NRCGI, getCxt(instanceP)->setupReq.cell);
+  addnRCGI(ie2->value.choice.NRCGI, &getCxt(instanceP)->setupReq.cell[0].info);
   /* mandatory */
   /* c3. C_RNTI */  // 16
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_InitialULRRCMessageTransferIEs_t, ie3);

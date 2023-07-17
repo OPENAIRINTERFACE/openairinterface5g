@@ -122,27 +122,27 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
     F1AP_Served_Cell_Information_t *servedCellInformation= &served_cells_item->served_Cell_Information;
     /* tac */
     if (servedCellInformation->fiveGS_TAC) {
-      req->cell[i].tac = malloc(sizeof(*req->cell[i].tac));
-      AssertFatal(req->cell[i].tac != NULL, "out of memory\n");
-      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, *req->cell[i].tac);
-      LOG_D(F1AP, "req->tac[%d] %d \n", i, *req->cell[i].tac);
+      req->cell[i].info.tac = malloc(sizeof(*req->cell[i].info.tac));
+      AssertFatal(req->cell[i].info.tac != NULL, "out of memory\n");
+      OCTET_STRING_TO_INT16(servedCellInformation->fiveGS_TAC, *req->cell[i].info.tac);
+      LOG_D(F1AP, "req->tac[%d] %d \n", i, *req->cell[i].info.tac);
     }
     
     /* - nRCGI */
     TBCD_TO_MCC_MNC(&(servedCellInformation->nRCGI.pLMN_Identity),
-                    req->cell[i].plmn.mcc,
-                    req->cell[i].plmn.mnc,
-                    req->cell[i].plmn.mnc_digit_length);
+                    req->cell[i].info.plmn.mcc,
+                    req->cell[i].info.plmn.mnc,
+                    req->cell[i].info.plmn.mnc_digit_length);
     // NR cellID
     BIT_STRING_TO_NR_CELL_IDENTITY(&servedCellInformation->nRCGI.nRCellIdentity,
-                                   req->cell[i].nr_cellid);
+                                   req->cell[i].info.nr_cellid);
     LOG_D(F1AP, "[SCTP %d] Received nRCGI: MCC %d, MNC %d, CELL_ID %llu\n", assoc_id,
-          req->cell[i].plmn.mcc,
-          req->cell[i].plmn.mnc,
-          (long long unsigned int)req->cell[i].nr_cellid);
+          req->cell[i].info.plmn.mcc,
+          req->cell[i].info.plmn.mnc,
+          (long long unsigned int)req->cell[i].info.nr_cellid);
     /* - nRPCI */
-    req->cell[i].nr_pci = servedCellInformation->nRPCI;
-    LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].nr_pci);
+    req->cell[i].info.nr_pci = servedCellInformation->nRPCI;
+    LOG_D(F1AP, "req->nr_pci[%d] %d \n", i, req->cell[i].info.nr_pci);
 
     // FDD Cells
     if (servedCellInformation->nR_Mode_Info.present==F1AP_NR_Mode_Info_PR_fDD) {
