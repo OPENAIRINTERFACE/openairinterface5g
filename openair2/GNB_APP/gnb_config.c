@@ -915,6 +915,38 @@ static NR_ServingCellConfigCommon_t *get_scc_config(int minRXTXTIME)
   return scc;
 }
 
+static NR_ServingCellConfig_t *get_scd_config(void)
+{
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  NR_ServingCellConfig_t *scd = calloc(1, sizeof(*scd));
+  prepare_scd(scd);
+  paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
+  paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
+  config_getlist(&SCDsParamList, NULL, 0, aprefix);
+  if (SCDsParamList.numelt > 0) {
+    sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0, GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
+    config_get(SCDsParams, sizeof(SCDsParams) / sizeof(paramdef_t), aprefix);
+    const NR_BWP_UplinkDedicated_t *bwp_Dedicated = scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated;
+    const NR_PTRS_UplinkConfig_t *setup =
+        bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup;
+    LOG_I(RRC,
+          "Read in ServingCellConfigDedicated UL (FreqDensity_0 %ld, FreqDensity_1 %ld, TimeDensity_0 %ld, TimeDensity_1 %ld, "
+          "TimeDensity_2 %ld, RE offset %ld, First_active_BWP_ID %ld SCS %ld, LocationandBW %ld\n",
+          *setup->transformPrecoderDisabled->frequencyDensity->list.array[0],
+          *setup->transformPrecoderDisabled->frequencyDensity->list.array[1],
+          *setup->transformPrecoderDisabled->timeDensity->list.array[0],
+          *setup->transformPrecoderDisabled->timeDensity->list.array[1],
+          *setup->transformPrecoderDisabled->timeDensity->list.array[2],
+          *setup->transformPrecoderDisabled->resourceElementOffset,
+          *scd->firstActiveDownlinkBWP_Id,
+          scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Common->genericParameters.subcarrierSpacing,
+          scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Common->genericParameters.locationAndBandwidth);
+  }
+  fix_scd(scd);
+
+  return scd;
+}
+
 void RCconfig_nr_macrlc() {
   int j = 0;
   uint16_t prbbl[275] = {0};
@@ -1227,12 +1259,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
   NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
   //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
 
-  // Serving Cell Config Dedicated
-  NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
-  memset((void*)scd,0,sizeof(NR_ServingCellConfig_t));
-  prepare_scd(scd);
-  paramdef_t SCDsParams[] = SCDPARAMS_DESC(scd);
-  paramlist_def_t SCDsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, NULL, 0};
+  NR_ServingCellConfig_t *scd = get_scd_config();
 
   ////////// Physical parameters
 
@@ -1260,24 +1287,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
     }
 
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
-
-    config_getlist(&SCDsParamList, NULL, 0, aprefix);
-    if (SCDsParamList.numelt > 0) {    
-      sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGDEDICATED, 0);
-      config_get( SCDsParams,sizeof(SCDsParams)/sizeof(paramdef_t),aprefix);  
-      LOG_I(RRC,"Read in ServingCellConfigDedicated UL (FreqDensity_0 %d, FreqDensity_1 %d, TimeDensity_0 %d, TimeDensity_1 %d, TimeDensity_2 %d, RE offset %d, First_active_BWP_ID %d SCS %d, LocationandBW %d \n",
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[0],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->frequencyDensity->list.array[1],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[0],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[1],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->timeDensity->list.array[2],
-      (int)*scd->uplinkConfig->uplinkBWP_ToAddModList->list.array[0]->bwp_Dedicated->pusch_Config->choice.setup->dmrs_UplinkForPUSCH_MappingTypeB->choice.setup->phaseTrackingRS->choice.setup->transformPrecoderDisabled->resourceElementOffset,
-      (int)*scd->firstActiveDownlinkBWP_Id,
-      (int)scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Common->genericParameters.subcarrierSpacing,
-      (int)scd->downlinkBWP_ToAddModList->list.array[0]->bwp_Common->genericParameters.locationAndBandwidth
-      );
-    }
-    fix_scd(scd);
 
     printf("NRRRC %u: Southbound Transport %s\n",i,*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr));
 
