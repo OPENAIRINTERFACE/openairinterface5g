@@ -180,16 +180,6 @@ typedef struct served_cells_to_activate_s {
 } served_cells_to_activate_t;
 
 typedef struct f1ap_setup_resp_s {
-  /* Connexion id used between SCTP/F1AP */
-  uint16_t cnx_id;
-
-  /* SCTP association id */
-  int32_t  assoc_id;
-
-  /* Number of SCTP streams used for a mme association */
-  uint16_t sctp_in_streams;
-  uint16_t sctp_out_streams;
-
   /// string holding gNB_CU_name
   char     *gNB_CU_name;
   /// number of DU cells to activate
