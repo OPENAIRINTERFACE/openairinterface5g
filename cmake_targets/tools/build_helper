@@ -564,17 +564,8 @@ check_install_additional_tools (){
         libforms-bin \
         libforms-dev \
         xmlstarlet"
-  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
+  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]] ||  [[ "$OS_DISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
-      doxygen \
-      ctags \
-      iperf3 \
-      gnutls-devel \
-      xforms \
-      xforms-devel \
-      xmlstarlet"
-  elif [[ "$OS_DISTRO" == "fedora" ]]; then
-    PACKAGE_LIST=" \
       doxygen \
       ctags \
       iperf3 \
