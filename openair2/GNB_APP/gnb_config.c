@@ -2329,41 +2329,6 @@ ngran_node_t get_node_type(void)
     return ngran_gNB_DU;
 }
 
-void nr_read_config_and_init(void) {
-  MessageDef *msg_p = NULL;
-  uint32_t    gnb_id;
-  uint32_t    gnb_nb = RC.nb_nr_inst;
-
-  RCconfig_NR_L1();
-  RCconfig_nr_prs();
-  RCconfig_nr_macrlc();
-
-  LOG_I(PHY, "%s() RC.nb_nr_L1_inst:%d\n", __FUNCTION__, RC.nb_nr_L1_inst);
-
-  if (RC.nb_nr_L1_inst>0) AssertFatal(l1_north_init_gNB()==0,"could not initialize L1 north interface\n");
-
-  AssertFatal (gnb_nb <= RC.nb_nr_inst,
-               "Number of gNB is greater than gNB defined in configuration file (%u/%u)!",
-               gnb_nb, RC.nb_nr_inst);
-
-  LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
-
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
-
-  for (gnb_id = 0; gnb_id < RC.nb_nr_inst ; gnb_id++) {
-    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)malloc(sizeof(gNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, RC.nb_nr_inst);
-    memset((void *)RC.nrrrc[gnb_id],0,sizeof(gNB_RRC_INST));
-    msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
-  }
-
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type) && RC.nrrrc[0]->node_type != ngran_gNB_CUCP) {
-    nr_pdcp_layer_init();
-  }
-}
-
 #ifdef E2_AGENT
 
 e2_agent_args_t RCconfig_NR_E2agent(void)
