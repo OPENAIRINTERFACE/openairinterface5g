@@ -595,7 +595,7 @@ check_install_oai_software() {
     case "$(get_distribution_release)" in
         "ubuntu18.04")
             add_cmake_repo
-            specific_packages="libgcrypt11-dev"
+            specific_packages=""
             ;;
          "debian11")
             specific_packages="libz-dev"
@@ -645,7 +645,6 @@ check_install_oai_software() {
       pkgconfig \
       libconfig-devel \
       libffi-devel \
-      libgcrypt-devel \
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
