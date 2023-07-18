@@ -268,7 +268,7 @@ add_library(ITTI ${OCP_ITTI}/intertask_interface.cpp)
 target_link_libraries(ITTI PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 
 # asn1c skeletons have hardcoded this flag to make customized debug logs
-# OAI uses this feature to re-use OAI LOG_I(ASN, ...)
+# OAI uses this feature to re-use OAI LOG_I(ASN1, ...)
 if (DEBUG_ASN1C)
   add_definitions(-DHAVE_CONFIG_H)
 endif()
