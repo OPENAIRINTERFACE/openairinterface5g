@@ -873,6 +873,47 @@ void RCconfig_NR_L1(void)
   }
 }
 
+static void check_ssb_raster(uint64_t freq, int band, int scs);
+
+static NR_ServingCellConfigCommon_t *get_scc_config(void)
+{
+  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));
+  uint64_t ssb_bitmap=0xff;
+  prepare_scc(scc);
+  paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
+  paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+  config_getlist(&SCCsParamList, NULL, 0, aprefix);
+  if (SCCsParamList.numelt > 0) {
+    sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, 0);
+    config_get(SCCsParams,sizeof(SCCsParams) / sizeof(paramdef_t), aprefix);
+    LOG_I(RRC,
+          "Read in ServingCellConfigCommon (PhysCellId %d, ABSFREQSSB %d, DLBand %d, ABSFREQPOINTA %d, DLBW "
+          "%d,RACH_TargetReceivedPower %d\n",
+          (int)*scc->physCellId,
+          (int)*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
+          (int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+          (int)scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
+          (int)scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
+          (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric
+              .preambleReceivedTargetPower);
+    // SSB of the PCell is always on the sync raster
+    uint64_t ssb_freq = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                                     *scc->ssbSubcarrierSpacing,
+                                     *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
+    LOG_I(RRC, "absoluteFrequencySSB %ld corresponds to %lu Hz\n",
+          *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB, ssb_freq);
+    if (get_softmodem_params()->sa)
+      check_ssb_raster(ssb_freq,
+                       *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
+                       *scc->ssbSubcarrierSpacing);
+    fix_scc(scc, ssb_bitmap);
+  }
+  return scc;
+}
+
 void RCconfig_nr_macrlc() {
   int j = 0;
   uint16_t prbbl[275] = {0};
@@ -1119,7 +1160,7 @@ void config_security(gNB_RRC_INST *rrc)
 }
 
 // Section 5.4.3 of 38.101-1 and -2
-void check_ssb_raster(uint64_t freq, int band, int scs)
+static void check_ssb_raster(uint64_t freq, int band, int scs)
 {
   int start_gscn = 0, step_gscn = 0, end_gscn = 0;
   for (int i = 0; i < sizeof(sync_raster) / sizeof(sync_raster_t); i++) {
@@ -1181,11 +1222,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
-  NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));
-  uint64_t ssb_bitmap=0xff;
-  prepare_scc(scc);
-  paramdef_t SCCsParams[] = SCCPARAMS_DESC(scc);
-  paramlist_def_t SCCsParamList = {GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, NULL, 0};
+  NR_ServingCellConfigCommon_t *scc = get_scc_config();
 
   // Serving Cell Config Dedicated
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
@@ -1217,32 +1254,6 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
       }
     } else {
       gnb_id = *(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr);
-    }
-
-    sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
-
-    config_getlist(&SCCsParamList, NULL, 0, aprefix);
-    if (SCCsParamList.numelt > 0) {    
-      sprintf(aprefix, "%s.[%i].%s.[%i]", GNB_CONFIG_STRING_GNB_LIST,0,GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON, 0);
-      config_get(SCCsParams,sizeof(SCCsParams) / sizeof(paramdef_t), aprefix);
-      LOG_I(RRC,"Read in ServingCellConfigCommon (PhysCellId %d, ABSFREQSSB %d, DLBand %d, ABSFREQPOINTA %d, DLBW %d,RACH_TargetReceivedPower %d\n",
-	    (int)*scc->physCellId,
-	    (int)*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB,
-	    (int)*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
-	    (int)scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA,
-	    (int)scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth,
-	    (int)scc->uplinkConfigCommon->initialUplinkBWP->rach_ConfigCommon->choice.setup->rach_ConfigGeneric.preambleReceivedTargetPower);
-      // SSB of the PCell is always on the sync raster
-      uint64_t ssb_freq = from_nrarfcn(*scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
-                                       *scc->ssbSubcarrierSpacing,
-                                       *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB);
-      LOG_I(RRC, "absoluteFrequencySSB %ld corresponds to %lu Hz\n",
-            *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB, ssb_freq);
-      if (get_softmodem_params()->sa)
-        check_ssb_raster(ssb_freq,
-                         *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0],
-                         *scc->ssbSubcarrierSpacing);
-      fix_scc(scc, ssb_bitmap);
     }
 
     sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
@@ -1982,31 +1993,31 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         rrc->configuration.mnc[0] = f1Setup->cell[k].info.plmn.mnc;
         rrc->configuration.tac    = *f1Setup->cell[k].info.tac;
         rrc->nr_cellid = f1Setup->cell[k].info.nr_cellid;
-        f1Setup->cell[k].info.nr_pci    = *rrc->configuration.scc->physCellId;
+        const NR_ServingCellConfigCommon_t *scc = rrc->configuration.scc;
+        DevAssert(scc != NULL);
+        f1Setup->cell[k].info.nr_pci    = *scc->physCellId;
         f1Setup->cell[k].info.num_ssi = 0;
 
-        if (rrc->configuration.scc->tdd_UL_DL_ConfigurationCommon) {
+        if (scc->tdd_UL_DL_ConfigurationCommon) {
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
           f1Setup->cell[k].info.mode = F1AP_MODE_TDD;
           f1ap_tdd_info_t *tdd = &f1Setup->cell[k].info.tdd;
-          tdd->freqinfo.arfcn = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          tdd->tbw.scs = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          tdd->tbw.nrb = rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          tdd->freqinfo.band = *rrc->configuration.scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+          tdd->freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          tdd->tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          tdd->tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          tdd->freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
         } else {
-          /***************** for test *****************/
           LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
           f1Setup->cell[k].info.mode = F1AP_MODE_FDD;
           f1ap_fdd_info_t *fdd = &f1Setup->cell[k].info.fdd;
-          fdd->dl_freqinfo.arfcn = 26200UL;
-          fdd->ul_freqinfo.arfcn = 26200UL;
-          fdd->dl_tbw.scs = 0;
-          fdd->ul_tbw.scs = 0;
-          fdd->dl_tbw.nrb = 3;
-          fdd->ul_tbw.nrb = 3;
-          fdd->dl_freqinfo.band = 7;
-          fdd->ul_freqinfo.band = 7;
-          /***************** for test *****************/
+          fdd->dl_freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+          fdd->ul_freqinfo.arfcn = *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA;
+          fdd->dl_tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          fdd->ul_tbw.scs = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+          fdd->dl_tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          fdd->ul_tbw.nrb = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+          fdd->dl_freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+          fdd->ul_freqinfo.band = *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
         }
 
         f1Setup->cell[k].info.measurement_timing_information = "0";
