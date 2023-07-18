@@ -62,18 +62,20 @@ void du_task_send_sctp_association_req(instance_t instance, f1ap_net_config_t *n
 
 void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   DevAssert(sctp_new_association_resp != NULL);
+  f1ap_cudu_inst_t *f1ap_du_data = getCxt(instance);
+  DevAssert(f1ap_du_data != NULL);
 
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
-    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
+    LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u, retrying...\n",
           sctp_new_association_resp->sctp_state,
           instance,
           sctp_new_association_resp->ulp_cnx_id);
-    //f1ap_handle_setup_message(instance, sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN);
+    sleep(3);
+    du_task_send_sctp_association_req(instance, &f1ap_du_data->net_config);
     return; // exit -1 for debugging
   }
 
   // save the assoc id
-  f1ap_cudu_inst_t *f1ap_du_data = getCxt(instance);
   f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
