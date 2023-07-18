@@ -205,7 +205,7 @@ static void mac_rrc_init(gNB_MAC_INST *mac, ngran_node_t node_type)
   }
 }
 
-void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc)
+void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc, NR_ServingCellConfig_t *scd)
 {
   module_id_t     i;
   gNB_MAC_INST    *nrmac;
@@ -242,6 +242,7 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc)
       RC.nrmac[i]->ul_handle = 0;
 
       RC.nrmac[i]->common_channels[0].ServingCellConfigCommon = scc;
+      RC.nrmac[i]->common_channels[0].pre_ServingCellConfig = scd;
 
       RC.nrmac[i]->first_MIB = true;
 

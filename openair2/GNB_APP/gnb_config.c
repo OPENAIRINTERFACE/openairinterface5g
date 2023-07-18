@@ -987,11 +987,12 @@ void RCconfig_nr_macrlc() {
 
   NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
   //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
+  NR_ServingCellConfig_t *scd = get_scd_config();
 
   if (MacRLC_ParamList.numelt > 0) {
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt;
     ngran_node_t node_type = get_node_type();
-    mac_top_init_gNB(node_type, scc);
+    mac_top_init_gNB(node_type, scc, scd);
     RC.nb_nr_mac_CC = (int *)malloc(RC.nb_nr_macrlc_inst * sizeof(int));
 
     for (j = 0; j < RC.nb_nr_macrlc_inst; j++) {
@@ -1261,8 +1262,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
-  NR_ServingCellConfig_t *scd = get_scd_config();
-
   ////////// Physical parameters
 
   /* get global parameters, defined outside any section in the config file */
@@ -1400,7 +1399,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         nrrrc_config.do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
         nrrrc_config.force_256qam_off = *GNBParamList.paramarray[i][GNB_FORCE256QAMOFF_IDX].iptr;
         LOG_I(GNB_APP, "256 QAM: %s\n", nrrrc_config.force_256qam_off ? "force off" : "may be on");
-        nrrrc_config.scd = scd;
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
         nrrrc_config.drbs = *GNBParamList.paramarray[i][GNB_DRBS].iptr;
