@@ -396,14 +396,6 @@ typedef int (*f1ap_message_processing_t)(
 int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
                         const uint8_t *const data, const uint32_t data_length);
 
-typedef struct f1ap_cudu_ue_inst_s {
-  // used for NB stats generation
-  rnti_t      rnti;
-  instance_t f1ap_uid;
-  instance_t du_ue_f1ap_id;
-  instance_t cu_ue_f1ap_id;
-} f1ap_cudu_ue_t;
-
 typedef struct f1ap_cudu_inst_s {
   f1ap_setup_req_t setupReq;
 
@@ -417,9 +409,6 @@ typedef struct f1ap_cudu_inst_s {
 
   /* GTP instance used by F1 */
   instance_t gtpInst;
-  uint64_t gNB_DU_id;
-  uint16_t num_ues;
-  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_GNB];
 } f1ap_cudu_inst_t;
 
 static const int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
