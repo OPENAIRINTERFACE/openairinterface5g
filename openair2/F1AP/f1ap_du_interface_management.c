@@ -34,6 +34,7 @@
 #include "f1ap_encoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_du_interface_management.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 #include "assertions.h"
 
 #include "GNB_APP/gnb_paramdef.h"
@@ -309,10 +310,8 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
   return 0;
 }
 
-int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
-                                uint32_t               assoc_id,
-                                uint32_t               stream,
-                                F1AP_F1AP_PDU_t       *pdu) {
+int DU_handle_F1_SETUP_RESPONSE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
               "pdu->present != F1AP_F1AP_PDU_PR_successfulOutcome\n");
@@ -327,9 +326,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
   int TransactionId = -1;
   int num_cells_to_activate = 0;
   F1AP_Cells_to_be_Activated_List_Item_t *cell;
-  MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, 0, F1AP_SETUP_RESP);
-  LOG_D(F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
-        in->protocolIEs.list.count);
+  f1ap_setup_resp_t resp = {0};
 
   for (int i=0; i < in->protocolIEs.list.count; i++) {
     ie = in->protocolIEs.list.array[i];
@@ -350,11 +347,10 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                     "ie->criticality != F1AP_Criticality_ignore\n");
         AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name,
                     "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
-        F1AP_SETUP_RESP (msg_p).gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
-        memcpy(F1AP_SETUP_RESP (msg_p).gNB_CU_name,ie->value.choice.GNB_CU_Name.buf,ie->value.choice.GNB_CU_Name.size);
-        F1AP_SETUP_RESP (msg_p).gNB_CU_name[ie->value.choice.GNB_CU_Name.size]='\0';
-        LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
-              F1AP_SETUP_RESP (msg_p).gNB_CU_name);
+        resp.gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
+        memcpy(resp.gNB_CU_name, ie->value.choice.GNB_CU_Name.buf, ie->value.choice.GNB_CU_Name.size);
+        resp.gNB_CU_name[ie->value.choice.GNB_CU_Name.size] = '\0';
+        LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n", resp.gNB_CU_name);
         break;
 
       case F1AP_ProtocolIE_ID_id_GNB_CU_RRC_Version:
@@ -379,17 +375,16 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                       "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
           cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
           TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity,
-                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mcc,
-                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc,
-                          F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc_digit_length);
+                          resp.cells_to_activate[i].plmn.mcc,
+                          resp.cells_to_activate[i].plmn.mnc,
+                          resp.cells_to_activate[i].plmn.mnc_digit_length);
           LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
                 cell->nRCGI.nRCellIdentity.buf[0],
                 cell->nRCGI.nRCellIdentity.buf[1],
                 cell->nRCGI.nRCellIdentity.buf[2],
                 cell->nRCGI.nRCellIdentity.buf[3],
                 cell->nRCGI.nRCellIdentity.buf[4]);
-          BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
-                                         F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid);
+          BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity, resp.cells_to_activate[i].nr_cellid);
           F1AP_ProtocolExtensionContainer_10696P112_t *ext = (F1AP_ProtocolExtensionContainer_10696P112_t *)cell->iE_Extensions;
 
           if (ext==NULL)
@@ -408,28 +403,26 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
                             case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailableSNPN_ID_List
               */
               case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation: {
-                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
+                resp.cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
                 F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
-                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
+                resp.cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
                 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
                 LOG_D(F1AP,
                       "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
                       i,
-                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mcc,
-                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].plmn.mnc,
-                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].nr_cellid,
-                      F1AP_SETUP_RESP(msg_p).cells_to_activate[i].num_SI);
+                      resp.cells_to_activate[i].plmn.mcc,
+                      resp.cells_to_activate[i].plmn.mnc,
+                      resp.cells_to_activate[i].nr_cellid,
+                      resp.cells_to_activate[i].num_SI);
 
                 for (int si = 0; si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count; si++) {
                   F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
                   size_t size = sib_item->sIBmessage.size;
-                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si] = size;
+                  resp.cells_to_activate[i].SI_container_length[si] = size;
                   LOG_D(F1AP, "F1AP: SI_container_length[%d][%ld] %ld bytes\n", i, sib_item->sIBtype, size);
-                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si]);
-                  memcpy((void *)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
-                         (void *)sib_item->sIBmessage.buf,
-                         size);
-                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
+                  resp.cells_to_activate[i].SI_container[si] = malloc(resp.cells_to_activate[i].SI_container_length[si]);
+                  memcpy(resp.cells_to_activate[i].SI_container[si], sib_item->sIBmessage.buf, size);
+                  resp.cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
                 }
 
                 break;
@@ -469,30 +462,26 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
 
   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
   LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
-  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
+  resp.num_cells_to_activate = num_cells_to_activate;
 
   // tmp
-  // F1AP_SETUP_RESP (msg_p).num_SI[0] = 1;
   for (int i=0; i<num_cells_to_activate; i++)
-    AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
+    AssertFatal(resp.cells_to_activate[i].num_SI > 0, "System Information %d is missing", i);
 
   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
-  itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  f1_setup_response(&resp);
   return 0;
 }
 
 // SETUP FAILURE
-int DU_handle_F1_SETUP_FAILURE(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               F1AP_F1AP_PDU_t *pdu) {
-  LOG_E(F1AP, "DU_handle_F1_SETUP_FAILURE\n");
+int DU_handle_F1_SETUP_FAILURE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_F1SetupFailure_t    *out;
   F1AP_F1SetupFailureIEs_t *ie;
+  f1ap_setup_failure_t fail = {0};
   out = &pdu->choice.unsuccessfulOutcome->value.choice.F1SetupFailure;
   /* Transaction ID */
-  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out,
-                             F1AP_ProtocolIE_ID_id_TransactionID, true);
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out, F1AP_ProtocolIE_ID_id_TransactionID, true);
   /* Cause */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out,
                              F1AP_ProtocolIE_ID_id_Cause, true);
@@ -503,9 +492,9 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
                                F1AP_ProtocolIE_ID_id_TimeToWait, true);
   }
 
+  f1_setup_failure(&fail);
   return 0;
 }
-
 
 /*
     gNB-DU Configuration Update

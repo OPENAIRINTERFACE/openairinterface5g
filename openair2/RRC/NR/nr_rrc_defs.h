@@ -362,6 +362,8 @@ typedef struct {
 } nr_security_configuration_t;
 
 typedef struct nr_mac_rrc_dl_if_s {
+  f1_setup_response_func_t f1_setup_response;
+  f1_setup_failure_func_t f1_setup_failure;
   ue_context_setup_request_func_t ue_context_setup_request;
   ue_context_modification_request_func_t ue_context_modification_request;
   ue_context_modification_confirm_func_t ue_context_modification_confirm;

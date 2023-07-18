@@ -24,6 +24,16 @@
 #include "mac_rrc_dl.h"
 #include "nr_rrc_defs.h"
 
+static void f1_setup_response_f1ap(const f1ap_setup_resp_t *resp)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
+static void f1_setup_failure_f1ap(const f1ap_setup_failure_t *fail)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
 static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_SETUP_REQ);
@@ -133,6 +143,8 @@ static void dl_rrc_message_transfer_f1ap(const f1ap_dl_rrc_message_t *dl_rrc)
 
 void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)
 {
+  mac_rrc->f1_setup_response = f1_setup_response_f1ap;
+  mac_rrc->f1_setup_failure = f1_setup_failure_f1ap;
   mac_rrc->ue_context_setup_request = ue_context_setup_request_f1ap;
   mac_rrc->ue_context_modification_request = ue_context_modification_request_f1ap;
   mac_rrc->ue_context_modification_confirm = ue_context_modification_confirm_f1ap;

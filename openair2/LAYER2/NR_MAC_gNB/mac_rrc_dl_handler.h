@@ -25,6 +25,9 @@
 #include "platform_types.h"
 #include "f1ap_messages_types.h"
 
+void f1_setup_response(const f1ap_setup_resp_t *resp);
+void f1_setup_failure(const f1ap_setup_failure_t *failure);
+
 void ue_context_setup_request(const f1ap_ue_context_setup_t *req);
 void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req);
 void ue_context_modification_confirm(const f1ap_ue_context_modif_confirm_t *confirm);

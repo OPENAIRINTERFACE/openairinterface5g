@@ -30,6 +30,17 @@
 #include "uper_decoder.h"
 #include "uper_encoder.h"
 
+void f1_setup_response(const f1ap_setup_resp_t *resp)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
+void f1_setup_failure(const f1ap_setup_failure_t *failure)
+{
+  LOG_E(MAC, "the CU reported F1AP Setup Failure, is there a configuration mismatch?\n");
+  exit(1);
+}
+
 static NR_RLC_BearerConfig_t *get_bearerconfig_from_srb(const f1ap_srb_to_be_setup_t *srb)
 {
   long priority = srb->srb_id; // high priority for SRB

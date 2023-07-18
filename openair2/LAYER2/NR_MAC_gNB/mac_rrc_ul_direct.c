@@ -24,6 +24,11 @@
 
 #include "mac_rrc_ul.h"
 
+static void f1_setup_request_direct(const f1ap_setup_req_t *req)
+{
+  AssertFatal(false, "not implemented\n");
+}
+
 static void ue_context_setup_response_direct(const f1ap_ue_context_setup_t *req, const f1ap_ue_context_setup_t *resp)
 {
   DevAssert(req->drbs_to_be_setup_length == resp->drbs_to_be_setup_length);
@@ -172,6 +177,7 @@ static void initial_ul_rrc_message_transfer_direct(module_id_t module_id, const 
 
 void mac_rrc_ul_direct_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
+  mac_rrc->f1_setup_request = f1_setup_request_direct;
   mac_rrc->ue_context_setup_response = ue_context_setup_response_direct;
   mac_rrc->ue_context_modification_response = ue_context_modification_response_direct;
   mac_rrc->ue_context_modification_required = ue_context_modification_required_direct;
