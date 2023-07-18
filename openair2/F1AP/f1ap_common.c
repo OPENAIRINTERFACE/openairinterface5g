@@ -49,13 +49,17 @@ f1ap_cudu_inst_t *getCxt(instance_t instanceP)
   return f1_inst[instanceP];
 }
 
+static pthread_mutex_t f1_inst_mtx = PTHREAD_MUTEX_INITIALIZER;
 void createF1inst(instance_t instanceP, f1ap_setup_req_t *req, f1ap_net_config_t *nc)
 {
   DevAssert(instanceP == 0);
-  DevAssert(req != NULL);
-  AssertFatal(f1_inst[0] == NULL, "Double call to F1 DU init\n");
+  pthread_mutex_lock(&f1_inst_mtx);
+  AssertFatal(f1_inst[0] == NULL, "Attempted to initialize multiple F1 instances\n");
   f1_inst[0] = calloc(1, sizeof(f1ap_cudu_inst_t));
   AssertFatal(f1_inst[0] != NULL, "out of memory\n");
-  f1_inst[0]->setupReq = *req;
-  f1_inst[0]->net_config = *nc;
+  if (req)
+    f1_inst[0]->setupReq = *req;
+  if (nc)
+    f1_inst[0]->net_config = *nc;
+  pthread_mutex_unlock(&f1_inst_mtx);
 }

@@ -52,6 +52,7 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,
                                                 sctp_new_association_ind_t *sctp_new_association_ind,
                                                 eth_params_t *IPaddrs)
 {
+  createF1inst(instance, NULL, NULL);
   // save the assoc id
   f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
   f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
