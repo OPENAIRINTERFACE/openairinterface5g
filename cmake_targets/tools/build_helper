@@ -554,11 +554,12 @@ check_install_additional_tools (){
             ;;
     esac
     PACKAGE_LIST="\
-	doxygen \
-	libpthread-stubs0-dev \
-	libqt5charts5-dev \
-	tshark \
-	uml-utilities \
+        doxygen \
+        libgnutls28-dev \
+        libpthread-stubs0-dev \
+        libqt5charts5-dev \
+        tshark \
+        uml-utilities \
         iperf3 \
         libforms-bin \
         libforms-dev \
@@ -568,6 +569,7 @@ check_install_additional_tools (){
       doxygen \
       ctags \
       iperf3 \
+      gnutls-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -576,6 +578,7 @@ check_install_additional_tools (){
       doxygen \
       ctags \
       iperf3 \
+      gnutls-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -614,7 +617,6 @@ check_install_oai_software() {
 	liblapack-dev \
 	liblapacke-dev \
 	libreadline-dev \
-	libgnutls28-dev \
 	libconfig-dev \
 	libsctp-dev  \
 	libssl-dev  \
@@ -655,7 +657,6 @@ check_install_oai_software() {
       openssl-devel \
       patch \
       readline-devel \
-      gnutls-devel \
       lapack \
       lapack-devel \
       blas \
