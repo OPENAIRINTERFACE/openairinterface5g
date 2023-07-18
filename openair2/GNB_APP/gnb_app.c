@@ -59,25 +59,6 @@ extern RAN_CONTEXT_t RC;
 #define GNB_REGISTER_RETRY_DELAY 10
 
 /*------------------------------------------------------------------------------*/
-void configure_nr_rrc(uint32_t gnb_id)
-{
-  MessageDef *msg_p = NULL;
-  //  int CC_id;
-
-  msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, NRRRC_CONFIGURATION_REQ);
-
-  if (RC.nrrrc[gnb_id]) {
-    RCconfig_NRRRC(msg_p,gnb_id, RC.nrrrc[gnb_id]);
-    
-    LOG_I(GNB_APP, "RRC starting with node type %d\n", RC.nrrrc[gnb_id]->node_type);
-    LOG_I(GNB_APP,"Sending configuration message to NR_RRC task\n");
-    itti_send_msg_to_task (TASK_RRC_GNB, GNB_MODULE_ID_TO_INSTANCE(gnb_id), msg_p);
-
-  }
-  else AssertFatal(0,"NRRRC context for gNB %u not allocated\n",gnb_id);
-}
-
-/*------------------------------------------------------------------------------*/
 
 
 uint32_t gNB_app_register(uint32_t gnb_id_start, uint32_t gnb_id_end)//, const Enb_properties_array_t *enb_properties)

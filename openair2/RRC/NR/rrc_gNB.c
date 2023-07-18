@@ -296,18 +296,12 @@ static void rrc_gNB_CU_DU_init(gNB_RRC_INST *rrc)
   cu_init_f1_ue_data();
 }
 
-static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_RrcConfigurationReq *configuration)
+void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
 {
-  protocol_ctxt_t      ctxt = { 0 };
-  gNB_RRC_INST         *rrc=RC.nrrrc[gnb_mod_idP];
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, gnb_mod_idP, GNB_FLAG_YES, NOT_A_RNTI, 0, 0,gnb_mod_idP);
-  LOG_I(NR_RRC,
-        PROTOCOL_NR_RRC_CTXT_FMT" Init...\n",
-        PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
   AssertFatal(rrc != NULL, "RC.nrrrc not initialized!");
   AssertFatal(NUMBER_OF_UE_MAX < (module_id_t)0xFFFFFFFFFFFFFFFF, " variable overflow");
   AssertFatal(configuration!=NULL,"configuration input is null\n");
-  rrc->module_id = gnb_mod_idP;
+  rrc->module_id = 0;
   rrc_gNB_CU_DU_init(rrc);
   uid_linear_allocator_init(&rrc->uid_allocator);
   RB_INIT(&rrc->rrc_ue_head);
@@ -316,7 +310,6 @@ static void openair_rrc_gNB_configuration(const module_id_t gnb_mod_idP, gNB_Rrc
    /// System Information INIT
   pthread_mutex_init(&rrc->cell_info_mutex,NULL);
   rrc->cell_info_configured = 0;
-  LOG_I(NR_RRC, PROTOCOL_NR_RRC_CTXT_FMT" Checking release \n",PROTOCOL_NR_RRC_CTXT_ARGS(&ctxt));
   init_NR_SI(rrc, configuration);
   return;
 } // END openair_rrc_gNB_configuration
@@ -2618,11 +2611,6 @@ void *rrc_gnb_task(void *args_p) {
 
       case NGAP_PDUSESSION_RELEASE_COMMAND:
         rrc_gNB_process_NGAP_PDUSESSION_RELEASE_COMMAND(msg_p, instance);
-        break;
-
-      /* Messages from gNB app */
-      case NRRRC_CONFIGURATION_REQ:
-        openair_rrc_gNB_configuration(instance, &NRRRC_CONFIGURATION_REQ(msg_p));
         break;
 
       /* Messages from F1AP task */

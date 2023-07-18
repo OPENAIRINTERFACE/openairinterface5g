@@ -298,6 +298,7 @@ static int create_gNB_tasks(void) {
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
+  ngran_node_t node_type = get_node_type();
 
   RCconfig_NR_L1();
   RCconfig_nr_prs();
@@ -314,13 +315,11 @@ static int create_gNB_tasks(void) {
 
   LOG_I(GNB_APP,"Allocating gNB_RRC_INST for %d instances\n",RC.nb_nr_inst);
 
-  RC.nrrrc = (gNB_RRC_INST **)malloc(RC.nb_nr_inst*sizeof(gNB_RRC_INST *));
-  LOG_I(PHY, "%s() RC.nb_nr_inst:%d RC.nrrrc:%p\n", __FUNCTION__, RC.nb_nr_inst, RC.nrrrc);
-  ngran_node_t node_type = get_node_type();
-  for (int gnb_id = gnb_id_start; (gnb_id < gnb_id_end) ; gnb_id++) {
-    RC.nrrrc[gnb_id] = (gNB_RRC_INST*)calloc(1,sizeof(gNB_RRC_INST));
-    LOG_I(PHY, "%s() Creating RRC instance RC.nrrrc[%d]:%p (%d of %d)\n", __FUNCTION__, gnb_id, RC.nrrrc[gnb_id], gnb_id+1, gnb_id_end);
-    configure_nr_rrc(gnb_id);
+  if (RC.nb_nr_inst > 0) {
+    AssertFatal(RC.nb_nr_inst == 1, "multiple RRC instances are not supported\n");
+    RC.nrrrc = calloc(1, sizeof(*RC.nrrrc));
+    RC.nrrrc[0] = calloc(1,sizeof(gNB_RRC_INST));
+    RCconfig_NRRRC(RC.nrrrc[0]);
   }
 
   if (RC.nb_nr_inst > 0 &&
