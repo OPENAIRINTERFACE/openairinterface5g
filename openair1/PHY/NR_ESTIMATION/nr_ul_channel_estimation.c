@@ -42,46 +42,6 @@
 #define NO_INTERP 1
 #define dBc(x,y) (dB_fixed(((int32_t)(x))*(x) + ((int32_t)(y))*(y)))
 
-static void freq2time(uint16_t ofdm_symbol_size,
-                      int16_t *freq_signal,
-                      int16_t *time_signal)
-{
-
-  switch (ofdm_symbol_size) {
-    case 128:
-      idft(IDFT_128, freq_signal, time_signal, 1);
-      break;
-    case 256:
-      idft(IDFT_256, freq_signal, time_signal, 1);
-      break;
-    case 512:
-      idft(IDFT_512, freq_signal, time_signal, 1);
-      break;
-    case 1024:
-      idft(IDFT_1024, freq_signal, time_signal, 1);
-      break;
-    case 1536:
-      idft(IDFT_1536, freq_signal, time_signal, 1);
-      break;
-    case 2048:
-      idft(IDFT_2048, freq_signal, time_signal, 1);
-      break;
-    case 4096:
-      idft(IDFT_4096, freq_signal, time_signal, 1);
-      break;
-    case 6144:
-      idft(IDFT_6144, freq_signal, time_signal, 1);
-      break;
-    case 8192:
-      idft(IDFT_8192, freq_signal, time_signal, 1);
-      break;
-    default:
-      idft(IDFT_512, freq_signal, time_signal, 1);
-      break;
-  }
-}
-
-
 __attribute__((always_inline)) inline c16_t c32x16cumulVectVectWithSteps(c16_t *in1,
                                                                          int *offset1,
                                                                          const int step1,
