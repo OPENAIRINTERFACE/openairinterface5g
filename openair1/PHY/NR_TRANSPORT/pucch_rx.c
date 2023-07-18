@@ -1158,36 +1158,27 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 	      pucch_pdu->prb_size,pucch_pdu->nr_of_symbols);
 
   int Prx = gNB->gNB_config.carrier_config.num_rx_ant.value;
+  //  AssertFatal((pucch_pdu->prb_size&1) == 0,"prb_size %d is not a multiple of2\n",pucch_pdu->prb_size);
   int Prx2 = (Prx==1)?2:Prx;
   // use 2 for Nb antennas in case of single antenna to allow the following allocations
-  int prb_size_ext = pucch_pdu->prb_size+(pucch_pdu->prb_size&1);
-  int16_t r_re_ext[Prx2][2][8*prb_size_ext] __attribute__((aligned(32)));
-  int16_t r_im_ext[Prx2][2][8*prb_size_ext] __attribute__((aligned(32)));
-  int16_t r_re_ext2[Prx2][2][8*prb_size_ext] __attribute__((aligned(32)));
-  int16_t r_im_ext2[Prx2][2][8*prb_size_ext] __attribute__((aligned(32)));
-  int16_t rd_re_ext[Prx2][2][4*prb_size_ext] __attribute__((aligned(32)));
-  int16_t rd_im_ext[Prx2][2][4*prb_size_ext] __attribute__((aligned(32)));
-  int16_t *r_re_ext_p,*r_im_ext_p,*rd_re_ext_p,*rd_im_ext_p;
-
   int nb_re_pucch = 12*pucch_pdu->prb_size;
+  int prb_size_ext = pucch_pdu->prb_size+(pucch_pdu->prb_size&1);
 
-  int16_t rp[Prx2][2][nb_re_pucch*2];
+  c16_t rp[Prx2][2][nb_re_pucch];
   memset(rp, 0, sizeof(rp));
-  int16_t *tmp_rp = NULL;
-  __m64 dmrs_re,dmrs_im;
 
   for (int aa=0;aa<Prx;aa++){
     for (int symb=0;symb<pucch_pdu->nr_of_symbols;symb++) {
-      tmp_rp = ((int16_t *)&rxdataF[aa][soffset + (l2+symb)*frame_parms->ofdm_symbol_size]);
+      c16_t *tmp_rp = ((c16_t *)&rxdataF[aa][soffset + (l2 + symb) * frame_parms->ofdm_symbol_size]);
 
       if (re_offset[symb] + nb_re_pucch < frame_parms->ofdm_symbol_size) {
-        memcpy1((void*)rp[aa][symb],(void*)&tmp_rp[re_offset[symb]*2],nb_re_pucch*sizeof(int32_t));
+        memcpy1(rp[aa][symb], &tmp_rp[re_offset[symb]], nb_re_pucch * sizeof(c16_t));
       }
       else {
         int neg_length = frame_parms->ofdm_symbol_size-re_offset[symb];
         int pos_length = nb_re_pucch-neg_length;
-        memcpy1((void*)rp[aa][symb],(void*)&tmp_rp[re_offset[symb]*2],neg_length*sizeof(int32_t));
-        memcpy1((void*)&rp[aa][symb][neg_length*2],(void*)tmp_rp,pos_length*sizeof(int32_t));
+        memcpy1(rp[aa][symb], &tmp_rp[re_offset[symb]], neg_length * sizeof(c16_t));
+        memcpy1(&rp[aa][symb][neg_length], tmp_rp, pos_length * sizeof(c16_t));
       }
     }
   }
@@ -1205,51 +1196,65 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
   int nc_group_size=1; // 2 PRB
   int ngroup = prb_size_ext/nc_group_size/2;
   int32_t corr32_re[2][ngroup][Prx2],corr32_im[2][ngroup][Prx2];
-  for (int aa=0;aa<Prx;aa++)
-    for (int group=0;group<ngroup;group++) {
-      corr32_re[0][group][aa]=0; corr32_im[0][group][aa]=0;
-      corr32_re[1][group][aa]=0; corr32_im[1][group][aa]=0;
-    }
+  memset(corr32_re, 0, sizeof(corr32_re));
+  memset(corr32_im, 0, sizeof(corr32_im));
 
-  //  AssertFatal((pucch_pdu->prb_size&1) == 0,"prb_size %d is not a multiple of 2\n",pucch_pdu->prb_size);
-  if ((pucch_pdu->prb_size&1) > 0) { // if the number of PRBs is odd
+  int16_t r_re_ext[Prx2][2][8 * prb_size_ext] __attribute__((aligned(32)));
+  int16_t r_im_ext[Prx2][2][8 * prb_size_ext] __attribute__((aligned(32)));
+  int16_t r_re_ext2[Prx2][2][8 * prb_size_ext] __attribute__((aligned(32)));
+  int16_t r_im_ext2[Prx2][2][8 * prb_size_ext] __attribute__((aligned(32)));
+  int16_t rd_re_ext[Prx2][2][4 * prb_size_ext] __attribute__((aligned(32)));
+  int16_t rd_im_ext[Prx2][2][4 * prb_size_ext] __attribute__((aligned(32)));
+
+  if (pucch_pdu->prb_size != prb_size_ext) {
+    // if the number of PRBs is odd
+    // we fill the unsed part of the arrays
+    for (int aa = 0; aa < Prx; aa++) {
     for (int symb=0; symb<pucch_pdu->nr_of_symbols;symb++) {
-      for (int aa=0;aa<Prx;aa++) {
-        memset(&r_re_ext[aa][symb][8*pucch_pdu->prb_size],0,8*pucch_pdu->prb_size*sizeof(int16_t));
-        memset(&r_im_ext[aa][symb][8*pucch_pdu->prb_size],0,8*pucch_pdu->prb_size*sizeof(int16_t));
-        memset(&rd_re_ext[aa][symb][4*pucch_pdu->prb_size],0,8*pucch_pdu->prb_size*sizeof(int16_t));
-        memset(&rd_im_ext[aa][symb][4*pucch_pdu->prb_size],0,8*pucch_pdu->prb_size*sizeof(int16_t));
+        const int sz = pucch_pdu->prb_size;
+        memset(r_re_ext[aa][symb] + 8 * sz, 0, 8 * sizeof(int16_t));
+        memset(r_im_ext[aa][symb] + 8 * sz, 0, 8 * sizeof(int16_t));
+        memset(rd_re_ext[aa][symb] + 4 * sz, 0, 4 * sizeof(int16_t));
+        memset(rd_im_ext[aa][symb] + 4 * sz, 0, 4 * sizeof(int16_t));
       }
     }
   }
+
   for (int symb=0; symb<pucch_pdu->nr_of_symbols;symb++) {
     // 24 REs contains 48x16-bit, so 6x8x16-bit
-    for (int prb=0;prb<pucch_pdu->prb_size;prb+=2) {
       for (int aa=0;aa<Prx;aa++) {
-        r_re_ext_p=&r_re_ext[aa][symb][8*prb];
-        r_im_ext_p=&r_im_ext[aa][symb][8*prb];
-        rd_re_ext_p=&rd_re_ext[aa][symb][4*prb];
-        rd_im_ext_p=&rd_im_ext[aa][symb][4*prb];
+      for (int prb = 0; prb < pucch_pdu->prb_size; prb++) {
+        int16_t *r_re_ext_p = &r_re_ext[aa][symb][8 * prb];
+        int16_t *r_im_ext_p = &r_im_ext[aa][symb][8 * prb];
+        int16_t *rd_re_ext_p = &rd_re_ext[aa][symb][4 * prb];
+        int16_t *rd_im_ext_p = &rd_im_ext[aa][symb][4 * prb];
 
-        for (int idx=0; idx<8; idx++) {
-          r_re_ext_p[idx<<1]=rp[aa][symb][prb*24+6*idx];
-          r_im_ext_p[idx<<1]=rp[aa][symb][prb*24+1+6*idx];
-          rd_re_ext_p[idx]=rp[aa][symb][prb*24+2+6*idx];
-          rd_im_ext_p[idx]=rp[aa][symb][prb*24+3+6*idx];
-          r_re_ext_p[1+(idx<<1)]=rp[aa][symb][prb*24+4+6*idx];
-          r_im_ext_p[1+(idx<<1)]=rp[aa][symb][prb*24+5+6*idx];
+        for (int idx = 0; idx < 4; idx++) {
+          c16_t *rp_base = rp[aa][symb] + prb * 12 + 3 * idx;
+          AssertFatal(prb * 12 + 3 * idx + 2 < nb_re_pucch, "");
+          r_re_ext_p[idx << 1] = rp_base->r;
+          r_im_ext_p[idx << 1] = rp_base->i;
+          rp_base++;
+          rd_re_ext_p[idx] = rp_base->r;
+          rd_im_ext_p[idx] = rp_base->i;
+          rp_base++;
+          r_re_ext_p[1 + (idx << 1)] = rp_base->r;
+          r_im_ext_p[1 + (idx << 1)] = rp_base->i;
         }
 
 #ifdef DEBUG_NR_PUCCH_RX
-        for (int i=0;i<8;i++) printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n",aa,prb+(i>>2),i,rd_re_ext_p[i],rd_im_ext_p[i]);
-        for (int i=0;i<16;i++) printf("Ant %d PRB %d data[%d] -> (%d,%d)\n",aa,prb+(i>>3),i,r_re_ext_p[i],r_im_ext_p[i]);
+        for (int i = 0; i < 8; i++)
+          printf("Ant %d PRB %d dmrs[%d] -> (%d,%d)\n", aa, prb + (i >> 2), i, rd_re_ext_p[i], rd_im_ext_p[i]);
+        for (int i = 0; i < 16; i++)
+          printf("Ant %d PRB %d data[%d] -> (%d,%d)\n", aa, prb + (i >> 3), i, r_re_ext_p[i], r_im_ext_p[i]);
 #endif
-      } // aa
-    } // prb
+      }
+    }
 
     // first compute DMRS component
 
-    uint32_t x1 = 0, x2 = 0, s = 0;
+    uint32_t x1 = 0, x2 = 0, sGold = 0;
+    uint8_t *sGold8 = (uint8_t *)&sGold;
     x2 = (((1<<17)*((14*slot) + (pucch_pdu->start_symbol_index+symb) + 1)*((2*pucch_pdu->dmrs_scrambling_id) + 1)) + (2*pucch_pdu->dmrs_scrambling_id))%(1U<<31); // c_init calculation according to TS38.211 subclause
 #ifdef DEBUG_NR_PUCCH_RX
     printf("slot %d, start_symbol_index %d, symbol %d, dmrs_scrambling_id %d\n",
@@ -1257,27 +1262,34 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 #endif
     int reset = 1;
     for (int i=0; i<=(pucch_pdu->prb_start>>2); i++) {
-      s = lte_gold_generic(&x1, &x2, reset);
+      sGold = lte_gold_generic(&x1, &x2, reset);
       reset = 0;
     }
 
     for (int group=0;group<ngroup;group++) {
       // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
       // non-coherent combining across groups
-      dmrs_re = byte2m64_re[((uint8_t*)&s)[(group&1)<<1]];
-      dmrs_im = byte2m64_im[((uint8_t*)&s)[(group&1)<<1]];
+      __m64 dmrs_re = byte2m64_re[sGold8[(group & 1) << 1]];
+      int16_t *dmrs_re16 = (int16_t *)&dmrs_re;
+      __m64 dmrs_im = byte2m64_im[sGold8[(group & 1) << 1]];
+      int16_t *dmrs_im16 = (int16_t *)&dmrs_im;
 #ifdef DEBUG_NR_PUCCH_RX
       printf("Group %d: s %x x2 %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
              group,
-             ((uint16_t*)&s)[0],x2,
-             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],
-             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],
-             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],
-             ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
+             ((uint16_t *)&s)[0],
+             x2,
+             dmrs_re16[0],
+             dmrs_im16[0],
+             dmrs_re16[1],
+             dmrs_im16[1],
+             dmrs_re16[2],
+             dmrs_im16[2],
+             dmrs_re16[3],
+             dmrs_im16[3]);
 #endif
       for (int aa=0;aa<Prx;aa++) {
-        rd_re_ext_p=&rd_re_ext[aa][symb][8*group];
-        rd_im_ext_p=&rd_im_ext[aa][symb][8*group];
+        int16_t *rd_re_ext_p = &rd_re_ext[aa][symb][8 * group];
+        int16_t *rd_im_ext_p = &rd_im_ext[aa][symb][8 * group];
 
 #ifdef DEBUG_NR_PUCCH_RX
         printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
@@ -1287,29 +1299,29 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                rd_re_ext_p[2],rd_im_ext_p[2],
                rd_re_ext_p[3],rd_im_ext_p[3]);
 #endif
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[0]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_im)[0]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[0]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[0]*((int16_t*)&dmrs_re)[0]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[1]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_im)[1]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[1]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[1]*((int16_t*)&dmrs_re)[1]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[2]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_im)[2]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[2]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[2]*((int16_t*)&dmrs_re)[2]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[3]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_im)[3]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[3]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[3]*((int16_t*)&dmrs_re)[3]);
+        for (int z = 0; z < 4; z++) {
+          corr32_re[symb][group][aa] += rd_re_ext_p[z] * dmrs_re16[z] + rd_im_ext_p[z] * dmrs_im16[z];
+          corr32_im[symb][group][aa] += -rd_re_ext_p[z] * dmrs_im16[z] + rd_im_ext_p[z] * dmrs_re16[z];
       }
-      dmrs_re = byte2m64_re[((uint8_t*)&s)[1+((group&1)<<1)]];
-      dmrs_im = byte2m64_im[((uint8_t*)&s)[1+((group&1)<<1)]];
+      }
+      dmrs_re = byte2m64_re[sGold8[1 + ((group & 1) << 1)]];
+      dmrs_im = byte2m64_im[sGold8[1 + ((group & 1) << 1)]];
 #ifdef DEBUG_NR_PUCCH_RX
       printf("Group %d: s %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
              group,
-             ((uint16_t*)&s)[1],
-             ((int16_t*)&dmrs_re)[0],((int16_t*)&dmrs_im)[0],
-             ((int16_t*)&dmrs_re)[1],((int16_t*)&dmrs_im)[1],
-             ((int16_t*)&dmrs_re)[2],((int16_t*)&dmrs_im)[2],
-             ((int16_t*)&dmrs_re)[3],((int16_t*)&dmrs_im)[3]);
+             ((uint16_t *)&sGold)[1],
+             dmrs_re16[0],
+             dmrs_im16[0],
+             dmrs_re16[1],
+             dmrs_im16[1],
+             dmrs_re16[2],
+             dmrs_im16[2],
+             dmrs_re16[3],
+             dmrs_im16[3]);
 #endif
       for (int aa=0;aa<Prx;aa++) {
-        rd_re_ext_p=&rd_re_ext[aa][symb][8*group];
-        rd_im_ext_p=&rd_im_ext[aa][symb][8*group];
+        int16_t *rd_re_ext_p = &rd_re_ext[aa][symb][8 * group];
+        int16_t *rd_im_ext_p = &rd_im_ext[aa][symb][8 * group];
 #ifdef DEBUG_NR_PUCCH_RX
         printf("Group %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
                group,
@@ -1318,14 +1330,10 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                rd_re_ext_p[6],rd_im_ext_p[6],
                rd_re_ext_p[7],rd_im_ext_p[7]);
 #endif
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[4]*((int16_t*)&dmrs_re)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_im)[0]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[4]*((int16_t*)&dmrs_im)[0] + rd_im_ext_p[4]*((int16_t*)&dmrs_re)[0]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[5]*((int16_t*)&dmrs_re)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_im)[1]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[5]*((int16_t*)&dmrs_im)[1] + rd_im_ext_p[5]*((int16_t*)&dmrs_re)[1]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[6]*((int16_t*)&dmrs_re)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_im)[2]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[6]*((int16_t*)&dmrs_im)[2] + rd_im_ext_p[6]*((int16_t*)&dmrs_re)[2]);
-        corr32_re[symb][group][aa]+=(rd_re_ext_p[7]*((int16_t*)&dmrs_re)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_im)[3]);
-        corr32_im[symb][group][aa]+=(-rd_re_ext_p[7]*((int16_t*)&dmrs_im)[3] + rd_im_ext_p[7]*((int16_t*)&dmrs_re)[3]);
+        for (int z = 0; z < 4; z++) {
+          corr32_re[symb][group][aa] += rd_re_ext_p[z + 4] * dmrs_re16[z] + rd_im_ext_p[z + 4] * dmrs_im16[z];
+          corr32_im[symb][group][aa] += -rd_re_ext_p[z + 4] * dmrs_im16[z] + rd_im_ext_p[z + 4] * dmrs_re16[z];
+        }
         /*	corr32_re[group][aa]>>=5;
                 corr32_im[group][aa]>>=5;*/
 #ifdef DEBUG_NR_PUCCH_RX
@@ -1333,95 +1341,77 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
 #endif
       } //aa    
 
-      if ((group&1) == 1) s = lte_gold_generic(&x1, &x2, 0);
+      if ((group & 1) == 1)
+        sGold = lte_gold_generic(&x1, &x2, 0);
     } // group
   } // symb
 
-  uint32_t x1, x2, s=0;  
+  uint32_t x1, x2, sGold = 0;
   // unscrambling
   x2 = ((pucch_pdu->rnti)<<15)+pucch_pdu->data_scrambling_id;
-  s = lte_gold_generic(&x1, &x2, 1);
+  sGold = lte_gold_generic(&x1, &x2, 1);
+  uint8_t *sGold8 = (uint8_t *)&sGold;
 #ifdef DEBUG_NR_PUCCH_RX
   printf("x2 %x, s %x\n",x2,s);
 #endif
   for (int symb=0;symb<pucch_pdu->nr_of_symbols;symb++) {
-    __m64 c_re0,c_im0,c_re1,c_im1,c_re2,c_im2,c_re3,c_im3;
+    __m64 c_re[4], c_im[4];
     int re_off=0;
     for (int prb=0;prb<prb_size_ext;prb+=2,re_off+=16) {
-      c_re0 = byte2m64_re[((uint8_t*)&s)[0]];
-      c_im0 = byte2m64_im[((uint8_t*)&s)[0]];
-      c_re1 = byte2m64_re[((uint8_t*)&s)[1]];
-      c_im1 = byte2m64_im[((uint8_t*)&s)[1]];
-      c_re2 = byte2m64_re[((uint8_t*)&s)[2]];
-      c_im2 = byte2m64_im[((uint8_t*)&s)[2]];
-      c_re3 = byte2m64_re[((uint8_t*)&s)[3]];
-      c_im3 = byte2m64_im[((uint8_t*)&s)[3]];
+      for (int z = 0; z < 4; z++) {
+        c_re[z] = byte2m64_re[sGold8[z]];
+        c_im[z] = byte2m64_im[sGold8[z]];
+      }
 
       for (int aa=0;aa<Prx;aa++) {
 #ifdef DEBUG_NR_PUCCH_RX
         printf("prb %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
                prb,
-               r_re_ext[aa][symb][re_off],r_im_ext[aa][symb][re_off],
-               r_re_ext[aa][symb][re_off+1],r_im_ext[aa][symb][re_off+1],
-               r_re_ext[aa][symb][re_off+2],r_im_ext[aa][symb][re_off+2],
-               r_re_ext[aa][symb][re_off+3],r_im_ext[aa][symb][re_off+3],
-               r_re_ext[aa][symb][re_off+4],r_im_ext[aa][symb][re_off+4],
-               r_re_ext[aa][symb][re_off+5],r_im_ext[aa][symb][re_off+5],
-               r_re_ext[aa][symb][re_off+6],r_im_ext[aa][symb][re_off+6],
-               r_re_ext[aa][symb][re_off+7],r_im_ext[aa][symb][re_off+7]);
-        printf("prb %d (%x): c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-               prb,s,
-               ((int16_t*)&c_re0)[0],((int16_t*)&c_im0)[0],
-               ((int16_t*)&c_re0)[1],((int16_t*)&c_im0)[1],
-               ((int16_t*)&c_re0)[2],((int16_t*)&c_im0)[2],
-               ((int16_t*)&c_re0)[3],((int16_t*)&c_im0)[3],
-               ((int16_t*)&c_re1)[0],((int16_t*)&c_im1)[0],
-               ((int16_t*)&c_re1)[1],((int16_t*)&c_im1)[1],
-               ((int16_t*)&c_re1)[2],((int16_t*)&c_im1)[2],
-               ((int16_t*)&c_re1)[3],((int16_t*)&c_im1)[3]
-               );
+               r_re_ext[aa][symb][re_off],
+               r_im_ext[aa][symb][re_off],
+               r_re_ext[aa][symb][re_off + 1],
+               r_im_ext[aa][symb][re_off + 1],
+               r_re_ext[aa][symb][re_off + 2],
+               r_im_ext[aa][symb][re_off + 2],
+               r_re_ext[aa][symb][re_off + 3],
+               r_im_ext[aa][symb][re_off + 3],
+               r_re_ext[aa][symb][re_off + 4],
+               r_im_ext[aa][symb][re_off + 4],
+               r_re_ext[aa][symb][re_off + 5],
+               r_im_ext[aa][symb][re_off + 5],
+               r_re_ext[aa][symb][re_off + 6],
+               r_im_ext[aa][symb][re_off + 6],
+               r_re_ext[aa][symb][re_off + 7],
+               r_im_ext[aa][symb][re_off + 7]);
         printf("prb %d: rd ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
                prb+1,
-               r_re_ext[aa][symb][re_off+8],r_im_ext[aa][symb][re_off+8],
-               r_re_ext[aa][symb][re_off+9],r_im_ext[aa][symb][re_off+9],
-               r_re_ext[aa][symb][re_off+10],r_im_ext[aa][symb][re_off+10],
-               r_re_ext[aa][symb][re_off+11],r_im_ext[aa][symb][re_off+11],
-               r_re_ext[aa][symb][re_off+12],r_im_ext[aa][symb][re_off+12],
-               r_re_ext[aa][symb][re_off+13],r_im_ext[aa][symb][re_off+13],
-               r_re_ext[aa][symb][re_off+14],r_im_ext[aa][symb][re_off+14],
-               r_re_ext[aa][symb][re_off+15],r_im_ext[aa][symb][re_off+15]);
-        printf("prb %d (%x): c ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
-               prb+1,s,
-               ((int16_t*)&c_re2)[0],((int16_t*)&c_im2)[0],
-               ((int16_t*)&c_re2)[1],((int16_t*)&c_im2)[1],
-               ((int16_t*)&c_re2)[2],((int16_t*)&c_im2)[2],
-               ((int16_t*)&c_re2)[3],((int16_t*)&c_im2)[3],
-               ((int16_t*)&c_re3)[0],((int16_t*)&c_im3)[0],
-               ((int16_t*)&c_re3)[1],((int16_t*)&c_im3)[1],
-               ((int16_t*)&c_re3)[2],((int16_t*)&c_im3)[2],
-               ((int16_t*)&c_re3)[3],((int16_t*)&c_im3)[3]
-               );
+               r_re_ext[aa][symb][re_off + 8],
+               r_im_ext[aa][symb][re_off + 8],
+               r_re_ext[aa][symb][re_off + 9],
+               r_im_ext[aa][symb][re_off + 9],
+               r_re_ext[aa][symb][re_off + 10],
+               r_im_ext[aa][symb][re_off + 10],
+               r_re_ext[aa][symb][re_off + 11],
+               r_im_ext[aa][symb][re_off + 11],
+               r_re_ext[aa][symb][re_off + 12],
+               r_im_ext[aa][symb][re_off + 12],
+               r_re_ext[aa][symb][re_off + 13],
+               r_im_ext[aa][symb][re_off + 13],
+               r_re_ext[aa][symb][re_off + 14],
+               r_im_ext[aa][symb][re_off + 14],
+               r_re_ext[aa][symb][re_off + 15],
+               r_im_ext[aa][symb][re_off + 15]);
 #endif
-
-        ((__m64*)&r_re_ext2[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[0],c_im0);
-        ((__m64*)&r_re_ext[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[0],c_re0);
-        ((__m64*)&r_im_ext2[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[0],c_re0);
-        ((__m64*)&r_im_ext[aa][symb][re_off])[0] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[0],c_im0);
-
-        ((__m64*)&r_re_ext2[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[1],c_im1);
-        ((__m64*)&r_re_ext[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[1],c_re1);
-        ((__m64*)&r_im_ext2[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[1],c_re1);
-        ((__m64*)&r_im_ext[aa][symb][re_off])[1] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[1],c_im1);
-
-        ((__m64*)&r_re_ext2[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[2],c_im2);
-        ((__m64*)&r_re_ext[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[2],c_re2);
-        ((__m64*)&r_im_ext2[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[2],c_re2);
-        ((__m64*)&r_im_ext[aa][symb][re_off])[2] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[2],c_im2);
-
-        ((__m64*)&r_re_ext2[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[3],c_im3);
-        ((__m64*)&r_re_ext[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_re_ext[aa][symb][re_off])[3],c_re3);
-        ((__m64*)&r_im_ext2[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[3],c_re3);
-        ((__m64*)&r_im_ext[aa][symb][re_off])[3] = _mm_mullo_pi16(((__m64*)&r_im_ext[aa][symb][re_off])[3],c_im3);
+        __m64 *r_re_ext_64 = (__m64 *)&r_re_ext[aa][symb][re_off];
+        __m64 *r_re_ext2_64 = (__m64 *)&r_re_ext2[aa][symb][re_off];
+        __m64 *r_im_ext_64 = (__m64 *)&r_im_ext[aa][symb][re_off];
+        __m64 *r_im_ext2_64 = (__m64 *)&r_im_ext2[aa][symb][re_off];
+        for (int z = 0; z < 4; z++) {
+          r_re_ext2_64[z] = _mm_mullo_pi16(r_re_ext_64[z], c_im[z]);
+          r_re_ext_64[z] = _mm_mullo_pi16(r_re_ext_64[z], c_re[z]);
+          r_im_ext2_64[z] = _mm_mullo_pi16(r_im_ext_64[z], c_re[z]);
+          r_im_ext_64[z] = _mm_mullo_pi16(r_im_ext_64[z], c_im[z]);
+        }
 
 #ifdef DEBUG_NR_PUCCH_RX
         printf("prb %d: r ((%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",
@@ -1446,7 +1436,7 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
                r_re_ext[aa][symb][re_off+15],r_im_ext[aa][symb][re_off+15]);
 #endif      
       }
-      s = lte_gold_generic(&x1, &x2, 0);
+      sGold = lte_gold_generic(&x1, &x2, 0);
 #ifdef DEBUG_NR_PUCCH_RX
       printf("\n");
 #endif
