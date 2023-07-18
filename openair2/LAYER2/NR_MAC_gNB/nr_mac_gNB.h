@@ -709,6 +709,11 @@ typedef bool (*nr_pp_impl_ul)(module_id_t mod_id,
                               frame_t frame,
                               sub_frame_t slot);
 
+typedef struct f1_config_t {
+  f1ap_setup_req_t *setup_req;
+  f1ap_setup_resp_t *setup_resp;
+} f1_config_t;
+
 /*! \brief top level eNB MAC structure */
 typedef struct gNB_MAC_INST_s {
   /// Ethernet parameters for northbound midhaul interface
@@ -816,7 +821,9 @@ typedef struct gNB_MAC_INST_s {
   uint8_t min_grant_prb;
   uint8_t min_grant_mcs;
   bool identity_pm;
+
   nr_mac_rrc_ul_if_t mac_rrc;
+  f1_config_t f1_config;
 
   int16_t frame;
   int16_t slot;

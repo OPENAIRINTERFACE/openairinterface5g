@@ -377,6 +377,10 @@ typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_setup_func_t bearer_context_mod;
 } cucp_cuup_if_t;
 
+typedef struct nr_rrc_du_container_t {
+  f1ap_setup_req_t *setup_req;
+} nr_rrc_du_container_t;
+
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -416,8 +420,6 @@ typedef struct gNB_RRC_INST_s {
   int srs_enable[MAX_NUM_CCs];
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
-  int cell_info_configured;
-  pthread_mutex_t cell_info_mutex;
 
   char *uecap_file;
 
@@ -426,6 +428,8 @@ typedef struct gNB_RRC_INST_s {
 
   nr_mac_rrc_dl_if_t mac_rrc;
   cucp_cuup_if_t cucp_cuup;
+
+  nr_rrc_du_container_t *du;
 
 } gNB_RRC_INST;
 

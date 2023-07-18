@@ -30,9 +30,37 @@
 #include "uper_decoder.h"
 #include "uper_encoder.h"
 
+static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t *plmn)
+{
+  return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
+}
+
 void f1_setup_response(const f1ap_setup_resp_t *resp)
 {
-  AssertFatal(false, "not implemented\n");
+  LOG_I(MAC, "received F1 Setup Response from CU %s\n", resp->gNB_CU_name);
+
+  if (resp->num_cells_to_activate == 0) {
+    LOG_W(NR_MAC, "no cell to activate: cell remains blocked\n");
+    return;
+  }
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+  const f1ap_setup_req_t *setup_req = mac->f1_config.setup_req;
+  const f1ap_served_cell_info_t *du_cell = &setup_req->cell[0].info;
+
+  AssertFatal(resp->num_cells_to_activate == 1, "can only handle one cell, but %d activated\n", resp->num_cells_to_activate);
+  const served_cells_to_activate_t *cu_cell = &resp->cells_to_activate[0];
+
+  AssertFatal(du_cell->nr_cellid  == cu_cell->nr_cellid, "CellID mismatch: DU %ld vs CU %ld\n", du_cell->nr_cellid, cu_cell->nr_cellid);
+  AssertFatal(check_plmn_identity(&du_cell->plmn, &cu_cell->plmn), "PLMN mismatch\n");
+  AssertFatal(du_cell->nr_pci == cu_cell->nrpci, "PCI mismatch: DU %d vs CU %d\n", du_cell->nr_pci, cu_cell->nrpci);
+
+  AssertFatal(cu_cell->num_SI == 0, "handling of CU-provided SIBs: not implemented\n");
+
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+
+  /* TODO: handling of pre-operational state? */
 }
 
 void f1_setup_failure(const f1ap_setup_failure_t *failure)

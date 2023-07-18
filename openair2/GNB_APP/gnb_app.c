@@ -160,12 +160,9 @@ void *gNB_app_task(void *args_p)
         LOG_E(F1AP, "Create task for F1AP DU failed\n");
         AssertFatal(1==0,"exiting");
       }
-      // configure F1AP here for F1C
-      LOG_I(GNB_APP,"ngran_gNB_DU: Allocating ITTI message for F1AP_SETUP_REQ\n");
-      msg_p = itti_alloc_new_message (TASK_GNB_APP, 0, F1AP_DU_REGISTER_REQ);
-      RCconfig_NR_DU_F1(msg_p, 0);
-
-      itti_send_msg_to_task (TASK_DU_F1, GNB_MODULE_ID_TO_INSTANCE(0), msg_p);
+    }
+    if (NODE_IS_DU(node_type) || NODE_IS_MONOLITHIC(node_type)) {
+      RC_config_trigger_F1Setup();
     }
   }
   do {
@@ -230,15 +227,9 @@ void *gNB_app_task(void *args_p)
       break;
 
     case F1AP_SETUP_RESP:
-      AssertFatal(NODE_IS_DU(node_type), "Should not have received F1AP_SETUP_RESP in CU/gNB\n");
-
-      LOG_I(GNB_APP, "Received %s: associated ngran_gNB_CU %s with %d cells to activate\n", ITTI_MSG_NAME (msg_p),
-      F1AP_SETUP_RESP(msg_p).gNB_CU_name,F1AP_SETUP_RESP(msg_p).num_cells_to_activate);
-      cell_to_activate = F1AP_SETUP_RESP(msg_p).num_cells_to_activate;
-      
-      gNB_app_handle_f1ap_setup_resp(&F1AP_SETUP_RESP(msg_p));
-
+      AssertFatal(false, "Should not received this, logic bug\n");
       break;
+
     case F1AP_GNB_CU_CONFIGURATION_UPDATE:
       AssertFatal(NODE_IS_DU(node_type), "Should not have received F1AP_GNB_CU_CONFIGURATION_UPDATE in CU/gNB\n");
 

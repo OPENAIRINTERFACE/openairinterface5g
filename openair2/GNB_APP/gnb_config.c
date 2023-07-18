@@ -1909,398 +1909,174 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
   return 0;
 }
 
-static f1ap_net_config_t read_DU_IP_config(const eth_params_t* f1_params)
+
+int RC_config_trigger_F1Setup()
 {
-  f1ap_net_config_t nc = {0};
-
-  nc.CU_f1_ip_address.ipv6 = 0;
-  nc.CU_f1_ip_address.ipv4 = 1;
-  strcpy(nc.CU_f1_ip_address.ipv4_address, f1_params->remote_addr);
-  nc.CUport = f1_params->remote_portd;
-  LOG_I(GNB_APP,
-        "FIAP: CU_ip4_address in DU %p, strlen %d\n",
-        nc.CU_f1_ip_address.ipv4_address,
-        (int)strlen(f1_params->remote_addr));
-
-  nc.DU_f1_ip_address.ipv6 = 0;
-  nc.DU_f1_ip_address.ipv4 = 1;
-  strcpy(nc.DU_f1_ip_address.ipv4_address, f1_params->my_addr);
-  nc.DUport = f1_params->my_portd;
-  LOG_I(GNB_APP,
-        "FIAP: DU_ip4_address in DU %p, strlen %ld\n",
-        nc.DU_f1_ip_address.ipv4_address,
-        strlen(f1_params->my_addr));
-
-  // sctp_in_streams/sctp_out_streams are given by SCTP layer
-  return nc;
-}
-
-int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
-  int k;
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
   config_get( GNBSParams,sizeof(GNBSParams)/sizeof(paramdef_t),NULL);
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
-  AssertFatal (i < num_gnbs,
-               "Failed to parse config file no %uth element in %s \n",i, GNB_CONFIG_STRING_ACTIVE_GNBS);
+  AssertFatal(num_gnbs == 1, "cannot configure DU: required config section \"gNBs\" missing\n");
 
-  if (num_gnbs > 0) {
-    // Output a list of all eNBs.
-    config_getlist( &GNBParamList,GNBParams,sizeof(GNBParams)/sizeof(paramdef_t),NULL);
-    AssertFatal(GNBParamList.paramarray[i][GNB_GNB_ID_IDX].uptr != NULL,
-                "gNB id %u is not defined in configuration file\n",i);
-    f1ap_setup_req_t *f1Setup = &F1AP_DU_REGISTER_REQ(msg_p).setup_req;
-    f1Setup->num_cells_available = 0;
+  // Output a list of all eNBs.
+  config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
+  AssertFatal(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr != NULL, "gNB id %u is not defined in configuration file\n", 0);
 
-    for (k=0; k <num_gnbs ; k++) {
-      if (strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[k], *(GNBParamList.paramarray[i][GNB_GNB_NAME_IDX].strptr)) == 0) {
-        char aprefix[MAX_OPTNAME_SIZE*2 + 8];
-        sprintf(aprefix,"%s.[%i]",GNB_CONFIG_STRING_GNB_LIST,k);
-        paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
-        paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
-        /* map parameter checking array instances to parameter definition array instances */
-        checkedparam_t config_check_PLMNParams [] = PLMNPARAMS_CHECK;
+  AssertFatal(strcmp(GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[0], *GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr) == 0,
+              "no active gNB found/mismatch of gNBs: %s vs %s\n",
+              GNBSParams[GNB_ACTIVE_GNBS_IDX].strlistptr[0],
+              *GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr);
 
-        for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
-          PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
+  char aprefix[MAX_OPTNAME_SIZE * 2 + 8];
+  sprintf(aprefix, "%s.[0]", GNB_CONFIG_STRING_GNB_LIST);
+  paramdef_t PLMNParams[] = GNBPLMNPARAMS_DESC;
+  paramlist_def_t PLMNParamList = {GNB_CONFIG_STRING_PLMN_LIST, NULL, 0};
+  /* map parameter checking array instances to parameter definition array instances */
+  checkedparam_t config_check_PLMNParams[] = PLMNPARAMS_CHECK;
 
-        config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams)/sizeof(paramdef_t), aprefix);
-        f1Setup->num_cells_available++;
-        f1Setup->gNB_DU_id = *(GNBParamList.paramarray[k][GNB_GNB_ID_IDX].uptr);
-        f1Setup->gNB_DU_name = strdup(*(GNBParamList.paramarray[k][GNB_GNB_NAME_IDX].strptr));
-        f1Setup->cell[k].info.tac = malloc(sizeof(*f1Setup->cell[k].info.tac));
-        AssertFatal(f1Setup->cell[k].info.tac != NULL, "out of memory\n");
-        *f1Setup->cell[k].info.tac = *GNBParamList.paramarray[k][GNB_TRACKING_AREA_CODE_IDX].uptr;
-        f1Setup->cell[k].info.plmn.mcc = *PLMNParamList.paramarray[k][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
-        f1Setup->cell[k].info.plmn.mnc = *PLMNParamList.paramarray[k][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
-        f1Setup->cell[k].info.plmn.mnc_digit_length = *PLMNParamList.paramarray[k][GNB_MNC_DIGIT_LENGTH].u8ptr;
-        AssertFatal((f1Setup->cell[k].info.plmn.mnc_digit_length == 2) ||
-                    (f1Setup->cell[k].info.plmn.mnc_digit_length == 3),
-                    "BAD MNC DIGIT LENGTH %d",
-                    f1Setup->cell[k].info.plmn.mnc_digit_length);
-        f1Setup->cell[k].info.nr_cellid = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-        LOG_I(GNB_APP,
-              "F1AP: gNB idx %d gNB_DU_id %ld, gNB_DU_name %s, TAC %d MCC/MNC/length %d/%d/%d cellID %ld\n",
-              k,
-              f1Setup->gNB_DU_id,
-              f1Setup->gNB_DU_name,
-              *f1Setup->cell[k].info.tac,
-              f1Setup->cell[k].info.plmn.mcc,
-              f1Setup->cell[k].info.plmn.mnc,
-              f1Setup->cell[k].info.plmn.mnc_digit_length,
-              f1Setup->cell[k].info.nr_cellid);
+  for (int I = 0; I < sizeof(PLMNParams) / sizeof(paramdef_t); ++I)
+    PLMNParams[I].chkPptr = &(config_check_PLMNParams[I]);
 
-        F1AP_DU_REGISTER_REQ(msg_p).net_config = read_DU_IP_config(&RC.nrmac[k]->eth_params_n);
+  config_getlist(&PLMNParamList, PLMNParams, sizeof(PLMNParams) / sizeof(paramdef_t), aprefix);
 
-        gNB_RRC_INST *rrc = RC.nrrrc[k];
-        // wait until RRC cell information is configured
-        int cell_info_configured = 0;
+  f1ap_setup_req_t *req = calloc(1, sizeof(*req));
+  req->num_cells_available = 1;
+  req->gNB_DU_id = *(GNBParamList.paramarray[0][GNB_GNB_ID_IDX].uptr);
+  req->gNB_DU_name = strdup(*(GNBParamList.paramarray[0][GNB_GNB_NAME_IDX].strptr));
+  req->cell[0].info.tac = malloc(sizeof(*req->cell[0].info.tac));
+  AssertFatal(req->cell[0].info.tac != NULL, "out of memory\n");
+  *req->cell[0].info.tac = *GNBParamList.paramarray[0][GNB_TRACKING_AREA_CODE_IDX].uptr;
+  req->cell[0].info.plmn.mcc = *PLMNParamList.paramarray[0][GNB_MOBILE_COUNTRY_CODE_IDX].uptr;
+  req->cell[0].info.plmn.mnc = *PLMNParamList.paramarray[0][GNB_MOBILE_NETWORK_CODE_IDX].uptr;
+  req->cell[0].info.plmn.mnc_digit_length = *PLMNParamList.paramarray[0][GNB_MNC_DIGIT_LENGTH].u8ptr;
+  AssertFatal((req->cell[0].info.plmn.mnc_digit_length == 2) || (req->cell[0].info.plmn.mnc_digit_length == 3),
+              "BAD MNC DIGIT LENGTH %d",
+              req->cell[0].info.plmn.mnc_digit_length);
+  req->cell[0].info.nr_cellid = (uint64_t) * (GNBParamList.paramarray[0][GNB_NRCELLID_IDX].u64ptr);
+  LOG_I(GNB_APP,
+        "F1AP: gNB idx %d gNB_DU_id %ld, gNB_DU_name %s, TAC %d MCC/MNC/length %d/%d/%d cellID %ld\n",
+        0,
+        req->gNB_DU_id,
+        req->gNB_DU_name,
+        *req->cell[0].info.tac,
+        req->cell[0].info.plmn.mcc,
+        req->cell[0].info.plmn.mnc,
+        req->cell[0].info.plmn.mnc_digit_length,
+        req->cell[0].info.nr_cellid);
 
-        do {
-          LOG_I(GNB_APP,"ngran_gNB_DU: Waiting for basic cell configuration\n");
-          usleep(100000);
-          pthread_mutex_lock(&rrc->cell_info_mutex);
-          cell_info_configured = rrc->cell_info_configured;
-          pthread_mutex_unlock(&rrc->cell_info_mutex);
-        } while (cell_info_configured == 0);
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  DevAssert(rrc);
+  // wait until RRC cell information is configured
+  const NR_ServingCellConfigCommon_t *scc = rrc->configuration.scc;
+  DevAssert(scc != NULL);
+  req->cell[0].info.nr_pci = *scc->physCellId;
+  LOG_W(GNB_APP, "no slices transported via F1 Setup Request!\n");
+  req->cell[0].info.num_ssi = 0;
 
-        rrc->configuration.mcc[0] = f1Setup->cell[k].info.plmn.mcc;
-        rrc->configuration.mnc[0] = f1Setup->cell[k].info.plmn.mnc;
-        rrc->configuration.tac    = *f1Setup->cell[k].info.tac;
-        rrc->nr_cellid = f1Setup->cell[k].info.nr_cellid;
-        const NR_ServingCellConfigCommon_t *scc = rrc->configuration.scc;
-        DevAssert(scc != NULL);
-        f1Setup->cell[k].info.nr_pci    = *scc->physCellId;
-        f1Setup->cell[k].info.num_ssi = 0;
-
-        if (scc->tdd_UL_DL_ConfigurationCommon) {
-          LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for TDD\n",k);
-          f1Setup->cell[k].info.mode = F1AP_MODE_TDD;
-          f1ap_tdd_info_t *tdd = &f1Setup->cell[k].info.tdd;
-          tdd->freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          tdd->tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          tdd->tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          tdd->freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-        } else {
-          LOG_I(GNB_APP,"ngran_DU: Configuring Cell %d for FDD\n",k);
-          f1Setup->cell[k].info.mode = F1AP_MODE_FDD;
-          f1ap_fdd_info_t *fdd = &f1Setup->cell[k].info.fdd;
-          fdd->dl_freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
-          fdd->ul_freqinfo.arfcn = *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA;
-          fdd->dl_tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          fdd->ul_tbw.scs = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-          fdd->dl_tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          fdd->ul_tbw.nrb = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
-          fdd->dl_freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-          fdd->ul_freqinfo.band = *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
-        }
-
-        f1Setup->cell[k].info.measurement_timing_information = "0";
-
-        DevAssert(rrc->carrier.mib != NULL);
-        int buf_len = 3; // this is what we assume in monolithic
-        f1Setup->cell[k].sys_info = calloc(1, sizeof(*f1Setup->cell[k].sys_info));
-        AssertFatal(f1Setup->cell[k].sys_info != NULL, "out of memory\n");
-        f1ap_gnb_du_system_info_t *sys_info = f1Setup->cell[k].sys_info;
-        sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
-        DevAssert(sys_info->mib != NULL);
-        sys_info->mib_length = encode_MIB_NR(rrc->carrier.mib, 0, sys_info->mib, buf_len);
-        DevAssert(sys_info->mib_length == buf_len);
-
-        NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-        asn_codec_ctx_t st={100*1000};
-        asn_dec_rval_t dec_rval = uper_decode_complete( &st,
-            &asn_DEF_NR_BCCH_DL_SCH_Message,
-            (void **)&bcch_message,
-            (const void *)rrc->carrier.SIB1,
-            rrc->carrier.sizeof_SIB1);
-
-        if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-          LOG_E(RRC,"SIB1 decode error\n");
-          // free the memory
-          SEQUENCE_free( &asn_DEF_NR_BCCH_DL_SCH_Message, bcch_message, 1 );
-          exit(1);
-        }
-       
-        NR_SIB1_t *bcch_SIB1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-        sys_info->sib1 = calloc(1,rrc->carrier.sizeof_SIB1);
-        asn_enc_rval_t enc_rval =
-            uper_encode_to_buffer(&asn_DEF_NR_SIB1, NULL, (void *)bcch_SIB1, sys_info->sib1, NR_MAX_SIB_LENGTH / 8);
-        AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
-            enc_rval.failed_type->name, enc_rval.encoded);
-
-        //if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
-          LOG_I(NR_RRC, "SIB1 container to be integrated in F1 Setup request:\n");
-          xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1 );
-        //}
-          sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
-          break;
-      }
-    }
+  if (scc->tdd_UL_DL_ConfigurationCommon) {
+    LOG_I(GNB_APP, "ngran_DU: Configuring Cell %d for TDD\n", 0);
+    req->cell[0].info.mode = F1AP_MODE_TDD;
+    f1ap_tdd_info_t *tdd = &req->cell[0].info.tdd;
+    tdd->freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+    tdd->tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    tdd->tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+    tdd->freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  } else {
+    LOG_I(GNB_APP, "ngran_DU: Configuring Cell %d for FDD\n", 0);
+    req->cell[0].info.mode = F1AP_MODE_FDD;
+    f1ap_fdd_info_t *fdd = &req->cell[0].info.fdd;
+    fdd->dl_freqinfo.arfcn = scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencyPointA;
+    fdd->ul_freqinfo.arfcn = *scc->uplinkConfigCommon->frequencyInfoUL->absoluteFrequencyPointA;
+    fdd->dl_tbw.scs = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    fdd->ul_tbw.scs = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
+    fdd->dl_tbw.nrb = scc->downlinkConfigCommon->frequencyInfoDL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+    fdd->ul_tbw.nrb = scc->uplinkConfigCommon->frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->carrierBandwidth;
+    fdd->dl_freqinfo.band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+    fdd->ul_freqinfo.band = *scc->uplinkConfigCommon->frequencyInfoUL->frequencyBandList->list.array[0];
   }
+
+  req->cell[0].info.measurement_timing_information = "0";
+
+  DevAssert(rrc->carrier.mib != NULL);
+  int buf_len = 3; // this is what we assume in monolithic
+  req->cell[0].sys_info = calloc(1, sizeof(*req->cell[0].sys_info));
+  AssertFatal(req->cell[0].sys_info != NULL, "out of memory\n");
+  f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
+  sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
+  DevAssert(sys_info->mib != NULL);
+  sys_info->mib_length = encode_MIB_NR(rrc->carrier.mib, 0, sys_info->mib, buf_len);
+  DevAssert(sys_info->mib_length == buf_len);
+
+  NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
+  asn_codec_ctx_t st = {100 * 1000};
+  asn_dec_rval_t dec_rval = uper_decode_complete(&st,
+                                                 &asn_DEF_NR_BCCH_DL_SCH_Message,
+                                                 (void **)&bcch_message,
+                                                 (const void *)rrc->carrier.SIB1,
+                                                 rrc->carrier.sizeof_SIB1);
+
+  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+    LOG_E(RRC, "SIB1 decode error\n");
+    // free the memory
+    SEQUENCE_free(&asn_DEF_NR_BCCH_DL_SCH_Message, bcch_message, 1);
+    exit(1);
+  }
+
+  NR_SIB1_t *bcch_SIB1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
+  sys_info->sib1 = calloc(1, rrc->carrier.sizeof_SIB1);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_SIB1, NULL, (void *)bcch_SIB1, sys_info->sib1, NR_MAX_SIB_LENGTH / 8);
+  AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
+
+  if (LOG_DEBUGFLAG(DEBUG_ASN1))
+    xer_fprint(stdout, &asn_DEF_NR_SIB1, (void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1);
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  mac->mac_rrc.f1_setup_request(req);
+  mac->f1_config.setup_req = req;
+
   return 0;
 }
 
-int du_check_plmn_identity(rrc_gNB_carrier_data_t *carrier,uint16_t mcc,uint16_t mnc,uint8_t mnc_digit_length) {
-  NR_SIB1_t *sib1 = carrier->siblock1->message.choice.c1->choice.systemInformationBlockType1;
-  AssertFatal(sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[0]->plmn_IdentityList.list.count > 0,
-              "plmn info isn't there\n");
-  AssertFatal(mnc_digit_length == 2 || mnc_digit_length == 3,
-              "impossible mnc_digit_length %d\n", mnc_digit_length);
-  NR_PLMN_Identity_t *plmn_Identity = sib1->cellAccessRelatedInfo.plmn_IdentityInfoList.list.array[0]
-                                            ->plmn_IdentityList.list.array[0];
-
-  // check if mcc is different and return failure if so
-  if (mcc !=
-      ((*plmn_Identity->mcc->list.array[0])*100)+
-      ((*plmn_Identity->mcc->list.array[1])*10) +
-      (*plmn_Identity->mcc->list.array[2])) {
-    LOG_E(GNB_APP, "mcc in F1AP_SETUP_RESP message is different from mcc in DU \n");
-    return(0);
-  }
-
-  // check that mnc digit length is different and return failure if so
-  if (mnc_digit_length != plmn_Identity->mnc.list.count) {
-    LOG_E(GNB_APP, "mnc(length: %d) in F1AP_SETUP_RESP message is different from mnc(length: %d) in DU \n",
-                    mnc_digit_length, plmn_Identity->mnc.list.count);
-    return 0;
-  }
-
-  // check that 2 digit mnc is different and return failure if so
-  if (mnc_digit_length == 2 &&
-      (mnc !=
-       (*plmn_Identity->mnc.list.array[0]*10) +
-       (*plmn_Identity->mnc.list.array[1]))) {
-    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld) in DU \n",
-                    mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1]);
-    return(0);
-  }
-  else if (mnc_digit_length == 3 &&
-           (mnc !=
-            (*plmn_Identity->mnc.list.array[0]*100) +
-            (*plmn_Identity->mnc.list.array[1]*10) +
-            (*plmn_Identity->mnc.list.array[2]))) {
-    LOG_E(GNB_APP, "mnc(%d) in F1AP_SETUP_RESP message is different from mnc(%ld%ld%ld) in DU \n",
-                    mnc, *plmn_Identity->mnc.list.array[0], *plmn_Identity->mnc.list.array[1], *plmn_Identity->mnc.list.array[2]);
-    return(0);
-  }
-
-  // if we're here, the mcc/mnc match so return success
-  return(1);
-}
-
-void du_extract_and_decode_SI(int inst, int si_ind, uint8_t *si_container, int si_container_length) {
-  gNB_RRC_INST *rrc = RC.nrrrc[inst];
-  rrc_gNB_carrier_data_t *carrier = &rrc->carrier;
-  NR_BCCH_DL_SCH_Message_t *bcch_message ;
-  AssertFatal(si_ind == 0, "Can only handle a single SI block for now\n");
-  LOG_I(GNB_APP, "rrc inst %d: Trying to decode SI block %d @ %p, length %d\n", inst, si_ind, si_container, si_container_length);
-  // point to first SI block
-  bcch_message = &carrier->systemInformation;
-  asn_dec_rval_t dec_rval = uper_decode_complete( NULL,
-                            &asn_DEF_NR_BCCH_DL_SCH_Message,
-                            (void **)&bcch_message,
-                            (const void *)si_container,
-                            si_container_length);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    AssertFatal(1==0, "[GNB_APP][NR_RRC inst %"PRIu8"] Failed to decode BCCH_DLSCH_MESSAGE (%zu bits)\n",
-                inst,
-                dec_rval.consumed );
-  }
-
-  if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
-    switch (bcch_message->message.choice.c1->present) {
-      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-        AssertFatal(1 == 0, "Should have received SIB1 from CU\n");
-        break;
-
-      case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformation:
-      {
-        NR_SystemInformation_t *si = bcch_message->message.choice.c1->choice.systemInformation;
-
-        if (si->criticalExtensions.present == NR_SystemInformation__criticalExtensions_PR_systemInformation) {
-          for (int i = 0; i < si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count; i++) {
-            LOG_I(GNB_APP, "Extracting SI %d/%d\n", i, si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.count);
-            SystemInformation_IEs__sib_TypeAndInfo__Member *typeAndInfo;
-            typeAndInfo = si->criticalExtensions.choice.systemInformation->sib_TypeAndInfo.list.array[i];
-
-            switch(typeAndInfo->present) {
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_NOTHING:
-                AssertFatal(0, "Should have received SIB2 SIB3 from CU\n");
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib2:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB2 in CU F1AP_SETUP_RESP message\n", inst);
-                carrier->sib2 = typeAndInfo->choice.sib2;
-                carrier->SIB23 = (uint8_t *)malloc(64);
-                memcpy((void *)carrier->SIB23, (void *)si_container, si_container_length);
-                carrier->sizeof_SIB23 = si_container_length;
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib3:
-                carrier->sib3 = typeAndInfo->choice.sib3;
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB3 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib4:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB4 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib5:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB5 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib6:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB6 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib7:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB7 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib8:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB8 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib9:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB9 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib10_v1610:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB10 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib11_v1610:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB11 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib12_v1610:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB12 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib13_v1610:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB13 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              case NR_SystemInformation_IEs__sib_TypeAndInfo__Member_PR_sib14_v1610:
-                LOG_I(GNB_APP, "[NR_RRC %"PRIu8"] Found SIB14 in CU F1AP_SETUP_RESP message\n", inst);
-                break;
-              default:
-                AssertFatal(1 == 0,"Shouldn't have received this SI %d\n", typeAndInfo->present);
-                break;
-            }
-          }
-        }
-
-        break;
-      }
-
-      case NR_BCCH_DL_SCH_MessageType__c1_PR_NOTHING:
-        AssertFatal(0, "Should have received SIB1 from CU\n");
-        break;
-    }
-  } else AssertFatal(1 == 0, "No SI messages\n");
-}
-
-int gNB_app_handle_f1ap_setup_resp(f1ap_setup_resp_t *resp) {
-  int i, j, si_ind;
-  int ret=0;
-  LOG_I(GNB_APP, "cells_to_activate %d, RRC instances %d\n",
-        resp->num_cells_to_activate, RC.nb_nr_inst);
-
-  for (j = 0; j < resp->num_cells_to_activate; j++) {
-    for (i = 0; i < RC.nb_nr_inst; i++) {
-      rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
-      // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
-      LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, resp->nr_cellid %lx\n",
-            j, i, RC.nrrrc[i]->nr_cellid, resp->cells_to_activate[j].nr_cellid);
-
-      if (RC.nrrrc[i]->nr_cellid == resp->cells_to_activate[j].nr_cellid
-          && (du_check_plmn_identity(carrier,
-                                     resp->cells_to_activate[j].plmn.mcc,
-                                     resp->cells_to_activate[j].plmn.mnc,
-                                     resp->cells_to_activate[j].plmn.mnc_digit_length)
-                  > 0
-              && resp->cells_to_activate[j].nrpci == carrier->physCellId)) {
-        // copy system information and decode it
-        for (si_ind=0; si_ind<resp->cells_to_activate[j].num_SI; si_ind++)  {
-
-          du_extract_and_decode_SI(i,
-                                   si_ind,
-                                   resp->cells_to_activate[j].SI_container[si_ind],
-                                   resp->cells_to_activate[j].SI_container_length[si_ind]);
-        }
-	ret++;
-      } else {
-        LOG_E(GNB_APP, "F1 Setup Response not matching\n");
-      }
-    }
-  }
-  return(ret);
+static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t *plmn)
+{
+  return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
 }
 
 int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_update_t *gnb_cu_cfg_update) {
-  int i, j, si_ind, ret=0;
+  int i, j, ret=0;
   LOG_I(GNB_APP, "cells_to_activate %d, RRC instances %d\n",
         gnb_cu_cfg_update->num_cells_to_activate, RC.nb_nr_inst);
 
+  AssertFatal(gnb_cu_cfg_update->num_cells_to_activate == 1, "only one cell supported at the moment\n");
+  AssertFatal(RC.nb_nr_inst == 1, "expected one instance\n");
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
   for (j = 0; j < gnb_cu_cfg_update->num_cells_to_activate; j++) {
     for (i = 0; i < RC.nb_nr_inst; i++) {
       rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
+      f1ap_setup_req_t *setup_req = RC.nrmac[i]->f1_config.setup_req;
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
-      LOG_I(GNB_APP, "Checking cell %d, rrc inst %d : rrc->nr_cellid %lx, gnb_cu_cfg_updatenr_cellid %lx\n",
-            j, i, RC.nrrrc[i]->nr_cellid, gnb_cu_cfg_update->cells_to_activate[j].nr_cellid);
 
       if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid
-          && (du_check_plmn_identity(carrier,
-                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mcc,
-                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mnc,
-                                     gnb_cu_cfg_update->cells_to_activate[j].plmn.mnc_digit_length)
-                  > 0
-              && gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId)) {
-         // copy system information and decode it
-         for (si_ind = 0; si_ind < gnb_cu_cfg_update->cells_to_activate[j].num_SI; si_ind++) {
-
-          du_extract_and_decode_SI(i,
-                                   si_ind,
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container[si_ind],
-                                   gnb_cu_cfg_update->cells_to_activate[j].SI_container_length[si_ind]);
-        }
-	ret++;
+          && check_plmn_identity(&setup_req->cell[0].info.plmn, &gnb_cu_cfg_update->cells_to_activate[j].plmn) > 0
+          && gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId) {
+        // copy system information and decode it
+        AssertFatal(gnb_cu_cfg_update->cells_to_activate[j].num_SI == 0,
+                    "gNB-CU Configuration Update: handling of additional SIs not implemend\n");
+        ret++;
+        mac->f1_config.setup_resp = malloc(sizeof(*mac->f1_config.setup_resp));
+        AssertFatal(mac->f1_config.setup_resp != NULL, "out of memory\n");
+        mac->f1_config.setup_resp->gNB_CU_name = gnb_cu_cfg_update->gNB_CU_name;
+        mac->f1_config.setup_resp->num_cells_to_activate = gnb_cu_cfg_update->num_cells_to_activate;
+        mac->f1_config.setup_resp->cells_to_activate[0] = gnb_cu_cfg_update->cells_to_activate[0];
       } else {
         LOG_E(GNB_APP, "GNB_CU_CONFIGURATION_UPDATE not matching\n");
       }
     }
   }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
   MessageDef *msg_ack_p = NULL;
   if (ret > 0) {
     // generate gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE

@@ -26,7 +26,42 @@
 
 static void f1_setup_request_direct(const f1ap_setup_req_t *req)
 {
-  AssertFatal(false, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_SETUP_REQ);
+  f1ap_setup_req_t *f1ap_msg = &F1AP_SETUP_REQ(msg);
+  f1ap_msg->gNB_DU_id = req->gNB_DU_id;
+  f1ap_msg->gNB_DU_name = strdup(req->gNB_DU_name);
+  f1ap_msg->num_cells_available = req->num_cells_available;
+  for (int n = 0; n < req->num_cells_available; ++n) {
+    f1ap_msg->cell[n].info = req->cell[n].info; // copy most fields
+    if (req->cell[n].info.tac) {
+      f1ap_msg->cell[n].info.tac = malloc(sizeof(*f1ap_msg->cell[n].info.tac));
+      AssertFatal(f1ap_msg->cell[n].info.tac != NULL, "out of memory\n");
+      *f1ap_msg->cell[n].info.tac = *req->cell[n].info.tac;
+    }
+    if (req->cell[n].info.measurement_timing_information)
+      f1ap_msg->cell[n].info.measurement_timing_information = strdup(req->cell[n].info.measurement_timing_information);
+
+    if (req->cell[n].sys_info) {
+      f1ap_gnb_du_system_info_t *orig_sys_info = req->cell[n].sys_info;
+      f1ap_gnb_du_system_info_t *copy_sys_info = calloc(1, sizeof(*copy_sys_info));
+      AssertFatal(copy_sys_info != NULL, "out of memory\n");
+      f1ap_msg->cell[n].sys_info = copy_sys_info;
+
+      copy_sys_info->mib = calloc(orig_sys_info->mib_length, sizeof(uint8_t));
+      AssertFatal(copy_sys_info->mib != NULL, "out of memory\n");
+      memcpy(copy_sys_info->mib, orig_sys_info->mib, orig_sys_info->mib_length);
+      copy_sys_info->mib_length = orig_sys_info->mib_length;
+
+      if (orig_sys_info->sib1_length > 0) {
+        copy_sys_info->sib1 = calloc(orig_sys_info->sib1_length, sizeof(uint8_t));
+        AssertFatal(copy_sys_info->sib1 != NULL, "out of memory\n");
+        memcpy(copy_sys_info->sib1, orig_sys_info->sib1, orig_sys_info->sib1_length);
+        copy_sys_info->sib1_length = orig_sys_info->sib1_length;
+      }
+    }
+  }
+
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
 static void ue_context_setup_response_direct(const f1ap_ue_context_setup_t *req, const f1ap_ue_context_setup_t *resp)
