@@ -2013,10 +2013,13 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
 
         DevAssert(rrc->carrier.mib != NULL);
         int buf_len = 3; // this is what we assume in monolithic
-        f1Setup->mib[k]                                        = calloc(buf_len, sizeof(*f1Setup->mib[k]));
-        DevAssert(f1Setup->mib[k] != NULL);
-        f1Setup->mib_length[k]                                 = encode_MIB_NR(rrc->carrier.mib, 0, f1Setup->mib[k], buf_len);
-        DevAssert(f1Setup->mib_length[k] == buf_len);
+        f1Setup->cell[k].sys_info = calloc(1, sizeof(*f1Setup->cell[k].sys_info));
+        AssertFatal(f1Setup->cell[k].sys_info != NULL, "out of memory\n");
+        f1ap_gnb_du_system_info_t *sys_info = f1Setup->cell[k].sys_info;
+        sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
+        DevAssert(sys_info->mib != NULL);
+        sys_info->mib_length = encode_MIB_NR(rrc->carrier.mib, 0, sys_info->mib, buf_len);
+        DevAssert(sys_info->mib_length == buf_len);
 
         NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
         asn_codec_ctx_t st={100*1000};
@@ -2034,12 +2037,9 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
         }
        
         NR_SIB1_t *bcch_SIB1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-        f1Setup->sib1[k] = calloc(1,rrc->carrier.sizeof_SIB1);
-        asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_SIB1,
-            NULL,
-            (void *)bcch_SIB1,
-            f1Setup->sib1[k],
-            NR_MAX_SIB_LENGTH/8);
+        sys_info->sib1 = calloc(1,rrc->carrier.sizeof_SIB1);
+        asn_enc_rval_t enc_rval =
+            uper_encode_to_buffer(&asn_DEF_NR_SIB1, NULL, (void *)bcch_SIB1, sys_info->sib1, NR_MAX_SIB_LENGTH / 8);
         AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
             enc_rval.failed_type->name, enc_rval.encoded);
 
@@ -2047,8 +2047,8 @@ int RCconfig_NR_DU_F1(MessageDef *msg_p, uint32_t i) {
           LOG_I(NR_RRC, "SIB1 container to be integrated in F1 Setup request:\n");
           xer_fprint(stdout, &asn_DEF_NR_SIB1,(void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1 );
         //}
-        f1Setup->sib1_length[k]                                = (enc_rval.encoded+7)/8;
-        break;
+          sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
+          break;
       }
     }
   }

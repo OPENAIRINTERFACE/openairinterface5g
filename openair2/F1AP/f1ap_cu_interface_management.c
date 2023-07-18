@@ -189,20 +189,17 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
 	
     struct F1AP_GNB_DU_System_Information * DUsi=served_cells_item->gNB_DU_System_Information;
     // System Information
+    req->cell[i].sys_info = calloc(1, sizeof(*req->cell[i].sys_info));
+    AssertFatal(req->cell[i].sys_info != NULL, "out of memory\n");
+    f1ap_gnb_du_system_info_t *sys_info = req->cell[i].sys_info;
     /* mib */
-    req->mib[i] = calloc(DUsi->mIB_message.size + 1, sizeof(char));
-    memcpy(req->mib[i], DUsi->mIB_message.buf, DUsi->mIB_message.size);
-    /* Convert the mme name to a printable string */
-    req->mib[i][DUsi->mIB_message.size] = '\0';
-    req->mib_length[i] = DUsi->mIB_message.size;
-    LOG_D(F1AP, "req->mib[%d] len = %d \n", i, req->mib_length[i]);
+    sys_info->mib = calloc(DUsi->mIB_message.size, sizeof(char));
+    memcpy(sys_info->mib, DUsi->mIB_message.buf, DUsi->mIB_message.size);
+    sys_info->mib_length = DUsi->mIB_message.size;
     /* sib1 */
-    req->sib1[i] = calloc(DUsi->sIB1_message.size + 1, sizeof(char));
-    memcpy(req->sib1[i], DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
-    /* Convert the mme name to a printable string */
-    req->sib1[i][DUsi->sIB1_message.size] = '\0';
-    req->sib1_length[i] = DUsi->sIB1_message.size;
-    LOG_D(F1AP, "req->sib1[%d] len = %d \n", i, req->sib1_length[i]);
+    sys_info->sib1 = calloc(DUsi->sIB1_message.size, sizeof(char));
+    memcpy(sys_info->sib1, DUsi->sIB1_message.buf, DUsi->sIB1_message.size);
+    sys_info->sib1_length = DUsi->sIB1_message.size;
   }
   
   // char *measurement_timing_information[F1AP_MAX_NB_CELLS];

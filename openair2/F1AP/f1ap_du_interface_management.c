@@ -281,12 +281,10 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
                          strlen(measurementTimingConfiguration));
     asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
     /* 4.1.2 gNB-DU System Information */
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                         (const char *)setup_req->mib[i], //f1ap_du_data->mib,
-                         setup_req->mib_length[i]);
-    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                         (const char *)setup_req->sib1[i],
-                         setup_req->sib1_length[i]);
+    AssertFatal(setup_req->cell[i].sys_info != NULL, "assume that sys_info is present, which is not the case\n");
+    const f1ap_gnb_du_system_info_t *sys_info = setup_req->cell[i].sys_info;
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message, (const char *)sys_info->mib, sys_info->mib_length);
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message, (const char *)sys_info->sib1, sys_info->sib1_length);
   }
 
   /* mandatory */

@@ -1873,13 +1873,15 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
 	//fixme: multi instance is not consistent here
 	F1AP_SETUP_RESP (msg_p).gNB_CU_name  = rrc->node_name;
         // check that CU rrc instance corresponds to mcc/mnc/cgi (normally cgi should be enough, but just in case)
-        LOG_W(NR_RRC, "instance %d sib1 length %d\n", i, f1_setup_req->sib1_length[i]);
+        const f1ap_gnb_du_system_info_t *sys_info = f1_setup_req->cell[i].sys_info;
+        AssertFatal(sys_info != NULL, "no system information found, should send F1 Setup Failure\n");
+        LOG_W(NR_RRC, "instance %d sib1 length %d\n", i, sys_info->sib1_length);
         AssertFatal(rrc->carrier.mib == NULL, "CU MIB is already initialized: double F1 setup request?\n");
         asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
-                                  &asn_DEF_NR_BCCH_BCH_Message,
-                                  (void **)&rrc->carrier.mib,
-                                  f1_setup_req->mib[i],
-                                  f1_setup_req->mib_length[i]);
+                                                       &asn_DEF_NR_BCCH_BCH_Message,
+                                                       (void **)&rrc->carrier.mib,
+                                                       sys_info->mib,
+                                                       sys_info->mib_length);
         AssertFatal(dec_rval.code == RC_OK,
                     "[gNB_CU %"PRIu8"] Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n",
                     j,
@@ -1888,8 +1890,8 @@ void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *f1_setup_req) {
         dec_rval = uper_decode_complete(NULL,
                                         &asn_DEF_NR_SIB1, //&asn_DEF_NR_BCCH_DL_SCH_Message,
                                         (void **)&rrc->carrier.siblock1_DU,
-                                        f1_setup_req->sib1[i],
-                                        f1_setup_req->sib1_length[i]);
+                                        sys_info->sib1,
+                                        sys_info->sib1_length);
         AssertFatal(dec_rval.code == RC_OK,
                     "[gNB_DU %"PRIu8"] Failed to decode NR_BCCH_DLSCH_MESSAGE (%zu bits)\n",
                     j,

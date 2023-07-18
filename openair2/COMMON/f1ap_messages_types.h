@@ -139,6 +139,13 @@ typedef struct f1ap_served_cell_info_t {
   char *measurement_timing_information;
 } f1ap_served_cell_info_t;
 
+typedef struct f1ap_gnb_du_system_info_t {
+  uint8_t *mib;
+  int mib_length;
+  uint8_t *sib1;
+  int sib1_length;
+} f1ap_gnb_du_system_info_t;
+
 typedef struct f1ap_setup_req_s {
 
   // F1_Setup_Req payload
@@ -149,16 +156,8 @@ typedef struct f1ap_setup_req_s {
   uint16_t num_cells_available; //0< num_cells_available <= 512;
   struct {
     f1ap_served_cell_info_t info;
+    f1ap_gnb_du_system_info_t *sys_info;
   } cell[F1AP_MAX_NB_CELLS];
-
-
-  // System Information
-  uint8_t *mib[F1AP_MAX_NB_CELLS];
-  int     mib_length[F1AP_MAX_NB_CELLS];
-  uint8_t *sib1[F1AP_MAX_NB_CELLS];
-  int     sib1_length[F1AP_MAX_NB_CELLS];
-
-
 } f1ap_setup_req_t;
 
 typedef struct f1ap_du_register_req_t {
