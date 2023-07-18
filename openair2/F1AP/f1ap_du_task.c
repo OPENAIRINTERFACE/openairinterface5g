@@ -78,7 +78,7 @@ void du_task_handle_sctp_association_resp(instance_t instance, sctp_new_associat
   }
 
   // save the assoc id
-  f1ap_setup_req_t *f1ap_du_data=f1ap_req(false, instance);
+  f1ap_setup_req_t *f1ap_du_data = &getCxt(instance)->setupReq;
   f1ap_du_data->assoc_id         = sctp_new_association_resp->assoc_id;
   f1ap_du_data->sctp_in_streams  = sctp_new_association_resp->in_streams;
   f1ap_du_data->sctp_out_streams = sctp_new_association_resp->out_streams;
@@ -114,7 +114,7 @@ void *F1AP_DU_task(void *arg) {
         // 2. store the message in f1ap context, that is also stored in RC
         // 2. send a sctp_association req
         f1ap_setup_req_t *msgSetup = &F1AP_SETUP_REQ(msg);
-        createF1inst(false, myInstance, msgSetup);
+        createF1inst(myInstance, msgSetup);
         du_task_send_sctp_association_req(myInstance, msgSetup);
       } break;
 

@@ -150,7 +150,7 @@ int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
       // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
-      drb_p->up_ul_tnl[0].port=getCxt(false,instance)->setupReq.CUport;
+      drb_p->up_ul_tnl[0].port = getCxt(instance)->setupReq.CUport;
 
       switch (drbs_tobesetup_item_p->rLCMode) {
         case F1AP_RLCMode_rlc_am:
@@ -332,8 +332,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
-            &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
             &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
@@ -459,7 +458,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
       F1AP_SCell_FailedtoSetup_Item_t *sCell_FailedtoSetup_item=
         &sCell_FailedtoSetup_item_ies->value.choice.SCell_FailedtoSetup_Item;
       /* sCell_ID */
-      addnRCGI(sCell_FailedtoSetup_item->sCell_ID,f1ap_req(false, instance)->cell+i);
+      addnRCGI(sCell_FailedtoSetup_item->sCell_ID, getCxt(instance)->setupReq.cell+i);
       /* cause */
       asn1cCalloc(sCell_FailedtoSetup_item->cause, tmp);
       // dummy value
@@ -544,7 +543,7 @@ int DU_send_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, f1ap_ue_context_setup
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -619,7 +618,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -766,7 +765,7 @@ int DU_send_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, f1ap_ue_context_rel
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -849,7 +848,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&ul_up_tnl0->transportLayerAddress, drb_p->up_ul_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&ul_up_tnl0->gTP_TEID, drb_p->up_ul_tnl[0].teid);
        // 3GPP assumes GTP-U is on port 2152, but OAI is configurable
-      drb_p->up_ul_tnl[0].port=getCxt(false,instance)->setupReq.CUport;
+      drb_p->up_ul_tnl[0].port = getCxt(instance)->setupReq.CUport;
 
       extern instance_t DUuniqInstance;
       if (DUuniqInstance == 0) {
@@ -861,16 +860,15 @@ int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t asso
                  (drb_p->up_ul_tnl[0].tl_address >> 8) & 0xff,
                  (drb_p->up_ul_tnl[0].tl_address >> 16) & 0xff,
                  (drb_p->up_ul_tnl[0].tl_address >> 24) & 0xff);
-        getCxt(DUtype, instance)->gtpInst=du_create_gtpu_instance_to_cu(
-                                            gtp_tunnel_ip_address,
-                                            getCxt(false,instance)->setupReq.CUport,
-                                            getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
-                                            getCxt(false,instance)->setupReq.DUport);
-        AssertFatal(getCxt(DUtype, instance)->gtpInst>0,"Failed to create CU F1-U UDP listener");
+        getCxt(instance)->gtpInst = du_create_gtpu_instance_to_cu(gtp_tunnel_ip_address,
+                                                                  getCxt(instance)->setupReq.CUport,
+                                                                  getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address,
+                                                                  getCxt(instance)->setupReq.DUport);
+        AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
         // Fixme: fully inconsistent instances management
         // dirty global var is a bad fix
         extern instance_t legacyInstanceMapping;
-        legacyInstanceMapping = DUuniqInstance = getCxt(DUtype, instance)->gtpInst;
+        legacyInstanceMapping = DUuniqInstance = getCxt(instance)->gtpInst;
       }
 
       switch (drbs_tobesetupmod_item_p->rLCMode) {
@@ -1026,7 +1024,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         transport_layer_addr_t tl_addr = {0};
         memcpy(tl_addr.buffer, &drb->up_ul_tnl[0].tl_address, sizeof(drb->up_ul_tnl[0].tl_address));
         tl_addr.length = sizeof(drb->up_ul_tnl[0].tl_address) * 8;
-        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(false, instance)->gtpInst,
+        drb->up_dl_tnl[j].teid = newGtpuCreateTunnel(getCxt(instance)->gtpInst,
                                                      resp->gNB_DU_ue_id,
                                                      drb->drb_id,
                                                      drb->drb_id,
@@ -1045,8 +1043,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel,gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
-          &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr,
           &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
@@ -1084,8 +1081,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
         asn1cCalloc(dLUPTNLInformation_ToBeSetup_Item->dLUPTNLInformation.choice.gTPTunnel, gTPTunnel);
         /* transportLayerAddress */
         struct sockaddr_in addr= {0};
-        inet_pton(AF_INET, getCxt(false,instance)->setupReq.DU_f1_ip_address.ipv4_address,
-          &addr.sin_addr.s_addr);
+        inet_pton(AF_INET, getCxt(instance)->setupReq.DU_f1_ip_address.ipv4_address, &addr.sin_addr.s_addr);
         TRANSPORT_LAYER_ADDRESS_IPv4_TO_BIT_STRING(addr.sin_addr.s_addr, &gTPTunnel->transportLayerAddress);
         /* gTP_TEID */
         INT32_TO_OCTET_STRING(resp->drbs_to_be_modified[i].up_dl_tnl[j].teid, &gTPTunnel->gTP_TEID);
@@ -1160,7 +1156,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
       /* 8.1 SCell_ToBeSetup_Item */
       F1AP_SCell_FailedtoSetupMod_Item_t *scell_failedtoSetupMod_item=&scell_failedtoSetupMod_item_ies->value.choice.SCell_FailedtoSetupMod_Item;
       /* - sCell_ID */
-      addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &f1ap_req(false, instance)->cell[i]);
+      addnRCGI(scell_failedtoSetupMod_item->sCell_ID, &getCxt(instance)->setupReq.cell[i]);
       asn1cCalloc(scell_failedtoSetupMod_item->cause, tmp);
       tmp->present = F1AP_Cause_PR_radioNetwork;
       tmp->choice.radioNetwork = F1AP_CauseRadioNetwork_unknown_or_already_allocated_gnb_du_ue_f1ap_id;
@@ -1269,7 +1265,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, f1ap_ue_contex
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -1393,7 +1389,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, f1ap_ue_contex
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(false, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 

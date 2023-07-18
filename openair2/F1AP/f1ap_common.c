@@ -32,8 +32,7 @@
 
 #include "f1ap_common.h"
 
-static f1ap_cudu_inst_t *f1_du_inst[NUMBER_OF_gNB_MAX]= {0};
-static f1ap_cudu_inst_t *f1_cu_inst[NUMBER_OF_gNB_MAX]= {0};
+static f1ap_cudu_inst_t *f1_inst[NUMBER_OF_gNB_MAX]= {0};
 
 uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_mod_idP)
 {
@@ -44,32 +43,16 @@ uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_m
   return transaction_identifier[mod_idP+cu_mod_idP];
 }
 
-f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP) {
-  //Fixme: 4G F1 has race condtions, someone may debug it, using this test
-  /*
-    static pid_t t=-1;
-    pid_t tNew=gettid();
-    AssertFatal ( t==-1 || t==tNew, "This is not thread safe\n");
-    t=tNew;
-  */
-  AssertFatal( instanceP < sizeofArray(f1_cu_inst), "");
-  return isCU == CUtype ? f1_cu_inst[ instanceP]:  f1_du_inst[ instanceP];
+f1ap_cudu_inst_t *getCxt(instance_t instanceP)
+{
+  DevAssert(instanceP == 0);
+  return f1_inst[instanceP];
 }
 
-void createF1inst(F1_t isCU, instance_t instanceP, f1ap_setup_req_t *req) {
-  if (isCU == CUtype) {
-    AssertFatal(f1_cu_inst[instanceP] == NULL, "Double call to F1 CU init\n");
-    f1_cu_inst[instanceP]=( f1ap_cudu_inst_t *) calloc(1, sizeof( f1ap_cudu_inst_t));
-    //memcpy(f1_cu_inst[instanceP]->setupReq, req, sizeof(f1ap_setup_req_t) );
-  } else {
-    AssertFatal(f1_du_inst[instanceP] == NULL, "Double call to F1 DU init\n");
-    f1_du_inst[instanceP]=( f1ap_cudu_inst_t *) calloc(1,  sizeof(f1ap_cudu_inst_t));
-    memcpy(&f1_du_inst[instanceP]->setupReq, req, sizeof(f1ap_setup_req_t) );
-  }
-}
-
-
-int f1ap_assoc_id(F1_t isCu, instance_t instanceP) {
-  f1ap_setup_req_t *f1_inst=f1ap_req(isCu, instanceP);
-  return f1_inst->assoc_id;
+void createF1inst(instance_t instanceP, f1ap_setup_req_t *req)
+{
+  AssertFatal(f1_inst[instanceP] == NULL, "Double call to F1 DU init\n");
+  f1_inst[instanceP] = (f1ap_cudu_inst_t *)calloc(1, sizeof(f1ap_cudu_inst_t));
+  if (req)
+    memcpy(&f1_inst[instanceP]->setupReq, req, sizeof(f1ap_setup_req_t));
 }

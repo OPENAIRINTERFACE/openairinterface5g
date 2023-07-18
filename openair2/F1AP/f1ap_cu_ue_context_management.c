@@ -509,7 +509,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /*Use a dummy teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU*/
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU */
         transport_layer_addr_t addr = { .length= 32, .buffer= { 0 } };
-        f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
+        f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(instance)->gtpInst,
                                                                                                f1ap_ue_context_setup_req->gNB_CU_ue_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
@@ -628,7 +628,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   //   return -1;
   // }
   LOG_D(F1AP,"F1AP UEContextSetupRequest Encoded %u bits\n", len);
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -692,7 +692,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
       F1AP_GTPTunnel_t *dl_up_tnl0 = dl_up_tnl_info_p->dLUPTNLInformation.choice.gTPTunnel;
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_tnl0->transportLayerAddress, drb_p->up_dl_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&dl_up_tnl0->gTP_TEID, drb_p->up_dl_tnl[0].teid);
-      GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(CUtype, instance)->gtpInst,
+      GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(instance)->gtpInst,
                                              f1ap_ue_context_setup_resp->gNB_DU_ue_id,
                                              (ebi_t)drbs_setup_item_p->dRBID,
                                              drb_p->up_dl_tnl[0].tl_address,
@@ -916,7 +916,7 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
     return -1;
   }
 
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
@@ -1562,7 +1562,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE CONTEXT_MODIFICATION REQUEST\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -1628,7 +1628,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
         F1AP_GTPTunnel_t *dl_up_tnl0 = dl_up_tnl_info_p->dLUPTNLInformation.choice.gTPTunnel;
         BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_tnl0->transportLayerAddress, drb_p->up_dl_tnl[0].tl_address);
         OCTET_STRING_TO_UINT32(&dl_up_tnl0->gTP_TEID, drb_p->up_dl_tnl[0].teid);
-        GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(CUtype, instance)->gtpInst,
+        GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(instance)->gtpInst,
                      f1ap_ue_context_modification_resp->gNB_CU_ue_id,
                      (ebi_t)drbs_setupmod_item_p->dRBID,
                      drb_p->up_dl_tnl[0].tl_address,
@@ -1892,7 +1892,7 @@ int CU_send_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, f1ap_ue_context
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Confirm\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
 
@@ -1959,6 +1959,6 @@ int CU_send_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, f1ap_ue_context_
     LOG_E(F1AP, "Failed to encode F1 UE Context Modification Refuse\n");
     return -1;
   }
-  f1ap_itti_send_sctp_data_req(true, instance, buffer, len);
+  f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }

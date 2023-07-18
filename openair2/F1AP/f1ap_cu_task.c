@@ -50,20 +50,20 @@ static instance_t cu_task_create_gtpu_instance(eth_params_t *IPaddrs) {
 
 static void cu_task_handle_sctp_association_ind(instance_t instance, sctp_new_association_ind_t *sctp_new_association_ind,
     eth_params_t *IPaddrs) {
-  createF1inst(true, instance, NULL);
+  createF1inst(instance, NULL);
   // save the assoc id
-  f1ap_setup_req_t *f1ap_cu_data=f1ap_req(true, instance);
+  f1ap_setup_req_t *f1ap_cu_data = &getCxt(instance)->setupReq;
   f1ap_cu_data->assoc_id         = sctp_new_association_ind->assoc_id;
   f1ap_cu_data->sctp_in_streams  = sctp_new_association_ind->in_streams;
   f1ap_cu_data->sctp_out_streams = sctp_new_association_ind->out_streams;
   if (RC.nrrrc[instance]->node_type != ngran_gNB_CUCP) {
-    getCxt(CUtype, instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
-    AssertFatal(getCxt(CUtype, instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
+    getCxt(instance)->gtpInst = cu_task_create_gtpu_instance(IPaddrs);
+    AssertFatal(getCxt(instance)->gtpInst > 0, "Failed to create CU F1-U UDP listener");
   } else
     LOG_I(F1AP, "In F1AP connection, don't start GTP-U, as we have also E1AP\n");
   // Fixme: fully inconsistent instances management
   // dirty global var is a bad fix
-  CUuniqInstance=getCxt(CUtype, instance)->gtpInst;
+  CUuniqInstance=getCxt(instance)->gtpInst;
 }
 
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
