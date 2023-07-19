@@ -26,12 +26,20 @@
 
 static void f1_setup_response_f1ap(const f1ap_setup_resp_t *resp)
 {
-  AssertFatal(false, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_RESP);
+  f1ap_setup_resp_t *f1ap_msg = &F1AP_SETUP_RESP(msg);
+  *f1ap_msg = *resp;
+  if (resp->gNB_CU_name != NULL)
+    f1ap_msg->gNB_CU_name = strdup(resp->gNB_CU_name);
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
 static void f1_setup_failure_f1ap(const f1ap_setup_failure_t *fail)
 {
-  AssertFatal(false, "not implemented\n");
+  MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_SETUP_FAILURE);
+  f1ap_setup_failure_t *f1ap_msg = &F1AP_SETUP_FAILURE(msg);
+  *f1ap_msg = *fail;
+  itti_send_msg_to_task(TASK_CU_F1, 0, msg);
 }
 
 static void ue_context_setup_request_f1ap(const f1ap_ue_context_setup_t *req)
