@@ -947,6 +947,8 @@ static NR_ServingCellConfig_t *get_scd_config(void)
   return scd;
 }
 
+// temporary minRXTXTIME, to be taken out once all radio config is read at DU
+static int minRXTXTIME = 6;
 void RCconfig_nr_macrlc() {
   int j = 0;
   uint16_t prbbl[275] = {0};
@@ -983,10 +985,13 @@ void RCconfig_nr_macrlc() {
     MacRLC_Params[i].chkPptr = &(config_check_MacRLCParams[i]);
   config_getlist(&MacRLC_ParamList, MacRLC_Params, sizeof(MacRLC_Params) / sizeof(paramdef_t), NULL);
 
+  NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
+  //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
+
   if (MacRLC_ParamList.numelt > 0) {
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt;
     ngran_node_t node_type = get_node_type();
-    mac_top_init_gNB(node_type);
+    mac_top_init_gNB(node_type, scc);
     RC.nb_nr_mac_CC = (int *)malloc(RC.nb_nr_macrlc_inst * sizeof(int));
 
     for (j = 0; j < RC.nb_nr_macrlc_inst; j++) {
@@ -1256,10 +1261,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
-  int minRXTXTIME = 6;
-  NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
-  //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
-
   NR_ServingCellConfig_t *scd = get_scd_config();
 
   ////////// Physical parameters
@@ -1399,7 +1400,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
         nrrrc_config.do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
         nrrrc_config.force_256qam_off = *GNBParamList.paramarray[i][GNB_FORCE256QAMOFF_IDX].iptr;
         LOG_I(GNB_APP, "256 QAM: %s\n", nrrrc_config.force_256qam_off ? "force off" : "may be on");
-        nrrrc_config.scc = scc;
         nrrrc_config.scd = scd;
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
@@ -1966,8 +1966,7 @@ int RC_config_trigger_F1Setup()
 
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   DevAssert(rrc);
-  // wait until RRC cell information is configured
-  const NR_ServingCellConfigCommon_t *scc = rrc->configuration.scc;
+  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
   DevAssert(scc != NULL);
   req->cell[0].info.nr_pci = *scc->physCellId;
   LOG_W(GNB_APP, "no slices transported via F1 Setup Request!\n");
@@ -2074,11 +2073,10 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
   NR_SCHED_LOCK(&mac->sched_lock);
   for (j = 0; j < gnb_cu_cfg_update->num_cells_to_activate; j++) {
     for (i = 0; i < RC.nb_nr_inst; i++) {
-      rrc_gNB_carrier_data_t *carrier =  &RC.nrrrc[i]->carrier;
       f1ap_setup_req_t *setup_req = RC.nrmac[i]->f1_config.setup_req;
       // identify local index of cell j by nr_cellid, plmn identity and physical cell ID
 
-      if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid
+      if (setup_req->cell[0].info.nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid
           && check_plmn_identity(&setup_req->cell[0].info.plmn, &gnb_cu_cfg_update->cells_to_activate[j].plmn) > 0
           && setup_req->cell[0].info.nr_pci == gnb_cu_cfg_update->cells_to_activate[j].nrpci) {
         // copy system information and decode it

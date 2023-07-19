@@ -119,7 +119,6 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
 {
   AssertFatal(!get_softmodem_params()->sa, "%s() cannot be called in SA mode, it is intrinsically for NSA\n", __func__);
   // generate nr-Config-r15 containers for LTE RRC : inside message for X2 EN-DC (CG-Config Message from 38.331)
-  rrc_gNB_carrier_data_t *carrier=&rrc->carrier;
   const gNB_RrcConfigurationReq *configuration = &rrc->configuration;
   MessageDef *msg;
   msg = itti_alloc_new_message(TASK_RRC_ENB, 0, X2AP_ENDC_SGNB_ADDITION_REQ_ACK);
@@ -243,7 +242,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   }
 
   NR_ServingCellConfig_t *scc = UE->spCellConfig ? UE->spCellConfig->spCellConfigDedicated : NULL;
-  UE->secondaryCellGroup = get_default_secondaryCellGroup(carrier->servingcellconfigcommon,
+  // The MAC has the ServingCellConfigCommon; the below code is incorrect: the
+  // CU should send a UE Context Setup Request to request the creating of the
+  // MAC Context
+  NR_ServingCellConfigCommon_t *sccc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+  UE->secondaryCellGroup = get_default_secondaryCellGroup(sccc,
                                                           scc,
                                                           UE->UE_Capability_nr,
                                                           1,
@@ -253,7 +256,7 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
   AssertFatal(UE->secondaryCellGroup != NULL, "out of memory\n");
   xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, UE->secondaryCellGroup);
 
-  fill_default_reconfig(carrier->servingcellconfigcommon, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.rrc_ue_id);
+  fill_default_reconfig(sccc, scc, reconfig_ies, UE->secondaryCellGroup, UE->UE_Capability_nr, configuration, ue_context_p->ue_context.rrc_ue_id);
   UE->rnti = UE->secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity;
   NR_CG_Config_t *CG_Config = calloc(1,sizeof(*CG_Config));
   memset((void *)CG_Config,0,sizeof(*CG_Config));

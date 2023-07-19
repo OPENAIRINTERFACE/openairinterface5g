@@ -689,9 +689,8 @@ int16_t do_RRCReconfiguration(
     NR_MeasConfig_t              *meas_config,
     struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
     rrc_gNB_ue_context_t         *const ue_context_pP,
-    rrc_gNB_carrier_data_t       *carrier,
     const gNB_RrcConfigurationReq *configuration,
-    NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
+    const NR_ServingCellConfigCommon_t *scc,
     NR_CellGroupConfig_t         *cellGroupConfig)
 //------------------------------------------------------------------------------
 {
@@ -742,7 +741,17 @@ int16_t do_RRCReconfiguration(
     }
 
     if(cellGroupConfig!=NULL){
-      update_cellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.rrc_ue_id, ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL, configuration);
+      /* TODO UECAP: update_cellGroupConfig should not even be here, it is
+       * updated by DU */
+      if (scc != NULL) {
+        update_cellGroupConfig(cellGroupConfig,
+                               ue_context_pP->ue_context.rrc_ue_id,
+                               ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL,
+                               configuration,
+                               scc);
+      } else {
+        LOG_W(RRC, "no scc, cannot update cellGroup\n");
+      }
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                        NULL,
@@ -1064,7 +1073,7 @@ int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
                           size_t buffer_size,
                           const uint8_t Transaction_id,
                           uint16_t pci,
-                          NR_ServingCellConfigCommon_t *scc)
+                          NR_ARFCN_ValueNR_t absoluteFrequencySSB)
 {
   asn_enc_rval_t enc_rval;
   NR_DL_DCCH_Message_t dl_dcch_msg = {0};
@@ -1081,15 +1090,14 @@ int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
   rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
   rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1, sizeof(NR_RRCReestablishment_IEs_t));
 
-  uint32_t nr_arfcn_dl = (uint64_t)*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB;
-  LOG_I(NR_RRC, "Reestablishment update key pci=%d, earfcn_dl=%u\n", pci, nr_arfcn_dl);
+  LOG_I(NR_RRC, "Reestablishment update key pci=%d, earfcn_dl=%lu\n", pci, absoluteFrequencySSB);
 
   // 3GPP TS 33.501 Section 6.11 Security handling for RRC connection re-establishment procedure
   if (ue_context_pP->ue_context.nh_ncc >= 0) {
-    nr_derive_key_ng_ran_star(pci, nr_arfcn_dl, ue_context_pP->ue_context.nh, ue_context_pP->ue_context.kgnb);
+    nr_derive_key_ng_ran_star(pci, absoluteFrequencySSB, ue_context_pP->ue_context.nh, ue_context_pP->ue_context.kgnb);
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount = ue_context_pP->ue_context.nh_ncc;
   } else { // first HO
-    nr_derive_key_ng_ran_star(pci, nr_arfcn_dl, ue_context_pP->ue_context.kgnb, ue_context_pP->ue_context.kgnb);
+    nr_derive_key_ng_ran_star(pci, absoluteFrequencySSB, ue_context_pP->ue_context.kgnb, ue_context_pP->ue_context.kgnb);
     // LG: really 1
     rrcReestablishment->criticalExtensions.choice.rrcReestablishment->nextHopChainingCount = 0;
   }
@@ -1144,15 +1152,8 @@ int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t r
   return((enc_rval.encoded+7)/8);
 }
 
-NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
+NR_MeasConfig_t *get_defaultMeasConfig(int arfcn, int band, int scs)
 {
-  const NR_FrequencyInfoDL_t *freqInfoDL = conf->scc->downlinkConfigCommon->frequencyInfoDL;
-  const NR_ARFCN_ValueNR_t absFreqSSB = *freqInfoDL->absoluteFrequencySSB;
-  DevAssert(freqInfoDL->scs_SpecificCarrierList.list.count == 1);
-  const NR_SubcarrierSpacing_t scs = freqInfoDL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing;
-  DevAssert(freqInfoDL->frequencyBandList.list.count == 1);
-  const NR_FreqBandIndicatorNR_t band = *freqInfoDL->frequencyBandList.list.array[0];
-
   NR_MeasConfig_t *mc = calloc(1, sizeof(*mc));
   mc->measObjectToAddModList = calloc(1, sizeof(*mc->measObjectToAddModList));
   mc->reportConfigToAddModList = calloc(1, sizeof(*mc->reportConfigToAddModList));
@@ -1163,7 +1164,7 @@ NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf)
   mo1->measObjectId = 1;
   mo1->measObject.present = NR_MeasObjectToAddMod__measObject_PR_measObjectNR;
   NR_MeasObjectNR_t *monr1 = calloc(1, sizeof(*monr1));
-  asn1cCallocOne(monr1->ssbFrequency, absFreqSSB);
+  asn1cCallocOne(monr1->ssbFrequency, arfcn);
   asn1cCallocOne(monr1->ssbSubcarrierSpacing, scs);
   monr1->referenceSignalConfig.ssb_ConfigMobility = calloc(1, sizeof(*monr1->referenceSignalConfig.ssb_ConfigMobility));
   monr1->referenceSignalConfig.ssb_ConfigMobility->deriveSSB_IndexFromCell = true;

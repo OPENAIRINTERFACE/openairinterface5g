@@ -205,10 +205,12 @@ static void mac_rrc_init(gNB_MAC_INST *mac, ngran_node_t node_type)
   }
 }
 
-void mac_top_init_gNB(ngran_node_t node_type)
+void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc)
 {
   module_id_t     i;
   gNB_MAC_INST    *nrmac;
+
+  AssertFatal(RC.nb_nr_macrlc_inst == 1, "what is the point of calling %s() if you don't need exactly one MAC?\n", __func__);
 
   LOG_I(MAC, "[MAIN] Init function start:nb_nr_macrlc_inst=%d\n",RC.nb_nr_macrlc_inst);
 
@@ -238,6 +240,8 @@ void mac_top_init_gNB(ngran_node_t node_type)
       memset((void*)RC.nrmac[i]->tag,0,sizeof(NR_TAG_t));
         
       RC.nrmac[i]->ul_handle = 0;
+
+      RC.nrmac[i]->common_channels[0].ServingCellConfigCommon = scc;
 
       RC.nrmac[i]->first_MIB = true;
 

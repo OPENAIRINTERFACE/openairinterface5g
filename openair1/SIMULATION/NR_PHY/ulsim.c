@@ -613,17 +613,17 @@ int main(int argc, char *argv[])
   r_re = malloc(n_rx*sizeof(double*));
   r_im = malloc(n_rx*sizeof(double*));
 
-  RC.nb_nr_macrlc_inst = 1;
-  RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
-  for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
-    RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB(ngran_gNB);
-
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));;
   prepare_scc(scc);
   uint64_t ssb_bitmap;
   fill_scc_sim(scc, &ssb_bitmap, N_RB_DL, N_RB_DL, mu, mu);
   fix_scc(scc,ssb_bitmap);
+
+  RC.nb_nr_macrlc_inst = 1;
+  RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
+  for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
+    RC.nb_nr_mac_CC[i] = 1;
+  mac_top_init_gNB(ngran_gNB, scc);
 
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   prepare_scd(scd);
@@ -651,7 +651,7 @@ int main(int argc, char *argv[])
 
   gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
   // common configuration
-  nr_mac_config_scc(RC.nrmac[0], conf.pdsch_AntennaPorts, n_tx, 0, 6, scc);
+  nr_mac_config_scc(RC.nrmac[0], conf.pdsch_AntennaPorts, n_tx, 0, 6);
   nr_mac_config_mib(RC.nrmac[0], mib);
   // UE dedicated configuration
   nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);

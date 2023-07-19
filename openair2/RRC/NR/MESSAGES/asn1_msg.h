@@ -99,23 +99,21 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 int do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size, uint8_t Transaction_id);
 
-int16_t do_RRCReconfiguration(
-    const protocol_ctxt_t        *const ctxt_pP,
-    uint8_t                      *buffer,
-    size_t                        buffer_size,
-    uint8_t                       Transaction_id,
-    NR_SRB_ToAddModList_t        *SRB_configList,
-    NR_DRB_ToAddModList_t        *DRB_configList,
-    NR_DRB_ToReleaseList_t       *DRB_releaseList,
-    NR_SecurityConfig_t          *security_config,
-    NR_SDAP_Config_t             *sdap_config,
-    NR_MeasConfig_t              *meas_config,
-    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
-    rrc_gNB_ue_context_t         *const ue_context_pP,
-    rrc_gNB_carrier_data_t       *carrier,
-    const gNB_RrcConfigurationReq *configuration,
-    NR_MAC_CellGroupConfig_t     *mac_CellGroupConfig,
-    NR_CellGroupConfig_t         *cellGroupConfig);
+int16_t do_RRCReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+                              uint8_t *buffer,
+                              size_t buffer_size,
+                              uint8_t Transaction_id,
+                              NR_SRB_ToAddModList_t *SRB_configList,
+                              NR_DRB_ToAddModList_t *DRB_configList,
+                              NR_DRB_ToReleaseList_t *DRB_releaseList,
+                              NR_SecurityConfig_t *security_config,
+                              NR_SDAP_Config_t *sdap_config,
+                              NR_MeasConfig_t *meas_config,
+                              struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
+                              rrc_gNB_ue_context_t *const ue_context_pP,
+                              const gNB_RrcConfigurationReq *configuration,
+                              const NR_ServingCellConfigCommon_t *scc,
+                              NR_CellGroupConfig_t *cellGroupConfig);
 
 uint8_t do_RRCSetupComplete(uint8_t Mod_id,
                             uint8_t *buffer,
@@ -156,11 +154,11 @@ int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
                           size_t buffer_size,
                           const uint8_t Transaction_id,
                           uint16_t pci,
-                          NR_ServingCellConfigCommon_t *scc);
+                          NR_ARFCN_ValueNR_t absoluteFrequencySSB);
 
 int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_TransactionIdentifier);
 
-NR_MeasConfig_t *get_defaultMeasConfig(const gNB_RrcConfigurationReq *conf);
+NR_MeasConfig_t *get_defaultMeasConfig(int absFreqSSB, int band, int scs);
 uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi);
 
 #endif  /* __RRC_NR_MESSAGES_ASN1_MSG__H__ */

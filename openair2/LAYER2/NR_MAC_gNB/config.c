@@ -471,13 +471,14 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
                        rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                        int pusch_AntennaPorts,
                        int sib1_tda,
-                       int minRXTXTIMEpdsch,
-                       NR_ServingCellConfigCommon_t *scc)
+                       int minRXTXTIMEpdsch)
 {
+  int CC_id = 0;
   DevAssert(nrmac != NULL);
-  AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon == NULL, "logic error: multiple configurations of SCC\n");
+  AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon != NULL, "logic error: SCC not in MAC\n");
   NR_SCHED_LOCK(&nrmac->sched_lock);
 
+  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   DevAssert(scc != NULL);
   AssertFatal(scc->ssb_PositionsInBurst->present > 0 && scc->ssb_PositionsInBurst->present < 4,
               "SSB Bitmap type %d is not valid\n",

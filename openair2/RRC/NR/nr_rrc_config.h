@@ -53,7 +53,7 @@ int encode_MIB_NR(NR_BCCH_BCH_Message_t *mib, int frame, uint8_t *buf, int buf_s
 
 
 #define NR_MAX_SIB_LENGTH 2976 // 3GPP TS 38.331 section 5.2.1
-NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configuration);
+NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configuration, const NR_ServingCellConfigCommon_t *scc);
 void free_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1);
 int encode_SIB1_NR(NR_BCCH_DL_SCH_Message_t *sib1, uint8_t *buffer, int max_buffer_size);
 
@@ -64,7 +64,8 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
                             NR_UE_NR_Capability_t *uecap,
-                            const gNB_RrcConfigurationReq *configuration);
+                            const gNB_RrcConfigurationReq *configuration,
+                            const NR_ServingCellConfigCommon_t *scc);
 void free_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig);
 int encode_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig, uint8_t *buffer, int max_buffer_size);
 NR_CellGroupConfig_t *decode_cellGroupConfig(const uint8_t *buffer, int max_buffer_size);

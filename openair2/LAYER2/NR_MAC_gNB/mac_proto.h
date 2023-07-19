@@ -38,7 +38,7 @@
 
 void set_cset_offset(uint16_t);
 
-void mac_top_init_gNB(ngran_node_t node_type);
+void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc);
 
 int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
                                           rnti_t rnti,
@@ -49,8 +49,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
                        rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
                        int pusch_AntennaPorts,
                        int sib1_tda,
-                       int minRXTXTIMEpdsch,
-                       NR_ServingCellConfigCommon_t *scc);
+                       int minRXTXTIMEpdsch);
 void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib);
 void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1);
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);

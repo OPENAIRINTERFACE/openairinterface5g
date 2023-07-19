@@ -338,7 +338,6 @@ typedef struct {
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
   NR_BCCH_DL_SCH_Message_t                  *siblock1;
-  NR_ServingCellConfigCommon_t              *servingcellconfigcommon;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
 
 } rrc_gNB_carrier_data_t;
