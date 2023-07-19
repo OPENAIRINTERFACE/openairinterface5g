@@ -453,7 +453,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
     }
 
     if (get_softmodem_params()->sl_mode) {
-      configure_NR_SL_Preconfig();
+      configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);
     }
   }
   else{

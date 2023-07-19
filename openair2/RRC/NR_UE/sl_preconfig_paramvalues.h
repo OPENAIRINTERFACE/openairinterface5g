@@ -89,15 +89,6 @@
 
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*             Params to fill Sidelink PRECONFIG                                                                                                     */
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-#define SL_PRECONFIG_DESC(x,y) {\
-{SL_CONFIG_STRING_SL_BWP_NUM_RX_POOLS,NULL,0,.uptr=&x,.defintval=0,TYPE_UINT,0},\
-{SL_CONFIG_STRING_SL_BWP_NUM_RX_POOLS,NULL,0,.uptr=&y,.defintval=0,TYPE_UINT,0}}
-
-
-
-/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink Frequency common Cell Config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define SL_FCCPARAMS_DESC(sl_fcc) { \
@@ -123,7 +114,7 @@
 /*             Sidelink Sync config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define SL_SYNCPARAMS_DESC(sl_syncconfig) { \
-{SL_CONFIG_STRING_SL_NUMSSB_WITHINPERIOD_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_NumSSB_WithinPeriod_r16,.defint64val=8,TYPE_INT64,0}, \
+{SL_CONFIG_STRING_SL_NUMSSB_WITHINPERIOD_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_NumSSB_WithinPeriod_r16,.defint64val=1,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_SL_TIMEOFFSET_SSB_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeOffsetSSB_r16,.defint64val=8,TYPE_INT64,0},\
 {SL_CONFIG_STRING_SL_TIMEINTERVAL_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeInterval_r16,.defint64val=60,TYPE_INT64,0}}
 
@@ -133,7 +124,7 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 #define SL_BWPPARAMS_DESC(sl_bwp) { \
 {SL_CONFIG_STRING_SL_BWP_START_AND_SIZE,NULL,0,.i64ptr=&sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->locationAndBandwidth,.defint64val=28875,TYPE_INT64,0}, \
-{SL_CONFIG_STRING_SL_BWP_NUM_SYMBOLS,NULL,0,.i64ptr=sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16,.defint64val=14,TYPE_INT64,0}, \
+{SL_CONFIG_STRING_SL_BWP_NUM_SYMBOLS,NULL,0,.i64ptr=sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16,.defint64val=7,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_SL_BWP_START_SYMBOL,NULL,0,.i64ptr=sl_bwp->sl_BWP_Generic_r16->sl_StartSymbol_r16,.defint64val=0,TYPE_INT64,0}}
 
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/

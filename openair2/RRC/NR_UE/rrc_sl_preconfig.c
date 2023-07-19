@@ -55,10 +55,6 @@ static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig) {
   sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_NumSSB_WithinPeriod_r16 = calloc(1, sizeof(long));
   sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeOffsetSSB_r16 = calloc(1, sizeof(long));
   sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeInterval_r16 = calloc(1, sizeof(long));
-  *sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_NumSSB_WithinPeriod_r16 = NR_SL_SSB_TimeAllocation_r16__sl_NumSSB_WithinPeriod_r16_n2;
-  *sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeOffsetSSB_r16 = 8;
-  *sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeInterval_r16 = 120;
-
   sl_syncconfig->sl_SSB_TimeAllocation2_r16 = NULL;
   sl_syncconfig->sl_SSB_TimeAllocation3_r16 = NULL;
 
@@ -74,11 +70,20 @@ static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig) {
   // Syncconfig is used when UE is synced to GNSS if set, else if UE is synced to eNB/gNB
   sl_syncconfig->gnss_Sync_r16 = calloc(1, sizeof(long));
   *sl_syncconfig->gnss_Sync_r16 = 0; // GNSS
+
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  paramdef_t SL_SYNCCFGPARAMS[] = SL_SYNCPARAMS_DESC(sl_syncconfig);
+  paramlist_def_t SL_SYNCFGParamList = {SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, NULL, 0};
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+  config_getlist(&SL_SYNCFGParamList, NULL, 0, aprefix);
+  LOG_I(RRC, "NUM SL-SYNCCFG elem in cfg file:%d\n", SL_SYNCFGParamList.numelt);
+  sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, 0);
+  config_get(SL_SYNCCFGPARAMS,sizeof(SL_SYNCCFGPARAMS)/sizeof(paramdef_t),aprefix);
 }
 
 static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
                                        uint16_t is_txpool,
-                                       uint16_t is_sl_syncsource) {
+                                       uint16_t is_sl_syncsource) { LOG_I(MAC, "HERE5");
 
   // PSCCH configuration
   sl_res_pool->sl_PSCCH_Config_r16 = calloc(1, sizeof(*sl_res_pool->sl_PSCCH_Config_r16));
@@ -86,11 +91,9 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
   sl_res_pool->sl_PSCCH_Config_r16->choice.setup = calloc(1, sizeof(NR_SL_PSCCH_Config_r16_t));
   // Indicates number of symbols for PSCCH in a resource pool
   sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_TimeResourcePSCCH_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_TimeResourcePSCCH_r16 = NR_SL_PSCCH_Config_r16__sl_TimeResourcePSCCH_r16_n3;
 
   // Indicates number of PRBs for PSCCH in a resource pool
   sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_FreqResourcePSCCH_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_FreqResourcePSCCH_r16 = NR_SL_PSCCH_Config_r16__sl_FreqResourcePSCCH_r16_n25;
 
   // Inititation during PSCCH DMRS Sequence generation
   sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_DMRS_ScrambleID_r16 = calloc(1, sizeof(long));
@@ -131,17 +134,14 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
 
   //Min freq domain resources used for resource sensing. Size of Subchannels
   sl_res_pool->sl_SubchannelSize_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_SubchannelSize_r16 = NR_SL_ResourcePool_r16__sl_SubchannelSize_r16_n50;
 
   sl_res_pool->dummy = NULL;
 
   // lowest RB index of lowest subch in this resource pool
   sl_res_pool->sl_StartRB_Subchannel_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_StartRB_Subchannel_r16 = 0; // STARTs from RB0
 
   //number of subchannels in this res pool. contiguous PRBs
   sl_res_pool->sl_NumSubchannel_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_NumSubchannel_r16 = 1;
 
 
   // 64QAM table is default. in case other MCS tables needs tobe used.
@@ -158,7 +158,6 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
 
   //number of contiguous PRBS in this res pool.
   sl_res_pool->sl_RB_Number_r16 = calloc(1, sizeof(long));
-  *sl_res_pool->sl_RB_Number_r16 = 50;
 
   sl_res_pool->sl_PreemptionEnable_r16 = NULL;
   sl_res_pool->sl_PriorityThreshold_UL_URLLC_r16 = NULL;
@@ -187,6 +186,14 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
   // mask out unused bits
   sl_res_pool->ext1->sl_TimeResource_r16->buf[sl_res_pool->ext1->sl_TimeResource_r16->size - 1] &= (0 - (1 << (sl_res_pool->ext1->sl_TimeResource_r16->bits_unused)));
 
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  paramdef_t SL_POOLPARAMS[] = SL_RESPOOLPARAMS_DESC(sl_res_pool);
+  if (is_txpool)
+    sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_TX_RPOOL_LIST, 0);
+  else
+    sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_RX_RPOOL_LIST, 0);
+
+  config_get(SL_POOLPARAMS,sizeof(SL_POOLPARAMS)/sizeof(paramdef_t),aprefix);
 }
 
 static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
@@ -199,17 +206,11 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
   // if Cyclicprefix is NULL, then default value Normal cyclic prefix is configured. else EXT CP. 
   sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->cyclicPrefix = NULL;
 
-  //30Khz and 40Mhz - 106 RBs
-  sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->locationAndBandwidth = 28875;
-  sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->subcarrierSpacing = NR_SubcarrierSpacing_kHz30;
-
-  sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16 = calloc(1, sizeof(long));
   // Value can be between symbols 7 to 14
-  *sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16 = NR_SL_BWP_Generic_r16__sl_LengthSymbols_r16_sym14;
+  sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16 = calloc(1, sizeof(long));
 
-  sl_bwp->sl_BWP_Generic_r16->sl_StartSymbol_r16 = calloc(1, sizeof(long));
   // Value can be between symbols 0 to 7
-  *sl_bwp->sl_BWP_Generic_r16->sl_StartSymbol_r16 = NR_SL_BWP_Generic_r16__sl_StartSymbol_r16_sym0;
+  sl_bwp->sl_BWP_Generic_r16->sl_StartSymbol_r16 = calloc(1, sizeof(long));
 
   sl_bwp->sl_BWP_Generic_r16->sl_PSBCH_Config_r16 = calloc(1,sizeof(NR_SL_PSBCH_Config_r16_t));
   // PSBCH CONFIG contains PO and alpha for PSBCH powercontrol.
@@ -217,10 +218,24 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
 
   sl_bwp->sl_BWP_Generic_r16->sl_TxDirectCurrentLocation_r16 = NULL;
 
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  paramdef_t SL_BWPPARAMS[] = SL_BWPPARAMS_DESC(sl_bwp);
+  paramlist_def_t SL_BWPParamList = {SL_CONFIG_STRING_SL_BWP_LIST, NULL, 0};
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+  config_getlist(&SL_BWPParamList, NULL, 0, aprefix);
+  LOG_I(RRC, "NUM SL-BWP elem in cfg file:%d\n", SL_BWPParamList.numelt);
+  sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0, SL_CONFIG_STRING_SL_BWP_LIST, 0);
+  config_get( SL_BWPPARAMS,sizeof(SL_BWPPARAMS)/sizeof(paramdef_t),aprefix);
+
   sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(NR_SL_BWP_PoolConfigCommon_r16_t));
 
-  if (num_rx_pools) {
-    AssertFatal(num_rx_pools >= 1, "Currently supports only 1 RX pool\n");
+  paramlist_def_t SL_RxPoolParamList = {SL_CONFIG_STRING_SL_RX_RPOOL_LIST, NULL, 0};
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+  config_getlist(&SL_RxPoolParamList, NULL, 0, aprefix);
+  LOG_I(RRC, "NUM Rx RPOOLs in cfg file:%d\n", SL_RxPoolParamList.numelt);
+  AssertFatal(SL_RxPoolParamList.numelt <= 1 && num_rx_pools <= 1, "Only Max 1 RX Respool Supported now\n");
+
+  if (num_rx_pools || SL_RxPoolParamList.numelt) {
     // Receiving resource pool.
     NR_SL_ResourcePool_r16_t *respool = calloc(1, sizeof(*respool));
     sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16));
@@ -230,16 +245,22 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
   } else 
     sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = NULL;
 
-  if (num_tx_pools) {
-    AssertFatal(num_tx_pools >= 1, "Currently supports only 1 TX pool\n");
+  paramlist_def_t SL_TxPoolParamList = {SL_CONFIG_STRING_SL_TX_RPOOL_LIST, NULL, 0};
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
+  config_getlist(&SL_TxPoolParamList, NULL, 0, aprefix);
+  LOG_I(RRC, "NUM Tx RPOOL in cfg file:%d\n", SL_TxPoolParamList.numelt);
+  AssertFatal(SL_TxPoolParamList.numelt <= 1 && num_tx_pools <= 1, "Only Max 1 TX Respool Supported now\n");
+
+  if (num_tx_pools || SL_TxPoolParamList.numelt) {
     //resource pool(s) to transmit NR SL 
     NR_SL_ResourcePoolConfig_r16_t *respoolcfg = calloc(1, sizeof(*respoolcfg));
-    sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16));
+    sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 =
+                  calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16));
     ASN_SEQUENCE_ADD(&sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list, respoolcfg);
-    sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePoolID_r16 = 1;
+    sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePoolID_r16 = 0;
     sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16 = calloc(1, sizeof(NR_SL_ResourcePool_r16_t));
     // Fill tx resource pool
-    prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16, num_tx_pools, sl_syncsource);
+    prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16, 1, sl_syncsource);
   } else 
     sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 = NULL;
 
@@ -254,19 +275,15 @@ static void prepare_NR_SL_FreqConfigCommon(NR_SL_FreqConfigCommon_r16_t *sl_fcfg
   // Sub carrier spacing used on this frequency configured.
   NR_SCS_SpecificCarrier_t *scs_specific = calloc(1, sizeof(*scs_specific));
   ASN_SEQUENCE_ADD(&sl_fcfg->sl_SCS_SpecificCarrierList_r16.list, scs_specific);
-  sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[0]->offsetToCarrier = 0;
-  sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing = NR_SubcarrierSpacing_kHz30;
-  sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[0]->carrierBandwidth = 106; //40Mhz
 
   // NR bands for Sidelink n47, n38. 
   // N47band - 5855Mhz - 5925Mhz
-  sl_fcfg->sl_AbsoluteFrequencyPointA_r16 = 792000; //freq 5880Mhz
+  //sl_fcfg->sl_AbsoluteFrequencyPointA_r16 = 792000; //freq 5880Mhz
 
   //SL SSB chosen to be located from RB10 to RB21. points to the middle of the SSB block.
   //SSB location should be within Sidelink BWP
   //792000 + 10*12*2 + 66*2. channel raster is 15Khz for band47
   sl_fcfg->sl_AbsoluteFrequencySSB_r16 = calloc(1, sizeof(NR_ARFCN_ValueNR_t));
-  *sl_fcfg->sl_AbsoluteFrequencySSB_r16 =  792372; 
 
   //NR SL transmission with a 7.5 Khz shift to the LTE raster. if absent, freq shift is disabled.
   //Required if carrier freq configured for NR SL shared by LTE SL
@@ -274,6 +291,15 @@ static void prepare_NR_SL_FreqConfigCommon(NR_SL_FreqConfigCommon_r16_t *sl_fcfg
 
   //NR SL transmission with valueN*5Khz shift to LTE raster.
   sl_fcfg->valueN_r16 = 0;
+
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  paramdef_t SL_FCCPARAMS[] = SL_FCCPARAMS_DESC(sl_fcfg);
+  paramlist_def_t SL_FCCParamList = {SL_CONFIG_STRING_SL_FCC_LIST, NULL, 0};
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
+  config_getlist(&SL_FCCParamList, NULL, 0, aprefix);
+  LOG_I(RRC, "NUM SL-FCC elem in cfg file:%d\n", SL_FCCParamList.numelt);
+  sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0, SL_CONFIG_STRING_SL_FCC_LIST, 0);
+  config_get( SL_FCCPARAMS,sizeof(SL_FCCPARAMS)/sizeof(paramdef_t),aprefix);
 
   // Sidelink BWP configuration. 
   // In REL16, 17 SUPPORTS only 1 SIDELINK Bandwidth part
@@ -347,14 +373,21 @@ NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_p
   //For the UE with sync reference as another UE, TDD ULDL config is determined from SL-MIB
   sl_preconfig->sl_PreconfigGeneral_r16 = calloc(1, sizeof(NR_SL_PreconfigGeneral_r16_t));
   sl_preconfig->sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16 = calloc(1, sizeof(NR_TDD_UL_DL_ConfigCommon_t));
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_ul_dl_cfg = sl_preconfig->sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16;
-  tdd_ul_dl_cfg->pattern1.dl_UL_TransmissionPeriodicity = NR_TDD_UL_DL_Pattern__dl_UL_TransmissionPeriodicity_ms2p5;
-  tdd_ul_dl_cfg->pattern1.nrofDownlinkSlots = 7;
-  tdd_ul_dl_cfg->pattern1.nrofDownlinkSymbols = 10;
-  tdd_ul_dl_cfg->pattern1.nrofUplinkSlots = 2;
-  tdd_ul_dl_cfg->pattern1.nrofUplinkSymbols = 4;
-  tdd_ul_dl_cfg->pattern1.ext1 = NULL;
-  tdd_ul_dl_cfg->pattern2 = NULL;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_uldl_cfg = sl_preconfig->sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16;
+  tdd_uldl_cfg->pattern1.ext1 = NULL;
+  tdd_uldl_cfg->pattern2 = NULL;
+
+  char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+  sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
+  paramdef_t SLTDDCFG_PARAMS[] = SL_TDDCONFIGPARAMS_DESC(tdd_uldl_cfg);
+  config_get(SLTDDCFG_PARAMS,sizeof(SLTDDCFG_PARAMS)/sizeof(paramdef_t),aprefix);
+
+  NR_SL_FreqConfigCommon_r16_t *fcc =  sl_preconfig->sl_PreconfigFreqInfoList_r16->list.array[0];
+  tdd_uldl_cfg->referenceSubcarrierSpacing =
+                          fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
+  NR_SL_BWP_ConfigCommon_r16_t *sl_bwp = fcc->sl_BWP_List_r16->list.array[0];
+  sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->subcarrierSpacing =
+                          fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
 
   // Configurations used for UE autonomous resource selection
   sl_preconfig->sl_UE_SelectedPreConfig_r16 = NULL;
@@ -372,354 +405,33 @@ NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_p
   return sl_preconfiguration;
 }
 
-static void get_NR_SL_Preconfig_params(NR_SL_PreconfigurationNR_r16_t *sl_preconfig) {
 
-    char aprefix[MAX_OPTNAME_SIZE*2 + 8];
+int configure_NR_SL_Preconfig(int sync_source) {
 
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
+  NR_SL_PreconfigurationNR_r16_t *sl_preconfig = NULL;
+  int num_txpools = 0, num_rxpools = 0;
 
-    NR_TDD_UL_DL_ConfigCommon_t *sl_tdd_uldl_cfg =
-            sl_preconfig->sidelinkPreconfigNR_r16.sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16;
-    paramdef_t SLTDDCFG_PARAMS[] = SL_TDDCONFIGPARAMS_DESC(sl_tdd_uldl_cfg);
-    config_get(SLTDDCFG_PARAMS,sizeof(SLTDDCFG_PARAMS)/sizeof(paramdef_t),aprefix);
+  if (sync_source) {
+    //SL-Preconfiguration with 1 txpool, 0 rxpool if UE is a syncsource
+    num_txpools = 1;
+    sl_preconfig = prepare_NR_SL_PRECONFIGURATION(num_txpools,num_rxpools,sync_source);
 
-    NR_SL_FreqConfigCommon_r16_t *sl_fcc = sl_preconfig->sidelinkPreconfigNR_r16.sl_PreconfigFreqInfoList_r16->list.array[0];
-    paramdef_t SL_FCCPARAMS[] = SL_FCCPARAMS_DESC(sl_fcc);
-    paramlist_def_t SL_FCCParamList = {SL_CONFIG_STRING_SL_FCC_LIST, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0);
-    config_getlist(&SL_FCCParamList, NULL, 0, aprefix);
-    LOG_I(RRC, "NUM SL-FCC elem in cfg file:%d\n", SL_FCCParamList.numelt);
-    if (SL_FCCParamList.numelt > 0) {
-      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION,0, SL_CONFIG_STRING_SL_FCC_LIST, 0);
-      config_get( SL_FCCPARAMS,sizeof(SL_FCCPARAMS)/sizeof(paramdef_t),aprefix);
+    if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+      xer_fprint(stdout, &asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
     }
-
-    NR_SL_BWP_ConfigCommon_r16_t *sl_bwp = sl_fcc->sl_BWP_List_r16->list.array[0];
-    paramdef_t SL_BWPPARAMS[] = SL_BWPPARAMS_DESC(sl_bwp);
-    paramlist_def_t SL_BWPParamList = {SL_CONFIG_STRING_SL_BWP_LIST, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-    config_getlist(&SL_BWPParamList, NULL, 0, aprefix);
-    LOG_I(RRC, "NUM SL-BWP elem in cfg file:%d\n", SL_BWPParamList.numelt);
-    if (SL_BWPParamList.numelt > 0) {
-      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0, SL_CONFIG_STRING_SL_BWP_LIST, 0);
-      config_get( SL_BWPPARAMS,sizeof(SL_BWPPARAMS)/sizeof(paramdef_t),aprefix);
-    }
-
-    sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->subcarrierSpacing =
-                          sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
-    sl_tdd_uldl_cfg->referenceSubcarrierSpacing =
-                          sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing;
-
-    NR_SL_SyncConfig_r16_t *sl_synccfg = sl_fcc->sl_SyncConfigList_r16->list.array[0];
-    paramdef_t SL_SYNCCFGPARAMS[] = SL_SYNCPARAMS_DESC(sl_synccfg);
-    paramlist_def_t SL_SYNCFGParamList = {SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-    config_getlist(&SL_SYNCFGParamList, NULL, 0, aprefix);
-    LOG_I(RRC, "NUM SL-SYNCCFG elem in cfg file:%d\n", SL_SYNCFGParamList.numelt);
-    if (SL_SYNCFGParamList.numelt > 0) {
-      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_SYNCCONFIG_LIST, 0);
-      config_get(SL_SYNCCFGPARAMS,sizeof(SL_SYNCCFGPARAMS)/sizeof(paramdef_t),aprefix);
-    }
-
-    paramlist_def_t SL_RxPoolParamList = {SL_CONFIG_STRING_SL_RX_RPOOL_LIST, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-    config_getlist(&SL_RxPoolParamList, NULL, 0, aprefix);
-    LOG_I(RRC, "NUM Rx RPOOLs in cfg file:%d\n", SL_RxPoolParamList.numelt);
-    AssertFatal(SL_RxPoolParamList.numelt <= 1, "Only Max 1 RX Respool Supported now\n");
-
-    if (SL_RxPoolParamList.numelt > 0) {
-
-      NR_SL_ResourcePool_r16_t *rxpool = NULL;
-
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16 == NULL)
-        sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16));
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 == NULL)
-        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16));
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.count == 0) {
-        rxpool = calloc(1, sizeof(NR_SL_ResourcePool_r16_t));
-        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16));
-        ASN_SEQUENCE_ADD(&sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list, rxpool);
-        // Fill RX resource pool
-        prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.array[0], 0, 0);
-      }
-
-      rxpool = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.array[0];
-      paramdef_t SL_RXPOOLPARAMS[] = SL_RESPOOLPARAMS_DESC(rxpool);
-      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_RX_RPOOL_LIST, 0);
-      config_get(SL_RXPOOLPARAMS,sizeof(SL_RXPOOLPARAMS)/sizeof(paramdef_t),aprefix);
-
-    } else {
-
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16)
-        ASN_STRUCT_FREE(asn_DEF_NR_SL_BWP_ConfigCommon_r16, sl_bwp->sl_BWP_PoolConfigCommon_r16);
-    }
-
-    paramlist_def_t SL_TxPoolParamList = {SL_CONFIG_STRING_SL_TX_RPOOL_LIST, NULL, 0};
-    sprintf(aprefix, "%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0);
-    config_getlist(&SL_TxPoolParamList, NULL, 0, aprefix);
-    LOG_I(RRC, "NUM Tx RPOOL in cfg file:%d\n", SL_TxPoolParamList.numelt);
-    AssertFatal(SL_TxPoolParamList.numelt <= 1, "Only Max 1 TX Respool Supported now\n");
-
-    if (SL_TxPoolParamList.numelt > 0) {
-
-      NR_SL_ResourcePool_r16_t *txpool = NULL;
-
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16 == NULL)
-        sl_bwp->sl_BWP_PoolConfigCommon_r16 = calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16));
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 == NULL)
-        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 =
-                                calloc(1, sizeof(*sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16));
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.count == 0) {
-        NR_SL_ResourcePoolConfig_r16_t *respoolcfg = calloc(1, sizeof(*respoolcfg));
-        respoolcfg->sl_ResourcePoolID_r16 = 0;
-        respoolcfg->sl_ResourcePool_r16 = calloc(1, sizeof(NR_SL_ResourcePool_r16_t));
-        ASN_SEQUENCE_ADD(&sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list, respoolcfg);
-        // Fill TX resource pool
-        prepare_NR_SL_ResourcePool(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16, 1, 0);
-      }
-
-      txpool = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]->sl_ResourcePool_r16;
-      paramdef_t SL_TXPOOLPARAMS[] = SL_RESPOOLPARAMS_DESC(txpool);
-      sprintf(aprefix, "%s.[%i].%s.[%i]", SL_CONFIG_STRING_SL_PRECONFIGURATION, 0,SL_CONFIG_STRING_SL_TX_RPOOL_LIST, 0);
-      config_get(SL_TXPOOLPARAMS,sizeof(SL_TXPOOLPARAMS)/sizeof(paramdef_t),aprefix);
-    } else {
-
-      if (sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16) {
-        ASN_STRUCT_FREE(asn_DEF_NR_SL_ResourcePoolConfig_r16, sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[0]);
-        free(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16);
-        sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16 = NULL;
-      }
-    }
-
-  return;
-}
-
-static void dump_NR_SL_ResourcePoolParams(NR_SL_ResourcePool_r16_t *respool) {
-
-  if (respool->sl_PSCCH_Config_r16 &&
-      respool->sl_PSCCH_Config_r16->present == NR_SetupRelease_SL_PSCCH_Config_r16_PR_setup) {
-
-    NR_SL_PSCCH_Config_r16_t *pscch_cfg = respool->sl_PSCCH_Config_r16->choice.setup;
-    LOG_I(NR_RRC,"PSCCH config: sl_TimeResourcePSCCH:%ld, sl_FreqResourcePSCCH:%ld, sl_DMRS_ScrambleID:%ld, sl_NumReservedBits:%ld\n",
-                (pscch_cfg->sl_TimeResourcePSCCH_r16)? *pscch_cfg->sl_TimeResourcePSCCH_r16 : 0,
-                (pscch_cfg->sl_FreqResourcePSCCH_r16)? *pscch_cfg->sl_FreqResourcePSCCH_r16 : 0,
-                (pscch_cfg->sl_DMRS_ScrambleID_r16)? *pscch_cfg->sl_DMRS_ScrambleID_r16 : 0,
-                (pscch_cfg->sl_NumReservedBits_r16)? *pscch_cfg->sl_NumReservedBits_r16 : 0);
   } else {
-    LOG_I(NR_RRC,"PSCCH CONFIG: not present\n");
-  }
+    //SL-Preconfiguration with 0 txpool, 1 rxpool if UE is not a syncsource
+    num_rxpools = 1;
+    sl_preconfig = prepare_NR_SL_PRECONFIGURATION(num_txpools,num_rxpools,sync_source);
 
-  if (respool->sl_PSSCH_Config_r16 &&
-      respool->sl_PSSCH_Config_r16->present == NR_SetupRelease_SL_PSSCH_Config_r16_PR_setup) {
-
-    LOG_I(NR_RRC,"PSSCH config: present\n");
-  } else {
-    LOG_I(NR_RRC,"PSSCH CONFIG: not present\n");
-  }
-  if (respool->sl_PSFCH_Config_r16 &&
-      respool->sl_PSFCH_Config_r16->present == NR_SetupRelease_SL_PSFCH_Config_r16_PR_setup) {
-
-    LOG_I(NR_RRC,"PSFCH config: present\n");
-  } else {
-    LOG_I(NR_RRC,"PSFCH CONFIG: not present\n");
-  }
-
-  LOG_I(NR_RRC,"Subchannels info: sl_SubchannelSize:%ld, sl_StartRB_Subchannel:%ld, sl_NumSubchannel:%ld, sl_RB_Number:%ld\n",
-                (respool->sl_SubchannelSize_r16)? *respool->sl_SubchannelSize_r16 : 0,
-                (respool->sl_StartRB_Subchannel_r16)? *respool->sl_StartRB_Subchannel_r16 : 0,
-                (respool->sl_NumSubchannel_r16)? *respool->sl_NumSubchannel_r16 : 0,
-                (respool->sl_RB_Number_r16)? *respool->sl_RB_Number_r16 : 0);
-
-  if (respool->ext1 &&
-      respool->ext1->sl_TimeResource_r16) {
-    int size = respool->ext1->sl_TimeResource_r16->size;
-    int unused = respool->ext1->sl_TimeResource_r16->bits_unused;
-    LOG_I(NR_RRC, "sl_TimeResource bitmap len:%d\n",size*8-unused);
-    for (int i=0;i<size;i++) {
-      LOG_I(NR_RRC, "sl_TimeResource bitmap buf[%d]:%x\n",i,respool->ext1->sl_TimeResource_r16->buf[i]);
+    if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
+      xer_fprint(stdout, &asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
     }
-  }
-
-}
-
-static void dump_NR_SL_FreqConfigCommonParams(NR_SL_FreqConfigCommon_r16_t *sl_fcfg) {
-
-  LOG_I(NR_RRC, "NR_SL_FreqConfigCommon_r16 IEs.............\n");
-
-  LOG_I(NR_RRC, "sl_AbsoluteFrequencyPointA:%ld \n", sl_fcfg->sl_AbsoluteFrequencyPointA_r16);
-
-  if (sl_fcfg->sl_AbsoluteFrequencySSB_r16) {
-    LOG_I(NR_RRC, "*sl_AbsoluteFrequencySSB_r16:%ld \n", *sl_fcfg->sl_AbsoluteFrequencySSB_r16);
-  }
-
-  int num = sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.count;
-  for (int i = 0; i < num; i++) {
-    LOG_I(NR_RRC," SCS entry[%d]: offsetToCarrier:%ld,  subcarrierSpacing:%ld, carrierBw:%ld \n", 
-      i, sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[i]->offsetToCarrier,
-         sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[i]->subcarrierSpacing,
-         sl_fcfg->sl_SCS_SpecificCarrierList_r16.list.array[i]->carrierBandwidth);
-  }
-
-  LOG_I(NR_RRC, "valueN_r16:%ld \n", sl_fcfg->valueN_r16);
-
-  if (sl_fcfg->sl_BWP_List_r16) {
-    num = sl_fcfg->sl_BWP_List_r16->list.count;
-    LOG_I(NR_RRC, "Sidelink BWPs configured:%d\n", num);
-    for (int i = 0; i < num; i++) {
-      NR_SL_BWP_ConfigCommon_r16_t *sl_bwp = sl_fcfg->sl_BWP_List_r16->list.array[i];
-      if (sl_bwp->sl_BWP_Generic_r16 &&
-          sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16) {
-            LOG_I(NR_RRC," SL-BWP[%d]: CyclicPrefix:%s, scs:%ld, locandBw:%ld\n",
-                            i, (sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->cyclicPrefix) ? "EXTENDED" : "NORMAL",
-                            sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->subcarrierSpacing,
-                            sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->locationAndBandwidth);
-
-            LOG_I(NR_RRC," SL-BWP[%d]: sl_LengthSymbols:%ld, sl_StartSymbol:%ld\n",
-                            i, *sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16,
-                            *sl_bwp->sl_BWP_Generic_r16->sl_StartSymbol_r16);
-
-
-            if (sl_bwp->sl_BWP_PoolConfigCommon_r16 &&
-                sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16) {
-
-              int num_rxpools = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.count;
-              LOG_I(NR_RRC, "NUM RX RESOURCE POOLs:%d\n", num_rxpools);
-              for (int i=0; i<num_rxpools;i++) {
-                LOG_I(NR_RRC, "RX RESOURCE POOL[%d]..... \n", i);
-                dump_NR_SL_ResourcePoolParams(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_RxPool_r16->list.array[i]);
-              }
-            }
-            if (sl_bwp->sl_BWP_PoolConfigCommon_r16 &&
-                sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16) {
-
-              int num_txpools = sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.count;
-              LOG_I(NR_RRC, "NUM TX RESOURCE POOLs:%d\n", num_txpools);
-              for (int i=0; i<num_txpools;i++) {
-                LOG_I(NR_RRC, "TX RESOURCE POOL[%d]..... \n", i);
-                dump_NR_SL_ResourcePoolParams(sl_bwp->sl_BWP_PoolConfigCommon_r16->sl_TxPoolSelectedNormal_r16->list.array[i]->sl_ResourcePool_r16);
-              }
-            }
-          }
-    }
-  }
-
-  if (sl_fcfg->sl_SyncConfigList_r16) {
-    int num = sl_fcfg->sl_SyncConfigList_r16->list.count;
-    LOG_I(NR_RRC, "NUM SyncConfig entries:%d\n", num);
-    for (int i=0;i<num;i++) {
-      NR_SL_SyncConfig_r16_t *synccfg = sl_fcfg->sl_SyncConfigList_r16->list.array[i];
-      if (synccfg->sl_SSB_TimeAllocation1_r16) {
-        NR_SL_SSB_TimeAllocation_r16_t *ssb_ta = synccfg->sl_SSB_TimeAllocation1_r16;
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc1, sl_NumSSB_WithinPeriod:%ld, sl_TimeOffsetSSB:%ld,sl_TimeInterval:%ld\n",
-                      i, (ssb_ta->sl_NumSSB_WithinPeriod_r16) ? *ssb_ta->sl_NumSSB_WithinPeriod_r16 : 0,
-                      (ssb_ta->sl_TimeOffsetSSB_r16) ? *ssb_ta->sl_TimeOffsetSSB_r16 : 0,
-                      (ssb_ta->sl_TimeInterval_r16) ? *ssb_ta->sl_TimeInterval_r16 : 0);
-      } else {
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc1 not present\n",i);
-      }
-      if (synccfg->sl_SSB_TimeAllocation2_r16) {
-        NR_SL_SSB_TimeAllocation_r16_t *ssb_ta = synccfg->sl_SSB_TimeAllocation2_r16;
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc2, sl_NumSSB_WithinPeriod:%ld, sl_TimeOffsetSSB:%ld,sl_TimeInterval:%ld\n",
-                      i, (ssb_ta->sl_NumSSB_WithinPeriod_r16) ? *ssb_ta->sl_NumSSB_WithinPeriod_r16 : 0,
-                      (ssb_ta->sl_TimeOffsetSSB_r16) ? *ssb_ta->sl_TimeOffsetSSB_r16 : 0,
-                      (ssb_ta->sl_TimeInterval_r16) ? *ssb_ta->sl_TimeInterval_r16 : 0);
-      } else {
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc2 not present\n",i);
-      }
-      if (synccfg->sl_SSB_TimeAllocation3_r16) {
-        NR_SL_SSB_TimeAllocation_r16_t *ssb_ta = synccfg->sl_SSB_TimeAllocation3_r16;
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc3, sl_NumSSB_WithinPeriod:%ld, sl_TimeOffsetSSB:%ld,sl_TimeInterval:%ld\n",
-                      i, (ssb_ta->sl_NumSSB_WithinPeriod_r16) ? *ssb_ta->sl_NumSSB_WithinPeriod_r16 : 0,
-                      (ssb_ta->sl_TimeOffsetSSB_r16) ? *ssb_ta->sl_TimeOffsetSSB_r16 : 0,
-                      (ssb_ta->sl_TimeInterval_r16) ? *ssb_ta->sl_TimeInterval_r16 : 0);
-      } else {
-        LOG_I(NR_RRC, "syncconfig[%d]: Timealloc3 not present\n",i);
-      }
-    }
-  }
-}
-
-
-void dump_NR_SL_Preconfiguration(NR_SL_PreconfigurationNR_r16_t *sl_preconfiguration) {
-
-  NR_SidelinkPreconfigNR_r16_t *sl_preconfig = &sl_preconfiguration->sidelinkPreconfigNR_r16;
-
-  AssertFatal(sl_preconfiguration || sl_preconfig ,"Sl_preconf cannot be NULL\n");
-
-  LOG_I(NR_RRC, "-------------START of NR_SL_Preconfiguration IEs............\n");
-
-  if (sl_preconfig->sl_PreconfigFreqInfoList_r16) {
-    int num = sl_preconfig->sl_PreconfigFreqInfoList_r16->list.count;
-    LOG_I(NR_RRC, "Number of Sidelink Frequencies configured:%d\n", num);
-
-    for (int i=0;i<num;i++) {
-      dump_NR_SL_FreqConfigCommonParams(sl_preconfig->sl_PreconfigFreqInfoList_r16->list.array[0]);
-    }
-  }
-
-  if (sl_preconfig->sl_PreconfigGeneral_r16 &&
-      sl_preconfig->sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16) {
-
-    NR_TDD_UL_DL_ConfigCommon_t *tdd_ul_dl_cfg = sl_preconfig->sl_PreconfigGeneral_r16->sl_TDD_Configuration_r16;
-    LOG_I(NR_RRC,"SL-TDD ULDL config: Transmissionperiod:%ld,DL-Slots:%ld,Sym:%ld, UL-Slots:%ld,Symbols:%ld\n",
-                          tdd_ul_dl_cfg->pattern1.dl_UL_TransmissionPeriodicity,
-                          tdd_ul_dl_cfg->pattern1.nrofDownlinkSlots, tdd_ul_dl_cfg->pattern1.nrofDownlinkSymbols,
-                          tdd_ul_dl_cfg->pattern1.nrofUplinkSlots, tdd_ul_dl_cfg->pattern1.nrofUplinkSymbols);
-
-    if (tdd_ul_dl_cfg->pattern1.ext1 &&
-        tdd_ul_dl_cfg->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530) {
-      LOG_I(NR_RRC, "SL-TDD ULDL config: Transmissionperiod_v1530:%ld\n",
-                *tdd_ul_dl_cfg->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530);
-    }
-  
-    AssertFatal(tdd_ul_dl_cfg->pattern2 == NULL ,"pattern2 not supported\n");
-  }
-
-  LOG_I(NR_RRC, "-------------END OF NR_SL_Preconfiguration IEs............\n\n");
-}
-
-int configure_NR_SL_Preconfig() {
-
-  //Example configurations to check and test
-  //UE needs to be set with only 1 PREconfiguration. TBD.. Remove these later.
-
-  //SL-Preconfiguration with 1 txpool, 1 rxpool and not syncsource
-  NR_SL_PreconfigurationNR_r16_t *sl_preconfig = prepare_NR_SL_PRECONFIGURATION(1,1,0);
-  dump_NR_SL_Preconfiguration(sl_preconfig);
-
-  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
-    get_NR_SL_Preconfig_params(sl_preconfig);
-    dump_NR_SL_Preconfiguration(sl_preconfig);
   }
 
   ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
   sl_preconfig = NULL;
   //END.......
-
-  //SL-Preconfiguration with 1 txpool, 0 rxpool and UE is syncsource
-  sl_preconfig = prepare_NR_SL_PRECONFIGURATION(1,0,1);
-  dump_NR_SL_Preconfiguration(sl_preconfig);
-
-  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
-    get_NR_SL_Preconfig_params(sl_preconfig);
-    dump_NR_SL_Preconfiguration(sl_preconfig);
-  }
-
-  ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
-  sl_preconfig = NULL;
-  //END
-
-  //SL-Preconfiguration with 0 txpool, 1 rxpool and UE is not a syncsource
-  sl_preconfig = prepare_NR_SL_PRECONFIGURATION(0,1,0);
-  dump_NR_SL_Preconfiguration(sl_preconfig);
-
-  if (!CONFIG_ISFLAGSET(CONFIG_NOOOPT)) {
-    get_NR_SL_Preconfig_params(sl_preconfig);
-    dump_NR_SL_Preconfiguration(sl_preconfig);
-  }
-
-  ASN_STRUCT_FREE(asn_DEF_NR_SL_PreconfigurationNR_r16, sl_preconfig);
-  sl_preconfig = NULL;
 
   return 0;
 }
