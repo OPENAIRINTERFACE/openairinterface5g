@@ -289,16 +289,14 @@ void exit_function(const char *file, const char *function, const int line, const
   }
 }
 
-
-
-static int create_gNB_tasks(void) {
+static int create_gNB_tasks(ngran_node_t node_type)
+{
   uint32_t                        gnb_nb = RC.nb_nr_inst; 
   uint32_t                        gnb_id_start = 0;
   uint32_t                        gnb_id_end = gnb_id_start + gnb_nb;
   LOG_D(GNB_APP, "%s(gnb_nb:%d)\n", __FUNCTION__, gnb_nb);
   itti_wait_ready(1);
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
-  ngran_node_t node_type = get_node_type();
 
   RCconfig_NR_L1();
   RCconfig_nr_prs();
@@ -634,8 +632,9 @@ int main( int argc, char **argv ) {
     RCconfig_NR_L1();
 
   // don't create if node doesn't connect to RRC/S1/GTP
+  const ngran_node_t node_type = get_node_type();
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    int ret = create_gNB_tasks();
+    int ret = create_gNB_tasks(node_type);
     AssertFatal(ret == 0, "cannot create ITTI tasks\n");
   }
 
@@ -734,6 +733,13 @@ int main( int argc, char **argv ) {
   if (NFAPI_MODE==NFAPI_MODE_PNF) {
     wait_nfapi_init("main?");
   }
+
+  // wait for F1 Setup Response before starting L1 for real
+  if (NODE_IS_DU(node_type) || NODE_IS_MONOLITHIC(node_type))
+    wait_f1_setup_response();
+
+  if (RC.nb_RU > 0)
+    start_NR_RU();
 
   if (RC.nb_nr_L1_inst > 0) {
     printf("wait RUs\n");

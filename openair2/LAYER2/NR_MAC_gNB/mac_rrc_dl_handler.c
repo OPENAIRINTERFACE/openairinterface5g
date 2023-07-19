@@ -58,9 +58,13 @@ void f1_setup_response(const f1ap_setup_resp_t *resp)
 
   AssertFatal(cu_cell->num_SI == 0, "handling of CU-provided SIBs: not implemented\n");
 
-  NR_SCHED_UNLOCK(&mac->sched_lock);
+  mac->f1_config.setup_resp = malloc(sizeof(*mac->f1_config.setup_resp));
+  AssertFatal(mac->f1_config.setup_resp != NULL, "out of memory\n");
+  *mac->f1_config.setup_resp = *resp;
+  if (resp->gNB_CU_name)
+    mac->f1_config.setup_resp->gNB_CU_name = strdup(resp->gNB_CU_name);
 
-  /* TODO: handling of pre-operational state? */
+  NR_SCHED_UNLOCK(&mac->sched_lock);
 }
 
 void f1_setup_failure(const f1ap_setup_failure_t *failure)

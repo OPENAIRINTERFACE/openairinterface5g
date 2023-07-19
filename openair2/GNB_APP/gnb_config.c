@@ -2039,6 +2039,26 @@ int RC_config_trigger_F1Setup()
   return 0;
 }
 
+void wait_f1_setup_response(void)
+{
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+  if (mac->f1_config.setup_resp != NULL) {
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    return;
+  }
+
+  LOG_W(GNB_APP, "waiting for F1 Setup Response before activating radio\n");
+
+  /* for the moment, we keep it simple and just sleep to periodically check.
+   * The actual check is protected by a mutex */
+  while (mac->f1_config.setup_resp == NULL) {
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    sleep(1);
+    NR_SCHED_LOCK(&mac->sched_lock);
+  }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+}
 static bool check_plmn_identity(const f1ap_plmn_t *check_plmn, const f1ap_plmn_t *plmn)
 {
   return plmn->mcc == check_plmn->mcc && plmn->mnc_digit_length == check_plmn->mnc_digit_length && plmn->mnc == check_plmn->mnc;
