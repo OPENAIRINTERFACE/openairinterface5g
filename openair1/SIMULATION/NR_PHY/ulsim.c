@@ -74,7 +74,6 @@ const char *__asan_default_options()
   /* don't do leak checking in nr_ulsim, not finished yet */
   return "detect_leaks=0";
 }
-
 PHY_VARS_gNB *gNB;
 PHY_VARS_NR_UE *UE;
 RAN_CONTEXT_t RC;
@@ -153,8 +152,9 @@ int NB_UE_INST = 1;
 
 int main(int argc, char *argv[])
 {
-
-  int c;
+  FILE *csv_file = NULL;
+  char *filename_csv = NULL;
+  char c;
   int i;
   double SNR, snr0 = -2.0, snr1 = 2.0;
   double sigma, sigma_dB;
@@ -168,8 +168,6 @@ int main(int argc, char *argv[])
   int trial, n_trials = 1, n_false_positive = 0, delay = 0;
   double maxDoppler = 0.0;
   uint8_t n_tx = 1, n_rx = 1;
-  //uint8_t transmission_mode = 1;
-  //uint16_t Nid_cell = 0;
   channel_desc_t *UE2gNB;
   uint8_t extended_prefix_flag = 0;
   //int8_t interf1 = -21, interf2 = -21;
@@ -235,13 +233,9 @@ int main(int argc, char *argv[])
   /* initialize the sin-cos table */
   InitSinLUT();
 
-  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:kl:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:E:")) != -1) {
+  while ((c = getopt(argc, argv, "a:b:c:d:ef:g:h:i:k:m:n:op:q:r:s:t:u:v:w:y:z:C:F:G:H:I:M:N:PR:S:T:U:L:ZW:E:X:")) != -1) {
     printf("handling optarg %c\n",c);
     switch (c) {
-
-      /*case 'd':
-        frame_type = 1;
-        break;*/
 
     case 'a':
       start_symbol = atoi(optarg);
@@ -261,11 +255,11 @@ int main(int argc, char *argv[])
     case 'd':
       delay = atoi(optarg);
       break;
-      
+
     case 'e':
       msg3_flag = 1;
       break;
-      
+
     case 'f':
       scg_fd = fopen(optarg, "r");
       
@@ -320,7 +314,7 @@ int main(int argc, char *argv[])
         printf("Maximum Doppler Frequency: %.0f Hz\n", maxDoppler);
       }
       break;
-      
+
     case 'i':
       i=0;
       do {
@@ -334,10 +328,6 @@ int main(int argc, char *argv[])
       openair0_cfg[0].threequarter_fs= 1;
       break;
 
-    case 'l':
-      nb_symb_sch = atoi(optarg);
-      break;
-      
     case 'm':
       Imcs = atoi(optarg);
       break;
@@ -353,7 +343,7 @@ int main(int argc, char *argv[])
     case 'o':
       ldpc_offload_flag = 1;
       break;
-      
+
     case 'p':
       extended_prefix_flag = 1;
       break;
@@ -365,7 +355,7 @@ int main(int argc, char *argv[])
     case 'r':
       nb_rb = atoi(optarg);
       break;
-      
+
     case 's':
       snr0 = atof(optarg);
       printf("Setting SNR0 to %f\n", snr0);
@@ -392,20 +382,6 @@ int main(int argc, char *argv[])
       eff_tp_check = atof(optarg);
       break;
 
-      /*
-	case 'r':
-	ricean_factor = pow(10,-.1*atof(optarg));
-	if (ricean_factor>1) {
-	printf("Ricean factor must be between 0 and 1\n");
-	exit(-1);
-	}
-	break;
-      */
-      
-      /*case 'x':
-        transmission_mode = atoi(optarg);
-        break;*/
-      
     case 'y':
       n_tx = atoi(optarg);
       if ((n_tx == 0) || (n_tx > 4)) {
@@ -413,7 +389,7 @@ int main(int argc, char *argv[])
         exit(-1);
       }
       break;
-      
+
     case 'z':
       n_rx = atoi(optarg);
       if ((n_rx == 0) || (n_rx > 8)) {
@@ -445,27 +421,23 @@ int main(int argc, char *argv[])
     case 'M':
       ilbrm = atoi(optarg);
       break;
-      
-    case 'N':
-     // Nid_cell = atoi(optarg);
-      break;
-      
+
     case 'R':
       N_RB_DL = atoi(optarg);
       N_RB_UL = N_RB_DL;
       break;
-      
+
     case 'S':
       snr1 = atof(optarg);
       snr1set = 1;
       printf("Setting SNR1 to %f\n", snr1);
       break;
-      
+
     case 'P':
       print_perf=1;
       opp_enabled=1;
       break;
-      
+
     case 'L':
       loglvl = atoi(optarg);
       break;
@@ -492,6 +464,11 @@ int main(int argc, char *argv[])
       params_from_file = 1;
       break;
 
+    case 'X' :
+      filename_csv = strdup(optarg);
+      AssertFatal(filename_csv != NULL, "strdup() error: errno %d\n", errno);
+      break;
+
     case 'Z':
       transform_precoding = transformPrecoder_enabled;
       num_dmrs_cdm_grps_no_data = 2;
@@ -513,46 +490,47 @@ int main(int argc, char *argv[])
 
     default:
     case 'h':
-      printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -i Intefrence0 -j Interference1 -n n_frames -s snr0 -S snr1 -t Delayspread -x transmission_mode -y TXant -z RXant -A interpolation_file -C(alibration offset dB) -N CellId -Z Enable SC-FDMA in Uplink \n", argv[0]);
-      //printf("-d Use TDD\n");
+      printf("%s -h(elp)\n", argv[0]);
+      printf("-a ULSCH starting symbol\n");
+      printf("-b ULSCH number of symbols\n");
+      printf("-c RNTI\n");
       printf("-d Introduce delay in terms of number of samples\n");
-      printf("-f Number of frames to simulate\n");
+      printf("-e To simulate MSG3 configuration\n");
+      printf("-f Input file to read from\n");// file not used in the code
       printf("-g Channel model configuration. Arguments list: Number of arguments = 3, {Channel model: [A] TDLA30, [B] TDLB100, [C] TDLC300}, {Correlation: [l] Low, [m] Medium, [h] High}, {Maximum Doppler shift} e.g. -g A,l,10\n");
       printf("-h This message\n");
       printf("-i Change channel estimation technique. Arguments list: Number of arguments=2, Frequency domain {0:Linear interpolation, 1:PRB based averaging}, Time domain {0:Estimates of last DMRS symbol, 1:Average of DMRS symbols}. e.g. -i 1,0\n");
-      //printf("-j Relative strength of second intefering eNB (in dB) - cell_id mod 3 = 2\n");
-      printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
-      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+      printf("-k 3/4 sampling\n");
       printf("-m MCS value\n");
       printf("-n Number of trials to simulate\n");
       printf("-o ldpc offload flag\n");
       printf("-p Use extended prefix mode\n");
       printf("-q MCS table\n");
       printf("-r Number of allocated resource blocks for PUSCH\n");
+      printf("-s Starting SNR, runs from SNR0 to SNR0 + 10 dB if ending SNR isn't given\n");
+      printf("-S Ending SNR, runs from SNR0 to SNR1\n");
+      printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-u Set the numerology\n");
+      printf("-v Set the max rounds\n");
       printf("-w Start PRB for PUSCH\n");
-      //printf("-x Transmission mode (1,2,6 for the moment)\n");
       printf("-y Number of TX antennas used at UE\n");
       printf("-z Number of RX antennas used at gNB\n");
-      printf("-v Set the max rounds\n");
-      printf("-A Interpolation_filname Run with Abstraction to generate Scatter plot using interpolation polynomial in file\n");
-      //printf("-C Generate Calibration information for Abstraction (effective SNR adjustment to remove Pe bias w.r.t. AWGN)\n");
+      printf("-C Specify the number of threads for the simulation\n");
+      printf("-E {SRS: [0] Disabled, [1] Enabled} e.g. -E 1\n");
       printf("-F Input filename (.txt format) for RX conformance testing\n");
       printf("-G Offset of samples to read from file (0 default)\n");
-      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
+      printf("-H Slot number\n");
       printf("-I Maximum LDPC decoder iterations\n");
+      printf("-L <log level, 0(errors), 1(warning), 2(info) 3(debug) 4 (trace)>\n");
       printf("-M Use limited buffer rate-matching\n");
-      printf("-N Nid_cell\n");
-      printf("-O oversampling factor (1,2,4,8,16)\n");
-      printf("-R Maximum number of available resorce blocks (N_RB_DL)\n");
-      printf("-t Acceptable effective throughput (in percentage)\n");
       printf("-P Print ULSCH performances\n");
+      printf("-Q If -F used, read parameters from file\n");
+      printf("-R Maximum number of available resorce blocks (N_RB_DL)\n");
       printf("-T Enable PTRS, arguments list: Number of arguments=2 L_PTRS{0,1,2} K_PTRS{2,4}, e.g. -T 0,2 \n");
       printf("-U Change DMRS Config, arguments list: Number of arguments=4, DMRS Mapping Type{0=A,1=B}, DMRS AddPos{0:3}, DMRS Config Type{1,2}, Number of CDM groups without data{1,2,3} e.g. -U 0,2,0,1 \n");
-      printf("-Q If -F used, read parameters from file\n");
-      printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       printf("-W Num of layer for PUSCH\n");
-      printf("-E {SRS: [0] Disabled, [1] Enabled} e.g. -E 1\n");
+      printf("-X Output filename (.csv format) for stats\n");
+      printf("-Z If -Z is used, SC-FDMA or transform precoding is enabled in Uplink \n");
       exit(-1);
       break;
 
@@ -768,7 +746,7 @@ int main(int argc, char *argv[])
   uint8_t crc_status = 0;
 
   unsigned char mod_order = nr_get_Qm_ul(Imcs, mcs_table);
-  uint16_t      code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
+  uint16_t code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
 
   uint8_t mapping_type = typeB; // Default Values
   pusch_dmrs_type_t dmrs_config_type = pusch_dmrs_type1; // Default Values
@@ -792,11 +770,11 @@ int main(int argc, char *argv[])
     num_dmrs_cdm_grps_no_data = dmrs_arg[3];
   }
 
-  uint8_t  length_dmrs         = pusch_len1;
-  uint16_t l_prime_mask        = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
+  uint8_t  length_dmrs = pusch_len1;
+  uint16_t l_prime_mask = get_l_prime(nb_symb_sch, mapping_type, add_pos, length_dmrs, start_symbol, NR_MIB__dmrs_TypeA_Position_pos2);
   uint16_t number_dmrs_symbols = get_dmrs_symbols_in_slot(l_prime_mask, nb_symb_sch);
   printf("num dmrs sym %d\n",number_dmrs_symbols);
-  uint8_t  nb_re_dmrs          = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
+  uint8_t  nb_re_dmrs = (dmrs_config_type == pusch_dmrs_type1) ? 6 : 4;
 
   uint32_t tbslbrm = 0;
   if (ilbrm)
@@ -813,17 +791,17 @@ int main(int argc, char *argv[])
 
     int8_t index = get_index_for_dmrs_lowpapr_seq((NR_NB_SC_PER_RB/2) * nb_rb);
     AssertFatal(index >= 0, "Num RBs not configured according to 3GPP 38.211 section 6.3.1.4. For PUSCH with transform precoding, num RBs cannot be multiple of any other primenumber other than 2,3,5\n");
-    
+
     dmrs_config_type = pusch_dmrs_type1;
-    nb_re_dmrs       = 6;
+    nb_re_dmrs = 6;
 
     printf("[ULSIM]: TRANSFORM PRECODING ENABLED. Num RBs: %d, index for DMRS_SEQ: %d\n", nb_rb, index);
   }
 
   nb_re_dmrs = nb_re_dmrs * num_dmrs_cdm_grps_no_data;
 
-  unsigned int available_bits  = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, precod_nbr_layers);
-  unsigned int TBS             = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
+  unsigned int available_bits = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, number_dmrs_symbols, mod_order, precod_nbr_layers);
+  unsigned int TBS = nr_compute_tbs(mod_order, code_rate, nb_rb, nb_symb_sch, nb_re_dmrs * number_dmrs_symbols, 0, 0, precod_nbr_layers);
 
   
   printf("[ULSIM]: length_dmrs: %u, l_prime_mask: %u	number_dmrs_symbols: %u, mapping_type: %u add_pos: %d \n", length_dmrs, l_prime_mask, number_dmrs_symbols, mapping_type, add_pos);
@@ -842,7 +820,7 @@ int main(int argc, char *argv[])
 
   uint8_t ptrs_time_density = get_L_ptrs(ptrs_mcs1, ptrs_mcs2, ptrs_mcs3, Imcs, mcs_table);
   uint8_t ptrs_freq_density = get_K_ptrs(n_rb0, n_rb1, nb_rb);
-  int     ptrs_symbols      = 0; // to calculate total PTRS RE's in a slot
+  int ptrs_symbols = 0; // to calculate total PTRS RE's in a slot
 
   double ts = 1.0/(frame_parms->subcarrier_spacing * frame_parms->ofdm_symbol_size);
 
@@ -927,6 +905,20 @@ int main(int argc, char *argv[])
     code_rate = nr_get_code_rate_ul(Imcs, mcs_table);
   }
 
+  // csv file
+  if (filename_csv != NULL) {
+    csv_file = fopen(filename_csv, "a");
+    if (csv_file == NULL) {
+      printf("Can't open file \"%s\", errno %d\n", filename_csv, errno);
+      return 1;
+    }
+    // adding name of parameters into file
+    fprintf(csv_file,"SNR,false_positive,");
+    for (int r = 0; r < max_rounds; r++)
+      fprintf(csv_file,"n_errors_%d,errors_scrambling_%d,channel_bler_%d,channel_ber_%d,",r,r,r,r);
+    fprintf(csv_file,"avg_round,eff_rate,eff_throughput,TBS,DMRS-PUSCH delay estimation: (min,max,average)\n");
+  }
+  //---------------
   int ret = 1;
   for (SNR = snr0; SNR <= snr1; SNR += snr_step) {
 
@@ -1549,6 +1541,10 @@ int main(int argc, char *argv[])
     roundStats/=((float)n_trials);
     effRate /= (double)n_trials;
     
+
+    // -------csv file-------
+
+    // adding values into file
     printf("*****************************************\n");
     printf("SNR %f: n_errors (%d/%d", SNR, n_errors[0], round_trials[0]);
     for (int r = 1; r < max_rounds; r++)
@@ -1559,6 +1555,7 @@ int main(int argc, char *argv[])
       printf(",%u/%u", errors_scrambling[r], available_bits * round_trials[r]);
     printf(")\n");
     printf("\n");
+
 
     for (int r = 0; r < max_rounds; r++) {
       blerStats[r] = (double)n_errors[r] / round_trials[r];
@@ -1571,6 +1568,7 @@ int main(int argc, char *argv[])
     printf(" Channel BER (%e", berStats[0]);
     for (int r = 1; r < max_rounds; r++)
       printf(",%e", berStats[r]);
+
     printf(") Avg round %.2f, Eff Rate %.4f bits/slot, Eff Throughput %.2f, TBS %u bits/slot\n", roundStats,effRate,effTP,TBS);
 
     printf("DMRS-PUSCH delay estimation: min %i, max %i, average %f\n",
@@ -1578,7 +1576,13 @@ int main(int argc, char *argv[])
 
     printf("*****************************************\n");
     printf("\n");
-
+    // writing to csv file
+    if (filename_csv) { // means we are asked to print stats to CSV
+      fprintf(csv_file,"%f,%d/%d,",SNR,n_false_positive,n_trials);
+      for (int r = 0; r < max_rounds; r++)
+        fprintf(csv_file,"%d/%d,%u/%u,%f,%e,",n_errors[r], round_trials[r], errors_scrambling[r], available_bits * round_trials[r],blerStats[r],berStats[r]);
+      fprintf(csv_file,"%.2f,%.4f,%.2f,%u,(%i,%i,%f)\n", roundStats, effRate, effTP, TBS,min_pusch_delay >> 1, max_pusch_delay >> 1, (double)sum_pusch_delay / (2 * delay_pusch_est_count));
+    }
     FILE *fd=fopen("nr_ulsim.log","w");
     if (fd == NULL) {
       printf("Problem with filename %s\n", "nr_ulsim.log");
@@ -1628,7 +1632,6 @@ int main(int argc, char *argv[])
       break;
     }
   } // SNR loop
-
   printf("\n");
   printf( "Num RB:\t%d\n"
           "Num symbols:\t%d\n"
@@ -1659,6 +1662,12 @@ int main(int argc, char *argv[])
 
   if (scg_fd)
     fclose(scg_fd);
+
+  // closing csv file
+  if (filename_csv != NULL) { // means we are asked to print stats to CSV
+    fclose(csv_file);
+    free(filename_csv);
+  }
 
   return ret;
 }
