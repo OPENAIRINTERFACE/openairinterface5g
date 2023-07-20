@@ -184,7 +184,7 @@ void aes_128_cbc_cmac(const aes_128_t* k_iv, byte_array_t msg, size_t len_out, u
     sz_iv = 16;
     iv = (uint8_t*)k_iv->iv16.iv;
   } else {
-    DevAssert(0!=0 && "Unknwon Initialization vector");
+    AssertFatal(0 != 0, "Unknwon Initialization vector");
   }
 
   CMAC_Update(ctx, iv, sz_iv);
@@ -233,7 +233,7 @@ void cipher_aes_128_cbc_cmac(cbc_cmac_ctx_t const* ctx, const aes_128_t* k_iv, b
     sz_iv = 16;
     iv = (uint8_t*)k_iv->iv16.iv;
   } else {
-    DevAssert(0!=0 && "Unknwon Initialization vector");
+    AssertFatal(0 != 0, "Unknwon Initialization vector");
   }
 
   CMAC_Update(ctx->mac, iv, sz_iv);
