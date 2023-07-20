@@ -1184,15 +1184,11 @@ int main(int argc, char **argv)
 
           if (n_trials == 1) {
             LOG_M("txsig0.m", "txs0", &UE->common_vars.txData[0][slot_offset], slot_length, 1, 1);
-            LOG_M("txsig0F.m", "txs0F", UE->common_vars.txdataF[0], frame_parms->ofdm_symbol_size * 14, 1, 1);
             if (precod_nbr_layers > 1) {
-              LOG_M("txsig1.m", "txs1", &UE->common_vars.txData[1][slot_offset], slot_length, 1, 1);
-              LOG_M("txsig1F.m", "txs1F", UE->common_vars.txdataF[1], frame_parms->ofdm_symbol_size * 14, 1, 1);
-              if (precod_nbr_layers == 4) {
-                LOG_M("txsig2.m", "txs2", &UE->common_vars.txData[2][slot_offset], slot_length, 1, 1);
-                LOG_M("txsig3.m", "txs3", &UE->common_vars.txData[3][slot_offset], slot_length, 1, 1);
-                LOG_M("txsig2F.m", "txs2F", UE->common_vars.txdataF[2], frame_parms->ofdm_symbol_size * 14, 1, 1);
-                LOG_M("txsig3F.m", "txs3F", UE->common_vars.txdataF[3], frame_parms->ofdm_symbol_size * 14, 1, 1);
+            LOG_M("txsig1.m", "txs1", &UE->common_vars.txData[1][slot_offset], slot_length, 1, 1);
+            if (precod_nbr_layers == 4) {
+              LOG_M("txsig2.m", "txs2", &UE->common_vars.txData[2][slot_offset], slot_length, 1, 1);
+              LOG_M("txsig3.m", "txs3", &UE->common_vars.txData[3][slot_offset], slot_length, 1, 1);
               }
             }
           }

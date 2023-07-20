@@ -335,8 +335,7 @@ void nr_ue_measurement_procedures(uint16_t l,
         T_INT((int)(ue->measurements.rx_power_avg_dB[0] - ue->measurements.n0_power_avg_dB)),
         T_INT((int)ue->measurements.rx_power_avg_dB[0]),
         T_INT((int)ue->measurements.n0_power_avg_dB),
-        T_INT((int)ue->measurements.wideband_cqi_avg[0]),
-        T_INT((int)ue->common_vars.freq_offset));
+        T_INT((int)ue->measurements.wideband_cqi_avg[0]));
 #endif
   }
 
