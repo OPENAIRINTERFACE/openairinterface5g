@@ -792,7 +792,7 @@ static inline simde__m128i square_a_64qam_epi16(simde__m128i a_r, simde__m128i a
   return simde_mm_adds_epi16(tmp_result, tmp_result2);
 }
 
-simde__m128i max_epi16(simde__m128i m0, simde__m128i m1, simde__m128i m2, simde__m128i m3, simde__m128i m4, simde__m128i m5, simde__m128i m6, simde__m128i m7)
+static inline simde__m128i max_epi16(simde__m128i m0, simde__m128i m1, simde__m128i m2, simde__m128i m3, simde__m128i m4, simde__m128i m5, simde__m128i m6, simde__m128i m7)
 {
   simde__m128i a0 = simde_mm_max_epi16(m0, m1);
   simde__m128i a1 = simde_mm_max_epi16(m2, m3);
@@ -891,7 +891,7 @@ static inline simde__m256i square_a_64qam_epi16_256(simde__m256i a_r, simde__m25
   return simde_mm256_adds_epi16(tmp_result, tmp_result2);
 }
 
-simde__m256i max_epi16_256(simde__m256i m0, simde__m256i m1, simde__m256i m2, simde__m256i m3, simde__m256i m4, simde__m256i m5, simde__m256i m6, simde__m256i m7)
+static inline simde__m256i max_epi16_256(simde__m256i m0, simde__m256i m1, simde__m256i m2, simde__m256i m3, simde__m256i m4, simde__m256i m5, simde__m256i m6, simde__m256i m7)
 {
   simde__m256i a0 = simde_mm256_max_epi16(m0, m1);
   simde__m256i a1 = simde_mm256_max_epi16(m2, m3);
