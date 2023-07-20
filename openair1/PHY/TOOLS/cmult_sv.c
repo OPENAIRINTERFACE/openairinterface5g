@@ -141,7 +141,8 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
       *yd=simde_mm256_shuffle_epi8(tmp,perm_mask);
     }
     c16_t* alpha16=(c16_t*) alpha, *yLast;
-    yLast=((c16_t*)y)+(N/8)*8;
+    if (y != NULL)
+     yLast = ((c16_t *)y) + (N / 8) * 8;
     for (c16_t* xTail=(c16_t*) end;
          xTail<((c16_t*) x)+N;
          xTail++, yLast++) {
