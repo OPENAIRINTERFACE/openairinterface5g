@@ -312,7 +312,7 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
   int **txdataF2;
 #endif
-  int **txdata,**txdata1,**txdata2;
+  int **txdata,**txdata1 = NULL,**txdata2 = NULL;
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
   double iqim = 0.0;
   unsigned char pbch_pdu[6];
