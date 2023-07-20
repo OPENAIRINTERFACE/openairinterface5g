@@ -312,7 +312,7 @@ int CU_send_F1_SETUP_RESPONSE(instance_t instance, f1ap_setup_resp_t *f1ap_setup
 
       /* optional */
       /* - gNB-CU System Information */
-      if (1) {
+      if (f1ap_setup_resp->cells_to_activate[i].num_SI > 0) {
         /* 3.1.2 gNB-CUSystem Information */
         F1AP_ProtocolExtensionContainer_10696P112_t *p = calloc(1, sizeof(* p));
         cells_to_be_activated_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *) p;
