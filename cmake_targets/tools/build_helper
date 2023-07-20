@@ -562,12 +562,14 @@ check_install_additional_tools (){
         iperf3 \
         libforms-bin \
         libforms-dev \
+        libxft-dev \
         xmlstarlet"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
     PACKAGE_LIST="\
       doxygen \
       ctags \
       iperf3 \
+      libXft-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -576,6 +578,7 @@ check_install_additional_tools (){
       doxygen \
       ctags \
       iperf3 \
+      libXft-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -619,7 +622,6 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-        libxft-dev \
 	patch \
 	openssl \
         zlib1g-dev \
@@ -649,7 +651,6 @@ check_install_oai_software() {
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
-      libXft-devel \
       ninja-build \
       make \
       openssl \
