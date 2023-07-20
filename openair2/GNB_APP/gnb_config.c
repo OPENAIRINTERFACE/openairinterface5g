@@ -1317,7 +1317,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
    
 
     rrc->nr_cellid        = (uint64_t)*(GNBParamList.paramarray[i][GNB_NRCELLID_IDX].u64ptr);
-    rrc->carrier.physCellId = *scc->physCellId;
 
     rrc->um_on_default_drb = *(GNBParamList.paramarray[i][GNB_UMONDEFAULTDRB_IDX].uptr);
     if (strcmp(*(GNBParamList.paramarray[i][GNB_TRANSPORT_S_PREFERENCE_IDX].strptr), "local_mac") == 0) {
@@ -2081,7 +2080,7 @@ int gNB_app_handle_f1ap_gnb_cu_configuration_update(f1ap_gnb_cu_configuration_up
 
       if (RC.nrrrc[i]->nr_cellid == gnb_cu_cfg_update->cells_to_activate[j].nr_cellid
           && check_plmn_identity(&setup_req->cell[0].info.plmn, &gnb_cu_cfg_update->cells_to_activate[j].plmn) > 0
-          && gnb_cu_cfg_update->cells_to_activate[j].nrpci == carrier->physCellId) {
+          && setup_req->cell[0].info.nr_pci == gnb_cu_cfg_update->cells_to_activate[j].nrpci) {
         // copy system information and decode it
         AssertFatal(gnb_cu_cfg_update->cells_to_activate[j].num_SI == 0,
                     "gNB-CU Configuration Update: handling of additional SIs not implemend\n");

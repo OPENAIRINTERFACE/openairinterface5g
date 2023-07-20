@@ -1024,19 +1024,16 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   int enable_ciphering = 0;
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
+  /* look up corresponding DU. For the moment, there is only one */
+  const nr_rrc_du_container_t *du = rrc->du;
+  AssertFatal(du != NULL, "received CCCH message, but no corresponding DU found\n");
+  const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
+
   uint8_t buffer[RRC_BUF_SIZE] = {0};
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_REESTABLISH;
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
-  int size = do_RRCReestablishment(ue_context_pP,
-                                   0 /* CC_id */,
-                                   buffer,
-                                   RRC_BUF_SIZE,
-                                   xid,
-                                   SRBs,
-                                   masterCellGroup_from_DU,
-                                   scc,
-                                   &rrc->carrier);
+  int size = do_RRCReestablishment(ue_context_pP, buffer, RRC_BUF_SIZE, xid, cell_info->nr_pci, scc);
 
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n", ue_p->rnti, size);
 
@@ -1234,6 +1231,10 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
   NR_RRCReestablishmentRequest_IEs_t rrcReestablishmentRequest;
   rnti_t rnti = msg->crnti;
 
+  /* look up corresponding DU. For the moment, there is only one */
+  const nr_rrc_du_container_t *du = gnb_rrc_inst->du;
+  AssertFatal(du != NULL, "received CCCH message, but no corresponding DU found\n");
+
   LOG_I(NR_RRC, "Decoding CCCH: RNTI %04x, payload_size %d\n", rnti, msg->rrc_container_length);
   dec_rval =
       uper_decode(NULL, &asn_DEF_NR_UL_CCCH_Message, (void **)&ul_ccch_msg, msg->rrc_container, msg->rrc_container_length, 0, 0);
@@ -1349,12 +1350,16 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
               cause == NR_ReestablishmentCause_otherFailure
                   ? "Other Failure"
                   : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
-        if (physCellId != gnb_rrc_inst->carrier.physCellId) {
+
+        uint8_t xid = -1;
+        AssertFatal(du->setup_req->num_cells_available == 1, "cannot handle more than one cell\n");
+        const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
+        if (physCellId != cell_info->nr_pci) {
           /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
           LOG_E(NR_RRC,
-                " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%ld), fallback to RRC establishment\n",
+                " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%d), fallback to RRC establishment\n",
                 physCellId,
-                gnb_rrc_inst->carrier.physCellId);
+                cell_info->nr_pci);
           /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the
            * original one, the gNB-CU should trigger the UE Context Setup
            * procedure" we did not implement this yet; TBD for Multi-DU */
@@ -1907,8 +1912,6 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
   rrc->du->setup_req = malloc(sizeof(*rrc->du->setup_req));
   AssertFatal(rrc->du->setup_req != NULL, "out of memory\n");
   *rrc->du->setup_req = *req;
-
-  rrc->carrier.physCellId = cell_info->nr_pci;
 
   if (rrc->carrier.mib != NULL) {
     LOG_E(NR_RRC, "CU MIB is already initialized: double F1 setup request?\n");

@@ -152,14 +152,11 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer,
 uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti);
 
 int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
-                          int CC_id,
                           uint8_t *const buffer,
                           size_t buffer_size,
                           const uint8_t Transaction_id,
-                          NR_SRB_ToAddModList_t *SRB_configList,
-                          const uint8_t *masterCellGroup_from_DU,
-                          NR_ServingCellConfigCommon_t *scc,
-                          rrc_gNB_carrier_data_t *carrier);
+                          uint16_t pci,
+                          NR_ServingCellConfigCommon_t *scc);
 
 int do_RRCReestablishmentComplete(uint8_t *buffer, size_t buffer_size, int64_t rrc_TransactionIdentifier);
 
