@@ -398,18 +398,21 @@ static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
 
-  nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id].llr,
-                           pusch_pdu->nrOfLayers,
-                           pusch_pdu->qam_mod_order,
-                           G,
-                           gNB->pusch_vars[ULSCH_id].llr_layers);
-
-  //----------------------------------------------------------
-  //------------------- ULSCH unscrambling -------------------
-  //----------------------------------------------------------
-  start_meas(&gNB->ulsch_unscrambling_stats);
-  nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id].llr, G, pusch_pdu->data_scrambling_id, pusch_pdu->rnti);
-  stop_meas(&gNB->ulsch_unscrambling_stats);
+  if (gNB->use_pusch_tp == 0 ) 
+  { 
+    nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id].llr,
+                             pusch_pdu->nrOfLayers,
+                             pusch_pdu->qam_mod_order,
+                             G,
+                             gNB->pusch_vars[ULSCH_id].llr_layers);
+    //----------------------------------------------------------
+    //------------------- ULSCH unscrambling -------------------
+    //----------------------------------------------------------
+    start_meas(&gNB->ulsch_unscrambling_stats);
+    nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id].llr, G, pusch_pdu->data_scrambling_id, pusch_pdu->rnti);
+    stop_meas(&gNB->ulsch_unscrambling_stats);
+  }
+  
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------
   //----------------------------------------------------------
@@ -417,7 +420,7 @@ static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int
   start_meas(&gNB->ulsch_decoding_stats);
   int nbDecode =
       nr_ulsch_decoding(gNB, ULSCH_id, gNB->pusch_vars[ULSCH_id].llr, frame_parms, pusch_pdu, frame_rx, slot_rx, harq_pid, G);
-  stop_meas(&gNB->ulsch_decoding_stats);
+
   return nbDecode;
 }
 
@@ -899,7 +902,8 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
 
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_RX_PUSCH, 1);
       start_meas(&gNB->rx_pusch_stats);
-      nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, ulsch->harq_pid);
+      if (gNB->use_pusch_tp) nr_rx_pusch_tp(gNB, ULSCH_id, frame_rx, slot_rx, ulsch->harq_pid);
+      else nr_rx_pusch(gNB, ULSCH_id, frame_rx, slot_rx, ulsch->harq_pid);
       NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ULSCH_id];
       pusch_vars->ulsch_power_tot = 0;
       pusch_vars->ulsch_noise_power_tot = 0;
@@ -962,6 +966,7 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       delNotifiedFIFO_elt(req);
       totalDecode--;
     }
+    stop_meas(&gNB->ulsch_decoding_stats);
   }
   for (int i = 0; i < gNB->max_nb_srs; i++) {
     NR_gNB_SRS_t *srs = &gNB->srs[i];

@@ -131,6 +131,12 @@ void nr_rx_pusch(PHY_VARS_gNB *gNB,
                  uint8_t slot,
                  unsigned char harq_pid);
 
+int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
+                   uint8_t ulsch_id,
+                   uint32_t frame,
+                   uint8_t slot,
+                   unsigned char harq_pid);
+
 /** \brief This function performs RB extraction (signal and channel estimates) (currently signal only until channel estimation and compensation are implemented)
     @param rxdataF pointer to the received frequency domain signal
     @param rxdataF_ext pointer to the extracted frequency domain signal
@@ -208,6 +214,24 @@ void nr_ulsch_channel_compensation(int **rxdataF_ext,
 \param Msc_PUSCH number of allocated data subcarriers
 */
 void nr_idft(int32_t *z, uint32_t Msc_PUSCH);
+
+void nr_ulsch_qpsk_qpsk(c16_t *stream0_in, c16_t *stream1_in, c16_t *stream0_out, c16_t *rho01, uint32_t length);
+
+void nr_ulsch_qam16_qam16(c16_t *stream0_in,
+                          c16_t *stream1_in,
+                          c16_t *ch_mag,
+                          c16_t *ch_mag_i,
+                          c16_t *stream0_out,
+                          c16_t *rho01,
+                          uint32_t length);
+
+void nr_ulsch_qam64_qam64(c16_t *stream0_in,
+                          c16_t *stream1_in,
+                          c16_t *ch_mag,
+                          c16_t *ch_mag_i,
+                          c16_t *stream0_out,
+                          c16_t *rho01,
+                          uint32_t length);
 
 /** \brief This function generates log-likelihood ratios (decoder input) for single-stream QPSK received waveforms.
     @param rxdataF_comp Compensated channel output

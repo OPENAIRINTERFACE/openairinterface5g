@@ -73,6 +73,7 @@ void nr_codeword_scrambling(uint8_t *in,
                             uint32_t* out);
 
 void nr_codeword_unscrambling(int16_t* llr, uint32_t size, uint8_t q, uint32_t Nid, uint32_t n_RNTI);
+void nr_codeword_unscrambling_init(int16_t *s, uint32_t size, uint8_t q, uint32_t Nid, uint32_t n_RNTI);
 
 /**@}*/
 
