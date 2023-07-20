@@ -842,8 +842,6 @@ class Containerize():
 		for image in imagesList:
 			imageTag = ImageTagToUse(image, self.ranCommitID, self.ranBranch, self.ranAllowMerge)
 			mySSH.command(f'sed -i -e "s#image: {image}:latest#image: oai-ci/{imageTag}#" ci-docker-compose.yml', '\$', 2)
-		localMmeIpAddr = EPC.MmeIPAddress
-		mySSH.command('sed -i -e "s/CI_MME_IP_ADDR/' + localMmeIpAddr + '/" ci-docker-compose.yml', '\$', 2)
 
 		# Currently support only one
 		svcName = self.services[self.eNB_instance]
@@ -904,7 +902,7 @@ class Containerize():
 			cnt = 0
 			while (cnt < 20):
 				mySSH.command('docker logs ' + containerName + ' | egrep --text --color=never -i "wait|sync|Starting"', '\$', 30)
-				result = re.search('got sync|Starting F1AP at CU|Got sync', mySSH.getBefore())
+				result = re.search('got sync|Starting F1AP at CU|Got sync|Waiting for RUs to be configured', mySSH.getBefore())
 				if result is None:
 					time.sleep(6)
 					cnt += 1

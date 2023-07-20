@@ -32,7 +32,7 @@ Replaces xml_files/enb_usrp210_band40_test_05mhz_tm2.xml
 040101
 030105
 040301 040502 040606 040608 040646 040648 040401 040201
-030201
+030205
 200000
     </TestCaseRequestedList>
     <TestCaseExclusionList></TestCaseExclusionList>
@@ -69,7 +69,7 @@ Replaces xml_files/enb_usrp210_band40_test_05mhz_tm2.xml
         <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
     </testCase>
 
-    <testCase id="030201">
+    <testCase id="030205">
         <class>Undeploy_Object</class>
         <desc>Undeploy eNB</desc>
         <yaml_path>ci-scripts/yaml_files/lte_b200_tdd_05Mhz_tm2</yaml_path>
