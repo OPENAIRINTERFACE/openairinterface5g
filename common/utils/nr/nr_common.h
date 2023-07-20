@@ -129,6 +129,8 @@ void freq2time(uint16_t ofdm_symbol_size,
                int16_t *freq_signal,
                int16_t *time_signal);
 
+void nr_est_delay(int ofdm_symbol_size, const c16_t *ls_est, c16_t *ch_estimates_time, delay_t *delay);
+
 #define CEILIDIV(a,b) ((a+b-1)/b)
 #define ROUNDIDIV(a,b) (((a<<1)+b)/(b<<1))
 

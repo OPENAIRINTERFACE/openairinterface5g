@@ -184,9 +184,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
         pilot_cnt += 2;
       }
 
-      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)pusch_vars->ul_ch_estimates_time[aarx]);
-
-      nr_est_timing_advance_pusch(&gNB->frame_parms, pusch_vars->ul_ch_estimates_time[aarx], delay);
+      nr_est_delay(gNB->frame_parms.ofdm_symbol_size, ul_ls_est, (c16_t *)pusch_vars->ul_ch_estimates_time[aarx], delay);
       int delay_idx = get_delay_idx(delay->est_delay, MAX_DELAY_COMP);
       c16_t *ul_delay_table = gNB->frame_parms.delay_table[delay_idx];
 
@@ -270,8 +268,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
       }
 
       // Delay compensation
-      freq2time(symbolSize, (int16_t *)ul_ls_est, (int16_t *)pusch_vars->ul_ch_estimates_time[aarx]);
-      nr_est_timing_advance_pusch(&gNB->frame_parms, pusch_vars->ul_ch_estimates_time[aarx], delay);
+      nr_est_delay(gNB->frame_parms.ofdm_symbol_size, ul_ls_est, (c16_t *)pusch_vars->ul_ch_estimates_time[aarx], delay);
       int delay_idx = get_delay_idx(-delay->est_delay, MAX_DELAY_COMP);
       c16_t *ul_delay_table = gNB->frame_parms.delay_table[delay_idx];
       for (int n = 0; n < nb_rb_pusch * NR_NB_SC_PER_RB; n++) {

@@ -801,3 +801,27 @@ void freq2time(uint16_t ofdm_symbol_size,
       break;
   }
 }
+
+void nr_est_delay(int ofdm_symbol_size, const c16_t *ls_est, c16_t *ch_estimates_time, delay_t *delay)
+{
+  freq2time(ofdm_symbol_size, (int16_t *)ls_est, (int16_t *)ch_estimates_time);
+
+  int max_pos = delay->delay_max_pos;
+  int max_val = delay->delay_max_val;
+  const int sync_pos = 0;
+
+  for (int i = 0; i < ofdm_symbol_size; i++) {
+    int temp = c16amp2(ch_estimates_time[i]) >> 1;
+    if (temp > max_val) {
+      max_pos = i;
+      max_val = temp;
+    }
+  }
+
+  if (max_pos > ofdm_symbol_size / 2)
+    max_pos = max_pos - ofdm_symbol_size;
+
+  delay->delay_max_pos = max_pos;
+  delay->delay_max_val = max_val;
+  delay->est_delay = max_pos - sync_pos;
+}
