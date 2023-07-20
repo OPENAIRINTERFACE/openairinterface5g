@@ -466,7 +466,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, uint32_t assoc_id, uint32_t
 
   // tmp
   for (int i=0; i<num_cells_to_activate; i++)
-    AssertFatal(resp.cells_to_activate[i].num_SI > 0, "System Information %d is missing", i);
+    AssertFatal(resp.cells_to_activate[i].num_SI == 0, "System Information handling not implemented");
 
   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
   f1_setup_response(&resp);
