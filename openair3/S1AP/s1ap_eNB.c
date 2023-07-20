@@ -32,7 +32,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
-#include <crypt.h>
+#include "openair3/SECU/kdf.h"
 
 #include "tree.h"
 #include "queue.h"
@@ -108,17 +108,20 @@ int s1ap_timer_remove(long timer_id)
   return ret;
 }
 
-uint32_t s1ap_generate_eNB_id(void) {
-  char    *out;
-  char     hostname[50];
-  int      ret;
-  uint32_t eNB_id;
+uint32_t s1ap_generate_eNB_id(void)
+{
   /* Retrieve the host name */
-  ret = gethostname(hostname, sizeof(hostname));
+  char hostname[32] = {0};
+  int const ret = gethostname(hostname, sizeof(hostname));
   DevAssert(ret == 0);
-  out = crypt(hostname, "eurecom");
-  DevAssert(out != NULL);
-  eNB_id = ((out[0] << 24) | (out[1] << 16) | (out[2] << 8) | out[3]);
+
+  uint8_t key[32] = {"eurecom"};
+  byte_array_t data = {.len = 32, .buf = (uint8_t *)hostname};
+
+  uint8_t out[32] = {0};
+  kdf(key, data, 32, out);
+
+  uint32_t const eNB_id = ((out[0] << 24) | (out[1] << 16) | (out[2] << 8) | out[3]);
   return eNB_id;
 }
 
