@@ -134,9 +134,9 @@ class OaiCiTest():
 			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
-		SSH.command('mkdir -p ' + self.UESourceCodePath, '\$', 5)
-		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
-		SSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
+		SSH.command(f'mkdir -p {self.UESourceCodePath}', '\$', 5)
+		SSH.command(f'cd {self.UESourceCodePath}', '\$', 5)
+		SSH.command(f'if [ ! -e .git ]; then stdbuf -o0 git clone {full_ran_repo_name} .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
 		# here add a check if git clone or git fetch went smoothly
 		SSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
 		SSH.command('git config user.name "OAI Jenkins"', '\$', 5)
@@ -170,11 +170,11 @@ class OaiCiTest():
 					HTML.CreateHtmlTestRow(self.Build_OAI_UE_args, 'OK', CONST.ALL_PROCESSES_OK)
 					return
 
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S git clean -x -d -ff', '\$', 30)
+			SSH.command(f'echo {self.UEPassword} | sudo -S git clean -x -d -ff', '\$', 30)
 
 		# if the commit ID is provided use it to point to it
 		if self.ranCommitID != '':
-			SSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
+			SSH.command(f'git checkout -f {self.ranCommitID}', '\$', 30)
 		# if the branch is not develop, then it is a merge request and we need to do 
 		# the potential merge. Note that merge conflicts should already been checked earlier
 		if self.ranAllowMerge:
@@ -182,33 +182,33 @@ class OaiCiTest():
 				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					SSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 30)
 			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				SSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 30)
+				logging.debug(f'Merging with the target branch: {self.ranTargetBranch}')
+				SSH.command(f'git merge --ff origin/{self.ranTargetBranch} -m "Temporary merge for CI"', '\$', 30)
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('mkdir -p log', '\$', 5)
 		SSH.command('chmod 777 log', '\$', 5)
 		# no need to remove in log (git clean did the trick)
-		SSH.command('stdbuf -o0 ./build_oai ' + self.Build_OAI_UE_args + ' 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 1200)
+		SSH.command(f'stdbuf -o0 ./build_oai {self.Build_OAI_UE_args} 2>&1 | stdbuf -o0 tee compile_oai_ue.log', 'Bypassing the Tests|build have failed', 1200)
 		SSH.command('ls ran_build/build', '\$', 3)
 		SSH.command('ls ran_build/build', '\$', 3)
 		buildStatus = True
 		result = re.search(self.air_interface, SSH.getBefore())
 		if result is None:
 			buildStatus = False
-		SSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		SSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		SSH.command('mv compile_oai_ue.log ' + 'build_log_' + self.testCase_id, '\$', 5)
+		SSH.command(f'mkdir -p build_log_{self.testCase_id}', '\$', 5)
+		SSH.command(f'mv log/* build_log_{self.testCase_id}', '\$', 5)
+		SSH.command(f'mv compile_oai_ue.log build_log_{self.testCase_id}', '\$', 5)
 		if buildStatus:
 			# Generating a BUILD INFO file
-			SSH.command('echo "SRC_BRANCH: ' + self.ranBranch + '" > ../LAST_BUILD_INFO.txt', '\$', 2)
-			SSH.command('echo "SRC_COMMIT: ' + self.ranCommitID + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+			SSH.command(f'echo "SRC_BRANCH: {self.ranBranch}" > ../LAST_BUILD_INFO.txt', '\$', 2)
+			SSH.command(f'echo "SRC_COMMIT: {self.ranCommitID}" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			if self.ranAllowMerge:
 				SSH.command('echo "MERGED_W_TGT_BRANCH: YES" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				if self.ranTargetBranch == '':
 					SSH.command('echo "TGT_BRANCH: develop" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 				else:
-					SSH.command('echo "TGT_BRANCH: ' + self.ranTargetBranch + '" >> ../LAST_BUILD_INFO.txt', '\$', 2)
+					SSH.command(f'echo "TGT_BRANCH: {self.ranTargetBranch}" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			else:
 				SSH.command('echo "MERGED_W_TGT_BRANCH: NO" >> ../LAST_BUILD_INFO.txt', '\$', 2)
 			SSH.close()
@@ -248,7 +248,7 @@ class OaiCiTest():
 			UE_prefix = 'NR '
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
+		SSH.command(f'cd {self.UESourceCodePath}', '\$', 5)
 		# Initialize_OAI_UE_args usually start with -C and followed by the location in repository
 		SSH.command('source oaienv', '\$', 5)
 		SSH.command('cd cmake_targets/ran_build/build', '\$', 5)
@@ -262,11 +262,11 @@ class OaiCiTest():
 					SSH.command('sed -f /tmp/adapt_usim_parameters.sed ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
 				else:
 					SSH.command('sed -e "s#93#92#" -e "s#8baf473f2f8fd09487cccbd7097c6862#fec86ba6eb707ed08905757b1bb44b8f#" -e "s#e734f8734007d6c5ce7a0508809e7e9c#C42449363BBAD02B66D16BC975D77CC1#" ../../../openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf > ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf', '\$', 5)
-				SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf .u*', '\$', 5)
-				SSH.command('echo ' + self.UEPassword + ' | sudo -S ../../nas_sim_tools/build/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
+				SSH.command(f'echo {self.UEPassword} | sudo -S rm -Rf .u*', '\$', 5)
+				SSH.command(f'echo {self.UEPassword} | sudo -S ../../nas_sim_tools/build/conf2uedata -c ../../../openair3/NAS/TOOLS/ci-ue_eurecom_test_sfr.conf -o .', '\$', 5)
 		else:
-			SSH.command('if [ -e rbconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm rbconfig.raw; fi', '\$', 5)
-			SSH.command('if [ -e reconfig.raw ]; then echo ' + self.UEPassword + ' | sudo -S rm reconfig.raw; fi', '\$', 5)
+			SSH.command(f'if [ -e rbconfig.raw ]; then echo {self.UEPassword} | sudo -S rm rbconfig.raw; fi', '\$', 5)
+			SSH.command(f'if [ -e reconfig.raw ]; then echo {self.UEPassword} | sudo -S rm reconfig.raw; fi', '\$', 5)
 			# Copy the RAW files from gNB running directory (maybe on another machine)
 			copyin_res = SSH.copyin(RAN.eNBIPAddress, RAN.eNBUserName, RAN.eNBPassword, RAN.eNBSourceCodePath + '/cmake_targets/rbconfig.raw', '.')
 			if (copyin_res == 0):
@@ -275,9 +275,9 @@ class OaiCiTest():
 			if (copyin_res == 0):
 				SSH.copyout(self.UEIPAddress, self.UEUserName, self.UEPassword, './reconfig.raw', self.UESourceCodePath + '/cmake_targets/ran_build/build')
 		SSH.command(f'echo "ulimit -c unlimited && {self.cmd_prefix} ./{self.air_interface} {self.Initialize_OAI_UE_args}" > ./my-lte-uesoftmodem-run{self.UE_instance}.sh', '\$', 5)
-		SSH.command('chmod 775 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
-		self.UELogFile = 'ue_' + self.testCase_id + '.log'
+		SSH.command(f'chmod 775 ./my-lte-uesoftmodem-run {self.UE_instance}.sh', '\$', 5)
+		SSH.command(f'echo {self.UEPassword} | sudo -S rm -Rf {self.UESourceCodePath}/cmake_targets/ue_{self.testCase_id}.log', '\$', 5)
+		self.UELogFile = f'ue_{self.testCase_id}.log'
 
 		# We are now looping several times to hope we really sync w/ an eNB
 		doOutterLoop = True
@@ -285,9 +285,9 @@ class OaiCiTest():
 		gotSyncStatus = True
 		fullSyncStatus = True
 		while (doOutterLoop):
-			SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets/ran_build/build', '\$', 5)
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -Rf ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log', '\$', 5)
-			SSH.command('echo $USER; nohup sudo -E stdbuf -o0 ./my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh' + ' > ' + self.UESourceCodePath + '/cmake_targets/ue_' + self.testCase_id + '.log ' + ' 2>&1 &', self.UEUserName, 5)
+			SSH.command(f'cd {self.UESourceCodePath}/cmake_targets/ran_build/build', '\$', 5)
+			SSH.command(f'echo {self.UEPassword} | sudo -S rm -Rf {self.UESourceCodePath}/cmake_targets/ue_{self.testCase_id}.log', '\$', 5)
+			SSH.command(f'echo $USER; nohup sudo -E stdbuf -o0 ./my-lte-uesoftmodem-run {self.UE_instance}.sh > {self.UESourceCodePath}/cmake_targets/ue_{self.testCase_id}.log 2>&1 &', self.UEUserName, 5)
 			time.sleep(6)
 			SSH.command('cd ../..', '\$', 5)
 			doLoop = True
@@ -302,7 +302,7 @@ class OaiCiTest():
 					gotSyncStatus = False
 					doLoop = False
 					continue
-				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
+				SSH.command(f'stdbuf -o0 cat ue_{self.testCase_id}.log | egrep --text --color=never -i "wait|sync"', '\$', 4)
 				if self.air_interface == 'nr-uesoftmodem':
 					result = re.search('Starting sync detection', SSH.getBefore())
 				else:
@@ -317,7 +317,7 @@ class OaiCiTest():
 				SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
 				result = re.search('-uesoftmodem', SSH.getBefore())
 				if result is not None:
-					SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT -r *-uesoftmodem', '\$', 4)
+					SSH.command(f'echo {self.UEPassword} | sudo -S killall --signal=SIGINT -r *-uesoftmodem', '\$', 4)
 					time.sleep(3)
 				outterLoopCounter = outterLoopCounter - 1
 				if (outterLoopCounter == 0):
@@ -347,7 +347,7 @@ class OaiCiTest():
 						SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
 						result = re.search('nr-uesoftmodem', SSH.getBefore())
 						if result is not None:
-							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT nr-uesoftmodem', '\$', 4)
+							SSH.command(f'echo {self.UEPassword} | sudo -S killall --signal=SIGINT nr-uesoftmodem', '\$', 4)
 						time.sleep(6)
 					else:
 						# Here we do have a great chance that the UE did cell-sync w/ eNB
@@ -355,7 +355,7 @@ class OaiCiTest():
 						doOutterLoop = False
 						fullSyncStatus = True
 						continue
-				SSH.command('stdbuf -o0 cat ue_' + self.testCase_id + '.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
+				SSH.command(f'stdbuf -o0 cat ue_{self.testCase_id}.log | egrep --text --color=never -i "wait|sync|Frequency"', '\$', 4)
 				if self.air_interface == 'nr-uesoftmodem':
 					# Positive messaging -->
 					result = re.search('Measured Carrier Frequency', SSH.getBefore())
@@ -378,7 +378,7 @@ class OaiCiTest():
 						SSH.command('ps -aux | grep --text --color=never softmodem | grep -v grep', '\$', 4)
 						result = re.search('lte-uesoftmodem', SSH.getBefore())
 						if result is not None:
-							SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
+							SSH.command(f'echo {self.UEPassword} | sudo -S killall --signal=SIGINT lte-uesoftmodem', '\$', 4)
 			outterLoopCounter = outterLoopCounter - 1
 			if (outterLoopCounter == 0):
 				doOutterLoop = False
@@ -543,13 +543,13 @@ class OaiCiTest():
 		result = re.search(', (?P<packetloss>[0-9\.]+)% packet loss, time [0-9\.]+ms', ping_output)
 		if result is None:
 			message = ue_header + ': Packet Loss Not Found!'
-			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			logging.error(f'\u001B[1;37;41m {message} \u001B[0m')
 			return (False, message)
 		packetloss = result.group('packetloss')
 		result = re.search('rtt min\/avg\/max\/mdev = (?P<rtt_min>[0-9\.]+)\/(?P<rtt_avg>[0-9\.]+)\/(?P<rtt_max>[0-9\.]+)\/[0-9\.]+ ms', ping_output)
 		if result is None:
 			message = ue_header + ': Ping RTT_Min RTT_Avg RTT_Max Not Found!'
-			logging.error('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			logging.error(f'\u001B[1;37;41m {message} \u001B[0m')
 			return (False, message)
 		rtt_min = result.group('rtt_min')
 		rtt_avg = result.group('rtt_avg')
@@ -561,10 +561,10 @@ class OaiCiTest():
 		max_msg = f'RTT(Max)   : {rtt_max} ms'
 
 		logging.info(f'\u001B[1;37;44m ping result for {ue_header} \u001B[0m')
-		logging.info(f'\u001B[1;34m    ' + pal_msg + '\u001B[0m')
-		logging.info(f'\u001B[1;34m    ' + min_msg + '\u001B[0m')
-		logging.info(f'\u001B[1;34m    ' + avg_msg + '\u001B[0m')
-		logging.info(f'\u001B[1;34m    ' + max_msg + '\u001B[0m')
+		logging.info(f'\u001B[1;34m    {pal_msg} \u001B[0m')
+		logging.info(f'\u001B[1;34m    {min_msg} \u001B[0m')
+		logging.info(f'\u001B[1;34m    {avg_msg} \u001B[0m')
+		logging.info(f'\u001B[1;34m    {max_msg} \u001B[0m')
 
 		message = f'{ue_header}\n{pal_msg}\n{min_msg}\n{avg_msg}\n{max_msg}'
 
@@ -580,7 +580,7 @@ class OaiCiTest():
 		if self.ping_rttavg_threshold != '':
 			if float(rtt_avg) > float(self.ping_rttavg_threshold):
 				ping_rttavg_error_msg = f'RTT(Avg) too high: {rtt_avg} ms; Target: {self.ping_rttavg_threshold} ms'
-				message += '\n' + ping_rttavg_error_msg
+				message += f'\n {ping_rttavg_error_msg}'
 				logging.error('\u001B[1;37;41m'+ ping_rttavg_error_msg +' \u001B[0m')
 				return (False, message)
 
@@ -631,8 +631,8 @@ class OaiCiTest():
 				iperf_bandwidth_new = float(iperf_bandwidth) - ((ue_num - 1) * residualBW)
 			else:
 				iperf_bandwidth_new = residualBW
-		iperf_bandwidth_str = '-b ' + iperf_bandwidth
-		iperf_bandwidth_str_new = '-b ' + ('%.2f' % iperf_bandwidth_new)
+		iperf_bandwidth_str = f'-b {iperf_bandwidth}'
+		iperf_bandwidth_str_new = f"-b {'%.2f' % iperf_bandwidth_new}"
 		result = re.sub(iperf_bandwidth_str, iperf_bandwidth_str_new, str(self.iperf_args))
 		if result is None:
 			logging.debug('\u001B[1;37;41m Calculate Iperf bandwidth Failed! \u001B[0m')
@@ -648,17 +648,17 @@ class OaiCiTest():
 			maxbitrate = result.group('maximum')
 			minbitrate = result.group('minimum')
 			lock.acquire()
-			logging.debug('\u001B[1;37;44m TCP iperf result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug(f'\u001B[1;37;44m TCP iperf result ({UE_IPAddress}) \u001B[0m')
 			msg = 'TCP Stats   :\n'
 			if avgbitrate is not None:
-				logging.debug('\u001B[1;34m    Avg Bitrate : ' + avgbitrate + '\u001B[0m')
-				msg += 'Avg Bitrate : ' + avgbitrate + '\n'
+				logging.debug(f'\u001B[1;34m    Avg Bitrate : {avgbitrate} \u001B[0m')
+				msg += f'Avg Bitrate : {avgbitrate} \n'
 			if maxbitrate is not None:
-				logging.debug('\u001B[1;34m    Max Bitrate : ' + maxbitrate + '\u001B[0m')
-				msg += 'Max Bitrate : ' + maxbitrate + '\n'
+				logging.debug(f'\u001B[1;34m    Max Bitrate : {maxbitrate} \u001B[0m')
+				msg += f'Max Bitrate : {maxbitrate} \n'
 			if minbitrate is not None:
-				logging.debug('\u001B[1;34m    Min Bitrate : ' + minbitrate + '\u001B[0m')
-				msg += 'Min Bitrate : ' + minbitrate + '\n'
+				logging.debug(f'\u001B[1;34m    Min Bitrate : {minbitrate} \u001B[0m')
+				msg += f'Min Bitrate : {minbitrate} \n'
 			statusQueue.put(0)
 			statusQueue.put(device_id)
 			statusQueue.put(UE_IPAddress)
@@ -672,9 +672,9 @@ class OaiCiTest():
 		result = re.search('-u', str(iperf_real_options))
 		if result is None:
 			logging.debug('Into Iperf_analyzeV2TCPOutput client')
-			filename = EPC.SourceCodePath + '/scripts/iperf_' + self.testCase_id + '_' + device_id + '.log'
+			filename = f'{EPC.SourceCodePath}/scripts/iperf_{self.testCase_id}_{device_id}.log'
 			response = self.Iperf_analyzeV2TCPOutput(lock, UE_IPAddress, device_id, statusQueue, iperf_real_options, EPC, SSH, filename)
-			logging.debug('Iperf_analyzeV2TCPOutput response returned value = ' + str(response))
+			logging.debug(f'Iperf_analyzeV2TCPOutput response returned value = {response}')
 			return response
 
 		result = re.search('Server Report:', SSH.getBefore())
@@ -709,13 +709,13 @@ class OaiCiTest():
 			packetloss = result.group('packetloss')
 			jitter = result.group('jitter')
 			lock.acquire()
-			logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug(f'\u001B[1;37;44m iperf result {UE_IPAddress} \u001B[0m')
 			iperfStatus = True
-			msg = 'Req Bitrate : ' + req_bandwidth + '\n'
-			logging.debug('\u001B[1;34m    Req Bitrate : ' + req_bandwidth + '\u001B[0m')
+			msg = f'Req Bitrate : {req_bandwidth} \n'
+			logging.debug(f'\u001B[1;34m    Req Bitrate : {req_bandwidth} \u001B[0m')
 			if bitrate is not None:
-				msg += 'Bitrate     : ' + bitrate + '\n'
-				logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
+				msg += f'Bitrate     : {bitrate} \n'
+				logging.debug(f'\u001B[1;34m    Bitrate : {bitrate}  \u001B[0m')
 				result = re.search('(?P<real_bw>[0-9\.]+) [KMG]bits/sec', str(bitrate))
 				if result is not None:
 					actual_bw = float(str(result.group('real_bw')))
@@ -730,18 +730,18 @@ class OaiCiTest():
 						actual_bw = actual_bw * 1000000000
 					br_loss = 100 * actual_bw / req_bw
 					bitperf = '%.2f ' % br_loss
-					msg += 'Bitrate Perf: ' + bitperf + '%\n'
-					logging.debug('\u001B[1;34m    Bitrate Perf: ' + bitperf + '%\u001B[0m')
+					msg += f'Bitrate Perf: {bitperf} %\n'
+					logging.debug(f'\u001B[1;34m    Bitrate Perf: {bitperf} %\u001B[0m')
 			if packetloss is not None:
-				msg += 'Packet Loss : ' + packetloss + '%\n'
-				logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
+				msg += f'Packet Loss : {packetloss} %\n'
+				logging.debug(f'\u001B[1;34m    Packet Loss : {packetloss} %\u001B[0m')
 				if float(packetloss) > float(self.iperf_packetloss_threshold):
 					msg += 'Packet Loss too high!\n'
 					logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
 					iperfStatus = False
 			if jitter is not None:
-				msg += 'Jitter      : ' + jitter + '\n'
-				logging.debug('\u001B[1;34m    Jitter      : ' + jitter + '\u001B[0m')
+				msg += f'Jitter      : {jitter} \n'
+				logging.debug(f'\u001B[1;34m    Jitter      : {jitter} \u001B[0m')
 			if (iperfStatus):
 				statusQueue.put(0)
 			else:
@@ -785,16 +785,15 @@ class OaiCiTest():
 				if result is not None:
 					report.append(str(line))
 					report_msg+=result.group('role') + ' ' + result.group('direction')+ '\t = ' +result.group('bitrate')+'\n'
-
 		if len(report)>0:
 			lock.acquire()
 			statusQueue.put(0)
 			statusQueue.put(device_id)
 			statusQueue.put(UE_IPAddress)
 			statusQueue.put(report_msg)
-			logging.debug('\u001B[1;37;45m TCP Bidir Iperf Result (' + UE_IPAddress + ') \u001B[0m')
+			logging.debug(f'\u001B[1;37;45m TCP Bidir Iperf Result ({UE_IPAddress}) \u001B[0m')
 			for rLine in report_msg.split('\n'):
-				logging.debug('\u001B[1;35m    ' + rLine + '\u001B[0m')
+				logging.debug(f'\u001B[1;35m    {rLine} \u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Bidir TCP : Could not analyze from Log file')
@@ -896,20 +895,20 @@ class OaiCiTest():
 				statusQueue.put(0)
 			statusQueue.put(device_id)
 			statusQueue.put(UE_IPAddress)
-			req_msg = 'Req Bitrate : ' + req_bandwidth
-			bir_msg = 'Bitrate     : ' + bitrate
-			brl_msg = 'Bitrate Perf: ' + bitperf
-			jit_msg = 'Jitter      : ' + jitter
-			pal_msg = 'Packet Loss : ' + packetloss
-			statusQueue.put(req_msg + '\n' + bir_msg + '\n' + brl_msg + '\n' + jit_msg + '\n' + pal_msg + '\n' + pal_too_high_msg + '\n' + bit_too_low_msg + '\n')
-			logging.debug('\u001B[1;37;45m iperf result (' + UE_IPAddress + ') \u001B[0m')
-			logging.debug('\u001B[1;35m    ' + req_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + bir_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + brl_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + jit_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + pal_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + pal_too_high_msg + '\u001B[0m')
-			logging.debug('\u001B[1;35m    ' + bit_too_low_msg + '\u001B[0m')
+			req_msg = f'Req Bitrate : {req_bandwidth}'
+			bir_msg = f'Bitrate     : {bitrate}'
+			brl_msg = f'Bitrate Perf: {bitperf}'
+			jit_msg = f'Jitter      : {jitter}'
+			pal_msg = f'Packet Loss : {packetloss}'
+			statusQueue.put(f'{req_msg}\n{bir_msg}\n{brl_msg}\n{jit_msg}\n{pal_msg}\n{pal_too_high_msg}\n{bit_too_low_msg}\n')
+			logging.debug(f'\u001B[1;37;45m iperf result ({UE_IPAddress}) \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {req_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {bir_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {brl_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {jit_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {pal_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {pal_too_high_msg} \u001B[0m')
+			logging.debug(f'\u001B[1;35m    {bit_too_low_msg} \u001B[0m')
 			lock.release()
 		else:
 			self.ping_iperf_wrong_exit(lock, UE_IPAddress, device_id, statusQueue, 'Could not analyze from server log')
@@ -927,7 +926,7 @@ class OaiCiTest():
 			statusQueue.put(device_id)
 			statusQueue.put(UE_IPAddress)
 			if result is not None:
-				logging.debug('\u001B[1;37;41m ' + result.group('error') + ' \u001B[0m')
+				logging.debug(f"\u001B[1;37;41m {result.group('error')} \u001B[0m")
 				statusQueue.put(result.group('error'))
 			else:
 				logging.debug('\u001B[1;37;41m Bitrate and/or Packet Loss Not Found! \u001B[0m')
@@ -937,13 +936,13 @@ class OaiCiTest():
 		bitrate = result.group('bitrate')
 		packetloss = result.group('packetloss')
 		lock.acquire()
-		logging.debug('\u001B[1;37;44m iperf result (' + UE_IPAddress + ') \u001B[0m')
-		logging.debug('\u001B[1;34m    Bitrate     : ' + bitrate + '\u001B[0m')
-		msg = 'Bitrate     : ' + bitrate + '\n'
+		logging.debug(f'\u001B[1;37;44m iperf result ({UE_IPAddress}) \u001B[0m')
+		logging.debug(f'\u001B[1;34m    Bitrate     : {bitrate} \u001B[0m')
+		msg = f'Bitrate     : {bitrate} \n'
 		iperfStatus = True
 		if packetloss is not None:
-			logging.debug('\u001B[1;34m    Packet Loss : ' + packetloss + '%\u001B[0m')
-			msg += 'Packet Loss : ' + packetloss + '%\n'
+			logging.debug(f'\u001B[1;34m    Packet Loss : {packetloss} %\u001B[0m')
+			msg += f'Packet Loss : {packetloss} %\n'
 			if float(packetloss) > float(self.iperf_packetloss_threshold):
 				logging.debug('\u001B[1;37;41m Packet Loss too high \u001B[0m')
 				msg += 'Packet Loss too high!\n'
@@ -1102,8 +1101,8 @@ class OaiCiTest():
 			# -B 10.0.1.1 -u -s -i 1 -fm
 			server_options = re.sub('-u.*$', '-u -s -i 1 -fm', str(self.iperf_args))
 			server_options = server_options.replace('-c','-B')
-			SSH.command('rm -f /tmp/tmp_iperf_server_' + self.testCase_id + '.log', '\$', 5)
-			SSH.command('echo $USER; nohup iperf ' + server_options + ' > /tmp/tmp_iperf_server_' + self.testCase_id + '.log 2>&1 &', iServerUser, 5)
+			SSH.command(f'rm -f /tmp/tmp_iperf_server_{self.testCase_id}.log', '\$', 5)
+			SSH.command(f'echo $USER; nohup iperf {server_options} > /tmp/tmp_iperf_server_{self.testCase_id}.log 2>&1 &', iServerUser, 5)
 			time.sleep(0.5)
 			SSH.close()
 
@@ -1112,13 +1111,13 @@ class OaiCiTest():
 		modified_options = modified_options.replace('-R','')
 		iperf_time = self.Iperf_ComputeTime()
 		SSH.open(iClientIPAddr, iClientUser, iClientPasswd)
-		SSH.command('rm -f /tmp/tmp_iperf_' + self.testCase_id + '.log', '\$', 5)
-		iperf_status = SSH.command('stdbuf -o0 iperf ' + modified_options + ' 2>&1 | stdbuf -o0 tee /tmp/tmp_iperf_' + self.testCase_id + '.log', '\$', int(iperf_time)*5.0)
+		SSH.command(f'rm -f /tmp/tmp_iperf_{self.testCase_id}.log', '\$', 5)
+		iperf_status = SSH.command(f'stdbuf -o0 iperf {modified_options} 2>&1 | stdbuf -o0 tee /tmp/tmp_iperf_{self.testCase_id}.log', '\$', int(iperf_time)*5.0)
 		status_queue = SimpleQueue()
 		lock = Lock()
 		if iperf_status < 0:
 			message = 'iperf on OAI UE crashed due to TIMEOUT !'
-			logging.debug('\u001B[1;37;41m ' + message + ' \u001B[0m')
+			logging.debug(f'\u001B[1;37;41m {message} \u001B[0m')
 			clientStatus = -2
 		else:
 			if self.iperf_options == 'sink':
@@ -1139,20 +1138,20 @@ class OaiCiTest():
 			SSH.close()
 
 		if (clientStatus == -1):
-			if (os.path.isfile('iperf_server_' + self.testCase_id + '.log')):
-				os.remove('iperf_server_' + self.testCase_id + '.log')
-			SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
-			filename='iperf_server_' + self.testCase_id + '_OAI-UE.log'
+			if (os.path.isfile(f'iperf_server_{self.testCase_id}.log')):
+				os.remove(f'iperf_server_{self.testCase_id}.log')
+			SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, f'/tmp/tmp_iperf_server_{self.testCase_id}.log', f'iperf_server_{self.testCase_id}_OAI-UE.log')
+			filename=f'iperf_server_{self.testCase_id}_OAI-UE.log'
 			self.Iperf_analyzeV2Server(lock, '10.0.1.2', 'OAI-UE', status_queue, modified_options,filename,0)
 
 		# copying on the EPC server for logCollection
 		if (clientStatus == -1):
-			copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, '/tmp/tmp_iperf_server_' + self.testCase_id + '.log', 'iperf_server_' + self.testCase_id + '_OAI-UE.log')
+			copyin_res = SSH.copyin(iServerIPAddr, iServerUser, iServerPasswd, f'/tmp/tmp_iperf_server_{self.testCase_id}.log', f'iperf_server_{self.testCase_id}_OAI-UE.log')
 			if (copyin_res == 0):
-				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_server_' + self.testCase_id + '_OAI-UE.log', EPC.SourceCodePath + '/scripts')
-		copyin_res = SSH.copyin(iClientIPAddr, iClientUser, iClientPasswd, '/tmp/tmp_iperf_' + self.testCase_id + '.log', 'iperf_' + self.testCase_id + '_OAI-UE.log')
+				SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, f'iperf_server_{self.testCase_id}_OAI-UE.log', f'{EPC.SourceCodePath}/scripts')
+		copyin_res = SSH.copyin(iClientIPAddr, iClientUser, iClientPasswd, f'/tmp/tmp_iperf_{self.testCase_id}.log', f'iperf_{self.testCase_id}_OAI-UE.log')
 		if (copyin_res == 0):
-			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, 'iperf_' + self.testCase_id + '_OAI-UE.log', EPC.SourceCodePath + '/scripts')
+			SSH.copyout(EPC.IPAddress, EPC.UserName, EPC.Password, f'iperf_{self.testCase_id}_OAI-UE.log', f'{EPC.SourceCodePath}/scripts')
 		iperf_noperf = False
 		if status_queue.empty():
 			iperf_status = False
@@ -1248,9 +1247,9 @@ class OaiCiTest():
 				self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 
 	def AnalyzeLogFile_UE(self, UElogFile,HTML,RAN):
-		if (not os.path.isfile('./' + UElogFile)):
+		if (not os.path.isfile(f'./{UElogFile}')):
 			return -1
-		ue_log_file = open('./' + UElogFile, 'r')
+		ue_log_file = open(f'./{UElogFile}', 'r')
 		exitSignalReceived = False
 		foundAssertion = False
 		msgAssertion = ''
@@ -1352,59 +1351,59 @@ class OaiCiTest():
 				try:
 					mibMsg = "MIB Information: " + result.group(1) + ', ' + result.group(2)
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mibMsg = "    nidcell = " + result.group('nidcell')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mibMsg = "    n_rb_dl = " + result.group('n_rb_dl')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mibMsg = "    phich_duration = " + result.group('phich_duration')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mibMsg = "    phich_resource = " + result.group('phich_resource')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mibMsg = "    tx_ant = " + result.group('tx_ant')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					mib_found = True
 				except Exception as e:
-					logging.error('\033[91m' + "MIB marker was not found" + '\033[0m')
+					logging.error(f'\033[91m MIB marker was not found \033[0m')
 			result = re.search("Measured Carrier Frequency (?P<measured_carrier_frequency>\d{1,15}) Hz", str(line))
 			if result is not None and (not frequency_found):
 				try:
-					mibMsg = "Measured Carrier Frequency = " + result.group('measured_carrier_frequency') + ' Hz'
+					mibMsg = f"Measured Carrier Frequency = {result.group('measured_carrier_frequency')} Hz"
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					frequency_found = True
 				except Exception as e:
-					logging.error('\033[91m' + "Measured Carrier Frequency not found" + '\033[0m')
+					logging.error(f'\033[91m Measured Carrier Frequency not found \033[0m')
 			result = re.search("PLMN MCC (?P<mcc>\d{1,3}), MNC (?P<mnc>\d{1,3}), TAC", str(line))
 			if result is not None and (not plmn_found):
 				try:
-					mibMsg = 'PLMN MCC = ' + result.group('mcc') + ' MNC = ' + result.group('mnc')
+					mibMsg = f"PLMN MCC = {result.group('mcc')} MNC = {result.group('mnc')}"
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 					plmn_found = True
 				except Exception as e:
-					logging.error('\033[91m' + "PLMN not found" + '\033[0m')
+					logging.error(f'\033[91m PLMN not found \033[0m')
 			result = re.search("Found (?P<operator>[\w,\s]{1,15}) \(name from internal table\)", str(line))
 			if result is not None:
 				try:
-					mibMsg = "The operator is: " + result.group('operator')
+					mibMsg = f"The operator is: {result.group('operator')}"
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + '\n'
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 				except Exception as e:
-					logging.error('\033[91m' + "Operator name not found" + '\033[0m')
+					logging.error(f'\033[91m Operator name not found \033[0m')
 			result = re.search("SIB5 InterFreqCarrierFreq element (.{1,4})/(.{1,4})", str(line))
 			if result is not None:
 				try:
-					mibMsg = "SIB5 InterFreqCarrierFreq element " + result.group(1) + '/' + result.group(2)
+					mibMsg = f'SIB5 InterFreqCarrierFreq element {result.group(1)}/{result.group(2)}'
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + mibMsg + ' -> '
-					logging.debug('\033[94m' + mibMsg + '\033[0m')
+					logging.debug(f'\033[94m{mibMsg}\033[0m')
 				except Exception as e:
-					logging.error('\033[91m' + "SIB5 InterFreqCarrierFreq element not found" + '\033[0m')
+					logging.error(f'\033[91m SIB5 InterFreqCarrierFreq element not found \033[0m')
 			result = re.search("DL Carrier Frequency/ARFCN : \-*(?P<carrier_frequency>\d{1,15}/\d{1,4})", str(line))
 			if result is not None:
 				try:
@@ -1412,78 +1411,78 @@ class OaiCiTest():
 					new_freq = re.sub('/[0-9]+','',freq)
 					float_freq = float(new_freq) / 1000000
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + 'DL Freq: ' + ('%.1f' % float_freq) + ' MHz'
-					logging.debug('\033[94m' + "    DL Carrier Frequency is: " + str(freq) + '\033[0m')
+					logging.debug(f'\033[94m    DL Carrier Frequency is:  {freq}\033[0m')
 				except Exception as e:
-					logging.error('\033[91m' + "    DL Carrier Frequency not found" + '\033[0m')
+					logging.error(f'\033[91m    DL Carrier Frequency not found \033[0m')
 			result = re.search("AllowedMeasBandwidth : (?P<allowed_bandwidth>\d{1,7})", str(line))
 			if result is not None:
 				try:
 					prb = result.group('allowed_bandwidth')
 					HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + ' -- PRB: ' + prb + '\n'
-					logging.debug('\033[94m' + "    AllowedMeasBandwidth: " + prb + '\033[0m')
+					logging.debug(f'\033[94m    AllowedMeasBandwidth: {prb}\033[0m')
 				except Exception as e:
-					logging.error('\033[91m' + "    AllowedMeasBandwidth not found" + '\033[0m')
+					logging.error(f'\033[91m    AllowedMeasBandwidth not found \033[0m')
 		ue_log_file.close()
 		if rrcConnectionRecfgComplete > 0:
-			statMsg = 'UE connected to eNB (' + str(rrcConnectionRecfgComplete) + ' RRCConnectionReconfigurationComplete message(s) generated)'
-			logging.debug('\033[94m' + statMsg + '\033[0m')
+			statMsg = f'UE connected to eNB ({rrcConnectionRecfgComplete}) RRCConnectionReconfigurationComplete message(s) generated)'
+			logging.debug(f'\033[94m{statMsg}\033[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if nrUEFlag:
 			if nrDecodeMib > 0:
-				statMsg = 'UE showed ' + str(nrDecodeMib) + ' "MIB decode" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {nrDecodeMib} "MIB decode" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrFoundDCI > 0:
-				statMsg = 'UE showed ' + str(nrFoundDCI) + ' "DCI found" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {nrFoundDCI} "DCI found" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nrCRCOK > 0:
-				statMsg = 'UE showed ' + str(nrCRCOK) + ' "PDSCH decoding" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {nrCRCOK} "PDSCH decoding" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if not frequency_found:
 				statMsg = 'NR-UE could NOT synch!'
-				logging.error('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				logging.error(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nbPduSessAccept > 0:
-				statMsg = 'UE showed ' + str(nbPduSessAccept) + ' "Received PDU Session Establishment Accept" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {nbPduSessAccept} "Received PDU Session Establishment Accept" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 			if nbPduDiscard > 0:
-				statMsg = 'UE showed ' + str(nbPduDiscard) + ' "warning: discard PDU, sn out of window" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {nbPduDiscard} "warning: discard PDU, sn out of window" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 				HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if uciStatMsgCount > 0:
-			statMsg = 'UE showed ' + str(uciStatMsgCount) + ' "uci->stat" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {uciStatMsgCount} "uci->stat" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if pdcpDataReqFailedCount > 0:
-			statMsg = 'UE showed ' + str(pdcpDataReqFailedCount) + ' "PDCP data request failed" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {pdcpDataReqFailedCount} "PDCP data request failed" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if badDciCount > 0:
-			statMsg = 'UE showed ' + str(badDciCount) + ' "bad DCI 1(A)" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {badDciCount} "bad DCI 1(A)" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if f1aRetransmissionCount > 0:
-			statMsg = 'UE showed ' + str(f1aRetransmissionCount) + ' "Format1A Retransmission but TBS are different" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {f1aRetransmissionCount} "Format1A Retransmission but TBS are different" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if fatalErrorCount > 0:
-			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "FATAL ERROR:" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {fatalErrorCount} "FATAL ERROR:" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if macBsrTimerExpiredCount > 0:
-			statMsg = 'UE showed ' + str(fatalErrorCount) + ' "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
-			logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+			statMsg = f'UE showed {fatalErrorCount} "MAC BSR Triggered ReTxBSR Timer expiry" message(s)'
+			logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if RAN.eNBmbmsEnables[0]:
 			if mbms_messages > 0:
-				statMsg = 'UE showed ' + str(mbms_messages) + ' "TRIED TO PUSH MBMS DATA" message(s)'
-				logging.debug('\u001B[1;30;43m ' + statMsg + ' \u001B[0m')
+				statMsg = f'UE showed {mbms_messages} "TRIED TO PUSH MBMS DATA" message(s)'
+				logging.debug(f'\u001B[1;30;43m{statMsg}\u001B[0m')
 			else:
 				statMsg = 'UE did NOT SHOW "TRIED TO PUSH MBMS DATA" message(s)'
-				logging.debug('\u001B[1;30;41m ' + statMsg + ' \u001B[0m')
+				logging.debug(f'\u001B[1;30;41m{statMsg}\u001B[0m')
 				global_status = CONST.OAI_UE_PROCESS_NO_MBMS_MSGS
 			HTML.htmlUEFailureMsg=HTML.htmlUEFailureMsg + statMsg + '\n'
 		if foundSegFault:
@@ -1527,22 +1526,22 @@ class OaiCiTest():
 	def TerminateOAIUE(self,HTML,RAN,EPC,CONTAINERS):
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-		SSH.command('cd ' + self.UESourceCodePath + '/cmake_targets', '\$', 5)
+		SSH.command(f'cd {self.UESourceCodePath}/cmake_targets', '\$', 5)
 		SSH.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 		result = re.search('-uesoftmodem', SSH.getBefore())
 		if result is not None:
-			SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGINT -r .*-uesoftmodem || true', '\$', 5)
+			SSH.command(f'echo {self.UEPassword} | sudo -S killall --signal SIGINT -r .*-uesoftmodem || true', '\$', 5)
 			time.sleep(10)
 			SSH.command('ps -aux | grep --color=never softmodem | grep -v grep', '\$', 5)
 			result = re.search('-uesoftmodem', SSH.getBefore())
 			if result is not None:
-				SSH.command('echo ' + self.UEPassword + ' | sudo -S killall --signal SIGKILL -r .*-uesoftmodem || true', '\$', 5)
+				SSH.command(f'echo {self.UEPassword} | sudo -S killall --signal SIGKILL -r .*-uesoftmodem || true', '\$', 5)
 				time.sleep(5)
-		SSH.command('rm -f my-lte-uesoftmodem-run' + str(self.UE_instance) + '.sh', '\$', 5)
+		SSH.command(f'rm -f my-lte-uesoftmodem-run {self.UE_instance}.sh', '\$', 5)
 		SSH.close()
 		result = re.search('ue_', str(self.UELogFile))
 		if result is not None:
-			copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword, self.UESourceCodePath + '/cmake_targets/' + self.UELogFile, '.')
+			copyin_res = SSH.copyin(self.UEIPAddress, self.UEUserName, self.UEPassword,f'{self.UESourceCodePath}/cmake_targets/{self.UELogFile}', '.')
 			if (copyin_res == -1):
 				logging.debug('\u001B[1;37;41m Could not copy UE logfile to analyze it! \u001B[0m')
 				HTML.htmlUEFailureMsg='Could not copy UE logfile to analyze it!'
@@ -1557,7 +1556,7 @@ class OaiCiTest():
 			else:
 				ueAction = 'Connection'
 			if (logStatus < 0):
-				logging.debug('\u001B[1m' + ueAction + ' Failed \u001B[0m')
+				logging.debug(f'\u001B[1m {ueAction} Failed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Failed</b>\n' + HTML.htmlUEFailureMsg
 				HTML.CreateHtmlTestRow('N/A', 'KO', logStatus, 'UE')
 				if self.air_interface == 'lte-uesoftmodem':
@@ -1571,7 +1570,7 @@ class OaiCiTest():
 						self.Initialize_OAI_UE_args = ''
 						self.AutoTerminateUEandeNB(HTML,RAN,EPC,CONTAINERS)
 			else:
-				logging.debug('\u001B[1m' + ueAction + ' Completed \u001B[0m')
+				logging.debug(f'\u001B[1m {ueAction} Completed \u001B[0m')
 				HTML.htmlUEFailureMsg='<b>' + ueAction + ' Completed</b>\n' + HTML.htmlUEFailureMsg
 				HTML.CreateHtmlTestRow('N/A', 'OK', CONST.ALL_PROCESSES_OK)
 			self.UELogFile = ''
@@ -1596,7 +1595,7 @@ class OaiCiTest():
 			#terminate all RAN nodes eNB/gNB/OCP
 			for instance in range(0, len(RAN.air_interface)):
 				if RAN.air_interface[instance]!='':
-					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					logging.debug(f'Auto Termination of Instance {instance} : {RAN.air_interface[instance]}')
 					RAN.eNB_instance=instance
 					RAN.TerminateeNB(HTML,EPC)
 		if CONTAINERS.yamlPath[0] != '':
@@ -1623,7 +1622,7 @@ class OaiCiTest():
 			#terminate all RAN nodes eNB/gNB/OCP
 			for instance in range(0, len(RAN.air_interface)):
 				if RAN.air_interface[instance]!='':
-					logging.debug('Auto Termination of Instance ' + str(instance) + ' : ' + RAN.air_interface[instance])
+					logging.debug(f'Auto Termination of Instance {instance} : {RAN.air_interface[instance]}')
 					RAN.eNB_instance=instance
 					RAN.TerminateeNB(HTML,EPC)
 		if CONTAINERS.yamlPath[0] != '':
@@ -1685,7 +1684,7 @@ class OaiCiTest():
 	def Perform_X2_Handover(self,HTML,RAN,EPC):
 		html_queue = SimpleQueue()
 		fullMessage = '<pre style="background-color:white">'
-		msg = 'Doing X2 Handover w/ option ' + self.x2_ho_options
+		msg = f'Doing X2 Handover w/ option {self.x2_ho_options}'
 		logging.debug(msg)
 		fullMessage += msg + '\n'
 		if self.x2_ho_options == 'network':
@@ -1711,7 +1710,7 @@ class OaiCiTest():
 			sys.exit('Insufficient Parameter')
 		SSH = sshconnection.SSHConnection()
 		SSH.open(IPAddress, UserName, Password)
-		SSH.command('cd ' + SourceCodePath, '\$', 5)
+		SSH.command(f'cd {SourceCodePath}', '\$', 5)
 		SSH.command('cd cmake_targets', '\$', 5)
 		SSH.command('rm -f build.log.zip', '\$', 5)
 		SSH.command('zip -r build.log.zip build_log_*/*', '\$', 60)
@@ -1724,7 +1723,7 @@ class OaiCiTest():
 			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
+		SSH.command(f'cd {EPC.SourceCodePath}', '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f ping.log.zip', '\$', 5)
 		SSH.command('zip ping.log.zip ping*.log', '\$', 60)
@@ -1738,7 +1737,7 @@ class OaiCiTest():
 			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(EPC.IPAddress, EPC.UserName, EPC.Password)
-		SSH.command('cd ' + EPC.SourceCodePath, '\$', 5)
+		SSH.command(f'cd {EPC.SourceCodePath}', '\$', 5)
 		SSH.command('cd scripts', '\$', 5)
 		SSH.command('rm -f iperf.log.zip', '\$', 5)
 		SSH.command('zip iperf.log.zip iperf*.log', '\$', 60)
@@ -1752,11 +1751,11 @@ class OaiCiTest():
 			sys.exit(0)
 		SSH = sshconnection.SSHConnection()
 		SSH.open(self.UEIPAddress, self.UEUserName, self.UEPassword)
-		SSH.command('cd ' + self.UESourceCodePath, '\$', 5)
-		SSH.command('cd cmake_targets', '\$', 5)
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm -f ue.log.zip', '\$', 5)
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S zip ue.log.zip ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 60)
-		SSH.command('echo ' + self.UEPassword + ' | sudo -S rm ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 5)
+		SSH.command(f'cd {self.UESourceCodePath}', '\$', 5)
+		SSH.command(f'cd cmake_targets', '\$', 5)
+		SSH.command(f'echo {self.UEPassword} | sudo -S rm -f ue.log.zip', '\$', 5)
+		SSH.command(f'echo {self.UEPassword} | sudo -S zip ue.log.zip ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 60)
+		SSH.command(f'echo {self.UEPassword} | sudo -S rm ue*.log core* ue_*record.raw ue_*.pcap ue_*txt', '\$', 5)
 		SSH.close()
 
 	def ConditionalExit(self):
@@ -1766,7 +1765,7 @@ class OaiCiTest():
 		sys.exit(1)
 
 	def ShowTestID(self):
-		logging.info('\u001B[1m----------------------------------------\u001B[0m')
-		logging.info('\u001B[1mTest ID:' + self.testCase_id + '\u001B[0m')
-		logging.info('\u001B[1m' + self.desc + '\u001B[0m')
-		logging.info('\u001B[1m----------------------------------------\u001B[0m')
+		logging.info(f'\u001B[1m----------------------------------------\u001B[0m')
+		logging.info(f'\u001B[1m Test ID: {self.testCase_id} \u001B[0m')
+		logging.info(f'\u001B[1m {self.desc} \u001B[0m')
+		logging.info(f'\u001B[1m----------------------------------------\u001B[0m')
