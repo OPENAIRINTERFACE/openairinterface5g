@@ -594,7 +594,6 @@ bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig
   }
   if (ra_index == NR_NB_RA_PROC_MAX) {
     LOG_E(NR_MAC, "RA processes are not available for CFRA RNTI %04x\n", rnti);
-    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return false;
   }
   NR_RA_t *ra = &cc->ra[ra_index];
