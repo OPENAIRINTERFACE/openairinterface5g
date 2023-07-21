@@ -74,13 +74,7 @@ uint16_t mac_rrc_nr_data_req(const module_id_t Mod_idP,
   // MIBCH
   if ((Srb_id & RAB_OFFSET) == MIBCH) {
 
-    int encode_size = 3;
-    rrc_gNB_carrier_data_t *carrier = &RC.nrrrc[Mod_idP]->carrier;
-    int encoded = encode_MIB_NR(carrier->mib, frameP, buffer_pP, encode_size);
-    DevAssert(encoded == encode_size);
-    LOG_D(NR_RRC, "MIB PDU buffer_pP[0]=%x , buffer_pP[1]=%x, buffer_pP[2]=%x\n", buffer_pP[0], buffer_pP[1],
-          buffer_pP[2]);
-    return encode_size;
+    DevAssert(false);
   }
 
   if ((Srb_id & RAB_OFFSET) == BCCH) {

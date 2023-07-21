@@ -560,18 +560,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
   NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
-void nr_mac_config_mib(gNB_MAC_INST *nrmac, NR_BCCH_BCH_Message_t *mib)
-{
-  DevAssert(nrmac != NULL);
-  DevAssert(mib != NULL);
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-
-  AssertFatal(cc->mib == NULL, "logic bug: updated MIB multiple times\n");
-  cc->mib = mib;
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-}
-
 void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1)
 {
   DevAssert(nrmac != NULL);

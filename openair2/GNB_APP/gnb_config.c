@@ -1960,9 +1960,10 @@ int RC_config_trigger_F1Setup()
         req->cell[0].info.plmn.mnc_digit_length,
         req->cell[0].info.nr_cellid);
 
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
-  DevAssert(rrc);
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  DevAssert(mac);
+  const NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
   DevAssert(scc != NULL);
   req->cell[0].info.nr_pci = *scc->physCellId;
   LOG_W(GNB_APP, "no slices transported via F1 Setup Request!\n");
@@ -1992,16 +1993,18 @@ int RC_config_trigger_F1Setup()
 
   req->cell[0].info.measurement_timing_information = "0";
 
-  DevAssert(rrc->carrier.mib != NULL);
+  DevAssert(mac->common_channels[0].mib != NULL);
   int buf_len = 3; // this is what we assume in monolithic
   req->cell[0].sys_info = calloc(1, sizeof(*req->cell[0].sys_info));
   AssertFatal(req->cell[0].sys_info != NULL, "out of memory\n");
   f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
   sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
   DevAssert(sys_info->mib != NULL);
-  sys_info->mib_length = encode_MIB_NR(rrc->carrier.mib, 0, sys_info->mib, buf_len);
+  sys_info->mib_length = encode_MIB_NR(mac->common_channels[0].mib, 0, sys_info->mib, buf_len);
   DevAssert(sys_info->mib_length == buf_len);
 
+  gNB_RRC_INST *rrc = RC.nrrrc[0];
+  DevAssert(rrc);
   NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
   asn_codec_ctx_t st = {100 * 1000};
   asn_dec_rval_t dec_rval = uper_decode_complete(&st,
@@ -2026,7 +2029,6 @@ int RC_config_trigger_F1Setup()
   if (LOG_DEBUGFLAG(DEBUG_ASN1))
     xer_fprint(stdout, &asn_DEF_NR_SIB1, (void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1);
 
-  gNB_MAC_INST *mac = RC.nrmac[0];
   mac->mac_rrc.f1_setup_request(req);
   mac->f1_config.setup_req = req;
 

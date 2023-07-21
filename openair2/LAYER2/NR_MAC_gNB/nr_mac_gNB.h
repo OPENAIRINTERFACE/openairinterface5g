@@ -225,7 +225,7 @@ typedef struct {
   NR_ARFCN_ValueEUTRA_t ul_CarrierFreq;
   long ul_Bandwidth;
   /// Outgoing MIB PDU for PHY
-  MIB_PDU MIB_pdu;
+  uint8_t MIB_pdu[3];
   /// Outgoing BCCH pdu for PHY
   BCCH_PDU BCCH_pdu;
   /// Outgoing BCCH DCI allocation

@@ -245,6 +245,7 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc,
       RC.nrmac[i]->common_channels[0].pre_ServingCellConfig = scd;
 
       RC.nrmac[i]->first_MIB = true;
+      RC.nrmac[i]->common_channels[0].mib = get_new_MIB_NR(scc);
 
       RC.nrmac[i]->cset0_bwp_start = 0;
       RC.nrmac[i]->cset0_bwp_size = 0;

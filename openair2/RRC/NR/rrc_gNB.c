@@ -237,11 +237,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
 {
   const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
 
-  LOG_D(RRC,"%s()\n\n\n\n",__FUNCTION__);
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    rrc->carrier.mib = get_new_MIB_NR(scc);
-  }
-
   if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
     NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(configuration, scc);
     //xer_fprint(stdout, &asn_DEF_NR_BCCH_DL_SCH_Message, sib1);
@@ -270,7 +265,6 @@ static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration
                       rrc->configuration.pusch_AntennaPorts,
                       rrc->configuration.sib1_tda,
                       rrc->configuration.minRXTXTIME);
-    nr_mac_config_mib(RC.nrmac[rrc->module_id], rrc->carrier.mib);
   }
 
   if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
@@ -1931,6 +1925,18 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
     return;
   }
 
+  /* do we need the MIB? for the moment, just check it is valid, then drop it */
+  NR_BCCH_BCH_Message_t *mib = NULL;
+  asn_dec_rval_t dec_rval =
+      uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&mib, sys_info->mib, sys_info->mib_length);
+  if (dec_rval.code != RC_OK || mib->message.present != NR_BCCH_BCH_MessageType_PR_mib
+      || mib->message.choice.messageClassExtension == NULL) {
+    LOG_E(RRC, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
+    rrc->mac_rrc.f1_setup_failure(&fail);
+    ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_Message, mib);
+    return;
+  }
+
   LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
 
   // we accept the DU
@@ -1943,14 +1949,9 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
   rrc->du->setup_req = malloc(sizeof(*rrc->du->setup_req));
   AssertFatal(rrc->du->setup_req != NULL, "out of memory\n");
   *rrc->du->setup_req = *req;
-
-  if (rrc->carrier.mib != NULL) {
-    LOG_E(NR_RRC, "CU MIB is already initialized: double F1 setup request?\n");
-  } else {
-    asn_dec_rval_t dec_rval =
-        uper_decode_complete(NULL, &asn_DEF_NR_BCCH_BCH_Message, (void **)&rrc->carrier.mib, sys_info->mib, sys_info->mib_length);
-    AssertFatal(dec_rval.code == RC_OK, "Failed to decode NR_BCCH_BCH_MESSAGE (%zu bits)\n", dec_rval.consumed);
-  }
+  rrc->du->mib = mib->message.choice.mib;
+  mib->message.choice.mib = NULL;
+  ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
 
   if (rrc->carrier.sib1 != NULL) {
     LOG_E(NR_RRC, "CU SIB1 is already initiaized: double F1 setup request?\n");

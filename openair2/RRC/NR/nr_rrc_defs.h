@@ -331,7 +331,6 @@ typedef struct {
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
 
-  NR_BCCH_BCH_Message_t                    *mib;
   NR_SIB1_t                                *siblock1_DU;
   NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
@@ -376,6 +375,7 @@ typedef struct cucp_cuup_if_s {
 
 typedef struct nr_rrc_du_container_t {
   f1ap_setup_req_t *setup_req;
+  NR_MIB_t *mib;
 } nr_rrc_du_container_t;
 
 //---NR---(completely change)---------------------

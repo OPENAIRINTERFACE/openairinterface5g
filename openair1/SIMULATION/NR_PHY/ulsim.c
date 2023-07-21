@@ -652,7 +652,6 @@ int main(int argc, char *argv[])
   gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
   // common configuration
   nr_mac_config_scc(RC.nrmac[0], conf.pdsch_AntennaPorts, n_tx, 0, 6);
-  nr_mac_config_mib(RC.nrmac[0], mib);
   // UE dedicated configuration
   nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   frame_parms->nb_antennas_tx = 1;
