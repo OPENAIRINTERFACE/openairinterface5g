@@ -173,16 +173,7 @@ rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti,
                                                 uint32_t du_ue_id)
 //-----------------------------------------------------------------------------
 {
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc_instance_pP, rnti);
-
-  /* TODO: this should not matter, we can have multiple UEs at different DUs
-   * with the same RNTI! */
-  if (ue_context_p) {
-    LOG_E(NR_RRC, "Cannot create new UE context, already exist rnti: %04x\n", rnti);
-    return ue_context_p;
-  }
-
-  ue_context_p = rrc_gNB_allocate_new_ue_context(rrc_instance_pP);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_allocate_new_ue_context(rrc_instance_pP);
   if (ue_context_p == NULL)
     return NULL;
 
