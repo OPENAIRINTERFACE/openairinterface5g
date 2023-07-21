@@ -465,6 +465,10 @@ static void UE_synch(void *arg) {
         } else {
           UE->is_synchronized = 1;
         }
+        if (UE->synch_request.received_synch_request == 1) {
+          UE->is_synchronized = 0;
+          UE->synch_request.received_synch_request = 0;
+        }
       } else {
 
         if (UE->UE_scan_carrier == 1) {

@@ -498,8 +498,6 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
-  if (!get_softmodem_params()->sa)
-    return 0;
   // schedule reception of SIB1 if RRC doesn't have it
   if (!SI_info->sib1)
     return 1;
@@ -542,9 +540,12 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
     NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
     bcch_message->message.choice.mib = NULL;
 
-    NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
-    // to schedule MAC to get SI if required
-    int get_sib = check_si_status(SI_info);
+    int get_sib = 0;
+    if (get_softmodem_params()->sa && NR_UE_rrc_inst[module_id].mib->cellBarred == NR_MIB__cellBarred_notBarred) {
+      NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
+      // to schedule MAC to get SI if required
+      get_sib = check_si_status(SI_info);
+    }
     nr_rrc_mac_config_req_mib(module_id, 0, NR_UE_rrc_inst[module_id].mib, get_sib);
     ret = 0;
   }

@@ -47,7 +47,7 @@ void nr_ue_init_mac(module_id_t module_idP);
    \param mac           mac instance */
 void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac);
 
-int8_t nr_ue_decode_mib(module_id_t module_id, int cc_id);
+void nr_ue_decode_mib(module_id_t module_id, int cc_id);
 
 /**\brief decode SIB1 and other SIs pdus in NR_UE, from if_module dl_ind
    \param module_id      module id
