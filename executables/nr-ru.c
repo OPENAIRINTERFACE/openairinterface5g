@@ -1252,8 +1252,13 @@ void *ru_thread( void *param ) {
         clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_feprx[rt_prof_idx]);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-        if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData)
-          ((scopeData_t *)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
+        gNBscopeCopy(RC.gNB[0],
+                     gNBRxdataF,
+                     ru->common.rxdataF[0],
+                     sizeof(c16_t),
+                     1,
+                     gNB->frame_parms.samples_per_slot_wCP,
+                     proc->tti_rx * gNB->frame_parms.samples_per_slot_wCP);
 
         // Do PRACH RU processing
         int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);
