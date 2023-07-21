@@ -560,18 +560,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
   NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
-void nr_mac_config_sib1(gNB_MAC_INST *nrmac, NR_BCCH_DL_SCH_Message_t *sib1)
-{
-  DevAssert(nrmac != NULL);
-  DevAssert(sib1 != NULL);
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-  NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-
-  AssertFatal(cc->sib1 == NULL, "logic bug: updated SIB1 multiple times\n");
-  cc->sib1 = sib1;
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-}
-
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
 {
   DevAssert(nrmac != NULL);

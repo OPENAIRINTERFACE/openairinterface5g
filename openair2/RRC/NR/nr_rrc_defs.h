@@ -325,18 +325,12 @@ typedef struct rrc_gNB_ue_context_s {
 
 typedef struct {
 
-  uint8_t                                   *SIB1;
-  uint16_t                                  sizeof_SIB1;
-
   uint8_t                                   *SIB23;
   uint8_t                                   sizeof_SIB23;
 
-  NR_SIB1_t                                *siblock1_DU;
-  NR_SIB1_t                                *sib1;
   NR_SIB2_t                                *sib2;
   NR_SIB3_t                                *sib3;
   NR_BCCH_DL_SCH_Message_t                  systemInformation; // SIB23
-  NR_BCCH_DL_SCH_Message_t                  *siblock1;
   NR_CellGroupConfig_t                      *secondaryCellGroup[MAX_NR_RRC_UE_CONTEXTS];
 
 } rrc_gNB_carrier_data_t;
@@ -376,6 +370,7 @@ typedef struct cucp_cuup_if_s {
 typedef struct nr_rrc_du_container_t {
   f1ap_setup_req_t *setup_req;
   NR_MIB_t *mib;
+  NR_SIB1_t *sib1;
 } nr_rrc_du_container_t;
 
 //---NR---(completely change)---------------------

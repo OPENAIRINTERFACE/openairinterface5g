@@ -71,6 +71,7 @@
 #include "NR_BCCH-BCH-Message.h"
 #include "NR_CellGroupConfig.h"
 #include "NR_BCCH-DL-SCH-Message.h"
+#include "openair2/RRC/NR/nr_rrc_config.h"
 
 /* PHY */
 #include "time_meas.h"
@@ -227,7 +228,8 @@ typedef struct {
   /// Outgoing MIB PDU for PHY
   uint8_t MIB_pdu[3];
   /// Outgoing BCCH pdu for PHY
-  BCCH_PDU BCCH_pdu;
+  uint8_t sib1_bcch_pdu[NR_MAX_SIB_LENGTH / 8];
+  int sib1_bcch_length;
   /// Outgoing BCCH DCI allocation
   uint32_t BCCH_alloc_pdu;
   /// Outgoing CCCH pdu for PHY

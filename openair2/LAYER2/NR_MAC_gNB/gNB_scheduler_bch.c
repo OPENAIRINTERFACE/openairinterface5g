@@ -569,14 +569,6 @@ void schedule_nr_sib1(module_id_t module_idP,
 
       LOG_D(NR_MAC,"(%d.%d) SIB1 transmission: ssb_index %d\n", frameP, slotP, type0_PDCCH_CSS_config->ssb_index);
 
-      // Get SIB1
-      uint8_t sib1_payload[NR_MAX_SIB_LENGTH/8];
-      uint16_t sib1_sdu_length = mac_rrc_nr_data_req(module_idP, CC_id, frameP, BCCH, SI_RNTI, 1, sib1_payload);
-      LOG_D(NR_MAC,"sib1_sdu_length = %i\n", sib1_sdu_length);
-      LOG_D(NR_MAC,"SIB1: \n");
-      for (int k=0;k<sib1_sdu_length;k++)
-        LOG_D(NR_MAC,"byte %d : %x\n",k,((uint8_t*)sib1_payload)[k]);
-
       default_table_type_t table_type = get_default_table_type(type0_PDCCH_CSS_config->type0_pdcch_ss_mux_pattern);
       // assuming normal CP
       NR_tda_info_t tda_info = get_info_from_tda_tables(table_type, time_domain_allocation, gNB_mac->common_channels->ServingCellConfigCommon->dmrs_TypeA_Position, true);
@@ -588,6 +580,8 @@ void schedule_nr_sib1(module_id_t module_idP,
                                                       &tda_info,
                                                       1);
 
+
+      NR_COMMON_channels_t *cc = &gNB_mac->common_channels[0];
       // Configure sched_ctrlCommon for SIB1
       uint32_t TBS = schedule_control_sib1(module_idP, CC_id,
                                            type0_PDCCH_CSS_config,
@@ -595,7 +589,7 @@ void schedule_nr_sib1(module_id_t module_idP,
                                            &dmrs_parms,
                                            &tda_info,
                                            candidate_idx,
-                                           sib1_sdu_length);
+                                           cc->sib1_bcch_length);
 
       nfapi_nr_dl_tti_request_body_t *dl_req = &DL_req->dl_tti_request_body;
       int pdu_index = gNB_mac->pdu_index[0]++;
@@ -605,7 +599,7 @@ void schedule_nr_sib1(module_id_t module_idP,
       nfapi_nr_pdu_t *tx_req = &TX_req->pdu_list[ntx_req];
 
       // Data to be transmitted
-      memcpy(tx_req->TLVs[0].value.direct, sib1_payload, TBS);
+      memcpy(tx_req->TLVs[0].value.direct, cc->sib1_bcch_pdu, TBS);
 
       tx_req->PDU_length = TBS;
       tx_req->PDU_index  = pdu_index;
@@ -617,9 +611,14 @@ void schedule_nr_sib1(module_id_t module_idP,
 
       type0_PDCCH_CSS_config->active = false;
 
-      T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
-        T_INT(0xffff), T_INT(frameP), T_INT(slotP), T_INT(0 /* harq_pid */),
-        T_BUFFER(sib1_payload, TBS));
+      T(T_GNB_MAC_DL_PDU_WITH_DATA,
+        T_INT(module_idP),
+        T_INT(CC_id),
+        T_INT(0xffff),
+        T_INT(frameP),
+        T_INT(slotP),
+        T_INT(0 /* harq_pid */),
+        T_BUFFER(cc->sib1_bcch_pdu, cc->sib1_bcch_length));
     }
   }
 }

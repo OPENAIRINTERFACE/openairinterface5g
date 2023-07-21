@@ -235,18 +235,6 @@ static int get_dl_arfcn(const f1ap_served_cell_info_t *cell_info)
 
 static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
 {
-  const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
-
-  if((get_softmodem_params()->sa) && ( (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)))) {
-    NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(configuration, scc);
-    //xer_fprint(stdout, &asn_DEF_NR_BCCH_DL_SCH_Message, sib1);
-    rrc->carrier.SIB1 = calloc(NR_MAX_SIB_LENGTH / 8, sizeof(*rrc->carrier.SIB1));
-    AssertFatal(rrc->carrier.SIB1 != NULL, "out of memory\n");
-    rrc->carrier.sizeof_SIB1 = encode_SIB1_NR(sib1, rrc->carrier.SIB1, NR_MAX_SIB_LENGTH / 8);
-    rrc->carrier.siblock1 = sib1;
-    nr_mac_config_sib1(RC.nrmac[rrc->module_id], sib1);
-  }
-
   if (!NODE_IS_DU(rrc->node_type)) {
     rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
     AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
@@ -1937,6 +1925,19 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
     return;
   }
 
+  NR_SIB1_t *sib1 = NULL;
+  if (sys_info->sib1) {
+    dec_rval = uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&sib1, sys_info->sib1, sys_info->sib1_length);
+    if (dec_rval.code != RC_OK) {
+      LOG_E(RRC, "Failed to decode NR_SIB1 (%zu bits) of DU, rejecting DU\n", dec_rval.consumed);
+      rrc->mac_rrc.f1_setup_failure(&fail);
+      ASN_STRUCT_FREE(asn_DEF_NR_SIB1, sib1);
+      return;
+    }
+    if (LOG_DEBUGFLAG(DEBUG_ASN1))
+      xer_fprint(stdout, &asn_DEF_NR_SIB1, sib1);
+  }
+
   LOG_I(RRC, "Accepting DU %ld (%s), sending F1 Setup Response\n", req->gNB_DU_id, req->gNB_DU_name);
 
   // we accept the DU
@@ -1952,17 +1953,7 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
   rrc->du->mib = mib->message.choice.mib;
   mib->message.choice.mib = NULL;
   ASN_STRUCT_FREE(asn_DEF_NR_BCCH_BCH_MessageType, mib);
-
-  if (rrc->carrier.sib1 != NULL) {
-    LOG_E(NR_RRC, "CU SIB1 is already initiaized: double F1 setup request?\n");
-  } else {
-    asn_dec_rval_t dec_rval =
-        uper_decode_complete(NULL, &asn_DEF_NR_SIB1, (void **)&rrc->carrier.sib1, sys_info->sib1, sys_info->sib1_length);
-    AssertFatal(dec_rval.code == RC_OK, "Failed to decode NR_BCCH_DLSCH_MESSAGE (%zu bits)\n", dec_rval.consumed);
-
-    if (LOG_DEBUGFLAG(DEBUG_ASN1))
-      xer_fprint(stdout, &asn_DEF_NR_SIB1, (void *)rrc->carrier.sib1);
-  }
+  rrc->du->sib1 = sib1;
 
   served_cells_to_activate_t cell = {
       .plmn = cell_info->plmn,
@@ -2894,7 +2885,9 @@ int rrc_gNB_generate_pcch_msg(uint32_t tmsi, uint8_t paging_drx, instance_t inst
   uint32_t T;  /* DRX cycle */
   uint32_t length;
   uint8_t buffer[RRC_BUF_SIZE];
-  struct NR_SIB1 *sib1 = RC.nrrrc[instance]->carrier.siblock1->message.choice.c1->choice.systemInformationBlockType1;
+  const nr_rrc_du_container_t *du = RC.nrrrc[0]->du;
+  DevAssert(du != NULL);
+  struct NR_SIB1 *sib1 = du->sib1;
 
   /* get default DRX cycle from configuration */
   Tc = sib1->servingCellConfigCommon->downlinkConfigCommon.pcch_Config.defaultPagingCycle;

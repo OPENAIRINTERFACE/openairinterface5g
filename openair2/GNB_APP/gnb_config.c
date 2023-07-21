@@ -2003,31 +2003,12 @@ int RC_config_trigger_F1Setup()
   sys_info->mib_length = encode_MIB_NR(mac->common_channels[0].mib, 0, sys_info->mib, buf_len);
   DevAssert(sys_info->mib_length == buf_len);
 
-  gNB_RRC_INST *rrc = RC.nrrrc[0];
-  DevAssert(rrc);
-  NR_BCCH_DL_SCH_Message_t *bcch_message = NULL;
-  asn_codec_ctx_t st = {100 * 1000};
-  asn_dec_rval_t dec_rval = uper_decode_complete(&st,
-                                                 &asn_DEF_NR_BCCH_DL_SCH_Message,
-                                                 (void **)&bcch_message,
-                                                 (const void *)rrc->carrier.SIB1,
-                                                 rrc->carrier.sizeof_SIB1);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E(RRC, "SIB1 decode error\n");
-    // free the memory
-    SEQUENCE_free(&asn_DEF_NR_BCCH_DL_SCH_Message, bcch_message, 1);
-    exit(1);
-  }
-
-  NR_SIB1_t *bcch_SIB1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
-  sys_info->sib1 = calloc(1, rrc->carrier.sizeof_SIB1);
+  DevAssert(mac->common_channels[0].sib1 != NULL);
+  NR_SIB1_t *bcch_SIB1 = mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+  sys_info->sib1 = calloc(NR_MAX_SIB_LENGTH / 8, sizeof(*sys_info->sib1));
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_SIB1, NULL, (void *)bcch_SIB1, sys_info->sib1, NR_MAX_SIB_LENGTH / 8);
   AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
-
-  if (LOG_DEBUGFLAG(DEBUG_ASN1))
-    xer_fprint(stdout, &asn_DEF_NR_SIB1, (void *)bcch_message->message.choice.c1->choice.systemInformationBlockType1);
 
   mac->mac_rrc.f1_setup_request(req);
   mac->f1_config.setup_req = req;
