@@ -563,6 +563,7 @@ check_install_additional_tools (){
         iperf3 \
         libforms-bin \
         libforms-dev \
+        libxft-dev \
         xmlstarlet"
   elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]] ||  [[ "$OS_DISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
@@ -570,6 +571,7 @@ check_install_additional_tools (){
       ctags \
       iperf3 \
       gnutls-devel \
+      libXft-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -612,7 +614,6 @@ check_install_oai_software() {
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-        libxft-dev \
 	patch \
 	openssl \
         zlib1g-dev \
@@ -641,7 +642,6 @@ check_install_oai_software() {
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
-      libXft-devel \
       ninja-build \
       make \
       openssl \
