@@ -370,22 +370,23 @@ class Containerize():
 		# Creating a tupple with the imageName and the DockerFile prefix pattern on obelix
 		if result is not None:
 			imageNames.append(('oai-enb', 'eNB'))
-		else:
-			result = re.search('gNB', self.imageKind)
-			if result is not None:
-				imageNames.append(('oai-gnb', 'gNB'))
-			else:
-				result = re.search('all', self.imageKind)
-				if result is not None:
-					imageNames.append(('oai-enb', 'eNB'))
-					imageNames.append(('oai-gnb', 'gNB'))
-					imageNames.append(('oai-nr-cuup', 'nr-cuup'))
-					imageNames.append(('oai-lte-ue', 'lteUE'))
-					imageNames.append(('oai-nr-ue', 'nrUE'))
-					if self.host == 'Red Hat':
-						imageNames.append(('oai-physim', 'phySim'))
-					if self.host == 'Ubuntu':
-						imageNames.append(('oai-lte-ru', 'lteRU'))
+		result = re.search('gNB', self.imageKind)
+		if result is not None:
+			imageNames.append(('oai-gnb', 'gNB'))
+		result = re.search('all', self.imageKind)
+		if result is not None:
+			imageNames.append(('oai-enb', 'eNB'))
+			imageNames.append(('oai-gnb', 'gNB'))
+			imageNames.append(('oai-nr-cuup', 'nr-cuup'))
+			imageNames.append(('oai-lte-ue', 'lteUE'))
+			imageNames.append(('oai-nr-ue', 'nrUE'))
+			if self.host == 'Red Hat':
+				imageNames.append(('oai-physim', 'phySim'))
+			if self.host == 'Ubuntu':
+				imageNames.append(('oai-lte-ru', 'lteRU'))
+		result = re.search('build_cross_arm64', self.imageKind)
+		if result is not None:
+			self.dockerfileprefix = '.ubuntu20.cross-arm64'
 		
 		# Workaround for some servers, we need to erase completely the workspace
 		if self.forcedWorkspaceCleanup:
