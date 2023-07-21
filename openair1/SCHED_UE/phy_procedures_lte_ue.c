@@ -644,7 +644,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
   LTE_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   uint8_t nCCE0,nCCE1,nCCE2,nCCE3,harq_ack1,harq_ack0,harq_ack3,harq_ack2;
   ANFBmode_t bundling_flag;
-  uint16_t n1_pucch0=0,n1_pucch1=0,n1_pucch2=0,n1_pucch3=0,n1_pucch_inter;
+  uint16_t n1_pucch0 = 0, n1_pucch1 = 0, n1_pucch2 = 0, n1_pucch3 = 0, n1_pucch_inter = 0;
   static uint8_t candidate_dl[9]; // which downlink(s) the current ACK/NACK is associating to
   uint8_t last_dl=0xff; // the last downlink with valid DL-DCI. for calculating the PUCCH resource index
   int sf;
@@ -951,7 +951,7 @@ uint16_t get_n1_pucch(PHY_VARS_UE *ue,
           //                                           proc->frame_tx%1024,
           //                                           proc->subframe_tx,n1_pucch_inter,
           //                                           b[0],b[1]);
-          return(n1_pucch_inter);
+          return n1_pucch_inter;
         } else if ((bundling_flag==multiplexing)&&(SR==0)) { // Table 10.1
           if (subframe == 3) {
             LOG_I(PHY, "sbuframe=%d \n",subframe);
