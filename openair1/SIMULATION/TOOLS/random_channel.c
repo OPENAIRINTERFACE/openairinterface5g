@@ -1723,8 +1723,9 @@ void free_channel_desc_scm(channel_desc_t *ch) {
   free(ch);
 }
 
-void set_channeldesc_owner(channel_desc_t *cdesc, uint32_t module_id) {
-  cdesc->module_id=module_id;
+void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_id)
+{
+  cdesc->module_id = module_id;
 }
 
 void set_channeldesc_name(channel_desc_t *cdesc,char *modelname) {
