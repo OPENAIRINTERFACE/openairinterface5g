@@ -204,7 +204,9 @@ pipeline {
               for (xmlFile in myXmlTestSuite) {
                 if (fileExists(xmlFile)) {
                   try {
+                   timeout (time: 60, unit: 'MINUTES') {
                     sh "python3 main.py --mode=TesteNB --eNBIPAddress=${params.eNB_IPAddress} --ranRepository=${eNB_Repository} --ranBranch=${eNB_Branch} --ranCommitID=${eNB_CommitID} --ranAllowMerge=${eNB_AllowMergeRequestProcess} --ranTargetBranch=${eNB_TargetBranch} --eNBUserName=${eNB_Username} --eNBPassword=${eNB_Password} --eNBSourceCodePath=${params.eNB_SourceCodePath} --EPCIPAddress=${params.EPC_IPAddress} --EPCType=${params.EPC_Type} --EPCUserName=${EPC_Username} --EPCPassword=${EPC_Password} --EPCSourceCodePath=${params.EPC_SourceCodePath} --XMLTestFile=${xmlFile} --OCUserName=${OC_Username} --OCPassword=${OC_Password} --OCProjectName=${OC_ProjectName}"
+                   }
                   } catch (Exception e) {
                     currentBuild.result = 'FAILURE'
                     buildStageStatus = false
