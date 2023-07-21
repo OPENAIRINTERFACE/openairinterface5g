@@ -112,25 +112,28 @@ time_stats_t softmodem_stats_rx_sf; // total rx time
 
 void tx_func(void *param) 
 {
-
   processingData_L1tx_t *info = (processingData_L1tx_t *) param;
+  PHY_VARS_gNB *gNB = info->gNB;
   int frame_tx = info->frame;
   int slot_tx = info->slot;
-
-  int absslot_tx = info->timestamp_tx/info->gNB->frame_parms.get_samples_per_slot(slot_tx,&info->gNB->frame_parms);
-  int absslot_rx = absslot_tx-info->gNB->RU_list[0]->sl_ahead;
+  int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
+  int i = 1;
+  for (; i < gNB->frame_parms.slots_per_subframe / 2; i++)
+    cumul_samples += gNB->frame_parms.get_samples_per_slot(i, &gNB->frame_parms);
+  int samples = cumul_samples / i;
+  int absslot_tx = info->timestamp_tx / samples;
+  int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
-  start_meas(&info->gNB->phy_proc_tx);
+  start_meas(&gNB->phy_proc_tx);
 
-  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.start_L1_TX[rt_prof_idx]);
+  clock_gettime(CLOCK_MONOTONIC, &gNB->rt_L1_profiling.start_L1_TX[rt_prof_idx]);
   phy_procedures_gNB_TX(info,
                         frame_tx,
                         slot_tx,
                         1);
-  clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.return_L1_TX[rt_prof_idx]);
+  clock_gettime(CLOCK_MONOTONIC, &gNB->rt_L1_profiling.return_L1_TX[rt_prof_idx]);
 
   if (get_softmodem_params()->reorder_thread_disable) {
-    PHY_VARS_gNB *gNB = info->gNB;
     processingData_RU_t syncMsgRU;
     syncMsgRU.frame_tx = frame_tx;
     syncMsgRU.slot_tx = slot_tx;
@@ -141,7 +144,7 @@ void tx_func(void *param)
   }
   /* this thread is done with the sched_info, decrease the reference counter */
   deref_sched_response(info->sched_response_id);
-  stop_meas(&info->gNB->phy_proc_tx);
+  stop_meas(&gNB->phy_proc_tx);
 }
 
 
@@ -179,11 +182,14 @@ void rx_func(void *param)
   int frame_tx = info->frame_tx;
   int slot_tx = info->slot_tx;
   nfapi_nr_config_request_scf_t *cfg = &gNB->gNB_config;
-
-  int absslot_tx = info->timestamp_tx/gNB->frame_parms.get_samples_per_slot(slot_rx,&gNB->frame_parms);
+  int cumul_samples = gNB->frame_parms.get_samples_per_slot(0, &gNB->frame_parms);
+  int i = 1;
+  for (; i < gNB->frame_parms.slots_per_subframe / 2; i++)
+    cumul_samples += gNB->frame_parms.get_samples_per_slot(i, &gNB->frame_parms);
+  int samples = cumul_samples / i;
+  int absslot_tx = info->timestamp_tx / samples;
   int absslot_rx = absslot_tx - gNB->RU_list[0]->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
-
   clock_gettime(CLOCK_MONOTONIC,&info->gNB->rt_L1_profiling.start_L1_RX[rt_prof_idx]);
   start_meas(&softmodem_stats_rxtx_sf);
 

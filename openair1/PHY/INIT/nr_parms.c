@@ -180,7 +180,7 @@ uint32_t get_samples_per_slot(int slot, const NR_DL_FRAME_PARMS *fp)
   if(fp->numerology_index == 0)
     samp_count = fp->samples_per_subframe;
   else
-    samp_count = (slot%(fp->slots_per_subframe/2)) ? fp->samples_per_slotN0 : fp->samples_per_slot0;
+    samp_count = (slot % (fp->slots_per_subframe / 2)) ? fp->samples_per_slotN0 : fp->samples_per_slot0;
 
   return samp_count;
 }
