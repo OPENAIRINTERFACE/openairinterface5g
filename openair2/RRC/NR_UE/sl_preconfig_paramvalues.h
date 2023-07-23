@@ -19,17 +19,6 @@
  *      contact@openairinterface.org
  */
 
-/* \file sl_preconfig_paramvalues.h
- * \brief 
- * \author Raghavendra Dinavahi
- * \date 
- * \version 0.1
- * \company 
- * \email:
- * \note
- * \warning
- */
-
 #ifndef __SL_PRECONFIG_PARAMSVALUES__H__
 #define __SL_PRECONFIG_PARAMSVALUES__H__
 
@@ -91,6 +80,11 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink Frequency common Cell Config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+
+/* Please refer to 3GPP SPEC 38.331 (RRC Specification) for details about these parameters
+   sl_AbsoluteFrequencyPointA_r16 - ARFCN of the lowest subcarrier for sidelink operation
+   sl_AbsoluteFrequencySSB_r16 - ARFCN of the center RE of sidelink SSB of length 11 RBs
+*/
 #define SL_FCCPARAMS_DESC(sl_fcc) { \
 {SL_CONFIG_STRING_SLOFFSETTOCARRIER,NULL,0,.i64ptr=&sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->offsetToCarrier,.defint64val=0,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_FCC_SUBCARRIERSPACING,NULL,0,.i64ptr=&sl_fcc->sl_SCS_SpecificCarrierList_r16.list.array[0]->subcarrierSpacing,.defint64val=NR_SubcarrierSpacing_kHz30,TYPE_INT64,0},\
@@ -102,6 +96,9 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink TDD ULDL Config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* Please refer to 3GPP SPEC 38.331 (RRC Specification) for details about these parameters
+   TDD ul dl configuration used for sidelink operation set in Sidelink Preconfiguration IE
+*/
 #define SL_TDDCONFIGPARAMS_DESC(sl_tdd_ul_dl_cfg) { \
 {SL_CONFIG_STRING_DLULTRANSMISSIONPERIODICITY,NULL,0,.i64ptr=&sl_tdd_ul_dl_cfg->pattern1.dl_UL_TransmissionPeriodicity,.defint64val=6,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_NROFDOWNLINKSLOTS,NULL,0,.i64ptr=&sl_tdd_ul_dl_cfg->pattern1.nrofDownlinkSlots,.defint64val=7,TYPE_INT64,0},\
@@ -113,6 +110,12 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink Sync config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* Please refer to 3GPP SPEC 38.331 (RRC Specification) for details about these parameters
+   These parameters indicate the repetition of Sidelink SSB
+   sl_NumSSB_WithinPeriod_r16 - number of SSB transmissions within 16 frames
+   sl_TimeOffsetSSB_r16 - timeoffset in slots for the first SL-SSB transmission within 16 frames
+   sl_TimeInterval_r16 - interval in slots between SL-SSB transmissions
+*/
 #define SL_SYNCPARAMS_DESC(sl_syncconfig) { \
 {SL_CONFIG_STRING_SL_NUMSSB_WITHINPERIOD_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_NumSSB_WithinPeriod_r16,.defint64val=1,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_SL_TIMEOFFSET_SSB_0,NULL,0,.i64ptr=sl_syncconfig->sl_SSB_TimeAllocation1_r16->sl_TimeOffsetSSB_r16,.defint64val=8,TYPE_INT64,0},\
@@ -122,6 +125,12 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink BWP Config parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* Please refer to 3GPP SPEC 38.331 (RRC Specification) for details about these parameters
+   Sidelink BandWidthPart parameters
+   locationAndBandwidth - determines the start and size of Sidelink BWP
+   sl_LengthSymbols_r16 - number of symbols in a slot used for sidelink operation
+   sl_StartSymbol_r16 - start symbol for sidelink operation in a slot
+*/
 #define SL_BWPPARAMS_DESC(sl_bwp) { \
 {SL_CONFIG_STRING_SL_BWP_START_AND_SIZE,NULL,0,.i64ptr=&sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16->locationAndBandwidth,.defint64val=28875,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_SL_BWP_NUM_SYMBOLS,NULL,0,.i64ptr=sl_bwp->sl_BWP_Generic_r16->sl_LengthSymbols_r16,.defint64val=7,TYPE_INT64,0}, \
@@ -130,6 +139,13 @@
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*             Sidelink Resource pool parameters                                                                                                     */
 /*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/* Please refer to 3GPP SPEC 38.331 (RRC Specification) for details about these parameters
+   Sidelink TX/RX resource pool parameters
+   sl_TimeResourcePSCCH_r16 - number of symbols used for PSCCH
+   sl_SubchannelSize_r16 - number of PRBs in every subchannel in a resource pool
+   sl_StartRB_Subchannel_r16 - lowest RB of a lowest subchannel in a resource pool
+   sl_RB_Number_r16 - number of RBs in a resource pool
+*/
 #define SL_RESPOOLPARAMS_DESC(sl_res_pool) { \
 {SL_CONFIG_STRING_RESPOOL_PSCCH_NUMSYM,NULL,0,.i64ptr=sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_TimeResourcePSCCH_r16,.defint64val=1,TYPE_INT64,0}, \
 {SL_CONFIG_STRING_RESPOOL_PSCCH_NUMRBS,NULL,0,.i64ptr=sl_res_pool->sl_PSCCH_Config_r16->choice.setup->sl_FreqResourcePSCCH_r16,.defint64val=4,TYPE_INT64,0}, \

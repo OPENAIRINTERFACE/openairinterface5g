@@ -19,17 +19,6 @@
  *      contact@openairinterface.org
  */
 
-/* \file rrc_sl_preconfig.c
- * \brief Preparation of Sidelink-Preconfiguration message
- * \author Raghavendra Dinavahi
- * \date 
- * \version 
- * \company Fraunhofer IIS
- * \email
- * \note
- * \warning
- */
-
 #define RRC_SL_PRECONFIG
 #define RRC_SL_PRECONFIG_C
 
@@ -39,7 +28,8 @@
 #include "sl_preconfig_paramvalues.h"
 #include "common/config/config_userapi.h"
 
-static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig) {
+static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig)
+{
 
   // Hysteris when evaluating SyncRef UE
   sl_syncconfig->sl_SyncRefMinHyst_r16 = NULL;
@@ -83,7 +73,8 @@ static void prepare_NR_SL_SyncConfig(NR_SL_SyncConfig_r16_t *sl_syncconfig) {
 
 static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
                                        uint16_t is_txpool,
-                                       uint16_t is_sl_syncsource) { LOG_I(MAC, "HERE5");
+                                       uint16_t is_sl_syncsource)
+{
 
   // PSCCH configuration
   sl_res_pool->sl_PSCCH_Config_r16 = calloc(1, sizeof(*sl_res_pool->sl_PSCCH_Config_r16));
@@ -199,7 +190,8 @@ static void prepare_NR_SL_ResourcePool(NR_SL_ResourcePool_r16_t *sl_res_pool,
 static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
                                    uint16_t num_tx_pools,
                                    uint16_t num_rx_pools,
-                                   uint16_t sl_syncsource) {
+                                   uint16_t sl_syncsource)
+{
 
   sl_bwp->sl_BWP_Generic_r16 = calloc(1, sizeof(NR_SL_BWP_Generic_r16_t));
   sl_bwp->sl_BWP_Generic_r16->sl_BWP_r16 = calloc(1, sizeof(NR_BWP_t));
@@ -270,7 +262,8 @@ static void prepare_NR_SL_BWPConfigCommon(NR_SL_BWP_ConfigCommon_r16_t *sl_bwp,
 static void prepare_NR_SL_FreqConfigCommon(NR_SL_FreqConfigCommon_r16_t *sl_fcfg,
                                     uint16_t num_tx_pools,
                                     uint16_t num_rx_pools,
-                                    uint16_t sl_syncsource) {
+                                    uint16_t sl_syncsource)
+{
 
   // Sub carrier spacing used on this frequency configured.
   NR_SCS_SpecificCarrier_t *scs_specific = calloc(1, sizeof(*scs_specific));
@@ -326,7 +319,8 @@ static void prepare_NR_SL_FreqConfigCommon(NR_SL_FreqConfigCommon_r16_t *sl_fcfg
 
 NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_pools,
                                                                uint16_t num_rx_pools,
-                                                               uint16_t sl_syncsource) {
+                                                               uint16_t sl_syncsource)
+{
 
   NR_SL_PreconfigurationNR_r16_t *sl_preconfiguration = CALLOC(1, sizeof(NR_SL_PreconfigurationNR_r16_t));
   NR_SidelinkPreconfigNR_r16_t *sl_preconfig = &sl_preconfiguration->sidelinkPreconfigNR_r16;
@@ -406,7 +400,8 @@ NR_SL_PreconfigurationNR_r16_t *prepare_NR_SL_PRECONFIGURATION(uint16_t num_tx_p
 }
 
 
-int configure_NR_SL_Preconfig(int sync_source) {
+int configure_NR_SL_Preconfig(int sync_source)
+{
 
   NR_SL_PreconfigurationNR_r16_t *sl_preconfig = NULL;
   int num_txpools = 0, num_rxpools = 0;
