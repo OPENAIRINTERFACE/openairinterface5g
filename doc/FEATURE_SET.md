@@ -229,13 +229,12 @@ The NAS layer is based on **3GPP 24.301** and implements the following functions
 
 The following features are valid for the gNB and the 5G-NR UE.
 
-*  Static TDD, 
-*  FDD
+*  Static TDD, FDD
 *  Normal CP
 *  Subcarrier spacings: 15 and 30kHz (FR1), 120kHz (FR2)
-*  Bandwidths: 10, 20, 40, 80, 100MHz (273 Physical Resource Blocks)
+*  Bandwidths: 10, 20, 40, 60, 80, 100MHz
 *  Intermediate downlink and uplink frequencies to interface with IF equipment
-*  Procedures for 2-layer DL MIMO
+*  Procedures for 2-layer DL and UL MIMO
 *  Slot format: 14 OFDM symbols in UL or DL
 *  Highly efficient 3GPP compliant LDPC encoder and decoder (BG1 and BG2 supported)
 *  Highly efficient 3GPP compliant polar encoder and decoder
@@ -300,13 +299,13 @@ The following features are valid for the gNB and the 5G-NR UE.
 - Scheduler procedures for CSI-RS
 - MAC downlink scheduler
   - phy-test scheduler (fixed allocation and usable also without UE)
-  - regular scheduler with dynamic allocation
+  - regular scheduler with dynamic proportionally-fair allocation
   - MCS adaptation from HARQ BLER
 - MAC header generation (including timing advance)
 - ACK / NACK handling and HARQ procedures for downlink
 - MAC uplink scheduler
   - phy-test scheduler (fixed allocation)
-  - regular scheduler with dynamic allocation
+  - regular scheduler with dynamic proportionally-fair allocation
   - HARQ procedures for uplink
 - Scheduler procedures for SRS reception
   - Periodic SRS reception
@@ -317,7 +316,7 @@ The following features are valid for the gNB and the 5G-NR UE.
   - evaluation of CQI report
 - MAC scheduling of SR reception
 - Bandwidth part (BWP) operation
-  - Handle multiple dedicated BWPs
+  - Handle multiple dedicated BWPs, supports one UE
   - BWP switching through RRCReconfiguration method
 
 **gNB RLC**
@@ -347,20 +346,19 @@ The following features are valid for the gNB and the 5G-NR UE.
   - Reflective QoS flow to DRB mapping for UL SDAP data PDUs
 
 **gNB RRC**
-- NR RRC (38.331) Rel 16 messages using new asn1c 
+- NR RRC (38.331) Rel 17 messages using new [asn1c](https://github.com/mouse07410/asn1c)
 - LTE RRC (36.331) also updated to Rel 15 
 - Generation of CellGroupConfig (for eNB) and MIB
 - Generation of system information block 1 (SIB1)
 - Generation of system information block 2 (SIB2)
 - Application to read configuration file and program gNB RRC
 - RRC can configure PDCP, RLC, MAC
-- Interface with gtp-u (tunnel creation/handling for S1-U (NSA), N3 (SA) interfaces)
+- Interface with GTP-U (tunnel creation/handling for S1-U (NSA), N3 (SA) interfaces)
 - Integration of RRC messages and procedures supporting UE 5G SA connection
   - RRCSetupRequest/RRCSetup/RRCSetupComplete
   - RRC Uplink/Downlink Information transfer carrying NAS messages transparently
   - RRC Reconfiguration/Reconfiguration complete
   - RRC Reestablishment/Reestablishment complete
-  - Paging
   - Support for master cell group configuration
   - Interface with NGAP for the interactions with the AMF
   - Interface with F1AP for CU/DU split deployment option
@@ -369,7 +367,7 @@ The following features are valid for the gNB and the 5G-NR UE.
 **gNB X2AP**
 - Integration of X2AP messages and procedures for the exchanges with the eNB over X2 interface supporting the NSA setup according to 36.423 Rel. 15
   - X2 setup with eNB
-  - Handling of SgNB Addition Request / Addition Request Acknowledge / Reconfiguration Complete 
+  - Handling of SgNB Addition Request/Addition Request Acknowledge/Reconfiguration Complete
 
 **gNB NGAP**
 
@@ -390,12 +388,21 @@ The following features are valid for the gNB and the 5G-NR UE.
   - F1 DL/UL RRC message transfer
   - F1 Initial UL RRC message transfer
   - F1 UE Context setup request/response
+  - F1 UE Context modification request/response
+  - F1 UE Context release
   - F1 gNB CU configuration update
 - Interface with RRC
 - Interface with gtp-u (tunnel creation/handling for F1-U interface)
 
+**gNB E1AP**
+- Integration of E1AP messages and procedures for exchange between CU-CP and CU-UP according to 38.463 Rel. 16
+  - gNB-CU-UP E1 Setup Setup request/response
+  - E1 Bearer Context Setup
+  - Bearer Context Modification (gNB-CU-CP initiated)
+- Interface with RRC and PDCP
+
 **gNB GTP-U**
-- New gtp-u implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
+- New GTP-U implementation supporting both N3 and F1-U interfaces according to 29.281 Rel.15
   - Interfaces with RRC, F1AP for tunnel creation
   - Interfaces with PDCP and RLC for data send/receive at the CU and DU respectively (F1-U interface)
   - Interface with SDAP for data send/receive, capture of GTP-U Optional Header, GTP-U Extension Header and PDU Session Container.
@@ -427,6 +434,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
+   - Support for 256 QAM
    - Support for 1, 2 and 4 RX antennas
    - Support for up to 2 layers (currently limited to DMRS configuration type 2)
 * Measurements based on NR-CSIRS
@@ -439,6 +447,7 @@ The following features are valid for the gNB and the 5G-NR UE.
    - DMRS configuration type 1 and 2
    - Single and multiple DMRS symbols
    - PTRS support
+   - Support for 256 QAM
    - Support for up to 2 TX antenna
    - Support for up to 2 layers
 *  NR-PUCCH 
