@@ -106,11 +106,9 @@ extern "C"
 #define CONFIG_L1_EMULATOR       "Run in L1 emulated mode (disable PHY layer)\n"
 #define CONFIG_HLP_CONTINUOUS_TX "perform continuous transmission, even in TDD mode (to work around USRP issues)\n"
 #define CONFIG_HLP_STATS_DISABLE "disable globally the stats generation and persistence"
-#define CONFIG_HLP_SYNC_REF      "Sync Reference in Sidelink\n"
-#define CONFIG_HLP_NID1          "Set NID1 value in Sidelink\n"
-#define CONFIG_HLP_NID2          "Set NID2 value in Sidelink\n"
 #define CONFIG_HLP_NOITTI        "Do not start itti threads, call queue processing in place, inside the caller thread"
 #define CONFIG_HLP_LDPC_OFFLOAD  "Enable LDPC offload to AMD Xilinx T2 telco card\n"
+#define CONFIG_HLP_SYNC_REF      "UE acts a Sync Reference in Sidelink. 0-none 1-GNB 2-GNSS 4-localtiming\n"
 
 /*-----------------------------------------------------------------------------------------------------------------------------------------------------*/
 /*                                            command line parameters common to eNodeB and UE                                                          */
@@ -143,8 +141,6 @@ extern "C"
 #define EMULATE_L1          softmodem_params.emulate_l1
 #define CONTINUOUS_TX       softmodem_params.continuous_tx
 #define SYNC_REF            softmodem_params.sync_ref
-#define NID1                softmodem_params.nid1
-#define NID2                softmodem_params.nid2
 #define LDPC_OFFLOAD_FLAG   softmodem_params.ldpc_offload_flag
 
 #define REORDER_THREAD_DISABLE    softmodem_params.reorder_thread_disable
@@ -191,10 +187,9 @@ extern int usrp_tx_thread;
   {"emulate-l1",            CONFIG_L1_EMULATOR,       PARAMFLAG_BOOL, .iptr=&EMULATE_L1,                      .defintval=0,             TYPE_INT,    0},  \
   {"continuous-tx",         CONFIG_HLP_CONTINUOUS_TX, PARAMFLAG_BOOL, .iptr=&CONTINUOUS_TX,                   .defintval=0,             TYPE_INT,    0},  \
   {"disable-stats",         CONFIG_HLP_STATS_DISABLE, PARAMFLAG_BOOL, .iptr=&stats_disabled,                  .defintval=0,             TYPE_INT,    0},  \
-  {"nid1",                  CONFIG_HLP_NID1,          0,              .iptr=&NID1,                            .defintval=10,            TYPE_INT,    0},  \
-  {"nid2",                  CONFIG_HLP_NID2,          0,              .iptr=&NID2,                            .defintval=1,             TYPE_INT,    0},  \
   {"no-itti-threads",       CONFIG_HLP_NOITTI,        PARAMFLAG_BOOL, .iptr=&softmodem_params.no_itti,        .defintval=0,             TYPE_INT,    0},  \
   {"ldpc-offload-enable",   CONFIG_HLP_LDPC_OFFLOAD,  PARAMFLAG_BOOL, .iptr=&LDPC_OFFLOAD_FLAG,               .defstrval=0,             TYPE_INT,    0},  \
+  {"sync-ref",              CONFIG_HLP_SYNC_REF,      0,              .uptr=&SYNC_REF,                        .defintval=0,             TYPE_UINT,   0},  \
 }
 // clang-format on
 
@@ -353,9 +348,7 @@ typedef struct {
   int            non_stop;
   int            emulate_l1;
   int            continuous_tx;
-  int            sync_ref;
-  int            nid1;
-  int            nid2;
+  uint32_t       sync_ref;
   int no_itti;
   int ldpc_offload_flag;
 } softmodem_params_t;

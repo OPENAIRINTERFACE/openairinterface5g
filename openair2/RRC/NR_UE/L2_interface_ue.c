@@ -94,6 +94,32 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
       AssertFatal(false, "use RLC instead\n");
       break;
 
+    case NR_SBCCH_SL_BCH:
+      if (pdu_len>0) {
+        LOG_T(NR_RRC, "[UE %d] Received SL-MIB for NR_SBCCH_SL_BCH.\n", module_id);
+
+        MessageDef *message_p;
+        int msg_sdu_size = BCCH_SDU_SIZE;
+
+        if (pdu_len > msg_sdu_size) {
+          LOG_E(NR_RRC, "SDU larger than NR_SBCCH_SL_BCH SDU buffer size (%d, %d)", sdu_size, msg_sdu_size);
+          sdu_size = msg_sdu_size;
+        } else {
+          sdu_size = pdu_len;
+        }
+
+        message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_SBCCH_DATA_IND);
+        memset(NR_RRC_MAC_SBCCH_DATA_IND (message_p).sdu, 0, BCCH_SDU_SIZE);
+        memcpy(NR_RRC_MAC_SBCCH_DATA_IND (message_p).sdu, pduP, sdu_size);
+        NR_RRC_MAC_SBCCH_DATA_IND (message_p).frame = frame; //frameP
+        NR_RRC_MAC_SBCCH_DATA_IND (message_p).slot = slot;
+        NR_RRC_MAC_SBCCH_DATA_IND (message_p).sdu_size = sdu_size;
+        NR_RRC_MAC_SBCCH_DATA_IND (message_p).gnb_index = gNB_index;
+        NR_RRC_MAC_SBCCH_DATA_IND (message_p).rx_slss_id = rnti;//rx_slss_id is rnti
+        itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
+      }
+      break;
+
     default:
       break;
   }

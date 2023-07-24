@@ -47,6 +47,7 @@
 #include "LAYER2/NR_MAC_COMMON/nr_mac_common.h"
 #include "LAYER2/MAC/mac.h"
 #include "NR_MAC_COMMON/nr_mac_extern.h"
+#include "mac_defs_sl.h"
 
 /* RRC */
 #include "NR_DRX-Config.h"
@@ -547,6 +548,9 @@ typedef struct {
   nr_emulated_l1_t nr_ue_emul_l1;
 
   pthread_mutex_t mutex_dl_info;
+
+  //SIDELINK MAC PARAMETERS
+  sl_nr_ue_mac_params_t *SL_MAC_PARAMS;
 
 } NR_UE_MAC_INST_t;
 

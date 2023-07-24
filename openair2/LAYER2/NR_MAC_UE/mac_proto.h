@@ -535,4 +535,28 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
                         RAR_grant_t *rar_grant,
                         uint16_t rnti,
                         const nr_dci_format_t dci_format);
+
+int nr_rrc_mac_config_req_sl_preconfig(module_id_t module_id,
+                                       NR_SL_PreconfigurationNR_r16_t *sl_preconfiguration,
+                                       uint8_t sync_source);
+
+void nr_rrc_mac_transmit_slss_req(module_id_t module_id,
+                                  uint8_t *sl_mib_payload,
+                                  uint16_t tx_slss_id,
+                                  NR_SL_SSB_TimeAllocation_r16_t *ssb_ta);
+void nr_rrc_mac_config_req_sl_mib(module_id_t module_id,
+                                  NR_SL_SSB_TimeAllocation_r16_t *ssb_ta,
+                                  uint16_t rx_slss_id,
+                                  uint8_t *sl_mib);
+void sl_prepare_psbch_payload(NR_TDD_UL_DL_ConfigCommon_t *TDD_UL_DL_Config,
+                              uint8_t *bits_0_to_7, uint8_t *bits_8_to_11,
+                              uint8_t mu, uint8_t L, uint8_t Y);
+
+uint8_t sl_decode_sl_TDD_Config(NR_TDD_UL_DL_ConfigCommon_t *TDD_UL_DL_Config,
+                                uint8_t bits_0_to_7, uint8_t bits_8_to_11,
+                                uint8_t mu, uint8_t L, uint8_t Y);
+
+uint8_t sl_determine_sci_1a_len(uint16_t *num_subchannels,
+                                NR_SL_ResourcePool_r16_t *rpool,
+                                sidelink_sci_format_1a_fields_t *sci_1a);
 #endif

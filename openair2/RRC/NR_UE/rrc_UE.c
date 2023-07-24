@@ -322,10 +322,8 @@ NR_UE_RRC_INST_t* nr_rrc_init_ue(char* uecap_file, int nb_inst)
       // SRB0 activated by default
       ptr->Srb[0] = RB_ESTABLISHED;
     }
-  }
 
-  if (get_softmodem_params()->sl_mode) {
-    configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);
+    init_sidelink(rrc);
   }
 
   return NR_UE_rrc_inst;
@@ -1462,6 +1460,14 @@ void *rrc_nrue(void *notUsed)
       nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(rrc, bcch->gnb_index, bcch->sdu, bcch->sdu_size, bcch->rsrq, bcch->rsrp);
     break;
 
+  case NR_RRC_MAC_SBCCH_DATA_IND:
+    LOG_D(NR_RRC, "[UE %ld] Received %s: gNB %d\n", instance, ITTI_MSG_NAME(msg_p), NR_RRC_MAC_SBCCH_DATA_IND(msg_p).gnb_index);
+    NRRrcMacSBcchDataInd *sbcch = &NR_RRC_MAC_SBCCH_DATA_IND(msg_p);
+    
+    nr_rrc_ue_decode_NR_SBCCH_SL_BCH_Message(rrc, sbcch->gnb_index,sbcch->frame, sbcch->slot, sbcch->sdu,
+                                             sbcch->sdu_size, sbcch->rx_slss_id);
+    break;
+
   case NR_RRC_MAC_CCCH_DATA_IND: {
     NRRrcMacCcchDataInd *ind = &NR_RRC_MAC_CCCH_DATA_IND(msg_p);
     nr_rrc_ue_decode_ccch(rrc, ind, 0);
@@ -1955,4 +1961,18 @@ void handle_t300_expiry(NR_UE_RRC_INST_t *rrc)
   nr_rrc_mac_config_req_reset(rrc->ue_id, cause);
   // TODO handle connEstFailureControl
   // TODO inform upper layers about the failure to establish the RRC connection
+}
+
+//This calls the sidelink preconf message after RRC, MAC instances are created.
+void start_sidelink(int instance)
+{
+
+  NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
+
+  if (get_softmodem_params()->sl_mode == 2) {
+
+    //Process the Sidelink Preconfiguration
+    rrc_ue_process_sidelink_Preconfiguration(rrc, get_softmodem_params()->sync_ref);
+
+  }
 }
