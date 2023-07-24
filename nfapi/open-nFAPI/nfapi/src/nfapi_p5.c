@@ -1039,8 +1039,6 @@ static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
 int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pMessageBuf;
   uint8_t *pWritePackedMessage = pPackedBuf;
-  uint8_t *pPackMessageEnd = (pWritePackedMessage == NULL) ? NULL : pPackedBuf + packedBufLen;
-  uint8_t *pPackedLengthField = (pWritePackedMessage == NULL) ? NULL : &pWritePackedMessage[4];
   uint32_t packedMsgLen;
   uint16_t packedMsgLen16;
 
@@ -1048,6 +1046,9 @@ int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pP
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 Pack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *pPackMessageEnd = pPackedBuf + packedBufLen;
+  uint8_t *pPackedLengthField = &pWritePackedMessage[4];
 
   // pack the message
   if(push16(pMessageHeader->phy_id, &pWritePackedMessage, pPackMessageEnd) &&
