@@ -35,8 +35,8 @@ void *nr_pdcp_integrity_nia2_init(uint8_t integrity_key[16])
   // This is a hack. Reduce the 3 functions to just cipher?
   // No. The overhead is x8 times more. Don't change before measuring
   // return integrity_key;
-  cbc_cmac_ctx_t* ctx = calloc(1, sizeof(cbc_cmac_ctx_t));  
-  DevAssert(ctx != NULL && "Memory exhausted");
+  cbc_cmac_ctx_t* ctx = calloc(1, sizeof(cbc_cmac_ctx_t));
+  AssertFatal(ctx != NULL, "Memory exhausted");
 
   *ctx = init_aes_128_cbc_cmac(integrity_key);
   return ctx;

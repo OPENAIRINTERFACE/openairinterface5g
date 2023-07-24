@@ -331,7 +331,7 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
 
   switch (scc->ssb_PositionsInBurst->present) {
     case 1 :
-      cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0]<<24;
+      cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = scc->ssb_PositionsInBurst->choice.shortBitmap.buf[0] << 24;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       break;
     case 2 :
@@ -342,8 +342,8 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
       cfg->ssb_table.ssb_mask_list[0].ssb_mask.value = 0;
       cfg->ssb_table.ssb_mask_list[1].ssb_mask.value = 0;
       for (int i=0; i<4; i++) {
-        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[3-i]<<i*8);
-        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (scc->ssb_PositionsInBurst->choice.longBitmap.buf[7-i]<<i*8);
+        cfg->ssb_table.ssb_mask_list[0].ssb_mask.value += (uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[3 - i] << i * 8;
+        cfg->ssb_table.ssb_mask_list[1].ssb_mask.value += (uint32_t) scc->ssb_PositionsInBurst->choice.longBitmap.buf[7 - i] << i * 8;
       }
       break;
     default:
@@ -594,7 +594,6 @@ bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig
   }
   if (ra_index == NR_NB_RA_PROC_MAX) {
     LOG_E(NR_MAC, "RA processes are not available for CFRA RNTI %04x\n", rnti);
-    NR_SCHED_UNLOCK(&nrmac->sched_lock);
     return false;
   }
   NR_RA_t *ra = &cc->ra[ra_index];

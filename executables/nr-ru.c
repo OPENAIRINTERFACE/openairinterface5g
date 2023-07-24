@@ -502,7 +502,7 @@ void fh_if5_north_asynch_in(RU_t *ru,int *frame,int *slot) {
   NR_DL_FRAME_PARMS *fp = ru->nr_frame_parms;
   RU_proc_t *proc        = &ru->proc;
   int tti_tx,frame_tx;
-  openair0_timestamp timestamp_tx;
+  openair0_timestamp timestamp_tx = 0;
   AssertFatal(1==0,"Shouldn't get here\n");
   //      printf("Received subframe %d (TS %llu) from RCC\n",tti_tx,timestamp_tx);
   frame_tx    = (timestamp_tx / (fp->samples_per_subframe*10))&1023;
@@ -1015,10 +1015,13 @@ void ru_tx_func(void *param) {
   int print_frame = 8;
   char filename[40];
  
-
-  // note that this will break for 60/120 kHz, to be handled
-  int absslot_tx = info->timestamp_tx/fp->get_samples_per_slot(slot_tx,fp);
-  int absslot_rx = absslot_tx-ru->sl_ahead;
+  int cumul_samples = fp->get_samples_per_slot(0, fp);
+  int i = 1;
+  for (; i < fp->slots_per_subframe / 2; i++)
+    cumul_samples += fp->get_samples_per_slot(i, fp);
+  int samples = cumul_samples / i;
+  int absslot_tx = info->timestamp_tx / samples;
+  int absslot_rx = absslot_tx - ru->sl_ahead;
   int rt_prof_idx = absslot_rx % RT_PROF_DEPTH;
   clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.start_RU_TX[rt_prof_idx]);
   // do TX front-end processing if needed (precoding and/or IDFTs)
@@ -1249,8 +1252,13 @@ void *ru_thread( void *param ) {
         clock_gettime(CLOCK_MONOTONIC,&ru->rt_ru_profiling.return_RU_feprx[rt_prof_idx]);
         //LOG_M("rxdata.m","rxs",ru->common.rxdata[0],1228800,1,1);
         LOG_D(PHY,"RU proc: frame_rx = %d, tti_rx = %d\n", proc->frame_rx, proc->tti_rx);
-        if (IS_SOFTMODEM_DOSCOPE && RC.gNB[0]->scopeData)
-          ((scopeData_t *)RC.gNB[0]->scopeData)->slotFunc(ru->common.rxdataF[0],proc->tti_rx, RC.gNB[0]->scopeData);
+        gNBscopeCopy(RC.gNB[0],
+                     gNBRxdataF,
+                     ru->common.rxdataF[0],
+                     sizeof(c16_t),
+                     1,
+                     gNB->frame_parms.samples_per_slot_wCP,
+                     proc->tti_rx * gNB->frame_parms.samples_per_slot_wCP);
 
         // Do PRACH RU processing
         int prach_id=find_nr_prach_ru(ru,proc->frame_rx,proc->tti_rx,SEARCH_EXIST);

@@ -16,9 +16,9 @@ Ref :
   L1 Rx processing : 305.0
   PUSCH inner-receiver : 150.0
   PUSCH decoding : 210.0
-  Schedule Response : 20.0
+  Schedule Response : 30.0
   DL & UL scheduling timing : 10.0
-  UL Indication : 30.0
+  UL Indication : 40.0
 Threshold :
   feprx : 1.25
   feptx_prec : 1.25

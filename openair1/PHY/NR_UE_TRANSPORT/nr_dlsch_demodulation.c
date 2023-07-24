@@ -259,7 +259,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                 int32_t *log2_maxh,
                 int rx_size_symbol,
                 int nbRx,
-                int32_t rxdataF_comp[][nbRx][rx_size_symbol],
+                int32_t rxdataF_comp[][nbRx][rx_size_symbol * NR_SYMBOLS_PER_SLOT],
                 c16_t ptrs_phase_per_slot[][NR_SYMBOLS_PER_SLOT],
                 int32_t ptrs_re_per_slot[][NR_SYMBOLS_PER_SLOT])
 {
@@ -621,7 +621,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                              codeword_TB0,
                              codeword_TB1,
                              layer_llr);
-
+    // if (llr[0][0]) abort();
     for (int i=0; i<NR_MAX_NB_LAYERS; i++)
       free(layer_llr[i]);
   // Please keep it: useful for debugging
@@ -667,8 +667,7 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     T_INT(frame_parms->symbols_per_slot),
     T_BUFFER(&rxdataF_comp[gNB_id][0], 2 * /* ulsch[UE_id]->harq_processes[harq_pid]->nb_rb */ frame_parms->N_RB_UL * 12 * 2));
 #endif
-
-  UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp, sizeof(c16_t), nbRx, rx_size_symbol);
+  UEscopeCopy(ue, pdschRxdataF_comp, rxdataF_comp[0], sizeof(c16_t), nbRx, rx_size_symbol * NR_SYMBOLS_PER_SLOT, 0);
 
   if (ue->phy_sim_pdsch_rxdataF_comp)
     for (int a = 0; a < nbRx; a++) {

@@ -299,11 +299,9 @@ int init_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   // init RX buffers
   common_vars->rxdata = malloc16(fp->nb_antennas_rx * sizeof(c16_t *));
-  common_vars->rxdataF = malloc16(fp->nb_antennas_rx * sizeof(c16_t *));
 
   for (i=0; i<fp->nb_antennas_rx; i++) {
     common_vars->rxdata[i] = malloc16_clear((2 * (fp->samples_per_frame) + fp->ofdm_symbol_size) * sizeof(c16_t));
-    common_vars->rxdataF[i] = malloc16_clear((2 * (fp->samples_per_frame) + fp->ofdm_symbol_size) * sizeof(c16_t));
   }
 
   // ceil(((NB_RB<<1)*3)/32) // 3 RE *2(QPSK)
@@ -415,10 +413,8 @@ void term_nr_ue_signal(PHY_VARS_NR_UE *ue, int nb_connected_gNB)
 
   for (int i = 0; i < fp->nb_antennas_rx; i++) {
     free_and_zero(common_vars->rxdata[i]);
-    free_and_zero(common_vars->rxdataF[i]);
   }
   free_and_zero(common_vars->rxdata);
-  free_and_zero(common_vars->rxdataF);
 
   for (int slot = 0; slot < fp->slots_per_frame; slot++) {
     for (int symb = 0; symb < fp->symbols_per_slot; symb++)

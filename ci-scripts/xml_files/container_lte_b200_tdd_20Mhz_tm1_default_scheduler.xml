@@ -32,7 +32,7 @@ Replaces xml_files/enb_usrp210_band40_test_20mhz_tm1_default_scheduler.xml
 040101
 030125
 040301 040522 040627 040626 040628 040629 040630 040667 040666 040668 040669 040670 040401 040201
-030201
+030225
 200000
     </TestCaseRequestedList>
     <TestCaseExclusionList></TestCaseExclusionList>
@@ -71,7 +71,7 @@ Replaces xml_files/enb_usrp210_band40_test_20mhz_tm1_default_scheduler.xml
         <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
     </testCase>
 
-    <testCase id="030201">
+    <testCase id="030225">
         <class>Undeploy_Object</class>
         <desc>Undeploy eNB</desc>
         <yaml_path>ci-scripts/yaml_files/lte_b200_tdd_20Mhz_tm1_default_scheduler</yaml_path>

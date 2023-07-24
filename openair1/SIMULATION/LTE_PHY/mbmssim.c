@@ -585,7 +585,7 @@ double SNR,snr0=-2.0,snr1,rate = 0;
 int print_perf=0;
 
 int main(int argc, char **argv) {
-  int k,i,j,aa;
+  int k = 0,i,j,aa;
   int re;
   int s,Kr,Kr_bytes;
   LTE_DL_FRAME_PARMS *frame_parms;

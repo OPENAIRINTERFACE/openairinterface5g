@@ -554,28 +554,24 @@ check_install_additional_tools (){
             ;;
     esac
     PACKAGE_LIST="\
-	doxygen \
-	libpthread-stubs0-dev \
-	libqt5charts5-dev \
-	tshark \
-	uml-utilities \
+        doxygen \
+        libgnutls28-dev \
+        libpthread-stubs0-dev \
+        libqt5charts5-dev \
+        tshark \
+        uml-utilities \
         iperf3 \
         libforms-bin \
         libforms-dev \
+        libxft-dev \
         xmlstarlet"
-  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
+  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]] ||  [[ "$OS_DISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
       doxygen \
       ctags \
       iperf3 \
-      xforms \
-      xforms-devel \
-      xmlstarlet"
-  elif [[ "$OS_DISTRO" == "fedora" ]]; then
-    PACKAGE_LIST=" \
-      doxygen \
-      ctags \
-      iperf3 \
+      gnutls-devel \
+      libXft-devel \
       xforms \
       xforms-devel \
       xmlstarlet"
@@ -595,7 +591,7 @@ check_install_oai_software() {
     case "$(get_distribution_release)" in
         "ubuntu18.04")
             add_cmake_repo
-            specific_packages="libgcrypt11-dev"
+            specific_packages=""
             ;;
          "debian11")
             specific_packages="libz-dev"
@@ -614,12 +610,10 @@ check_install_oai_software() {
 	liblapack-dev \
 	liblapacke-dev \
 	libreadline-dev \
-	libgnutls28-dev \
 	libconfig-dev \
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-        libxft-dev \
 	patch \
 	openssl \
         zlib1g-dev \
@@ -645,18 +639,15 @@ check_install_oai_software() {
       pkgconfig \
       libconfig-devel \
       libffi-devel \
-      libgcrypt-devel \
       lksctp-tools \
       lksctp-tools-devel \
       libtool \
-      libXft-devel \
       ninja-build \
       make \
       openssl \
       openssl-devel \
       patch \
       readline-devel \
-      gnutls-devel \
       lapack \
       lapack-devel \
       blas \
