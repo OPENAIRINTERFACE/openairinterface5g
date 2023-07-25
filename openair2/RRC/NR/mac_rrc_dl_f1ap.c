@@ -92,6 +92,11 @@ static void dl_rrc_message_transfer_f1ap(const f1ap_dl_rrc_message_t *dl_rrc)
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
   f1ap_dl_rrc_message_t *msg = &F1AP_DL_RRC_MESSAGE(message_p);
   *msg = *dl_rrc;
+  if (dl_rrc->old_gNB_DU_ue_id) {
+    msg->old_gNB_DU_ue_id = malloc(sizeof(*msg->old_gNB_DU_ue_id));
+    AssertFatal(msg->old_gNB_DU_ue_id != NULL, "out of memory\n");
+    *msg->old_gNB_DU_ue_id = *dl_rrc->old_gNB_DU_ue_id;
+  }
   if (dl_rrc->rrc_container) {
     msg->rrc_container = malloc(dl_rrc->rrc_container_length);
     AssertFatal(msg->rrc_container != NULL, "out of memory\n");

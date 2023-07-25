@@ -286,8 +286,7 @@ typedef struct f1ap_dl_rrc_message_s {
 
   uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
-  uint32_t old_gNB_DU_ue_id;
-  uint16_t rnti; 
+  uint32_t *old_gNB_DU_ue_id;
   uint8_t  srb_id;
   uint8_t  execute_duplication;
   uint8_t *rrc_container;

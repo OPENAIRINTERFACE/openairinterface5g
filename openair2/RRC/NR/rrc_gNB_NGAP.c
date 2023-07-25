@@ -58,6 +58,7 @@
 #include "NR_UE-CapabilityRAT-ContainerList.h"
 #include "NGAP_CauseRadioNetwork.h"
 #include "f1ap_messages_types.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/E1AP/e1ap_asnc.h"
 #include "NGAP_asn_constant.h"
 #include "NGAP_PDUSessionResourceSetupRequestTransfer.h"
@@ -618,7 +619,7 @@ int rrc_gNB_process_NGAP_DOWNLINK_NAS(MessageDef *msg_p, instance_t instance, mu
   AssertFatal(!NODE_IS_DU(RC.nrrrc[ctxt.module_id]->node_type), "illegal node type DU: receiving NGAP messages at this node\n");
   /* Transfer data to PDCP */
   rb_id_t srb_id = UE->Srb[2].Active ? DCCH1 : DCCH;
-  nr_pdcp_data_req_srb(ctxt.rntiMaybeUEid, srb_id, (*rrc_gNB_mui)++, length, buffer, deliver_pdu_srb_f1, RC.nrrrc[instance]);
+  nr_rrc_transfer_protected_rrc_message(RC.nrrrc[instance], UE, srb_id, buffer, length);
   return 0;
 }
 

@@ -60,8 +60,6 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
                                       F1AP_F1AP_PDU_t *pdu) {
   F1AP_DLRRCMessageTransfer_t    *container;
   F1AP_DLRRCMessageTransferIEs_t *ie;
-  uint64_t        cu_ue_f1ap_id;
-  uint64_t        du_ue_f1ap_id;
   int             executeDuplication;
   //uint64_t        subscriberProfileIDforRFP;
   //uint64_t        rAT_FrequencySelectionPriority;
@@ -70,15 +68,11 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  LOG_D(F1AP, "cu_ue_f1ap_id %lu \n", cu_ue_f1ap_id);
+  uint32_t cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_DLRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(F1AP, "du_ue_f1ap_id %lu associated with UE RNTI %x \n",
-        du_ue_f1ap_id,
-        f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id)); // this should be the one transmitted via initial ul rrc message transfer
+  uint32_t du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   if (f1ap_du_add_cu_ue_id(instance,du_ue_f1ap_id, cu_ue_f1ap_id) < 0 ) {
     LOG_E(F1AP, "Failed to find the F1AP UID \n");
@@ -135,9 +129,10 @@ int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   }
 
   f1ap_dl_rrc_message_t dl_rrc = {
+    .gNB_CU_ue_id = cu_ue_f1ap_id,
+    .gNB_DU_ue_id = du_ue_f1ap_id,
     .rrc_container_length = ie->value.choice.RRCContainer.size,
     .rrc_container = ie->value.choice.RRCContainer.buf,
-    .rnti = f1ap_get_rnti_by_du_id(DUtype, instance, du_ue_f1ap_id),
     .srb_id = srb_id
   };
   dl_rrc_message_transfer(&dl_rrc);
