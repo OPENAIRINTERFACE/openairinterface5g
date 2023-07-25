@@ -1071,6 +1071,39 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
   return 1;
 }
 
+void nr_pdcp_reestablishment(ue_id_t ue_id)
+{
+  // TODO implement this on a per RB basis following TS 38.323 Sec 5.1.2
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+  if (ue == NULL) {
+    LOG_E(PDCP, "Cannot find PDCP entity for UE %lx\n", ue_id);
+    nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+    return;
+  }
+
+  for (int i = 0; i < 3; i++) {
+    nr_pdcp_entity_t *srb = ue->srb[i];
+    if (srb != NULL) {
+      srb->tx_next = 0;
+      srb->rx_next = 0;
+      srb->rx_deliv = 0;
+      srb->rx_reord = 0;
+    }
+  }
+
+  for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
+    nr_pdcp_entity_t *drb = ue->drb[i];
+    if (drb != NULL) {
+      // drb->tx_next = 0; // Should continue from the previous value
+      drb->rx_next = 0;
+      //drb->rx_deliv = 0; // should continue from the previous value
+      drb->rx_reord = 0;
+    }
+  }
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+}
+
 bool nr_pdcp_data_req_drb(protocol_ctxt_t *ctxt_pP,
                           const srb_flag_t srb_flagP,
                           const rb_id_t rb_id,

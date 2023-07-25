@@ -58,6 +58,7 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
 void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 
 bool nr_pdcp_remove_UE(ue_id_t ue_id);
+void nr_pdcp_reestablishment(ue_id_t ue_id);
 
 void nr_pdcp_config_set_security(ue_id_t ue_id,
                                  const rb_id_t rb_id,

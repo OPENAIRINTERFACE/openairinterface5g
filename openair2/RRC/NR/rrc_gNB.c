@@ -1238,6 +1238,7 @@ void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
                               kRRCenc,
                               kRRCint,
                               kUPenc);
+  nr_pdcp_reestablishment(ctxt_pP->rntiMaybeUEid);
 
   if (!NODE_IS_CU(rrc->node_type)) {
     apply_macrlc_config_reest(rrc, ue_context_pP, ctxt_pP, ctxt_pP->rntiMaybeUEid);
