@@ -207,18 +207,6 @@ void nr_ue_mac_default_configs(NR_UE_MAC_INST_t *mac)
   memset(&mac->ul_time_alignment, 0, sizeof(mac->ul_time_alignment));
 }
 
-NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id) {
-  NR_BWP_DownlinkCommon_t *bwp_Common = NULL;
-  if (dl_bwp_id > 0 && mac->cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList) {
-    bwp_Common = mac->cg->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList->list.array[dl_bwp_id-1]->bwp_Common;
-  } else if (mac->scc) {
-    bwp_Common = mac->scc->downlinkConfigCommon->initialDownlinkBWP;
-  } else if (mac->scc_SIB) {
-    bwp_Common = &mac->scc_SIB->downlinkConfigCommon.initialDownlinkBWP;
-  }
-  return bwp_Common;
-}
-
 int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
 {
 
@@ -288,6 +276,7 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
 #endif
 
   mac->ssb_subcarrier_offset = ssb_subcarrier_offset;
+  mac->dmrs_TypeA_Position = mac->mib->dmrs_TypeA_Position;
 
   if (mac->first_sync_frame == -1)
     mac->first_sync_frame = frame;
@@ -647,7 +636,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
       dlsch_config_pdu_1_0->rb_offset -= dlsch_config_pdu_1_0->BWPStart;
 
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
+    int dmrs_typeA_pos = mac->dmrs_TypeA_Position;
     NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
                                              dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, mac->get_sib1);
 
@@ -669,7 +658,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_0->dlDmrsSymbPos = fill_dmrs_mask(pdsch_config,
                                                          NR_DL_DCI_FORMAT_1_0,
-                                                         mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position,
+                                                         mac->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_0->number_symbols,
                                                          dlsch_config_pdu_1_0->start_symbol,
                                                          tda_info.mapping_type,
@@ -868,7 +857,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     dlsch_config_pdu_1_1->rb_offset = dlsch_config_pdu_1_1->start_rb + dlsch_config_pdu_1_1->BWPStart;
     /* TIME_DOM_RESOURCE_ASSIGNMENT */
-    int dmrs_typeA_pos = (mac->scc != NULL) ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position;
+    int dmrs_typeA_pos = mac->dmrs_TypeA_Position;
     NR_tda_info_t tda_info = get_dl_tda_info(current_DL_BWP, dci_ind->ss_type, dci->time_domain_assignment.val,
                                              dmrs_typeA_pos, mux_pattern, get_rnti_type(mac, rnti), coreset_type, false);
 
@@ -1059,7 +1048,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     /* dmrs symbol positions*/
     dlsch_config_pdu_1_1->dlDmrsSymbPos = fill_dmrs_mask(pdsch_Config,
                                                          NR_DL_DCI_FORMAT_1_1,
-                                                         mac->scc? mac->scc->dmrs_TypeA_Position:mac->mib->dmrs_TypeA_Position,
+                                                         mac->dmrs_TypeA_Position,
                                                          dlsch_config_pdu_1_1->number_symbols,
                                                          dlsch_config_pdu_1_1->start_symbol,
                                                          tda_info.mapping_type,
@@ -4138,17 +4127,13 @@ int nr_ue_process_rar(nr_downlink_indication_t *dl_info, int pdu_id)
 // - referenceSignalPower:   dBm/RE (average EPRE of the resources elements that carry secondary synchronization signals in dBm)
 int16_t compute_nr_SSB_PL(NR_UE_MAC_INST_t *mac, short ssb_rsrp_dBm)
 {
-
-  long referenceSignalPower;
+  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
+  int referenceSignalPower = cfg->ssb_config.ss_pbch_power;
   //TODO improve PL measurements. Probably not correct as it is.
-  if (mac->scc)
-    referenceSignalPower = mac->scc->ss_PBCH_BlockPower;
-  else
-    referenceSignalPower = mac->scc_SIB->ss_PBCH_BlockPower;
 
   int16_t pathloss = (int16_t)(referenceSignalPower - ssb_rsrp_dBm);
 
-  LOG_D(NR_MAC, "pathloss %d dB, referenceSignalPower %ld dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
+  LOG_D(NR_MAC, "pathloss %d dB, referenceSignalPower %d dBm/RE (%f mW), RSRP %d dBm (%f mW)\n",
         pathloss,
         referenceSignalPower,
         pow(10, referenceSignalPower/10),

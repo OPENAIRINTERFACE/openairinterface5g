@@ -238,8 +238,6 @@ void config_dci_pdu(NR_UE_MAC_INST_t *mac,
 
 void ue_dci_configuration(NR_UE_MAC_INST_t *mac, fapi_nr_dl_config_request_t *dl_config, const frame_t frame, const int slot);
 
-NR_BWP_DownlinkCommon_t *get_bwp_downlink_common(NR_UE_MAC_INST_t *mac, NR_BWP_Id_t dl_bwp_id);
-
 uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       int cc_id,
                       frame_t frameP,
