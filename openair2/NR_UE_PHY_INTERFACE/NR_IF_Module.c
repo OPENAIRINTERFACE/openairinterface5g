@@ -1248,8 +1248,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
   return ret_mask;
 }
 
-nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
-
+nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id)
+{
   if (nr_ue_if_module_inst[module_id] == NULL) {
     nr_ue_if_module_inst[module_id] = (nr_ue_if_module_t *)malloc(sizeof(nr_ue_if_module_t));
     memset((void*)nr_ue_if_module_inst[module_id],0,sizeof(nr_ue_if_module_t));

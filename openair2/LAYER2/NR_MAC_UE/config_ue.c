@@ -720,6 +720,28 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   mac->phy_config_request_sent = true;
 }
 
+void handle_reconfiguration_with_sync(NR_UE_MAC_INST_t *mac,
+                                      module_id_t module_id,
+                                      int cc_idP,
+                                      struct NR_ReconfigurationWithSync *reconfigurationWithSync)
+{
+  RA_config_t *ra = &mac->ra;
+  if (reconfigurationWithSync->rach_ConfigDedicated) {
+    ra->rach_ConfigDedicated = reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
+  }
+  NR_ServingCellConfigCommon_t *scc = reconfigurationWithSync->spCellConfigCommon;
+  mac->bwp_dlcommon = scc->downlinkConfigCommon->initialDownlinkBWP;
+  mac->bwp_ulcommon = scc->uplinkConfigCommon->initialUplinkBWP;
+  mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
+  mac->tdd_UL_DL_ConfigurationCommon = scc->tdd_UL_DL_ConfigurationCommon;
+  mac->p_Max = scc->uplinkConfigCommon->frequencyInfoUL->p_Max;
+  mac->nr_band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+  mac->physCellId = *scc->physCellId;
+  mac->crnti = reconfigurationWithSync->newUE_Identity;
+  LOG_I(NR_MAC, "Configuring CRNTI %x\n", mac->crnti);
+  config_common_ue(mac, scc, module_id, cc_idP);
+}
+
 void nr_rrc_mac_config_req_mcg(module_id_t module_id,
                                int cc_idP,
                                NR_CellGroupConfig_t *cell_group_config)
@@ -741,75 +763,40 @@ void nr_rrc_mac_config_req_mcg(module_id_t module_id,
         mac->scheduling_info.periodicBSR_SF,
         mac->scheduling_info.retxBSR_SF);
 
-  RA_config_t *ra = &mac->ra;
   if (cell_group_config->spCellConfig && cell_group_config->spCellConfig->reconfigurationWithSync) {
     LOG_A(NR_MAC, "Received the reconfigurationWithSync in %s\n", __FUNCTION__);
-    if (cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-      ra->rach_ConfigDedicated = cell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-    }
-    NR_ServingCellConfigCommon_t *scc = cell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-    mac->bwp_dlcommon = scc->downlinkConfigCommon->initialDownlinkBWP;
-    mac->bwp_ulcommon = scc->uplinkConfigCommon->initialUplinkBWP;
-    mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
-    mac->tdd_UL_DL_ConfigurationCommon = scc->tdd_UL_DL_ConfigurationCommon;
-    mac->p_Max = scc->uplinkConfigCommon->frequencyInfoUL->p_Max;
-    mac->nr_band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
+
+    handle_reconfiguration_with_sync(mac, module_id, cc_idP, cell_group_config->spCellConfig->reconfigurationWithSync);
+
     mac->state = UE_NOT_SYNC;
     mac->ra.ra_state = RA_UE_IDLE;
-    mac->physCellId = *scc->physCellId;
+    nr_ue_mac_default_configs(mac);
+
     if (!get_softmodem_params()->emulate_l1) {
       mac->synch_request.Mod_id = module_id;
       mac->synch_request.CC_id = cc_idP;
       mac->synch_request.synch_req.target_Nid_cell = mac->physCellId;
       mac->if_module->synch_request(&mac->synch_request);
-    }
-    mac->crnti = cell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-    LOG_I(NR_MAC, "Configuring CRNTI %x\n", mac->crnti);
-
-    configure_current_BWP(mac, NULL, cell_group_config);
-    config_common_ue(mac, scc, module_id, cc_idP);
-    nr_ue_mac_default_configs(mac);
-
-    if (!get_softmodem_params()->emulate_l1) {
       mac->if_module->phy_config_request(&mac->phy_config);
       mac->phy_config_request_sent = true;
     }
-
     // Setup the SSB to Rach Occasions mapping according to the config
     build_ssb_to_ro_map(mac);
-  } else {
-    configure_current_BWP(mac, NULL, cell_group_config);
   }
+  configure_current_BWP(mac, NULL, cell_group_config);
 }
 
 void nr_rrc_mac_config_req_scg(module_id_t module_id,
                                int cc_idP,
                                NR_CellGroupConfig_t *scell_group_config)
 {
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-  RA_config_t *ra = &mac->ra;
-
   AssertFatal(scell_group_config, "scell_group_config cannot be NULL\n");
 
   mac->cg = scell_group_config;
   mac->servCellIndex = *scell_group_config->spCellConfig->servCellIndex;
-  if (scell_group_config->spCellConfig->reconfigurationWithSync) {
-    if (scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated) {
-      ra->rach_ConfigDedicated = scell_group_config->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink;
-    }
-    NR_ServingCellConfigCommon_t *scc = scell_group_config->spCellConfig->reconfigurationWithSync->spCellConfigCommon;
-    mac->bwp_dlcommon = scc->downlinkConfigCommon->initialDownlinkBWP;
-    mac->bwp_ulcommon = scc->uplinkConfigCommon->initialUplinkBWP;
-    mac->dmrs_TypeA_Position = scc->dmrs_TypeA_Position;
-    mac->tdd_UL_DL_ConfigurationCommon = scc->tdd_UL_DL_ConfigurationCommon;
-    mac->p_Max = scc->uplinkConfigCommon->frequencyInfoUL->p_Max;
-    mac->nr_band = *scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0];
-    mac->physCellId = *scc->physCellId;
-    config_common_ue(mac, scc, module_id, cc_idP);
-    mac->crnti = scell_group_config->spCellConfig->reconfigurationWithSync->newUE_Identity;
-    LOG_I(MAC,"Configuring CRNTI %x\n",mac->crnti);
-  }
+  if (scell_group_config->spCellConfig->reconfigurationWithSync)
+    handle_reconfiguration_with_sync(mac, module_id, cc_idP, scell_group_config->spCellConfig->reconfigurationWithSync);
   configure_current_BWP(mac, NULL, scell_group_config);
   // Setup the SSB to Rach Occasions mapping according to the config
   build_ssb_to_ro_map(mac);
