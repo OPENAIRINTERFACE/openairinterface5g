@@ -966,7 +966,7 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
 
   if (ue_context_p) {
     MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
-    NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.gNB_ue_ngap_id;
+    NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.rrc_ue_id;
     itti_send_msg_to_task(TASK_NGAP, instance, msg);
     rrc_gNB_remove_ue_context(RC.nrrrc[instance], ue_context_p);
   } else {

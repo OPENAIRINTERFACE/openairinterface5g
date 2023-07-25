@@ -1321,7 +1321,7 @@ void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *const ctx
 
   /* Update RNTI in ue_context */
   LOG_I(NR_RRC, "RRC Reestablishment - Updating UEid from %04x to %lx\n", ue_p->rnti, ctxt_pP->rntiMaybeUEid);
-  rrc_gNB_update_ue_context_rnti(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], ue_p->gNB_ue_ngap_id);
+  rrc_gNB_update_ue_context_rnti(ctxt_pP->rntiMaybeUEid, RC.nrrrc[ctxt_pP->module_id], ue_p->rrc_ue_id);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(NR_CellGroupConfig_t));
@@ -2295,7 +2295,7 @@ static void rrc_CU_process_ue_context_release_complete(MessageDef *msg_p)
 
   nr_pdcp_remove_UE(UE->rnti);
   newGtpuDeleteAllTunnels(instance, UE->rnti);
-  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(instance, UE->gNB_ue_ngap_id);
+  rrc_gNB_send_NGAP_UE_CONTEXT_RELEASE_COMPLETE(instance, UE->rrc_ue_id);
   LOG_I(NR_RRC, "removed UE %04x \n", UE->rnti);
   rrc_gNB_remove_ue_context(rrc, ue_context_p);
 }
@@ -2311,7 +2311,7 @@ static void rrc_CU_process_ue_context_modification_response(MessageDef *msg_p, i
   if (resp->drbs_to_be_setup_length > 0) {
     e1ap_bearer_setup_req_t req = {0};
     req.numPDUSessionsMod = UE->nb_of_pdusessions;
-    req.gNB_cu_cp_ue_id = UE->gNB_ue_ngap_id;
+    req.gNB_cu_cp_ue_id = UE->rrc_ue_id;
     req.rnti = UE->rnti;
     for (int i = 0; i < req.numPDUSessionsMod; i++) {
       req.pduSessionMod[i].numDRB2Modify = resp->drbs_to_be_setup_length;
