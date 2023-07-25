@@ -1310,8 +1310,6 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
       rrc->eth_params_s.my_portd                 = *(GNBParamList.paramarray[i][GNB_LOCAL_S_PORTD_IDX].uptr);
       rrc->eth_params_s.remote_portd             = *(GNBParamList.paramarray[i][GNB_REMOTE_S_PORTD_IDX].uptr);
       rrc->eth_params_s.transp_preference        = ETH_UDP_MODE;
-      rrc->sctp_in_streams                       = (uint16_t)*(SCTPParams[GNB_SCTP_INSTREAMS_IDX].uptr);
-      rrc->sctp_out_streams                      = (uint16_t)*(SCTPParams[GNB_SCTP_OUTSTREAMS_IDX].uptr);
     }
 
    

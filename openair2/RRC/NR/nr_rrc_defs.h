@@ -415,8 +415,6 @@ typedef struct gNB_RRC_INST_s {
   int srb1_timer_status_prohibit;
   int um_on_default_drb;
   int srs_enable[MAX_NUM_CCs];
-  uint16_t sctp_in_streams;
-  uint16_t sctp_out_streams;
 
   char *uecap_file;
 
