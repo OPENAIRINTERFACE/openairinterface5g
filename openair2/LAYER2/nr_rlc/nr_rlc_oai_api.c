@@ -1010,6 +1010,24 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
   return RLC_OP_STATUS_OK;
 }
 
+/* This function is for testing purposes. At least on a COTS UE, it will
+ * trigger a reestablishment. */
+void nr_rlc_test_trigger_reestablishment(int rnti)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (ue == NULL) {
+    nr_rlc_manager_unlock(nr_rlc_ue_manager);
+    LOG_E(RLC, "Cannot find RLC entity for UE %04x\n", rnti);
+    return;
+  }
+  /* we simply assume the SRB exists, because the scheduler creates it as soon
+   * as the UE context is created. */
+  nr_rlc_entity_t *ent = ue->srb[0];
+  ent->reestablishment(ent);
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
+
 void nr_rlc_tick(int frame, int subframe)
 {
   if (frame != nr_rlc_current_time_last_frame ||
