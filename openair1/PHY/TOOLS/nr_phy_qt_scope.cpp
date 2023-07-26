@@ -70,22 +70,18 @@ float Limits_KPI_ue[2][2] = {
     {0.2, 10} // Throughput in Mbs
 };
 
-// Holds status of active plots
-std::set<LLRPlot *> puschLlrSet;
-std::set<IQPlot *> puschIqSet;
+// Plot updater
+PlotUpdater puschLlrUpdater;
+PlotUpdater puschIqUpdater;
 
 void scopeUpdaterGnb(enum PlotTypeGnbIf plotType, int numElt)
 {
   switch (plotType) {
     case puschLLRe:
-      for (auto puschLlr = puschLlrSet.begin(); puschLlr != puschLlrSet.end(); puschLlr++) {
-        (*puschLlr)->updatePlot(numElt);
-      }
+      puschLlrUpdater.updatePlot(numElt);
       break;
     case puschIQe:
-      for (auto puschIq = puschIqSet.begin(); puschIq != puschIqSet.end(); puschIq++) {
-        (*puschIq)->updatePlot(numElt);
-      }
+      puschIqUpdater.updatePlot(numElt);
       break;
   }
 }
@@ -366,8 +362,7 @@ void CIRPlotUE::timerEvent(QTimerEvent *event)
   }
 }
 
-LLRPlot::LLRPlot(int16_t *data, int len, int interval, std::set<LLRPlot *> *notificationSet)
-    : data(data), len(len), notificationSet(notificationSet)
+LLRPlot::LLRPlot(int16_t *data, int len, int interval, PlotUpdater *plotUpdater) : data(data), len(len), plotUpdater(plotUpdater)
 {
   this->legend()->hide();
 
@@ -393,14 +388,14 @@ LLRPlot::LLRPlot(int16_t *data, int len, int interval, std::set<LLRPlot *> *noti
   if (interval)
     startTimer(interval);
 
-  if (notificationSet)
-    notificationSet->insert(this);
+  if (plotUpdater)
+    connect(plotUpdater, &PlotUpdater::updatePlot, this, &LLRPlot::updatePlot, Qt::QueuedConnection);
 }
 
 LLRPlot::~LLRPlot()
 {
-  if (this->notificationSet)
-    this->notificationSet->erase(this);
+  if (this->plotUpdater)
+    disconnect(this->plotUpdater, &PlotUpdater::updatePlot, this, &LLRPlot::updatePlot);
 }
 
 void LLRPlot::updatePlot(int len)
@@ -450,8 +445,7 @@ void LLRPlotUE::timerEvent(QTimerEvent *event)
   }
 }
 
-IQPlot::IQPlot(complex16 *data, int len, int interval, std::set<IQPlot *> *notificationSet)
-    : data(data), len(len), notificationSet(notificationSet)
+IQPlot::IQPlot(complex16 *data, int len, int interval, PlotUpdater *plotUpdater) : data(data), len(len), plotUpdater(plotUpdater)
 {
   this->legend()->hide();
 
@@ -476,14 +470,14 @@ IQPlot::IQPlot(complex16 *data, int len, int interval, std::set<IQPlot *> *notif
   if (interval)
     startTimer(interval);
 
-  if (notificationSet)
-    notificationSet->insert(this);
+  if (plotUpdater)
+    connect(plotUpdater, &PlotUpdater::updatePlot, this, &IQPlot::updatePlot, Qt::QueuedConnection);
 }
 
 IQPlot::~IQPlot()
 {
-  if (this->notificationSet)
-    this->notificationSet->erase(this);
+  if (this->plotUpdater)
+    disconnect(this->plotUpdater, &PlotUpdater::updatePlot, this, &IQPlot::updatePlot);
 }
 
 void IQPlot::updatePlot(int len)
@@ -839,12 +833,12 @@ void PainterWidgetGnb::makeConnections(int type)
 
     case PlotTypeGnb::puschLLR: {
       int init_coded_bits_per_codeword = 100;
-      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, init_coded_bits_per_codeword, 0, &puschLlrSet);
+      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, init_coded_bits_per_codeword, 0, &puschLlrUpdater);
       break;
     }
     case PlotTypeGnb::puschIQ: {
       int init_num_re = 100;
-      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], init_num_re, 0, &puschIqSet);
+      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], init_num_re, 0, &puschIqUpdater);
       break;
     }
     case PlotTypeGnb::puschSNR: {

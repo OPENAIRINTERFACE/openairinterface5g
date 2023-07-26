@@ -24,7 +24,6 @@
 #ifndef QT_SCOPE_MAINWINDOW_H
 #define QT_SCOPE_MAINWINDOW_H
 
-#include <set>
 #include <QtCharts>
 
 extern "C" {
@@ -99,6 +98,14 @@ class ValueProviderUE : public ValueProvider {
   {
     return nullptr;
   }
+};
+
+/// Class for emitting a queued signal to update plots
+class PlotUpdater : public QObject {
+  Q_OBJECT
+
+ signals:
+  void updatePlot(int numElt);
 };
 
 /// An editable GUI field for a dialog box to set certain KPI configurations
@@ -249,14 +256,6 @@ class CIRPlotUE : public CIRPlot {
   ValueProviderUE *valueProvider;
 };
 
-/// New data signal emiter
-class NewDataHere : public QObject {
-  Q_OBJECT
-
- signals:
-  void updateScope();
-};
-
 /// Chart class for plotting LLRs
 class LLRPlot : public QChart {
   Q_OBJECT
@@ -266,8 +265,8 @@ class LLRPlot : public QChart {
   /// \param data Pointer to the LLR data
   /// \param len Length of the LLR data
   /// \param interval update interval in ms (0 means no timer-triggered updates)
-  /// \param notificationSet pointer to a std::set for update notifications
-  LLRPlot(int16_t *data, int len, int interval = 1000, std::set<LLRPlot *> *notificationSet = nullptr);
+  /// \param plotUpdater pointer to a PlotUpdater for update notifications
+  LLRPlot(int16_t *data, int len, int interval = 1000, PlotUpdater *plotUpdater = nullptr);
 
   /// Destructor
   ~LLRPlot();
@@ -287,8 +286,8 @@ class LLRPlot : public QChart {
   /// Length of the LLR data
   int len;
 
-  /// Pointer to a std::set for update notifications
-  std::set<LLRPlot *> *notificationSet;
+  /// Pointer to a PlotUpdater for update notifications
+  PlotUpdater *plotUpdater;
 
   /// Scatter series used to plot the LLR in the chart
   QScatterSeries *series;
@@ -326,8 +325,8 @@ class IQPlot : public QChart {
   /// \param data Pointer to the complex I/Q data
   /// \param len Length of the I/Q data
   /// \param interval update interval in ms (0 means no timer-triggered updates)
-  /// \param notificationSet pointer to a std::set for update notifications
-  IQPlot(complex16 *data, int len, int interval = 1000, std::set<IQPlot *> *notificationSet = nullptr);
+  /// \param plotUpdater pointer to a PlotUpdater for update notifications
+  IQPlot(complex16 *data, int len, int interval = 1000, PlotUpdater *plotUpdater = nullptr);
 
   /// Destructor
   ~IQPlot();
@@ -347,8 +346,8 @@ class IQPlot : public QChart {
   /// Length of the I/Q data
   int len;
 
-  /// Pointer to a std::set for update notifications
-  std::set<IQPlot *> *notificationSet;
+  /// Pointer to a PlotUpdater for update notifications
+  PlotUpdater *plotUpdater;
 
   /// Scatter series used to plot the I/Q constellation diagram
   QScatterSeries *series;
