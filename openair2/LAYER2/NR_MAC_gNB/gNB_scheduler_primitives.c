@@ -1992,22 +1992,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   destroy_nr_list(&sched_ctrl->retrans_ul_harq);
   uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
-  const rnti_t rnti = UE->rnti;
   free(UE);
-
-  /* clear RA process(es?) associated to the UE */
-  for (int cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
-    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-      NR_COMMON_channels_t *cc = &ccPtr[cc_id];
-      if (cc->ra[i].rnti == rnti) {
-        LOG_D(NR_MAC, "free RA process %d for rnti %04x\n", i, rnti);
-        /* is it enough? */
-        cc->ra[i].cfra = false;
-        cc->ra[i].rnti = 0;
-        cc->ra[i].crnti = 0;
-      }
-    }
-  }
 }
 
 
