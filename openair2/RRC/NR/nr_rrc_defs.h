@@ -223,7 +223,6 @@ typedef struct drb_s {
 } drb_t;
 
 typedef enum {
-  RRC_FIRST_RECONF,
   RRC_SETUP,
   RRC_SETUP_FOR_REESTABLISHMENT,
   RRC_REESTABLISH,
