@@ -215,3 +215,8 @@ ccmake ../../..
 cmake-gui ../../..
 ```
 You can of course use all standard cmake/ninja/make commands in this directory.
+
+# Cross Compile
+
+If you want to use cross-compiler on x86 platform for aarch64 version, please refer the [cross-compile.md](./cross-compile.md) for more information.
+
