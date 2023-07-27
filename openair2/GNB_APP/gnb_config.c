@@ -949,6 +949,8 @@ static NR_ServingCellConfig_t *get_scd_config(void)
 
 // temporary minRXTXTIME, to be taken out once all radio config is read at DU
 static int minRXTXTIME = 6;
+static f1ap_setup_req_t *RC_read_F1Setup(const NR_ServingCellConfigCommon_t *scc, NR_BCCH_BCH_Message_t *mib, const NR_BCCH_DL_SCH_Message_t *sib1);
+
 void RCconfig_nr_macrlc() {
   int j = 0;
   uint16_t prbbl[275] = {0};
@@ -1073,6 +1075,15 @@ void RCconfig_nr_macrlc() {
       RC.nrmac[j]->num_ulprbbl = num_prbbl;
       memcpy(RC.nrmac[j]->ulprbbl, prbbl, 275 * sizeof(prbbl[0]));
     } //  for (j=0;j<RC.nb_nr_macrlc_inst;j++)
+
+    // read F1 Setup information from config and generated MIB/SIB1
+    // and store it at MAC for sending later
+    NR_BCCH_BCH_Message_t *mib = RC.nrmac[0]->common_channels[0].mib;
+    const NR_BCCH_DL_SCH_Message_t *sib1 = RC.nrmac[0]->common_channels[0].sib1;
+    f1ap_setup_req_t *req = RC_read_F1Setup(scc, mib, sib1);
+    AssertFatal(req != NULL, "could not read F1 Setup information\n");
+    RC.nrmac[0]->f1_config.setup_req = req;
+
   } else { // MacRLC_ParamList.numelt > 0
     LOG_E(PHY, "No %s configuration found\n", CONFIG_STRING_MACRLC_LIST);
     // AssertFatal (0,"No " CONFIG_STRING_MACRLC_LIST " configuration found");
@@ -1905,7 +1916,7 @@ int RCconfig_NR_X2(MessageDef *msg_p, uint32_t i) {
 }
 
 
-int RC_config_trigger_F1Setup()
+static f1ap_setup_req_t *RC_read_F1Setup(const NR_ServingCellConfigCommon_t *scc, NR_BCCH_BCH_Message_t *mib, const NR_BCCH_DL_SCH_Message_t *sib1)
 {
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
@@ -1961,10 +1972,6 @@ int RC_config_trigger_F1Setup()
         req->cell[0].info.nr_cellid);
 
 
-  gNB_MAC_INST *mac = RC.nrmac[0];
-  DevAssert(mac);
-  const NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
-  DevAssert(scc != NULL);
   req->cell[0].info.nr_pci = *scc->physCellId;
   LOG_W(GNB_APP, "no slices transported via F1 Setup Request!\n");
   req->cell[0].info.num_ssi = 0;
@@ -1993,27 +2000,24 @@ int RC_config_trigger_F1Setup()
 
   req->cell[0].info.measurement_timing_information = "0";
 
-  DevAssert(mac->common_channels[0].mib != NULL);
   int buf_len = 3; // this is what we assume in monolithic
   req->cell[0].sys_info = calloc(1, sizeof(*req->cell[0].sys_info));
   AssertFatal(req->cell[0].sys_info != NULL, "out of memory\n");
   f1ap_gnb_du_system_info_t *sys_info = req->cell[0].sys_info;
   sys_info->mib = calloc(buf_len, sizeof(*sys_info->mib));
   DevAssert(sys_info->mib != NULL);
-  sys_info->mib_length = encode_MIB_NR(mac->common_channels[0].mib, 0, sys_info->mib, buf_len);
+  DevAssert(mib != NULL);
+  sys_info->mib_length = encode_MIB_NR(mib, 0, sys_info->mib, buf_len);
   DevAssert(sys_info->mib_length == buf_len);
 
-  DevAssert(mac->common_channels[0].sib1 != NULL);
-  NR_SIB1_t *bcch_SIB1 = mac->common_channels[0].sib1->message.choice.c1->choice.systemInformationBlockType1;
+  DevAssert(sib1 != NULL);
+  NR_SIB1_t *bcch_SIB1 = sib1->message.choice.c1->choice.systemInformationBlockType1;
   sys_info->sib1 = calloc(NR_MAX_SIB_LENGTH / 8, sizeof(*sys_info->sib1));
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_SIB1, NULL, (void *)bcch_SIB1, sys_info->sib1, NR_MAX_SIB_LENGTH / 8);
   AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
   sys_info->sib1_length = (enc_rval.encoded + 7) / 8;
 
-  mac->mac_rrc.f1_setup_request(req);
-  mac->f1_config.setup_req = req;
-
-  return 0;
+  return req;
 }
 
 void wait_f1_setup_response(void)

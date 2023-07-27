@@ -52,6 +52,8 @@
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "openair2/E1AP/e1ap.h"
 #include "gnb_config.h"
+#include "openair2/LAYER2/NR_MAC_gNB/mac_proto.h"
+
 extern unsigned char NB_gNB_INST;
 
 extern RAN_CONTEXT_t RC;
@@ -162,7 +164,8 @@ void *gNB_app_task(void *args_p)
       }
     }
     if (NODE_IS_DU(node_type) || NODE_IS_MONOLITHIC(node_type)) {
-      RC_config_trigger_F1Setup();
+      // need to check SA?
+      nr_mac_send_f1_setup_req();
     }
   }
   do {

@@ -320,3 +320,10 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc,
 
   srand48(0);
 }
+
+void nr_mac_send_f1_setup_req(void)
+{
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  DevAssert(mac);
+  mac->mac_rrc.f1_setup_request(mac->f1_config.setup_req);
+}

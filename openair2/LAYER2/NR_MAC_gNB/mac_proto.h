@@ -39,6 +39,7 @@
 void set_cset_offset(uint16_t);
 
 void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc, NR_ServingCellConfig_t *scd);
+void nr_mac_send_f1_setup_req(void);
 
 int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
                                           rnti_t rnti,
