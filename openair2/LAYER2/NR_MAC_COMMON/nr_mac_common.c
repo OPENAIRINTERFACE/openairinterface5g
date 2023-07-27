@@ -3633,7 +3633,7 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrec
   }
 }
 
-int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
+static const int tdd_period_to_num[8] = {500, 625, 1000, 1250, 2000, 2500, 5000, 10000};
 
 bool is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slot)
 {

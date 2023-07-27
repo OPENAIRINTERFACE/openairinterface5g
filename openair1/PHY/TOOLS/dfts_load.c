@@ -43,8 +43,7 @@
 
 /* function description array, to be used when loading the dfts/idfts lib */
 static loader_shlibfunc_t shlib_fdesc[2];
-static char *arg[64]={"phytest","-O","cmdlineonly::dbgl0"};
-
+static char *const arg[64] = {"phytest", "-O", "cmdlineonly::dbgl0"};
 
 int load_dftslib(void) {
 	 

@@ -47,8 +47,6 @@
 //#define DEBUG_RXDATA
 //#define SRS_IND_DEBUG
 
-uint8_t SSB_Table[38]={0,2,4,6,8,10,12,14,254,254,16,18,20,22,24,26,28,30,254,254,32,34,36,38,40,42,44,46,254,254,48,50,52,54,56,58,60,62};
-
 extern uint8_t nfapi_mode;
 
 void nr_common_signal_procedures (PHY_VARS_gNB *gNB,int frame,int slot,nfapi_nr_dl_tti_ssb_pdu ssb_pdu) {

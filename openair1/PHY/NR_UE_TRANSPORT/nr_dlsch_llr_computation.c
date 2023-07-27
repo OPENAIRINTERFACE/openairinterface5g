@@ -38,9 +38,7 @@
 
 //#define DEBUG_LLR_SIC
 
-
-int16_t nr_zeros[8] __attribute__ ((aligned(16))) = {0,0,0,0,0,0,0,0};
-int16_t nr_ones[8] __attribute__ ((aligned(16))) = {0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff,0xffff};
+int16_t nr_zeros[8] __attribute__((aligned(16))) = {0, 0, 0, 0, 0, 0, 0, 0};
 #if defined(__x86_64__) || defined(__i386__)
 __m128i rho_rpi __attribute__ ((aligned(16)));
 __m128i rho_rmi __attribute__((aligned(16)));

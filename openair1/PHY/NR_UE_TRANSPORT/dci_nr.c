@@ -47,15 +47,14 @@
 #include "assertions.h"
 #include "T.h"
 
-char nr_dci_format_string[8][30] = {
-  "NR_DL_DCI_FORMAT_1_0",
-  "NR_DL_DCI_FORMAT_1_1",
-  "NR_DL_DCI_FORMAT_2_0",
-  "NR_DL_DCI_FORMAT_2_1",
-  "NR_DL_DCI_FORMAT_2_2",
-  "NR_DL_DCI_FORMAT_2_3",
-  "NR_UL_DCI_FORMAT_0_0",
-  "NR_UL_DCI_FORMAT_0_1"};
+static const char nr_dci_format_string[8][30] = {"NR_DL_DCI_FORMAT_1_0",
+                                                 "NR_DL_DCI_FORMAT_1_1",
+                                                 "NR_DL_DCI_FORMAT_2_0",
+                                                 "NR_DL_DCI_FORMAT_2_1",
+                                                 "NR_DL_DCI_FORMAT_2_2",
+                                                 "NR_DL_DCI_FORMAT_2_3",
+                                                 "NR_UL_DCI_FORMAT_0_0",
+                                                 "NR_UL_DCI_FORMAT_0_1"};
 
 //#define DEBUG_DCI_DECODING 1
 

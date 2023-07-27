@@ -1290,7 +1290,7 @@ int ngap_gNB_handle_ng_ENDC_pdusession_modification_confirm(uint32_t            
 }
 
 /* Handlers matrix. Only gNB related procedure present here */
-ngap_message_decoded_callback ngap_messages_callback[][3] = {
+const ngap_message_decoded_callback ngap_messages_callback[][3] = {
     {0, 0, 0}, /* AMFConfigurationUpdate */
     {0, 0, 0}, /* AMFStatusIndication */
     {0, 0, 0}, /* CellTrafficTrace */

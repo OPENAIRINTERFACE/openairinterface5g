@@ -91,29 +91,29 @@ static int _nas_user_proc_clac    (nas_user_t *user, const at_command_t *data);
 /* NAS procedures applicable to AT commands */
 typedef int (*_nas_user_procedure_t) (nas_user_t *, const at_command_t *);
 
-static _nas_user_procedure_t _nas_user_procedure[AT_COMMAND_ID_MAX] = {
-  NULL,
-  _nas_user_proc_cgsn,    /* CGSN    */
-  _nas_user_proc_cgmi,    /* CGMI    */
-  _nas_user_proc_cgmm,    /* CGMM    */
-  _nas_user_proc_cgmr,    /* CGMR    */
-  _nas_user_proc_cimi,    /* CIMI    */
-  _nas_user_proc_cfun,    /* CFUN    */
-  _nas_user_proc_cpin,    /* CPIN    */
-  _nas_user_proc_csq,     /* CSQ     */
-  _nas_user_proc_cesq,    /* CESQ    */
-  _nas_user_proc_clac,    /* CLAC    */
-  _nas_user_proc_cmee,    /* CMEE    */
-  _nas_user_proc_cnum,    /* CNUM    */
-  _nas_user_proc_clck,    /* CLCK    */
-  _nas_user_proc_cops,    /* COPS    */
-  _nas_user_proc_creg,    /* CREG    */
-  _nas_user_proc_cgatt,   /* CGATT   */
-  _nas_user_proc_cgreg,   /* CGREG   */
-  _nas_user_proc_cereg,   /* CEREG   */
-  _nas_user_proc_cgdcont, /* CGDCONT */
-  _nas_user_proc_cgact,   /* CGACT   */
-  _nas_user_proc_cgpaddr, /* CGPADDR */
+static const _nas_user_procedure_t _nas_user_procedure[AT_COMMAND_ID_MAX] = {
+    NULL,
+    _nas_user_proc_cgsn, /* CGSN    */
+    _nas_user_proc_cgmi, /* CGMI    */
+    _nas_user_proc_cgmm, /* CGMM    */
+    _nas_user_proc_cgmr, /* CGMR    */
+    _nas_user_proc_cimi, /* CIMI    */
+    _nas_user_proc_cfun, /* CFUN    */
+    _nas_user_proc_cpin, /* CPIN    */
+    _nas_user_proc_csq, /* CSQ     */
+    _nas_user_proc_cesq, /* CESQ    */
+    _nas_user_proc_clac, /* CLAC    */
+    _nas_user_proc_cmee, /* CMEE    */
+    _nas_user_proc_cnum, /* CNUM    */
+    _nas_user_proc_clck, /* CLCK    */
+    _nas_user_proc_cops, /* COPS    */
+    _nas_user_proc_creg, /* CREG    */
+    _nas_user_proc_cgatt, /* CGATT   */
+    _nas_user_proc_cgreg, /* CGREG   */
+    _nas_user_proc_cereg, /* CEREG   */
+    _nas_user_proc_cgdcont, /* CGDCONT */
+    _nas_user_proc_cgact, /* CGACT   */
+    _nas_user_proc_cgpaddr, /* CGPADDR */
 };
 
 /*
@@ -122,12 +122,7 @@ static _nas_user_procedure_t _nas_user_procedure[AT_COMMAND_ID_MAX] = {
  * ---------------------------------------------------------------------
  */
 
-static const char *_nas_user_sim_status_str[] = {
-  "READY",
-  "SIM PIN",
-  "SIM PUK",
-  "PH-SIM PIN"
-};
+static const char *const _nas_user_sim_status_str[] = {"READY", "SIM PIN", "SIM PUK", "PH-SIM PIN"};
 
 /****************************************************************************/
 /******************  E X P O R T E D    F U N C T I O N S  ******************/

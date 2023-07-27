@@ -41,18 +41,10 @@
 #include "openair1/PHY/NR_UE_ESTIMATION/nr_estimation.h"
 #include <openair1/PHY/impl_defs_nr.h>
 #include <common/utils/nr/nr_common.h>
-
-#ifndef NO_RAT_NR
-
 #include "SCHED_NR_UE/defs.h"
 #include "SCHED_NR_UE/harq_nr.h"
 
-#define DEFINE_VARIABLES_PUCCH_UE_NR_H
 #include "SCHED_NR_UE/pucch_uci_ue_nr.h"
-#undef DEFINE_VARIABLES_PUCCH_UE_NR_H
-
-#endif
-
 
 long
 binary_search_float_nr(

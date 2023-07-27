@@ -52,7 +52,7 @@ extern uint16_t NB_UE_INST;
 
 static uicc_t** uiccArray=NULL;
 
-const char *hexTable="0123456789abcdef";
+const char *const hexTable = "0123456789abcdef";
 static inline uint8_t mkDigit(unsigned char in) {
   for (int i=0; i<16; i++)
     if (tolower(in)==hexTable[i])
