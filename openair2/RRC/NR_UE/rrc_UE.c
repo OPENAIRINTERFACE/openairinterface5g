@@ -124,45 +124,12 @@ static Rrc_State_NR_t nr_rrc_get_state (module_id_t ue_mod_idP) {
   return NR_UE_rrc_inst[ue_mod_idP].nrRrcState;
 }
 
-
-static Rrc_Sub_State_NR_t nr_rrc_get_sub_state (module_id_t ue_mod_idP) {
-  return NR_UE_rrc_inst[ue_mod_idP].nrRrcSubState;
-}
-
 static int nr_rrc_set_state (module_id_t ue_mod_idP, Rrc_State_NR_t state) {
   AssertFatal ((RRC_STATE_FIRST_NR <= state) && (state <= RRC_STATE_LAST_NR),
                "Invalid state %d!\n", state);
 
   if (NR_UE_rrc_inst[ue_mod_idP].nrRrcState != state) {
     NR_UE_rrc_inst[ue_mod_idP].nrRrcState = state;
-    return (1);
-  }
-
-  return (0);
-}
-
-static int nr_rrc_set_sub_state( module_id_t ue_mod_idP, Rrc_Sub_State_NR_t subState ) {
-  if (get_softmodem_params()->sa) {
-    switch (NR_UE_rrc_inst[ue_mod_idP].nrRrcState) {
-      case RRC_STATE_INACTIVE_NR:
-        AssertFatal ((RRC_SUB_STATE_INACTIVE_FIRST_NR <= subState) && (subState <= RRC_SUB_STATE_INACTIVE_LAST_NR),
-                     "Invalid nr sub state %d for state %d!\n", subState, NR_UE_rrc_inst[ue_mod_idP].nrRrcState);
-        break;
-
-      case RRC_STATE_IDLE_NR:
-        AssertFatal ((RRC_SUB_STATE_IDLE_FIRST_NR <= subState) && (subState <= RRC_SUB_STATE_IDLE_LAST_NR),
-                     "Invalid nr sub state %d for state %d!\n", subState, NR_UE_rrc_inst[ue_mod_idP].nrRrcState);
-        break;
-
-      case RRC_STATE_CONNECTED_NR:
-        AssertFatal ((RRC_SUB_STATE_CONNECTED_FIRST_NR <= subState) && (subState <= RRC_SUB_STATE_CONNECTED_LAST_NR),
-                     "Invalid nr sub state %d for state %d!\n", subState, NR_UE_rrc_inst[ue_mod_idP].nrRrcState);
-        break;
-    }
-  }
-
-  if (NR_UE_rrc_inst[ue_mod_idP].nrRrcSubState != subState) {
-    NR_UE_rrc_inst[ue_mod_idP].nrRrcSubState = subState;
     return (1);
   }
 
@@ -727,7 +694,6 @@ int nr_decode_SI(const module_id_t module_id, const uint8_t gNB_index, NR_System
       default:
         break;
     }
-    nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR);
   }
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_RRC_UE_DECODE_SI, VCD_FUNCTION_OUT);
   return 0;
@@ -803,8 +769,6 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_IN);
 
-  nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_RECEIVING_SIB_NR);
-
   asn_dec_rval_t dec_rval = uper_decode_complete(NULL,
                                                  &asn_DEF_NR_BCCH_DL_SCH_Message,
                                                  (void **)&bcch_message,
@@ -863,14 +827,6 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
         break;
     }
   }
-
-  if (nr_rrc_get_sub_state(module_id) == RRC_SUB_STATE_IDLE_SIB_COMPLETE_NR) {
-    //if ( (NR_UE_rrc_inst[ctxt_pP->module_id].initialNasMsg.data != NULL) || (!get_softmodem_params()->sa)) {
-      nr_rrc_ue_generate_RRCSetupRequest(module_id, 0);
-      nr_rrc_set_sub_state(module_id, RRC_SUB_STATE_IDLE_CONNECTING_NR);
-    //}
-  }
-
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME( VCD_SIGNAL_DUMPER_FUNCTIONS_UE_DECODE_BCCH, VCD_FUNCTION_OUT );
   return 0;
 }
@@ -1114,7 +1070,6 @@ int8_t nr_rrc_ue_decode_ccch( const protocol_ctxt_t *const ctxt_pP, const NR_SRB
          nr_rrc_ue_process_masterCellGroup(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->masterCellGroup, NULL);
          nr_rrc_ue_process_RadioBearerConfig(ctxt_pP, gNB_index, &dl_ccch_msg->message.choice.c1->choice.rrcSetup->criticalExtensions.choice.rrcSetup->radioBearerConfig);
          nr_rrc_set_state(ctxt_pP->module_id, RRC_STATE_CONNECTED_NR);
-         nr_rrc_set_sub_state(ctxt_pP->module_id, RRC_SUB_STATE_CONNECTED_NR);
          NR_UE_rrc_inst[ctxt_pP->module_id].rnti = ctxt_pP->rntiMaybeUEid;
          rrc_ue_generate_RRCSetupComplete(ctxt_pP, gNB_index, dl_ccch_msg->message.choice.c1->choice.rrcSetup->rrc_TransactionIdentifier, NR_UE_rrc_inst[ctxt_pP->module_id].selected_plmn_identity);
          rval = 0;
