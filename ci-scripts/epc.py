@@ -643,7 +643,7 @@ class EPCManagement():
 		mySSH = SSH.SSHConnection()
 		mySSH.open(self.IPAddress, self.UserName, self.Password)
 		mySSH.command('docker-compose --version', '\$', 5)
-		result = re.search('docker-compose version 1', mySSH.getBefore())
+		result = re.search('docker-compose version 1|Docker Compose version v2', mySSH.getBefore())
 		if result is None:
 			mySSH.close()
 			HTML.CreateHtmlTestRow(self.Type, 'KO', CONST.INVALID_PARAMETER)
