@@ -337,7 +337,7 @@ typedef struct
   uint16_t dmrs_ports;//DMRS ports. [TS38.212 7.3.1.1.2] provides description between DCI 0-1 content and DMRS ports. Bitmap occupying the 11 LSBs with: bit 0: antenna port 1000 bit 11: antenna port 1011 and for each bit 0: DMRS port not used 1: DMRS port used
   //Pusch Allocation in frequency domain [TS38.214, sec 6.1.2.2]
   uint8_t  resource_alloc;
-  uint8_t  rb_bitmap[36];//
+  uint8_t  rb_bitmap[36];
   uint16_t rb_start;
   uint16_t rb_size;
   uint8_t  vrb_to_prb_mapping;
@@ -437,7 +437,9 @@ typedef enum{vrb_to_prb_mapping_non_interleaved = 0, vrb_to_prb_mapping_interlea
 typedef struct {
   uint16_t BWPSize;
   uint16_t BWPStart;
-  uint8_t SubcarrierSpacing;  
+  uint8_t SubcarrierSpacing;
+  uint8_t resource_alloc;
+  uint8_t rb_bitmap[36];
   uint16_t number_rbs;
   uint16_t start_rb;
   uint16_t number_symbols;

@@ -93,6 +93,8 @@ NR_tda_info_t get_ul_tda_info(const NR_UE_UL_BWP_t *ul_bwp, int controlResourceS
 NR_tda_info_t get_dl_tda_info(const NR_UE_DL_BWP_t *dl_BWP, int ss_type, int tda_index, int dmrs_typeA_pos,
                               int mux_pattern, nr_rnti_type_t rnti_type, int coresetid, bool sib1);
 
+uint8_t getRBGSize(uint16_t bwp_size, long rbg_size_config);
+
 uint16_t nr_dci_size(const NR_UE_DL_BWP_t *DL_BWP,
                      const NR_UE_UL_BWP_t *UL_BWP,
                      const NR_CrossCarrierSchedulingConfig_t *crossCarrierSchedulingConfig,

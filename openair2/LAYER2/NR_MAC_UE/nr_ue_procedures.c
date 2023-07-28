@@ -316,38 +316,63 @@ int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
  */
 int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *pusch_config_pdu,
                                                       fapi_nr_dl_config_dlsch_pdu_rel15_t *dlsch_config_pdu,
+                                                      NR_PDSCH_Config_t *pdsch_Config,
                                                       uint16_t n_RB_ULBWP,
                                                       uint16_t n_RB_DLBWP,
-                                                      uint16_t riv)
+                                                      int start_DLBWP,
+                                                      dci_field_t frequency_domain_assignment)
 {
 
   /*
    * TS 38.214 subclause 5.1.2.2 Resource allocation in frequency domain (downlink)
    * when the scheduling grant is received with DCI format 1_0, then downlink resource allocation type 1 is used
    */
-  if(dlsch_config_pdu != NULL){
-
-    /*
-     * TS 38.214 subclause 5.1.2.2.1 Downlink resource allocation type 0
-     */
-    /*
-     * TS 38.214 subclause 5.1.2.2.2 Downlink resource allocation type 1
-     */
-    dlsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_DLBWP);
-    dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
-
-    // Sanity check in case a false or erroneous DCI is received
-    if ((dlsch_config_pdu->number_rbs < 1 ) || (dlsch_config_pdu->number_rbs > n_RB_DLBWP - dlsch_config_pdu->start_rb)) {
-      // DCI is invalid!
-      LOG_W(MAC, "Frequency domain assignment values are invalid! #RBs: %d, Start RB: %d, n_RB_DLBWP: %d \n", dlsch_config_pdu->number_rbs, dlsch_config_pdu->start_rb, n_RB_DLBWP);
-      return -1;
+  if(dlsch_config_pdu != NULL) {
+    if (pdsch_Config &&
+        pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType0) {
+      // TS 38.214 subclause 5.1.2.2.1 Downlink resource allocation type 0
+      dlsch_config_pdu->resource_alloc = 0;
+      int P = getRBGSize(n_RB_DLBWP, pdsch_Config->rbg_Size);
+      int n_RBG = frequency_domain_assignment.nbits;
+      int index = 0;
+      for (int i = 0; i < n_RBG; i++) {
+        // The order of RBG bitmap is such that RBG 0 to RBG n_RBG − 1 are mapped from MSB to LSB
+        int bit_rbg = (frequency_domain_assignment.val >> (n_RBG - 1 - i)) & 0x01;
+        int size_RBG;
+        if (i == n_RBG - 1)
+          size_RBG = (start_DLBWP + n_RB_DLBWP) % P > 0 ?
+                     (start_DLBWP + n_RB_DLBWP) % P :
+                     P;
+        else if (i == 0)
+          size_RBG = P - (start_DLBWP % P);
+        else
+          size_RBG = P;
+        for (int j = index; j < size_RBG; j++)
+          dlsch_config_pdu->rb_bitmap[j / 8] |= bit_rbg << (j % 8);
+        index += size_RBG;
+      }
     }
+    else if (pdsch_Config &&
+             pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_dynamicSwitch)
+      AssertFatal(false, "DLSCH dynamic switch allocation not yet supported\n");
+    else {
+      // TS 38.214 subclause 5.1.2.2.2 Downlink resource allocation type 1
+      dlsch_config_pdu->resource_alloc = 1;
+      int riv = frequency_domain_assignment.val;
+      dlsch_config_pdu->number_rbs = NRRIV2BW(riv,n_RB_DLBWP);
+      dlsch_config_pdu->start_rb   = NRRIV2PRBOFFSET(riv,n_RB_DLBWP);
 
-    LOG_D(MAC,"DLSCH riv = %i\n", riv);
-    LOG_D(MAC,"DLSCH n_RB_DLBWP = %i\n", n_RB_DLBWP);
-    LOG_D(MAC,"DLSCH number_rbs = %i\n", dlsch_config_pdu->number_rbs);
-    LOG_D(MAC,"DLSCH start_rb = %i\n", dlsch_config_pdu->start_rb);
-
+      // Sanity check in case a false or erroneous DCI is received
+      if ((dlsch_config_pdu->number_rbs < 1) || (dlsch_config_pdu->number_rbs > n_RB_DLBWP - dlsch_config_pdu->start_rb)) {
+        // DCI is invalid!
+        LOG_W(MAC, "Frequency domain assignment values are invalid! #RBs: %d, Start RB: %d, n_RB_DLBWP: %d \n", dlsch_config_pdu->number_rbs, dlsch_config_pdu->start_rb, n_RB_DLBWP);
+        return -1;
+      }
+      LOG_D(MAC,"DLSCH riv = %i\n", riv);
+      LOG_D(MAC,"DLSCH n_RB_DLBWP = %i\n", n_RB_DLBWP);
+      LOG_D(MAC,"DLSCH number_rbs = %i\n", dlsch_config_pdu->number_rbs);
+      LOG_D(MAC,"DLSCH start_rb = %i\n", dlsch_config_pdu->start_rb);
+    }
   }
   if(pusch_config_pdu != NULL){
     /*
@@ -359,7 +384,7 @@ int8_t nr_ue_process_dci_freq_dom_resource_assignment(nfapi_nr_ue_pusch_pdu_t *p
     /*
      * TS 38.214 subclause 6.1.2.2.2 Uplink resource allocation type 1
      */
-
+    int riv = frequency_domain_assignment.val;
     pusch_config_pdu->rb_size  = NRRIV2BW(riv,n_RB_ULBWP);
     pusch_config_pdu->rb_start = NRRIV2PRBOFFSET(riv,n_RB_ULBWP);
 
@@ -643,7 +668,13 @@ static int nr_ue_process_dci_dl_10(module_id_t module_id,
 
   /* IDENTIFIER_DCI_FORMATS */
   /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
-  if (nr_ue_process_dci_freq_dom_resource_assignment(NULL, dlsch_pdu, 0, dlsch_pdu->BWPSize, dci->frequency_domain_assignment.val)
+  if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,
+                                                     dlsch_pdu,
+                                                     NULL,
+                                                     0,
+                                                     dlsch_pdu->BWPSize,
+                                                     0,
+                                                     dci->frequency_domain_assignment)
       < 0) {
     LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
     return -1;
@@ -912,9 +943,11 @@ static int nr_ue_process_dci_dl_11(module_id_t module_id,
   /* FREQ_DOM_RESOURCE_ASSIGNMENT_DL */
   if (nr_ue_process_dci_freq_dom_resource_assignment(NULL,
                                                      dlsch_pdu,
+                                                     pdsch_Config,
                                                      0,
                                                      current_DL_BWP->BWPSize,
-                                                     dci->frequency_domain_assignment.val)
+                                                     current_DL_BWP->BWPStart,
+                                                     dci->frequency_domain_assignment)
       < 0) {
     LOG_W(MAC, "[%d.%d] Invalid frequency_domain_assignment. Possibly due to false DCI. Ignoring DCI!\n", frame, slot);
     return -1;
