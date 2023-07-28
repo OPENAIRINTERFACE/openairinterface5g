@@ -875,7 +875,7 @@ void RCconfig_NR_L1(void)
 
 static void check_ssb_raster(uint64_t freq, int band, int scs);
 
-static NR_ServingCellConfigCommon_t *get_scc_config(void)
+static NR_ServingCellConfigCommon_t *get_scc_config(int minRXTXTIME)
 {
   NR_ServingCellConfigCommon_t *scc = calloc(1,sizeof(*scc));
   uint64_t ssb_bitmap=0xff;
@@ -911,6 +911,7 @@ static NR_ServingCellConfigCommon_t *get_scc_config(void)
                        *scc->ssbSubcarrierSpacing);
     fix_scc(scc, ssb_bitmap);
   }
+  nr_rrc_config_ul_tda(scc, minRXTXTIME);
   return scc;
 }
 
@@ -1222,7 +1223,9 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
   paramdef_t GNBParams[]  = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST,NULL,0};
 
-  NR_ServingCellConfigCommon_t *scc = get_scc_config();
+  int minRXTXTIME = 6;
+  NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
+  //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
 
   // Serving Cell Config Dedicated
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
@@ -1376,6 +1379,7 @@ void RCconfig_NRRRC(MessageDef *msg_p, uint32_t i, gNB_RRC_INST *rrc)
         NRRRC_CONFIGURATION_REQ (msg_p).pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
         LOG_I(GNB_APP,"minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
+        DevAssert(NRRRC_CONFIGURATION_REQ (msg_p).minRXTXTIME == minRXTXTIME);
         LOG_I(GNB_APP,"SIB1 TDA %d\n",*GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr);
         NRRRC_CONFIGURATION_REQ (msg_p).sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
         LOG_I(GNB_APP,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
