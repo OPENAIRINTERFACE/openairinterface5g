@@ -523,7 +523,7 @@ function main() {
     echo_info "Doxygen generation log is located here: $doxygen_log"
     echo_info "Generating Doxygen files....please wait"
     (
-      cmake --build . --target doc
+      $CMAKE --build . --target doc
     ) >& $doxygen_log
   fi
 

@@ -226,11 +226,11 @@ compilations() {
   local verbose=$([ "$VERBOSE_COMPILE" == "1" ] && echo "-v" || echo "")
   echo cd $OPENAIR_DIR/cmake_targets/$dir/build
   cd $OPENAIR_DIR/cmake_targets/$dir/build
-  echo_info "Running \"cmake --build . $verbose --target $targets -- -j$(nproc)\"" $green
+  echo_info "Running \"$CMAKE --build . $verbose --target $targets -- -j$(nproc)\"" $green
   echo "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
-    cmake --build . $verbose --target $targets -- -j$(nproc)
+    $CMAKE --build . $verbose --target $targets -- -j$(nproc)
     ret=$?
   } > $dlog/$logfile 2>&1
   if [ "$VERBOSE_CI" == "1" ]; then
