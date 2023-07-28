@@ -626,7 +626,7 @@ add_library(UTIL
   ${OPENAIR_DIR}/common/utils/time_meas.c
   ${OPENAIR_DIR}/common/utils/time_stat.c
 )
-target_link_libraries(UTIL PUBLIC ${T_LIB})
+target_link_libraries(UTIL PUBLIC ${T_LIB} pthread)
 
 set(SECURITY_SRC
   ${OPENAIR3_DIR}/SECU/secu_defs.c
