@@ -357,6 +357,7 @@ void CIRPlotUE::timerEvent(QTimerEvent *event)
       maxY = std::max(maxY, value);
     }
 
+    this->axisX->setRange(-this->len / 2, this->len / 2);
     this->axisY->setMax(maxY);
     this->series->replace(points);
   }
@@ -368,6 +369,7 @@ LLRPlot::LLRPlot(int16_t *data, int len, int interval, PlotUpdater *plotUpdater)
 
   // add new series to the chart
   this->series = new QScatterSeries();
+  this->series->setUseOpenGL();
   this->series->setMarkerSize(3);
   this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
   this->series->setColor(Qt::blue);
@@ -440,6 +442,7 @@ void LLRPlotUE::timerEvent(QTimerEvent *event)
       maxY = std::max(maxY, abs(this->data[i]));
     }
 
+    this->axisX->setRange(0, this->len);
     this->axisY->setRange(-maxY, maxY);
     this->series->replace(points);
   }
@@ -451,6 +454,7 @@ IQPlot::IQPlot(complex16 *data, int len, int interval, PlotUpdater *plotUpdater)
 
   // add new series to the chart
   this->series = new QScatterSeries();
+  this->series->setUseOpenGL();
   this->series->setMarkerSize(3);
   this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
   this->series->setColor(Qt::blue);
