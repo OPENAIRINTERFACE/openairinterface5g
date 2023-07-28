@@ -1951,11 +1951,8 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
       case RRC_PDUSESSION_MODIFY:
         rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(ctxt_pP, ue_context_p, xid);
         break;
-      case RRC_FIRST_RECONF:
-        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
-        break;
       case RRC_DEFAULT_RECONF:
-        /* nothing to do */
+        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
       default:
         LOG_E(RRC, "Received unexpected xid: %d\n", xid);
