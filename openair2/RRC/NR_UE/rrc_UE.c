@@ -484,24 +484,87 @@ int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *ph
     return 0;
 }
 
+bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
+{
+  switch (si_type) {
+    case NR_SIB_TypeInfo__type_sibType2:
+      if (!SI_info->sib2)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType3:
+      if (!SI_info->sib3)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType4:
+      if (!SI_info->sib4)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType5:
+      if (!SI_info->sib5)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType6:
+      if (!SI_info->sib6)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType7:
+      if (!SI_info->sib7)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType8:
+      if (!SI_info->sib8)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType9:
+      if (!SI_info->sib9)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType10_v1610:
+      if (!SI_info->sib10)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType11_v1610:
+      if (!SI_info->sib11)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType12_v1610:
+      if (!SI_info->sib12)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType13_v1610:
+      if (!SI_info->sib13)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType14_v1610:
+      if (!SI_info->sib14)
+        return false;
+      break;
+    default :
+      AssertFatal(false, "Invalid SIB type %d\n", si_type);
+  }
+  return true;
+}
+
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
-  // schedule reception of SIB1
+  // schedule reception of SIB1 if RRC doesn't have it
   if (!SI_info->sib1)
     return 1;
   else {
-    if (!SI_info->sib1->si_SchedulingInfo)
-      return 0;
-    // The UE in RRC_IDLE and RRC_INACTIVE shall ensure having
-    // a valid version of (at least) the MIB, SIB1 through
-    // SIB4 (and SIB5 if the UE supports E-UTRA)
-    if (!SI_info->sib2 ||
-        !SI_info->sib3 ||
-        !SI_info->sib4)
-      // we schedule reception of otherSI
-      // if UE RRC doesn't have any of the
-      // default SIBs for now
-      return 2;
+    if (SI_info->sib1->si_SchedulingInfo) {
+      // Check if RRC has configured default SI
+      // from SIB2 to SIB14 as current ASN1 version
+      // TODO can be used for on demand SI when (if) implemented
+      for (int i = 2; i < 15; i++) {
+        int si_index = i - 2;
+        if ((SI_info->default_otherSI_map >> si_index) & 0x01) {
+          // if RRC has no valid version of one of the default configured SI
+          // Then schedule reception of otherSI
+          if (!check_si_validity(SI_info, si_index))
+            return 2;
+        }
+      }
+    }
   }
   return 0;
 }
@@ -704,6 +767,22 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
   return 0;
 }
 
+void nr_rrc_configure_default_SI(NR_UE_RRC_SI_INFO *SI_info,
+                                 NR_SIB1_t *sib1)
+{
+  struct NR_SI_SchedulingInfo *si_SchedulingInfo = sib1->si_SchedulingInfo;
+  if (!si_SchedulingInfo)
+    return;
+  SI_info->default_otherSI_map = 0;
+  for (int i = 0; i < si_SchedulingInfo->schedulingInfoList.list.count; i++) {
+    struct NR_SchedulingInfo *schedulingInfo = si_SchedulingInfo->schedulingInfoList.list.array[i];
+    for (int j = 0; j < schedulingInfo->sib_MappingInfo.list.count; j++) {
+      struct NR_SIB_TypeInfo *sib_Type = schedulingInfo->sib_MappingInfo.list.array[j];
+      SI_info->default_otherSI_map |= 1 << sib_Type->type;
+    }
+  }
+}
+
 /**\brief decode NR BCCH-DLSCH (SI) messages
    \param module_idP    module id
    \param gNB_index     gNB index
@@ -762,6 +841,8 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
           LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
           nr_rrc_set_state(module_id, RRC_STATE_IDLE_NR);
         }
+        // configure default SI
+        nr_rrc_configure_default_SI(SI_info, sib1);
         // configure timers and constant
         nr_rrc_set_sib1_timers_and_constants(&NR_UE_rrc_inst[module_id].timers_and_constants, sib1);
         // take ServingCellConfigCommon and configure L1/L2
