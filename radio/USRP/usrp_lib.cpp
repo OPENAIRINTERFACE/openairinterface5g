@@ -263,7 +263,42 @@ static int sync_to_gps(openair0_device *device) {
 #define ATR_MASK 0x7f //pins controlled by ATR
 #define ATR_RX   0x50 //data[4] and data[6]
 #define ATR_XX   0x20 //data[5]
-#define MAN_MASK ATR_MASK^0xFFF //manually controlled pins 
+#define MAN_MASK ATR_MASK ^ 0xFFF // manually controlled pins
+
+static void trx_usrp_start_interdigital_gpio(openair0_device *device, usrp_state_t *s)
+{
+  AssertFatal(device->type == USRP_X400_DEV,
+              "interdigital frontend device for beam management can only be used together with an X400\n");
+
+  // s->gpio_bank="GPIO0";
+  std::vector<std::string> sxx{12, "DB0_RF0"};
+  // set every pin on GPIO0 to be ocntrolled by DB1_RF0
+  s->usrp->set_gpio_src(s->gpio_bank, sxx);
+  // set data direction register (DDR) to output
+  s->usrp->set_gpio_attr(s->gpio_bank, "DDR", 0xfff, 0xfff);
+  // set lower GPIO#1 to be controlled automatically by ATR (the rest  bits are controlled manually)
+  s->usrp->set_gpio_attr(s->gpio_bank, "CTRL", (1 << 1), (1 << 1));
+  // set GPIO1 (Tx/Rx1)  to 1 for MHU1 for transmistting
+  s->usrp->set_gpio_attr(s->gpio_bank, "ATR_XX", (1 << 1), (1 << 1));
+  // set GPIO4 (ID0) to 1 and GPIO2 (TX/RX2) &GPIO3 (ID1) to 0
+  s->usrp->set_gpio_attr(s->gpio_bank, "OUT", (1 << 4), 0x1c);
+}
+
+static void trx_usrp_start_generic_gpio(openair0_device *device, usrp_state_t *s)
+{
+  // setup GPIO for TDD, GPIO(4) = ATR_RX
+  // set data direction register (DDR) to output
+  s->usrp->set_gpio_attr(s->gpio_bank, "DDR", 0xfff, 0xfff);
+  // set bits to be controlled automatically by ATR
+  s->usrp->set_gpio_attr(s->gpio_bank, "CTRL", ATR_MASK, 0xfff);
+  // set bits to 1 when the radio is only receiving (ATR_RX)
+  s->usrp->set_gpio_attr(s->gpio_bank, "ATR_RX", ATR_RX, ATR_MASK);
+  // set bits to 1 when the radio is transmitting and receiveing (ATR_XX)
+  // (we use full duplex here, because our RX is on all the time - this might need to change later)
+  s->usrp->set_gpio_attr(s->gpio_bank, "ATR_XX", ATR_XX, ATR_MASK);
+  // set all other pins to manual
+  s->usrp->set_gpio_attr(s->gpio_bank, "OUT", MAN_MASK, 0xfff);
+}
 
 /*! \brief Called to start the USRP transceiver. Return 0 if OK, < 0 if error
     @param device pointer to the device structure specific to the RF hardware target
@@ -280,21 +315,19 @@ static int trx_usrp_start(openair0_device *device) {
     s->gpio_bank = (char *) "GPIO0";
     s->usrp->set_gpio_src(s->gpio_bank, sxx);
   }
-#endif  
+#endif
 
-  // setup GPIO for TDD, GPIO(4) = ATR_RX
-  //set data direction register (DDR) to output
-  s->usrp->set_gpio_attr(s->gpio_bank, "DDR", 0xfff, 0xfff);
-  //set bits to be controlled automatically by ATR 
-  s->usrp->set_gpio_attr(s->gpio_bank, "CTRL", ATR_MASK, 0xfff);
-  //set bits to 1 when the radio is only receiving (ATR_RX)
-  s->usrp->set_gpio_attr(s->gpio_bank, "ATR_RX", ATR_RX, ATR_MASK);
-  // set bits to 1 when the radio is transmitting and receiveing (ATR_XX)
-  // (we use full duplex here, because our RX is on all the time - this might need to change later)
-  s->usrp->set_gpio_attr(s->gpio_bank, "ATR_XX", ATR_XX, ATR_MASK);
-  // set all other pins to manual
-  s->usrp->set_gpio_attr(s->gpio_bank, "OUT", MAN_MASK, 0xfff);
-  
+  switch (device->openair0_cfg->gpio_controller) {
+    case RU_GPIO_CONTROL_GENERIC:
+      trx_usrp_start_generic_gpio(device, s);
+      break;
+    case RU_GPIO_CONTROL_INTERDIGITAL:
+      trx_usrp_start_interdigital_gpio(device, s);
+      break;
+    default:
+      AssertFatal(false, "illegal GPIO controller %d\n", device->openair0_cfg->gpio_controller);
+  }
+
   s->wait_for_first_pps = 1;
   s->rx_count = 0;
   s->tx_count = 0;
