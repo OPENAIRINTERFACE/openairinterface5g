@@ -1303,6 +1303,7 @@ set(NR_L2_SRC_UE
   ${NR_UE_RRC_DIR}/rrc_UE.c
   ${NR_UE_RRC_DIR}/rrc_nsa.c
   ${NR_UE_RRC_DIR}/rrc_timers_and_constants.c
+  ${NR_UE_RRC_DIR}/rrc_sl_preconfig.c
   )
 
 set (MAC_SRC
