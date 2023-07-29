@@ -101,7 +101,7 @@ void free_list(NR_UE_SSB *node) {
 }
 
 
-int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, nr_phy_data_t *phy_data, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
+int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_initial_symbol, c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   NR_DL_FRAME_PARMS *frame_parms=&ue->frame_parms;
   int ret =-1;
@@ -163,7 +163,6 @@ int nr_pbch_detection(UE_nr_rxtx_proc_t * proc, PHY_VARS_NR_UE *ue, int pbch_ini
                      frame_parms,
                      temp_ptr->i_ssb,
                      SISO,
-                     phy_data,
                      &result,
                      rxdataF);
 
@@ -213,9 +212,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   NR_DL_FRAME_PARMS *fp = &ue->frame_parms;
   int ret=-1;
   int rx_power=0; //aarx,
-
-  nr_phy_data_t phy_data = {0};
-  NR_UE_PDCCH_CONFIG *phy_pdcch_config = &phy_data.phy_pdcch_config;
   
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_IN);
 
@@ -317,7 +313,7 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
 
       if (ret==0) { //we got sss channel
         nr_gold_pbch(ue);
-        ret = nr_pbch_detection(proc, ue, 1, &phy_data, rxdataF);  // start pbch detection at first symbol after pss
+        ret = nr_pbch_detection(proc, ue, 1, rxdataF);  // start pbch detection at first symbol after pss
       }
 
       if (ret == 0) {
@@ -463,103 +459,6 @@ int nr_initial_sync(UE_nr_rxtx_proc_t *proc,
   LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 #endif
 
-  }
-
-  if (ue->target_Nid_cell != -1) {
-    return ret;
-  }
-
-  // if stand alone and sync on ssb do sib1 detection as part of initial sync
-  if (sa == 1 && ret == 0) {
-    nr_ue_dlsch_init(phy_data.dlsch, 1, ue->max_ldpc_iterations);
-    bool dec = false;
-    proc->gNB_id = 0; //FIXME
-
-    // Hold the channel estimates in frequency domain.
-    int32_t pdcch_est_size = ((((fp->symbols_per_slot*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH))+15)/16)*16);
-    __attribute__ ((aligned(16))) int32_t pdcch_dl_ch_estimates[4*fp->nb_antennas_rx][pdcch_est_size];
-
-    for(int n_ss = 0; n_ss < phy_pdcch_config->nb_search_space; n_ss++) {
-      proc->nr_slot_rx = phy_pdcch_config->slot; // setting PDCCH slot to proc
-      uint8_t nb_symb_pdcch = phy_pdcch_config->pdcch_config[n_ss].coreset.duration;
-      int start_symb = phy_pdcch_config->pdcch_config[n_ss].coreset.StartSymbolIndex;
-      for (uint16_t l=start_symb; l<start_symb+nb_symb_pdcch; l++) {
-        nr_slot_fep_init_sync(ue,
-                              proc,
-                              l, // the UE PHY has no notion of the symbols to be monitored in the search space
-                              frame_id * fp->samples_per_frame + phy_pdcch_config->sfn * fp->samples_per_frame + ue->rx_offset,
-                              true,
-                              rxdataF,
-                              link_type_dl);
-
-        nr_pdcch_channel_estimation(ue,
-                                    proc,
-                                    l,
-                                    &phy_pdcch_config->pdcch_config[n_ss].coreset,
-                                    fp->first_carrier_offset,
-                                    phy_pdcch_config->pdcch_config[n_ss].BWPStart,
-                                    pdcch_est_size,
-                                    pdcch_dl_ch_estimates,
-                                    rxdataF);
-
-      }
-      int  dci_cnt = nr_ue_pdcch_procedures(ue, proc, pdcch_est_size, pdcch_dl_ch_estimates, &phy_data, n_ss, rxdataF);
-      if (dci_cnt>0){
-        NR_UE_DLSCH_t *dlsch = phy_data.dlsch;
-        if (dlsch[0].active == 1) {
-          uint16_t nb_symb_sch = dlsch->dlsch_config.number_symbols;
-          uint16_t start_symb_sch = dlsch->dlsch_config.start_symbol;
-
-          for (uint16_t m=start_symb_sch;m<(nb_symb_sch+start_symb_sch) ; m++){
-            nr_slot_fep_init_sync(ue,
-                                  proc,
-                                  m,
-                                  frame_id * fp->samples_per_frame + phy_pdcch_config->sfn * fp->samples_per_frame + ue->rx_offset,
-                                  true,
-                                  rxdataF,
-                                  link_type_dl);
-          }
-
-          uint8_t nb_re_dmrs;
-          if (dlsch[0].dlsch_config.dmrsConfigType == NFAPI_NR_DMRS_TYPE1) {
-            nb_re_dmrs = 6*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-          }
-          else {
-            nb_re_dmrs = 4*dlsch[0].dlsch_config.n_dmrs_cdm_groups;
-          }
-          uint16_t dmrs_len = get_num_dmrs(dlsch[0].dlsch_config.dlDmrsSymbPos);
-
-          const uint32_t rx_llr_size = nr_get_G(dlsch[0].dlsch_config.number_rbs,
-                                                dlsch[0].dlsch_config.number_symbols,
-                                                nb_re_dmrs,
-                                                dmrs_len,
-                                                dlsch[0].dlsch_config.qamModOrder,
-                                                dlsch[0].Nl);
-          int16_t* llr[2];
-          int16_t* layer_llr[NR_MAX_NB_LAYERS];
-          llr[0] = (int16_t *)malloc16_clear(rx_llr_size*sizeof(int16_t));
-
-          int ret = nr_ue_pdsch_procedures(ue,
-                                           proc,
-                                           phy_data.dlsch,
-                                           llr,
-                                           rxdataF);
-          if (ret >= 0)
-            dec = nr_ue_dlsch_procedures(ue,
-                                         proc,
-                                         phy_data.dlsch,
-                                         llr);
-
-          // deactivate dlsch once dlsch proc is done
-          dlsch[0].active = 0;
-          free(llr[0]);
-          for (int i=0; i<NR_MAX_NB_LAYERS; i++)
-            free(layer_llr[i]);
-        }
-      }
-    }
-    if (dec == false) // sib1 not decoded
-      ret = -1;
   }
   //  exit_fun("debug exit");
   VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_INITIAL_UE_SYNC, VCD_FUNCTION_OUT);

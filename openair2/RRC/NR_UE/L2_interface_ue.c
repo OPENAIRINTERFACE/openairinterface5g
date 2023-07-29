@@ -61,11 +61,8 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
 {
   sdu_size_t sdu_size = 0;
 
-  switch(channel){
+  switch(channel) {
     case NR_BCCH_BCH:
-      AssertFatal(nr_rrc_ue_decode_NR_BCCH_BCH_Message(module_id, gNB_index, (uint8_t*)pduP, pdu_len) == 0, "UE decode BCCH-BCH error!\n");
-      break;
-
     case NR_BCCH_DL_SCH:
       if (pdu_len>0) {
         LOG_T(NR_RRC, "[UE %d] Received SDU for NR-BCCH-DL-SCH on SRB %u from gNB %d\n", module_id, channel & RAB_OFFSET,
@@ -88,6 +85,7 @@ int8_t nr_mac_rrc_data_ind_ue(const module_id_t module_id,
         NR_RRC_MAC_BCCH_DATA_IND (message_p).slot = slot;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).sdu_size = sdu_size;
         NR_RRC_MAC_BCCH_DATA_IND (message_p).gnb_index = gNB_index;
+        NR_RRC_MAC_BCCH_DATA_IND (message_p).is_bch = (channel == NR_BCCH_BCH);
         itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
       }
       break;
