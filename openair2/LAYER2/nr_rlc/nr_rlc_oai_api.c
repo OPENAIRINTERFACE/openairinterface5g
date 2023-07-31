@@ -179,7 +179,7 @@ mac_rlc_status_resp_t mac_rlc_status_ind(
   switch (channel_idP) {
   case 0:                          rb = ue->srb0;                 break;
   case 1 ... 3:                    rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... NGAP_MAX_DRBS_PER_UE: rb = ue->drb[channel_idP - 4]; break;
+  case 4 ... MAX_DRBS_PER_UE:      rb = ue->drb[channel_idP - 4]; break;
   default:                         rb = NULL;                     break;
   }
 
@@ -241,9 +241,9 @@ rlc_buffer_occupancy_t mac_rlc_get_buffer_occupancy_ind(
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
   switch (channel_idP) {
-  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... NGAP_MAX_DRBS_PER_UE: rb = ue->drb[channel_idP - 4]; break;
-  default:      rb = NULL;                     break;
+  case 1 ... 3:               rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... MAX_DRBS_PER_UE: rb = ue->drb[channel_idP - 4]; break;
+  default:                    rb = NULL;                     break;
   }
 
   if (rb != NULL) {
@@ -333,9 +333,9 @@ int nr_rlc_get_available_tx_space(
   ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rntiP);
 
   switch (channel_idP) {
-  case 1 ... 3: rb = ue->srb[channel_idP - 1]; break;
-  case 4 ... NGAP_MAX_DRBS_PER_UE: rb = ue->drb[channel_idP - 4]; break;
-  default:      rb = NULL;                     break;
+  case 1 ... 3:               rb = ue->srb[channel_idP - 1]; break;
+  case 4 ... MAX_DRBS_PER_UE: rb = ue->drb[channel_idP - 4]; break;
+  default:                    rb = NULL;                     break;
   }
 
   if (rb != NULL) {

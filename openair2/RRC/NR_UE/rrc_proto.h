@@ -173,6 +173,7 @@ void handle_rlf_sync(NR_UE_Timers_Constants_t *tac,
 void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
                                                        struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
 
+int configure_NR_SL_Preconfig(int sync_source);
 /** @}*/
 #endif
 

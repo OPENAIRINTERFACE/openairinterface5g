@@ -223,7 +223,6 @@ typedef struct drb_s {
 } drb_t;
 
 typedef enum {
-  RRC_FIRST_RECONF,
   RRC_SETUP,
   RRC_SETUP_FOR_REESTABLISHMENT,
   RRC_REESTABLISH,
@@ -237,8 +236,8 @@ typedef enum {
 
 typedef struct gNB_RRC_UE_s {
   uint8_t primaryCC_id;
-  drb_t                              established_drbs[NGAP_MAX_DRBS_PER_UE];
-  uint8_t                            DRB_active[NGAP_MAX_DRBS_PER_UE];
+  drb_t                              established_drbs[MAX_DRBS_PER_UE];
+  uint8_t                            DRB_active[MAX_DRBS_PER_UE];
 
   NR_SRB_INFO_TABLE_ENTRY Srb[maxSRBs]; // 3gpp max is 3 SRBs, number 1..3, we waste the entry 0 for code simplicity
   NR_MeasConfig_t                   *measConfig;

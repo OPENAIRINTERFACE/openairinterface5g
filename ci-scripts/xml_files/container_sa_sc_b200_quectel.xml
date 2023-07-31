@@ -21,101 +21,95 @@
 
 -->
 <testCaseList>
-  <htmlTabRef>TEST-SA-FR1-B200</htmlTabRef>
-  <htmlTabName>20 MHz TDD SA</htmlTabName>
+  <htmlTabRef>TEST-SA-FR1-SC-FDMA-B200</htmlTabRef>
+  <htmlTabName>40 MHz TDD SA with SC-FDMA</htmlTabName>
   <htmlTabIcon>tasks</htmlTabIcon>
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
-    100000
-    111111
-    010000
-    030101
-    010001
-    050000
-    050001
-    070000
-    070001
-    070002
-    060001
-    000002
-    060002
-    050000
-    010010
-    010001
-    050001
-    010010
-    010001
-    050000
-    010010
-    010002
-    030201
-    200000
+    300000
+    311111
+    210000
+    230101
+    210001
+    250000
+    250001
+    270000
+    270001
+    270002
+    260001
+    200002
+    260002
+    250000
+    210010
+    210002
+    230201
+    400000
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
 
-  <testCase id="111111">
+  <testCase id="311111">
     <class>Pull_Local_Registry</class>
     <desc>Pull Images from Local Registry</desc>
     <test_svr_id>0</test_svr_id>
     <images_to_pull>oai-gnb</images_to_pull>
   </testCase>
 
-  <testCase id="100000">
+  <testCase id="300000">
     <class>Custom_Command</class>
     <desc>Disable Sleep States</desc>
     <node>ofqot</node>
     <command>sudo cpupower idle-set -D 0</command>
   </testCase>
-  <testCase id="200000">
+  <testCase id="400000">
     <class>Custom_Command</class>
     <desc>Enable Sleep States</desc>
     <node>ofqot</node>
     <command>sudo cpupower idle-set -E</command>
   </testCase>
 
-  <testCase id="010000">
+  <testCase id="210000">
     <class>Initialize_UE</class>
     <desc>Initialize Quectel</desc>
     <id>idefix</id>
   </testCase>
-  <testCase id="010002">
+  <testCase id="210002">
     <class>Terminate_UE</class>
     <desc>Terminate Quectel</desc>
     <id>idefix</id>
   </testCase>
-  <testCase id="010001">
+  <testCase id="210001">
     <class>Attach_UE</class>
     <desc>Attach UE</desc>
     <id>idefix</id>
   </testCase>
-  <testCase id="010010">
+  <testCase id="210010">
     <class>Detach_UE</class>
     <desc>Detach UE</desc>
     <id>idefix</id>
   </testCase>
 
-  <testCase id="030101">
+  <testCase id="230101">
     <class>Deploy_Object</class>
-    <desc>Deploy gNB (TDD/Band78/40MHz/B200) in a container</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
+    <desc>Deploy gNB (TDD/Band78/40MHz/B200) with SC-FDMA in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_sc_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
   </testCase>
 
-  <testCase id="000001">
+  <testCase id="200001">
     <class>IdleSleep</class>
     <desc>Sleep</desc>
     <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
   </testCase>
 
-  <testCase id="000002">
+  <testCase id="200002">
     <class>IdleSleep</class>
     <desc>Sleep</desc>
     <idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
   </testCase>
 
 
-  <testCase id="050000">
+  <testCase id="250000">
     <class>Ping</class>
     <desc>Ping: 20pings in 20sec</desc>
     <id>idefix</id>
@@ -124,7 +118,7 @@
     <ping_rttavg_threshold>15</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="050001">
+  <testCase id="250001">
     <class>Ping</class>
     <desc>Ping: 100pings in 20sec</desc>
     <id>idefix</id>
@@ -133,21 +127,21 @@
     <ping_rttavg_threshold>15</ping_rttavg_threshold>
   </testCase>
 
-  <testCase id="070000">
+  <testCase id="270000">
     <class>Iperf</class>
-    <desc>iperf (DL/30Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 30M -t 30 -i 1 -fm</iperf_args>
+    <desc>iperf (DL/100Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 100M -t 30 -i 1 -fm</iperf_args>
     <direction>DL</direction>
     <id>idefix</id>
-    <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
-    <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+    <iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070001">
+  <testCase id="270001">
     <class>Iperf</class>
-    <desc>iperf (UL/3.5Mbps/UDP)(30 sec)(single-ue profile)</desc>
-    <iperf_args>-u -b 3.5M -t 30 -i 1 -fm</iperf_args>
+    <desc>iperf (UL/6Mbps/UDP)(30 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 6M -t 30 -i 1 -fm</iperf_args>
     <direction>UL</direction>
     <id>idefix</id>
     <iperf_packetloss_threshold>1</iperf_packetloss_threshold>
@@ -155,7 +149,7 @@
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="070002">
+  <testCase id="270002">
     <class>Iperf</class>
     <desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
     <iperf_args>-t 10 --bidir</iperf_args>
@@ -164,14 +158,14 @@
     <iperf_profile>single-ue</iperf_profile>
   </testCase>
 
-  <testCase id="060001">
+  <testCase id="260001">
     <class>Custom_Command</class>
     <desc>Trigger Reestablishment</desc>
     <node>ofqot</node>
     <command>echo ci force_reestab | nc -N 192.168.68.194 9090 | grep -E 'force-remove UE RNTI [0-9a-f]{4} from RLC to trigger reestablishment'</command>
     <command_fail>yes</command_fail>
   </testCase>
-  <testCase id="060002">
+  <testCase id="260002">
     <class>Custom_Command</class>
     <desc>Verify Reestablishment</desc>
     <node>ofqot</node>
@@ -179,10 +173,10 @@
     <command_fail>yes</command_fail>
   </testCase>
 
-  <testCase id="030201">
+  <testCase id="230201">
     <class>Undeploy_Object</class>
     <desc>Undeploy gNB</desc>
-    <yaml_path>ci-scripts/yaml_files/sa_b200_gnb</yaml_path>
+    <yaml_path>ci-scripts/yaml_files/sa_sc_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
     <d_retx_th>10,100,100,100</d_retx_th>

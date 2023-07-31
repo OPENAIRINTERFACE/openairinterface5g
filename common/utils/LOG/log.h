@@ -240,7 +240,7 @@ typedef enum {
   NR_MAC,
   NR_PHY,
   LOADER,
-  ASN,
+  ASN1,
   NFAPI_VNF,
   NFAPI_PNF,
   ITTI,

@@ -120,7 +120,7 @@ NR_DRB_ToAddModList_t *fill_DRB_configList(gNB_RRC_UE_t *ue)
   if (ue->nb_of_pdusessions == 0)
     return NULL;
   int nb_drb_to_setup = rrc->configuration.drbs;
-  long drb_priority[NGAP_MAX_DRBS_PER_UE] = {0};
+  long drb_priority[MAX_DRBS_PER_UE] = {0};
   uint8_t drb_id_to_setup_start = 0;
   NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
   for (int i = 0; i < ue->nb_of_pdusessions; i++) {
@@ -399,7 +399,7 @@ static NR_DRB_ToAddModList_t *createDRBlist(gNB_RRC_UE_t *ue, bool reestablish)
   NR_DRB_ToAddMod_t *DRB_config = NULL;
   NR_DRB_ToAddModList_t *DRB_configList = CALLOC(sizeof(*DRB_configList), 1);
 
-  for (int i = 0; i < NGAP_MAX_DRBS_PER_UE; i++) {
+  for (int i = 0; i < MAX_DRBS_PER_UE; i++) {
     if (ue->established_drbs[i].status != DRB_INACTIVE) {
       DRB_config = generateDRB_ASN1(&ue->established_drbs[i]);
       if (reestablish) {
@@ -822,13 +822,13 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
 
     // search exist DRB_config
     int j;
-    for (j = 0; i < NGAP_MAX_DRBS_PER_UE; j++) {
+    for (j = 0; i < MAX_DRBS_PER_UE; j++) {
       if (ue_p->established_drbs[j].status != DRB_INACTIVE
           && ue_p->established_drbs[j].cnAssociation.sdap_config.pdusession_id == ue_p->pduSession[i].param.pdusession_id)
         break;
     }
 
-    if (j == NGAP_MAX_DRBS_PER_UE) {
+    if (j == MAX_DRBS_PER_UE) {
       ue_p->pduSession[i].xid = xid;
       ue_p->pduSession[i].status = PDU_SESSION_STATUS_FAILED;
       ue_p->pduSession[i].cause = NGAP_CAUSE_RADIO_NETWORK;
@@ -1951,11 +1951,8 @@ static void handle_rrcReconfigurationComplete(const protocol_ctxt_t *const ctxt_
       case RRC_PDUSESSION_MODIFY:
         rrc_gNB_send_NGAP_PDUSESSION_MODIFY_RESP(ctxt_pP, ue_context_p, xid);
         break;
-      case RRC_FIRST_RECONF:
-        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
-        break;
       case RRC_DEFAULT_RECONF:
-        /* nothing to do */
+        rrc_gNB_send_NGAP_INITIAL_CONTEXT_SETUP_RESP(ctxt_pP, ue_context_p);
         break;
       default:
         LOG_E(RRC, "Received unexpected xid: %d\n", xid);

@@ -327,35 +327,37 @@ static void fill_mib_in_rx_ind(nfapi_nr_dl_tti_request_pdu_t *pdu_list, fapi_nr_
 
 static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu)
 {
-    /* For multiple UEs, we need to be able to filter the rx'd messages by
-       the RNTI. The filtering is different between NSA mode and SA mode.
-       NSA mode has a two step CFRA procedure and SA has a 4 step procedure.
-       We only need to check if the rx'd RNTI doesnt match the CRNTI if the RAR
-       has been processed already, in NSA mode.
-       In SA, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
-       Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
-       MAC instance of the UE still has a CRNTI = 0. We should only check if the
-       CRNTI doesnt match the received RNTI in SA mode if Msg3 has been processed
-       already. Only once the RA procedure succeeds is the CRNTI value updated
-       to the TC_RNTI. */
-    if (get_softmodem_params()->nsa)
-    {
-        if (received_pdu->RNTI != mac->crnti &&
-            (received_pdu->RNTI != mac->ra.ra_rnti || mac->ra.RA_RAPID_found))
-            return false;
-    }
-    if (get_softmodem_params()->sa)
-    {
-        if (received_pdu->RNTI != mac->crnti && mac->ra.ra_state == RA_SUCCEEDED)
-            return false;
-        if (received_pdu->RNTI != mac->ra.t_crnti && mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
-            return false;
-        if (received_pdu->RNTI != 0x10b && mac->ra.ra_state == WAIT_RAR)
-            return false;
-        if (received_pdu->RNTI != 0xFFFF && mac->ra.ra_state <= GENERATE_PREAMBLE)
-            return false;
-    }
-    return true;
+  /* For multiple UEs, we need to be able to filter the rx'd messages by
+     the RNTI. The filtering is different between NSA mode and SA mode.
+     NSA mode has a two step CFRA procedure and SA has a 4 step procedure.
+     We only need to check if the rx'd RNTI doesnt match the CRNTI if the RAR
+     has been processed already, in NSA mode.
+     In SA, depending on the RA state, we can have a SIB (0xffff), RAR (0x10b),
+     Msg3 (TC_RNTI) or an actual DCI message (CRNTI). When we get Msg3, the
+     MAC instance of the UE still has a CRNTI = 0. We should only check if the
+     CRNTI doesnt match the received RNTI in SA mode if Msg3 has been processed
+     already. Only once the RA procedure succeeds is the CRNTI value updated
+     to the TC_RNTI. */
+  if (get_softmodem_params()->nsa) {
+    if (received_pdu->RNTI != mac->crnti &&
+        (received_pdu->RNTI != mac->ra.ra_rnti || mac->ra.RA_RAPID_found))
+      return false;
+  }
+  if (get_softmodem_params()->sa) {
+    if (mac->state == UE_NOT_SYNC)
+      return false;
+    if (received_pdu->RNTI == 0xFFFF && mac->scc_SIB)
+      return false;
+    if (received_pdu->RNTI != mac->crnti && mac->ra.ra_state == RA_SUCCEEDED)
+      return false;
+    if (received_pdu->RNTI != mac->ra.t_crnti && mac->ra.ra_state == WAIT_CONTENTION_RESOLUTION)
+      return false;
+    if (received_pdu->RNTI != 0x10b && mac->ra.ra_state == WAIT_RAR)
+      return false;
+    if (received_pdu->RNTI != 0xFFFF && mac->ra.ra_state <= GENERATE_PREAMBLE)
+      return false;
+  }
+  return true;
 }
 
 static void copy_dl_tti_req_to_dl_info(nr_downlink_indication_t *dl_info, nfapi_nr_dl_tti_request_t *dl_tti_request)
@@ -1037,19 +1039,18 @@ int handle_bcch_bch(module_id_t module_id, int cc_id,
                     unsigned int gNB_index, void *phy_data, uint8_t *pduP,
                     unsigned int additional_bits,
                     uint32_t ssb_index, uint32_t ssb_length,
-                    uint16_t ssb_start_subcarrier, uint16_t cell_id){
-
-  return nr_ue_decode_mib(module_id,
-                          cc_id,
-                          gNB_index,
-                          phy_data,
-                          additional_bits,
-                          ssb_length,  //  Lssb = 64 is not support
-                          ssb_index,
-                          pduP,
-                          ssb_start_subcarrier,
-                          cell_id);
-
+                    uint16_t ssb_start_subcarrier, uint16_t cell_id)
+{
+  NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+  mac->mib_ssb = ssb_index;
+  mac->physCellId = cell_id;
+  mac->mib_additional_bits = additional_bits;
+  if(ssb_length == 64)
+    mac->frequency_range = FR2;
+  else
+    mac->frequency_range = FR1;
+  nr_mac_rrc_data_ind_ue(module_id, cc_id, gNB_index, 0, 0, 0, NR_BCCH_BCH, (uint8_t *) pduP, 3);    //  fixed 3 bytes MIB PDU
+  return 0;
 }
 
 //  L2 Abstraction Layer
@@ -1149,11 +1150,9 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
   uint32_t ret_mask = 0x0;
   module_id_t module_id = dl_info->module_id;
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
-
   if ((!dl_info->dci_ind && !dl_info->rx_ind)) {
     // UL indication to schedule DCI reception
-    if (mac->phy_config_request_sent)
-      nr_ue_dl_scheduler(dl_info);
+    nr_ue_dl_scheduler(dl_info);
   } else {
     // UL indication after reception of DCI or DL PDU
     if (dl_info && dl_info->dci_ind && dl_info->dci_ind->number_of_dcis) {

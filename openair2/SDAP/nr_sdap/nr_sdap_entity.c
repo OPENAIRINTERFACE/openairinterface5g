@@ -518,7 +518,7 @@ bool nr_sdap_delete_ue_entities(ue_id_t ue_id)
   }
 
   /* Handle scenario where ue_id matches the head of the list */
-  while (entityPtr != NULL && entityPtr->ue_id == ue_id && upperBound < NGAP_MAX_DRBS_PER_UE) {
+  while (entityPtr != NULL && entityPtr->ue_id == ue_id && upperBound < MAX_DRBS_PER_UE) {
     sdap_info.sdap_entity_llist = entityPtr->next_entity;
     free(entityPtr);
     entityPtr = sdap_info.sdap_entity_llist;

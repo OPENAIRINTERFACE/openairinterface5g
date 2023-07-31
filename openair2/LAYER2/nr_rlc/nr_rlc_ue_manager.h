@@ -23,6 +23,7 @@
 #define _NR_RLC_UE_MANAGER_H_
 #include "openair2/COMMON/platform_types.h"
 #include "nr_rlc_entity.h"
+#include "common/platform_constants.h"
 
 typedef void nr_rlc_ue_manager_t;
 

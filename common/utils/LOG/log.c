@@ -487,7 +487,7 @@ int logInit (void)
   register_log_component("SCTP","",SCTP);
   register_log_component("X2AP","",X2AP);
   register_log_component("LOADER","log",LOADER);
-  register_log_component("ASN","log",ASN);
+  register_log_component("ASN1","log",ASN1);
   register_log_component("NFAPI_VNF","log",NFAPI_VNF);
   register_log_component("NFAPI_PNF","log",NFAPI_PNF);
   register_log_component("GNB_APP","log",GNB_APP);

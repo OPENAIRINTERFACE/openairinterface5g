@@ -451,6 +451,10 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
     {
       LOG_D(NR_RRC, "In NSA mode \n");
     }
+
+    if (get_softmodem_params()->sl_mode) {
+      configure_NR_SL_Preconfig(get_softmodem_params()->sync_ref);
+    }
   }
   else{
     NR_UE_rrc_inst = NULL;
@@ -480,24 +484,89 @@ int8_t nr_ue_process_physical_cell_group_config(NR_PhysicalCellGroupConfig_t *ph
     return 0;
 }
 
+bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
+{
+  switch (si_type) {
+    case NR_SIB_TypeInfo__type_sibType2:
+      if (!SI_info->sib2)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType3:
+      if (!SI_info->sib3)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType4:
+      if (!SI_info->sib4)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType5:
+      if (!SI_info->sib5)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType6:
+      if (!SI_info->sib6)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType7:
+      if (!SI_info->sib7)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType8:
+      if (!SI_info->sib8)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType9:
+      if (!SI_info->sib9)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType10_v1610:
+      if (!SI_info->sib10)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType11_v1610:
+      if (!SI_info->sib11)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType12_v1610:
+      if (!SI_info->sib12)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType13_v1610:
+      if (!SI_info->sib13)
+        return false;
+      break;
+    case NR_SIB_TypeInfo__type_sibType14_v1610:
+      if (!SI_info->sib14)
+        return false;
+      break;
+    default :
+      AssertFatal(false, "Invalid SIB type %d\n", si_type);
+  }
+  return true;
+}
+
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
-  // schedule reception of SIB1
+  if (!get_softmodem_params()->sa)
+    return 0;
+  // schedule reception of SIB1 if RRC doesn't have it
   if (!SI_info->sib1)
     return 1;
   else {
-    if (!SI_info->sib1->si_SchedulingInfo)
-      return 0;
-    // The UE in RRC_IDLE and RRC_INACTIVE shall ensure having
-    // a valid version of (at least) the MIB, SIB1 through
-    // SIB4 (and SIB5 if the UE supports E-UTRA)
-    if (!SI_info->sib2 ||
-        !SI_info->sib3 ||
-        !SI_info->sib4)
-      // we schedule reception of otherSI
-      // if UE RRC doesn't have any of the
-      // default SIBs for now
-      return 2;
+    if (SI_info->sib1->si_SchedulingInfo) {
+      // Check if RRC has configured default SI
+      // from SIB2 to SIB14 as current ASN1 version
+      // TODO can be used for on demand SI when (if) implemented
+      for (int i = 2; i < 15; i++) {
+        int si_index = i - 2;
+        if ((SI_info->default_otherSI_map >> si_index) & 0x01) {
+          // if RRC has no valid version of one of the default configured SI
+          // Then schedule reception of otherSI
+          if (!check_si_validity(SI_info, si_index))
+            return 2;
+        }
+      }
+    }
   }
   return 0;
 }
@@ -700,6 +769,22 @@ int8_t nr_rrc_ue_generate_ra_msg(module_id_t module_id, uint8_t gNB_index) {
   return 0;
 }
 
+void nr_rrc_configure_default_SI(NR_UE_RRC_SI_INFO *SI_info,
+                                 NR_SIB1_t *sib1)
+{
+  struct NR_SI_SchedulingInfo *si_SchedulingInfo = sib1->si_SchedulingInfo;
+  if (!si_SchedulingInfo)
+    return;
+  SI_info->default_otherSI_map = 0;
+  for (int i = 0; i < si_SchedulingInfo->schedulingInfoList.list.count; i++) {
+    struct NR_SchedulingInfo *schedulingInfo = si_SchedulingInfo->schedulingInfoList.list.array[i];
+    for (int j = 0; j < schedulingInfo->sib_MappingInfo.list.count; j++) {
+      struct NR_SIB_TypeInfo *sib_Type = schedulingInfo->sib_MappingInfo.list.array[j];
+      SI_info->default_otherSI_map |= 1 << sib_Type->type;
+    }
+  }
+}
+
 /**\brief decode NR BCCH-DLSCH (SI) messages
    \param module_idP    module id
    \param gNB_index     gNB index
@@ -758,6 +843,8 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
           LOG_D(PHY,"Setting state to RRC_STATE_IDLE_NR\n");
           nr_rrc_set_state(module_id, RRC_STATE_IDLE_NR);
         }
+        // configure default SI
+        nr_rrc_configure_default_SI(SI_info, sib1);
         // configure timers and constant
         nr_rrc_set_sib1_timers_and_constants(&NR_UE_rrc_inst[module_id].timers_and_constants, sib1);
         // take ServingCellConfigCommon and configure L1/L2
@@ -1961,15 +2048,22 @@ void *rrc_nrue_task(void *args_p)
          break;
 
        case NR_RRC_MAC_BCCH_DATA_IND:
-         LOG_D(NR_RRC, "[UE %d] Received %s: frameP %d, gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
-               NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, NR_RRC_MAC_BCCH_DATA_IND (msg_p).frame, 0,NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
-         nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message (ctxt.module_id,
-                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index,
-                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu,
-                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).sdu_size,
-                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrq,
-                                                  NR_RRC_MAC_BCCH_DATA_IND (msg_p).rsrp);
+         LOG_D(NR_RRC, "[UE %d] Received %s: gNB %d\n", ue_mod_id, ITTI_MSG_NAME (msg_p),
+               NR_RRC_MAC_BCCH_DATA_IND (msg_p).gnb_index);
+         NRRrcMacBcchDataInd *bcch = &NR_RRC_MAC_BCCH_DATA_IND (msg_p);
+         PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, ue_mod_id, GNB_FLAG_NO, NOT_A_RNTI, bcch->frame, 0, bcch->gnb_index);
+         if (bcch->is_bch)
+           nr_rrc_ue_decode_NR_BCCH_BCH_Message(ue_mod_id,
+                                                bcch->gnb_index,
+                                                bcch->sdu,
+                                                bcch->sdu_size);
+         else
+           nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(ctxt.module_id,
+                                                   bcch->gnb_index,
+                                                   bcch->sdu,
+                                                   bcch->sdu_size,
+                                                   bcch->rsrq,
+                                                   bcch->rsrp);
          break;
 
        case NR_RRC_MAC_CCCH_DATA_IND:
@@ -2059,7 +2153,7 @@ void *rrc_nrue_task(void *args_p)
         break;
     }
     LOG_D(NR_RRC, "[UE %d] RRC Status %d\n", ue_mod_id, nr_rrc_get_state(ue_mod_id));
-    result = itti_free (ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
+    result = itti_free(ITTI_MSG_ORIGIN_ID(msg_p), msg_p);
     AssertFatal (result == EXIT_SUCCESS, "Failed to free memory (%d)!\n", result);
     msg_p = NULL;
   }

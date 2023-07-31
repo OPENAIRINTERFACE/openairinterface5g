@@ -50,10 +50,8 @@ void RCconfig_nrUE_prs(void *cfg)
   if (gParamList.numelt > 0)
   {
     ue->prs_active_gNBs = *(gParamList.paramarray[j][PRS_ACTIVE_GNBS_IDX].uptr);
-  }
-  else
-  {
-    LOG_E(PHY,"%s configuration NOT found..!! Skipped configuring UE for the PRS reception\n", CONFIG_STRING_PRS_CONFIG);
+  } else {
+    LOG_I(PHY,"%s configuration NOT found..!! Skipped configuring UE for the PRS reception\n", CONFIG_STRING_PRS_CONFIG);
   }
 
   paramlist_def_t PRS_ParamList = {{0},NULL,0};
@@ -133,10 +131,8 @@ void RCconfig_nrUE_prs(void *cfg)
         LOG_I(PHY, "MutingPattern2 \t\t[%s\b\b]\n", str[6]);
         LOG_I(PHY, "-----------------------------------------\n");
       }
-    }
-    else
-    {
-      LOG_E(PHY,"No %s configuration found..!!\n", PRS_ParamList.listname);
+    } else {
+      LOG_I(PHY,"No %s configuration found..!!\n", PRS_ParamList.listname);
     }
   }
 }
