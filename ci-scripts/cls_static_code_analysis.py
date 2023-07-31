@@ -42,9 +42,10 @@ from multiprocessing import Process, Lock, SimpleQueue
 #-----------------------------------------------------------
 # OAI Testing modules
 #-----------------------------------------------------------
-import sshconnection as SSH
 import helpreadme as HELP
 import constants as CONST
+import cls_cmd
+from cls_containerize import CreateWorkspace
 
 #-----------------------------------------------------------
 # Class Declaration
@@ -95,53 +96,31 @@ class StaticCodeAnalysis():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('Building on server: ' + lIpAddr)
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-
+		cmd = cls_cmd.getConnection(lIpAddr)
 		self.testCase_id = HTML.testCase_id
-
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
 			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
 
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		if (self.ranAllowMerge):
-			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 30)
-			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 30)
+		CreateWorkspace(cmd, lSourcePath, full_ran_repo_name, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
 
-		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:focal || true', '\$', 60)
-		mySSH.command('sed -e "s@xenial@bionic@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.bionic', '\$', 6)
-		mySSH.command('docker build --tag oai-cppcheck:bionic --file ci-scripts/docker/Dockerfile.cppcheck.bionic . > cmake_targets/log/cppcheck-bionic.txt 2>&1', '\$', 600)
-		mySSH.command('sed -e "s@xenial@focal@" ci-scripts/docker/Dockerfile.cppcheck.xenial > ci-scripts/docker/Dockerfile.cppcheck.focal', '\$', 6)
-		mySSH.command('docker build --tag oai-cppcheck:focal --file ci-scripts/docker/Dockerfile.cppcheck.focal . > cmake_targets/log/cppcheck-focal.txt 2>&1', '\$', 600)
-		mySSH.command('docker image rm oai-cppcheck:bionic oai-cppcheck:focal || true', '\$', 30)
+		logDir = f'{lSourcePath}/cmake_targets/build_log_{self.testCase_id}'
+		cmd.run(f'mkdir -p {logDir}')
+		cmd.run('docker image rm oai-cppcheck:bionic oai-cppcheck:focal')
+		cmd.run(f'sed -e "s@xenial@bionic@" {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.xenial > {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.bionic')
+		cmd.run(f'docker build --tag oai-cppcheck:bionic --file {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.bionic . > {logDir}/cppcheck-bionic.txt 2>&1')
+		cmd.run(f'sed -e "s@xenial@focal@" {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.xenial > {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.focal')
+		cmd.run(f'docker build --tag oai-cppcheck:focal --file {lSourcePath}/ci-scripts/docker/Dockerfile.cppcheck.focal . > {logDir}/cppcheck-focal.txt 2>&1')
+		cmd.run('docker image rm oai-cppcheck:bionic oai-cppcheck:focal')
 
 		# Analyzing the logs
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		mySSH.close()
+		cmd.copyin(f'{logDir}/cppcheck-bionic.txt', 'cppcheck-bionic.txt')
+		cmd.copyin(f'{logDir}/cppcheck-focal.txt', 'cppcheck-focal.txt')
+		cmd.close()
 
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '/*', '.')
 		CCR = CppCheckResults()
 		CCR_ref = CppCheckResults()
 		vId = 0
@@ -251,57 +230,37 @@ class StaticCodeAnalysis():
 			HELP.GenericHelp(CONST.Version)
 			sys.exit('Insufficient Parameter')
 		logging.debug('Building on server: ' + lIpAddr)
-		mySSH = SSH.SSHConnection()
-		mySSH.open(lIpAddr, lUserName, lPassWord)
-
+		cmd = cls_cmd.getConnection(lIpAddr)
 		self.testCase_id = HTML.testCase_id
-
 		# on RedHat/CentOS .git extension is mandatory
 		result = re.search('([a-zA-Z0-9\:\-\.\/])+\.git', self.ranRepository)
 		if result is not None:
 			full_ran_repo_name = self.ranRepository.replace('git/', 'git')
 		else:
 			full_ran_repo_name = self.ranRepository + '.git'
-		mySSH.command('mkdir -p ' + lSourcePath, '\$', 5)
-		mySSH.command('cd ' + lSourcePath, '\$', 5)
-		mySSH.command('if [ ! -e .git ]; then stdbuf -o0 git clone ' + full_ran_repo_name + ' .; else stdbuf -o0 git fetch --prune; fi', '\$', 600)
-		# Raphael: here add a check if git clone or git fetch went smoothly
-		mySSH.command('git config user.email "jenkins@openairinterface.org"', '\$', 5)
-		mySSH.command('git config user.name "OAI Jenkins"', '\$', 5)
 
-		mySSH.command('echo ' + lPassWord + ' | sudo -S git clean -x -d -ff', '\$', 30)
-		mySSH.command('mkdir -p cmake_targets/log', '\$', 5)
-		# if the commit ID is provided use it to point to it
-		if self.ranCommitID != '':
-			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
-		# if the branch is not develop, then it is a merge request and we need to do
-		# the potential merge. Note that merge conflicts should already been checked earlier
-		argToPass = ''
-		if (self.ranAllowMerge):
-			argToPass = '--build-arg MERGE_REQUEST=true --build-arg SRC_BRANCH=' + self.ranBranch
+		CreateWorkspace(cmd, lSourcePath, full_ran_repo_name, self.ranCommitID, self.ranTargetBranch, self.ranAllowMerge)
+		check_options = ''
+		if self.ranAllowMerge:
+			check_options = f'--build-arg MERGE_REQUEST=true --build-arg SRC_BRANCH={self.ranBranch}'
 			if self.ranTargetBranch == '':
-				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
-					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 30)
-					argToPass += ' --build-arg TARGET_BRANCH=develop '
+				if self.ranBranch != 'develop' and self.ranBranch != 'origin/develop':
+					check_options += ' --build-arg TARGET_BRANCH=develop'
 			else:
-				logging.debug('Merging with the target branch: ' + self.ranTargetBranch)
-				mySSH.command('git merge --ff origin/' + self.ranTargetBranch + ' -m "Temporary merge for CI"', '\$', 30)
-				argToPass += ' --build-arg TARGET_BRANCH=' + self.ranTargetBranch + ' '
+				check_options += f' --build-arg TARGET_BRANCH={self.ranTargetBranch}'
 
-		mySSH.command('docker image rm oai-formatting-check:latest || true', '\$', 60)
-		mySSH.command('docker build --target oai-formatting-check --tag oai-formatting-check:latest ' + argToPass + '--file ci-scripts/docker/Dockerfile.formatting.bionic . > cmake_targets/log/oai-formatting-check.txt 2>&1', '\$', 600)
+		logDir = f'{lSourcePath}/cmake_targets/build_log_{self.testCase_id}'
+		cmd.run(f'mkdir -p {logDir}')
+		cmd.run('docker image rm oai-formatting-check:latest')
+		cmd.run(f'docker build --target oai-formatting-check --tag oai-formatting-check:latest {check_options} --file {lSourcePath}/ci-scripts/docker/Dockerfile.formatting.bionic . > {logDir}/oai-formatting-check.txt 2>&1')
 
-		mySSH.command('docker image rm oai-formatting-check:latest || true', '\$', 60)
-		mySSH.command('docker image prune --force', '\$', 60)
-		mySSH.command('docker volume prune --force', '\$', 60)
+		cmd.run('docker image rm oai-formatting-check:latest')
+		cmd.run('docker image prune --force')
+		cmd.run('docker volume prune --force')
 
 		# Analyzing the logs
-		mySSH.command('cd ' + lSourcePath + '/cmake_targets', '\$', 5)
-		mySSH.command('mkdir -p build_log_' + self.testCase_id, '\$', 5)
-		mySSH.command('mv log/* ' + 'build_log_' + self.testCase_id, '\$', 5)
-		mySSH.close()
-
-		mySSH.copyin(lIpAddr, lUserName, lPassWord, lSourcePath + '/cmake_targets/build_log_' + self.testCase_id + '/*', '.')
+		cmd.copyin(f'{logDir}/oai-formatting-check.txt', 'oai-formatting-check.txt')
+		cmd.close()
 
 		finalStatus = 0
 		if (os.path.isfile('./oai-formatting-check.txt')):
