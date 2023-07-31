@@ -80,7 +80,7 @@ typedef struct OAI_NR_UECapability_s {
 } OAI_NR_UECapability_t;
 
 typedef enum Rrc_State_NR_e {
-  RRC_STATE_IDLE_NR=0,
+  RRC_STATE_IDLE_NR = 0,
   RRC_STATE_INACTIVE_NR,
   RRC_STATE_CONNECTED_NR,
 
