@@ -469,8 +469,8 @@ class HTMLManagement():
 				self.htmlFile.write('        <td bgcolor = "orange" >')
 			else:
 				self.htmlFile.write('        <td>')
-			for i in infoList:
-				self.htmlFile.write(f'         <pre>{i}</pre>')
+			for i in infoList: # add custom style to have elements side-by-side to reduce need for vertical space
+				self.htmlFile.write(f'         <pre style="display: inline flow-root list-item; margin: 0 3px 0 3px; min-width: 24em;">{i}</pre>')
 
 			self.htmlFile.write('                </td>')
 			self.htmlFile.write('      </tr>\n')
