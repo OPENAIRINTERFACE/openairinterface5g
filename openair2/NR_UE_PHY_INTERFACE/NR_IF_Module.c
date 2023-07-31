@@ -742,19 +742,17 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
 
-    if (mac->tdd_UL_DL_ConfigurationCommon) {
-      if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
-                        (slot + slot_ahead) % slots_per_frame,
-                        mac->frame_type)
-          && mac->ra.ra_state != RA_SUCCEEDED) {
-        // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
-        nr_uplink_indication_t ul_info = {
+    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
+                      (slot + slot_ahead) % slots_per_frame,
+                      mac->frame_type)
+        && mac->ra.ra_state != RA_SUCCEEDED) {
+      // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
+      nr_uplink_indication_t ul_info = {
             .frame_rx = frame,
             .slot_rx = slot,
             .slot_tx = (slot + slot_ahead) % slots_per_frame,
             .frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx};
-        nr_ue_ul_scheduler(&ul_info);
-      }
+      nr_ue_ul_scheduler(&ul_info);
     }
 }
 

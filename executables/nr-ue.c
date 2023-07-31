@@ -328,9 +328,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       free_and_zero(ch_info);
     }
 
-    bool default_dl = mac->tdd_UL_DL_ConfigurationCommon ? false : true;
-    if (default_dl ||
-        is_nr_DL_slot(mac->tdd_UL_DL_ConfigurationCommon,
+    if (is_nr_DL_slot(mac->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_rx)) {
       memset(&mac->dl_info, 0, sizeof(mac->dl_info));
       mac->dl_info.cc_id = CC_id;
@@ -345,8 +343,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
-    if (!default_dl &&
-        is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
+    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_tx, mac->frame_type)) {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind()\n", ul_info.slot_tx);
       nr_ue_ul_scheduler(&ul_info);
