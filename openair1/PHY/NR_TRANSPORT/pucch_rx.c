@@ -1268,9 +1268,9 @@ void nr_decode_pucch2(PHY_VARS_gNB *gNB,
     for (int group=0;group<ngroup;group++) {
       // each group has 8*nc_group_size elements, compute 1 complex correlation with DMRS per group
       // non-coherent combining across groups
-      __m64 dmrs_re = byte2m64_re[sGold8[(group & 1) << 1]];
+      simde__m64 dmrs_re = byte2m64_re[sGold8[(group & 1) << 1]];
       int16_t *dmrs_re16 = (int16_t *)&dmrs_re;
-      __m64 dmrs_im = byte2m64_im[sGold8[(group & 1) << 1]];
+      simde__m64 dmrs_im = byte2m64_im[sGold8[(group & 1) << 1]];
       int16_t *dmrs_im16 = (int16_t *)&dmrs_im;
 #ifdef DEBUG_NR_PUCCH_RX
       printf("Group %d: s %x x2 %x ((%d,%d),(%d,%d),(%d,%d),(%d,%d))\n",

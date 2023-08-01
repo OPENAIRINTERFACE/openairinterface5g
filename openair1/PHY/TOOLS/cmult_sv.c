@@ -80,6 +80,7 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
   // stores result in y
   // N is the number of complex numbers
   // output_shift reduces the result of the multiplication by this number of bits
+#if defined(__x86_64__) || defined (__i386__)
   if ( __builtin_cpu_supports("avx2")) {
     // output is 32 bytes aligned, but not the input
 
@@ -137,6 +138,7 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
       *yLast=c16mulShift(*xTail,*alpha16,output_shift);
     }
   } else {
+#endif
     // Multiply elementwise two complex vectors of N elements
     // x        - input 1    in the format  |Re0  Im0 |,......,|Re(N-1) Im(N-1)|
     //            We assume x1 with a dynamic of 15 bit maximum
@@ -184,7 +186,9 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
       xd+=4;
       y_128+=1;
     }
+#if defined(__x86__) || defined(__x86_64__)
   }
+#endif
 }
 
 #ifdef MAIN
