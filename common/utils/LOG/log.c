@@ -283,7 +283,7 @@ void  log_getconfig(log_t *g_log)
   int ret = config_get( logparams_defaults,sizeof(logparams_defaults)/sizeof(paramdef_t),CONFIG_STRING_LOG_PREFIX);
 
   if (ret <0) {
-    fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed");
+    fprintf(stderr,"[LOG] init aborted, configuration couldn't be performed\n");
     return;
   }
 
