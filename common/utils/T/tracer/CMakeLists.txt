@@ -1,4 +1,4 @@
-add_library(tracer_utils OBJECT config.c database.c event.c handler.c utils.c)
+add_library(tracer_utils OBJECT configuration.c database.c event.c handler.c utils.c)
 target_link_libraries(tracer_utils PUBLIC m pthread)
 
 add_library(tracer_events OBJECT event_selector.c)

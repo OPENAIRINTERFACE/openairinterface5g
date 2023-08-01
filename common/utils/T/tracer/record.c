@@ -6,7 +6,7 @@
 #include "database.h"
 #include "utils.h"
 #include "../T_defs.h"
-#include "config.h"
+#include "configuration.h"
 
 void usage(void)
 {

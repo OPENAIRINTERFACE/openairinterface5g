@@ -8,7 +8,7 @@
 #include "database.h"
 #include "utils.h"
 #include "handler.h"
-#include "config.h"
+#include "configuration.h"
 #include "logger/logger.h"
 #include "view/view.h"
 

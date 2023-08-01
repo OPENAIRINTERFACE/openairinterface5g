@@ -6,7 +6,7 @@
 #include "database.h"
 #include "event.h"
 #include "handler.h"
-#include "config.h"
+#include "configuration.h"
 #include "logger/logger.h"
 #include "gui/gui.h"
 #include "utils.h"
