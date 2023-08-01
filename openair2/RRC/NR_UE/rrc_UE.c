@@ -2029,12 +2029,13 @@ void *rrc_nrue_task(void *args_p)
          handle_rlf_sync(tac, sync_msg);
          break;
 
-       case NRRRC_SLOT_PROCESS:
-         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d slot %d\n",
-               ue_mod_id, ITTI_MSG_NAME (msg_p), NRRRC_SLOT_PROCESS (msg_p).frame, NRRRC_SLOT_PROCESS (msg_p).slot);
+       case NRRRC_FRAME_PROCESS:
+         LOG_D(NR_RRC, "[UE %d] Received %s: frame %d\n",
+               ue_mod_id, ITTI_MSG_NAME (msg_p), NRRRC_FRAME_PROCESS (msg_p).frame);
+         // increase the timers every 10ms (every new frame)
          NR_UE_Timers_Constants_t *timers = &NR_UE_rrc_inst[ue_mod_id].timers_and_constants;
          nr_rrc_handle_timers(timers);
-         NR_UE_RRC_SI_INFO *SInfo = &NR_UE_rrc_inst[ue_mod_id].SInfo[NRRRC_SLOT_PROCESS (msg_p).gnb_id];
+         NR_UE_RRC_SI_INFO *SInfo = &NR_UE_rrc_inst[ue_mod_id].SInfo[NRRRC_FRAME_PROCESS (msg_p).gnb_id];
          nr_rrc_SI_timers(SInfo);
          break;
 
@@ -2528,13 +2529,12 @@ void process_lte_nsa_msg(nsa_msg_t *msg, int msg_len)
     }
 }
 
-void nr_ue_rrc_timer_trigger(int module_id, int frame, int slot, int gnb_id)
+void nr_ue_rrc_timer_trigger(int module_id, int frame, int gnb_id)
 {
   MessageDef *message_p;
-  message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NRRRC_SLOT_PROCESS);
-  NRRRC_SLOT_PROCESS(message_p).frame = frame;
-  NRRRC_SLOT_PROCESS(message_p).slot = slot;
-  NRRRC_SLOT_PROCESS(message_p).gnb_id = gnb_id;
-  LOG_D(NR_RRC, "RRC timer trigger: frame %d slot %d \n", frame, slot);
+  message_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NRRRC_FRAME_PROCESS);
+  NRRRC_FRAME_PROCESS(message_p).frame = frame;
+  NRRRC_FRAME_PROCESS(message_p).gnb_id = gnb_id;
+  LOG_D(NR_RRC, "RRC timer trigger: frame %d\n", frame);
   itti_send_msg_to_task(TASK_RRC_NRUE, GNB_MODULE_ID_TO_INSTANCE(module_id), message_p);
 }
