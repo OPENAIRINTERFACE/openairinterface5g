@@ -56,25 +56,25 @@
     </testCase>
     <testCase id="100000">
         <class>Custom_Command</class>
-        <desc>Disable Sleep States</desc>
+        <desc>Disable Sleep States (hutch)</desc>
         <node>hutch</node>
         <command>sudo cpupower idle-set -D 0</command>
     </testCase>
     <testCase id="100001">
         <class>Custom_Command</class>
-        <desc>Disable Sleep States</desc>
+        <desc>Disable Sleep States (carabe)</desc>
         <node>carabe</node>
         <command>sudo cpupower idle-set -D 0</command>
     </testCase>
     <testCase id="200000">
         <class>Custom_Command</class>
-        <desc>Enable Sleep States</desc>
+        <desc>Enable Sleep States (hutch)</desc>
         <node>hutch</node>
         <command>sudo cpupower idle-set -E</command>
     </testCase>
     <testCase id="200001">
         <class>Custom_Command</class>
-        <desc>Enable Sleep States</desc>
+        <desc>Enable Sleep States (carabe)</desc>
         <node>carabe</node>
         <command>sudo cpupower idle-set -E</command>
     </testCase>

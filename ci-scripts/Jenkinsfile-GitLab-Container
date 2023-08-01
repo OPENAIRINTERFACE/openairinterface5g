@@ -288,7 +288,7 @@ pipeline {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'RAN-LTE-FDD-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'LTE-FDD-LTEBOX-Container')
             }
           }
           post {
@@ -309,7 +309,7 @@ pipeline {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-FDD-OAICN4G-Container', 'RAN-LTE-FDD-OAICN4G-Container')
+              triggerSlaveJob ('RAN-LTE-FDD-OAICN4G-Container', 'LTE-FDD-OAICN4G-Container')
             }
           }
           post {
@@ -329,7 +329,7 @@ pipeline {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'RAN-LTE-TDD-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'LTE-TDD-LTEBOX-Container')
             }
           }
           post {
@@ -489,7 +489,7 @@ pipeline {
           when { expression {do5Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'RAN-SA-OAIUE-CN5G')
+              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'SA-OAIUE-CN5G')
             }
           }
           post {
