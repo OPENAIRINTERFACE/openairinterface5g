@@ -439,55 +439,55 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 {
   switch (si_type) {
     case NR_SIB_TypeInfo__type_sibType2:
-      if (!SI_info->sib2)
+      if (!SI_info->sib2 || SI_info->sib2_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType3:
-      if (!SI_info->sib3)
+      if (!SI_info->sib3 || SI_info->sib3_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType4:
-      if (!SI_info->sib4)
+      if (!SI_info->sib4 || SI_info->sib4_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType5:
-      if (!SI_info->sib5)
+      if (!SI_info->sib5 || SI_info->sib5_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType6:
-      if (!SI_info->sib6)
+      if (!SI_info->sib6 || SI_info->sib6_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType7:
-      if (!SI_info->sib7)
+      if (!SI_info->sib7 || SI_info->sib7_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType8:
-      if (!SI_info->sib8)
+      if (!SI_info->sib8 || SI_info->sib8_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType9:
-      if (!SI_info->sib9)
+      if (!SI_info->sib9 || SI_info->sib9_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType10_v1610:
-      if (!SI_info->sib10)
+      if (!SI_info->sib10 || SI_info->sib10_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType11_v1610:
-      if (!SI_info->sib11)
+      if (!SI_info->sib11 || SI_info->sib11_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType12_v1610:
-      if (!SI_info->sib12)
+      if (!SI_info->sib12 || SI_info->sib12_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType13_v1610:
-      if (!SI_info->sib13)
+      if (!SI_info->sib13 || SI_info->sib13_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType14_v1610:
-      if (!SI_info->sib14)
+      if (!SI_info->sib14 || SI_info->sib14_timer == -1)
         return false;
       break;
     default :
@@ -501,7 +501,8 @@ int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
   if (!get_softmodem_params()->sa)
     return 0;
   // schedule reception of SIB1 if RRC doesn't have it
-  if (!SI_info->sib1)
+  // or if the timer expired
+  if (!SI_info->sib1 || SI_info->sib1_timer == -1)
     return 1;
   else {
     if (SI_info->sib1->si_SchedulingInfo) {
