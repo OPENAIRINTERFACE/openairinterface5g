@@ -305,17 +305,17 @@ pipeline {
           }
         }
         // Pipeline to test OAI LTE-UE
-        stage ("LTE-B200-FDD-OAICN4G-Container") {
+        stage ("LTE-B200-FDD-OAIUE-OAICN4G-Container") {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-FDD-OAICN4G-Container', 'LTE-FDD-OAICN4G-Container')
+              triggerSlaveJob ('RAN-LTE-FDD-OAIUE-OAICN4G-Container', 'LTE-FDD-OAIUE-OAICN4G-Container')
             }
           }
           post {
             always {
               script {
-                finalizeSlaveJob('RAN-LTE-FDD-OAICN4G-Container')
+                finalizeSlaveJob('RAN-LTE-FDD-OAIUE-OAICN4G-Container')
               }
             }
             failure {

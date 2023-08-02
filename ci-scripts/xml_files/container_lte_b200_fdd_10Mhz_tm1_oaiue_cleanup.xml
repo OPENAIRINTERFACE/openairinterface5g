@@ -21,9 +21,9 @@
 
 -->
 <testCaseList>
-    <htmlTabRef>test-fdd-10-tm1</htmlTabRef>
-    <htmlTabName>Test-FDD-10MHz-TM1</htmlTabName>
-    <htmlTabIcon>tasks</htmlTabIcon>
+    <htmlTabRef>images-clean-up</htmlTabRef>
+    <htmlTabName>Images Clean-Up</htmlTabName>
+    <htmlTabIcon>trash</htmlTabIcon>
     <TestCaseRequestedList>
 222222
 333333
