@@ -1300,13 +1300,15 @@ void NFAPI_NR_DMRS_TYPE1_linear_interp(NR_DL_FRAME_PARMS *frame_parms,
 #endif
 
     if (pilot_cnt == 0) { // Treat first pilot
-      c16multaddVectRealComplex(filt16_dl_first, &ch, dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_p0, &ch, dl_ch, 16);
+    } else if (pilot_cnt == 1 || pilot_cnt == 2) {
+      c16multaddVectRealComplex(filt16_ul_p1p2, &ch, dl_ch, 16);
     } else if (pilot_cnt == 6 * nb_rb_pdsch - 1) { // Treat last pilot
-      c16multaddVectRealComplex(filt16_dl_last, &ch, dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_last, &ch, dl_ch, 16);
     } else { // Treat middle pilots
-      c16multaddVectRealComplex(filt16_dl_middle, &ch, dl_ch, 16);
+      c16multaddVectRealComplex(filt16_ul_middle, &ch, dl_ch, 16);
       if (pilot_cnt % 2 == 0) {
-      dl_ch += 4;
+        dl_ch += 4;
       }
     }
   }
