@@ -287,8 +287,11 @@ static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8
 static inline void bfly2_16(int16x8_t *x0, int16x8_t *x1, int16x8_t *y0, int16x8_t *y1, int16x8_t *tw, int16x8_t *twb)
 {
 
-  *y0  = vqaddq_s16(*x0,*x1);
-  *y1  = vqsubq_s16(*x0,*x1);
+  int16x8_t x1t;
+
+  x1t = packed_cmult2(*(x1),*(tw),*(twb));
+  *y0  = vqaddq_s16(*x0,x1t);
+  *y1  = vqsubq_s16(*x0,x1t);
 
 }
 static inline void ibfly2(int16x8_t *x0, int16x8_t *x1,int16x8_t *y0, int16x8_t *y1,int16x8_t *tw)
@@ -1534,7 +1537,7 @@ void dft512(int16_t *x,int16_t *y,unsigned char scale)
 {
 
   simdshort_q15_t xtmp[256],*xtmpp,*x64 = (simdshort_q15_t *)x;
-  simd_q15_t ytmp[128],*tw512a_128p=(simd_q15_t *)tw512a,*tw512b_128p=(simd_q15_t *)tw512b,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
+  simd_q15_t ytmp[128],*tw512_128p=(simd_q15_t*)tw512,*tw512a_128p=(simd_q15_t *)tw512a,*tw512b_128p=(simd_q15_t *)tw512b,*y128=(simd_q15_t *)y,*y128p=(simd_q15_t *)y;
   simd_q15_t *ytmpp = &ytmp[0];
   int i;
   simd_q15_t ONE_OVER_SQRT2_Q15_128 = set1_int16(ONE_OVER_SQRT2_Q15);
@@ -7147,7 +7150,7 @@ void idft(uint8_t sizeidx, int16_t *input,int16_t *output,unsigned char scale_fl
 #ifdef MR_MAIN
 #include <string.h>
 #include <stdio.h>
-
+/*
 #define LOG_M write_output
 int write_output(const char *fname,const char *vname,void *data,int length,int dec,char format)
 {
@@ -7303,6 +7306,12 @@ int write_output(const char *fname,const char *vname,void *data,int length,int d
 
   return 0;
 }
+*/
+#include "common/config/config_paramdesc.h"
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert) { return; }
+int oai_exit=0;
+int config_get(paramdef_t *params,int numparams, char *prefix) { return;}
+int config_check_unknown_cmdlineopt(char *prefix) { return; }
 
 int main(int argc, char**argv)
 {
@@ -7669,6 +7678,10 @@ int main(int argc, char**argv)
   printf("\n\n512-point(%f cycles)\n",(double)ts.diff/(double)ts.trials);
   LOG_M("y512.m","y512",y,512,1,1);
   LOG_M("x512.m","x512",x,512,1,1);
+  dft512((int16_t*)y,(int16_t*)x,1);
+  LOG_M("y512_dft.m","y512",y,512,1,1);
+  LOG_M("x512_dft.m","x512",x,512,1,1);
+
   /*
   printf("X: ");
   for (i=0;i<64;i++)
@@ -7810,8 +7823,8 @@ int main(int argc, char**argv)
   LOG_M("y4096.m","y4096",y,4096,1,1);
   LOG_M("x4096.m","x4096",x,4096,1,1);
 
-  dft4096((int16_t *)y,(int16_t *)x2,1);
-  LOG_M("x4096_2.m","x4096_2",x2,4096,1,1);
+  dft4096((int16_t *)y,(int16_t *)x,1);
+  LOG_M("x4096_2.m","x4096_2",x,4096,1,1);
 
 // NR 160Mhz, 434 PRB, 3/4 sampling
   memset((void*)x, 0, 6144*sizeof(int32_t));
