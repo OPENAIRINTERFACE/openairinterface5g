@@ -101,10 +101,13 @@ Webhook
   - L2simulator: skips physical layer and uses proxy between gNB and UE, currently only ping
 - [RAN-LTE-FDD-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-FDD-LTEBOX-Container/)
   - hutch + B210, nano w/ ltebox + 2x UE
-  - tests RRC inactivity timers, different bandwidths
+  - tests RRC inactivity timers, different bandwidths, IF4p5 fronthaul
+- [RAN-LTE-FDD-OAIUE-OAICN4G-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-FDD-OAIUE-OAICN4G-Container/)
+  - hutch + B210 (eNB), carabe + B210 (4G UE), nano w/ OAI 4GC
+  - tests OAI 4G for 10 MHz/TM1; known to be unstable
 - [RAN-LTE-TDD-2x2-Container](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-LTE-TDD-2x2-Container/)
   - obelix + N310, porcepix, nrmodule2 + Quectel
-  - TM1 and TM2 test
+  - TM1 and TM2 test, IF4p5 fronthaul
 - [RAN-LTE-TDD-LTEBOX-Container](https://jenkins-oai.eurecom.fr/job/RAN-LTE-TDD-LTEBOX-Container/)
   - starsky + B210, nano w/ ltebox + 2x UE
   - TM1 over bandwidths 5, 10, 20 MHz in Band 40, default scheduler for 20 MHz
@@ -148,23 +151,3 @@ Webhook
 - [RAN-SA-AmariS-CN5G](https://jenkins-oai.eurecom.fr/view/RAN/job/RAN-SA-AmariS-CN5G/)
   - asterix + N310, amariue (1x UE), porcepix w/ OAI 5GC
   - Amarisoft UE simulator: expected to be increased to more UEs
-
-### RAN-CI-develop
-
-***DEFUNCT***: automatically triggered tests, mostly 4G, to be phased out and
-integrated into RAN-Container-Parent
-
-The following defunct pipelines remain to be integrated into RAN-Container-Parent:
-- eNB-CI-IF4p5-FDD-Band7-B210
-  - hutch + B210, nano w/ ltebox + 2x UE
-  - tests IF4.5 split over bandwidths 5, 10, 20 MHz in Band 7
-- eNB-CI-IF4p5-TDD-Band40-B210
-  - starsky + B210, nano w/ ltebox + 2x UE
-  - tests IF4.5 split over bandwidths 5, 10, 20 MHz in Band 40
-- eNB-UE-CI-MONO-FDD-Band7-B200
-  - hutch + B210 (eNB), carabe + B210 (4G UE), nano w/ ltebox
-  - tests OAI 4G for 5 MHz/TM1 with both CN and in noS1 model, MBMS; known to
-    be unstable
-- UE-CI-FDD-Band20-B200
-  - starsky + B210 (sniffer)
-  - Sniff MIB + SIB1 of Orange, SFR
