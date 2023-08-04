@@ -1,7 +1,7 @@
 #include "event.h"
 #include "database.h"
 #include "utils.h"
-#include "config.h"
+#include "configuration.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>

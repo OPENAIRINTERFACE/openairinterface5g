@@ -256,8 +256,11 @@ add_definitions("-DPACKAGE_BUGREPORT=\"openair4g-devel@lists.eurecom.fr\"")
 
 # Debug related options
 #########################################
-add_boolean_option(DEBUG_ASN1      False "ASN1 coder/decoder Debug" OFF)
-#add_boolean_option(DEBUG_MAC_INTERFACE False "print MAC-RLC PDU exchange to stdout") # if true, make sure that global and PDCP log levels are trace, not found in code, commented out, to be removed
+add_boolean_option(DEBUG_ASN1 False "Enable ASN1 debug logs" OFF)
+# asn1c skeletons have hardcoded this flag to make customized debug logs
+# OAI uses this feature to re-use OAI LOG_I(ASN1, ...)
+# see common/utils/config.h
+add_boolean_option(TRACE_ASN1C_ENC_DEC OFF "Enable ASN1 encoder/decoder debug traces via OAI logging system" ON)
 add_boolean_option(T_TRACER            True  "Activate the T tracer, a debugging/monitoring framework" ON)
 add_boolean_option(UE_AUTOTEST_TRACE   False "Activate UE autotest specific logs" ON)
 add_boolean_option(UE_DEBUG_TRACE      False "Activate UE debug trace" ON)
@@ -266,12 +269,6 @@ add_boolean_option(UE_TIMING_TRACE     False "Activate UE timing trace" ON)
 set (OCP_ITTI ${OPENAIR_DIR}/common/utils/ocp_itti)
 add_library(ITTI ${OCP_ITTI}/intertask_interface.cpp)
 target_link_libraries(ITTI PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
-
-# asn1c skeletons have hardcoded this flag to make customized debug logs
-# OAI uses this feature to re-use OAI LOG_I(ASN1, ...)
-if (DEBUG_ASN1C)
-  add_definitions(-DHAVE_CONFIG_H)
-endif()
 
 # asn1c skeletons need this
 add_definitions(-DHAVE_NETINET_IN_H)

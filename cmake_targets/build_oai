@@ -120,6 +120,8 @@ Options:
    Builds Coverity-Scan objects for upload
 --disable-deadline
    Disables deadline scheduler of Linux kernel (>=3.14.x).
+--trace-asn1c-enc-dec
+   Output asn1c logging traces via OAI logging system.
 --enable-deadline
    Enable deadline scheduler of Linux kernel (>=3.14.x). 
 --disable-cpu-affinity
@@ -416,6 +418,10 @@ function main() {
             sleep 2
             CMAKE_CMD="$CMAKE_CMD -DSANITIZE_MEMORY=ON -DSANITIZE_ADDRESS=OFF -DSANITIZE_UNDEFINED=OFF"
             shift;;
+       --trace-asn1c-enc-dec)
+            CMAKE_CMD="$CMAKE_CMD -DTRACE_ASN1C_ENC_DEC=ON"
+            echo_info "Enabling asn1c internal traces via OAI logging system"
+            shift 1;;
         -h | --help)
             print_help
             exit 1;;

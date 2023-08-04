@@ -11,7 +11,7 @@
 #include "gui/gui.h"
 #include "utils.h"
 #include "event_selector.h"
-#include "config.h"
+#include "configuration.h"
 
 typedef struct {
   int socket;
