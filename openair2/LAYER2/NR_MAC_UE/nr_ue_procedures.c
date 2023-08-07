@@ -1276,6 +1276,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
     // Only HARQ transmitted in default PUCCH
     pucch_pdu->mcs = get_pucch0_mcs(pucch->n_harq, 0, pucch->ack_payload, 0);
     pucch_pdu->payload = pucch->ack_payload;
+    pucch_pdu->n_bit = 1;
   }
   else if (pucch->pucch_resource != NULL) {
 
@@ -1315,9 +1316,6 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
       LOG_E(MAC,"PUCCH number of UCI bits exceeds payload size\n");
       return;
     }
-    if (pucchres->format.present != NR_PUCCH_Resource__format_PR_format0)
-      pucch_pdu->payload =
-          (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
 
     switch(pucchres->format.present) {
       case NR_PUCCH_Resource__format_PR_format0 :
@@ -1333,6 +1331,18 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
         pucch_pdu->nr_of_symbols = pucchres->format.choice.format1->nrofSymbols;
         pucch_pdu->start_symbol_index = pucchres->format.choice.format1->startingSymbolIndex;
         pucch_pdu->time_domain_occ_idx = pucchres->format.choice.format1->timeDomainOCC;
+        if (pucch->n_harq > 0) {
+          // only HARQ bits are transmitted, resource selection depends on SR
+          // resource selection handled in function multiplex_pucch_resource
+          pucch_pdu->n_bit = pucch->n_harq;
+          pucch_pdu->payload = pucch->ack_payload;
+        }
+        else {
+          // For a positive SR transmission using PUCCH format 1,
+          // the UE transmits the PUCCH as described in 38.211 by setting b(0) = 0
+          pucch_pdu->n_bit = pucch->n_sr;
+          pucch_pdu->payload = 0;
+        }
         break;
       case NR_PUCCH_Resource__format_PR_format2 :
         pucch_pdu->format_type = 2;
@@ -1348,6 +1358,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                                                      2,
                                                      pucchres->format.choice.format2->nrofSymbols,
                                                      8);
+        pucch_pdu->payload = (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
         break;
       case NR_PUCCH_Resource__format_PR_format3 :
         pucch_pdu->format_type = 3;
@@ -1380,6 +1391,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
                                                      2 - pucch_pdu->pi_2bpsk,
                                                      pucchres->format.choice.format3->nrofSymbols - f3_dmrs_symbols,
                                                      12);
+        pucch_pdu->payload = (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
         break;
       case NR_PUCCH_Resource__format_PR_format4 :
         pucch_pdu->format_type = 4;
@@ -1397,6 +1409,7 @@ void nr_ue_configure_pucch(NR_UE_MAC_INST_t *mac,
           pucch_pdu->pi_2bpsk = pucchfmt->pi2BPSK!= NULL ?  1 : 0;
           pucch_pdu->add_dmrs_flag = pucchfmt->additionalDMRS!= NULL ?  1 : 0;
         }
+        pucch_pdu->payload = (pucch->csi_part1_payload << (pucch->n_harq + pucch->n_sr)) | (pucch->sr_payload << pucch->n_harq) | pucch->ack_payload;
         break;
       default :
         AssertFatal(1==0,"Undefined PUCCH format \n");
