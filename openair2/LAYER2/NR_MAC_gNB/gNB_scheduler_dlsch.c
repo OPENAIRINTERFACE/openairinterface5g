@@ -379,6 +379,33 @@ void abort_nr_dl_harq(NR_UE_info_t* UE, int8_t harq_pid)
 
 }
 
+static void get_start_stop_allocation(gNB_MAC_INST *mac,
+                                      NR_UE_info_t *UE,
+                                      int *rbStart,
+                                      int *rbStop)
+{
+  NR_UE_DL_BWP_t *dl_bwp = &UE->current_DL_BWP;
+  NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+  // UE is scheduled in a set of contiguously allocated resource blocks within the active bandwidth part of size N_BWP PRBs
+  // except for the case when DCI format 1_0 is decoded in any common search space
+  // in which case the size of CORESET 0 shall be used if CORESET 0 is configured for the cell
+  // and the size of initial DL bandwidth part shall be used if CORESET 0 is not configured for the cell.
+  // TS 38.214 Section 5.1.2.2.2
+  *rbStop = dl_bwp->BWPSize;
+  *rbStart = 0; // start wrt BWPstart
+  if (sched_ctrl->search_space->searchSpaceType->present == NR_SearchSpace__searchSpaceType_PR_common &&
+      dl_bwp->dci_format == NR_DL_DCI_FORMAT_1_0) {
+    if (mac->cset0_bwp_size != 0) {
+      *rbStart = mac->cset0_bwp_start;
+      *rbStop = *rbStart + mac->cset0_bwp_size;
+    }
+    else {
+      *rbStart = dl_bwp->initial_BWPStart;
+      *rbStop = *rbStart + dl_bwp->initial_BWPSize;
+    }
+  }
+}
+
 static bool allocate_dl_retransmission(module_id_t module_id,
                                        frame_t frame,
                                        sub_frame_t slot,
@@ -404,9 +431,11 @@ static bool allocate_dl_retransmission(module_id_t module_id,
   int pm_index = (curInfo->nrOfLayers < retInfo->nrOfLayers) ? curInfo->pm_index : retInfo->pm_index;
 
   const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-  const uint16_t bwpSize = coresetid == 0 ? nr_mac->cset0_bwp_size : dl_bwp->BWPSize;
 
-  int rbStart = 0; // start wrt BWPstart
+  int rbStop = 0;
+  int rbStart = 0;
+  get_start_stop_allocation(nr_mac, UE, &rbStart, &rbStop);
+
   int rbSize = 0;
   const int tda = get_dl_tda(nr_mac, scc, slot);
   AssertFatal(tda>=0,"Unable to find PDSCH time domain allocation in list\n");
@@ -429,10 +458,10 @@ static bool allocate_dl_retransmission(module_id_t module_id,
       rbSize = 0;
 
       const uint16_t slbitmap = SL_to_bitmap(retInfo->tda_info.startSymbolIndex, retInfo->tda_info.nrOfSymbols);
-      while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
+      while (rbStart < rbStop && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
         rbStart++;
 
-      if (rbStart >= bwpSize) {
+      if (rbStart >= rbStop) {
         LOG_D(NR_MAC, "[UE %04x][%4d.%2d] could not allocate DL retransmission: no resources\n",
               UE->rnti,
               frame,
@@ -440,7 +469,7 @@ static bool allocate_dl_retransmission(module_id_t module_id,
         return false;
       }
 
-      while (rbStart + rbSize < bwpSize &&
+      while (rbStart + rbSize < rbStop &&
              (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap &&
              rbSize < retInfo->rbSize)
         rbSize++;
@@ -454,10 +483,10 @@ static bool allocate_dl_retransmission(module_id_t module_id,
                                                    layers);
 
     const uint16_t slbitmap = SL_to_bitmap(temp_tda.startSymbolIndex, temp_tda.nrOfSymbols);
-    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
+    while (rbStart < rbStop && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
-    while (rbStart + rbSize < bwpSize && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
+    while (rbStart + rbSize < rbStop && (rballoc_mask[rbStart + rbSize] & slbitmap) == slbitmap)
       rbSize++;
 
     uint32_t new_tbs;
@@ -673,12 +702,6 @@ static void pf_dl(module_id_t module_id,
     NR_UE_DL_BWP_t *dl_bwp = &iterator->UE->current_DL_BWP;
     NR_UE_UL_BWP_t *ul_bwp = &iterator->UE->current_UL_BWP;
 
-    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
-    const uint16_t bwpSize = coresetid == 0 ?
-      mac->cset0_bwp_size :
-      dl_bwp->BWPSize;
-    int rbStart = 0; // start wrt BWPstart
-
     if (sched_ctrl->available_dl_harq.head < 0) {
       LOG_D(NR_MAC, "[UE %04x][%4d.%2d] UE has no free DL HARQ process, skipping\n",
             iterator->UE->rnti,
@@ -731,6 +754,7 @@ static void pf_dl(module_id_t module_id,
     sched_pdsch->time_domain_allocation = get_dl_tda(mac, scc, slot);
     AssertFatal(sched_pdsch->time_domain_allocation>=0,"Unable to find PDSCH time domain allocation in list\n");
 
+    const int coresetid = sched_ctrl->coreset->controlResourceSetId;
     sched_pdsch->tda_info = get_dl_tda_info(dl_bwp, sched_ctrl->search_space->searchSpaceType->present, sched_pdsch->time_domain_allocation,
                                             scc->dmrs_TypeA_Position, 1, NR_RNTI_C, coresetid, false);
 
@@ -738,13 +762,16 @@ static void pf_dl(module_id_t module_id,
 
     const uint16_t slbitmap = SL_to_bitmap(tda_info->startSymbolIndex, tda_info->nrOfSymbols);
 
+    int rbStop = 0;
+    int rbStart = 0;
+    get_start_stop_allocation(mac, iterator->UE, &rbStart, &rbStop);
     // Freq-demain allocation
-    while (rbStart < bwpSize && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
+    while (rbStart < rbStop && (rballoc_mask[rbStart] & slbitmap) != slbitmap)
       rbStart++;
 
     uint16_t max_rbSize = 1;
 
-    while (rbStart + max_rbSize < bwpSize && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
+    while (rbStart + max_rbSize < rbStop && (rballoc_mask[rbStart + max_rbSize] & slbitmap) == slbitmap)
       max_rbSize++;
 
     sched_pdsch->dmrs_parms = get_dl_dmrs_params(scc,
@@ -809,8 +836,8 @@ static void nr_fr1_dlsch_preprocessor(module_id_t module_id, frame_t frame, sub_
   const int startSymbolAndLength = tdaList->list.array[tda]->startSymbolAndLength;
   SLIV2SL(startSymbolAndLength, &startSymbolIndex, &nrOfSymbols);
 
-  const uint16_t bwpSize = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_size : current_BWP->BWPSize;
-  const uint16_t BWPStart = coresetid == 0 ? RC.nrmac[module_id]->cset0_bwp_start : current_BWP->BWPStart;
+  const uint16_t bwpSize = current_BWP->BWPSize;
+  const uint16_t BWPStart = current_BWP->BWPStart;
 
   const uint16_t slbitmap = SL_to_bitmap(startSymbolIndex, nrOfSymbols);
   uint16_t *vrb_map = RC.nrmac[module_id]->common_channels[CC_id].vrb_map;
@@ -1013,13 +1040,8 @@ void nr_schedule_ue_spec(module_id_t module_id,
     const int pduindex = gNB_mac->pdu_index[CC_id]++;
     pdsch_pdu->pduIndex = pduindex;
 
-    if (coresetid == 0) {
-      pdsch_pdu->BWPSize  = gNB_mac->cset0_bwp_size;
-      pdsch_pdu->BWPStart = gNB_mac->cset0_bwp_start;
-    } else {
-      pdsch_pdu->BWPSize  = current_BWP->BWPSize;
-      pdsch_pdu->BWPStart = current_BWP->BWPStart;
-    }
+    pdsch_pdu->BWPSize  = current_BWP->BWPSize;
+    pdsch_pdu->BWPStart = current_BWP->BWPStart;
 
     pdsch_pdu->SubcarrierSpacing = current_BWP->scs;
     pdsch_pdu->CyclicPrefix = current_BWP->cyclicprefix ? *current_BWP->cyclicprefix : 0;
@@ -1123,9 +1145,17 @@ void nr_schedule_ue_spec(module_id_t module_id,
     AssertFatal(pdsch_Config == NULL || pdsch_Config->resourceAllocation == NR_PDSCH_Config__resourceAllocation_resourceAllocationType1,
                 "Only frequency resource allocation type 1 is currently supported\n");
 
+
+    // For a PDSCH scheduled with a DCI format 1_0 in any type of PDCCH common search space, regardless of which
+    // bandwidth part is the active bandwidth part, RB numbering starts from the lowest RB of the CORESET in which the
+    // DCI was received; otherwise RB numbering starts from the lowest RB in the determined downlink bandwidth part.
+    // TS 38.214 Section 5.1.2.2.2
+    int rbStop = 0;
+    int rbStart = 0;
+    get_start_stop_allocation(gNB_mac, UE, &rbStart, &rbStop);
     dci_payload.frequency_domain_assignment.val = PRBalloc_to_locationandbandwidth0(pdsch_pdu->rbSize,
-                                                                                    pdsch_pdu->rbStart,
-                                                                                    pdsch_pdu->BWPSize);
+                                                                                    pdsch_pdu->rbStart - rbStart,
+                                                                                    rbStop - rbStart);
     dci_payload.format_indicator = 1;
     dci_payload.time_domain_assignment.val = sched_pdsch->time_domain_allocation;
     dci_payload.mcs = sched_pdsch->mcs;
