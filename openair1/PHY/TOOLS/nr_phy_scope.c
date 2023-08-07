@@ -738,6 +738,18 @@ static void *scope_thread_gNB(void *arg) {
 }
 #endif
 
+static void scopeUpdaterGnb(enum PlotTypeGnbIf plotType, int numElt)
+{
+  switch (plotType) {
+    case puschLLRe:
+      /* update PUSCH LLR plot */
+      break;
+    case puschIQe:
+      /* update PUSCH IQ plot */
+      break;
+  }
+}
+
 STATICFORXSCOPE void gNBinitScope(scopeParms_t *p)
 {
   AssertFatal(p->gNB->scopeData = calloc(sizeof(scopeData_t), 1), "");
@@ -746,6 +758,7 @@ STATICFORXSCOPE void gNBinitScope(scopeParms_t *p)
   scope->argv=p->argv;
   scope->ru=p->ru;
   scope->gNB=p->gNB;
+  scope->scopeUpdater = scopeUpdaterGnb;
   scope->copyData = copyData;
 #ifndef WEBSRVSCOPE
   pthread_t forms_thread;
