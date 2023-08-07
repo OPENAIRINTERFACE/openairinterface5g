@@ -346,7 +346,7 @@ static bool is_my_dci(NR_UE_MAC_INST_t *mac, nfapi_nr_dl_dci_pdu_t *received_pdu
   if (get_softmodem_params()->sa) {
     if (mac->state == UE_NOT_SYNC)
       return false;
-    if (received_pdu->RNTI == 0xFFFF && mac->scc_SIB)
+    if (received_pdu->RNTI == 0xFFFF && mac->phy_config_request_sent)
       return false;
     if (received_pdu->RNTI != mac->crnti && mac->ra.ra_state == RA_SUCCEEDED)
       return false;
@@ -742,19 +742,17 @@ void check_and_process_dci(nfapi_nr_dl_tti_request_t *dl_tti_request,
     int slots_per_frame = 20; //30 kHZ subcarrier spacing
     int slot_ahead = 2; // TODO: Make this dynamic
 
-    if (mac->scc || mac->scc_SIB) {
-      if (is_nr_UL_slot(mac->scc ? mac->scc->tdd_UL_DL_ConfigurationCommon : mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
-                        (slot + slot_ahead) % slots_per_frame,
-                        mac->frame_type)
-          && mac->ra.ra_state != RA_SUCCEEDED) {
-        // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
-        nr_uplink_indication_t ul_info = {
+    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
+                      (slot + slot_ahead) % slots_per_frame,
+                      mac->frame_type)
+        && mac->ra.ra_state != RA_SUCCEEDED) {
+      // If we filled dl_info AFTER we got the slot indication, we want to check if we should fill tx_req:
+      nr_uplink_indication_t ul_info = {
             .frame_rx = frame,
             .slot_rx = slot,
             .slot_tx = (slot + slot_ahead) % slots_per_frame,
             .frame_tx = (ul_info.slot_rx + slot_ahead >= slots_per_frame) ? ul_info.frame_rx + 1 : ul_info.frame_rx};
-        nr_ue_ul_scheduler(&ul_info);
-      }
+      nr_ue_ul_scheduler(&ul_info);
     }
 }
 
@@ -1133,10 +1131,7 @@ int nr_ue_ul_indication(nr_uplink_indication_t *ul_info)
   LOG_T(NR_MAC, "In %s():%d not calling scheduler mac->ra.ra_state = %d\n",
         __FUNCTION__, __LINE__, mac->ra.ra_state);
 
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon =
-      mac->scc != NULL ? mac->scc->tdd_UL_DL_ConfigurationCommon
-                       : (mac->scc_SIB ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : NULL);
-  if (mac->phy_config_request_sent && is_nr_UL_slot(tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
+  if (mac->phy_config_request_sent && is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon, ul_info->slot_tx, mac->frame_type))
     nr_ue_ul_scheduler(ul_info);
 
   pthread_mutex_unlock(&mac_IF_mutex);
@@ -1251,8 +1246,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
   return ret_mask;
 }
 
-nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id){
-
+nr_ue_if_module_t *nr_ue_if_module_init(uint32_t module_id)
+{
   if (nr_ue_if_module_inst[module_id] == NULL) {
     nr_ue_if_module_inst[module_id] = (nr_ue_if_module_t *)malloc(sizeof(nr_ue_if_module_t));
     memset((void*)nr_ue_if_module_inst[module_id],0,sizeof(nr_ue_if_module_t));

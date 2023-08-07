@@ -528,8 +528,7 @@ int main( int argc, char **argv ) {
         mac->phy_config_request_sent = true;
         fapi_nr_config_request_t *nrUE_config = &UE[CC_id]->nrUE_config;
 
-        nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config,
-        *mac->scc->downlinkConfigCommon->frequencyInfoDL->frequencyBandList.list.array[0]);
+        nr_init_frame_parms_ue(&UE[CC_id]->frame_parms, nrUE_config, mac->nr_band);
       }
 
       init_nr_ue_vars(UE[CC_id], 0, abstraction_flag);

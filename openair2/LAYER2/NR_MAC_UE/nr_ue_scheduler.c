@@ -111,7 +111,7 @@ void fill_scheduled_response(nr_scheduled_response_t *scheduled_response,
 fapi_nr_ul_config_request_t *get_ul_config_request(NR_UE_MAC_INST_t *mac, int slot, int fb_time)
 {
 
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->tdd_UL_DL_ConfigurationCommon;
 
   //Check if requested on the right slot
   AssertFatal(is_nr_UL_slot(tdd_config, slot, mac->frame_type) != 0, "UL config_request called at wrong slot %d\n", slot);
@@ -483,8 +483,12 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->start_symbol_index = tda_info->startSymbolIndex;
     pusch_config_pdu->nr_of_symbols = tda_info->nrOfSymbols;
 
-    l_prime_mask =
-        get_l_prime(tda_info->nrOfSymbols, tda_info->mapping_type, add_pos, dmrslength, tda_info->startSymbolIndex, mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
+    l_prime_mask = get_l_prime(tda_info->nrOfSymbols,
+                               tda_info->mapping_type,
+                               add_pos,
+                               dmrslength,
+                               tda_info->startSymbolIndex,
+                               mac->dmrs_TypeA_Position);
     LOG_D(NR_MAC, "MSG3 start_sym:%d NR Symb:%d mappingtype:%d, DMRS_MASK:%x\n", pusch_config_pdu->start_symbol_index, pusch_config_pdu->nr_of_symbols, tda_info->mapping_type, l_prime_mask);
 
 #ifdef DEBUG_MSG3
@@ -655,7 +659,7 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     l_prime_mask = get_l_prime(pusch_config_pdu->nr_of_symbols,
                                mappingtype, add_pos, dmrslength,
                                pusch_config_pdu->start_symbol_index,
-                               mac->scc ? mac->scc->dmrs_TypeA_Position : mac->mib->dmrs_TypeA_Position);
+                               mac->dmrs_TypeA_Position);
 
     // Num PRB Overhead from PUSCH-ServingCellConfig
     if (current_UL_BWP->pusch_servingcellconfig && current_UL_BWP->pusch_servingcellconfig->xOverhead)
@@ -859,7 +863,7 @@ void nr_ue_aperiodic_srs_scheduling(NR_UE_MAC_INST_t *mac, long resource_trigger
               slot_offset, DURATION_RX_TO_TX);
   int n_slots_frame = nr_slots_per_frame[current_UL_BWP->scs];
   int sched_slot = (slot + slot_offset) % n_slots_frame;
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->scc==NULL ? mac->scc_SIB->tdd_UL_DL_ConfigurationCommon : mac->scc->tdd_UL_DL_ConfigurationCommon;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->tdd_UL_DL_ConfigurationCommon;
   if (!is_nr_UL_slot(tdd_config, sched_slot, mac->frame_type)) {
     LOG_E(NR_MAC, "Slot for scheduling aperiodic SRS %d is not an UL slot\n", sched_slot);
     return;
@@ -1655,84 +1659,20 @@ static void build_ssb_list(NR_UE_MAC_INST_t *mac) {
 
   // Create the list of transmitted SSBs
   // ===================================
-  BIT_STRING_t *ssb_bitmap;
-  uint64_t ssb_positionsInBurst;
-  uint8_t ssb_idx = 0;
   ssb_list_info_t *ssb_list = &mac->ssb_list;
+  fapi_nr_config_request_t *cfg = &mac->phy_config.config_req;
+  ssb_list->nb_tx_ssb = 0;
 
-  if (mac->scc) {
-    NR_ServingCellConfigCommon_t *scc = mac->scc;
-    switch (scc->ssb_PositionsInBurst->present) {
-      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_shortBitmap:
-        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.shortBitmap;
-
-        ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
-        LOG_D(NR_MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
-
-        for (uint8_t bit_nb=3; bit_nb<=3; bit_nb--) {
-          // If SSB is transmitted
-          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-            ssb_list->nb_tx_ssb++;
-            ssb_list->tx_ssb[ssb_idx].transmitted = true;
-            LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
-          }
-          ssb_idx++;
-        }
-        break;
-      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_mediumBitmap:
-        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.mediumBitmap;
-
-        ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
-        LOG_D(NR_MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
-
-        for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
-          // If SSB is transmitted
-          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-            ssb_list->nb_tx_ssb++;
-            ssb_list->tx_ssb[ssb_idx].transmitted = true;
-            LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
-          }
-          ssb_idx++;
-        }
-        break;
-      case NR_ServingCellConfigCommon__ssb_PositionsInBurst_PR_longBitmap:
-        ssb_bitmap = &scc->ssb_PositionsInBurst->choice.longBitmap;
-
-        ssb_positionsInBurst = BIT_STRING_to_uint64(ssb_bitmap);
-        LOG_D(NR_MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
-
-        for (uint8_t bit_nb=63; bit_nb<=63; bit_nb--) {
-          // If SSB is transmitted
-          if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-            ssb_list->nb_tx_ssb++;
-            ssb_list->tx_ssb[ssb_idx].transmitted = true;
-            LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
-          }
-          ssb_idx++;
-        }
-        break;
-      default:
-        AssertFatal(false,"ssb_PositionsInBurst not present\n");
-        break;
+  for(int ssb_index = 0; ssb_index < 64; ssb_index++) {
+    uint32_t curr_mask = cfg->ssb_table.ssb_mask_list[ssb_index / 32].ssb_mask;
+    // check if if current SSB is transmitted
+    if ((curr_mask >> (31 - (ssb_index % 32))) & 0x01) {
+      ssb_list->nb_tx_ssb++;
+      ssb_list->tx_ssb[ssb_index].transmitted = true;
+      LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_index);
     }
-  } else { // This is configuration from SIB1
-
-    AssertFatal(mac->scc_SIB->ssb_PositionsInBurst.groupPresence == NULL, "Handle case for >8 SSBs\n");
-    ssb_bitmap = &mac->scc_SIB->ssb_PositionsInBurst.inOneGroup;
-
-    ssb_positionsInBurst = BIT_STRING_to_uint8(ssb_bitmap);
-
-    LOG_D(NR_MAC,"SSB config: SSB_positions_in_burst 0x%lx\n", ssb_positionsInBurst);
-
-    for (uint8_t bit_nb=7; bit_nb<=7; bit_nb--) {
-      // If SSB is transmitted
-      if ((ssb_positionsInBurst>>bit_nb) & 0x01) {
-        ssb_list->nb_tx_ssb++;
-        ssb_list->tx_ssb[ssb_idx].transmitted = true;
-        LOG_D(NR_MAC,"SSB idx %d transmitted\n", ssb_idx);
-      }
-      ssb_idx++;
-    }
+    else
+      ssb_list->tx_ssb[ssb_index].transmitted = false;
   }
 }
 
@@ -2512,12 +2452,10 @@ static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_fr
   fapi_nr_prach_config_t *prach_config = &cfg->prach_config;
   nr_scheduled_response_t scheduled_response;
 
-  NR_ServingCellConfigCommon_t *scc = mac->scc;
-  NR_ServingCellConfigCommonSIB_t *scc_SIB = mac->scc_SIB;
   NR_RACH_ConfigCommon_t *setup = mac->current_UL_BWP.rach_ConfigCommon;
   NR_RACH_ConfigGeneric_t *rach_ConfigGeneric = &setup->rach_ConfigGeneric;
 
-  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = scc==NULL ? scc_SIB->tdd_UL_DL_ConfigurationCommon : scc->tdd_UL_DL_ConfigurationCommon;
+  NR_TDD_UL_DL_ConfigCommon_t *tdd_config = mac->tdd_UL_DL_ConfigurationCommon;
 
   if (is_nr_UL_slot(tdd_config, slotP, mac->frame_type)) {
 
