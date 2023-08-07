@@ -288,7 +288,7 @@ pipeline {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'RAN-LTE-FDD-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'LTE-FDD-LTEBOX-Container')
             }
           }
           post {
@@ -304,11 +304,32 @@ pipeline {
             }
           }
         }
+        // Pipeline to test OAI LTE-UE
+        stage ("LTE-B200-FDD-OAIUE-OAICN4G-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-FDD-OAIUE-OAICN4G-Container', 'LTE-FDD-OAIUE-OAICN4G-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-FDD-OAIUE-OAICN4G-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
         stage ("LTE-B200-TDD-LTEBOX-Container") {
           when { expression {do4Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'RAN-LTE-TDD-LTEBOX-Container')
+              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'LTE-TDD-LTEBOX-Container')
             }
           }
           post {
@@ -468,7 +489,7 @@ pipeline {
           when { expression {do5Gtest} }
           steps {
             script {
-              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'RAN-SA-OAIUE-CN5G')
+              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'SA-OAIUE-CN5G')
             }
           }
           post {

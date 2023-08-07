@@ -130,6 +130,13 @@ oai_ue_caracal:
   IF: oaitun_ue1
   MTU: 1500
 
+lte_oai_ue_carabe:
+  Host: carabe
+  NetworkScript: docker exec lte-b200-ue-fdd-10Mhz-tm1 ip a show dev oaitun_ue1
+  CmdPrefix: docker exec lte-b200-ue-fdd-10Mhz-tm1
+  IF: oaitun_ue1
+  MTU: 1500
+
 rfsim5g_gnb_nos1:
   Host: localhost
   NetworkScript: docker exec rfsim5g-oai-gnb ip a show dev oaitun_enb1
