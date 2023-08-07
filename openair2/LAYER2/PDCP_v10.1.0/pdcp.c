@@ -135,6 +135,36 @@ pdcp_enb_t pdcp_enb[MAX_NUM_CCs];
 extern int oai_exit;
 
 pthread_t pdcp_stats_thread_desc;
+/*! \fn bool pdcp_config_req_asn1 (const protocol_ctxt_t* const ctxt_pP, srb_flag_t srb_flagP, uint32_t  action, rb_id_t rb_id,
+ * uint8_t rb_sn, uint8_t rb_report, uint16_t header_compression_profile, uint8_t security_mode) \brief  Function for RRC to
+ * configure a Radio Bearer. \param[in]  ctxt_pP           Running context. \param[in]  pdcp_pP            Pointer on PDCP
+ * structure. \param[in]  enb_mod_idP        Virtualized enb module identifier, Not used if eNB_flagP = 0. \param[in]  ue_mod_idP
+ * Virtualized ue module identifier. \param[in]  frame              Frame index. \param[in]  eNB_flag           Flag to indicate eNB
+ * (1) or UE (0) \param[in]  srb_flagP          Flag to indicate SRB (1) or DRB (0) \param[in]  action             add, remove,
+ * modify a RB \param[in]  rb_id              radio bearer id \param[in]  rb_sn              sequence number for this radio bearer
+ * \param[in]  drb_report         set a pdcp report for this drb
+ * \param[in]  header_compression set the rohc profile
+ * \param[in]  security_mode      set the integrity and ciphering algs
+ * \param[in]  kRRCenc            RRC encryption key
+ * \param[in]  kRRCint            RRC integrity key
+ * \param[in]  kUPenc             User-Plane encryption key
+ * \return     A status about the processing, OK or error code.
+ */
+static bool pdcp_config_req_asn1(const protocol_ctxt_t *const ctxt_pP,
+                                 pdcp_t *const pdcp_pP,
+                                 const srb_flag_t srb_flagP,
+                                 const rlc_mode_t rlc_modeP,
+                                 const config_action_t actionP,
+                                 const uint16_t lc_idP,
+                                 const uint16_t mch_idP,
+                                 const rb_id_t rb_idP,
+                                 const uint8_t rb_snP,
+                                 const uint8_t rb_reportP,
+                                 const uint16_t header_compression_profileP,
+                                 const uint8_t security_modeP,
+                                 uint8_t *const kRRCenc_pP,
+                                 uint8_t *const kRRCint_pP,
+                                 uint8_t *const kUPenc_pP);
 
 void *pdcp_stats_thread(void *param) {
 
@@ -1880,24 +1910,21 @@ rrc_pdcp_config_asn1_req(const protocol_ctxt_t *const  ctxt_pP,
 
   return 0;
 }
-
-//-----------------------------------------------------------------------------
-bool
-pdcp_config_req_asn1(const protocol_ctxt_t *const  ctxt_pP,
-                     pdcp_t          *const        pdcp_pP,
-                     const srb_flag_t              srb_flagP,
-                     const rlc_mode_t              rlc_modeP,
-                     const config_action_t         actionP,
-                     const uint16_t                lc_idP,
-                     const uint16_t                mch_idP,
-                     const rb_id_t                 rb_idP,
-                     const uint8_t                 rb_snP,
-                     const uint8_t                 rb_reportP,
-                     const uint16_t                header_compression_profileP,
-                     const uint8_t                 security_modeP,
-                     uint8_t         *const        kRRCenc_pP,
-                     uint8_t         *const        kRRCint_pP,
-                     uint8_t         *const        kUPenc_pP)
+static bool pdcp_config_req_asn1(const protocol_ctxt_t *const ctxt_pP,
+                                 pdcp_t *const pdcp_pP,
+                                 const srb_flag_t srb_flagP,
+                                 const rlc_mode_t rlc_modeP,
+                                 const config_action_t actionP,
+                                 const uint16_t lc_idP,
+                                 const uint16_t mch_idP,
+                                 const rb_id_t rb_idP,
+                                 const uint8_t rb_snP,
+                                 const uint8_t rb_reportP,
+                                 const uint16_t header_compression_profileP,
+                                 const uint8_t security_modeP,
+                                 uint8_t *const kRRCenc_pP,
+                                 uint8_t *const kRRCint_pP,
+                                 uint8_t *const kUPenc_pP)
 //-----------------------------------------------------------------------------
 {
 
