@@ -88,7 +88,7 @@
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
 
 #define RRC_SUBFRAME_PROCESS(mSGpTR)    (mSGpTR)->ittiMsg.rrc_subframe_process
-#define NRRRC_SLOT_PROCESS(mSGpTR)      (mSGpTR)->ittiMsg.nr_rrc_slot_process
+#define NRRRC_FRAME_PROCESS(mSGpTR)     (mSGpTR)->ittiMsg.nr_rrc_frame_process
 
 #define RLC_SDU_INDICATION(mSGpTR)      (mSGpTR)->ittiMsg.rlc_sdu_indication
 #define NRDuDlReq(mSGpTR)      (mSGpTR)->ittiMsg.nr_du_dl_req
@@ -464,11 +464,10 @@ typedef struct rrc_subframe_process_s {
   int CC_id;
 } RrcSubframeProcess;
 
-typedef struct nrrrc_slot_process_s {
+typedef struct nrrrc_frame_process_s {
   int frame;
-  int slot;
   int gnb_id;
-} NRRrcSlotProcess;
+} NRRrcFrameProcess;
 
 // eNB: RLC -> RRC messages
 typedef struct rlc_sdu_indication_s {
