@@ -11,7 +11,7 @@ Please see [NOTICE](NOTICE.md) file for third party software that is included in
 
 # Overview
 
-This tutorial describes the steps of deployment 5G OAI RAN, with integrated E2 agent, with FlexRIC, O-RAN compliant nearRT-RIC.
+This tutorial describes the steps of deployment 5G OAI RAN, with integrated E2 agent, and FlexRIC, O-RAN compliant nearRT-RIC.
 
 # 1. Installation
 
@@ -82,7 +82,7 @@ git submodule update
 ```bash
 git clone https://gitlab.eurecom.fr/mosaic5g/flexric flexric
 cd flexric/
-git checkout d3ff879135d036632d7938c2085dbf4577759225
+git checkout 793daf62b6f7d5b56062ec9f3cf70e874b6538e3
 ```
 
 ### 2.2.2 Build FlexRIC
@@ -95,9 +95,14 @@ mkdir build && cd build && cmake .. && make -j8
 sudo make install
 ```
 
-By default the service model libraries will be installed in the path /usr/local/lib/flexric while the configuration file in `/usr/local/etc/flexric`.
+By default the service model libraries will be installed in the path `/usr/local/lib/flexric` while the configuration file in `/usr/local/etc/flexric`.
 
- * Note: currently, only xApp KPM v03.00 and RC v01.03 (xapp_kpm_rc) is supported to communicate with the integrated E2 agent in OAI. If you are interested in custom SMs (MAC, RLC, PDCP, GTP, TC and SLICE), please follow the instructions at https://gitlab.eurecom.fr/mosaic5g/flexric.
+Available SMs in this version are:
+* KPM v03.00 (xapp_kpm_moni)
+* GTP (xapp_gtp_moni)
+* MAC + RLC + PDCP (xapp_mac_rlc_pdcp_moni)
+
+If you are interested in TC and SLICE SMs, please follow the instructions at https://gitlab.eurecom.fr/mosaic5g/flexric.
 
 # 3. Start the process
 
@@ -119,8 +124,24 @@ cd flexric
 ./build/examples/ric/nearRT-RIC
 ```
 
-* start the KPM+RC xApp
+* start the KPM xApp
 ```bash
 cd flexric
-./build/examples/xApp/c/kpm_rc/xapp_kpm_rc
+./build/examples/xApp/c/monitor/xapp_kpm_moni
 ```
+
+* start the GTP xApp
+```bash
+cd flexric
+./build/examples/xApp/c/monitor/xapp_gtp_moni
+```
+
+* start the (MAC + RLC + PDCP) xApp
+```bash
+cd flexric
+./build/examples/xApp/c/monitor/xapp_mac_rlc_pdcp_moni
+```
+
+# Optional - Multiple UEs
+
+If you are interested in having multiple UEs in rfsim mode, please, follow the instructions at https://gitlab.eurecom.fr/oaiworkshop/summerworkshop2023/-/tree/main/ran#multiple-ues.
