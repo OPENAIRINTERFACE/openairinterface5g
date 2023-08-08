@@ -57,12 +57,11 @@ int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs,
   if(mac->frequency_range == FR1) {
 
     //TODO configure P-MAX from the upper layers according to 38.331
-    long *p_emax = (mac->scc!=NULL) ? mac->scc->uplinkConfigCommon->frequencyInfoUL->p_Max : mac->scc_SIB->uplinkConfigCommon->frequencyInfoUL.p_Max;
     int p_powerclass = 23; // dBm assuming poweclass 3 UE
-
+    int p_emax = mac->p_Max ? *mac->p_Max : 0;
     int delta_P_powerclass = 0; // for powerclass 2 needs to be changed
-    if(p_emax && Qm == 1 && powerBoostPi2BPSK && (nr_band == 40 || nr_band == 41 || nr_band == 77 || nr_band == 78 || nr_band == 79)) {
-      *p_emax += 3;
+    if(mac->p_Max && Qm == 1 && powerBoostPi2BPSK && (nr_band == 40 || nr_band == 41 || nr_band == 77 || nr_band == 78 || nr_band == 79)) {
+      p_emax += 3;
       delta_P_powerclass -= 3;
     }
 
@@ -137,10 +136,10 @@ int nr_get_Pcmax(NR_UE_MAC_INST_t *mac, int Qm, bool powerBoostPi2BPSK, int scs,
     if (P_MPR > total_reduction)
       total_reduction = P_MPR;
     int pcmax_high, pcmax_low;
-    if(p_emax) {
-      pcmax_high = *p_emax < (p_powerclass - delta_P_powerclass) ? *p_emax : (p_powerclass - delta_P_powerclass);
-      pcmax_low = (*p_emax - delta_TC) < (p_powerclass - delta_P_powerclass - total_reduction) ?
-                  (*p_emax - delta_TC) : (p_powerclass - delta_P_powerclass - total_reduction);
+    if(mac->p_Max) {
+      pcmax_high = p_emax < (p_powerclass - delta_P_powerclass) ? p_emax : (p_powerclass - delta_P_powerclass);
+      pcmax_low = (p_emax - delta_TC) < (p_powerclass - delta_P_powerclass - total_reduction) ?
+                  (p_emax - delta_TC) : (p_powerclass - delta_P_powerclass - total_reduction);
     }
     else {
       pcmax_high = p_powerclass - delta_P_powerclass;

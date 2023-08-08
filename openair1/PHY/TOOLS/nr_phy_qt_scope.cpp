@@ -70,6 +70,22 @@ float Limits_KPI_ue[2][2] = {
     {0.2, 10} // Throughput in Mbs
 };
 
+// Plot updater
+PlotUpdater puschLlrUpdater;
+PlotUpdater puschIqUpdater;
+
+void scopeUpdaterGnb(enum PlotTypeGnbIf plotType, int numElt)
+{
+  switch (plotType) {
+    case puschLLRe:
+      puschLlrUpdater.updatePlot(numElt);
+      break;
+    case puschIQe:
+      puschIqUpdater.updatePlot(numElt);
+      break;
+  }
+}
+
 /* This class creates the window when choosing the option 'Configs' to configure the threshold values. */
 ConfigBoxFloat::ConfigBoxFloat(float *valuePtr, QWidget *parent) : QLineEdit(parent), valuePtr(valuePtr)
 {
@@ -178,7 +194,8 @@ KPIListSelectUE::KPIListSelectUE(QWidget *parent) : QComboBox(parent)
   this->addItem("Configs", static_cast<int>(PlotTypeUE::config));
 }
 
-WaterFall::WaterFall(complex16 *values, NR_DL_FRAME_PARMS *frame_parms, QWidget *parent) : QWidget(parent), values(values), frame_parms(frame_parms)
+WaterFall::WaterFall(complex16 *values, NR_DL_FRAME_PARMS *frame_parms, QWidget *parent)
+    : QWidget(parent), values(values), frame_parms(frame_parms)
 {
   this->iteration = 0;
   this->image = nullptr;
@@ -187,8 +204,8 @@ WaterFall::WaterFall(complex16 *values, NR_DL_FRAME_PARMS *frame_parms, QWidget 
   startTimer(100);
 }
 
-/* this function to plot the waterfall graph for the RX signal in time domain for one frame. x-axis shows the frame divided into slots
-   and the y-axis is a color map depending on the SquaredNorm of the received signal at the correspoinding slot. */
+/* this function to plot the waterfall graph for the RX signal in time domain for one frame. x-axis shows the frame divided into
+   slots and the y-axis is a color map depending on the SquaredNorm of the received signal at the correspoinding slot. */
 void WaterFall::timerEvent(QTimerEvent *event)
 {
   if (!this->isVisible())
@@ -340,17 +357,19 @@ void CIRPlotUE::timerEvent(QTimerEvent *event)
       maxY = std::max(maxY, value);
     }
 
+    this->axisX->setRange(-this->len / 2, this->len / 2);
     this->axisY->setMax(maxY);
     this->series->replace(points);
   }
 }
 
-LLRPlot::LLRPlot(int16_t *data, int len) : data(data), len(len)
+LLRPlot::LLRPlot(int16_t *data, int len, int interval, PlotUpdater *plotUpdater) : data(data), len(len), plotUpdater(plotUpdater)
 {
   this->legend()->hide();
 
   // add new series to the chart
   this->series = new QScatterSeries();
+  this->series->setUseOpenGL();
   this->series->setMarkerSize(3);
   this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
   this->series->setColor(Qt::blue);
@@ -360,7 +379,6 @@ LLRPlot::LLRPlot(int16_t *data, int len) : data(data), len(len)
   // add new X axis
   this->axisX = new QValueAxis();
   this->axisX->setLabelFormat("%d");
-  this->axisX->setRange(0, len);
   this->addAxis(this->axisX, Qt::AlignBottom);
   this->series->attachAxis(this->axisX);
 
@@ -369,24 +387,42 @@ LLRPlot::LLRPlot(int16_t *data, int len) : data(data), len(len)
   this->addAxis(this->axisY, Qt::AlignLeft);
   this->series->attachAxis(this->axisY);
 
-  startTimer(1000);
+  if (interval)
+    startTimer(interval);
+
+  if (plotUpdater)
+    connect(plotUpdater, &PlotUpdater::updatePlot, this, &LLRPlot::updatePlot, Qt::QueuedConnection);
 }
 
-void LLRPlot::timerEvent(QTimerEvent *event)
+LLRPlot::~LLRPlot()
 {
+  if (this->plotUpdater)
+    disconnect(this->plotUpdater, &PlotUpdater::updatePlot, this, &LLRPlot::updatePlot);
+}
+
+void LLRPlot::updatePlot(int len)
+{
+  this->len = len;
+
   if (!this->isVisible())
     return;
 
-  QVector<QPointF> points(this->len);
+  QVector<QPointF> points(len);
   int maxY = this->axisY->max();
 
-  for (int i = 0; i < this->len; i++) {
+  for (int i = 0; i < len; i++) {
     points[i] = QPointF(i, this->data[i]);
     maxY = std::max(maxY, abs(this->data[i]));
   }
 
+  this->axisX->setRange(0, len);
   this->axisY->setRange(-maxY, maxY);
   this->series->replace(points);
+}
+
+void LLRPlot::timerEvent(QTimerEvent *event)
+{
+  this->updatePlot(this->len);
 }
 
 void LLRPlotUE::timerEvent(QTimerEvent *event)
@@ -406,17 +442,19 @@ void LLRPlotUE::timerEvent(QTimerEvent *event)
       maxY = std::max(maxY, abs(this->data[i]));
     }
 
+    this->axisX->setRange(0, this->len);
     this->axisY->setRange(-maxY, maxY);
     this->series->replace(points);
   }
 }
 
-IQPlot::IQPlot(complex16 *data, int len) : data(data), len(len)
+IQPlot::IQPlot(complex16 *data, int len, int interval, PlotUpdater *plotUpdater) : data(data), len(len), plotUpdater(plotUpdater)
 {
   this->legend()->hide();
 
   // add new series to the chart
   this->series = new QScatterSeries();
+  this->series->setUseOpenGL();
   this->series->setMarkerSize(3);
   this->series->setMarkerShape(QScatterSeries::MarkerShapeRectangle);
   this->series->setColor(Qt::blue);
@@ -433,19 +471,31 @@ IQPlot::IQPlot(complex16 *data, int len) : data(data), len(len)
   this->addAxis(this->axisY, Qt::AlignLeft);
   this->series->attachAxis(this->axisY);
 
-  startTimer(1000);
+  if (interval)
+    startTimer(interval);
+
+  if (plotUpdater)
+    connect(plotUpdater, &PlotUpdater::updatePlot, this, &IQPlot::updatePlot, Qt::QueuedConnection);
 }
 
-void IQPlot::timerEvent(QTimerEvent *event)
+IQPlot::~IQPlot()
 {
+  if (this->plotUpdater)
+    disconnect(this->plotUpdater, &PlotUpdater::updatePlot, this, &IQPlot::updatePlot);
+}
+
+void IQPlot::updatePlot(int len)
+{
+  this->len = len;
+
   if (!this->isVisible())
     return;
 
-  QVector<QPointF> points(this->len);
+  QVector<QPointF> points(len);
   int maxX = this->axisX->max();
   int maxY = this->axisY->max();
 
-  for (int i = 0; i < this->len; i++) {
+  for (int i = 0; i < len; i++) {
     points[i] = QPointF(this->data[i].r, this->data[i].i);
 
     maxX = std::max(maxX, abs(this->data[i].r));
@@ -455,6 +505,11 @@ void IQPlot::timerEvent(QTimerEvent *event)
   this->axisX->setRange(-maxX, maxX);
   this->axisY->setRange(-maxY, maxY);
   this->series->replace(points);
+}
+
+void IQPlot::timerEvent(QTimerEvent *event)
+{
+  this->updatePlot(this->len);
 }
 
 void IQPlotUE::timerEvent(QTimerEvent *event)
@@ -667,7 +722,10 @@ PainterWidgetGnb::PainterWidgetGnb(QWidget *config, QComboBox *comboBox, scopeDa
   this->plotType = PlotTypeGnb::empty;
 
   makeConnections(this->comboBox->currentIndex());
-  connect(this->comboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &PainterWidgetGnb::makeConnections);
+  connect(this->comboBox,
+          static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+          this,
+          &PainterWidgetGnb::makeConnections);
 }
 
 float PainterWidgetGnb::getValue()
@@ -778,15 +836,13 @@ void PainterWidgetGnb::makeConnections(int type)
     }
 
     case PlotTypeGnb::puschLLR: {
-      int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
-      int Qm = 2;
-      int coded_bits_per_codeword = num_re * Qm;
-      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, coded_bits_per_codeword);
+      int init_coded_bits_per_codeword = 100;
+      newChart = new LLRPlot((int16_t *)p->gNB->pusch_vars[0].llr, init_coded_bits_per_codeword, 0, &puschLlrUpdater);
       break;
     }
     case PlotTypeGnb::puschIQ: {
-      int num_re = frame_parms->N_RB_UL * 12 * frame_parms->symbols_per_slot;
-      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], num_re);
+      int init_num_re = 100;
+      newChart = new IQPlot((complex16 *)p->gNB->pusch_vars[0].rxdataF_comp[0], init_num_re, 0, &puschIqUpdater);
       break;
     }
     case PlotTypeGnb::puschSNR: {
@@ -846,7 +902,8 @@ void PainterWidgetGnb::makeConnections(int type)
 
 /* @UE: This is the main function of the UE sub-widgets, i.e., for each KPI. This function will be called
    only once when the the sub-widget is created, and it mainly initializes the widget variables and structures. */
-PainterWidgetUE::PainterWidgetUE(QWidget *config, QComboBox *comboBox, PHY_VARS_NR_UE *ue) : config(config), comboBox(comboBox), ue(ue)
+PainterWidgetUE::PainterWidgetUE(QWidget *config, QComboBox *comboBox, PHY_VARS_NR_UE *ue)
+    : config(config), comboBox(comboBox), ue(ue)
 {
   this->chartView = new QChartView(this);
   this->chartView->hide();
@@ -854,7 +911,10 @@ PainterWidgetUE::PainterWidgetUE(QWidget *config, QComboBox *comboBox, PHY_VARS_
   this->plotType = PlotTypeUE::empty;
 
   makeConnections(this->comboBox->currentIndex());
-  connect(this->comboBox, static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged), this, &PainterWidgetUE::makeConnections);
+  connect(this->comboBox,
+          static_cast<void (QComboBox::*)(int)>(&QComboBox::currentIndexChanged),
+          this,
+          &PainterWidgetUE::makeConnections);
 }
 
 float PainterWidgetUE::getValue()
@@ -890,7 +950,6 @@ float PainterWidgetUE::getValue()
 
     case PlotTypeUE::timingAdvance:
       return (float)this->ue->timing_advance;
-
 
     default:
       return 0;
@@ -1240,6 +1299,7 @@ void nrgNBinitQtScope(scopeParms_t *p)
   scope->argc = p->argc;
   scope->argv = p->argv;
   scope->ru = p->ru;
+  scope->scopeUpdater = scopeUpdaterGnb;
   scope->copyData = copyData;
   copyDataMutexInit(scope);
 

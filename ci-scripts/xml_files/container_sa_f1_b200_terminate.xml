@@ -27,7 +27,6 @@
   <repeatCount>1</repeatCount>
   <TestCaseRequestedList>
   230201
-  222222
   </TestCaseRequestedList>
   <TestCaseExclusionList></TestCaseExclusionList>
 
@@ -37,12 +36,6 @@
     <yaml_path>ci-scripts/yaml_files/sa_f1_b200_gnb</yaml_path>
     <eNB_instance>0</eNB_instance>
     <eNB_serverId>0</eNB_serverId>
-  </testCase>
-
-  <testCase id="222222">
-    <class>Clean_Test_Server_Images</class>
-    <desc>Clean Test Images on Test Server</desc>
-    <test_svr_id>0</test_svr_id>
   </testCase>
 
 </testCaseList>

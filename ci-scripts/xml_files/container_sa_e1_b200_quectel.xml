@@ -1,0 +1,166 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+  <htmlTabRef>TEST-SA-FR1-F1-E1-B200</htmlTabRef>
+  <htmlTabName>40 MHz TDD F1+E1 SA</htmlTabName>
+  <htmlTabIcon>tasks</htmlTabIcon>
+  <repeatCount>1</repeatCount>
+  <TestCaseRequestedList>
+    333333
+    300000
+    310000
+    330101
+    330102
+    330103
+    310001
+    350000
+    370001
+    370000
+    370002
+    310011
+    310002
+    330201
+    200000
+  </TestCaseRequestedList>
+  <TestCaseExclusionList></TestCaseExclusionList>
+
+  <testCase id="333333">
+    <class>Pull_Local_Registry</class>
+    <desc>Pull Images from Local Registry</desc>
+    <test_svr_id>0</test_svr_id>
+    <images_to_pull>oai-gnb oai-nr-cuup</images_to_pull>
+  </testCase>
+
+  <testCase id="310000">
+    <class>Initialize_UE</class>
+    <desc>Initialize Quectel</desc>
+    <id>idefix</id>
+  </testCase>
+  <testCase id="310002">
+    <class>Terminate_UE</class>
+    <desc>Terminate Quectel</desc>
+    <id>idefix</id>
+  </testCase>
+  <testCase id="310001">
+    <class>Attach_UE</class>
+    <desc>Attach Quectel</desc>
+    <id>idefix</id>
+  </testCase>
+  <testCase id="310011">
+    <class>Detach_UE</class>
+    <desc>Detach Quectel</desc>
+    <id>idefix</id>
+  </testCase>
+
+  <testCase id="330101">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB-CU-CP in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_e1_b200_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <services>gnb_cucp</services>
+  </testCase>
+
+  <testCase id="330102">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB-CU-UP in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_e1_b200_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <services>gnb_cuup</services>
+  </testCase>
+
+  <testCase id="330103">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB-DU (TDD/Band78/40MHz/B200) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_e1_b200_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <services>gnb_du_tdd</services>
+  </testCase>
+
+  <testCase id="300000">
+    <class>Custom_Command</class>
+    <desc>Disable Sleep States</desc>
+    <node>ofqot</node>
+    <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+  <testCase id="200000">
+    <class>Custom_Command</class>
+    <desc>Enable Sleep States</desc>
+    <node>ofqot</node>
+    <command>sudo cpupower idle-set -E</command>
+  </testCase>
+
+  <testCase id="350000">
+    <class>Ping</class>
+    <desc>Ping: 20pings in 20sec</desc>
+    <id>idefix</id>
+    <ping_args>-c 20 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>25</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="370000">
+    <class>Iperf</class>
+    <desc>iperf (DL/80Mbps/UDP)(30 sec)</desc>
+    <iperf_args>-u -b 80M -t 30 -i 1 -fm</iperf_args>
+    <direction>DL</direction>
+    <id>idefix</id>
+    <iperf_packetloss_threshold>10</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+    <iperf_profile>single-ue</iperf_profile>
+  </testCase>
+
+  <testCase id="370001">
+    <class>Iperf</class>
+    <desc>iperf (UL/8Mbps/UDP)(30 sec)</desc>
+    <iperf_args>-u -b 8M -t 30 -i 1 -fm</iperf_args>
+    <direction>UL</direction>
+    <id>idefix</id>
+    <iperf_packetloss_threshold>1</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+    <iperf_profile>single-ue</iperf_profile>
+  </testCase>
+
+  <testCase id="370002">
+    <class>Iperf</class>
+    <desc>iperf (BIDIR TCP)(10 sec)(single-ue profile)</desc>
+    <iperf_args>-t 20 --bidir</iperf_args>
+    <direction>BIDIR</direction>
+    <id>idefix</id>
+    <iperf_profile>single-ue</iperf_profile>
+  </testCase>
+
+  <testCase id="330201">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy CU-DU</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_e1_b200_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <d_retx_th>10,100,100,100</d_retx_th>
+    <u_retx_th>10,100,100,100</u_retx_th>
+  </testCase>
+
+</testCaseList>
+

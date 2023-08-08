@@ -7,7 +7,7 @@
 #include "database.h"
 #include "event.h"
 #include "handler.h"
-#include "config.h"
+#include "configuration.h"
 #include "utils.h"
 #include "packet-mac-lte.h"
 

@@ -135,8 +135,6 @@ then
     exit $STATUS
 fi
 
-git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG
-
 git merge --ff $TARGET_COMMIT_ID -m "Temporary merge for CI"
 
 STATUS=`git status | egrep -c "You have unmerged paths.|fix conflicts"`

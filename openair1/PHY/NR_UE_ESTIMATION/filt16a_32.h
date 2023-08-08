@@ -252,12 +252,7 @@ static const short filt8_rep4[8] = {16384, 16384, 16384, 16384, 0, 0, 0, 0};
 
 // DL
 // DMRS_Type1
-static const short filt16_dl_first[16] = {12228, 12228, 12228, 12228, 8192, 8192, 8192, 8192, 4096, 4096, 4096, 4096, 0, 0, 0, 0};
-
-static const short filt16_dl_middle[16] =
-    {2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048, 2048};
-
-static const short filt16_dl_last[16] = {4096, 4096, 4096, 4096, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
+// using UL filter
 
 // DMRS_Type2
 static const short filt16_dl_first_type2[16] = {16384, 16384, 16384, 8192, 8192, 8192, 8192, 8192, 8192, 0, 0, 0, 0, 0, 0};

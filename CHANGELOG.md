@@ -1,5 +1,34 @@
 # RELEASE NOTES: #
 
+## [v2.0.0](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v2.0.0) -> August 2023. ##
+
+This release adds support for 5G and maintains previous features:
+* 5G SA in gNB
+  - PHY, MAC, RLC, PDCP, SDAP, RRC layers
+  - 2x2 MIMO and 256-QAM for UL/DL
+  - 15 and 30 kHz subcarrier spacings; 10-100 MHz bandwidths
+  - Up to 800Mbps throughput or 5ms latency
+  - F1, basic E1, 5G FAPI (SCF 222.10.02), split 8 split options
+  - Handling of up to 16 UEs
+  - RRC procedures for connection setup, multiple PDU sessions, reestablishment
+* 5G SA in UE
+  - PHY, MAC, RLC, PDCP, SDAP, RRC layers
+  - 2x2 MIMO and 256-QAM for UL/DL
+  - 15 and 30 kHz subcarrier spacings; 10-100 MHz bandwidths
+  - Custom FAPI-like MAC/PHY interface
+  - RRC procedures for connection setup and cell measurement
+* Basic 5G NSA in gNB
+  - X2 sgNB Addition Request between OAI eNB and gNB
+* 4G eNB and UE
+  - Bugfixes in fairRR scheduler (eNB)
+  - Non-standard F1 midhaul removed (eNB)
+  - FlexRAN removed (eNB)
+  - Sync fixes (UE)
+* LTE-M supported
+* Support for AW2S devices, RFsimulator channel emulation support
+
+For more information on supported features, please refer to the [feature set](doc/FEATURE_SET.md).
+
 ## [v1.2.1](https://gitlab.eurecom.fr/oai/openairinterface5g/-/tags/v1.2.1) -> February 2020. ##
 
 * Bug fix for mutex lock for wake-up signal

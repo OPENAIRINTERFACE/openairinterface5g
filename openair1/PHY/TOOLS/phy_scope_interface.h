@@ -70,6 +70,11 @@ enum scopeDataType {
   MAX_SCOPE_TYPES
 };
 
+enum PlotTypeGnbIf {
+  puschLLRe,
+  puschIQe,
+};
+
 #define COPIES_MEM 4
 
 typedef struct {
@@ -89,6 +94,7 @@ typedef struct scopeData_s {
   pthread_mutex_t copyDataMutex;
   scopeGraphData_t *copyDataBufs[MAX_SCOPE_TYPES][COPIES_MEM];
   int copyDataBufsIdx[MAX_SCOPE_TYPES];
+  void (*scopeUpdater)(enum PlotTypeGnbIf plotType, int numElements);
 } scopeData_t;
 
 int load_softscope(char *exectype, void *initarg);
@@ -102,6 +108,9 @@ void copyData(void *, enum scopeDataType type, void *dataIn, int elementSz, int 
 #define gNBscopeCopy(gnb, type, ...) \
   if (gnb->scopeData)                \
     ((scopeData_t *)gnb->scopeData)->copyData((scopeData_t *)gNB->scopeData, type, ##__VA_ARGS__);
+#define GnbScopeUpdate(gnb, type, numElt) \
+  if (gnb->scopeData)                     \
+    ((scopeData_t *)gnb->scopeData)->scopeUpdater(type, numElt);
 
 extended_kpi_ue* getKPIUE();
 

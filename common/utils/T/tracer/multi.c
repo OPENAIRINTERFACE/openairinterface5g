@@ -8,7 +8,7 @@
 #include "database.h"
 #include "utils.h"
 #include "../T.h"
-#include "config.h"
+#include "configuration.h"
 
 #define DEFAULT_LOCAL_PORT 2022
 

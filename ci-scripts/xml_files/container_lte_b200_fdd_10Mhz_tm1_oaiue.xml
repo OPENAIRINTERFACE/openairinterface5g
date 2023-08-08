@@ -1,0 +1,174 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+    <htmlTabRef>test-fdd-10-tm1</htmlTabRef>
+    <htmlTabName>Test-FDD-10MHz-TM1</htmlTabName>
+    <htmlTabIcon>tasks</htmlTabIcon>
+    <TestCaseRequestedList>
+100000
+100001
+111110
+111111
+030111
+000001
+030311
+000002
+040511 040613 040616 040651
+030411
+000001
+030211
+200000
+200001
+    </TestCaseRequestedList>
+    <TestCaseExclusionList></TestCaseExclusionList>
+
+    <testCase id="111110">
+        <class>Pull_Local_Registry</class>
+        <desc>Pull Images from Local Registry</desc>
+        <test_svr_id>0</test_svr_id>
+        <images_to_pull>oai-enb</images_to_pull>
+    </testCase>
+    <testCase id="111111">
+        <class>Pull_Local_Registry</class>
+        <desc>Pull Images from Local Registry</desc>
+        <test_svr_id>1</test_svr_id>
+        <images_to_pull>oai-lte-ue</images_to_pull>
+    </testCase>
+    <testCase id="100000">
+        <class>Custom_Command</class>
+        <desc>Disable Sleep States (hutch)</desc>
+        <node>hutch</node>
+        <command>sudo cpupower idle-set -D 0</command>
+    </testCase>
+    <testCase id="100001">
+        <class>Custom_Command</class>
+        <desc>Disable Sleep States (carabe)</desc>
+        <node>carabe</node>
+        <command>sudo cpupower idle-set -D 0</command>
+    </testCase>
+    <testCase id="200000">
+        <class>Custom_Command</class>
+        <desc>Enable Sleep States (hutch)</desc>
+        <node>hutch</node>
+        <command>sudo cpupower idle-set -E</command>
+    </testCase>
+    <testCase id="200001">
+        <class>Custom_Command</class>
+        <desc>Enable Sleep States (carabe)</desc>
+        <node>carabe</node>
+        <command>sudo cpupower idle-set -E</command>
+    </testCase>
+
+    <testCase id="030111">
+        <class>Deploy_Object</class>
+        <desc>Deploy eNB (FDD/Band7/10MHz/B200) in a container</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_tm1_magma</yaml_path>
+        <eNB_instance>0</eNB_instance>
+        <eNB_serverId>0</eNB_serverId>
+    </testCase>
+
+    <testCase id="030311">
+        <class>Deploy_Object</class>
+        <desc>Deploy LTE-UE (FDD/Band7/10MHz/B200) in a container</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_oai_ue_magma</yaml_path>
+        <eNB_instance>1</eNB_instance>
+        <eNB_serverId>1</eNB_serverId>
+    </testCase>
+
+    <testCase id="000001">
+        <class>IdleSleep</class>
+        <desc>Sleep</desc>
+        <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+    </testCase>
+
+    <testCase id="000002">
+        <class>IdleSleep</class>
+        <desc>Sleep</desc>
+        <idle_sleep_time_in_sec>10</idle_sleep_time_in_sec>
+    </testCase>
+
+    <testCase id="030211">
+        <class>Undeploy_Object</class>
+        <desc>Undeploy eNB</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_tm1_magma</yaml_path>
+        <eNB_instance>0</eNB_instance>
+        <eNB_serverId>0</eNB_serverId>
+    </testCase>
+
+    <testCase id="030411">
+        <class>Undeploy_Object</class>
+        <desc>Undeploy LTE-UE</desc>
+        <yaml_path>ci-scripts/yaml_files/lte_b200_fdd_10Mhz_oai_ue_magma</yaml_path>
+        <eNB_instance>1</eNB_instance>
+        <eNB_serverId>1</eNB_serverId>
+    </testCase>
+
+    <testCase id="040511">
+        <class>Ping</class>
+        <desc>ping (10MHz - 20 sec)</desc>
+        <ping_args>-c 20 192.168.61.200</ping_args>
+        <ping_packetloss_threshold>5</ping_packetloss_threshold>
+        <id>lte_oai_ue_carabe</id>
+    </testCase>
+
+    <testCase id="040613">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - DL/10Mbps/UDP)(30 sec)(balanced profile)</desc>
+        <iperf_args>-u -b 10M -t 30 -i 1</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>single-ue</iperf_profile>
+        <direction>DL</direction>
+        <id>lte_oai_ue_carabe</id>
+    </testCase>
+
+    <testCase id="040616">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - DL/TCP)(30 sec)(single-ue profile)</desc>
+        <iperf_args>-t 30 -i 1 -fm</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>single-ue</iperf_profile>
+        <direction>DL</direction>
+        <id>lte_oai_ue_carabe</id>
+    </testCase>
+
+    <testCase id="040651">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - UL/10Mbps/UDP)(30 sec)(balanced profile)</desc>
+        <iperf_args>-u -b 10M -t 30 -i 1</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>single-ue</iperf_profile>
+        <direction>UL</direction>
+        <id>lte_oai_ue_carabe</id>
+    </testCase>
+
+    <testCase id="040654">
+        <class>Iperf</class>
+        <desc>iperf (10MHz - UL/TCP)(30 sec)(balanced profile)</desc>
+        <iperf_args>-t 30 -i 1 -fm</iperf_args>
+        <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_profile>balanced</iperf_profile>
+        <direction>UL</direction>
+        <id>lte_oai_ue_carabe</id>
+    </testCase>
+
+</testCaseList>

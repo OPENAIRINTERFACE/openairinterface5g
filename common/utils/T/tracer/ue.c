@@ -14,7 +14,7 @@
 #include "utils.h"
 #include "event_selector.h"
 #include "openair_logo.h"
-#include "config.h"
+#include "configuration.h"
 
 typedef struct {
   view *phyview;

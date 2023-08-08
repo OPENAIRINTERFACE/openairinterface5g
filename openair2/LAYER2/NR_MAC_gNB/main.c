@@ -240,6 +240,9 @@ void mac_top_init_gNB(ngran_node_t node_type)
 
       RC.nrmac[i]->first_MIB = true;
 
+      RC.nrmac[i]->cset0_bwp_start = 0;
+      RC.nrmac[i]->cset0_bwp_size = 0;
+
       pthread_mutex_init(&RC.nrmac[i]->sched_lock, NULL);
 
       pthread_mutex_init(&RC.nrmac[i]->UE_info.mutex, NULL);

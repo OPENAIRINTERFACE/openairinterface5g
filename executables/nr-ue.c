@@ -306,10 +306,6 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       process_queued_nr_nfapi_msgs(mac, sfn_slot);
     }
 
-    bool only_dl = false;
-    if (mac->scc == NULL && mac->scc_SIB == NULL)
-      only_dl = true;
-
     int CC_id = 0;
     uint8_t gNB_id = 0;
     nr_uplink_indication_t ul_info;
@@ -332,10 +328,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
       free_and_zero(ch_info);
     }
 
-    if (only_dl ||
-        is_nr_DL_slot(get_softmodem_params()->nsa ?
-                      mac->scc->tdd_UL_DL_ConfigurationCommon :
-                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+    if (is_nr_DL_slot(mac->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_rx)) {
       memset(&mac->dl_info, 0, sizeof(mac->dl_info));
       mac->dl_info.cc_id = CC_id;
@@ -350,10 +343,7 @@ static void *NRUE_phy_stub_standalone_pnf_task(void *arg)
 
     if (pthread_mutex_unlock(&mac->mutex_dl_info)) abort();
 
-    if (!only_dl &&
-        is_nr_UL_slot(get_softmodem_params()->nsa ?
-                      mac->scc->tdd_UL_DL_ConfigurationCommon :
-                      mac->scc_SIB->tdd_UL_DL_ConfigurationCommon,
+    if (is_nr_UL_slot(mac->tdd_UL_DL_ConfigurationCommon,
                       ul_info.slot_tx, mac->frame_type)) {
       LOG_D(NR_MAC, "Slot %d. calling nr_ue_ul_ind()\n", ul_info.slot_tx);
       nr_ue_ul_scheduler(&ul_info);
@@ -517,16 +507,8 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
       !get_softmodem_params()->continuous_tx) {
 
     uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-    int nrofUplinkSlots, nrofUplinkSymbols;
-    if (mac->scc) {
-      nrofUplinkSlots = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      nrofUplinkSymbols = mac->scc->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
-    }
-    else {
-      nrofUplinkSlots = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-      nrofUplinkSymbols = mac->scc_SIB->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
-    }
-
+    int nrofUplinkSlots = mac->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
+    int nrofUplinkSymbols = mac->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
     int slot_tx_usrp = proc->nr_slot_tx;
     uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
     uint8_t first_tx_slot = tdd_period - num_UL_slots;
@@ -928,7 +910,8 @@ void *UE_thread(void *arg)
       timing_advance = UE->timing_advance;
     }
 
-    nr_ue_rrc_timer_trigger(UE->Mod_id, curMsg.proc.frame_tx, curMsg.proc.nr_slot_tx, curMsg.proc.gNB_id);
+    if (curMsg.proc.nr_slot_tx == 0)
+      nr_ue_rrc_timer_trigger(UE->Mod_id, curMsg.proc.frame_tx, curMsg.proc.gNB_id);
 
     // Start TX slot processing here. It runs in parallel with RX slot processing
     notifiedFIFO_elt_t *newElt = newNotifiedFIFO_elt(sizeof(nr_rxtx_thread_data_t), curMsg.proc.nr_slot_tx, &txFifo, processSlotTX);

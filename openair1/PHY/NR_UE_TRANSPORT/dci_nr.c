@@ -800,7 +800,8 @@ void nr_pdcch_unscrambling(int16_t *e_rx,
                            uint16_t scrambling_RNTI,
                            uint32_t length,
                            uint16_t pdcch_DMRS_scrambling_id,
-                           int16_t *z2) {
+                           int16_t *z2)
+{
   int i;
   uint8_t reset;
   uint32_t x1 = 0, x2 = 0, s = 0;
@@ -809,7 +810,7 @@ void nr_pdcch_unscrambling(int16_t *e_rx,
   reset = 1;
   // x1 is set in first call to lte_gold_generic
   n_id = pdcch_DMRS_scrambling_id;
-  x2 = ((rnti<<16) + n_id); //mod 2^31 is implicit //this is c_init in 38.211 v15.1.0 Section 7.3.2.3
+  x2 = ((rnti << 16) + n_id) % (1U << 31); // this is c_init in 38.211 v15.1.0 Section 7.3.2.3
 
   LOG_D(PHY,"PDCCH Unscrambling x2 %x : scrambling_RNTI %x\n", x2, rnti);
 

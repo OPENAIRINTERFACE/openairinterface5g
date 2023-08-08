@@ -3635,12 +3635,12 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrec
 
 int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
 
-int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slot) {
+bool is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slot_t slot)
+{
+  if (tdd_UL_DL_ConfigurationCommon == NULL)
+    return true;
 
-  int period,period1,period2=0;
-
-  if (tdd_UL_DL_ConfigurationCommon==NULL) return(1);
-
+  int period1, period2 = 0;
   if (tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
       tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
     period1 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
@@ -3650,49 +3650,54 @@ int is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon,slo
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
         tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+      period2 = 3000 + *tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
   }    
-  period = period1+period2;
-  int scs=tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
-  int slots=period*(1<<scs)/1000;
-  int slots1=period1*(1<<scs)/1000;
+  int period = period1+period2;
+  int scs = tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int slots = period * (1 << scs) / 1000;
+  int slots1 = period1 * (1 << scs) / 1000;
   int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period <= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period <= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  if (slot_in_period < slots1)
+    return slot_in_period <= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  else
+    return slot_in_period <= slots1 + tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots;
 }
 
-int is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t	*tdd_UL_DL_ConfigurationCommon, slot_t slot, frame_type_t frame_type) {
-
-  int period,period1,period2=0;
-
+bool is_nr_UL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slot, frame_type_t frame_type)
+{
   // Note: condition on frame_type
   // goal: the UL scheduler assumes mode is TDD therefore this hack is needed to make FDD work
-  if (tdd_UL_DL_ConfigurationCommon == NULL || frame_type == FDD) {
-    return(1);
-  }
+  if (frame_type == FDD)
+    return true;
+  if (tdd_UL_DL_ConfigurationCommon == NULL)
+    // before receiving TDD information all slots should be considered to be DL
+    return false;
 
+  int period1, period2 = 0;
   if (tdd_UL_DL_ConfigurationCommon->pattern1.ext1 &&
       tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530)
-    period1 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
+    period1 = 3000 + *tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
   else
     period1 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern1.dl_UL_TransmissionPeriodicity];
 			       
   if (tdd_UL_DL_ConfigurationCommon->pattern2) {
     if (tdd_UL_DL_ConfigurationCommon->pattern2->ext1 &&
 	      tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530)
-      period2 = 3000+*tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
+      period2 = 3000 + *tdd_UL_DL_ConfigurationCommon->pattern2->ext1->dl_UL_TransmissionPeriodicity_v1530;
     else
       period2 = tdd_period_to_num[tdd_UL_DL_ConfigurationCommon->pattern2->dl_UL_TransmissionPeriodicity];
   }    
-  period = period1+period2;
-  int scs=tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
-  int slots=period*(1<<scs)/1000;
-  int slots1=period1*(1<<scs)/1000;
+  int period = period1+period2;
+  int scs = tdd_UL_DL_ConfigurationCommon->referenceSubcarrierSpacing;
+  int slots = period * (1 << scs) / 1000;
+  int slots1 = period1 * (1 << scs) / 1000;
   int slot_in_period = slot % slots;
-  if (slot_in_period < slots1) return(slot_in_period >= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots ? 1 : 0);
-  else return(slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots ? 1 : 0);    
+  if (slot_in_period < slots1)
+    return slot_in_period >= tdd_UL_DL_ConfigurationCommon->pattern1.nrofDownlinkSlots;
+  else
+    return slot_in_period >= slots1+tdd_UL_DL_ConfigurationCommon->pattern2->nrofDownlinkSlots;
 }
 
 int16_t fill_dmrs_mask(const NR_PDSCH_Config_t *pdsch_Config,
