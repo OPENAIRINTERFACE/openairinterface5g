@@ -103,7 +103,6 @@ pipeline {
             gitCommitAuthorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
             gitCommitAuthorEmailAddr = gitCommitAuthorEmailAddr.trim()
             echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
-            sh "git log -n1 --pretty=format:\"%s\" > .git/CI_COMMIT_MSG"
           }
         }
       }
@@ -525,24 +524,6 @@ pipeline {
     }
   }
   post {
-    always {
-      script {
-        def eSubject = JOB_NAME + ' - Build # ' + BUILD_ID + ' - ' + currentBuild.result + '!'
-        def eBody = "Hi,\n\n"
-        eBody += "Here are attached HTML report files for " + JOB_NAME + "  - Build # " + BUILD_ID + " - " + currentBuild.result + "!\n\n"
-        eBody += "Regards,\n"
-        eBody += "OAI CI Team"
-        emailext attachmentsPattern: '*results*.html',
-           body: eBody,
-           replyTo: 'no-reply@openairinterface.org',
-           subject: eSubject,
-           to: gitCommitAuthorEmailAddr
-
-        if (fileExists('.git/CI_COMMIT_MSG')) {
-          sh "rm -f .git/CI_COMMIT_MSG"
-        }
-      }
-    }
     success {
       script {
         def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"

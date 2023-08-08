@@ -120,6 +120,7 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1.xml
         <desc>iperf (5MHz - DL/15Mbps/UDP)(30 sec)(balanced profile)</desc>
         <iperf_args>-u -b 15M -t 30 -i 1</iperf_args>
         <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_bitrate_threshold>50</iperf_bitrate_threshold>
         <direction>DL</direction>
         <id>adb_ue_1 adb_ue_2</id>
     </testCase>
@@ -178,6 +179,7 @@ Replaces xml_files/enb_usrp210_band7_test_05mhz_tm1.xml
         <desc>iperf (5MHz - UL/9Mbps/UDP)(30 sec)(single-ue profile)</desc>
         <iperf_args>-u -b 9M -t 30 -i 1</iperf_args>
         <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_bitrate_threshold>50</iperf_bitrate_threshold>
         <iperf_profile>single-ue</iperf_profile>
         <direction>UL</direction>
         <id>adb_ue_1</id>

@@ -129,6 +129,7 @@
         <desc>iperf (5MHz - DL/6.5Mbps/UDP)(30 sec)(balanced)</desc>
         <iperf_args>-u -b 6.5M -t 30 -i 1</iperf_args>
         <iperf_packetloss_threshold>50</iperf_packetloss_threshold>
+        <iperf_bitrate_threshold>50</iperf_bitrate_threshold>
         <iperf_profile>balanced</iperf_profile>
         <direction>DL</direction>
         <id>adb_ue_1 adb_ue_2</id>
