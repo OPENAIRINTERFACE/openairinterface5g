@@ -31,6 +31,7 @@
 
 
 #define NBIOT_MODULENAME "NB_IoT"
+#include "common/ran_context.h"
 
 typedef void(*RCConfig_NbIoT_f_t)(RAN_CONTEXT_t *RC);
 #define NBIOT_RCCONFIG_FNAME "RCConfig_NbIoT"

@@ -39,7 +39,7 @@
 
 #include "local.h"
 #include "proto_extern.h"
-//#include "platform_constants.h"
+//#include "common/platform_constants.h"
 
 //#define NETLINK_DEBUG 1
 
@@ -161,7 +161,7 @@ int nas_netlink_send(unsigned char *data,unsigned int len)
   int status;
 
 
-  //  printk("[NAS][NETLINK] Sending %d bytes (%d)\n",len,NLMSG_SPACE(len));
+    //printk("[NAS][NETLINK] Sending %d bytes (%d)\n",len,NLMSG_SPACE(len));
   skb_put(nl_skb, NLMSG_SPACE(len));
   memcpy(NLMSG_DATA(nlh),data,len);
 

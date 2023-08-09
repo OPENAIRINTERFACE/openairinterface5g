@@ -1,0 +1,21 @@
+version: '3.8'
+
+services:
+    enb_mono_tdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: lte-b200-enb-tdd-05Mhz-tm2
+        environment:
+            USE_B2XX: 'yes'
+            USE_ADDITIONAL_OPTIONS: --RUs.[0].max_rxgain 115 --RUs.[0].nb_tx 2 --RUs.[0].nb_rx 2 --eNBs.[0].component_carriers.[0].nb_antenna_ports 2 --log_config.global_log_options level,nocolor,time,line_num,function
+            #USE_ADDITIONAL_OPTIONS: --RUs.[0].max_rxgain 115 --RUs.[0].nb_tx 2 --RUs.[0].nb_rx 2 --eNBs.[0].component_carriers.[0].nb_antenna_ports 2 --eNBs.[0].component_carriers.[0].nb_antennas_tx 2 --eNBs.[0].component_carriers.[0].nb_antennas_rx 2 --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - ../../conf_files/enb.band40.25prb.usrpb200.conf:/opt/oai-enb/etc/enb.conf
+            - /dev:/dev
+        network_mode: "host"
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5

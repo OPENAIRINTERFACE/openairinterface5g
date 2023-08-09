@@ -249,7 +249,9 @@ int usim_api_authenticate_test(usim_data_t *usim_data,
     LOG_TRACE(INFO,
               "USIM-API  - Comparing the XMAC with the MAC included in AUTN Succeeded");
     /* Verify that the received sequence number SQN is in the correct range */
-    rc = _usim_api_check_sqn(*(uint32_t*)(sqn), sqn[USIM_API_SQN_SIZE - 1]);
+    uint32_t v;
+    memcpy(&v, sqn, sizeof(v));
+    rc = _usim_api_check_sqn(v, sqn[USIM_API_SQN_SIZE - 1]);
   }
 
 
@@ -392,7 +394,9 @@ int usim_api_authenticate(usim_data_t *usim_data, const OctetString* rand_pP, co
     LOG_TRACE(INFO,
               "USIM-API  - Comparing the XMAC with the MAC included in AUTN Succeeded");
     /* Verify that the received sequence number SQN is in the correct range */
-    rc = _usim_api_check_sqn(*(uint32_t*)(sqn), sqn[USIM_API_SQN_SIZE - 1]);
+    uint32_t v;
+    memcpy(&v, sqn, sizeof(v));
+    rc = _usim_api_check_sqn(v, sqn[USIM_API_SQN_SIZE - 1]);
   }
 
 

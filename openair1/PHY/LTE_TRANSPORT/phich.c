@@ -44,11 +44,6 @@
 
 //unsigned short phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
-
-
-int32_t alam_bpsk_perm1[4] = {2,1,4,3}; // -conj(x) 1 (-1-j) -> 2 (1-j), 2->1, 3 (-1+j) -> (4) 1+j, 4->3
-int32_t alam_bpsk_perm2[4] = {3,4,2,1}; // conj(x) 1 (-1-j) -> 3 (-1+j), 3->1, 2 (1-j) -> 4 (1+j), 4->2
-
 // This routine generates the PHICH
 
 void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
@@ -74,7 +69,8 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
   uint32_t subframe_offset=((frame_parms->Ncp==0)?14:12)*frame_parms->ofdm_symbol_size*subframe;
 
   memset(d,0,24*sizeof(int16_t));
-
+  const int nushift=frame_parms->nushift;
+  
   if (frame_parms->nb_antenna_ports_eNB==1)
     gain_lin_QPSK = (int16_t)(((int32_t)amp*ONE_OVER_SQRT2_Q15)>>15);
   else
@@ -245,7 +241,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -287,7 +283,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -329,7 +325,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m];
           y1[j]   += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -360,7 +356,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[7]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -385,7 +381,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[15]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -410,7 +406,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[23]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j]   += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -533,7 +529,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y1_16[7] = -y0_16[5];
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j] += y0_16[m];
           y1[j] += y1_16[m++];
           y0[j+1] += y0_16[m];
@@ -644,7 +640,7 @@ void generate_phich(LTE_DL_FRAME_PARMS *frame_parms,
       y0_16[7]   = d[7]*gain_lin_QPSK;
 
       for (i=0,j=0,m=0; i<6; i++,j+=2) {
-        if ((i!=(frame_parms->nushift))&&(i!=(frame_parms->nushift+3))) {
+        if ((i!=(nushift))&&(i!=((nushift+3)%6))) {
           y0[j] += y0_16[m++];
           y0[j+1] += y0_16[m++];
         }
@@ -714,8 +710,9 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
   int32_t **txdataF = eNB->common_vars.txdataF;
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;
-  uint8_t pusch_subframe;
+  uint8_t pusch_subframe=-1;
   uint8_t i;
+  uint8_t harq_pid = 0; 
   int subframe = proc->subframe_tx;
   phich_config_t *phich;
 
@@ -748,16 +745,20 @@ void generate_phich_top(PHY_VARS_eNB *eNB,
     
     nseq_PHICH = ((phich->first_rb/Ngroup_PHICH) +
 		  phich->n_DMRS)%(2*NSF_PHICH);
+    harq_pid = subframe2harq_pid(frame_parms,phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe),pusch_subframe);
+	if (harq_pid == 255) {
+      LOG_E(PHY,"FATAL ERROR: illegal harq_pid, returning\n");
+	  return;
+	}
     LOG_D(PHY,"[eNB %d][PUSCH %d] Frame %d subframe %d Generating PHICH, AMP %d  ngroup_PHICH %d/%d, nseq_PHICH %d : HI %d, first_rb %d)\n",
-	  eNB->Mod_id,subframe2harq_pid(frame_parms,
-          phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe),pusch_subframe),proc->frame_tx,
+	  eNB->Mod_id,harq_pid,proc->frame_tx,
 	  subframe,amp,ngroup_PHICH,Ngroup_PHICH,nseq_PHICH,
 	  phich->hi,
 	  phich->first_rb);
     
     T(T_ENB_PHY_PHICH, T_INT(eNB->Mod_id), T_INT(proc->frame_tx), T_INT(subframe),
       T_INT(-1 /* TODO: rnti */), 
-      T_INT(subframe2harq_pid(frame_parms,phich_frame2_pusch_frame(frame_parms,proc->frame_tx,subframe),pusch_subframe)),
+      T_INT(harq_pid),
       T_INT(Ngroup_PHICH), T_INT(NSF_PHICH),
       T_INT(ngroup_PHICH), T_INT(nseq_PHICH),
       T_INT(phich->hi),

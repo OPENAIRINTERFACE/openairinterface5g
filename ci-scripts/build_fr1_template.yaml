@@ -1,0 +1,40 @@
+
+ranRepository : https://gitlab.eurecom.fr/oai/openairinterface5g.git
+ranBranch : integration_2021_wk13_a  
+ranCommitID : 104aa7eed5d6702c1b9da663414079ef698da206     
+ranAllowMerge : 'yes' 
+ranTargetBranch : develop
+
+steps:
+  - InitiateHtml,none
+  - TesteNB,xml_files/fr1_multi_node_build.xml
+  - TesteNB,xml_files/fr1_epc_start.xml
+  - TesteNB,xml_files/fr1_nsa_base_next.xml #ue toggle, nodes initialize, ue toggle, ping, nodes terminate
+  - TesteNB,xml_files/fr1_epc_closure.xml
+
+RAN:
+    - eNBIPAddress : 192.168.18.199 #eNB on Minimassive
+      eNBUserName : oaicicd
+      eNBPassword : HzB*nkryaITdVd08TKlT#2Z5a!7M#~qn
+      eNBSourceCodePath : /tmp/CI-FR1-eNB
+    - eNB1IPAddress : 192.168.18.198 #gNB on Mozart
+      eNB1UserName : oaicicd
+      eNB1Password : 7zkDOFgh@w3HvRBMPTMh@BAx
+      eNB1SourceCodePath : /tmp/CI-FR1-gNB
+
+
+EPC: #on Nikaia 
+  EPCIPAddress : 192.168.18.99
+  EPCUserName : nikaia
+  EPCPassword : linux
+  EPCSourceCodePath : /tmp/CI-FR1-EPC
+  EPCType : ltebox
+
+
+UE:
+  UEIPAddress : none
+  UEUserName : none
+  UEPassword : none
+  UESourceCodePath : none
+
+

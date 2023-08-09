@@ -19,10 +19,10 @@
  *      contact@openairinterface.org
  */
 
-#include<stdio.h>
-#include<string.h>
-#include<gpib/ib.h>
-#include"gpib_send.h"
+#include <stdio.h>
+#include <string.h>
+#include <gpib/ib.h>
+#include "gpib_send.h"
 void gpib_send(unsigned int gpib_board, unsigned int gpib_device, char *command_string )
 {
   unsigned short addlist[2] = {gpib_device, NOADDR};

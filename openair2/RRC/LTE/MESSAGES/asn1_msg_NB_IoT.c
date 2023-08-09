@@ -35,8 +35,8 @@
 #include <sysexits.h> /* for EX_* exit codes */
 #include <errno.h>  /* for errno */
 #include "common/utils/LOG/log.h"
+#include "oai_asn1.h"
 #include <asn_application.h>
-#include <asn_internal.h> /* for _ASN_DEFAULT_STACK_MAX */
 #include <per_encoder.h>
 #include "asn1_msg.h"
 
@@ -68,10 +68,8 @@
 
 //#include "PHY/defs.h"
 #include "enb_config.h"
+#include "intertask_interface.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
 
 
 
@@ -178,21 +176,15 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   memset(PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc,0,sizeof(*PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc));
   asn_set_empty(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list);//.size=0;
   //left as it is???
-#if defined(ENABLE_ITTI)
+
   dummy_mcc[0] = (configuration->mcc / 100) % 10;
   dummy_mcc[1] = (configuration->mcc / 10) % 10;
   dummy_mcc[2] = (configuration->mcc / 1) % 10;
-#else
-  dummy_mcc[0] = 0;
-  dummy_mcc[1] = 0;
-  dummy_mcc[2] = 1;
-#endif
-  ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[0]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[1]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[2]);
+  asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[0]);
+  asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[1]);
+  asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mcc->list,&dummy_mcc[2]);
   PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list.size=0;
   PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list.count=0;
-#if defined(ENABLE_ITTI)
 
   if (configuration->mnc >= 100) {
     dummy_mnc[0] = (configuration->mnc / 100) % 10;
@@ -210,48 +202,31 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
     }
   }
 
-#else
-  dummy_mnc[0] = 0;
-  dummy_mnc[1] = 1;
-  dummy_mnc[2] = 0xf;
-#endif
-  ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[0]);
-  ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[1]);
+  asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[0]);
+  asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[1]);
 
   if (dummy_mnc[2] != 0xf) {
-    ASN_SEQUENCE_ADD(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[2]);
+    asn1cSeqAdd(&PLMN_identity_info_NB_IoT.plmn_Identity_r13.mnc.list,&dummy_mnc[2]);
   }
 
   //still set to "notReserved" as in the previous case
   PLMN_identity_info_NB_IoT.cellReservedForOperatorUse_r13=LTE_PLMN_IdentityInfo_NB_r13__cellReservedForOperatorUse_r13_notReserved;
   *attachWithoutPDN_Connectivity = 0;
   PLMN_identity_info_NB_IoT.attachWithoutPDN_Connectivity_r13 = attachWithoutPDN_Connectivity;
-  ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->cellAccessRelatedInfo_r13.plmn_IdentityList_r13.list,&PLMN_identity_info_NB_IoT);
+  asn1cSeqAdd(&(*sib1_NB_IoT)->cellAccessRelatedInfo_r13.plmn_IdentityList_r13.list,&PLMN_identity_info_NB_IoT);
   // 16 bits = 2 byte
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.buf = MALLOC(2); //MALLOC works in byte
   //lefts as it is?
-#if defined(ENABLE_ITTI)
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.buf[0] = (configuration->tac >> 8) & 0xff;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.buf[1] = (configuration->tac >> 0) & 0xff;
-#else
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.buf[0] = 0x00;
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.buf[1] = 0x01;
-#endif
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.size=2;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.trackingAreaCode_r13.bits_unused=0;
   // 28 bits --> i have to use 32 bits = 4 byte
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf = MALLOC(8); // why allocate 8 byte?
-#if defined(ENABLE_ITTI)
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[0] = (configuration->cell_identity >> 20) & 0xff;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[1] = (configuration->cell_identity >> 12) & 0xff;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[2] = (configuration->cell_identity >>  4) & 0xff;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[3] = (configuration->cell_identity <<  4) & 0xf0;
-#else
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[0] = 0x00;
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[1] = 0x00;
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[2] = 0x00;
-  (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.buf[3] = 0x10;
-#endif
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.size=4;
   (*sib1_NB_IoT)->cellAccessRelatedInfo_r13.cellIdentity_r13.bits_unused=4;
   //Still set to "notBarred" as in the previous case
@@ -264,11 +239,8 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   *((*sib1_NB_IoT)->p_Max_r13) = 23;
   //FIXME
   (*sib1_NB_IoT)->freqBandIndicator_r13 =
-#if defined(ENABLE_ITTI)
     configuration->eutra_band;
-#else
-    5; //if not configured we use band 5 (UL: 824 MHz - 849MHz / DL: 869 MHz - 894 MHz  FDD mode)
-#endif
+
   //OPTIONAL new parameters, to be used?
   /*
    * freqBandInfo_r13
@@ -302,13 +274,11 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
     * listed in the schedulingInfoList list.
     * */
   sib_type_NB_IoT[0]=LTE_SIB_Type_NB_r13_sibType3_NB_r13;
-  ASN_SEQUENCE_ADD(&schedulingInfo_NB_IoT[0].sib_MappingInfo_r13.list,&sib_type_NB_IoT[0]);
-  ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->schedulingInfoList_r13.list,&schedulingInfo_NB_IoT[0]);
+  asn1cSeqAdd(&schedulingInfo_NB_IoT[0].sib_MappingInfo_r13.list,&sib_type_NB_IoT[0]);
+  asn1cSeqAdd(&(*sib1_NB_IoT)->schedulingInfoList_r13.list,&schedulingInfo_NB_IoT[0]);
   //printf("[ASN Debug] SI P: %ld\n",(*sib1_NB_IoT)->schedulingInfoList_r13.list.array[0]->si_Periodicity_r13);
-#if defined(ENABLE_ITTI)
 
   if (configuration->frame_type == TDD)
-#endif
   {
     //FIXME in NB-IoT mandatory to be FDD --> so must give an error
     LOG_E(RRC,"[NB-IoT %d] Frame Type is TDD --> not supported by NB-IoT, exiting\n", Mod_id); //correct?
@@ -325,7 +295,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
   //FIXME correct?
   (*sib1_NB_IoT)->systemInfoValueTagList_r13 = CALLOC(1, sizeof(struct LTE_SystemInfoValueTagList_NB_r13));
   asn_set_empty(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list);
-  ASN_SEQUENCE_ADD(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list,&systemInfoValueTagSI);
+  asn1cSeqAdd(&(*sib1_NB_IoT)->systemInfoValueTagList_r13->list,&systemInfoValueTagSI);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_LTE_BCCH_DL_SCH_Message_NB, (void *)bcch_message);
@@ -342,9 +312,7 @@ uint8_t do_SIB1_NB_IoT(uint8_t Mod_id, int CC_id,
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-#ifdef USER_MODE
   LOG_D(RRC,"[NB-IoT] SystemInformationBlockType1-NB Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
 
   if (enc_rval.encoded==-1) {
     return(-1);
@@ -423,7 +391,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   rach_Info_NB_IoT.ra_ResponseWindowSize_r13 = configuration->rach_raResponseWindowSize_NB;
   rach_Info_NB_IoT.mac_ContentionResolutionTimer_r13 = configuration-> rach_macContentionResolutionTimer_NB;
   //rach_infoList max size = maxNPRACH-Resources-NB-r13 = 3
-  ASN_SEQUENCE_ADD(&sib2_NB_IoT->radioResourceConfigCommon_r13.rach_ConfigCommon_r13.rach_InfoList_r13.list,&rach_Info_NB_IoT);
+  asn1cSeqAdd(&sib2_NB_IoT->radioResourceConfigCommon_r13.rach_ConfigCommon_r13.rach_InfoList_r13.list,&rach_Info_NB_IoT);
   //TS 36.331 pag 614 --> if not present the value to infinity sould be used
   *connEstFailOffset = 0;
   sib2_NB_IoT->radioResourceConfigCommon_r13.rach_ConfigCommon_r13.connEstFailOffset_r13 = connEstFailOffset; /*OPTIONAL*/
@@ -442,7 +410,7 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   //   =CALLOC(1, sizeof(struct RSRP_ThresholdsNPRACH_InfoList_NB_r13)); //fatto uguale dopo
   //   rsrp_ThresholdsPrachInfoList = sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.rsrp_ThresholdsPrachInfoList_r13;
   //   rsrp_range = configuration->nprach_rsrp_range_NB;
-  //   ASN_SEQUENCE_ADD(&rsrp_ThresholdsPrachInfoList->list,rsrp_range);
+  //   asn1cSeqAdd(&rsrp_ThresholdsPrachInfoList->list,rsrp_range);
   // According configuration to set the 3 CE level configuration setting
   nprach_parameters[0].nprach_Periodicity_r13               = configuration->nprach_Periodicity[0];
   nprach_parameters[0].nprach_StartTime_r13                 = configuration->nprach_StartTime[0];
@@ -475,15 +443,15 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   nprach_parameters[2].npdcch_StartSF_CSS_RA_r13            = configuration->npdcch_StartSF_CSS_RA[2];
   nprach_parameters[2].npdcch_Offset_RA_r13                 = configuration->npdcch_Offset_RA[2];
   //nprach_parameterList have a max size of 3 possible nprach configuration (see maxNPRACH_Resources_NB_r13)
-  ASN_SEQUENCE_ADD(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[0]);
-  ASN_SEQUENCE_ADD(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[1]);
-  ASN_SEQUENCE_ADD(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[2]);
+  asn1cSeqAdd(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[0]);
+  asn1cSeqAdd(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[1]);
+  asn1cSeqAdd(&sib2_NB_IoT->radioResourceConfigCommon_r13.nprach_Config_r13.nprach_ParametersList_r13.list,&nprach_parameters[2]);
   // NPDSCH-Config NB-IOT
   sib2_NB_IoT->radioResourceConfigCommon_r13.npdsch_ConfigCommon_r13.nrs_Power_r13= configuration->npdsch_nrs_Power;
   //NPUSCH-Config NB-IoT----------------------------------------------------------------
   //list of size 3 (see maxNPRACH_Resources_NB_r13)
   ack_nack_repetition = configuration-> npusch_ack_nack_numRepetitions_NB; //is an enumerative
-  ASN_SEQUENCE_ADD(&(sib2_NB_IoT->radioResourceConfigCommon_r13.npusch_ConfigCommon_r13.ack_NACK_NumRepetitions_Msg4_r13.list) ,&ack_nack_repetition);
+  asn1cSeqAdd(&(sib2_NB_IoT->radioResourceConfigCommon_r13.npusch_ConfigCommon_r13.ack_NACK_NumRepetitions_Msg4_r13.list) ,&ack_nack_repetition);
   *srs_SubframeConfig = configuration->npusch_srs_SubframeConfig_NB;
   sib2_NB_IoT->radioResourceConfigCommon_r13.npusch_ConfigCommon_r13.srs_SubframeConfig_r13= srs_SubframeConfig; /*OPTIONAL*/
   /*OPTIONAL*/
@@ -547,9 +515,9 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
   bcch_message->message.choice.c1.present = LTE_BCCH_DL_SCH_MessageType_NB__c1_PR_systemInformation_r13;
   bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.present = LTE_SystemInformation_NB__criticalExtensions_PR_systemInformation_r13;
   bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list.count=0;
-  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
+  asn1cSeqAdd(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
                    sib2_NB_part);
-  ASN_SEQUENCE_ADD(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
+  asn1cSeqAdd(&bcch_message->message.choice.c1.choice.systemInformation_r13.criticalExtensions.choice.systemInformation_r13.sib_TypeAndInfo_r13.list,
                    sib3_NB_part);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
@@ -563,10 +531,9 @@ uint8_t do_SIB23_NB_IoT(uint8_t Mod_id,
                                    900);
   //  AssertFatal (enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n",
   //               enc_rval.failed_type->name, enc_rval.encoded);
-  //#if defined(ENABLE_ITTI).....
-#ifdef USER_MODE
+
   LOG_D(RRC,"[NB-IoT] SystemInformation-NB Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
+
 
   if (enc_rval.encoded==-1) {
     msg("[RRC] ASN1 : SI-NB encoding failed for SIB23_NB_IoT\n");
@@ -657,7 +624,7 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
     // SRB1_lchan_config_NB->choice.explicitValue.logicalChannelSR_Prohibit_r13 = logicalChannelSR_Prohibit;
     //
     // //ADD SRB1
-    // ASN_SEQUENCE_ADD(&(*SRB_configList_NB_IoT)->list,SRB1_config_NB);
+    // asn1cSeqAdd(&(*SRB_configList_NB_IoT)->list,SRB1_config_NB);
   }
   ///SRB1bis (The configuration for SRB1 and SRB1bis is the same) the only difference is the logical channel identity = 3 but not set here
   SRB1bis_config_NB_IoT = CALLOC(1,sizeof(*SRB1bis_config_NB_IoT));
@@ -682,7 +649,7 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
   //ADD SRB1bis
   //MP: Actually there is no way to distinguish SRB1 and SRB1bis once put in the list
   //MP: SRB_ToAddModList_NB_r13_t size = 1
-  ASN_SEQUENCE_ADD(&(*SRB_configList_NB_IoT)->list,SRB1bis_config_NB_IoT);
+  asn1cSeqAdd(&(*SRB_configList_NB_IoT)->list,SRB1bis_config_NB_IoT);
   // PhysicalConfigDedicated (NPDCCH, NPUSCH, CarrierConfig, UplinkPowerControl)
   physicalConfigDedicated2_NB_IoT = CALLOC(1,sizeof(*physicalConfigDedicated2_NB_IoT));
   *physicalConfigDedicated_NB_IoT = physicalConfigDedicated2_NB_IoT;
@@ -748,10 +715,8 @@ uint8_t do_RRCConnectionSetup_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-#ifdef USER_MODE
-  LOG_D(RRC,"RRCConnectionSetup-NB Encoded %zd bits (%zd bytes), ecause %d\n",
-        enc_rval.encoded,(enc_rval.encoded+7)/8,ecause);
-#endif
+  LOG_D(RRC,"RRCConnectionSetup-NB Encoded %zd bits (%zd bytes)\n",
+        enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
 
@@ -793,20 +758,10 @@ uint8_t do_SecurityModeCommand_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-  //#if defined(ENABLE_ITTI)
-  //# if !defined(DISABLE_XER_SPRINT)....
-#ifdef USER_MODE
-  LOG_D(RRC,"[NB-IoT %d] securityModeCommand-NB for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
-#endif
+  LOG_D(RRC, "[NB-IoT %d] securityModeCommand-NB for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[NB-IoT %d] ASN1 : securityModeCommand-NB encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[NB-IoT %d] ASN1 : securityModeCommand-NB encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -850,20 +805,10 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-  //#if defined(ENABLE_ITTI)
-  //# if !defined(DISABLE_XER_SPRINT)....
-#ifdef USER_MODE
-  LOG_D(RRC,"[NB-IoT %d] UECapabilityEnquiry-NB for UE %x Encoded %zd bits (%zd bytes)\n",
-        ctxt_pP->module_id,
-        ctxt_pP->rnti,
-        enc_rval.encoded,
-        (enc_rval.encoded+7)/8);
-#endif
+  LOG_D(RRC, "[NB-IoT %d] UECapabilityEnquiry-NB for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
   if (enc_rval.encoded==-1) {
-    LOG_E(RRC,"[NB-IoT %d] ASN1 : UECapabilityEnquiry-NB encoding failed for UE %x\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rnti);
+    LOG_E(RRC, "[NB-IoT %d] ASN1 : UECapabilityEnquiry-NB encoding failed for UE %lx\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
     return(-1);
   }
 
@@ -876,6 +821,7 @@ uint8_t do_UECapabilityEnquiry_NB_IoT(
 uint16_t do_RRCConnectionReconfiguration_NB_IoT(
   const protocol_ctxt_t        *const ctxt_pP,
   uint8_t                            *buffer,
+  size_t                              buffer_size,
   uint8_t                             Transaction_id,
   LTE_SRB_ToAddModList_NB_r13_t          *SRB1_list_NB, //SRB_ConfigList2 (default)--> only SRB1
   LTE_DRB_ToAddModList_NB_r13_t          *DRB_list_NB_IoT, //DRB_ConfigList (default)
@@ -928,7 +874,7 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
                                    NULL,
                                    (void *)&dl_dcch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if (enc_rval.encoded <= 0) {
     LOG_E(RRC, "ASN1 message encoding failed %s, %li\n",
@@ -940,8 +886,6 @@ uint16_t do_RRCConnectionReconfiguration_NB_IoT(
     xer_fprint(stdout,&asn_DEF_LTE_DL_DCCH_Message_NB,(void *)&dl_dcch_msg_NB_IoT);
   }
 
-  //#if defined(ENABLE_ITTI)
-  //# if !defined(DISABLE_XER_SPRINT)...
   LOG_I(RRC,"RRCConnectionReconfiguration-NB Encoded %zd bits (%zd bytes)\n",enc_rval.encoded,(enc_rval.encoded+7)/8);
   return((enc_rval.encoded+7)/8);
 }
@@ -977,10 +921,8 @@ uint8_t do_RRCConnectionReestablishmentReject_NB_IoT(
   }
 
   //Only change in "asn_DEF_DL_CCCH_Message_NB"
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReestablishmentReject Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
   return((enc_rval.encoded+7)/8);
 }
 
@@ -1025,10 +967,8 @@ uint8_t do_RRCConnectionReject_NB_IoT(
           enc_rval.failed_type->name, enc_rval.encoded);
   }
 
-#ifdef USER_MODE
   LOG_D(RRC,"RRCConnectionReject-NB Encoded %zd bits (%zd bytes)\n",
         enc_rval.encoded,(enc_rval.encoded+7)/8);
-#endif
   return((enc_rval.encoded+7)/8);
 }
 
@@ -1068,7 +1008,8 @@ uint8_t do_DLInformationTransfer_NB_IoT(
 /*do_RRCConnectionReestablishment_NB-->used to re-establish SRB1*/ //which parameter to use?
 uint8_t do_RRCConnectionReestablishment_NB_IoT(
   uint8_t Mod_id,
-  uint8_t *const buffer,
+  uint8_t *buffer,
+  size_t buffer_size,
   const uint8_t     Transaction_id,
   const NB_IoT_DL_FRAME_PARMS *const frame_parms, //to be changed
   LTE_SRB_ToAddModList_NB_r13_t      *SRB_list_NB_IoT) { //should contain SRB1 already configured?
@@ -1094,7 +1035,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
                                    NULL,
                                    (void *)&dl_ccch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);
+                                   buffer_size);
 
   if (enc_rval.encoded <= 0) {
     LOG_E(RRC, "ASN1 message encoding failed (%s, %li)!\n",
@@ -1113,6 +1054,7 @@ uint8_t do_RRCConnectionReestablishment_NB_IoT(
 uint8_t do_RRCConnectionRelease_NB_IoT(
   uint8_t                             Mod_id,
   uint8_t                            *buffer,
+  size_t                              buffer_size,
   const uint8_t                             Transaction_id) {
   asn_enc_rval_t enc_rval;
   LTE_DL_DCCH_Message_NB_t dl_dcch_msg_NB_IoT;
@@ -1135,7 +1077,7 @@ uint8_t do_RRCConnectionRelease_NB_IoT(
                                    NULL,
                                    (void *)&dl_dcch_msg_NB_IoT,
                                    buffer,
-                                   RRC_BUF_SIZE);//check
+                                   buffer_size);
   return((enc_rval.encoded+7)/8);
 }
 

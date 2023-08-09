@@ -119,15 +119,15 @@ typedef struct ccparams_sidelink_s {
   libconfig_int     discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
   //For discRxPoolPS
   char             *discRxPoolPS_cp_Len;
-  const char       *discRxPoolPS_discPeriod;
+  char       *discRxPoolPS_discPeriod;
   libconfig_int     discRxPoolPS_numRetx;
   libconfig_int     discRxPoolPS_numRepetition;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_Num;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_Start;
   libconfig_int     discRxPoolPS_ResourceConfig_prb_End;
-  const char       *discRxPoolPS_ResourceConfig_offsetIndicator_present;
+  char       *discRxPoolPS_ResourceConfig_offsetIndicator_present;
   libconfig_int     discRxPoolPS_ResourceConfig_offsetIndicator_choice;
-  const char       *discRxPoolPS_ResourceConfig_subframeBitmap_present;
+  char       *discRxPoolPS_ResourceConfig_subframeBitmap_present;
   char             *discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size;
   libconfig_int     discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused;
@@ -137,46 +137,47 @@ typedef struct ccparams_sidelink_s {
 /*                                     component carriers configuration parameters                                                                                                                   */
 /*   optname                                                   helpstr   paramflags    XXXptr                                        defXXXval                    type         numelt  checked_param */
 /*---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-
-#define CCPARAMS_SIDELINK_DESC(SLparams) {				\
-{"sidelink_configured",                                          NULL,   0,   iptr:(int*)&SLparams.sidelink_configured,   defintval:0,  TYPE_UINT,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN,                             NULL,   0,   strptr:(char **)&SLparams.rxPool_sc_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_SC_PRIOD,                              NULL,   0,   strptr:(char **)&SLparams.rxPool_sc_Period,          defstrval:"sf40",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_DATA_CP_LEN,                           NULL,   0,   strptr:(char **)&SLparams.rxPool_data_CP_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_PRB_NUM,                            NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_PRB_START,                          NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_PRB_END,                            NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_PRESENT,                  NULL,   0,   strptr:(char **)&SLparams.rxPool_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_CHOICE,                   NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_PRESENT,                   NULL,   0,   strptr:(char **)&SLparams.rxPool_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,             NULL,   0,   strptr:(char **)&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,            NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED, NULL,   0,   iptr:(int32_t *)&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_CP_LEN,                            NULL,   0,   strptr:(char **)&SLparams.discRxPool_cp_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_DISCPERIOD,                        NULL,   0,   strptr:(char **)&SLparams.discRxPool_discPeriod,          defstrval:"rf32",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_NUMRETX,                           NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_numRetx,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_NUMREPETITION,                     NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_numRepetition,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_NUM,                        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_START,                      NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_END,                        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_PRESENT,              NULL,   0,   strptr:(char **)&SLparams.discRxPool_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_CHOICE,               NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_PRESENT,               NULL,   0,   strptr:(char **)&SLparams.discRxPool_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,         NULL,   0,   strptr:(char **)&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,NULL,   0,   iptr:(int32_t *)&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_CP_LEN,                            NULL,   0,   strptr:(char **)&SLparams.discRxPoolPS_cp_Len,          defstrval:"normal",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_DISCPERIOD,                        NULL,   0,   strptr:(char **)&SLparams.discRxPoolPS_discPeriod,          defstrval:"rf32",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_NUMRETX,                           NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_numRetx,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_NUMREPETITION,                     NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_numRepetition,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_NUM,                        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_prb_Num,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_START,                      NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_prb_Start,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_END,                        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_prb_End,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_PRESENT,              NULL,   0,   strptr:(char **)&SLparams.discRxPoolPS_ResourceConfig_offsetIndicator_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_CHOICE,               NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_offsetIndicator_choice,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_PRESENT,               NULL,   0,   strptr:(char **)&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_present,            defstrval:"prNothing",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF,         NULL,   0,   strptr:(char **)&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf,            defstrval:"001001",  TYPE_STRING,  0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE,        NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size,         defintval:1,       TYPE_UINT,    0}, \
-{ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,NULL,   0,   iptr:(int32_t *)&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused,         defintval:1,       TYPE_UINT,    0} \
+// clang-format off
+#define CCPARAMS_SIDELINK_DESC(SLparams) {   \
+  {"sidelink_configured",                                                NULL,   0,   .iptr=&SLparams.sidelink_configured,                                               .defintval=0,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_SC_CP_LEN,                                   NULL,   0,   .strptr=&SLparams.rxPool_sc_CP_Len,                                                .defstrval="normal",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_SC_PRIOD,                                    NULL,   0,   .strptr=&SLparams.rxPool_sc_Period,                                                .defstrval="sf40",       TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_DATA_CP_LEN,                                 NULL,   0,   .strptr=&SLparams.rxPool_data_CP_Len,                                              .defstrval="normal",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_PRB_NUM,                                  NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_prb_Num,                                     .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_PRB_START,                                NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_prb_Start,                                   .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_PRB_END,                                  NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_prb_End,                                     .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_PRESENT,                        NULL,   0,   .strptr=&SLparams.rxPool_ResourceConfig_offsetIndicator_present,                   .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_OFFSETIND_CHOICE,                         NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_offsetIndicator_choice,                      .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_PRESENT,                         NULL,   0,   .strptr=&SLparams.rxPool_ResourceConfig_subframeBitmap_present,                    .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,                   NULL,   0,   .strptr=&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_buf,              .defstrval="001001",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,                  NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_size,               .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_RXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,       NULL,   0,   .iptr=&SLparams.rxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,        .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_CP_LEN,                                  NULL,   0,   .strptr=&SLparams.discRxPool_cp_Len,                                               .defstrval="normal",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_DISCPERIOD,                              NULL,   0,   .strptr=&SLparams.discRxPool_discPeriod,                                           .defstrval="rf32",       TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_NUMRETX,                                 NULL,   0,   .iptr=&SLparams.discRxPool_numRetx,                                                .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_NUMREPETITION,                           NULL,   0,   .iptr=&SLparams.discRxPool_numRepetition,                                          .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_NUM,                              NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_prb_Num,                                 .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_START,                            NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_prb_Start,                               .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_PRB_END,                              NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_prb_End,                                 .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_PRESENT,                    NULL,   0,   .strptr=&SLparams.discRxPool_ResourceConfig_offsetIndicator_present,               .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_OFFSETIND_CHOICE,                     NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_offsetIndicator_choice,                  .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_PRESENT,                     NULL,   0,   .strptr=&SLparams.discRxPool_ResourceConfig_subframeBitmap_present,                .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_BUF,               NULL,   0,   .strptr=&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_buf,          .defstrval="001001",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_SIZE,              NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_size,           .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOL_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED,   NULL,   0,   .iptr=&SLparams.discRxPool_ResourceConfig_subframeBitmap_choice_bs_bits_unused,    .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_CP_LEN,                                NULL,   0,   .strptr=&SLparams.discRxPoolPS_cp_Len,                                             .defstrval="normal",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_DISCPERIOD,                            NULL,   0,   .strptr=&SLparams.discRxPoolPS_discPeriod,                                         .defstrval="rf32",       TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_NUMRETX,                               NULL,   0,   .iptr=&SLparams.discRxPoolPS_numRetx,                                              .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_NUMREPETITION,                         NULL,   0,   .iptr=&SLparams.discRxPoolPS_numRepetition,                                        .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_NUM,                            NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_prb_Num,                               .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_START,                          NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_prb_Start,                             .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_PRB_END,                            NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_prb_End,                               .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_PRESENT,                  NULL,   0,   .strptr=&SLparams.discRxPoolPS_ResourceConfig_offsetIndicator_present,             .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_OFFSETIND_CHOICE,                   NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_offsetIndicator_choice,                .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_PRESENT,                   NULL,   0,   .strptr=&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_present,              .defstrval="prNothing",  TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_BUF,             NULL,   0,   .strptr=&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_buf,        .defstrval="001001",     TYPE_STRING,  0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_SIZE,            NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_size,         .defintval=1,            TYPE_UINT,    0}, \
+  {ENB_CONFIG_STRING_DISCRXPOOLPS_RC_SFBITMAP_CHOICE_BS_ASN_BITS_UNUSED, NULL,   0,   .iptr=&SLparams.discRxPoolPS_ResourceConfig_subframeBitmap_choice_bs_bits_unused,  .defintval=1,            TYPE_UINT,    0}, \
 }
+// clang-format on
 #endif

@@ -31,8 +31,6 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
-#include "SCHED/sched_eNB.h"
 #include "nfapi_interface.h"
 #include "fapi_l1.h"
 #include "nfapi_pnf.h"
@@ -42,27 +40,18 @@
 
 
 #include "assertions.h"
-#include "msc.h"
 
 #include <time.h>
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
 
 
 extern int oai_nfapi_rach_ind(nfapi_rach_indication_t *rach_ind);
 
-void prach_procedures(PHY_VARS_eNB *eNB
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-  ,
-  int br_flag
-#endif
-                     ) {
-  uint16_t max_preamble[4],max_preamble_energy[4],max_preamble_delay[4],avg_preamble_energy[4];
+void prach_procedures(PHY_VARS_eNB *eNB,
+                      int br_flag ) {
+  uint16_t max_preamble[4]={0},max_preamble_energy[4]={0},max_preamble_delay[4]={0},avg_preamble_energy[4]={0}; 
   uint16_t i;
   int frame,subframe;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
   if (br_flag==1) {
     subframe = eNB->proc.subframe_prach_br;
@@ -70,9 +59,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
     pthread_mutex_lock(&eNB->UL_INFO_mutex);
     eNB->UL_INFO.rach_ind_br.rach_indication_body.number_of_preambles=0;
     pthread_mutex_unlock(&eNB->UL_INFO_mutex);
-  } else
-#endif
-  {
+  } else {
     pthread_mutex_lock(&eNB->UL_INFO_mutex);
     eNB->UL_INFO.rach_ind.rach_indication_body.number_of_preambles=0;
     pthread_mutex_unlock(&eNB->UL_INFO_mutex);
@@ -89,14 +76,11 @@ void prach_procedures(PHY_VARS_eNB *eNB
     ru=eNB->RU_list[i];
 
     for (ru_aa=0,aa=0; ru_aa<ru->nb_rx; ru_aa++,aa++) {
-      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[ru_aa];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+      eNB->prach_vars.rxsigF[0][aa] = eNB->RU_list[i]->prach_rxsigF[0][ru_aa];
       int ce_level;
 
       if (br_flag==1)
         for (ce_level=0; ce_level<4; ce_level++) eNB->prach_vars_br.rxsigF[ce_level][aa] = eNB->RU_list[i]->prach_rxsigF_br[ce_level][ru_aa];
-
-#endif
     }
   }
 
@@ -106,12 +90,9 @@ void prach_procedures(PHY_VARS_eNB *eNB
            &max_preamble[0],
            &max_preamble_energy[0],
            &max_preamble_delay[0],
-	   &avg_preamble_energy[0],
+           &avg_preamble_energy[0],
            frame,
-           0
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-           ,br_flag
-#endif
+           0,br_flag
           );
   LOG_D(PHY,"[RAPROC] Frame %d, subframe %d : BR %d  Most likely preamble %d, energy %d dB delay %d (prach_energy counter %d), threshold %d, I0 %d\n",
         frame,subframe,br_flag,
@@ -119,9 +100,8 @@ void prach_procedures(PHY_VARS_eNB *eNB
         max_preamble_energy[0]/10,
         max_preamble_delay[0],
         eNB->prach_energy_counter,
-	eNB->measurements.prach_I0+eNB->prach_DTX_threshold,
-	eNB->measurements.prach_I0);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+        eNB->measurements.prach_I0+eNB->prach_DTX_threshold,
+        eNB->measurements.prach_I0);
 
   if (br_flag==1) {
     int             prach_mask;
@@ -161,9 +141,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
     ind++;
     }
     } */// ce_level
-  } else
-#endif
-  {
+  } else {
     if ((eNB->prach_energy_counter == 100) &&
         (max_preamble_energy[0] > eNB->measurements.prach_I0+eNB->prach_DTX_threshold)) {
       LOG_D(PHY,"[eNB %d/%d][RAPROC] Frame %d, subframe %d Initiating RA procedure with preamble %d, energy %d.%d dB, delay %d\n",
@@ -206,7 +184,7 @@ void prach_procedures(PHY_VARS_eNB *eNB
     else {
       eNB->measurements.prach_I0 = ((eNB->measurements.prach_I0*900)>>10) + ((avg_preamble_energy[0]*124)>>10);
 
-      if (frame==0) LOG_I(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
+      if (frame==0) LOG_D(PHY,"prach_I0 = %d.%d dB\n",eNB->measurements.prach_I0/10,eNB->measurements.prach_I0%10);
 
       if (eNB->prach_energy_counter < 100) eNB->prach_energy_counter++;
     }

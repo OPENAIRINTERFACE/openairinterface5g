@@ -40,6 +40,23 @@ The present clause specifies several numerical functions for testing of digital 
 
 #define NB_SAMPLES_CHANNEL_OFFSET 4
 
+typedef enum {
+  UNSPECIFIED_MODID=0,
+  RFSIMU_MODULEID=1
+} channelmod_moduleid_t;
+#define MODULEID_STR_INIT {"","rfsimulator"}
+
+#define CHANMODEL_FREE_DELAY       1<<0
+#define CHANMODEL_FREE_RSQRT_6     1<<1
+#define CHANMODEL_FREE_RSQRT_NTAPS 1<<2
+#define CHANMODEL_FREE_AMPS        1<<3
+
+typedef enum {
+  CORR_LEVEL_LOW,
+  CORR_LEVEL_MEDIUM,
+  CORR_LEVEL_HIGH
+} corr_level_t;
+
 typedef struct {
   ///Number of tx antennas
   uint8_t nb_tx;
@@ -49,24 +66,30 @@ typedef struct {
   uint8_t nb_taps;
   ///linear amplitudes of taps
   double *amps;
+  ///normalization channel factor
+  double normalization_ch_factor;
   ///Delays of the taps in mus. length(delays)=nb_taps. Has to be between 0 and Td.
   double *delays;
   ///length of impulse response. should be set to 11+2*bw*t_max
   uint8_t channel_length;
   ///channel state vector. size(state) = nb_taps * (n_tx * n_rx);
-  struct complex **a;
+  struct complexd **a;
   ///interpolated (sample-spaced) channel impulse response. size(ch) = (n_tx * n_rx) * channel_length. ATTENTION: the dimensions of ch are the transposed ones of a. This is to allow the use of BLAS when applying the correlation matrices to the state.
-  struct complex **ch;
+  struct complexd **ch;
   ///Sampled frequency response (90 kHz resolution)
-  struct complex **chF;
+  struct complexd **chF;
   ///Maximum path delay in mus.
   double Td;
+  ///Carrier center frequency
+  uint64_t center_freq;
   ///Channel bandwidth in MHz.
   double channel_bandwidth;
   ///System sampling rate in Msps.
   double sampling_rate;
-  ///Ricean factor of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
+  ///Ricean factor, sqrt(1/(K+1)), of first tap wrt other taps (0..1, where 0 means AWGN and 1 means Rayleigh channel).
   double ricean_factor;
+  ///Correlation level of correlation channel matrix
+  corr_level_t corr_level;
   ///Angle of arrival of wavefront (in radians). For Ricean channel only. This assumes that both RX and TX have linear antenna arrays with lambda/2 antenna spacing. Furhter it is assumed that the arrays are parallel to each other and that they are far enough apart so that we can safely assume plane wave propagation.
   double aoa;
   ///If set to 1, aoa is randomized according to a uniform random distribution
@@ -74,11 +97,12 @@ typedef struct {
   ///in Hz. if >0 generate a channel with a Clarke's Doppler profile with a maximum Doppler bandwidth max_Doppler. CURRENTLY NOT IMPLEMENTED!
   double max_Doppler;
   ///Square root of the full correlation matrix size(R_tx) = nb_taps * (n_tx * n_rx) * (n_tx * n_rx).
-  struct complex **R_sqrt;
+  struct complexd **R_sqrt;
   ///path loss including shadow fading in dB
   double path_loss_dB;
   ///additional delay of channel in samples.
   int32_t channel_offset;
+  float noise_power_dB;
   ///This parameter (0...1) allows for simple 1st order temporal variation. 0 means a new channel every call, 1 means keep channel constant all the time
   double forgetting_factor;
   ///needs to be set to 1 for the first call, 0 otherwise.
@@ -92,6 +116,16 @@ typedef struct {
   time_stats_t interp_time;
   time_stats_t interp_freq;
   time_stats_t convolution;
+  /// index in the channel descriptors array
+  unsigned int chan_idx;
+  /// id of the channel modeling algorithm
+  int modelid;
+  /// identifies channel descriptor owner (the module which created this descriptor
+  channelmod_moduleid_t module_id;
+  /// name of this descriptor,used for model created from config file at init time
+  char *model_name;  
+  /// flags to properly trigger memory free
+  unsigned int free_flags;
 } channel_desc_t;
 
 typedef struct {
@@ -160,6 +194,11 @@ typedef enum {
   EVA,
   ETU,
   MBSFN,
+  TDL_A,
+  TDL_B,
+  TDL_C,
+  TDL_D,
+  TDL_E,
   Rayleigh8,
   Rayleigh1,
   Rayleigh1_800,
@@ -190,6 +229,11 @@ typedef enum {
   {"EVA",EVA},\
   {"ETU",ETU},\
   {"MBSFN",MBSFN},\
+  {"TDL_A",TDL_A},\
+  {"TDL_B",TDL_B},\
+  {"TDL_C",TDL_C},\
+  {"TDL_D",TDL_D},\
+  {"TDL_E",TDL_E},\
   {"Rayleigh8",Rayleigh8},\
   {"Rayleigh1",Rayleigh1},\
   {"Rayleigh1_800",Rayleigh1_800},\
@@ -211,14 +255,44 @@ typedef enum {
   {"EPA_high",EPA_high},\
   {NULL, -1}
 
-#define CONFIG_HLP_SNR           "Set average SNR in dB (for --siml1 option)\n"
+#define CONFIG_HLP_SNR     "Set average SNR in dB (for --siml1 option)\n"
 #define CHANNELMOD_SECTION "channelmod"
-#define CHANNELMOD_PARAMS_DESC {  \
-    {"s" ,CONFIG_HLP_SNR, PARAMFLAG_CMDLINE_NOPREFIXENABLED ,               dblptr:&snr_dB,                       defdblval:25,         TYPE_DOUBLE,      0},\
-    {"sinr_dB" ,NULL,     0                                 ,               dblptr:&sinr_dB,                       defdblval:0,         TYPE_DOUBLE,      0},\
-  }
 
-#include "platform_constants.h"
+/* global channel modelization parameters */
+#define CHANNELMOD_MODELLIST_PARANAME "modellist"
+
+#define CHANNELMOD_HELP_MODELLIST "<list name> channel list name in config file describing the model type and its parameters\n"
+// clang-format off
+#define CHANNELMOD_PARAMS_DESC {  \
+  {"s"      ,                     CONFIG_HLP_SNR,                     PARAMFLAG_CMDLINE_NOPREFIXENABLED,  .dblptr=&snr_dB,              .defdblval=25,                    TYPE_DOUBLE, 0}, \
+  {"sinr_dB",                     NULL,                               0,                                  .dblptr=&sinr_dB,             .defdblval=0 ,                    TYPE_DOUBLE, 0}, \
+  {"max_chan",                    "Max number of runtime models",     0,                                  .uptr=&max_chan,              .defintval=10,                    TYPE_UINT,   0}, \
+  {CHANNELMOD_MODELLIST_PARANAME, CHANNELMOD_HELP_MODELLIST,          0,                                  .strptr=&modellist_name,      .defstrval="DefaultChannelList",  TYPE_STRING, 0}, \
+}
+// clang-format on
+
+/* parameters for one model */ 
+#define CHANNELMOD_MODEL_NAME_PNAME "model_name"
+#define CHANNELMOD_MODEL_TYPE_PNAME "type"
+#define CHANNELMOD_MODEL_PL_PNAME "ploss_dB"
+#define CHANNELMOD_MODEL_NP_PNAME "noise_power_dB"
+#define CHANNELMOD_MODEL_FF_PNAME "forgetfact"
+#define CHANNELMOD_MODEL_CO_PNAME "offset"
+#define CHANNELMOD_MODEL_DT_PNAME "ds_tdl"
+
+// clang-format off
+#define CHANNELMOD_MODEL_PARAMS_DESC {  \
+    {CHANNELMOD_MODEL_NAME_PNAME, "name of the model\n",               0,  .strptr=NULL ,            .defstrval="",                    TYPE_STRING,    0 }, \
+    {CHANNELMOD_MODEL_TYPE_PNAME, "name of the model type\n",          0,  .strptr=NULL ,            .defstrval="AWGN",                TYPE_STRING,    0 }, \
+    {CHANNELMOD_MODEL_PL_PNAME,   "channel path loss in dB\n",         0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_NP_PNAME,   "channel noise in dB\n",             0,  .dblptr=NULL,             .defdblval=-50,                   TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_FF_PNAME,   "channel forget factor ((0 to 1)\n", 0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
+    {CHANNELMOD_MODEL_CO_PNAME,   "channel offset in samps\n",         0,  .iptr=NULL,               .defintval=0,                     TYPE_INT,       0 }, \
+    {CHANNELMOD_MODEL_DT_PNAME,   "delay spread for TDL models\n",     0,  .dblptr=NULL,             .defdblval=0,                     TYPE_DOUBLE,    0 }, \
+}
+// clang-format on
+
+#include "common/platform_constants.h"
 
 typedef struct {
   channel_desc_t *RU2UE[NUMBER_OF_RU_MAX][NUMBER_OF_UE_MAX][MAX_NUM_CCs];
@@ -243,38 +317,49 @@ typedef struct {
 } sim_t;
 
 
-/**
-\brief This routine initializes a new channel descriptor
-\param nb_tx Number of TX antennas
-\param nb_rx Number of RX antennas
-\param nb_taps Number of taps
-\param channel_length Length of the interpolated channel impulse response
-\param amps Linear amplitudes of the taps (length(amps)=channel_length). The values should sum up to 1.
-\param delays Delays of the taps. If delays==NULL the taps are assumed to be spaced equidistantly between 0 and t_max.
-\param R_sqrt Channel correlation matrix. If R_sqrt==NULL, no channel correlation is applied.
-\param Td Maximum path delay in mus.
-\param BW Channel bandwidth in MHz.
-\param ricean_factor Ricean factor applied to all taps.
-\param aoa Anlge of arrival
-\param forgetting_factor This parameter (0...1) allows for simple 1st order temporal variation
-\param max_Doppler This is the maximum Doppler frequency for Jakes' Model
-\param channel_offset This is a time delay to apply to channel
-\param path_loss_dB This is the path loss in dB
-\param random_aoa If set to 1, AoA of ricean component is randomized
-*/
-
-//channel_desc_t *new_channel_desc(uint8_t nb_tx,uint8_t nb_rx, uint8_t nb_taps, uint8_t channel_length, double *amps, double* delays, struct complex** R_sqrt, double Td, double BW, double ricean_factor, double aoa, double forgetting_factor, double max_Doppler, int32_t channel_offset, double path_loss_dB,uint8_t random_aoa);
-
 channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
                                      uint8_t nb_rx,
                                      SCM_t channel_model,
                                      double sampling_rate,
+                                     uint64_t center_freq,
                                      double channel_bandwidth,
+                                     double DS_TDL,
+                                     double maxDoppler,
+                                     const corr_level_t corr_level,
                                      double forgetting_factor,
                                      int32_t channel_offset,
-                                     double path_loss_dB);
+                                     double path_loss_dB,
+                                     float noise_power_dB);
+
+channel_desc_t *find_channel_desc_fromname( char *modelname );
 
 
+/**
+\brief free memory allocated for a model descriptor
+\param ch points to the model, which cannot be used after calling this fuction
+*/
+void free_channel_desc_scm(channel_desc_t *ch);
+
+/**
+\brief This set the ownerid of a model descriptor, can be later used to check what module created a channel model
+\param cdesc points to the model descriptor
+\param module_id identifies the channel model. should be define as a macro in simu.h
+*/
+void set_channeldesc_owner(channel_desc_t *cdesc, channelmod_moduleid_t module_id);
+/**
+\brief This function set a model name to a model descriptor, can be later used to identify a allocated channel model
+\param cdesc points to the model descriptor
+\param module_name is the C string to use as model name for the channel pointed by cdesc
+*/
+void set_channeldesc_name(channel_desc_t *cdesc,char *modelname);
+
+/** \fn void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length)
+\brief This routine generates the complex exponential to apply the Doppler shift
+\param cexp_doppler Output with the complex exponential of Doppler shift
+\param desc Pointer to the channel descriptor
+\param length Size of complex exponential of Doppler shift
+*/
+void get_cexp_doppler(struct complexd *cexp_doppler, channel_desc_t *chan_desc, const uint32_t length);
 
 /** \fn void random_channel(channel_desc_t *desc)
 \brief This routine generates a random channel response (time domain) according to a tapped delay line model.
@@ -282,13 +367,38 @@ channel_desc_t *new_channel_desc_scm(uint8_t nb_tx,
 */
 int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 
+/**
+\brief Add AWGN noise and phase noise if enabled
+\param rxdata output data with noise
+\param r_re real part of input data without noise
+\param r_im imaginary part of input data without noise
+\param sigma noise power
+\param length number of samples to apply the noise
+\param slot_offset slot offset to start applying the noise
+\param ts sampling time
+\param delay introduce delay in terms of number of samples
+\param pdu_bit_map bitmap indicating presence of optional PDUs
+\param nb_antennas_rx number of receive antennas
+*/
+void add_noise(c16_t **rxdata,
+               const double **r_re,
+               const double **r_im,
+               const double sigma,
+               const int length,
+               const int slot_offset,
+               const double ts,
+               const int delay,
+               const uint16_t pdu_bit_map,
+               const uint8_t nb_antennas_rx);
+
 /**\fn void multipath_channel(channel_desc_t *desc,
-           double tx_sig_re[2],
-           double tx_sig_im[2],
-           double rx_sig_re[2],
-           double rx_sig_im[2],
+           double tx_sig_re[NB_ANTENNAS_TX],
+           double tx_sig_im[NB_ANTENANS_TX],
+           double rx_sig_re[NB_ANTENNAS_RX],
+           double rx_sig_im[NB_ANTENNAS_RX],
            uint32_t length,
-           uint8_t keep_channel)
+           uint8_t keep_channel,
+	   int log_channel)
 
 \brief This function generates and applys a random frequency selective random channel model.
 @param desc Pointer to channel descriptor
@@ -298,15 +408,17 @@ int random_channel(channel_desc_t *desc, uint8_t abstraction_flag);
 @param rx_sig_im output signal (imaginary component)
 @param length Length of input signal
 @param keep_channel Set to 1 to keep channel constant for null-B/F
+@param log_channel=1 make channel coefficients come out for first sample of input
 */
 
 void multipath_channel(channel_desc_t *desc,
-                       double *tx_sig_re[2],
-                       double *tx_sig_im[2],
-                       double *rx_sig_re[2],
-                       double *rx_sig_im[2],
+                       double *tx_sig_re[NB_ANTENNAS_TX],
+                       double *tx_sig_im[NB_ANTENNAS_TX],
+                       double *rx_sig_re[NB_ANTENNAS_RX],
+                       double *rx_sig_im[NB_ANTENNAS_RX],
                        uint32_t length,
-                       uint8_t keep_channel);
+                       uint8_t keep_channel,
+		       int log_channel);
 /*
 \fn double compute_pbch_sinr(channel_desc_t *desc,
                              channel_desc_t *desc_i1,
@@ -415,55 +527,56 @@ the value \f$\mathrm{sgn}(u)i\f$.  The search requires at most \f$Nbits-1\f$ com
 */
 int gauss(unsigned int *gauss_LUT,unsigned char Nbits);
 
+void fill_random(void *buf, size_t sz);
 double gaussdouble(double,double);
-void randominit(unsigned int seed_init);
+void randominit(unsigned long seed_init);
 double uniformrandom(void);
-int freq_channel(channel_desc_t *desc,uint16_t nb_rb, int16_t n_samples);
-int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples);
+double gaussZiggurat(double mean, double variance);
+void tableNor(unsigned long seed);
+int freq_channel(channel_desc_t *desc,uint16_t nb_rb, int16_t n_samples,int scs);
+int init_freq_channel(channel_desc_t *desc,uint16_t nb_rb,int16_t n_samples,int scs);
+void term_freq_channel(void);
 uint8_t multipath_channel_nosigconv(channel_desc_t *desc);
 void multipath_tv_channel(channel_desc_t *desc,
                           double **tx_sig_re,
                           double **tx_sig_im,
                           double **rx_sig_re,
                           double **rx_sig_im,
-                          uint16_t length,
+                          uint32_t length,
                           uint8_t keep_channel);
 
 /**@} */
 /**@} */
 
-void rxAddInput( struct complex16 *input_sig, struct complex16 *after_channel_sig,
-                 int rxAnt,
-                 channel_desc_t *channelDesc,
-                 int nbSamples,
-                 uint64_t TS,
-                 uint32_t CirSize
-               );
-
-int modelid_fromname(char *modelname);
+int modelid_fromstrtype(char *modeltype);
 double channelmod_get_snr_dB(void);
 double channelmod_get_sinr_dB(void);
 void init_channelmod(void) ;
-
+int load_channellist(uint8_t nb_tx, uint8_t nb_rx, double sampling_rate, double channel_bandwidth) ;
 double N_RB2sampling_rate(uint16_t N_RB);
 double N_RB2channel_bandwidth(uint16_t N_RB);
 
+/* Linear phase noise model */
+/*!
+  \brief This function produce phase noise and add to input signal
+  \param ts Sampling time 
+  \param *Re *Im Real and Imag part of the signal
+*/
+//look-up table for the sine (cosine) function
+#define ResolSinCos 100
+void InitSinLUT( void );
+void phase_noise(double ts, int16_t * InRe, int16_t * InIm);
 
-#include "targets/RT/USER/rfsim.h"
 
 void do_DL_sig(sim_t *sim,
                uint16_t subframe,
                uint32_t offset,
                uint32_t length,
-               uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *ue_frame_parms,
+               uint8_t abstraction_flag,
+               LTE_DL_FRAME_PARMS *ue_frame_parms,
                uint8_t UE_id,
                int CC_id);
 
-void do_UL_sig(sim_t *sim,
-               uint16_t subframe,uint8_t abstraction_flag,LTE_DL_FRAME_PARMS *frame_parms,
-               uint32_t frame,int ru_id,uint8_t CC_id);
-
+void do_UL_sig(sim_t *sim, uint16_t subframe, uint8_t abstraction_flag, LTE_DL_FRAME_PARMS *frame_parms, uint32_t frame, int ru_id, uint8_t CC_id, int NB_UEs);
 
 #endif
-
-

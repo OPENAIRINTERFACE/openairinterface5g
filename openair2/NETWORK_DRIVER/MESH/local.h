@@ -64,8 +64,6 @@
 #include "rrc_nas_primitives.h"
 #include "COMMON/platform_types.h"
 
-#define MAKE_VERSION(a,b,c) ((a)*256+(b)*16+(c))
-
 struct rb_entity {
   nasRadioBearerId_t rab_id;
   nasSapId_t sapi;
@@ -162,10 +160,8 @@ typedef struct pdcp_data_req_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   traffic_type;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
-#endif
 } pdcp_data_req_header_t;
 
 typedef struct pdcp_data_ind_header_s {
@@ -173,22 +169,13 @@ typedef struct pdcp_data_ind_header_s {
   sdu_size_t          data_size;
   signed int          inst;
   ip_traffic_type_t   dummy_traffic_type;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint32_t sourceL2Id;
   uint32_t destinationL2Id;
-#endif
 } pdcp_data_ind_header_t;
 
 extern struct net_device *nasdev[NB_INSTANCES_MAX];
-//extern int bytes_wrote;
-//extern int bytes_read;
+
 
 extern uint8_t NAS_NULL_IMEI[14];
-
-//global variables shared with RRC
-#ifndef PDCP_USE_NETLINK
-extern int pdcp_2_nas_irq;
-#endif
-//extern uint8_t nas_IMEI[14];
 
 #endif

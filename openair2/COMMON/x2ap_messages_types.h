@@ -25,19 +25,36 @@
 #include "s1ap_messages_types.h"
 #include "LTE_PhysCellId.h"
 
+typedef enum {
+  X2AP_CAUSE_T_DC_PREP_TIMEOUT,
+  X2AP_CAUSE_T_DC_OVERALL_TIMEOUT,
+  X2AP_CAUSE_RADIO_CONNECTION_WITH_UE_LOST,
+} x2ap_cause_t;
+
 //-------------------------------------------------------------------------------------------//
 // Defines to access message fields.
 
-#define X2AP_REGISTER_ENB_REQ(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_register_enb_req
-#define X2AP_SETUP_REQ(mSGpTR)                  (mSGpTR)->ittiMsg.x2ap_setup_req
-#define X2AP_SETUP_RESP(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_setup_resp
-#define X2AP_HANDOVER_REQ(mSGpTR)               (mSGpTR)->ittiMsg.x2ap_handover_req
-#define X2AP_HANDOVER_REQ_ACK(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
-#define X2AP_REGISTER_ENB_CNF(mSGpTR)           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
-#define X2AP_DEREGISTERED_ENB_IND(mSGpTR)       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
-#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)         (mSGpTR)->ittiMsg.x2ap_ue_context_release
-#define X2AP_HANDOVER_CANCEL(mSGpTR)            (mSGpTR)->ittiMsg.x2ap_handover_cancel
 
+#define X2AP_REGISTER_ENB_REQ(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_req
+#define X2AP_SETUP_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_setup_req
+#define X2AP_SETUP_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_setup_resp
+#define X2AP_RESET_REQ(mSGpTR)                                  (mSGpTR)->ittiMsg.x2ap_reset_req
+#define X2AP_RESET_RESP(mSGpTR)                                 (mSGpTR)->ittiMsg.x2ap_reset_resp
+#define X2AP_HANDOVER_REQ(mSGpTR)                               (mSGpTR)->ittiMsg.x2ap_handover_req
+#define X2AP_HANDOVER_REQ_ACK(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_handover_req_ack
+#define X2AP_REGISTER_ENB_CNF(mSGpTR)                           (mSGpTR)->ittiMsg.x2ap_register_enb_cnf
+#define X2AP_DEREGISTERED_ENB_IND(mSGpTR)                       (mSGpTR)->ittiMsg.x2ap_deregistered_enb_ind
+#define X2AP_UE_CONTEXT_RELEASE(mSGpTR)                         (mSGpTR)->ittiMsg.x2ap_ue_context_release
+#define X2AP_HANDOVER_CANCEL(mSGpTR)                            (mSGpTR)->ittiMsg.x2ap_handover_cancel
+#define X2AP_SENB_ADDITION_REQ(mSGpTR)                          (mSGpTR)->ittiMsg.x2ap_senb_addition_req
+#define X2AP_ENDC_SGNB_ADDITION_REQ(mSGpTR)                     (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req
+#define X2AP_ENDC_SGNB_ADDITION_REQ_ACK(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_addition_req_ACK
+#define X2AP_ENDC_SGNB_RECONF_COMPLETE(mSGpTR)                  (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_reconf_complete
+#define X2AP_ENDC_SGNB_RELEASE_REQUEST(mSGpTR)                  (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_release_request
+#define X2AP_ENDC_SGNB_RELEASE_REQUIRED(mSGpTR)                 (mSGpTR)->ittiMsg.x2ap_ENDC_sgnb_release_required
+#define X2AP_ENDC_DC_PREP_TIMEOUT(mSGpTR)                       (mSGpTR)->ittiMsg.x2ap_ENDC_dc_prep_timeout
+#define X2AP_ENDC_DC_OVERALL_TIMEOUT(mSGpTR)                    (mSGpTR)->ittiMsg.x2ap_ENDC_dc_overall_timeout
+#define X2AP_ENDC_SETUP_REQ(mSGpTR)                             (mSGpTR)->ittiMsg.x2ap_ENDC_setup_req
 
 #define X2AP_MAX_NB_ENB_IP_ADDRESS 2
 
@@ -53,6 +70,14 @@ typedef struct x2ap_setup_resp_s {
   int num_cc;
 } x2ap_setup_resp_t;
 
+typedef struct x2ap_reset_req_s {
+  uint32_t cause;
+} x2ap_reset_req_t;
+
+typedef struct x2ap_reset_resp_s {
+  int dummy;
+} x2ap_reset_resp_t;
+
 /* X2AP UE CONTEXT RELEASE */
 typedef struct x2ap_ue_context_release_s {
   /* used for X2AP->RRC in source and RRC->X2AP in target */
@@ -65,6 +90,13 @@ typedef enum {
   X2AP_T_RELOC_PREP_TIMEOUT,
   X2AP_TX2_RELOC_OVERALL_TIMEOUT
 } x2ap_handover_cancel_cause_t;
+
+typedef enum {
+	X2AP_RECONF_RESPONSE_SUCCESS,
+	X2AP_RECONF_RESPONSE_REJECT
+	/* Extensions may appear below */
+
+} x2ap_sgNB_reconf_response_information_t;
 
 typedef struct x2ap_handover_cancel_s {
   int rnti;
@@ -100,11 +132,13 @@ typedef struct x2ap_register_enb_req_s {
    * CC Params
    */
   int16_t                 eutra_band[MAX_NUM_CCs];
+  int32_t                 nr_band[MAX_NUM_CCs];
+  int32_t                 nrARFCN[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
   uint32_t                subframeAssignment[MAX_NUM_CCs];
@@ -134,10 +168,15 @@ typedef struct x2ap_register_enb_req_s {
   /* timers (unit: millisecond) */
   int t_reloc_prep;
   int tx2_reloc_overall;
+  int t_dc_prep;
+  int t_dc_overall;
 } x2ap_register_enb_req_t;
 
 typedef struct x2ap_subframe_process_s {
   /* nothing, we simply use the module ID in the header */
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } x2ap_subframe_process_t;
 
 //-------------------------------------------------------------------------------------------//
@@ -235,5 +274,170 @@ typedef struct x2ap_handover_req_ack_s {
 
   uint32_t mme_ue_s1ap_id;
 } x2ap_handover_req_ack_t;
+
+typedef struct x2ap_senb_addition_req_s {
+
+	/* MeNB UE X2AP ID*/
+	int x2_MeNB_UE_id;
+
+	/*SCG Bearer option*/
+	security_capabilities_t UE_security_capabilities;
+
+	/*SCG Bearer option*/
+	uint8_t SeNB_security_key[256];
+
+	/*SeNB UE aggregate maximum bitrate */
+	ambr_t SeNB_ue_ambr;
+
+	uint8_t total_nb_e_rabs_tobeadded;
+
+	uint8_t nb_sCG_e_rabs_tobeadded;
+
+	uint8_t nb_split_e_rabs_tobeadded;
+
+	/*list of total e_rabs (SCG or split) to be added*/
+    //e_rab_setup_t total_e_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+	/* list of SCG e_rab to be added by RRC layers */
+	e_rab_setup_t e_sCG_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+	/* list of split e_rab to be added by RRC layers */
+	e_rab_setup_t e_split_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+	/* list of SCG e_rab to be added by RRC layers */
+	e_rab_t  e_sCG_rab_param[S1AP_MAX_E_RAB];
+
+	/* list of split e_rab to be added by RRC layers */
+	e_rab_t  e_split_rab_param[S1AP_MAX_E_RAB];
+
+	/*Used for the MeNB to SeNB Container to include the SCG-ConfigInfo as per 36.331*/
+	uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
+
+	int rrc_buffer_size;
+
+}x2ap_senb_addition_req_t;
+
+typedef struct x2ap_senb_addition_req_ack_s {
+
+  int MeNB_UE_X2_id;
+
+  int SgNB_UE_X2_id;
+
+  uint8_t nb_sCG_e_rabs_tobeadded;
+
+  uint8_t nb_split_e_rabs_tobeadded;
+
+ /* list of SCG e_rab to be added by RRC layers */
+  e_rab_setup_t e_sCG_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+  /* list of split e_rab to be added by RRC layers */
+  e_rab_setup_t e_split_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+  uint8_t rrc_buffer[1024 /* arbitrary, big enough */];
+  int rrc_buffer_size;
+
+} x2ap_senb_addition_req_ack_t;
+
+
+typedef struct x2ap_ENDC_setup_req_s {
+  uint32_t Nid_cell[MAX_NUM_CCs];
+  int num_cc;
+  uint32_t servedNrCell_band[MAX_NUM_CCs];
+} x2ap_ENDC_setup_req_t;
+
+typedef struct x2ap_ENDC_sgnb_addition_req_s {
+  int ue_x2_id;
+  LTE_PhysCellId_t target_physCellId; 
+  /* used for RRC->X2AP in source eNB */
+  int rnti;
+
+  nr_security_capabilities_t security_capabilities;
+
+  /* SgNB Security Key */
+  uint8_t      kgnb[32];
+
+  /*next_hop_chaining_coun */
+  long int     kgnb_ncc;
+
+  /* UE aggregate maximum bitrate */
+  ambr_t ue_ambr;
+
+  uint8_t nb_e_rabs_tobeadded;
+
+ /* list of e_rab to be added by RRC layers */
+  e_rab_tobe_added_t e_rabs_tobeadded[S1AP_MAX_E_RAB];
+
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
+
+  x2ap_lastvisitedcell_info_t lastvisitedcell_info;
+
+  uint8_t rrc_buffer[4096 /* arbitrary, big enough */];
+  int rrc_buffer_size;
+
+  int target_assoc_id;
+
+  	/*long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
+  	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
+  	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;*/
+
+
+} x2ap_ENDC_sgnb_addition_req_t;
+
+typedef struct x2ap_ENDC_sgnb_addition_req_ACK_s {
+  int MeNB_ue_x2_id;
+
+  int SgNB_ue_x2_id;
+
+  int gnb_x2_assoc_id;  // to be stored in the rrc's ue context, used when sending 'sgnb reconfiguration complete'
+
+  /* used for X2AP->RRC in source eNB */
+  int rnti;
+
+  uint8_t nb_e_rabs_admitted_tobeadded;
+
+ /* list of e_rab to be added by RRC layers */
+  e_rab_admitted_tobe_added_t e_rabs_admitted_tobeadded[S1AP_MAX_E_RAB];
+
+  /* list of e_rab to be setup by RRC layers */
+  e_rab_t  e_rab_param[S1AP_MAX_E_RAB];
+
+  x2ap_lastvisitedcell_info_t lastvisitedcell_info;
+
+  uint8_t rrc_buffer[4096 /* arbitrary, big enough */];
+  int rrc_buffer_size;
+
+  int target_assoc_id;
+
+  	/*long int pDCPatSgNB = X2AP_EN_DC_ResourceConfiguration__pDCPatSgNB_present;
+  	long int mCGresources = X2AP_EN_DC_ResourceConfiguration__mCGresources_not_present;
+  	long int sCGresources = X2AP_EN_DC_ResourceConfiguration__sCGresources_not_present;*/
+
+
+} x2ap_ENDC_sgnb_addition_req_ACK_t;
+
+typedef struct x2ap_ENDC_reconf_complete_s {
+  int MeNB_ue_x2_id;
+  int SgNB_ue_x2_id;
+  int gnb_x2_assoc_id;
+} x2ap_ENDC_reconf_complete_t;
+
+typedef struct x2ap_ENDC_sgnb_release_request_s {
+  int          rnti;
+  x2ap_cause_t cause;
+  int          assoc_id;
+} x2ap_ENDC_sgnb_release_request_t;
+
+typedef struct x2ap_ENDC_sgnb_release_required_s {
+  int gnb_rnti;
+} x2ap_ENDC_sgnb_release_required_t;
+
+typedef struct x2ap_ENDC_dc_prep_timeout_s {
+  int rnti;
+} x2ap_ENDC_dc_prep_timeout_t;
+
+typedef struct x2ap_ENDC_dc_overall_timeout_s {
+  int rnti;
+} x2ap_ENDC_dc_overall_timeout_t;
 
 #endif /* X2AP_MESSAGES_TYPES_H_ */

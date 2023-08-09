@@ -95,6 +95,17 @@ static void read_pipe(int p, char *b, int size) {
     size -= ret;
   }
 }
+int checkIfFedoraDistribution(void) {
+  return !system("grep -iq 'ID_LIKE.*fedora' /etc/os-release ");
+}
+
+int checkIfGenericKernelOnFedora(void) {
+  return system("uname -a | grep -q rt");
+}
+
+int checkIfInsideContainer(void) {
+  return !system("egrep -q 'libpod|podman|kubepods'  /proc/self/cgroup");
+}
 
 /********************************************************************/
 /* background process                                               */
@@ -161,6 +172,10 @@ int background_system(char *command) {
 void start_background_system(void) {
   int p[2];
   pid_t son;
+
+  if (module_initialized == 1)
+    return;
+
   module_initialized = 1;
 
   if (pipe(p) == -1) {
@@ -196,19 +211,59 @@ void start_background_system(void) {
   background_system_process();
 }
 
+int rt_sleep_ns (uint64_t x)
+{
+  struct timespec myTime;
+  clock_gettime(CLOCK_MONOTONIC, &myTime);
+  myTime.tv_sec += x/1000000000ULL;
+  myTime.tv_nsec = x%1000000000ULL;
+  if (myTime.tv_nsec>=1000000000) {
+    myTime.tv_nsec -= 1000000000;
+    myTime.tv_sec++;
+  }
+
+  return clock_nanosleep(CLOCK_MONOTONIC, TIMER_ABSTIME, &myTime, NULL);
+}
 
 void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name, int affinity, int priority){
   pthread_attr_t attr;
-  pthread_attr_init(&attr);
-  pthread_attr_setdetachstate(&attr, PTHREAD_CREATE_DETACHED);
-  pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
-  pthread_attr_setschedpolicy(&attr, SCHED_FIFO);
-  struct sched_param sparam={0};
-  sparam.sched_priority = priority;
-  pthread_attr_setschedparam(&attr, &sparam);
+  int ret;
+  int settingPriority = 1;
+  ret=pthread_attr_init(&attr);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
 
-  pthread_create(t, &attr, func, param);
+  LOG_I(UTIL,"Creating thread %s with affinity %d and priority %d\n",name,affinity,priority);
 
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
+  
+  if (settingPriority) {
+    ret=pthread_attr_setinheritsched(&attr, PTHREAD_EXPLICIT_SCHED);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    ret=pthread_attr_setschedpolicy(&attr, SCHED_OAI);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+    if(priority<sched_get_priority_min(SCHED_OAI) || priority>sched_get_priority_max(SCHED_OAI)) {
+      LOG_E(UTIL,"Prio not possible: %d, min is %d, max: %d, forced in the range\n",
+	    priority,
+	    sched_get_priority_min(SCHED_OAI),
+	    sched_get_priority_max(SCHED_OAI));
+      if(priority<sched_get_priority_min(SCHED_OAI))
+        priority=sched_get_priority_min(SCHED_OAI);
+      if(priority>sched_get_priority_max(SCHED_OAI))
+        priority=sched_get_priority_max(SCHED_OAI);
+    }
+    AssertFatal(priority<=sched_get_priority_max(SCHED_OAI),"");
+    struct sched_param sparam={0};
+    sparam.sched_priority = priority;
+    ret=pthread_attr_setschedparam(&attr, &sparam);
+    AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  }
+  
+  ret=pthread_create(t, &attr, func, param);
+  AssertFatal(ret==0,"ret: %d, errno: %d\n",ret, errno);
+  
   pthread_setname_np(*t, name);
   if (affinity != -1 ) {
     cpu_set_t cpuset;
@@ -216,20 +271,91 @@ void threadCreate(pthread_t* t, void * (*func)(void*), void * param, char* name,
     CPU_SET(affinity, &cpuset);
     AssertFatal( pthread_setaffinity_np(*t, sizeof(cpu_set_t), &cpuset) == 0, "Error setting processor affinity");
   }
-
   pthread_attr_destroy(&attr);
 }
 
+// Legacy, pthread_create + thread_top_init() should be replaced by threadCreate
+// threadCreate encapsulates the posix pthread api
+void thread_top_init(char *thread_name,
+		     int affinity,
+		     uint64_t runtime,
+		     uint64_t deadline,
+		     uint64_t period) {
+  
+  int policy, s, j;
+  struct sched_param sparam;
+  char cpu_affinity[1024];
+  cpu_set_t cpuset;
+  int settingPriority = 1;
+
+  /* Set affinity mask to include CPUs 2 to MAX_CPUS */
+  /* CPU 0 is reserved for UHD threads */
+  /* CPU 1 is reserved for all RX_TX threads */
+  /* Enable CPU Affinity only if number of CPUs > 2 */
+  CPU_ZERO(&cpuset);
+
+  /* Check the actual affinity mask assigned to the thread */
+  s = pthread_getaffinity_np(pthread_self(), sizeof(cpu_set_t), &cpuset);
+  if (s != 0)
+  {
+    perror( "pthread_getaffinity_np");
+    exit_fun("Error getting processor affinity ");
+  }
+  memset(cpu_affinity,0,sizeof(cpu_affinity));
+  for (j = 0; j < 1024; j++)
+  {
+    if (CPU_ISSET(j, &cpuset))
+    {  
+      char temp[1024];
+      sprintf (temp, " CPU_%d", j);
+      strcat(cpu_affinity, temp);
+    }
+  }
+
+  if (checkIfFedoraDistribution())
+    if (checkIfGenericKernelOnFedora())
+      if (checkIfInsideContainer())
+        settingPriority = 0;
+
+  if (settingPriority) {
+    memset(&sparam, 0, sizeof(sparam));
+    sparam.sched_priority = sched_get_priority_max(SCHED_FIFO);
+    policy = SCHED_FIFO;
+  
+    s = pthread_setschedparam(pthread_self(), policy, &sparam);
+    if (s != 0) {
+      perror("pthread_setschedparam : ");
+      exit_fun("Error setting thread priority");
+    }
+  
+    s = pthread_getschedparam(pthread_self(), &policy, &sparam);
+    if (s != 0) {
+      perror("pthread_getschedparam : ");
+      exit_fun("Error getting thread priority");
+    }
+
+    pthread_setname_np(pthread_self(), thread_name);
+
+    LOG_I(HW, "[SCHED][eNB] %s started on CPU %d, sched_policy = %s , priority = %d, CPU Affinity=%s \n",thread_name,sched_getcpu(),
+                     (policy == SCHED_FIFO)  ? "SCHED_FIFO" :
+                     (policy == SCHED_RR)    ? "SCHED_RR" :
+                     (policy == SCHED_OTHER) ? "SCHED_OTHER" :
+                     "???",
+                     sparam.sched_priority, cpu_affinity );
+  }
+}
+
+
 // Block CPU C-states deep sleep
-void configure_linux(void) {
+void set_latency_target(void) {
   int ret;
   static int latency_target_fd=-1;
-  uint32_t latency_target_value=10; // in microseconds
+  uint32_t latency_target_value=2; // in microseconds
   if (latency_target_fd == -1) {
     if ( (latency_target_fd = open("/dev/cpu_dma_latency", O_RDWR)) != -1 ) {
       ret = write(latency_target_fd, &latency_target_value, sizeof(latency_target_value));
       if (ret == 0) {
-	printf("# error setting cpu_dma_latency to %d!: %s\n", latency_target_value, strerror(errno));
+	printf("# error setting cpu_dma_latency to %u!: %s\n", latency_target_value, strerror(errno));
 	close(latency_target_fd);
 	latency_target_fd=-1;
 	return;
@@ -237,12 +363,19 @@ void configure_linux(void) {
     }
   }
   if (latency_target_fd != -1) 
-    LOG_I(HW,"# /dev/cpu_dma_latency set to %dus\n", latency_target_value);
+    LOG_I(HW,"# /dev/cpu_dma_latency set to %u us\n", latency_target_value);
   else
-    LOG_E(HW,"Can't set /dev/cpu_dma_latency to %dus\n", latency_target_value);
+    LOG_E(HW,"Can't set /dev/cpu_dma_latency to %u us\n", latency_target_value);
 
   // Set CPU frequency to it's maximum
-  if ( 0 != system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done"))
-	  LOG_W(HW,"Can't set cpu frequency\n");
-  
+  int system_ret = system("for d in /sys/devices/system/cpu/cpu[0-9]*; do cat $d/cpufreq/cpuinfo_max_freq > $d/cpufreq/scaling_min_freq; done");
+  if (system_ret == -1) {
+    LOG_E(HW, "Can't set cpu frequency: [%d]  %s\n", errno, strerror(errno));
+    return;
+  }
+  if (!((WIFEXITED(system_ret)) && (WEXITSTATUS(system_ret) == 0))) {
+    LOG_E(HW, "Can't set cpu frequency\n");
+  }
+  mlockall(MCL_CURRENT | MCL_FUTURE);
+
 }

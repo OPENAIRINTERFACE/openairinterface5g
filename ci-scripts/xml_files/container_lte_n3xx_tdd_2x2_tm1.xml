@@ -1,0 +1,160 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+
+<testCaseList>
+  <htmlTabRef>TEST-LTE-2x2-N3XX-TM1</htmlTabRef>
+  <htmlTabName>2.6 Ghz TDD LTE 2x2 TM1</htmlTabName>
+  <htmlTabIcon>tasks</htmlTabIcon>
+  <repeatCount>1</repeatCount>
+  <TestCaseRequestedList>
+
+111111
+100000
+010000
+030101
+010001
+000001
+050000
+050001
+070000
+070001
+010010
+010002
+030201
+
+</TestCaseRequestedList>
+  <TestCaseExclusionList></TestCaseExclusionList>
+
+  <testCase id="111111">
+    <class>Pull_Local_Registry</class>
+    <desc>Pull Images from Local Registry</desc>
+    <test_svr_id>0</test_svr_id>
+    <images_to_pull>oai-enb</images_to_pull>
+  </testCase>
+
+  <testCase id="100000">
+    <class>Custom_Command</class>
+    <desc>Disable Sleep States</desc>
+    <node>obelix</node>
+    <command>sudo cpupower idle-set -D 0</command>
+  </testCase>
+
+  <testCase id="200000">
+    <class>Custom_Command</class>
+    <desc>Enable Sleep States</desc>
+    <node>obelix</node>
+    <command>sudo cpupower idle-set -E</command>
+  </testCase>
+
+  <testCase id="030101">
+    <class>Deploy_Object</class>
+    <desc>Deploy eNB (TDD/Band38/2.6Ghz/N3XX) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/lte_n3xx_tdd_2x2_tm1</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+  </testCase>
+
+  <testCase id="000001">
+    <class>IdleSleep</class>
+    <desc>Sleep</desc>
+    <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+  </testCase>
+
+  <testCase id="010000">
+    <class>Initialize_UE</class>
+    <desc>Initialize Quectel</desc>
+    <id>nrmodule2_quectel</id>
+  </testCase>
+
+  <testCase id="010002">
+    <class>Terminate_UE</class>
+    <desc>Terminate Quectel</desc>
+    <id>nrmodule2_quectel</id>
+  </testCase>
+
+  <testCase id="010001">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>nrmodule2_quectel</id>
+  </testCase>
+
+  <testCase id="050000">
+    <class>Ping</class>
+    <desc>Ping: 20 pings</desc>
+    <id>nrmodule2_quectel</id>
+    <ping_args>-c 20 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>60</ping_rttavg_threshold>
+  </testCase>
+
+ <testCase id="050001">
+    <class>Ping</class>
+    <desc>Ping: 100 pings, size 1024</desc>
+    <id>nrmodule2_quectel</id>
+    <ping_args>-c 100 -s 1024 -i 0,2 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>60</ping_rttavg_threshold>
+   </testCase>
+
+  <testCase id="070000">
+    <class>Iperf</class>
+    <desc>iperf (DL/26Mbps/UDP)(60 sec)(single-ue profile)</desc>
+    <iperf_args>-u -b 26M -t 60</iperf_args>
+    <direction>DL</direction>
+    <id>nrmodule2_quectel</id>
+    <iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+    <iperf_profile>single-ue</iperf_profile>
+   </testCase>
+
+   <testCase id="070001">
+     <class>Iperf</class>
+     <desc>iperf (UL/7Mbps/UDP)(60 sec)(single-ue profile)</desc>
+     <iperf_args>-u -b 7M -t 60</iperf_args>
+     <direction>UL</direction>
+     <id>nrmodule2_quectel</id>
+     <iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+     <iperf_bitrate_threshold>95</iperf_bitrate_threshold>
+     <iperf_profile>single-ue</iperf_profile>
+   </testCase>
+
+  <testCase id="010010">
+    <class>Detach_UE</class>
+    <desc>Detach UE</desc>
+    <id>nrmodule2_quectel</id>
+  </testCase>
+
+  <testCase id="030201">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy gNB</desc>
+    <yaml_path>ci-scripts/yaml_files/lte_n3xx_tdd_2x2_tm1</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+    <!-- <d_retx_th>1,100,100,100</d_retx_th>
+	    <u_retx_th>1,100,100,100</u_retx_th>
+		    ?
+    -->
+  </testCase>
+
+</testCaseList>
+

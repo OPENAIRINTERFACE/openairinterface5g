@@ -52,10 +52,10 @@ Description Defines structure of the AT command response returned after
 /*
  * Response format indicator (set by ATV0 and ATV1)
  * -----------------------------------------------
- *  TRUE  - <CR><LF><text><CR><LF>, <CR><LF><verbose code><CR><LF>
- *  FALSE - <text><CR><LF>, <numeric code><CR><LF>
+ *  true  - <CR><LF><text><CR><LF>, <CR><LF><verbose code><CR><LF>
+ *  false - <text><CR><LF>, <numeric code><CR><LF>
  */
-int at_response_format_v1 = TRUE;
+bool at_response_format_v1 = true;
 
 /****************************************************************************/
 /*******************  L O C A L    D E F I N I T I O N S  *******************/
@@ -1067,32 +1067,32 @@ static int _at_response_encode_cgpaddr(char* buffer, const at_response_t* data)
 
             if (cgpaddr->PDP_addr_1[i] != NULL) {
                 /* IPv4 address */
-                offset += sprintf(buffer+offset, ",%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][0],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][1],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][2],
-                                  (unsigned int)cgpaddr->PDP_addr_1[i][3]);
+                offset += sprintf(buffer+offset, ",%c.%c.%c.%c",
+                                  cgpaddr->PDP_addr_1[i][0],
+                                  cgpaddr->PDP_addr_1[i][1],
+                                  cgpaddr->PDP_addr_1[i][2],
+                                  cgpaddr->PDP_addr_1[i][3]);
             }
 
             if (cgpaddr->PDP_addr_2[i] != NULL) {
                 /* IPv6 Link-local address prefixe */
                 offset += sprintf(buffer+offset,
-                                  ",%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)0xfe, (unsigned int)0x80,
-                                  (unsigned int)0, (unsigned int)0,
-                                  (unsigned int)0, (unsigned int)0,
-                                  (unsigned int)0, (unsigned int)0);
+                                  ",%u.%u.%u.%u.%u.%u.%u.%u",
+                                  0xfeU, 0x80U,
+                                  0U, 0U,
+                                  0U, 0U,
+                                  0U, 0U);
                 /* IPv6 Link-local address */
                 offset += sprintf(buffer+offset,
-                                  ".%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu.%hhu",
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][0],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][1],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][2],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][3],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][4],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][5],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][6],
-                                  (unsigned int)cgpaddr->PDP_addr_2[i][7]);
+                                  ".%c.%c.%c.%c.%c.%c.%c.%c",
+                                  cgpaddr->PDP_addr_2[i][0],
+                                  cgpaddr->PDP_addr_2[i][1],
+                                  cgpaddr->PDP_addr_2[i][2],
+                                  cgpaddr->PDP_addr_2[i][3],
+                                  cgpaddr->PDP_addr_2[i][4],
+                                  cgpaddr->PDP_addr_2[i][5],
+                                  cgpaddr->PDP_addr_2[i][6],
+                                  cgpaddr->PDP_addr_2[i][7]);
             }
 
             offset += sprintf(buffer+offset, "\r\n");

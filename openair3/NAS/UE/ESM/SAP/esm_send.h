@@ -40,6 +40,8 @@ Description Defines functions executed at the ESM Service Access
 #ifndef __ESM_SEND_H__
 #define __ESM_SEND_H__
 
+#include <stdbool.h>
+
 #include "EsmStatus.h"
 
 
@@ -90,7 +92,7 @@ int esm_send_status(int pti, int ebi, esm_status_msg *msg, int esm_cause);
  * Transaction related messages
  * ----------------------------
  */
-int esm_send_pdn_connectivity_request(int pti, int is_emergency, int pdn_type,
+int esm_send_pdn_connectivity_request(int pti, bool is_emergency, int pdn_type,
                                       const char *apn, pdn_connectivity_request_msg *msg);
 int esm_send_pdn_disconnect_request(int pti, int ebi,
                                     pdn_disconnect_request_msg *msg);

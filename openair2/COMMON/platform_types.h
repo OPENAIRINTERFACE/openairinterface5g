@@ -28,35 +28,10 @@
 
  ***************************************************************************/
 #ifndef __PLATFORM_TYPES_H__
-#    define __PLATFORM_TYPES_H__
+#define __PLATFORM_TYPES_H__
 
-#if !defined(NAS_NETLINK)
-  #include <stdint.h>
-#endif
-
-//-----------------------------------------------------------------------------
-// GENERIC TYPES
-//-----------------------------------------------------------------------------
-
-/* boolean_t is also defined in openair2/COMMON/commonDef.h,
- * let's protect potential redefinition
- */
-#ifndef _BOOLEAN_T_DEFINED_
-  #define _BOOLEAN_T_DEFINED_
-
-  typedef signed char        boolean_t;
-
-  #if !defined(TRUE)
-    #define TRUE               (boolean_t)0x01
-  #endif
-
-  #if !defined(FALSE)
-    #define FALSE              (boolean_t)0x00
-  #endif
-
-  #define BOOL_NOT(b) (b^TRUE)
-
-#endif /* _BOOLEAN_T_DEFINED_ */
+#include <stdint.h>
+#include <stdbool.h>
 
 //-----------------------------------------------------------------------------
 // GENERIC ACCESS STRATUM TYPES
@@ -65,29 +40,34 @@ typedef int32_t               sdu_size_t;
 typedef uint32_t              frame_t;
 typedef int32_t               sframe_t;
 typedef uint32_t              sub_frame_t;
+typedef uint32_t              slot_t;
 typedef uint16_t              module_id_t;
 typedef uint8_t               slice_id_t;
 typedef uint8_t               eNB_index_t;
-typedef uint16_t              ue_id_t;
+typedef uint64_t              ue_id_t;
 typedef int16_t               smodule_id_t;
-typedef uint16_t              rb_id_t;
-typedef uint16_t              srb_id_t;
+typedef long              rb_id_t;
+typedef long              srb_id_t;
 
-typedef boolean_t             MBMS_flag_t;
-#define  MBMS_FLAG_NO         FALSE
-#define  MBMS_FLAG_YES        TRUE
+typedef bool MBMS_flag_t;
+#define MBMS_FLAG_NO  false
+#define MBMS_FLAG_YES true
 
-typedef boolean_t             eNB_flag_t;
-#define  ENB_FLAG_NO          FALSE
-#define  ENB_FLAG_YES         TRUE
+typedef bool eNB_flag_t;
+#define ENB_FLAG_NO  false
+#define ENB_FLAG_YES true
 
-typedef boolean_t             srb_flag_t;
-#define  SRB_FLAG_NO          FALSE
-#define  SRB_FLAG_YES         TRUE
+typedef bool gNB_flag_t;
+#define GNB_FLAG_NO  false
+#define GNB_FLAG_YES true
 
-typedef boolean_t             sl_discovery_flag_t;
-#define  SL_DISCOVERY_FLAG_NO          FALSE
-#define  SL_DISCOVERY_FLAG_YES         TRUE
+typedef bool srb_flag_t;
+#define SRB_FLAG_NO  false
+#define SRB_FLAG_YES true
+
+typedef bool sl_discovery_flag_t;
+#define SL_DISCOVERY_FLAG_NO  false
+#define SL_DISCOVERY_FLAG_YES true
 
 typedef enum link_direction_e {
   UNKNOWN_DIR          = 0,
@@ -144,8 +124,8 @@ typedef uint16_t           rlc_usn_t;
 typedef int32_t            rlc_buffer_occupancy_t;
 typedef signed int         rlc_op_status_t;
 
-#define  SDU_CONFIRM_NO          FALSE
-#define  SDU_CONFIRM_YES         TRUE
+#define  SDU_CONFIRM_NO          false
+#define  SDU_CONFIRM_YES         true
 //-----------------------------------------------------------------------------
 // PDCP TYPES
 //-----------------------------------------------------------------------------
@@ -187,21 +167,13 @@ typedef uint8_t            mme_code_t;
 typedef uint32_t           m_tmsi_t;
 
 //Random UE identity length = 40 bits
-#if ! defined(NOT_A_RANDOM_UE_IDENTITY)
   #define NOT_A_RANDOM_UE_IDENTITY (uint64_t)0xFFFFFFFF
-#endif
-#if ! defined(NOT_A_RNTI)
   #define NOT_A_RNTI (rnti_t)0
-#endif
-#if ! defined(M_RNTI)
   #define M_RNTI     (rnti_t)0xFFFD
-#endif
-#if ! defined(P_RNTI)
   #define P_RNTI     (rnti_t)0xFFFE
-#endif
-#if ! defined(SI_RNTI)
   #define SI_RNTI    (rnti_t)0xFFFF
-#endif
+#define CBA_RNTI   (rnti_t)0xfff4
+#define OAI_C_RNTI (rnti_t)0x1234
 typedef enum config_action_e {
   CONFIG_ACTION_NULL              = 0,
   CONFIG_ACTION_ADD               = 1,
@@ -212,52 +184,58 @@ typedef enum config_action_e {
   CONFIG_ACTION_MBMS_MODIFY       = 11
 } config_action_t;
 
+/* Maximum size of any message we might send or receive (e.g., via a socket) */
+#define MAX_MESSAGE_SIZE 8192
+
+typedef struct nsa_msg_t {
+  uint8_t msg_type;
+  uint8_t msg_buffer[MAX_MESSAGE_SIZE];
+} nsa_msg_t;
+
 //-----------------------------------------------------------------------------
 // GTPV1U TYPES
 //-----------------------------------------------------------------------------
 typedef uint32_t           teid_t; // tunnel endpoint identifier
 typedef uint8_t            ebi_t;  // eps bearer id
-
+typedef uint8_t            pdusessionid_t;
 
 
 //-----------------------------------------------------------------------------
 //
 //-----------------------------------------------------------------------------
 // may be ITTI not enabled, but type instance is useful also for OTG,
-#if !defined(instance_t)
-  typedef uint16_t instance_t;
-#endif
+typedef intptr_t instance_t;
+
 typedef struct protocol_ctxt_s {
   module_id_t module_id;     /*!< \brief  Virtualized module identifier      */
   eNB_flag_t  enb_flag;      /*!< \brief  Flag to indicate eNB (1) or UE (0) */
   instance_t  instance;      /*!< \brief  ITTI or OTG module identifier      */
-  rnti_t      rnti;
+  ue_id_t rntiMaybeUEid;
   frame_t     frame;         /*!< \brief  LTE frame number.*/
   sub_frame_t subframe;      /*!< \brief  LTE sub frame number.*/
   eNB_index_t eNB_index;     /*!< \brief  valid for UE indicating the index of connected eNB(s)      */
-  boolean_t   configured;  /*!< \brief  flag indicating whether the instance is configured or not  */
-  boolean_t		brOption;
+  bool        brOption;
 } protocol_ctxt_t;
 // warning time hardcoded
 #define PROTOCOL_CTXT_TIME_MILLI_SECONDS(CtXt_h) ((CtXt_h)->frame*10+(CtXt_h)->subframe)
 
-#define UE_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD + NB_eNB_INST
+#define UE_MODULE_ID_TO_INSTANCE(mODULE_iD) mODULE_iD + RC.nb_inst
 #define ENB_MODULE_ID_TO_INSTANCE( mODULE_iD ) mODULE_iD
-#define UE_INSTANCE_TO_MODULE_ID( iNSTANCE ) iNSTANCE - NB_eNB_INST
+#define UE_INSTANCE_TO_MODULE_ID(iNSTANCE) iNSTANCE - RC.nb_inst
 #define ENB_INSTANCE_TO_MODULE_ID( iNSTANCE )iNSTANCE
 
+//NR
+#define GNB_MODULE_ID_TO_INSTANCE(mODULE_iD) mODULE_iD
 
 #define MODULE_ID_TO_INSTANCE(mODULE_iD, iNSTANCE, eNB_fLAG) \
-  if(eNB_fLAG == ENB_FLAG_YES) \
-    iNSTANCE = ENB_MODULE_ID_TO_INSTANCE(mODULE_iD); \
-  else \
-    iNSTANCE = UE_MODULE_ID_TO_INSTANCE(mODULE_iD)
+  do { \
+    iNSTANCE = eNB_fLAG == ENB_FLAG_YES ? ENB_MODULE_ID_TO_INSTANCE(mODULE_iD) : UE_MODULE_ID_TO_INSTANCE(mODULE_iD); \
+  } while (0)
 
 #define INSTANCE_TO_MODULE_ID(iNSTANCE, mODULE_iD, eNB_fLAG) \
-  if(eNB_fLAG == ENB_FLAG_YES) \
-    mODULE_iD = ENB_INSTANCE_TO_MODULE_ID(iNSTANCE); \
-  else \
-    mODULE_iD = UE_INSTANCE_TO_MODULE_ID(iNSTANCE)
+  do { \
+    mODULE_iD = eNB_fLAG == ENB_FLAG_YES ? ENB_INSTANCE_TO_MODULE_ID(iNSTANCE) : UE_INSTANCE_TO_MODULE_ID(iNSTANCE); \
+  } while (0)
 
 #define PROTOCOL_CTXT_COMPUTE_MODULE_ID(CtXt_h) \
   INSTANCE_TO_MODULE_ID( (CtXt_h)->instance , (CtXt_h)->module_id , (CtXt_h)->enb_flag )
@@ -266,33 +244,44 @@ typedef struct protocol_ctxt_s {
 #define PROTOCOL_CTXT_COMPUTE_INSTANCE(CtXt_h) \
   MODULE_ID_TO_INSTANCE( (CtXt_h)->module_id , (CtXt_h)->instance , (CtXt_h)->enb_flag )
 
-
 #define PROTOCOL_CTXT_SET_BY_MODULE_ID(Ctxt_Pp, mODULE_iD, eNB_fLAG, rNTI, fRAME, sUBfRAME, eNB_iNDEX) \
-  (Ctxt_Pp)->module_id = mODULE_iD; \
-  (Ctxt_Pp)->enb_flag  = eNB_fLAG; \
-  (Ctxt_Pp)->rnti      = rNTI; \
-  (Ctxt_Pp)->frame     = fRAME; \
-  (Ctxt_Pp)->subframe  = sUBfRAME; \
-  (Ctxt_Pp)->eNB_index  = eNB_iNDEX; \
-  PROTOCOL_CTXT_COMPUTE_INSTANCE(Ctxt_Pp)
+  do {                                                                                                 \
+    (Ctxt_Pp)->module_id = mODULE_iD;                                                                  \
+    (Ctxt_Pp)->enb_flag = eNB_fLAG;                                                                    \
+    (Ctxt_Pp)->rntiMaybeUEid = rNTI;                                                                   \
+    (Ctxt_Pp)->frame = fRAME;                                                                          \
+    (Ctxt_Pp)->subframe = sUBfRAME;                                                                    \
+    (Ctxt_Pp)->eNB_index = eNB_iNDEX;                                                                  \
+    (Ctxt_Pp)->brOption = false;                 /* set a default value */                             \
+    PROTOCOL_CTXT_COMPUTE_INSTANCE(Ctxt_Pp);                                                           \
+  } while (0)
 
 #define PROTOCOL_CTXT_SET_BY_INSTANCE(Ctxt_Pp, iNSTANCE, eNB_fLAG, rNTI, fRAME, sUBfRAME) \
-  (Ctxt_Pp)->instance  = iNSTANCE; \
-  (Ctxt_Pp)->enb_flag  = eNB_fLAG; \
-  (Ctxt_Pp)->rnti      = rNTI; \
-  (Ctxt_Pp)->frame     = fRAME; \
-  (Ctxt_Pp)->subframe  = sUBfRAME; \
-  PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp)
+  do {                                                                                    \
+    (Ctxt_Pp)->instance = iNSTANCE;                                                       \
+    (Ctxt_Pp)->enb_flag = eNB_fLAG;                                                       \
+    (Ctxt_Pp)->rntiMaybeUEid = rNTI;                                                      \
+    (Ctxt_Pp)->frame = fRAME;                                                             \
+    (Ctxt_Pp)->subframe = sUBfRAME;                                                       \
+    (Ctxt_Pp)->eNB_index = 0;                    /* set a default value */                \
+    (Ctxt_Pp)->brOption = false;                 /* set a default value */                \
+    PROTOCOL_CTXT_COMPUTE_MODULE_ID(Ctxt_Pp);                                             \
+  } while (0)
 
-#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02u][RNTI %" PRIx16 "]"
-#define PROTOCOL_CTXT_ARGS(CTXT_Pp) \
-  (CTXT_Pp)->frame, \
-  ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB":" UE", \
-  (CTXT_Pp)->module_id, \
-  (CTXT_Pp)->rnti
+#define PROTOCOL_CTXT_FMT "[FRAME %05u][%s][MOD %02d][RNTI %" PRIx64 "]"
+#define PROTOCOL_CTXT_ARGS(CTXT_Pp) (CTXT_Pp)->frame, ((CTXT_Pp)->enb_flag == ENB_FLAG_YES) ? "eNB" : " UE", (CTXT_Pp)->module_id, (CTXT_Pp)->rntiMaybeUEid
+
+#define PROTOCOL_NR_CTXT_ARGS(CTXT_Pp) (CTXT_Pp)->frame, ((CTXT_Pp)->enb_flag == GNB_FLAG_YES) ? "gNB" : " UE", (CTXT_Pp)->module_id, (CTXT_Pp)->rntiMaybeUEid
 
 #define CHECK_CTXT_ARGS(CTXT_Pp)
 
-#define exit_fun(msg) exit_function(__FILE__,__FUNCTION__,__LINE__,msg)
-void exit_function(const char *file, const char *function, const int line, const char *s);
+#define exit_fun(msg) exit_function(__FILE__, __FUNCTION__, __LINE__, "exit_fun", OAI_EXIT_NORMAL)
+#ifdef __cplusplus
+extern "C"
+{
+#endif
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert);
+#ifdef __cplusplus
+}
+#endif
 #endif

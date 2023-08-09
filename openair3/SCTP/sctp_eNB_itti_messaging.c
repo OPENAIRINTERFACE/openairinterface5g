@@ -29,7 +29,7 @@ int sctp_itti_send_init_msg_multi_cnf(task_id_t task_id, instance_t instance, in
   MessageDef      *message_p;
   sctp_init_msg_multi_cnf_t *sctp_init_msg_multi_cnf_p;
 
-  message_p = itti_alloc_new_message(TASK_SCTP, SCTP_INIT_MSG_MULTI_CNF);
+  message_p = itti_alloc_new_message(TASK_SCTP, 0, SCTP_INIT_MSG_MULTI_CNF);
 
   sctp_init_msg_multi_cnf_p = &message_p->ittiMsg.sctp_init_msg_multi_cnf;
 
@@ -45,7 +45,7 @@ int sctp_itti_send_new_message_ind(task_id_t task_id, instance_t instance,
   MessageDef      *message_p;
   sctp_data_ind_t *sctp_data_ind_p;
 
-  message_p = itti_alloc_new_message(TASK_SCTP, SCTP_DATA_IND);
+  message_p = itti_alloc_new_message(TASK_SCTP, 0, SCTP_DATA_IND);
 
   sctp_data_ind_p = &message_p->ittiMsg.sctp_data_ind;
 
@@ -69,7 +69,7 @@ int sctp_itti_send_association_resp(task_id_t task_id, instance_t instance,
   MessageDef                  *message_p;
   sctp_new_association_resp_t *sctp_new_association_resp_p;
 
-  message_p = itti_alloc_new_message(TASK_SCTP, SCTP_NEW_ASSOCIATION_RESP);
+  message_p = itti_alloc_new_message(TASK_SCTP, 0, SCTP_NEW_ASSOCIATION_RESP);
 
   sctp_new_association_resp_p = &message_p->ittiMsg.sctp_new_association_resp;
 
@@ -89,7 +89,7 @@ int sctp_itti_send_association_ind(task_id_t task_id, instance_t instance,
   MessageDef                 *message_p;
   sctp_new_association_ind_t *sctp_new_association_ind_p;
 
-  message_p = itti_alloc_new_message(TASK_SCTP, SCTP_NEW_ASSOCIATION_IND);
+  message_p = itti_alloc_new_message(TASK_SCTP, 0, SCTP_NEW_ASSOCIATION_IND);
 
   sctp_new_association_ind_p = &message_p->ittiMsg.sctp_new_association_ind;
 

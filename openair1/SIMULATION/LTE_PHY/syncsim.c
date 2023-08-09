@@ -41,9 +41,7 @@
 #endif
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/cbmimo1_device.h"
-#include "ARCH/COMMON/defs.h"
+#include "radio/COMMON/defs.h"
 #include "LAYER2/MAC/vars.h"
 
 #ifdef XFORMS
@@ -52,13 +50,12 @@
 #endif //XFORMS
 
 
-#include "OCG_vars.h"
 #include "openair_hw.h"
 
 #define BW 5.0
 
 
-PHY_VARS_eNB *PHY_vars_eNB,*PHY_vars_eNB1,*PHY_vars_eNB2;
+PHY_VARS_eNB *PHY_vars_eNB, *PHY_vars_eNB1, *PHY_vars_eNB2;
 PHY_VARS_UE *PHY_vars_UE[2];
 
 #define DLSCH_RB_ALLOC 0x1fff // igore DC component,RB13
@@ -315,7 +312,7 @@ int main(int argc, char **argv) {
 #ifdef IFFT_FPGA
   int **txdataF2;
 #endif
-  int **txdata,**txdata1,**txdata2;
+  int **txdata,**txdata1 = NULL,**txdata2 = NULL;
   double **s_re,**s_im,**s_re1,**s_im1,**s_re2,**s_im2,**r_re,**r_im,**r_re1,**r_im1,**r_re2,**r_im2;
   double iqim = 0.0;
   unsigned char pbch_pdu[6];
@@ -699,7 +696,7 @@ int main(int argc, char **argv) {
   bzero(txdataF2[0],FRAME_LENGTH_BYTES_NO_PREFIX);
   bzero(txdataF2[1],FRAME_LENGTH_BYTES_NO_PREFIX);
 #else
-  txdata = PHY_vars_eNB->lte_eNB_common_vars.txdata[eNb_id];
+  txdata = PHY_vars_eNB->common_vars.txdataF[eNb_id];
   txdata1 = PHY_vars_eNB1->lte_eNB_common_vars.txdata[eNb_id];
   txdata2 = PHY_vars_eNB2->lte_eNB_common_vars.txdata[eNb_id];
 #endif
@@ -716,7 +713,7 @@ int main(int argc, char **argv) {
   r_re2 = malloc(2*sizeof(double *));
   r_im2 = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   eNB2UE = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
                                 PHY_vars_UE[0]->lte_frame_parms.nb_antennas_rx,
@@ -724,7 +721,7 @@ int main(int argc, char **argv) {
                                 BW,
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (interf1>-20)
     eNB2UE1 = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
@@ -733,7 +730,7 @@ int main(int argc, char **argv) {
                                    BW,
                                    0,
                                    0,
-                                   0);
+                                   0, 0);
 
   if (interf2>-20)
     eNB2UE2 = new_channel_desc_scm(PHY_vars_eNB->lte_frame_parms.nb_antennas_tx,
@@ -742,7 +739,7 @@ int main(int argc, char **argv) {
                                    BW,
                                    0,
                                    0,
-                                   0);
+                                   0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

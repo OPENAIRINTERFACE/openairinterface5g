@@ -81,9 +81,9 @@
 #define UETT310(A)                                              LTE_UE_TimersAndConstants__t310_ ## A
 #define UETIMER_T310_MODVALUES                                  { UETT310(ms0), UETT310(ms50),UETT310(ms100),UETT310(ms200),UETT310(ms500),UETT310(ms1000),UETT310(ms2000)}
 
-#define UETIMER_T311_OKVALUES                                   {1000,3110,5000,10000,15000,20000,31100}
+#define UETIMER_T311_OKVALUES                                   {1000,3000,5000,10000,15000,20000,30000}
 #define UETT311(A)                                              LTE_UE_TimersAndConstants__t311_ ## A
-#define UETIMER_T311_MODVALUES                                  { UETT311(ms1000), UETT311(ms3000),UETT311(ms5000),UETT311(ms10000),UETT311(ms15000),UETT311(ms20000),UETT311(ms30000)}
+#define UETIMER_T311_MODVALUES                                  { UETT311(ms1000), UETT311(ms3000), UETT311(ms5000), UETT311(ms10000), UETT311(ms15000), UETT311(ms20000), UETT311(ms30000)}
 
 #define UETIMER_N310_OKVALUES                                   {1,2,3,4,6,8,10,20}
 #define UETN310(A)                                              LTE_UE_TimersAndConstants__n310_ ## A

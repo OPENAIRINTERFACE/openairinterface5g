@@ -39,6 +39,7 @@
 #include "local.h"
 #include "proto_extern.h"
 
+MODULE_LICENSE("OAI");
 
 #define OAI_IP_DRIVER_NETLINK_ID 31
 #define NL_DEST_PID 1

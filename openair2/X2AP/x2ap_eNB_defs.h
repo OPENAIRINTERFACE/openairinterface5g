@@ -32,6 +32,8 @@
 #include "tree.h"
 
 #include "sctp_eNB_defs.h"
+#include "s1ap_messages_types.h"
+#include "x2ap_messages_types.h"
 
 #include "x2ap_ids.h"
 #include "x2ap_timers.h"
@@ -119,6 +121,8 @@ typedef struct x2ap_eNB_data_s {
   /* Nid cells */
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int                     num_cc;
+  /*Frequency band of NR neighbor cell supporting ENDC NSA */
+  uint32_t                servedNrCell_band[MAX_NUM_CCs];
 
   /* Only meaningfull in virtual mode */
   struct x2ap_eNB_instance_s *x2ap_eNB_instance;
@@ -170,11 +174,18 @@ typedef struct x2ap_eNB_instance_s {
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
   uint32_t                subframeAssignment[MAX_NUM_CCs];
   uint32_t                specialSubframe[MAX_NUM_CCs];
+
+//#ifdef Rel15
+  int32_t                 nr_band[MAX_NUM_CCs];
+  uint32_t				  tdd_nRARFCN[MAX_NUM_CCs];
+  int16_t                 nr_SCS[MAX_NUM_CCs];
+//#endif
+
   int                     num_cc;
 
   net_ip_address_t target_enb_x2_ip_address[X2AP_MAX_NB_ENB_IP_ADDRESS];

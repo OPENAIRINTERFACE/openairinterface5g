@@ -59,16 +59,16 @@ Description NAS procedure functions triggered by the network
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_initialize()                                  **
+ ** Name:    nas_network_initialize()                                      **
  **                                                                        **
  ** Description: Initializes network internal data                         **
  **                                                                        **
- ** Inputs:  None                                                      **
- **          Others:    None                                       **
+ ** Inputs:  None                                                          **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **      Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 void nas_network_initialize(void)
@@ -80,16 +80,16 @@ void nas_network_initialize(void)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_cleanup()                                     **
+ ** Name:    nas_network_cleanup()                                         **
  **                                                                        **
  ** Description: Performs clean up procedure before the system is shutdown **
  **                                                                        **
- ** Inputs:  None                                                      **
- **          Others:    None                                       **
+ ** Inputs:  None                                                          **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **          Return:    None                                       **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    None                                               **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 void nas_network_cleanup(nas_user_t *user)
@@ -103,20 +103,20 @@ void nas_network_cleanup(nas_user_t *user)
 
 /****************************************************************************
  **                                                                        **
- ** Name:    nas_network_process_data()                                **
+ ** Name:    nas_network_process_data()                                    **
  **                                                                        **
  ** Description: Process Access Stratum messages received from the network **
- **      and call applicable NAS procedure function.               **
+ **              and call applicable NAS procedure function.               **
  **                                                                        **
- ** Inputs:  msg_id:    AS message identifier                      **
- **          data:      Generic pointer to data structure that has **
- **             to be processed                            **
- **          Others:    None                                       **
+ ** Inputs:  msg_id:    AS message identifier                              **
+ **          data:      Generic pointer to data structure that has         **
+ **                     to be processed                                    **
+ **          Others:    None                                               **
  **                                                                        **
- ** Outputs:     None                                                      **
- **      Return:    RETURNok if the message has been success-  **
- **             fully processed; RETURNerror otherwise     **
- **          Others:    None                                       **
+ ** Outputs: None                                                          **
+ **          Return:    RETURNok if the message has been success-          **
+ **                     fully processed; RETURNerror otherwise             **
+ **          Others:    None                                               **
  **                                                                        **
  ***************************************************************************/
 int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
@@ -141,11 +141,11 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 
   case AS_CELL_INFO_CNF: {
     /* Received cell information confirm */
-    const cell_info_cnf_t *info = &msg->msg.cell_info_cnf;
-    int cell_found = (info->errCode == AS_SUCCESS);
-    rc = nas_proc_cell_info(user, cell_found, info->tac,
-                            info->cellID, info->rat,
-                            info->rsrp, info->rsrq);
+    /* remove using pointers to fiels of the packed structure msg as it
+     * triggers warnings with gcc version 9 */
+    const cell_info_cnf_t info = msg->msg.cell_info_cnf;
+    int cell_found = (info.errCode == AS_SUCCESS);
+    rc = nas_proc_cell_info(user, cell_found, info.tac, info.cellID, info.rat, info.rsrp, info.rsrq);
     break;
   }
 
@@ -157,12 +157,12 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
 
   case AS_NAS_ESTABLISH_CNF: {
     /* Received NAS signalling connection establishment confirm */
-    const nas_establish_cnf_t *confirm = &msg->msg.nas_establish_cnf;
+    const nas_establish_cnf_t confirm = msg->msg.nas_establish_cnf;
 
-    if ( (confirm->errCode == AS_SUCCESS) ||
-         (confirm->errCode == AS_TERMINATED_NAS) ) {
-      rc = nas_proc_establish_cnf(user, confirm->nasMsg.data,
-                                  confirm->nasMsg.length);
+    if ( (confirm.errCode == AS_SUCCESS) ||
+         (confirm.errCode == AS_TERMINATED_NAS) ) {
+      rc = nas_proc_establish_cnf(user, confirm.nasMsg.data,
+                                  confirm.nasMsg.length);
     } else {
       LOG_TRACE(WARNING, "NET-MAIN  - "
                 "Initial NAS message not delivered");
@@ -173,7 +173,7 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
   }
 
   case AS_NAS_RELEASE_IND:
-    /* Received NAS signalling connection releaase indication */
+    /* Received NAS signalling connection release indication */
     rc = nas_proc_release_ind(user, msg->msg.nas_release_ind.cause);
     break;
 
@@ -191,10 +191,10 @@ int nas_network_process_data(nas_user_t *user, int msg_id, const void *data)
     break;
 
   case AS_DL_INFO_TRANSFER_IND: {
-    const dl_info_transfer_ind_t *info = &msg->msg.dl_info_transfer_ind;
+    const dl_info_transfer_ind_t info = msg->msg.dl_info_transfer_ind;
     /* Received downlink data transfer indication */
-    rc = nas_proc_dl_transfer_ind(user, info->nasMsg.data,
-                                  info->nasMsg.length);
+    rc = nas_proc_dl_transfer_ind(user, info.nasMsg.data,
+                                  info.nasMsg.length);
     break;
   }
 

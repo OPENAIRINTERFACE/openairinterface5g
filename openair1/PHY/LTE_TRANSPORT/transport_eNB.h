@@ -33,13 +33,12 @@
 #define __TRANSPORT_ENB__H__
 #include "transport_common.h"
 //#include "PHY/defs_eNB.h"
-#include "PHY/impl_defs_lte.h"
 #include "dci.h"
 #include "mdci.h"
 #include "uci_common.h"
-#ifndef STANDALONE_COMPILE
-#include "UTIL/LISTS/list.h"
-#endif
+//#ifndef STANDALONE_COMPILE
+//  #include "UTIL/LISTS/list.h"
+//#endif
 
 
 // structures below implement 36-211 and 36-212
@@ -101,7 +100,7 @@ typedef struct {
   /// start symbold of pdsch
   uint8_t pdsch_start;
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  uint8_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  uint8_t eDL[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
   uint8_t *d[MAX_NUM_DLSCH_SEGMENTS];//[(96+3+(3*6144))];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
@@ -127,13 +126,11 @@ typedef struct {
   /// codeword this transport block is mapped to
   uint8_t codeword;
 #ifdef PHY_TX_THREAD
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
-#endif
 #endif
 } LTE_DL_eNB_HARQ_t;
 
@@ -181,18 +178,20 @@ typedef struct {
   uint8_t Kmimo;
   /// Nsoft parameter related to UE Category
   uint32_t Nsoft;
+  /// current pa value
+  int pa;
+  /// current pb value
+  int pb;
   /// amplitude of PDSCH (compared to RS) in symbols without pilots
   int16_t sqrt_rho_a;
   /// amplitude of PDSCH (compared to RS) in symbols containing pilots
   int16_t sqrt_rho_b;
 #ifndef PHY_TX_THREAD
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// indicator that this DLSCH corresponds to SIB1-BR, needed for c_init for scrambling
   uint8_t sib1_br_flag;
   /// initial absolute subframe (see 36.211 Section 6.3.1), needed for c_init for scrambling
   uint16_t i0;
   CEmode_t CEmode;
-#endif
 #endif
 } LTE_eNB_DLSCH_t;
 
@@ -266,12 +265,13 @@ typedef struct {
   /// coded RI bits
   int16_t q_RI[MAX_RI_PAYLOAD];
   /// Concatenated "e"-sequences (for definition see 36-212 V8.6 2009-03, p.17-18)
-  int16_t e[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
+  int16_t eUL[MAX_NUM_CHANNEL_BITS] __attribute__((aligned(32)));
   /// Temporary h sequence to flag PUSCH_x/PUSCH_y symbols which are not scrambled
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Pointer to the payload
-  uint8_t *b;
+  uint8_t *decodedBytes;
   /// Pointers to transport block segments
+  //TBD
   uint8_t *c[MAX_NUM_ULSCH_SEGMENTS];
   /// RTC values for each segment (for definition see 36-212 V8.6 2009-03, p.15)
   uint32_t RTC[MAX_NUM_ULSCH_SEGMENTS];
@@ -287,8 +287,12 @@ typedef struct {
   uint8_t rvidx;
   /// soft bits for each received segment ("w"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
   int16_t w[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
+  int16_t pusch_rep_buffer[MAX_NUM_ULSCH_SEGMENTS][3*(6144+64)];
   /// soft bits for each received segment ("d"-sequence)(for definition see 36-212 V8.6 2009-03, p.15)
+  //TBD
   int16_t *d[MAX_NUM_ULSCH_SEGMENTS];
+  uint32_t processedSegments;
+  uint32_t processedBadSegment;
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
   uint32_t C;
   /// Number of "small" code segments (for definition see 36-212 V8.6 2009-03, p.10)
@@ -319,12 +323,11 @@ typedef struct {
   //  int calibration_flag;
   /// delta_TF for power control
   int32_t delta_TF;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   // PUSCH Repetition Number for the current SF
   uint32_t repetition_number ;
   // PUSCH Total number of repetitions
   uint32_t total_number_of_repetitions;
-#endif
+  decode_abort_t abort_decode;
 } LTE_UL_eNB_HARQ_t;
 
 typedef struct {
@@ -351,7 +354,7 @@ typedef struct {
   uint16_t    n_pucch_1[4][2];
   /// two antenna n1_pucch 1_0 for SR
   uint16_t    n_pucch_1_0_sr[2];
-   /// two antenna n2_pucch
+  /// two antenna n2_pucch
   uint16_t    n_pucch_2[2];
   /// two antenna n3_pucch
   uint16_t    n_pucch_3[2];
@@ -359,7 +362,6 @@ typedef struct {
   uint8_t     tdd_bundling;
   /// Received Energy
   uint32_t stat;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// non BL/CE, CEmodeA, CEmodeB
   UE_type_t ue_type;
   /// Indicates the symbols that are left empty due to eMTC retuning.
@@ -376,7 +378,6 @@ typedef struct {
   uint8_t cdm_Index;
   // Indicates if the resource blocks allocated for this grant overlap with the SRS configuration.
   uint8_t Nsrs;
-#endif
 } LTE_eNB_UCI;
 
 typedef struct {
@@ -454,10 +455,8 @@ typedef struct {
 } LTE_eNB_UE_stats;
 
 typedef struct {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// UE type (normal, CEModeA, CEModeB)
   uint8_t ue_type;
-#endif
   /// HARQ process mask, indicates which processes are currently active
   uint16_t harq_mask;
   /// Pointers to 8 HARQ processes for the ULSCH

@@ -94,8 +94,8 @@ AcT_t emm_main_get_plmn_rat(emm_data_t *emm_data);
 const char *emm_main_get_registered_plmn(emm_plmn_list_t *emm_plmn_list, emm_data_t *emm_data, network_plmn_t *plmn, int format);
 
 /* User's getter for network attachment */
-int emm_main_is_attached(emm_data_t *emm_data);
-int emm_main_is_emergency(emm_data_t *emm_data);
+bool emm_main_is_attached(emm_data_t *emm_data);
+bool emm_main_is_emergency(emm_data_t *emm_data);
 
 
 #endif /* __EMM_MAIN_H__*/

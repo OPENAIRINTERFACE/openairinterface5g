@@ -48,7 +48,6 @@
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-#include "OCG_vars.h"
 #include "UTIL/LOG/log.h"
 #include "UTIL/LISTS/list.h"
 
@@ -112,7 +111,6 @@ void do_OFDM_mod_l(int32_t **txdataF, int32_t **txdata, uint16_t next_slot, LTE_
   slot_offset = (next_slot)*(frame_parms->samples_per_tti>>1);
 
   for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-    //    printf("Thread %d starting ... aa %d (%llu)\n",omp_get_thread_num(),aa,rdtsc());
 
     if (frame_parms->Ncp == 1)
       PHY_ofdm_mod(&txdataF[aa][slot_offset_F],        // input
@@ -311,7 +309,7 @@ int main(int argc, char **argv)
 
   opp_enabled=1; // to enable the time meas
 
-#if defined(__arm__)
+#if defined(__arm__) || defined(__aarch64__)
   FILE    *proc_fd = NULL;
   char buf[64];
 
@@ -689,7 +687,6 @@ int main(int argc, char **argv)
   // moreover you need to init itti with the following line
   // however itti will catch all signals, so ctrl-c won't work anymore
   // alternatively you can disable ITTI completely in CMakeLists.txt
-  //itti_init(TASK_MAX, THREAD_MAX, MESSAGES_ID_MAX, tasks_info, messages_info, messages_definition_xml, NULL);
 
   if (common_flag == 0) {
     switch (N_RB_DL) {
@@ -890,8 +887,6 @@ int main(int argc, char **argv)
     hostname[1023] = '\0';
     gethostname(hostname, 1023);
     printf("Hostname: %s\n", hostname);
-    //char dirname[FILENAME_MAX];
-    //sprintf(dirname, "%s/SIMU/USER/pre-ci-logs-%s", getenv("OPENAIR_TARGETS"),hostname );
     sprintf(time_meas_fname,"time_meas_prb%d_mcs%d_anttx%d_antrx%d_pdcch%d_channel%s_tx%d.csv",
             N_RB_DL,mcs1,n_tx_phy,n_rx,num_pdcch_symbols,channel_model_input,transmission_mode);
     //mkdir(dirname,0777);
@@ -989,7 +984,7 @@ int main(int argc, char **argv)
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    forgetting_factor,
                                    rx_sample_offset,
-                                   0);
+                                   0, 0);
 
   if(num_rounds>1) {
     for(n=1; n<8; n++)
@@ -1000,7 +995,7 @@ int main(int argc, char **argv)
                                        N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                        forgetting_factor,
                                        rx_sample_offset,
-                                       0);
+                                       0, 0);
   }
 
   if (eNB2UE[0]==NULL) {

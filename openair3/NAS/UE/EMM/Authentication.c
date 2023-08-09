@@ -67,8 +67,9 @@ Description Defines the authentication EMM procedure executed by the
 
 #include "usim_api.h"
 #include "secu_defs.h"
+#include "kdf.h"
 #include "Authentication.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 
 
 /****************************************************************************/
@@ -129,7 +130,7 @@ static int _authentication_kasme(const OctetString *autn,
  **      authentication challenge data and respond with an AUTHEN- **
  **      TICATION RESPONSE message to the network.                 **
  **                                                                        **
- ** Inputs:  native_ksi:    TRUE if the security context is of type    **
+ ** Inputs:  native_ksi:    true if the security context is of type    **
  **             native (for KSIASME)                       **
  **      ksi:       The NAS ket sey identifier                 **
  **      rand:      Authentication parameter RAND              **
@@ -178,12 +179,15 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   OctetString ik = {AUTH_IK_SIZE, authentication_data->ik};
   OctetString res = {AUTH_RES_SIZE, authentication_data->res};
 
-  if (memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) {
+  if ((memcmp(authentication_data->rand, rand->value, AUTH_CK_SIZE) != 0) ||
+      (authentication_data->auth_process_started == false)) {
     /*
      * There is no valid stored RAND in the ME or the stored RAND is
      * different from the new received value in the AUTHENTICATION
-     * REQUEST message
+     * REQUEST message OR if this is first time UE starting the
+     * Authentication process
      */
+	authentication_data->auth_process_started = true;
     OctetString auts;
     auts.length = 0;
     auts.value = (uint8_t *)malloc(AUTH_AUTS_SIZE);
@@ -305,7 +309,7 @@ int emm_proc_authentication_request(nas_user_t *user, int native_ksi, int ksi,
   emm_sap.u.emm_as.u.security.res = &res;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, FALSE, TRUE);
+                           user->emm_data->security, false, true);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
@@ -395,7 +399,7 @@ int emm_proc_authentication_reject(nas_user_t *user)
   }
 
   /* Consider the USIM invalid */
-  user->emm_data->usim_is_valid = FALSE;
+  user->emm_data->usim_is_valid = false;
 
   /* Stop timer T3410 */
   if (emm_timers->T3410.id != NAS_TIMER_INACTIVE_ID) {
@@ -649,7 +653,7 @@ static int _authentication_abnormal_cases_cde(nas_user_t *user, int emm_cause,
   emm_sap.u.emm_as.u.security.auts = auts;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, FALSE, TRUE);
+                           user->emm_data->security, false, true);
   rc = emm_sap_send(user, &emm_sap);
 
   if (rc != RETURNerror) {
@@ -979,14 +983,10 @@ static int _authentication_kasme(const OctetString *autn,
             input_s[4],input_s[5],input_s[6],input_s[7],
             input_s[8],input_s[9],input_s[10],input_s[11],
             input_s[12],input_s[13]);
-  /* TODO !!! Compute the Kasme key */
-  // todo_hmac_256(key, input_s, kasme->value);
-  kdf(key,
-      ck->length + ik->length , /*key_length*/
-      input_s,
-      offset,
-      kasme->value,
-      kasme->length);
+
+  assert(ck->length + ik->length == 32);
+  byte_array_t data = {.len = offset, .buf = input_s};
+  kdf(key, data, kasme->length, kasme->value);
 
   LOG_TRACE(INFO,"EMM-PROC  KASME (l=%d)%s",
             kasme->length,

@@ -46,6 +46,7 @@ extern "C"
 typedef struct libconfig_privatedata {
       char *configfile;
       config_t cfg;
+      config_t runtcfg;
 } libconfig_privatedata_t;
  
 #ifdef __cplusplus

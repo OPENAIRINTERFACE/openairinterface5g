@@ -29,8 +29,8 @@
 
 ***************************************************************************/
 
-#ifndef _NAS_PROTO_H
-#define _NAS_PROTO_H
+#ifndef __NETWORK_DRIVER_MESH_PROTO_EXTERN__H__
+#define __NETWORK_DRIVER_MESH_PROTO_EXTERN__H__
 
 #include <linux/if_arp.h>
 #include <linux/types.h>
@@ -110,14 +110,6 @@ void nas_COMMON_del_send(struct sk_buff *skb,
                          struct cx_entity *cx,
                          struct classifier_entity *gc,int inst, struct nas_priv *gpriv);
 
-#ifndef PDCP_USE_NETLINK
-/**
-\fn void nas_COMMON_QOS_receive()
-\brief Retrieve PDU from PDCP for connection
- */
-void nas_COMMON_QOS_receive(void);
-#endif //PDCP_USE_NETLINK
-
 /**
 \fn struct rb_entity *nas_COMMON_add_rb(struct cx_entity *cx, nasRadioBearerId_t rabi, nasQoSTrafficClass_t qos)
 \brief Add a radio-bearer descriptor
@@ -168,7 +160,6 @@ struct classifier_entity
  */
 void nas_COMMON_flush_rb(struct cx_entity *cx);
 
-#ifdef PDCP_USE_NETLINK
 /**
 \fn int nas_netlink_send(unsigned char *data,unsigned int len)
 \brief Request the transfer of data by PDCP via netlink socket
@@ -185,7 +176,6 @@ int nas_netlink_send(unsigned char *data,unsigned int len);
  */
 void nas_COMMON_QOS_receive(struct nlmsghdr *nlh);
 
-#endif //PDCP_USE_NETLINK
 //nasmesh.c
 
 /**
@@ -305,13 +295,10 @@ void nas_tool_print_buffer(char * buffer,int length);
 void nas_print_rb_entity(struct rb_entity *rb);
 void nas_print_classifier(struct classifier_entity *gc);
 
-#ifdef PDCP_USE_NETLINK
 // nas_netlink.c
 
 void nas_netlink_release(void);
 int nas_netlink_init(void);
-
-#endif
 
 /** @} */
 #endif

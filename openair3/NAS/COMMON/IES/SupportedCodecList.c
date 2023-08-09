@@ -43,13 +43,17 @@ int decode_supported_codec_list(SupportedCodecList *supportedcodeclist, uint8_t 
   CHECK_LENGTH_DECODER(len - decoded, ielen);
   supportedcodeclist->systemidentification = *(buffer + decoded);
   decoded++;
+  ielen--;
   supportedcodeclist->lengthofbitmap = *(buffer + decoded);
   decoded++;
+  ielen--;
   //IES_DECODE_U16(supportedcodeclist->codecbitmap, *(buffer + decoded));
   IES_DECODE_U16(buffer, decoded, supportedcodeclist->codecbitmap);
+  ielen=ielen -2;
 #if defined (NAS_DEBUG)
   dump_supported_codec_list_xml(supportedcodeclist, iei);
 #endif
+  decoded = decoded + ielen;
   return decoded;
 }
 int encode_supported_codec_list(SupportedCodecList *supportedcodeclist, uint8_t iei, uint8_t *buffer, uint32_t len)

@@ -33,13 +33,14 @@
 #include "PHY/phy_extern_ue.h"
 #include "PHY/sse_intrin.h"
 #include "transport_proto_ue.h"
+#include "openair1/PHY/LTE_TRANSPORT/transport_vars.h"
 
 //#define DEBUG_DRS
 
 int generate_drs_pusch(PHY_VARS_UE *ue,
-		       UE_rxtx_proc_t *proc,
-		       LTE_DL_FRAME_PARMS *frame_parms,
-		       int32_t **txdataF,
+                       UE_rxtx_proc_t *proc,
+                       LTE_DL_FRAME_PARMS *frame_parms,
+                       int32_t **txdataF,
                        uint8_t eNB_id,
                        short amp,
                        unsigned int subframe,
@@ -62,11 +63,10 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
   LTE_DL_FRAME_PARMS *fp = (ue==NULL) ? frame_parms : &ue->frame_parms;
   int32_t *txF = (ue==NULL) ? txdataF[ant] : ue->common_vars.txdataF[ant];
   uint32_t u,v,alpha_ind;
-  uint32_t u0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-  uint32_t u1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-  uint32_t v0 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-  uint32_t v1 = (ue==NULL) ? 0 : frame_parms->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
-
+  uint32_t  u0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
+  uint32_t  u1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
+  uint32_t  v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
+  uint32_t  v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   int32_t ref_re,ref_im;
   uint8_t harq_pid = (proc == NULL) ? 0: subframe2harq_pid(fp,proc->frame_tx,subframe);
 
@@ -82,10 +82,6 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 		     fp->pusch_config_common.ul_ReferenceSignalsPUSCH.nPRS[(subframe<<1)+1]+
 		     ((ue->ulsch[0]->cooperation_flag==2)?10:0)+
 		     ant*6) % 12;
-    u0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[subframe<<1];
-    u1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.grouphop[1+(subframe<<1)];
-    v0=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[subframe<<1];
-    v1=fp->pusch_config_common.ul_ReferenceSignalsPUSCH.seqhop[1+(subframe<<1)];
   }
 
   
@@ -108,7 +104,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
     drs_offset = 0;
 #ifdef DEBUG_DRS
-    printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%d,v=%d\n",Msc_RS, Msc_RS_idx,u,v);
+    printf("drs_modulation: Msc_RS = %d, Msc_RS_idx = %d, u=%u,v=%u\n",Msc_RS, Msc_RS_idx,u,v);
 #endif
 
 
@@ -147,7 +143,7 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
             alpha_ind-=12;
 
 #ifdef DEBUG_DRS
-          printf("symbol_offset %d, alpha_ind %d , re_offset %d : (%d,%d)\n",
+          printf("symbol_offset %d, alpha_ind %u , re_offset %d : (%d,%d)\n",
               symbol_offset,
               alpha_ind,
               re_offset,
@@ -181,4 +177,3 @@ int generate_drs_pusch(PHY_VARS_UE *ue,
 
   return(0);
 }
-

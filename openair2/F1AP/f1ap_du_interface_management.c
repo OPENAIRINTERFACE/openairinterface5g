@@ -32,18 +32,27 @@
 
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
-#include "f1ap_decoder.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_du_interface_management.h"
 #include "assertions.h"
 
-extern f1ap_setup_req_t *f1ap_du_data;
+#include "GNB_APP/gnb_paramdef.h"
 
+int to_NRNRB(int nrb) {
+  for (int i=0; i<sizeofArray(nrb_lut); i++)
+    if (nrb_lut[i] == nrb)
+      return i;
+
+  if(!RC.nrrrc)
+    return 0;
+
+  AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
+}
 
 int DU_handle_RESET(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+                    uint32_t assoc_id,
+                    uint32_t stream,
+                    F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -72,9 +81,9 @@ int DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
 }
 
 int DU_handle_ERROR_INDICATION(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+                               uint32_t assoc_id,
+                               uint32_t stream,
+                               F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -85,319 +94,252 @@ int DU_handle_ERROR_INDICATION(instance_t instance,
 
 // SETUP REQUEST
 int DU_send_F1_SETUP_REQUEST(instance_t instance) {
-  module_id_t enb_mod_idP=0;
-  module_id_t du_mod_idP=0;
-
-  F1AP_F1AP_PDU_t          pdu; 
-  F1AP_F1SetupRequest_t    *out;
-  F1AP_F1SetupRequestIEs_t *ie;
-
+  instance_t nb_mod_idP=0;
+  instance_t du_mod_idP=0;
+  F1AP_F1AP_PDU_t       pdu= {0};
   uint8_t  *buffer;
   uint32_t  len;
-  int       i = 0;
-  int       j = 0;
-
   /* Create */
   /* 0. pdu Type */
-  memset(&pdu, 0, sizeof(pdu));
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
-  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_F1Setup;
-  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
-  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_F1SetupRequest;
-  out = &pdu.choice.initiatingMessage->value.choice.F1SetupRequest;
-
+  asn1cCalloc(pdu.choice.initiatingMessage, initMsg);
+  initMsg->procedureCode = F1AP_ProcedureCode_id_F1Setup;
+  initMsg->criticality   = F1AP_Criticality_reject;
+  initMsg->value.present = F1AP_InitiatingMessage__value_PR_F1SetupRequest;
+  F1AP_F1SetupRequest_t *f1Setup = &initMsg->value.choice.F1SetupRequest;
   /* mandatory */
   /* c1. Transaction ID (integer value) */
-  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
-  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
+  asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC1);
+  ieC1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ieC1->criticality               = F1AP_Criticality_reject;
+  ieC1->value.present             = F1AP_F1SetupRequestIEs__value_PR_TransactionID;
+  ieC1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(nb_mod_idP, du_mod_idP);
   /* mandatory */
-  /* c2. GNB_DU_ID (integrer value) */
-  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_ID;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_ID;
-  asn_int642INTEGER(&ie->value.choice.GNB_DU_ID, f1ap_du_data->gNB_DU_id);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  /* c2. GNB_DU_ID (integer value) */
+  asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC2);
+  ieC2->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_ID;
+  ieC2->criticality               = F1AP_Criticality_reject;
+  ieC2->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_ID;
+  asn_int642INTEGER(&ieC2->value.choice.GNB_DU_ID, f1ap_req(false, instance)->gNB_DU_id);
 
   /* optional */
   /* c3. GNB_DU_Name */
-  if (f1ap_du_data->gNB_DU_name != NULL) {
-    ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-    ie->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Name;
-    ie->criticality               = F1AP_Criticality_ignore;
-    ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Name;
-    OCTET_STRING_fromBuf(&ie->value.choice.GNB_DU_Name, f1ap_du_data->gNB_DU_name,
-                         strlen(f1ap_du_data->gNB_DU_name));
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  if (f1ap_req(false,instance)->gNB_DU_name != NULL) {
+    asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieC3);
+    ieC3->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Name;
+    ieC3->criticality               = F1AP_Criticality_ignore;
+    ieC3->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Name;
+    char *gNB_DU_name=f1ap_req(false, instance)->gNB_DU_name;
+    OCTET_STRING_fromBuf(&ieC3->value.choice.GNB_DU_Name, gNB_DU_name, strlen(gNB_DU_name));
   }
 
   /* mandatory */
-  /* c4. serverd cells list */
-  ie = (F1AP_F1SetupRequestIEs_t *)calloc(1, sizeof(F1AP_F1SetupRequestIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Served_Cells_List;
-
-  int num_cells_available = f1ap_du_data->num_cells_available;
+  /* c4. served cells list */
+  asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ieCells);
+  ieCells->id                        = F1AP_ProtocolIE_ID_id_gNB_DU_Served_Cells_List;
+  ieCells->criticality               = F1AP_Criticality_reject;
+  ieCells->value.present             = F1AP_F1SetupRequestIEs__value_PR_GNB_DU_Served_Cells_List;
+  int num_cells_available = f1ap_req(false, instance)->num_cells_available;
   LOG_D(F1AP, "num_cells_available = %d \n", num_cells_available);
-  for (i=0;
-       i<num_cells_available;
-       i++) {
-        /* mandatory */
-        /* 4.1 serverd cells item */
 
-        F1AP_GNB_DU_Served_Cells_ItemIEs_t *gnb_du_served_cell_list_item_ies;
-        gnb_du_served_cell_list_item_ies = (F1AP_GNB_DU_Served_Cells_ItemIEs_t *)calloc(1, sizeof(F1AP_GNB_DU_Served_Cells_ItemIEs_t));
-        gnb_du_served_cell_list_item_ies->id = F1AP_ProtocolIE_ID_id_GNB_DU_Served_Cells_Item;
-        gnb_du_served_cell_list_item_ies->criticality = F1AP_Criticality_reject;
-        gnb_du_served_cell_list_item_ies->value.present = F1AP_GNB_DU_Served_Cells_ItemIEs__value_PR_GNB_DU_Served_Cells_Item;
-        
+  for (int i=0; i<num_cells_available; i++) {
+    /* mandatory */
+    /* 4.1 served cells item */
+    cellIDs_t *cell=&f1ap_req(false, instance)->cell[i];
+    asn1cSequenceAdd(ieCells->value.choice.GNB_DU_Served_Cells_List.list,
+                     F1AP_GNB_DU_Served_Cells_ItemIEs_t, duServedCell);
+    duServedCell->id = F1AP_ProtocolIE_ID_id_GNB_DU_Served_Cells_Item;
+    duServedCell->criticality = F1AP_Criticality_reject;
+    duServedCell->value.present = F1AP_GNB_DU_Served_Cells_ItemIEs__value_PR_GNB_DU_Served_Cells_Item;
+    F1AP_GNB_DU_Served_Cells_Item_t  *gnb_du_served_cells_item=&duServedCell->value.choice.GNB_DU_Served_Cells_Item;
+    /* 4.1.1 served cell Information */
+    F1AP_Served_Cell_Information_t *served_cell_information= &gnb_du_served_cells_item->served_Cell_Information;
+    addnRCGI(served_cell_information->nRCGI,cell);
+    /* - nRPCI */
+    served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
+    /* - fiveGS_TAC */
+    uint32_t tac=htonl(cell->tac);
+    asn1cCalloc(served_cell_information->fiveGS_TAC, netOrder);
+    OCTET_STRING_fromBuf(netOrder, ((char *)&tac)+1, 3);
 
-        F1AP_GNB_DU_Served_Cells_Item_t gnb_du_served_cells_item;
-        memset((void *)&gnb_du_served_cells_item, 0, sizeof(F1AP_GNB_DU_Served_Cells_Item_t));
+    /* - Configured_EPS_TAC */
+    if(0) {
+      served_cell_information->configured_EPS_TAC = (F1AP_Configured_EPS_TAC_t *)calloc(1, sizeof(F1AP_Configured_EPS_TAC_t));
+      OCTET_STRING_fromBuf(served_cell_information->configured_EPS_TAC, "2", 2);
+    }
 
-        /* 4.1.1 serverd cell Information */
-        F1AP_Served_Cell_Information_t served_cell_information;
+    /* servedPLMN information */
+    asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t,servedPLMN_item);
+    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    // // /* - CHOICE NR-MODE-Info */
+    F1AP_NR_Mode_Info_t *nR_Mode_Info= &served_cell_information->nR_Mode_Info;
+    F1AP_ProtocolExtensionContainer_10696P34_t *p = calloc(1, sizeof(*p));
+    servedPLMN_item->iE_Extensions = (struct F1AP_ProtocolExtensionContainer *) p;
+    asn1cSequenceAdd(p->list, F1AP_ServedPLMNs_ItemExtIEs_t , served_plmns_itemExtIEs);
+    served_plmns_itemExtIEs->criticality = F1AP_Criticality_ignore;
+    served_plmns_itemExtIEs->id = F1AP_ProtocolIE_ID_id_TAISliceSupportList;
+    served_plmns_itemExtIEs->extensionValue.present = F1AP_ServedPLMNs_ItemExtIEs__extensionValue_PR_SliceSupportList;
+    F1AP_SliceSupportList_t *slice_support_list = &served_plmns_itemExtIEs->extensionValue.choice.SliceSupportList;
 
-        memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
+    /* get list of sst/sd from configuration file */
+    paramdef_t SNSSAIParams[] = GNBSNSSAIPARAMS_DESC;
+    paramlist_def_t SNSSAIParamList = {GNB_CONFIG_STRING_SNSSAI_LIST, NULL, 0};
+    char sstr[100];
+    /* TODO: be sure that %d in the line below is at the right place */
+    sprintf(sstr, "%s.[%d].%s.[0]", GNB_CONFIG_STRING_GNB_LIST, i, GNB_CONFIG_STRING_PLMN_LIST);
+    config_getlist(&SNSSAIParamList, SNSSAIParams, sizeof(SNSSAIParams)/sizeof(paramdef_t), sstr);
+    AssertFatal(SNSSAIParamList.numelt > 0, "no slice configuration found (snssaiList in the configuration file)\n");
+    AssertFatal(SNSSAIParamList.numelt <= 1024, "maximum size for slice support list is 1024, see F1AP 38.473 9.3.1.37\n");
+    for (int s = 0; s < SNSSAIParamList.numelt; s++) {
+      uint32_t sst;
+      uint32_t sd;
+      bool has_sd;
+      sst = *SNSSAIParamList.paramarray[s][GNB_SLICE_SERVICE_TYPE_IDX].uptr;
+      has_sd = *SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr != 0xffffff;
+      asn1cSequenceAdd(slice_support_list->list, F1AP_SliceSupportItem_t, slice);
+      INT8_TO_OCTET_STRING(sst, &slice->sNSSAI.sST);
+      if (has_sd) {
+        sd = *SNSSAIParamList.paramarray[s][GNB_SLICE_DIFFERENTIATOR_IDX].uptr;
+        asn1cCalloc(slice->sNSSAI.sD, tmp);
+        INT24_TO_OCTET_STRING(sd, tmp);
+      }
+    }
 
-        /* - nRCGI */
-        F1AP_NRCGI_t nRCGI;
-        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-        LOG_D(F1AP, "plmn: (%d,%d)\n",f1ap_du_data->mcc[i],f1ap_du_data->mnc[i]);
-        //MCC_MNC_TO_PLMNID(208, 95, 2, &nRCGI.pLMN_Identity);
+    if (f1ap_req(false, instance)->fdd_flag) { // FDD
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
+      /* FDD.1 UL NRFreqInfo */
+      /* FDD.1.1 UL NRFreqInfo ARFCN */
+      fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
 
-        NR_CELL_ID_TO_BIT_STRING(f1ap_du_data->nr_cellid[i], &nRCGI.nRCellIdentity);
-        LOG_D(F1AP, "nRCellIdentity (%llx): %x.%x.%x.%x.%x\n",
-              (long long unsigned int)f1ap_du_data->nr_cellid[i],
-              nRCGI.nRCellIdentity.buf[0],
-              nRCGI.nRCellIdentity.buf[1],
-              nRCGI.nRCellIdentity.buf[2],
-              nRCGI.nRCellIdentity.buf[3],
-              nRCGI.nRCellIdentity.buf[4]);
+      /* FDD.1.2 F1AP_SUL_Information */
+      if(0) { // Optional
+        asn1cCalloc(fDD_Info->uL_NRFreqInfo.sul_Information, fdd_sul_info);
+        fdd_sul_info->sUL_NRARFCN = 0;
+        fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+        fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+      }
 
-        served_cell_information.nRCGI = nRCGI;
+      /* FDD.1.3 freqBandListNr */
+      int fdd_ul_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_num_frequency_bands;
+      LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
 
-        /* - nRPCI */
-        served_cell_information.nRPCI = f1ap_du_data->nr_pci[i];  // int 0..1007
+      for (int fdd_ul_j=0; fdd_ul_j<fdd_ul_num_available_freq_Bands; fdd_ul_j++) {
+        asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
+        /* FDD.1.3.1 freqBandIndicatorNr*/
+        nr_freqBandNrItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
+        /* FDD.1.3.2 supportedSULBandList*/
+        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
+        LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
-        /* - fiveGS_TAC */
-        OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             (const char*)&f1ap_du_data->tac[i],
-                             3);
+        for (int fdd_ul_k=0; fdd_ul_k<num_available_supported_SULBands; fdd_ul_k++) {
+          asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
+          /* FDD.1.3.2.1 freqBandIndicatorNr */
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
+        } // for FDD : UL supported_SULBands
+      } // for FDD : UL freq_Bands
 
-        /* - Configured_EPS_TAC */
-        if(0){
-          served_cell_information.configured_EPS_TAC = (F1AP_Configured_EPS_TAC_t *)calloc(1, sizeof(F1AP_Configured_EPS_TAC_t));
-          OCTET_STRING_fromBuf(served_cell_information.configured_EPS_TAC,
-                             "2",
-                             2);
-        }
+      /* FDD.2 DL NRFreqInfo */
+      /* FDD.2.1 DL NRFreqInfo ARFCN */
+      fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
 
-        /* - broadcast PLMNs */
-        // RK: add the num_available_broadcast_PLMNs to the message 
-        int num_available_broadcast_PLMNs = 1; //f1ap_du_data->num_available_broadcast_PLMNs;
-        LOG_D(F1AP, "num_available_broadcast_PLMNs = %d \n", num_available_broadcast_PLMNs);
-        for (j=0;
-            j<num_available_broadcast_PLMNs;    // num_available_broadcast_PLMNs
-            j++) {
-            /* > PLMN BroadcastPLMNs Item */
-            F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            //MCC_MNC_TO_PLMNID(208, 95, 2, &broadcastPLMNs_Item->pLMN_Identity);
-            MCC_MNC_TO_PLMNID(f1ap_du_data->mcc[i], f1ap_du_data->mnc[i], f1ap_du_data->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
-            ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
-        }
+      /* FDD.2.2 F1AP_SUL_Information */
+      if(0) { // Optional
+        F1AP_SUL_Information_t *fdd_sul_info=fDD_Info->dL_NRFreqInfo.sul_Information;
+        fdd_sul_info->sUL_NRARFCN = 0;
+        fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+        fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+      }
 
-        // // /* - CHOICE NR-MODE-Info */
-        F1AP_NR_Mode_Info_t nR_Mode_Info;
-        //f1ap_du_data->fdd_flag = 1;
-        if (f1ap_du_data->fdd_flag) { // FDD
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
-          F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
+      /* FDD.2.3 freqBandListNr */
+      int fdd_dl_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_num_frequency_bands;
+      LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
 
-          /* FDD.1 UL NRFreqInfo */
-            /* FDD.1.1 UL NRFreqInfo ARFCN */
-            fDD_Info->uL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_arfcn; // Integer
+      for (int fdd_dl_j=0; fdd_dl_j<fdd_dl_num_available_freq_Bands; fdd_dl_j++) {
+        asn1cSequenceAdd(fDD_Info->dL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
+        /* FDD.2.3.1 freqBandIndicatorNr*/
+        nr_freqBandNrItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
+        /* FDD.2.3.2 supportedSULBandList*/
+        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
+        LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
-            /* FDD.1.2 F1AP_SUL_Information */
-            if(0) { // Optional
-              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
-              fdd_sul_info->sUL_NRARFCN = 0;
-              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
-              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
-              fDD_Info->uL_NRFreqInfo.sul_Information = fdd_sul_info;
-            }
+        for (int fdd_dl_k=0; fdd_dl_k<num_available_supported_SULBands; fdd_dl_k++) {
+          asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
+          /* FDD.2.3.2.1 freqBandIndicatorNr */
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
+        } // for FDD : DL supported_SULBands
+      } // for FDD : DL freq_Bands
 
-            /* FDD.1.3 freqBandListNr */
-            int fdd_ul_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_frequency_bands;
-            LOG_D(F1AP, "fdd_ul_num_available_freq_Bands = %d \n", fdd_ul_num_available_freq_Bands);
-            int fdd_ul_j;
-            for (fdd_ul_j=0;
-                 fdd_ul_j<fdd_ul_num_available_freq_Bands;
-                 fdd_ul_j++) {
+      /* FDD.3 UL Transmission Bandwidth */
+      fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_scs;
+      fDD_Info->uL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].fdd.ul_nrb);
+      /* FDD.4 DL Transmission Bandwidth */
+      fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_scs;
+      fDD_Info->dL_Transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].fdd.dl_nrb);
+    } else { // TDD
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
+      /* TDD.1 nRFreqInfo */
+      /* TDD.1.1 nRFreqInfo ARFCN */
+      tDD_Info->nRFreqInfo.nRARFCN = f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_arfcn; // Integer
 
-                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-                  /* FDD.1.3.1 freqBandIndicatorNr*/
-                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_band[fdd_ul_j]; //
+      /* TDD.1.2 F1AP_SUL_Information */
+      if(0) { // Optional
+        F1AP_SUL_Information_t *tdd_sul_info= tDD_Info->nRFreqInfo.sul_Information;
+        tdd_sul_info->sUL_NRARFCN = 0;
+        tdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
+        tdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
+      }
 
-                  /* FDD.1.3.2 supportedSULBandList*/
-                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.ul_num_sul_frequency_bands;
-                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
-                  int fdd_ul_k;
-                  for (fdd_ul_k=0;
-                       fdd_ul_k<num_available_supported_SULBands;
-                       fdd_ul_k++) {
-                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-                          /* FDD.1.3.2.1 freqBandIndicatorNr */
-                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.ul_nr_sul_band[fdd_ul_k]; //
-                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
-                  } // for FDD : UL supported_SULBands
-                  ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
-            } // for FDD : UL freq_Bands
-           
-          /* FDD.2 DL NRFreqInfo */
-            /* FDD.2.1 DL NRFreqInfo ARFCN */
-            fDD_Info->dL_NRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_arfcn; // Integer
+      /* TDD.1.3 freqBandListNr */
+      int tdd_num_available_freq_Bands = f1ap_req(false,instance)->nr_mode_info[i].tdd.num_frequency_bands;
+      LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
 
-            /* FDD.2.2 F1AP_SUL_Information */
-            if(0) { // Optional
-              F1AP_SUL_Information_t *fdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
-              fdd_sul_info->sUL_NRARFCN = 0;
-              fdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
-              fdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
-              fDD_Info->dL_NRFreqInfo.sul_Information = fdd_sul_info;
-            }
+      for (int j=0; j<tdd_num_available_freq_Bands; j++) {
+        asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
+        /* TDD.1.3.1 freqBandIndicatorNr*/
+        nr_freqBandNrItem->freqBandIndicatorNr = *f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_band; //
+        /* TDD.1.3.2 supportedSULBandList*/
+        int num_available_supported_SULBands = f1ap_req(false,instance)->nr_mode_info[i].tdd.num_sul_frequency_bands;
+        LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
 
-            /* FDD.2.3 freqBandListNr */
-            int fdd_dl_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_frequency_bands;
-            LOG_D(F1AP, "fdd_dl_num_available_freq_Bands = %d \n", fdd_dl_num_available_freq_Bands);
-            int fdd_dl_j;
-            for (fdd_dl_j=0;
-                 fdd_dl_j<fdd_dl_num_available_freq_Bands;
-                 fdd_dl_j++) {
+        for (int k=0; k<num_available_supported_SULBands; k++) {
+          asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list,F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
+          /* TDD.1.3.2.1 freqBandIndicatorNr */
+          nr_supportedSULFreqBandItem->freqBandIndicatorNr = *f1ap_req(false,instance)->nr_mode_info[i].tdd.nr_sul_band; //
+        } // for TDD : supported_SULBands
+      } // for TDD : freq_Bands
 
-                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-                  /* FDD.2.3.1 freqBandIndicatorNr*/
-                  nr_freqBandNrItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_band[fdd_dl_j]; //
+      /* TDD.2 transmission_Bandwidth */
+      tDD_Info->transmission_Bandwidth.nRSCS = f1ap_req(false,instance)->nr_mode_info[i].tdd.scs;
+      tDD_Info->transmission_Bandwidth.nRNRB = to_NRNRB(f1ap_req(false,instance)->nr_mode_info[i].tdd.nrb);
+    } // if nR_Mode_Info
 
-                  /* FDD.2.3.2 supportedSULBandList*/
-                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].fdd.dl_num_sul_frequency_bands;
-                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
-                  int fdd_dl_k;
-                  for (fdd_dl_k=0;
-                       fdd_dl_k<num_available_supported_SULBands;
-                       fdd_dl_k++) {
-                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-                          /* FDD.2.3.2.1 freqBandIndicatorNr */
-                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = f1ap_du_data->nr_mode_info[i].fdd.dl_nr_sul_band[fdd_dl_k]; //
-                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
-                  } // for FDD : DL supported_SULBands
-                  ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
-            } // for FDD : DL freq_Bands
-
-          /* FDD.3 UL Transmission Bandwidth */
-          fDD_Info->uL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.ul_scs;
-          fDD_Info->uL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.ul_nrb;
-          /* FDD.4 DL Transmission Bandwidth */
-          fDD_Info->dL_Transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].fdd.dl_scs;
-          fDD_Info->dL_Transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].fdd.dl_nrb;
-          
-          nR_Mode_Info.choice.fDD = fDD_Info;
-        } else { // TDD
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_tDD;
-          F1AP_TDD_Info_t *tDD_Info = (F1AP_TDD_Info_t *)calloc(1, sizeof(F1AP_TDD_Info_t));
-
-          /* TDD.1 nRFreqInfo */
-            /* TDD.1.1 nRFreqInfo ARFCN */
-            tDD_Info->nRFreqInfo.nRARFCN = f1ap_du_data->nr_mode_info[i].tdd.nr_arfcn; // Integer
-
-            /* TDD.1.2 F1AP_SUL_Information */
-            if(0) { // Optional
-              F1AP_SUL_Information_t *tdd_sul_info = (F1AP_SUL_Information_t *)calloc(1, sizeof(F1AP_SUL_Information_t));
-              tdd_sul_info->sUL_NRARFCN = 0;
-              tdd_sul_info->sUL_transmission_Bandwidth.nRSCS = 0;
-              tdd_sul_info->sUL_transmission_Bandwidth.nRNRB = 0;
-              tDD_Info->nRFreqInfo.sul_Information = tdd_sul_info;
-            }
-
-            /* TDD.1.3 freqBandListNr */
-            int tdd_num_available_freq_Bands = f1ap_du_data->nr_mode_info[i].tdd.num_frequency_bands;
-            LOG_D(F1AP, "tdd_num_available_freq_Bands = %d \n", tdd_num_available_freq_Bands);
-            int j;
-            for (j=0;
-                 j<tdd_num_available_freq_Bands;
-                 j++) {
-
-                  F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-                  memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-                  /* TDD.1.3.1 freqBandIndicatorNr*/
-                  nr_freqBandNrItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_band; //
-
-                  /* TDD.1.3.2 supportedSULBandList*/
-                  int num_available_supported_SULBands = f1ap_du_data->nr_mode_info[i].tdd.num_sul_frequency_bands;
-                  LOG_D(F1AP, "num_available_supported_SULBands = %d \n", num_available_supported_SULBands);
-                  int k;
-                  for (k=0;
-                       k<num_available_supported_SULBands;
-                       k++) {
-                        F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-                        memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-                          /* TDD.1.3.2.1 freqBandIndicatorNr */
-                          nr_supportedSULFreqBandItem.freqBandIndicatorNr = *f1ap_du_data->nr_mode_info[i].tdd.nr_sul_band; //
-                        ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
-                  } // for TDD : supported_SULBands
-                  ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
-            } // for TDD : freq_Bands
-
-          /* TDD.2 transmission_Bandwidth */
-          tDD_Info->transmission_Bandwidth.nRSCS = f1ap_du_data->nr_mode_info[i].tdd.scs;
-          tDD_Info->transmission_Bandwidth.nRNRB = f1ap_du_data->nr_mode_info[i].tdd.nrb;
-     
-          nR_Mode_Info.choice.tDD = tDD_Info;
-        } // if nR_Mode_Info
-        
-        served_cell_information.nR_Mode_Info = nR_Mode_Info;
-
-        /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = f1ap_du_data->measurement_timing_information[i]; // sept. 2018
-
-        OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
-                             measurementTimingConfiguration,
-                             strlen(measurementTimingConfiguration));
-        gnb_du_served_cells_item.served_Cell_Information = served_cell_information; //
-
-        /* 4.1.2 gNB-DU System Information */
-        F1AP_GNB_DU_System_Information_t *gNB_DU_System_Information = (F1AP_GNB_DU_System_Information_t *)calloc(1, sizeof(F1AP_GNB_DU_System_Information_t));
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                             (const char*)f1ap_du_data->mib[i],//f1ap_du_data->mib,
-                             f1ap_du_data->mib_length[i]);
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                             (const char*)f1ap_du_data->sib1[i],
-                             f1ap_du_data->sib1_length[i]);
-
-        gnb_du_served_cells_item.gNB_DU_System_Information = gNB_DU_System_Information; //
-
-        /* ADD */
-        gnb_du_served_cell_list_item_ies->value.choice.GNB_DU_Served_Cells_Item = gnb_du_served_cells_item;
-
-        ASN_SEQUENCE_ADD(&ie->value.choice.GNB_DU_Served_Cells_List.list, 
-                        gnb_du_served_cell_list_item_ies);
-
+    /* - measurementTimingConfiguration */
+    char *measurementTimingConfiguration = f1ap_req(false,instance)->measurement_timing_information[i]; // sept. 2018
+    OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
+                         measurementTimingConfiguration,
+                         strlen(measurementTimingConfiguration));
+    asn1cCalloc(gnb_du_served_cells_item->gNB_DU_System_Information, gNB_DU_System_Information);
+    /* 4.1.2 gNB-DU System Information */
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
+                         (const char *)f1ap_req(false,instance)->mib[i], //f1ap_du_data->mib,
+                         f1ap_req(false,instance)->mib_length[i]);
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
+                         (const char *)f1ap_req(false,instance)->sib1[i],
+                         f1ap_req(false,instance)->sib1_length[i]);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+
+  /* mandatory */
+  /* c5. RRC VERSION */
+  asn1cSequenceAdd(f1Setup->protocolIEs.list, F1AP_F1SetupRequestIEs_t, ie2);
+  ie2->id                        = F1AP_ProtocolIE_ID_id_GNB_DU_RRC_Version;
+  ie2->criticality               = F1AP_Criticality_reject;
+  ie2->value.present             = F1AP_F1SetupRequestIEs__value_PR_RRC_Version;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.buf=calloc(1,sizeof(char));
+  ie2->value.choice.RRC_Version.latest_RRC_Version.buf[0] = 0xe0;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.size = 1;
+  ie2->value.choice.RRC_Version.latest_RRC_Version.bits_unused = 5;
 
   /* encode */
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
@@ -405,146 +347,175 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance) {
     return -1;
   }
 
-  MSC_LOG_TX_MESSAGE(
-  MSC_F1AP_DU,
-  MSC_F1AP_CU,
-  (const char *)buffer,
-  len,
-  MSC_AS_TIME_FMT" F1_SETUP_REQUEST initiatingMessage gNB_DU_name %s",
-  0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-  f1ap_du_data->gNB_DU_name);
-
-  du_f1ap_itti_send_sctp_data_req(instance, f1ap_du_data->assoc_id, buffer, len, 0);
-
+  ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, 0);
   return 0;
 }
 
 int DU_handle_F1_SETUP_RESPONSE(instance_t instance,
-				uint32_t               assoc_id,
-				uint32_t               stream,
-				F1AP_F1AP_PDU_t       *pdu)
-{
+                                uint32_t               assoc_id,
+                                uint32_t               stream,
+                                F1AP_F1AP_PDU_t       *pdu) {
+  LOG_D(F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
+  AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
+              "pdu->present != F1AP_F1AP_PDU_PR_successfulOutcome\n");
+  AssertFatal(pdu->choice.successfulOutcome->procedureCode  == F1AP_ProcedureCode_id_F1Setup,
+              "pdu->choice.successfulOutcome->procedureCode != F1AP_ProcedureCode_id_F1Setup\n");
+  AssertFatal(pdu->choice.successfulOutcome->criticality  == F1AP_Criticality_reject,
+              "pdu->choice.successfulOutcome->criticality != F1AP_Criticality_reject\n");
+  AssertFatal(pdu->choice.successfulOutcome->value.present  == F1AP_SuccessfulOutcome__value_PR_F1SetupResponse,
+              "pdu->choice.successfulOutcome->value.present != F1AP_SuccessfulOutcome__value_PR_F1SetupResponse\n");
+  F1AP_F1SetupResponse_t    *in = &pdu->choice.successfulOutcome->value.choice.F1SetupResponse;
+  F1AP_F1SetupResponseIEs_t *ie;
+  int TransactionId = -1;
+  int num_cells_to_activate = 0;
+  F1AP_Cells_to_be_Activated_List_Item_t *cell;
+  MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, 0, F1AP_SETUP_RESP);
+  LOG_D(F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
+        in->protocolIEs.list.count);
 
-   LOG_D(F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
+  for (int i=0; i < in->protocolIEs.list.count; i++) {
+    ie = in->protocolIEs.list.array[i];
 
-   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
-	       "pdu->present != F1AP_F1AP_PDU_PR_successfulOutcome\n");
-   AssertFatal(pdu->choice.successfulOutcome->procedureCode  == F1AP_ProcedureCode_id_F1Setup,
-	       "pdu->choice.successfulOutcome->procedureCode != F1AP_ProcedureCode_id_F1Setup\n");
-   AssertFatal(pdu->choice.successfulOutcome->criticality  == F1AP_Criticality_reject,
-	       "pdu->choice.successfulOutcome->criticality != F1AP_Criticality_reject\n");
-   AssertFatal(pdu->choice.successfulOutcome->value.present  == F1AP_SuccessfulOutcome__value_PR_F1SetupResponse,
-	       "pdu->choice.successfulOutcome->value.present != F1AP_SuccessfulOutcome__value_PR_F1SetupResponse\n");
+    switch (ie->id) {
+      case F1AP_ProtocolIE_ID_id_TransactionID:
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+                    "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_TransactionID,
+                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
+        TransactionId=ie->value.choice.TransactionID;
+        LOG_D(F1AP, "F1AP: F1Setup-Resp: TransactionId %d\n",
+              TransactionId);
+        break;
 
-   F1AP_F1SetupResponse_t    *in = &pdu->choice.successfulOutcome->value.choice.F1SetupResponse;
+      case F1AP_ProtocolIE_ID_id_gNB_CU_Name:
+        AssertFatal(ie->criticality == F1AP_Criticality_ignore,
+                    "ie->criticality != F1AP_Criticality_ignore\n");
+        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name,
+                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
+        F1AP_SETUP_RESP (msg_p).gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
+        memcpy(F1AP_SETUP_RESP (msg_p).gNB_CU_name,ie->value.choice.GNB_CU_Name.buf,ie->value.choice.GNB_CU_Name.size);
+        F1AP_SETUP_RESP (msg_p).gNB_CU_name[ie->value.choice.GNB_CU_Name.size]='\0';
+        LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
+              F1AP_SETUP_RESP (msg_p).gNB_CU_name);
+        break;
 
+      case F1AP_ProtocolIE_ID_id_GNB_CU_RRC_Version:
+        LOG_D(F1AP, "F1AP: Received GNB-CU-RRC-Version, ignoring\n");
+        break;
 
-   F1AP_F1SetupResponseIEs_t *ie;
-   int TransactionId = -1;
-   int num_cells_to_activate = 0;
-   F1AP_Cells_to_be_Activated_List_Item_t *cell;
+      case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List: {
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+                    "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List,
+                    "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List\n");
+        num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
+        LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
 
-   MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, F1AP_SETUP_RESP);
+        for (int i=0; i<num_cells_to_activate; i++) {
+          F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *) ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+          AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
+                      "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
+          AssertFatal(cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject,
+                      "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
+          AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
+                      "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
+          cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
+                          F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc_digit_length);
+          LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+                cell->nRCGI.nRCellIdentity.buf[0],
+                cell->nRCGI.nRCellIdentity.buf[1],
+                cell->nRCGI.nRCellIdentity.buf[2],
+                cell->nRCGI.nRCellIdentity.buf[3],
+                cell->nRCGI.nRCellIdentity.buf[4]);
+          BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
+                                         F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid);
+          F1AP_ProtocolExtensionContainer_10696P112_t *ext = (F1AP_ProtocolExtensionContainer_10696P112_t *)cell->iE_Extensions;
 
-   LOG_D(F1AP, "F1AP: F1Setup-Resp: protocolIEs.list.count %d\n",
-         in->protocolIEs.list.count);
-   for (int i=0;i < in->protocolIEs.list.count; i++) {
-     ie = in->protocolIEs.list.array[i];
-     switch (ie->id) {
-     case F1AP_ProtocolIE_ID_id_TransactionID:
-       AssertFatal(ie->criticality == F1AP_Criticality_reject,
-		   "ie->criticality != F1AP_Criticality_reject\n");
-       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_TransactionID,
-		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
-       TransactionId=ie->value.choice.TransactionID;
-       LOG_D(F1AP, "F1AP: F1Setup-Resp: TransactionId %d\n",
-             TransactionId);
-       break;
-     case F1AP_ProtocolIE_ID_id_gNB_CU_Name:
-       AssertFatal(ie->criticality == F1AP_Criticality_ignore,
-		   "ie->criticality != F1AP_Criticality_ignore\n");
-       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_GNB_CU_Name,
-		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_TransactionID\n");
-       F1AP_SETUP_RESP (msg_p).gNB_CU_name = malloc(ie->value.choice.GNB_CU_Name.size+1);
-       memcpy(F1AP_SETUP_RESP (msg_p).gNB_CU_name,ie->value.choice.GNB_CU_Name.buf,ie->value.choice.GNB_CU_Name.size);
-       F1AP_SETUP_RESP (msg_p).gNB_CU_name[ie->value.choice.GNB_CU_Name.size]='\0';
-       LOG_D(F1AP, "F1AP: F1Setup-Resp: gNB_CU_name %s\n",
-             F1AP_SETUP_RESP (msg_p).gNB_CU_name);
-       break;
-     case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List:
-       AssertFatal(ie->criticality == F1AP_Criticality_reject,
-		   "ie->criticality != F1AP_Criticality_reject\n");
-       AssertFatal(ie->value.present == F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List,
-		   "ie->value.present != F1AP_F1SetupResponseIEs__value_PR_Cells_to_be_Activated_List\n");
-       num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
-       LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
-       for (int i=0;i<num_cells_to_activate;i++) {
-	 
-	 F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *) ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+          if (ext==NULL)
+            continue;
 
-	 AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
-		   "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
-	 AssertFatal(cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject,
-		     "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
-	 AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
-		     "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
+          for (int cnt=0; cnt<ext->list.count; cnt++) {
+            F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
 
-	 cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+            switch (cells_to_be_activated_list_itemExtIEs->id) {
+              /*
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_NOTHING:
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailablePLMNList,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_ExtendedAvailablePLMN_List,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_IAB_Info_IAB_donor_CU,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailableSNPN_ID_List
+              */
+              case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation: {
+                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
+                F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
+                F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
+                AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
+                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                      i, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mcc, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].mnc,
+                      F1AP_SETUP_RESP (msg_p).cells_to_activate[i].nr_cellid, F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI);
 
-	 TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i], F1AP_SETUP_RESP (msg_p).mnc_digit_length[i]);
-	 AssertFatal(cell->nRPCI != NULL, "nRPCI is null\n");
-	 LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
-         cell->nRCGI.nRCellIdentity.buf[0],
-         cell->nRCGI.nRCellIdentity.buf[1],
-         cell->nRCGI.nRCellIdentity.buf[2],
-         cell->nRCGI.nRCellIdentity.buf[3],
-         cell->nRCGI.nRCellIdentity.buf[4]);
-	 BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
-					F1AP_SETUP_RESP (msg_p).nr_cellid[i]);
-	 F1AP_SETUP_RESP (msg_p).nrpci[i] = *cell->nRPCI;
+                for (int si = 0; si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count; si++) {
+                  F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
+                  size_t size = sib_item->sIBmessage.size;
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si] = size;
+                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%ld] %ld bytes\n", i, sib_item->sIBtype, size);
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container_length[si]);
+                  memcpy((void *)F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_container[si],
+                         (void *)sib_item->sIBmessage.buf,
+                         size);
+                  F1AP_SETUP_RESP (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
+                }
 
-	 F1AP_ProtocolExtensionContainer_160P9_t *ext = (F1AP_ProtocolExtensionContainer_160P9_t *)cell->iE_Extensions;
-	 AssertFatal(ext!=NULL,"Extension for SI is null\n");
-	 F1AP_SETUP_RESP (msg_p).num_SI[i] = ext->list.count;
-	 AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
-   LOG_D(F1AP, "F1AP: F1Setup-Resp Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
-         i, F1AP_SETUP_RESP (msg_p).mcc[i], F1AP_SETUP_RESP (msg_p).mnc[i],
-         F1AP_SETUP_RESP (msg_p).nr_cellid[i], F1AP_SETUP_RESP (msg_p).num_SI[i]);
-	 for (int si =0;si < ext->list.count;si++) {
-	   size_t size = ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.size;
-	   F1AP_SETUP_RESP (msg_p).SI_container_length[i][si] = size;
-     LOG_D(F1AP, "F1AP: F1Setup-Resp SI_container_length[%d][%d] %ld bytes\n", i, si, size);
-	   F1AP_SETUP_RESP (msg_p).SI_container[i][si] = malloc(F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
+                break;
+              }
 
-	   memcpy((void*)F1AP_SETUP_RESP (msg_p).SI_container[i][si],
-		  (void*)ext->list.array[si]->extensionValue.choice.GNB_CUSystemInformation.sImessage.buf,
-		  F1AP_SETUP_RESP (msg_p).SI_container_length[i][si]);
-	 }
-       }
-       break;
-     }
-   }
-   AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
-   AssertFatal(num_cells_to_activate>0,"No cells activated\n");
-   F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
+              case F1AP_ProtocolIE_ID_id_AvailablePLMNList:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
 
-   for (int i=0;i<num_cells_to_activate;i++)  
-     AssertFatal(F1AP_SETUP_RESP (msg_p).num_SI[i] > 0, "System Information %d is missing",i);
+              case F1AP_ProtocolIE_ID_id_ExtendedAvailablePLMN_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
 
-   MSC_LOG_RX_MESSAGE(
-    MSC_F1AP_DU,
-    MSC_F1AP_CU,
-    0,
-    0,
-    MSC_AS_TIME_FMT" DU_handle_F1_SETUP_RESPONSE successfulOutcome assoc_id %d",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    assoc_id);
- 
-   LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message to ENB_APP with assoc_id (%d->%d)\n",
-         assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
-   itti_send_msg_to_task(TASK_ENB_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+              case F1AP_ProtocolIE_ID_id_IAB_Info_IAB_donor_CU:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
 
-   return 0;
+              case F1AP_ProtocolIE_ID_id_AvailableSNPN_ID_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+
+              default:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n",(int)cells_to_be_activated_list_itemExtIEs->id);
+                break;
+            }
+          } // for (cnt=...
+        } // for (cells_to_activate...
+
+        break;
+      } // case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List
+
+      default:
+        AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n", (int)ie->id);
+        break;
+    } // switch ie
+  } // for IE
+
+  AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
+  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
+  F1AP_SETUP_RESP (msg_p).num_cells_to_activate = num_cells_to_activate;
+
+  // tmp
+  // F1AP_SETUP_RESP (msg_p).num_SI[0] = 1;
+  for (int i=0; i<num_cells_to_activate; i++)
+    AssertFatal(F1AP_SETUP_RESP (msg_p).cells_to_activate[i].num_SI > 0, "System Information %d is missing",i);
+
+  LOG_D(F1AP, "Sending F1AP_SETUP_RESP ITTI message\n");
+  itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  return 0;
 }
 
 // SETUP FAILURE
@@ -553,6 +524,22 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
                                uint32_t stream,
                                F1AP_F1AP_PDU_t *pdu) {
   LOG_E(F1AP, "DU_handle_F1_SETUP_FAILURE\n");
+  F1AP_F1SetupFailure_t    *out;
+  F1AP_F1SetupFailureIEs_t *ie;
+  out = &pdu->choice.unsuccessfulOutcome->value.choice.F1SetupFailure;
+  /* Transaction ID */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out,
+                             F1AP_ProtocolIE_ID_id_TransactionID, true);
+  /* Cause */
+  F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out,
+                             F1AP_ProtocolIE_ID_id_Cause, true);
+
+  if(0) {
+    /* TimeToWait */
+    F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_F1SetupFailureIEs_t, ie, out,
+                               F1AP_ProtocolIE_ID_id_TimeToWait, true);
+  }
+
   return 0;
 }
 
@@ -563,494 +550,454 @@ int DU_handle_F1_SETUP_FAILURE(instance_t instance,
 
 //void DU_send_gNB_DU_CONFIGURATION_UPDATE(F1AP_GNBDUConfigurationUpdate_t *GNBDUConfigurationUpdate) {
 int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
-                                         instance_t du_mod_idP,
-                                         f1ap_setup_req_t *f1ap_setup_req) {
-  F1AP_F1AP_PDU_t                     pdu;
-  F1AP_GNBDUConfigurationUpdate_t     *out;
-  F1AP_GNBDUConfigurationUpdateIEs_t  *ie;
-
-  uint8_t  *buffer;
-  uint32_t  len;
-  int       i = 0;
-  int       j = 0;
-
+                                        instance_t du_mod_idP,
+                                        f1ap_setup_req_t *f1ap_setup_req) {
+  F1AP_F1AP_PDU_t                     pdu= {0};
+  uint8_t  *buffer=NULL;
+  uint32_t  len=0;
   /* Create */
   /* 0. Message Type */
-  memset(&pdu, 0, sizeof(pdu));
   pdu.present = F1AP_F1AP_PDU_PR_initiatingMessage;
-  pdu.choice.initiatingMessage = (F1AP_InitiatingMessage_t *)calloc(1, sizeof(F1AP_InitiatingMessage_t));
-  pdu.choice.initiatingMessage->procedureCode = F1AP_ProcedureCode_id_gNBDUConfigurationUpdate;
-  pdu.choice.initiatingMessage->criticality   = F1AP_Criticality_reject;
-  pdu.choice.initiatingMessage->value.present = F1AP_InitiatingMessage__value_PR_GNBDUConfigurationUpdate;
-  out = &pdu.choice.initiatingMessage->value.choice.GNBDUConfigurationUpdate;
-
+  asn1cCalloc(pdu.choice.initiatingMessage, initMsg);
+  initMsg->procedureCode = F1AP_ProcedureCode_id_gNBDUConfigurationUpdate;
+  initMsg->criticality   = F1AP_Criticality_reject;
+  initMsg->value.present = F1AP_InitiatingMessage__value_PR_GNBDUConfigurationUpdate;
+  F1AP_GNBDUConfigurationUpdate_t      *out = &pdu.choice.initiatingMessage->value.choice.GNBDUConfigurationUpdate;
   /* mandatory */
   /* c1. Transaction ID (integer value) */
-  ie = (F1AP_GNBDUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBDUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_TransactionID;
-  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-
+  asn1cSequenceAdd(out, F1AP_GNBDUConfigurationUpdateIEs_t, ie1);
+  ie1->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ie1->criticality               = F1AP_Criticality_reject;
+  ie1->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_TransactionID;
+  ie1->value.choice.TransactionID = F1AP_get_next_transaction_identifier(instance, du_mod_idP);
   /* mandatory */
   /* c2. Served_Cells_To_Add */
-  ie = (F1AP_GNBDUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBDUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Add_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Add_List;
+  asn1cSequenceAdd(out, F1AP_GNBDUConfigurationUpdateIEs_t, ie2);
+  ie2->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Add_List;
+  ie2->criticality               = F1AP_Criticality_reject;
+  ie2->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Add_List;
 
-  for (j=0;
-       j<1;
-       j++) {
-        //
-        F1AP_Served_Cells_To_Add_ItemIEs_t *served_cells_to_add_item_ies;
-        served_cells_to_add_item_ies = (F1AP_Served_Cells_To_Add_ItemIEs_t *)calloc(1, sizeof(F1AP_Served_Cells_To_Add_ItemIEs_t));
-        served_cells_to_add_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Add_Item;
-        served_cells_to_add_item_ies->criticality   = F1AP_Criticality_reject;
-        served_cells_to_add_item_ies->value.present = F1AP_Served_Cells_To_Add_ItemIEs__value_PR_Served_Cells_To_Add_Item;
-        
-        F1AP_Served_Cells_To_Add_Item_t served_cells_to_add_item;
-        memset((void *)&served_cells_to_add_item, 0, sizeof(F1AP_Served_Cells_To_Add_Item_t));
+  for (int j=0;   j<1; j++) {
+    //
+    asn1cSequenceAdd(ie2->value.choice.Served_Cells_To_Add_List.list, F1AP_Served_Cells_To_Add_ItemIEs_t, served_cells_to_add_item_ies);
+    served_cells_to_add_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Add_Item;
+    served_cells_to_add_item_ies->criticality   = F1AP_Criticality_reject;
+    served_cells_to_add_item_ies->value.present = F1AP_Served_Cells_To_Add_ItemIEs__value_PR_Served_Cells_To_Add_Item;
+    F1AP_Served_Cells_To_Add_Item_t *served_cells_to_add_item= &served_cells_to_add_item_ies->value.choice.Served_Cells_To_Add_Item;
+    F1AP_Served_Cell_Information_t  *served_cell_information=&served_cells_to_add_item->served_Cell_Information;
+    /* - nRCGI */
+    addnRCGI(served_cell_information->nRCGI, &f1ap_setup_req->cell[j]);
+    /* - nRPCI */
+    /* 2.1.1 serverd cell Information */
+    cellIDs_t *cell=&f1ap_req(false, instance)->cell[j];
+    served_cell_information->nRPCI = cell->nr_pci;  // int 0..1007
+    /* - fiveGS_TAC */
+    uint32_t tac=htonl(cell->tac);
+    served_cell_information->fiveGS_TAC=(F1AP_FiveGS_TAC_t *) calloc(1,sizeof(F1AP_FiveGS_TAC_t *));
+    OCTET_STRING_fromBuf(served_cell_information->fiveGS_TAC, ((char *)&tac)+1, 3);
 
-        /* 2.1.1 serverd cell Information */
-        F1AP_Served_Cell_Information_t served_cell_information;
+    /* - Configured_EPS_TAC */
+    if(1) {
+      served_cell_information->configured_EPS_TAC = (F1AP_Configured_EPS_TAC_t *)calloc(1, sizeof(F1AP_Configured_EPS_TAC_t));
+      OCTET_STRING_fromBuf(served_cell_information->configured_EPS_TAC,"2", 2);
+    }
 
-        memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
-        /* - nRCGI */
-        F1AP_NRCGI_t nRCGI;
-        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &nRCGI.pLMN_Identity);
-        LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
-              nRCGI.nRCellIdentity.buf[0],
-              nRCGI.nRCellIdentity.buf[1],
-              nRCGI.nRCellIdentity.buf[2],
-              nRCGI.nRCellIdentity.buf[3],
-              nRCGI.nRCellIdentity.buf[4]);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
-        served_cell_information.nRCGI = nRCGI;
+    asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
+    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    // // /* - CHOICE NR-MODE-Info */
+    F1AP_NR_Mode_Info_t *nR_Mode_Info=&served_cell_information->nR_Mode_Info;
+    LOG_E(F1AP,"Here hardcoded values instead of values from configuration file\n");
 
-        /* - nRPCI */
-        served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
+    if (f1ap_setup_req->fdd_flag) {
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
+      /* > FDD >> FDD Info */
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
+      /* >>> UL NRFreqInfo */
+      fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
+      asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, ul_freqBandNrItem);
+      ul_freqBandNrItem->freqBandIndicatorNr = 888L;
+      asn1cSequenceAdd(ul_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, ul_supportedSULFreqBandItem);
+      ul_supportedSULFreqBandItem->freqBandIndicatorNr = 777L;
+      /* >>> DL NRFreqInfo */
+      fDD_Info->dL_NRFreqInfo.nRARFCN = 666L;
+      asn1cSequenceAdd(fDD_Info->dL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, dl_freqBandNrItem);
+      dl_freqBandNrItem->freqBandIndicatorNr = 555L;
+      asn1cSequenceAdd(dl_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, dl_supportedSULFreqBandItem);
+      dl_supportedSULFreqBandItem->freqBandIndicatorNr = 444L;
+      /* >>> UL Transmission Bandwidth */
+      fDD_Info->uL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
+      fDD_Info->uL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
+      /* >>> DL Transmission Bandwidth */
+      fDD_Info->dL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
+      fDD_Info->dL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
+    } else { // TDD
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
+      /* > TDD >> TDD Info */
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
+      /* >>> ARFCN */
+      tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
+      asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
+      nr_freqBandNrItem->freqBandIndicatorNr = 555L;
+      asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
+      nr_supportedSULFreqBandItem->freqBandIndicatorNr = 444L;
+      tDD_Info->transmission_Bandwidth.nRSCS= F1AP_NRSCS_scs15;
+      tDD_Info->transmission_Bandwidth.nRNRB= F1AP_NRNRB_nrb11;
+    }
 
-        /* - fiveGS_TAC */
-        OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_setup_req->tac[i],
-                             3);
-
-        /* - Configured_EPS_TAC */
-        if(1){
-          served_cell_information.configured_EPS_TAC = (F1AP_Configured_EPS_TAC_t *)calloc(1, sizeof(F1AP_Configured_EPS_TAC_t));
-          OCTET_STRING_fromBuf(served_cell_information.configured_EPS_TAC,
-                             "2",
-                             2);
-        }
-
-        /* - broadcast PLMNs */
-        int maxnoofBPLMNS = 1;
-        for (i=0;
-            i<maxnoofBPLMNS;
-            i++) {
-            /* > PLMN BroadcastPLMNs Item */
-            F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            //memset((void *)&broadcastPLMNs_Item, 0, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
-            ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
-        }
-
-        // // /* - CHOICE NR-MODE-Info */
-        F1AP_NR_Mode_Info_t nR_Mode_Info;
-
-        if (f1ap_setup_req->fdd_flag) {
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
-          /* > FDD >> FDD Info */
-          F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
-          /* >>> UL NRFreqInfo */
-          fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
-
-          F1AP_FreqBandNrItem_t ul_freqBandNrItem;
-          memset((void *)&ul_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          ul_freqBandNrItem.freqBandIndicatorNr = 888L;
-
-            F1AP_SupportedSULFreqBandItem_t ul_supportedSULFreqBandItem;
-            memset((void *)&ul_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            ul_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&ul_freqBandNrItem.supportedSULBandList.list, &ul_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &ul_freqBandNrItem);
-
-          /* >>> DL NRFreqInfo */
-          fDD_Info->dL_NRFreqInfo.nRARFCN = 666L;
-
-          F1AP_FreqBandNrItem_t dl_freqBandNrItem;
-          memset((void *)&dl_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          dl_freqBandNrItem.freqBandIndicatorNr = 555L;
-
-            F1AP_SupportedSULFreqBandItem_t dl_supportedSULFreqBandItem;
-            memset((void *)&dl_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            dl_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&dl_freqBandNrItem.supportedSULBandList.list, &dl_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &dl_freqBandNrItem);
-
-          /* >>> UL Transmission Bandwidth */
-          fDD_Info->uL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
-          fDD_Info->uL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
-          /* >>> DL Transmission Bandwidth */
-          fDD_Info->dL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
-          fDD_Info->dL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
-          
-          nR_Mode_Info.choice.fDD = fDD_Info;
-        } else { // TDD
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_tDD;
-
-          /* > TDD >> TDD Info */
-          F1AP_TDD_Info_t *tDD_Info = (F1AP_TDD_Info_t *)calloc(1, sizeof(F1AP_TDD_Info_t));
-          /* >>> ARFCN */
-          tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
-          F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-          memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          nr_freqBandNrItem.freqBandIndicatorNr = 555L;
-
-            F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-            memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            nr_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
-
-          tDD_Info->transmission_Bandwidth.nRSCS= F1AP_NRSCS_scs15;
-          tDD_Info->transmission_Bandwidth.nRNRB= F1AP_NRNRB_nrb11;
-     
-          nR_Mode_Info.choice.tDD = tDD_Info;
-        } 
-        
-        served_cell_information.nR_Mode_Info = nR_Mode_Info;
-
-        /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = "0"; // sept. 2018
-
-        OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
-                             measurementTimingConfiguration,
-                             strlen(measurementTimingConfiguration));
-        served_cells_to_add_item.served_Cell_Information = served_cell_information; //
-
-        /* 2.1.2 gNB-DU System Information */
-        F1AP_GNB_DU_System_Information_t *gNB_DU_System_Information = (F1AP_GNB_DU_System_Information_t *)calloc(1, sizeof(F1AP_GNB_DU_System_Information_t));
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                             "1",
-                             sizeof("1"));
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                             "1",
-                             sizeof("1"));
-        served_cells_to_add_item.gNB_DU_System_Information = gNB_DU_System_Information; //
-
-        /* ADD */
-        served_cells_to_add_item_ies->value.choice.Served_Cells_To_Add_Item = served_cells_to_add_item;
-
-        ASN_SEQUENCE_ADD(&ie->value.choice.Served_Cells_To_Add_List.list, 
-                        served_cells_to_add_item_ies);
-
+    /* - measurementTimingConfiguration */
+    char *measurementTimingConfiguration = "0"; // sept. 2018
+    OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
+                         measurementTimingConfiguration,
+                         strlen(measurementTimingConfiguration));
+    /* 2.1.2 gNB-DU System Information */
+    asn1cCalloc(served_cells_to_add_item->gNB_DU_System_Information, gNB_DU_System_Information);
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
+                         "1",
+                         sizeof("1"));
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
+                         "1",
+                         sizeof("1"));
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
 
   /* mandatory */
   /* c3. Served_Cells_To_Modify */
-  ie = (F1AP_GNBDUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBDUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Modify_List;
+  asn1cSequenceAdd(out, F1AP_GNBDUConfigurationUpdateIEs_t, ie3);
+  ie3->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_List;
+  ie3->criticality               = F1AP_Criticality_reject;
+  ie3->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Modify_List;
 
-  for (i=0;
-       i<1;
-       i++) {
-        //
-        F1AP_Served_Cells_To_Modify_ItemIEs_t *served_cells_to_modify_item_ies;
-        served_cells_to_modify_item_ies = (F1AP_Served_Cells_To_Modify_ItemIEs_t *)calloc(1, sizeof(F1AP_Served_Cells_To_Modify_ItemIEs_t));
-        served_cells_to_modify_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_Item;
-        served_cells_to_modify_item_ies->criticality   = F1AP_Criticality_reject;
-        served_cells_to_modify_item_ies->value.present = F1AP_Served_Cells_To_Modify_ItemIEs__value_PR_Served_Cells_To_Modify_Item;
-        
-        F1AP_Served_Cells_To_Modify_Item_t served_cells_to_modify_item;
-        memset((void *)&served_cells_to_modify_item, 0, sizeof(F1AP_Served_Cells_To_Modify_Item_t));
+  for (int i=0; i<1; i++) {
+    //
+    cellIDs_t *cell=&f1ap_req(false, instance)->cell[i];
+    asn1cSequenceAdd(ie3->value.choice.Served_Cells_To_Modify_List.list, F1AP_Served_Cells_To_Modify_ItemIEs_t, served_cells_to_modify_item_ies);
+    served_cells_to_modify_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Modify_Item;
+    served_cells_to_modify_item_ies->criticality   = F1AP_Criticality_reject;
+    served_cells_to_modify_item_ies->value.present = F1AP_Served_Cells_To_Modify_ItemIEs__value_PR_Served_Cells_To_Modify_Item;
+    F1AP_Served_Cells_To_Modify_Item_t *served_cells_to_modify_item=&served_cells_to_modify_item_ies->value.choice.Served_Cells_To_Modify_Item;
+    /* 3.1 oldNRCGI */
+    //addnRGCI(served_cells_to_modify_item->oldNRCGI, f1ap_setup_req->cell[i]);
+    /* 3.2.1 serverd cell Information */
+    F1AP_Served_Cell_Information_t *served_cell_information= &served_cells_to_modify_item->served_Cell_Information;
+    /* - nRCGI */
+    //addnRGCI(served_cell_information->nRCGI,f1ap_setup_req->cell[i]);
+    /* - nRPCI */
+    served_cell_information->nRPCI = f1ap_setup_req->cell[i].nr_pci;  // int 0..1007
+    /* - fiveGS_TAC */
+    asn1cCalloc(served_cell_information->fiveGS_TAC, tac );
+    OCTET_STRING_fromBuf(tac,
+                         (const char *) &f1ap_setup_req->cell[i].tac,
+                         3);
 
-        /* 3.1 oldNRCGI */
-        F1AP_NRCGI_t oldNRCGI;
-        memset(&oldNRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
-                                         &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
-        served_cells_to_modify_item.oldNRCGI = oldNRCGI;
+    /* - Configured_EPS_TAC */
+    if(1) {
+      asn1cCalloc(served_cell_information->configured_EPS_TAC, tmp2);
+      OCTET_STRING_fromBuf(tmp2,
+                           "2",
+                           2);
+    }
 
+    asn1cSequenceAdd(served_cell_information->servedPLMNs.list, F1AP_ServedPLMNs_Item_t, servedPLMN_item);
+    MCC_MNC_TO_PLMNID(cell->mcc, cell->mnc, cell->mnc_digit_length, &servedPLMN_item->pLMN_Identity);
+    // // /* - CHOICE NR-MODE-Info */
+    F1AP_NR_Mode_Info_t *nR_Mode_Info= &served_cell_information->nR_Mode_Info;
 
-        /* 3.2.1 serverd cell Information */
-        F1AP_Served_Cell_Information_t served_cell_information;
-        memset((void *)&served_cell_information, 0, sizeof(F1AP_Served_Cell_Information_t));
+    if (f1ap_setup_req->fdd_flag) {
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_fDD;
+      /* > FDD >> FDD Info */
+      asn1cCalloc(nR_Mode_Info->choice.fDD, fDD_Info);
+      /* >>> UL NRFreqInfo */
+      fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
+      asn1cSequenceAdd(fDD_Info->uL_NRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, ul_freqBandNrItem);
+      ul_freqBandNrItem->freqBandIndicatorNr = 888L;
+      asn1cSequenceAdd(ul_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, ul_supportedSULFreqBandItem);
+      ul_supportedSULFreqBandItem->freqBandIndicatorNr = 777L;
+      /* >>> DL NRFreqInfo */
+      fDD_Info->dL_NRFreqInfo.nRARFCN = 666L;
+      asn1cSequenceAdd(dl_freqBandNrItem->supportedSULBandList.list, F1AP_FreqBandNrItem_t, dl_freqBandNrItem);
+      dl_freqBandNrItem->freqBandIndicatorNr = 555L;
+      F1AP_SupportedSULFreqBandItem_t dl_supportedSULFreqBandItem;
+      memset((void *)&dl_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
+      dl_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
+      /* >>> UL Transmission Bandwidth */
+      fDD_Info->uL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
+      fDD_Info->uL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
+      /* >>> DL Transmission Bandwidth */
+      fDD_Info->dL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
+      fDD_Info->dL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
+    } else { // TDD
+      nR_Mode_Info->present = F1AP_NR_Mode_Info_PR_tDD;
+      /* > TDD >> TDD Info */
+      asn1cCalloc(nR_Mode_Info->choice.tDD, tDD_Info);
+      /* >>> ARFCN */
+      tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
+      asn1cSequenceAdd(tDD_Info->nRFreqInfo.freqBandListNr.list, F1AP_FreqBandNrItem_t, nr_freqBandNrItem);
+      nr_freqBandNrItem->freqBandIndicatorNr = 555L;
+      asn1cSequenceAdd(nr_freqBandNrItem->supportedSULBandList.list, F1AP_SupportedSULFreqBandItem_t, nr_supportedSULFreqBandItem);
+      nr_supportedSULFreqBandItem->freqBandIndicatorNr = 444L;
+      tDD_Info->transmission_Bandwidth.nRSCS= F1AP_NRSCS_scs15;
+      tDD_Info->transmission_Bandwidth.nRNRB= F1AP_NRNRB_nrb11;
+    }
 
-        /* - nRCGI */
-        F1AP_NRCGI_t nRCGI;
-        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
-                                         &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
-        served_cell_information.nRCGI = nRCGI;
-
-        /* - nRPCI */
-        served_cell_information.nRPCI = f1ap_setup_req->nr_pci[i];  // int 0..1007
-
-        /* - fiveGS_TAC */
-        OCTET_STRING_fromBuf(&served_cell_information.fiveGS_TAC,
-                             (const char *) &f1ap_setup_req->tac[i],
-                             3);
-
-        /* - Configured_EPS_TAC */
-        if(1){
-          served_cell_information.configured_EPS_TAC = (F1AP_Configured_EPS_TAC_t *)calloc(1, sizeof(F1AP_Configured_EPS_TAC_t));
-          OCTET_STRING_fromBuf(served_cell_information.configured_EPS_TAC,
-                             "2",
-                             2);
-        }
-
-        /* - broadcast PLMNs */
-        int maxnoofBPLMNS = 1;
-        for (i=0;
-            i<maxnoofBPLMNS;
-            i++) {
-            /* > PLMN BroadcastPLMNs Item */
-            F1AP_BroadcastPLMNs_Item_t *broadcastPLMNs_Item = (F1AP_BroadcastPLMNs_Item_t *)calloc(1, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            //memset((void *)&broadcastPLMNs_Item, 0, sizeof(F1AP_BroadcastPLMNs_Item_t));
-            MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i], &broadcastPLMNs_Item->pLMN_Identity);
-            ASN_SEQUENCE_ADD(&served_cell_information.servedPLMNs.list, broadcastPLMNs_Item);
-        }
-
-        // // /* - CHOICE NR-MODE-Info */
-        F1AP_NR_Mode_Info_t nR_Mode_Info;
-
-        if (f1ap_setup_req->fdd_flag) {
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_fDD;
-          /* > FDD >> FDD Info */
-          F1AP_FDD_Info_t *fDD_Info = (F1AP_FDD_Info_t *)calloc(1, sizeof(F1AP_FDD_Info_t));
-          /* >>> UL NRFreqInfo */
-          fDD_Info->uL_NRFreqInfo.nRARFCN = 999L;
-
-          F1AP_FreqBandNrItem_t ul_freqBandNrItem;
-          memset((void *)&ul_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          ul_freqBandNrItem.freqBandIndicatorNr = 888L;
-
-            F1AP_SupportedSULFreqBandItem_t ul_supportedSULFreqBandItem;
-            memset((void *)&ul_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            ul_supportedSULFreqBandItem.freqBandIndicatorNr = 777L;
-            ASN_SEQUENCE_ADD(&ul_freqBandNrItem.supportedSULBandList.list, &ul_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&fDD_Info->uL_NRFreqInfo.freqBandListNr.list, &ul_freqBandNrItem);
-
-          /* >>> DL NRFreqInfo */
-          fDD_Info->dL_NRFreqInfo.nRARFCN = 666L;
-
-          F1AP_FreqBandNrItem_t dl_freqBandNrItem;
-          memset((void *)&dl_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          dl_freqBandNrItem.freqBandIndicatorNr = 555L;
-
-            F1AP_SupportedSULFreqBandItem_t dl_supportedSULFreqBandItem;
-            memset((void *)&dl_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            dl_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&dl_freqBandNrItem.supportedSULBandList.list, &dl_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&fDD_Info->dL_NRFreqInfo.freqBandListNr.list, &dl_freqBandNrItem);
-
-          /* >>> UL Transmission Bandwidth */
-          fDD_Info->uL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
-          fDD_Info->uL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
-          /* >>> DL Transmission Bandwidth */
-          fDD_Info->dL_Transmission_Bandwidth.nRSCS = F1AP_NRSCS_scs15;
-          fDD_Info->dL_Transmission_Bandwidth.nRNRB = F1AP_NRNRB_nrb11;
-          
-          nR_Mode_Info.choice.fDD = fDD_Info;
-        } else { // TDD
-          nR_Mode_Info.present = F1AP_NR_Mode_Info_PR_tDD;
-
-          /* > TDD >> TDD Info */
-          F1AP_TDD_Info_t *tDD_Info = (F1AP_TDD_Info_t *)calloc(1, sizeof(F1AP_TDD_Info_t));
-          /* >>> ARFCN */
-          tDD_Info->nRFreqInfo.nRARFCN = 999L; // Integer
-          F1AP_FreqBandNrItem_t nr_freqBandNrItem;
-          memset((void *)&nr_freqBandNrItem, 0, sizeof(F1AP_FreqBandNrItem_t));
-          nr_freqBandNrItem.freqBandIndicatorNr = 555L;
-
-            F1AP_SupportedSULFreqBandItem_t nr_supportedSULFreqBandItem;
-            memset((void *)&nr_supportedSULFreqBandItem, 0, sizeof(F1AP_SupportedSULFreqBandItem_t));
-            nr_supportedSULFreqBandItem.freqBandIndicatorNr = 444L;
-            ASN_SEQUENCE_ADD(&nr_freqBandNrItem.supportedSULBandList.list, &nr_supportedSULFreqBandItem);
-
-          ASN_SEQUENCE_ADD(&tDD_Info->nRFreqInfo.freqBandListNr.list, &nr_freqBandNrItem);
-
-          tDD_Info->transmission_Bandwidth.nRSCS= F1AP_NRSCS_scs15;
-          tDD_Info->transmission_Bandwidth.nRNRB= F1AP_NRNRB_nrb11;
-     
-          nR_Mode_Info.choice.tDD = tDD_Info;
-        } 
-        
-        served_cell_information.nR_Mode_Info = nR_Mode_Info;
-
-        /* - measurementTimingConfiguration */
-        char *measurementTimingConfiguration = "0"; // sept. 2018
-
-        OCTET_STRING_fromBuf(&served_cell_information.measurementTimingConfiguration,
-                             measurementTimingConfiguration,
-                             strlen(measurementTimingConfiguration));
-        served_cells_to_modify_item.served_Cell_Information = served_cell_information; //
-
-        /* 3.2.2 gNB-DU System Information */
-        F1AP_GNB_DU_System_Information_t *gNB_DU_System_Information = (F1AP_GNB_DU_System_Information_t *)calloc(1, sizeof(F1AP_GNB_DU_System_Information_t));
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
-                             "1",
-                             sizeof("1"));
-
-        OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
-                             "1",
-                             sizeof("1"));
-        served_cells_to_modify_item.gNB_DU_System_Information = gNB_DU_System_Information; //
-
-        /* ADD */
-        served_cells_to_modify_item_ies->value.choice.Served_Cells_To_Modify_Item = served_cells_to_modify_item;
-
-        ASN_SEQUENCE_ADD(&ie->value.choice.Served_Cells_To_Modify_List.list, 
-                        served_cells_to_modify_item_ies);
-
+    /* - measurementTimingConfiguration */
+    char *measurementTimingConfiguration = "0"; // sept. 2018
+    OCTET_STRING_fromBuf(&served_cell_information->measurementTimingConfiguration,
+                         measurementTimingConfiguration,
+                         strlen(measurementTimingConfiguration));
+    /* 3.2.2 gNB-DU System Information */
+    asn1cCalloc( served_cells_to_modify_item->gNB_DU_System_Information, gNB_DU_System_Information);
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->mIB_message,  // sept. 2018
+                         "1",
+                         sizeof("1"));
+    OCTET_STRING_fromBuf(&gNB_DU_System_Information->sIB1_message,  // sept. 2018
+                         "1",
+                         sizeof("1"));
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
 
   /* mandatory */
   /* c4. Served_Cells_To_Delete */
-  ie = (F1AP_GNBDUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBDUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Delete_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Delete_List;
+  asn1cSequenceAdd(out, F1AP_GNBDUConfigurationUpdateIEs_t, ie4);
+  ie4->id                        = F1AP_ProtocolIE_ID_id_Served_Cells_To_Delete_List;
+  ie4->criticality               = F1AP_Criticality_reject;
+  ie4->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Served_Cells_To_Delete_List;
 
-  for (i=0;
-       i<1;
-       i++) {
-        //
-        F1AP_Served_Cells_To_Delete_ItemIEs_t *served_cells_to_delete_item_ies;
-        served_cells_to_delete_item_ies = (F1AP_Served_Cells_To_Delete_ItemIEs_t *)calloc(1, sizeof(F1AP_Served_Cells_To_Delete_ItemIEs_t));
-        served_cells_to_delete_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Delete_Item;
-        served_cells_to_delete_item_ies->criticality   = F1AP_Criticality_reject;
-        served_cells_to_delete_item_ies->value.present = F1AP_Served_Cells_To_Delete_ItemIEs__value_PR_Served_Cells_To_Delete_Item;
-        
-        F1AP_Served_Cells_To_Delete_Item_t served_cells_to_delete_item;
-        memset((void *)&served_cells_to_delete_item, 0, sizeof(F1AP_Served_Cells_To_Delete_Item_t));
-
-        /* 3.1 oldNRCGI */
-        F1AP_NRCGI_t oldNRCGI;
-        memset(&oldNRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
-                                         &oldNRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &oldNRCGI.nRCellIdentity);
-        served_cells_to_delete_item.oldNRCGI = oldNRCGI;
-
-        /* ADD */
-        served_cells_to_delete_item_ies->value.choice.Served_Cells_To_Delete_Item = served_cells_to_delete_item;
-
-        ASN_SEQUENCE_ADD(&ie->value.choice.Served_Cells_To_Delete_List.list, 
-                         served_cells_to_delete_item_ies);
+  for (int i=0; i<1; i++) {
+    //
+    asn1cSequenceAdd(ie4->value.choice.Served_Cells_To_Delete_List.list, F1AP_Served_Cells_To_Delete_ItemIEs_t, served_cells_to_delete_item_ies);
+    served_cells_to_delete_item_ies->id            = F1AP_ProtocolIE_ID_id_Served_Cells_To_Delete_Item;
+    served_cells_to_delete_item_ies->criticality   = F1AP_Criticality_reject;
+    served_cells_to_delete_item_ies->value.present = F1AP_Served_Cells_To_Delete_ItemIEs__value_PR_Served_Cells_To_Delete_Item;
+    F1AP_Served_Cells_To_Delete_Item_t *served_cells_to_delete_item=&served_cells_to_delete_item_ies->value.choice.Served_Cells_To_Delete_Item;
+    /* 3.1 oldNRCGI */
+    addnRCGI(served_cells_to_delete_item->oldNRCGI, &f1ap_setup_req->cell[i]);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-
-  /* mandatory */
-  /* c5. Active_Cells_List */
-  ie = (F1AP_GNBDUConfigurationUpdateIEs_t *)calloc(1, sizeof(F1AP_GNBDUConfigurationUpdateIEs_t));
-  ie->id                        = F1AP_ProtocolIE_ID_id_Active_Cells_List;
-  ie->criticality               = F1AP_Criticality_reject;
-  ie->value.present             = F1AP_GNBDUConfigurationUpdateIEs__value_PR_Active_Cells_List;
-
-  for (i=0;
-       i<1;
-       i++) {
-        //
-        F1AP_Active_Cells_ItemIEs_t *active_cells_item_ies;
-        active_cells_item_ies = (F1AP_Active_Cells_ItemIEs_t *)calloc(1, sizeof(F1AP_Active_Cells_ItemIEs_t));
-        active_cells_item_ies->id            = F1AP_ProtocolIE_ID_id_Active_Cells_Item;
-        active_cells_item_ies->criticality   = F1AP_Criticality_reject;
-        active_cells_item_ies->value.present = F1AP_Active_Cells_ItemIEs__value_PR_Active_Cells_Item;
-        
-        F1AP_Active_Cells_Item_t active_cells_item;
-        memset((void *)&active_cells_item, 0, sizeof(F1AP_Active_Cells_Item_t));
-
-        /* 3.1 oldNRCGI */
-        F1AP_NRCGI_t nRCGI;
-        memset(&nRCGI, 0, sizeof(F1AP_NRCGI_t));
-        MCC_MNC_TO_PLMNID(f1ap_setup_req->mcc[i], f1ap_setup_req->mnc[i], f1ap_setup_req->mnc_digit_length[i],
-                                         &nRCGI.pLMN_Identity);
-        NR_CELL_ID_TO_BIT_STRING(f1ap_setup_req->nr_cellid[i], &nRCGI.nRCellIdentity);
-        active_cells_item.nRCGI = nRCGI;
-        
-        /* ADD */
-        active_cells_item_ies->value.choice.Active_Cells_Item = active_cells_item;
-
-        ASN_SEQUENCE_ADD(&ie->value.choice.Active_Cells_List.list, 
-                         active_cells_item_ies);
-  }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
 
   if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
-    LOG_E(F1AP, "Failed to encode F1 setup request\n");
+    LOG_E(F1AP, "Failed to encode F1 gNB-DU CONFIGURATION UPDATE\n");
     return -1;
   }
 
+  ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
   return 0;
 }
 
-
-
 int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 int DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 
 int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu) {
+  LOG_D(F1AP, "DU_handle_gNB_CU_CONFIGURATION_UPDATE\n");
+  AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_initiatingMessage,
+              "pdu->present != F1AP_F1AP_PDU_PR_initiatingMessage\n");
+  AssertFatal(pdu->choice.initiatingMessage->procedureCode  == F1AP_ProcedureCode_id_gNBCUConfigurationUpdate,
+              "pdu->choice.initiatingMessage->procedureCode != F1AP_ProcedureCode_id_gNBCUConfigurationUpdate\n");
+  AssertFatal(pdu->choice.initiatingMessage->criticality  == F1AP_Criticality_reject,
+              "pdu->choice.initiatingMessage->criticality != F1AP_Criticality_reject\n");
+  AssertFatal(pdu->choice.initiatingMessage->value.present  == F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate,
+              "pdu->choice.initiatingMessage->value.present != F1AP_InitiatingMessage__value_PR_GNBCUConfigurationUpdate\n");
+  F1AP_GNBCUConfigurationUpdate_t *in = &pdu->choice.initiatingMessage->value.choice.GNBCUConfigurationUpdate;
+  F1AP_GNBCUConfigurationUpdateIEs_t *ie;
+  int TransactionId = -1;
+  int num_cells_to_activate = 0;
+  F1AP_Cells_to_be_Activated_List_Item_t *cell;
+  MessageDef *msg_p = itti_alloc_new_message (TASK_DU_F1, 0, F1AP_GNB_CU_CONFIGURATION_UPDATE);
+  LOG_D(F1AP, "F1AP: gNB_CU_Configuration_Update: protocolIEs.list.count %d\n",
+        in->protocolIEs.list.count);
+
+  for (int i=0; i < in->protocolIEs.list.count; i++) {
+    ie = in->protocolIEs.list.array[i];
+
+    switch (ie->id) {
+      case F1AP_ProtocolIE_ID_id_TransactionID:
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+                    "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID,
+                    "ie->value.present != F1AP_GNBCUConfigurationUpdateIEs__value_PR_TransactionID\n");
+        TransactionId=ie->value.choice.TransactionID;
+        LOG_D(F1AP, "F1AP: GNB-CU-ConfigurationUpdate: TransactionId %d\n",
+              TransactionId);
+        break;
+
+      case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List: {
+        AssertFatal(ie->criticality == F1AP_Criticality_reject,
+                    "ie->criticality != F1AP_Criticality_reject\n");
+        AssertFatal(ie->value.present == F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Activated_List,
+                    "ie->value.present != F1AP_GNBCUConfigurationUpdateIEs__value_PR_Cells_to_be_Activated_List\n");
+        num_cells_to_activate = ie->value.choice.Cells_to_be_Activated_List.list.count;
+        LOG_D(F1AP, "F1AP: Activating %d cells\n",num_cells_to_activate);
+
+        for (int i=0; i<num_cells_to_activate; i++) {
+          F1AP_Cells_to_be_Activated_List_ItemIEs_t *cells_to_be_activated_list_item_ies = (F1AP_Cells_to_be_Activated_List_ItemIEs_t *) ie->value.choice.Cells_to_be_Activated_List.list.array[i];
+          AssertFatal(cells_to_be_activated_list_item_ies->id == F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item,
+                      "cells_to_be_activated_list_item_ies->id != F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List_Item");
+          AssertFatal(cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject,
+                      "cells_to_be_activated_list_item_ies->criticality == F1AP_Criticality_reject");
+          AssertFatal(cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item,
+                      "cells_to_be_activated_list_item_ies->value.present == F1AP_Cells_to_be_Activated_List_ItemIEs__value_PR_Cells_to_be_Activated_List_Item");
+          cell = &cells_to_be_activated_list_item_ies->value.choice.Cells_to_be_Activated_List_Item;
+          TBCD_TO_MCC_MNC(&cell->nRCGI.pLMN_Identity, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
+                          F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc_digit_length);
+          LOG_D(F1AP, "nr_cellId : %x %x %x %x %x\n",
+                cell->nRCGI.nRCellIdentity.buf[0],
+                cell->nRCGI.nRCellIdentity.buf[1],
+                cell->nRCGI.nRCellIdentity.buf[2],
+                cell->nRCGI.nRCellIdentity.buf[3],
+                cell->nRCGI.nRCellIdentity.buf[4]);
+          BIT_STRING_TO_NR_CELL_IDENTITY(&cell->nRCGI.nRCellIdentity,
+                                         F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid);
+          F1AP_ProtocolExtensionContainer_10696P112_t *ext = (F1AP_ProtocolExtensionContainer_10696P112_t *)cell->iE_Extensions;
+
+          if (ext==NULL)
+            continue;
+
+          for (int cnt=0; cnt<ext->list.count; cnt++) {
+            F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *cells_to_be_activated_list_itemExtIEs=(F1AP_Cells_to_be_Activated_List_ItemExtIEs_t *)ext->list.array[cnt];
+
+            switch (cells_to_be_activated_list_itemExtIEs->id) {
+              /*
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_NOTHING:
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_GNB_CUSystemInformation,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailablePLMNList,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_ExtendedAvailablePLMN_List,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_IAB_Info_IAB_donor_CU,
+                            case F1AP_Cells_to_be_Activated_List_ItemExtIEs__extensionValue_PR_AvailableSNPN_ID_List
+              */
+              case F1AP_ProtocolIE_ID_id_gNB_CUSystemInformation: {
+                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nrpci = (cell->nRPCI != NULL) ? *cell->nRPCI : 0;
+                F1AP_GNB_CUSystemInformation_t *gNB_CUSystemInformation = (F1AP_GNB_CUSystemInformation_t *)&cells_to_be_activated_list_itemExtIEs->extensionValue.choice.GNB_CUSystemInformation;
+                F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count;
+                AssertFatal(ext->list.count==1,"At least one SI message should be there, and only 1 for now!\n");
+                LOG_D(F1AP, "F1AP: Cell %d MCC %d MNC %d NRCellid %lx num_si %d\n",
+                      i, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mcc, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].mnc,
+                      F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].nr_cellid, F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].num_SI);
+
+                for (int si = 0; si < gNB_CUSystemInformation->sibtypetobeupdatedlist.list.count; si++) {
+                  F1AP_SibtypetobeupdatedListItem_t *sib_item = gNB_CUSystemInformation->sibtypetobeupdatedlist.list.array[si];
+                  size_t size = sib_item->sIBmessage.size;
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si] = size;
+                  LOG_D(F1AP, "F1AP: SI_container_length[%d][%ld] %ld bytes\n", i, sib_item->sIBtype, size);
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si] = malloc(F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container_length[si]);
+                  memcpy((void *)F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_container[si],
+                         (void *)sib_item->sIBmessage.buf,
+                         size);
+                  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).cells_to_activate[i].SI_type[si]=sib_item->sIBtype;
+                }
+
+                break;
+              }
+
+              case F1AP_ProtocolIE_ID_id_AvailablePLMNList:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+
+              case F1AP_ProtocolIE_ID_id_ExtendedAvailablePLMN_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+
+              case F1AP_ProtocolIE_ID_id_IAB_Info_IAB_donor_CU:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+
+              case F1AP_ProtocolIE_ID_id_AvailableSNPN_ID_List:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id_AvailablePLMNList not supported yet\n");
+                break;
+
+              default:
+                AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n",(int)cells_to_be_activated_list_itemExtIEs->id);
+                break;
+            }
+          } // for (cnt=...
+        } // for (cells_to_activate...
+
+        break;
+      } // case F1AP_ProtocolIE_ID_id_Cells_to_be_Activated_List
+
+      default:
+        AssertFatal(1==0,"F1AP_ProtocolIE_ID_id %d unknown\n", (int)ie->id);
+        break;
+    } // switch ie
+  } // for IE
+
+  AssertFatal(TransactionId!=-1,"TransactionId was not sent\n");
+  LOG_D(F1AP,"F1AP: num_cells_to_activate %d\n",num_cells_to_activate);
+  F1AP_GNB_CU_CONFIGURATION_UPDATE (msg_p).num_cells_to_activate = num_cells_to_activate;
+  LOG_D(F1AP, "Sending F1AP_GNB_CU_CONFIGURATION_UPDATE ITTI message \n");
+  itti_send_msg_to_task(TASK_GNB_APP, GNB_MODULE_ID_TO_INSTANCE(assoc_id), msg_p);
+  return 0;
 }
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateFailure_t *GNBCUConfigurationUpdateFailure) {
-  AssertFatal(1==0,"Not implemented yet\n");
+    f1ap_gnb_cu_configuration_update_failure_t *GNBCUConfigurationUpdateFailure) {
+  AssertFatal(1==0,"received gNB CU CONFIGURATION UPDATE FAILURE with cause %d\n",
+              GNBCUConfigurationUpdateFailure->cause);
 }
 
 int DU_send_gNB_CU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                    F1AP_GNBCUConfigurationUpdateAcknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
-  AssertFatal(1==0,"Not implemented yet\n");
+    f1ap_gnb_cu_configuration_update_acknowledge_t *GNBCUConfigurationUpdateAcknowledge) {
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated == 0,
+              "%d cells failed to activate\n",
+              GNBCUConfigurationUpdateAcknowledge->num_cells_failed_to_be_activated);
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_to_setup == 0,
+              "%d TNLAssociations to setup, handle this ...\n",
+              GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_to_setup);
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed == 0,
+              "%d TNLAssociations failed\n",
+              GNBCUConfigurationUpdateAcknowledge->noofTNLAssociations_failed);
+  AssertFatal(GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs == 0,
+              "%d DedicatedSIDeliveryNeededUEs\n",
+              GNBCUConfigurationUpdateAcknowledge->noofDedicatedSIDeliveryNeededUEs);
+  F1AP_F1AP_PDU_t           pdu= {0};
+  uint8_t  *buffer=NULL;
+  uint32_t  len=0;
+  /* Create */
+  /* 0. pdu Type */
+  pdu.present = F1AP_F1AP_PDU_PR_successfulOutcome;
+  asn1cCalloc(pdu.choice.successfulOutcome, tmp);
+  tmp->procedureCode = F1AP_ProcedureCode_id_gNBCUConfigurationUpdate;
+  tmp->criticality   = F1AP_Criticality_reject;
+  tmp->value.present = F1AP_SuccessfulOutcome__value_PR_GNBCUConfigurationUpdateAcknowledge;
+  F1AP_GNBCUConfigurationUpdateAcknowledge_t *out = &tmp->value.choice.GNBCUConfigurationUpdateAcknowledge;
+  /* mandatory */
+  /* c1. Transaction ID (integer value)*/
+  asn1cSequenceAdd(out->protocolIEs.list, F1AP_GNBCUConfigurationUpdateAcknowledgeIEs_t, ie);
+  ie->id                        = F1AP_ProtocolIE_ID_id_TransactionID;
+  ie->criticality               = F1AP_Criticality_reject;
+  ie->value.present             = F1AP_GNBCUConfigurationUpdateAcknowledgeIEs__value_PR_TransactionID;
+  ie->value.choice.TransactionID = F1AP_get_next_transaction_identifier(0, 0);
+
+  /* encode */
+  if (f1ap_encode_pdu(&pdu, &buffer, &len) < 0) {
+    LOG_E(F1AP, "Failed to encode GNB-DU-Configuration-Update-Acknowledge\n");
+    return -1;
+  }
+
+  ASN_STRUCT_RESET(asn_DEF_F1AP_F1AP_PDU, &pdu);
+  f1ap_itti_send_sctp_data_req(false, instance, buffer, len, 0);
+  return 0;
 }
 
 
 int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
-                    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
+    F1AP_GNBDUResourceCoordinationRequest_t *GNBDUResourceCoordinationRequest) {
   AssertFatal(0, "Not implemented yet\n");
 }
 
 int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+    uint32_t assoc_id,
+    uint32_t stream,
+    F1AP_F1AP_PDU_t *pdu) {
   AssertFatal(0, "Not implemented yet\n");
 }

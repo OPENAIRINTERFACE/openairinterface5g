@@ -30,6 +30,22 @@
 #ifndef S1AP_ENB_H_
 #define S1AP_ENB_H_
 
+#define S1AP_MMEIND     0x80000000
+#define S1AP_UEIND      0x00000000
+#define S1_SETRSP_WAIT  0x00010000
+#define S1_SETREQ_WAIT  0x00020000
+#define SCTP_REQ_WAIT   0x00030000
+#define S1AP_LINEIND    0x0000ffff
+#define S1AP_TIMERIND   0x00ff0000
+
+#define S1AP_TIMERID_INIT   0xffffffffffffffff
+
+typedef enum s1ap_timer_type_s {
+  S1AP_TIMER_PERIODIC,
+  S1AP_TIMER_ONE_SHOT,
+  S1AP_TIMER_TYPE_MAX,
+} s1ap_timer_type_t;
+
 typedef struct s1ap_eNB_config_s {
   // MME related params
   unsigned char mme_enabled;          ///< MME enabled ?
@@ -43,6 +59,7 @@ void *s1ap_eNB_process_itti_msg(void*);
 void  s1ap_eNB_init(void);
 void *s1ap_eNB_task(void *arg);
 
+int s1ap_timer_remove(long timer_id);
 uint32_t s1ap_generate_eNB_id(void);
 
 #endif /* S1AP_ENB_H_ */

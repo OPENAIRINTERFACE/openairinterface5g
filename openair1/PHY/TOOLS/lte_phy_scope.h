@@ -28,6 +28,7 @@
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
 #include "PHY/impl_defs_top.h"
+#include <common/ran_context.h>
 
 
 /* Forms and Objects */

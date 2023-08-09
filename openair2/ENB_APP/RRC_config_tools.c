@@ -73,6 +73,12 @@ static const eutra_band_t eutra_bands[] = {
   {42, 3400    * MHz, 3600    * MHz, 3400    * MHz, 3600    * MHz, TDD},
   {43, 3600    * MHz, 3800    * MHz, 3600    * MHz, 3800    * MHz, TDD},
   {44, 703    * MHz, 803    * MHz, 703    * MHz, 803    * MHz, TDD},
+  // ...
+  {65,  1920    * MHz,  2010    * MHz,  2110    * MHz,  2200    * MHz, FDD},
+  {66,  1710    * MHz,  1780    * MHz,  2110    * MHz,  2200    * MHz, FDD},
+  {71,  663    * MHz,  698    * MHz,  617    * MHz,  652    * MHz, FDD},
+  {72,  451    * MHz,  456    * MHz,  461    * MHz,  466    * MHz, FDD},
+  {73,  450    * MHz,  455    * MHz,  460    * MHz,  465    * MHz, FDD},
 };
 
 
@@ -102,7 +108,7 @@ int config_check_band_frequencies(    int ind,
                      "enb %d uplink frequency %u too high (%u) for band %d!",
                      ind, uplink_frequency, eutra_bands[band_index].ul_max, band);
         AssertError (eutra_bands[band_index].frame_type == frame_type, errors ++,
-                     "enb %d invalid frame type (%d/%d) for band %d!",
+                     "enb %d invalid frame type (%u/%u) for band %d!",
                      ind, eutra_bands[band_index].frame_type, frame_type, band);
       }
     }

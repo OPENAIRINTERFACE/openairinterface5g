@@ -1,0 +1,68 @@
+{
+  "name": "softmodemngx",
+  "version": "2.0.0",
+  "scripts": {
+    "lint": "ng lint",
+    "build": "ng build",
+    "dev": "ng serve --configuration=development",
+    "prod": "ng serve --configuration=production"
+  },
+  "private": true,
+  "dependencies": {
+    "@angular-slider/ngx-slider": "^2.0.4",
+    "@angular/animations": "^14.1.0",
+    "@angular/cdk": "^14.1.0",
+    "@angular/common": "^14.1.0",
+    "@angular/compiler": "^14.1.0",
+    "@angular/core": "^14.1.0",
+    "@angular/flex-layout": "^14.0.0-beta.40",
+    "@angular/forms": "^14.1.0",
+    "@angular/material": "^14.1.0",
+    "@angular/platform-browser": "^14.1.0",
+    "@angular/platform-browser-dynamic": "^14.1.0",
+    "@angular/router": "^14.1.0",
+    "chart.js": "^3.8.2",
+    "loader-utils": "^3.2.1",
+    "moment": "^2.29.3",
+    "ng2-charts": "^4.0.0",
+    "rxjs": "^6.6.6",
+    "tslib": "^2.0.0",
+    "zone.js": "^0.11.4",
+    "json5": "^2.2.2",
+    "tsconfig-paths": "^4.0.0"
+  },
+  "devDependencies": {
+    "@angular-devkit/architect": "^0.1401.0",
+    "@angular-devkit/build-angular": "^14.1.0",
+    "@angular-eslint/builder": "14.0.2",
+    "@angular-eslint/eslint-plugin": "14.0.2",
+    "@angular-eslint/eslint-plugin-template": "14.0.2",
+    "@angular-eslint/schematics": "14.0.2",
+    "@angular-eslint/template-parser": "14.0.2",
+    "@angular/cli": "^14.1.0",
+    "@angular/compiler-cli": "^14.1.0",
+    "@angular/language-service": "^14.1.0",
+    "@types/node": "^12.20.23",
+    "@typescript-eslint/eslint-plugin": "^5.29.0",
+    "@typescript-eslint/parser": "^5.29.0",
+    "eslint": "^8.18.0",
+    "fs-extra": "^10.0.0",
+    "fuzzy": "^0.1.3",
+    "husky": "^5.1.3",
+    "inquirer": "^6.2.2",
+    "inquirer-autocomplete-prompt": "^1.0.1",
+    "jasmine-core": "~3.7.1",
+    "jasmine-spec-reporter": "~5.0.0",
+    "jsonc-parser": "^3.0.0",
+    "open": "^7.0.3",
+    "ts-node": "^8.10.2",
+    "tslint-angular": "^3.0.3",
+    "typescript": "~4.6.4"
+  },
+  "husky": {
+    "hooks": {
+      "pre-commit": "pretty-quick --staged && ng lint && ng test",
+      "pre-push": "ng build --aot true"
+    }
+  }
+}

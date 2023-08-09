@@ -95,14 +95,15 @@ typedef enum {
 /******************  E X P O R T E D    F U N C T I O N S  ******************/
 /****************************************************************************/
 
+#define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #ifdef LOG_E
 # define LOG_TRACE(s, x, args...)                               \
 do {                                                            \
     switch (s) {                                                \
-        case ERROR:     LOG_E(NAS, " %s:%d  " x "\n", __FILE__, __LINE__, ##args); break;  \
-        case WARNING:   LOG_W(NAS, " %s:%d  " x "\n", __FILE__, __LINE__, ##args); break;  \
-        case INFO:      LOG_I(NAS, " %s:%d  " x "\n", __FILE__, __LINE__, ##args); break;  \
-        default:        LOG_D(NAS, " %s:%d  " x "\n", __FILE__, __LINE__, ##args); break;  \
+        case ERROR:     LOG_E(NAS, " %s:%d  " x "\n", __FILENAME__, __LINE__, ##args); break;  \
+        case WARNING:   LOG_W(NAS, " %s:%d  " x "\n", __FILENAME__, __LINE__, ##args); break;  \
+        case INFO:      LOG_I(NAS, " %s:%d  " x "\n", __FILENAME__, __LINE__, ##args); break;  \
+        default:        LOG_D(NAS, " %s:%d  " x "\n", __FILENAME__, __LINE__, ##args); break;  \
     }                                                           \
 } while (0)
 

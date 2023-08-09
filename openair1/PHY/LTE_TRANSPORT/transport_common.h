@@ -32,13 +32,12 @@
 #ifndef __TRANSPORT_COMMON__H__
 #define __TRANSPORT_COMMON__H__
 #include "PHY/defs_common.h"
-#include "PHY/impl_defs_lte.h"
 #include "dci.h"
 #include "mdci.h"
 //#include "uci.h"
-#ifndef STANDALONE_COMPILE
-#include "UTIL/LISTS/list.h"
-#endif
+//#ifndef STANDALONE_COMPILE
+//  #include "UTIL/LISTS/list.h"
+//#endif
 
 #define MOD_TABLE_QPSK_OFFSET 1
 #define MOD_TABLE_16QAM_OFFSET 5
@@ -58,7 +57,7 @@
 
 // maximum of 3 segments before each coding block if data length exceeds 6144 bits.
 
-#define MAX_NUM_DLSCH_SEGMENTS 16
+#define MAX_NUM_DLSCH_SEGMENTS 13
 #define MAX_NUM_ULSCH_SEGMENTS MAX_NUM_DLSCH_SEGMENTS
 #define MAX_DLSCH_PAYLOAD_BYTES (MAX_NUM_DLSCH_SEGMENTS*768)
 #define MAX_ULSCH_PAYLOAD_BYTES (MAX_NUM_ULSCH_SEGMENTS*768)
@@ -66,21 +65,6 @@
 #define MAX_NUM_CHANNEL_BITS (14*1200*6)  // 14 symbols, 1200 REs, 12 bits/RE
 #define MAX_NUM_RE (14*1200)
 
-#if !defined(SI_RNTI)
-#define SI_RNTI  (rnti_t)0xffff
-#endif
-#if !defined(M_RNTI)
-#define M_RNTI   (rnti_t)0xfffd
-#endif
-#if !defined(P_RNTI)
-#define P_RNTI   (rnti_t)0xfffe
-#endif
-#if !defined(CBA_RNTI)
-#define CBA_RNTI (rnti_t)0xfff4
-#endif
-#if !defined(C_RNTI)
-#define C_RNTI   (rnti_t)0x1234
-#endif
 // These are the codebook indexes according to Table 6.3.4.2.3-1 of 36.211
 //1 layer
 #define PMI_2A_11  0
@@ -93,7 +77,9 @@
 #define PMI_2A_R1_1j 2
 
 typedef enum { SEARCH_EXIST=0,
-	       SEARCH_EXIST_OR_FREE} find_type_t;
+               SEARCH_EXIST_OR_FREE,
+               SEARCH_EXIST_RA
+             } find_type_t;
 
 typedef enum {
   SCH_IDLE=0,
@@ -103,14 +89,10 @@ typedef enum {
 } SCH_status_t;
 
 
-
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   CEmodeA = 0,
   CEmodeB = 1
 } CEmode_t;
-#endif
 
 #define PUSCH_x 2
 #define PUSCH_y 3
@@ -135,20 +117,14 @@ typedef enum {
   HARQ_SR,
   HARQ_CQI,
   SR_CQI,
-  HARQ_SR_CQI  
+  HARQ_SR_CQI
 } UCI_type_t;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef enum {
   NOCE,
   CEMODEA,
   CEMODEB
 } UE_type_t;
-#endif
-
-
-
-
 
 typedef enum {
   SI_PDSCH=0,
@@ -182,8 +158,6 @@ typedef struct {
   uint8_t num_prach;
   PRACH_TDD_PREAMBLE_MAP_elem map[6];
 } PRACH_TDD_PREAMBLE_MAP;
-
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 typedef struct {
   uint16_t slss_id;
@@ -253,7 +227,7 @@ typedef struct {
 typedef struct {
   /// payload length
   int payload_length;
-	uint8_t payload[100];
+  uint8_t payload[100];
 } SLDCH_t;
 
 #define TTI_SYNC 0
@@ -276,7 +250,6 @@ typedef struct UE_tport_s {
   uint8_t payload[1500];
 } UE_tport_t;
 
-#endif
 
 /**@}*/
 #endif

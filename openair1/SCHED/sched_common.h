@@ -311,7 +311,7 @@ void get_cqipmiri_params(PHY_VARS_UE *ue,uint8_t eNB_id);
 
 int8_t get_PHR(uint8_t Mod_id, uint8_t CC_id, uint8_t eNB_index);
 
-void schedule_response(Sched_Rsp_t *Sched_INFO);
+void schedule_response(Sched_Rsp_t *Sched_INFO, void *proc);
 
 LTE_eNB_UE_stats* get_UE_stats(uint8_t Mod_id, uint8_t CC_id,uint16_t rnti);
 
@@ -339,7 +339,7 @@ void dump_dlsch2(PHY_VARS_UE *phy_vars_ue,uint8_t eNB_id,uint8_t subframe, unsig
 
 int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subframe_tx);
 
-void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
+void compute_srs_pos(frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset);
 
 
 /* from here: prototype added to remove compilation warnings, doc to be written by the author of the function */

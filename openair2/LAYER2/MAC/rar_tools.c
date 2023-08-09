@@ -33,15 +33,12 @@
 #include "mac_extern.h"
 #include "SIMULATION/TOOLS/sim.h"
 #include "common/utils/LOG/log.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "UTIL/OPT/opt.h"
 #include "common/ran_context.h"
 
 #define DEBUG_RAR
 
 extern unsigned int localRIV2alloc_LUT25[512];
-extern unsigned int distRIV2alloc_LUT25[512];
 extern unsigned short RIV2nb_rb_LUT25[512];
 extern unsigned short RIV2first_rb_LUT25[512];
 extern RAN_CONTEXT_t RC;
@@ -53,7 +50,8 @@ fill_rar(const module_id_t module_idP,
          RA_t *ra,
          const frame_t frameP,
          uint8_t *const dlsch_buffer,
-         const uint16_t N_RB_UL, const uint8_t input_buffer_length)
+         const uint16_t N_RB_UL,
+         const uint8_t input_buffer_length)
 //------------------------------------------------------------------------------
 {
   RA_HEADER_RAPID *rarh = (RA_HEADER_RAPID *) dlsch_buffer;
@@ -66,8 +64,10 @@ fill_rar(const module_id_t module_idP,
   rar[5] = (uint8_t) (ra->rnti & 0xff);
   //ra->timing_offset = 0;
   ra->timing_offset /= 16;  //T_A = N_TA/16, where N_TA should be on a 30.72Msps
-  rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));  // 7 MSBs of timing advance + divide by 4
-  rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0; // 4 LSBs of timing advance + divide by 4
+  //rar[0] = (uint8_t) (ra->timing_offset >> (2 + 4));  // 7 MSBs of timing advance + divide by 4
+  //rar[1] = (uint8_t) (ra->timing_offset << (4 - 2)) & 0xf0; // 4 LSBs of timing advance + divide by 4
+  rar[0] = (uint8_t) (ra->timing_offset >> (4));  // 7 MSBs of timing advance + divide by 4
+  rar[1] = (uint8_t) (ra->timing_offset << (4)) & 0xf0; // 4 LSBs of timing advance + divide by 4
   COMMON_channels_t *cc = &RC.mac[module_idP]->common_channels[CC_id];
 
   if(N_RB_UL == 25) {
@@ -96,10 +96,11 @@ fill_rar(const module_id_t module_idP,
   trace_pdu(DIRECTION_DOWNLINK, dlsch_buffer, input_buffer_length, module_idP,  WS_RA_RNTI, 1,
             RC.mac[module_idP]->frame, RC.mac[module_idP]->subframe,
             0, 0);
+
   return (ra->rnti);
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 //------------------------------------------------------------------------------
 /*
  * Fill the RAR buffer (header + PDU) for LTE-M devices
@@ -185,6 +186,7 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
         rarh->RAPID,
         ra->preamble_index,
         ra->timing_offset);
+
   trace_pdu(DIRECTION_DOWNLINK,
             dlsch_buffer,
             input_buffer_length,
@@ -195,7 +197,6 @@ unsigned short fill_rar_br(eNB_MAC_INST *eNB,
             eNB->subframe,
             0,
             0);
+
   return (ra->rnti);
 }
-#endif
-

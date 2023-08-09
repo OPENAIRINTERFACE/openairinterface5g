@@ -1,0 +1,52 @@
+version: '3.8'
+services:
+    oai-gnb:
+        image: oaisoftwarealliance/oai-gnb:develop
+        privileged: true
+        container_name: rfsim5g-oai-gnb
+        environment:
+            USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --rfsimulator.wait_timeout 20 --noS1 --log_config.global_log_options level,nocolor,time
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.140
+        volumes:
+            - ../../conf_files/gnb.band261.32prb.rfsim.phytest-dora.conf:/opt/oai-gnb/etc/gnb.conf
+            - rrc.config:/opt/oai-gnb/
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai-nr-ue:
+        image: oaisoftwarealliance/oai-nr-ue:develop
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue
+        environment:
+            USE_ADDITIONAL_OPTIONS: --do-ra --rfsim --noS1 --rrc_config_path etc/rrc/ --rfsimulator.serveraddr 192.168.71.140 --log_config.global_log_options level,nocolor,time
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+            - rrc.config:/opt/oai-nr-ue/etc/rrc/
+        depends_on:
+            - oai-gnb
+        networks:
+            public_net:
+                ipv4_address: 192.168.71.150
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+volumes:
+    rrc.config:
+
+networks:
+    public_net:
+        driver: bridge
+        name: rfsim5g-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.71.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim5g-public"

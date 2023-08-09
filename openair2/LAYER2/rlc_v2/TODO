@@ -1,0 +1,15 @@
+RLC AM
+======
+
+- 36.322 5.4 Re-establishment procedure
+  when possible, reassemble RLC SDUs from any byte segments of AMD PDUs
+  with SN < VR(MR) in the receiving side, remove RLC headers when doing
+  so and deliver all reassembled RLC SDUs to upper layer in ascending order
+  of the RLC SN, if not delivered before;
+
+- 36.322 5.2.3 Status reporting
+  delay triggering the STATUS report until x < VR(MS) or x >= VR(MR)
+
+- 36.322 5.1.3.2.3 Actions when a RLC data PDU is placed in the reception
+  buffer
+  [...] and in-sequence byte segments of the AMD PDU with SN = VR(R) [...]

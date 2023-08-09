@@ -1,0 +1,32 @@
+version: '3.8'
+services:
+    oai-du:
+        image: oaisoftwarealliance/oai-gnb:develop
+        privileged: true
+        container_name: rfsim5g-oai-du
+        network_mode: "host"
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim --MACRLCs.[0].local_n_address 172.21.16.109 --MACRLCs.[0].remote_n_address 172.21.6.22 --log_config.global_log_options level,nocolor,time
+        volumes:
+            - ../../conf_files/gnb-du.band78.106prb.rfsim.conf:/opt/oai-gnb/etc/gnb.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    oai-nr-ue:
+        image: oaisoftwarealliance/oai-nr-ue:develop
+        privileged: true
+        container_name: rfsim5g-oai-nr-ue
+        network_mode: "host"
+        environment:
+            USE_ADDITIONAL_OPTIONS: --sa --rfsim -r 106 --numerology 1 -C 3619200000 --uicc0.imsi 208990100001140 --rfsimulator.serveraddr 127.0.0.1 --log_config.global_log_options level,nocolor,time
+        depends_on:
+            - oai-du
+        volumes:
+            - ../../conf_files/nrue.uicc.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep nr-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5

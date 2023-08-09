@@ -1,0 +1,253 @@
+<!--
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file common/utils/websrv/frontend/src/app/components/scope/scope.component.html
+ * \brief: implementation of web interface frontend for oai
+ * \scope component web interface implementation (works with scope.component.ts)
+ * \author:  Yacine  El Mghazli, Francois TABURET
+ * \date 2022
+ * \version 0.1
+ * \company NOKIA BellLabs France
+ * \email: yacine.el_mghazli@nokia-bell-labs.com  francois.taburet@nokia-bell-labs.com
+ * \note
+ * \warning
+ */
+-->
+<div class="grid-container">
+  <mat-grid-list cols="11" rowHeight="100px">
+
+<!-- top fullwidth area for scope status display -->	  
+    <mat-grid-tile [colspan]="11" [rowspan]="1">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ scopetitle }} {{ scopesubtitle }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+
+          <div FxLayoutAlign="row">
+            <label>{{ scopetime }} {{ scopestatus }} &nbsp; msg skipped: {{ skippedmsg }}  &nbsp; msg buffered: {{ bufferedmsg }}  &nbsp;</label>
+          </div>
+
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+<!-- left full heigth, narrow width area, for global scope controls -->
+    <mat-grid-tile [colspan]="1" [rowspan]="8">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Scope control</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+		    <button mat-mini-fab color={{startstop_color}} (click)="startorstop()">{{startstop}}</button>
+            <br><br>
+            <div class="scope-slider-div">
+            <label id="scope-slider-refrate-labelid" class="scope-slider-label">refresh rate</label>
+            <label class="scope-slider-value-label"> {{rfrate}} </label>
+            </div>           
+            <mat-slider class="scope-slider" min=".1" max="10" step="0.1" [value]="rfrate" 
+                        aria-labelledby="scope-slider-refrate-labelid" vertical="true" thumbLabel="true" 
+                        [(ngModel)]="rfrate" (change)="OnRefrateChange()" > 
+            </mat-slider>
+	        <br><br>        
+            <mat-list-item class="sigselect" role="listitem">
+		      <mat-form-field class="select-form">
+			  <mat-select placeholder="sig select" name="SigSelect" class="SigSelect" [value]="selected_sig.target_id" (selectionChange)="SigChanged($event.value)" >
+				 <mat-option *ngFor="let targetid of sig_list" [value]="targetid.target_id" >
+					{{targetid.target_id}}
+				 </mat-option>
+			  </mat-select>
+		      </mat-form-field>
+	        </mat-list-item> 
+	        <br><br>
+	       <mat-slide-toggle  [matTooltip]="help_ack" [checked]="data_ACK" (change)="onDataACKchange()" [(ngModel)]="data_ACK">ack
+           </mat-slide-toggle>            
+        </mat-card-content> 
+      </mat-card>
+    </mat-grid-tile>
+    
+<!--  area for watter fall data display -->
+    <mat-grid-tile [colspan]="7" [rowspan]="3">
+      <mat-card class="dashboard-card">
+        <mat-card-content class="dashboard-card-content">
+		  <div fxLayout="column">
+			<!-- area for the chart -->
+			<div  fxFlex="1 1 90% "  style="width:100%">
+              <canvas baseChart id="wf"
+                [datasets]="WFDatasets"
+                [options]="WFOptions"
+                [type]="'scatter'">
+              </canvas>
+            </div> 
+            <br><br>     
+            <!-- area for the control used to select WF data -->
+            <div fxFlex="0 1 10%"  style="width:100%">
+			  <div class="form-group" fxFlex="50%"><mat-list-item class="WFselect" role="listitem">
+			  <mat-form-field class="select-form">
+			  <mat-select placeholder="select data" name="WFSelect" class="WFSelect" [value]="selected_WF" (selectionChange)="WFChanged($event.value)" >
+				 <mat-option *ngFor="let graph of WFgraph_list" [value]="graph.title" > 
+					{{graph.title}}
+				 </mat-option>
+				 <mat-option>none</mat-option>
+			  </mat-select>
+		      </mat-form-field>
+	        </mat-list-item></div>
+	        <div class="form-group" fxFlex="25%"><button mat-raised-button color="primary" (click)="RefreshWF()">Refresh</button> </div> 
+	      </div> 
+        </div></mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+<!-- right area for Time Response data -->    
+    <mat-grid-tile [colspan]="3" [rowspan]="3">		
+      <mat-card class="dashboard-card">
+        <mat-card-content class="dashboard-card-content">
+		  <div fxLayout="column">
+			<!-- area for the chart -->
+			<div  fxFlex="1 1 80% "  style="width:100%">
+              <canvas baseChart id="tresp"
+                [datasets]="TRespDatasets"
+                [options]="TRespOptions"
+                [labels]="TRespLabels"
+                [type]="'line'">
+              </canvas>
+            </div> 
+            <br><br>
+            <!-- area for the control used to enable -->
+            <div fxFlex="0 1 20%"  style="width:60%">
+	          <div class="form-group" fxFlex="50%"><mat-slide-toggle [checked]="enable_TResp" (change)="onEnableTResp()" [(ngModel)]="enable_TResp">enable:
+              </mat-slide-toggle> </div>
+	          <div class="form-group" fxFlex="25%"><button mat-raised-button color="primary" (click)="RefreshTResp()">Refresh</button> </div>                
+	        </div>
+	      </div> 
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile> 
+    
+<!-- area for LLR data display -->
+    <mat-grid-tile [colspan]="5" [rowspan]="4">
+      <mat-card class="dashboard-card">
+        <mat-card-content class="dashboard-card-content">
+			<div fxLayout="column">
+			  <div  fxFlex="1 1 80% ">
+              <canvas baseChart id="llr" width="90%"
+                [datasets]=" LLRDatasets"
+                [options]="LLROptions"
+                [type]="'scatter'">
+              </canvas>
+              </div>
+            <div fxFlex="0 1 10%"  style="width:100%">
+	        <div class="form-group" fxFlex="50%"> <mat-list-item class="llrchannelselect" role="listitem">
+		      <mat-form-field class="select-form">
+			  <mat-select placeholder="Channels(llr view)" name="llrChannelsSelect" class="ChannelsSelect" multiple [value]="selected_llrchannels" (selectionChange)="llrchannelsChanged($event.value)" >
+				 <mat-option *ngFor="let graph of llrgraph_list" [value]="graph.title" >
+					{{graph.title}}
+				 </mat-option>
+			  </mat-select>
+		      </mat-form-field>
+	        </mat-list-item> </div>            
+            <div class="form-group" fxFlex="50%">
+              <div class="scope-slider-div">
+                <label id="scope-slider-ythresh-labelid" class="scope-slider-label">y threshold </label>
+                <label class="scope-slider-value-label"> {{llrythresh}} </label>
+              </div>           
+              <mat-slider class="scope-slider" min="0" max="100" step="1" [value]="llrythresh" 
+                        aria-labelledby="scope-slider-ythresh-labelid" thumbLabel="true" 
+                        [(ngModel)]="llrythresh" (change)="OnYthreshChange()" > 
+              </mat-slider>
+            </div>				
+			</div>			
+	        <div fxFlex="0 1 10%">            
+            <div class="form-group" fxFlex="25%"> <mat-form-field appearance="fill">
+            <mat-label>xmin</mat-label>
+            <input matInput type="number" (change)="OnLLRxminChange()" [value]="llrxmin" [(ngModel)]="llrxmin" min="llrmin" [max]="llrmax"> 
+            </mat-form-field></div>
+            <div class="form-group" fxFlex="25%"><mat-form-field appearance="fill">
+            <mat-label>xmax</mat-label>
+            <input matInput type="number" (change)="OnLLRxmaxChange()" [value]="llrxmax" [(ngModel)]="llrxmax" min="llrmin" [max]="llrmax">
+            </mat-form-field></div>
+            <div class="form-group" fxFlex="25%"><button mat-raised-button color="primary" (click)="RefreshLLR()">Refresh</button> </div>               
+            </div>			
+	      </div>                 
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>  <!-- end of LLR area -->
+    
+<!-- area for iq constellation  data display -->        
+     <mat-grid-tile [colspan]="5" [rowspan]="6">
+      <mat-card class="dashboard-card">
+        <mat-card-content>
+		  <div fxLayout="column">
+			<!-- area for the chart -->
+			<div  fxFlex="1 1 80% " style="width:60%">
+              <canvas baseChart  id="iqc"
+                [datasets]="IQDatasets"
+                [options]="IQOptions"
+                [type]="'scatter'">
+              </canvas>
+            </div> 
+            <br><br>
+            <!-- area for the control used to select channel's -->
+            <div fxFlex="0 1 10%"  style="width:60%">
+			<div class="form-group" fxFlex="50%"> <mat-list-item class="channelselect" role="listitem">
+		      <mat-form-field class="select-form">
+			  <mat-select placeholder="Channels(IQ view)" name="ChannelsSelect" class="ChannelsSelect" multiple [value]="selected_channels" (selectionChange)="channelsChanged($event.value)" >
+				 <mat-option *ngFor="let graph of iqgraph_list" [value]="graph.title" >
+					{{graph.title}}
+				 </mat-option>
+			  </mat-select>
+		      </mat-form-field>
+	        </mat-list-item></div>	        
+	        <div class="form-group" fxFlex="25%"><button mat-raised-button color="primary" (click)="RefreshIQV()">Refresh</button> </div>  
+	        </div>
+	        <!-- area for the 4 controls used to select x and y limits for data -->
+	        <div fxFlex="0 1 5%">            
+            <div class="form-group" fxFlex="25%">  	
+            <mat-form-field appearance="fill">
+            <mat-label>xmin</mat-label>
+            <input matInput type="number" (change)="OnIQxminChange()" [value]="iqxmin" [(ngModel)]="iqxmin" min="iqmin" [max]="iqmax"> 
+            </mat-form-field>
+            </div>
+            <div class="form-group" fxFlex="25%">
+            <mat-form-field appearance="fill">
+            <mat-label>xmax</mat-label>
+            <input matInput type="number" (change)="OnIQxmaxChange()" [value]="iqxmax" [(ngModel)]="iqxmax" min="iqmin" [max]="iqmax">
+            </mat-form-field>           			        
+            </div>
+            <div class="form-group" fxFlex="25%">	
+            <mat-form-field appearance="fill">
+            <mat-label>ymin</mat-label>
+            <input matInput type="number" (change)="OnIQyminChange()" [value]="iqymin" [(ngModel)]="iqymin" min="iqmin" [max]="iqmax"> 
+            </mat-form-field>
+            </div>
+            <div class="form-group" fxFlex="25%">
+            <mat-form-field appearance="fill">
+            <mat-label>ymax</mat-label>
+            <input matInput type="number" (change)="OnIQymaxChange()" [value]="iqymax" [(ngModel)]="iqymax" min="iqmin" [max]="iqmax">
+            </mat-form-field>     
+            </div>                               
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>  <!-- end of iq area -->
+             
+  </mat-grid-list>
+</div>

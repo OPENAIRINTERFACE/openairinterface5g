@@ -1,0 +1,6 @@
+add_boolean_option(ENABLE_UESCOPE OFF "Whether to build the lte uescope" OFF)
+add_boolean_option(ENABLE_ENBSCOPE OFF "Whether to build the lte enbcope" OFF)
+add_boolean_option(ENABLE_NRSCOPE OFF "Whether to build the 5G scope" OFF)
+if(ENABLE_UESCOPE OR ENABLE_ENBSCOPE OR ENABLE_NRSCOPE)
+  add_subdirectory(TOOLS)
+endif()

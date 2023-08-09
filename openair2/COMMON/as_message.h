@@ -219,6 +219,10 @@ typedef struct kenb_refresh_req_s {
   Byte_t kenb[32];
 } kenb_refresh_req_t;
 
+typedef struct nsa_oai_tun_nsa_s {
+  uint8_t buffer[500];
+} nas_oai_tun_nsa_t;
+
 /*
  * NAS->AS - Cell Information request
  * NAS request AS to search for a suitable cell belonging to the selected
@@ -322,6 +326,15 @@ typedef struct nas_establish_req_s {
   plmn_t          plmnID;         /* Selected PLMN identity               */
   as_nas_info_t   initialNasMsg;  /* Initial NAS message to transfer      */
 } nas_establish_req_t;
+
+/*
+ * fill me
+ */
+typedef struct nas_deregistration_req_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
+} nas_deregistration_req_t;
 
 /*
  * AS->NAS - NAS signalling connection establishment indication
@@ -458,7 +471,11 @@ typedef ul_info_transfer_ind_t dl_info_transfer_ind_t;
  */
 
 /* TODO: Quality of Service parameters */
-typedef struct {} as_qos_t;
+typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
+} as_qos_t;
 
 /*
  * NAS->AS - Radio access bearer establishment request

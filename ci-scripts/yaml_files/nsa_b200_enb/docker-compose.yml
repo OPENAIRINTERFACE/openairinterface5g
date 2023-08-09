@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+    enb_mono_fdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: nsa-b200-enb
+        environment:
+            USE_B2XX: 'yes'
+            USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - ../../conf_files/enb.nsa.band7.25prb.usrpb200.conf:/opt/oai-enb/etc/enb.conf
+            - /dev:/dev
+        networks:
+            public_net:
+                ipv4_address: 192.168.68.130
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: nsa-b200-enb-net
+        ipam:
+            config:
+                - subnet: 192.168.68.128/26
+        driver_opts:
+            com.docker.network.bridge.name: "nsa-enb-net"

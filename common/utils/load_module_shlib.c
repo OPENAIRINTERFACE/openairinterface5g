@@ -63,62 +63,58 @@ void loader_init(void) {
 }
 
 /* build the full shared lib name from the module name */
-char *loader_format_shlibpath(char *modname)
+static char *loader_format_shlibpath(char *modname, char *version)
 {
+  char *tmpstr;
+  char *shlibpath = NULL;
+  char *shlibversion = NULL;
+  // clang-format off
+  paramdef_t LoaderParams[] = {
+    {"shlibpath",    NULL, 0, .strptr = &shlibpath,    .defstrval = NULL, TYPE_STRING, 0, NULL},
+    {"shlibversion", NULL, 0, .strptr = &shlibversion, .defstrval = "",   TYPE_STRING, 0, NULL}
+  };
+  // clang-format on
 
-char *tmpstr;
-char *shlibpath   =NULL;
-char *shlibversion=NULL;
-char *cfgprefix;
-paramdef_t LoaderParams[] ={{"shlibpath", NULL, 0, strptr:&shlibpath, defstrval:NULL, TYPE_STRING, 0, NULL},
-                            {"shlibversion", NULL, 0, strptr:&shlibversion, defstrval:"", TYPE_STRING, 0, NULL}};
+  int ret;
 
-int ret;
-
-
-
-
-/* looks for specific path for this module in the config file */
-/* specific value for a module path and version is located in a modname subsection of the loader section */
-/* shared lib name is formatted as lib<module name><module version>.so */
-  cfgprefix = malloc(sizeof(LOADER_CONFIG_PREFIX)+strlen(modname)+16);
-  if (cfgprefix == NULL) {
-      fprintf(stderr,"[LOADER] %s %d malloc error loading module %s, %s\n",__FILE__, __LINE__, modname, strerror(errno));
-      exit_fun("[LOADER] unrecoverable error");
+  /* looks for specific path for this module in the config file */
+  /* specific value for a module path and version is located in a modname subsection of the loader section */
+  /* shared lib name is formatted as lib<module name><module version>.so */
+  char cfgprefix[sizeof(LOADER_CONFIG_PREFIX)+strlen(modname)+16];
+  sprintf(cfgprefix,LOADER_CONFIG_PREFIX ".%s",modname);
+  ret = config_get(LoaderParams, sizeofArray(LoaderParams), cfgprefix);
+  if (ret <0) {
+    fprintf(stderr, "[LOADER]  %s %d couldn't retrieve config from section %s\n", __FILE__, __LINE__, cfgprefix);
+  }
+  /* no specific path, use loader default shared lib path */
+  if (shlibpath == NULL) {
+    shlibpath = loader_data.shlibpath;
+  }
+  /* no specific shared lib version */
+  if (version != NULL) { // version specified as a function parameter
+    shlibversion = version;
+  }
+  if (shlibversion == NULL) { // no specific version specified, neither as a config param or as a function param
+    shlibversion = "";
+  }
+  /* alloc memory for full module shared lib file name */
+  tmpstr = malloc(strlen(shlibpath) + strlen(modname) + strlen(shlibversion) + 16);
+  if (tmpstr == NULL) {
+    fprintf(stderr, "[LOADER] %s %d malloc error loading module %s, %s\n", __FILE__, __LINE__, modname, strerror(errno));
+    exit_fun("[LOADER] unrecoverable error");
+  }
+  if (shlibpath[0] != 0) {
+    ret = sprintf(tmpstr, "%s/", shlibpath);
   } else {
-      sprintf(cfgprefix,LOADER_CONFIG_PREFIX ".%s",modname);
-      int ret = config_get( LoaderParams,sizeof(LoaderParams)/sizeof(paramdef_t),cfgprefix);
-      if (ret <0) {
-          fprintf(stderr,"[LOADER]  %s %d couldn't retrieve config from section %s\n",__FILE__, __LINE__,cfgprefix);
-      }
-   }
-/* no specific path, use loader default shared lib path */
-   if (shlibpath == NULL) {
-       shlibpath =  loader_data.shlibpath ;
-   } 
-/* no specific shared lib version */
-   if (shlibversion == NULL) {
-       shlibversion = "" ;
-   } 
-/* alloc memory for full module shared lib file name */
-   tmpstr = malloc(strlen(shlibpath)+strlen(modname)+strlen(shlibversion)+16);
-   if (tmpstr == NULL) {
-      fprintf(stderr,"[LOADER] %s %d malloc error loading module %s, %s\n",__FILE__, __LINE__, modname, strerror(errno));
-      exit_fun("[LOADER] unrecoverable error");
-   }
-   if(shlibpath[0] != 0) {
-       ret=sprintf(tmpstr,"%s/",shlibpath);
-   } else {
-       ret = 0;
-   }
+    ret = 0;
+  }
 
-   sprintf(tmpstr+ret,"lib%s%s.so",modname,shlibversion);
-   
-  
-   return tmpstr; 
+  sprintf(tmpstr + ret, "lib%s%s.so", modname, shlibversion);
+
+  return tmpstr;
 }
 
-int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
+int load_module_version_shlib(char *modname, char *version, loader_shlibfunc_t *farray, int numf, void *autoinit_arg)
 {
   void *lib_handle = NULL;
   initfunc_t fpi;
@@ -138,7 +134,8 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
      loader_init();
   }
 
-  shlib_path = loader_format_shlibpath(modname);
+  shlib_path = loader_format_shlibpath(modname, version);
+  printf("shlib_path %s\n", shlib_path);
 
   for (int i = 0; i < loader_data.numshlibs; i++) {
     if (strcmp(loader_data.shlibs[i].name, modname) == 0) {
@@ -152,8 +149,7 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
     lib_idx = loader_data.numshlibs;
     ++loader_data.numshlibs;
     if (loader_data.numshlibs > loader_data.maxshlibs) {
-      fprintf(stderr, "[LOADER] can not load more than %d shlibs\n",
-              loader_data.maxshlibs);
+      fprintf(stderr, "[LOADER] can not load more than %u shlibs\n", loader_data.maxshlibs);
       ret = -1;
       goto load_module_shlib_exit;
     }
@@ -195,15 +191,17 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
   }
 
   if (farray) {
-    if (!loader_data.shlibs[lib_idx].funcarray) {
-      loader_data.shlibs[lib_idx].funcarray = malloc(numf*sizeof(loader_shlibfunc_t));
-      if (!loader_data.shlibs[lib_idx].funcarray) {
+    loader_shlibdesc_t *shlib = &loader_data.shlibs[lib_idx];
+    if (!shlib->funcarray) {
+      shlib->funcarray = calloc(numf, sizeof(loader_shlibfunc_t));
+      if (!shlib->funcarray) {
         fprintf(stderr, "[LOADER] load_module_shlib(): unable to allocate memory\n");
         ret = -1;
         goto load_module_shlib_exit;
       }
+      shlib->len_funcarray = numf;
+      shlib->numfunc = 0;
     }
-    loader_data.shlibs[lib_idx].numfunc = 0;
     for (int i = 0; i < numf; i++) {
       farray[i].fptr = dlsym(lib_handle,farray[i].fname);
       if (!farray[i].fptr) {
@@ -212,9 +210,32 @@ int load_module_shlib(char *modname,loader_shlibfunc_t *farray, int numf, void *
         ret = -1;
         goto load_module_shlib_exit;
       }
-      loader_data.shlibs[lib_idx].funcarray[i].fname=strdup(farray[i].fname);
-      loader_data.shlibs[lib_idx].funcarray[i].fptr = farray[i].fptr;
-      loader_data.shlibs[lib_idx].numfunc++;
+      /* check whether this function has been loaded before */
+      int j = 0;
+      for (; j < shlib->numfunc; ++j) {
+        if (shlib->funcarray[j].fptr == farray[i].fptr) {
+          int rc = strcmp(shlib->funcarray[i].fname, farray[i].fname);
+          AssertFatal(rc == 0,
+                      "reloading the same fptr with different fnames (%s, %s)\n",
+                      shlib->funcarray[i].fname, farray[i].fname);
+          break;
+        }
+      }
+      if (j == shlib->numfunc) {
+        if (shlib->numfunc == shlib->len_funcarray) {
+          loader_shlibfunc_t *n = realloc(shlib->funcarray, shlib->numfunc * 2 * sizeof(loader_shlibfunc_t));
+          if (!n) {
+            fprintf(stderr, "[LOADER] %s(): unable to allocate memory\n", __func__);
+            ret = -1;
+            goto load_module_shlib_exit;
+          }
+          shlib->funcarray = n;
+          shlib->len_funcarray = shlib->numfunc * 2;
+        }
+        shlib->funcarray[j].fname = strdup(farray[i].fname);
+        shlib->funcarray[j].fptr = farray[i].fptr;
+        shlib->numfunc++;
+      }
     } /* for int i... */
   } else {  /* farray ! NULL */
     sprintf(afname,"%s_getfarray",modname);
@@ -244,4 +265,23 @@ void * get_shlibmodule_fptr(char *modname, char *fname)
         }
     } /* for i loop on modules */
     return NULL;
+}
+
+void loader_reset()
+{
+  for (int i = 0; i < loader_data.numshlibs && loader_data.shlibs[i].name != NULL; i++) {
+    loader_shlibdesc_t *shlib = &loader_data.shlibs[i];
+    free(shlib->name);
+    free(shlib->thisshlib_path);
+    for (int j = 0; j < shlib->numfunc; ++j)
+      free(shlib->funcarray[j].fname);
+    free(shlib->funcarray);
+    shlib->numfunc = 0;
+    shlib->len_funcarray = 0;
+  }
+  if(loader_data.shlibpath){
+    free(loader_data.shlibpath);
+    loader_data.shlibpath=NULL;
+  }
+  free(loader_data.shlibs);
 }

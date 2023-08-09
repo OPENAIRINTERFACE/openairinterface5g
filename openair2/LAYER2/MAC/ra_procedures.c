@@ -42,8 +42,6 @@
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
@@ -287,9 +285,12 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                                sub_frame_t subframeP) {
   uint8_t Size = 0;
   UE_MODE_t UE_mode;
-
+  protocol_ctxt_t ctxt;
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, module_idP, ENB_FLAG_NO,
+                                 UE_mac_inst[module_idP].crnti, frameP,
+                                 subframeP, eNB_indexP);
   // Modification for phy_stub_ue operation
-  if(NFAPI_MODE == NFAPI_UE_STUB_PNF) { // phy_stub_ue mode
+  if(NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) { // phy_stub_ue mode
     UE_mode = UE_mac_inst[module_idP].UE_mode[0];
     LOG_D(MAC, "ue_get_rach , UE_mode: %d", UE_mode);
   } else { // Full stack mode
@@ -320,6 +321,18 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
 
     if (UE_mac_inst[module_idP].RA_active == 0) {
       LOG_I(MAC, "RA not active\n");
+      if (UE_rrc_inst[module_idP].Info[eNB_indexP].T300_cnt
+          != T300[UE_rrc_inst[module_idP].sib2[eNB_indexP]->ue_TimersAndConstants.t300]) {
+            /* Calling rrc_ue_generate_RRCConnectionRequest here to ensure that
+               every time we fill the UE_mac_inst context we generate new random
+               values in msg3. When the T300 timer has expired, rrc_common.c will
+               call rrc_ue_generate_RRCConnectionRequest, so we do not want to call
+               when UE_rrc_inst[module_idP].Info[eNB_indexP].T300_cnt ==
+               T300[UE_rrc_inst[module_idP].sib2[eNB_indexP]->ue_TimersAndConstants.t300. */
+            UE_rrc_inst[module_idP].Srb0[eNB_indexP].Tx_buffer.payload_size = 0;
+            rrc_ue_generate_RRCConnectionRequest(&ctxt, eNB_indexP);
+      }
+
       // check if RRC is ready to initiate the RA procedure
       Size = mac_rrc_data_req_ue(module_idP,
                                  CC_id,
@@ -333,7 +346,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
       Size16 = (uint16_t) Size;
       //  LOG_D(MAC,"[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",module_idP,frameP,Size);
       LOG_I(RRC,
-            "[MSC_MSG][FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
+            "[FRAME %05d][RRC_UE][MOD %02d][][--- MAC_DATA_REQ (RRCConnectionRequest eNB %d) --->][MAC_UE][MOD %02d][]\n",
             frameP, module_idP, eNB_indexP, module_idP);
       LOG_I(MAC,
             "[UE %d] Frame %d: Requested RRCConnectionRequest, got %d bytes\n",
@@ -390,10 +403,7 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
         LOG_USEDINLOG_VAR(mac_rlc_status_resp_t,rlc_status)=mac_rlc_status_ind(module_idP,
             UE_mac_inst[module_idP].crnti,
             eNB_indexP, frameP, subframeP,
-            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-            ,0, 0
-#endif
+            ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 0, 0
                                                                               );
 
         if (UE_mac_inst[module_idP].crnti_before_ho)
@@ -409,12 +419,9 @@ PRACH_RESOURCES_t *ue_get_rach(module_id_t module_idP, int CC_id,
                 module_idP, frameP, rlc_status.bytes_in_buffer,
                 dcch_header_len);
 
-        sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6, //not used
-                                       (char *) &ulsch_buff[0]
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-                                       ,0,
+        sdu_lengths = mac_rlc_data_req(module_idP, UE_mac_inst[module_idP].crnti, eNB_indexP, frameP, ENB_FLAG_NO, MBMS_FLAG_NO, DCCH, 6,
+                                       (char *) &ulsch_buff[0],0,
                                        0
-#endif
                                       );
 
         if(sdu_lengths > 0)

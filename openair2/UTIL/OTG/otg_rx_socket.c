@@ -195,17 +195,7 @@ void server_socket_tcp_ip4()
 
 
               /* create  new thread for the new connection */
-              if (pthread_create(&id, NULL, (void *)recv_ip4_tcp, (void*)csock))
-                LOG_W(OTG,"SOCKET:: TCP-IP4 ::pthread_create OK!\n");
-
-              else
-                LOG_W(OTG,"SOCKET:: TCP-IP4 ::Error in pthread_create \n");
-
-              if (pthread_detach(id))
-                LOG_W(OTG,"SOCKET:: TCP-IP4 ::pthread_detach OK!\n");
-              else
-                LOG_W(OTG,"SOCKET:: TCP-IP4 ::Error in pthread_detach\n");
-
+              threadCreate(&id, (void *)recv_ip4_tcp, (void*)csock, "OTG", -1, OAI_PRIORITY_RT_LOW);
               LOG_I(OTG,"SOCKET:: TCP-IP4 :: Client n=%d finish transmission\n", cmpt_cl);
               cmpt_cl+=1;
             }

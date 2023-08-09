@@ -19,13 +19,13 @@
  *      contact@openairinterface.org
  */
 
+#ifndef __UTILS_MME_CONFIG__H__
+#define __UTILS_MME_CONFIG__H__
+
 #include <pthread.h>
 #include <stdint.h>
 
 #include "mme_default_values.h"
-
-#ifndef MME_CONFIG_H_
-#define MME_CONFIG_H_
 
 #define MME_CONFIG_STRING_MME_CONFIG                     "MME"
 #define MME_CONFIG_STRING_REALM                          "REALM"
@@ -38,10 +38,6 @@
 
 #define MME_CONFIG_STRING_INTERTASK_INTERFACE_CONFIG     "INTERTASK_INTERFACE"
 #define MME_CONFIG_STRING_INTERTASK_INTERFACE_QUEUE_SIZE "ITTI_QUEUE_SIZE"
-
-#define MME_CONFIG_STRING_S6A_CONFIG                     "S6A"
-#define MME_CONFIG_STRING_S6A_CONF_FILE_PATH             "S6A_CONF"
-#define MME_CONFIG_STRING_S6A_HSS_HOSTNAME               "HSS_HOSTNAME"
 
 #define MME_CONFIG_STRING_SCTP_CONFIG                    "SCTP"
 #define MME_CONFIG_STRING_SCTP_INSTREAMS                 "SCTP_INSTREAMS"
@@ -150,10 +146,6 @@ typedef struct mme_config_s {
     uint32_t  sgw_ip_address_for_S11;
   } ipv4;
   struct {
-    char *conf_file;
-    char *hss_host_name;
-  } s6a_config;
-  struct {
     uint32_t  queue_size;
     char     *log_file;
   } itti_config;
@@ -183,4 +175,4 @@ int config_parse_opt_line(int argc, char *argv[], mme_config_t *mme_config);
 
 //int yyparse(struct mme_config_s *mme_config_p);
 
-#endif /* MME_CONFIG_H_ */
+#endif /* __UTILS_MME_CONFIG__H__ */

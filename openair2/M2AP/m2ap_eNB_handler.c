@@ -30,8 +30,6 @@
 
 #include "intertask_interface.h"
 
-#include "asn1_conversions.h"
-
 #include "m2ap_common.h"
 #include "m2ap_eNB_defs.h"
 #include "m2ap_eNB_handler.h"
@@ -44,25 +42,24 @@
 //#include "m2ap_MCE_interface_management.h"
 #include "m2ap_eNB_interface_management.h"
 
-#include "msc.h"
 #include "assertions.h"
 #include "conversions.h"
 
 /* Handlers matrix. Only eNB related procedure present here */
-m2ap_eNB_message_decoded_callback m2ap_eNB_messages_callback[][3] = {
-  { eNB_handle_MBMS_SESSION_START_REQUEST, 0, 0 }, /* MBMSSessionStart  */
-  { eNB_handle_MBMS_SESSION_STOP_REQUEST, 0, 0 }, /* MBMSSessionStop */
-  { eNB_handle_MBMS_SCHEDULING_INFORMATION, 0, 0 }, /* MBMSSchedulingInformation */
-  { 0, 0, 0 }, /* Error Indication */
-  { 0, 0, 0 }, /* Reset */
-  { 0,eNB_handle_M2_SETUP_RESPONSE,eNB_handle_M2_SETUP_FAILURE }, /* M2 Setup */
-  { 0, 0, 0 }, /* eNBConfigurationUpdate */
-  { 0, 0, 0 }, /* MCEConfigurationUpdate */
-  { 0, 0, 0 }, /* privateMessage */
-  { 0, 0, 0 }, /* MBMSSessionUpdate */
-  { 0, 0, 0 }, /* MBMSServiceCounting */
-  { 0, 0, 0 }, /* MBMSServiceCountingResultReport */
-  { 0, 0, 0 } /* MBMSOverloadNotification */
+static const m2ap_eNB_message_decoded_callback m2ap_eNB_messages_callback[][3] = {
+    {eNB_handle_MBMS_SESSION_START_REQUEST, 0, 0}, /* MBMSSessionStart  */
+    {eNB_handle_MBMS_SESSION_STOP_REQUEST, 0, 0}, /* MBMSSessionStop */
+    {eNB_handle_MBMS_SCHEDULING_INFORMATION, 0, 0}, /* MBMSSchedulingInformation */
+    {0, 0, 0}, /* Error Indication */
+    {0, 0, 0}, /* Reset */
+    {0, eNB_handle_M2_SETUP_RESPONSE, eNB_handle_M2_SETUP_FAILURE}, /* M2 Setup */
+    {0, 0, 0}, /* eNBConfigurationUpdate */
+    {0, 0, 0}, /* MCEConfigurationUpdate */
+    {0, 0, 0}, /* privateMessage */
+    {0, 0, 0}, /* MBMSSessionUpdate */
+    {0, 0, 0}, /* MBMSServiceCounting */
+    {0, 0, 0}, /* MBMSServiceCountingResultReport */
+    {0, 0, 0} /* MBMSOverloadNotification */
 };
 
 static char *m2ap_direction2String(int m2ap_dir) {
@@ -113,7 +110,7 @@ int m2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
   }
   
   /* Calling the right handler */
-  LOG_I(M2AP, "Calling handler with instance %d\n",instance);
+  LOG_I(M2AP, "Calling handler with instance %ld\n",instance);
   ret = (*m2ap_eNB_messages_callback[pdu.choice.initiatingMessage.procedureCode][pdu.present - 1])
         (instance, assoc_id, stream, &pdu);
   ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_M2AP_M2AP_PDU, &pdu);

@@ -28,10 +28,10 @@
 
 //#define DEBUG_CCODE 1
 
-unsigned short glte[] = { 0133, 0171, 0165 }; // {A,B}
-unsigned short glte_rev[] = { 0155, 0117, 0127 }; // {A,B}
-unsigned short gdab[] = { 0133, 0171, 0145 }; // {A,B}
-unsigned short gdab_rev[] = { 0155, 0117, 0123 }; // {A,B}
+static const unsigned short glte[] = {0133, 0171, 0165}; // {A,B}
+static const unsigned short glte_rev[] = {0155, 0117, 0127}; // {A,B}
+static const unsigned short gdab[] = {0133, 0171, 0145}; // {A,B}
+static const unsigned short gdab_rev[] = {0155, 0117, 0123}; // {A,B}
 unsigned char  ccodelte_table[128];      // for transmitter
 unsigned char  ccodelte_table_rev[128];  // for receiver
 
@@ -101,7 +101,7 @@ ccodelte_encode (int32_t numbits,
       state |= (1<<shiftbit);
 
 #ifdef DEBUG_CCODE
-    printf("shiftbit %d, %d -> %d \n",shiftbit,c&(1<<(7-first_bit-shiftbit)),state);
+    printf("shiftbit %d, %d -> %u \n",shiftbit,c&(1<<(7-first_bit-shiftbit)),state);
     dummy+=3;
 #endif
   }
@@ -119,7 +119,7 @@ ccodelte_encode (int32_t numbits,
         state |= 64;
 
 #ifdef DEBUG_CCODE
-      printf("shiftbit %d, %d: %d -> %d \n",shiftbit,state>>6,dummy,state);
+      printf("shiftbit %d, %u: %u -> %u \n",shiftbit,state>>6,dummy,state);
       dummy+=3;
 #endif
     }
@@ -128,7 +128,7 @@ ccodelte_encode (int32_t numbits,
   state = state & 0x3f;   // true initial state of Tail-biting CCode
   state<<=1;              // because of loop structure in CCode
 #ifdef DEBUG_CCODE
-  printf("Initial state %d\n",state);
+  printf("Initial state %u\n",state);
   dummy = 0;
 #endif //DEBUG_CCODE
   /* Do not increment inPtr until we read the next octet */
@@ -152,7 +152,7 @@ ccodelte_encode (int32_t numbits,
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
 #ifdef DEBUG_CCODE
-      printf("numbits %d, input %d, outbit %d: %d -> %d (%d%d%d)\n",numbits,state>>6,dummy,state,out,out&1,(out>>1)&1,(out>>2)&1);
+      printf("numbits %d, input %u, outbit %u: %u -> %d (%d%d%d)\n",numbits,state>>6,dummy,state,out,out&1,(out>>1)&1,(out>>2)&1);
       dummy+=3;
 #endif //DEBUG_CCODE      
     }
@@ -175,7 +175,7 @@ ccodelte_encode (int32_t numbits,
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
 #ifdef DEBUG_CCODE
-      printf("crc bit %d input %d, outbit %d: %d -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      printf("crc bit %d input %u, outbit %u: %u -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
       dummy+=3;
 #endif //DEBUG_CCODE      
     }
@@ -198,7 +198,7 @@ ccodelte_encode (int32_t numbits,
       *outPtr++ = (out>>1)&1;
       *outPtr++ = (out>>2)&1;
 #ifdef DEBUG_CCODE
-      printf("crc bit %d input %d, outbit %d: %d -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
+      printf("crc bit %d input %u, outbit %u: %u -> %d (%u)\n",shiftbit,state>>6,dummy,state,out,ccodelte_table[state]);
       dummy+=3;
 #endif //DEBUG_CCODE      
     }

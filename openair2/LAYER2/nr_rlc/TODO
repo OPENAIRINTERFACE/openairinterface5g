@@ -1,0 +1,10 @@
+RLC AM:
+
+    - status reporting (38.322 5.3.4): implement this (not done because not
+      clearly understood):
+
+        "delay triggering the STATUS report until x < RX_Highest_Status
+         or x >= RX_Next + AM_Window_Size."
+
+    - send indication of successful delivery as soon as possible. Today we
+      signal successful delivery in order. Probably not a big issue though.

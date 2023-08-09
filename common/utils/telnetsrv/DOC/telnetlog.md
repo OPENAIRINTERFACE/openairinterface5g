@@ -32,11 +32,10 @@ log level/verbosity  comp 27 OSA set to info / medium (disabled)
 log level/verbosity  comp 28 eRAL set to info / medium (disabled)
 log level/verbosity  comp 29 mRAL set to info / medium (disabled)
 log level/verbosity  comp 30 ENB_APP set to info / medium (disabled)
-log level/verbosity  comp 31 FLEXRAN_AGENT set to info / medium (disabled)
-log level/verbosity  comp 32 TMR set to info / medium (disabled)
-log level/verbosity  comp 33 USIM set to info / medium (disabled)
-log level/verbosity  comp 34 LOCALIZE set to info / medium (disabled)
-log level/verbosity  comp 35 RRH set to info / medium (disabled)
+log level/verbosity  comp 31 TMR set to info / medium (disabled)
+log level/verbosity  comp 32 USIM set to info / medium (disabled)
+log level/verbosity  comp 33 LOCALIZE set to info / medium (disabled)
+log level/verbosity  comp 34 RRH set to info / medium (disabled)
 softmodem> softmodem log show
 Available log levels:
    emerg alert crit error warn notice info debug file trace
@@ -62,7 +61,6 @@ component                 verbosity  level  enabled
 16              PERF:    medium      info  N
 17               OIP:    medium      info  N
 18               CLI:    medium      info  N
-19               MSC:    medium      info  N
 20               OCM:    medium      info  N
 21               UDP:    medium      info  N
 22            GTPV1U:    medium      info  N
@@ -74,13 +72,12 @@ component                 verbosity  level  enabled
 28              eRAL:    medium      info  N
 29              mRAL:    medium      info  N
 30           ENB_APP:    medium      info  N
-31     FLEXRAN_AGENT:    medium      info  N
-32               TMR:    medium      info  N
-33              USIM:    medium      info  N
-34          LOCALIZE:    medium      info  N
-35               RRH:    medium      info  N
-36           comp36?:    medium      info  Y
-37            LOADER:    medium     alert  Y
+31               TMR:    medium      info  N
+32              USIM:    medium      info  N
+33          LOCALIZE:    medium      info  N
+34               RRH:    medium      info  N
+35           comp36?:    medium      info  Y
+36            LOADER:    medium     alert  Y
 softmodem> softmodem log level_error 0-4
 log level/verbosity  comp 0 PHY set to error / medium (enabled)
 log level/verbosity  comp 1 MAC set to error / medium (enabled)

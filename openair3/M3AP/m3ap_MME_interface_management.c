@@ -93,8 +93,8 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStartRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   /* c2. TMGI */ 
@@ -108,7 +108,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	  uint8_t TMGI[5] = {4,3,2,1,0};
 	  OCTET_STRING_fromBuf(&tmgi->serviceID,(const char*)&TMGI[2],3);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* optional */
   /* c2. MBMS_Session_ID */
   if(0){
@@ -118,7 +118,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	  ie->value.present             = M3AP_MBMSSessionStartRequest_IEs__value_PR_MBMS_Session_ID;
 	  //M3AP_MBMS_Session_ID_t * mbms_session_id = &ie->value.choice.MBMS_Session_ID;
 
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* mandatory */
   /* c2. MBMS_E_RAB_QoS_Parameters */ 
@@ -133,7 +133,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	//struct M3AP_GBR_QosInformation  *gbrQosInformation;     /* OPTIONAL */
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2. MBMS_Session_Duration */ 
   ie = (M3AP_MBMSSessionStartRequest_IEs_t *)calloc(1, sizeof(M3AP_MBMSSessionStartRequest_IEs_t));
@@ -145,7 +145,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	uint8_t duration[5] = {4,3,2,1,0};
 	OCTET_STRING_fromBuf(mbms_session_duration,(const char*)&duration[2],3);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2 MBMS_Service_Area */
   ie = (M3AP_MBMSSessionStartRequest_IEs_t *)calloc(1, sizeof(M3AP_MBMSSessionStartRequest_IEs_t));
@@ -157,7 +157,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	uint8_t duration[5] = {4,3,2,1,0};
 	OCTET_STRING_fromBuf(mbms_service_area,(const char*)&duration[2],1);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2 MinimumTimeToMBMSDataTransfer */
   ie = (M3AP_MBMSSessionStartRequest_IEs_t *)calloc(1, sizeof(M3AP_MBMSSessionStartRequest_IEs_t));
@@ -170,7 +170,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	OCTET_STRING_fromBuf(minimumtimetombmsdatatransfer,(const char*)&duration[2],1);
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2 TNL_Information */
   ie = (M3AP_MBMSSessionStartRequest_IEs_t *)calloc(1, sizeof(M3AP_MBMSSessionStartRequest_IEs_t));
@@ -190,12 +190,12 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	//tnl_information->iPMCAddress.buf[2]
 	//tnl_information->iPMCAddress.buf[3]
 	//tnl_information->iPMCAddress.buf.size = 4;
-	uint32_t ip= (224<<24) | (0) << 16 | (0) << 8 | (2);
-	INT32_TO_OCTET_STRING(ip,&tnl_information->iPMCAddress);
-	ip= (224<<24) | (0) << 16 | (0) << 8 | (2);
-	INT32_TO_OCTET_STRING(ip,&tnl_information->iPSourceAddress);
+  uint32_t ip = (224U << 24) | (0) << 16 | (0) << 8 | (2);
+  INT32_TO_OCTET_STRING(ip, &tnl_information->iPMCAddress);
+  ip = (224U << 24) | (0) << 16 | (0) << 8 | (2);
+  INT32_TO_OCTET_STRING(ip, &tnl_information->iPSourceAddress);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* optional */
   /* c2 Time_ofMBMS_DataTransfer */
   if(0){
@@ -208,7 +208,7 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 		//char duration[5] = {4,3,2,1,0};
 		//OCTET_STRING_fromBuf(absolute_time_ofmbms_data,(const char*)&duration[2],3);
 	  //}
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* optional */
   /* c2 MBMS_Cell_List */
@@ -222,9 +222,9 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
 	  {
 		//MCC_MNC_TO_PLMNID(0,0,3,ecgi->pLMN_Identity);
 		//MACRO_ENB_ID_TO_CELL_IDENTITY(1,0,ecgi->eUTRANcellIdentifier);
-		ASN_SEQUENCE_ADD(&mbms_cell_list->list,ecgi);
+		asn1cSeqAdd(&mbms_cell_list->list,ecgi);
 	  }
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* encode */
@@ -265,7 +265,7 @@ int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_START_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_START_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: SessionStart-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -296,16 +296,6 @@ int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
   ////M3AP_SESSION_START_RESP(msg_p).
-////  MSC_LOG_RX_MESSAGE(
-////    MSC_M3AP_MME,
-////    MSC_M3AP_MCE,
-  //      //return 0;
-////    0,
-////    0,
-////    MSC_AS_TIME_FMT" MME_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-////    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-////    assoc_id);
-////
   // LOG_W(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
   //       assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
   itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
@@ -353,8 +343,8 @@ int MME_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m3ap_session_stop_re
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStopRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   /* c2. MCE_MBMS_M3AP_ID (integer value) */ //long
@@ -362,9 +352,9 @@ int MME_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m3ap_session_stop_re
   ie->id                        = M3AP_ProtocolIE_ID_id_MCE_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionStopRequest_IEs__value_PR_MCE_MBMS_M3AP_ID;
-  //ie->value.choice.MCE_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M3AP_ID = 0;
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
 
   /* encode */
@@ -403,7 +393,7 @@ int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_STOP_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_STOP_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: MBMSSessionStop-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -434,14 +424,6 @@ int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
  // M3AP_SESSION_STOP_RESP(msg_p).
- // MSC_LOG_RX_MESSAGE(
- //   MSC_M3AP_MME,
- //   MSC_M3AP_MCE,
- //   0,
- //   0,
- //   MSC_AS_TIME_FMT" MME_handle_M2_SESSION_STOP_RESPONSE successfulOutcome assoc_id %d",
- //   0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
- //   assoc_id);
 
  //  LOG_D(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
  //        assoc_id,MCE_MODULE_ID_TO_INSTANCE(assoc_id));
@@ -522,7 +504,7 @@ int MME_handle_M3_SETUP_REQUEST(instance_t instance,
 //              assoc_id, stream);
 //  }
 //
-    message_p = itti_alloc_new_message(TASK_M3AP_MME, M3AP_SETUP_REQ); 
+    message_p = itti_alloc_new_message(TASK_M3AP_MME, 0, M3AP_SETUP_REQ); 
     //printf("M3AP_SETUP_REQ(message_p).assoc_id %d\n",M3AP_SETUP_REQ(message_p).assoc_id);
 //  
 //  /* assoc_id */
@@ -628,15 +610,6 @@ int MME_handle_M3_SETUP_REQUEST(instance_t instance,
     *m3ap_mme_data_from_mce = M3AP_SETUP_REQ(message_p);
     //printf("m3ap_mme_data_from_mce->assoc_id %d %d\n",m3ap_mme_data_from_mce->assoc_id,assoc_id);
 //
-////  MSC_LOG_TX_MESSAGE(
-////  MSC_M3AP_MME,
-////  MSC_RRC_MCE,
-////  0,
-////  0,
-////  MSC_AS_TIME_FMT" MME_handle_M3_SETUP_REQUEST",
-////  0,0//MSC_AS_TIME_ARGS(ctxt_pP),
-////  );
-////
     itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(instance), message_p);
 //  if (num_mbms_available > 0) {
 //    itti_send_msg_to_task(TASK_MME_APP, MCE_MODULE_ID_TO_INSTANCE(instance), message_p);
@@ -685,7 +658,7 @@ int MME_send_M3_SETUP_RESPONSE(instance_t instance, /*uint32_t assoc_id,*/
     ie = (M3AP_M3SetupResponseIEs_t *)calloc(1, sizeof(M3AP_M3SetupResponseIEs_t));
     ie->id                        = M3AP_ProtocolIE_ID_id_CriticalityDiagnostics;
     ie->criticality               = M3AP_Criticality_ignore;
-    ie->value.present             = M3AP_M3SetupFailureIEs__value_PR_CriticalityDiagnostics;
+    ie->value.present             = M3AP_M3SetupResponseIEs__value_PR_CriticalityDiagnostics;
     ie->value.choice.CriticalityDiagnostics.procedureCode = (M3AP_ProcedureCode_t *)calloc(1, sizeof(M3AP_ProcedureCode_t));
     *ie->value.choice.CriticalityDiagnostics.procedureCode = M3AP_ProcedureCode_id_m3Setup;
     ie->value.choice.CriticalityDiagnostics.triggeringMessage = (M3AP_TriggeringMessage_t *)calloc(1, sizeof(M3AP_TriggeringMessage_t));
@@ -694,7 +667,7 @@ int MME_send_M3_SETUP_RESPONSE(instance_t instance, /*uint32_t assoc_id,*/
     *ie->value.choice.CriticalityDiagnostics.procedureCriticality = M3AP_Criticality_reject;
     //ie->value.choice.CriticalityDiagnostics.transactionID = (M2AP_TransactionID_t *)calloc(1, sizeof(M3AP_TransactionID_t));
     //*ie->value.choice.CriticalityDiagnostics.transactionID = 0;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+    asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* encode */
@@ -744,7 +717,7 @@ int MME_send_M3_SETUP_FAILURE(instance_t instance,m3ap_setup_failure_t* m3ap_set
 // // ie->criticality               = M3AP_Criticality_reject;
 // // ie->value.present             = M3AP_M3SetupFailure_Ies__value_PR_GlobalMCE_ID;
 // // ie->value.choice.GlobalMCE_ID = M3AP_get_next_transaction_identifier(enb_mod_idP, mce_mod_idP);
-// // ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+// // asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* mandatory */
 //  /* c2. Cause */
@@ -754,7 +727,7 @@ int MME_send_M3_SETUP_FAILURE(instance_t instance,m3ap_setup_failure_t* m3ap_set
 //  ie->value.present             = M3AP_M3SetupFailure_Ies__value_PR_Cause;
 //  ie->value.choice.Cause.present = M3AP_Cause_PR_radioNetwork;
 //  ie->value.choice.Cause.choice.radioNetwork = M3AP_CauseRadioNetwork_unspecified;
-//  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//  asn1cSeqAdd(&out->protocolIEs.list, ie);
 //
 //  /* optional */
 //  /* c3. TimeToWait */
@@ -764,7 +737,7 @@ int MME_send_M3_SETUP_FAILURE(instance_t instance,m3ap_setup_failure_t* m3ap_set
 //    ie->criticality               = M3AP_Criticality_ignore;
 //    ie->value.present             = M3AP_M3SetupFailure_Ies__value_PR_TimeToWait;
 //    ie->value.choice.TimeToWait = M3AP_TimeToWait_v10s;
-//    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//    asn1cSeqAdd(&out->protocolIEs.list, ie);
 //  }
 //
 //  /* optional */
@@ -782,7 +755,7 @@ int MME_send_M3_SETUP_FAILURE(instance_t instance,m3ap_setup_failure_t* m3ap_set
 //    *ie->value.choice.CriticalityDiagnostics.procedureCriticality = M3AP_Criticality_reject;
 //    //ie->value.choice.CriticalityDiagnostics.transactionID = (M3AP_TransactionID_t *)calloc(1, sizeof(M3AP_TransactionID_t));
 //    //*ie->value.choice.CriticalityDiagnostics.transactionID = 0;
-//    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+//    asn1cSeqAdd(&out->protocolIEs.list, ie);
 //  }
 //
 //  /* encode */
@@ -884,8 +857,8 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
   ie->id                        = M3AP_ProtocolIE_ID_id_MME_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MME_MBMS_M3AP_ID;
-  //ie->value.choice.MME_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  //ie->value.choice.MME_MBMS_M3AP_ID = 0;
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   /* c2. MCE_MBMS_M3AP_ID (integer value) */ //long
@@ -893,9 +866,9 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
   ie->id                        = M3AP_ProtocolIE_ID_id_MCE_MBMS_M3AP_ID;
   ie->criticality               = M3AP_Criticality_reject;
   ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MCE_MBMS_M3AP_ID;
-  //ie->value.choice.MCE_MBMS_M3AP_ID = /*F1AP_get_next_transaction_identifier(enb_mod_idP, du_mod_idP);*/ //?
+  //ie->value.choice.MCE_MBMS_M3AP_ID = 0;
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
    /* mandatory */
   /* c2. TMGI */ 
@@ -909,7 +882,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	  uint8_t TMGI[5] = {4,3,2,1,0};
 	  OCTET_STRING_fromBuf(&tmgi->serviceID,(const char*)&TMGI[2],3);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* optional */
   /* c2. MBMS_Session_ID */
   if(0){
@@ -919,7 +892,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	  ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MBMS_Session_ID;
 	  //M3AP_MBMS_Session_ID_t * mbms_session_id = &ie->value.choice.MBMS_Session_ID;
 
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* mandatory */
   /* c2. MBMS_E_RAB_QoS_Parameters */ 
@@ -934,7 +907,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	//struct M3AP_GBR_QosInformation  *gbrQosInformation;     /* OPTIONAL */
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* mandatory */
   /* c2. MBMS_Session_Duration */ 
   ie = (M3AP_MBMSSessionUpdateRequest_IEs_t *)calloc(1, sizeof(M3AP_MBMSSessionUpdateRequest_IEs_t));
@@ -946,7 +919,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	uint8_t duration[5] = {4,3,2,1,0};
 	OCTET_STRING_fromBuf(mbms_session_duration,(const char*)&duration[2],3);
   }
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* optional */
   /* c2 MBMS_Service_Area */
   if(0){
@@ -956,7 +929,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	  ie->value.present             = M3AP_MBMSSessionUpdateRequest_IEs__value_PR_MBMS_Service_Area;
 	  //M3AP_MBMS_Service_Area_t * mbms_service_area = &ie->value.choice.MBMS_Service_Area;
 
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* mandatory */
   /* c2 MinimumTimeToMBMSDataTransfer */
@@ -970,7 +943,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	OCTET_STRING_fromBuf(minimumtimetombmsdatatransfer,(const char*)&duration[2],1);
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
   /* optional */
   /* c2 TNL_Information */
   if(0){
@@ -984,7 +957,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 		OCTET_STRING_fromBuf(&tnl_information->iPSourceAddress,"1204",strlen("1234"));
 		OCTET_STRING_fromBuf(&tnl_information->gTP_DLTEID,"1204",strlen("1234"));
 	  }
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* optional */
   /* c2 Time_ofMBMS_DataTransfer */
@@ -998,7 +971,7 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 		//char duration[5] = {4,3,2,1,0};
 		//OCTET_STRING_fromBuf(absolute_time_ofmbms_data,(const char*)&duration[2],3);
 	  //}
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
   /* optional */
   /* c2 MBMS_Cell_List */
@@ -1012,9 +985,9 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 	  {
 		//MCC_MNC_TO_PLMNID(0,0,3,ecgi->pLMN_Identity);
 		//MACRO_ENB_ID_TO_CELL_IDENTITY(1,0,ecgi->eUTRANcellIdentifier);
-		ASN_SEQUENCE_ADD(&mbms_cell_list->list,ecgi);
+		asn1cSeqAdd(&mbms_cell_list->list,ecgi);
 	  }
-	  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+	  asn1cSeqAdd(&out->protocolIEs.list, ie);
   }
 
   /* encode */
@@ -1055,7 +1028,7 @@ int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
   int MCE_MBMS_M3AP_ID=-1;
 
 
-  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME,M3AP_MBMS_SESSION_UPDATE_RESP); //TODO
+  MessageDef *msg_g = itti_alloc_new_message(TASK_M3AP_MME, 0,M3AP_MBMS_SESSION_UPDATE_RESP); //TODO
 
   LOG_D(M3AP, "M3AP: SessionUpdate-Resp: protocolIEs.list.count %d\n",
          in->protocolIEs.list.count);
@@ -1086,16 +1059,6 @@ int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
   //AssertFatal(MME_MBMS_M3AP_ID!=-1,"MME_MBMS_M3AP_ID was not sent\n");
   //AssertFatal(MCE_MBMS_M3AP_ID!=-1,"MCE_MBMS_M3AP_ID was not sent\n");
   ////M3AP_SESSION_START_RESP(msg_p).
-////  MSC_LOG_RX_MESSAGE(
-////    MSC_M3AP_MME,
-////    MSC_M3AP_MCE,
-  //      //return 0;
-////    0,
-////    0,
-////    MSC_AS_TIME_FMT" MME_handle_M2_SESSION_START_RESPONSE successfulOutcome assoc_id %d",
-////    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-////    assoc_id);
-////
   // LOG_W(M3AP, "Sending M3AP_SESSION_START_RESP ITTI message to MCE_APP with assoc_id (%d->%d)\n",
   //       assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
   itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);

@@ -10,7 +10,7 @@ As a developer you may need to look at these sections:
 
 Loader usage examples can be found in oai sources:
 
-*  device and transport initialization code: [function `load_lib` in *targets/ARCH/COMMON/__common_lib.c__* ](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/targets/ARCH/COMMON/common_lib.c#L91)
-*  turbo encoder and decoder initialization: [function `load_codinglib`in *openair1/PHY/CODING/__coding_load.c__*](https://gitlab.eurecom.fr/oai/openairinterface5g/blob/develop/openair1/PHY/CODING/coding_load.c#L113)
+*  device and transport initialization code: [function `load_lib` in *radio/COMMON/__common_lib.c__* ](./../../../radio/COMMON/common_lib.c#L91)
+*  turbo encoder and decoder initialization: [function `load_codinglib`in *openair1/PHY/CODING/__coding_load.c__*](./../../../develop/openair1/PHY/CODING/coding_load.c#L113)
 
 [loader home page](../loader.md)

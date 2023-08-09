@@ -102,7 +102,7 @@ int process_cell_info_req(int msg_id, const cell_info_req_t* req,
   index += _process_plmn(_mscgen_buffer, &req->plmnID, MSCGEN_BUFFER_SIZE);
   snprintf(_mscgen_buffer + index, MSCGEN_BUFFER_SIZE - index,
            ", rat = 0x%x%c", req->rat, '\0');
-  MSCGEN("[MSC_MSG][%s][%s][--- Cell Information Request (0x%.4x)\\n%s --->][%s]\n",
+  printf("[%s][%s][--- Cell Information Request (0x%.4x)\\n%s --->][%s]\n",
          getTime(), _ue_id, msg_id, _mscgen_buffer, _as_id);
 
   /* Setup cell information confirm message */
@@ -116,7 +116,7 @@ int process_cell_info_req(int msg_id, const cell_info_req_t* req,
   snprintf(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
            "tac = 0x%.4x, cellID = 0x%.8x, rat = 0x%x, RSRQ = %u, RSRP = %u%c",
            cnf->tac, cnf->cellID, cnf->rat, cnf->rsrq, cnf->rsrp, '\0');
-  MSCGEN("[MSC_MSG][%s][%s][--- Cell Information Confirm (0x%.4x)\\n%s --->][%s]\n",
+  printf("[%s][%s][--- Cell Information Confirm (0x%.4x)\\n%s --->][%s]\n",
          getTime(), _as_id, AS_CELL_INFO_CNF, _mscgen_buffer, _ue_id);
 
   printf("INFO\t: %s - Send cell informtion confirm\n", __FUNCTION__);
@@ -146,13 +146,13 @@ int process_nas_establish_req(int msg_id, const nas_establish_req_t* req,
            "cause = %s, type = %s, tmsi = {MMEcode = %d, m_tmsi = %u}%c",
            rrcCause(req->cause), rrcType(req->type),
            req->s_tmsi.MMEcode, req->s_tmsi.m_tmsi, '\0');
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment Request "
+  printf("[%s][%s][--- NAS Signalling Connection Establishment Request "
          "(0x%.4x)\\n%s --->][%s]\n",
          getTime(), _ue_id, msg_id, _mscgen_buffer, _as_id);
 
   _process_dump(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
                 (char*)req->initialNasMsg.data, req->initialNasMsg.length);
-  MSCGEN("[MSC_RBOX][%s][%s][%s]\n", _ue_id, _as_id, _mscgen_buffer);
+  printf("[%s][%s][%s]\n", _ue_id, _as_id, _mscgen_buffer);
 
   /* Process initial NAS message */
   bytes = nas_process(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
@@ -160,7 +160,7 @@ int process_nas_establish_req(int msg_id, const nas_establish_req_t* req,
                       req->initialNasMsg.length);
 
   if (bytes < 0) {
-    MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment "
+    printf("[%s][%s][--- NAS Signalling Connection Establishment "
            "Indication (0x%.4x)\\ntac = 0x%.4x\\n%s ---x][%s]\n", getTime(),
            _as_id, AS_NAS_ESTABLISH_IND, ind->tac, _mscgen_buffer, _mme_id);
     /* Setup NAS signalling connection establishment confirmation message */
@@ -190,7 +190,7 @@ int process_nas_establish_req(int msg_id, const nas_establish_req_t* req,
   // Transmission failure of Attach Request message
   //cnf->errCode = AS_FAILURE; // UE DEBUG
 
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment Indication "
+  printf("[%s][%s][--- NAS Signalling Connection Establishment Indication "
          "(0x%.4x)\\nUEid = %u, tac = 0x%.4x\\n%s --->][%s]\n", getTime(),
          _as_id, AS_NAS_ESTABLISH_IND, ind->UEid, ind->tac, _mscgen_buffer, _mme_id);
 
@@ -224,13 +224,13 @@ int process_ul_info_transfer_req(int msg_id, const ul_info_transfer_req_t* req,
   snprintf(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
            "tmsi = {MMEcode = %d, m_tmsi = %u}%c",
            req->s_tmsi.MMEcode, req->s_tmsi.m_tmsi, '\0');
-  MSCGEN("[MSC_MSG][%s][%s][--- Uplink Information Request "
+  printf("[%s][%s][--- Uplink Information Request "
          "(0x%.4x)\\n%s --->][%s]\n",
          getTime(), _ue_id, msg_id, _mscgen_buffer, _as_id);
 
   _process_dump(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
                 (char*)req->nasMsg.data, req->nasMsg.length);
-  MSCGEN("[MSC_RBOX][%s][%s][%s]\n", _ue_id, _as_id, _mscgen_buffer);
+  printf("[%s][%s][%s]\n", _ue_id, _as_id, _mscgen_buffer);
 
   /* Process NAS message */
   bytes = nas_process(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
@@ -238,7 +238,7 @@ int process_ul_info_transfer_req(int msg_id, const ul_info_transfer_req_t* req,
                       req->nasMsg.length);
 
   if (bytes < 0) {
-    MSCGEN("[MSC_MSG][%s][%s][--- Uplink Information Indication "
+    printf("[%s][%s][--- Uplink Information Indication "
            "(0x%.4x)\\n%s ---x][%s]\n", getTime(),
            _as_id, AS_UL_INFO_TRANSFER_IND, _mscgen_buffer, _mme_id);
     /* Setup uplink information confirmation message */
@@ -279,7 +279,7 @@ int process_ul_info_transfer_req(int msg_id, const ul_info_transfer_req_t* req,
   //  cnf->errCode = AS_FAILURE; // UE DEBUG
   //}
 
-  MSCGEN("[MSC_MSG][%s][%s][--- Uplink Information Indication "
+  printf("[%s][%s][--- Uplink Information Indication "
          "(0x%.4x), UEid = %u\\n%s --->][%s]\n", getTime(),
          _as_id, AS_UL_INFO_TRANSFER_IND, ind->UEid, _mscgen_buffer, _mme_id);
 
@@ -297,7 +297,7 @@ int process_nas_release_req(int msg_id, const nas_release_req_t* req)
   printf("INFO\t: %s - Process NAS signalling connection release request\n",
          __FUNCTION__);
 
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Release Request "
+  printf("[%s][%s][--- NAS Signalling Release Request "
          "(0x%.4x), tmsi = {MMEcode = %d, m_tmsi = %u}, "
          "cause = %s (%u) --->][%s]\n", getTime(), _ue_id, msg_id,
          req->s_tmsi.MMEcode, req->s_tmsi.m_tmsi,
@@ -332,14 +332,14 @@ int process_nas_establish_rsp(int msg_id, const nas_establish_rsp_t* rsp,
   //rsp->nasMsg.data[21] = 0xc4; // MME DEBUG (Send ESM status)
   //}
 
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment "
+  printf("[%s][%s][--- NAS Signalling Connection Establishment "
          "Response (0x%.4x)\\nerrCode = %s, UEid = %u --->][%s]\n",
          getTime(), _mme_id, msg_id,
          rrcErrCode(rsp->errCode), rsp->UEid, _as_id);
 
   _process_dump(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
                 (char*)rsp->nasMsg.data, rsp->nasMsg.length);
-  MSCGEN("[MSC_RBOX][%s][%s][%s]\n", _mme_id, _as_id, _mscgen_buffer);
+  printf("[%s][%s][%s]\n", _mme_id, _as_id, _mscgen_buffer);
 
   // Discard Attach Accept message
   //return (0); // UE DEBUG
@@ -350,7 +350,7 @@ int process_nas_establish_rsp(int msg_id, const nas_establish_rsp_t* rsp,
                       rsp->nasMsg.length);
 
   if (bytes < 0) {
-    MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment "
+    printf("[%s][%s][--- NAS Signalling Connection Establishment "
            "Confirm (0x%.4x)\\n%s ---x][%s]\n", getTime(),
            _as_id, AS_NAS_ESTABLISH_CNF, _mscgen_buffer, _ue_id);
     return (0);
@@ -369,7 +369,7 @@ int process_nas_establish_rsp(int msg_id, const nas_establish_rsp_t* rsp,
     }
   }
 
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Establishment "
+  printf("[%s][%s][--- NAS Signalling Connection Establishment "
          "Confirm (0x%.4x)\\n%s --->][%s]\n", getTime(),
          _as_id, AS_NAS_ESTABLISH_CNF, _mscgen_buffer, _ue_id);
 
@@ -401,13 +401,13 @@ int process_dl_info_transfer_req(int msg_id, const dl_info_transfer_req_t* req,
   //  req->nasMsg.data[6] = 0x02; // UE DEBUG
   //}
 
-  MSCGEN("[MSC_MSG][%s][%s][--- Downlink Information Request "
+  printf("[%s][%s][--- Downlink Information Request "
          "(0x%.4x), UEid = %u --->][%s]\n",
          getTime(), _mme_id, msg_id, req->UEid, _as_id);
 
   _process_dump(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
                 (char*)req->nasMsg.data, req->nasMsg.length);
-  MSCGEN("[MSC_RBOX][%s][%s][%s]\n", _mme_id, _as_id, _mscgen_buffer);
+  printf("[%s][%s][%s]\n", _mme_id, _as_id, _mscgen_buffer);
 
   /* Process NAS message */
   bytes = nas_process(_mscgen_buffer, MSCGEN_BUFFER_SIZE,
@@ -415,7 +415,7 @@ int process_dl_info_transfer_req(int msg_id, const dl_info_transfer_req_t* req,
                       req->nasMsg.length);
 
   if (bytes < 0) {
-    MSCGEN("[MSC_MSG][%s][%s][--- Downlink Information Indication "
+    printf("[%s][%s][--- Downlink Information Indication "
            "(0x%.4x)\\n%s ---x][%s]\n", getTime(),
            _as_id, AS_DL_INFO_TRANSFER_IND, _mscgen_buffer, _ue_id);
     /* Setup downlink information confirmation message */
@@ -445,7 +445,7 @@ int process_dl_info_transfer_req(int msg_id, const dl_info_transfer_req_t* req,
   //  return (0); // MME DEBUG
   //}
 
-  MSCGEN("[MSC_MSG][%s][%s][--- Downlink Information Indication "
+  printf("[%s][%s][--- Downlink Information Indication "
          "(0x%.4x)\\n%s --->][%s]\n", getTime(),
          _as_id, AS_DL_INFO_TRANSFER_IND, _mscgen_buffer, _ue_id);
 
@@ -464,14 +464,14 @@ int process_nas_release_ind(int msg_id, const nas_release_req_t* req,
   printf("INFO\t: %s - Process NAS signalling connection release request\n",
          __FUNCTION__);
 
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Release Request "
+  printf("[%s][%s][--- NAS Signalling Connection Release Request "
          "(0x%.4x), UEid = %u, cause = %s (%u) --->][%s]\n",
          getTime(), _mme_id, msg_id, req->UEid,
          rrcReleaseCause(req->cause), req->cause, _as_id);
 
   /* Forward NAS release indication to the UE */
   ind->cause = req->cause;
-  MSCGEN("[MSC_MSG][%s][%s][--- NAS Signalling Connection Release Indication "
+  printf("[%s][%s][--- NAS Signalling Connection Release Indication "
          "(0x%.4x), cause = %s (%u) --->][%s]\n",
          getTime(), _as_id, msg_id, rrcReleaseCause(req->cause),
          ind->cause, _ue_id);
@@ -518,7 +518,7 @@ static int _process_dump(char* buffer, int len, const char* msg, int size)
                                            len - index, "\\n");
 
     index += snprintf(buffer + index, len - index,
-                      " %.2hx", (unsigned char)(msg[i]));
+                      " %.2hhx", (unsigned char)msg[i]);
   }
 
   buffer[index] = '\0';

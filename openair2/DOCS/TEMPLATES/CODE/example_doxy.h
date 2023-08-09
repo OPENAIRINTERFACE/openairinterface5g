@@ -31,6 +31,9 @@
 * \warning  this is a warning
 */
 
+#ifndef __DOCS_TEMPLATES_CODE_EXAMPLE_DOXY__H__
+#define __DOCS_TEMPLATES_CODE_EXAMPLE_DOXY__H__
+
 //-----------------------------------begin group-----------------------------
 
 
@@ -138,3 +141,4 @@ struct frame {
 int init(int src, int dst);
 
 //-----------------------end func proto-------------------
+#endif

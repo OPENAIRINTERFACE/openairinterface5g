@@ -60,11 +60,11 @@ uint8_t rrc_find_free_ue_index(uint8_t Mod_id) {
   uint16_t i;
 
   for(i=1; i<=NB_CNX_CH; i++)
-    if ( (CH_rrc_inst[Mod_id].Info.UE_list[i][0] == 0) &&
-         (CH_rrc_inst[Mod_id].Info.UE_list[i][1] == 0) &&
-         (CH_rrc_inst[Mod_id].Info.UE_list[i][2] == 0) &&
-         (CH_rrc_inst[Mod_id].Info.UE_list[i][3] == 0) &&
-         (CH_rrc_inst[Mod_id].Info.UE_list[i][4] == 0)) {
+    if ( (CH_rrc_inst[Mod_id].Info.UE_info[i][0] == 0) &&
+         (CH_rrc_inst[Mod_id].Info.UE_info[i][1] == 0) &&
+         (CH_rrc_inst[Mod_id].Info.UE_info[i][2] == 0) &&
+         (CH_rrc_inst[Mod_id].Info.UE_info[i][3] == 0) &&
+         (CH_rrc_inst[Mod_id].Info.UE_info[i][4] == 0)) {
       return i;
     }
 
@@ -78,7 +78,7 @@ unsigned short rrc_find_ue_index(unsigned char Mod_id, L2_ID Mac_id) {
   unsigned char i;
   /*
   for(i=0;i<=NB_CNX_CH;i++)
-    if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id,sizeof(L2_ID))==0)
+    if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_info[i].L2_id,sizeof(L2_ID))==0)
       return i;
   return i;
   */
@@ -167,7 +167,7 @@ unsigned char rrc_is_mobile_already_associated(uint8_t Mod_id, L2_ID Mac_id) {
   /*
   unsigned char i;
   for(i=0;i<NB_CNX_CH;i++)
-    if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_list[i].L2_id,sizeof(L2_ID))==0)
+    if( bcmp(Mac_id.L2_id,CH_rrc_inst[Mod_id].Info.UE_info[i].L2_id,sizeof(L2_ID))==0)
       return 1;
   return 0;
   */

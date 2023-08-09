@@ -96,7 +96,11 @@ typedef struct {
  * and "no TFT operation" shall be empty.
  * ---------------------------------------------------------------
  */
-typedef struct {} NoPacketFilter;
+typedef struct {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
+} NoPacketFilter;
 
 typedef NoPacketFilter DeleteExistingTft;
 typedef NoPacketFilter NoTftOperation;
@@ -155,7 +159,9 @@ typedef union {
  */
 
 typedef struct {
-  /* TODO */
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } ParameterList;
 
 /*

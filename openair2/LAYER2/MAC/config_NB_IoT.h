@@ -8,8 +8,8 @@
  *
  */
 
-#ifndef _CONFIG_H_
-#define _CONFIG_H_
+#ifndef __LAYER2_MAC_CONFIG_NB_IOT__H__
+#define __LAYER2_MAC_CONFIG_NB_IOT__H__
 
 //#include "NB_IoT_Message_definitions.h"
 

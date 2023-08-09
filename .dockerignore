@@ -1,0 +1,7 @@
+*.log
+cmake_targets/log/
+cmake_targets/ran_build/
+common/utils/T/T_IDs.h
+common/utils/T/T_messages.txt.h
+common/utils/T/genids
+common/utils/T/genids.o

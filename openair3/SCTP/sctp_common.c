@@ -41,7 +41,7 @@
 #include "sctp_common.h"
 
 /* Pre-bind socket options configuration.
- * See http://linux.die.net/man/7/sctp for more informations on these options.
+ * See http://linux.die.net/man/7/sctp for more information on these options.
  */
 int sctp_set_init_opt(int sd, uint16_t instreams, uint16_t outstreams,
                       uint16_t max_attempts, uint16_t init_timeout)

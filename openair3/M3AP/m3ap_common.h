@@ -18,11 +18,9 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
+#ifndef M3AP_COMMON_H_
+#define M3AP_COMMON_H_
+#include "oai_asn1.h"
 #include "M3AP_ProtocolIE-Field.h"
 #include "M3AP_M3AP-PDU.h"
 #include "M3AP_InitiatingMessage.h"
@@ -35,8 +33,6 @@
 #include "M3AP_asn_constant.h"
 #include "intertask_interface.h"
 
-#ifndef M3AP_COMMON_H_
-#define M3AP_COMMON_H_
 
 /** @defgroup _m3ap_impl_ M3AP Layer Reference Implementation
  * @ingroup _ref_implementation_
@@ -52,26 +48,14 @@
 # define M3AP_PORT 36444
 #endif
 
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
-
 extern int asn1_xer_print;
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "m3ap_default_values.h"
-# define M3AP_INFO(x, args...) LOG_I(M3AP, x, ##args)
-# define M3AP_ERROR(x, args...) LOG_E(M3AP, x, ##args)
-# define M3AP_WARN(x, args...)  LOG_W(M3AP, x, ##args)
-# define M3AP_DEBUG(x, args...) LOG_D(M3AP, x, ##args)
-#else
-# define M3AP_INFO(x, args...) do { fprintf(stdout, "[M3AP][I]"x, ##args); } while(0)
-# define M3AP_ERROR(x, args...) do { fprintf(stdout, "[M3AP][E]"x, ##args); } while(0)
-# define M3AP_WARN(x, args...)  do { fprintf(stdout, "[M3AP][W]"x, ##args); } while(0)
-# define M3AP_DEBUG(x, args...) do { fprintf(stdout, "[M3AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "m3ap_default_values.h"
+#define M3AP_INFO(x, args...) LOG_I(M3AP, x, ##args)
+#define M3AP_ERROR(x, args...) LOG_E(M3AP, x, ##args)
+#define M3AP_WARN(x, args...)  LOG_W(M3AP, x, ##args)
+#define M3AP_DEBUG(x, args...) LOG_D(M3AP, x, ##args)
 
 #define M3AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
   do {\

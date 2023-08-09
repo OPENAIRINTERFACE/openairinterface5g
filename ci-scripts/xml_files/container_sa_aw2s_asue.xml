@@ -1,0 +1,166 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+  <htmlTabRef>TEST-5G-AW2S</htmlTabRef>
+  <htmlTabName>20 MHz TDD SA</htmlTabName>
+  <htmlTabIcon>tasks</htmlTabIcon>
+  <repeatCount>1</repeatCount>
+  <TestCaseRequestedList>
+    010000
+    001000
+    020000
+    002000
+    002001
+    002002
+    002003
+    002004
+    002005
+    000100
+    000010
+    000020
+    000200
+    003000
+    004000
+    000002
+    030000
+  </TestCaseRequestedList>
+  <TestCaseExclusionList></TestCaseExclusionList>
+
+  <testCase id="010000">
+    <class>Pull_Cluster_Image</class>
+    <desc>Pull Images from Cluster</desc>
+    <oc_project>oaicicd-ran</oc_project>
+    <images_to_pull>oai-gnb-aw2s</images_to_pull>
+  </testCase>
+
+  <testCase id="020000">
+    <class>Deploy_Object</class>
+    <desc>Deploy gNB (TDD/Band78/20MHz/aw2s) in a container</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_aw2s_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+  </testCase>
+
+  <testCase id="001000">
+    <class>Initialize_UE</class>
+    <desc>Initialize Amarisoft UE</desc>
+    <id>amarisoft_ue</id>
+  </testCase>
+
+  <testCase id="002001">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_1</id>
+  </testCase>
+
+  <testCase id="002002">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_2</id>
+  </testCase>
+
+  <testCase id="002003">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_3</id>
+  </testCase>
+
+  <testCase id="002004">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_4</id>
+  </testCase>
+
+  <testCase id="002005">
+    <class>Attach_UE</class>
+    <desc>Attach UE</desc>
+    <id>amarisoft_ue_5</id>
+  </testCase>
+
+  <testCase id="000010">
+    <class>Iperf</class>
+    <desc>iperf (DL/20Mbps/UDP)(30 sec)(multi-ue profile)</desc>
+    <iperf_args>-u -b 60M -t 30 -i 1 -R</iperf_args>
+    <direction>IPERF3</direction>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3</id>
+    <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+    <iperf_profile>balanced</iperf_profile>
+  </testCase>
+
+  <testCase id="000020">
+    <class>Iperf</class>
+    <desc>iperf (UL/5Mbps/UDP)(30 sec)(multi-ue profile)</desc>
+    <iperf_args>-u -b 15M -t 30 -i 1 </iperf_args>
+    <direction>IPERF3</direction>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3</id>
+    <iperf_packetloss_threshold>25</iperf_packetloss_threshold>
+    <iperf_bitrate_threshold>80</iperf_bitrate_threshold>
+    <iperf_profile>balanced</iperf_profile>
+  </testCase>
+
+  <testCase id="000100">
+    <class>Ping</class>
+    <desc>Ping: 20pings in 20sec, multi-ue</desc>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+    <ping_args>-c 20 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>25</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="000200">
+    <class>Ping</class>
+    <desc>Ping: 100pings in 20sec, multi-ue</desc>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+    <ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
+    <ping_packetloss_threshold>1</ping_packetloss_threshold>
+    <ping_rttavg_threshold>30</ping_rttavg_threshold>
+  </testCase>
+
+  <testCase id="003000">
+    <class>Detach_UE</class>
+    <desc>Detach UE</desc>
+    <id>amarisoft_ue_1 amarisoft_ue_2 amarisoft_ue_3 amarisoft_ue_4 amarisoft_ue_5</id>
+  </testCase>
+
+  <testCase id="004000">
+    <class>Terminate_UE</class>
+    <desc>Terminate UE</desc>
+    <id>amarisoft_ue</id>
+  </testCase>
+
+  <testCase id="000002">
+    <class>IdleSleep</class>
+    <desc>Sleep</desc>
+    <idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+  </testCase>
+
+  <testCase id="030000">
+    <class>Undeploy_Object</class>
+    <desc>Undeploy gNB</desc>
+    <yaml_path>ci-scripts/yaml_files/sa_aw2s_gnb</yaml_path>
+    <eNB_instance>0</eNB_instance>
+    <eNB_serverId>0</eNB_serverId>
+  </testCase>
+
+</testCaseList>

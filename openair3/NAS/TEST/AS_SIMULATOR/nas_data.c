@@ -628,7 +628,7 @@ ssize_t authenticationParameter(char* buffer, size_t len, const OctetString* par
   int index = 0;
 
   for (int i = 0; i < param->length; i++) {
-    index += snprintf(buffer + index, len - index, "%.2hx",
+    index += snprintf(buffer + index, len - index, "%.2hhx",
                       (unsigned char)(param->value[i]));
   }
 

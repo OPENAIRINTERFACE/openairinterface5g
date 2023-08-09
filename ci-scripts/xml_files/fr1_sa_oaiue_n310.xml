@@ -1,0 +1,140 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+-->
+<testCaseList>
+	<htmlTabRef>TEST-SA-FR1-Tab1</htmlTabRef>
+	<htmlTabName>SA Ping DL UL with OAI NR UE (N310)</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
+	<TestCaseRequestedList>
+ 100000
+ 040000
+ 000002
+ 010000
+ 000002
+ 050000
+ 050001
+ 000001
+ 010002
+ 080000
+ 200000
+	</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="010000">
+		<class>Initialize_OAI_UE</class>
+		<desc>Initialize OAI UE (N310)</desc>
+		<air_interface>nr</air_interface>
+		<Initialize_OAI_UE_args>--sa -O ../../../ci-scripts/conf_files/ue.sa.conf --usrp-args "mgmt_addr=172.21.19.13,addr=192.168.10.2"  --numerology 1 -r 106 --band 78 -C 3319680000 --ue-txgain 0 --ue-rxgain 70 --ue-fo-compensation --log_config.global_log_options level,nocolor,time</Initialize_OAI_UE_args>
+	</testCase>
+
+	<testCase id="010002">
+		<class>Terminate_OAI_UE</class>
+		<desc>Terminate OAI UE</desc>
+	</testCase>
+
+	<testCase id="100000">
+		<class>Custom_Command</class>
+		<desc>Disable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -D 0</command>
+	</testCase>
+	<testCase id="200000">
+		<class>Custom_Command</class>
+		<desc>Enable Sleep States</desc>
+		<node>asterix</node>
+		<command>sudo cpupower idle-set -E</command>
+	</testCase>
+
+	<testCase id="040000">
+		<class>Initialize_eNB</class>
+		<desc>Initialize gNB</desc>
+		<Initialize_eNB_args>-O ci-scripts/conf_files/gnb.sa.band78.106prb.usrp310.2x2.conf --gNBs.[0].min_rxtxtime 5 --sa --usrp-tx-thread-config 1 --tune-offset 30000000 --thread-pool 1,3,5,7,9,11,13,15 --gNBs.[0].min_rxtxtime 5 --log_config.global_log_options level,nocolor,time</Initialize_eNB_args>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>nr</air_interface>
+		<eNB_Trace>yes</eNB_Trace>
+		<eNB_Stats>yes</eNB_Stats>
+		<USRP_IPAddress>172.21.19.14</USRP_IPAddress>
+		<cmd_prefix>numactl --cpunodebind=netdev:ens2f0np0 --membind=netdev:ens2f0np0</cmd_prefix>
+	</testCase>
+
+	<testCase id="000001">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>5</idle_sleep_time_in_sec>
+	</testCase>
+
+	<testCase id="000002">
+		<class>IdleSleep</class>
+		<desc>Sleep</desc>
+		<idle_sleep_time_in_sec>20</idle_sleep_time_in_sec>
+	</testCase>
+
+
+	<testCase id="050000">
+		<class>Ping</class>
+		<desc>Ping from CN to UE: 20pings in 20sec</desc>
+		<id>oai_ue_obelix</id>
+		<ping_args>-c 20 %cn_ip%</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="050001">
+		<class>Ping</class>
+		<desc>Ping from CN to UE: 100pings in 20sec</desc>
+		<id>oai_ue_obelix</id>
+		<ping_args>-c 100 -i 0.2 %cn_ip%</ping_args>
+		<ping_packetloss_threshold>5</ping_packetloss_threshold>
+	</testCase>
+
+	<testCase id="070000">
+		<class>Iperf</class>
+		<desc>iperf (DL/60Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<id>oai_ue_obelix</id>
+		<iperf_args>-u -b 60M -t 60</iperf_args>
+		<direction>DL</direction>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+	<testCase id="070001">
+		<class>Iperf</class>
+		<desc>iperf (UL/3Mbps/UDP)(60 sec)(single-ue profile)</desc>
+		<id>oai_ue_obelix</id>
+		<iperf_args>-u -b 3M -t 60</iperf_args>
+		<direction>UL</direction>
+		<iperf_packetloss_threshold>5</iperf_packetloss_threshold>
+		<iperf_profile>single-ue</iperf_profile>
+	</testCase>
+
+
+	<testCase id="080000">
+		<class>Terminate_eNB</class>
+		<desc>Terminate gNB</desc>
+		<eNB_instance>0</eNB_instance>
+		<eNB_serverId>0</eNB_serverId>
+		<air_interface>nr</air_interface>
+	</testCase>
+
+</testCaseList>
+

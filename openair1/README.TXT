@@ -21,7 +21,6 @@ General remarks: every directory contains at least defs.h (for declaration of st
 |   |-- defs.h		  // top level defs.h (includes spec_defs, impl_defs and all defs.h of subdirectories)
 |   |-- extern.h
 |   |-- impl_defs.h       // non-LTE openair implementation
-|   |-- impl_defs_lte.h   // lte implementation
 |   |-- impl_defs_top.h   // general implementaion defs
 |   |-- spec_defs.h
 |   |-- spec_defs_top.h

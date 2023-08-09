@@ -1,0 +1,114 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Location of the python executor node shall be in the same subnet as the others servers
+def nodeExecutor = params.nodeExecutor
+
+// Name of the resource
+def lockResources = []
+if (params.LockResources != null && params.LockResources.trim().length() > 0)
+  params.LockResources.trim().split(",").each{lockResources += [resource: it.trim()]}
+
+// Docker Hub account to push to
+def DH_Account = "oaisoftwarealliance"
+
+pipeline {
+  agent {
+    label nodeExecutor
+  }
+  options {
+    ansiColor('xterm')
+    lock(extra: lockResources)
+  }
+  stages {
+    stage ("Verify Parameters") {
+      steps {
+        script {
+          echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+          def allParametersPresent = true
+
+          // It is already to late to check it
+          if (params.nodeExecutor != null) {
+            echo "Docker Push executor node  :   ${nodeExecutor}"
+          }
+          if (params.LockResources == null) {
+            echo "no LockResources given"
+            allParametersPresent = false
+          }
+        }
+      }
+    }
+    stage ("Push to DockerHub") {
+      steps {
+        script {
+          WEEK_REF = sh returnStdout: true, script: 'date +"%Y.w%V"'
+          WEEK_REF = WEEK_REF.trim()
+          WEEK_TAG = sh returnStdout: true, script: 'python3 ./ci-scripts/provideUniqueImageTag.py --start_tag ' + WEEK_REF
+          WEEK_TAG = WEEK_TAG.trim()
+          if ((params.forceTag != null) && (params.tagToUse != null)) {
+            if (params.forceTag) {
+              WEEK_TAG = params.tagToUse
+              echo "Forced Tag is ${WEEK_TAG}"
+            }
+          }
+          WEEK_SHA = sh returnStdout: true, script: 'git log -n1 --pretty=format:"%h" origin/develop | cut -c 1-8'
+          WEEK_SHA = WEEK_SHA.trim()
+
+          withCredentials([
+            [$class: 'UsernamePasswordMultiBinding', credentialsId: "${params.DH_Credentials}", usernameVariable: 'DH_Username', passwordVariable: 'DH_Password']
+          ]) {
+            def listOfImages = ["oai-enb", "oai-gnb", "oai-lte-ue", "oai-nr-ue", "oai-nr-cuup"]
+            // Logging in on both registries
+            sh "docker login -u ${DH_Username} -p ${DH_Password} > /dev/null 2>&1"
+            sh "docker login -u oaicicd -p oaicicd porcepix.sboai.cs.eurecom.fr > /dev/null 2>&1"
+            listOfImages.eachWithIndex { item, iindex ->
+              sh "docker pull --quiet porcepix.sboai.cs.eurecom.fr/${item}:develop-${WEEK_SHA}"
+              sh "docker image tag porcepix.sboai.cs.eurecom.fr/${item}:develop-${WEEK_SHA} ${DH_Account}/${item}:develop"
+              sh "docker image tag porcepix.sboai.cs.eurecom.fr/${item}:develop-${WEEK_SHA} ${DH_Account}/${item}:${WEEK_TAG}"
+              sh "docker push --quiet ${DH_Account}/${item}:${WEEK_TAG}"
+              sh "docker push --quiet ${DH_Account}/${item}:develop"
+              sh "docker rmi ${DH_Account}/${item}:${WEEK_TAG} ${DH_Account}/${item}:develop porcepix.sboai.cs.eurecom.fr/${item}:develop-${WEEK_SHA}"
+            }
+            // Proxy is not following the same pattern.
+            sh "docker image tag proxy:develop ${DH_Account}/proxy:develop"
+            sh "docker image tag proxy:develop ${DH_Account}/proxy:${WEEK_TAG}"
+            sh "docker push --quiet ${DH_Account}/proxy:develop"
+            sh "docker push --quiet ${DH_Account}/proxy:${WEEK_TAG}"
+            sh "docker rmi ${DH_Account}/proxy:develop ${DH_Account}/proxy:${WEEK_TAG}"
+            // Logging out on both registries
+            sh "docker logout porcepix.sboai.cs.eurecom.fr > /dev/null 2>&1"
+            sh "docker logout > /dev/null 2>&1"
+          }
+        }
+      }
+    }
+  }
+  post {
+    always {
+      script {
+        sh "docker logout porcepix.sboai.cs.eurecom.fr > /dev/null 2>&1"
+        sh "docker logout > /dev/null 2>&1"
+        echo "End of Registry Push"
+      }
+    }
+  }
+}

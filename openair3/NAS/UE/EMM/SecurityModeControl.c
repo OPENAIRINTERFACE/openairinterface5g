@@ -63,7 +63,7 @@ Description Defines the security mode control EMM procedure executed by the
 
 # include "assertions.h"
 #include "secu_defs.h"
-#include "msc.h"
+#include "kdf.h"
 #include "SecurityModeControl.h"
 
 #if  defined(NAS_BUILT_IN_UE)
@@ -125,7 +125,7 @@ static void _security_release(emm_security_context_t *ctx);
  **      grity algorithm and ciphered with the selected NAS ciphe-         **
  **      ring algorithm.                                                   **
  **                                                                        **
- ** Inputs:  native_ksi:    TRUE if the security context is of type        **
+ ** Inputs:  native_ksi:    true if the security context is of type        **
  **             native (for KSIASME)                                       **
  **      ksi:       The NAS ket sey identifier                             **
  **      seea:      Selected EPS cyphering algorithm                       **
@@ -146,7 +146,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
 
   int rc = RETURNerror;
   int emm_cause = EMM_CAUSE_SUCCESS;
-  int security_context_is_new = FALSE;
+  int security_context_is_new = false;
   security_data_t *security_data = user->security_data;
 
   LOG_TRACE(INFO, "EMM-PROC  - Security mode control requested (ksi=%d)",
@@ -264,7 +264,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
           user->emm_data->security->ul_count.overflow = 0;
           user->emm_data->security->ul_count.seq_num = 0;
           /* Set new security context indicator */
-          security_context_is_new = TRUE;
+          security_context_is_new = true;
         }
       }
 
@@ -286,7 +286,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
       user->emm_data->security->selected_algorithms.encryption = seea;
       user->emm_data->security->selected_algorithms.integrity  = seia;
 #if  defined(NAS_BUILT_IN_UE)
-      nas_itti_kenb_refresh_req(security_data->kenb.value);
+      nas_itti_kenb_refresh_req(security_data->kenb.value, user->ueid);
 #endif
 
     }
@@ -296,14 +296,14 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
     else {
       /* Setup EMM cause code */
       emm_cause = EMM_CAUSE_SECURITY_MODE_REJECTED;
-
-      /* Release security mode control internal data */
-      if (security_data->kenb.value) {
-        free(security_data->kenb.value);
-        security_data->kenb.value = NULL;
-        security_data->kenb.length = 0;
-      }
     }
+  }
+
+  /* Release security mode control internal data */
+  if (security_data->kenb.value) {
+    free(security_data->kenb.value);
+    security_data->kenb.value = NULL;
+    security_data->kenb.length = 0;
   }
 
   /* Setup EMM procedure handler to be executed upon receiving
@@ -329,7 +329,7 @@ int emm_proc_security_mode_command(nas_user_t *user, int native_ksi, int ksi,
   emm_sap.u.emm_as.u.security.emm_cause = emm_cause;
   /* Setup EPS NAS security data */
   emm_as_set_security_data(&emm_sap.u.emm_as.u.security.sctx,
-                           user->emm_data->security, security_context_is_new, TRUE);
+                           user->emm_data->security, security_context_is_new, true);
   rc = emm_sap_send(user, &emm_sap);
 
   LOG_FUNC_RETURN (rc);
@@ -485,7 +485,9 @@ static int _security_kenb(const OctetString *kasme, OctetString *kenb,
   input[5] = 0;
   input[6] = 4;
 
-  kdf(kasme->value, 32, input, 7, kenb->value, 32);
+  byte_array_t data = {.len = 7, .buf = input};
+  kdf(kasme->value, data, 32, kenb->value);
+
   kenb->length = 32;
   return (RETURNok);
 }
@@ -537,8 +539,12 @@ static int _security_kdf(const OctetString *kasme, OctetString *key,
   input[5] = 0x00;
   input[6] = 0x01;
 
+  assert(kasme->length == 32);
+  byte_array_t data = {.len = 7, .buf=input};
   /* Compute the derived key */
-  kdf(kasme->value, kasme->length, input, 7, output, 32);
+  kdf(kasme->value, data, 32, output);
+
+
   memcpy(key->value, &output[31 - key->length + 1], key->length);
   return (RETURNok);
 }

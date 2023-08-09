@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include "database.h"
 #include "event.h"
-#include "config.h"
+#include "configuration.h"
 
 void usage(void)
 {

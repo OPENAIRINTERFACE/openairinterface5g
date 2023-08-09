@@ -11,7 +11,7 @@
 #include "gui/gui.h"
 #include "utils.h"
 #include "event_selector.h"
-#include "config.h"
+#include "configuration.h"
 
 typedef struct {
   int socket;
@@ -86,7 +86,7 @@ int main(int n, char **v)
   int i;
   event_handler *h;
   logger *textlog;
-  gui *g;
+  gui *g = NULL;    /* initialization not necessary but gcc is not happy */
   int gui_mode = 0;
   view *out;
   int gui_active = 1;

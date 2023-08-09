@@ -139,11 +139,7 @@ void send_T_messages_txt(void *forwarder) {
     /* TODO: be careful, we use internal T stuff, to rewrite? */
     T_LOCAL_size = 0;
     T_HEADER(T_ID(-1));
-    T_PUT_buffer(1, ((T_buffer) {
-addr:
-(src), length:
-      (send_size)
-    }));
+    T_PUT_buffer(1, ((T_buffer) { .addr= (src), .length= (send_size) }));
     forward(forwarder, buf, T_LOCAL_size);
     src += send_size;
     src_len -= send_size;
@@ -357,24 +353,6 @@ static void forward(void *_forwarder, char *buf, int size) {
   if (f->tail != NULL) f->tail->next = new;
 
   f->tail = new;
-#if BASIC_SIMULATOR
-
-  /* When runnng the basic simulator, the tracer may be too slow.
-   * Let's not take too much memory in the tracee and
-   * wait if there is too much data to send. 200MB is
-   * arbitrary.
-   */
-  while (f->memusage > 200 * 1024 * 1024) {
-    if (pthread_cond_signal(&f->cond)) abort();
-
-    if (pthread_mutex_unlock(&f->lock)) abort();
-
-    usleep(1000);
-
-    if (pthread_mutex_lock(&f->lock)) abort();
-  }
-
-#endif /* BASIC_SIMULATOR */
   f->memusage += size+4;
 
   /* warn every 100MB */

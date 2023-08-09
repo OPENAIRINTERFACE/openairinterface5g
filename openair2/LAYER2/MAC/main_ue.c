@@ -41,10 +41,10 @@
 #include "common/utils/LOG/log.h"
 #include "nfapi/oai_integration/vendor_ext.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-
-
+#include "PHY_INTERFACE/phy_stub_UE.h"
 #include "common/ran_context.h"
-extern FILL_UL_INFO_MUTEX_t fill_ul_mutex;
+#include <openair2/RRC/LTE/rrc_proto.h>
+
 extern void openair_rrc_top_init_ue( int eMBMS_active, char *uecap_xer, uint8_t cba_group_active, uint8_t HO_active);
 
 void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char eNB_index, uint8_t first_sync) { //init as MR
@@ -58,13 +58,6 @@ void dl_phy_sync_success(module_id_t module_idP, frame_t frameP, unsigned char e
     rrc_in_sync_ind(module_idP, frameP, eNB_index);
   }
 }
-
-void
-mac_UE_out_of_sync_ind(module_id_t module_idP, frame_t frameP,
-                       uint16_t eNB_index) {
-  //  Mac_rlc_xface->mac_out_of_sync_ind(Mod_id, frameP, eNB_index);
-}
-
 
 int
 mac_top_init_ue(int eMBMS_active, char *uecap_xer,
@@ -91,7 +84,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
   }
 
   // mutex below are used for multiple UE's L2 FAPI simulation.
-  if (NFAPI_MODE == NFAPI_UE_STUB_PNF) {
+  if (NFAPI_MODE == NFAPI_UE_STUB_PNF || NFAPI_MODE == NFAPI_MODE_STANDALONE_PNF) {
     pthread_mutex_init(&fill_ul_mutex.rx_mutex,NULL);
     pthread_mutex_init(&fill_ul_mutex.crc_mutex,NULL);
     pthread_mutex_init(&fill_ul_mutex.sr_mutex,NULL);
@@ -110,7 +103,7 @@ mac_top_init_ue(int eMBMS_active, char *uecap_xer,
 int rlcmac_init_global_param_ue(void) {
   LOG_I(MAC, "[MAIN] CALLING RLC_MODULE_INIT...\n");
 
-  if (rlc_module_init() != 0) {
+  if (rlc_module_init(0) != 0) {
     return (-1);
   }
 

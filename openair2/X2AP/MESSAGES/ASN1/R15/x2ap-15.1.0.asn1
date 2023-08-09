@@ -4010,7 +4010,7 @@ NRNeighbour-Information-ExtIEs X2AP-PROTOCOL-EXTENSION ::= {
 	...
 }
 
-CellAssistanceInformation ::= CHOICE {
+CellAssistanceInformation ::= CHOICE {
 	limited-list				Limited-list,
 	full-list				ENUMERATED  {allServedNRcells, ...},
 	...
@@ -6094,7 +6094,7 @@ SgNBResourceCoordinationInformationExtIEs X2AP-PROTOCOL-EXTENSION ::= {
 	...
 }
 
-SgNB-UE-X2AP-ID ::= INTEGER (0..4294967295)
+SgNB-UE-X2AP-ID ::= INTEGER (0..4294967295)
 
 SIPTOBearerDeactivationIndication ::= ENUMERATED {
 	true,

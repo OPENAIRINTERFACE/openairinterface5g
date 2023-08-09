@@ -901,7 +901,7 @@ unsigned char phy_threegpplte_turbo_decoder_scalar(llr_t *y,
   llr_t *yp = y;
   unsigned short i,pi;
   unsigned char iteration_cnt=0;
-  unsigned int crc,oldcrc;
+  uint32_t crc, oldcrc;
   unsigned char crc_len,temp;
 
   if (crc_type > 3) {

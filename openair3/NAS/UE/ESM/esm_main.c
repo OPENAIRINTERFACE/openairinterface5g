@@ -96,12 +96,12 @@ void esm_main_initialize(nas_user_t *user, esm_indication_callback_t cb)
 
   for (i = 0; i < ESM_DATA_PDN_MAX + 1; i++) {
     esm_data->pdn[i].pid = -1;
-    esm_data->pdn[i].is_active = FALSE;
+    esm_data->pdn[i].is_active = false;
     esm_data->pdn[i].data = NULL;
   }
 
   /* Emergency bearer services indicator */
-  esm_data->emergency = FALSE;
+  esm_data->emergency = false;
 
   /* Initialize the procedure transaction identity manager */
 
@@ -225,12 +225,12 @@ int esm_main_get_nb_pdns(esm_data_t *esm_data)
  ** Inputs:  None                                                      **
  **                                                                        **
  ** Outputs:     None                                                      **
- **      Return:    TRUE if a PDN connection for emergency     **
+ **      Return:    true if a PDN connection for emergency     **
  **             bearer services is established             **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_has_emergency(esm_data_t *esm_data)
+bool esm_main_has_emergency(esm_data_t *esm_data)
 {
   LOG_FUNC_IN;
 
@@ -245,16 +245,16 @@ int esm_main_has_emergency(esm_data_t *esm_data)
  **                                                                        **
  ** Inputs:  cid:       PDN connection identifier                  **
  **                                                                        **
- ** Outputs:     state:     TRUE if the current state of the PDN con-  **
- **             nection is ACTIVE; FALSE otherwise.        **
- **      Return:    TRUE if the specified PDN connection has a **
- **             PDN context defined; FALSE if no any PDN   **
+ ** Outputs:     state:     true if the current state of the PDN con-  **
+ **             nection is ACTIVE; false otherwise.        **
+ **      Return:    true if the specified PDN connection has a **
+ **             PDN context defined; false if no any PDN   **
  **             context has been defined for the specified **
  **             connection.                                **
  **      Others:    None                                       **
  **                                                                        **
  ***************************************************************************/
-int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
+bool esm_main_get_pdn_status(nas_user_t *user, int cid, bool *state)
 {
   LOG_FUNC_IN;
 
@@ -263,14 +263,14 @@ int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
   esm_ebr_data_t *esm_ebr_data = user-> esm_ebr_data;
 
   if (pid >= ESM_DATA_PDN_MAX) {
-    return (FALSE);
+    return (false);
   } else if (pid != esm_data->pdn[pid].pid) {
     LOG_TRACE(WARNING, "ESM-MAIN  - PDN connection %d is not defined", cid);
-    return (FALSE);
+    return (false);
   } else if (esm_data->pdn[pid].data == NULL) {
     LOG_TRACE(ERROR, "ESM-MAIN  - PDN connection %d has not been allocated",
               cid);
-    return (FALSE);
+    return (false);
   }
 
   if (esm_data->pdn[pid].data->bearer[0] != NULL) {
@@ -281,7 +281,7 @@ int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
   }
 
   /* The PDN connection has not been activated yet */
-  LOG_FUNC_RETURN (TRUE);
+  LOG_FUNC_RETURN (true);
 }
 
 /****************************************************************************
@@ -301,7 +301,7 @@ int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state)
  **                                                                        **
  ***************************************************************************/
 int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn,
-                     int *is_emergency, int *is_active)
+                     bool *is_emergency, bool *is_active)
 {
   LOG_FUNC_IN;
 

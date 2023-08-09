@@ -31,7 +31,6 @@
 #include "ip_forward_messages_types.h"
 #include "s11_messages_types.h"
 #include "s1ap_messages_types.h"
-#include "f1ap_messages_types.h"
 #include "nas_messages_types.h"
 #include "s6a_messages_types.h"
 #include "sctp_messages_types.h"
@@ -39,6 +38,7 @@
 #include "udp_messages_types.h"
 #include "mme_app_messages_types.h"
 #include "m2ap_messages_types.h"
+#include "ngap_messages_types.h"
 
 
 #endif /* MESSAGES_TYPES_H_ */

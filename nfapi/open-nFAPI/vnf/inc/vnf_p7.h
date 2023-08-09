@@ -25,7 +25,6 @@
 #define TIME2TIMEHR(_time) (((uint32_t)(_time.tv_sec) & 0xFFF) << 20 | ((uint32_t)(_time.tv_usec) & 0xFFFFF))
 
 
-
 typedef struct {
 	uint8_t* buffer;
 	uint16_t length;
@@ -77,6 +76,9 @@ typedef struct nfapi_vnf_p7_connection_info {
 	int32_t sf_offset_filtered;
 	int32_t sf_offset_trend;
 	int32_t sf_offset;
+	int32_t slot_offset;
+	int32_t slot_offset_trend;
+	int32_t slot_offset_filtered;
 	uint16_t zero_count;
 	int32_t adjustment;
 	int32_t insync_minor_adjustment;
@@ -85,8 +87,10 @@ typedef struct nfapi_vnf_p7_connection_info {
 	uint32_t previous_t1;
 	uint32_t previous_t2;
 	int32_t previous_sf_offset_filtered;
-
+	int32_t previous_slot_offset_filtered;
 	int sfn_sf;
+	int sfn;
+	int slot;
 
 	int socket;
 	struct sockaddr_in local_addr;
@@ -111,6 +115,7 @@ typedef struct {
 	nfapi_vnf_p7_connection_info_t* p7_connections;
 	int socket;
 	uint32_t sf_start_time_hr;
+	uint32_t slot_start_time_hr;
 	uint8_t* rx_message_buffer; // would this be better put in the p7 conenction info?
 	uint16_t rx_message_buffer_size;
 	
@@ -120,14 +125,19 @@ uint32_t vnf_get_current_time_hr(void);
 
 uint16_t increment_sfn_sf(uint16_t sfn_sf);
 int vnf_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info);
+int vnf_nr_sync(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* p7_info);
+
 int send_mac_subframe_indications(vnf_p7_t* config);
+int send_mac_slot_indications(vnf_p7_t* config);
 int vnf_p7_read_dispatch_message(vnf_p7_t* vnf_p7 );
+int vnf_nr_p7_read_dispatch_message(vnf_p7_t* vnf_p7 );
 
 void vnf_p7_connection_info_list_add(vnf_p7_t* vnf_p7, nfapi_vnf_p7_connection_info_t* node);
 nfapi_vnf_p7_connection_info_t* vnf_p7_connection_info_list_find(vnf_p7_t* vnf_p7, uint16_t phy_id);
 nfapi_vnf_p7_connection_info_t* vnf_p7_connection_info_list_delete(vnf_p7_t* vnf_p7, uint16_t phy_id);
 
 int vnf_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* header);
+int vnf_nr_p7_pack_and_send_p7_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* header);
 
 void vnf_p7_release_msg(vnf_p7_t* vnf_p7, nfapi_p7_message_header_t* header);
 void vnf_p7_release_pdu(vnf_p7_t* vnf_p7, void* pdu);

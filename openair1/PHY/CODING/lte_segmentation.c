@@ -59,7 +59,6 @@ int lte_segmentation(unsigned char *input_buffer,
   }
 
   if ((*C)>MAX_NUM_DLSCH_SEGMENTS) {
-    printf("%d\n",*(int *)0);
     LOG_E(PHY,"lte_segmentation.c: too many segments %d, B %d, L %d, Bprime %d\n",*C,B,L,Bprime);
     return(-1);
   }
@@ -174,7 +173,7 @@ main() {
 
   for (Bbytes=5; Bbytes<2*768; Bbytes++) {
     lte_segmentation(0,0,Bbytes<<3,&C,&Cplus,&Cminus,&Kplus,&Kminus,&F);
-    printf("Bbytes %d : C %d, Cplus %d, Cminus %d, Kplus %d, Kminus %d, F %d\n",
+    printf("Bbytes %u : C %u, Cplus %u, Cminus %u, Kplus %u, Kminus %u, F %u\n",
            Bbytes, C, Cplus, Cminus, Kplus, Kminus, F);
   }
 }

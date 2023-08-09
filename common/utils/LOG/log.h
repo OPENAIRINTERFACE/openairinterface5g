@@ -25,7 +25,6 @@
 * \date 2009 - 2014
 * \version 0.5
 * @ingroup util
-
 */
 
 #ifndef __LOG_H__
@@ -52,8 +51,14 @@
   #define _GNU_SOURCE
 #endif
 #include <pthread.h>
-#include "T.h"
+#include <common/utils/utils.h>
 /*----------------------------------------------------------------------------*/
+#include <assert.h>
+#ifdef NDEBUG
+#warning assert is disabled
+#endif
+#define NUM_ELEMENTS(ARRAY) (sizeof(ARRAY) / sizeof(ARRAY[0]))
+#define CHECK_INDEX(ARRAY, INDEX) assert((INDEX) < NUM_ELEMENTS(ARRAY))
 
 #ifdef __cplusplus
 extern "C" {
@@ -74,7 +79,7 @@ extern "C" {
  *  @brief the macros that describe the maximum length of LOG
  * @{*/
 
-#define MAX_LOG_TOTAL 1500 /*!< \brief the maximum length of a log */
+#define MAX_LOG_TOTAL 16384 /*!< \brief the maximum length of a log */
 /* @}*/
 
 /** @defgroup _log_level Message levels defined by LOG
@@ -82,13 +87,14 @@ extern "C" {
  *  @brief LOG defines 9 levels of messages for users. Importance of these levels decrease gradually from 0 to 8
  * @{*/
 # define  OAILOG_DISABLE -1 /*!< \brief disable all LOG messages, cannot be used in LOG macros, use only in LOG module */
-# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" fuctinalities */
+# define  OAILOG_ERR      0 /*!< \brief critical error conditions, impact on "must have" functionalities */
 # define  OAILOG_WARNING  1 /*!< \brief warning conditions, shouldn't happen but doesn't impact "must have" functionalities */
-# define  OAILOG_INFO     2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
-# define  OAILOG_DEBUG    3 /*!< \brief first level debug-level messages, for developers , may impact real-time behavior */
-# define  OAILOG_TRACE    4 /*!< \brief  second level debug-level messages, for developers ,likely impact real-time behavior*/
+# define  OAILOG_ANALYSIS 2 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
+# define  OAILOG_INFO     3 /*!< \brief informational messages most people don't need, shouldn't impact real-time behavior */
+# define  OAILOG_DEBUG    4 /*!< \brief first level debug-level messages, for developers, may impact real-time behavior */
+# define  OAILOG_TRACE    5 /*!< \brief second level debug-level messages, for developers, likely impact real-time behavior*/
 
-#define NUM_LOG_LEVEL 5 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
+#define NUM_LOG_LEVEL 6 /*!< \brief the number of message levels users have with LOG (OAILOG_DISABLE is not available to user as a level, so it is not included)*/
 /* @}*/
 
 
@@ -121,6 +127,8 @@ extern "C" {
 #define FLAG_FUNCT       0x0020
 #define FLAG_FILE_LINE   0x0040
 #define FLAG_TIME        0x0100
+#define FLAG_THREAD_ID   0x0200
+#define FLAG_REAL_TIME   0x0400
 #define FLAG_INITIALIZED 0x8000
 
 #define SET_LOG_OPTION(O)   g_log->flag = (g_log->flag | O)
@@ -148,6 +156,7 @@ extern "C" {
 #define DEBUG_SECURITY     (1<<11)
 #define DEBUG_NAS          (1<<12)
 #define DEBUG_RLC          (1<<13)
+#define DEBUG_DLSCH_DECOD  (1<<14)
 #define UE_TIMING          (1<<20)
 
 
@@ -166,6 +175,7 @@ extern "C" {
     {"SECURITY",    DEBUG_SECURITY},\
     {"NAS",         DEBUG_NAS},\
     {"RLC",         DEBUG_RLC},\
+    {"DLSCH_DECOD", DEBUG_DLSCH_DECOD},\
     {"UE_TIMING",   UE_TIMING},\
     {NULL,-1}\
   }
@@ -184,8 +194,8 @@ typedef enum {
   MIN_LOG_COMPONENTS = 0,
   PHY = MIN_LOG_COMPONENTS,
   MAC,
+  EMU,
   SIM,
-  OCG,
   OMG,
   OPT,
   OTG,
@@ -200,13 +210,15 @@ typedef enum {
   NAS,
   PERF,
   OIP,
-  MSC,
+  CLI,
   OCM,
   UDP_,
   GTPU,
+  SDAP,
   SPGW,
   S1AP,
   F1AP,
+  E1AP,
   SCTP,
   HW,
   OSA,
@@ -215,19 +227,24 @@ typedef enum {
   ENB_APP,
   MCE_APP,
   MME_APP,
-  FLEXRAN_AGENT,
   TMR,
   USIM,
   LOCALIZE,
-  PROTO_AGENT,
   F1U,
   X2AP,
   M2AP,
   M3AP,
+  NGAP,
+  GNB_APP,
+  NR_RRC,
+  NR_MAC,
+  NR_PHY,
   LOADER,
-  ASN,
+  ASN1,
   NFAPI_VNF,
   NFAPI_PNF,
+  ITTI,
+  UTIL,
   MAX_LOG_PREDEF_COMPONENTS,
 }
 comp_name_t;
@@ -268,16 +285,6 @@ typedef struct {
 } log_t;
 
 
-#if defined(ENABLE_ITTI)
-typedef enum log_instance_type_e {
-  LOG_INSTANCE_UNKNOWN,
-  LOG_INSTANCE_ENB,
-  LOG_INSTANCE_UE,
-} log_instance_type_t;
-
-void log_set_instance_type (log_instance_type_t instance);
-#endif
-
 
 #ifdef LOG_MAIN
 log_t *g_log;
@@ -294,7 +301,8 @@ extern "C" {
 #    include "log_if.h"
 /*----------------------------------------------------------------------------*/
 int  logInit (void);
-int isLogInitDone (void);
+void logTerm (void);
+int  isLogInitDone (void);
 void logRecord_mt(const char *file, const char *func, int line,int comp, int level, const char *format, ...) __attribute__ ((format (printf, 6, 7)));
 void vlogRecord_mt(const char *file, const char *func, int line, int comp, int level, const char *format, va_list args );
 void log_dump(int component, void *buffer, int buffsize,int datatype, const char *format, ... );
@@ -306,8 +314,8 @@ void set_glog_filelog(int enable);
 void set_component_filelog(int comp);
 void close_component_filelog(int comp);
 void set_component_consolelog(int comp);
-int  map_str_to_int(mapping *map, const char *str);
-char *map_int_to_str(mapping *map, int val);
+int map_str_to_int(const mapping *map, const char *str);
+char *map_int_to_str(const mapping *map, const int val);
 void logClean (void);
 int  is_newline( char *str, int size);
 
@@ -316,7 +324,6 @@ int register_log_component(char *name, char *fext, int compidx);
 #define LOG_MEM_SIZE 100*1024*1024
 #define LOG_MEM_FILE "./logmem.log"
 void flush_mem_to_file(void);
-void log_output_memory(const char *file, const char *func, int line, int comp, int level, const char* format,va_list args);
 int logInit_log_mem(void);
 void close_log_mem(void);
   
@@ -336,8 +343,28 @@ typedef struct {
 @param length length of data vector to output
 @param dec    decimation level
 @param format data format (0 = real 16-bit, 1 = complex 16-bit,2 real 32-bit, 3 complex 32-bit,4 = real 8-bit, 5 = complex 8-bit)
+@param multiVec create new file or append to existing (useful for writing multiple vectors to same file. Just call the function multiple times with same file name and with this parameter set to 1)
 */
-int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, char format);
+#define MATLAB_RAW (1U<<31)
+#define MATLAB_SHORT 0
+#define MATLAB_CSHORT 1
+#define MATLAB_INT 2
+#define MATLAB_CINT 3
+#define MATLAB_INT8 4
+#define MATLAB_CINT8 5
+#define MATLAB_LLONG 6
+#define MATLAB_DOUBLE 7
+#define MATLAB_CDOUBLE 8
+#define MATLAB_UINT8 9
+#define MATLEB_EREN1 10
+#define MATLEB_EREN2 11
+#define MATLEB_EREN3 12
+#define MATLAB_CSHORT_BRACKET1 13
+#define MATLAB_CSHORT_BRACKET2 14
+#define MATLAB_CSHORT_BRACKET3 15
+  
+int32_t write_file_matlab(const char *fname, const char *vname, void *data, int length, int dec, unsigned int format, int multiVec);
+#define write_output(a, b, c, d, e, f) write_file_matlab(a, b, c, d, e, f, 0)
 
 /*----------------macro definitions for reading log configuration from the config module */
 #define CONFIG_STRING_LOG_PREFIX                           "log_config"
@@ -360,15 +387,17 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 
 
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-/*                                       LOG globalconfiguration parameters                                                                   */
-/*   optname                            help                                                paramflags       XXXptr                    defXXXval              type   numelt */
-/*------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+/*   LOG global configuration parameters                                                                                                                                                */
+/*   optname                               help                                          paramflags         XXXptr               defXXXval                          type        numelt */
+/*-------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
+// clang-format off
 #define LOG_GLOBALPARAMS_DESC { \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,    "Default log level for all componemts\n",              0,         strptr:(char **)&gloglevel,    defstrval:log_level_names[2].name,    TYPE_STRING,    0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,   "Default console output option, for all components\n", 0,         iptr:&(consolelog),            defintval:1,                          TYPE_INT,       0}, \
-    {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS,  LOG_CONFIG_HELP_OPTIONS,                               0,         strlistptr:NULL,               defstrlistval:NULL,                   TYPE_STRINGLIST,0} \
-  }
+  {LOG_CONFIG_STRING_GLOBAL_LOG_LEVEL,   "Default log level for all componemts\n",              0, .strptr=&gloglevel,         .defstrval=log_level_names[3].name, TYPE_STRING,     0}, \
+  {LOG_CONFIG_STRING_GLOBAL_LOG_ONLINE,  "Default console output option, for all components\n", 0, .iptr=&(consolelog),        .defintval=1,                       TYPE_INT,        0}, \
+  {LOG_CONFIG_STRING_GLOBAL_LOG_OPTIONS, LOG_CONFIG_HELP_OPTIONS,                               0, .strlistptr=NULL,           .defstrlistval=NULL,                TYPE_STRINGLIST, 0}, \
+}
+// clang-format on
 
 #define LOG_OPTIONS_IDX   2
 
@@ -382,46 +411,55 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 #define LOG_DUMP_DOUBLE     1
 // debugging macros
 #define LOG_F  LOG_I           /* because  LOG_F was originaly to dump a message or buffer but is also used as a regular level...., to dump use LOG_DUMPMSG */
+
 #  if T_TRACER
-/* per component, level dependant macros */
-#    define LOG_E(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} else { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))   ;}} while (0)
-#    define LOG_W(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} else { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)) ;}} while (0)
-#    define LOG_I(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} else { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))    ;}} while (0)
-#    define LOG_D(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} else { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))   ;}} while (0)
-#    define LOG_T(c, x...) do { if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE  ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} else { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))   ;}} while (0)
+#include "T.h"
+/* per component, level dependent macros */
+#    define LOG_E(c, x...) do { T(T_LEGACY_ ## c ## _ERROR, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ERR     ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;} } while (0)
+#    define LOG_W(c, x...) do { T(T_LEGACY_ ## c ## _WARNING, T_PRINTF(x)); if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_WARNING ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;} } while (0)
+#    define LOG_A(c, x...) do { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))   ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_ANALYSIS) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ANALYSIS, x);} } while (0)
+#    define LOG_I(c, x...) do { T(T_LEGACY_ ## c ## _INFO, T_PRINTF(x))   ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_INFO    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;} } while (0)
+#    define LOG_D(c, x...) do { T(T_LEGACY_ ## c ## _DEBUG, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_DEBUG   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;} } while (0)
+#    define LOG_T(c, x...) do { T(T_LEGACY_ ## c ## _TRACE, T_PRINTF(x))  ; if (T_stdout) { if( g_log->log_component[c].level >= OAILOG_TRACE   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;} } while (0)
 #    define VLOG(c,l, f, args) do { if (T_stdout) { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ;} } while (0)
 /* macro used to dump a buffer or a message as in openair2/RRC/LTE/RRC_eNB.c, replaces LOG_F macro */
 #    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
-/* bitmask dependant macros, to isolate debugging code */
+/* bitmask dependent macros, to isolate debugging code */
 #    define LOG_DEBUGFLAG(D) (g_log->debug_mask & D)
 
-/* bitmask dependant macros, to generate debug file such as matlab file or message dump */
+/* bitmask dependent macros, to generate debug file such as matlab file or message dump */
 #    define LOG_DUMPFLAG(D) (g_log->dump_mask & D)
-#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)/* */
+#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)/* */
 /* define variable only used in LOG macro's */
 #    define LOG_VAR(A,B) A B
-#  else /* T_TRACER: remove all debugging and tracing messages, except errors */
-#    define LOG_I(c, x...) /* */
-#    define LOG_W(c, x...) /* */
-#    define LOG_E(c, x...) /* */
-#    define LOG_D(c, x...) /* */
-#    define LOG_T(c, x...) /* */
+#  else /* T_TRACER */
+#    define LOG_E(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ERR     ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ERR, x)     ;}  while (0)
+#    define LOG_W(c, x...) do { if( g_log->log_component[c].level >= OAILOG_WARNING ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_WARNING, x) ;}  while (0)
+#    define LOG_A(c, x...) do { if( g_log->log_component[c].level >= OAILOG_ANALYSIS) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_ANALYSIS, x);}  while (0)
+#    define LOG_I(c, x...) do { if( g_log->log_component[c].level >= OAILOG_INFO    ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x)    ;}  while (0)
+#    define LOG_D(c, x...) do { if( g_log->log_component[c].level >= OAILOG_DEBUG   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_DEBUG, x)   ;}  while (0)
+#    define LOG_T(c, x...) do { if( g_log->log_component[c].level >= OAILOG_TRACE   ) logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_TRACE, x)   ;}  while (0)
+#    define VLOG(c,l, f, args) do { if( g_log->log_component[c].level >= l  ) vlogRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, l, f, args)   ; } while (0)
 
-#    define LOG_DUMPMSG(c, b, s, x...) /* */
 #    define nfapi_log(FILE, FNC, LN, COMP, LVL, FMT...)
-#    define LOG_DEBUGFLAG(D)  ( 0 )
-#    define LOG_DUMPFLAG(D) ( 0 )
-#    define LOG_M(file, vector, data, len, dec, format)
-#    define LOG_VAR(A,B)
+#    define LOG_DEBUGFLAG(D)  (g_log->dump_mask & D)
+#    define LOG_DUMPFLAG(D) (g_log->debug_mask & D)
+#    define LOG_DUMPMSG(c, f, b, s, x...) do {  if(g_log->dump_mask & f) log_dump(c, b, s, LOG_DUMP_CHAR, x)  ;}   while (0)  /* */
+
+#    define LOG_M(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
+#    define LOG_VAR(A,B) A B
+#    define T_ACTIVE(a) (0) 
 #  endif /* T_TRACER */
+
 /* avoid warnings for variables only used in LOG macro's but set outside debug section */
 #define GCC_NOTUSED   __attribute__((unused))
 #define LOG_USEDINLOG_VAR(A,B) GCC_NOTUSED A B
 
-/* unfiltered macros, usefull for simulators or messages at init time, before log is configured */
-#define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format);} while(0)
+/* unfiltered macros, useful for simulators or messages at init time, before log is configured */
+#define LOG_UM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 0);} while(0)
 #define LOG_UI(c, x...) do {logRecord_mt(__FILE__, __FUNCTION__, __LINE__,c, OAILOG_INFO, x) ; } while(0)
 #define LOG_UDUMPMSG(c, b, s, f, x...) do { log_dump(c, b, s, f, x)  ;}   while (0)  /* */
+#    define LOG_MM(file, vector, data, len, dec, format) do { write_file_matlab(file, vector, data, len, dec, format, 1);} while(0)
 /* @}*/
 
 
@@ -437,119 +475,8 @@ int32_t write_file_matlab(const char *fname, const char *vname, void *data, int 
 
 /* @}*/
 
-static __inline__ uint64_t rdtsc(void) {
-  uint32_t a, d;
-  __asm__ volatile ("rdtsc" : "=a" (a), "=d" (d));
-  return (((uint64_t)d)<<32) | ((uint64_t)a);
-}
-
-#define DEBUG_REALTIME 1
-#if DEBUG_REALTIME
-
-extern double cpuf;
-
-static inline uint64_t checkTCPU(int timeout, char *file, int line) {
-  static uint64_t __thread lastCPUTime=0;
-  static uint64_t __thread last=0;
-  uint64_t cur=rdtsc();
-  struct timespec CPUt;
-  clock_gettime(CLOCK_THREAD_CPUTIME_ID, &CPUt);
-  uint64_t CPUTime=CPUt.tv_sec*1000*1000+CPUt.tv_nsec/1000;
-  double microCycles=(double)(cpuf*1000);
-  int duration=(int)((cur-last)/microCycles);
-
-  if ( last!=0 && duration > timeout ) {
-    //struct timespec ts;
-    //clock_gettime(CLOCK_MONOTONIC, &ts);
-    printf("%s:%d lte-ue delay %d (exceed %d), CPU for this period: %lld\n", file, line,
-           duration, timeout, (long long)CPUTime-lastCPUTime );
-  }
-
-  last=cur;
-  lastCPUTime=CPUTime;
-  return cur;
-}
-
-static inline unsigned long long checkT(int timeout, char *file, int line) {
-  static unsigned long long __thread last=0;
-  unsigned long long cur=rdtsc();
-  int microCycles=(int)(cpuf*1000);
-  int duration=(int)((cur-last)/microCycles);
-
-  if ( last!=0 && duration > timeout )
-    printf("%s:%d lte-ue delay %d (exceed %d)\n", file, line,
-           duration, timeout);
-
-  last=cur;
-  return cur;
-}
-
-typedef struct m {
-  uint64_t iterations;
-  uint64_t sum;
-  uint64_t maxArray[11];
-} Meas;
-
-static inline void printMeas(char *txt, Meas *M, int period) {
-  if (M->iterations%period == 0 ) {
-    char txt2[512];
-    sprintf(txt2,"%s avg=%" PRIu64 " iterations=%" PRIu64 " max=%"
-            PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 ":%" PRIu64 "\n",
-            txt,
-            M->sum/M->iterations,
-            M->iterations,
-            M->maxArray[1],M->maxArray[2], M->maxArray[3],M->maxArray[4], M->maxArray[5],
-            M->maxArray[6],M->maxArray[7], M->maxArray[8],M->maxArray[9],M->maxArray[10]);
-#if T_TRACER
-    LOG_W(PHY,"%s",txt2);
-#else
-    printf("%s",txt2);
-#endif
-  }
-}
-
-static inline int cmpint(const void *a, const void *b) {
-  uint64_t *aa=(uint64_t *)a;
-  uint64_t *bb=(uint64_t *)b;
-  return (int)(*aa-*bb);
-}
-
-static inline void updateTimes(uint64_t start, Meas *M, int period, char *txt) {
-  if (start!=0) {
-    uint64_t end=rdtsc();
-    long long diff=(end-start)/(cpuf*1000);
-    M->maxArray[0]=diff;
-    M->sum+=diff;
-    M->iterations++;
-    qsort(M->maxArray, 11, sizeof(uint64_t), cmpint);
-    printMeas(txt,M,period);
-  }
-}
-
-#define check(a) do { checkT(a,__FILE__,__LINE__); } while (0)
-#define checkcpu(a) do { checkTCPU(a,__FILE__,__LINE__); } while (0)
-#define initRefTimes(a) static __thread Meas a= {0}
-#define pickTime(a) uint64_t a=rdtsc()
-#define readTime(a) a
-#define initStaticTime(a) static __thread uint64_t a={0}
-#define pickStaticTime(a) do { a=rdtsc(); } while (0)
-
-#else
-#define check(a) do {} while (0)
-#define checkcpu(a) do {} while (0)
-#define initRefTimes(a) do {} while (0)
-#define initStaticTime(a) do {} while (0)
-#define pickTime(a) do {} while (0)
-#define readTime(a) 0
-#define pickStaticTime(a) do {} while (0)
-#define updateTimes(a,b,c,d) do {} while (0)
-#define printMeas(a,b,c) do {} while (0)
-#endif
-
 #ifdef __cplusplus
 }
 #endif
 
 #endif
-
-

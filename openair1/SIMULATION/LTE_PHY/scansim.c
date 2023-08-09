@@ -41,8 +41,6 @@
   #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-#include "OCG_vars.h"
-
 #define BW 20.0
 
 
@@ -313,7 +311,7 @@ int main(int argc, char **argv) {
   r_re2 = malloc(2*sizeof(double *));
   r_im2 = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   printf("PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0][0] = %p\n",
          PHY_vars_eNB1->lte_eNB_common_vars.txdataF[0][0]);
@@ -335,7 +333,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(PHY_vars_eNB->lte_frame_parms.N_RB_DL),
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

@@ -36,9 +36,12 @@
     *(uint32_t*)(buffer) = htonl(value);  \
     size += sizeof(uint8_t) + sizeof(uint16_t)
 
-#define ENCODE_U32(buffer, value, size)   \
-    *(uint32_t*)(buffer) = htonl(value);  \
-    size += sizeof(uint32_t)
+#define ENCODE_U32(buffer, value, size) \
+  {                                     \
+    uint32_t tmp = htonl(value);        \
+    memcpy(buffer, &tmp, sizeof(tmp));  \
+  }                                     \
+  size += sizeof(uint32_t)
 
 #define IES_ENCODE_U8(buffer, encoded, value)   \
     ENCODE_U8(buffer + encoded, value, encoded)
@@ -80,7 +83,7 @@ void tlv_encode_perror(void);
         }                                                                      \
         if (lENGTH < mINIMUMlENGTH)                                            \
         {                                                                      \
-                printf("(%s:%d) Expecting at least %d bytes, got %d\n",        \
+                printf("(%s:%d) Expecting at least %d bytes, got %u\n",        \
            __FILE__, __LINE__, mINIMUMlENGTH, lENGTH);             \
                 errorCodeEncoder = TLV_ENCODE_BUFFER_TOO_SHORT;                \
                 return TLV_ENCODE_BUFFER_TOO_SHORT;                            \

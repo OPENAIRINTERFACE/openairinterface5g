@@ -1,0 +1,154 @@
+<!--
+
+ Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ contributor license agreements.  See the NOTICE file distributed with
+ this work for additional information regarding copyright ownership.
+ The OpenAirInterface Software Alliance licenses this file to You under
+ the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ except in compliance with the License.
+ You may obtain a copy of the License at
+
+      http://www.openairinterface.org/?page_id=698
+
+ Unless required by applicable law or agreed to in writing, software
+ distributed under the License is distributed on an "AS IS" BASIS,
+ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ See the License for the specific language governing permissions and
+ limitations under the License.
+
+ For more information about the OpenAirInterface (OAI) Software Alliance:
+      contact@openairinterface.org
+
+ 030105 040301 040502 040606 040601 040603 040608 040605 040646 040641 040643 040648 040645 040401 040201 030201
+-->
+<testCaseList>
+	<htmlTabRef>test-ldpc-gpu</htmlTabRef>
+	<htmlTabName>Test-ldpc-GPU</htmlTabName>
+	<htmlTabIcon>tasks</htmlTabIcon>
+	<repeatCount>1</repeatCount>
+	<TestCaseRequestedList>000002 000003 000004 000005 000006 000007 000008 000009 000010 000011 000012 000013 000014 000015 000016 000017 000018 000019 000020 000021</TestCaseRequestedList>
+	<TestCaseExclusionList></TestCaseExclusionList>
+
+	<testCase id="000002">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 3872 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000003">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 3872 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000004">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 4224 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000005">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 4224 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000006">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 4576 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000007">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 4576 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000008">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 4928 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000009">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 4928 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000010">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 5280 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000011">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 5280 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000012">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 5632 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000013">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 5632 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000014">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 6336 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000015">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 6336 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000016">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 7040 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000017">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 7040 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000018">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 7744 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000019">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 7744 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+	<testCase id="000020">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with CPU</desc>
+		<physim_run_args>-l 8448 -s10 -n100</physim_run_args>
+	</testCase>
+
+	<testCase id="000021">
+		<class>Run_LDPCTest</class>
+		<desc>Run LDPC Test with GPU</desc>
+		<physim_run_args>-l 8448 -s10 -n100 -G 1</physim_run_args>
+	</testCase>
+
+
+
+</testCaseList>

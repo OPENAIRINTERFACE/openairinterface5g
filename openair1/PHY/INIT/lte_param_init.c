@@ -25,7 +25,6 @@
 #include <execinfo.h>
 #include <signal.h>
 
-#include "SIMULATION/TOOLS/sim.h"
 #include "PHY/types.h"
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
@@ -33,7 +32,9 @@
 #include "phy_init.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "PHY/LTE_TRANSPORT/transport_common_proto.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/softmodem-common.h"
+#include "SIMULATION/TOOLS/sim.h"
+
 extern PHY_VARS_eNB *eNB;
 extern PHY_VARS_UE *UE;
 extern RU_t *ru;
@@ -104,7 +105,7 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
   UE->frame_parms = *frame_parms;
   UE->frame_parms.nb_antennas_rx=N_rx_ue;
   //  eNB->frame_parms = *frame_parms;
-  ru->frame_parms = *frame_parms;
+  ru->frame_parms = frame_parms;
   ru->nb_tx = N_tx_phy;
   ru->nb_rx = N_rx_ru;
   ru->if_south = LOCAL_RF;
@@ -149,12 +150,6 @@ void lte_param_init(PHY_VARS_eNB **eNBp,
     else if (eNB->frame_parms.N_RB_DL == 50)  ru->N_TA_offset = 624/2;
     else if (eNB->frame_parms.N_RB_DL == 25)  ru->N_TA_offset = 624/4;
   } else ru->N_TA_offset=0;
-
-  if (IS_SOFTMODEM_BASICSIM)
-    /* this is required for the basic simulator in TDD mode
-     * TODO: find a proper cleaner solution
-     */
-    UE->N_TA_offset = 0;
 
   printf("Done lte_param_init\n");
 }

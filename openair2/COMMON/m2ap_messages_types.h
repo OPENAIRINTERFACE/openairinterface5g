@@ -90,7 +90,9 @@ typedef struct m2ap_net_ip_address_s {
 } m2ap_net_ip_address_t;
 
 typedef struct m2ap_enb_setup_req_s {
-   //
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_enb_setup_req_t;
 
 
@@ -269,24 +271,14 @@ typedef struct m2ap_setup_resp_s {
   uint8_t num_mcch_config_per_mbsfn;
 
 
-//  /// string holding gNB_CU_name
-//  char     *gNB_CU_name;
-//  /// number of DU cells to activate
-//  uint16_t num_cells_to_activate; //0< num_cells_to_activate <= 512;
-//  /// mcc of DU cells
-//  //uint16_t mcc[M2AP_MAX_NB_CELLS];
   uint16_t mcc;//[M2AP_MAX_NB_CELLS];
-  /// mnc of DU cells
-  //uint16_t mnc[M2AP_MAX_NB_CELLS];
   uint16_t mnc;//[M2AP_MAX_NB_CELLS];
-  /// mnc digit length of DU cells
-  //uint8_t mnc_digit_length[M2AP_MAX_NB_CELLS];
   uint8_t mnc_digit_length;//[M2AP_MAX_NB_CELLS];
   // NR Global Cell Id
 //  uint64_t nr_cellid[M2AP_MAX_NB_CELLS];
 //  /// NRPCI
 //  uint16_t nrpci[M2AP_MAX_NB_CELLS];
-//  /// num SI messages per DU cell
+//  /// num SI messages
 //  uint8_t num_SI[M2AP_MAX_NB_CELLS];
 //  /// SI message containers (up to 21 messages per cell)
 //  uint8_t *SI_container[M2AP_MAX_NB_CELLS][21];
@@ -354,7 +346,7 @@ typedef struct m2ap_register_mce_req_s {
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t        frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
   int                     num_cc;
@@ -427,7 +419,7 @@ typedef struct m2ap_register_enb_req_s {
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
   uint32_t                Nid_cell[MAX_NUM_CCs];
   int16_t                 N_RB_DL[MAX_NUM_CCs];
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_DL[MAX_NUM_CCs];
   uint32_t                fdd_earfcn_UL[MAX_NUM_CCs];
   int                     num_cc;
@@ -459,6 +451,9 @@ typedef struct m2ap_register_enb_req_s {
 
 typedef struct m2ap_subframe_process_s {
   /* nothing, we simply use the module ID in the header */
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_subframe_process_t;
 
 //-------------------------------------------------------------------------------------------//
@@ -480,7 +475,7 @@ typedef struct m2ap_mbms_scheduling_information_s {
 		uint8_t common_sf_allocation_period;
 		uint8_t mbms_area_id;
 		struct{
-			uint8_t allocated_sf_end;
+			uint16_t allocated_sf_end;
                         uint8_t data_mcs;
                         uint8_t mch_scheduling_period;
 			struct{
@@ -533,49 +528,124 @@ typedef struct m2ap_mce_sctp_req_s {
   	uint32_t mce_port_for_M2C;
 }m2ap_mce_sctp_req_t;
 
+typedef struct m2ap_enb_sctp_req_s {
+  	/* The local MCE IP address to bind */
+	net_ip_address_t enb_m2_ip_address;
+
+  	/* eNB port for M2C*/
+  	uint32_t enb_port_for_M2C;
+}m2ap_enb_sctp_req_t;
+
+
 typedef struct m2ap_mbms_scheduling_information_resp_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_scheduling_information_resp_t;
 typedef struct m2ap_session_start_req_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_session_start_req_t;
 typedef struct m2ap_session_start_resp_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_session_start_resp_t;
 typedef struct m2ap_session_start_failure_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_session_start_failure_t;
 typedef struct m2ap_session_stop_req_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_session_stop_req_t;
 typedef struct m2ap_session_stop_resp_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_session_stop_resp_t;
 typedef struct m2ap_reset_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_reset_t;
 typedef struct m2ap_enb_configuration_update_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_enb_configuration_update_t;
 typedef struct m2ap_enb_configuration_update_ack_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_enb_configuration_update_ack_t;
 typedef struct m2ap_enb_configuration_update_failure_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_enb_configuration_update_failure_t;
 typedef struct m2ap_mce_configuration_update_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mce_configuration_update_t;
 typedef struct m2ap_mce_configuration_update_ack_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mce_configuration_update_ack_t;
 typedef struct m2ap_mce_configuration_update_failure_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mce_configuration_update_failure_t;
 typedef struct m2ap_error_indication_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 }m2ap_error_indication_t;
 typedef struct m2ap_mbms_session_update_req_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_session_update_req_t;
 typedef struct m2ap_mbms_session_update_resp_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_session_update_resp_t;
 typedef struct m2ap_mbms_session_update_failure_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_session_update_failure_t;
 typedef struct m2ap_mbms_service_counting_report_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_service_counting_report_t;
 typedef struct m2ap_mbms_overload_notification_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_overload_notification_t;
 typedef struct m2ap_mbms_service_counting_req_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_service_counting_req_t;
 typedef struct m2ap_mbms_service_counting_resp_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_service_counting_resp_t;
 typedef struct m2ap_mbms_service_counting_failure_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } m2ap_mbms_service_counting_failure_t;
 
 

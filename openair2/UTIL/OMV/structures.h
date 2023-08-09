@@ -31,7 +31,7 @@
 #ifndef STRUCTURES_H
 #define STRUCTURES_H
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
 #ifndef __PHY_IMPLEMENTATION_DEFS_H__
 	#define Maxneighbor NUMBER_OF_UE_MAX
 	#ifndef NB_ANTENNAS_RX
@@ -49,7 +49,7 @@ typedef struct Geo {
   int node_type;
   int Neighbors; // number of neighboring nodes (distance between the node and its neighbors < 100)
   int Neighbor[NUMBER_OF_UE_MAX]; // array of its neighbors
-  //relavent to UE only
+  //relevant to UE only
   unsigned short state;
   unsigned short rnti;
   unsigned int connected_eNB;

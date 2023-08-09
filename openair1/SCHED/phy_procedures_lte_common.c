@@ -680,18 +680,16 @@ uint8_t reset_ack(LTE_DL_FRAME_PARMS *frame_parms,
   return get_reset_ack(frame_parms, harq_ack, subframe_tx, subframe_rx, o_ACK, pN_bundled, cw_idx, 1);
 }
 
-
-
-uint8_t Np6[4]= {0,1,3,5};
-uint8_t Np15[4]= {0,3,8,13};
-uint8_t Np25[4]= {0,5,13,22};
-uint8_t Np50[4]= {0,11,27,44};
-uint8_t Np75[4]= {0,16,41,66};
-uint8_t Np100[4]= {0,22,55,88};
+static const uint8_t Np6[4] = {0, 1, 3, 5};
+static const uint8_t Np15[4] = {0, 3, 8, 13};
+static const uint8_t Np25[4] = {0, 5, 13, 22};
+static const uint8_t Np50[4] = {0, 11, 27, 44};
+static const uint8_t Np75[4] = {0, 16, 41, 66};
+static const uint8_t Np100[4] = {0, 22, 55, 88};
 // This is part of the PUCCH allocation procedure (see Section 10.1 36.213)
 uint16_t get_Np(uint8_t N_RB_DL,uint8_t nCCE,uint8_t plus1)
 {
-  uint8_t *Np;
+  const uint8_t *Np;
 
   switch (N_RB_DL) {
   case 6:
@@ -752,9 +750,9 @@ int subframe_num(LTE_DL_FRAME_PARMS *frame_parms){
     }
 }
 
-lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char subframe)
+lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,
+		                       unsigned char subframe)
 {
-
   // if FDD return dummy value
   if (frame_parms->frame_type == FDD)
     return(SF_DL);
@@ -820,6 +818,7 @@ lte_subframe_t subframe_select(LTE_DL_FRAME_PARMS *frame_parms,unsigned char sub
     break;
 
   default:
+
     AssertFatal(1==0,"subframe %d Unsupported TDD configuration %d\n",subframe,frame_parms->tdd_config);
     return(255);
 
@@ -830,16 +829,15 @@ dci_detect_mode_t dci_detect_mode_select(LTE_DL_FRAME_PARMS *frame_parms,uint8_t
 {
   dci_detect_mode_t ret = 0;
 
-  static dci_detect_mode_t Table_8_2_3gpp_36_213[][10] = {
-     //subf0    , subf1     , subf2 , subf3         , subf4     , subf5     , subf6     , subf7 , subf8     , subf9
-      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , NO_DCI    },  // tdd0
-      {DL_DCI   , UL_DL_DCI , NO_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI },  // tdd1
-      {DL_DCI   , DL_DCI    , NO_DCI    , UL_DL_DCI , DL_DCI    , DL_DCI    , DL_DCI    , NO_DCI, UL_DL_DCI , DL_DCI    },  // tdd2
-      {UL_DL_DCI, DL_DCI    , NO_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd3
-      {DL_DCI   , DL_DCI    , NO_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , UL_DL_DCI },  // tdd4
-      {DL_DCI   , DL_DCI    , NO_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI    , DL_DCI, UL_DL_DCI , DL_DCI    },  // tdd5
-      {UL_DL_DCI, UL_DL_DCI , NO_DCI    , NO_DCI    , NO_DCI    , UL_DL_DCI , UL_DL_DCI , NO_DCI, NO_DCI    , UL_DL_DCI }}; // tdd6
-
+  static const dci_detect_mode_t Table_8_2_3gpp_36_213[][10] = {
+      // subf0    , subf1     , subf2 , subf3         , subf4     , subf5     , subf6     , subf7 , subf8     , subf9
+      {UL_DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, NO_DCI, UL_DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, NO_DCI}, // tdd0
+      {DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, UL_DL_DCI, DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, UL_DL_DCI}, // tdd1
+      {DL_DCI, DL_DCI, NO_DCI, UL_DL_DCI, DL_DCI, DL_DCI, DL_DCI, NO_DCI, UL_DL_DCI, DL_DCI}, // tdd2
+      {UL_DL_DCI, DL_DCI, NO_DCI, NO_DCI, NO_DCI, DL_DCI, DL_DCI, DL_DCI, UL_DL_DCI, UL_DL_DCI}, // tdd3
+      {DL_DCI, DL_DCI, NO_DCI, NO_DCI, DL_DCI, DL_DCI, DL_DCI, DL_DCI, UL_DL_DCI, UL_DL_DCI}, // tdd4
+      {DL_DCI, DL_DCI, NO_DCI, DL_DCI, DL_DCI, DL_DCI, DL_DCI, DL_DCI, UL_DL_DCI, DL_DCI}, // tdd5
+      {UL_DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, NO_DCI, UL_DL_DCI, UL_DL_DCI, NO_DCI, NO_DCI, UL_DL_DCI}}; // tdd6
 
   DevAssert(subframe>=0 && subframe<=9);
   DevAssert((frame_parms->tdd_config)>=0 && (frame_parms->tdd_config)<=6);
@@ -993,7 +991,7 @@ int is_srs_occasion_common(LTE_DL_FRAME_PARMS *frame_parms,int frame_tx,int subf
   return(isSubframeSRS);
 }
 
-void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset)
+void compute_srs_pos(frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeriodicity,uint16_t *psrsOffset)
 {
     if(TDD == frameType)
     {
@@ -1083,74 +1081,4 @@ void compute_srs_pos(lte_frame_type_t frameType,uint16_t isrs,uint16_t *psrsPeri
 	AssertFatal(isrs<=636,"Isrs out of range %d>636\n",isrs);
 	
       }
-}
-
-// uint8_t eNB_id,uint8_t harq_pid, uint8_t UE_id,
-int16_t estimate_ue_tx_power(uint32_t tbs, uint32_t nb_rb, uint8_t control_only, lte_prefix_type_t ncp, uint8_t use_srs)
-{
-
-  /// The payload + CRC size in bits, "B"
-  uint32_t B;
-  /// Number of code segments
-  uint32_t C;
-  /// Number of "small" code segments
-  uint32_t Cminus;
-  /// Number of "large" code segments
-  uint32_t Cplus;
-  /// Number of bits in "small" code segments (<6144)
-  uint32_t Kminus;
-  /// Number of bits in "large" code segments (<6144)
-  uint32_t Kplus;
-  /// Total number of bits across all segments
-  uint32_t sumKr;
-  /// Number of "Filler" bits
-  uint32_t F;
-  // num resource elements
-  uint32_t num_re=0.0;
-  // num symbols
-  uint32_t num_symb=0.0;
-  /// effective spectral efficiency of the PUSCH
-  uint32_t MPR_x100=0;
-  /// beta_offset
-  uint16_t beta_offset_pusch_x8=8;
-  /// delta mcs
-  float delta_mcs=0.0;
-  /// bandwidth factor
-  float bw_factor=0.0;
-
-  B= tbs+24;
-  lte_segmentation(NULL,
-                   NULL,
-                   B,
-                   &C,
-                   &Cplus,
-                   &Cminus,
-                   &Kplus,
-                   &Kminus,
-                   &F);
-
-
-  sumKr = Cminus*Kminus + Cplus*Kplus;
-  num_symb = 12-(ncp<<1)-(use_srs==0?0:1);
-  num_re = num_symb * nb_rb * 12;
-
-  if (num_re == 0)
-    return(0);
-
-  MPR_x100 = 100*sumKr/num_re;
-
-  if (control_only == 1 )
-    beta_offset_pusch_x8=8; // fixme
-
-  //(beta_offset_pusch_x8=ue->ulsch[eNB_id]->harq_processes[harq_pid]->control_only == 1) ? ue->ulsch[eNB_id]->beta_offset_cqi_times8:8;
-
-  // if deltamcs_enabledm
-  delta_mcs = ((hundred_times_delta_TF[MPR_x100/6]+10*dB_fixed_times10((beta_offset_pusch_x8)>>3))/100.0);
-  bw_factor = (hundred_times_log10_NPRB[nb_rb-1]/100.0);
-#ifdef DEBUG_SEGMENTATION
-  printf("estimated ue tx power %d (num_re %d, sumKr %d, mpr_x100 %d, delta_mcs %f, bw_factor %f)\n",
-         (int16_t)ceil(delta_mcs + bw_factor), num_re, sumKr, MPR_x100, delta_mcs, bw_factor);
-#endif
-  return (int16_t)ceil(delta_mcs + bw_factor);
-
 }

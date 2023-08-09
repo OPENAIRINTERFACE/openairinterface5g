@@ -19,15 +19,15 @@
  *      contact@openairinterface.org
  */
 
-/*! \file m2ap_handler.h
- * \brief m2ap handler procedures for eNB
+/*! \file m3ap_handler.h
+ * \brief m3ap handler procedures for eNB
  * \author Javier Morgade <javier.morgade@ieee.org>
  * \date 2019
  * \version 0.1
  */
 
-#ifndef M2AP_MCE_HANDLERS_H_
-#define M2AP_MCE_HANDLERS_H_
+#ifndef __M3AP_MCE_HANDLER__H__
+#define __M3AP_MCE_HANDLER__H__
 
 #include "m2ap_MCE_defs.h"
 
@@ -40,4 +40,4 @@ int m3ap_MCE_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
                             const uint8_t * const data, const uint32_t data_length);
 
 
-#endif /* M2AP_MCE_HANDLERS_H_ */
+#endif /* __M3AP_MCE_HANDLER__H__ */

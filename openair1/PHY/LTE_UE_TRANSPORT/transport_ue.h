@@ -32,14 +32,15 @@
 #ifndef __TRANSPORT_UE__H__
 #define __TRANSPORT_UE__H__
 #include "PHY/defs_UE.h"
-#include "PHY/impl_defs_lte.h"
 #include "../LTE_TRANSPORT/dci.h"
 #include "../LTE_TRANSPORT/mdci.h"
 #include "../LTE_TRANSPORT/uci_common.h"
 #include "../LTE_TRANSPORT/transport_common.h"
+/*
 #ifndef STANDALONE_COMPILE
 #include "UTIL/LISTS/list.h"
 #endif
+*/
 
 #include "../LTE_TRANSPORT/transport_common.h"
 
@@ -89,7 +90,7 @@ typedef struct {
   /// Redundancy-version of the current sub-frame
   uint8_t rvidx;
   /// Turbo-code outputs (36-212 V8.6 2009-03, p.12
-  uint8_t d[MAX_NUM_ULSCH_SEGMENTS][(96+3+(3*6144))];
+  uint8_t *d[MAX_NUM_ULSCH_SEGMENTS];
   /// Sub-block interleaver outputs (36-212 V8.6 2009-03, p.16-17)
   uint8_t w[MAX_NUM_ULSCH_SEGMENTS][3*6144];
   /// Number of code segments (for definition see 36-212 V8.6 2009-03, p.9)
@@ -154,8 +155,6 @@ typedef struct {
   uint8_t h[MAX_NUM_CHANNEL_BITS];
   /// Scrambled "b"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
   uint8_t b_tilde[MAX_NUM_CHANNEL_BITS];
-  /// Modulated "d"-sequences (for definition see 36-211 V8.6 2009-03, p.14)
-  int32_t d[MAX_NUM_RE];
   /// Transform-coded "z"-sequences (for definition see 36-211 V8.6 2009-03, p.14-15)
   int32_t z[MAX_NUM_RE];
   /// "q" sequences for CQI/PMI (for definition see 36-212 V8.6 2009-03, p.27)
@@ -195,7 +194,7 @@ typedef struct {
   /// allocated CBA RNTI
   uint16_t cba_rnti[4];//NUM_MAX_CBA_GROUP];
   /// UL max-harq-retransmission
-  uint8_t Mlimit;
+  uint16_t Mlimit;
 } LTE_UE_ULSCH_t;
 
 
@@ -270,6 +269,7 @@ typedef struct {
   uint32_t errors[8];
   /// codeword this transport block is mapped to
   uint8_t codeword;
+  decode_abort_t abort_decode;
 } LTE_DL_UE_HARQ_t;
 
 

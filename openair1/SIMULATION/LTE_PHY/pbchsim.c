@@ -40,8 +40,6 @@
   #include "PHY/TOOLS/lte_phy_scope.h"
 #endif
 
-#include "OCG_vars.h"
-
 #include "unitary_defs.h"
 
 PHY_VARS_eNB *eNB,*eNB1,*eNB2;
@@ -364,7 +362,7 @@ int main(int argc, char **argv) {
   r_re2 = malloc(2*sizeof(double *));
   r_im2 = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d, interf (%d,%d)\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u, interf (%d,%d)\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb,interf1,interf2);
   printf("eNB1->common_vars.txdataF[0][0] = %p\n",
          eNB1->common_vars.txdataF[0][0]);
@@ -386,7 +384,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                 0,
                                 0,
-                                0);
+                                0, 0);
 
   if (interf1>-20)
     eNB2UE1 = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -396,7 +394,7 @@ int main(int argc, char **argv) {
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    0,
                                    4,
-                                   0);
+                                   0, 0);
 
   if (interf2>-20)
     eNB2UE2 = new_channel_desc_scm(eNB->frame_parms.nb_antennas_tx,
@@ -406,7 +404,7 @@ int main(int argc, char **argv) {
                                    N_RB2channel_bandwidth(eNB->frame_parms.N_RB_DL),
                                    0,
                                    8,
-                                   0);
+                                   0, 0);
 
   if (eNB2UE==NULL) {
     msg("Problem generating channel model. Exiting.\n");

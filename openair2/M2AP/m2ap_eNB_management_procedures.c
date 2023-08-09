@@ -116,7 +116,7 @@ void dump_trees_m2(void)
 m2ap_eNB_instance_t *zz;
 STAILQ_FOREACH(zz, &m2ap_eNB_internal_data.m2ap_eNB_instances_head,
                m2ap_eNB_entries) {
-printf("here comes the tree (instance %d):\n---------------------------------------------\n", zz->instance);
+printf("here comes the tree (instance %ld):\n---------------------------------------------\n", zz->instance);
 dump_tree_m2(zz->m2ap_enb_head.rbh_root);
 printf("---------------------------------------------\n");
 }

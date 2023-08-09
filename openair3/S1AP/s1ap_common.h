@@ -23,24 +23,11 @@
  * @ingroup _ref_implementation_
  * @{
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
 #ifndef S1AP_COMMON_H_
 #define S1AP_COMMON_H_
 
-
 #include "common/utils/LOG/log.h"
-/* replace ASN_DEBUG defined in asn_internal.h by oai tracing system
-   Would be cleaner to modify asn_internal.h but it seems to come
-   from non oai source, with BSD license, so prefer to do that here..
-*/
-#ifdef ASN_DEBUG
-# undef ASN_DEBUG
-#endif
-#define ASN_DEBUG( x... )  LOG_I(ASN, x)
+#include "oai_asn1.h"
 
 #include "S1AP_ProtocolIE-Field.h"
 #include "S1AP_S1AP-PDU.h"
@@ -61,34 +48,17 @@
 # error "You are compiling s1ap with the wrong version of ASN1C"
 #endif
 
-#ifndef FALSE
-# define FALSE (0)
-#endif
-#ifndef TRUE
-# define TRUE  (!FALSE)
-#endif
-
 #define S1AP_UE_ID_FMT  "0x%06"PRIX32
 
-extern int asn_debug;
 extern int asn1_xer_print;
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "s1ap_eNB_default_values.h"
-# define S1AP_ERROR(x, args...) LOG_E(S1AP, x, ##args)
-# define S1AP_WARN(x, args...)  LOG_W(S1AP, x, ##args)
-# define S1AP_TRAF(x, args...)  LOG_I(S1AP, x, ##args)
-# define S1AP_INFO(x, args...) LOG_I(S1AP, x, ##args)
-# define S1AP_DEBUG(x, args...) LOG_I(S1AP, x, ##args)
-#else
-# include "mme_default_values.h"
-# define S1AP_ERROR(x, args...) do { fprintf(stdout, "[S1AP][E]"x, ##args); } while(0)
-# define S1AP_WARN(x, args...)  do { fprintf(stdout, "[S1AP][W]"x, ##args); } while(0)
-# define S1AP_TRAF(x, args...)  do { fprintf(stdout, "[S1AP][T]"x, ##args); } while(0)
-# define S1AP_INFO(x, args...) do { fprintf(stdout, "[S1AP][I]"x, ##args); } while(0)
-# define S1AP_DEBUG(x, args...) do { fprintf(stdout, "[S1AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "s1ap_eNB_default_values.h"
+#define S1AP_ERROR(x, args...) LOG_E(S1AP, x, ##args)
+#define S1AP_WARN(x, args...)  LOG_W(S1AP, x, ##args)
+#define S1AP_TRAF(x, args...)  LOG_I(S1AP, x, ##args)
+#define S1AP_INFO(x, args...) LOG_I(S1AP, x, ##args)
+#define S1AP_DEBUG(x, args...) LOG_I(S1AP, x, ##args)
 
 
 #define S1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
@@ -106,7 +76,12 @@ extern int asn1_xer_print;
     if (ie == NULL ) { \
       S1AP_ERROR("S1AP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL\n",__FILE__,__LINE__);\
     } \
-    if (mandatory)  DevAssert(ie != NULL); \
+    if (mandatory) { \
+      if (ie == NULL) { \
+        S1AP_ERROR("S1AP_FIND_PROTOCOLIE_BY_ID: %s %d: ie is NULL\n",__FILE__,__LINE__);\
+        return -1; \
+      } \
+    } \
   } while(0)
 /** \brief Function callback prototype.
  **/

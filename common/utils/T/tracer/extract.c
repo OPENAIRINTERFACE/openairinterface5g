@@ -4,7 +4,7 @@
 #include <fcntl.h>
 #include "database.h"
 #include "event.h"
-#include "config.h"
+#include "configuration.h"
 
 void usage(void)
 {
@@ -55,8 +55,8 @@ int main(int n, char **v)
   int found;
   int count = 1;
   int check_time = 0;
-  time_t sec;
-  long nsec;
+  time_t sec = 0;  /* initialization not necessary but gcc is not happy */
+  long nsec = 0;   /* initialization not necessary but gcc is not happy */
 
   for (i = 1; i < n; i++) {
     if (!strcmp(v[i], "-h") || !strcmp(v[i], "--help")) usage();

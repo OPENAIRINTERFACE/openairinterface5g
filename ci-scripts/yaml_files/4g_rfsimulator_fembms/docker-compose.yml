@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+    oai_enb0:
+        image: oaisoftwarealliance/oai-enb:develop
+        privileged: true
+        container_name: rfsim4g-oai-enb
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.20
+        environment:
+            TZ: Europe/Paris
+            USE_ADDITIONAL_OPTIONS: --rfsim --noS1 --eNBs.[0].component_carriers.[0].mbms_dedicated_serving_cell ENABLE --log_config.global_log_options level,nocolor,time
+        volumes:
+            - ../../conf_files/enb.band7.tm1.25prb.rfsim.mbms.conf:/opt/oai-enb/etc/enb.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+    oai_ue0:
+        image: oaisoftwarealliance/oai-lte-ue:develop
+        privileged: true
+        container_name: rfsim4g-oai-lte-ue0
+        networks:
+            public_net:
+                ipv4_address: 192.168.61.30
+        environment:
+            TZ: Europe/Paris
+            USE_ADDITIONAL_OPTIONS: -C 2680000000 -r 25 --ue-rxgain 140 --ue-txgain 120 --rfsim --noS1 --rfsimulator.serveraddr 192.168.61.20 --log_config.global_log_options level,nocolor,time --noS1
+        volumes:
+            - ../../conf_files/lteue.usim-mbs.conf:/opt/oai-lte-ue/etc/ue_usim.conf
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-uesoftmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+
+networks:
+    public_net:
+        name: rfsim4g-oai-public-net
+        ipam:
+            config:
+                - subnet: 192.168.61.0/26
+        driver_opts:
+            com.docker.network.bridge.name: "rfsim4g-public"

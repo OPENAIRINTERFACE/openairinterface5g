@@ -1,0 +1,17 @@
+version: '3.8'
+services:
+    oai-enb:
+        image: oai-enb:latest
+        privileged: true
+        container_name: oai-enb
+        environment:
+            TZ: Europe/Paris
+            USE_ADDITIONAL_OPTIONS: --usrp-tx-thread-config 1 --thread-pool 0,2,4,6
+        volumes:
+            - ../../conf_files/enb.band38.lte_2x2.100prb.usrpn310.conf:/opt/oai-enb/etc/enb.conf
+        network_mode: "host"
+        healthcheck:
+            test: /bin/bash -c "pgrep lte-softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5

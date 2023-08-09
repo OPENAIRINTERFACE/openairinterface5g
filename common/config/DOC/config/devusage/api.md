@@ -11,10 +11,11 @@ configmodule_interface_t *load_configmodule(int argc, char **argv, uint32_t init
 *  if the bit CONFIG_ENABLECMDLINEONLY is set in `initflags` then the module allows parameters to be set only via the command line. This is used for the oai UE.
 
 ```c
-void End_configmodule(void)
+void end_configmodule(void)
 ```
-* Free memory which has been allocated by the configuration module since its initialization.
+* Free memory which has been allocated by the configuration module for storing parameters values, when `PARAMFLAG_NOFREE` flag is not specified in the parameter definition.
 * Possibly calls the `config_<config source>_end` function
+This call should be used when all configurations have been read. The program will still be able to use parameter values allocated by the config module WHEN THE `PARAMFLAG_NOFREE` flag has been specified in the parameter definition. The config module can be reloaded later in the program (not fully tested as not used today)
 
 ## Retrieving parameter's values
 

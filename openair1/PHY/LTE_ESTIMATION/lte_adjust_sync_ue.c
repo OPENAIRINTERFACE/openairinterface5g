@@ -23,7 +23,6 @@
 #include "PHY/defs_UE.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/impl_defs_top.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -36,7 +35,7 @@
 void lte_adjust_synch(LTE_DL_FRAME_PARMS *frame_parms,
                       PHY_VARS_UE *ue,
                       module_id_t eNB_id,
-		      uint8_t subframe,
+		              uint8_t subframe,
                       unsigned char clear,
                       short coef)
 {

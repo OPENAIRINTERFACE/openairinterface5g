@@ -34,9 +34,6 @@
 #define INCLUDE_CONFIG_PARAMDESC_H
 
 
-
-
-
 #define MAX_OPTNAME_SIZE 64
 #define CONFIG_MAXOPTLENGTH 512 /* max full option length, full option name exemple: (prefix1.[<index>].prefix2.optname */
 
@@ -49,6 +46,7 @@
 #define PARAMFLAG_NOFREE                  (1 << 3)         // don't free parameter in end function
 #define PARAMFLAG_BOOL                    (1 << 4)         // integer param can be 0 or 1
 #define PARAMFLAG_CMDLINE_NOPREFIXENABLED (1 << 5)         // on the command line, allow a parameter to be specified without the prefix
+#define PARAMFLAG_CMDLINEONLY (1 << 6) // this parameter cannot be specified in config file
 
 /*   Flags used by config modules to return info to calling modules and/or to  for internal usage*/
 #define PARAMFLAG_MALLOCINCONFIG          (1 << 15)        // parameter allocated in config module
@@ -99,13 +97,15 @@ typedef union checkedparam {
 
 /* paramdef is used to describe a parameter, array of paramdef_t strustures is used as the main parameter in */
 /* config apis used to retrieve parameters values  */
+#define MAX_LIST_SIZE 32
+#define DEFAULT_EXTRA_SZ 256
 typedef struct paramdef {
   char         optname[MAX_OPTNAME_SIZE]; /* parameter name, can be used as long command line option */
   char         *helpstr;                  /* help string */
   unsigned int paramflags;                /* value is a "ored" combination of above PARAMFLAG_XXXX values */
-  union {                                 /* pointer to the parameter value, completed by the config module */
-    char **strptr;
-    char **strlistptr;
+  union { /* pointer to the parameter value, completed by the config module */
+    char      **strptr;
+    char      **strlistptr;
     uint8_t   *u8ptr;
     int8_t    *i8ptr;
     uint16_t  *u16ptr;

@@ -22,16 +22,14 @@
 #include <string.h>
 #include <math.h>
 #include <unistd.h>
-#include "SIMULATION/TOOLS/defs.h"
-#include "SIMULATION/RF/defs.h"
+#include "SIMULATION/TOOLS/sim.h"
+#include "SIMULATION/RF/rf.h"
 #include "PHY/types.h"
 #include "PHY/defs.h"
 #include "PHY/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/vars.h"
-
-#include "OCG_vars.h"
 
 #include "unitary_defs.h"
 
@@ -43,8 +41,6 @@ PHY_VARS_UE *UE;
 #define DLSCH_RB_ALLOC 0x1fbf // igore DC component,RB13
 
 double cpuf;
-
-extern uint16_t prach_root_sequence_map0_3[838];
 
 void dump_prach_config(LTE_DL_FRAME_PARMS *frame_parms,uint8_t subframe);
 
@@ -333,7 +329,7 @@ int main(int argc, char **argv) {
   r_re = malloc(2*sizeof(double *));
   r_im = malloc(2*sizeof(double *));
   nsymb = (frame_parms->Ncp == 0) ? 14 : 12;
-  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %d\n",NUMBER_OF_OFDM_CARRIERS,
+  printf("FFT Size %d, Extended Prefix %d, Samples per subframe %d, Symbols per subframe %u\n",NUMBER_OF_OFDM_CARRIERS,
          frame_parms->Ncp,frame_parms->samples_per_tti,nsymb);
   msg("[SIM] Using SCM/101\n");
   UE2eNB = new_channel_desc_scm(UE->frame_parms.nb_antennas_tx,
@@ -343,7 +339,7 @@ int main(int argc, char **argv) {
                                 N_RB2channel_bandwidth(eNB->frame_parms.N_RB_UL),
                                 0.0,
                                 delay,
-                                0);
+                                0, 0);
 
   if (UE2eNB==NULL) {
     msg("Problem generating channel model. Exiting.\n");
@@ -497,7 +493,7 @@ int main(int argc, char **argv) {
         }
       }
 
-      printf("SNR %f dB, UE Speed %f km/h: errors %d/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
+      printf("SNR %f dB, UE Speed %f km/h: errors %u/%d (delay %f)\n",SNR,ue_speed,prach_errors,n_frames,delay_avg/(double)(n_frames-prach_errors));
       //printf("(%f,%f)\n",ue_speed,(double)prach_errors/(double)n_frames);
     } // UE Speed loop
 

@@ -56,7 +56,6 @@ void print_CQI(void *o,UCI_format_t uci_format,unsigned char eNB_id,int N_RB_DL)
   switch(uci_format) {
   case wideband_cqi_rank1_2A:
 #ifdef DEBUG_UCI
-    LOG_D(PHY,"[PRINT CQI] flat_LA %d\n", flag_LA);
     switch(N_RB_DL) {
     case 6:
       LOG_I(PHY,"[PRINT CQI] wideband_cqi rank 1: eNB %d, cqi %d\n",eNB_id,

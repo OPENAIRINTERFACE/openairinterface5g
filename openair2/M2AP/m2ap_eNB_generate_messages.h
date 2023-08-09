@@ -26,8 +26,8 @@
  * \version 0.1
  */
 
-#ifndef M2AP_ENB_GENERATE_MESSAGES_H_
-#define M2AP_ENB_GENERATE_MESSAGES_H_
+#ifndef __M2AP_ENB_GENERATE_MESSAGES__H__
+#define __M2AP_ENB_GENERATE_MESSAGES__H__
 
 #include "m2ap_eNB_defs.h"
 #include "m2ap_common.h"
@@ -60,4 +60,4 @@ int m2ap_eNB_set_cause (M2AP_Cause_t * cause_p,
 //                                          int m2_ue_id,
 //                                          m2ap_handover_cancel_cause_t cause);
 
-#endif /*  M2AP_ENB_GENERATE_MESSAGES_H_ */
+#endif /*  __M2AP_ENB_GENERATE_MESSAGES__H__ */

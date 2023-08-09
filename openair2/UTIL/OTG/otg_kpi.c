@@ -37,11 +37,10 @@ unsigned int start_log_GP=0;
 unsigned int start_log_GP_bg=0;
 unsigned int start_log_jitter=0;
 
-#include"otg_kpi.h"
-#include"otg_externs.h"
+#include "otg_kpi.h"
+#include "otg_externs.h"
 
-extern unsigned char NB_eNB_INST;
-extern unsigned char NB_UE_INST;
+extern uint16_t NB_UE_INST;
 
 void tx_throughput(int src, int dst, int application) {
   if (otg_info->tx_num_bytes[src][dst][application]>0) {

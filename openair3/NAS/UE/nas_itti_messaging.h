@@ -26,7 +26,6 @@
 #include "assertions.h"
 #include "intertask_interface.h"
 #include "esm_proc.h"
-#include "msc.h"
 
 #ifndef NAS_ITTI_MESSAGING_H_
 #define NAS_ITTI_MESSAGING_H_
@@ -48,7 +47,7 @@ int nas_itti_protected_msg(
 
 # if defined(NAS_BUILT_IN_UE)
 
-int nas_itti_kenb_refresh_req(const Byte_t kenb[32]);
+int nas_itti_kenb_refresh_req(const Byte_t kenb[32], int user_id);
 
 int nas_itti_cell_info_req(const plmn_t plmnID, const Byte_t rat, int user_id);
 

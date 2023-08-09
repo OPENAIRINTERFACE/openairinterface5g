@@ -8,7 +8,7 @@
 #include "database.h"
 #include "utils.h"
 #include "handler.h"
-#include "config.h"
+#include "configuration.h"
 #include "logger/logger.h"
 #include "view/view.h"
 
@@ -345,11 +345,9 @@ int main(int n, char **v)
   /* setup traces */
   for (i = 0; i < nvars; i++) {
     char format[256];
-    if (strlen(vars[i].arg) + strlen(vars[i].vcd_name) > 256-16) abort();
-    sprintf(format, "%c [%s] %s",
-        vars[i].boolean ? 'b' : 'l',
-        vars[i].arg,
-        vars[i].vcd_name);
+    int ret = snprintf(format, 256, "%c [%s] %s", vars[i].boolean ? 'b' : 'l', vars[i].arg, vars[i].vcd_name);
+    if (ret > 255)
+      abort();
     textlog = new_textlog(h, database, vars[i].event, format);
     logger_add_view(textlog, vcd_view);
     on_off(database, vars[i].event, is_on, 1);

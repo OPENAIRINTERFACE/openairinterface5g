@@ -1,0 +1,4986 @@
+-- ASN1START
+-- **************************************************************
+--
+-- Elementary Procedure definitions
+--
+-- **************************************************************
+
+E1AP-PDU-Descriptions {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-PDU-Descriptions (0) }
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules
+--
+-- **************************************************************
+
+IMPORTS
+	Criticality,
+	ProcedureCode
+
+FROM E1AP-CommonDataTypes
+	Reset,
+	ResetAcknowledge,
+	ErrorIndication,
+	GNB-CU-UP-E1SetupRequest,
+	GNB-CU-UP-E1SetupResponse,
+	GNB-CU-UP-E1SetupFailure, 
+	GNB-CU-CP-E1SetupRequest,
+	GNB-CU-CP-E1SetupResponse,
+	GNB-CU-CP-E1SetupFailure, 
+	GNB-CU-UP-ConfigurationUpdate,
+	GNB-CU-UP-ConfigurationUpdateAcknowledge,
+	GNB-CU-UP-ConfigurationUpdateFailure,
+	GNB-CU-CP-ConfigurationUpdate,
+	GNB-CU-CP-ConfigurationUpdateAcknowledge,
+	GNB-CU-CP-ConfigurationUpdateFailure,
+	BearerContextSetupRequest,
+	BearerContextSetupResponse,
+	BearerContextSetupFailure,
+	BearerContextModificationRequest,
+	BearerContextModificationResponse,
+	BearerContextModificationFailure,
+	BearerContextModificationRequired,
+	BearerContextModificationConfirm,
+	BearerContextReleaseCommand,
+	BearerContextReleaseComplete,
+	BearerContextReleaseRequest,
+	BearerContextInactivityNotification,
+	DLDataNotification,
+	ULDataNotification,
+	DataUsageReport,
+	E1ReleaseRequest,
+	E1ReleaseResponse,
+	GNB-CU-UP-CounterCheckRequest,
+	GNB-CU-UP-StatusIndication,
+	MRDC-DataUsageReport,
+	DeactivateTrace,
+	TraceStart,
+	PrivateMessage,
+	ResourceStatusRequest,
+	ResourceStatusResponse,
+	ResourceStatusFailure,
+	ResourceStatusUpdate,
+	IAB-UPTNLAddressUpdate,
+	IAB-UPTNLAddressUpdateAcknowledge,
+	IAB-UPTNLAddressUpdateFailure,
+	CellTrafficTrace,
+	EarlyForwardingSNTransfer,
+	GNB-CU-CPMeasurementResultsInformation
+
+FROM E1AP-PDU-Contents
+	id-reset,
+	id-errorIndication,
+	id-gNB-CU-UP-E1Setup,
+	id-gNB-CU-CP-E1Setup,
+	id-gNB-CU-UP-ConfigurationUpdate,
+	id-gNB-CU-CP-ConfigurationUpdate,
+	id-e1Release,
+	id-bearerContextSetup,
+	id-bearerContextModification,
+	id-bearerContextModificationRequired,
+	id-bearerContextRelease,
+	id-bearerContextReleaseRequest,
+	id-bearerContextInactivityNotification,
+	id-dLDataNotification,
+	id-uLDataNotification,
+	id-dataUsageReport,
+	id-gNB-CU-UP-CounterCheck,
+	id-gNB-CU-UP-StatusIndication,
+	id-mRDC-DataUsageReport,
+	id-DeactivateTrace,
+	id-TraceStart,
+	id-privateMessage,
+	id-resourceStatusReportingInitiation,
+	id-resourceStatusReporting,
+	id-iAB-UPTNLAddressUpdate,
+	id-CellTrafficTrace,
+	id-earlyForwardingSNTransfer,
+	id-gNB-CU-CPMeasurementResultsInformation
+
+FROM E1AP-Constants;
+
+-- **************************************************************
+--
+-- Interface Elementary Procedure Class
+--
+-- **************************************************************
+
+E1AP-ELEMENTARY-PROCEDURE ::= CLASS {
+	&InitiatingMessage				,
+	&SuccessfulOutcome							OPTIONAL,
+	
+&UnsuccessfulOutcome						OPTIONAL,
+	&procedureCode				ProcedureCode 	UNIQUE,
+	&criticality				Criticality 	DEFAULT ignore
+}
+WITH SYNTAX {
+	INITIATING MESSAGE			&InitiatingMessage
+	[SUCCESSFUL OUTCOME			&SuccessfulOutcome]
+	[UNSUCCESSFUL OUTCOME		&UnsuccessfulOutcome]
+	PROCEDURE CODE				&procedureCode
+	[CRITICALITY				&criticality]
+}
+
+-- **************************************************************
+--
+-- Interface PDU Definition
+--
+-- **************************************************************
+
+E1AP-PDU ::= CHOICE {
+	initiatingMessage		InitiatingMessage,
+	successfulOutcome		SuccessfulOutcome,
+	unsuccessfulOutcome		UnsuccessfulOutcome,
+	...
+}
+
+InitiatingMessage ::= SEQUENCE {
+	procedureCode			E1AP-ELEMENTARY-PROCEDURE.&procedureCode		({E1AP-ELEMENTARY-PROCEDURES}),
+	criticality				E1AP-ELEMENTARY-PROCEDURE.&criticality			({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value					E1AP-ELEMENTARY-PROCEDURE.&InitiatingMessage	({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+SuccessfulOutcome ::= SEQUENCE {
+	procedureCode			E1AP-ELEMENTARY-PROCEDURE.&procedureCode		({E1AP-ELEMENTARY-PROCEDURES}),
+	criticality				E1AP-ELEMENTARY-PROCEDURE.&criticality			({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value					E1AP-ELEMENTARY-PROCEDURE.&SuccessfulOutcome	({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+UnsuccessfulOutcome ::= SEQUENCE {
+	procedureCode			E1AP-ELEMENTARY-PROCEDURE.&procedureCode		({E1AP-ELEMENTARY-PROCEDURES}),
+	criticality				E1AP-ELEMENTARY-PROCEDURE.&criticality			({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode}),
+	value					E1AP-ELEMENTARY-PROCEDURE.&UnsuccessfulOutcome	({E1AP-ELEMENTARY-PROCEDURES}{@procedureCode})
+}
+
+-- **************************************************************
+--
+-- Interface Elementary Procedure List
+--
+-- **************************************************************
+
+E1AP-ELEMENTARY-PROCEDURES E1AP-ELEMENTARY-PROCEDURE ::= {
+	E1AP-ELEMENTARY-PROCEDURES-CLASS-1			|
+	E1AP-ELEMENTARY-PROCEDURES-CLASS-2			,
+
+	...
+}
+
+E1AP-ELEMENTARY-PROCEDURES-CLASS-1 E1AP-ELEMENTARY-PROCEDURE ::= {
+	reset										|
+	gNB-CU-UP-E1Setup							|
+	gNB-CU-CP-E1Setup							|
+	gNB-CU-UP-ConfigurationUpdate				|
+	gNB-CU-CP-ConfigurationUpdate				|
+	e1Release									|
+	bearerContextSetup							|
+	bearerContextModification					|
+	bearerContextModificationRequired			|
+	bearerContextRelease						|
+	resourceStatusReportingInitiation			|
+	iAB-UPTNLAddressUpdate						,
+	...
+}
+
+E1AP-ELEMENTARY-PROCEDURES-CLASS-2 E1AP-ELEMENTARY-PROCEDURE ::= {
+	errorIndication							|
+	bearerContextReleaseRequest				|
+	bearerContextInactivityNotification		|
+	dLDataNotification						|
+	uLDataNotification						|
+	dataUsageReport							|
+	gNB-CU-UP-CounterCheck					|
+	gNB-CU-UP-StatusIndication			|
+	mRDC-DataUsageReport					|
+	deactivateTrace							|
+	traceStart								|
+	privateMessage							|
+	cellTrafficTrace						|
+	resourceStatusReporting					|
+	earlyForwardingSNTransfer				|
+	gNB-CU-CPMeasurementResultsInformation,
+	...
+}
+
+-- **************************************************************
+--
+-- Interface Elementary Procedures
+--
+-- **************************************************************
+
+reset E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		Reset
+	SUCCESSFUL OUTCOME		ResetAcknowledge
+	PROCEDURE CODE			id-reset
+	CRITICALITY				reject
+}
+
+errorIndication E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		ErrorIndication
+	PROCEDURE CODE			id-errorIndication
+	CRITICALITY				ignore
+}
+
+gNB-CU-UP-E1Setup E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-UP-E1SetupRequest
+	SUCCESSFUL OUTCOME		GNB-CU-UP-E1SetupResponse
+	UNSUCCESSFUL OUTCOME	GNB-CU-UP-E1SetupFailure
+	PROCEDURE CODE			id-gNB-CU-UP-E1Setup
+	CRITICALITY				reject
+}
+
+gNB-CU-CP-E1Setup E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-CP-E1SetupRequest
+	SUCCESSFUL OUTCOME		GNB-CU-CP-E1SetupResponse
+	UNSUCCESSFUL OUTCOME	GNB-CU-CP-E1SetupFailure
+	PROCEDURE CODE			id-gNB-CU-CP-E1Setup
+	CRITICALITY				reject
+}
+
+gNB-CU-UP-ConfigurationUpdate E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-UP-ConfigurationUpdate
+	SUCCESSFUL OUTCOME		GNB-CU-UP-ConfigurationUpdateAcknowledge
+	UNSUCCESSFUL OUTCOME	GNB-CU-UP-ConfigurationUpdateFailure
+	PROCEDURE CODE			id-gNB-CU-UP-ConfigurationUpdate
+	CRITICALITY				reject
+}
+
+gNB-CU-CP-ConfigurationUpdate E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-CP-ConfigurationUpdate
+	SUCCESSFUL OUTCOME		GNB-CU-CP-ConfigurationUpdateAcknowledge
+	UNSUCCESSFUL OUTCOME	GNB-CU-CP-ConfigurationUpdateFailure
+	PROCEDURE CODE			id-gNB-CU-CP-ConfigurationUpdate
+	CRITICALITY				reject
+}
+
+e1Release E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		E1ReleaseRequest
+	SUCCESSFUL OUTCOME		E1ReleaseResponse
+	PROCEDURE CODE			id-e1Release
+	CRITICALITY				reject
+}
+
+bearerContextSetup E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextSetupRequest
+	SUCCESSFUL OUTCOME		BearerContextSetupResponse
+	UNSUCCESSFUL OUTCOME	BearerContextSetupFailure
+	PROCEDURE CODE			id-bearerContextSetup
+	CRITICALITY				reject
+}
+
+bearerContextModification E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextModificationRequest
+	SUCCESSFUL OUTCOME		BearerContextModificationResponse
+	UNSUCCESSFUL OUTCOME	BearerContextModificationFailure
+	PROCEDURE CODE			id-bearerContextModification
+	CRITICALITY				reject
+}
+
+bearerContextModificationRequired E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextModificationRequired
+	SUCCESSFUL OUTCOME		BearerContextModificationConfirm
+	PROCEDURE CODE			id-bearerContextModificationRequired
+	CRITICALITY				reject
+}
+
+bearerContextRelease E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextReleaseCommand
+	SUCCESSFUL OUTCOME		BearerContextReleaseComplete
+	PROCEDURE CODE			id-bearerContextRelease
+	CRITICALITY				reject
+}
+
+bearerContextReleaseRequest E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextReleaseRequest
+	PROCEDURE CODE			id-bearerContextReleaseRequest
+	CRITICALITY				ignore
+}
+
+bearerContextInactivityNotification E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		BearerContextInactivityNotification
+	PROCEDURE CODE			id-bearerContextInactivityNotification
+	CRITICALITY				ignore
+}
+
+dLDataNotification E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		DLDataNotification
+	PROCEDURE CODE			id-dLDataNotification
+	CRITICALITY				ignore
+}
+
+uLDataNotification E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		ULDataNotification
+	PROCEDURE CODE			id-uLDataNotification
+	CRITICALITY				ignore
+}
+
+dataUsageReport E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		DataUsageReport
+	PROCEDURE CODE			id-dataUsageReport
+	CRITICALITY				ignore
+}
+
+gNB-CU-UP-CounterCheck E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-UP-CounterCheckRequest
+	PROCEDURE CODE			id-gNB-CU-UP-CounterCheck
+	CRITICALITY				ignore
+}
+
+gNB-CU-UP-StatusIndication 	E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-UP-StatusIndication
+	PROCEDURE CODE			id-gNB-CU-UP-StatusIndication
+	CRITICALITY			ignore
+}
+
+privateMessage E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		PrivateMessage
+	PROCEDURE CODE			id-privateMessage
+	CRITICALITY				ignore
+}
+
+gNB-CU-CPMeasurementResultsInformation E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		GNB-CU-CPMeasurementResultsInformation
+	PROCEDURE CODE			id-gNB-CU-CPMeasurementResultsInformation
+	CRITICALITY				ignore
+}
+
+mRDC-DataUsageReport	E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		MRDC-DataUsageReport
+	PROCEDURE CODE			id-mRDC-DataUsageReport
+	CRITICALITY				ignore
+}
+
+deactivateTrace E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		DeactivateTrace
+	PROCEDURE CODE			id-DeactivateTrace
+	CRITICALITY				ignore
+}
+
+traceStart E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		TraceStart
+	PROCEDURE CODE			id-TraceStart
+	CRITICALITY				ignore
+}
+
+resourceStatusReportingInitiation E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		ResourceStatusRequest
+	SUCCESSFUL OUTCOME		ResourceStatusResponse
+	UNSUCCESSFUL OUTCOME	ResourceStatusFailure
+	PROCEDURE CODE			id-resourceStatusReportingInitiation
+	CRITICALITY				reject
+}
+
+resourceStatusReporting E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		ResourceStatusUpdate
+	PROCEDURE CODE			id-resourceStatusReporting
+	CRITICALITY				ignore
+}
+
+iAB-UPTNLAddressUpdate E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		IAB-UPTNLAddressUpdate
+	SUCCESSFUL OUTCOME		IAB-UPTNLAddressUpdateAcknowledge
+	UNSUCCESSFUL OUTCOME	IAB-UPTNLAddressUpdateFailure
+	PROCEDURE CODE			id-iAB-UPTNLAddressUpdate
+	CRITICALITY				reject
+}
+
+cellTrafficTrace E1AP-ELEMENTARY-PROCEDURE ::={
+	INITIATING MESSAGE CellTrafficTrace
+	PROCEDURE CODE		id-CellTrafficTrace
+	CRITICALITY			ignore
+}
+
+earlyForwardingSNTransfer E1AP-ELEMENTARY-PROCEDURE ::= {
+	INITIATING MESSAGE		EarlyForwardingSNTransfer
+	PROCEDURE CODE			id-earlyForwardingSNTransfer
+	CRITICALITY				ignore
+}
+
+END
+-- ASN1STOP
+-- ASN1START
+-- **************************************************************
+--
+-- PDU definitions for E1AP
+--
+-- **************************************************************
+
+E1AP-PDU-Contents {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-PDU-Contents (1) }
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules
+--
+-- **************************************************************
+
+IMPORTS
+	
+	Cause,
+	CriticalityDiagnostics,
+	GNB-CU-CP-UE-E1AP-ID,
+	GNB-CU-UP-UE-E1AP-ID,
+	UE-associatedLogicalE1-ConnectionItem,
+	GNB-CU-UP-ID,
+	GNB-CU-UP-Name,
+	Extended-GNB-CU-UP-Name,
+	GNB-CU-CP-Name,
+	Extended-GNB-CU-CP-Name,
+	CNSupport,
+	PLMN-Identity,
+	Slice-Support-List,
+	NR-CGI-Support-List,
+	QoS-Parameters-Support-List,
+	SecurityInformation,
+	BitRate,
+	BearerContextStatusChange,
+	DRB-To-Setup-List-EUTRAN,
+	DRB-Setup-List-EUTRAN,
+	DRB-Failed-List-EUTRAN,
+	DRB-To-Modify-List-EUTRAN,
+	DRB-Measurement-Results-Information-List,
+	DRB-Modified-List-EUTRAN,
+	DRB-Failed-To-Modify-List-EUTRAN,
+	DRB-To-Remove-List-EUTRAN,
+	DRB-Required-To-Remove-List-EUTRAN,
+	DRB-Required-To-Modify-List-EUTRAN,
+	DRB-Confirm-Modified-List-EUTRAN,
+	DRB-To-Setup-Mod-List-EUTRAN,
+	DRB-Setup-Mod-List-EUTRAN,
+	DRB-Failed-Mod-List-EUTRAN,
+	ExtendedSliceSupportList,
+	PDU-Session-Resource-To-Setup-List,
+	PDU-Session-Resource-Setup-List,
+	PDU-Session-Resource-Failed-List,
+	PDU-Session-Resource-To-Modify-List,
+	PDU-Session-Resource-Modified-List,
+	PDU-Session-Resource-Failed-To-Modify-List,
+	PDU-Session-Resource-To-Remove-List,
+	PDU-Session-Resource-Required-To-Modify-List,
+	PDU-Session-Resource-Confirm-Modified-List,
+	PDU-Session-Resource-To-Setup-Mod-List,
+	PDU-Session-Resource-Setup-Mod-List,
+	PDU-Session-Resource-Failed-Mod-List,
+	PDU-Session-To-Notify-List,
+	DRB-Status-Item,
+	DRB-Activity-Item,
+	Data-Usage-Report-List,
+	TimeToWait,
+	ActivityNotificationLevel,
+	ActivityInformation,
+	New-UL-TNL-Information-Required,
+	GNB-CU-CP-TNLA-Setup-Item,
+	GNB-CU-CP-TNLA-Failed-To-Setup-Item,
+	GNB-CU-CP-TNLA-To-Add-Item,
+	GNB-CU-CP-TNLA-To-Remove-Item,
+	GNB-CU-CP-TNLA-To-Update-Item,
+	GNB-CU-UP-TNLA-To-Remove-Item,
+	TransactionID,
+	Inactivity-Timer,
+	DRBs-Subject-To-Counter-Check-List-EUTRAN,
+	DRBs-Subject-To-Counter-Check-List-NG-RAN,
+	PPI,
+	GNB-CU-UP-Capacity,
+	GNB-CU-UP-OverloadInformation,
+	DataDiscardRequired,
+	PDU-Session-Resource-Data-Usage-List,
+	RANUEID,
+	GNB-DU-ID,
+	TraceID,
+	TraceActivation,
+	SubscriberProfileIDforRFP,
+	AdditionalRRMPriorityIndex,
+	RetainabilityMeasurementsInfo,
+	Transport-Layer-Address-Info,
+	HW-CapacityIndicator,
+	RegistrationRequest,
+	ReportCharacteristics,
+	ReportingPeriodicity,
+	TNL-AvailableCapacityIndicator,
+	DLUPTNLAddressToUpdateItem,
+	ULUPTNLAddressToUpdateItem,
+	NPNContextInfo,
+	NPNSupportInfo,
+	MDTPLMNList,
+	PrivacyIndicator,
+	URIaddress,
+	DRBs-Subject-To-Early-Forwarding-List,
+	CHOInitiation,
+	ExtendedSliceSupportList,
+	TransportLayerAddress,
+	AdditionalHandoverInfo,
+	Extended-NR-CGI-Support-List,
+	DirectForwardingPathAvailability
+
+
+FROM E1AP-IEs
+
+	PrivateIE-Container{},
+	ProtocolExtensionContainer{},
+	ProtocolIE-Container{},
+	ProtocolIE-ContainerList{},
+	ProtocolIE-SingleContainer{},
+	E1AP-PRIVATE-IES,
+	E1AP-PROTOCOL-EXTENSION,
+	E1AP-PROTOCOL-IES
+
+
+FROM E1AP-Containers
+	
+	id-Cause,
+	id-CriticalityDiagnostics,
+	id-gNB-CU-CP-UE-E1AP-ID, 
+	id-gNB-CU-UP-UE-E1AP-ID,
+	id-ResetType,
+	id-UE-associatedLogicalE1-ConnectionItem,
+	id-UE-associatedLogicalE1-ConnectionListResAck,
+	id-gNB-CU-UP-ID,
+	id-gNB-CU-UP-Name,
+	id-Extended-GNB-CU-UP-Name,
+	id-gNB-CU-CP-Name,
+	id-Extended-GNB-CU-CP-Name,
+	id-CNSupport,
+	id-SupportedPLMNs,
+	id-NPNSupportInfo,
+	id-NPNContextInfo,
+	id-SecurityInformation,
+	id-UEDLAggregateMaximumBitRate,
+	id-BearerContextStatusChange,
+	id-System-BearerContextSetupRequest,
+	id-System-BearerContextSetupResponse,
+	id-System-BearerContextModificationRequest,
+	id-System-BearerContextModificationResponse,
+	id-System-BearerContextModificationConfirm,
+	id-System-BearerContextModificationRequired,
+	id-DRB-Status-List,
+	id-Data-Usage-Report-List,	
+	id-TimeToWait,
+	id-ActivityNotificationLevel,
+	id-ActivityInformation,
+	id-New-UL-TNL-Information-Required,
+	id-GNB-CU-CP-TNLA-Setup-List,
+	id-GNB-CU-CP-TNLA-Failed-To-Setup-List,
+	id-GNB-CU-CP-TNLA-To-Add-List,
+	id-GNB-CU-CP-TNLA-To-Remove-List,
+	id-GNB-CU-CP-TNLA-To-Update-List,
+	id-GNB-CU-UP-TNLA-To-Remove-List,
+	id-DRB-To-Setup-List-EUTRAN,
+	id-DRB-To-Modify-List-EUTRAN,
+	id-DRB-To-Remove-List-EUTRAN,
+	id-DRB-Required-To-Modify-List-EUTRAN,
+	id-DRB-Required-To-Remove-List-EUTRAN,
+	id-DRB-Setup-List-EUTRAN,
+	id-DRB-Failed-List-EUTRAN,
+	id-DRB-Measurement-Results-Information-List,
+	id-DRB-Modified-List-EUTRAN,
+	id-DRB-Failed-To-Modify-List-EUTRAN,
+	id-DRB-Confirm-Modified-List-EUTRAN,
+	id-DRB-To-Setup-Mod-List-EUTRAN,
+	id-DRB-Setup-Mod-List-EUTRAN,
+	id-DRB-Failed-Mod-List-EUTRAN,
+	id-PDU-Session-Resource-To-Setup-List,
+	id-PDU-Session-Resource-To-Modify-List,
+	id-PDU-Session-Resource-To-Remove-List,
+	id-PDU-Session-Resource-Required-To-Modify-List,
+	id-PDU-Session-Resource-Setup-List,
+	id-PDU-Session-Resource-Failed-List,
+	id-PDU-Session-Resource-Modified-List,
+	id-PDU-Session-Resource-Failed-To-Modify-List,
+	id-PDU-Session-Resource-Confirm-Modified-List,
+	id-PDU-Session-Resource-Setup-Mod-List,
+	id-PDU-Session-Resource-Failed-Mod-List,
+	id-PDU-Session-Resource-To-Setup-Mod-List,
+	id-PDU-Session-To-Notify-List,
+	id-TransactionID,
+	id-Serving-PLMN,
+	id-UE-Inactivity-Timer,
+	id-System-GNB-CU-UP-CounterCheckRequest,
+	id-DRBs-Subject-To-Counter-Check-List-EUTRAN,
+	id-DRBs-Subject-To-Counter-Check-List-NG-RAN,
+	id-PPI,
+	id-gNB-CU-UP-Capacity,
+	id-GNB-CU-UP-OverloadInformation,
+	id-UEDLMaximumIntegrityProtectedDataRate,
+	id-DataDiscardRequired,
+	id-PDU-Session-Resource-Data-Usage-List,
+	id-RANUEID,
+	id-GNB-DU-ID,
+	id-TraceID,
+	id-TraceActivation,
+	id-SubscriberProfileIDforRFP,
+	id-AdditionalRRMPriorityIndex, 
+	id-RetainabilityMeasurementsInfo,
+	id-Transport-Layer-Address-Info,
+	id-gNB-CU-CP-Measurement-ID,
+	id-gNB-CU-UP-Measurement-ID,
+	id-RegistrationRequest,
+	id-ReportCharacteristics,
+	id-ReportingPeriodicity,
+	id-TNL-AvailableCapacityIndicator,
+	id-HW-CapacityIndicator,
+	id-DLUPTNLAddressToUpdateList,
+	id-ULUPTNLAddressToUpdateList,
+	id-ManagementBasedMDTPLMNList,
+	id-TraceCollectionEntityIPAddress,
+	id-PrivacyIndicator,
+	id-URIaddress,
+	id-DRBs-Subject-To-Early-Forwarding-List,
+	id-CHOInitiation,
+	id-ExtendedSliceSupportList,
+	id-AdditionalHandoverInfo,
+	id-Extended-NR-CGI-Support-List,
+	id-DirectForwardingPathAvailability,
+
+	maxnoofErrors,
+	maxnoofSPLMNs,
+	maxnoofDRBs,
+	maxnoofTNLAssociations,
+	maxnoofIndividualE1ConnectionsToReset,
+	maxnoofTNLAddresses
+
+	
+FROM E1AP-Constants;
+
+-- **************************************************************
+--
+-- RESET 
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Reset
+--
+-- **************************************************************
+
+Reset ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {ResetIEs} },
+	...
+}
+
+ResetIEs E1AP-PROTOCOL-IES ::= { 
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-ResetType					CRITICALITY reject	TYPE ResetType					PRESENCE mandatory	},
+	...
+}
+
+ResetType ::= CHOICE {
+	e1-Interface					ResetAll,
+	partOfE1-Interface				UE-associatedLogicalE1-ConnectionListRes,
+	choice-extension				ProtocolIE-SingleContainer	{{ResetType-ExtIEs}}
+}
+
+ResetType-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+ResetAll ::= ENUMERATED {
+	reset-all,
+	...
+}
+
+UE-associatedLogicalE1-ConnectionListRes ::= SEQUENCE (SIZE(1.. maxnoofIndividualE1ConnectionsToReset)) OF ProtocolIE-SingleContainer { { UE-associatedLogicalE1-ConnectionItemRes } }
+
+UE-associatedLogicalE1-ConnectionItemRes E1AP-PROTOCOL-IES ::= {
+	
+	{ ID id-UE-associatedLogicalE1-ConnectionItem	CRITICALITY reject	TYPE UE-associatedLogicalE1-ConnectionItem	PRESENCE mandatory},
+	...
+}
+
+-- **************************************************************
+--
+-- Reset Acknowledge
+--
+-- **************************************************************
+
+ResetAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {ResetAcknowledgeIEs} },
+	...
+}
+
+ResetAcknowledgeIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID									CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-UE-associatedLogicalE1-ConnectionListResAck		CRITICALITY ignore	TYPE UE-associatedLogicalE1-ConnectionListResAck			PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	},
+	...
+}
+
+UE-associatedLogicalE1-ConnectionListResAck ::= SEQUENCE (SIZE(1.. maxnoofIndividualE1ConnectionsToReset)) OF ProtocolIE-SingleContainer { { UE-associatedLogicalE1-ConnectionItemResAck } }
+
+UE-associatedLogicalE1-ConnectionItemResAck 	E1AP-PROTOCOL-IES ::= {
+	{ ID id-UE-associatedLogicalE1-ConnectionItem	 CRITICALITY ignore 	TYPE UE-associatedLogicalE1-ConnectionItem  	PRESENCE mandatory },
+	...
+}
+
+
+-- **************************************************************
+--
+-- ERROR INDICATION
+--
+-- **************************************************************
+
+ErrorIndication ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container	{{ErrorIndication-IEs}},
+	...
+}
+
+ErrorIndication-IEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID					CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY ignore	TYPE GNB-CU-CP-UE-E1AP-ID		PRESENCE optional}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY ignore	TYPE GNB-CU-UP-UE-E1AP-ID		PRESENCE optional}|	
+	{ ID id-Cause							CRITICALITY ignore	TYPE Cause						PRESENCE optional}|
+	{ ID id-CriticalityDiagnostics			CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-UP E1 SETUP
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- GNB-CU-UP E1 Setup Request
+--
+-- **************************************************************
+
+GNB-CU-UP-E1SetupRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-E1SetupRequestIEs} },
+	...
+}
+
+GNB-CU-UP-E1SetupRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID					PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-ID						CRITICALITY reject	TYPE GNB-CU-UP-ID					PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-Name						CRITICALITY ignore	TYPE GNB-CU-UP-Name					PRESENCE optional	}|
+	{ ID id-CNSupport							CRITICALITY reject	TYPE CNSupport						PRESENCE mandatory	}|
+	{ ID id-SupportedPLMNs						CRITICALITY reject	TYPE SupportedPLMNs-List			PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-Capacity					CRITICALITY ignore	TYPE GNB-CU-UP-Capacity			   PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info	CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-UP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-UP-Name		PRESENCE optional	},
+	...
+} 
+
+SupportedPLMNs-List	::=	SEQUENCE (SIZE (1..maxnoofSPLMNs)) OF SupportedPLMNs-Item 
+
+SupportedPLMNs-Item ::= SEQUENCE {
+	pLMN-Identity					PLMN-Identity,
+	slice-Support-List				Slice-Support-List												OPTIONAL,
+	nR-CGI-Support-List				NR-CGI-Support-List												OPTIONAL,
+	qoS-Parameters-Support-List		QoS-Parameters-Support-List										OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { SupportedPLMNs-ExtIEs } }		OPTIONAL, 
+	...
+}
+
+SupportedPLMNs-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-NPNSupportInfo					CRITICALITY reject	EXTENSION NPNSupportInfo					PRESENCE optional}|
+	{ ID id-ExtendedSliceSupportList		CRITICALITY reject	EXTENSION ExtendedSliceSupportList 		PRESENCE optional}|
+	{ ID id-Extended-NR-CGI-Support-List	CRITICALITY ignore	EXTENSION Extended-NR-CGI-Support-List	PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-UP E1 Setup Response
+--
+-- **************************************************************
+
+GNB-CU-UP-E1SetupResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-E1SetupResponseIEs} },
+	...
+}
+
+GNB-CU-UP-E1SetupResponseIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID						PRESENCE mandatory	}|
+	{ ID id-gNB-CU-CP-Name						CRITICALITY ignore	TYPE GNB-CU-CP-Name						PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info		CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-CP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-CP-Name			PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-UP E1 Setup Failure
+--
+-- **************************************************************
+
+GNB-CU-UP-E1SetupFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-E1SetupFailureIEs} },
+	...
+}
+
+GNB-CU-UP-E1SetupFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-CP E1 SETUP
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- GNB-CU-CP E1 Setup Request
+--
+-- **************************************************************
+
+GNB-CU-CP-E1SetupRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-E1SetupRequestIEs} },
+	...
+}
+
+GNB-CU-CP-E1SetupRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID						PRESENCE mandatory	}|
+	{ ID id-gNB-CU-CP-Name						CRITICALITY ignore	TYPE GNB-CU-CP-Name						PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info		CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-CP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-CP-Name			PRESENCE optional	},
+	...
+} 
+
+-- **************************************************************
+--
+-- GNB-CU-CP E1 Setup Response
+--
+-- **************************************************************
+
+GNB-CU-CP-E1SetupResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-E1SetupResponseIEs} },
+	...
+}
+
+GNB-CU-CP-E1SetupResponseIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID					PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-ID						CRITICALITY reject	TYPE GNB-CU-UP-ID					PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-Name						CRITICALITY ignore	TYPE GNB-CU-UP-Name					PRESENCE optional	}|
+	{ ID id-CNSupport							CRITICALITY reject	TYPE CNSupport						PRESENCE mandatory	}|
+	{ ID id-SupportedPLMNs						CRITICALITY reject	TYPE SupportedPLMNs-List			PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-Capacity					CRITICALITY ignore	TYPE GNB-CU-UP-Capacity				PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info		CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-UP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-UP-Name		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-CP E1 Setup Failure
+--
+-- **************************************************************
+
+GNB-CU-CP-E1SetupFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-E1SetupFailureIEs} },
+	...
+}
+
+GNB-CU-CP-E1SetupFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-UP CONFIGURATION UPDATE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- GNB-CU-UP Configuration Update
+--
+-- **************************************************************
+
+GNB-CU-UP-ConfigurationUpdate ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-ConfigurationUpdateIEs} },
+	...
+}
+
+GNB-CU-UP-ConfigurationUpdateIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID					PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-ID						CRITICALITY reject	TYPE GNB-CU-UP-ID					PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-Name						CRITICALITY ignore	TYPE GNB-CU-UP-Name					PRESENCE optional	}|
+	{ ID id-SupportedPLMNs						CRITICALITY reject	TYPE SupportedPLMNs-List			PRESENCE optional	}|
+	{ ID id-gNB-CU-UP-Capacity					CRITICALITY ignore	TYPE GNB-CU-UP-Capacity			   PRESENCE optional	}|
+	{ ID id-GNB-CU-UP-TNLA-To-Remove-List		CRITICALITY reject	TYPE GNB-CU-UP-TNLA-To-Remove-List	PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info		CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-UP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-UP-Name		PRESENCE optional	},
+	...
+} 
+
+GNB-CU-UP-TNLA-To-Remove-List 	::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-UP-TNLA-To-Remove-Item
+
+-- **************************************************************
+--
+-- GNB-CU-UP Configuration Update Acknowledge
+--
+-- **************************************************************
+
+GNB-CU-UP-ConfigurationUpdateAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-ConfigurationUpdateAcknowledgeIEs} },
+	...
+}
+
+GNB-CU-UP-ConfigurationUpdateAcknowledgeIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID					CRITICALITY reject	TYPE TransactionID						PRESENCE mandatory	}|
+	{ ID id-CriticalityDiagnostics			CRITICALITY ignore	TYPE CriticalityDiagnostics				PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info	CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-UP Configuration Update Failure
+--
+-- **************************************************************
+
+GNB-CU-UP-ConfigurationUpdateFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-UP-ConfigurationUpdateFailureIEs} },
+	...
+}
+
+GNB-CU-UP-ConfigurationUpdateFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- GNB-CU-CP CONFIGURATION UPDATE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- GNB-CU-CP Configuration Update
+--
+-- **************************************************************
+
+GNB-CU-CP-ConfigurationUpdate ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-ConfigurationUpdateIEs} },
+	...
+}
+
+GNB-CU-CP-ConfigurationUpdateIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-gNB-CU-CP-Name						CRITICALITY ignore	TYPE GNB-CU-CP-Name						PRESENCE optional	}|
+	{ ID id-GNB-CU-CP-TNLA-To-Add-List			CRITICALITY ignore	TYPE GNB-CU-CP-TNLA-To-Add-List		PRESENCE optional	}|
+	{ ID id-GNB-CU-CP-TNLA-To-Remove-List		CRITICALITY ignore	TYPE GNB-CU-CP-TNLA-To-Remove-List	PRESENCE optional	}|
+	{ ID id-GNB-CU-CP-TNLA-To-Update-List		CRITICALITY ignore	TYPE GNB-CU-CP-TNLA-To-Update-List	PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info	CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	}|
+	{ ID id-Extended-GNB-CU-CP-Name				CRITICALITY ignore	TYPE Extended-GNB-CU-CP-Name			PRESENCE optional	},
+	...
+} 
+
+GNB-CU-CP-TNLA-To-Add-List       ::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-CP-TNLA-To-Add-Item 
+GNB-CU-CP-TNLA-To-Remove-List 	::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-CP-TNLA-To-Remove-Item 
+GNB-CU-CP-TNLA-To-Update-List		::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-CP-TNLA-To-Update-Item
+
+-- **************************************************************
+--
+-- GNB-CU-CP Configuration Update Acknowledge
+--
+-- **************************************************************
+
+GNB-CU-CP-ConfigurationUpdateAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-ConfigurationUpdateAcknowledgeIEs} },
+	...
+}
+
+GNB-CU-CP-ConfigurationUpdateAcknowledgeIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID									PRESENCE mandatory	}|
+	{ ID id-CriticalityDiagnostics				CRITICALITY ignore	TYPE CriticalityDiagnostics							PRESENCE optional	}|
+	{ ID id-GNB-CU-CP-TNLA-Setup-List			CRITICALITY ignore	TYPE GNB-CU-CP-TNLA-Setup-List					PRESENCE optional	}|
+	{ ID id-GNB-CU-CP-TNLA-Failed-To-Setup-List	CRITICALITY ignore	TYPE GNB-CU-CP-TNLA-Failed-To-Setup-List		PRESENCE optional	}|
+	{ ID id-Transport-Layer-Address-Info	CRITICALITY ignore	TYPE Transport-Layer-Address-Info	PRESENCE optional	},
+	...
+}
+
+GNB-CU-CP-TNLA-Setup-List				::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-CP-TNLA-Setup-Item 
+GNB-CU-CP-TNLA-Failed-To-Setup-List	::= SEQUENCE (SIZE(1.. maxnoofTNLAssociations))	OF GNB-CU-CP-TNLA-Failed-To-Setup-Item 
+
+
+-- **************************************************************
+--
+-- GNB-CU-CP Configuration Update Failure
+--
+-- **************************************************************
+
+GNB-CU-CP-ConfigurationUpdateFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {GNB-CU-CP-ConfigurationUpdateFailureIEs} },
+	...
+}
+
+GNB-CU-CP-ConfigurationUpdateFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- E1 RELEASE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- E1 Release Request
+--
+-- **************************************************************
+
+E1ReleaseRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {E1ReleaseRequestIEs} },
+	...
+}
+
+E1ReleaseRequestIEs E1AP-PROTOCOL-IES ::= { 
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	},
+	...
+}
+
+-- **************************************************************
+--
+-- E1 Release Response
+--
+-- **************************************************************
+
+E1ReleaseResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {E1ReleaseResponseIEs} },
+	...
+}
+
+E1ReleaseResponseIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	},
+	...
+}
+
+-- **************************************************************
+--
+-- BEARER CONTEXT SETUP
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Setup Request
+--
+-- **************************************************************
+
+BearerContextSetupRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextSetupRequestIEs} },
+	...
+}
+
+BearerContextSetupRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID				CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory }|
+	{ ID id-SecurityInformation					CRITICALITY reject	TYPE SecurityInformation							PRESENCE mandatory }|
+	{ ID id-UEDLAggregateMaximumBitRate			CRITICALITY reject	TYPE BitRate										PRESENCE mandatory }|
+	{ ID id-UEDLMaximumIntegrityProtectedDataRate	CRITICALITY reject		TYPE BitRate								PRESENCE optional	 }|
+	{ ID id-Serving-PLMN						CRITICALITY ignore	TYPE PLMN-Identity									PRESENCE mandatory }|
+	{ ID id-ActivityNotificationLevel			CRITICALITY reject	TYPE ActivityNotificationLevel					PRESENCE mandatory }|
+	{ ID id-UE-Inactivity-Timer					CRITICALITY reject	TYPE Inactivity-Timer								PRESENCE optional  }|
+	{ ID id-BearerContextStatusChange			CRITICALITY reject	TYPE BearerContextStatusChange					PRESENCE optional  }|
+	{ ID id-System-BearerContextSetupRequest	CRITICALITY reject	TYPE System-BearerContextSetupRequest				PRESENCE mandatory }|
+	{ ID id-RANUEID								CRITICALITY ignore	TYPE RANUEID										PRESENCE optional }|
+	{ ID id-GNB-DU-ID							CRITICALITY ignore	TYPE GNB-DU-ID										PRESENCE optional }|
+	{ ID id-TraceActivation						CRITICALITY ignore	TYPE TraceActivation								PRESENCE optional }|
+	{ ID id-NPNContextInfo						CRITICALITY reject	TYPE NPNContextInfo									PRESENCE optional}|
+	{ ID id-ManagementBasedMDTPLMNList			CRITICALITY	ignore	TYPE MDTPLMNList									PRESENCE optional}|
+	{ ID id-CHOInitiation						CRITICALITY reject	TYPE CHOInitiation									PRESENCE optional }|
+	{ ID id-AdditionalHandoverInfo				CRITICALITY ignore	TYPE AdditionalHandoverInfo							PRESENCE optional }|
+	{ ID id-DirectForwardingPathAvailability	CRITICALITY ignore	TYPE DirectForwardingPathAvailability			PRESENCE optional }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID				CRITICALITY ignore	TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE optional },
+	...
+} 
+
+System-BearerContextSetupRequest	::=	CHOICE {
+	e-UTRAN-BearerContextSetupRequest		ProtocolIE-Container		 	{{EUTRAN-BearerContextSetupRequest}},
+	nG-RAN-BearerContextSetupRequest		ProtocolIE-Container		 	{{NG-RAN-BearerContextSetupRequest}},
+	choice-extension						ProtocolIE-SingleContainer		{{System-BearerContextSetupRequest-ExtIEs}}
+}
+
+System-BearerContextSetupRequest-ExtIEs E1AP-PROTOCOL-IES::= {
+	...
+}
+
+
+EUTRAN-BearerContextSetupRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-To-Setup-List-EUTRAN		CRITICALITY reject	 TYPE DRB-To-Setup-List-EUTRAN		PRESENCE mandatory }|
+	{ ID id-SubscriberProfileIDforRFP		CRITICALITY ignore	 TYPE SubscriberProfileIDforRFP		PRESENCE optional }|
+	{ ID id-AdditionalRRMPriorityIndex		CRITICALITY ignore	 TYPE AdditionalRRMPriorityIndex	PRESENCE optional },
+	...
+}
+
+NG-RAN-BearerContextSetupRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-To-Setup-List		CRITICALITY reject	 TYPE PDU-Session-Resource-To-Setup-List		PRESENCE mandatory },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Bearer Context Setup Response
+--
+-- **************************************************************
+
+BearerContextSetupResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextSetupResponseIEs} },
+	...
+}
+
+
+BearerContextSetupResponseIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID				CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID				CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE mandatory	}|
+	{ ID id-System-BearerContextSetupResponse	CRITICALITY ignore	TYPE System-BearerContextSetupResponse				PRESENCE mandatory  },
+	...
+}
+
+System-BearerContextSetupResponse::=	CHOICE {
+	e-UTRAN-BearerContextSetupResponse		ProtocolIE-Container 			{{EUTRAN-BearerContextSetupResponse}},
+	nG-RAN-BearerContextSetupResponse		ProtocolIE-Container 			{{NG-RAN-BearerContextSetupResponse}},
+	choice-extension						ProtocolIE-SingleContainer		{{System-BearerContextSetupResponse-ExtIEs}}
+}
+
+System-BearerContextSetupResponse-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EUTRAN-BearerContextSetupResponse E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-Setup-List-EUTRAN 		CRITICALITY ignore	 TYPE DRB-Setup-List-EUTRAN			PRESENCE mandatory }|
+	{ ID id-DRB-Failed-List-EUTRAN 		CRITICALITY ignore	 TYPE DRB-Failed-List-EUTRAN		PRESENCE optional  },
+	...
+}
+
+NG-RAN-BearerContextSetupResponse E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-Setup-List 	CRITICALITY ignore	 TYPE PDU-Session-Resource-Setup-List		PRESENCE mandatory }|
+	{ ID id-PDU-Session-Resource-Failed-List 	CRITICALITY ignore	 TYPE PDU-Session-Resource-Failed-List		PRESENCE optional  },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Bearer Context Setup Failure
+--
+-- **************************************************************
+
+BearerContextSetupFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextSetupFailureIEs} },
+	...
+}
+
+BearerContextSetupFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID		CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID		CRITICALITY ignore	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE optional	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause							PRESENCE mandatory	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- BEARER CONTEXT MODIFICATION
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Modification Request
+--
+-- **************************************************************
+
+BearerContextModificationRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextModificationRequestIEs} },
+	...
+}
+
+BearerContextModificationRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID					CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID									PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID					CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID									PRESENCE mandatory }|
+	{ ID id-SecurityInformation						CRITICALITY reject	TYPE SecurityInformation									PRESENCE optional  }|
+	{ ID id-UEDLAggregateMaximumBitRate				CRITICALITY reject	TYPE BitRate												PRESENCE optional  }|
+	{ ID id-UEDLMaximumIntegrityProtectedDataRate		CRITICALITY reject	TYPE BitRate											PRESENCE optional	 }|
+	{ ID id-BearerContextStatusChange				CRITICALITY reject	TYPE BearerContextStatusChange							PRESENCE optional  }|
+	{ ID id-New-UL-TNL-Information-Required			CRITICALITY reject	TYPE New-UL-TNL-Information-Required					PRESENCE optional  }|
+	{ ID id-UE-Inactivity-Timer						CRITICALITY reject	TYPE Inactivity-Timer										PRESENCE optional  }|
+	{ ID id-DataDiscardRequired					CRITICALITY ignore	TYPE DataDiscardRequired											PRESENCE optional  }|
+	{ ID id-System-BearerContextModificationRequest	CRITICALITY reject	TYPE System-BearerContextModificationRequest		PRESENCE optional  }|
+	{ ID id-RANUEID										CRITICALITY ignore	TYPE RANUEID												PRESENCE optional }|
+	{ ID id-GNB-DU-ID									CRITICALITY ignore	TYPE GNB-DU-ID												PRESENCE optional }|
+	{ ID id-ActivityNotificationLevel					CRITICALITY ignore	TYPE ActivityNotificationLevel							PRESENCE optional },
+	...
+} 
+
+System-BearerContextModificationRequest	::=	CHOICE {
+	e-UTRAN-BearerContextModificationRequest		ProtocolIE-Container 			{{EUTRAN-BearerContextModificationRequest}},
+	nG-RAN-BearerContextModificationRequest			ProtocolIE-Container 			{{NG-RAN-BearerContextModificationRequest}},
+	choice-extension								ProtocolIE-SingleContainer		{{System-BearerContextModificationRequest-ExtIEs}}
+}
+
+System-BearerContextModificationRequest-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EUTRAN-BearerContextModificationRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-To-Setup-Mod-List-EUTRAN		CRITICALITY reject	 TYPE DRB-To-Setup-Mod-List-EUTRAN		PRESENCE optional }|
+	{ ID id-DRB-To-Modify-List-EUTRAN			CRITICALITY reject	 TYPE DRB-To-Modify-List-EUTRAN			PRESENCE optional }|
+	{ ID id-DRB-To-Remove-List-EUTRAN			CRITICALITY reject	 TYPE DRB-To-Remove-List-EUTRAN			PRESENCE optional }|
+	{ ID id-SubscriberProfileIDforRFP			CRITICALITY ignore	 TYPE 	SubscriberProfileIDforRFP		PRESENCE optional }|
+	{ ID id-AdditionalRRMPriorityIndex			CRITICALITY ignore	 TYPE 	AdditionalRRMPriorityIndex		PRESENCE optional },
+	...
+}
+
+NG-RAN-BearerContextModificationRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-To-Setup-Mod-List	CRITICALITY reject	 TYPE PDU-Session-Resource-To-Setup-Mod-List	PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-To-Modify-List 	CRITICALITY reject	 TYPE PDU-Session-Resource-To-Modify-List		PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-To-Remove-List		CRITICALITY reject	 TYPE PDU-Session-Resource-To-Remove-List		PRESENCE optional },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Bearer Context Modification Response
+--
+-- **************************************************************
+
+BearerContextModificationResponse ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextModificationResponseIEs} },
+	...
+}
+
+
+BearerContextModificationResponseIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID								PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID								PRESENCE mandatory }|
+	{ ID id-System-BearerContextModificationResponse	CRITICALITY ignore	TYPE System-BearerContextModificationResponse		PRESENCE optional  },
+	...
+}
+
+System-BearerContextModificationResponse	::=	CHOICE {
+	e-UTRAN-BearerContextModificationResponse			ProtocolIE-Container {{EUTRAN-BearerContextModificationResponse}},
+	nG-RAN-BearerContextModificationResponse			ProtocolIE-Container {{NG-RAN-BearerContextModificationResponse}},
+	choice-extension									ProtocolIE-SingleContainer {{System-BearerContextModificationResponse-ExtIEs}}
+}
+
+System-BearerContextModificationResponse-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EUTRAN-BearerContextModificationResponse E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-Setup-Mod-List-EUTRAN				CRITICALITY ignore	TYPE DRB-Setup-Mod-List-EUTRAN					PRESENCE optional }|
+	{ ID id-DRB-Failed-Mod-List-EUTRAN				CRITICALITY ignore	TYPE DRB-Failed-Mod-List-EUTRAN				PRESENCE optional }|
+	{ ID id-DRB-Modified-List-EUTRAN				CRITICALITY ignore	TYPE DRB-Modified-List-EUTRAN					PRESENCE optional }|
+	{ ID id-DRB-Failed-To-Modify-List-EUTRAN		CRITICALITY ignore	TYPE DRB-Failed-To-Modify-List-EUTRAN		PRESENCE optional }|
+	{ ID id-RetainabilityMeasurementsInfo			CRITICALITY ignore	TYPE RetainabilityMeasurementsInfo				PRESENCE optional },
+	...
+}
+
+NG-RAN-BearerContextModificationResponse E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-Setup-Mod-List 		CRITICALITY reject	TYPE PDU-Session-Resource-Setup-Mod-List				PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-Failed-Mod-List		CRITICALITY reject	TYPE PDU-Session-Resource-Failed-Mod-List				PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-Modified-List			CRITICALITY reject	TYPE PDU-Session-Resource-Modified-List				PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-Failed-To-Modify-List	CRITICALITY reject	TYPE PDU-Session-Resource-Failed-To-Modify-List		PRESENCE optional }|
+	{ ID id-RetainabilityMeasurementsInfo				CRITICALITY ignore	TYPE RetainabilityMeasurementsInfo						PRESENCE optional },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Bearer Context Modification Failure
+--
+-- **************************************************************
+
+BearerContextModificationFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextModificationFailureIEs} },
+	...
+}
+
+BearerContextModificationFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID		CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID		CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause							PRESENCE mandatory	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- BEARER CONTEXT MODIFICATION REQUIRED
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Modification Required
+--
+-- **************************************************************
+
+BearerContextModificationRequired ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextModificationRequiredIEs} },
+	...
+}
+
+BearerContextModificationRequiredIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID									PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID									PRESENCE mandatory }|
+	{ ID id-System-BearerContextModificationRequired	CRITICALITY reject	TYPE System-BearerContextModificationRequired			PRESENCE mandatory },	
+	...
+} 
+
+System-BearerContextModificationRequired	::=	CHOICE {
+	e-UTRAN-BearerContextModificationRequired		ProtocolIE-Container {{EUTRAN-BearerContextModificationRequired}},
+	nG-RAN-BearerContextModificationRequired		ProtocolIE-Container {{NG-RAN-BearerContextModificationRequired}},
+	choice-extension								ProtocolIE-SingleContainer {{System-BearerContextModificationRequired-ExtIEs}}
+}
+
+System-BearerContextModificationRequired-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EUTRAN-BearerContextModificationRequired E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-Required-To-Modify-List-EUTRAN	CRITICALITY reject	TYPE DRB-Required-To-Modify-List-EUTRAN	PRESENCE optional }|
+	{ ID id-DRB-Required-To-Remove-List-EUTRAN	CRITICALITY reject	TYPE DRB-Required-To-Remove-List-EUTRAN	PRESENCE optional },
+	...
+}
+
+NG-RAN-BearerContextModificationRequired E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-Required-To-Modify-List	CRITICALITY reject	TYPE PDU-Session-Resource-Required-To-Modify-List	PRESENCE optional }|
+	{ ID id-PDU-Session-Resource-To-Remove-List	CRITICALITY reject	 TYPE PDU-Session-Resource-To-Remove-List	PRESENCE optional },
+	...
+}
+
+
+-- **************************************************************
+--
+-- Bearer Context Modification Confirm
+--
+-- **************************************************************
+
+BearerContextModificationConfirm ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextModificationConfirmIEs} },
+	...
+}
+
+
+BearerContextModificationConfirmIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID						CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE mandatory }|
+	{ ID id-System-BearerContextModificationConfirm		CRITICALITY ignore	TYPE System-BearerContextModificationConfirm		PRESENCE optional  },
+	...
+}
+
+System-BearerContextModificationConfirm	::=	CHOICE {
+	e-UTRAN-BearerContextModificationConfirm		ProtocolIE-Container {{EUTRAN-BearerContextModificationConfirm}},
+	nG-RAN-BearerContextModificationConfirm			ProtocolIE-Container {{NG-RAN-BearerContextModificationConfirm}},
+	choice-extension								ProtocolIE-SingleContainer {{System-BearerContextModificationConfirm-ExtIEs}}
+}
+
+System-BearerContextModificationConfirm-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EUTRAN-BearerContextModificationConfirm E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRB-Confirm-Modified-List-EUTRAN	CRITICALITY ignore	 TYPE DRB-Confirm-Modified-List-EUTRAN	PRESENCE optional },
+	...
+}
+
+NG-RAN-BearerContextModificationConfirm E1AP-PROTOCOL-IES ::= {
+	{ ID id-PDU-Session-Resource-Confirm-Modified-List	CRITICALITY ignore	 TYPE PDU-Session-Resource-Confirm-Modified-List	PRESENCE optional },
+	...
+}
+
+
+-- **************************************************************
+--
+-- BEARER CONTEXT RELEASE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Release Command
+--
+-- **************************************************************
+
+BearerContextReleaseCommand ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextReleaseCommandIEs} },
+	...
+}
+
+BearerContextReleaseCommandIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-Cause							CRITICALITY ignore	TYPE Cause							PRESENCE mandatory },	
+	...
+} 
+
+-- **************************************************************
+--
+-- Bearer Context Release Complete
+--
+-- **************************************************************
+
+BearerContextReleaseComplete ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextReleaseCompleteIEs} },
+	...
+}
+
+
+BearerContextReleaseCompleteIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID		CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID		CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics			PRESENCE optional	}|
+	{ ID id-RetainabilityMeasurementsInfo	CRITICALITY ignore	TYPE RetainabilityMeasurementsInfo	PRESENCE optional },
+	...
+}
+
+-- **************************************************************
+--
+-- BEARER CONTEXT RELEASE REQUEST
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Release Request
+--
+-- **************************************************************
+
+BearerContextReleaseRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextReleaseRequestIEs} },
+	...
+}
+
+BearerContextReleaseRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-DRB-Status-List					CRITICALITY ignore	TYPE DRB-Status-List				PRESENCE optional  }|
+	{ ID id-Cause							CRITICALITY ignore	TYPE Cause							PRESENCE mandatory },	
+	...
+} 
+
+DRB-Status-List ::= SEQUENCE (SIZE(1..maxnoofDRBs)) OF DRB-Status-Item
+
+
+-- **************************************************************
+--
+-- BEARER CONTEXT INACTIVITY NOTIFICATION
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Bearer Context Inactivity Notification
+--
+-- **************************************************************
+
+BearerContextInactivityNotification ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { BearerContextInactivityNotificationIEs } },
+	...
+}
+
+BearerContextInactivityNotificationIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-ActivityInformation				CRITICALITY reject	TYPE ActivityInformation			PRESENCE mandatory },
+	...
+} 
+
+
+-- **************************************************************
+--
+-- DL DATA NOTIFICATION
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- DL Data Notification
+--
+-- **************************************************************
+
+DLDataNotification ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { DLDataNotificationIEs } },
+	...
+}
+
+DLDataNotificationIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-PPI								CRITICALITY ignore	TYPE PPI							PRESENCE optional }|
+	{ ID id-PDU-Session-To-Notify-List		CRITICALITY ignore	TYPE PDU-Session-To-Notify-List		PRESENCE optional },
+	...
+} 
+
+-- **************************************************************
+
+-- **************************************************************
+--
+-- UL Data Notification
+--
+-- **************************************************************
+
+ULDataNotification ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { ULDataNotificationIEs } },
+	...
+}
+
+ULDataNotificationIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-PDU-Session-To-Notify-List		CRITICALITY reject	 TYPE PDU-Session-To-Notify-List	PRESENCE mandatory },
+	...
+}
+
+-- **************************************************************
+--
+-- DATA USAGE REPORT
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Data Usage Report
+--
+-- **************************************************************
+
+DataUsageReport ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { DataUsageReportIEs } },
+	...
+}
+
+DataUsageReportIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-Data-Usage-Report-List			CRITICALITY ignore	TYPE Data-Usage-Report-List			PRESENCE mandatory },	
+	...
+}
+
+
+-- **************************************************************
+--
+-- GNB-CU-UP COUNTER CHECK
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- gNB-CU-UP Counter Check Request
+--
+-- **************************************************************
+
+GNB-CU-UP-CounterCheckRequest ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { GNB-CU-UP-CounterCheckRequestIEs } },
+	...
+}
+
+GNB-CU-UP-CounterCheckRequestIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID					CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID					CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE mandatory }|
+	{ ID id-System-GNB-CU-UP-CounterCheckRequest	CRITICALITY reject	TYPE System-GNB-CU-UP-CounterCheckRequest	PRESENCE mandatory },
+	...
+} 
+
+System-GNB-CU-UP-CounterCheckRequest	::=	CHOICE {
+	e-UTRAN-GNB-CU-UP-CounterCheckRequest		ProtocolIE-Container		{{EUTRAN-GNB-CU-UP-CounterCheckRequest}},
+	nG-RAN-GNB-CU-UP-CounterCheckRequest		ProtocolIE-Container		{{NG-RAN-GNB-CU-UP-CounterCheckRequest}},
+	choice-extension							ProtocolIE-SingleContainer	{{System-GNB-CU-UP-CounterCheckRequest-ExtIEs}}
+}
+
+System-GNB-CU-UP-CounterCheckRequest-ExtIEs E1AP-PROTOCOL-IES::= {
+	...
+}
+
+EUTRAN-GNB-CU-UP-CounterCheckRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRBs-Subject-To-Counter-Check-List-EUTRAN	CRITICALITY ignore	 TYPE DRBs-Subject-To-Counter-Check-List-EUTRAN	PRESENCE mandatory },
+	...
+}
+
+NG-RAN-GNB-CU-UP-CounterCheckRequest E1AP-PROTOCOL-IES ::= {
+	{ ID id-DRBs-Subject-To-Counter-Check-List-NG-RAN	CRITICALITY ignore	 TYPE DRBs-Subject-To-Counter-Check-List-NG-RAN	PRESENCE mandatory },
+	...
+}
+
+
+-- **************************************************************
+--
+-- gNB-CU-UP STATUS INDICATION ELEMENTARY PROCEDURE
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- gNB-CU-UP Status Indication
+--
+-- **************************************************************
+
+
+GNB-CU-UP-StatusIndication ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { GNB-CU-UP-StatusIndicationIEs} },
+	...
+}
+
+
+GNB-CU-UP-StatusIndicationIEs E1AP-PROTOCOL-IES ::= { 
+	{ ID id-TransactionID						CRITICALITY reject	TYPE TransactionID				 			PRESENCE mandatory	}|
+	{ ID id-GNB-CU-UP-OverloadInformation	CRITICALITY reject	TYPE GNB-CU-UP-OverloadInformation		PRESENCE mandatory	},
+	...
+}
+
+-- **************************************************************
+--
+-- gNB-CU-CP MEASUREMENT RESULTS INFORMATION
+--
+-- **************************************************************
+
+GNB-CU-CPMeasurementResultsInformation ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { GNB-CU-CPMeasurementResultsInformationIEs } },
+	...
+}
+
+GNB-CU-CPMeasurementResultsInformationIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID					CRITICALITY reject		TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID					CRITICALITY reject		TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE mandatory}|
+	{ ID id-DRB-Measurement-Results-Information-List	CRITICALITY ignore		TYPE DRB-Measurement-Results-Information-List	PRESENCE mandatory},
+	...
+}
+
+-- **************************************************************
+--
+-- MR-DC DATA USAGE REPORT
+--
+-- **************************************************************
+
+MRDC-DataUsageReport ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { MRDC-DataUsageReportIEs } },
+	...
+}
+
+MRDC-DataUsageReportIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID					CRITICALITY reject		TYPE GNB-CU-CP-UE-E1AP-ID							PRESENCE mandatory}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID					CRITICALITY reject		TYPE GNB-CU-UP-UE-E1AP-ID							PRESENCE mandatory}|
+	{ ID id-PDU-Session-Resource-Data-Usage-List	CRITICALITY ignore		TYPE PDU-Session-Resource-Data-Usage-List	PRESENCE mandatory},
+	...
+}
+
+
+-- **************************************************************
+--
+-- TRACE ELEMENTARY PROCEDURES
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- TRACE START
+--
+-- **************************************************************
+
+TraceStart ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ {TraceStartIEs} },
+	...
+}
+
+TraceStartIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ ID id-TraceActivation					CRITICALITY ignore	TYPE TraceActivation					PRESENCE mandatory	},
+	...
+}
+
+-- **************************************************************
+--
+-- DEACTIVATE TRACE
+--
+-- **************************************************************
+
+DeactivateTrace ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ {DeactivateTraceIEs} },
+	...
+}
+
+DeactivateTraceIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ ID id-TraceID							CRITICALITY ignore	TYPE TraceID							PRESENCE mandatory	},
+	...
+}
+
+-- **************************************************************
+--
+-- CELL TRAFFIC TRACE
+--
+-- **************************************************************
+
+CellTrafficTrace ::= SEQUENCE {
+protocolIEs		ProtocolIE-Container	{ { CellTrafficTraceIEs } },
+...
+}
+
+CellTrafficTraceIEs E1AP-PROTOCOL-IES ::= {
+	{ID id-gNB-CU-CP-UE-E1AP-ID				CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ID id-gNB-CU-UP-UE-E1AP-ID				CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID				PRESENCE mandatory	}|
+	{ID id-TraceID					           CRITICALITY ignore	TYPE TraceID			            PRESENCE mandatory}|
+	{ID id-TraceCollectionEntityIPAddress	CRITICALITY ignore	TYPE TransportLayerAddress		   PRESENCE mandatory	}|
+	{ID id-PrivacyIndicator					CRITICALITY ignore	TYPE PrivacyIndicator			        PRESENCE optional}|
+{ID id-URIaddress	                     CRITICALITY ignore	    TYPE URIaddress		            PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- PRIVATE MESSAGE
+--
+-- **************************************************************
+
+
+PrivateMessage ::= SEQUENCE {
+	privateIEs		PrivateIE-Container	{{PrivateMessage-IEs}},
+	...
+}
+
+PrivateMessage-IEs E1AP-PRIVATE-IES ::= {
+	...
+}
+
+-- **************************************************************
+--
+-- RESOURCE STATUS REQUEST
+--
+-- **************************************************************
+
+ResourceStatusRequest ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { ResourceStatusRequestIEs } },
+	...
+}
+
+ResourceStatusRequestIEs E1AP-PROTOCOL-IES ::= {
+		{ ID id-TransactionID					CRITICALITY reject		TYPE TransactionID	PRESENCE mandatory}|
+		{ ID id-gNB-CU-CP-Measurement-ID		CRITICALITY reject		TYPE INTEGER (1..4095, ...)		PRESENCE mandatory}|
+		{ ID id-gNB-CU-UP-Measurement-ID		CRITICALITY ignore		TYPE INTEGER (1..4095, ...)		PRESENCE optional}|
+		{ ID id-RegistrationRequest				CRITICALITY reject		TYPE RegistrationRequest			PRESENCE mandatory}|
+		{ ID id-ReportCharacteristics			CRITICALITY reject		TYPE ReportCharacteristics		PRESENCE conditional}|
+		{ ID id-ReportingPeriodicity			CRITICALITY reject		TYPE ReportingPeriodicity			PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- RESOURCE STATUS RESPONSE
+--
+-- **************************************************************
+
+
+ResourceStatusResponse ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { ResourceStatusResponseIEs } },
+	...
+}
+
+ResourceStatusResponseIEs E1AP-PROTOCOL-IES ::= {
+		{ ID id-TransactionID					CRITICALITY reject		TYPE TransactionID	PRESENCE mandatory}|
+		{ ID id-gNB-CU-CP-Measurement-ID		CRITICALITY reject		TYPE INTEGER (1..4095, ...)		PRESENCE mandatory}|
+		{ ID id-gNB-CU-UP-Measurement-ID		CRITICALITY ignore		TYPE INTEGER (1..4095, ...)		PRESENCE mandatory}|
+		{ ID id-CriticalityDiagnostics			CRITICALITY ignore		TYPE CriticalityDiagnostics			PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- RESOURCE STATUS FAILURE
+--
+-- **************************************************************
+
+ResourceStatusFailure ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { ResourceStatusFailureIEs } },
+	...
+}
+
+ResourceStatusFailureIEs E1AP-PROTOCOL-IES ::= {
+		{ ID id-TransactionID					CRITICALITY reject		TYPE TransactionID	PRESENCE mandatory}|
+		{ ID id-gNB-CU-CP-Measurement-ID		CRITICALITY reject		TYPE INTEGER (1..4095, ...)		PRESENCE mandatory}|
+		{ ID id-gNB-CU-UP-Measurement-ID		CRITICALITY ignore		TYPE INTEGER (1..4095, ...)		PRESENCE optional}|
+		{ ID id-Cause					CRITICALITY ignore		TYPE Cause		PRESENCE mandatory}|
+		{ ID id-CriticalityDiagnostics	CRITICALITY ignore		TYPE CriticalityDiagnostics					PRESENCE optional},
+	...
+}
+
+-- **************************************************************
+--
+-- RESOURCE STATUS UPDATE
+--
+-- **************************************************************
+
+ResourceStatusUpdate ::= SEQUENCE {
+	protocolIEs		ProtocolIE-Container		{ { ResourceStatusUpdateIEs } },
+	...
+}
+
+ResourceStatusUpdateIEs E1AP-PROTOCOL-IES ::= {
+		{ ID id-TransactionID					CRITICALITY reject		TYPE TransactionID	PRESENCE mandatory}|
+		{ ID id-gNB-CU-CP-Measurement-ID		CRITICALITY reject		TYPE INTEGER (1..4095, ...)		PRESENCE mandatory}|
+		{ ID id-gNB-CU-UP-Measurement-ID		CRITICALITY ignore		TYPE INTEGER (1..4095, ...)		PRESENCE optional}|
+		{ ID id-TNL-AvailableCapacityIndicator		CRITICALITY ignore		TYPE 							TNL-AvailableCapacityIndicator	PRESENCE optional}|
+		{ ID id-HW-CapacityIndicator				CRITICALITY ignore		TYPE 							HW-CapacityIndicator			PRESENCE mandatory},
+
+	...
+}
+
+-- **************************************************************
+--
+-- IAB UP TNL ADDRESS UPDATE 
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- IAB UP TNL Address Update
+--
+-- **************************************************************
+
+IAB-UPTNLAddressUpdate	::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { IAB-UPTNLAddressUpdateIEs} },
+	...
+}
+
+IAB-UPTNLAddressUpdateIEs E1AP-PROTOCOL-IES ::= { 
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-DLUPTNLAddressToUpdateList			CRITICALITY ignore	TYPE DLUPTNLAddressToUpdateList			PRESENCE optional	},
+	...
+}
+
+DLUPTNLAddressToUpdateList       ::= SEQUENCE (SIZE(1.. maxnoofTNLAddresses))	OF DLUPTNLAddressToUpdateItem
+
+-- **************************************************************
+--
+-- IAB UP TNL Address Update Acknowledge
+--
+-- **************************************************************
+
+IAB-UPTNLAddressUpdateAcknowledge ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { IAB-UPTNLAddressUpdateAcknowledgeIEs} },
+	...
+}
+
+IAB-UPTNLAddressUpdateAcknowledgeIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	}|
+	{ ID id-ULUPTNLAddressToUpdateList			CRITICALITY ignore	TYPE ULUPTNLAddressToUpdateList			PRESENCE optional	},
+	...
+}
+
+ULUPTNLAddressToUpdateList       ::= SEQUENCE (SIZE(1.. maxnoofTNLAddresses))	OF ULUPTNLAddressToUpdateItem
+
+
+-- **************************************************************
+--
+-- IAB UP TNL Address Update Failure
+--
+-- **************************************************************
+
+IAB-UPTNLAddressUpdateFailure ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { {IAB-UPTNLAddressUpdateFailureIEs} },
+	...
+}
+
+IAB-UPTNLAddressUpdateFailureIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-TransactionID				CRITICALITY reject	TYPE TransactionID				PRESENCE mandatory	}|
+	{ ID id-Cause						CRITICALITY ignore	TYPE Cause						PRESENCE mandatory	}|
+	{ ID id-TimeToWait					CRITICALITY ignore	TYPE TimeToWait					PRESENCE optional	}|
+	{ ID id-CriticalityDiagnostics		CRITICALITY ignore	TYPE CriticalityDiagnostics		PRESENCE optional	},
+	...
+}
+
+-- **************************************************************
+--
+-- EARLY FORWARDING SN TRANSFER
+--
+-- **************************************************************
+
+-- **************************************************************
+--
+-- Early Forwarding SN Transfer
+--
+-- **************************************************************
+
+EarlyForwardingSNTransfer ::= SEQUENCE {
+	protocolIEs			ProtocolIE-Container       { { EarlyForwardingSNTransferIEs } },
+	...
+}
+
+EarlyForwardingSNTransferIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-gNB-CU-CP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-CP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-gNB-CU-UP-UE-E1AP-ID			CRITICALITY reject	TYPE GNB-CU-UP-UE-E1AP-ID			PRESENCE mandatory }|
+	{ ID id-DRBs-Subject-To-Early-Forwarding-List		CRITICALITY reject	 TYPE DRBs-Subject-To-Early-Forwarding-List		PRESENCE mandatory },
+	...
+}
+
+END
+-- ASN1STOP
+-- ASN1START
+-- **************************************************************
+--
+-- Information Element Definitions
+--
+-- **************************************************************
+
+E1AP-IEs {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-IEs (2) }
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+IMPORTS	
+	
+	id-CommonNetworkInstance,
+	id-SNSSAI,
+	id-OldQoSFlowMap-ULendmarkerexpected,
+	id-DRB-QoS,
+	id-endpoint-IP-Address-and-Port,
+	id-NetworkInstance,
+	id-QoSFlowMappingIndication,
+	id-TNLAssociationTransportLayerAddressgNBCUUP,
+	id-Cause,
+	id-QoSMonitoringRequest,
+	id-QosMonitoringReportingFrequency,
+	id-QoSMonitoringDisabled,
+	id-PDCP-StatusReportIndication,
+	id-RedundantCommonNetworkInstance,
+	id-redundant-nG-UL-UP-TNL-Information,
+	id-redundant-nG-DL-UP-TNL-Information,
+	id-RedundantQosFlowIndicator,
+	id-TSCTrafficCharacteristics,
+	id-ExtendedPacketDelayBudget,
+	id-CNPacketDelayBudgetDownlink,
+	id-CNPacketDelayBudgetUplink,
+	id-AdditionalPDCPduplicationInformation,
+	id-RedundantPDUSessionInformation,
+	id-RedundantPDUSessionInformation-used,
+	id-QoS-Mapping-Information,
+	id-MDTConfiguration,
+	id-TraceCollectionEntityURI,
+	id-EHC-Parameters,
+	id-DAPSRequestInfo,
+	id-EarlyForwardingCOUNTReq,
+	id-EarlyForwardingCOUNTInfo,
+	id-AlternativeQoSParaSetList,
+	id-MCG-OfferedGBRQoSFlowInfo,
+	id-Number-of-tunnels,
+	id-DataForwardingtoE-UTRANInformationList,
+	id-DataForwardingtoNG-RANQoSFlowInformationList,
+	id-MaxCIDEHCDL,
+	id-ignoreMappingRuleIndication,
+	id-EarlyDataForwardingIndicator,
+	id-QoSFlowsDRBRemapping,
+	maxnoofQoSParaSets,
+	maxnoofErrors,
+	maxnoofSliceItems,
+	maxnoofEUTRANQOSParameters,
+	maxnoofNGRANQOSParameters,
+	maxnoofDRBs,
+	maxnoofPDUSessionResource,
+	maxnoofQoSFlows,
+	maxnoofUPParameters,
+	maxnoofCellGroups,
+	maxnooftimeperiods,
+	maxnoofNRCGI,
+	maxnoofTLAs,
+	maxnoofGTPTLAs,
+	maxnoofSPLMNs,
+	maxnoofMDTPLMNs,
+	maxnoofExtSliceItems,
+	maxnoofDataForwardingTunneltoE-UTRAN,
+	maxnoofExtNRCGI
+
+FROM E1AP-Constants
+
+	Criticality,
+	ProcedureCode,
+	ProtocolIE-ID,
+	TriggeringMessage
+
+FROM E1AP-CommonDataTypes
+
+	ProtocolExtensionContainer{},
+	ProtocolIE-SingleContainer{},	
+	E1AP-PROTOCOL-EXTENSION,
+	E1AP-PROTOCOL-IES
+
+
+FROM E1AP-Containers;
+
+-- A
+
+ActivityInformation	::=	CHOICE	{
+	dRB-Activity-List						DRB-Activity-List,
+	pDU-Session-Resource-Activity-List		PDU-Session-Resource-Activity-List,
+	uE-Activity								UE-Activity, 
+	choice-extension						ProtocolIE-SingleContainer	{{ActivityInformation-ExtIEs}}
+}
+
+ActivityInformation-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+ActivityNotificationLevel	::=	ENUMERATED	{
+	drb,
+	pdu-session,
+	ue,
+	...
+}
+
+AdditionalHandoverInfo ::= ENUMERATED	{
+	discard-pdpc-SN,
+	...
+}
+
+AdditionalPDCPduplicationInformation	::=	ENUMERATED	{
+	three, 
+	four,
+	...
+}
+
+AdditionalRRMPriorityIndex ::= BIT STRING (SIZE(32))
+
+AveragingWindow  ::= INTEGER (0..4095, ...) 
+
+AlternativeQoSParaSetList ::= SEQUENCE (SIZE(1..maxnoofQoSParaSets)) OF AlternativeQoSParaSetItem
+
+AlternativeQoSParaSetItem ::= SEQUENCE {
+	alternativeQoSParameterIndex		INTEGER(1..8,...),
+	guaranteedFlowBitRateDL				BitRate					OPTIONAL,
+	guaranteedFlowBitRateUL				BitRate					OPTIONAL,
+	packetDelayBudget					PacketDelayBudget		OPTIONAL,
+	packetErrorRate						PacketErrorRate			OPTIONAL,
+	iE-Extensions		ProtocolExtensionContainer { {AlternativeQoSParaSetItem-ExtIEs} }	OPTIONAL,
+	...
+}
+
+AlternativeQoSParaSetItem-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- B
+
+BearerContextStatusChange	::= 	ENUMERATED {
+	suspend,
+	resume,
+	...
+}
+
+BitRate ::= INTEGER (0..4000000000000,...)
+
+-- C
+
+Cause ::= CHOICE {
+	radioNetwork		CauseRadioNetwork,
+	transport			CauseTransport,
+	protocol			CauseProtocol,
+	misc				CauseMisc,
+	choice-extension	ProtocolIE-SingleContainer	{{Cause-ExtIEs}}
+}
+
+Cause-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+CauseMisc ::= ENUMERATED {
+	control-processing-overload,
+	not-enough-user-plane-processing-resources,
+	hardware-failure,
+	om-intervention,
+	unspecified,
+	...
+}
+
+CauseProtocol ::= ENUMERATED {
+	transfer-syntax-error,
+	abstract-syntax-error-reject,
+	abstract-syntax-error-ignore-and-notify,
+	message-not-compatible-with-receiver-state,
+	semantic-error,
+	abstract-syntax-error-falsely-constructed-message,
+	unspecified,
+	...
+}
+
+CauseRadioNetwork ::= ENUMERATED {
+	unspecified,
+	unknown-or-already-allocated-gnb-cu-cp-ue-e1ap-id,
+	unknown-or-already-allocated-gnb-cu-up-ue-e1ap-id,
+	unknown-or-inconsistent-pair-of-ue-e1ap-id,
+	interaction-with-other-procedure,
+	pPDCP-Count-wrap-around,
+	not-supported-QCI-value,
+	not-supported-5QI-value,
+	encryption-algorithms-not-supported, 
+	integrity-protection-algorithms-not-supported,
+	uP-integrity-protection-not-possible, 
+	uP-confidentiality-protection-not-possible,
+	multiple-PDU-Session-ID-Instances,
+	unknown-PDU-Session-ID,
+	multiple-QoS-Flow-ID-Instances,
+	unknown-QoS-Flow-ID,
+	multiple-DRB-ID-Instances,
+	unknown-DRB-ID,
+	invalid-QoS-combination,
+	procedure-cancelled,
+	normal-release,
+	no-radio-resources-available,
+	action-desirable-for-radio-reasons,
+	resources-not-available-for-the-slice,
+	pDCP-configuration-not-supported,
+	...,
+	ue-dl-max-IP-data-rate-reason,
+	uP-integrity-protection-failure,
+	release-due-to-pre-emption,
+	rsn-not-available-for-the-up,
+	nPN-not-supported,
+	report-characteristic-empty,
+	existing-measurement-ID,
+	measurement-temporarily-not-available,
+	measurement-not-supported-for-the-object
+}
+
+CauseTransport ::= ENUMERATED {
+	unspecified,
+	transport-resource-unavailable,
+	...,
+	unknown-TNL-address-for-IAB
+}
+
+Cell-Group-Information	::= SEQUENCE (SIZE(1.. maxnoofCellGroups)) OF Cell-Group-Information-Item
+
+Cell-Group-Information-Item	::=	SEQUENCE {
+	cell-Group-ID							Cell-Group-ID,
+	uL-Configuration						UL-Configuration		OPTIONAL,
+	dL-TX-Stop								DL-TX-Stop				OPTIONAL,
+	rAT-Type								RAT-Type				OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { Cell-Group-Information-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+Cell-Group-Information-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-Number-of-tunnels	CRITICALITY ignore	EXTENSION Number-of-tunnels 	PRESENCE optional},
+	...
+}
+
+
+Cell-Group-ID	::=		INTEGER (0..3, ...)
+
+CHOInitiation	::=		ENUMERATED {true, ...}
+
+Number-of-tunnels  ::=		INTEGER (1..4, ...)
+
+CipheringAlgorithm	::=	ENUMERATED {
+	nEA0,
+	c-128-NEA1,
+	c-128-NEA2,
+	c-128-NEA3,
+	...
+}
+
+CNSupport ::= ENUMERATED {
+	c-epc,
+	c-5gc,
+	both,
+	...
+}
+
+CommonNetworkInstance ::= OCTET STRING
+
+ConfidentialityProtectionIndication ::= ENUMERATED {
+	required,
+	preferred,
+	not-needed,
+	...
+}
+
+
+ConfidentialityProtectionResult ::= ENUMERATED {
+	performed,
+	not-performed,
+	...
+}
+
+
+CP-TNL-Information		::= 	CHOICE {
+	endpoint-IP-Address		TransportLayerAddress, 
+	choice-extension		ProtocolIE-SingleContainer	{{CP-TNL-Information-ExtIEs}}
+}
+
+CP-TNL-Information-ExtIEs E1AP-PROTOCOL-IES ::= {
+	{ ID id-endpoint-IP-Address-and-Port	CRITICALITY reject	TYPE Endpoint-IP-address-and-port 	PRESENCE mandatory},
+	...
+}
+
+
+CriticalityDiagnostics ::= SEQUENCE {
+	procedureCode					ProcedureCode					OPTIONAL,
+	triggeringMessage				TriggeringMessage				OPTIONAL,
+	procedureCriticality			Criticality						OPTIONAL,
+	transactionID					TransactionID					OPTIONAL,
+	iEsCriticalityDiagnostics		CriticalityDiagnostics-IE-List	OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { {CriticalityDiagnostics-ExtIEs} }	OPTIONAL,
+	...
+}
+
+
+CriticalityDiagnostics-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+CriticalityDiagnostics-IE-List ::= SEQUENCE (SIZE (1..maxnoofErrors)) OF
+	SEQUENCE {
+		iECriticality			Criticality,
+		iE-ID					ProtocolIE-ID,
+		typeOfError				TypeOfError,
+		iE-Extensions			ProtocolExtensionContainer { {CriticalityDiagnostics-IE-List-ExtIEs} } OPTIONAL,
+		...
+}
+
+CriticalityDiagnostics-IE-List-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- D
+
+DAPSRequestInfo ::= SEQUENCE {
+	dapsIndicator				ENUMERATED {daps-HO-required, ...},
+	iE-Extensions				ProtocolExtensionContainer { {DAPSRequestInfo-ExtIEs} } OPTIONAL,
+	...
+}
+
+DAPSRequestInfo-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Data-Forwarding-Information-Request	::=	SEQUENCE {
+	data-Forwarding-Request					Data-Forwarding-Request,
+	qoS-Flows-Forwarded-On-Fwd-Tunnels	QoS-Flow-Mapping-List			OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { Data-Forwarding-Information-Request-ExtIEs } }	OPTIONAL,
+	...
+}
+
+Data-Forwarding-Information-Request-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Data-Forwarding-Information	::=	SEQUENCE {
+	uL-Data-Forwarding						UP-TNL-Information		OPTIONAL,
+	dL-Data-Forwarding						UP-TNL-Information		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { Data-Forwarding-Information-ExtIEs } }	OPTIONAL,
+	...
+}
+
+Data-Forwarding-Information-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-DataForwardingtoNG-RANQoSFlowInformationList	CRITICALITY ignore	EXTENSION DataForwardingtoNG-RANQoSFlowInformationList	PRESENCE optional},
+	...
+}
+
+Data-Forwarding-Request ::= ENUMERATED	{
+	uL,
+	dL,
+	both,
+	...
+}
+
+DataForwardingtoE-UTRANInformationList ::= SEQUENCE (SIZE(1.. maxnoofDataForwardingTunneltoE-UTRAN)) OF DataForwardingtoE-UTRANInformationListItem
+
+DataForwardingtoE-UTRANInformationListItem ::= SEQUENCE {
+	data-forwarding-tunnel-information							UP-TNL-Information,
+	qoS-Flows-to-be-forwarded-List						QoS-Flows-to-be-forwarded-List,
+	iE-Extensions		ProtocolExtensionContainer { { DataForwardingtoE-UTRANInformationListItem-ExtIEs} }	OPTIONAL,
+	...
+}
+
+DataForwardingtoE-UTRANInformationListItem-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Data-Usage-per-PDU-Session-Report ::= SEQUENCE {
+	secondaryRATType			ENUMERATED {nR, e-UTRA, ...},
+	pDU-session-Timed-Report-List			SEQUENCE (SIZE(1..maxnooftimeperiods)) OF MRDC-Data-Usage-Report-Item,
+	iE-Extensions				ProtocolExtensionContainer { { Data-Usage-per-PDU-Session-Report-ExtIEs} } OPTIONAL,
+...
+}
+
+Data-Usage-per-PDU-Session-Report-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Data-Usage-per-QoS-Flow-List	::= SEQUENCE (SIZE(1..maxnoofQoSFlows)) OF Data-Usage-per-QoS-Flow-Item
+
+Data-Usage-per-QoS-Flow-Item ::= SEQUENCE {
+	qoS-Flow-Identifier		QoS-Flow-Identifier,
+	secondaryRATType			ENUMERATED {nR, e-UTRA, ...},
+	qoS-Flow-Timed-Report-List			SEQUENCE (SIZE(1..maxnooftimeperiods)) OF MRDC-Data-Usage-Report-Item,
+	iE-Extensions				ProtocolExtensionContainer { { Data-Usage-per-QoS-Flow-Item-ExtIEs} } OPTIONAL,
+...
+}
+
+Data-Usage-per-QoS-Flow-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Data-Usage-Report-List	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF Data-Usage-Report-Item
+
+Data-Usage-Report-Item	::= SEQUENCE {
+	dRB-ID						DRB-ID,
+	rAT-Type					RAT-Type,
+	dRB-Usage-Report-List		DRB-Usage-Report-List,
+	iE-Extensions	ProtocolExtensionContainer { { Data-Usage-Report-ItemExtIEs } }	OPTIONAL,
+	...
+}
+
+Data-Usage-Report-ItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DefaultDRB	::=	ENUMERATED	{
+	true,
+	false,
+	...
+}
+
+DirectForwardingPathAvailability ::= ENUMERATED {
+	inter-system-direct-path-available,
+	...,
+	intra-system-direct-path-available
+}
+
+DiscardTimer	::=	ENUMERATED {ms10, ms20, ms30, ms40, ms50, ms60, ms75, ms100, ms150, ms200, ms250, ms300, ms500, ms750, ms1500, infinity}
+
+DLDiscarding ::= SEQUENCE {
+	dLDiscardingCountVal			PDCP-Count,
+	iE-Extensions					ProtocolExtensionContainer { { DLDiscarding-ExtIEs } } 		OPTIONAL
+}
+
+DLDiscarding-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DLUPTNLAddressToUpdateItem	::= SEQUENCE {
+	oldTNLAdress						TransportLayerAddress,
+	newTNLAdress						TransportLayerAddress,
+	iE-Extensions	ProtocolExtensionContainer { { DLUPTNLAddressToUpdateItemExtIEs } }	OPTIONAL,
+	...
+}
+
+DLUPTNLAddressToUpdateItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DL-TX-Stop	::=	ENUMERATED	{
+	stop,
+	resume,
+	...
+}
+
+DRB-Activity	::= ENUMERATED {
+	active,
+	not-active,
+	...
+}
+
+DRB-Activity-List ::= SEQUENCE (SIZE(1..maxnoofDRBs)) OF DRB-Activity-Item
+
+DRB-Activity-Item	::= SEQUENCE {
+	dRB-ID						DRB-ID,
+	dRB-Activity				DRB-Activity,
+	iE-Extensions	ProtocolExtensionContainer { { DRB-Activity-ItemExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Activity-ItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Confirm-Modified-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Confirm-Modified-Item-EUTRAN
+
+DRB-Confirm-Modified-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cell-Group-Information					Cell-Group-Information	OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Confirm-Modified-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Confirm-Modified-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Confirm-Modified-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Confirm-Modified-Item-NG-RAN
+
+DRB-Confirm-Modified-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cell-Group-Information					Cell-Group-Information	OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Confirm-Modified-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Confirm-Modified-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-Item-EUTRAN
+
+DRB-Failed-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-Mod-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-Mod-Item-EUTRAN
+
+DRB-Failed-Mod-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-Mod-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-Mod-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-Item-NG-RAN
+
+DRB-Failed-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-Mod-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-Mod-Item-NG-RAN
+
+DRB-Failed-Mod-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-Mod-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-Mod-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-To-Modify-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-To-Modify-Item-EUTRAN
+
+DRB-Failed-To-Modify-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-To-Modify-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-To-Modify-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Failed-To-Modify-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Failed-To-Modify-Item-NG-RAN
+
+DRB-Failed-To-Modify-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Failed-To-Modify-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Failed-To-Modify-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-ID	::=	INTEGER (1..32, ...)
+DRB-Measurement-Results-Information-List	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Measurement-Results-Information-Item
+DRB-Measurement-Results-Information-Item	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	uL-D1-Result								INTEGER (0..10000, ...)							OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Measurement-Results-Information-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Measurement-Results-Information-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Modified-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Modified-Item-EUTRAN
+
+DRB-Modified-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID, 
+	s1-DL-UP-TNL-Information				UP-TNL-Information						OPTIONAL,
+	pDCP-SN-Status-Information				PDCP-SN-Status-Information				OPTIONAL,
+	uL-UP-Transport-Parameters				UP-Parameters							OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Modified-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Modified-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Modified-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Modified-Item-NG-RAN
+
+DRB-Modified-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	uL-UP-Transport-Parameters					UP-Parameters							OPTIONAL,
+	pDCP-SN-Status-Information					PDCP-SN-Status-Information				OPTIONAL,	
+	flow-Setup-List								QoS-Flow-List							OPTIONAL,
+	flow-Failed-List							QoS-Flow-Failed-List					OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Modified-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Modified-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-EarlyForwardingCOUNTInfo				CRITICALITY reject	EXTENSION EarlyForwardingCOUNTInfo		PRESENCE optional}|
+	{ID id-OldQoSFlowMap-ULendmarkerexpected	CRITICALITY ignore	EXTENSION QoS-Flow-List						PRESENCE optional},
+	...
+}
+
+DRB-Removed-Item	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	dRB-Released-In-Session					ENUMERATED {released-in-session, not-released-in-session, ...}		OPTIONAL,
+	dRB-Accumulated-Session-Time			OCTET STRING (SIZE(5))													OPTIONAL,
+	qoS-Flow-Removed-List					SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flow-Removed-Item		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Removed-Item-ExtIEs } }			OPTIONAL,
+	...
+}
+
+DRB-Removed-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Required-To-Modify-List-EUTRAN ::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Required-To-Modify-Item-EUTRAN
+
+DRB-Required-To-Modify-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	s1-DL-UP-TNL-Information				UP-TNL-Information							OPTIONAL,
+	gNB-CU-UP-CellGroupRelatedConfiguration	GNB-CU-UP-CellGroupRelatedConfiguration		OPTIONAL,
+	cause									Cause		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Required-To-Modify-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Required-To-Modify-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Required-To-Modify-List-NG-RAN ::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Required-To-Modify-Item-NG-RAN
+
+DRB-Required-To-Modify-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	gNB-CU-UP-CellGroupRelatedConfiguration	GNB-CU-UP-CellGroupRelatedConfiguration		OPTIONAL,
+	flow-To-Remove							QoS-Flow-List								OPTIONAL,
+	cause									Cause		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Required-To-Modify-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Required-To-Modify-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+DRB-Setup-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Setup-Item-EUTRAN
+
+DRB-Setup-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	s1-DL-UP-TNL-Information				UP-TNL-Information,
+	data-Forwarding-Information-Response	Data-Forwarding-Information		OPTIONAL,
+	uL-UP-Transport-Parameters				UP-Parameters,
+	s1-DL-UP-Unchanged						ENUMERATED {true, ...}		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Setup-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Setup-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Setup-Mod-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Setup-Mod-Item-EUTRAN
+
+DRB-Setup-Mod-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	s1-DL-UP-TNL-Information				UP-TNL-Information,
+	data-Forwarding-Information-Response	Data-Forwarding-Information		OPTIONAL,
+	uL-UP-Transport-Parameters				UP-Parameters,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Setup-Mod-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Setup-Mod-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Setup-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Setup-Item-NG-RAN
+
+DRB-Setup-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	dRB-data-Forwarding-Information-Response	Data-Forwarding-Information		OPTIONAL,
+	uL-UP-Transport-Parameters					UP-Parameters,
+	flow-Setup-List								QoS-Flow-List,
+	flow-Failed-List							QoS-Flow-Failed-List	OPTIONAL,
+	iE-Extensions								ProtocolExtensionContainer { { DRB-Setup-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Setup-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Setup-Mod-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Setup-Mod-Item-NG-RAN
+
+DRB-Setup-Mod-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	dRB-data-Forwarding-Information-Response	Data-Forwarding-Information		OPTIONAL,
+	uL-UP-Transport-Parameters					UP-Parameters,
+	flow-Setup-List								QoS-Flow-List,
+	flow-Failed-List							QoS-Flow-Failed-List	OPTIONAL,
+	iE-Extensions								ProtocolExtensionContainer { { DRB-Setup-Mod-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Setup-Mod-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Status-Item	::= SEQUENCE {
+	dRB-ID						DRB-ID,
+	pDCP-DL-Count				PDCP-Count		OPTIONAL,
+	pDCP-UL-Count				PDCP-Count		OPTIONAL,
+	iE-Extensions	ProtocolExtensionContainer { { DRB-Status-ItemExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Status-ItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRBs-Subject-To-Counter-Check-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRBs-Subject-To-Counter-Check-Item-EUTRAN
+
+DRBs-Subject-To-Counter-Check-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID						DRB-ID,
+	pDCP-UL-Count				PDCP-Count,
+	pDCP-DL-Count				PDCP-Count,
+	iE-Extensions		ProtocolExtensionContainer { { DRBs-Subject-To-Counter-Check-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRBs-Subject-To-Counter-Check-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRBs-Subject-To-Counter-Check-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRBs-Subject-To-Counter-Check-Item-NG-RAN
+
+DRBs-Subject-To-Counter-Check-Item-NG-RAN	::=	SEQUENCE {
+	pDU-Session-ID				PDU-Session-ID,
+	dRB-ID						DRB-ID,
+	pDCP-UL-Count				PDCP-Count,
+	pDCP-DL-Count				PDCP-Count,
+	iE-Extensions			ProtocolExtensionContainer { { DRBs-Subject-To-Counter-Check-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRBs-Subject-To-Counter-Check-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRBs-Subject-To-Early-Forwarding-List	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRBs-Subject-To-Early-Forwarding-Item
+
+DRBs-Subject-To-Early-Forwarding-Item	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	dLCountValue								PDCP-Count,
+	iE-Extensions							ProtocolExtensionContainer { { DRBs-Subject-To-Early-Forwarding-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRBs-Subject-To-Early-Forwarding-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Modify-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Modify-Item-EUTRAN
+
+DRB-To-Modify-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	pDCP-Configuration						PDCP-Configuration						OPTIONAL,	
+	eUTRAN-QoS								EUTRAN-QoS								OPTIONAL,
+	s1-UL-UP-TNL-Information				UP-TNL-Information						OPTIONAL,	
+	data-Forwarding-Information		Data-Forwarding-Information		OPTIONAL,
+	pDCP-SN-Status-Request					PDCP-SN-Status-Request						OPTIONAL,
+	pDCP-SN-Status-Information				PDCP-SN-Status-Information				OPTIONAL,
+	dL-UP-Parameters						UP-Parameters							OPTIONAL,
+	cell-Group-To-Add						Cell-Group-Information					OPTIONAL,
+	cell-Group-To-Modify					Cell-Group-Information					OPTIONAL,
+	cell-Group-To-Remove					Cell-Group-Information					OPTIONAL,
+	dRB-Inactivity-Timer					Inactivity-Timer						OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-To-Modify-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Modify-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Modify-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Modify-Item-NG-RAN
+
+DRB-To-Modify-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	sDAP-Configuration							SDAP-Configuration						OPTIONAL,	
+	pDCP-Configuration							PDCP-Configuration						OPTIONAL,
+	dRB-Data-Forwarding-Information		Data-Forwarding-Information		OPTIONAL,
+	pDCP-SN-Status-Request							PDCP-SN-Status-Request						OPTIONAL,
+	pdcp-SN-Status-Information					PDCP-SN-Status-Information				OPTIONAL,
+	dL-UP-Parameters							UP-Parameters							OPTIONAL,
+	cell-Group-To-Add							Cell-Group-Information					OPTIONAL,
+	cell-Group-To-Modify						Cell-Group-Information					OPTIONAL,
+	cell-Group-To-Remove						Cell-Group-Information					OPTIONAL,
+	flow-Mapping-Information					QoS-Flow-QoS-Parameter-List				OPTIONAL,
+	dRB-Inactivity-Timer						Inactivity-Timer						OPTIONAL,
+	iE-Extensions								ProtocolExtensionContainer { { DRB-To-Modify-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Modify-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-OldQoSFlowMap-ULendmarkerexpected	CRITICALITY reject	EXTENSION QoS-Flow-List	PRESENCE optional}|
+	{ID id-DRB-QoS						CRITICALITY ignore	EXTENSION QoSFlowLevelQoSParameters			PRESENCE optional}|
+	{ID id-EarlyForwardingCOUNTReq		CRITICALITY reject	EXTENSION EarlyForwardingCOUNTReq			PRESENCE optional}|
+	{ID id-EarlyForwardingCOUNTInfo		CRITICALITY reject	EXTENSION EarlyForwardingCOUNTInfo			PRESENCE optional}|
+	{ID id-DAPSRequestInfo				CRITICALITY ignore	EXTENSION DAPSRequestInfo					PRESENCE optional}|
+	{ID id-EarlyDataForwardingIndicator	CRITICALITY ignore	EXTENSION EarlyDataForwardingIndicator	PRESENCE optional},
+	...
+}
+
+DRB-To-Remove-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Remove-Item-EUTRAN
+
+DRB-To-Remove-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-To-Remove-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Remove-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Required-To-Remove-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Required-To-Remove-Item-EUTRAN
+
+DRB-Required-To-Remove-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Required-To-Remove-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Required-To-Remove-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Remove-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Remove-Item-NG-RAN
+
+DRB-To-Remove-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-To-Remove-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Remove-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-Required-To-Remove-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Required-To-Remove-Item-NG-RAN
+
+DRB-Required-To-Remove-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-Required-To-Remove-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-Required-To-Remove-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Setup-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Setup-Item-EUTRAN
+
+DRB-To-Setup-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID									DRB-ID,
+	pDCP-Configuration						PDCP-Configuration,
+	eUTRAN-QoS								EUTRAN-QoS,
+	s1-UL-UP-TNL-Information				UP-TNL-Information,
+	data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	cell-Group-Information					Cell-Group-Information,
+	dL-UP-Parameters						UP-Parameters							OPTIONAL,
+	dRB-Inactivity-Timer					Inactivity-Timer						OPTIONAL,
+	existing-Allocated-S1-DL-UP-TNL-Info	UP-TNL-Information						OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-To-Setup-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Setup-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Setup-Mod-List-EUTRAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Setup-Mod-Item-EUTRAN
+
+DRB-To-Setup-Mod-Item-EUTRAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	pDCP-Configuration							PDCP-Configuration,
+	eUTRAN-QoS									EUTRAN-QoS,
+	s1-UL-UP-TNL-Information					UP-TNL-Information,
+	data-Forwarding-Information-Request			Data-Forwarding-Information-Request		OPTIONAL,
+	cell-Group-Information						Cell-Group-Information,
+	dL-UP-Parameters							UP-Parameters							OPTIONAL,
+	dRB-Inactivity-Timer						Inactivity-Timer						OPTIONAL,
+	iE-Extensions								ProtocolExtensionContainer { { DRB-To-Setup-Mod-Item-EUTRAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Setup-Mod-Item-EUTRAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRB-To-Setup-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Setup-Item-NG-RAN
+
+DRB-To-Setup-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	sDAP-Configuration							SDAP-Configuration,
+	pDCP-Configuration							PDCP-Configuration,
+	cell-Group-Information						Cell-Group-Information,
+	qos-flow-Information-To-Be-Setup					QoS-Flow-QoS-Parameter-List,
+	dRB-Data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	dRB-Inactivity-Timer						Inactivity-Timer	OPTIONAL,
+	pDCP-SN-Status-Information								PDCP-SN-Status-Information								OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { DRB-To-Setup-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Setup-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-DRB-QoS						CRITICALITY ignore	EXTENSION QoSFlowLevelQoSParameters		PRESENCE optional}|
+	{ID id-DAPSRequestInfo				CRITICALITY ignore	EXTENSION DAPSRequestInfo					PRESENCE optional}|
+	{ID id-ignoreMappingRuleIndication	CRITICALITY reject	EXTENSION IgnoreMappingRuleIndication	PRESENCE optional}|
+	{ID id-QoSFlowsDRBRemapping			CRITICALITY reject	EXTENSION QoS-Flows-DRB-Remapping			PRESENCE optional},
+	...
+}
+
+DRB-To-Setup-Mod-List-NG-RAN	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-To-Setup-Mod-Item-NG-RAN
+
+DRB-To-Setup-Mod-Item-NG-RAN	::=	SEQUENCE {
+	dRB-ID										DRB-ID,
+	sDAP-Configuration							SDAP-Configuration,
+	pDCP-Configuration							PDCP-Configuration,
+	cell-Group-Information						Cell-Group-Information,
+	flow-Mapping-Information					QoS-Flow-QoS-Parameter-List,
+	dRB-Data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	dRB-Inactivity-Timer						Inactivity-Timer					OPTIONAL,
+	pDCP-SN-Status-Information				PDCP-SN-Status-Information					OPTIONAL,
+	iE-Extensions								ProtocolExtensionContainer { { DRB-To-Setup-Mod-Item-NG-RAN-ExtIEs } }	OPTIONAL,
+	...
+}
+
+DRB-To-Setup-Mod-Item-NG-RAN-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-DRB-QoS						CRITICALITY ignore	EXTENSION QoSFlowLevelQoSParameters		PRESENCE optional}|
+	{ID id-ignoreMappingRuleIndication	CRITICALITY reject	EXTENSION IgnoreMappingRuleIndication	PRESENCE optional}|
+	{ID id-DAPSRequestInfo				CRITICALITY ignore	EXTENSION DAPSRequestInfo				PRESENCE optional},
+	...
+}
+
+DRB-Usage-Report-List ::= SEQUENCE (SIZE(1..maxnooftimeperiods)) OF DRB-Usage-Report-Item
+
+DRB-Usage-Report-Item	::= SEQUENCE {
+	startTimeStamp					OCTET STRING (SIZE(4)),
+	endTimeStamp					OCTET STRING (SIZE(4)),
+	usageCountUL					INTEGER (0..18446744073709551615),
+	usageCountDL					INTEGER (0..18446744073709551615),
+	iE-Extensions					ProtocolExtensionContainer { { DRB-Usage-Report-Item-ExtIEs} } OPTIONAL,
+	...
+}
+
+DRB-Usage-Report-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Duplication-Activation	::=		ENUMERATED {
+	active, 
+	inactive,
+	...
+}
+
+
+Dynamic5QIDescriptor	::= SEQUENCE {
+	qoSPriorityLevel					QoSPriorityLevel,
+	packetDelayBudget					PacketDelayBudget,
+	packetErrorRate						PacketErrorRate,
+	fiveQI								INTEGER (0..255, ...)								OPTIONAL,
+	delayCritical						ENUMERATED {delay-critical, non-delay-critical}		OPTIONAL,
+	averagingWindow 					AveragingWindow										OPTIONAL,
+	maxDataBurstVolume					MaxDataBurstVolume									OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { Dynamic5QIDescriptor-ExtIEs } } OPTIONAL
+}
+
+Dynamic5QIDescriptor-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-ExtendedPacketDelayBudget			CRITICALITY ignore	EXTENSION 	ExtendedPacketDelayBudget		PRESENCE optional	}|
+	{ ID id-CNPacketDelayBudgetDownlink			CRITICALITY ignore	EXTENSION 	ExtendedPacketDelayBudget		PRESENCE optional	}|
+	{ ID id-CNPacketDelayBudgetUplink			CRITICALITY ignore	EXTENSION 	ExtendedPacketDelayBudget		PRESENCE optional	},
+	...
+}
+
+DataDiscardRequired	::= 	ENUMERATED {
+	required,
+	...
+}
+
+-- E
+
+EarlyDataForwardingIndicator ::= ENUMERATED {stop, ...}
+
+EarlyForwardingCOUNTInfo ::= CHOICE {
+	firstDLCount					FirstDLCount,
+	dLDiscardingCount				DLDiscarding,
+	choice-Extension				ProtocolIE-SingleContainer { { EarlyForwardingCOUNTInfo-ExtIEs} } 
+}
+
+EarlyForwardingCOUNTInfo-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+EarlyForwardingCOUNTReq ::= ENUMERATED { first-dl-count, dl-discarding, ...}
+
+EHC-Common-Parameters ::= SEQUENCE {
+	ehc-CID-Length						ENUMERATED { bits7, bits15, ...},
+	iE-Extensions						ProtocolExtensionContainer { { EHC-Common-Parameters-ExtIEs } } 		OPTIONAL
+}
+
+EHC-Common-Parameters-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EHC-Downlink-Parameters ::= SEQUENCE {
+	drb-ContinueEHC-DL					ENUMERATED { true, ...},
+	iE-Extensions						ProtocolExtensionContainer { { EHC-Downlink-Parameters-ExtIEs } } 		OPTIONAL
+}
+
+EHC-Downlink-Parameters-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+{ID id-MaxCIDEHCDL			CRITICALITY ignore	EXTENSION	MaxCIDEHCDL		PRESENCE optional	},
+	...
+}
+
+EHC-Uplink-Parameters ::= SEQUENCE {
+	drb-ContinueEHC-UL					ENUMERATED { true, ...},
+	iE-Extensions						ProtocolExtensionContainer { { EHC-Uplink-Parameters-ExtIEs } } 		OPTIONAL
+}
+
+EHC-Uplink-Parameters-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EHC-Parameters ::= SEQUENCE {
+	ehc-Common							EHC-Common-Parameters,
+	ehc-Downlink						EHC-Downlink-Parameters					OPTIONAL,
+	ehc-Uplink							EHC-Uplink-Parameters					OPTIONAL,
+	iE-Extensions						ProtocolExtensionContainer { { EHC-Parameters-ExtIEs } } 		OPTIONAL
+}
+
+EHC-Parameters-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EncryptionKey	::=	OCTET STRING
+
+Endpoint-IP-address-and-port::= SEQUENCE {
+	endpoint-IP-Address			TransportLayerAddress,
+	portNumber					PortNumber,
+	iE-Extensions							ProtocolExtensionContainer { { Endpoint-IP-address-and-port-ExtIEs} } OPTIONAL
+}
+
+Endpoint-IP-address-and-port-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EUTRANAllocationAndRetentionPriority ::= SEQUENCE {
+	priorityLevel				PriorityLevel,
+	pre-emptionCapability		Pre-emptionCapability,
+	pre-emptionVulnerability	Pre-emptionVulnerability,
+	iE-Extensions				ProtocolExtensionContainer { {EUTRANAllocationAndRetentionPriority-ExtIEs} } OPTIONAL,
+	...
+}
+
+ExtendedPacketDelayBudget ::= INTEGER (1..65535, ...)
+
+EUTRANAllocationAndRetentionPriority-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+EUTRAN-QoS-Support-List ::= SEQUENCE (SIZE(1.. maxnoofEUTRANQOSParameters)) OF EUTRAN-QoS-Support-Item
+
+EUTRAN-QoS-Support-Item ::= SEQUENCE {
+	eUTRAN-QoS	EUTRAN-QoS,
+	iE-Extensions			ProtocolExtensionContainer { { EUTRAN-QoS-Support-Item-ExtIEs } }	OPTIONAL
+}
+
+EUTRAN-QoS-Support-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+EUTRAN-QoS	::= SEQUENCE {
+	qCI										QCI,
+	eUTRANallocationAndRetentionPriority	EUTRANAllocationAndRetentionPriority,
+	gbrQosInformation						GBR-QosInformation										OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { EUTRAN-QoS-ExtIEs } }	OPTIONAL,
+	...
+}
+
+EUTRAN-QoS-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+ExtendedSliceSupportList ::= SEQUENCE (SIZE(1.. maxnoofExtSliceItems)) OF Slice-Support-Item
+
+-- F
+
+FirstDLCount ::= SEQUENCE {
+	firstDLCountVal					PDCP-Count,
+	iE-Extensions					ProtocolExtensionContainer { { FirstDLCount-ExtIEs } } 		OPTIONAL
+}
+
+FirstDLCount-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- G
+
+GNB-CU-CP-Name 				::= PrintableString(SIZE(1..150,...)) 
+
+Extended-GNB-CU-CP-Name	 ::= SEQUENCE {
+	gNB-CU-CP-NameVisibleString			GNB-CU-CP-NameVisibleString				OPTIONAL,
+	gNB-CU-CP-NameUTF8String			GNB-CU-CP-NameUTF8String				OPTIONAL, 
+	iE-Extensions						ProtocolExtensionContainer { { Extended-GNB-CU-CP-Name-ExtIEs } } OPTIONAL,
+	...
+}
+
+Extended-GNB-CU-CP-Name-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-CP-NameVisibleString ::= VisibleString(SIZE(1..150,...))
+
+GNB-CU-CP-NameUTF8String ::= UTF8String(SIZE(1..150,...))
+
+
+GNB-CU-CP-UE-E1AP-ID		::= INTEGER (0..4294967295)
+
+GNB-CU-UP-Capacity				::= INTEGER (0..255)
+
+GNB-CU-UP-CellGroupRelatedConfiguration	 ::= SEQUENCE (SIZE(1.. maxnoofUPParameters)) OF GNB-CU-UP-CellGroupRelatedConfiguration-Item	
+
+GNB-CU-UP-CellGroupRelatedConfiguration-Item ::= SEQUENCE {
+	cell-Group-ID				Cell-Group-ID,
+	uP-TNL-Information			UP-TNL-Information,
+	uL-Configuration			UL-Configuration		OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { {GNB-CU-UP-CellGroupRelatedConfiguration-Item-ExtIEs } }	OPTIONAL
+}
+
+GNB-CU-UP-CellGroupRelatedConfiguration-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-UP-ID				::= INTEGER (0..68719476735)
+
+GNB-CU-UP-Name 				::= PrintableString(SIZE(1..150,...))
+
+Extended-GNB-CU-UP-Name	 ::= SEQUENCE {
+	gNB-CU-UP-NameVisibleString			GNB-CU-UP-NameVisibleString				OPTIONAL,
+	gNB-CU-UP-NameUTF8String			GNB-CU-UP-NameUTF8String				OPTIONAL, 
+	iE-Extensions						ProtocolExtensionContainer { { Extended-GNB-CU-UP-Name-ExtIEs } } OPTIONAL,
+	...
+}
+
+Extended-GNB-CU-UP-Name-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-UP-NameVisibleString ::= VisibleString(SIZE(1..150,...))
+
+GNB-CU-UP-NameUTF8String ::= UTF8String(SIZE(1..150,...))
+
+GNB-CU-UP-UE-E1AP-ID		::= INTEGER (0..4294967295) 
+
+GNB-CU-CP-TNLA-Setup-Item::= SEQUENCE {
+	tNLAssociationTransportLayerAddress		CP-TNL-Information,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-CP-TNLA-Setup-Item-ExtIEs} } OPTIONAL,
+	...
+}
+
+GNB-CU-CP-TNLA-Setup-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-CP-TNLA-Failed-To-Setup-Item ::= SEQUENCE {
+	tNLAssociationTransportLayerAddress		CP-TNL-Information,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-CP-TNLA-Failed-To-Setup-Item-ExtIEs} } OPTIONAL
+}
+
+GNB-CU-CP-TNLA-Failed-To-Setup-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-CP-TNLA-To-Add-Item ::= SEQUENCE {
+	tNLAssociationTransportLayerAddress		CP-TNL-Information,
+	tNLAssociationUsage						TNLAssociationUsage,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-CP-TNLA-To-Add-Item-ExtIEs} } OPTIONAL
+}
+
+GNB-CU-CP-TNLA-To-Add-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-CP-TNLA-To-Remove-Item::= SEQUENCE {
+	tNLAssociationTransportLayerAddress		CP-TNL-Information,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-CP-TNLA-To-Remove-Item-ExtIEs} } OPTIONAL
+}
+
+GNB-CU-CP-TNLA-To-Remove-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-TNLAssociationTransportLayerAddressgNBCUUP	CRITICALITY reject	EXTENSION CP-TNL-Information	PRESENCE optional},
+	...
+}
+
+GNB-CU-CP-TNLA-To-Update-Item::= SEQUENCE {
+	tNLAssociationTransportLayerAddress		CP-TNL-Information,
+	tNLAssociationUsage						TNLAssociationUsage 	OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-CP-TNLA-To-Update-Item-ExtIEs} } OPTIONAL
+}
+
+GNB-CU-CP-TNLA-To-Update-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-UP-TNLA-To-Remove-Item::= SEQUENCE {
+	tNLAssociationTransportLayerAddress			CP-TNL-Information,
+	tNLAssociationTransportLayerAddressgNBCUCP	CP-TNL-Information		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { GNB-CU-UP-TNLA-To-Remove-Item-ExtIEs} } OPTIONAL
+}
+
+GNB-CU-UP-TNLA-To-Remove-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GBR-QosInformation ::= SEQUENCE {
+	e-RAB-MaximumBitrateDL			BitRate,
+	e-RAB-MaximumBitrateUL			BitRate,
+	e-RAB-GuaranteedBitrateDL		BitRate,
+	e-RAB-GuaranteedBitrateUL		BitRate,
+	iE-Extensions					ProtocolExtensionContainer { { GBR-QosInformation-ExtIEs} } OPTIONAL,
+	...
+}
+
+GBR-QosInformation-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GBR-QoSFlowInformation::= SEQUENCE {
+	maxFlowBitRateDownlink			BitRate,
+	maxFlowBitRateUplink			BitRate, 
+	guaranteedFlowBitRateDownlink	BitRate,
+	guaranteedFlowBitRateUplink		BitRate, 
+	maxPacketLossRateDownlink		MaxPacketLossRate		OPTIONAL,
+	maxPacketLossRateUplink			MaxPacketLossRate		OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { GBR-QosFlowInformation-ExtIEs} } OPTIONAL,
+	...
+}
+
+GBR-QosFlowInformation-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-AlternativeQoSParaSetList	CRITICALITY ignore	EXTENSION AlternativeQoSParaSetList	PRESENCE optional},
+	...
+}
+
+GTP-TEID				::= OCTET STRING (SIZE (4))
+
+GTPTLAs	::= SEQUENCE (SIZE(1.. maxnoofGTPTLAs)) OF	GTPTLA-Item
+
+GTPTLA-Item	::= SEQUENCE {
+	gTPTransportLayerAddresses				TransportLayerAddress,
+	iE-Extensions	ProtocolExtensionContainer { { GTPTLA-Item-ExtIEs } }         OPTIONAL,
+	...
+}
+
+GTPTLA-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GTPTunnel				::= SEQUENCE {
+	transportLayerAddress				TransportLayerAddress,
+	gTP-TEID							GTP-TEID,
+	iE-Extensions						ProtocolExtensionContainer { { GTPTunnel-ExtIEs} } OPTIONAL,
+	...
+}
+
+GTPTunnel-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+GNB-CU-UP-OverloadInformation ::= ENUMERATED {overloaded, not-overloaded}
+
+GNB-DU-ID	::= INTEGER (0..68719476735)
+
+
+-- H
+
+HFN		::=		INTEGER	(0..4294967295)
+
+HW-CapacityIndicator ::= SEQUENCE {
+	offeredThroughput				INTEGER (1..16777216, ...),
+	availableThroughput				INTEGER (0..100, ...),
+	iE-Extensions		ProtocolExtensionContainer { { HW-CapacityIndicator-ExtIEs } },
+	...
+}
+
+HW-CapacityIndicator-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- I 
+
+IgnoreMappingRuleIndication	::=	ENUMERATED	{
+	true,
+	...
+}
+
+IntegrityProtectionIndication ::= ENUMERATED {
+	required,
+	preferred,
+	not-needed,
+	...
+}
+
+IntegrityProtectionAlgorithm	::=	ENUMERATED {
+	nIA0,
+	i-128-NIA1,
+	i-128-NIA2,
+	i-128-NIA3,
+	...
+}
+
+IntegrityProtectionKey	::= OCTET STRING
+
+IntegrityProtectionResult ::= ENUMERATED {
+	performed,
+	not-performed,
+	...
+}
+
+Inactivity-Timer	::=	INTEGER (1..7200, ...)
+
+InterfacesToTrace ::= BIT STRING (SIZE(8))
+
+ImmediateMDT ::= SEQUENCE { 
+measurementsToActivate		MeasurementsToActivate,
+	measurementFour 	M4Configuration		OPTIONAL,
+	measurementSix 				M6Configuration		OPTIONAL, 
+	measurementSeven 			M7Configuration	    OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { { ImmediateMDT-ExtIEs} } OPTIONAL,
+	...
+}
+ImmediateMDT-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- J
+
+-- K
+
+-- L
+
+Links-to-log ::= ENUMERATED {
+	uplink,
+	downlink,
+	both-uplink-and-downlink,
+	...
+} 
+
+-- M
+
+MaxDataBurstVolume  ::= INTEGER (0..4095, ..., 4096.. 2000000) 
+
+MaximumIPdatarate ::= SEQUENCE {
+	maxIPrate			MaxIPrate,
+	iE-Extensions		ProtocolExtensionContainer { {MaximumIPdatarate-ExtIEs} }	OPTIONAL,
+	...
+}
+
+MaximumIPdatarate-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+MaxIPrate ::= ENUMERATED {
+	bitrate64kbs,
+	max-UErate,
+	...
+}
+
+MaxPacketLossRate ::= INTEGER (0..1000, ...)
+
+MaxCIDEHCDL ::= INTEGER (1..32767, ...)
+
+MRDC-Data-Usage-Report-Item ::= SEQUENCE {
+	startTimeStamp				OCTET STRING (SIZE(4)),
+	endTimeStamp				OCTET STRING (SIZE(4)),
+	usageCountUL				INTEGER (0..18446744073709551615),
+	usageCountDL				INTEGER (0..18446744073709551615),
+	iE-Extensions				ProtocolExtensionContainer { { MRDC-Data-Usage-Report-Item-ExtIEs} } OPTIONAL,
+...
+}
+
+MRDC-Data-Usage-Report-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+MRDC-Usage-Information ::= SEQUENCE {
+	data-Usage-per-PDU-Session-Report		Data-Usage-per-PDU-Session-Report			OPTIONAL,
+	data-Usage-per-QoS-Flow-List			Data-Usage-per-QoS-Flow-List				OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { { MRDC-Usage-Information-ExtIEs} } OPTIONAL,
+...
+}
+
+MRDC-Usage-Information-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+M4Configuration ::= SEQUENCE {
+	m4period			M4period,
+	m4-links-to-log		Links-to-log,
+	iE-Extensions		ProtocolExtensionContainer { { M4Configuration-ExtIEs} } OPTIONAL,
+	...
+}
+
+M4Configuration-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+M4period ::= ENUMERATED {ms1024, ms2048, ms5120, ms10240, min1, ... } 
+
+M6Configuration ::= SEQUENCE {
+	m6report-Interval	M6report-Interval,
+	m6-links-to-log		Links-to-log,
+	iE-Extensions		ProtocolExtensionContainer { { M6Configuration-ExtIEs} } OPTIONAL,
+	...
+}
+
+M6Configuration-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+M6report-Interval ::= ENUMERATED { ms120, ms240, ms480, ms640, ms1024, ms2048, ms5120, ms10240, ms20480 ,ms40960, min1, min6, min12, min30, ... }
+
+M7Configuration ::= SEQUENCE {
+	m7period			M7period,
+	m7-links-to-log		Links-to-log,
+	iE-Extensions		ProtocolExtensionContainer { { M7Configuration-ExtIEs} } OPTIONAL,
+	...
+}
+
+M7Configuration-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+M7period ::= INTEGER(1..60, ...)
+
+MDT-Activation 	::= ENUMERATED { 
+	immediate-MDT-only,
+	immediate-MDT-and-Trace,
+		...
+}
+
+MDT-Configuration ::= SEQUENCE {
+	mdt-Activation				MDT-Activation,
+	mDTMode			MDTMode,
+	iE-Extensions				ProtocolExtensionContainer { { MDT-Configuration-ExtIEs} } OPTIONAL,
+	...
+}
+MDT-Configuration-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+MDTMode ::= CHOICE {
+	immediateMDT 				ImmediateMDT,
+	choice-extension	ProtocolIE-SingleContainer	{{MDTMode-ExtIEs}}
+}
+
+MDTMode-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+MeasurementsToActivate ::= BIT STRING (SIZE (8))
+
+MDTPLMNList ::= SEQUENCE (SIZE(1..maxnoofMDTPLMNs)) OF PLMN-Identity
+
+-- N
+
+NetworkInstance ::= INTEGER (1..256, ...)
+
+New-UL-TNL-Information-Required::= 	ENUMERATED {
+	required,
+	...
+}
+NGRANAllocationAndRetentionPriority ::= SEQUENCE {
+	priorityLevel				PriorityLevel,
+	pre-emptionCapability		Pre-emptionCapability,
+	pre-emptionVulnerability	Pre-emptionVulnerability,
+	iE-Extensions				ProtocolExtensionContainer { {NGRANAllocationAndRetentionPriority-ExtIEs} } OPTIONAL
+}
+
+NGRANAllocationAndRetentionPriority-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+NG-RAN-QoS-Support-List ::= SEQUENCE (SIZE(1.. maxnoofNGRANQOSParameters)) OF NG-RAN-QoS-Support-Item
+
+NG-RAN-QoS-Support-Item ::= SEQUENCE {
+	non-Dynamic5QIDescriptor	Non-Dynamic5QIDescriptor,
+	iE-Extensions				ProtocolExtensionContainer { { NG-RAN-QoS-Support-Item-ExtIEs } }	OPTIONAL
+}
+
+NG-RAN-QoS-Support-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+NID	::= BIT STRING (SIZE (44))
+
+Non-Dynamic5QIDescriptor	::= SEQUENCE {
+	fiveQI						INTEGER (0..255, ...),
+	qoSPriorityLevel			QoSPriorityLevel				OPTIONAL,
+	averagingWindow 			AveragingWindow					OPTIONAL,
+	maxDataBurstVolume			MaxDataBurstVolume				OPTIONAL,
+	iE-Extensions	ProtocolExtensionContainer { { Non-Dynamic5QIDescriptor-ExtIEs } } OPTIONAL
+}
+
+Non-Dynamic5QIDescriptor-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-CNPacketDelayBudgetDownlink			CRITICALITY ignore	EXTENSION 	ExtendedPacketDelayBudget		PRESENCE optional	}|
+	{ ID id-CNPacketDelayBudgetUplink			CRITICALITY ignore	EXTENSION 	ExtendedPacketDelayBudget		PRESENCE optional	},
+	...
+}
+
+NPNSupportInfo ::= CHOICE {
+	sNPN				NPNSupportInfo-SNPN,
+	choice-extension	ProtocolIE-SingleContainer	{{NPNSupportInfo-ExtIEs}}
+}
+
+NPNSupportInfo-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+NPNSupportInfo-SNPN ::= SEQUENCE {
+	nID						NID,
+	iE-Extensions			ProtocolExtensionContainer { { NPNSupportInfo-SNPN-ExtIEs } }	OPTIONAL
+}
+
+
+NPNSupportInfo-SNPN-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+NPNContextInfo ::= CHOICE {
+	sNPN				NPNContextInfo-SNPN,
+	choice-extension	ProtocolIE-SingleContainer	{{NPNContextInfo-ExtIEs}}
+}
+
+NPNContextInfo-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+NPNContextInfo-SNPN ::= SEQUENCE {
+	nID						NID,
+	iE-Extensions			ProtocolExtensionContainer { {NPNContextInfo-SNPN-ExtIEs } }	OPTIONAL
+}
+
+NPNContextInfo-SNPN-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+NR-Cell-Identity	::=		BIT STRING (SIZE(36))
+
+NR-CGI ::= SEQUENCE {
+	pLMN-Identity			PLMN-Identity,
+	nR-Cell-Identity		NR-Cell-Identity,
+	iE-Extensions			ProtocolExtensionContainer { { NR-CGI-ExtIEs } }	OPTIONAL
+}
+
+NR-CGI-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+NR-CGI-Support-List ::= SEQUENCE (SIZE(1.. maxnoofNRCGI)) OF NR-CGI-Support-Item
+
+NR-CGI-Support-Item ::= SEQUENCE {
+	nR-CGI	NR-CGI,
+	iE-Extensions				ProtocolExtensionContainer { { NR-CGI-Support-Item-ExtIEs } }	OPTIONAL
+}
+
+NR-CGI-Support-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Extended-NR-CGI-Support-List ::= SEQUENCE (SIZE(1.. maxnoofExtNRCGI)) OF Extended-NR-CGI-Support-Item
+
+Extended-NR-CGI-Support-Item ::= SEQUENCE {
+	nR-CGI	NR-CGI,
+	iE-Extensions				ProtocolExtensionContainer { { Extended-NR-CGI-Support-Item-ExtIEs } }	OPTIONAL
+}
+
+Extended-NR-CGI-Support-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- O
+
+OutOfOrderDelivery	::=	ENUMERATED	{
+	true,
+	...
+}
+
+
+-- P
+
+PacketDelayBudget ::= INTEGER (0..1023, ...) 
+
+PacketErrorRate ::= SEQUENCE {
+	pER-Scalar			PER-Scalar,
+	pER-Exponent		PER-Exponent,
+	iE-Extensions		ProtocolExtensionContainer { {PacketErrorRate-ExtIEs} }	OPTIONAL,
+	...
+}
+
+PacketErrorRate-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PER-Scalar ::= INTEGER (0..9, ...)
+PER-Exponent ::= INTEGER (0..9, ...)
+
+PDCP-Configuration	::=	SEQUENCE {
+	
+	pDCP-SN-Size-UL							PDCP-SN-Size,
+	pDCP-SN-Size-DL							PDCP-SN-Size,
+	rLC-Mode								RLC-Mode,
+	rOHC-Parameters							ROHC-Parameters			OPTIONAL,
+	t-ReorderingTimer						T-ReorderingTimer		OPTIONAL,
+	discardTimer							DiscardTimer			OPTIONAL,
+	uLDataSplitThreshold					ULDataSplitThreshold	OPTIONAL,
+	pDCP-Duplication						PDCP-Duplication		OPTIONAL,
+	pDCP-Reestablishment					PDCP-Reestablishment	OPTIONAL,
+	pDCP-DataRecovery						PDCP-DataRecovery		OPTIONAL,
+	duplication-Activation				Duplication-Activation		OPTIONAL,
+	outOfOrderDelivery						OutOfOrderDelivery		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDCP-Configuration-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDCP-Configuration-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-PDCP-StatusReportIndication					CRITICALITY ignore	EXTENSION PDCP-StatusReportIndication					PRESENCE	optional}|
+	{ ID id-AdditionalPDCPduplicationInformation		CRITICALITY ignore	EXTENSION AdditionalPDCPduplicationInformation	PRESENCE optional	}|
+	{ ID id-EHC-Parameters								CRITICALITY ignore	EXTENSION EHC-Parameters									PRESENCE optional},
+	...
+}
+
+PDCP-Count	::=	SEQUENCE {
+	pDCP-SN				PDCP-SN,
+	hFN					HFN,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDCP-Count-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDCP-Count-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}	
+	
+PDCP-SN-Status-Request	::=		ENUMERATED {
+	requested,
+	...
+}
+
+PDCP-DataRecovery	::=	ENUMERATED	{
+	true,
+	...
+}
+
+PDCP-Duplication	::=	ENUMERATED	{
+	true,
+	...
+}
+
+PDCP-Reestablishment	::=	ENUMERATED	{
+	true,
+	...
+}
+
+PDU-Session-Resource-Data-Usage-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Data-Usage-Item
+
+PDU-Session-Resource-Data-Usage-Item	::= SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	mRDC-Usage-Information						MRDC-Usage-Information,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Data-Usage-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Data-Usage-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDCP-SN		::=		INTEGER	(0..262143)
+
+PDCP-SN-Size	::=	ENUMERATED	{
+	s-12,
+	s-18,
+	...
+}
+
+PDCP-SN-Status-Information ::= SEQUENCE {
+	pdcpStatusTransfer-UL	DRBBStatusTransfer,
+	pdcpStatusTransfer-DL	PDCP-Count,
+	iE-Extension		ProtocolExtensionContainer { { PDCP-SN-Status-Information-ExtIEs} }	OPTIONAL,
+	...
+}
+
+PDCP-StatusReportIndication	::=	ENUMERATED	{
+	downlink,
+	uplink,
+	both,
+	...
+}
+
+PDCP-SN-Status-Information-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+DRBBStatusTransfer ::= SEQUENCE {
+	receiveStatusofPDCPSDU	BIT STRING (SIZE(1..131072))										OPTIONAL,
+	countValue				PDCP-Count,
+	iE-Extension			ProtocolExtensionContainer { {DRBBStatusTransfer-ExtIEs} }	OPTIONAL,
+	...
+}
+
+DRBBStatusTransfer-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-ID	::=	INTEGER (0..255)
+
+PDU-Session-Resource-Activity	::= ENUMERATED {
+	active,
+	not-active,
+	...
+}
+
+PDU-Session-Resource-Activity-List ::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Activity-Item
+
+PDU-Session-Resource-Activity-Item	::= SEQUENCE {
+	pDU-Session-ID									PDU-Session-ID,
+	pDU-Session-Resource-Activity					PDU-Session-Resource-Activity,
+	iE-Extensions	ProtocolExtensionContainer 		{ { PDU-Session-Resource-Activity-ItemExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Activity-ItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+PDU-Session-Resource-Confirm-Modified-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Confirm-Modified-Item
+
+PDU-Session-Resource-Confirm-Modified-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	dRB-Confirm-Modified-List-NG-RAN		DRB-Confirm-Modified-List-NG-RAN	OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Confirm-Modified-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Confirm-Modified-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-Resource-Failed-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Failed-Item
+
+PDU-Session-Resource-Failed-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Failed-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Failed-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-Resource-Failed-Mod-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Failed-Mod-Item
+
+PDU-Session-Resource-Failed-Mod-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Failed-Mod-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Failed-Mod-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-Resource-Failed-To-Modify-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Failed-To-Modify-Item
+
+PDU-Session-Resource-Failed-To-Modify-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Failed-To-Modify-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Failed-To-Modify-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-Resource-Modified-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Modified-Item
+
+PDU-Session-Resource-Modified-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	nG-DL-UP-TNL-Information				UP-TNL-Information						OPTIONAL,
+	securityResult							SecurityResult							OPTIONAL,
+	pDU-Session-Data-Forwarding-Information-Response		Data-Forwarding-Information		OPTIONAL,
+	dRB-Setup-List-NG-RAN					DRB-Setup-List-NG-RAN					OPTIONAL,
+	dRB-Failed-List-NG-RAN				DRB-Failed-List-NG-RAN				OPTIONAL,
+	dRB-Modified-List-NG-RAN				DRB-Modified-List-NG-RAN				OPTIONAL,
+	dRB-Failed-To-Modify-List-NG-RAN		DRB-Failed-To-Modify-List-NG-RAN		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Modified-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Modified-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-redundant-nG-DL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information	PRESENCE optional	},
+	...
+}
+
+PDU-Session-Resource-Required-To-Modify-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Required-To-Modify-Item
+
+PDU-Session-Resource-Required-To-Modify-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	nG-DL-UP-TNL-Information				UP-TNL-Information						OPTIONAL,
+	dRB-Required-To-Modify-List-NG-RAN		DRB-Required-To-Modify-List-NG-RAN		OPTIONAL,
+	dRB-Required-To-Remove-List-NG-RAN				DRB-Required-To-Remove-List-NG-RAN				OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Required-To-Modify-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Required-To-Modify-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-redundant-nG-DL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information	PRESENCE optional	},
+	...
+}	
+
+PDU-Session-Resource-Setup-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Setup-Item
+
+PDU-Session-Resource-Setup-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	securityResult							SecurityResult				OPTIONAL,
+	nG-DL-UP-TNL-Information				UP-TNL-Information,
+	pDU-Session-Data-Forwarding-Information-Response		Data-Forwarding-Information		OPTIONAL,
+	nG-DL-UP-Unchanged						ENUMERATED {true, ...}		OPTIONAL,
+	dRB-Setup-List-NG-RAN					DRB-Setup-List-NG-RAN,
+	dRB-Failed-List-NG-RAN					DRB-Failed-List-NG-RAN		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-Setup-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Setup-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-redundant-nG-DL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information	PRESENCE optional	}|
+	{ ID id-RedundantPDUSessionInformation-used		CRITICALITY ignore	EXTENSION 	RedundantPDUSessionInformation	PRESENCE optional	},
+	...
+}
+
+PDU-Session-Resource-Setup-Mod-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-Setup-Mod-Item
+
+PDU-Session-Resource-Setup-Mod-Item	::=	SEQUENCE {
+	pDU-Session-ID											PDU-Session-ID,
+	securityResult											SecurityResult								OPTIONAL,
+	nG-DL-UP-TNL-Information								UP-TNL-Information,
+	pDU-Session-Data-Forwarding-Information-Response		Data-Forwarding-Information		OPTIONAL,
+	dRB-Setup-Mod-List-NG-RAN								DRB-Setup-Mod-List-NG-RAN,
+	dRB-Failed-Mod-List-NG-RAN								DRB-Failed-Mod-List-NG-RAN					OPTIONAL,
+	iE-Extensions											ProtocolExtensionContainer	{ { PDU-Session-Resource-Setup-Mod-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-Setup-Mod-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-redundant-nG-DL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information	PRESENCE optional	},
+	...
+}
+
+PDU-Session-Resource-To-Modify-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-To-Modify-Item
+
+PDU-Session-Resource-To-Modify-Item	::=	SEQUENCE {
+	pDU-Session-ID										PDU-Session-ID,
+	securityIndication									SecurityIndication						OPTIONAL,
+	pDU-Session-Resource-DL-AMBR						BitRate									OPTIONAL,
+	nG-UL-UP-TNL-Information							UP-TNL-Information						OPTIONAL,
+	pDU-Session-Data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	pDU-Session-Data-Forwarding-Information	Data-Forwarding-Information	OPTIONAL,
+	pDU-Session-Inactivity-Timer						Inactivity-Timer						OPTIONAL,
+	networkInstance										NetworkInstance							OPTIONAL,
+	dRB-To-Setup-List-NG-RAN							DRB-To-Setup-List-NG-RAN				OPTIONAL,
+	dRB-To-Modify-List-NG-RAN							DRB-To-Modify-List-NG-RAN				OPTIONAL,
+	dRB-To-Remove-List-NG-RAN					DRB-To-Remove-List-NG-RAN		OPTIONAL,
+	iE-Extensions										ProtocolExtensionContainer	{ { PDU-Session-Resource-To-Modify-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-To-Modify-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-SNSSAI		CRITICALITY reject	EXTENSION SNSSAI		PRESENCE optional}|
+	{ ID id-CommonNetworkInstance						CRITICALITY ignore	EXTENSION CommonNetworkInstance								PRESENCE optional	}|
+	{ID id-redundant-nG-UL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information			PRESENCE optional	}|
+	{ID id-RedundantCommonNetworkInstance				CRITICALITY ignore	EXTENSION 	CommonNetworkInstance		PRESENCE optional	}|
+	{ID id-DataForwardingtoE-UTRANInformationList				CRITICALITY ignore	EXTENSION 	DataForwardingtoE-UTRANInformationList		PRESENCE optional	},
+	...
+}
+
+PDU-Session-Resource-To-Remove-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-To-Remove-Item
+
+PDU-Session-Resource-To-Remove-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-To-Remove-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-To-Remove-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-Cause		CRITICALITY ignore	EXTENSION Cause		PRESENCE optional},
+	...
+}
+
+PDU-Session-Resource-To-Setup-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-To-Setup-Item
+
+PDU-Session-Resource-To-Setup-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	pDU-Session-Type						PDU-Session-Type,
+	sNSSAI									SNSSAI,
+	securityIndication						SecurityIndication,
+	pDU-Session-Resource-DL-AMBR			BitRate						OPTIONAL,
+	nG-UL-UP-TNL-Information				UP-TNL-Information,
+	pDU-Session-Data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	pDU-Session-Inactivity-Timer			Inactivity-Timer	OPTIONAL,
+	existing-Allocated-NG-DL-UP-TNL-Info	UP-TNL-Information		OPTIONAL,
+	networkInstance							NetworkInstance		OPTIONAL,
+	dRB-To-Setup-List-NG-RAN				DRB-To-Setup-List-NG-RAN,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-Resource-To-Setup-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-To-Setup-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-CommonNetworkInstance						CRITICALITY ignore	EXTENSION CommonNetworkInstance								PRESENCE optional	}|
+	{ ID id-redundant-nG-UL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information					PRESENCE optional	}|
+	{ ID id-RedundantCommonNetworkInstance			CRITICALITY ignore	EXTENSION 	CommonNetworkInstance				PRESENCE optional	}|
+	{ ID id-RedundantPDUSessionInformation			CRITICALITY ignore	EXTENSION 	RedundantPDUSessionInformation	PRESENCE optional	},
+	...
+}
+
+PDU-Session-Resource-To-Setup-Mod-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-Resource-To-Setup-Mod-Item
+
+PDU-Session-Resource-To-Setup-Mod-Item	::=	SEQUENCE {
+	pDU-Session-ID										PDU-Session-ID,
+	pDU-Session-Type									PDU-Session-Type,
+	sNSSAI												SNSSAI,
+	securityIndication									SecurityIndication,
+	pDU-Session-Resource-AMBR							BitRate									OPTIONAL,
+	nG-UL-UP-TNL-Information							UP-TNL-Information,
+	pDU-Session-Data-Forwarding-Information-Request		Data-Forwarding-Information-Request		OPTIONAL,
+	pDU-Session-Inactivity-Timer						Inactivity-Timer						OPTIONAL, 
+	dRB-To-Setup-Mod-List-NG-RAN						DRB-To-Setup-Mod-List-NG-RAN,
+	iE-Extensions										ProtocolExtensionContainer	{ { PDU-Session-Resource-To-Setup-Mod-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-Resource-To-Setup-Mod-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-NetworkInstance		CRITICALITY ignore	EXTENSION NetworkInstance		PRESENCE optional}|
+	{ID id-CommonNetworkInstance	CRITICALITY ignore	EXTENSION CommonNetworkInstance	PRESENCE optional}|
+	{ID id-redundant-nG-UL-UP-TNL-Information		CRITICALITY ignore	EXTENSION 	UP-TNL-Information		PRESENCE optional	}|
+	{ID id-RedundantCommonNetworkInstance			CRITICALITY ignore	EXTENSION 	CommonNetworkInstance	PRESENCE optional	},
+	...
+}
+
+PDU-Session-To-Notify-List	::= SEQUENCE (SIZE(1.. maxnoofPDUSessionResource)) OF PDU-Session-To-Notify-Item
+
+PDU-Session-To-Notify-Item	::=	SEQUENCE {
+	pDU-Session-ID							PDU-Session-ID,
+	qoS-Flow-List							QoS-Flow-List,
+	iE-Extensions							ProtocolExtensionContainer	{ { PDU-Session-To-Notify-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+PDU-Session-To-Notify-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+PDU-Session-Type ::= ENUMERATED {
+	ipv4,
+	ipv6,
+	ipv4v6,
+	ethernet,
+	unstructured,
+	...
+}
+
+PLMN-Identity ::= OCTET STRING (SIZE(3)) 
+
+PortNumber ::= BIT STRING (SIZE(16))
+
+PPI ::= INTEGER (0..7, ...)
+
+PriorityLevel	::= INTEGER { spare (0), highest (1), lowest (14), no-priority (15) } (0..15)
+
+Pre-emptionCapability ::= ENUMERATED {
+	shall-not-trigger-pre-emption,
+	may-trigger-pre-emption
+}
+
+Pre-emptionVulnerability ::= ENUMERATED {
+	not-pre-emptable,
+	pre-emptable
+}
+
+PrivacyIndicator ::= ENUMERATED {
+	immediate-MDT,
+	logged-MDT,
+	...
+}
+
+-- Q
+
+QCI ::= INTEGER (0..255)
+
+QoS-Characteristics ::= CHOICE {
+	non-Dynamic-5QI				Non-Dynamic5QIDescriptor,
+	dynamic-5QI					Dynamic5QIDescriptor,
+	choice-extension			ProtocolIE-SingleContainer	{{QoS-Characteristics-ExtIEs}}
+}
+
+QoS-Characteristics-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+QoS-Flow-Identifier	::=	INTEGER (0..63)
+
+QoS-Flow-List	::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flow-Item
+
+QoS-Flow-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	iE-Extensions							ProtocolExtensionContainer	{ { QoS-Flow-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+QoS-Flow-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-QoSFlowMappingIndication		CRITICALITY ignore	EXTENSION QoS-Flow-Mapping-Indication		PRESENCE optional},
+	...
+}
+
+QoS-Flow-Failed-List	::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flow-Failed-Item
+
+QoS-Flow-Failed-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	cause									Cause,
+	iE-Extensions							ProtocolExtensionContainer	{ { QoS-Flow-Failed-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+QoS-Flow-Failed-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+QoS-Flow-Mapping-List	::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flow-Mapping-Item
+
+QoS-Flow-Mapping-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	qoSFlowMappingIndication						QoS-Flow-Mapping-Indication		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { QoS-Flow-Mapping-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+QoS-Flow-Mapping-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+QoS-Flow-Mapping-Indication ::= ENUMERATED {ul, dl, ...}
+
+QoS-Flows-DRB-Remapping ::= ENUMERATED {update, source-configuration, ...}
+
+QoS-Parameters-Support-List	::= SEQUENCE {
+	eUTRAN-QoS-Support-List			EUTRAN-QoS-Support-List			OPTIONAL,
+	nG-RAN-QoS-Support-List			NG-RAN-QoS-Support-List			OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { QoS-Parameters-Support-List-ItemExtIEs} } OPTIONAL,
+	...
+}
+
+QoS-Parameters-Support-List-ItemExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+QoSPriorityLevel ::= INTEGER (0..127, ...)
+
+
+QoS-Flow-QoS-Parameter-List	::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flow-QoS-Parameter-Item
+
+QoS-Flow-QoS-Parameter-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	qoSFlowLevelQoSParameters				QoSFlowLevelQoSParameters,
+	qoSFlowMappingIndication				QoS-Flow-Mapping-Indication		OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer	{ { QoS-Flow-QoS-Parameter-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+QoS-Flow-QoS-Parameter-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-RedundantQosFlowIndicator		CRITICALITY ignore 	EXTENSION RedundantQoSFlowIndicator			PRESENCE optional}|
+	{ID id-TSCTrafficCharacteristics 		CRITICALITY ignore 	EXTENSION TSCTrafficCharacteristics 			PRESENCE optional},
+	...
+}
+
+QoSFlowLevelQoSParameters	::= SEQUENCE {
+	qoS-Characteristics						QoS-Characteristics,
+	nGRANallocationRetentionPriority		NGRANAllocationAndRetentionPriority,
+	gBR-QoS-Flow-Information				GBR-QoSFlowInformation						OPTIONAL,
+	reflective-QoS-Attribute				ENUMERATED {subject-to, ...}				OPTIONAL,
+	additional-QoS-Information				ENUMERATED {more-likely, ...}				OPTIONAL,
+	paging-Policy-Indicator					INTEGER	(1..8,	...)						OPTIONAL,
+	reflective-QoS-Indicator				ENUMERATED {enabled, ...}					OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { QoSFlowLevelQoSParameters-ExtIEs } }	OPTIONAL
+}
+
+QoSFlowLevelQoSParameters-ExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-QoSMonitoringRequest				CRITICALITY ignore	EXTENSION QosMonitoringRequest					PRESENCE optional}|
+	{ID id-MCG-OfferedGBRQoSFlowInfo		CRITICALITY ignore	EXTENSION GBR-QoSFlowInformation				PRESENCE optional}|
+	{ID id-QosMonitoringReportingFrequency	CRITICALITY ignore	EXTENSION QosMonitoringReportingFrequency	PRESENCE optional}|
+	{ID id-QoSMonitoringDisabled			CRITICALITY ignore	EXTENSION QosMonitoringDisabled					PRESENCE optional},
+	...
+}
+
+QosMonitoringRequest ::= ENUMERATED {ul, dl, both}
+
+QosMonitoringReportingFrequency ::= INTEGER (1..1800, ...)
+
+QosMonitoringDisabled ::= ENUMERATED {true, ...}
+
+QoS-Flow-Removed-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	qoS-Flow-Released-In-Session			ENUMERATED {released-in-session, not-released-in-session, ...}			OPTIONAL,
+	qoS-Flow-Accumulated-Session-Time		OCTET STRING (SIZE(5))														OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { QoS-Flow-Removed-Item-ExtIEs } }		OPTIONAL,
+	...
+}
+
+QoS-Flow-Removed-Item-ExtIEs		E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+QoS-Flows-to-be-forwarded-List ::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF QoS-Flows-to-be-forwarded-Item
+
+QoS-Flows-to-be-forwarded-Item ::=	SEQUENCE {
+	qoS-Flow-Identifier						QoS-Flow-Identifier,
+	iE-Extensions							ProtocolExtensionContainer { { QoS-Flows-to-be-forwarded-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+QoS-Flows-to-be-forwarded-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+QoS-Mapping-Information ::= SEQUENCE {
+dscp							BIT STRING (SIZE(6))		OPTIONAL,  
+flow-label						BIT STRING (SIZE(20))	OPTIONAL,
+...
+}
+
+DataForwardingtoNG-RANQoSFlowInformationList		::= SEQUENCE (SIZE(1.. maxnoofQoSFlows)) OF DataForwardingtoNG-RANQoSFlowInformationList-Item
+
+DataForwardingtoNG-RANQoSFlowInformationList-Item	::=	SEQUENCE {
+	qoS-Flow-Identifier					QoS-Flow-Identifier,
+	iE-Extensions						ProtocolExtensionContainer	{ { DataForwardingtoNG-RANQoSFlowInformationList-Item-ExtIEs} }	OPTIONAL,
+	...
+}
+
+DataForwardingtoNG-RANQoSFlowInformationList-Item-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+-- R
+
+RANUEID ::= OCTET STRING (SIZE (8))
+
+RAT-Type	::=	ENUMERATED	{
+	e-UTRA,
+	nR,
+	...
+}
+
+RedundantQoSFlowIndicator::= ENUMERATED {true,false}
+
+RedundantPDUSessionInformation ::= SEQUENCE {
+	rSN					RSN,
+	iE-Extensions		ProtocolExtensionContainer { {RedundantPDUSessionInformation-ExtIEs} }	OPTIONAL,
+	...
+}
+
+RedundantPDUSessionInformation-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+RSN ::= ENUMERATED {v1, v2, ...}
+
+RetainabilityMeasurementsInfo	::= SEQUENCE (SIZE(1.. maxnoofDRBs)) OF DRB-Removed-Item
+
+RegistrationRequest	::=	ENUMERATED	{
+	start,
+	stop,
+	...
+}
+
+
+ReportCharacteristics	::=	BIT STRING (SIZE(36))
+
+ReportingPeriodicity	::=	ENUMERATED	{
+	ms500, ms1000, ms2000, ms5000, ms10000, ms20000, ms30000, ms40000, ms50000, ms60000, ms70000, ms80000, ms90000, ms100000, ms110000, ms120000, 
+	...
+}
+
+RLC-Mode	::=	ENUMERATED	{
+	rlc-tm,
+	rlc-am,
+	rlc-um-bidirectional,
+	rlc-um-unidirectional-ul,
+	rlc-um-unidirectional-dl,
+	...
+}
+
+
+ROHC-Parameters	::= CHOICE {
+	rOHC					ROHC,
+	uPlinkOnlyROHC			UplinkOnlyROHC,
+	choice-Extension		ProtocolIE-SingleContainer { { ROHC-Parameters-ExtIEs} } 
+}
+
+ROHC-Parameters-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+ROHC	::= SEQUENCE {
+	maxCID							INTEGER (0..16383, ...),
+	rOHC-Profiles					INTEGER (0..511, ...),
+	continueROHC					ENUMERATED {true, ...}								OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { ROHC-ExtIEs } } 		OPTIONAL
+}
+
+ROHC-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+
+-- S
+
+SecurityAlgorithm	::= SEQUENCE {
+	cipheringAlgorithm				CipheringAlgorithm,
+	integrityProtectionAlgorithm	IntegrityProtectionAlgorithm	OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { SecurityAlgorithm-ExtIEs } }	OPTIONAL,
+	...
+}
+
+SecurityAlgorithm-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+SecurityIndication ::= SEQUENCE {
+	integrityProtectionIndication			IntegrityProtectionIndication,
+	confidentialityProtectionIndication		ConfidentialityProtectionIndication,
+	maximumIPdatarate							MaximumIPdatarate							OPTIONAL,
+	iE-Extensions		ProtocolExtensionContainer { {SecurityIndication-ExtIEs} }	OPTIONAL,
+	...
+}
+
+SecurityIndication-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+	
+SecurityInformation ::= SEQUENCE {
+	securityAlgorithm			SecurityAlgorithm,
+	uPSecuritykey				UPSecuritykey,
+	iE-Extensions				ProtocolExtensionContainer { { SecurityInformation-ExtIEs } }	OPTIONAL,
+	...
+}
+
+SecurityInformation-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+SecurityResult ::= SEQUENCE {
+	integrityProtectionResult			IntegrityProtectionResult,
+	confidentialityProtectionResult		ConfidentialityProtectionResult,
+	iE-Extensions						ProtocolExtensionContainer { {SecurityResult-ExtIEs} }	OPTIONAL,
+	...
+}
+
+SecurityResult-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Slice-Support-List ::= SEQUENCE (SIZE(1.. maxnoofSliceItems)) OF Slice-Support-Item
+
+Slice-Support-Item ::= SEQUENCE {
+	sNSSAI	SNSSAI,
+	iE-Extensions				ProtocolExtensionContainer { { Slice-Support-Item-ExtIEs } }	OPTIONAL
+}
+
+Slice-Support-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+SNSSAI ::= SEQUENCE {
+	sST			OCTET STRING (SIZE(1)),
+	sD			OCTET STRING (SIZE(3)) 	OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { { SNSSAI-ExtIEs } }	OPTIONAL,
+	...
+}
+
+SNSSAI-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+SDAP-Configuration ::= SEQUENCE {
+	defaultDRB				DefaultDRB,
+	sDAP-Header-UL			SDAP-Header-UL,
+	sDAP-Header-DL			SDAP-Header-DL,
+	iE-Extensions			ProtocolExtensionContainer { { SDAP-Configuration-ExtIEs } }	OPTIONAL,
+	...
+}
+
+SDAP-Configuration-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+SDAP-Header-DL	::=	ENUMERATED	{
+	present,
+	absent,
+	...
+}
+
+SDAP-Header-UL	::=	ENUMERATED	{
+	present,
+	absent,
+	...
+}
+
+SubscriberProfileIDforRFP ::= INTEGER (1..256, ...)
+
+-- T
+
+TimeToWait ::= ENUMERATED {v1s, v2s, v5s, v10s, v20s, v60s, ...} 
+
+TNLAssociationUsage ::= ENUMERATED {
+	ue,
+	non-ue,
+	both, 
+...
+}
+
+TNL-AvailableCapacityIndicator ::= SEQUENCE {
+	dL-TNL-OfferedCapacity				INTEGER (0..16777216, ...),
+	dL-TNL-AvailableCapacity			INTEGER (0..100, ...),
+	uL-TNL-OfferedCapacity				INTEGER (0..16777216, ...),
+	uL-TNL-AvailableCapacity			INTEGER (0..100, ...),
+	iE-Extensions		ProtocolExtensionContainer { { TNL-AvailableCapacityIndicator-ExtIEs } },
+	...
+}
+
+TNL-AvailableCapacityIndicator-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+TSCTrafficCharacteristics		::= SEQUENCE {
+	tSCTrafficCharacteristicsUL				TSCTrafficInformation			OPTIONAL,
+	tSCTrafficCharacteristicsDL				TSCTrafficInformation			OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { TSCTrafficCharacteristics-ExtIEs } }	OPTIONAL
+}
+
+TSCTrafficCharacteristics-ExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+TSCTrafficInformation			::= SEQUENCE {
+	periodicity						Periodicity,
+	burstArrivalTime						BurstArrivalTime				OPTIONAL,
+	iE-Extensions							ProtocolExtensionContainer { { TSCTrafficInformation-ExtIEs } }	OPTIONAL
+}
+
+TSCTrafficInformation-ExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+Periodicity					::= INTEGER	(1..640000,	...)
+
+BurstArrivalTime			::= OCTET STRING
+
+TraceActivation ::= SEQUENCE {
+	traceID								TraceID,
+	interfacesToTrace					InterfacesToTrace,
+	traceDepth							TraceDepth,
+	traceCollectionEntityIPAddress		TransportLayerAddress,
+	iE-Extensions		ProtocolExtensionContainer { {TraceActivation-ExtIEs} }	OPTIONAL,
+	...
+}
+
+TraceActivation-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	{ ID id-MDTConfiguration	CRITICALITY ignore	EXTENSION MDT-Configuration		PRESENCE 	optional }|
+	{ ID id-TraceCollectionEntityURI	CRITICALITY ignore	EXTENSION URIaddress	PRESENCE    optional},
+	...
+}
+
+TraceDepth ::= ENUMERATED { 
+	minimum,
+	medium,
+	maximum,
+	minimumWithoutVendorSpecificExtension,
+	mediumWithoutVendorSpecificExtension,
+	maximumWithoutVendorSpecificExtension,
+	...
+}
+
+TraceID ::= OCTET STRING (SIZE(8))
+
+TransportLayerAddress		::= 	BIT STRING (SIZE(1..160, ...))
+
+TransactionID				::= INTEGER (0..255, ...)
+
+T-Reordering	::=	ENUMERATED	{ms0, ms1, ms2, ms4, ms5, ms8, ms10, ms15, ms20, ms30, ms40, ms50, ms60, ms80, ms100, ms120, ms140, ms160, ms180, ms200, ms220, ms240, ms260, ms280, ms300, ms500, ms750, ms1000, ms1250, ms1500, ms1750, ms2000, ms2250, ms2500, ms2750, ms3000, ...}
+
+T-ReorderingTimer ::= SEQUENCE {
+	t-Reordering				T-Reordering,
+		iE-Extensions				ProtocolExtensionContainer { { T-ReorderingTimer-ExtIEs } }	OPTIONAL,
+	...
+}
+
+T-ReorderingTimer-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+TypeOfError ::= ENUMERATED {
+	not-understood,
+	missing,
+	...
+}
+
+Transport-Layer-Address-Info ::= SEQUENCE {
+	transport-UP-Layer-Addresses-Info-To-Add-List	Transport-UP-Layer-Addresses-Info-To-Add-List	OPTIONAL,
+	transport-UP-Layer-Addresses-Info-To-Remove-List	Transport-UP-Layer-Addresses-Info-To-Remove-List	OPTIONAL,
+	iE-Extensions		ProtocolExtensionContainer { { Transport-Layer-Address-Info-ExtIEs} }	OPTIONAL,
+	...
+	}
+
+Transport-Layer-Address-Info-ExtIEs	E1AP-PROTOCOL-EXTENSION	::=	{
+	...
+}
+
+Transport-UP-Layer-Addresses-Info-To-Add-List	::= SEQUENCE (SIZE(1.. maxnoofTLAs)) OF Transport-UP-Layer-Addresses-Info-To-Add-Item
+
+Transport-UP-Layer-Addresses-Info-To-Add-Item ::= SEQUENCE {
+	iP-SecTransportLayerAddress		TransportLayerAddress,
+	gTPTransportLayerAddressesToAdd			GTPTLAs							OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { Transport-UP-Layer-Addresses-Info-To-Add-ItemExtIEs } }    OPTIONAL,
+	...
+}
+
+Transport-UP-Layer-Addresses-Info-To-Add-ItemExtIEs E1AP-PROTOCOL-EXTENSION ::= { 
+	...
+}
+
+Transport-UP-Layer-Addresses-Info-To-Remove-List	::= SEQUENCE (SIZE(1.. maxnoofTLAs)) OF Transport-UP-Layer-Addresses-Info-To-Remove-Item
+
+Transport-UP-Layer-Addresses-Info-To-Remove-Item ::= SEQUENCE {
+	iP-SecTransportLayerAddress		TransportLayerAddress,
+	gTPTransportLayerAddressesToRemove			GTPTLAs							OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { Transport-UP-Layer-Addresses-Info-To-Remove-ItemExtIEs } }    OPTIONAL,
+	...
+}
+
+Transport-UP-Layer-Addresses-Info-To-Remove-ItemExtIEs E1AP-PROTOCOL-EXTENSION ::= { 
+	...
+}
+-- U
+
+UE-Activity	::=	ENUMERATED	{
+	active,
+	not-active,
+	...
+}
+
+UE-associatedLogicalE1-ConnectionItem ::= SEQUENCE {
+	gNB-CU-CP-UE-E1AP-ID		GNB-CU-CP-UE-E1AP-ID	 OPTIONAL,
+	gNB-CU-UP-UE-E1AP-ID		GNB-CU-UP-UE-E1AP-ID	 OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { { UE-associatedLogicalE1-ConnectionItemExtIEs} }	OPTIONAL,
+	...
+}
+
+UE-associatedLogicalE1-ConnectionItemExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+UL-Configuration	::=	ENUMERATED	{
+	no-data,
+	shared,
+	only,
+	...
+}
+
+ULUPTNLAddressToUpdateItem	::= SEQUENCE {
+	oldTNLAdress						TransportLayerAddress,
+	newTNLAdress						TransportLayerAddress,
+	iE-Extensions	ProtocolExtensionContainer { { ULUPTNLAddressToUpdateItemExtIEs } }	OPTIONAL,
+	...
+}
+
+ULUPTNLAddressToUpdateItemExtIEs 	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+ULDataSplitThreshold	::=	ENUMERATED {b0, b100, b200, b400, b800, b1600, b3200, b6400, b12800, b25600, b51200, b102400, b204800, b409600, b819200, b1228800, b1638400, b2457600, b3276800, b4096000, b4915200, b5734400, b6553600, infinity, ...}
+
+UP-Parameters ::= SEQUENCE (SIZE(1.. maxnoofUPParameters)) OF UP-Parameters-Item
+
+UP-Parameters-Item ::= SEQUENCE {
+	uP-TNL-Information			UP-TNL-Information,
+	cell-Group-ID				Cell-Group-ID,
+	iE-Extensions				ProtocolExtensionContainer { { UP-Parameters-Item-ExtIEs } }	OPTIONAL,
+	...
+}
+
+UP-Parameters-Item-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	{ID id-QoS-Mapping-Information	CRITICALITY reject	EXTENSION QoS-Mapping-Information	PRESENCE optional},
+	...
+}
+
+UPSecuritykey	::= SEQUENCE {
+	encryptionKey				EncryptionKey,
+	integrityProtectionKey		IntegrityProtectionKey		OPTIONAL,
+	iE-Extensions				ProtocolExtensionContainer { { UPSecuritykey-ExtIEs } }	OPTIONAL,
+	...
+}
+
+UPSecuritykey-ExtIEs	E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+UP-TNL-Information		::= 	CHOICE {
+	gTPTunnel		GTPTunnel,
+	choice-extension		ProtocolIE-SingleContainer	{{UP-TNL-Information-ExtIEs}}
+}
+
+UP-TNL-Information-ExtIEs E1AP-PROTOCOL-IES ::= {
+	...
+}
+
+UplinkOnlyROHC ::= SEQUENCE {
+	maxCID							INTEGER (0..16383, ...),
+	rOHC-Profiles					INTEGER (0..511, ...),
+	continueROHC					ENUMERATED {true, ...}	OPTIONAL,
+	iE-Extensions					ProtocolExtensionContainer { { UplinkOnlyROHC-ExtIEs } } 		OPTIONAL
+}
+
+UplinkOnlyROHC-ExtIEs E1AP-PROTOCOL-EXTENSION ::= {
+	...
+}
+
+URIaddress ::= VisibleString
+
+-- V
+
+-- W
+
+-- X
+
+-- Y
+
+-- Z
+
+END
+-- ASN1STOP
+-- ASN1START
+-- **************************************************************
+--
+-- Common definitions
+--
+-- **************************************************************
+
+E1AP-CommonDataTypes {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-CommonDataTypes (3)}
+
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+
+-- **************************************************************
+--
+-- Extension constants
+--
+-- **************************************************************
+
+maxPrivateIEs 									INTEGER ::= 65535
+maxProtocolExtensions 							INTEGER ::= 65535
+maxProtocolIEs									INTEGER ::= 65535
+
+-- **************************************************************
+--
+-- Common Data Types
+--
+-- **************************************************************
+
+Criticality		::= 	ENUMERATED { reject, ignore, notify }
+
+Presence		::= ENUMERATED { optional, conditional, mandatory }
+
+PrivateIE-ID	::= CHOICE {
+	local				INTEGER (0.. maxPrivateIEs),
+	global			OBJECT IDENTIFIER
+}
+
+ProcedureCode		::= INTEGER (0..255)
+
+ProtocolExtensionID	::= INTEGER (0..maxProtocolExtensions)
+
+ProtocolIE-ID		::= INTEGER (0..maxProtocolIEs)
+
+TriggeringMessage	::= ENUMERATED { initiating-message, successful-outcome, unsuccessful-outcome}
+
+END
+-- ASN1STOP
+-- ASN1START
+-- **************************************************************
+--
+-- Constant definitions
+--
+-- **************************************************************
+
+
+E1AP-Constants {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-Constants (4) }
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+IMPORTS
+
+	ProcedureCode,
+	ProtocolIE-ID
+
+FROM E1AP-CommonDataTypes;
+
+-- **************************************************************
+--
+-- Elementary Procedures
+--
+-- **************************************************************
+
+id-reset														ProcedureCode ::= 0
+id-errorIndication												ProcedureCode ::= 1
+id-privateMessage												ProcedureCode ::= 2
+id-gNB-CU-UP-E1Setup											ProcedureCode ::= 3
+id-gNB-CU-CP-E1Setup											ProcedureCode ::= 4
+id-gNB-CU-UP-ConfigurationUpdate								ProcedureCode ::= 5
+id-gNB-CU-CP-ConfigurationUpdate								ProcedureCode ::= 6
+id-e1Release													ProcedureCode ::= 7
+id-bearerContextSetup											ProcedureCode ::= 8
+id-bearerContextModification									ProcedureCode ::= 9
+id-bearerContextModificationRequired							ProcedureCode ::= 10
+id-bearerContextRelease											ProcedureCode ::= 11
+id-bearerContextReleaseRequest									ProcedureCode ::= 12
+id-bearerContextInactivityNotification							ProcedureCode ::= 13
+id-dLDataNotification											ProcedureCode ::= 14
+id-dataUsageReport												ProcedureCode ::= 15
+id-gNB-CU-UP-CounterCheck										ProcedureCode ::= 16
+id-gNB-CU-UP-StatusIndication									ProcedureCode ::= 17
+id-uLDataNotification											ProcedureCode ::= 18
+id-mRDC-DataUsageReport											ProcedureCode ::= 19
+id-TraceStart													ProcedureCode ::= 20
+id-DeactivateTrace												ProcedureCode ::= 21
+id-resourceStatusReportingInitiation							ProcedureCode ::= 22
+id-resourceStatusReporting										ProcedureCode ::= 23
+id-iAB-UPTNLAddressUpdate										ProcedureCode ::= 24
+id-CellTrafficTrace												ProcedureCode ::= 25
+id-earlyForwardingSNTransfer									ProcedureCode ::= 26
+id-gNB-CU-CPMeasurementResultsInformation						ProcedureCode ::= 27
+
+
+-- **************************************************************
+--
+-- Lists
+--
+-- **************************************************************
+
+maxnoofErrors								INTEGER ::= 256
+maxnoofSPLMNs								INTEGER ::= 12
+maxnoofSliceItems							INTEGER ::= 1024
+maxnoofIndividualE1ConnectionsToReset		INTEGER ::= 65536
+maxnoofEUTRANQOSParameters					INTEGER ::= 256
+maxnoofNGRANQOSParameters					INTEGER ::= 256
+maxnoofDRBs									INTEGER	::= 32
+maxnoofNRCGI								INTEGER	::= 512
+maxnoofPDUSessionResource					INTEGER	::= 256
+maxnoofQoSFlows								INTEGER	::= 64
+maxnoofUPParameters							INTEGER	::= 8
+maxnoofCellGroups							INTEGER	::= 4
+maxnooftimeperiods							INTEGER	::= 2
+maxnoofTNLAssociations						INTEGER ::= 32
+maxnoofTLAs									INTEGER ::= 16
+maxnoofGTPTLAs								INTEGER ::= 16
+maxnoofTNLAddresses							INTEGER ::= 8
+maxnoofMDTPLMNs								INTEGER ::= 16
+maxnoofQoSParaSets							INTEGER ::= 8
+maxnoofExtSliceItems						INTEGER ::= 65535
+maxnoofDataForwardingTunneltoE-UTRAN		INTEGER ::= 256
+maxnoofExtNRCGI 							INTEGER	::= 16384
+
+
+-- **************************************************************
+--
+-- IEs
+--
+-- **************************************************************
+
+id-Cause														ProtocolIE-ID ::= 0
+id-CriticalityDiagnostics										ProtocolIE-ID ::= 1
+id-gNB-CU-CP-UE-E1AP-ID 										ProtocolIE-ID ::= 2
+id-gNB-CU-UP-UE-E1AP-ID											ProtocolIE-ID ::= 3
+id-ResetType													ProtocolIE-ID ::= 4
+id-UE-associatedLogicalE1-ConnectionItem						ProtocolIE-ID ::= 5
+id-UE-associatedLogicalE1-ConnectionListResAck					ProtocolIE-ID ::= 6
+id-gNB-CU-UP-ID													ProtocolIE-ID ::= 7
+id-gNB-CU-UP-Name												ProtocolIE-ID ::= 8
+id-gNB-CU-CP-Name												ProtocolIE-ID ::= 9
+id-CNSupport													ProtocolIE-ID ::= 10
+id-SupportedPLMNs												ProtocolIE-ID ::= 11
+id-TimeToWait													ProtocolIE-ID ::= 12
+id-SecurityInformation											ProtocolIE-ID ::= 13
+id-UEDLAggregateMaximumBitRate									ProtocolIE-ID ::= 14
+id-System-BearerContextSetupRequest								ProtocolIE-ID ::= 15
+id-System-BearerContextSetupResponse							ProtocolIE-ID ::= 16
+id-BearerContextStatusChange									ProtocolIE-ID ::= 17
+id-System-BearerContextModificationRequest						ProtocolIE-ID ::= 18
+id-System-BearerContextModificationResponse						ProtocolIE-ID ::= 19
+id-System-BearerContextModificationConfirm						ProtocolIE-ID ::= 20
+id-System-BearerContextModificationRequired						ProtocolIE-ID ::= 21
+id-DRB-Status-List												ProtocolIE-ID ::= 22
+id-ActivityNotificationLevel									ProtocolIE-ID ::= 23
+id-ActivityInformation											ProtocolIE-ID ::= 24
+id-Data-Usage-Report-List										ProtocolIE-ID ::= 25
+id-New-UL-TNL-Information-Required								ProtocolIE-ID ::= 26
+id-GNB-CU-CP-TNLA-To-Add-List									ProtocolIE-ID ::= 27
+id-GNB-CU-CP-TNLA-To-Remove-List								ProtocolIE-ID ::= 28
+id-GNB-CU-CP-TNLA-To-Update-List								ProtocolIE-ID ::= 29
+id-GNB-CU-CP-TNLA-Setup-List									ProtocolIE-ID ::= 30
+id-GNB-CU-CP-TNLA-Failed-To-Setup-List							ProtocolIE-ID ::= 31
+id-DRB-To-Setup-List-EUTRAN										ProtocolIE-ID ::= 32
+id-DRB-To-Modify-List-EUTRAN									ProtocolIE-ID ::= 33
+id-DRB-To-Remove-List-EUTRAN									ProtocolIE-ID ::= 34
+id-DRB-Required-To-Modify-List-EUTRAN							ProtocolIE-ID ::= 35
+id-DRB-Required-To-Remove-List-EUTRAN							ProtocolIE-ID ::= 36
+id-DRB-Setup-List-EUTRAN										ProtocolIE-ID ::= 37
+id-DRB-Failed-List-EUTRAN										ProtocolIE-ID ::= 38
+id-DRB-Modified-List-EUTRAN										ProtocolIE-ID ::= 39
+id-DRB-Failed-To-Modify-List-EUTRAN								ProtocolIE-ID ::= 40
+id-DRB-Confirm-Modified-List-EUTRAN								ProtocolIE-ID ::= 41
+id-PDU-Session-Resource-To-Setup-List							ProtocolIE-ID ::= 42
+id-PDU-Session-Resource-To-Modify-List							ProtocolIE-ID ::= 43
+id-PDU-Session-Resource-To-Remove-List							ProtocolIE-ID ::= 44
+id-PDU-Session-Resource-Required-To-Modify-List					ProtocolIE-ID ::= 45
+id-PDU-Session-Resource-Setup-List								ProtocolIE-ID ::= 46
+id-PDU-Session-Resource-Failed-List								ProtocolIE-ID ::= 47
+id-PDU-Session-Resource-Modified-List							ProtocolIE-ID ::= 48
+id-PDU-Session-Resource-Failed-To-Modify-List					ProtocolIE-ID ::= 49
+id-PDU-Session-Resource-Confirm-Modified-List					ProtocolIE-ID ::= 50
+id-DRB-To-Setup-Mod-List-EUTRAN									ProtocolIE-ID ::= 51
+id-DRB-Setup-Mod-List-EUTRAN									ProtocolIE-ID ::= 52
+id-DRB-Failed-Mod-List-EUTRAN									ProtocolIE-ID ::= 53
+id-PDU-Session-Resource-Setup-Mod-List							ProtocolIE-ID ::= 54
+id-PDU-Session-Resource-Failed-Mod-List							ProtocolIE-ID ::= 55
+id-PDU-Session-Resource-To-Setup-Mod-List						ProtocolIE-ID ::= 56
+id-TransactionID												ProtocolIE-ID ::= 57
+id-Serving-PLMN													ProtocolIE-ID ::= 58
+id-UE-Inactivity-Timer											ProtocolIE-ID ::= 59
+id-System-GNB-CU-UP-CounterCheckRequest							ProtocolIE-ID ::= 60
+id-DRBs-Subject-To-Counter-Check-List-EUTRAN					ProtocolIE-ID ::= 61
+id-DRBs-Subject-To-Counter-Check-List-NG-RAN					ProtocolIE-ID ::= 62
+id-PPI															ProtocolIE-ID ::= 63
+id-gNB-CU-UP-Capacity											ProtocolIE-ID ::= 64
+id-GNB-CU-UP-OverloadInformation								ProtocolIE-ID ::= 65
+id-UEDLMaximumIntegrityProtectedDataRate						ProtocolIE-ID ::= 66
+id-PDU-Session-To-Notify-List									ProtocolIE-ID ::= 67
+id-PDU-Session-Resource-Data-Usage-List							ProtocolIE-ID ::= 68
+id-SNSSAI														ProtocolIE-ID ::= 69
+id-DataDiscardRequired											ProtocolIE-ID ::= 70
+id-OldQoSFlowMap-ULendmarkerexpected							ProtocolIE-ID ::= 71
+id-DRB-QoS														ProtocolIE-ID ::= 72
+id-GNB-CU-UP-TNLA-To-Remove-List								ProtocolIE-ID ::= 73
+id-endpoint-IP-Address-and-Port									ProtocolIE-ID ::= 74
+id-TNLAssociationTransportLayerAddressgNBCUUP					ProtocolIE-ID ::= 75
+id-RANUEID														ProtocolIE-ID ::= 76
+id-GNB-DU-ID													ProtocolIE-ID ::= 77
+id-CommonNetworkInstance										ProtocolIE-ID ::= 78
+id-NetworkInstance												ProtocolIE-ID ::= 79
+id-QoSFlowMappingIndication										ProtocolIE-ID ::= 80
+id-TraceActivation												ProtocolIE-ID ::= 81
+id-TraceID														ProtocolIE-ID ::= 82
+id-SubscriberProfileIDforRFP									ProtocolIE-ID ::= 83
+id-AdditionalRRMPriorityIndex									ProtocolIE-ID ::= 84
+id-RetainabilityMeasurementsInfo								ProtocolIE-ID ::= 85
+id-Transport-Layer-Address-Info									ProtocolIE-ID ::= 86
+id-QoSMonitoringRequest											ProtocolIE-ID ::= 87
+id-PDCP-StatusReportIndication									ProtocolIE-ID ::= 88
+id-gNB-CU-CP-Measurement-ID										ProtocolIE-ID ::= 89
+id-gNB-CU-UP-Measurement-ID										ProtocolIE-ID ::= 90
+id-RegistrationRequest											ProtocolIE-ID ::= 91
+id-ReportCharacteristics										ProtocolIE-ID ::= 92
+id-ReportingPeriodicity											ProtocolIE-ID ::= 93
+id-TNL-AvailableCapacityIndicator								ProtocolIE-ID ::= 94
+id-HW-CapacityIndicator											ProtocolIE-ID ::= 95
+id-RedundantCommonNetworkInstance								ProtocolIE-ID ::= 96
+id-redundant-nG-UL-UP-TNL-Information							ProtocolIE-ID ::= 97
+id-redundant-nG-DL-UP-TNL-Information							ProtocolIE-ID ::= 98
+id-RedundantQosFlowIndicator									ProtocolIE-ID ::= 99
+id-TSCTrafficCharacteristics									ProtocolIE-ID ::= 100
+id-CNPacketDelayBudgetDownlink									ProtocolIE-ID ::= 101
+id-CNPacketDelayBudgetUplink									ProtocolIE-ID ::= 102
+id-ExtendedPacketDelayBudget									ProtocolIE-ID ::= 103
+id-AdditionalPDCPduplicationInformation							ProtocolIE-ID ::= 104
+id-RedundantPDUSessionInformation								ProtocolIE-ID ::= 105
+id-RedundantPDUSessionInformation-used							ProtocolIE-ID ::= 106
+id-QoS-Mapping-Information										ProtocolIE-ID ::= 107
+id-DLUPTNLAddressToUpdateList									ProtocolIE-ID ::= 108
+id-ULUPTNLAddressToUpdateList									ProtocolIE-ID ::= 109
+id-NPNSupportInfo												ProtocolIE-ID ::= 110
+id-NPNContextInfo												ProtocolIE-ID ::= 111
+id-MDTConfiguration												ProtocolIE-ID ::= 112
+id-ManagementBasedMDTPLMNList									ProtocolIE-ID ::= 113
+id-TraceCollectionEntityIPAddress								ProtocolIE-ID ::= 114
+id-PrivacyIndicator												ProtocolIE-ID ::= 115
+id-TraceCollectionEntityURI										ProtocolIE-ID ::= 116
+id-URIaddress													ProtocolIE-ID ::= 117
+id-EHC-Parameters												ProtocolIE-ID ::= 118
+id-DRBs-Subject-To-Early-Forwarding-List						ProtocolIE-ID ::= 119
+id-DAPSRequestInfo												ProtocolIE-ID ::= 120
+id-CHOInitiation												ProtocolIE-ID ::= 121
+id-EarlyForwardingCOUNTReq										ProtocolIE-ID ::= 122
+id-EarlyForwardingCOUNTInfo										ProtocolIE-ID ::= 123
+id-AlternativeQoSParaSetList									ProtocolIE-ID ::= 124
+	id-ExtendedSliceSupportList									ProtocolIE-ID ::= 125
+id-MCG-OfferedGBRQoSFlowInfo									ProtocolIE-ID ::= 126
+id-Number-of-tunnels											ProtocolIE-ID ::= 127
+id-DRB-Measurement-Results-Information-List						ProtocolIE-ID ::= 128
+id-Extended-GNB-CU-CP-Name										ProtocolIE-ID ::= 129
+id-Extended-GNB-CU-UP-Name										ProtocolIE-ID ::= 130
+id-DataForwardingtoE-UTRANInformationList						ProtocolIE-ID ::= 131
+id-QosMonitoringReportingFrequency								ProtocolIE-ID ::= 132
+id-QoSMonitoringDisabled										ProtocolIE-ID ::= 133
+id-AdditionalHandoverInfo										ProtocolIE-ID ::= 134
+id-Extended-NR-CGI-Support-List									ProtocolIE-ID ::= 135
+id-DataForwardingtoNG-RANQoSFlowInformationList					ProtocolIE-ID ::= 136
+id-MaxCIDEHCDL													ProtocolIE-ID ::= 137
+id-ignoreMappingRuleIndication									ProtocolIE-ID ::= 138
+id-DirectForwardingPathAvailability								ProtocolIE-ID ::= 139
+id-EarlyDataForwardingIndicator									ProtocolIE-ID ::= 140
+id-QoSFlowsDRBRemapping											ProtocolIE-ID ::= 141
+
+
+END
+-- ASN1STOP
+-- ASN1START
+-- **************************************************************
+--
+-- Container definitions
+--
+-- **************************************************************
+
+E1AP-Containers {
+itu-t (0) identified-organization (4) etsi (0) mobileDomain (0)
+ngran-access (22) modules (3) e1ap (5) version1 (1) e1ap-Containers (5) }
+
+
+DEFINITIONS AUTOMATIC TAGS ::= 
+
+BEGIN
+
+-- **************************************************************
+--
+-- IE parameter types from other modules.
+--
+-- **************************************************************
+
+IMPORTS
+	maxPrivateIEs,
+	maxProtocolExtensions,
+	maxProtocolIEs,
+	Criticality,
+	Presence,
+	PrivateIE-ID,
+	ProtocolIE-ID
+	
+FROM E1AP-CommonDataTypes;
+
+-- **************************************************************
+--
+-- Class Definition for Protocol IEs
+--
+-- **************************************************************
+
+E1AP-PROTOCOL-IES ::= CLASS {
+	&id					ProtocolIE-ID			UNIQUE,
+	&criticality		Criticality,
+	&Value,
+	&presence			Presence
+}
+WITH SYNTAX {
+	ID					&id
+	CRITICALITY			&criticality
+	TYPE				&Value
+	PRESENCE			&presence
+}
+
+-- **************************************************************
+--
+-- Class Definition for Protocol Extensions
+--
+-- **************************************************************
+
+E1AP-PROTOCOL-EXTENSION ::= CLASS {
+	&id					ProtocolIE-ID		UNIQUE,
+	&criticality		Criticality,
+	&Extension,
+	&presence			Presence
+}
+WITH SYNTAX {
+	ID					&id
+	CRITICALITY			&criticality
+	EXTENSION			&Extension
+	PRESENCE			&presence
+}
+
+-- **************************************************************
+--
+-- Class Definition for Private IEs
+--
+-- **************************************************************
+
+E1AP-PRIVATE-IES ::= CLASS {
+	&id					PrivateIE-ID,
+	&criticality		Criticality,
+	&Value,
+	&presence			Presence
+}
+WITH SYNTAX {
+	ID					&id
+	CRITICALITY			&criticality
+	TYPE				&Value
+	PRESENCE			&presence
+}
+
+-- **************************************************************
+--
+-- Container for Protocol IEs
+--
+-- **************************************************************
+
+ProtocolIE-Container { E1AP-PROTOCOL-IES : IEsSetParam} ::= 
+	SEQUENCE (SIZE (0..maxProtocolIEs)) OF
+	ProtocolIE-Field {{IEsSetParam}}
+
+ProtocolIE-SingleContainer { E1AP-PROTOCOL-IES : IEsSetParam} ::= 
+	ProtocolIE-Field {{IEsSetParam}}
+
+ProtocolIE-Field { E1AP-PROTOCOL-IES : IEsSetParam} ::= SEQUENCE {
+	id				E1AP-PROTOCOL-IES.&id				({IEsSetParam}),
+	criticality		E1AP-PROTOCOL-IES.&criticality		({IEsSetParam}{@id}),
+	value			E1AP-PROTOCOL-IES.&Value			({IEsSetParam}{@id})
+}
+
+-- **************************************************************
+--
+-- Container Lists for Protocol IE Containers
+--
+-- **************************************************************
+
+ProtocolIE-ContainerList {INTEGER : lowerBound, INTEGER : upperBound, E1AP-PROTOCOL-IES : IEsSetParam} ::=
+	SEQUENCE (SIZE (lowerBound..upperBound)) OF
+	ProtocolIE-Container {{IEsSetParam}}
+
+-- **************************************************************
+--
+-- Container for Protocol Extensions
+--
+-- **************************************************************
+
+ProtocolExtensionContainer { E1AP-PROTOCOL-EXTENSION : ExtensionSetParam} ::= 
+	SEQUENCE (SIZE (1..maxProtocolExtensions)) OF
+	ProtocolExtensionField {{ExtensionSetParam}}
+
+ProtocolExtensionField { E1AP-PROTOCOL-EXTENSION : ExtensionSetParam} ::= SEQUENCE {
+	id					E1AP-PROTOCOL-EXTENSION.&id				({ExtensionSetParam}),
+	criticality			E1AP-PROTOCOL-EXTENSION.&criticality	({ExtensionSetParam}{@id}),
+	extensionValue		E1AP-PROTOCOL-EXTENSION.&Extension		({ExtensionSetParam}{@id})
+}
+
+-- **************************************************************
+--
+-- Container for Private IEs
+--
+-- **************************************************************
+
+PrivateIE-Container { E1AP-PRIVATE-IES : IEsSetParam} ::= 
+	SEQUENCE (SIZE (1..maxPrivateIEs)) OF
+	PrivateIE-Field {{IEsSetParam}}
+
+PrivateIE-Field { E1AP-PRIVATE-IES : IEsSetParam} ::= SEQUENCE {
+	id				E1AP-PRIVATE-IES.&id				({IEsSetParam}),
+	criticality		E1AP-PRIVATE-IES.&criticality		({IEsSetParam}{@id}),
+	value			E1AP-PRIVATE-IES.&Value			({IEsSetParam}{@id})
+}
+
+END
+-- ASN1STOP

@@ -45,7 +45,7 @@
 #include "LAYER2/MAC/mac_proto.h"
 #include "PHY/phy_extern.h"
 #include "PHY/INIT/phy_init.h"
-#include "targets/ARCH/ETHERNET/USERSPACE/LIB/ethernet_lib.h"
+#include "radio/ETHERNET/ethernet_lib.h"
 #include "nfapi_vnf.h"
 #include "nfapi_pnf.h"
 
@@ -54,7 +54,6 @@
 #include "common/config/config_userapi.h"
 #include "RRC_config_tools.h"
 #include "enb_paramdef.h"
-#include "proto_agent.h"
 
 int RCconfig_MME(void ) {
   //int               num_enbs                      = 0;
@@ -94,7 +93,7 @@ int RCconfig_MME(void ) {
 
   if (address) {
     MessageDef *message;
-    AssertFatal((message = itti_alloc_new_message(TASK_MME_APP, M3AP_MME_SCTP_REQ))!=NULL,"");
+    AssertFatal((message = itti_alloc_new_message(TASK_MME_APP, 0, M3AP_MME_SCTP_REQ))!=NULL,"");
     M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv6 = 0;
     M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv4 = 1;
     strcpy( M3AP_MME_SCTP_REQ (message).mme_m3_ip_address.ipv4_address, address);

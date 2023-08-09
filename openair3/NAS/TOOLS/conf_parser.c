@@ -13,7 +13,7 @@ bool parse_config_file(const char *output_dir, const char *conf_filename, int ou
     config_setting_t *root_setting = NULL;
     config_setting_t *ue_setting = NULL;
     config_setting_t *all_plmn_setting = NULL;
-    char user[10];
+    char user[100];
     config_t cfg;
 
 	networks_t networks;;

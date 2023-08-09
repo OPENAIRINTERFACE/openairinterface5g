@@ -82,8 +82,17 @@ void dlsch_scheduler_pre_ue_select_fairRR(
     frame_t         frameP,
     sub_frame_t     subframeP,
     int*            mbsfn_flag,
-    uint16_t        nb_rbs_required[MAX_NUM_CCs][NUMBER_OF_UE_MAX],
+    uint16_t        nb_rbs_required[MAX_NUM_CCs][MAX_MOBILES_PER_ENB],
     DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs]);
+
+void dlsch_scheduler_pre_processor_allocate_fairRR(
+    module_id_t Mod_id,
+    int UE_id,
+    uint8_t CC_id,
+    int N_RBG,
+    uint16_t nb_rbs_required[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint16_t nb_rbs_remaining[NFAPI_CC_MAX][MAX_MOBILES_PER_ENB],
+    uint8_t rballoc_sub[NFAPI_CC_MAX][N_RBG_MAX]);
 
 void dlsch_scheduler_pre_processor_fairRR (module_id_t   Mod_id,
                                     frame_t       frameP,
@@ -125,7 +134,5 @@ void schedule_ulsch_rnti_fairRR(module_id_t   module_idP,
 
 /* extern */
 extern DLSCH_UE_SELECT dlsch_ue_select[MAX_NUM_CCs];
-extern int last_dlsch_ue_id[MAX_NUM_CCs];
-extern int last_ulsch_ue_id[MAX_NUM_CCs];
 
 #endif

@@ -1,0 +1,139 @@
+<!--
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+/*! \file common/utils/websrv/frontend/src/app/components/commands/commands.component.html
+ * \brief: implementation of web interface frontend for oai
+ * \commands web interface implementation (works with commands.component.ts)
+ * \author:  Yacine  El Mghazli, Francois TABURET
+ * \date 2022
+ * \version 0.1
+ * \company NOKIA BellLabs France
+ * \email: yacine.el_mghazli@nokia-bell-labs.com  francois.taburet@nokia-bell-labs.com
+ * \note
+ * \warning
+ */
+-->
+<div class="grid-container" > 
+  <mat-grid-list cols="2" rowHeight="12vh" >
+    <mat-grid-tile [colspan]="2" [rowspan]="2">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>Softmodem commands</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div class="spaceddiv" *ngIf="modules$ | async as modules" fxLaypout="row">
+            <mat-form-field>
+              <mat-label>Module</mat-label>
+              <mat-select (selectionChange)="onModuleSelect($event.value)" [(value)]="selectedModule">
+                <mat-option  *ngFor="let module of modules" [value]="module"> {{ module.name }}
+                </mat-option>
+              </mat-select>
+            </mat-form-field>
+          </div>
+          <div  *ngIf="cmds$ | async as cmds">
+            <div *ngIf="cmds.length">
+              <mat-chip-list>
+                <mat-chip *ngFor="let cmd of cmds" (click)="onCmdSubmit(cmd)" [matTooltip]="cmd.hlp_cmd" > {{cmd.nameFC.value}}
+                </mat-chip>
+              </mat-chip-list>
+            </div>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+    <mat-grid-tile *ngIf="vars$ | async as vars" [colspan]="1" [rowspan]="8">
+      <mat-card *ngIf="vars.length" class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ selectedModule!.name }} variables</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+          <div  class="spaceddiv" *ngFor="let variable of vars">
+            <mat-form-field class="scrollablefield">
+              <mat-label>{{ variable.nameFC.value }}</mat-label>
+              <input matInput [formControl]="variable.valueFC" [readonly]="!variable.modifiableFC.value" />
+            </mat-form-field>
+            <button mat-raised-button color="primary" [disabled]="!variable.modifiableFC.value"
+              (click)="onVarsubmit(variable)">
+              set
+            </button>
+          </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile>
+
+   <mat-grid-tile *ngIf="(rows$ | async)?.length" [colspan]="1" [rowspan]="8">
+      <mat-card class="dashboard-card">
+        <mat-card-header>
+          <mat-card-title>{{ selectedModule!.name }} {{ selectedCmd!.name }}  {{ title_ptext }}</mat-card-title>
+        </mat-card-header>
+        <mat-card-content class="dashboard-card-content">
+           <div >
+          <mat-table mat-table [dataSource]="rows$" multiTemplateDataRows class="mat-elevation-z8">
+
+            <div  class="TableRowdiv" *ngFor="let col of columns; index as colIndex" matColumnDef="{{col.name}}">
+              <mat-header-cell *matHeaderCellDef fxLayoutAlign="start center">
+                <div [matTooltip]="hlp_cc[colIndex]">
+                  <h4>{{ col.name }}</h4>
+                </div>
+              </mat-header-cell>
+               <mat-cell *matCellDef="let row">
+                <div   [ngSwitch]="col.type" [formGroup]="row" fxLayoutAlign="start center">
+                  <mat-slide-toggle *ngSwitchCase="IArgType.boolean" [formControl]="row.paramsCtrls[colIndex].valueFC"
+                    [checked]="row.paramsCtrls[colIndex].valueFC.value">
+                  </mat-slide-toggle>
+                 <mat-list-item role="listitem">
+                 <mat-form-field *ngSwitchCase="IArgType.loglvl">
+                    <mat-select [formControl]="row.paramsCtrls[colIndex].valueFC"
+                      [(value)]="row.paramsCtrls[colIndex].valueFC.value">
+                      <mat-option *ngFor="let level of logLvlValues" [value]="level"> {{ level }}
+                      </mat-option>
+                    </mat-select>
+                    </mat-form-field>
+                    </mat-list-item>  
+                  <div *ngSwitchDefault>
+                    <mat-form-field>
+                      <input matInput [formControl]="row.paramsCtrls[colIndex].valueFC" [readonly]="!col.modifiable" />
+                    </mat-form-field>
+                  </div>
+                </div>
+              </mat-cell> 
+            </div>
+
+            <div matColumnDef="button">
+              <mat-header-cell *matHeaderCellDef> </mat-header-cell>
+              <mat-cell *matCellDef="let row" fxLayoutAlign="center">
+                <button class="TableBtn" mat-raised-button color="primary" (click)="onParamSubmit(row)" [disabled]="row.pristine"> set
+                </button>
+              </mat-cell>
+            </div>
+
+            <mat-header-row *matHeaderRowDef="displayedColumns"></mat-header-row>
+            <mat-row *matRowDef="let row; columns: displayedColumns"></mat-row>
+
+          </mat-table>
+         </div>
+        </mat-card-content>
+      </mat-card>
+    </mat-grid-tile> 
+  </mat-grid-list>
+</div>

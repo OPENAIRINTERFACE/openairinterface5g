@@ -23,8 +23,6 @@
 
 #include "commonDef.h"
 
-#include "security_types.h"
-
 #include "queue.h"
 
 #ifndef COMMON_TYPES_H_

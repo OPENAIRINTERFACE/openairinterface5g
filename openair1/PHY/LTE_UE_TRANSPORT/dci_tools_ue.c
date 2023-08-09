@@ -32,11 +32,13 @@
 
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_UE/sched_UE.h"
 #ifdef DEBUG_DCI_TOOLS
 #include "PHY/phy_vars.h"
 #endif
 #include "assertions.h"
+#include "PHY/LTE_TRANSPORT/transport_vars.h"
 
 
 //#define DEBUG_HARQ
@@ -60,11 +62,70 @@
 #define LOG_I(A,B...) printf(B)
 */
 
-extern uint16_t beta_cqi[16];
-extern uint16_t beta_ri[16];
-extern uint16_t beta_ack[16];
+int flag_LA=0;
 
-void extract_dci1A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+static const double p_qpsk[8] = {5982.42405670359,
+                                 -21568.1135917693,
+                                 31293.9987036905,
+                                 -23394.6795043871,
+                                 9608.34750585489,
+                                 -2158.15802349899,
+                                 267.731968719036,
+                                 -20.6145324295965};
+static const double p_qam16[8] = {7862.12690694170,
+                                  -28510.3207048338,
+                                  41542.2150287122,
+                                  -31088.3036957379,
+                                  12690.1982361016,
+                                  -2785.66604739984,
+                                  326.595462489375,
+                                  -18.9911849872089};
+static const double p_qam64[8] = {8832.57933013696,
+                                  -32119.1802555952,
+                                  46914.2578990397,
+                                  -35163.8150557183,
+                                  14343.7419388853,
+                                  -3126.61025510092,
+                                  360.954930562237,
+                                  -18.0358548533343};
+static const double q_qpsk[8] = {1.94491167814437e-09,
+                                 8.40494123817774e-08,
+                                 4.75527131198034e-07,
+                                 -2.48946285301621e-05,
+                                 -0.000347614016158364,
+                                 0.00209252225437100,
+                                 0.0742986115462510,
+                                 0.488297879889425};
+static const double q_qam16[8] = {3.21151853033897e-10,
+                                  5.55435952230651e-09,
+                                  -2.30760065362117e-07,
+                                  -6.25587743817859e-06,
+                                  4.62251036452795e-06,
+                                  0.00224150813158937,
+                                  0.0393723140344367,
+                                  0.245486379182639};
+static const double q_qam64[8] = {2.25934026232206e-11,
+                                  -1.45992206328306e-10,
+                                  -3.70861183071900e-08,
+                                  -1.22206071019319e-06,
+                                  6.49115500399637e-06,
+                                  0.00129828997837433,
+                                  0.0259669554914859,
+                                  0.166602901214898};
+static const double sinr_to_cqi[4][16] = {
+  {-2.5051, -2.5051, -1.7451, -0.3655, 1.0812, 2.4012, 3.6849, 6.6754, 8.3885, 8.7970, 12.0437, 14.4709, 15.7281,  17.2424,  17.2424, 17.2424},
+  {-2.2360, -2.2360, -1.3919, -0.0218, 1.5319,  2.9574,  4.3234, 6.3387, 8.9879, 9.5096, 12.6609, 14.0116, 16.4984, 18.1572, 18.1572, 18.1572},
+  {-1, -1.0000, -0.4198, -0.0140, 1.0362,  2.3520, 3.5793, 6.1136, 8.4836, 9.0858, 12.4723, 13.9128, 16.2054, 17.7392, 17.7392, 17.7392},
+  { -4.1057, -4.1057, -3.3768, -2.2916, -1.1392, 0.1236, 1.2849, 3.1933, 5.9298, 6.4052, 9.6245, 10.9414, 13.5166, 14.9545, 14.9545, 14.9545}
+};
+
+static int errorRB(int rb, char * table, int line) {
+  LOG_E(PHY,"Received %d rb, impossble in table %s, at line %d\n", rb, table, line);
+  return 0;
+}
+
+#define rbAllocCheck(RBalL, TabLe) (RBalL) > sizeof(TabLe)/sizeof(*TabLe) ? errorRB(RBalL, #TabLe, __LINE__) : TabLe[RBalL]
+void extract_dci1A_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
     uint8_t harq_pid=0;
     uint32_t rballoc=0;
@@ -182,7 +243,7 @@ void extract_dci1A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
     pdci_info_extarcted->dai      = dai;
 }
 
-void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci1C_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -222,7 +283,7 @@ void extract_dci1C_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_
     pdci_info_extarcted->Ngap     = Ngap;
 }
 
-void extract_dci1_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci1_info(uint8_t N_RB_DL, frame_type_t frame_type, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -329,7 +390,7 @@ void extract_dci1_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, void *dci_p
 
 }
 
-void extract_dci2_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci2_info(uint8_t N_RB_DL, frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -615,7 +676,7 @@ void extract_dci2_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_
 
 }
 
-void extract_dci2A_info(uint8_t N_RB_DL, lte_frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
+void extract_dci2A_info(uint8_t N_RB_DL, frame_type_t frame_type, uint8_t nb_antenna_ports_eNB, void *dci_pdu, DCI_INFO_EXTRACTED_t *pdci_info_extarcted)
 {
 
     uint32_t rballoc=0;
@@ -974,28 +1035,28 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
     {
         switch (N_RB_DL) {
         case 6:
-            NPRB     = RIV2nb_rb_LUT6[rballoc];//NPRB;
+            NPRB     = rbAllocCheck(rballoc, RIV2nb_rb_LUT6);
             if(rah)
               RIV_max  = RIV_max6;
             else
               RIV_max  = 0x3F;
             break;
         case 25:
-            NPRB     = RIV2nb_rb_LUT25[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT25);
             if(rah)
               RIV_max  = RIV_max25;
             else
               RIV_max  = 0x1FFF;
             break;
         case 50:
-            NPRB     = RIV2nb_rb_LUT50[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT50);
             if(rah)
               RIV_max  = RIV_max50;
             else
               RIV_max  = 0x1FFFF;
             break;
         case 100:
-            NPRB     = RIV2nb_rb_LUT100[rballoc];//NPRB;
+            NPRB     =  rbAllocCheck(rballoc,RIV2nb_rb_LUT100);
             if(rah)
               RIV_max  = RIV_max100;
             else
@@ -1034,9 +1095,14 @@ int check_dci_format1_1a_coherency(DCI_format_t dci_format,
             // this is an eNB issue
             // retransmisison but old and new TBS are different !!!
             // work around, consider it as a new transmission
-            LOG_E(PHY,"Format1A Retransmission but TBS are different: consider it as new transmission !!! \n");
+            LOG_E(PHY,
+                  "Format1A Retransmission but TBS are different: consider it as new transmission !!!, round %d, mcs 1 %d, NPRB %d \n",
+                  pdlsch0_harq->round,
+                  mcs1,
+                  NPRB);
             pdlsch0_harq->round = 0;
             //return(0); // ?? to cross check
+	  return(0); // ?? to cross check
         }
     }
 
@@ -1293,7 +1359,7 @@ void compute_llr_offset(LTE_DL_FRAME_PARMS *frame_parms,
         }
 
         granted_re = nb_rb_alloc * (12-crs_re);
-        pbch_pss_sss_re = adjust_G2(frame_parms,dlsch0_harq->rb_alloc_even,dlsch0_harq->Qm,subframe,symbol);
+        pbch_pss_sss_re = adjust_G2(frame_parms->Ncp,frame_parms->frame_type, frame_parms->N_RB_DL,dlsch0_harq->rb_alloc_even,dlsch0_harq->Qm,subframe,symbol);
         pbch_pss_sss_re = (double)pbch_pss_sss_re * ((double)(12-crs_re)/12);
         data_re = granted_re - pbch_pss_sss_re;
         llr_offset = data_re * dlsch0_harq->Qm * 2;
@@ -2833,7 +2899,7 @@ uint16_t quantize_subband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id,int nb_rb)
 
   }
 #ifdef DEBUG_HARQ
-    printf( "quantize_subband_pmi pmivect %d \n", pmivect);
+    printf( "quantize_subband_pmi pmivect %u \n", pmivect);
 #endif
   return(pmivect);
 }
@@ -2915,7 +2981,6 @@ uint16_t quantize_wideband_pmi(PHY_MEASUREMENTS *meas,uint8_t eNB_id)
 
 uint8_t sinr2cqi(double sinr,uint8_t trans_mode)
 {
-  // int flag_LA=0;
 
   uint8_t retValue = 0;
 

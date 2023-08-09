@@ -18,11 +18,9 @@
  * For more information about the OpenAirInterface (OAI) Software Alliance:
  *      contact@openairinterface.org
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
+#ifndef X2AP_COMMON_H_
+#define X2AP_COMMON_H_
+#include "oai_asn1.h"
 #include "X2AP_ProtocolIE-Field.h"
 #include "X2AP_X2AP-PDU.h"
 #include "X2AP_InitiatingMessage.h"
@@ -34,9 +32,6 @@
 #include "X2AP_ProtocolExtensionContainer.h"
 #include "X2AP_asn_constant.h"
 #include "intertask_interface.h"
-
-#ifndef X2AP_COMMON_H_
-#define X2AP_COMMON_H_
 
 /** @defgroup _x2ap_impl_ X2AP Layer Reference Implementation
  * @ingroup _ref_implementation_
@@ -52,25 +47,13 @@
 # define X2AP_PORT 36422
 #endif
 
-#ifndef TRUE
-#define TRUE 1
-#define FALSE 0
-#endif
-
 extern int asn1_xer_print;
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# define X2AP_INFO(x, args...) LOG_I(X2AP, x, ##args)
-# define X2AP_ERROR(x, args...) LOG_E(X2AP, x, ##args)
-# define X2AP_WARN(x, args...)  LOG_W(X2AP, x, ##args)
-# define X2AP_DEBUG(x, args...) LOG_D(X2AP, x, ##args)
-#else
-# define X2AP_INFO(x, args...) do { fprintf(stdout, "[X2AP][I]"x, ##args); } while(0)
-# define X2AP_ERROR(x, args...) do { fprintf(stdout, "[X2AP][E]"x, ##args); } while(0)
-# define X2AP_WARN(x, args...)  do { fprintf(stdout, "[X2AP][W]"x, ##args); } while(0)
-# define X2AP_DEBUG(x, args...) do { fprintf(stdout, "[X2AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#define X2AP_INFO(x, args...) LOG_I(X2AP, x, ##args)
+#define X2AP_ERROR(x, args...) LOG_E(X2AP, x, ##args)
+#define X2AP_WARN(x, args...)  LOG_W(X2AP, x, ##args)
+#define X2AP_DEBUG(x, args...) LOG_D(X2AP, x, ##args)
 
 #define X2AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
   do {\

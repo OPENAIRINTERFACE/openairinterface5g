@@ -55,14 +55,18 @@ MESSAGE_DEF(RRC_STATE_IND,              MESSAGE_PRIORITY_MED,       RrcStateInd,
 // eNB: ENB_APP -> RRC messages
 MESSAGE_DEF(RRC_CONFIGURATION_REQ,      MESSAGE_PRIORITY_MED,       RrcConfigurationReq,        rrc_configuration_req)
 MESSAGE_DEF(NBIOTRRC_CONFIGURATION_REQ, MESSAGE_PRIORITY_MED,       NbIoTRrcConfigurationReq,   nbiotrrc_configuration_req)
+MESSAGE_DEF(NRRRC_CONFIGURATION_REQ,    MESSAGE_PRIORITY_MED,       gNB_RrcConfigurationReq,    nrrrc_configuration_req)
 
 // UE: NAS -> RRC messages
 MESSAGE_DEF(NAS_KENB_REFRESH_REQ,       MESSAGE_PRIORITY_MED,       NasKenbRefreshReq,          nas_kenb_refresh_req)
 MESSAGE_DEF(NAS_CELL_SELECTION_REQ,     MESSAGE_PRIORITY_MED,       NasCellSelectionReq,        nas_cell_selection_req)
 MESSAGE_DEF(NAS_CONN_ESTABLI_REQ,       MESSAGE_PRIORITY_MED,       NasConnEstabliReq,          nas_conn_establi_req)
 MESSAGE_DEF(NAS_UPLINK_DATA_REQ,        MESSAGE_PRIORITY_MED,       NasUlDataReq,               nas_ul_data_req)
+MESSAGE_DEF(NAS_DEREGISTRATION_REQ,     MESSAGE_PRIORITY_MED,       NasDeregistrationReq,       nas_deregistration_req)
 
 MESSAGE_DEF(NAS_RAB_ESTABLI_RSP,        MESSAGE_PRIORITY_MED,       NasRabEstRsp,               nas_rab_est_rsp)
+
+MESSAGE_DEF(NAS_OAI_TUN_NSA,            MESSAGE_PRIORITY_MED,       NasOaiTunNsa,               nas_oai_tun_nsa)
 
 // UE: RRC -> NAS messages
 MESSAGE_DEF(NAS_CELL_SELECTION_CNF,     MESSAGE_PRIORITY_MED,       NasCellSelectionCnf,        nas_cell_selection_cnf)
@@ -75,3 +79,7 @@ MESSAGE_DEF(NAS_DOWNLINK_DATA_IND,      MESSAGE_PRIORITY_MED,       NasDlDataInd
 
 // eNB: realtime -> RRC messages
 MESSAGE_DEF(RRC_SUBFRAME_PROCESS,       MESSAGE_PRIORITY_MED,       RrcSubframeProcess,         rrc_subframe_process)
+MESSAGE_DEF(NRRRC_FRAME_PROCESS,        MESSAGE_PRIORITY_MED,       NRRrcFrameProcess,          nr_rrc_frame_process)
+
+// eNB: RLC -> RRC messages
+MESSAGE_DEF(RLC_SDU_INDICATION,         MESSAGE_PRIORITY_MED,       RlcSduIndication,           rlc_sdu_indication)

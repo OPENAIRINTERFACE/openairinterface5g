@@ -1,0 +1,92 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for Ubuntu 20.04
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest as ru-base
+
+FROM ran-build:latest AS ru-build
+
+
+#start from scratch for target executable
+FROM ubuntu:focal as oai-lte-ru
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe/Paris
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        tzdata \
+        procps \
+        software-properties-common \
+        libblas3 \
+        libatlas3-base \
+        libconfig9 \
+        net-tools \
+        gdb \
+        python \
+        python3 \
+        python3-six \
+        python3-requests \
+        libusb-1.0-0 \
+        iputils-ping \
+        iproute2 && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /opt/oai-lte-ru/bin
+COPY --from=ru-build \
+    /oai-ran/cmake_targets/ran_build/build/oairu ./
+COPY ./docker/scripts/lte_ru_entrypoint.sh ./entrypoint.sh
+
+COPY --from=ru-build \
+    /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/liboai_usrpdevif.so \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /usr/local/lib/
+
+# Now we are copying from builder-image the UHD files.
+COPY --from=ru-base /usr/local/bin/uhd_find_devices /usr/local/bin
+COPY --from=ru-base /usr/local/lib/libuhd.so.4.4.0 /usr/local/lib
+COPY --from=ru-base /usr/local/lib/uhd/utils/uhd_images_downloader.py /opt/oai-lte-ru/bin
+
+COPY --from=ru-base \
+    /usr/lib/x86_64-linux-gnu/libboost_chrono.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_date_time.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_filesystem.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_regex.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_serialization.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_thread.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/libboost_system.so.1.71.0 \
+    /usr/lib/x86_64-linux-gnu/
+
+RUN /bin/bash -c "ln -s /usr/local/lib/liboai_usrpdevif.so /usr/local/lib/liboai_device.so" && \
+    ldconfig
+
+WORKDIR /opt/oai-lte-ru
+
+ENTRYPOINT ["/opt/oai-lte-ru/bin/entrypoint.sh"]
+CMD ["/opt/oai-lte-ru/bin/oairu", "-O", "/opt/oai-lte-ru/etc/rru.conf"]

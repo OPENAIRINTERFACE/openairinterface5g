@@ -46,7 +46,6 @@ extern UE_RRC_INST_NB_IoT 					*UE_rrc_inst_NB_IoT;
 extern eNB_RRC_INST_NB_IoT 					*eNB_rrc_inst_NB_IoT;
 extern PHY_Config_NB_IoT_t 						*config_INFO;
 
-extern rlc_info_t 							Rlc_info_am_NB_IoT,Rlc_info_am_config_NB_IoT;
 extern uint8_t 								DRB2LCHAN_NB_IoT[2];
 extern LTE_LogicalChannelConfig_NB_r13_t 		SRB1bis_logicalChannelConfig_defaultValue_NB_IoT;
 extern LTE_LogicalChannelConfig_NB_r13_t 		SRB1_logicalChannelConfig_defaultValue_NB_IoT;

@@ -1,6 +1,0 @@
-syntax = "proto2";
-package protocol;
-
-enum flex_control_delegation_type {
-     FLCDT_MAC_DL_UE_SCHEDULER = 1;		// DL UE scheduler delegation
-}

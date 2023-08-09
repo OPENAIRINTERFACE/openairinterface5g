@@ -13,7 +13,6 @@ extern "C" {
     double samplerate = 30.72e6*ratio;
     double ofdm_size = 2048*ratio;
     double PI = std::acos(-1);
-    std::complex<int> tt;
     complex<double> t[len];
     int index=0;
     double cp0 = 160*ratio;

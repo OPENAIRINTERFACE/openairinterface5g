@@ -70,7 +70,7 @@ typedef struct CellInfo_s {
 //-------------------------------------------------------------------------------------------//
 // eNB: ENB_APP -> PHY messages
 typedef struct PhyConfigurationReq_s {
-  lte_frame_type_t        frame_type[MAX_NUM_CCs];
+  frame_type_t            frame_type[MAX_NUM_CCs];
   lte_prefix_type_t       prefix_type[MAX_NUM_CCs];
   uint32_t                downlink_frequency[MAX_NUM_CCs];
   int32_t                 uplink_frequency_offset[MAX_NUM_CCs];
@@ -82,6 +82,9 @@ typedef struct PhyConfigurationReq_s {
 
 // UE: RRC -> PHY messages
 typedef struct PhyDeactivateReq_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } PhyDeactivateReq;
 
 typedef struct PhyFindCellReq_s {
@@ -93,9 +96,15 @@ typedef struct PhyFindCellReq_s {
 } PhyFindCellReq;
 
 typedef struct PhyFindNextCellReq_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 } PhyFindNextCellReq;
 
 typedef struct PhyMeasThresholdReq_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 #   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
   ral_link_cfg_param_t    cfg_param;
@@ -103,6 +112,9 @@ typedef struct PhyMeasThresholdReq_s {
 } PhyMeasThresholdReq;
 
 typedef struct PhyMeasReportInd_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 #   if ENABLE_RAL
   ral_threshold_t         threshold;
   ral_link_param_t        link_param;
@@ -119,6 +131,9 @@ typedef struct PhyFindCellInd_s {
 } PhyFindCellInd;
 
 typedef struct PhyMeasThresholdConf_s {
+  // This dummy element is to avoid CLANG warning: empty struct has size 0 in C, size 1 in C++
+  // To be removed if the structure is filled
+  uint32_t dummy;
 #   if ENABLE_RAL
   ral_transaction_id_t    transaction_id;
   ral_status_t            status;

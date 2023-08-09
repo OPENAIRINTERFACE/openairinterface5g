@@ -69,10 +69,9 @@ void esm_main_cleanup(esm_data_t *esm_data);
 /* User's getter for PDN connections and EPS bearer contexts */
 int esm_main_get_nb_pdns_max(esm_data_t *esm_data);
 int esm_main_get_nb_pdns(esm_data_t *esm_data);
-int esm_main_has_emergency(esm_data_t *esm_data);
-int esm_main_get_pdn_status(nas_user_t *user, int cid, int *state);
-int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn, int *is_emergency,
-                     int *is_active);
+bool esm_main_has_emergency(esm_data_t *esm_data);
+bool esm_main_get_pdn_status(nas_user_t *user, int cid, bool *state);
+int esm_main_get_pdn(esm_data_t *esm_data, int cid, int *type, const char **apn, bool *is_emergency, bool *is_active);
 int esm_main_get_pdn_addr(esm_data_t *esm_data, int cid, const char **ipv4addr, const char **ipv6addr);
 
 

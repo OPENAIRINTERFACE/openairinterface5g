@@ -23,6 +23,8 @@ logger *new_ticklog(void *event_handler, void *database,
 logger *new_iqlog(void *event_handler, void *database,
     char *event_name, char *nb_rb, char *N_RB_UL, char *symbols_per_tti,
     char *buffer_varname);
+logger *new_iqlog_full(void *event_handler, void *database, char *event_name,
+    char *buffer_varname);
 logger *new_iqdotlog(void *event_handler, void *database,
     char *event_name, char *I, char *Q);
 

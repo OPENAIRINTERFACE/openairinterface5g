@@ -30,14 +30,6 @@
 
 #include <stdint.h>  // for uint8/16/32_t
 
-/* check if this ifndef is required for NB-IoT ?!
-//#ifndef NO_OPENAIR1
-//#include "PHY/defs_NB_IoT.h"
-//#else
-//#include "PHY/TOOLS/time_meas.h"
-//#endif
-*/
-
 #define CRC24_A_NB_IoT 0
 #define CRC24_B_NB_IoT 1
 #define CRC16_NB_IoT 2

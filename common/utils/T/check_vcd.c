@@ -15,11 +15,22 @@
 /* VCD specific defines and includes
  * If the codebase changes, it may need to be updated
  */
-#define ENB_MODE
 #define ENABLE_USE_CPU_EXECUTION_TIME
 #include "../LOG/vcd_signal_dumper.c"
 
-void err(char *fmt, ...) __attribute__ ((format (printf, 1, 2)));
+/*
+ * Dummy needed by assertions.h
+ */
+void exit_function(const char *file, const char *function, const int line, const char *s, const int assert)
+{
+  if (assert) {
+    abort();
+  } else {
+    exit(EXIT_SUCCESS);
+  }
+}
+
+void err(char *fmt, ...) __attribute__((format(printf, 1, 2)));
 void err(char *fmt, ...)
 {
   va_list ap;
@@ -56,14 +67,17 @@ void err(char *fmt, ...)
   exit(1);
 }
 
-int main(void)
+int main(int argc, char *argv[])
 {
   /* to disable the checks done by this program, uncomment the following
    * line, ie. remove the leading '//'
    */
   //return 0;
 
-  void *database = parse_database("T_messages.txt");
+  if (argc != 3) err("usage: %s <T_messages.txt> <vcd_signal_dumper.h>", argv[0]);
+  char *T_msg_txt = argv[1];
+  char *vcd_sig_dmp = argv[2];
+  void *database = parse_database(T_msg_txt);
   int number_of_events;
   int first_var = -1;
   int last_var;
@@ -201,8 +215,8 @@ int main(void)
    * VCD_VARIABLE_ABC or VCD_FUNCTION_XYZ
    */
   i = first_var;
-  in = fopen("../LOG/vcd_signal_dumper.h", "r");
-  if (in == NULL) err("could not open ../LOG/vcd_signal_dumper.h");
+  in = fopen(vcd_sig_dmp, "r");
+  if (in == NULL) err("could not open %s\n", vcd_sig_dmp);
   while (1) {
     char *x = "  VCD_SIGNAL_DUMPER_VARIABLES_";
     ssize_t r;
@@ -242,7 +256,9 @@ int main(void)
       err("%s is not correct in T_messages.txt", name);
     i++;
   }
+  free(l);
   fclose(in);
+  free_database(database);
   if (i != last_fun + 1) err("VCD FUNCTIONS wrong in T_messages.txt");
 
   return 0;

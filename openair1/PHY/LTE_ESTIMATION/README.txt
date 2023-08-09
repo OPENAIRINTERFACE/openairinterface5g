@@ -8,7 +8,6 @@ lte_ul_channel_estimation.c       : UL channel estimation (both DRS and SRS rout
 freq_equalization.c               : UL frequency-domain equalization for SC-FDMA receiver
 lte_dl_channel_estimation_emos.c  : DL channel estimation for EMOS-specific pilot arrangements
 lte_sync_time.c                   : DL initial time symncronization based on PSS
-lte_adjust_sync.c                 : DL timing adjustment (tracking) based on LTE RS-based channel estimates
+lte_adjust_sync_ue.c              : DL timing adjustment (tracking) based on LTE RS-based channel estimates
 lte_eNB_measurements.c            : UL measurement procedures
 lte_ue_measurements.c             : DL measurement procedures
-

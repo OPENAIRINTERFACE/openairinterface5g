@@ -1,0 +1,498 @@
+ PUCCH TEST 
+-----------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+
+-------------------------------------------------------------------------------------------
+
+  => Test : No harq feedback on going
+
+Set pucch common configuration 
+PUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : Error due to acknownlegment not set 
+[1;31m[PHY][E][get_downlink_ack] PUCCH Downlink acknowledgment has not been set : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : Error due to DAI not set 
+[1;31m[PHY][E][get_downlink_ack] PUCCH Downlink DAI has not been set : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : Error due to DAI at wrong value 
+[1;31m[PHY][E][get_downlink_ack] PUCCH Downlink DAI has an invalid value : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : Error due to ACK not ready to be send 
+[1;31m[PHY][E][get_downlink_ack] PUCCH Downlink ack can not be transmitted : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : Error due to invalid DAI value 
+[1;31m[PHY][E][get_downlink_ack] PUCCH Downlink dai is invalid : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+Set pucch common configuration 
+
+  => Test : Error due to undefined PUCCH format from common config  
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+[1;31m[PHY][E][select_pucch_resource] PUCCH Invalid initial resource index : at line 0 in function select_pucch_resource of file   
+[0m[93m[PHY][W][pucch_procedures_ue_nr] PUCCH No PUCCH resource found at AbsSubframe 0.4 
+[0m
+  => Test : Error due to PUCCH format with multiple cells not already implemented 
+[1;31m[PHY][E][get_downlink_ack] PUCCH ACK feedback is not implemented for mutiple gNB cells : at line 0 in function get_downlink_ack of file   
+[0mPUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+-------------------------------------------------------------------------------------------
+
+Set pucch common configuration 
+
+  => Test : PUCCH format from common config in prach mode: one positive downlink ACKnowledgment 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH format 0 nb symbols total 2 uci size 1 selected format 0 
+PUCCH common configuration with index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 12 ) 
+PUCCH ( starting_prb : 0 ) ( second_hop : 99 ) ( m_0 : 4 ) ( m_CS : 6 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from common config in prach mode: one negative downlink ACKnowledgment 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH format 0 nb symbols total 2 uci size 1 selected format 0 
+PUCCH common configuration with index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 12 ) 
+PUCCH ( starting_prb : 0 ) ( second_hop : 99 ) ( m_0 : 4 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from common config in dedicated mode: two positive downlink ACKnowledgments 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH format 1 nb symbols total 4 uci size 2 selected format 1 
+PUCCH common configuration with index 3 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x02 ) ( ack length 2 data 0x02 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 4 ) ( nb symbols : 4 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 10 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 98 ) ( m_0 : 6 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 4 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from common config in dedicated mode: one positive and one negative downlink ACKnowledgments 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH format 1 nb symbols total 4 uci size 2 selected format 1 
+PUCCH common configuration with index 3 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x00 ) ( ack length 2 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 4 ) ( nb symbols : 4 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 10 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 98 ) ( m_0 : 6 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 4 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from common config in dedicated mode: two negative downlink ACKnowledgments 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH format 1 nb symbols total 4 uci size 2 selected format 1 
+PUCCH common configuration with index 3 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x00 ) ( ack length 2 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 4 ) ( nb symbols : 4 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 10 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 98 ) ( m_0 : 6 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 4 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from common config in dedicated mode: no resource is found 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+[1;31m[PHY][E][select_pucch_resource] PUCCH No compatible pucch format found : at line 0 in function select_pucch_resource of file   
+[0m[93m[PHY][W][pucch_procedures_ue_nr] PUCCH No PUCCH resource found at AbsSubframe 0.4 
+[0m
+  => Test : PUCCH format from common config in dedicated mode: no PUCCH after reset of pending harq ACKnowledgments 
+PUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+Set default pucch dedicated configuration 
+
+-------------------------------------------------------------------------------------------
+
+  => Test : PUCCH format from dedicated config : pucch resource indicator is invalid 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+[1;31m[PHY][E][select_pucch_resource] PUCCH Invalid pucch resource indicator: at line 0 in function select_pucch_resource of file   
+[0m[93m[PHY][W][pucch_procedures_ue_nr] PUCCH No PUCCH resource found at AbsSubframe 0.4 
+[0m
+  => Test : PUCCH format from dedicated config with 1 transport block : with 1 downlink ACKnowledgments and pucch resource indicator 0 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 1 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 6 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 1 downlink ACKnowledgments and pucch resource indicator 5 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+PUCCH format 1 nb symbols total 9 uci size 1 selected format 1 
+PUCCH dedicated configuration with resource index 5 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 1 data 0x01 ) ( ack length 1 data 0x01 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 9 ) ( nb symbols : 9 ) ( max code rate*100 : 8 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 5 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 5 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 2 downlink ACKnowledgments and pucch resource indicator 1 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH found resource set 0 
+PUCCH format 1 nb symbols total 5 uci size 2 selected format 1 
+PUCCH dedicated configuration with resource index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x03 ) ( ack length 2 data 0x03 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 5 ) ( max code rate*100 : 8 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 1 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 8 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 2 downlink ACKnowledgments and pucch resource indicator 0 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 2 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 6 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 3 downlink ACKnowledgments and pucch resource indicator 1 
+PUCCH power n(3) = ( V(3) - U(3) )mod4 * N_TB(1) + N(3) 
+PUCCH found resource set 1 
+PUCCH format 3 nb symbols total 5 uci size 3 selected format 3 
+PUCCH dedicated configuration with resource index 9 
+PUCCH Adjust number of prb : (N_UCI : 3 ) (payload_in_bits : 18) (N_sc_ctrl_RB : 12) (nb_symbols : 3) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 3 data 0x07 ) ( ack length 3 data 0x07 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 3 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 1 ) 
+PUCCH ( starting_prb : 2 ) ( second_hop : 2 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 3 downlink ACKnowledgments and pucch resource indicator 3 
+PUCCH power n(3) = ( V(3) - U(3) )mod4 * N_TB(1) + N(3) 
+PUCCH found resource set 1 
+PUCCH format 2 nb symbols total 2 uci size 3 selected format 2 
+PUCCH dedicated configuration with resource index 11 
+PUCCH Adjust number of prb : (N_UCI : 3 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 3 data 0x07 ) ( ack length 3 data 0x07 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 1 ) 
+PUCCH ( starting_prb : 2 ) ( second_hop : 2 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 6 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 4 downlink ACKnowledgments and pucch resource indicator 5 
+PUCCH power n(4) = ( V(4) - U(4) )mod4 * N_TB(1) + N(4) 
+PUCCH found resource set 2 
+PUCCH format 4 nb symbols total 9 uci size 4 selected format 3 
+PUCCH dedicated configuration with resource index 21 
+PUCCH Number of pucch format 4 in subframe 4 is 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0f ) ( ack length 4 data 0x0f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 4 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 9 ) ( nb symbols : 7 ) ( max code rate*100 : 35 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 15 ) ( occ_Index : 16 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 3 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 5 ) ( DELTA_TF : -5 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block : with 4 downlink ACKnowledgments and pucch resource indicator 7 
+PUCCH power n(4) = ( V(4) - U(4) )mod4 * N_TB(1) + N(4) 
+PUCCH found resource set 2 
+PUCCH format 3 nb symbols total 11 uci size 4 selected format 3 
+PUCCH dedicated configuration with resource index 23 
+PUCCH Adjust number of prb : (N_UCI : 4 ) (payload_in_bits : 54) (N_sc_ctrl_RB : 12) (nb_symbols : 9) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0f ) ( ack length 4 data 0x0f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 11 ) ( nb symbols : 9 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 1 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -6 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 1 transport block and missed PDSCH : with 6 downlink ACKnowledgments and pucch resource indicator 5 
+PUCCH power n(4) = ( V(4) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH found resource set 2 
+PUCCH format 4 nb symbols total 9 uci size 4 selected format 3 
+PUCCH dedicated configuration with resource index 21 
+PUCCH Number of pucch format 4 in subframe 4 is 2 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0a ) ( ack length 4 data 0x0a ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 4 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 9 ) ( nb symbols : 7 ) ( max code rate*100 : 35 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 15 ) ( occ_Index : 16 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 6 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 5 ) ( DELTA_TF : -2 ) ( G_b_f_c : 0 ) 
+
+-------------------------------------------------------------------------------------------
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 1 downlink ACKnowledgments and pucch resource indicator 0 
+PUCCH power n(2) = ( V(1) - U(1) )mod4 * N_TB(2) + N(2) 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 2 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 6 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 1 downlink ACKnowledgments and pucch resource indicator 1 
+PUCCH power n(2) = ( V(1) - U(1) )mod4 * N_TB(2) + N(2) 
+PUCCH found resource set 0 
+PUCCH format 1 nb symbols total 5 uci size 2 selected format 1 
+PUCCH dedicated configuration with resource index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x03 ) ( ack length 2 data 0x03 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 5 ) ( max code rate*100 : 8 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 1 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 8 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 2 downlink ACKnowledgments and pucch resource indicator 3 
+PUCCH power n(4) = ( V(2) - U(2) )mod4 * N_TB(2) + N(4) 
+PUCCH found resource set 2 
+PUCCH format 2 nb symbols total 2 uci size 4 selected format 2 
+PUCCH dedicated configuration with resource index 19 
+PUCCH Adjust number of prb : (N_UCI : 4 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0f ) ( ack length 4 data 0x0f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 1 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 2 downlink ACKnowledgments and pucch resource indicator 7 
+PUCCH power n(4) = ( V(2) - U(2) )mod4 * N_TB(2) + N(4) 
+PUCCH found resource set 2 
+PUCCH format 3 nb symbols total 11 uci size 4 selected format 3 
+PUCCH dedicated configuration with resource index 23 
+PUCCH Adjust number of prb : (N_UCI : 4 ) (payload_in_bits : 54) (N_sc_ctrl_RB : 12) (nb_symbols : 9) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0f ) ( ack length 4 data 0x0f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 11 ) ( nb symbols : 9 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 1 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -6 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 3 downlink ACKnowledgments and pucch resource indicator 2 
+PUCCH power n(6) = ( V(3) - U(3) )mod4 * N_TB(2) + N(6) 
+PUCCH found resource set 3 
+PUCCH format 4 nb symbols total 6 uci size 6 selected format 3 
+PUCCH dedicated configuration with resource index 26 
+PUCCH Number of pucch format 4 in subframe 4 is 3 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 6 data 0x3f ) ( ack length 6 data 0x3f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 4 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 6 ) ( nb symbols : 4 ) ( max code rate*100 : 35 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 12 ) ( occ_Index : 13 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 11 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 5 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 3 downlink ACKnowledgments and pucch resource indicator 4 
+PUCCH power n(6) = ( V(3) - U(3) )mod4 * N_TB(2) + N(6) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 8 uci size 6 selected format 3 
+PUCCH dedicated configuration with resource index 28 
+PUCCH Adjust number of prb : (N_UCI : 6 ) (payload_in_bits : 36) (N_sc_ctrl_RB : 12) (nb_symbols : 6) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 6 data 0x3f ) ( ack length 6 data 0x3f ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 8 ) ( nb symbols : 6 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 4 downlink ACKnowledgments and pucch resource indicator 4 
+PUCCH power n(8) = ( V(4) - U(4) )mod4 * N_TB(2) + N(8) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 8 uci size 8 selected format 3 
+PUCCH dedicated configuration with resource index 28 
+PUCCH Adjust number of prb : (N_UCI : 8 ) (payload_in_bits : 36) (N_sc_ctrl_RB : 12) (nb_symbols : 6) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 8 data 0xff ) ( ack length 8 data 0xff ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 8 ) ( nb symbols : 6 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 6 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -1 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks : with 4 downlink ACKnowledgments and pucch resource indicator 6 
+PUCCH power n(8) = ( V(4) - U(4) )mod4 * N_TB(2) + N(8) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 10 uci size 8 selected format 3 
+PUCCH dedicated configuration with resource index 30 
+PUCCH Adjust number of prb : (N_UCI : 8 ) (payload_in_bits : 48) (N_sc_ctrl_RB : 12) (nb_symbols : 8) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 8 data 0xff ) ( ack length 8 data 0xff ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 10 ) ( nb symbols : 8 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks and 1 missed PDSCH : with 4 downlink ACKnowledgments and pucch resource indicator 4 
+PUCCH power n(8) = ( V(4) - U(3) )mod4 * N_TB(2) + N(6) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 10 uci size 8 selected format 3 
+PUCCH dedicated configuration with resource index 30 
+PUCCH Adjust number of prb : (N_UCI : 8 ) (payload_in_bits : 48) (N_sc_ctrl_RB : 12) (nb_symbols : 8) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 8 data 0xfc ) ( ack length 8 data 0xfc ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 10 ) ( nb symbols : 8 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with 2 transport blocks and 2 missed PDSCH : with 4 downlink ACKnowledgments and pucch resource indicator 4 
+PUCCH power n(8) = ( V(4) - U(2) )mod4 * N_TB(2) + N(4) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 10 uci size 8 selected format 3 
+PUCCH dedicated configuration with resource index 30 
+PUCCH Adjust number of prb : (N_UCI : 8 ) (payload_in_bits : 48) (N_sc_ctrl_RB : 12) (nb_symbols : 8) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 8 data 0xcc ) ( ack length 8 data 0xcc ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 10 ) ( nb symbols : 8 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+-------------------------------------------------------------------------------------------
+
+  => Test : PUCCH format from dedicated config with only a negative scheduling request : no PUCCH should be generated 
+PUCCH No feedback AbsSubframe 0.4 
+[PHY][D][pucch_procedures_ue_nr] PUCCH No feedback AbsSubframe 0.4 
+
+  => Test : PUCCH format 0 from dedicated config with only a positive scheduling request 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 1 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format 1 from dedicated config with only a positive scheduling request 
+PUCCH found resource set 0 
+PUCCH format 1 nb symbols total 5 uci size 1 selected format 1 
+PUCCH dedicated configuration with resource index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 1 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 1 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 5 ) ( max code rate*100 : 8 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 1 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 8 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+-------------------------------------------------------------------------------------------
+
+  => Test : PUCCH format from dedicated config with a negative scheduling request and a positive ack 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 2 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with a positive scheduling request and a positive ack 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+PUCCH format 0 nb symbols total 1 uci size 2 selected format 0 
+PUCCH dedicated configuration with resource index 0 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 0 data 0x00 ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 0 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 1 ) ( nb symbols : 1 ) ( max code rate*100 : 0 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 9 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 1 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with a positive scheduling request and a positive ack 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 0 
+PUCCH format 1 nb symbols total 5 uci size 2 selected format 1 
+PUCCH dedicated configuration with resource index 1 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x01 ) ( ack length 1 data 0x01 ) ( sr length 1 value 0 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 1 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 5 ) ( max code rate*100 : 8 ) ( starting_symbol_index : 0 ) 
+PUCCH ( starting_prb : 1 ) ( second_hop : 1 ) ( m_0 : 2 ) ( m_CS : 0 ) ( time_domain_occ 1 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 8 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 2 ) ( DELTA_TF : 3 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with a positive scheduling request and two positive acks 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH found resource set 1 
+PUCCH format 2 nb symbols total 2 uci size 3 selected format 2 
+PUCCH dedicated configuration with resource index 8 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 3 data 0x07 ) ( ack length 2 data 0x03 ) ( sr length 1 value 1 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 1 ) 
+PUCCH ( starting_prb : 2 ) ( second_hop : 2 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 6 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with a positive scheduling request and two positive acks 
+PUCCH power n(2) = ( V(2) - U(2) )mod4 * N_TB(1) + N(2) 
+PUCCH found resource set 1 
+PUCCH format 3 nb symbols total 5 uci size 3 selected format 3 
+PUCCH dedicated configuration with resource index 9 
+PUCCH Adjust number of prb : (N_UCI : 3 ) (payload_in_bits : 18) (N_sc_ctrl_RB : 12) (nb_symbols : 3) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 3 data 0x07 ) ( ack length 2 data 0x03 ) ( sr length 1 value 1 ) ( csi length 0 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 5 ) ( nb symbols : 3 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 1 ) 
+PUCCH ( starting_prb : 2 ) ( second_hop : 2 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 4 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -3 ) ( G_b_f_c : 0 ) 
+
+-------------------------------------------------------------------------------------------
+
+  => Test : PUCCH format from dedicated config with CSI alone 
+PUCCH found resource set 2 
+PUCCH format 2 nb symbols total 2 uci size 4 selected format 2 
+PUCCH dedicated configuration with resource index 16 
+PUCCH Adjust number of prb : (N_UCI : 4 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 4 data 0x0e ) ( ack length 0 data 0x00 ) ( sr length 0 value 0 ) ( csi length 4 data : 0x0e ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 7 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 1 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with ACK and CSI 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 2 
+PUCCH format 2 nb symbols total 2 uci size 5 selected format 2 
+PUCCH dedicated configuration with resource index 19 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 9) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 5 data 0x1d ) ( ack length 1 data 0x01 ) ( sr length 0 value 0 ) ( csi length 4 data : 0x0e ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 2 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 3 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with ACK, negative SR and CSI 
+PUCCH power n(1) = ( V(1) - U(1) )mod4 * N_TB(1) + N(1) 
+PUCCH found resource set 3 
+PUCCH format 3 nb symbols total 7 uci size 6 selected format 3 
+PUCCH dedicated configuration with resource index 27 
+PUCCH Adjust number of prb : (N_UCI : 2 ) (payload_in_bits : 30) (N_sc_ctrl_RB : 12) (nb_symbols : 5) (Q_m : 2) (max_code_rate*100 : 25) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 2 data 0x01 ) ( ack length 1 data 0x01 ) ( sr length 1 value 0 ) ( csi length 4 data : 0x00 ) 
+PUCCH ( format : 3 ) ( modulation :  QPSK  ) ( nb prb : 1 ) ( nb symbols total: 7 ) ( nb symbols : 5 ) ( max code rate*100 : 25 ) ( starting_symbol_index : 3 ) 
+PUCCH ( starting_prb : 4 ) ( second_hop : 4 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 1 dBm ) ( 10Log(...) : 0 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 4 ) ( DELTA_TF : -6 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with negative SR and CSI 
+PUCCH found resource set 2 
+PUCCH format 2 nb symbols total 2 uci size 5 selected format 2 
+PUCCH dedicated configuration with resource index 16 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 9) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 5 data 0x1c ) ( ack length 0 data 0x00 ) ( sr length 1 value 0 ) ( csi length 4 data : 0x0e ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 2 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 3 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+  => Test : PUCCH format from dedicated config with positive SR and CSI 
+PUCCH found resource set 2 
+PUCCH format 2 nb symbols total 2 uci size 5 selected format 2 
+PUCCH dedicated configuration with resource index 16 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 4) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH Adjust number of prb : (N_UCI : 5 ) (payload_in_bits : 9) (N_sc_ctrl_RB : 8) (nb_symbols : 2) (Q_m : 2) (max_code_rate*100 : 15) 
+PUCCH ( AbsSubframe : 0.4 ) ( total payload size 5 data 0x1d ) ( ack length 0 data 0x00 ) ( sr length 1 value 1 ) ( csi length 4 data : 0x0e ) 
+PUCCH ( format : 2 ) ( modulation :  QPSK  ) ( nb prb : 2 ) ( nb symbols total: 2 ) ( nb symbols : 2 ) ( max code rate*100 : 15 ) ( starting_symbol_index : 2 ) 
+PUCCH ( starting_prb : 3 ) ( second_hop : 3 ) ( m_0 : 0 ) ( m_CS : 0 ) ( time_domain_occ 0 ) (occ_length : 0 ) ( occ_Index : 0 ) 
+[PHY][D][get_PL] get_PL : Frame 0 : rsrp 0.000000 dBm/RE (-inf), eNB power 0 dBm/RE
+PUCCH ( Tx power : 9 dBm ) ( 10Log(...) : 3 ) ( from Path Loss : 0 ) ( delta_F_PUCCH : 3 ) ( DELTA_TF : 0 ) ( G_b_f_c : 0 ) 
+
+Release default pucch dedicated configuration 
+
+Test PUCCH is pass 

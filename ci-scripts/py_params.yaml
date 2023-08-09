@@ -1,0 +1,48 @@
+eNBRepository : b
+ranRepository : c
+eNB_AllowMerge : 
+ranAllowMerge : 
+eNBBranch : f
+ranBranch : g
+eNBCommitID :  
+ranCommitID : i
+eNBTargetBranch : j
+ranTargetBranch : k
+
+nodes : 
+  - type : eNB
+    IPAddress : 001.1.1
+    UserName : toto
+    Password : qwe
+    SourceCodePath : l
+  - type : gNB
+    IPAddress : 002.2.2
+    UserName : tata
+    Password : asd
+    SourceCodePath : m  
+  - type : eNB
+    IPAddress : 003.3.3
+    UserName : titi
+    Password : zxc
+    SourceCodePath : n
+  - type : gNB
+    IPAddress : 004.4.4
+    UserName : caca
+    Password : pepe
+    SourceCodePath :  o   
+
+EPCIPAddress : p
+EPCUserName : q
+EPCPassword : r
+EPCSourceCodePath : s
+EPCType : t
+EPCContainerPrefix : u
+
+XMLTestFile : z
+
+UEIPAddress : qqq
+UEUserName : www
+UEPassword : eee
+UESourceCodePath : yyy
+
+finalStatus : bbb

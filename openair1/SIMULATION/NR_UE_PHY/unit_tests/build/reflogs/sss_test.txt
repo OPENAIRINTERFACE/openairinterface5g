@@ -1,0 +1,709 @@
+ SSS TEST 
+----------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+***********************************
+    SSS NR Test synchronisation 
+***********************************
+------------------------------------------------
+Test nr pss with Nid2 0 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 222224, val = 219912170 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 222224, val = 219912170 (41 dB)
+Test nr sss with Nid1 0 
+(phase,Nid1) (0,0), metric_phase -201728 tot_metric -201728, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 43008 tot_metric 43008, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 45056 tot_metric 45056, phase_max 0 
+(phase,Nid1) (0,287), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (1,0), metric_phase 48128 tot_metric 48128, phase_max 1 
+(phase,Nid1) (2,0), metric_phase 310272 tot_metric 310272, phase_max 2 
+(phase,Nid1) (3,0), metric_phase 498176 tot_metric 498176, phase_max 3 
+(phase,Nid1) (4,0), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,0), metric_phase 760832 tot_metric 760832, phase_max 5 
+Nid2 0 Nid1 0 tot_metric 760832, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 0 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 0, val = 232379536 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 232379536 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 492, val = 230217517 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 56788, val = 232379536 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 111112, val = 230349320 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 0 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 0, Peak found at pos 222224, val = 219912170 (41 dB)
+[UE] nr_synchro_time: Sync source = 0, Peak found at pos 222224, val = 219912170 (41 dB)
+Test nr sss with Nid1 71 
+(phase,Nid1) (0,0), metric_phase -14336 tot_metric -14336, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 2048 tot_metric 2048, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 18432 tot_metric 18432, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 20480 tot_metric 20480, phase_max 0 
+(phase,Nid1) (0,23), metric_phase 22528 tot_metric 22528, phase_max 0 
+(phase,Nid1) (0,79), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,113), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,226), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (1,71), metric_phase 60928 tot_metric 60928, phase_max 1 
+(phase,Nid1) (2,71), metric_phase 324608 tot_metric 324608, phase_max 2 
+(phase,Nid1) (3,71), metric_phase 509440 tot_metric 509440, phase_max 3 
+(phase,Nid1) (4,71), metric_phase 650240 tot_metric 650240, phase_max 4 
+(phase,Nid1) (5,71), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 0 Nid1 71 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 71 Nid2 0 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+Test nr sss with Nid1 21 
+(phase,Nid1) (0,0), metric_phase 19456 tot_metric 19456, phase_max 0 
+(phase,Nid1) (0,8), metric_phase 21504 tot_metric 21504, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23552 tot_metric 23552, phase_max 0 
+(phase,Nid1) (0,88), metric_phase 24576 tot_metric 24576, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 41984 tot_metric 41984, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 46080 tot_metric 46080, phase_max 0 
+(phase,Nid1) (0,319), metric_phase 47104 tot_metric 47104, phase_max 0 
+(phase,Nid1) (2,21), metric_phase 308736 tot_metric 308736, phase_max 2 
+(phase,Nid1) (3,21), metric_phase 494592 tot_metric 494592, phase_max 3 
+(phase,Nid1) (4,21), metric_phase 642048 tot_metric 642048, phase_max 4 
+(phase,Nid1) (5,21), metric_phase 759808 tot_metric 759808, phase_max 5 
+Nid2 2 Nid1 21 tot_metric 759808, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 21 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 0, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 0, val = 232105225 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 232105225 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 230099437 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 492, val = 230099437 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 56788, val = 232105225 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 56788, val = 232105225 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 111112, val = 230409881 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 111112, val = 230409881 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 1 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 1, Peak found at pos 222224, val = 219714314 (41 dB)
+[UE] nr_synchro_time: Sync source = 1, Peak found at pos 222224, val = 219714314 (41 dB)
+Test nr sss with Nid1 55 
+(phase,Nid1) (0,0), metric_phase -1536 tot_metric -1536, phase_max 0 
+(phase,Nid1) (0,1), metric_phase 1536 tot_metric 1536, phase_max 0 
+(phase,Nid1) (0,2), metric_phase 5632 tot_metric 5632, phase_max 0 
+(phase,Nid1) (0,3), metric_phase 20992 tot_metric 20992, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,120), metric_phase 28160 tot_metric 28160, phase_max 0 
+(phase,Nid1) (0,135), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,228), metric_phase 44544 tot_metric 44544, phase_max 0 
+(phase,Nid1) (1,55), metric_phase 61440 tot_metric 61440, phase_max 1 
+(phase,Nid1) (2,55), metric_phase 326144 tot_metric 326144, phase_max 2 
+(phase,Nid1) (3,55), metric_phase 507392 tot_metric 507392, phase_max 3 
+(phase,Nid1) (4,55), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,55), metric_phase 770560 tot_metric 770560, phase_max 5 
+Nid2 1 Nid1 55 tot_metric 770560, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 55 Nid2 1 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 0 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 0, val = 231344100 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 0 Nid1 111 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 492 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 231344100 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 492 Nid1 111 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 493 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 492, val = 229165600 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 493 Nid1 111 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 56788 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 56788, val = 231344100 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 56788 Nid1 111 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 111111 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 111112, val = 229601794 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 111111 Nid1 111 Nid2 2 
+------------------------------------------------
+Test nr pss with Nid2 2 at position 222222 
+[PHY][I][pss_search_time_nr] [UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+[UE] nr_synchro_time: Sync source = 2, Peak found at pos 222224, val = 219559301 (41 dB)
+Test nr sss with Nid1 111 
+(phase,Nid1) (0,0), metric_phase 19968 tot_metric 19968, phase_max 0 
+(phase,Nid1) (0,13), metric_phase 22016 tot_metric 22016, phase_max 0 
+(phase,Nid1) (0,109), metric_phase 23040 tot_metric 23040, phase_max 0 
+(phase,Nid1) (0,117), metric_phase 26112 tot_metric 26112, phase_max 0 
+(phase,Nid1) (0,124), metric_phase 37376 tot_metric 37376, phase_max 0 
+(phase,Nid1) (0,161), metric_phase 42496 tot_metric 42496, phase_max 0 
+(phase,Nid1) (0,170), metric_phase 43520 tot_metric 43520, phase_max 0 
+(phase,Nid1) (0,210), metric_phase 45568 tot_metric 45568, phase_max 0 
+(phase,Nid1) (1,111), metric_phase 62464 tot_metric 62464, phase_max 1 
+(phase,Nid1) (2,111), metric_phase 327680 tot_metric 327680, phase_max 2 
+(phase,Nid1) (3,111), metric_phase 511488 tot_metric 511488, phase_max 3 
+(phase,Nid1) (4,111), metric_phase 651264 tot_metric 651264, phase_max 4 
+(phase,Nid1) (5,111), metric_phase 770048 tot_metric 770048, phase_max 5 
+Nid2 2 Nid1 111 tot_metric 770048, phase_max 5 
+SSS NR Test is pass with warning due to phase difference 5 (instead of 3) offset 222222 Nid1 111 Nid2 2 
+
+SSS NR Number of tests : 36  Pass : 0 Pass with warning : 36 Fail : 0 
+SSS NR Synchronisaton test is terminated.
+

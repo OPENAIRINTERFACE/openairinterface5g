@@ -21,7 +21,6 @@
 
 #include "PHY/defs_eNB.h"
 #include "PHY/defs_UE.h"
-#include "PHY/impl_defs_lte.h"
 
 //#define DEBUG_PC 0
 /*
@@ -29,10 +28,10 @@ double ratioPB[2][4]={{ 1.0,4.0/5.0,3.0/5.0,2.0/5.0},
           { 5.0/4.0,1.0,3.0/4.0,1.0/2.0}};
 */
 
-double ratioPB[2][4]={{ 0.00000,  -0.96910,  -2.21849,  -3.97940}, //in db
-                      { 0.96910,   0.00000,  -1.24939,  -3.01030}};
+static const double ratioPB[2][4] = {{0.00000, -0.96910, -2.21849, -3.97940}, // in db
+                                     {0.96910, 0.00000, -1.24939, -3.01030}};
 
-double pa_values[8]={-6.0,-4.77,-3.0,-1.77,0.0,1.0,2.0,3.0}; //reported by higher layers
+static const double pa_values[8] = {-6.0, -4.77, -3.0, -1.77, 0.0, 1.0, 2.0, 3.0}; // reported by higher layers
 
 double get_pa_dB(uint8_t pa)
 {
@@ -57,8 +56,10 @@ double computeRhoA_eNB(uint8_t pa,
 
   sqrt_rho_a_lin= pow(10,(0.05*rho_a_dB));
 
-  dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
-
+  if (dlsch_eNB) {
+     dlsch_eNB->sqrt_rho_a= (short) (sqrt_rho_a_lin*pow(2,13));
+     dlsch_eNB->pa = pa;
+  }
 #if DEBUG_PC
   printf("eNB: p_a=%d, value=%f, sqrt_rho_a=%d\n",p_a,pa_values[ pdsch_config_dedicated->p_a],dlsch_eNB->sqrt_rho_a);
 #endif
@@ -87,8 +88,10 @@ double computeRhoB_eNB(uint8_t pa,
 
   sqrt_rho_b_lin= pow(10,(0.05*rho_b_dB));
 
-  dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
-
+  if (dlsch_eNB) {
+    dlsch_eNB->sqrt_rho_b= (short) (sqrt_rho_b_lin*pow(2,13));
+    dlsch_eNB->pb = pb;
+  }
 #ifdef DEBUG_PC
   printf("eNB: n_ant=%d, p_b=%d -> rho_b/rho_a=%f -> sqrt_rho_b=%d\n",n_antenna_port,pb,ratioPB[1][pb],dlsch_eNB->sqrt_rho_b);
 #endif

@@ -29,24 +29,16 @@
  * \note
  * \warning
  */
-
-#if HAVE_CONFIG_H_
-# include "config.h"
-#endif
-
 #ifndef F1AP_COMMON_H_
 #define F1AP_COMMON_H_
 
-#include "openairinterface5g_limits.h"
+#include "common/openairinterface5g_limits.h"
+#include "oai_asn1.h"
+#include <openair2/RRC/NR/MESSAGES/asn1_msg.h>
 
 #define F1AP_UE_IDENTIFIER_NUMBER 3
 #define F1AP_TRANSACTION_IDENTIFIER_NUMBER 3
 
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...);
-#endif
-
-#include "F1AP_Active-Cells-List.h"
 #include "F1AP_RAT-FrequencyPriorityInformation.h"
 #include "F1AP_DLUPTNLInformation-ToBeSetup-Item.h"
 #include "F1AP_PrivateMessage.h"
@@ -55,6 +47,7 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_NRPCI.h"
 #include "F1AP_Transmission-Bandwidth.h"
 #include "F1AP_SIB1-message.h"
+#include "F1AP_SibtypetobeupdatedListItem.h"
 #include "F1AP_GNBCUConfigurationUpdateAcknowledge.h"
 #include "F1AP_DRBs-Setup-Item.h"
 #include "F1AP_EUTRA-NR-CellResourceCoordinationReqAck-Container.h"
@@ -75,7 +68,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_DRBs-Required-ToBeModified-Item.h"
 #include "F1AP_BitRate.h"
 #include "F1AP_SRBs-ToBeSetup-List.h"
-#include "F1AP_ConcurrentWarningMessageIndicator.h"
 #include "F1AP_CriticalityDiagnostics-IE-Item.h"
 #include "F1AP_GNB-CU-TNL-Association-To-Update-List.h"
 #include "F1AP_DRB-Notify-List.h"
@@ -85,6 +77,7 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_PWS-Failed-NR-CGI-List.h"
 #include "F1AP_InitialULRRCMessageTransfer.h"
 #include "F1AP_Served-Cell-Information.h"
+#include "F1AP_ServedPLMNs-Item.h"
 #include "F1AP_Served-EUTRA-Cells-Information.h"
 #include "F1AP_Cells-Broadcast-Cancelled-Item.h"
 #include "F1AP_F1SetupRequest.h"
@@ -128,13 +121,11 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_TransactionID.h"
 #include "F1AP_AllocationAndRetentionPriority.h"
 #include "F1AP_ShortDRXCycleLength.h"
-#include "F1AP_BroadcastPLMNs-Item.h"
 #include "F1AP_DRB-Information.h"
 #include "F1AP_TimeToWait.h"
 #include "F1AP_NonDynamic5QIDescriptor.h"
 #include "F1AP_C-RNTI.h"
 #include "F1AP_MIB-message.h"
-#include "F1AP_SIBtype-Item.h"
 #include "F1AP_Served-Cells-To-Modify-List.h"
 #include "F1AP_NRCGI.h"
 #include "F1AP_DuplicationActivation.h"
@@ -187,6 +178,7 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_CellULConfigured.h"
 #include "F1AP_DRB-Activity.h"
 #include "F1AP_GNB-CU-TNL-Association-Failed-To-Setup-Item.h"
+#include "F1AP_ProtocolIE-ID.h"
 #include "F1AP_PrivateIE-ID.h"
 #include "F1AP_WriteReplaceWarningResponse.h"
 #include "F1AP_CauseMisc.h"
@@ -231,9 +223,7 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_SUL-Information.h"
 #include "F1AP_CriticalityDiagnostics-IE-List.h"
 #include "F1AP_EUTRA-FDD-Info.h"
-#include "F1AP_BroadcastPLMNs-List.h"
 #include "F1AP_Served-Cells-To-Delete-Item.h"
-#include "F1AP_ListofEUTRACellsinGNBDUCoordination.h"
 #include "F1AP_Candidate-SpCell-Item.h"
 #include "F1AP_Cells-To-Be-Broadcast-List.h"
 #include "F1AP_ULRRCMessageTransfer.h"
@@ -255,7 +245,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_SRBs-ToBeReleased-List.h"
 #include "F1AP_MeasGapConfig.h"
 #include "F1AP_NR-Mode-Info.h"
-#include "F1AP_Active-Cells-Item.h"
 #include "F1AP_Protected-EUTRA-Resources-List.h"
 #include "F1AP_SRBs-FailedToBeSetup-Item.h"
 #include "F1AP_ResetAll.h"
@@ -287,7 +276,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_UEContextReleaseRequest.h"
 #include "F1AP_GNB-DU-Name.h"
 #include "F1AP_DRBs-ToBeModified-Item.h"
-#include "F1AP_SIBtype-List.h"
 #include "F1AP_EUTRA-NR-CellResourceCoordinationReq-Container.h"
 #include "F1AP_DRBs-SetupMod-List.h"
 #include "F1AP_DRBs-Required-ToBeModified-List.h"
@@ -296,7 +284,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_PacketDelayBudget.h"
 #include "F1AP_GNBCUConfigurationUpdate.h"
 #include "F1AP_Cells-Broadcast-Completed-Item.h"
-#include "F1AP_RRCRconfigurationCompleteIndicator.h"
 #include "F1AP_PagingPriority.h"
 #include "F1AP_Cells-Failed-to-be-Activated-List.h"
 #include "F1AP_Endpoint-IP-address-and-port.h"
@@ -306,7 +293,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_ResetType.h"
 #include "F1AP_FDD-Info.h"
 #include "F1AP_DLUPTNLInformation-ToBeSetup-List.h"
-#include "F1AP_QoSFlowIndicator.h"
 #include "F1AP_NR-CGI-List-For-Restart-List.h"
 #include "F1AP_F1SetupResponse.h"
 #include "F1AP_UEContextSetupResponse.h"
@@ -325,7 +311,6 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_Cells-to-be-Barred-List.h"
 #include "F1AP_Presence.h"
 #include "F1AP_CellBarred.h"
-#include "F1AP_SIBtype.h"
 #include "F1AP_RequestType.h"
 #include "F1AP_NRFreqInfo.h"
 #include "F1AP_Potential-SpCell-Item.h"
@@ -348,13 +333,14 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include "F1AP_GBR-QoSFlowInformation.h"
 #include "F1AP_SCellIndex.h"
 #include "F1AP_DRBs-SetupMod-Item.h"
-#include "F1AP_TransmissionStopIndicator.h"
 #include "F1AP_UEContextSetupFailure.h"
 #include "F1AP_DRBs-FailedToBeModified-List.h"
 #include "F1AP_DRBs-FailedToBeSetupMod-Item.h"
 #include "F1AP_ProtocolExtensionID.h"
 #include "F1AP_Cells-To-Be-Broadcast-Item.h"
 #include "F1AP_QCI.h"
+
+#include "f1ap_default_values.h"
 
 #include "conversions.h"
 #include "platform_types.h"
@@ -365,40 +351,23 @@ inline void ASN_DEBUG(const char *fmt, ...);
 #include <arpa/inet.h>
 #include "T.h"
 #include "common/ran_context.h"
-#include "msc.h"
 
 /* Checking version of ASN1C compiler */
 #if (ASN1C_ENVIRONMENT_VERSION < ASN1C_MINIMUM_VERSION)
-# error "You are compiling f1ap with the wrong version of ASN1C"
-#endif
-
-#ifndef FALSE
-# define FALSE (0)
-#endif
-#ifndef TRUE
-# define TRUE  (!FALSE)
+  # error "You are compiling f1ap with the wrong version of ASN1C"
 #endif
 
 #define F1AP_UE_ID_FMT  "0x%06"PRIX32
 
 #include "assertions.h"
 
-#if defined(ENB_MODE)
-# include "common/utils/LOG/log.h"
-# include "f1ap_default_values.h"
-# define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
-# define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
-# define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
-# define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
-# define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
-#else
-//# include "mme_default_values.h"
-# define F1AP_ERROR(x, args...) do { fprintf(stdout, "[F1AP][E]"x, ##args); } while(0)
-# define F1AP_WARN(x, args...)  do { fprintf(stdout, "[F1AP][W]"x, ##args); } while(0)
-# define F1AP_TRAF(x, args...)  do { fprintf(stdout, "[F1AP][T]"x, ##args); } while(0)
-# define F1AP_INFO(x, args...) do { fprintf(stdout, "[F1AP][I]"x, ##args); } while(0)
-# define F1AP_DEBUG(x, args...) do { fprintf(stdout, "[F1AP][D]"x, ##args); } while(0)
-#endif
+#include "common/utils/LOG/log.h"
+#include "f1ap_default_values.h"
+#define F1AP_ERROR(x, args...) LOG_E(F1AP, x, ##args)
+#define F1AP_WARN(x, args...)  LOG_W(F1AP, x, ##args)
+#define F1AP_TRAF(x, args...)  LOG_I(F1AP, x, ##args)
+#define F1AP_INFO(x, args...) LOG_I(F1AP, x, ##args)
+#define F1AP_DEBUG(x, args...) LOG_I(F1AP, x, ##args)
 
 //Forward declaration
 #define F1AP_FIND_PROTOCOLIE_BY_ID(IE_TYPE, ie, container, IE_ID, mandatory) \
@@ -416,73 +385,84 @@ inline void ASN_DEBUG(const char *fmt, ...);
     if (mandatory) DevAssert(ie != NULL); \
   } while(0)
 
-/** \brief Function callback prototype.
+/** \brief Function array prototype.
  **/
-typedef int (*f1ap_message_decoded_callback)(
+typedef int (*f1ap_message_processing_t)(
   instance_t             instance,
   uint32_t               assoc_id,
   uint32_t               stream,
   F1AP_F1AP_PDU_t       *message_p
 );
+int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
+                        const uint8_t *const data, const uint32_t data_length);
 
 typedef struct f1ap_cudu_ue_inst_s {
-  // used for eNB stats generation
+  // used for NB stats generation
   rnti_t      rnti;
-  module_id_t f1ap_uid;
-  module_id_t mac_uid;
-  module_id_t du_ue_f1ap_id;
-  module_id_t cu_ue_f1ap_id;
+  instance_t f1ap_uid;
+  instance_t du_ue_f1ap_id;
+  instance_t cu_ue_f1ap_id;
 } f1ap_cudu_ue_t;
 
 typedef struct f1ap_cudu_inst_s {
+  f1ap_setup_req_t setupReq;
+  uint16_t sctp_in_streams;
+  uint16_t sctp_out_streams;
+  uint16_t default_sctp_stream_id;
+  instance_t gtpInst;
+  uint64_t gNB_DU_id;
   uint16_t num_ues;
-  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_ENB];
+  f1ap_cudu_ue_t f1ap_ue[MAX_MOBILES_PER_GNB];
 } f1ap_cudu_inst_t;
 
+typedef enum {
+  DUtype=0,
+  CUtype
+} F1_t;
 
+static const int nrb_lut[29] = {11, 18, 24, 25, 31, 32, 38, 51, 52, 65, 66, 78, 79, 93, 106, 107, 121, 132, 133, 135, 160, 162, 189, 216, 217, 245, 264, 270, 273};
 
-uint8_t F1AP_get_next_transaction_identifier(module_id_t enb_mod_idP, module_id_t cu_mod_idP);
+uint8_t F1AP_get_next_transaction_identifier(instance_t mod_idP, instance_t cu_mod_idP);
 
+f1ap_cudu_inst_t *getCxt(F1_t isCU, instance_t instanceP);
 
-int f1ap_add_ue(f1ap_cudu_inst_t *f1_inst,
-                module_id_t     module_idP,
-                int             CC_idP,
-                int             UE_id,
+void createF1inst(F1_t isCU, instance_t instanceP, f1ap_setup_req_t *req);
+int f1ap_add_ue(F1_t isCu,
+                instance_t     instanceP,
                 rnti_t          rntiP);
 
-int f1ap_remove_ue(f1ap_cudu_inst_t *f1_inst,
+int f1ap_remove_ue(F1_t isCu, instance_t instanceP,
                    rnti_t            rntiP);
 
-int f1ap_get_du_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_du_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
-int f1ap_get_cu_ue_f1ap_id (f1ap_cudu_inst_t *f1_inst,
+int f1ap_get_cu_ue_f1ap_id (F1_t isCu, instance_t instanceP,
                             rnti_t            rntiP);
 
 
-int f1ap_get_rnti_by_du_id(f1ap_cudu_inst_t *f1_inst,
-                           module_id_t       du_ue_f1ap_id );
+int f1ap_get_rnti_by_du_id(F1_t isCu, instance_t instanceP,
+                           instance_t       du_ue_f1ap_id );
 
 
-int f1ap_get_rnti_by_cu_id(f1ap_cudu_inst_t *f1_inst,
-                           module_id_t       cu_ue_f1ap_id );
+int f1ap_get_rnti_by_cu_id(F1_t isCu, instance_t instanceP,
+                           instance_t       cu_ue_f1ap_id );
 
+int f1ap_du_add_cu_ue_id(instance_t instanceP,
+                         instance_t       du_ue_f1ap_id,
+                         instance_t       cu_ue_f1ap_id);
 
-int f1ap_get_du_uid(f1ap_cudu_inst_t *f1_inst,
-                    module_id_t       du_ue_f1ap_id );
+int f1ap_assoc_id(F1_t isCu, instance_t instanceP);
 
-int f1ap_get_cu_uid(f1ap_cudu_inst_t *f1_inst,
-                    module_id_t       cu_ue_f1ap_id );
+static inline f1ap_setup_req_t *f1ap_req(F1_t isCu, instance_t instanceP) {
+  return &getCxt(isCu, instanceP)->setupReq;
+}
 
-int f1ap_get_uid_by_rnti(f1ap_cudu_inst_t *f1_inst,
-                         rnti_t            rntiP );
-
-int f1ap_du_add_cu_ue_id(f1ap_cudu_inst_t *f1_inst,
-                         module_id_t       du_ue_f1ap_id,
-                         module_id_t       cu_ue_f1ap_id);
-
-int f1ap_cu_add_du_ue_id(f1ap_cudu_inst_t *f1_inst,
-                         module_id_t       cu_ue_f1ap_id,
-                         module_id_t       du_ue_f1ap_id);
+//lts: C struct type is not homogeneous, so we need macros instead of functions
+#define addnRCGI(nRCGi, servedCelL) \
+  MCC_MNC_TO_PLMNID((servedCelL)->mcc,(servedCelL)-> mnc,(servedCelL)->mnc_digit_length, \
+                    &((nRCGi).pLMN_Identity));        \
+  NR_CELL_ID_TO_BIT_STRING((servedCelL)->nr_cellid, &((nRCGi).nRCellIdentity));
+extern RAN_CONTEXT_t RC;
 
 #endif /* F1AP_COMMON_H_ */

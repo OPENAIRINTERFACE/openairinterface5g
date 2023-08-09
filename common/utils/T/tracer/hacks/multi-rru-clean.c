@@ -152,7 +152,7 @@ int main(int n, char **v)
     int32_t length;
     char *v;
     int vpos = 0;
-    struct timespec t;
+    struct timespec t = {0};
     char *buf;
 
     /* read event from file */

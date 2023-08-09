@@ -19,8 +19,8 @@ in `telnetsrv.h`
 */
 static int coding_setmod_cmd(char *buff, int debug, telnet_printfunc_t prnt);
 static telnetshell_cmddef_t coding_cmdarray[] = {
-   {"mode","[sse,avx2,stdc,none]",coding_setmod_cmd},
-   {"","",NULL},
+    {"mode", "[sse,avx2,stdc,none]", coding_setmod_cmd, {NULL}, 0, NULL},
+    {"", "", NULL, {NULL}, 0, NULL},
 };
 
 /*
@@ -109,8 +109,24 @@ The telnet server is dynamically loaded, to use  the `add_telnetcmd` function, t
 
 | Fields     | type |Description                                                       |
 |:-----------|:------:|:-----------------------|
-| `cmdname`    | `char[TELNET_CMD_MAXSIZE]`  | command name, as tested by the telnet server to check it should call the `cmdfunc` function  |
-| `helpstr`     | `char[TELNET_HELPSTR_SIZE]` |  character string to print when the elp`command is received from the telnet client |
-| `cmdfunc`     | `cmdfunc_t` |  pointer to the function implementing the `cmdname` sub command. |
+| `cmdname`    | `char[TELNET_CMD_MAXSIZE]`  | command name, as tested by the telnet server or web server to check it should call the `cmdfunc` or `webfunc` function  |
+| `helpstr`     | `char[TELNET_HELPSTR_SIZE]` |  character string to print when the help`command is received from the telnet client |
+| `cmdfunc`     | `cmdfunc_t` |  pointer to the function implementing the `cmdname` telnet or web server sub command. |
+| `webfunc`     | `webfunc_t` or `webfunc_getdata_t` |  pointer to the function implementing the `cmdname` web server sub command. |
+| `cmdflags`     | unsigned int bit mask | possible bits are defined in the next table |
+| `qptr`     | pointer to a thread pool queue |  when `TELNETSRV_CMDFLAG_PUSHINTPOOLQ` bit is set in `cmdflags` , contains the queue where the command is pushed|
 
+### `cmdflags ` bit definitions
+ These flags possibly modify the way the  `telnetshell_cmddef_t` structure is used by the telnet server and/or  the web server
+
+| Fields     | Description                                                       |
+|:------------------------------------:|:-----------------------|
+| TELNETSRV_CMDFLAG_PUSHINTPOOLQ | function defined in `cmdfunc` field is pushed in a thread pool queue instead of beeing executed synchronously. The queue is created by the telnet server code in the  `add_telnetcmd` function|
+| TELNETSRV_CMDFLAG_GETWEBTBLDATA | web server will use the `webfunc_getdata_t` version of the `webfunc` union. command results are written in a `webdatadef_t` structure instead of being printed |
+| TELNETSRV_CMDFLAG_TELNETONLY | this command definition is only for the telnet server, web server is ignoring it |
+| TELNETSRV_CMDFLAG_WEBSRVONLY | this command definition is only for the web server, telnet server is ignoring it |
+| TELNETSRV_CMDFLAG_CONFEXEC  | Currently only used by the web server, command execution has to be confirmed by user |
+| TELNETSRV_CMDFLAG_NEEDPARAM  | Currently only used by the web server, user must provide a parameter before command execution |
+| TELNETSRV_CMDFLAG_WEBSRV_SETRETURNTBL  | Currently only used by the web server, when a parameter modification requires a new page |
+| TELNETSRV_CMDFLAG_AUTOUPDATE |  Currently only used by the web server, the command can be rescheduled for result update |
 [oai telnet server home](telnetsrv.md)

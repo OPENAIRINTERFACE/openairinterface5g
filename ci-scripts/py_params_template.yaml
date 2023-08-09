@@ -1,0 +1,90 @@
+eNBRepository : b
+ranRepository : c
+eNB_AllowMerge : 
+ranAllowMerge : 
+eNBBranch : f
+ranBranch : g
+eNBCommitID :  
+ranCommitID : i
+eNBTargetBranch : j
+ranTargetBranch : k
+
+
+RAN:
+  RAN_inst_0:
+    name : RAN_1
+    nodes : 
+    - type : eNB
+      IPAddress : 001.1.1
+      UserName : toto
+      Password : qwe
+      SourceCodePath : l
+    - type : gNB
+      IPAddress : 002.2.2
+      UserName : tata
+      Password : asd
+      SourceCodePath : m  
+    - type : eNB
+      IPAddress : 003.3.3
+      UserName : titi
+      Password : zxc
+      SourceCodePath : n
+    - type : gNB
+      IPAddress : 004.4.4
+      UserName : caca
+      Password : pepe
+      SourceCodePath :  o        
+  RAN_inst_1:
+    name : RAN_2
+    nodes : 
+    - type : eNB
+      IPAddress : 101.1.1
+      UserName : toto
+      Password : qwe
+      SourceCodePath : l
+    - type : gNB
+      IPAddress : 102.2.2
+      UserName : zaza
+      Password : asd
+      SourceCodePath : m  
+    - type : eNB
+      IPAddress : 103.3.3
+      UserName : zizi
+      Password : zxc
+      SourceCodePath : n
+    - type : gNB
+      IPAddress : 104.4.4
+      UserName : aaaa
+      Password : pepe
+      SourceCodePath :  o   
+
+
+
+EPC:
+  EPC_inst_0:
+    EPCIPAddress : p
+    EPCUserName : q
+    EPCPassword : r
+    EPCSourceCodePath : s
+    EPCType : t
+    EPCContainerPrefix : u
+
+UE:
+  UE_inst_0:
+    name : UE_1 
+    type :
+    UEIPAddress : qqq  
+    UEUserName : www
+    UEPassword : eee
+    UESourceCodePath : yyy
+  UE_inst_1:
+    name : UE_2
+    type :
+    UEIPAddress : bloblob  
+    UEUserName : gwou
+    UEPassword : zebu
+    UESourceCodePath : pop
+
+
+XMLTestFile : z
+finalStatus : bbb

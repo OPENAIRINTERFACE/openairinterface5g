@@ -35,10 +35,12 @@
 #include "PHY/LTE_UE_TRANSPORT/transport_proto_ue.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
 #include "nfapi/oai_integration/vendor_ext.h"
+#include "PHY/phy_extern.h"
 void init_7_5KHz(void);
 
 uint8_t dmrs1_tab_ue[8] = {0,2,3,4,6,8,9,10};
 
+void init_sss(void);
 
 void phy_config_sib1_ue(module_id_t Mod_id,int CC_id,
                         uint8_t eNB_id,
@@ -137,7 +139,7 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
       if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_oneFrame) {
         fp->MBSFN_config[i].fourFrames_flag = 0;
         fp->MBSFN_config[i].mbsfn_SubframeConfig = mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]; // 6-bit subframe configuration
-        LOG_I(PHY, "[CONFIG] LTE_MBSFN_SubframeConfig[%d] pattern is  %d\n", i,
+        LOG_I(PHY, "[CONFIG] LTE_MBSFN_SubframeConfig[%d] oneFrame pattern is  %d\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       } else if (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.present == LTE_MBSFN_SubframeConfig__subframeAllocation_PR_fourFrames) { // 24-bit subframe configuration
         fp->MBSFN_config[i].fourFrames_flag = 1;
@@ -145,7 +147,7 @@ void phy_config_sib2_ue(module_id_t Mod_id,int CC_id,
           mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[2]|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[1]<<8)|
           (mbsfn_SubframeConfigList->list.array[i]->subframeAllocation.choice.oneFrame.buf[0]<<16);
-        LOG_I(PHY, "[CONFIG]  LTE_MBSFN_SubframeConfig[%d] pattern is  %x\n", i,
+        LOG_I(PHY, "[CONFIG]  LTE_MBSFN_SubframeConfig[%d] fourFrame pattern is  %x\n", i,
               fp->MBSFN_config[i].mbsfn_SubframeConfig);
       }
     }
@@ -201,28 +203,24 @@ void phy_config_sib13_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,int mbsfn_A
   }
 
   lte_gold_mbsfn(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_table,fp->Nid_cell_mbsfn);
-
-  
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   lte_gold_mbsfn_khz_1dot25(fp,PHY_vars_UE_g[Mod_id][CC_id]->lte_gold_mbsfn_khz_1dot25_table,fp->Nid_cell_mbsfn);
-#endif
-
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
+
 void phy_config_sib1_fembms_ue(module_id_t Mod_id,int CC_id,
-                        uint8_t eNB_id,
-                        struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig){
+                               uint8_t eNB_id,
+                               struct LTE_NonMBSFN_SubframeConfig_r14 *nonMBSFN_SubframeConfig) {
   PHY_VARS_UE *ue        = PHY_vars_UE_g[Mod_id][CC_id];
   LTE_DL_FRAME_PARMS *fp = &ue->frame_parms;
+
   if (nonMBSFN_SubframeConfig != NULL) {
-    fp->NonMBSFN_config_flag = 0;
+    fp->NonMBSFN_config_flag = 1;
     fp->NonMBSFN_config.radioframeAllocationPeriod=nonMBSFN_SubframeConfig->radioFrameAllocationPeriod_r14;
     fp->NonMBSFN_config.radioframeAllocationOffset=nonMBSFN_SubframeConfig->radioFrameAllocationOffset_r14;
     fp->NonMBSFN_config.non_mbsfn_SubframeConfig=(nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]<<1 | nonMBSFN_SubframeConfig->subframeAllocation_r14.buf[0]>>7);
   }
 }
-#endif
+
 
 
 /*
@@ -346,22 +344,22 @@ void phy_config_meas_ue(module_id_t Mod_id,uint8_t CC_id,uint8_t eNB_index,uint8
   memcpy((void *)phy_meas->adj_cell_id,(void *)adj_cell_id,n_adj_cells*sizeof(unsigned int));
 }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(10, 0, 0))
+
 void phy_config_dedicated_scell_ue(uint8_t Mod_id,
                                    uint8_t eNB_index,
                                    LTE_SCellToAddMod_r10_t *sCellToAddMod_r10,
                                    int CC_id) {
 }
-#endif
 
 
-void phy_config_harq_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
-                        uint16_t max_harq_tx ) {
+
+void phy_config_harq_ue(module_id_t Mod_id,
+                        int CC_id,
+                        uint8_t eNB_id,
+                        uint16_t max_harq_tx) {
   PHY_VARS_UE *phy_vars_ue = PHY_vars_UE_g[Mod_id][CC_id];
   phy_vars_ue->ulsch[eNB_id]->Mlimit = max_harq_tx;
 }
-
-extern uint16_t beta_cqi[16];
 
 void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
                              struct LTE_PhysicalConfigDedicated *physicalConfigDedicated ) {
@@ -533,18 +531,6 @@ void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
         }
       }
     }
-
-#ifdef CBA
-
-    if (physicalConfigDedicated->pusch_CBAConfigDedicated_vlola) {
-      phy_vars_ue->pusch_ca_config_dedicated[eNB_id].betaOffset_CA_Index = (uint16_t) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->betaOffset_CBA_Index;
-      phy_vars_ue->pusch_ca_config_dedicated[eNB_id].cShift = (uint16_t) *physicalConfigDedicated->pusch_CBAConfigDedicated_vlola->cShift_CBA;
-      LOG_D(PHY,"[UE %d ] physicalConfigDedicated pusch CBA config dedicated: beta offset %d cshift %d \n",Mod_id,
-            phy_vars_ue->pusch_ca_config_dedicated[eNB_id].betaOffset_CA_Index,
-            phy_vars_ue->pusch_ca_config_dedicated[eNB_id].cShift);
-    }
-
-#endif
   } else {
     LOG_D(PHY,"[PHY][UE %d] Received NULL radioResourceConfigDedicated from eNB %d\n",Mod_id,eNB_id);
     return;
@@ -561,7 +547,7 @@ void phy_config_dedicated_ue(module_id_t Mod_id,int CC_id,uint8_t eNB_id,
     phy_vars_ue->decode_MIB = 0;
   }
 
-  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF) {
+  if(NFAPI_MODE!=NFAPI_UE_STUB_PNF && NFAPI_MODE!=NFAPI_MODE_STANDALONE_PNF) {
     //phy_vars_ue->pdcch_vars[1][eNB_id]->crnti = phy_vars_ue->pdcch_vars[0][eNB_id]->crnti;
     if(phy_vars_ue->pdcch_vars[0][eNB_id]->crnti == 0x1234)
       phy_vars_ue->pdcch_vars[0][eNB_id]->crnti = phy_vars_ue->pdcch_vars[1][eNB_id]->crnti;
@@ -638,10 +624,12 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
   int eNB_id;
   int th_id;
   LOG_D(PHY,"Initializing UE vars (abstraction %"PRIu8") for eNB TXant %"PRIu8", UE RXant %"PRIu8"\n",abstraction_flag,fp->nb_antennas_tx,fp->nb_antennas_rx);
-  init_dfts();
+  crcTableInit();
+  load_dftslib();
   init_frame_parms(&ue->frame_parms,1);
   lte_sync_time_init(&ue->frame_parms);
   init_lte_top(&ue->frame_parms);
+  init_sss();
   init_7_5KHz();
   init_ul_hopping(&ue->frame_parms);
   // many memory allocation sizes are hard coded
@@ -700,8 +688,9 @@ int init_lte_ue_signal(PHY_VARS_UE *ue,
         int idx = (j<<1) + i;
 
         for (th_id=0; th_id<RX_NB_TH_MAX; th_id++) {
-          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH) );
-          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*fp->ofdm_symbol_size*2 );
+          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*
+                  max(fp->symbols_per_tti*(fp->ofdm_symbol_size+LTE_CE_FILTER_LENGTH),6144) );
+          common_vars->common_vars_rx_data_per_thread[th_id].dl_ch_estimates_time[eNB_id][idx] = (int32_t *)malloc16_clear( sizeof(int32_t)*max(fp->ofdm_symbol_size*2,6144) );
         }
       }
   }

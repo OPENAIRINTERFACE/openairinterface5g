@@ -1,0 +1,47 @@
+ HARQ TEST 
+----------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+
+HARQ Uplink 
+First sequence ndi does not toggle 
+[HARQ-UL-PUSCH harqId : 0] first new transmission 
+[HARQ-UL-PUSCH harqId : 0] retransmission 
+[HARQ-UL-PUSCH harqId : 0] retransmission 
+[HARQ-UL-PUSCH harqId : 0] retransmission 
+[HARQ-UL-PUSCH harqId : 0] retransmission 
+Second sequence ndi toggle each transmission 
+[HARQ-UL-PUSCH harqId : 1] first new transmission 
+[HARQ-UL-PUSCH harqId : 1] new transmission due to toogle of ndi 
+[HARQ-UL-PUSCH harqId : 1] new transmission due to toogle of ndi 
+[HARQ-UL-PUSCH harqId : 1] new transmission due to toogle of ndi 
+[HARQ-UL-PUSCH harqId : 1] new transmission due to toogle of ndi 
+Third sequence ndi toggle each two transmissions 
+[HARQ-UL-PUSCH harqId : 2] first new transmission 
+[HARQ-UL-PUSCH harqId : 2] retransmission 
+[HARQ-UL-PUSCH harqId : 2] new transmission due to toogle of ndi 
+[HARQ-UL-PUSCH harqId : 2] retransmission 
+[HARQ-UL-PUSCH harqId : 2] new transmission due to toogle of ndi 
+
+HARQ Downlink 
+First sequence ndi does not toggle 
+[HARQ-DL-PDSCH harqId : 0] first new reception 
+[HARQ-DL-PDSCH harqId : 0] reception of a retransmission 
+[HARQ-DL-PDSCH harqId : 0] reception of a retransmission 
+[HARQ-DL-PDSCH harqId : 0] reception of a retransmission 
+[HARQ-DL-PDSCH harqId : 0] reception of a retransmission 
+Second sequence ndi toggle each transmission 
+[HARQ-DL-PDSCH harqId : 1] first new reception 
+[HARQ-DL-PDSCH harqId : 1] new reception due to toogle of ndi 
+[HARQ-DL-PDSCH harqId : 1] new reception due to toogle of ndi 
+[HARQ-DL-PDSCH harqId : 1] new reception due to toogle of ndi 
+[HARQ-DL-PDSCH harqId : 1] new reception due to toogle of ndi 
+Third sequence ndi toggle each two transmissions 
+[HARQ-DL-PDSCH harqId : 2] first new reception 
+[HARQ-DL-PDSCH harqId : 2] reception of a retransmission 
+[HARQ-DL-PDSCH harqId : 2] new reception due to toogle of ndi 
+[HARQ-DL-PDSCH harqId : 2] reception of a retransmission 
+[HARQ-DL-PDSCH harqId : 2] new reception due to toogle of ndi 
+Test NR HARQ is pass 

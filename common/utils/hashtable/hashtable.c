@@ -162,34 +162,6 @@ hashtable_rc_t hashtable_is_key_exists (const hash_table_t *const hashtblP, cons
   return HASH_TABLE_KEY_NOT_EXISTS;
 }
 //-------------------------------------------------------------------------------------------------------------------------------
-hashtable_rc_t hashtable_apply_funct_on_elements (hash_table_t *const hashtblP, void functP(hash_key_t keyP, void *dataP, void *parameterP), void *parameterP)
-//-------------------------------------------------------------------------------------------------------------------------------
-{
-  hash_node_t  *node         = NULL;
-  unsigned int  i            = 0;
-  unsigned int  num_elements = 0;
-
-  if (hashtblP == NULL) {
-    return HASH_TABLE_BAD_PARAMETER_HASHTABLE;
-  }
-
-  while ((num_elements < hashtblP->num_elements) && (i < hashtblP->size)) {
-    if (hashtblP->nodes[i] != NULL) {
-      node=hashtblP->nodes[i];
-
-      while(node) {
-        num_elements += 1;
-        functP(node->key, node->data, parameterP);
-        node=node->next;
-      }
-    }
-
-    i += 1;
-  }
-
-  return HASH_TABLE_OK;
-}
-//-------------------------------------------------------------------------------------------------------------------------------
 hashtable_rc_t hashtable_dump_content (const hash_table_t *const hashtblP, char *const buffer_pP, int *const remaining_bytes_in_buffer_pP )
 //-------------------------------------------------------------------------------------------------------------------------------
 {
@@ -266,7 +238,6 @@ hashtable_rc_t hashtable_insert(hash_table_t *const hashtblP, const hash_key_t k
   }
 
   hashtblP->nodes[hash]=node;
-  hashtblP->num_elements += 1;
   return HASH_TABLE_OK;
 }
 //-------------------------------------------------------------------------------------------------------------------------------
@@ -295,7 +266,6 @@ hashtable_rc_t hashtable_remove(hash_table_t *const hashtblP, const hash_key_t k
       }
 
       free(node);
-      hashtblP->num_elements -= 1;
       return HASH_TABLE_OK;
     }
 
@@ -335,47 +305,3 @@ hashtable_rc_t hashtable_get(const hash_table_t *const hashtblP, const hash_key_
   *dataP = NULL;
   return HASH_TABLE_KEY_NOT_EXISTS;
 }
-//-------------------------------------------------------------------------------------------------------------------------------
-/*
- * Resizing
- * The number of elements in a hash table is not always known when creating the table.
- * If the number of elements grows too large, it will seriously reduce the performance of most hash table operations.
- * If the number of elements are reduced, the hash table will waste memory. That is why we provide a function for resizing the table.
- * Resizing a hash table is not as easy as a realloc(). All hash values must be recalculated and each element must be inserted into its new position.
- * We create a temporary hash_table_t object (newtbl) to be used while building the new hashes.
- * This allows us to reuse hashtable_insert() and hashtable_remove(), when moving the elements to the new table.
- * After that, we can just free the old table and copy the elements from newtbl to hashtbl.
- */
-
-hashtable_rc_t hashtable_resize(hash_table_t *const hashtblP, const hash_size_t sizeP) {
-  hash_table_t       newtbl;
-  hash_size_t        n;
-  hash_node_t       *node,*next;
-
-  if (hashtblP == NULL) {
-    return HASH_TABLE_BAD_PARAMETER_HASHTABLE;
-  }
-
-  newtbl.size     = sizeP;
-  newtbl.hashfunc = hashtblP->hashfunc;
-  newtbl.num_elements = 0;
-
-  if(!(newtbl.nodes=calloc(sizeP, sizeof(hash_node_t *)))) return -1;
-
-  for(n=0; n<hashtblP->size; ++n) {
-    for(node=hashtblP->nodes[n]; node; node=next) {
-      next = node->next;
-      hashtable_insert(&newtbl, node->key, node->data);
-      // Lionel GAUTHIER: BAD CODE TO BE REWRITTEN
-      hashtable_remove(hashtblP, node->key);
-    }
-  }
-
-  free(hashtblP->nodes);
-  hashtblP->size=newtbl.size;
-  hashtblP->nodes=newtbl.nodes;
-  return HASH_TABLE_OK;
-}
-
-
-

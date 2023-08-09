@@ -31,14 +31,13 @@
 */
 #include "PHY/types.h"
 #include "PHY/defs_UE.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "PHY/phy_extern_ue.h"
 #include "SCHED_UE/sched_UE.h"
 #include "transport_proto_ue.h"
 #include "PHY/MODULATION/modulation_UE.h"
 #include "PHY/LTE_ESTIMATION/lte_estimation.h"
 #include "PHY/LTE_REFSIG/lte_refsig.h"
-#include "openair2/LAYER2/MAC/mac_proto.h"
 #include "common_lib.h"
 #include "PHY/INIT/phy_init.h"
 
@@ -116,10 +115,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
   pbch_decoded = 0;
 
   for (frame_mod4=0; frame_mod4<4; frame_mod4++) {
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
     if (ue->FeMBMS_active != 2) {
-#endif
       pbch_tx_ant = rx_pbch(&ue->common_vars,
                             ue->pbch_vars[0],
                             frame_parms,
@@ -127,7 +123,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
                             SISO,
                             ue->high_speed_flag,
                             frame_mod4);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     } else {
       pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
                                    ue->pbch_vars[0],
@@ -138,17 +133,12 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
                                    frame_mod4);
     }
 
-#endif
-
     if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
       pbch_decoded = 1;
       break;
     }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
     if (ue->FeMBMS_active != 2) {
-#endif
       pbch_tx_ant = rx_pbch(&ue->common_vars,
                             ue->pbch_vars[0],
                             frame_parms,
@@ -156,7 +146,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
                             ALAMOUTI,
                             ue->high_speed_flag,
                             frame_mod4);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     } else {
       pbch_tx_ant = rx_pbch_fembms(&ue->common_vars,
                                    ue->pbch_vars[0],
@@ -166,8 +155,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
                                    ue->high_speed_flag,
                                    frame_mod4);
     }
-
-#endif
 
     if ((pbch_tx_ant>0) && (pbch_tx_ant<=2)) {
       pbch_decoded = 1;
@@ -217,10 +204,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
         break;
     }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
     if(ue->FeMBMS_active != 2) {
-#endif
       // now check for PHICH parameters
       frame_parms->phich_config_common.phich_duration = (PHICH_DURATION_t)((ue->pbch_vars[0]->decoded_output[2]>>4)&1);
       dummy = (ue->pbch_vars[0]->decoded_output[2]>>2)&3;
@@ -266,7 +250,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
             frame_parms->N_RB_DL,
             frame_parms->phich_config_common.phich_duration,
             phich_resource);  //frame_parms->phich_config_common.phich_resource);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
     } else {
       for(int i=0; i<RX_NB_TH; i++) {
         ue->proc.proc_rxtx[i].frame_rx =   (((ue->pbch_vars[0]->decoded_output[2]&31)<<1) + (ue->pbch_vars[0]->decoded_output[1]>>7))<<4;
@@ -284,7 +267,6 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
            );
     }
 
-#endif
     return(0);
   } else {
     return(-1);
@@ -294,6 +276,7 @@ int pbch_detection(PHY_VARS_UE *ue, runmode_t mode) {
 char phich_string[13][4] = {"","1/6","","1/2","","","one","","","","","","two"};
 char duplex_string[2][4] = {"FDD","TDD"};
 char prefix_string[2][9] = {"NORMAL","EXTENDED"};
+
 
 int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   int32_t sync_pos,sync_pos2,sync_pos_slot;
@@ -311,6 +294,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
   init_frame_parms(frame_parms,1);
   /*
   LOG_M("rxdata0.m","rxd0",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
+
   exit(-1);
   */
   sync_pos = lte_sync_time(ue->common_vars.rxdata,
@@ -348,7 +332,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
     //   LOG_M("rxdata2.m","rxd2",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
     LOG_D(PHY,"FDD Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
           frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
     if (ret==-1) {
       ue->FeMBMS_active = 2;
@@ -362,8 +345,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       LOG_D(PHY,"FeMBMS Normal prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
             frame_parms->Nid_cell,metric_fdd_ncp,phase_fdd_ncp,flip_fdd_ncp,ret);
     }
-
-#endif
   } else {
     LOG_D(PHY,"FDD Normal prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
   }
@@ -403,7 +384,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
       //     LOG_M("rxdata3.m","rxd3",ue->common_vars.rxdata[0],10*frame_parms->samples_per_tti,1,1);
       LOG_D(PHY,"FDD Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
             frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
       if (ret==-1) {
         ue->FeMBMS_active = 2;
@@ -417,8 +397,6 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
         LOG_I(PHY,"FeMBMS CAS Extended prefix: CellId %d metric %d, phase %d, flip %d, pbch %d\n",
               frame_parms->Nid_cell,metric_fdd_ecp,phase_fdd_ecp,flip_fdd_ecp,ret);
       }
-
-#endif
     } else {
       LOG_D(PHY,"FDD Extended prefix: SSS error condition: sync_pos %d, sync_pos_slot %d\n", sync_pos, sync_pos_slot);
     }
@@ -579,13 +557,7 @@ int initial_sync(PHY_VARS_UE *ue, runmode_t mode) {
     ue->measurements.rx_power_avg_dB[0] = dB_fixed(ue->measurements.rx_power_avg[0]);
     LOG_I(PHY,"[UE%d] Initial sync : Estimated power: %d dB\n",ue->Mod_id,ue->measurements.rx_power_avg_dB[0] );
 
-    if (IS_SOFTMODEM_BASICSIM )
-      phy_adjust_gain(ue,ue->measurements.rx_power_avg_dB[0],0);
-  } else {
-    if (IS_SOFTMODEM_BASICSIM )
-      phy_adjust_gain(ue,dB_fixed(ue->measurements.rssi),0);
   }
 
   return ret;
 }
-

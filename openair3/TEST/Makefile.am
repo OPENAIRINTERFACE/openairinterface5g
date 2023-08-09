@@ -43,8 +43,7 @@ if HAVE_CHECK
 TESTS =	\
 	test_kdf	\
 	test_aes128_cmac_encrypt	\
-	test_aes128_ctr_encrypt	\
-	test_aes128_ctr_decrypt	\
+	test_aes128_ctr	\
 	test_secu_kenb	\
 	test_secu_knas	\
     test_secu_knas_encrypt_eea1 \
@@ -68,8 +67,7 @@ common_ldadd = 	$(top_builddir)/SECU/libsecu.la	\
 check_PROGRAMS =	\
 	test_kdf	\
 	test_aes128_cmac_encrypt	\
-	test_aes128_ctr_encrypt	\
-	test_aes128_ctr_decrypt	\
+	test_aes128_ctr	\
 	test_secu_kenb	\
 	test_secu_knas	\
     test_secu_knas_encrypt_eea1 \

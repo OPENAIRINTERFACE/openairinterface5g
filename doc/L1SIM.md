@@ -14,13 +14,9 @@
 
 This page is valid for the develop branch
 
-# Table of Contents: #
+**Table of Contents**
 
-* [How to build the eNB and the UE](#build)
-* [How to run an eNB built with the noS1 option](#run-noS1-eNB)
-* [How to run a UE built with the noS1 option](#run-noS1-UE)
-* [Continuous Integration notes](#CInote)
-* [How to ping an eNB from a UE and vice versa (with the noS1 option)](#noS1-pinging)
+[[_TOC_]]
 
 The old oaisim is dead! Long live oaisim! :)
 
@@ -42,7 +38,7 @@ Run lte-softmodem as usual with this configuration.
 $ source oaienv
 $ cd cmake_targets/tools
 $ sudo -E ./init_nas_nos1 eNB
-$ cd ../lte_build_oai/build
+$ cd ../ran_build/build
 $ sudo -E ./lte-softmodem -O YYY.conf --noS1 --nokrnmod 0
 ```
 
@@ -56,7 +52,7 @@ Run it like:
 $ source oaienv
 $ cd cmake_targets/tools
 $ sudo -E ./init_nas_nos1 UE
-$ cd ../lte_build_oai/build
+$ cd ../ran_build/build
 $ sudo ./lte-uesoftmodem -O XXX.conf -r 25 --siml1 --noS1 --nokrnmod 0
 ```
 

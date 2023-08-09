@@ -32,7 +32,6 @@
 #include "PHY/vars.h"
 #include "MAC_INTERFACE/vars.h"
 
-#include "ARCH/CBMIMO1/DEVICE_DRIVER/vars.h"
 #include "SCHED/defs.h"
 #include "SCHED/vars.h"
 #include "LAYER2/MAC/defs.h"
@@ -40,7 +39,6 @@
 #include "RRC/LTE/vars.h"
 #include "PHY_INTERFACE/vars.h"
 #include "UTIL/LOG/log.h"
-#include "OCG_vars.h"
 #include "UTIL/OTG/otg_tx.h"
 #include "UTIL/OTG/otg.h"
 #include "UTIL/OTG/otg_vars.h"
@@ -477,6 +475,7 @@ u16 attach_ue4(char *dcch_sdu_eNB, char dcch_sdu_eNB_len, char *dcch_sdu_ue)
 }
 
 //u8 NB_INST=2;
+const int NB_UE_INST = 1;
 
 int main (int argc, char **argv)
 {
@@ -492,10 +491,6 @@ int main (int argc, char **argv)
   int i,comp;
 
   logInit();
-
-  NB_UE_INST  = 1;
-  NB_eNB_INST = 1;
-  NB_INST=2;
 
   // Parse arguments
   if(parse_args(argc, argv, &args) > 0) {
@@ -516,7 +511,6 @@ int main (int argc, char **argv)
   /*
   set_log(OMG,  LOG_INFO, 20);
    set_log(EMU,  LOG_INFO, 10);
-   set_log(OCG,  LOG_INFO, 1);
    set_log(MAC,  LOG_TRACE, 1);
    set_log(RLC,  LOG_TRACE, 1);
    set_log(PHY,  LOG_DEBUG, 1);

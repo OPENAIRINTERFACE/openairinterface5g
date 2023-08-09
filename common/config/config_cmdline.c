@@ -53,13 +53,17 @@ int parse_stringlist(paramdef_t *cfgoptions, char *val) {
   }
 
   free(tmpval);
-  config_check_valptr(cfgoptions,(char **)&(cfgoptions->strlistptr), sizeof(char *) * numelt);
+
+  AssertFatal(MAX_LIST_SIZE > numelt, 
+              "This piece of code use fixed size arry of constant #define MAX_LIST_SIZE %d\n", 
+              MAX_LIST_SIZE );
+  config_check_valptr(cfgoptions, sizeof(char*), numelt);
+  
   cfgoptions->numelt=numelt;
   atoken=strtok_r(val, ",",&tokctx);
 
   for( int i=0; i<cfgoptions->numelt && atoken != NULL ; i++) {
-    config_check_valptr(cfgoptions,&(cfgoptions->strlistptr[i]),strlen(atoken)+1);
-    sprintf(cfgoptions->strlistptr[i],"%s",atoken);
+    snprintf(cfgoptions->strlistptr[i],DEFAULT_EXTRA_SZ,"%s",atoken);
     printf_params("[LIBCONFIG] %s[%i]: %s\n", cfgoptions->optname,i,cfgoptions->strlistptr[i]);
     atoken=strtok_r(NULL, ",",&tokctx);
   }
@@ -84,13 +88,14 @@ int processoption(paramdef_t *cfgoptions, char *value) {
       char *charptr;
 
     case TYPE_STRING:
-      if (cfgoptions->numelt == 0 ) {
-        config_check_valptr(cfgoptions, cfgoptions->strptr, strlen(tmpval)+1);
-        sprintf(*(cfgoptions->strptr), "%s",tmpval);
-      } else {
-        sprintf( (char *)(cfgoptions->strptr), "%s",tmpval);
+      if (cfgoptions->numelt == 0 )
+        config_check_valptr(cfgoptions, 1,
+                            strlen(tmpval)+1);
+      if (cfgoptions->numelt < (strlen(tmpval)+1)) {
+        CONFIG_PRINTF_ERROR("[CONFIG] command line option %s value too long\n",
+                            cfgoptions->optname);
       }
-
+      snprintf(*cfgoptions->strptr, cfgoptions->numelt ,"%s",tmpval);
       printf_cmdl("[CONFIG] %s set to  %s from command line\n", cfgoptions->optname, tmpval);
       optisset=1;
       break;
@@ -105,7 +110,7 @@ int processoption(paramdef_t *cfgoptions, char *value) {
     case TYPE_INT16:
     case TYPE_UINT8:
     case TYPE_INT8:
-      config_check_valptr(cfgoptions, (char **)&(cfgoptions->iptr),sizeof(int32_t));
+      config_check_valptr(cfgoptions, sizeof(*cfgoptions->iptr), 1);
       config_assign_int(cfgoptions,cfgoptions->optname,(int32_t)strtol(tmpval,&charptr,0));
 
       if( *charptr != 0) {
@@ -117,14 +122,14 @@ int processoption(paramdef_t *cfgoptions, char *value) {
 
     case TYPE_UINT64:
     case TYPE_INT64:
-      config_check_valptr(cfgoptions, (char **)&(cfgoptions->i64ptr),sizeof(uint64_t));
+      config_check_valptr(cfgoptions, sizeof(*cfgoptions->i64ptr), 1);
       *(cfgoptions->i64ptr)=strtoll(tmpval,&charptr,0);
 
       if( *charptr != 0) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires an integer argument\n",cfgoptions->optname);
       }
 
-      printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*(cfgoptions->i64ptr));
+      printf_cmdl("[CONFIG] %s set to  %lli from command line\n", cfgoptions->optname, (long long)*cfgoptions->i64ptr);
       optisset=1;
       break;
 
@@ -133,8 +138,8 @@ int processoption(paramdef_t *cfgoptions, char *value) {
       break;
 
     case TYPE_DOUBLE:
-      config_check_valptr(cfgoptions, (char **)&(cfgoptions->dblptr),sizeof(double));
-      *(cfgoptions->dblptr) = strtof(tmpval,&charptr);
+      config_check_valptr(cfgoptions, sizeof(*cfgoptions->dblptr), 1);
+      *cfgoptions->dblptr = strtof(tmpval,&charptr);
 
       if( *charptr != 0) {
         CONFIG_PRINTF_ERROR("[CONFIG] command line, option %s requires a double argument\n",cfgoptions->optname);
@@ -211,7 +216,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
 
   while (c > 0 ) {
     char *oneargv = strdup(config_get_if()->argv[i]);          /* we use strtok_r which modifies its string paramater, and we don't want argv to be modified */
-
+    if(!oneargv) abort();
     /* first check help options, either --help, -h or --help_<section> */
     if (strncmp(oneargv, "-h",2) == 0 || strncmp(oneargv, "--help",6) == 0 ) {
       char *tokctx = NULL;
@@ -255,7 +260,7 @@ int config_process_cmdline(paramdef_t *cfgoptions,int numoptions, char *prefix) 
         if ( ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgpath) == 0))  || /* short option, one "-" */
              ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 )) || /* long option beginning with "--" */
              ((strlen(oneargv) == 2) && (strcmp(oneargv + 1,cfgoptions[n].optname) == 0) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ||
-             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2,cfgpath ) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
+             ((strlen(oneargv) > 2) && (strcmp(oneargv + 2, cfgoptions[n].optname) == 0 ) && (cfgoptions[n].paramflags & PARAMFLAG_CMDLINE_NOPREFIXENABLED )) ) {
           char *valptr=NULL;
           int ret;
           config_get_if()->argv_info[i] |= CONFIG_CMDLINEOPT_PROCESSED;

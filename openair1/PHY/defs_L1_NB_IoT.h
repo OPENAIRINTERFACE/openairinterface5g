@@ -19,7 +19,7 @@
  *      contact@openairinterface.org
  */
 
-/*! \file PHY/defs.h
+/*! \file PHY/defs_L1_NB_IoT.h
  \brief Top-level defines and structure definitions
  \author R. Knopp, F. Kaltenberger
  \date 2011
@@ -32,7 +32,9 @@
 #ifndef __PHY_DEFS_NB_IOT__H__
 #define __PHY_DEFS_NB_IOT__H__
 
-#define _GNU_SOURCE 
+#ifndef _GNU_SOURCE
+#define _GNU_SOURCE
+#endif
 #include <stdio.h>
 #include <stdlib.h>
 #include <malloc.h>
@@ -44,29 +46,21 @@
 //#include <complex.h>
 #include "assertions.h"
 #ifdef MEX
-# define msg mexPrintf
+  #define msg mexPrintf
 #else
-# ifdef OPENAIR2
-#   if ENABLE_RAL
-#     include "collection/hashtable/hashtable.h"
-#     include "COMMON/ral_messages_types.h"
-#     include "UTIL/queue.h"
-#   endif
-#   include "common/utils/LOG/log.h"
-#   define msg(aRGS...) LOG_D(PHY, ##aRGS)
-# else
-#   define msg printf
-# endif
+    #if ENABLE_RAL
+      #include "collection/hashtable/hashtable.h"
+      #include "COMMON/ral_messages_types.h"
+      #include "UTIL/queue.h"
+    #endif
+    #include "common/utils/LOG/log.h"
+    #define msg(aRGS...) LOG_D(PHY, ##aRGS)
 #endif
 //use msg in the real-time thread context
 #define msg_nrt printf
 //use msg_nrt in the non real-time context (for initialization, ...)
 #ifndef malloc16
-#  ifdef __AVX2__
-#    define malloc16(x) memalign(32,x)
-#  else
-#    define malloc16(x) memalign(16,x)
-#  endif
+    #define malloc16(x) memalign(32,x)
 #endif
 #define free16(y,x) free(y)
 #define bigmalloc malloc
@@ -87,11 +81,7 @@
 /*
 static inline void* malloc16_clear( size_t size )
 {
-#ifdef __AVX2__
   void* ptr = memalign(32, size);
-#else
-  void* ptr = memalign(16, size);
-#endif
   DevAssert(ptr);
   memset( ptr, 0, size );
   return ptr;
@@ -122,11 +112,9 @@ static inline void* malloc16_clear( size_t size )
 
 
 #include "PHY/impl_defs_top_NB_IoT.h"
-//#include "impl_defs_top.h"
-//#include "impl_defs_lte.h"
 #include "PHY/impl_defs_lte_NB_IoT.h"
 
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 //#include "PHY/CODING/defs.h"
 #include "PHY/CODING/defs_NB_IoT.h"
 #include "openair2/PHY_INTERFACE/IF_Module_NB_IoT.h"
@@ -140,8 +128,8 @@ static inline void* malloc16_clear( size_t size )
 #include "PHY/LTE_TRANSPORT/defs_NB_IoT.h"
 #include <pthread.h>
 
-#include "targets/ARCH/COMMON/common_lib.h"
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "radio/COMMON/common_lib.h"
+#include "common/openairinterface5g_limits.h"
 
 #define NUM_DCI_MAX_NB_IoT 32
 
@@ -150,11 +138,7 @@ static inline void* malloc16_clear( size_t size )
 #define NB_BANDS_MAX_NB_IoT 8
 
 
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
 typedef enum {normal_txrx_NB_IoT=0,rx_calib_ue_NB_IoT=1,rx_calib_ue_med_NB_IoT=2,rx_calib_ue_byp_NB_IoT=3,debug_prach_NB_IoT=4,no_L2_connect_NB_IoT=5,calib_prach_tx_NB_IoT=6,rx_dump_frame_NB_IoT=7,loop_through_memory_NB_IoT=8} runmode_NB_IoT_t;
-#endif
 /*
 enum transmission_access_mode {
   NO_ACCESS=0,
@@ -200,19 +184,6 @@ typedef struct {
   NB_IoT_UE_DLSCH_t   *dlsch_rn_MCH[10];
 
 } PHY_VARS_RN_NB_IoT;
-/*
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
-//typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
-*/
-// enum transmission_access_mode {
-//   NO_ACCESS=0,
-//   POSTPONED_ACCESS,
-//   CANCELED_ACCESS,
-//   UNKNOWN_ACCESS,
-//   SCHEDULED_ACCESS,
-//   CBA_ACCESS};
 
 typedef enum  {
   eNodeB_3GPP_NB_IoT=0,   // classical eNodeB function
@@ -425,10 +396,8 @@ typedef struct eNB_proc_NB_IoT_t_s {
   int RU_mask;
   /// mask for RUs serving nbiot (PRACH)
   int RU_mask_prach;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mask for RUs serving eNB (PRACH)
   int RU_mask_prach_br;
-#endif
   /// parameters for turbo-decoding worker thread
   td_params_NB_IoT        tdp;
   /// parameters for turbo-encoding worker thread
@@ -471,13 +440,10 @@ typedef struct {
   pthread_mutex_t       mutex_rxtx;
   /// scheduling parameters for RXn-TXnp4 thread
   struct                sched_param sched_param_rxtx;
-  /// 
+  ///
   int                   sub_frame_start;
   ///
   int                   sub_frame_step;
-  ///
-  unsigned long long    gotIQs;
-
 } UE_rxtx_proc_NB_IoT_t;
 
 /// Context data structure for eNB subframe processing
@@ -569,10 +535,8 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   uint32_t                      lte_gold_uespec_table[2][20][2][21];
   /// mbsfn reference symbols
   uint32_t                      lte_gold_mbsfn_table[10][3][42];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mbsfn reference symbols
   uint32_t                      lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
-#endif
   ///
   uint32_t                      X_u[64][839];
   ///
@@ -599,7 +563,8 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   unsigned char                 cooperation_flag;                   // for cooperative communication
 
   unsigned char                 is_secondary_eNB;                   // primary by default
-  unsigned char                 is_init_sync;                       /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
+  unsigned char
+  is_init_sync;                       /// Flag to tell if initial synchronization is performed. This affects how often the secondary eNB will listen to the PSS from the primary system.
   unsigned char                 has_valid_precoder;                 /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from, and this B/F vector is created.
   unsigned char                 PeNB_id;                            /// id of Primary eNB
   int                           rx_offset;                          /// Timing offset (used if is_secondary_eNB)
@@ -706,10 +671,10 @@ typedef struct PHY_VARS_eNB_NB_IoT_s {
   time_stats_t                       ulsch_tc_intl1_stats;
   time_stats_t                       ulsch_tc_intl2_stats;
 
-  #ifdef LOCALIZATION
+#ifdef LOCALIZATION
   /// time state for localization
   time_stats_t                       localization_stats;
-  #endif
+#endif
 
   int32_t                                   pucch1_stats_cnt[NUMBER_OF_UE_MAX_NB_IoT][10];
   int32_t                                   pucch1_stats[NUMBER_OF_UE_MAX_NB_IoT][10*1024];
@@ -845,13 +810,11 @@ typedef struct {
   uint32_t                        lte_gold_uespec_table[2][20][2][21];
   //mbsfn reference symbols
   uint32_t                        lte_gold_mbsfn_table[10][3][42];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// mbsfn reference symbols
   uint32_t         lte_gold_mbsfn_khz_1dot25_table[10][150]; //Not sure whether we need this here
-#endif
   ///
   uint32_t                        X_u[64][839];
-  /// 
+  ///
   uint32_t                        high_speed_flag;
   uint32_t                        perfect_ce;
   int16_t                         ch_est_alpha;
@@ -861,66 +824,66 @@ typedef struct {
   ///
   char                            ulsch_no_allocation_counter[NUMBER_OF_CONNECTED_eNB_MAX];
 
-/*
+  /*
 
-  unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
-  PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
-  int turbo_iterations, turbo_cntl_iterations;
-  /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_TBS[NUMBER_OF_CONNECTED_eNB_MAX];
-  /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_TBS_last[NUMBER_OF_CONNECTED_eNB_MAX];
-  /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t bitrate[NUMBER_OF_CONNECTED_eNB_MAX];
-  /// \brief ?.
-  /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
-  uint32_t total_received_bits[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_errors_last[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_received_last[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_fer[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_SI_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_p_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_p_errors[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mch_received[NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
-  int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
-  unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
-  uint8_t               generate_prach;
-  uint8_t               prach_cnt;
-  uint8_t               prach_PreambleIndex;
-  //  uint8_t               prach_timer;
-  uint8_t               decode_SIB;
-  uint8_t               decode_MIB;
-  int              rx_offset; /// Timing offset
-  int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
-  int              timing_advance; ///timing advance signalled from eNB
-  int              hw_timing_advance;
-  int              N_TA_offset; ///timing offset used in TDD
-  /// Flag to tell if UE is secondary user (cognitive mode)
-  unsigned char    is_secondary_ue;
-  /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
-  unsigned char    has_valid_precoder;
-  /// hold the precoder for NULL beam to the primary eNB
-  int              **ul_precoder_S_UE;
-  /// holds the maximum channel/precoder coefficient
-  char             log2_maxp;
-*/
+    unsigned char ulsch_Msg3_active[NUMBER_OF_CONNECTED_eNB_MAX];
+    uint32_t  ulsch_Msg3_frame[NUMBER_OF_CONNECTED_eNB_MAX];
+    unsigned char ulsch_Msg3_subframe[NUMBER_OF_CONNECTED_eNB_MAX];
+    PRACH_RESOURCES_t *prach_resources[NUMBER_OF_CONNECTED_eNB_MAX];
+    int turbo_iterations, turbo_cntl_iterations;
+    /// \brief ?.
+    /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
+    uint32_t total_TBS[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// \brief ?.
+    /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
+    uint32_t total_TBS_last[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// \brief ?.
+    /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
+    uint32_t bitrate[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// \brief ?.
+    /// - first index: eNB [0..NUMBER_OF_CONNECTED_eNB_MAX[ (hard coded)
+    uint32_t total_received_bits[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_errors_last[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_received[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_received_last[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_fer[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_SI_received[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_SI_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_ra_received[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_ra_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_p_received[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_p_errors[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mch_received_sf[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mch_received[NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mcch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mtch_received[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mcch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mtch_errors[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mcch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int dlsch_mtch_trials[MAX_MBSFN_AREA][NUMBER_OF_CONNECTED_eNB_MAX];
+    int current_dlsch_cqi[NUMBER_OF_CONNECTED_eNB_MAX];
+    unsigned char first_run_timing_advance[NUMBER_OF_CONNECTED_eNB_MAX];
+    uint8_t               generate_prach;
+    uint8_t               prach_cnt;
+    uint8_t               prach_PreambleIndex;
+    //  uint8_t               prach_timer;
+    uint8_t               decode_SIB;
+    uint8_t               decode_MIB;
+    int              rx_offset; /// Timing offset
+    int              rx_offset_diff; /// Timing adjustment for ofdm symbol0 on HW USRP
+    int              timing_advance; ///timing advance signalled from eNB
+    int              hw_timing_advance;
+    int              N_TA_offset; ///timing offset used in TDD
+    /// Flag to tell if UE is secondary user (cognitive mode)
+    unsigned char    is_secondary_ue;
+    /// Flag to tell if secondary eNB has channel estimates to create NULL-beams from.
+    unsigned char    has_valid_precoder;
+    /// hold the precoder for NULL beam to the primary eNB
+    int              **ul_precoder_S_UE;
+    /// holds the maximum channel/precoder coefficient
+    char             log2_maxp;
+  */
   /// if ==0 enables phy only test mode
   int              mac_enabled;
   /// Flag to initialize averaging of PHY measurements
@@ -935,98 +898,98 @@ typedef struct {
   double           sinr_eff;
   /// N0 (used for abstraction)
   double           N0;
-/*
-  /// PDSCH Varaibles
-  PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+  /*
+    /// PDSCH Varaibles
+    PDSCH_CONFIG_DEDICATED pdsch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// PUSCH Varaibles
-  PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// PUSCH Varaibles
+    PUSCH_CONFIG_DEDICATED pusch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// PUSCH contention-based access vars
-  PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
+    /// PUSCH contention-based access vars
+    PUSCH_CA_CONFIG_DEDICATED  pusch_ca_config_dedicated[NUMBER_OF_eNB_MAX]; // lola
 
-  /// PUCCH variables
+    /// PUCCH variables
 
-  PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+    PUCCH_CONFIG_DEDICATED pucch_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  uint8_t ncs_cell[20][7];
+    uint8_t ncs_cell[20][7];
 
-  /// UL-POWER-Control
-  UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// UL-POWER-Control
+    UL_POWER_CONTROL_DEDICATED ul_power_control_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// TPC
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
-  TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// TPC
+    TPC_PDCCH_CONFIG tpc_pdcch_config_pucch[NUMBER_OF_CONNECTED_eNB_MAX];
+    TPC_PDCCH_CONFIG tpc_pdcch_config_pusch[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// CQI reporting
-  CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// CQI reporting
+    CQI_REPORT_CONFIG cqi_report_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// SRS Variables
-  SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// SRS Variables
+    SOUNDINGRS_UL_CONFIG_DEDICATED soundingrs_ul_config_dedicated[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// Scheduling Request Config
-  SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// Scheduling Request Config
+    SCHEDULING_REQUEST_CONFIG scheduling_request_config[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  /// Transmission mode per eNB
-  uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
+    /// Transmission mode per eNB
+    uint8_t transmission_mode[NUMBER_OF_CONNECTED_eNB_MAX];
 
-  time_stats_t phy_proc;
-  time_stats_t phy_proc_tx;
-  time_stats_t phy_proc_rx[2];
+    time_stats_t phy_proc;
+    time_stats_t phy_proc_tx;
+    time_stats_t phy_proc_rx[2];
 
-  uint32_t use_ia_receiver;
+    uint32_t use_ia_receiver;
 
-  time_stats_t ofdm_mod_stats;
-  time_stats_t ulsch_encoding_stats;
-  time_stats_t ulsch_modulation_stats;
-  time_stats_t ulsch_segmentation_stats;
-  time_stats_t ulsch_rate_matching_stats;
-  time_stats_t ulsch_turbo_encoding_stats;
-  time_stats_t ulsch_interleaving_stats;
-  time_stats_t ulsch_multiplexing_stats;
+    time_stats_t ofdm_mod_stats;
+    time_stats_t ulsch_encoding_stats;
+    time_stats_t ulsch_modulation_stats;
+    time_stats_t ulsch_segmentation_stats;
+    time_stats_t ulsch_rate_matching_stats;
+    time_stats_t ulsch_turbo_encoding_stats;
+    time_stats_t ulsch_interleaving_stats;
+    time_stats_t ulsch_multiplexing_stats;
 
-  time_stats_t generic_stat;
-  time_stats_t pdsch_procedures_stat;
-  time_stats_t dlsch_procedures_stat;
+    time_stats_t generic_stat;
+    time_stats_t pdsch_procedures_stat;
+    time_stats_t dlsch_procedures_stat;
 
-  time_stats_t ofdm_demod_stats;
-  time_stats_t dlsch_rx_pdcch_stats;
-  time_stats_t rx_dft_stats;
-  time_stats_t dlsch_channel_estimation_stats;
-  time_stats_t dlsch_freq_offset_estimation_stats;
-  time_stats_t dlsch_decoding_stats[2];
-  time_stats_t dlsch_demodulation_stats;
-  time_stats_t dlsch_rate_unmatching_stats;
-  time_stats_t dlsch_turbo_decoding_stats;
-  time_stats_t dlsch_deinterleaving_stats;
-  time_stats_t dlsch_llr_stats;
-  time_stats_t dlsch_unscrambling_stats;
-  time_stats_t dlsch_rate_matching_stats;
-  time_stats_t dlsch_turbo_encoding_stats;
-  time_stats_t dlsch_interleaving_stats;
-  time_stats_t dlsch_tc_init_stats;
-  time_stats_t dlsch_tc_alpha_stats;
-  time_stats_t dlsch_tc_beta_stats;
-  time_stats_t dlsch_tc_gamma_stats;
-  time_stats_t dlsch_tc_ext_stats;
-  time_stats_t dlsch_tc_intl1_stats;
-  time_stats_t dlsch_tc_intl2_stats;
-  time_stats_t tx_prach;
+    time_stats_t ofdm_demod_stats;
+    time_stats_t dlsch_rx_pdcch_stats;
+    time_stats_t rx_dft_stats;
+    time_stats_t dlsch_channel_estimation_stats;
+    time_stats_t dlsch_freq_offset_estimation_stats;
+    time_stats_t dlsch_decoding_stats[2];
+    time_stats_t dlsch_demodulation_stats;
+    time_stats_t dlsch_rate_unmatching_stats;
+    time_stats_t dlsch_turbo_decoding_stats;
+    time_stats_t dlsch_deinterleaving_stats;
+    time_stats_t dlsch_llr_stats;
+    time_stats_t dlsch_unscrambling_stats;
+    time_stats_t dlsch_rate_matching_stats;
+    time_stats_t dlsch_turbo_encoding_stats;
+    time_stats_t dlsch_interleaving_stats;
+    time_stats_t dlsch_tc_init_stats;
+    time_stats_t dlsch_tc_alpha_stats;
+    time_stats_t dlsch_tc_beta_stats;
+    time_stats_t dlsch_tc_gamma_stats;
+    time_stats_t dlsch_tc_ext_stats;
+    time_stats_t dlsch_tc_intl1_stats;
+    time_stats_t dlsch_tc_intl2_stats;
+    time_stats_t tx_prach;
 
-  /// RF and Interface devices per CC
-  openair0_device rfdevice;
-  time_stats_t dlsch_encoding_SIC_stats;
-  time_stats_t dlsch_scrambling_SIC_stats;
-  time_stats_t dlsch_modulation_SIC_stats;
-  time_stats_t dlsch_llr_stripping_unit_SIC_stats;
-  time_stats_t dlsch_unscrambling_SIC_stats;
+    /// RF and Interface devices per CC
+    openair0_device rfdevice;
+    time_stats_t dlsch_encoding_SIC_stats;
+    time_stats_t dlsch_scrambling_SIC_stats;
+    time_stats_t dlsch_modulation_SIC_stats;
+    time_stats_t dlsch_llr_stripping_unit_SIC_stats;
+    time_stats_t dlsch_unscrambling_SIC_stats;
 
-#if ENABLE_RAL
-  hash_table_t    *ral_thresholds_timed;
-  SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
-  SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
-#endif
-*/
+  #if ENABLE_RAL
+    hash_table_t    *ral_thresholds_timed;
+    SLIST_HEAD(ral_thresholds_gen_poll_s, ral_threshold_phy_t) ral_thresholds_gen_polled[RAL_LINK_PARAM_GEN_MAX];
+    SLIST_HEAD(ral_thresholds_lte_poll_s, ral_threshold_phy_t) ral_thresholds_lte_polled[RAL_LINK_PARAM_LTE_MAX];
+  #endif
+  */
 } PHY_VARS_UE_NB_IoT;
 
 

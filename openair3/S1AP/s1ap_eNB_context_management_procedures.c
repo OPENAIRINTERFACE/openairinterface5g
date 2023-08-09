@@ -47,7 +47,6 @@
 #include "s1ap_eNB_nas_procedures.h"
 #include "s1ap_eNB_management_procedures.h"
 #include "s1ap_eNB_context_management_procedures.h"
-#include "msc.h"
 
 
 int s1ap_ue_context_release_complete(instance_t instance,
@@ -94,7 +93,7 @@ int s1ap_ue_context_release_complete(instance_t instance,
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_MME_UE_S1AP_ID;
   ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
@@ -102,64 +101,14 @@ int s1ap_ue_context_release_complete(instance_t instance,
   ie->criticality = S1AP_Criticality_ignore;
   ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_ENB_UE_S1AP_ID;
   ie->value.choice.ENB_UE_S1AP_ID = ue_release_complete_p->eNB_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
-  /* optional */
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_CriticalityDiagnostics;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CriticalityDiagnostics;
-    // ie->value.choice.CriticalityDiagnostics = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* release 12, optional */
-#if (S1AP_VERSION >= MAKE_VERSION(12, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_UserLocationInformation;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_UserLocationInformation;
-    // ie->value.choice.UserLocationInformation = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-
-  /* release 13, optional */
-#if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_InformationOnRecommendedCellsAndENBsForPaging;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_InformationOnRecommendedCellsAndENBsForPaging;
-    // ie->value.choice.InformationOnRecommendedCellsAndENBsForPaging = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-
-    ie = (S1AP_UEContextReleaseComplete_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseComplete_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_CellIdentifierAndCELevelForCECapableUEs;
-    ie->criticality = S1AP_Criticality_ignore;
-    ie->value.present = S1AP_UEContextReleaseComplete_IEs__value_PR_CellIdentifierAndCELevelForCECapableUEs;
-    // ie->value.choice.CellIdentifierAndCELevelForCECapableUEs = ;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(13, 0, 0)) */
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(12, 0, 0)) */
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
     S1AP_ERROR("Failed to encode UE context release complete\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_S1AP_ENB,
-    MSC_S1AP_MME,
-    buffer,
-    length,
-    MSC_AS_TIME_FMT" UEContextRelease successfulOutcome eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-    0,0, //MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_release_complete_p->eNB_ue_s1ap_id,
-    ue_context_p->mme_ue_s1ap_id);
 
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,
@@ -228,7 +177,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_MME_UE_S1AP_ID;
   ie->value.choice.MME_UE_S1AP_ID = ue_context_p->mme_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
@@ -236,7 +185,7 @@ int s1ap_ue_context_release_req(instance_t instance,
   ie->criticality = S1AP_Criticality_reject;
   ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_ENB_UE_S1AP_ID;
   ie->value.choice.ENB_UE_S1AP_ID = ue_release_req_p->eNB_ue_s1ap_id;
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
   /* mandatory */
   ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
@@ -276,35 +225,15 @@ int s1ap_ue_context_release_req(instance_t instance,
       break;
   }
 
-  ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
+  asn1cSeqAdd(&out->protocolIEs.list, ie);
 
-  /* optional */
-#if (S1AP_VERSION >= MAKE_VERSION(10, 0, 0))
-  if (0) {
-    ie = (S1AP_UEContextReleaseRequest_IEs_t *)calloc(1, sizeof(S1AP_UEContextReleaseRequest_IEs_t));
-    ie->id = S1AP_ProtocolIE_ID_id_GWContextReleaseIndication;
-    ie->criticality = S1AP_Criticality_reject;
-    ie->value.present = S1AP_UEContextReleaseRequest_IEs__value_PR_GWContextReleaseIndication;
-    ie->value.choice.GWContextReleaseIndication = TRUE;
-    ASN_SEQUENCE_ADD(&out->protocolIEs.list, ie);
-  }
-#endif /* #if (S1AP_VERSION >= MAKE_VERSION(10, 0, 0)) */
+
 
   if (s1ap_eNB_encode_pdu(&pdu, &buffer, &length) < 0) {
     /* Encode procedure has failed... */
     S1AP_ERROR("Failed to encode UE context release complete\n");
     return -1;
   }
-
-  MSC_LOG_TX_MESSAGE(
-    MSC_S1AP_ENB,
-    MSC_S1AP_MME,
-    buffer,
-    length,
-    MSC_AS_TIME_FMT" UEContextReleaseRequest initiatingMessage eNB_ue_s1ap_id %u mme_ue_s1ap_id %u",
-    0,0,//MSC_AS_TIME_ARGS(ctxt_pP),
-    ue_release_req_p->eNB_ue_s1ap_id,
-    ue_context_p->mme_ue_s1ap_id);
 
   /* UE associated signalling -> use the allocated stream */
   s1ap_eNB_itti_send_sctp_data_req(s1ap_eNB_instance_p->instance,

@@ -14,7 +14,7 @@
 #include "utils.h"
 #include "event_selector.h"
 #include "openair_logo.h"
-#include "config.h"
+#include "configuration.h"
 
 /****************************************************************************/
 /* conversion from rnti to "ue_id" (which does not really exists)           */

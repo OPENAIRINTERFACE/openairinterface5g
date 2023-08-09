@@ -1,0 +1,383 @@
+ SRS TEST 
+----------
+log init done
+Start lte_param_init, frame_type 0, extended_prefix 0
+[PHY][I][nr_init_frame_parms_ue] Initializing frame parms for mu 1, N_RB 106, Ncp 0
+Initializing UE vars (abstraction 0) for eNB TXant 1, UE RXant 1
+Ok: No detected differences for uplink reference sequences 
+Number of srs generations 491520
+srs period 1 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 1 
+test_srs_periodicity srs at frame 0 slot 2 
+test_srs_periodicity srs at frame 0 slot 3 
+test_srs_periodicity srs at frame 0 slot 4 
+test_srs_periodicity srs at frame 0 slot 5 
+test_srs_periodicity srs at frame 0 slot 6 
+test_srs_periodicity srs at frame 0 slot 7 
+test_srs_periodicity srs at frame 0 slot 8 
+test_srs_periodicity srs at frame 0 slot 9 
+srs period 1 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 1 
+test_srs_periodicity srs at frame 0 slot 2 
+test_srs_periodicity srs at frame 0 slot 3 
+test_srs_periodicity srs at frame 0 slot 4 
+test_srs_periodicity srs at frame 0 slot 5 
+test_srs_periodicity srs at frame 0 slot 6 
+test_srs_periodicity srs at frame 0 slot 7 
+test_srs_periodicity srs at frame 0 slot 8 
+test_srs_periodicity srs at frame 0 slot 9 
+srs period 2 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 2 
+test_srs_periodicity srs at frame 0 slot 4 
+test_srs_periodicity srs at frame 0 slot 6 
+test_srs_periodicity srs at frame 0 slot 8 
+test_srs_periodicity srs at frame 1 slot 0 
+test_srs_periodicity srs at frame 1 slot 2 
+test_srs_periodicity srs at frame 1 slot 4 
+test_srs_periodicity srs at frame 1 slot 6 
+test_srs_periodicity srs at frame 1 slot 8 
+srs period 2 offset 1 
+test_srs_periodicity srs at frame 0 slot 1 
+test_srs_periodicity srs at frame 0 slot 3 
+test_srs_periodicity srs at frame 0 slot 5 
+test_srs_periodicity srs at frame 0 slot 7 
+test_srs_periodicity srs at frame 0 slot 9 
+test_srs_periodicity srs at frame 1 slot 1 
+test_srs_periodicity srs at frame 1 slot 3 
+test_srs_periodicity srs at frame 1 slot 5 
+test_srs_periodicity srs at frame 1 slot 7 
+test_srs_periodicity srs at frame 1 slot 9 
+srs period 4 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 4 
+test_srs_periodicity srs at frame 0 slot 8 
+test_srs_periodicity srs at frame 1 slot 2 
+test_srs_periodicity srs at frame 1 slot 6 
+test_srs_periodicity srs at frame 2 slot 0 
+test_srs_periodicity srs at frame 2 slot 4 
+test_srs_periodicity srs at frame 2 slot 8 
+test_srs_periodicity srs at frame 3 slot 2 
+test_srs_periodicity srs at frame 3 slot 6 
+srs period 4 offset 3 
+test_srs_periodicity srs at frame 0 slot 3 
+test_srs_periodicity srs at frame 0 slot 7 
+test_srs_periodicity srs at frame 1 slot 1 
+test_srs_periodicity srs at frame 1 slot 5 
+test_srs_periodicity srs at frame 1 slot 9 
+test_srs_periodicity srs at frame 2 slot 3 
+test_srs_periodicity srs at frame 2 slot 7 
+test_srs_periodicity srs at frame 3 slot 1 
+test_srs_periodicity srs at frame 3 slot 5 
+test_srs_periodicity srs at frame 3 slot 9 
+srs period 5 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 5 
+test_srs_periodicity srs at frame 1 slot 0 
+test_srs_periodicity srs at frame 1 slot 5 
+test_srs_periodicity srs at frame 2 slot 0 
+test_srs_periodicity srs at frame 2 slot 5 
+test_srs_periodicity srs at frame 3 slot 0 
+test_srs_periodicity srs at frame 3 slot 5 
+test_srs_periodicity srs at frame 4 slot 0 
+test_srs_periodicity srs at frame 4 slot 5 
+srs period 5 offset 4 
+test_srs_periodicity srs at frame 0 slot 4 
+test_srs_periodicity srs at frame 0 slot 9 
+test_srs_periodicity srs at frame 1 slot 4 
+test_srs_periodicity srs at frame 1 slot 9 
+test_srs_periodicity srs at frame 2 slot 4 
+test_srs_periodicity srs at frame 2 slot 9 
+test_srs_periodicity srs at frame 3 slot 4 
+test_srs_periodicity srs at frame 3 slot 9 
+test_srs_periodicity srs at frame 4 slot 4 
+test_srs_periodicity srs at frame 4 slot 9 
+srs period 8 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 0 slot 8 
+test_srs_periodicity srs at frame 1 slot 6 
+test_srs_periodicity srs at frame 2 slot 4 
+test_srs_periodicity srs at frame 3 slot 2 
+test_srs_periodicity srs at frame 4 slot 0 
+test_srs_periodicity srs at frame 4 slot 8 
+test_srs_periodicity srs at frame 5 slot 6 
+test_srs_periodicity srs at frame 6 slot 4 
+test_srs_periodicity srs at frame 7 slot 2 
+srs period 8 offset 7 
+test_srs_periodicity srs at frame 0 slot 7 
+test_srs_periodicity srs at frame 1 slot 5 
+test_srs_periodicity srs at frame 2 slot 3 
+test_srs_periodicity srs at frame 3 slot 1 
+test_srs_periodicity srs at frame 3 slot 9 
+test_srs_periodicity srs at frame 4 slot 7 
+test_srs_periodicity srs at frame 5 slot 5 
+test_srs_periodicity srs at frame 6 slot 3 
+test_srs_periodicity srs at frame 7 slot 1 
+test_srs_periodicity srs at frame 7 slot 9 
+srs period 10 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 1 slot 0 
+test_srs_periodicity srs at frame 2 slot 0 
+test_srs_periodicity srs at frame 3 slot 0 
+test_srs_periodicity srs at frame 4 slot 0 
+test_srs_periodicity srs at frame 5 slot 0 
+test_srs_periodicity srs at frame 6 slot 0 
+test_srs_periodicity srs at frame 7 slot 0 
+test_srs_periodicity srs at frame 8 slot 0 
+test_srs_periodicity srs at frame 9 slot 0 
+srs period 10 offset 9 
+test_srs_periodicity srs at frame 0 slot 9 
+test_srs_periodicity srs at frame 1 slot 9 
+test_srs_periodicity srs at frame 2 slot 9 
+test_srs_periodicity srs at frame 3 slot 9 
+test_srs_periodicity srs at frame 4 slot 9 
+test_srs_periodicity srs at frame 5 slot 9 
+test_srs_periodicity srs at frame 6 slot 9 
+test_srs_periodicity srs at frame 7 slot 9 
+test_srs_periodicity srs at frame 8 slot 9 
+test_srs_periodicity srs at frame 9 slot 9 
+srs period 16 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 1 slot 6 
+test_srs_periodicity srs at frame 3 slot 2 
+test_srs_periodicity srs at frame 4 slot 8 
+test_srs_periodicity srs at frame 6 slot 4 
+test_srs_periodicity srs at frame 8 slot 0 
+test_srs_periodicity srs at frame 9 slot 6 
+test_srs_periodicity srs at frame 11 slot 2 
+test_srs_periodicity srs at frame 12 slot 8 
+test_srs_periodicity srs at frame 14 slot 4 
+srs period 16 offset 15 
+test_srs_periodicity srs at frame 1 slot 5 
+test_srs_periodicity srs at frame 3 slot 1 
+test_srs_periodicity srs at frame 4 slot 7 
+test_srs_periodicity srs at frame 6 slot 3 
+test_srs_periodicity srs at frame 7 slot 9 
+test_srs_periodicity srs at frame 9 slot 5 
+test_srs_periodicity srs at frame 11 slot 1 
+test_srs_periodicity srs at frame 12 slot 7 
+test_srs_periodicity srs at frame 14 slot 3 
+test_srs_periodicity srs at frame 15 slot 9 
+srs period 20 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 2 slot 0 
+test_srs_periodicity srs at frame 4 slot 0 
+test_srs_periodicity srs at frame 6 slot 0 
+test_srs_periodicity srs at frame 8 slot 0 
+test_srs_periodicity srs at frame 10 slot 0 
+test_srs_periodicity srs at frame 12 slot 0 
+test_srs_periodicity srs at frame 14 slot 0 
+test_srs_periodicity srs at frame 16 slot 0 
+test_srs_periodicity srs at frame 18 slot 0 
+srs period 20 offset 19 
+test_srs_periodicity srs at frame 1 slot 9 
+test_srs_periodicity srs at frame 3 slot 9 
+test_srs_periodicity srs at frame 5 slot 9 
+test_srs_periodicity srs at frame 7 slot 9 
+test_srs_periodicity srs at frame 9 slot 9 
+test_srs_periodicity srs at frame 11 slot 9 
+test_srs_periodicity srs at frame 13 slot 9 
+test_srs_periodicity srs at frame 15 slot 9 
+test_srs_periodicity srs at frame 17 slot 9 
+test_srs_periodicity srs at frame 19 slot 9 
+srs period 32 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 3 slot 2 
+test_srs_periodicity srs at frame 6 slot 4 
+test_srs_periodicity srs at frame 9 slot 6 
+test_srs_periodicity srs at frame 12 slot 8 
+test_srs_periodicity srs at frame 16 slot 0 
+test_srs_periodicity srs at frame 19 slot 2 
+test_srs_periodicity srs at frame 22 slot 4 
+test_srs_periodicity srs at frame 25 slot 6 
+test_srs_periodicity srs at frame 28 slot 8 
+srs period 32 offset 31 
+test_srs_periodicity srs at frame 3 slot 1 
+test_srs_periodicity srs at frame 6 slot 3 
+test_srs_periodicity srs at frame 9 slot 5 
+test_srs_periodicity srs at frame 12 slot 7 
+test_srs_periodicity srs at frame 15 slot 9 
+test_srs_periodicity srs at frame 19 slot 1 
+test_srs_periodicity srs at frame 22 slot 3 
+test_srs_periodicity srs at frame 25 slot 5 
+test_srs_periodicity srs at frame 28 slot 7 
+test_srs_periodicity srs at frame 31 slot 9 
+srs period 40 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 4 slot 0 
+test_srs_periodicity srs at frame 8 slot 0 
+test_srs_periodicity srs at frame 12 slot 0 
+test_srs_periodicity srs at frame 16 slot 0 
+test_srs_periodicity srs at frame 20 slot 0 
+test_srs_periodicity srs at frame 24 slot 0 
+test_srs_periodicity srs at frame 28 slot 0 
+test_srs_periodicity srs at frame 32 slot 0 
+test_srs_periodicity srs at frame 36 slot 0 
+srs period 40 offset 39 
+test_srs_periodicity srs at frame 3 slot 9 
+test_srs_periodicity srs at frame 7 slot 9 
+test_srs_periodicity srs at frame 11 slot 9 
+test_srs_periodicity srs at frame 15 slot 9 
+test_srs_periodicity srs at frame 19 slot 9 
+test_srs_periodicity srs at frame 23 slot 9 
+test_srs_periodicity srs at frame 27 slot 9 
+test_srs_periodicity srs at frame 31 slot 9 
+test_srs_periodicity srs at frame 35 slot 9 
+test_srs_periodicity srs at frame 39 slot 9 
+srs period 64 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 6 slot 4 
+test_srs_periodicity srs at frame 12 slot 8 
+test_srs_periodicity srs at frame 19 slot 2 
+test_srs_periodicity srs at frame 25 slot 6 
+test_srs_periodicity srs at frame 32 slot 0 
+test_srs_periodicity srs at frame 38 slot 4 
+test_srs_periodicity srs at frame 44 slot 8 
+test_srs_periodicity srs at frame 51 slot 2 
+test_srs_periodicity srs at frame 57 slot 6 
+srs period 64 offset 63 
+test_srs_periodicity srs at frame 6 slot 3 
+test_srs_periodicity srs at frame 12 slot 7 
+test_srs_periodicity srs at frame 19 slot 1 
+test_srs_periodicity srs at frame 25 slot 5 
+test_srs_periodicity srs at frame 31 slot 9 
+test_srs_periodicity srs at frame 38 slot 3 
+test_srs_periodicity srs at frame 44 slot 7 
+test_srs_periodicity srs at frame 51 slot 1 
+test_srs_periodicity srs at frame 57 slot 5 
+test_srs_periodicity srs at frame 63 slot 9 
+srs period 80 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 8 slot 0 
+test_srs_periodicity srs at frame 16 slot 0 
+test_srs_periodicity srs at frame 24 slot 0 
+test_srs_periodicity srs at frame 32 slot 0 
+test_srs_periodicity srs at frame 40 slot 0 
+test_srs_periodicity srs at frame 48 slot 0 
+test_srs_periodicity srs at frame 56 slot 0 
+test_srs_periodicity srs at frame 64 slot 0 
+test_srs_periodicity srs at frame 72 slot 0 
+srs period 80 offset 79 
+test_srs_periodicity srs at frame 7 slot 9 
+test_srs_periodicity srs at frame 15 slot 9 
+test_srs_periodicity srs at frame 23 slot 9 
+test_srs_periodicity srs at frame 31 slot 9 
+test_srs_periodicity srs at frame 39 slot 9 
+test_srs_periodicity srs at frame 47 slot 9 
+test_srs_periodicity srs at frame 55 slot 9 
+test_srs_periodicity srs at frame 63 slot 9 
+test_srs_periodicity srs at frame 71 slot 9 
+test_srs_periodicity srs at frame 79 slot 9 
+srs period 160 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 16 slot 0 
+test_srs_periodicity srs at frame 32 slot 0 
+test_srs_periodicity srs at frame 48 slot 0 
+test_srs_periodicity srs at frame 64 slot 0 
+test_srs_periodicity srs at frame 80 slot 0 
+test_srs_periodicity srs at frame 96 slot 0 
+test_srs_periodicity srs at frame 112 slot 0 
+test_srs_periodicity srs at frame 128 slot 0 
+test_srs_periodicity srs at frame 144 slot 0 
+srs period 160 offset 159 
+test_srs_periodicity srs at frame 15 slot 9 
+test_srs_periodicity srs at frame 31 slot 9 
+test_srs_periodicity srs at frame 47 slot 9 
+test_srs_periodicity srs at frame 63 slot 9 
+test_srs_periodicity srs at frame 79 slot 9 
+test_srs_periodicity srs at frame 95 slot 9 
+test_srs_periodicity srs at frame 111 slot 9 
+test_srs_periodicity srs at frame 127 slot 9 
+test_srs_periodicity srs at frame 143 slot 9 
+test_srs_periodicity srs at frame 159 slot 9 
+srs period 320 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 32 slot 0 
+test_srs_periodicity srs at frame 64 slot 0 
+test_srs_periodicity srs at frame 96 slot 0 
+test_srs_periodicity srs at frame 128 slot 0 
+test_srs_periodicity srs at frame 160 slot 0 
+test_srs_periodicity srs at frame 192 slot 0 
+test_srs_periodicity srs at frame 224 slot 0 
+test_srs_periodicity srs at frame 256 slot 0 
+test_srs_periodicity srs at frame 288 slot 0 
+srs period 320 offset 319 
+test_srs_periodicity srs at frame 31 slot 9 
+test_srs_periodicity srs at frame 63 slot 9 
+test_srs_periodicity srs at frame 95 slot 9 
+test_srs_periodicity srs at frame 127 slot 9 
+test_srs_periodicity srs at frame 159 slot 9 
+test_srs_periodicity srs at frame 191 slot 9 
+test_srs_periodicity srs at frame 223 slot 9 
+test_srs_periodicity srs at frame 255 slot 9 
+test_srs_periodicity srs at frame 287 slot 9 
+test_srs_periodicity srs at frame 319 slot 9 
+srs period 640 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 64 slot 0 
+test_srs_periodicity srs at frame 128 slot 0 
+test_srs_periodicity srs at frame 192 slot 0 
+test_srs_periodicity srs at frame 256 slot 0 
+test_srs_periodicity srs at frame 320 slot 0 
+test_srs_periodicity srs at frame 384 slot 0 
+test_srs_periodicity srs at frame 448 slot 0 
+test_srs_periodicity srs at frame 512 slot 0 
+test_srs_periodicity srs at frame 576 slot 0 
+srs period 640 offset 639 
+test_srs_periodicity srs at frame 63 slot 9 
+test_srs_periodicity srs at frame 127 slot 9 
+test_srs_periodicity srs at frame 191 slot 9 
+test_srs_periodicity srs at frame 255 slot 9 
+test_srs_periodicity srs at frame 319 slot 9 
+test_srs_periodicity srs at frame 383 slot 9 
+test_srs_periodicity srs at frame 447 slot 9 
+test_srs_periodicity srs at frame 511 slot 9 
+test_srs_periodicity srs at frame 575 slot 9 
+test_srs_periodicity srs at frame 639 slot 9 
+srs period 1280 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 128 slot 0 
+test_srs_periodicity srs at frame 256 slot 0 
+test_srs_periodicity srs at frame 384 slot 0 
+test_srs_periodicity srs at frame 512 slot 0 
+test_srs_periodicity srs at frame 640 slot 0 
+test_srs_periodicity srs at frame 768 slot 0 
+test_srs_periodicity srs at frame 896 slot 0 
+test_srs_periodicity srs at frame 1024 slot 0 
+test_srs_periodicity srs at frame 1152 slot 0 
+srs period 1280 offset 1279 
+test_srs_periodicity srs at frame 127 slot 9 
+test_srs_periodicity srs at frame 255 slot 9 
+test_srs_periodicity srs at frame 383 slot 9 
+test_srs_periodicity srs at frame 511 slot 9 
+test_srs_periodicity srs at frame 639 slot 9 
+test_srs_periodicity srs at frame 767 slot 9 
+test_srs_periodicity srs at frame 895 slot 9 
+test_srs_periodicity srs at frame 1023 slot 9 
+test_srs_periodicity srs at frame 1151 slot 9 
+test_srs_periodicity srs at frame 1279 slot 9 
+srs period 2560 offset 0 
+test_srs_periodicity srs at frame 0 slot 0 
+test_srs_periodicity srs at frame 256 slot 0 
+test_srs_periodicity srs at frame 512 slot 0 
+test_srs_periodicity srs at frame 768 slot 0 
+test_srs_periodicity srs at frame 1024 slot 0 
+test_srs_periodicity srs at frame 1280 slot 0 
+test_srs_periodicity srs at frame 1536 slot 0 
+test_srs_periodicity srs at frame 1792 slot 0 
+test_srs_periodicity srs at frame 2048 slot 0 
+test_srs_periodicity srs at frame 2304 slot 0 
+srs period 2560 offset 2559 
+test_srs_periodicity srs at frame 255 slot 9 
+test_srs_periodicity srs at frame 511 slot 9 
+test_srs_periodicity srs at frame 767 slot 9 
+test_srs_periodicity srs at frame 1023 slot 9 
+test_srs_periodicity srs at frame 1279 slot 9 
+test_srs_periodicity srs at frame 1535 slot 9 
+test_srs_periodicity srs at frame 1791 slot 9 
+test_srs_periodicity srs at frame 2047 slot 9 
+test_srs_periodicity srs at frame 2303 slot 9 
+test_srs_periodicity srs at frame 2559 slot 9 
+Test NR SRS is pass 

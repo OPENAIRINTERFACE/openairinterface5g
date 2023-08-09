@@ -1,0 +1,85 @@
+#/*
+# * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# * contributor license agreements.  See the NOTICE file distributed with
+# * this work for additional information regarding copyright ownership.
+# * The OpenAirInterface Software Alliance licenses this file to You under
+# * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# * except in compliance with the License.
+# * You may obtain a copy of the License at
+# *
+# *      http://www.openairinterface.org/?page_id=698
+# *
+# * Unless required by applicable law or agreed to in writing, software
+# * distributed under the License is distributed on an "AS IS" BASIS,
+# * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# * See the License for the specific language governing permissions and
+# * limitations under the License.
+# *-------------------------------------------------------------------------------
+# * For more information about the OpenAirInterface (OAI) Software Alliance:
+# *      contact@openairinterface.org
+# */
+#---------------------------------------------------------------------
+#
+# Dockerfile for the Open-Air-Interface BUILD service
+#   Valid for Ubuntu18.04
+#
+#---------------------------------------------------------------------
+
+FROM ran-base:latest AS gnb-base
+
+FROM ran-build:latest AS gnb-build
+
+COPY ./libori.so /usr/local/lib/
+
+# build AW2S fronthaul lib
+WORKDIR /oai-ran
+RUN /bin/sh oaienv && \
+    cd cmake_targets/ && \
+    ./build_oai -w AW2SORI -t Ethernet
+
+#start from scratch for target executable
+FROM ubuntu:bionic as oai-gnb-aw2s
+ENV DEBIAN_FRONTEND=noninteractive
+ENV TZ=Europe
+
+RUN apt-get update && \
+    DEBIAN_FRONTEND=noninteractive apt-get upgrade --yes && \
+    DEBIAN_FRONTEND=noninteractive apt-get install --yes \
+        procps \
+        libsctp1 \
+        tzdata \
+        libblas3 \
+        libatlas3-base \
+        libconfig9 \
+        openssl \
+        net-tools \
+        iproute2 \
+        iputils-ping  && \
+    rm -rf /var/lib/apt/lists/*
+
+COPY ./libori.so /usr/local/lib/
+
+WORKDIR /opt/oai-gnb-aw2s/bin
+COPY --from=gnb-build /oai-ran/cmake_targets/ran_build/build/nr-softmodem ./
+COPY ./docker/scripts/gnb-aw2s_entrypoint.sh /opt/oai-gnb-aw2s/bin/entrypoint.sh
+
+COPY --from=gnb-build \
+    /oai-ran/cmake_targets/ran_build/build/liboai_eth_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/librfsimulator.so \
+    /oai-ran/cmake_targets/ran_build/build/libaw2sori_transpro.so \
+    /oai-ran/cmake_targets/ran_build/build/libcoding.so \
+    /oai-ran/cmake_targets/ran_build/build/libparams_libconfig.so \
+    /oai-ran/cmake_targets/ran_build/build/libdfts.so \
+    /oai-ran/cmake_targets/ran_build/build/libldpc*.so \
+    /oai-ran/cmake_targets/ran_build/build/libtelnetsrv.so \
+    /usr/local/lib/
+
+
+RUN /bin/bash -c "ln -s /usr/local/lib/libaw2sori_transpro.so /usr/local/lib/libthirdparty_transpro.so" && \
+    /bin/bash -c "ln -s /usr/local/lib/liboai_eth_transpro.so /usr/local/lib/liboai_transpro.so" && \
+    ldconfig
+
+WORKDIR /opt/oai-gnb-aw2s
+
+ENTRYPOINT ["/opt/oai-gnb-aw2s/bin/entrypoint.sh"]
+CMD ["/opt/oai-gnb-aw2s/bin/nr-softmodem", "-O", "/opt/oai-gnb-aw2s/etc/gnb.conf"]

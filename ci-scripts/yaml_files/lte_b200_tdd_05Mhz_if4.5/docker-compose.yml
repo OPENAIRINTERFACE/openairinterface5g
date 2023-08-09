@@ -1,0 +1,35 @@
+version: '3.8'
+
+services:
+    rru_tdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: lte-b200-rru-tdd-05Mhz-tm1
+        network_mode: "host"
+        environment:
+            USE_B2XX: 'yes'
+            USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - ../../conf_files/enb-rru.band40.usrpb210.tm1.conf:/opt/oai-enb/etc/enb.conf
+            - /dev:/dev
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5
+    rcc_tdd:
+        image: oai-enb:latest
+        privileged: true
+        container_name: lte-b200-rcc-tdd-05Mhz-tm1
+        network_mode: "host"
+        environment:
+            USE_ADDITIONAL_OPTIONS: --log_config.global_log_options level,nocolor,time,line_num,function
+        volumes:
+            - ../../conf_files/enb-rcc.band40.25prb.tm1.if4p5.fair-scheduler.conf:/opt/oai-enb/etc/enb.conf
+        healthcheck:
+            # pgrep does NOT work
+            test: /bin/bash -c "ps aux | grep -v grep | grep -c softmodem"
+            interval: 10s
+            timeout: 5s
+            retries: 5

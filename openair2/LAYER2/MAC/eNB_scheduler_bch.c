@@ -26,7 +26,6 @@
  * \email: navid.nikaein@eurecom.fr
  * \version 1.0
  * @ingroup _mac
-
  */
 
 #include "assertions.h"
@@ -36,8 +35,6 @@
 #include "common/utils/LOG/log.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 #include "UTIL/OPT/opt.h"
-#include "OCG.h"
-#include "OCG_extern.h"
 
 #include "RRC/LTE/rrc_extern.h"
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
@@ -45,9 +42,7 @@
 //#include "LAYER2/MAC/pre_processor.c"
 #include "pdcp.h"
 
-#if defined(ENABLE_ITTI)
-  #include "intertask_interface.h"
-#endif
+#include "intertask_interface.h"
 
 #define ENABLE_MAC_PAYLOAD_DEBUG
 #define DEBUG_eNB_SCHEDULER 1
@@ -59,21 +54,20 @@ extern RAN_CONTEXT_t RC;
 // NEED TO ADD schedule_SI_BR for SIB1_BR and SIB23_BR
 // CCE_allocation_infeasible to be done for EPDCCH/MPDCCH
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 
 #define size_Sj25 2
-int Sj25[size_Sj25] = { 0, 3 };
+static const int Sj25[size_Sj25] = {0, 3};
 
 #define size_Sj50 6
-int Sj50[size_Sj50] = { 0, 1, 2, 5, 6, 7 };
+static const int Sj50[size_Sj50] = {0, 1, 2, 5, 6, 7};
 
 #define size_Sj75 10
-int Sj75[size_Sj75] = { 0, 1, 2, 3, 4, 7, 8, 9, 10, 11 };
+static const int Sj75[size_Sj75] = {0, 1, 2, 3, 4, 7, 8, 9, 10, 11};
 
 #define size_Sj100 14
-int Sj100[size_Sj100] = { 0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15 };
+static const int Sj100[size_Sj100] = {0, 1, 2, 3, 4, 5, 6, 9, 10, 11, 12, 13, 14, 15};
 
-int SIB1_BR_TBS_table[6] = { 208, 256, 328, 504, 712, 936 };
+static const int SIB1_BR_TBS_table[6] = {208, 256, 328, 504, 712, 936};
 
 //------------------------------------------------------------------------------
 void
@@ -93,7 +87,7 @@ schedule_SIB1_MBMS(module_id_t module_idP,
   nfapi_tx_request_pdu_t *TX_req;
   nfapi_dl_config_request_body_t *dl_req;
   int m, i, N_S_NB;
-  int *Sj;
+  const int *Sj;
   int n_NB = 0;
   int TBS;
   int k = 0, rvidx;
@@ -201,7 +195,8 @@ schedule_SIB1_MBMS(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -316,7 +311,7 @@ schedule_SIB1_BR(module_id_t module_idP,
   nfapi_tx_request_pdu_t *TX_req;
   nfapi_dl_config_request_body_t *dl_req;
   int m, i, N_S_NB;
-  int *Sj;
+  const int *Sj;
   int n_NB = 0;
   int TBS;
   int k = 0, rvidx;
@@ -365,7 +360,7 @@ schedule_SIB1_BR(module_id_t module_idP,
                       N_RB_DL);
 
           if ((sfoffset == 1)
-              && ((subframeP != 0) || (subframeP != 5)))
+              && ((subframeP != 0) && (subframeP != 5)))
             continue;
           else if ((sfoffset == 0) && (foffset == 0)
                    && (subframeP != 4) && (subframeP != 9))
@@ -424,7 +419,8 @@ schedule_SIB1_BR(module_id_t module_idP,
     // Note: definition of k above and rvidx from 36.321 section 5.3.1
     rvidx = (((3 * k) >> 1) + (k & 1)) & 3;
     i = cc->SIB1_BR_cnt & (m - 1);
-    n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
+    if(Sj)
+      n_NB = Sj[((cc->physCellId % N_S_NB) + (i * N_S_NB / m)) % N_S_NB];
     bcch_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, BCCH_SIB1_BR, 0xFFFF, 1, &cc->BCCH_BR_pdu[0].payload[0], 0);  // not used in this case
     AssertFatal(cc->mib->message.schedulingInfoSIB1_BR_r13 < 19,
                 "schedulingInfoSIB1_BR_r13 %d > 18\n",
@@ -519,10 +515,10 @@ schedule_SIB1_BR(module_id_t module_idP,
   }
 }
 
-int si_WindowLength_BR_r13tab[LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] = { 20, 40, 60, 80, 120, 160, 200 };
-int si_TBS_r13tab[LTE_SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = { 152, 208, 256, 328, 408, 504, 600, 712, 808, 936 };
-
-int si_WindowLength_MBMS_r14tab[8] = { 1, 2, 5, 10, 15, 20, 40, 80 };
+static const int si_WindowLength_BR_r13tab
+    [LTE_SystemInformationBlockType1_v1310_IEs__bandwidthReducedAccessRelatedInfo_r13__si_WindowLength_BR_r13_spare] =
+        {20, 40, 60, 80, 120, 160, 200};
+static const int si_TBS_r13tab[LTE_SchedulingInfo_BR_r13__si_TBS_r13_b936 + 1] = {152, 208, 256, 328, 408, 504, 600, 712, 808, 936};
 
 //------------------------------------------------------------------------------
 void
@@ -584,7 +580,7 @@ schedule_SI_BR(module_id_t module_idP, frame_t frameP,
         long si_Narrowband_r13 = schedulingInfoList_BR_r13->list.array[i]->si_Narrowband_r13;
         long si_TBS_r13 = si_TBS_r13tab[schedulingInfoList_BR_r13->list.array[i]->si_TBS_r13];
         // check if the SI is to be scheduled now
-        int period_in_sf;
+        int period_in_sf = 0;
 
         if ((si_Periodicity >= 0) && (si_Periodicity < 25)) {
           // 2^i * 80 subframes, note: si_Periodicity is 2^i * 80ms
@@ -733,6 +729,7 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
   if (subframeP == 0) {
     for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
       cc = &eNB->common_channels[CC_id];
+      //printf("*cc->sib1_MBMS->si_WindowLength_r14 %d \n", *cc->sib1_MBMS->si_WindowLength_r14);
       vrb_map = (void *) &cc->vrb_map;
       N_RB_DL = to_prb(cc->mib->message.dl_Bandwidth);
       dl_config_request = &eNB->DL_req[CC_id];
@@ -908,13 +905,69 @@ schedule_SI_MBMS(module_id_t module_idP, frame_t frameP,
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   //schedule_SIB1_BR(module_idP, frameP, subframeP);
   //schedule_SI_BR(module_idP, frameP, subframeP);
-#endif
   stop_meas(&eNB->schedule_si_mbms);
 }
-#endif
+
+void
+schedule_fembms_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
+  eNB_MAC_INST *eNB = RC.mac[module_idP];
+  COMMON_channels_t *cc;
+  nfapi_dl_config_request_pdu_t *dl_config_pdu;
+  nfapi_tx_request_pdu_t *TX_req;
+  int mib_sdu_length;
+  int CC_id;
+  nfapi_dl_config_request_t *dl_config_request;
+  nfapi_dl_config_request_body_t *dl_req;
+  uint16_t sfn_sf = frameP << 4 | subframeP;
+  AssertFatal(subframeP == 0, "Subframe must be 0\n");
+  AssertFatal((frameP & 15) == 0, "Frame must be a multiple of 16\n");
+
+  for (CC_id = 0; CC_id < MAX_NUM_CCs; CC_id++) {
+    dl_config_request = &eNB->DL_req[CC_id];
+    dl_req = &dl_config_request->dl_config_request_body;
+    cc = &eNB->common_channels[CC_id];
+    mib_sdu_length = mac_rrc_data_req(module_idP, CC_id, frameP, MIBCH_MBMS, 0xFFFF, 1, &cc->MIB_pdu.payload[0], 0); // not used in this case
+    LOG_D(MAC, "Frame %d, subframe %d: BCH PDU length %d\n", frameP, subframeP, mib_sdu_length);
+
+    if (mib_sdu_length > 0) {
+      LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
+
+      if ((frameP & 1023) < 40)
+        LOG_D(MAC,
+              "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
+              module_idP, frameP, CC_id, mib_sdu_length,
+              (int) cc->mib->message.schedulingInfoSIB1_BR_r13);
+
+      dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
+      memset((void *) dl_config_pdu, 0,
+             sizeof(nfapi_dl_config_request_pdu_t));
+      dl_config_pdu->pdu_type                                = NFAPI_DL_CONFIG_BCH_PDU_TYPE, dl_config_pdu->pdu_size =
+            2 + sizeof(nfapi_dl_config_bch_pdu);
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.tl.tag             = NFAPI_DL_CONFIG_REQUEST_BCH_PDU_REL8_TAG;
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.length             = mib_sdu_length;
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.pdu_index          = eNB->pdu_index[CC_id];
+      dl_config_pdu->bch_pdu.bch_pdu_rel8.transmission_power = 6000;
+      dl_req->tl.tag                                         = NFAPI_DL_CONFIG_REQUEST_BODY_TAG;
+      dl_req->number_pdu++;
+      dl_config_request->header.message_id = NFAPI_DL_CONFIG_REQUEST;
+      dl_config_request->sfn_sf = sfn_sf;
+      LOG_D(MAC, "eNB->DL_req[0].number_pdu %d (%p)\n", dl_req->number_pdu, &dl_req->number_pdu);
+      // DL request
+      TX_req = &eNB->TX_req[CC_id].tx_request_body.tx_pdu_list[eNB->TX_req[CC_id].tx_request_body.number_of_pdus];
+      TX_req->pdu_length = 3;
+      TX_req->pdu_index = eNB->pdu_index[CC_id]++;
+      TX_req->num_segments = 1;
+      TX_req->segments[0].segment_length = 3;
+      TX_req->segments[0].segment_data = cc[CC_id].MIB_pdu.payload;
+      eNB->TX_req[CC_id].tx_request_body.number_of_pdus++;
+      eNB->TX_req[CC_id].sfn_sf = sfn_sf;
+      eNB->TX_req[CC_id].tx_request_body.tl.tag = NFAPI_TX_REQUEST_BODY_TAG;
+      eNB->TX_req[CC_id].header.message_id = NFAPI_TX_REQUEST;
+    }
+  }
+}
 
 void
 schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
@@ -941,17 +994,11 @@ schedule_mib(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP) {
       LOG_D(MAC, "Frame %d, subframe %d: Adding BCH PDU in position %d (length %d)\n", frameP, subframeP, dl_req->number_pdu, mib_sdu_length);
 
       if ((frameP & 1023) < 40)
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
         LOG_D(MAC,
               "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes (cc->mib->message.schedulingInfoSIB1_BR_r13 %d)\n",
               module_idP, frameP, CC_id, mib_sdu_length,
               (int) cc->mib->message.schedulingInfoSIB1_BR_r13);
 
-#else
-        LOG_D(MAC,
-              "[eNB %d] Frame %d : MIB->BCH  CC_id %d, Received %d bytes\n",
-              module_idP, frameP, CC_id, mib_sdu_length);
-#endif
       dl_config_pdu = &dl_req->dl_config_pdu_list[dl_req->number_pdu];
       memset((void *) dl_config_pdu, 0,
              sizeof(nfapi_dl_config_request_pdu_t));
@@ -1185,9 +1232,7 @@ schedule_SI(module_id_t module_idP, frame_t frameP, sub_frame_t subframeP)
     }
   }
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   schedule_SIB1_BR(module_idP, frameP, subframeP);
   schedule_SI_BR(module_idP, frameP, subframeP);
-#endif
   stop_meas(&eNB->schedule_si);
 }

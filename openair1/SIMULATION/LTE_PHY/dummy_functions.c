@@ -67,6 +67,11 @@ int ue_query_mch(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
 		 sub_frame_t subframe, uint8_t eNB_index,
 		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
 
+
+int ue_query_mch_fembms(module_id_t Mod_id, uint8_t CC_id, uint32_t frame,
+		 sub_frame_t subframe, uint8_t eNB_index,
+		 uint8_t * sync_area, uint8_t * mcch_active){ return(0);}
+
 void dl_phy_sync_success(module_id_t module_idP,
 			 frame_t frameP,
 			 unsigned char eNB_index, uint8_t first_sync){}
@@ -81,15 +86,11 @@ int8_t get_Po_NOMINAL_PUSCH(module_id_t module_idP, uint8_t CC_id) { return(0);}
 
 int8_t get_deltaP_rampup(module_id_t module_idP, uint8_t CC_id) { return(0);}
 
-void thread_top_init(char *thread_name,
-                     int affinity,
-                     uint64_t runtime,
-                     uint64_t deadline,
-                     uint64_t period) {}
-
 int oai_nfapi_hi_dci0_req(nfapi_hi_dci0_request_t *hi_dci0_req) { return(0);}
 int oai_nfapi_tx_req(nfapi_tx_request_t *tx_req) { return(0); }
 
 int oai_nfapi_dl_config_req(nfapi_dl_config_request_t *dl_config_req) { return(0); }
 int oai_nfapi_ue_release_req(nfapi_ue_release_request_t *release_req){ return(0); }
 int oai_nfapi_ul_config_req(nfapi_ul_config_request_t *ul_config_req) { return(0); }
+
+

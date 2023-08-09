@@ -555,7 +555,7 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
                                            32767-ue->ch_est_alpha,
                                            dl_ch-(ue->frame_parms.ofdm_symbol_size<<1),0,ue->frame_parms.ofdm_symbol_size);
       } else { // high_speed_flag == 1
-        if ((symbol == 0)) {
+        if (symbol == 0) {
           //      printf("Interpolating %d->0\n",4-ue->frame_parms.Ncp);
           //      dl_ch_prev = (int16_t *)&dl_ch_estimates[(p<<1)+aarx][(4-ue->frame_parms.Ncp)*(ue->frame_parms.ofdm_symbol_size)];
           if(((Ns>>1)!=0) || ( ((Ns>>1)==0) && interpolateS11S12)) {
@@ -657,35 +657,35 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
     }
   }
 
-  void (*idft)(int16_t *,int16_t *, int);
+  idft_size_idx_t idftsizeidx;
 
   switch (ue->frame_parms.ofdm_symbol_size) {
     case 128:
-      idft = idft128;
-      break;
-
-    case 256:
-      idft = idft256;
-      break;
-
-    case 512:
-      idft = idft512;
-      break;
-
-    case 1024:
-      idft = idft1024;
-      break;
-
-    case 1536:
-      idft = idft1536;
-      break;
-
-    case 2048:
-      idft = idft2048;
-      break;
-
-    default:
-      idft = idft512;
+      idftsizeidx = IDFT_128;
+      break;        
+                    
+    case 256:       
+      idftsizeidx = IDFT_256;
+      break;        
+                    
+    case 512:       
+      idftsizeidx = IDFT_512;
+      break;        
+                    
+    case 1024:      
+      idftsizeidx = IDFT_1024;
+      break;       
+                   
+    case 1536:     
+      idftsizeidx = IDFT_1536;
+      break;        
+                    
+    case 2048:      
+      idftsizeidx = IDFT_2048;
+      break;        
+                    
+    default:        
+      idftsizeidx = IDFT_512;
       break;
   }
 
@@ -695,13 +695,13 @@ int lte_dl_channel_estimation(PHY_VARS_UE *ue,
       for (p=0; p<ue->frame_parms.nb_antenna_ports_eNB; p++) {
         if (ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx]) {
           //LOG_I(PHY,"Channel Impulse Computation Slot %d ThreadId %d Symbol %d \n", Ns, ue->current_thread_id[Ns>>1], l);
-          idft((int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
+          idft(idftsizeidx,(int16_t *) &ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates[eNB_offset][(p<<1)+aarx][8],
                (int16_t *) ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][(p<<1)+aarx],1);
         }
       }
   }
 
-  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id),
+  T(T_UE_PHY_DL_CHANNEL_ESTIMATE, T_INT(eNB_id), T_INT(0),
     T_INT(ue->proc.proc_rxtx[ue->current_thread_id[Ns>>1]].frame_rx%1024), T_INT(ue->proc.proc_rxtx[ue->current_thread_id[Ns>>1]].subframe_rx),
     T_INT(0), T_BUFFER(&ue->common_vars.common_vars_rx_data_per_thread[ue->current_thread_id[Ns>>1]].dl_ch_estimates_time[eNB_offset][0][0], 512  * 4));
   return(0);

@@ -26,8 +26,8 @@
  * \version 0.1
  */
 
-#ifndef M2AP_MCE_MANAGEMENT_PROCEDURES_H_
-#define M2AP_MCE_MANAGEMENT_PROCEDURES_H
+#ifndef __M2AP_MCE_MANAGEMENT_PROCEDURES__H__
+#define __M2AP_MCE_MANAGEMENT_PROCEDURES__H__
 
 void m2ap_MCE_prepare_internal_data(void);
 
@@ -51,4 +51,4 @@ struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p,
                                      int32_t assoc_id,
                                      uint16_t cnx_id);
 
-#endif /* M2AP_MCE_MANAGEMENT_PROCEDURES_H_ */
+#endif /* __M2AP_MCE_MANAGEMENT_PROCEDURES__H__ */

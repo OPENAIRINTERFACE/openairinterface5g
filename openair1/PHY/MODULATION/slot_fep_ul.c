@@ -20,8 +20,8 @@
  */
 
 #include "PHY/defs_eNB.h"
-#include "PHY/phy_extern.h"
-#include "modulation_eNB.h"
+//#include "PHY/phy_extern.h"
+//#include "modulation_eNB.h"
 //#define DEBUG_FEP
 
 
@@ -36,7 +36,7 @@ int slot_fep_ul(RU_t *ru,
 #endif
   unsigned char aa;
   RU_COMMON *common=&ru->common;
-  LTE_DL_FRAME_PARMS *fp = &ru->frame_parms;
+  LTE_DL_FRAME_PARMS *fp = ru->frame_parms;
   unsigned char symbol = l+((7-fp->Ncp)*(Ns&1)); ///symbol within sub-frame
   unsigned int nb_prefix_samples = (no_prefix ? 0 : fp->nb_prefix_samples);
   unsigned int nb_prefix_samples0 = (no_prefix ? 0 : fp->nb_prefix_samples0);
@@ -44,7 +44,7 @@ int slot_fep_ul(RU_t *ru,
   unsigned int slot_offset;
 
 
-  void (*dft)(int16_t *,int16_t *, int);
+  dft_size_idx_t dftsize;
 
   int tmp_dft_in[2048] __attribute__ ((aligned (32)));  // This is for misalignment issues for 6 and 15 PRBs
   unsigned int frame_length_samples = fp->samples_per_tti * 10;
@@ -52,31 +52,31 @@ int slot_fep_ul(RU_t *ru,
 
   switch (fp->ofdm_symbol_size) {
   case 128:
-    dft = dft128;
+    dftsize = DFT_128;
     break;
 
   case 256:
-    dft = dft256;
+    dftsize = DFT_256;
     break;
 
   case 512:
-    dft = dft512;
+    dftsize = DFT_512;
     break;
 
   case 1024:
-    dft = dft1024;
+    dftsize = DFT_1024;
     break;
 
   case 1536:
-    dft = dft1536;
+    dftsize = DFT_1536;
     break;
 
   case 2048:
-    dft = dft2048;
+    dftsize = DFT_2048;
     break;
 
   default:
-    dft = dft512;
+    dftsize = DFT_512;
     break;
   }
 
@@ -109,7 +109,7 @@ int slot_fep_ul(RU_t *ru,
       LOG_D(PHY,"slot_fep: symbol 0 %d dB\n",
 	    dB_fixed(signal_energy(&common->rxdata_7_5kHz[aa][rx_offset],fp->ofdm_symbol_size)));
 #endif
-      dft( (int16_t *)&common->rxdata_7_5kHz[aa][rx_offset],
+      dft( dftsize,(int16_t *)&common->rxdata_7_5kHz[aa][rx_offset],
            (int16_t *)&common->rxdataF[aa][fp->ofdm_symbol_size*symbol],
            1
          );
@@ -121,13 +121,13 @@ int slot_fep_ul(RU_t *ru,
         memcpy((void *)&tmp_dft_in,
 	       (void *)&common->rxdata_7_5kHz[aa][(rx_offset % frame_length_samples)],
 	       fp->ofdm_symbol_size*sizeof(int));
-        dft( (short *) tmp_dft_in,
+        dft( dftsize,(short *) tmp_dft_in,
              (short*)  &common->rxdataF[aa][fp->ofdm_symbol_size*symbol],
              1
            );
       }
       else{
-      dft( (short *)&common->rxdata_7_5kHz[aa][rx_offset],
+      dft( dftsize,(short *)&common->rxdata_7_5kHz[aa][rx_offset],
            (short*)&common->rxdataF[aa][fp->ofdm_symbol_size*symbol],
            1
          );

@@ -32,11 +32,8 @@
 #ifndef __DCI_NB_IOT_H__
 #define __DCI_NB_IOT_H__
 
-//#ifndef USER_MODE
-//#include "PHY/types.h"
-//#else
 #include <stdint.h>
-//#endif
+
 
 typedef enum 
 {

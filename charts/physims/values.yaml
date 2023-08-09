@@ -1,0 +1,39 @@
+# Default values for oai-physim.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+
+global:
+  serviceAccountName: oai-physim-sa
+  namespace: "OAICICD_PROJECT"
+  image: 
+    registry: local
+    repository: image-registry.openshift-image-registry.svc:5000/oaicicd-ran/oai-physim
+    version: TAG
+    # pullPolicy: IfNotPresent or Never or Always
+    pullPolicy: Always
+  # removing the node selector
+  nodeSelector: {}
+  # It is not a good way of assigning pods to the nodes: this way we bypass the scheduler. At the moment we don't provide the resource information of these pods.
+  # Therefore, Openshift assigns the pods to the same node because it thinks the pods don't consume much resources. This isn't the case, they consume a lot of resources.
+  nodeName:
+    dlsim100rbtm2: acamas
+    dlsimbasic: acamas
+    ldpctest: acamas
+    nrdlschsim: acamas
+    nrdlsimbasic: acamas
+    nrdlsimdmrsptrs: acamas
+    nrdlsimmcsmimo: acamas
+    nrdlsimoffset: dedale
+    nrpbschsim106rb: dedale
+    nrpbchsim217rb: dedale
+    nrpbchsim273rb: dedale
+    nrprachsim: dedale
+    nrpucchsim: dedale
+    nrulschsim: theseus
+    nrulsim3gpp: theseus
+    nrulsimmimo: theseus
+    nrulsimmisc: theseus
+    nrulsimscfdma: theseus
+    polartest: theseus
+    smallblocktest: theseus
+    ulsim: theseus

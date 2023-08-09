@@ -1,0 +1,11 @@
+.mat-tab-group {
+    margin-bottom: 10px;
+}
+.mat-ink-bar{
+    height: 8px !important;
+}
+.mat-tab-label-active 
+{
+    color: #000000 !important;
+} 
+

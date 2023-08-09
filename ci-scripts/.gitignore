@@ -1,3 +1,4 @@
+r*.raw
 enb_*.log
 ue_*.log
 ping_*.*
@@ -5,3 +6,5 @@ iperf_*.*
 phones_list.txt
 modules_list.txt
 test_results*.html
+pMain*
+__pycache__

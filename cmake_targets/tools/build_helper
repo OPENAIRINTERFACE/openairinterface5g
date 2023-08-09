@@ -32,15 +32,24 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
-  centos) OS_BASEDISTRO="fedora"; INSTALLER="yum --skip-broken"; CMAKE="cmake3" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
+  rocky)  OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
+  centos) OS_BASEDISTRO="centos"; INSTALLER="yum"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
   ubuntu) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
 esac
 KERNEL_VERSION=$(uname -r | cut -d '.' -f1)
 KERNEL_MAJOR=$(uname -r | cut -d '.' -f2)
 
-SUDO='sudo -E'
+#check if we run inside a container
+IS_CONTAINER=`egrep -c "docker|podman|kubepods|libpod|buildah" /proc/self/cgroup || true`
+#sudo is not needed when we are root
+if [ "$UID" = 0 ]
+then
+  SUDO=''
+else
+  SUDO='sudo -S -E'
+fi
 
 ###############################
 ## echo and  family
@@ -82,7 +91,6 @@ echo_info()    { cecho "$*" $blue         ;}
 # If we can't check the distribution, it returns "Unknown"
 # This function return always true as exit code by design
 # Examples:
-#   ubuntu16.04
 #   debian8.5
 get_distribution_release() {
     if [[ ! -z "$OS_DISTRO$OS_RELEASE" ]]; then
@@ -95,16 +103,39 @@ get_distribution_release() {
 check_supported_distribution() {
     local distribution=$(get_distribution_release)
     case "$distribution" in
+        "ubuntu23.10") return 0 ;;
+        "ubuntu22.04") return 0 ;;
+        "ubuntu21.04") return 0 ;;
+        "ubuntu20.04") return 0 ;;
         "ubuntu18.04") return 0 ;;
-        "ubuntu17.10") return 0 ;;
-        "ubuntu17.04") return 0 ;;
-        "ubuntu16.04") return 0 ;;
-        "ubuntu14.04") return 0 ;;
-        "fedora24")    return 0 ;;
+        "debian11")    return 0 ;;
+        "fedora36")    return 0 ;;
+        "fedora37")    return 0 ;;
         "rhel7")       return 0 ;;
-	"rhel7.6")     return 0 ;;
-	"rhel7.7")     return 0 ;;
+        "rhel7.6")     return 0 ;;
+        "rhel7.7")     return 0 ;;
+        "rhel7.8")     return 0 ;;
+        "rhel7.9")     return 0 ;;
+        "rhel8.2")     return 0 ;;
+        "rhel8.3")     return 0 ;;
+        "rhel8.4")     return 0 ;;
+        "rhel8.5")     return 0 ;;
+        "rhel8.6")     return 0 ;;
+        "rhel8.7")     return 0 ;;
+        "rhel8.8")     return 0 ;;
+        "rhel8.9")     return 0 ;;
+        "rhel9.0")     return 0 ;;
+        "rhel9.1")     return 0 ;;
+        "rhel9.2")     return 0 ;;
+        "rhel9.3")     return 0 ;;
         "centos7")     return 0 ;;
+        "centos8")     return 0 ;;
+        "rocky8.7")    return 0 ;;
+        "rocky8.8")    return 0 ;;
+        "rocky8.9")    return 0 ;;
+        "rocky9.1")    return 0 ;;
+        "rocky9.2")    return 0 ;;
+        "rocky9.3")    return 0 ;;
     esac
     return 1
 }
@@ -141,7 +172,6 @@ clean_kernel() {
     echo_info "Flushed iptables"
     $SUDO rmmod nasmesh > /dev/null 2>&1
     $SUDO rmmod oai_nw_drv  > /dev/null 2>&1
-    $SUDO rmmod openair_rf > /dev/null 2>&1
     $SUDO rmmod ue_ip > /dev/null 2>&1
     echo_info "removed drivers from kernel"
 }
@@ -149,8 +179,9 @@ clean_kernel() {
 clean_all_files() {
  set_openair_env
  dir=$OPENAIR_DIR/cmake_targets
- rm -rf $dir/log $OPENAIR_DIR/targets/bin/*
- rm -rf $dir/lte_build_oai $dir/lte-simulators/build
+ rm -rf $dir/ran_build $dir/ran_build_noLOG
+ rm -rf $dir/lte-simulators/build 
+ rm -rf $dir/nas_sim_tools/build 
  rm -rf $dir/oaisim_build_oai/build $dir/oaisim_build_oai/CMakeLists.txt
  rm -rf $dir/autotests/bin $dir/autotests/log $dir/autotests/*/build
 }
@@ -167,37 +198,52 @@ check_warnings() {
   #we look for 'warning:' in the compilation log file
   #this is how gcc starts a warning
   #this is not perfect, we may get false positive
-  warning_count=`grep "warning:" "$1"|wc -l`
+  warning_count=`grep "warning:" "$1" | egrep -v "jobserver unavailable|disabling jobserver mode" | wc -l`
   if [ $warning_count -gt 0 ]; then
     echo_error "WARNING: $warning_count warnings. See $1"
   fi
 }
 
+#check_errors:
+#    print error message if the compilation had errors
+#argument:
+#    $1: log file
+check_errors() {
+  #we look for 'error:' in the compilation log file
+  error_count=`grep -c "error:" "$1"`
+  if [ $error_count -gt 0 ]; then
+    echo_error "ERROR: $error_count error. See $1"
+  fi
+}
+
 compilations() {
-  cd $OPENAIR_DIR/cmake_targets/$1/build
+  [[ $# -gt 2 ]] || echo_fatal "compilations needs more than three arguments"
+  local dir=$1
+  shift 1
+  local logfile=$1
+  shift 1
+  local targets=$@
+  local verbose=$([ "$VERBOSE_COMPILE" == "1" ] && echo "-v" || echo "")
+  echo cd $OPENAIR_DIR/cmake_targets/$dir/build
+  cd $OPENAIR_DIR/cmake_targets/$dir/build
+  echo_info "Running \"cmake --build . $verbose --target $targets -- -j$(nproc)\"" $green
+  echo "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
-    rm -f $3
-    if [ "$BUILD_COVERITY_SCAN" == "1" ]; then
-        COV_SCAN_PREFIX="cov-build --dir cov-int"
-    else
-        COV_SCAN_PREFIX=""
-    fi
-    if [ "$VERBOSE_COMPILE" == "1" ]; then
-       $COV_SCAN_PREFIX make -j`nproc` $2 VERBOSE=$VERBOSE_COMPILE
-    else
-       $COV_SCAN_PREFIX make -j`nproc` $2
-    fi
-
-  } > $dlog/$2.$REL.txt 2>&1
-  set -e
-  echo_info "Log file for compilation has been written to: $dlog/$2.$REL.txt"
-  if [ -s $3 ] ; then
-     cp $3 $4
-     echo_success "$2 compiled"
-     check_warnings "$dlog/$2.$REL.txt"
+    cmake --build . $verbose --target $targets -- -j$(nproc)
+    ret=$?
+  } > $dlog/$logfile 2>&1
+  if [ "$VERBOSE_CI" == "1" ]; then
+     echo "====== Start of log for $logfile ======"
+     cat $dlog/$logfile
+     echo "====== End of log for $logfile ======"
+  fi
+  check_warnings "$dlog/$logfile"
+  if [[ $ret -eq 0 ]]; then
+     echo_success "$targets compiled"
   else
-     echo_error "$2 compilation failed"
+     check_errors "$dlog/$logfile"
+     echo_error "compilation of $targets failed"
      exit 1
   fi
 }
@@ -206,78 +252,88 @@ compilations() {
 # External packages installers
 ############################################
 
-install_protobuf_from_source(){
-    protobuf_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_install_log.txt
-    echo_info "\nInstalling Google Protobuf from sources. The log file for Protobuf installation is here: $protobuf_install_log "
-    (
-    cd /tmp
-    echo "Downloading protobuf"
-    #rm -rf /tmp/protobuf-2.6.1.tar.gz* /tmp/protobuf-2.6.1
-    #wget https://github.com/google/protobuf/releases/download/v2.6.1/protobuf-2.6.1.tar.gz
-    #tar -xzvf protobuf-2.6.1.tar.gz --owner $USER --group $USER --no-same-owner
-    #cd protobuf-2.6.1/
-    rm -rf /tmp/protobuf-cpp-3.3.0.tar.gz* /tmp/protobuf-3.3.0
-    wget https://github.com/google/protobuf/releases/download/v3.3.0/protobuf-cpp-3.3.0.tar.gz
-    tar -xzvf protobuf-cpp-3.3.0.tar.gz --owner $USER --group $(groups | cut -d" " -f1) --no-same-owner
-    cd protobuf-3.3.0/
-    ./configure
-    echo "Compiling protobuf"
-    make -j`nproc`
-    $SUDO make install
-    $SUDO ldconfig
-    ) >& $protobuf_install_log
-}
-
-install_protobuf_c_from_source(){
-    protobuf_c_install_log=$OPENAIR_DIR/cmake_targets/log/protobuf_c_install_log.txt
-    echo_info "\nInstalling Google Protobuf_C from sources. The log file for Protobuf_C installation is here: $protobuf_c_install_log "
-    (
-    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-        export PKG_CONFIG_PATH=/usr/local/lib/pkgconfig
-    fi
-    cd /tmp
-    echo "Downloading protobuf-c"
-    rm -rf /tmp/protobuf-c
-    git clone https://github.com/protobuf-c/protobuf-c.git
-    cd protobuf-c
-	git checkout 2a46af42784abf86804d536f6e0122d47cfeea45
-    ./autogen.sh
-    ./configure
-    echo "Compiling protobuf-c"
-    make -j`nproc`
-    $SUDO make install
-    $SUDO ldconfig
-    ) >& $protobuf_c_install_log
-}
-
 install_usrp_uhd_driver_from_source(){
     uhd_install_log=$OPENAIR_DIR/cmake_targets/log/uhd_install_log.txt
     echo_info "\nInstalling UHD driver from sources. The log file for UHD driver installation is here: $uhd_install_log "
     (
-    cd /tmp
-    echo "Downloading UHD driver"
+    pushd /tmp
+    echo "Cloning UHD driver repository"
     rm -rf /tmp/uhd
     git clone https://github.com/EttusResearch/uhd.git
     cd uhd
-    git checkout tags/v3.13.0.2
+    # For our legacy TDD eNB running with a B2xx RF board
+    # the following patch has to be applied
+    if [[ -v UHD_VERSION ]]; then
+        git checkout tags/v${UHD_VERSION}
+        # We recommend to use not older than 3.15.0.0
+        if [[ "$UHD_VERSION" == "3.15.0.0" ]]; then
+            # Tested that patch for the following versions:
+            # - 3.15.0.0
+            git apply $OPENAIR_DIR/cmake_targets/tools/uhd-3.15-tdd-patch.diff
+            ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
+        else
+            # Tested that patch for the following versions:
+            # - 4.0.0.0
+            # - 4.1.0.0
+            # - 4.1.0.5
+            # - 4.2.0.0
+            # - 4.2.0.1
+            # - 4.3.0.0-rc1
+            # - 4.4.0.0
+            git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
+            ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
+        fi
+    else
+        git checkout tags/v4.0.0.0
+        git apply $OPENAIR_DIR/cmake_targets/tools/uhd-4.x-tdd-patch.diff
+        ret=$?;[[ $ret -ne 0 ]] && echo_fatal "Could not apply the TDD patch"
+    fi
+    # Printing out the results of the patch to make sure it was properly applied
+    git diff
     mkdir -p host/build
-    cd host/build
-    $CMAKE ../
+    cd host/build || true
+    $CMAKE ../ -GNinja
     echo "Compiling UHD"
-    make -j`nproc`
-    make test
-    $SUDO make install
-    $SUDO ldconfig
+    ninja
+    $SUDO ninja install
+    $SUDO ldconfig -v
+    if [ $IS_CONTAINER -eq 0 ]; then
+        if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+            $SUDO /usr/local/lib/uhd/utils/uhd_images_downloader.py
+        fi
+        if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
+            $SUDO /usr/local/lib64/uhd/utils/uhd_images_downloader.py
+        fi
+    fi
+    popd
+    rm -rf /tmp/uhd
     ) >& $uhd_install_log
 }
 
 check_install_usrp_uhd_driver(){
-    if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+    if [[ "$OS_BASEDISTRO" == "debian" ]]; then
+        boost_libs_ubuntu="libboost-chrono-dev libboost-date-time-dev libboost-filesystem-dev libboost-program-options-dev libboost-thread-dev libboost-test-dev libboost-regex-dev"
         #first we remove old installation
-        $SUDO apt-get remove -y uhd || true
-        $SUDO apt-get remove libuhd-dev libuhd003 uhd-host -y || true
+        $SUDO apt-get remove uhd -y || true
+        $SUDO apt-get remove uhd-host -y || true
+        $SUDO apt-get remove libuhd-dev -y || true
+        $SUDO apt-get remove libuhd003 -y || true
+        $SUDO apt-get remove libuhd3.13.1 -y || true
+        $SUDO apt-get remove libuhd3.14.0 -y || true
+        $SUDO apt-get remove libuhd3.14.1 -y || true
+        $SUDO apt-get remove libuhd3.15.0 -y || true
+        local distribution=$(get_distribution_release)
+        if [[ "$distribution" == "ubuntu18.04" || "$distribution" == "ubuntu20.04" || "$distribution" == "ubuntu22.04" ]]; then
+            $SUDO apt-get remove libuhd4.0.0 -y || true
+            $SUDO apt-get remove libuhd4.1.0 -y || true
+        fi
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
+        if [[ -v BUILD_UHD_FROM_SOURCE ]] || [[ "$OS_DISTRO" == "debian" ]]; then
+            $SUDO apt-get install -y $boost_libs_ubuntu libusb-1.0-0-dev doxygen python3-docutils python3-mako python3-numpy python3-requests python3-setuptools ninja-build
+            install_usrp_uhd_driver_from_source
+            return
+        fi
         # The new USRP repository
         # Raphael Defosseux: Adding a loop on adding PPA because in CI the gpg key retrieve may
         # timeout due to proxy / network latencies in Eurecom on VM
@@ -296,14 +352,28 @@ check_install_usrp_uhd_driver(){
             x=$((x + 1))
         done
         $SUDO apt-get update
-        $SUDO apt-get -y --allow-unauthenticated install  python python-tk libboost-all-dev libusb-1.0-0-dev
-        $SUDO apt-get -y --allow-unauthenticated install libuhd-dev libuhd003 uhd-host
+        $SUDO apt-get -y install python-tk  $boost_libs_ubuntu libusb-1.0-0-dev
+        case "$(get_distribution_release)" in
+          "ubuntu18.04" | "ubuntu20.04" | "ubuntu22.04")
+            $SUDO apt-get -y install libuhd-dev libuhd4.4.0 uhd-host
+            ;;
+        esac
     elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-        $SUDO $INSTALLER -y install python boost libusb-devel libusbx-devel boost-devel python-mako python-docutils cmake
-        $SUDO pip install requests
-        if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
-            # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
-            $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+        boost_libs_fedora="boost-chrono boost-date-time boost-filesystem boost-program-options boost-thread boost-test boost-regex boost-devel"
+        if [ $IS_CONTAINER -eq 0 ]
+        then
+            $SUDO $INSTALLER -y install python3 $boost_libs_fedora libusb-devel libusbx-devel  python3-mako python3-docutils python3-pip $CMAKE
+            $SUDO pip3 install requests
+        else
+            $SUDO $INSTALLER -y install $boost_libs_fedora $CMAKE
+            $SUDO pip3 install mako requests
+        fi
+        if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
+            if [ $IS_CONTAINER -eq 0 ]
+            then
+                # until EPEL repo hasn't bumped UHD driver to >=3.10 in EPEL, build driver from source
+                $SUDO $INSTALLER -y remove uhd uhd-devel uhd-firmware
+            fi
             install_usrp_uhd_driver_from_source
         else
             $SUDO $INSTALLER -y install uhd uhd-devel uhd-firmware
@@ -320,13 +390,13 @@ install_usrp_uhd_driver() {
     # quick workaround for RHE7.6
     local distribution=$(get_distribution_release)
     if [ -z $1 ]; then
-      if [[ "$OS_DISTRO" == "rhel" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader
       else
           $SUDO uhd_images_downloader
       fi
     else
-      if [[ "$OS_DISTRO" == "rhel" ]]; then
+      if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
           $SUDO /usr/local/bin/uhd_images_downloader -i $1
       else
           $SUDO uhd_images_downloader -i $1
@@ -353,8 +423,10 @@ install_bladerf_driver_from_source(){
     $SUDO ldconfig
     echo "Downloading FPGA and firmware images"
     cd /tmp/bladeRF
-    wget https://www.nuand.com/fx3/bladeRF_fw_latest.img
-    wget https://www.nuand.com/fpga/hostedx40-latest.rbf
+    #wget has been removed from default dependencies, so we must be sure that's installed
+    $SUDO $INSTALLER -y install wget
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fx3/bladeRF_fw_latest.img
+    wget --tries=3 --retry-connrefused https://www.nuand.com/fpga/hostedx40-latest.rbf
     sudo mkdir -p /usr/share/Nuand/bladeRF
     sudo mv bladeRF_fw_latest.img /usr/share/Nuand/bladeRF/bladeRF_fw.img
     sudo mv hostedx40-latest.rbf /usr/share/Nuand/bladeRF/hostedx40.rbf
@@ -363,13 +435,9 @@ install_bladerf_driver_from_source(){
 
 check_install_bladerf_driver(){
     if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-        if [ "$(get_distribution_release)" == "ubuntu14.04" ] ; then
-            $SUDO add-apt-repository -y ppa:bladerf/bladerf
-            $SUDO apt-get update
-        fi
-        $SUDO apt-get install -y --allow-unauthenticated  bladerf libbladerf-dev
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-firmware-fx3
-        $SUDO apt-get install -y --allow-unauthenticated bladerf-fpga-hostedx40
+        $SUDO apt-get install -y  bladerf libbladerf-dev
+        $SUDO apt-get install -y bladerf-firmware-fx3
+        $SUDO apt-get install -y bladerf-fpga-hostedx40
    elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
         install_bladerf_driver_from_source
    else
@@ -402,7 +470,7 @@ install_soapy_from_source(){
     (
     cd /tmp
     echo "Downloading SoapySDR"
-    rm -rf /tmp/soapysdr
+    rm -rf /tmp/SoapySDR
     git clone -b soapy-sdr-0.7.0 --single-branch https://github.com/pothosware/SoapySDR.git
     cd SoapySDR
     #git checkout tags/release_003_010_001_001
@@ -415,13 +483,13 @@ install_soapy_from_source(){
     $SUDO ldconfig
     cd /tmp
     echo "Downloading SoapyRemote"
-    rm -rf /tmp/soapyremote
+    rm -rf /tmp/SoapyRemote
     git clone -b soapy-remote-0.5.0 --single-branch https://github.com/pothosware/SoapyRemote.git
     cd SoapyRemote
     #git checkout tags/release_003_010_001_001
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyRemote"
     make -j`nproc`
     $SUDO make install
@@ -440,7 +508,7 @@ install_soapy_iris_from_source(){
     cd sklk-soapyiris
     mkdir -p build
     cd build
-    cmake ../
+    $CMAKE ../
     echo "Compiling SoapyIris"
     make -j`nproc`
     $SUDO make install
@@ -461,119 +529,54 @@ check_install_soapy () {
     install_soapy_from_source
     #fi
     install_soapy_iris_from_source
+}
 
+# for ubuntu 18 we need a special repository (https://apt.kitware.com/) to install cmake >= 3.12
+add_cmake_repo () {
+  $SUDO $INSTALLER -y install wget
+  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | gpg --dearmor - | $SUDO tee /usr/share/keyrings/kitware-archive-keyring.gpg >/dev/null
+  echo 'deb [signed-by=/usr/share/keyrings/kitware-archive-keyring.gpg] https://apt.kitware.com/ubuntu/ bionic main' | $SUDO tee /etc/apt/sources.list.d/kitware.list >/dev/null
+  $SUDO $INSTALLER -y update
+  $SUDO rm /usr/share/keyrings/kitware-archive-keyring.gpg
+  $SUDO $INSTALLER -y install kitware-archive-keyring
 }
 
 check_install_additional_tools (){
   $SUDO $INSTALLER update -y
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
+  local optional_packages=""
+  if [[ "$OS_BASEDISTRO" == "debian" ]]; then
+    case "$(get_distribution_release)" in
+        "ubuntu18.04")
+            optional_packages="python-dev python-pip python-pyroute2 python python-numpy python-scipy python-matplotlib ctags"
+            ;;
+        "ubuntu20.04" | "ubuntu21.04" | "ubuntu22.04" | "debian11" )
+            optional_packages="python3 python3-pip python3-dev python3-scipy python3-matplotlib python3-pyroute2 universal-ctags"
+            ;;
+    esac
     PACKAGE_LIST="\
-	check \
-	dialog \
-	dkms \
-	gawk \
-	libboost-all-dev \
-	libpthread-stubs0-dev \
-	openvpn \
-	pkg-config \
-	python-dev  \
-	python-pexpect \
-	sshfs \
-	swig  \
-	tshark \
-	uml-utilities \
-	unzip  \
-	valgrind  \
-	vlan	  \
-	ctags \
-        ntpdate \
+        doxygen \
+        libgnutls28-dev \
+        libpthread-stubs0-dev \
+        libqt5charts5-dev \
+        tshark \
+        uml-utilities \
         iperf3 \
-        android-tools-adb \
-	wvdial \
-        python-numpy \
-        sshpass \
-        nscd \
-        bc \
-        ntp \
-        python-scipy \
-        python-matplotlib"
-  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+        libforms-bin \
+        libforms-dev \
+        libxft-dev \
+        xmlstarlet"
+  elif [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]] ||  [[ "$OS_DISTRO" == "fedora" ]]; then
     PACKAGE_LIST="\
-      check \
-      dialog \
-      dkms \
-      gawk \
-      boost-devel \
-      openvpn \
-      pkgconfig \
-      pexpect \
-      sshfs \
-      swig  \
-      wireshark \
-      unzip  \
-      valgrind  \
-      vconfig	  \
+      doxygen \
       ctags \
-      ntpdate \
       iperf3 \
-      wvdial \
-      numpy \
-      sshpass \
-      nscd \
-      python2-paramiko \
-      python-pyroute2 \
-      python-netifaces \
-      scipy \
-      python-matplotlib"
-  elif [[ "$OS_DISTRO" == "fedora" ]]; then
-    PACKAGE_LIST=" \
-      check \
-      dialog \
-      dkms \
-      gawk \
-      boost-devel \
-      openvpn \
-      pkgconfig \
-      python-pexpect \
-      sshfs \
-      swig  \
-      wireshark \
-      unzip  \
-      valgrind  \
-      vconfig	  \
-      ctags \
-      ntpdate \
-      iperf3 \
-      wvdial \
-      python-numpy \
-      sshpass \
-      nscd \
-      python2-paramiko \
-      python-pyroute2 \
-      python-netifaces \
-      python2-scipy \
-      python2-matplotlib"
+      gnutls-devel \
+      libXft-devel \
+      xforms \
+      xforms-devel \
+      xmlstarlet"
   fi
-    $SUDO $INSTALLER install -y $PACKAGE_LIST
-
-    $SUDO rm -fr /opt/ssh
-    $SUDO GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/ssh.git /opt/ssh
-
-  #The packages below are already installed for Redhat distros (RHEL, CentOS, Fedora)
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    $SUDO pip install paramiko
-    $SUDO pip install pyroute2 colorama
-    log_netiface=$OPENAIR_DIR/cmake_targets/log/netiface_install_log.txt
-    echo_info "Installing Netinterfaces package. The logfile for installation is in $log_netiface"
-    (
-    $SUDO rm -fr /tmp/netifaces-0.10.4.tar.gz /tmp/netifaces
-    wget -P /tmp  https://pypi.python.org/packages/18/fa/dd13d4910aea339c0bb87d2b3838d8fd923c11869b1f6e741dbd0ff3bc00/netifaces-0.10.4.tar.gz
-    tar -xzvf /tmp/netifaces-0.10.4.tar.gz -C /tmp
-    cd /tmp/netifaces-0.10.4
-    $SUDO python setup.py install
-    cd -
-    ) >& $log_netiface
-  fi
+    $SUDO $INSTALLER install -y $PACKAGE_LIST $optional_packages
 }
 
 check_install_oai_software() {
@@ -583,193 +586,111 @@ check_install_oai_software() {
         exit 1
     fi
     $SUDO $INSTALLER update -y
-  if [[ "$OS_DISTRO" == "ubuntu" ]]; then
-    local LAPACK_LIBNAME="liblapack.so"
-    local LAPACK_TARGET="/usr/lib/atlas-base/atlas/liblapack.so"
+  if [[ "$OS_BASEDISTRO" == "debian" ]]; then
     $SUDO apt install -y software-properties-common
     case "$(get_distribution_release)" in
-        "ubuntu14.04")
-            specific_packages="libtasn1-3-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
-            # For iperf3
-            $SUDO add-apt-repository "deb http://archive.ubuntu.com/ubuntu trusty-backports universe"
-            $SUDO apt-get update
-            ;;
-        "ubuntu16.04")
-            specific_packages="libtasn1-6-dev libgnutls-dev libatlas-dev iproute libconfig8-dev"
-            ;;
-        "ubuntu17.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev libatlas-dev iproute libconfig8-dev"
-            ;;
-        "ubuntu17.10")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute libconfig8-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
-            ;;
         "ubuntu18.04")
-            specific_packages="libtasn1-6-dev libgnutls28-dev iproute2 libconfig-dev"
-            LAPACK_LIBNAME="liblapack.so-x86_64-linux-gnu"
-            LAPACK_TARGET="/usr/lib/x86_64-linux-gnu/atlas/liblapack.so"
+            add_cmake_repo
+            specific_packages=""
+            ;;
+         "debian11")
+            specific_packages="libz-dev"
             ;;
     esac
     $SUDO apt-get install -y \
     $specific_packages \
-	autoconf  \
 	automake  \
-	bison  \
 	build-essential \
-	cmake \
-	cmake-curses-gui  \
-	doxygen \
-	doxygen-gui \
-	texlive-latex-base \
-	ethtool \
-	flex  \
-	gdb  \
+	$CMAKE \
+        ninja-build \
+	pkg-config \
 	git \
-	graphviz \
-	gtkwave \
-	guile-2.0-dev  \
-	iperf \
-	iptables \
-	iptables-dev \
 	libatlas-base-dev \
 	libblas-dev \
-  liblapack-dev\
-  liblapacke-dev\
-	libffi-dev \
-	libforms-bin \
-	libforms-dev \
-	libgcrypt11-dev \
-	libgmp-dev \
-	libgtk-3-dev \
-	libidn2-0-dev  \
-	libidn11-dev \
-	libmysqlclient-dev  \
-	libpython2.7-dev \
-	libsctp1  \
+	liblapack-dev \
+	liblapacke-dev \
+	libreadline-dev \
+	libconfig-dev \
 	libsctp-dev  \
 	libssl-dev  \
 	libtool  \
-	libusb-1.0-0-dev \
-	libxml2 \
-	libxml2-dev  \
-	libxslt1-dev \
-	mscgen  \
-	octave-signal \
-	openssh-client \
-	openssh-server \
+	patch \
 	openssl \
-	python  \
-	subversion \
-	xmlstarlet \
-	python-pip \
-	pydb \
-	libyaml-dev \
-	wget \
-	libxpm-dev \
-        libboost-all-dev
+        zlib1g-dev \
+        xxd
 
-    $SUDO update-alternatives --set "$LAPACK_LIBNAME" "$LAPACK_TARGET"
-
-    $SUDO apt-get install -y nettle-dev nettle-bin
   elif [[ "$OS_BASEDISTRO" == "fedora" ]]; then
-    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]]; then
+    if [[ "$OS_DISTRO" == "rhel" ]] || [[ "$OS_DISTRO" == "centos" ]] || [[ "$OS_DISTRO" == "rocky" ]]; then
       if rpm -q epel-release > /dev/null; then
         echo "EPEL repos already present. Good."
       else
         echo "EPEL repos not present. Installing them."
-        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-7.noarch.rpm
+        $SUDO $INSTALLER install -y https://dl.fedoraproject.org/pub/epel/epel-release-latest-9.noarch.rpm
       fi
-      $SUDO $INSTALLER install -y python-epdb vim-common
-    else
-      $SUDO $INSTALLER install -y mscgen pydb
     fi
 
     $SUDO $INSTALLER install -y \
-      autoconf \
       automake \
-      bc \
-      bison \
       $CMAKE \
-      doxygen \
-      ethtool \
-      flex \
-      gdb \
+      gcc \
+      gcc-c++ \
       git \
-      graphviz \
-      gtkwave \
-      guile-devel \
-      iperf \
-      iproute \
-      iptables \
-      iptables-devel \
       atlas-devel \
-      blas-devel \
+      pkgconfig \
       libconfig-devel \
       libffi-devel \
-      xforms \
-      xforms-devel \
-      libgcrypt-devel \
-      gmp-devel \
-      gtk3-devel \
-      libidn2-devel  \
-      libidn-devel \
-      mariadb-devel \
       lksctp-tools \
       lksctp-tools-devel \
-      openssl-devel \
-      libtasn1 \
       libtool \
-      libusb-devel \
-      libxml2 \
-      libxml2-devel \
-      libxslt-devel \
-      openssh-clients \
-      openssh-server \
+      ninja-build \
+      make \
       openssl \
+      openssl-devel \
       patch \
-      psmisc \
-      python \
-      subversion \
-      xmlstarlet \
-      python-pip \
-      wget \
-      kernel-headers \
-      kernel-devel \
-      nettle-devel \
-      gnutls-devel \
-      libXpm-devel \
+      readline-devel \
       lapack \
       lapack-devel \
       blas \
       blas-devel \
-      libyaml-devel
+      vim-common \
+      zlib-devel
   fi
 
     install_asn1c_from_source $1
-    $SUDO rm -fr /opt/ssh
-    $SUDO git clone https://gist.github.com/2190472.git /opt/ssh
+    install_simde_from_source $1
 }
 
 install_asn1c_from_source(){
+    mkdir -p $OPENAIR_DIR/cmake_targets/log
     asn1_install_log=$OPENAIR_DIR/cmake_targets/log/asn1c_install_log.txt
     echo_info "\nInstalling ASN1. The log file for ASN1 installation is here: $asn1_install_log "
     (
+    $SUDO $INSTALLER -y install bison flex
     $SUDO rm -rf /tmp/asn1c
     # GIT_SSL_NO_VERIFY=true git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
-    git clone https://gitlab.eurecom.fr/oai/asn1c.git /tmp/asn1c
+    git clone https://github.com/mouse07410/asn1c /tmp/asn1c
     cd /tmp/asn1c
-    # better to use a given commit than a branch in case the branch
-    # is updated and requires modifications in the source of OAI
-    #git checkout velichkov_s1ap_plus_option_group
-    git checkout 0a7524184f16e7093990a31d8d4db487a16e5782
+    git checkout vlm_master
     autoreconf -iv
-    ./configure
+    ./configure --prefix /opt/asn1c/
     make -j`nproc`
     $SUDO make install
     cd -
     $SUDO ldconfig
+    if [[ -v CI_ENV ]]; then
+        $SUDO rm -rf /tmp/asn1c
+    fi
     ) > $asn1_install_log 2>&1
+}
+
+install_simde_from_source(){
+    echo_info "\nInstalling SIMDE from source without test cases (header files only)"
+    cd /tmp
+    $SUDO rm -rf /tmp/simde
+    git clone https://github.com/simd-everywhere/simde-no-tests.git /tmp/simde
+    cd /tmp/simde
+    # brute force copy into /usr/include
+    $SUDO \cp -rv ../simde /usr/include
 }
 
 #################################################
@@ -777,20 +698,10 @@ install_asn1c_from_source(){
 ################################################
 
 install_nas_tools() {
-  if [ ! -f .ue.nvram0 ]; then
-    echo_success "generate .ue_emm.nvram .ue.nvram"
-    ./nvram --gen -c $1 -o $2
-  else
-    [ ./nvram -nt .ue.nvram0 -o ./nvram -nt .ue_emm.nvram0 ] && ./nvram --gen -c $1 -o $2
-  fi
-
-  if [ ! -f .usim.nvram0 ]; then
-    echo_success "generate .usim.nvram"
-    ./usim --gen -c $1 -o $2
-  else
-    [ ./usim -nt .usim.nvram0 ] && ./usim --gen -c $1 -o $2
-  fi
-
+  echo_success "generate .ue_emm.nvram .ue.nvram"
+  ./nvram --gen -c $1 -o $2 > "$3"
+  echo_success "generate .usim.nvram"
+  ./usim --gen -c $1 -o $2 >> "$3"
 }
 
 
@@ -848,24 +759,4 @@ do
          exit
         fi
 done
-}
-
-
-# get from http://www.linuxjournal.com/content/validating-ip-address-bash-script
-validate_ip() {
-
-local  ip=$1
-local  stat=1
-
-if [[ $ip =~ ^[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}$ ]]; then
-    OIFS=$IFS
-    IFS='.'
-    ip=($ip)
-    IFS=$OIFS
-    [[ ${ip[0]} -le 255 && ${ip[1]} -le 255 \
-        && ${ip[2]} -le 255 && ${ip[3]} -le 255 ]]
-    stat=$?
-fi
-
-return $stat
 }

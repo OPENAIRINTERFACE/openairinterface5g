@@ -12,147 +12,206 @@
   </tr>
 </table>
 
+[[_TOC_]]
+
 This page is valid on tags starting from **`2019.w09`**.
 
-# Soft Modem Build Script
+# Overview
 
-The OAI EPC is developed in a distinct project with it's own [documentation](https://github.com/OPENAIRINTERFACE/openair-epc-fed/wiki) , it is not described here.
+The [OAI EPC](https://github.com/OPENAIRINTERFACE/openair-epc-fed/blob/master/docs/DEPLOY_HOME_MAGMA_MME.md) and [OAI 5GC](https://gitlab.eurecom.fr/oai/cn5g/oai-cn5g-fed/-/blob/master/docs/DEPLOY_HOME.md) are developed in distinct projects with their own documentation and are not further described here.
 
-OAI UE and eNodeB sources can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
+OAI softmodem sources, which aim to implement 3GPP compliant UEs, eNodeB and gNodeB can be downloaded from the Eurecom [gitlab repository](./GET_SOURCES.md).
 
-Sources come with a build script [build_oai](../cmake_targets/build_oai) located at the root of the `openairinterface5g/cmake_targets` directory. This script is developed to build the oai binaries (executables,shared libraries) for different hardware platforms, and use cases. 
+Sources come with a build script [build_oai](../cmake_targets/build_oai) located at the root of the `openairinterface5g/cmake_targets` directory. This script is developed to build the oai binaries (executables,shared libraries) for different hardware platforms, and use cases.
 
 The main oai binaries, which are tested by the Continuous Integration process are:
 
 -  The LTE UE: `lte-uesoftmodem`
+-  The 5G UE: `nr-uesoftmodem`
 -  The LTE eNodeB: `lte-softmodem`
--  The PHY simulators: `dlsim` and `ulsim`
+-  The 5G gNodeB: `nr-softmodem`
+-  The 5G CU-UP: `nr-cuup`
+-  The LTE PHY simulators: `dlsim` and `ulsim`
+-  The 5G PHY simulators: `nr_dlschsim`, `nr_dlsim`, `nr_pbchsim`, `nr_pucchsim`, `nr_ulschsim`, `nr_ulsim`, `polartest`, `smallblocktest`, `nr _ulsim`, `ldpctest`
 
-The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using cmake, make and standard linux shell commands to ease the oai build and use . The file describing how to build the executables from source files is the [CMakeLists.txt](../cmake_targets/CMakeLists.txt), it is used as input by cmake to generate the makefiles.
+Running the  [build_oai](../cmake_targets/build_oai) script also generates some utilities required to build and/or run the oai softmodem binaries:
+
+- `conf2uedata`: a binary used to build the (4G) UE data from a configuration file. The created file emulates the sim card  of a 3GPP compliant phone.
+- `nvram`: a binary used to build (4G) UE (IMEI...) and EMM (IMSI, registered PLMN) non volatile data.
+- `rb_tool`: radio bearer utility for (4G) UE
+- `genids` T Tracer utility, used at build time to generate `T_IDs.h` include file. This binary is located in the [T Tracer source file directory](../common/utils/T) .
+
+The build system for OAI uses [cmake](https://cmake.org/) which is a  tool to generate makefiles. The `build_oai` script is a wrapper using `cmake` and `make`/`ninja` to ease the oai build and use. It logs the `cmake` and `ninja`/`make` commands it executes. The file describing how to build the executables from source files is the [CMakeLists.txt](../CMakeLists.txt), it is used as input by cmake to generate the makefiles.
 
 The oai softmodem supports many use cases, and new ones are regularly added. Most of them are accessible using the configuration file or the command line options and continuous effort is done to avoid introducing build options as it makes tests and usage more complicated than run-time options. The following functionalities, originally requiring a specific build are now accessible by configuration or command line options:
 
 - s1, noS1
-- all simulators, with exception of PHY simulators, which are distinct executables.
+- all simulators as the rfsimulator, the L2 simulator, with exception of PHY simulators, which are distinct executables. 
 
+# Running `build_oai`
 
-Calling the `build_oai` script with the -h option gives the list of all available options, but a process to simplify and check the requirements of all these options is on-going. Check the [table](BUILD.md "# `build_oai` options") At the end of this page to know the status of `buid_oai` options which are not described hereafter.
+## List of options
 
-# Building PHY Simulators
+Calling the `build_oai` script with the `-h` option gives the list of all available options. A number of important ones:
+
+- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed.
+- The `-w` option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one, `liboai_usrpdevif.so`). The RF simulator[RF simulator](../radio/rfsimulator/README.md) is implemented as a specific device replacing RF hardware, it can be specifically built using `-w SIMU` option, but is also built during any softmodem build.
+- `--eNB` is to build the `lte-softmodem` executable and all required shared libraries
+- `--gNB` is to build the `nr-softmodem` and `nr-cuup` executables and all required shared libraries
+- `--UE` is to build the `lte-uesoftmodem` executable and all required shared libraries
+- `--nrUE` is to build the `nr-uesoftmodem` executable and all required shared libraries
+- `--ninja` is to use the `ninja` build tool, which speeds up compilation.
+- `-c` is to clean the workspace and force a complete rebuild.
+
+## Installing dependencies
+
+Install all dependencies by issuing the `-I` option. To install furthermore libraries for optional libraries, use the `--install-optional-packages` option. The `-I` option will also install dependencies for an SDR when paired with `-w`. For instance, in order to install all dependencies and the ones for USRP, run:
+
+```bash
+cd openairinterface5g/cmake_targets/
+./build_oai -I --install-optional-packages -w USRP
+```
+
+Note the section on installing UHD further down for more information.
+
+## Installing (new) asn1c from source
+
+With tag 2023.w22, we switch from our [own
+`asn1c`](https://gitlab.eurecom.fr/oai/asn1c.git) to a [community-maintained
+`asn1c`](https://github.com/mouse07410/asn1c). This new version has many
+bugfixes, but is incompatible with the previous version. To ease the
+transition, both versions can be installed in parallel. Assuming you installed
+`asn1c` using `build_oai`, tags before 2023.w22 will use the version under
+`/usr/local/`; tag 2023.w22 and newer will use the version under `/opt/asn1c/`
+(if present) or any system directory (e.g., also `/usr/local/`), and
+additionally check that all command line options of the new `asn1c` are
+supported.
+
+To install the new `asn1c`, either run `build_oai -I`. To not re-install all
+packages, you can also just install `asn1c` like this:
+```
+cd openairinterface5g
+sudo ls                               # open sudo session, required by install_asn1c_from_source
+. oaienv                              # read of default variables
+. cmake_targets/tools/build_helper    # read in function
+install_asn1c_from_source             # install under `/opt/asn1c`
+```
+
+Additionally, you can also point to a specific `asn1c` to use if you chose to
+install elsewhere, using one of these two methods:
+```
+./build_oai --ninja <other-options> --cmake-opt -DASN1C_EXEC=/opt/asn1c/bin/asn1c
+cmake .. -GNinja -DASN1C_EXEC=/opt/asn1c/bin/asn1c
+```
+
+## Installing UHD from source
+
+Previously for Ubuntu distributions, when installing the pre-requisites, most of the packages are installed from PPA.
+
+Especially the `UHD` driver, but you could not easily manage the version of `libuhd` that will be installed.
+
+Now, when installing the pre-requisites, especially the `UHD` driver, you can now specify if you want to install from source or not.
+
+- For `fedora`-based OS, it was already the case all the time. But now you can specify which version to install.
+- For `ubuntu` OS, you can still install from the Ettus PPA or select a version to install from source.
+  * In case of PPA installation, you do nothing special, the script will install the latest version available on the PPA.
+    - `./build_oai -I -w USRP`
+  * In case of a installation from source, you do as followed:
+
+```bash
+export BUILD_UHD_FROM_SOURCE=True
+export UHD_VERSION=3.15.0.0
+./build_oai -I -w USRP
+```
+
+The `UHD_VERSION` env variable `SHALL` be a valid tag (minus `v`) from the `https://github.com/EttusResearch/uhd.git` repository.
+
+**CAUTION: Note that if you are using the OAI eNB in TDD mode with B2xx boards, a patch is mandatory.**
+
+Starting this commit, the patch is applied automatically in our automated builds.
+
+See:
+
+* `cmake_targets/tools/uhd-3.15-tdd-patch.diff`
+* `cmake_targets/tools/uhd-4.x-tdd-patch.diff`
+* `cmake_targets/tools/build_helper` --> function `install_usrp_uhd_driver_from_source`
+
+## Building PHY Simulators
+
+The PHY layer simulators (LTE and NR) can be built as follows:
+
+```bash
+cd openairinterface5g/cmake_targets/
+./build_oai --phy_simulators
+```
+
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
 
 Detailed information about these simulators can be found [in this dedicated page](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/OpenAirLTEPhySimul)
 
-# Building UE and eNodeB Executables
+## Building UEs, eNodeB and gNodeB Executables
 
-After downloading the source files, a single build command can be used to get the binaries supporting all the oai softmodem use cases (UE and eNodeB):
-
-```
-cd <your oai installation directory>/openairinterface5g/
-source oaienv
-cd cmake_targets/
-./build_oai -I -w USRP --eNB --UE
-```
-
-- The `-I` option is to install pre-requisites, you only need it the first time you build the softmodem or when some oai dependencies have changed. 
-- The `-w` option is to select the radio head support you want to include in your build. Radio head support is provided via a shared library, which is called the "oai device" The build script creates a soft link from `liboai_device.so` to the true device which will be used at run-time (here the USRP one,`liboai_usrpdevif.so` . USRP is the only hardware tested today in the Continuous Integration process. The RF simulator[RF simulator](../targets/ARCH/rfsimulator/README.md) is implemented as a specific device replacing RF hardware, it can be build using `-w SIMU` option.
-- `--eNB` is to build the `lte-softmodem` executable and all required shared libraries
-- `--UE` is to build the `lte-uesoftmodem` executable and all required shared libraries
-
-You can build the eNodeB and the UE separately, you may not need both of them depending on your oai usage.
-
-After completing the build, the binaries are available in the `cmake_targets/lte_build_oai/build` directory. A copy is also available in the `target/bin` directory, with all binaries suffixed by the 3GPP release number, today .Rel14 by default. It must be noticed that the option for building for a specific 3GPP release number is not tested by the CI and may be removed in the future. 
-
-## Issue when building `nasmeh` module ##
-
-A lot of users and contributors have faced the issue: `nasmesh` module does not build.
-
-The reason is that the linux headers are not properly installed. For example:
+After downloading the source files, a single build command can be used to get the binaries supporting all the oai softmodem use cases (UE and [eg]NodeB):
 
 ```bash
-$ uname -r
-4.4.0-145-lowlatency
-$ dpkg --list | grep 4.4.0-145-lowlatency | grep headers
-ii  linux-headers-4.4.0-145-lowlatency         4.4.0-145.171
+cd openairinterface5g/cmake_targets/
+./build_oai -w USRP --eNB --UE --nrUE --gNB
 ```
 
-In my example it is properly installed.
+You can build any oai softmodem executable separately, you may not need all of them depending on your oai usage.
 
-Check on your environment:
+After completing the build, the binaries are available in the `cmake_targets/ran_build/build` directory.
+
+## Building Optional Binaries
+
+There are a number of optional libraries that can be built in support of the
+RAN, such as telnet, scopes, offloading libraries, etc.
+
+Using the help option of the build script you can get the list of available optional libraries.
 
 ```bash
-$ uname -r
-your-version
-$ dpkg --list | grep your-version | grep headers
-$
+./build_oai --build-lib all # build all
+./build_oai --build-lib telnet  # build only telnet
+./build_oai --build-lib "telnet enbscope uescope nrscope nrqtscope"
+./build_oai --build-lib telnet --build-lib nrqtscope
 ```
 
-Install it:
+The following libraries are build in CI and should always work: `telnet`,
+`enbscope`, `uescope`, `nrscope`, `nrqtscope`.
 
+Some libraries have further dependencies and might not build on every system:
+- `enbscope`, `uescope`, `nrscope`: libforms/X
+- `nrqtscope`: Qt5
+- `ldpc_cuda`: CUDA
+- `ldpc_t1`: DPDK and VVDN T1
+- `websrv`: npm and others
+
+# Running `cmake` directly
+
+`build_oai` is a wrapper on top of `cmake`. It is therefore possible to run `cmake` directly. An example using `ninja`: to build all "main targets" for 5G, excluding additional libraries:
+```
+cd openairinterface5g
+mkdir build && cd build
+cmake .. -GNinja && ninja nr-softmodem nr-uesoftmodem nr-cuup params_libconfig coding rfsimulator ldpc
+```
+
+To build additional libraries, e.g., telnet, do the following:
 ```bash
-$ sudo apt-get install --yes linux-headers-your-version
+cmake .. -GNinja -DENABLE_TELNETSRV=ON && ninja telnetsrv
 ```
 
-# Building Optional Binaries
+A list of all libraries can be seen using `ccmake ..` or `cmake-gui ..`.
 
-## Telnet Server
+It is currently not possible to build all targets in the form of `cmake ..
+-GNinja && ninja`: currently, SDRs are always exposed, even if you don't have
+the dependencies, and some targets are simply broken. Again, `build_oai` list
+all targets that it builds, and you can use them with `ninja`
 
-The telnet server can be built  with the `--build-lib telnetsrv` option, after building the softmodem or while building it.
-
-`./build_oai -I -w USRP --eNB --UE --build-lib telnetsrv`
-
-or
-
-`./build_oai  --build-lib telnetsrv`
-
-You can get documentation about the telnet server  [here](common/utils/telnetsrv/DOC/telnetsrv.md)
-
-## USRP record player
-
-The USRP record player today needs a specific build. Work to make it available as a run time option is under consideration
-
-## Other optional libraries
-
-Using the help option of the build script you can get the list of available optional libraries. Those which haven't been mentioned above are known to need more tests and documentation
-
-# `build_oai` options
-
-| Option                                                      | Status                                      | Description                                                  |
-| ----------------------------------------------------------- | ------------------------------------------- | :----------------------------------------------------------- |
-| -h                                                          | maintained                                  | get help                                                     |
-| -c                                                          | maintained                                  | erase all previously built files for this target before starting the new build. |
-| -C                                                          | maintained, needs improvement               | erase all previously built files for any target before starting the new build. |
-| --verbose-compile                                           | maintained                                  | get compilation messages, as when running `make` or `gcc` directly. |
-| --cflags_processor                                          | maintained                                  | used to pass options to the compiler                         |
-| --clean-kernel                                              | unknown                                     | no code in the script corresponding to this option           |
-| --install-system-files                                      | maintained                                  | install oai built binaries in linux system files repositories |
-| -w                                                          | maintained and tested in CI for USRP device | build corresponding oai device and create the soft link to enforce this device usage at run-time |
-| --phy_simulators                                            | maintained, tested in CI                    | build all PHY simulators, a set of executables allowing unitary tests of LTE channel implementation within oai. |
-| --core_simulators                                           |                                             |                                                              |
-| -s                                                          |                                             |                                                              |
-| --run-group                                                 |                                             |                                                              |
-| -I                                                          | maintained, tested in CI                    | install external dependencies before starting the build      |
-| --install-optional-packages                                 | maintained                                  | install optional packages, useful for developing and testing. look at the |
-|                                                             |                                             | check_install_additional_tools function in cmake_targets/tools/build_helper script to get the list |
-| -g                                                          | maintained                                  | build binaries with gdb support.                             |
-| --eNB                                                       | maintained and tested in CI                 | build `lte-softmodem` the LTE eNodeB                         |
-| --UE                                                        | maintained and tested in CI                 | build `lte-uesoftmodem` the LTE UE                           |
-| --usrp-recplay                                              | maintained                                  | build with support for the record player. Implementation will be soon reviewed to switch to a run-time option. |
-| --build-lib                                                 | maintained                                  | build  optional shared library(ies), which can then be loaded at run time via command line option. Use the --help option to get the list of supported optional libraries. |
-| --UE-conf-nvram                                             |                                             |                                                              |
-| --UE-gen-nvram                                              |                                             |                                                              |
-| -r                                                          | unknown, to be removed                      | specifies which 3GPP release to build for. Only the default (today rel14) is tested in CI and it is likely that future oai release will remove this option |
-| -V                                                          | deprecated                                  | Used to build with support for synchronization diagram utility. This is now available via the T-Tracer and is included if T-Tracer is not disabled. |
-| --build-doxygen                                             | unknown                                     | build doxygen documentation, many oai source files do not include doxygen comments |
-| --disable-deadline --enable-deadline --disable-cpu-affinity | deprecated                                  | These options were used to activate or de-activate specific code depending on the choice of a specific linux scheduling  mode. This has not been tested for a while and should be implemented as configuration options |
-| --disable-T-Tracer                                          | maintained, to be tested                    | Remove T_Tracer and console LOG messages except error messages. |
-| --disable-hardware-dependency                               |                                             |                                                              |
-| --ue-autotest-trace --ue-timing --ue-trace                  | deprecated                                  | Were used to enable conditional code implementing debugging messages or debugging statistics. These functionalities are now either available from run-time options or not maintained. |
-| --build-eclipse                                             | unknown                                     |                                                              |
-|                                                             |                                             |                                                              |
-
-[oai wiki home](https://gitlab.eurecom.fr/oai/openairinterface5g/wikis/home)
-
-[oai softmodem features](FEATURE_SET.md)
-
-[running the oai softmodem ](RUNMODEM.md)
-
+The default target directory of `build_oai` is the following, for historical reasons:
+```bash
+cd openairinterface5g/cmake_targets/ran_build/build
+cmake ../../.. -GNinja
+ccmake ../../..
+cmake-gui ../../..
+```
+You can of course use all standard cmake/ninja/make commands in this directory.

@@ -1,0 +1,668 @@
+#!/bin/groovy
+/*
+ * Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The OpenAirInterface Software Alliance licenses this file to You under
+ * the OAI Public License, Version 1.1  (the "License"); you may not use this file
+ * except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.openairinterface.org/?page_id=698
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ *-------------------------------------------------------------------------------
+ * For more information about the OpenAirInterface (OAI) Software Alliance:
+ *      contact@openairinterface.org
+ */
+
+// Location of the executor node
+def nodeExecutor = params.nodeExecutor
+
+// Tags to shorten pipeline duration
+def doBuild = true
+def do4Gtest = false
+def do5Gtest = false
+
+//
+def gitCommitAuthorEmailAddr
+
+pipeline {
+  agent {
+    label nodeExecutor
+  }
+  options {
+    timestamps()
+    gitLabConnection('OAI GitLab')
+    ansiColor('xterm')
+  }
+
+  stages {
+    stage ("Verify Parameters") {
+      steps {
+        script {
+          JOB_TIMESTAMP = sh returnStdout: true, script: 'date --utc --rfc-3339=seconds | sed -e "s#+00:00##"'
+          JOB_TIMESTAMP = JOB_TIMESTAMP.trim()
+
+          echo '\u2705 \u001B[32mVerify Parameters\u001B[0m'
+          def allParametersPresent = true
+
+          echo '\u2705 \u001B[32mVerify Labels\u001B[0m'
+          if ("MERGE".equals(env.gitlabActionType)) {
+            LABEL_CHECK = sh returnStdout: true, script: 'ci-scripts/checkGitLabMergeRequestLabels.sh --mr-id ' + env.gitlabMergeRequestIid
+            LABEL_CHECK = LABEL_CHECK.trim()
+            if (LABEL_CHECK == 'NONE') {
+              def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Your merge request should have one of the mandatory labels:\n\n"
+              message += " - ~documentation (don't perform any stages)\n"
+              message += " - ~BUILD-ONLY (execute only build stages)\n"
+              message += " - ~4G-LTE (perform 4G tests)\n"
+              message += " - ~5G-NR (perform 5G tests)\n"
+              message += " - ~CI (perform both 4G and 5G tests)\n\n"
+              message += "Not performing CI due to lack of labels"
+              addGitLabMRComment comment: message
+              error('Not performing CI due to lack of labels')
+            } else if (LABEL_CHECK == 'FULL') {
+              do4Gtest = true
+              do5Gtest = true
+            } else if (LABEL_CHECK == "SHORTEN-4G") {
+              do4Gtest = true
+            } else if (LABEL_CHECK == 'SHORTEN-5G') {
+              do5Gtest = true
+            } else if (LABEL_CHECK == 'documentation') {
+              doBuild = false
+            } else {
+              // is "BUILD-ONLY", will only build
+            }
+          } else {
+            do4Gtest = true
+            do5Gtest = true
+          }
+        }
+      }
+    }
+    stage ("Verify Guidelines") {
+      steps {
+        echo "Git URL     is ${GIT_URL}"
+        echo "GitLab Act    is ${env.gitlabActionType}"
+        script {
+          if ("MERGE".equals(env.gitlabActionType)) {
+            // since a bit, in push events, gitlabUserEmail is not populated
+            gitCommitAuthorEmailAddr = env.gitlabUserEmail
+            echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
+            // GitLab-Jenkins plugin integration is lacking to perform the merge by itself
+            // Doing it manually --> it may have merge conflicts
+            sh "./ci-scripts/doGitLabMerge.sh --src-branch ${env.gitlabSourceBranch} --src-commit ${env.gitlabMergeRequestLastCommit} --target-branch ${env.gitlabTargetBranch} --target-commit ${GIT_COMMIT}"
+          } else {
+            echo "Git Branch    is ${GIT_BRANCH}"
+            echo "Git Commit    is ${GIT_COMMIT}"
+            // since a bit, in push events, gitlabUserEmail is not populated
+            gitCommitAuthorEmailAddr = sh returnStdout: true, script: 'git log -n1 --pretty=format:%ae ${GIT_COMMIT}'
+            gitCommitAuthorEmailAddr = gitCommitAuthorEmailAddr.trim()
+            echo "GitLab Usermail is ${gitCommitAuthorEmailAddr}"
+          }
+        }
+      }
+      post {
+        failure {
+          script {
+            def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): Merge Conflicts -- Cannot perform CI"
+            addGitLabMRComment comment: message
+            currentBuild.result = 'FAILURE'
+          }
+        }
+      }
+    }
+    // Build Stages are Mandatory
+    // Later we will add a Ubuntu20 build
+    stage ("Image Building Processes") {
+      when { expression {doBuild} }
+      parallel {
+        stage ("Ubuntu18-Image-Builder") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Ubuntu18-Image-Builder', 'Ubuntu18-Image-Builder')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Ubuntu18-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RHEL8-Cluster-Image-Builder") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RHEL8-Cluster-Image-Builder', 'RHEL8-Cluster-Image-Builder')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RHEL8-Cluster-Image-Builder')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("cppcheck") {
+          steps {
+            script {
+              triggerSlaveJob ('RAN-cppcheck', 'cppcheck')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-cppcheck')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("Image Test Processes") {
+      when { expression {doBuild} }
+      parallel {
+        stage ("PhySim-Cluster") {
+          when { expression {do4Gtest || do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-PhySim-Cluster', 'PhySim-Cluster')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-PhySim-Cluster')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RF-Sim-Test-4G") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test-4G', 'RF-Sim-Test-4G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test-4G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("RF-Sim-Test-5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-RF-Sim-Test-5G', 'RF-Sim-Test-5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-RF-Sim-Test-5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("L2-Sim-Test-4G") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-L2-Sim-Test-4G', 'L2-Sim-Test-4G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-L2-Sim-Test-4G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("L2-Sim-Test-5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-L2-Sim-Test-5G', 'L2-Sim-Test-5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-L2-Sim-Test-5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("LTE-B200-FDD-LTEBOX-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-FDD-LTEBOX-Container', 'LTE-FDD-LTEBOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-FDD-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        // Pipeline to test OAI LTE-UE
+        stage ("LTE-B200-FDD-OAIUE-OAICN4G-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-FDD-OAIUE-OAICN4G-Container', 'LTE-FDD-OAIUE-OAICN4G-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-FDD-OAIUE-OAICN4G-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("LTE-B200-TDD-LTEBOX-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-TDD-LTEBOX-Container', 'LTE-TDD-LTEBOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-TDD-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("NSA-B200-Module-LTEBOX-Container") {
+          when { expression {do4Gtest || do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-NSA-B200-Module-LTEBOX-Container', 'NSA-B200-Module-LTEBOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-NSA-B200-Module-LTEBOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("SA-B200-Module-SABOX-Container") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-B200-Module-SABOX-Container', 'SA-B200-Module-SABOX-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-B200-Module-SABOX-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("gNB-N300-Timing-Phytest-LDPC") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-gNB-N300-Timing-Phytest-LDPC', 'gNB-N300-Timing-Phytest-LDPC')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-gNB-N300-Timing-Phytest-LDPC')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("LTE-TDD-2x2-Container") {
+          when { expression {do4Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-LTE-TDD-2x2-Container', 'LTE-TDD-2x2-Container')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-LTE-TDD-2x2-Container')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("SA-AW2S-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-AW2S-CN5G', 'SA-AW2S-CN5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-AW2S-CN5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("Interop-F1") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-Interop-F1', 'Interop-F1')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-Interop-F1')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("Sanity-Check OAI-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerCN5GSlaveJob ('OAI-CN5G-COTS-UE-Test', 'OAI-CN5G-COTS-UE-Test')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('OAI-CN5G-COTS-UE-Test')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+        stage ("SA-OAIUE-CN5G") {
+          when { expression {do5Gtest} }
+          steps {
+            script {
+              triggerSlaveJob ('RAN-SA-OAIUE-CN5G', 'SA-OAIUE-CN5G')
+            }
+          }
+          post {
+            always {
+              script {
+                finalizeSlaveJob('RAN-SA-OAIUE-CN5G')
+              }
+            }
+            failure {
+              script {
+                currentBuild.result = 'FAILURE'
+              }
+            }
+          }
+        }
+      }
+    }
+    stage ("DockerHub-Push") {
+      when { expression {doBuild && "PUSH".equals(env.gitlabActionType)} }
+      steps {
+        script {
+          triggerSlaveJob ('RAN-DockerHub-Push', 'DockerHub-Push')
+        }
+      }
+      post {
+        failure {
+          script {
+            echo "Push to Docker-Hub KO"
+            currentBuild.result = 'FAILURE'
+          }
+        }
+      }
+    }
+  }
+  post {
+    success {
+      script {
+        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): passed (" + BUILD_URL + ")"
+        if ("MERGE".equals(env.gitlabActionType)) {
+          addGitLabMRComment comment: message
+          def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+          sendSocialMediaMessage('ci-enb', 'good', message2)
+        } else {
+          sendSocialMediaMessage('ci-enb', 'good', message)
+        }
+        echo "Pipeline is SUCCESSFUL"
+      }
+    }
+    failure {
+      script {
+        def message = "OAI " + JOB_NAME + " build (" + BUILD_ID + "): failed (" + BUILD_URL + ")"
+        if ("MERGE".equals(env.gitlabActionType)) {
+          addGitLabMRComment comment: message
+          def message2 = message + " -- MergeRequest #" + env.gitlabMergeRequestIid + " (" + env.gitlabMergeRequestTitle + ")"
+          sendSocialMediaMessage('ci-enb', 'danger', message2)
+        } else {
+          sendSocialMediaMessage('ci-enb', 'danger', message)
+        }
+        echo "Pipeline FAILED"
+      }
+    }
+  }
+}
+
+// ----  Slave Job functions
+
+def triggerSlaveJob (jobName, gitlabStatusName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    MR_NUMBER = env.gitlabMergeRequestIid
+  } else {
+    MR_NUMBER = 'develop'
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+      string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+      string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+      string(name: 'eNB_MR', value: String.valueOf(MR_NUMBER)),
+      booleanParam(name: 'eNB_mergeRequest', value: "MERGE".equals(env.gitlabActionType)),
+      string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  gitlabCommitStatus(name: gitlabStatusName) {
+    if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+       echo "${jobName} Slave Job is OK"
+    } else {
+       error "${jobName} Slave Job is KO"
+    }
+  }
+}
+
+def triggerCN5GSlaveJob (jobName, gitlabStatusName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.gitlabMergeRequestLastCommit
+    shortenShaOne = shortenShaOne.trim()
+    fullRanTag = 'porcepix.sboai.cs.eurecom.fr/oai-gnb:' + env.gitlabSourceBranch + '-' + shortenShaOne
+  } else {
+    shortenShaOne = sh returnStdout: true, script: 'git log -1 --pretty=format:"%h" --abbrev=8 ' + env.GIT_COMMIT
+    shortenShaOne = shortenShaOne.trim()
+    fullRanTag = 'porcepix.sboai.cs.eurecom.fr/oai-gnb:develop-' + shortenShaOne
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'FULL_RAN_TAG', value: String.valueOf(fullRanTag))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  gitlabCommitStatus(name: gitlabStatusName) {
+    if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+       echo "${jobName} Slave Job is OK"
+    } else {
+       error "${jobName} Slave Job is KO"
+    }
+  }
+}
+
+def triggerSlaveJobNoGitLab (jobName) {
+  if ("MERGE".equals(env.gitlabActionType)) {
+    MR_NUMBER = env.gitlabMergeRequestIid
+  } else {
+    MR_NUMBER = 'develop'
+  }
+  // Workaround for the "cancelled" GitLab pipeline notification
+  // The slave job is triggered with the propagate false so the following commands are executed
+  // Its status is now PASS/SUCCESS from a stage pipeline point of view
+  // localStatus variable MUST be analyzed to properly assess the status
+  localStatus = build job: jobName,
+    parameters: [
+      string(name: 'eNB_Repository', value: String.valueOf(GIT_URL)),
+      string(name: 'eNB_Branch', value: String.valueOf(env.gitlabSourceBranch)),
+      string(name: 'eNB_CommitID', value: String.valueOf(env.gitlabMergeRequestLastCommit)),
+      string(name: 'eNB_MR', value: String.valueOf(MR_NUMBER)),
+      booleanParam(name: 'eNB_mergeRequest', value: "MERGE".equals(env.gitlabActionType)),
+      string(name: 'eNB_TargetBranch', value: String.valueOf(env.gitlabTargetBranch))
+    ], propagate: false
+  localResult = localStatus.getResult()
+  echo "${jobName} Slave Job status is ${localResult}"
+  if (localStatus.resultIsBetterOrEqualTo('SUCCESS')) {
+     echo "${jobName} Slave Job is OK"
+  } else {
+     error "${jobName} Slave Job is KO"
+  }
+}
+
+def finalizeSlaveJob(jobName) {
+  // In case of any non-success, we are retrieving the HTML report of the last completed
+  // slave job. The only drop-back is that we may retrieve the HTML report of a previous build
+  if (jobName == 'OAI-CN5G-COTS-UE-Test') {
+    fileName = "test_results_oai_cn5g_cots_ue.html"
+  } else {
+    fileName = "test_results-${jobName}.html"
+  }
+  if (!fileExists(fileName)) {
+    copyArtifacts(projectName: jobName,
+      filter: 'test_results*.html',
+      selector: lastCompleted())
+    if (fileExists(fileName)) {
+      sh "sed -i -e 's#TEMPLATE_BUILD_TIME#${JOB_TIMESTAMP}#' ${fileName}"
+      archiveArtifacts artifacts: fileName
+    }
+  }
+}
+
+// Abstraction function to send social media messages:
+// like on Slack or Mattermost
+def sendSocialMediaMessage(pipeChannel, pipeColor, pipeMessage) {
+  slackSend channel: pipeChannel, color: pipeColor, message: pipeMessage
+}

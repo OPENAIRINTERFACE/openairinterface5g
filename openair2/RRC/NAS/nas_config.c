@@ -44,8 +44,9 @@
 
 #include "nas_config.h"
 #include "common/utils/LOG/log.h"
-#include "targets/RT/USER/lte-softmodem.h"
+#include "executables/lte-softmodem.h"
 #include "common/config/config_userapi.h"
+#include "pdcp.h"
 
 //default values according to the examples,
 
@@ -56,15 +57,19 @@ char *broadcastAddr ;
 #define NASHLP_NETMASK   "<NAS network mask>\n"
 #define NASHLP_BROADCASTADDR   "<NAS network broadcast address>\n"
 void nas_getparams(void) {
-  paramdef_t nasoptions[] = {
+  // this datamodel require this static because we partially keep data like baseNetAddress (malloc on a global)
+  // but we loose the opther attributes in nasoptions between two calls if is is not static !
+  // clang-format off
+  static paramdef_t nasoptions[] = {
     /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
     /*                                            configuration parameters for netlink, includes network parameters when running in noS1 mode                             */
     /*   optname                     helpstr                paramflags           XXXptr                               defXXXval               type                 numelt */
     /*--------------------------------------------------------------------------------------------------------------------------------------------------------------------*/
-    {"NetworkPrefix",    NASHLP_NETPREFIX,         0,              strptr:&baseNetAddress,        defstrval:"10.0",            TYPE_STRING,  0 },
-    {"NetworkMask",      NASHLP_NETMASK,         0,              strptr:&netMask,               defstrval:"255.255.255.0",   TYPE_STRING,  0 },
-    {"BroadcastAddr",    NASHLP_BROADCASTADDR,         0,              strptr:&broadcastAddr,         defstrval:"10.0.255.255",    TYPE_STRING,  0 },
+    {"NetworkPrefix",    NASHLP_NETPREFIX,       0,              .strptr=&baseNetAddress,        .defstrval="10.0",            TYPE_STRING,  0 },
+    {"NetworkMask",      NASHLP_NETMASK,         0,              .strptr=&netMask,               .defstrval="255.255.255.0",   TYPE_STRING,  0 },
+    {"BroadcastAddr",    NASHLP_BROADCASTADDR,   0,              .strptr=&broadcastAddr,         .defstrval="10.0.255.255",    TYPE_STRING,  0 },
   };
+  // clang-format on
   config_get( nasoptions,sizeof(nasoptions)/sizeof(paramdef_t),"nas.noS1");
 }
 
@@ -260,7 +265,7 @@ int nas_config_mbms(int interface_id, int thirdOctet, int fourthOctet, char *ifn
     bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
@@ -301,7 +306,7 @@ int nas_config_mbms_s1(int interface_id, int thirdOctet, int fourthOctet, char *
   printf("returnValue %d\n",returnValue);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, "255.255.255.0", broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
@@ -335,14 +340,32 @@ int nas_config(int interface_id, int thirdOctet, int fourthOctet, char *ifname) 
     returnValue= setInterfaceParameter(interfaceName, broadcastAddress,SIOCSIFBRDADDR);
 
   if(!returnValue)
-    bringInterfaceUp(interfaceName, 1);
+	  returnValue=bringInterfaceUp(interfaceName, 1);
 
   if(!returnValue)
-    LOG_I(OIP,"Interface %s successfuly configured, ip address %s, mask %s broadcast address %s\n",
+    LOG_I(OIP,"Interface %s successfully configured, ip address %s, mask %s broadcast address %s\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
   else
     LOG_E(OIP,"Interface %s couldn't be configured (ip address %s, mask %s broadcast address %s)\n",
           interfaceName, ipAddress, netMask, broadcastAddress);
+
+  int res;
+  char command_line[500];
+  res = sprintf(command_line,
+    "ip rule add from %s/32 table %d && "
+    "ip rule add to %s/32 table %d && "
+    "ip route add default dev %s%d table %d",
+    ipAddress, interface_id - 1 + 10000,
+    ipAddress, interface_id - 1 + 10000,
+    UE_NAS_USE_TUN ? "oaitun_ue" : "oip",
+    interface_id, interface_id - 1 + 10000);
+
+  if (res < 0) {
+    LOG_E(OIP,"Could not create ip rule/route commands string\n");
+    return res;
+  }
+
+  background_system(command_line);
 
   return returnValue;
 }

@@ -4,6 +4,7 @@ T_IDs.h
 T_messages.txt.h
 genids
 tracer/enb
+tracer/gnb
 tracer/extract_config
 tracer/record
 tracer/replay

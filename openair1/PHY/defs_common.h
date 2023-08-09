@@ -29,12 +29,13 @@
  \note
  \warning
 */
-#ifndef __PHY_DEFS_COMMON_H__
-#define __PHY_DEFS_COMMON_H__
+
+#ifndef __PHY_DEFS_COMMON__H__
+#define __PHY_DEFS_COMMON__H__
 
 
 #ifndef _GNU_SOURCE
-#define _GNU_SOURCE
+  #define _GNU_SOURCE
 #endif
 #include <sched.h>
 #include <stdio.h>
@@ -49,43 +50,31 @@
 #include <execinfo.h>
 #include <getopt.h>
 #include <sys/sysinfo.h>
-
-
-
-#include <stdio.h>
-#include <stdlib.h>
 #include <malloc.h>
 #include <string.h>
 #include <math.h>
 #include "common_lib.h"
-#include "msc.h"
 #include <common/utils/LOG/log.h>
-
 #include "assertions.h"
 
-
 //#include <complex.h>
-
-
-
-
-
-
-
-#include "PHY/TOOLS/time_meas.h"
+#include "time_meas.h"
 #include "platform_types.h"
-#define MAX_NUM_RU_PER_eNB 64 
+#define MAX_NUM_RU_PER_eNB 64
 
 #include <pthread.h>
 
-#include "targets/COMMON/openairinterface5g_limits.h"
+#include "TOOLS/tools_defs.h"
+
+#include "common/openairinterface5g_limits.h"
+#include "common/utils/LOG/log.h"
 
 #include "types.h"
 #include "nfapi_interface.h"
-//#include "defs.h"
 
 #define RX_NB_TH_MAX 2
 #define RX_NB_TH 2
+#define RX_NB_TH_DL 14
 
 #define LTE_SLOTS_PER_SUBFRAME 2
 
@@ -95,6 +84,7 @@
 #define LTE_CE_OFFSET LTE_CE_FILTER_LENGTH
 #define TX_RX_SWITCH_SYMBOL (NUMBER_OF_SYMBOLS_PER_FRAME>>1)
 #define PBCH_PDU_SIZE 3 //bytes
+#define NR_NUMBER_OF_SYMBOLS_PER_SLOT 14
 
 #define PRACH_SYMBOL 3 //position of the UL PSS wrt 2nd slot of special subframe
 
@@ -108,10 +98,9 @@
 
 #define NB_RX_ANTENNAS_MAX 64
 
-#ifdef OCP_FRAMEWORK
-#include "enums.h"
-#else
-typedef enum {TDD=1,FDD=0} lte_frame_type_t;
+#define TC_NSEC_x32768 16667
+
+typedef enum {TDD=1,FDD=0} frame_type_t;
 
 typedef enum {EXTENDED=1,NORMAL=0} lte_prefix_type_t;
 
@@ -130,7 +119,6 @@ typedef enum {
   one=6,
   two=12
 } PHICH_RESOURCE_t;
-#endif
 /// PHICH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: PHICH-Duration, see TS 36.211 (Table 6.9.3-1).
@@ -152,7 +140,6 @@ typedef struct {
 } PRACH_CONFIG_INFO;
 
 
-
 /// PRACH-ConfigSIB or PRACH-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: RACH_ROOT_SEQUENCE, see TS 36.211 (5.7.1). \vr{[0..837]}
@@ -163,13 +150,11 @@ typedef struct {
   PRACH_CONFIG_INFO prach_ConfigInfo;
 } PRACH_CONFIG_COMMON;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
-
 /// PRACH-eMTC-Config from 36.331 RRC spec
 typedef struct {
   /// Parameter: High-speed-flag, see TS 36.211 (5.7.2). \vr{[0..1]} 1 corresponds to Restricted set and 0 to Unrestricted set.
   uint8_t highSpeedFlag;
-/// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
+  /// Parameter: \f$N_\text{CS}\f$, see TS 36.211 (5.7.2). \vr{[0..15]}\n Refer to table 5.7.2-2 for preamble format 0..3 and to table 5.7.2-3 for preamble format 4.
   uint8_t zeroCorrelationZoneConfig;
   /// Parameter: prach-FrequencyOffset, see TS 36.211 (5.7.1). \vr{[0..94]}\n For TDD the value range is dependent on the value of \ref prach_ConfigIndex.
 
@@ -181,7 +166,7 @@ typedef struct {
   uint8_t prach_ConfigIndex[4];
   /// indicator for CE level activation
   uint8_t prach_CElevel_enable[4];
-  /// prach frequency offset for each CE level 
+  /// prach frequency offset for each CE level
   uint8_t prach_FreqOffset[4];
   /// indicator for CE level hopping activation
   uint8_t prach_hopping_enable[4];
@@ -196,12 +181,9 @@ typedef struct {
   /// prach_Config_enabled=1 means enabled. \vr{[0..1]}
   uint8_t prach_Config_enabled;
   /// PRACH Configuration Information
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   PRACH_eMTC_CONFIG_INFO prach_ConfigInfo;
-#endif  
 } PRACH_eMTC_CONFIG_COMMON;
 
-#endif
 
 /// Enumeration for parameter \f$N_\text{ANRep}\f$ \ref PUCCH_CONFIG_DEDICATED::repetitionFactor.
 typedef enum {
@@ -264,12 +246,10 @@ typedef struct {
 } UL_REFERENCE_SIGNALS_PUSCH_t;
 
 /// Enumeration for parameter Hopping-mode \ref PUSCH_CONFIG_COMMON::hoppingMode.
-#ifndef OCP_FRAMEWORK
 typedef enum {
   interSubFrame=0,
   intraAndInterSubFrame=1
 } PUSCH_HOPPING_t;
-#endif
 
 /// PUSCH-ConfigCommon from 36.331 RRC spec.
 typedef struct {
@@ -448,7 +428,6 @@ typedef struct {
   uint8_t filterCoefficient;
 } UL_POWER_CONTROL_DEDICATED;
 
-#ifndef OCP_FRAMEWORK
 /// Enumeration for parameter \f$\alpha\f$ \ref UL_POWER_CONTROL_CONFIG_COMMON::alpha.
 typedef enum {
   al0=0,
@@ -460,7 +439,6 @@ typedef enum {
   al09=6,
   al1=7
 } PUSCH_alpha_t;
-#endif
 
 /// \note UNUSED
 typedef enum {
@@ -583,16 +561,14 @@ typedef struct {
   int mbsfn_SubframeConfig;
 } MBSFN_config_t;
 
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
 typedef struct {
   int radioframeAllocationPeriod;
   int radioframeAllocationOffset;
   int non_mbsfn_SubframeConfig;
 } NonMBSFN_config_t;
-#endif
 
 
-typedef struct {
+typedef struct LTE_DL_FRAME_PARMS {
   /// Number of resource blocks (RB) in DL
   uint8_t N_RB_DL;
   /// Number of resource blocks (RB) in UL
@@ -622,7 +598,7 @@ typedef struct {
   /// shift of pilot position in one RB
   uint8_t nushift;
   /// Frame type (0 FDD, 1 TDD)
-  lte_frame_type_t frame_type;
+  frame_type_t frame_type;
   /// TDD subframe assignment (0-7) (default = 3) (254=RX only, 255=TX only)
   uint8_t tdd_config;
   /// TDD S-subframe configuration (0-9)
@@ -635,31 +611,27 @@ typedef struct {
   uint8_t threequarter_fs;
   /// Size of FFT
   uint16_t ofdm_symbol_size;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t FeMBMS_active;
-#endif
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Size of FFT
   uint16_t ofdm_symbol_size_khz_1dot25;
-#endif
   /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples;
   /// Number of prefix samples in first symbol of slot
   uint16_t nb_prefix_samples0;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
- /// Number of prefix samples in all but first symbol of slot
+  /// Number of prefix samples in all but first symbol of slot
   uint16_t nb_prefix_samples_khz_1dot25;
   /// Number of prefix samples in first symbol of slot
   uint16_t nb_prefix_samples0_khz_1dot25;
-#endif
   /// Carrier offset in FFT buffer for first RE in PRB0
   uint16_t first_carrier_offset;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// Carrier offset in FFT buffer for first RE in PRB0 (FeMBMS
   uint16_t first_carrier_offset_khz_1dot25;
-#endif
   /// Number of samples in a subframe
   uint32_t samples_per_tti;
+  /// Number of samples in a subframe
+  uint32_t samples_per_subframe;
+  /// Number of samples in a slot
+  uint32_t samples_per_slot;
   /// Number of OFDM/SC-FDMA symbols in one subframe (to be modified to account for potential different in UL/DL)
   uint16_t symbols_per_tti;
   /// Number of OFDM symbols in DL portion of S-subframe
@@ -674,10 +646,8 @@ typedef struct {
   uint8_t nb_antenna_ports_eNB;
   /// PRACH_CONFIG
   PRACH_CONFIG_COMMON prach_config_common;
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   /// PRACH_eMTC_CONFIG
   PRACH_eMTC_CONFIG_COMMON prach_emtc_config_common;
-#endif
   /// PUCCH Config Common (from 36-331 RRC spec)
   PUCCH_CONFIG_COMMON pucch_config_common;
   /// PDSCH Config Common (from 36-331 RRC spec)
@@ -694,10 +664,8 @@ typedef struct {
   int num_MBSFN_config;
   /// Array of MBSFN Configurations (max 8 (maxMBSFN-Allocations) elements as per 36.331)
   MBSFN_config_t MBSFN_config[8];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   uint8_t NonMBSFN_config_flag;
   NonMBSFN_config_t NonMBSFN_config;
-#endif
   /// Maximum Number of Retransmissions of RRCConnectionRequest (from 36-331 RRC Spec)
   uint8_t maxHARQ_Msg3Tx;
   /// Size of SI windows used for repetition of one SI message (in frames)
@@ -712,9 +680,7 @@ typedef struct {
   uint16_t phich_reg[MAX_NUM_PHICH_GROUPS][3];
 
   struct MBSFN_SubframeConfig *mbsfn_SubframeConfig[MAX_MBSFN_AREA];
-#if (LTE_RRC_VERSION >= MAKE_VERSION(14, 0, 0))
   struct NonMBSFN_SubframeConfig *non_mbsfn_SubframeConfig;
-#endif
   /// for fair RR scheduler
   uint32_t ue_multiple_max;
 } LTE_DL_FRAME_PARMS;
@@ -742,6 +708,11 @@ typedef enum {
   TM9_10=14
 } MIMO_mode_t;
 
+typedef enum {
+  NR_SISO=0,
+  NR_DUALSTREAM=1
+} MIMO_nrmode_t;
+
 
 typedef enum {
   /// MRT
@@ -752,28 +723,29 @@ typedef enum {
   MMSE=2
 } PRECODE_TYPE_t;
 
-typedef enum {format0,
-              format1,
-              format1A,
-              format1B,
-              format1C,
-              format1D,
-              format1E_2A_M10PRB,
-              format2,
-              format2A,
-              format2B,
-              format2C,
-              format2D,
-              format3,
-	      format3A,
-	      format4,
-              format5,
-              format6_0A,
-              format6_0B,
-              format6_1A,
-              format6_1B,
-              format6_2
-             } DCI_format_t;
+typedef enum {
+  format0,
+  format1,
+  format1A,
+  format1B,
+  format1C,
+  format1D,
+  format1E_2A_M10PRB,
+  format2,
+  format2A,
+  format2B,
+  format2C,
+  format2D,
+  format3,
+  format3A,
+  format4,
+  format5,
+  format6_0A,
+  format6_0B,
+  format6_1A,
+  format6_1B,
+  format6_2
+} DCI_format_t;
 
 typedef struct {
   /// Length of DCI in bits
@@ -783,7 +755,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// harq_pid
@@ -804,12 +776,12 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// Format
   DCI_format_t format;
-  /// epdcch resource assignment (0=localized,1=distributed) 
+  /// epdcch resource assignment (0=localized,1=distributed)
   uint8_t epdcch_resource_assignment_flag;
   /// epdcch index
   uint16_t epdcch_id;
@@ -818,7 +790,7 @@ typedef struct {
   /// epdcch number of PRBs in set
   uint8_t epdcch_num_prb;
   /// vector of prb ids for set
-  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];  
+  uint8_t epdcch_prb_index[MAX_EPDCCH_PRB];
   /// LBT parameter for frame configuration
   uint8_t dwpts_symbols;
   /// LBT parameter for frame configuration
@@ -826,7 +798,7 @@ typedef struct {
   /// DCI pdu
   uint8_t dci_pdu[8];
 } eDCI_ALLOC_t;
- 
+
 typedef struct {
   /// Length of DCI in bits
   uint8_t dci_length;
@@ -835,7 +807,7 @@ typedef struct {
   /// Position of first CCE of the dci
   int firstCCE;
   /// flag to indicate that this is a RA response
-  boolean_t ra_flag;
+  bool ra_flag;
   /// rnti
   rnti_t rnti;
   /// Format
@@ -850,7 +822,7 @@ typedef struct {
   uint8_t number_of_prb_pairs;
   /// mpdcch resource assignment (combinatorial index r)
   uint8_t resource_block_assignment;
-  /// transmission type (0=localized,1=distributed) 
+  /// transmission type (0=localized,1=distributed)
   uint8_t transmission_type;
   /// mpdcch start symbol
   uint8_t start_symbol;
@@ -895,13 +867,15 @@ typedef enum {
   NOT_SYNCHED=0,
   PRACH=1,
   RA_RESPONSE=2,
-  PUSCH=3,
-  RESYNCH=4
+  RA_WAIT_CR=3,
+  PUSCH=4,
+  RESYNCH=5,
+  NUM_UE_MODE=6
 } UE_MODE_t;
 
-#define FOREACH_PARALLEL(GEN)			\
-  GEN(PARALLEL_SINGLE_THREAD)			\
-  GEN(PARALLEL_RU_L1_SPLIT)			\
+#define FOREACH_PARALLEL(GEN)   \
+  GEN(PARALLEL_SINGLE_THREAD)   \
+  GEN(PARALLEL_RU_L1_SPLIT)     \
   GEN(PARALLEL_RU_L1_TRX_SPLIT)
 
 #define GENERATE_ENUM(N) N,
@@ -914,45 +888,12 @@ typedef enum {
 #define FOREACH_WORKER(GEN) GEN(WORKER_DISABLE) GEN(WORKER_ENABLE)
 typedef enum {
   FOREACH_WORKER(GENERATE_ENUM)
-}WORKER_CONF_t;
+} WORKER_CONF_t;
 
 typedef struct THREAD_STRUCT_s {
   PARALLEL_CONF_t  parallel_conf;
   WORKER_CONF_t    worker_conf;
 } THREAD_STRUCT;
-extern THREAD_STRUCT  thread_struct;
-
-static inline void set_parallel_conf(char *parallel_conf) {
-  mapping config[]= {
-    FOREACH_PARALLEL(GENERATE_ENUMTXT)
-    {NULL,-1}
-  };
-  thread_struct.parallel_conf = (PARALLEL_CONF_t)map_str_to_int(config, parallel_conf);
-  if (thread_struct.parallel_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", parallel_conf);
-    thread_struct.parallel_conf = PARALLEL_SINGLE_THREAD;
-  }
-}
-
-static inline void set_worker_conf(char *worker_conf) {
-  mapping config[]={
-    FOREACH_WORKER(GENERATE_ENUMTXT)
-    {NULL, -1}
-  };
-  thread_struct.worker_conf =  (WORKER_CONF_t)map_str_to_int(config, worker_conf);
-  if (thread_struct.worker_conf == -1 ) {
-    LOG_E(ENB_APP,"Impossible value: %s\n", worker_conf);
-    thread_struct.worker_conf = WORKER_DISABLE ;
-  }
-}
-
-static inline PARALLEL_CONF_t get_thread_parallel_conf(void) {
-  return thread_struct.parallel_conf;
-}
-
-static inline WORKER_CONF_t get_thread_worker_conf(void) {
-  return thread_struct.worker_conf;
-}
 
 typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 
@@ -962,13 +903,12 @@ typedef enum {SF_DL, SF_UL, SF_S} lte_subframe_t;
 #define MAX_FRAME_NUMBER 0x400
 
 
-
 #define NUMBER_OF_RN_MAX 3
 typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_relay} relaying_type_t;
 
 
 
-#define MCS_COUNT 28
+#define MCS_COUNT 29
 #define MCS_TABLE_LENGTH_MAX 64
 
 
@@ -977,49 +917,6 @@ typedef enum {no_relay=1,unicast_relay_type1,unicast_relay_type2, multicast_rela
 #define NUMBER_OF_eNB_SECTORS_MAX 3
 
 #define NB_BANDS_MAX 8
-
-#define MAX_BANDS_PER_RRU 4
-
-
-#ifdef OCP_FRAMEWORK
-#include <enums.h>
-#else
-typedef enum {normal_txrx=0,rx_calib_ue=1,rx_calib_ue_med=2,rx_calib_ue_byp=3,debug_prach=4,no_L2_connect=5,calib_prach_tx=6,rx_dump_frame=7,loop_through_memory=8} runmode_t;
-
-/*! \brief Extension Type */
-typedef enum {
-  CYCLIC_PREFIX,
-  CYCLIC_SUFFIX,
-  ZEROS,
-  NONE
-} Extension_t;
-	
-enum transmission_access_mode {
-  NO_ACCESS=0,
-  POSTPONED_ACCESS,
-  CANCELED_ACCESS,
-  UNKNOWN_ACCESS,
-  SCHEDULED_ACCESS,
-  CBA_ACCESS};
-
-typedef enum  {
-  eNodeB_3GPP=0,   // classical eNodeB function
-  NGFI_RAU_IF5,    // RAU with NGFI IF5
-  NGFI_RAU_IF4p5,  // RAU with NFGI IF4p5
-  NGFI_RRU_IF5,    // NGFI_RRU (NGFI remote radio-unit,IF5)
-  NGFI_RRU_IF4p5,  // NGFI_RRU (NGFI remote radio-unit,IF4p5)
-  MBP_RRU_IF5      // Mobipass RRU
-} node_function_t;
-
-typedef enum {
-
-  synch_to_ext_device=0,  // synch to RF or Ethernet device
-  synch_to_other,          // synch to another source_(timer, other RU)
-  synch_to_mobipass_standalone  // special case for mobipass in standalone mode
-} node_timing_t;
-#endif
-
-
 
 #include "common/utils/LOG/log_extern.h"
 extern pthread_cond_t sync_cond;
@@ -1048,39 +945,85 @@ extern int sync_var;
 #define DECODE_NUM_FPTR              13
 
 
+// Mask for identifying subframe for MBMS
+#define MBSFN_TDD_SF3 0x80// for TDD
+#define MBSFN_TDD_SF4 0x40
+#define MBSFN_TDD_SF7 0x20
+#define MBSFN_TDD_SF8 0x10
+#define MBSFN_TDD_SF9 0x08
+
+
+
+#define MBSFN_FDD_SF1 0x80// for FDD
+#define MBSFN_FDD_SF2 0x40
+#define MBSFN_FDD_SF3 0x20
+#define MBSFN_FDD_SF6 0x10
+#define MBSFN_FDD_SF7 0x08
+#define MBSFN_FDD_SF8 0x04
+typedef struct {
+  pthread_mutex_t mutex_failure;
+  bool failed;
+} decode_abort_t;
+
+static inline void init_abort(decode_abort_t *ab)
+{
+  int ret = pthread_mutex_init(&ab->mutex_failure, NULL);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  ab->failed = false;
+}
+
+static inline bool check_abort(decode_abort_t *ab)
+{
+  int ret = pthread_mutex_lock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  bool failed = ab->failed;
+  ret = pthread_mutex_unlock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  return failed;
+}
+
+static inline void set_abort(decode_abort_t *ab, bool v)
+{
+  int ret = pthread_mutex_lock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+  ab->failed = v;
+  ret = pthread_mutex_unlock(&ab->mutex_failure);
+  AssertFatal(ret == 0, "mutex failed with %d\n", ret);
+}
+
 typedef uint8_t(decoder_if_t)(int16_t *y,
-                               int16_t *y2,
-    		               uint8_t *decoded_bytes,
-    		               uint8_t *decoded_bytes2,
-	   		       uint16_t n,
-	   		       uint8_t max_iterations,
-	   		       uint8_t crc_type,
-	   		       uint8_t F,
-	   		       time_stats_t *init_stats,
-	   		       time_stats_t *alpha_stats,
-	   		       time_stats_t *beta_stats,
-	   		       time_stats_t *gamma_stats,
-	   		       time_stats_t *ext_stats,
-	   		       time_stats_t *intl1_stats,
-                               time_stats_t *intl2_stats);
+                              int16_t *y2,
+                              uint8_t *decoded_bytes,
+                              uint8_t *decoded_bytes2,
+                              uint16_t n,
+                              uint8_t max_iterations,
+                              uint8_t crc_type,
+                              uint8_t F,
+                              time_stats_t *init_stats,
+                              time_stats_t *alpha_stats,
+                              time_stats_t *beta_stats,
+                              time_stats_t *gamma_stats,
+                              time_stats_t *ext_stats,
+                              time_stats_t *intl1_stats,
+                              time_stats_t *intl2_stats,
+                              decode_abort_t *abort_decode);
 
 typedef uint8_t(encoder_if_t)(uint8_t *input,
-                               uint16_t input_length_bytes,
-                               uint8_t *output,
-                               uint8_t F);
+                              uint16_t input_length_bytes,
+                              uint8_t *output,
+                              uint8_t F);
 
+extern int oai_exit;
 
 static inline void wait_sync(char *thread_name) {
   int rc;
-
   printf( "waiting for sync (%s,%d/%p,%p,%p)\n",thread_name,sync_var,&sync_var,&sync_cond,&sync_mutex);
   AssertFatal((rc = pthread_mutex_lock( &sync_mutex ))==0,"sync mutex lock error");
-  
-  while (sync_var<0)
+
+  while (sync_var<0 && !oai_exit)
     pthread_cond_wait( &sync_cond, &sync_mutex );
-  
+
   AssertFatal((rc = pthread_mutex_unlock( &sync_mutex ))==0,"sync mutex unlock error");
-  
   printf( "got sync (%s)\n", thread_name);
   /*
    * Raphael Defosseux: added for CI to get faster the got sync message.
@@ -1089,23 +1032,28 @@ static inline void wait_sync(char *thread_name) {
   fflush(stderr);
 }
 
-static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name, int sleeptime,int sleep_cnt_max) {
+
+static inline int wakeup_thread(pthread_mutex_t *mutex,
+                                pthread_cond_t *cond,
+                                int *instance_cnt,
+                                char *name,
+                                int sleeptime,
+                                int sleep_cnt_max) {
   int rc;
   int sleep_cnt=0;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt == 0) {
-
+  while (*instance_cnt == 0 && !oai_exit) {
     AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
-
     sleep_cnt++;
+
     if (sleep_cnt>sleep_cnt_max) return(-1);
+
     usleep(sleeptime);
     AssertFatal((rc = pthread_mutex_lock(mutex))==0,"wakeup_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
   }
-  *instance_cnt = *instance_cnt + 1;
 
+  *instance_cnt = *instance_cnt + 1;
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"wakeup_thread(): error unlocking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
   // the thread can now be woken up
@@ -1119,74 +1067,81 @@ static inline int wakeup_thread(pthread_mutex_t *mutex,pthread_cond_t *cond,int 
   return(0);
 }
 
-static inline int timedwait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name,uint32_t time_ns) {
+
+static inline int timedwait_on_condition(pthread_mutex_t *mutex,
+    pthread_cond_t *cond,
+    int *instance_cnt,
+    char *name,
+    uint32_t time_ns) {
   int rc;
   int waitret=0;
-  struct timespec now,abstime;
-
+  struct timespec now, abstime;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] timedwait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  clock_gettime(CLOCK_REALTIME,&now);
-  while (*instance_cnt < 0) {
+  while (*instance_cnt < 0 && !oai_exit) {
+    clock_gettime(CLOCK_REALTIME, &now);
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
-    abstime.tv_sec=now.tv_sec;
+    abstime.tv_sec = now.tv_sec;
     abstime.tv_nsec = now.tv_nsec + time_ns;
-    if (abstime.tv_nsec >= 1000*1000*1000)
-    {
+
+    if (abstime.tv_nsec >= 1000*1000*1000) {
       abstime.tv_nsec -= 1000*1000*1000;
       abstime.tv_sec  += 1;
     }
+
     if ((waitret = pthread_cond_timedwait(cond,mutex,&abstime)) == 0) break; // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex)) == 0,"[SCHED][eNB] timedwait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
-  return(0);
+  return(waitret);
 }
 
-static inline int wait_on_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
-  int rc;
 
+static inline int wait_on_condition(pthread_mutex_t *mutex,
+                                    pthread_cond_t *cond,
+                                    int *instance_cnt,
+                                    char *name) {
+  int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt < 0) {
+  while (*instance_cnt < 0 && !oai_exit) {
     // most of the time the thread is waiting here
     // proc->instance_cnt_rxtx is -1
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 
-static inline int wait_on_busy_condition(pthread_mutex_t *mutex,pthread_cond_t *cond,int *instance_cnt,char *name) {
+
+static inline int wait_on_busy_condition(pthread_mutex_t *mutex,
+    pthread_cond_t *cond,
+    int *instance_cnt,
+    char *name) {
   int rc;
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
 
-  while (*instance_cnt == 0) {
+  while (*instance_cnt == 0 && !oai_exit) {
     // most of the time the thread will skip this
     // waits only if proc->instance_cnt_rxtx is 0
     pthread_cond_wait(cond,mutex); // this unlocks mutex_rxtx while waiting and then locks it again
   }
 
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] wait_on_busy_condition(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 
-static inline int release_thread(pthread_mutex_t *mutex,int *instance_cnt,char *name) {
+
+static inline int release_thread(pthread_mutex_t *mutex,
+                                 int *instance_cnt,
+                                 char *name) {
   int rc;
-
   AssertFatal((rc = pthread_mutex_lock(mutex))==0,"[SCHED][eNB] release_thread(): error locking mutex for %s (%d %s, %p)\n", name, rc, strerror(rc), (void *)mutex);
-
-  *instance_cnt=*instance_cnt-1;
-
+  *instance_cnt=-1;
   AssertFatal((rc = pthread_mutex_unlock(mutex))==0,"[SCHED][eNB] release_thread(): error unlocking mutex return %d for %s\n", rc, name);
-
   return(0);
 }
 
-
-#endif //  __PHY_DEFS__H__
+#endif //  __PHY_DEFS_COMMON_H__

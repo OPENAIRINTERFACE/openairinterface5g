@@ -31,27 +31,6 @@
 #include "m3ap_common.h"
 #include "M3AP_M3AP-PDU.h"
 
-int asn_debug = 0;
-int asn1_xer_print = 0;
-
-#if defined(EMIT_ASN_DEBUG_EXTERN)
-inline void ASN_DEBUG(const char *fmt, ...)
-{
-  if (asn_debug) {
-    int adi = asn_debug_indent;
-    va_list ap;
-    va_start(ap, fmt);
-    fprintf(stderr, "[ASN1]");
-
-    while(adi--) fprintf(stderr, " ");
-
-    vfprintf(stderr, fmt, ap);
-    fprintf(stderr, "\n");
-    va_end(ap);
-  }
-}
-#endif
-
 ssize_t m3ap_generate_initiating_message(
   uint8_t               **buffer,
   uint32_t               *length,

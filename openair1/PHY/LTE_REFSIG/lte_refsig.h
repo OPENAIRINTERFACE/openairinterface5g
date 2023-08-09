@@ -36,8 +36,7 @@
 \param reset resets the generator
 \return 32 bits of the gold sequence
 */
-uint32_t lte_gold_generic(uint32_t *x1, uint32_t *x2, uint8_t reset);
-
+#include <openair1/PHY/LTE_TRANSPORT/transport_proto.h>
 
 /*!\brief This function generates the LTE Gold sequence (36-211, Sec 7.2), specifically for DL reference signals.
 @param frame_parms LTE DL Frame parameters
@@ -106,6 +105,16 @@ int lte_dl_mbsfn(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
                  short amp,
                  int subframe,
                  unsigned char l);
+/*! \brief This function generates the 1.25KHz MBSFN reference signal sequence (36-211, Sec 6.10.1.2)
+@param phy_vars_eNB Pointer to eNB variables
+@param output Output vector for OFDM symbol (Frequency Domain)
+@param amp Q15 amplitude
+*/
+
+int lte_dl_mbsfn_khz_1dot25(PHY_VARS_eNB *phy_vars_eNB, int32_t *output,
+                 short amp,
+                 int subframe);
+
 
 
 /*!\brief This function generates the cell-specific reference signal sequence (36-211, Sec 6.10.1.1) for channel estimation upon reception
