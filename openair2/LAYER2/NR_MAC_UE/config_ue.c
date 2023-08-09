@@ -711,7 +711,10 @@ void nr_rrc_mac_config_req_sib1(module_id_t module_id,
   mac->si_SchedulingInfo = si_SchedulingInfo;
   mac->nr_band = *scc->downlinkConfigCommon.frequencyInfoDL.frequencyBandList.list.array[0]->freqBandIndicatorNR;
   config_common_ue_sa(mac, scc, module_id, cc_idP);
-  configure_current_BWP(mac, scc, NULL);
+  // configure BWP only if it is a SIB1 detection in non connected state (after sync)
+  // not if it is a periodical update of SIB1 (no change of BWP in that case)
+  if(mac->state < UE_CONNECTED)
+    configure_current_BWP(mac, scc, NULL);
 
   // Setup the SSB to Rach Occasionsif (cell_group_config->spCellConfig) { mapping according to the config
   build_ssb_to_ro_map(mac);
