@@ -1151,19 +1151,14 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
 }
 
 //-----------------------------------------------------------------------------
-static void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
-                                                rrc_gNB_ue_context_t *ue_context_pP,
+static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context_pP,
                                                 const uint8_t *masterCellGroup_from_DU,
                                                 NR_ServingCellConfigCommon_t *scc,
                                                 const rnti_t old_rnti)
 //-----------------------------------------------------------------------------
 {
-  // int UE_id = -1;
-  // NR_LogicalChannelConfig_t  *SRB1_logicalChannelConfig = NULL;
-  // NR_SRB_ToAddMod_t          *SRB1_config = NULL;
-  // rrc_gNB_carrier_data_t     *carrier = NULL;
-  module_id_t module_id = ctxt_pP->module_id;
-  gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
+  module_id_t module_id = 0;
+  gNB_RRC_INST *rrc = RC.nrrrc[module_id];
   int enable_ciphering = 0;
   gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
 
@@ -1171,8 +1166,7 @@ static void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_REESTABLISH;
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
-  int size = do_RRCReestablishment(ctxt_pP,
-                                   ue_context_pP,
+  int size = do_RRCReestablishment(ue_context_pP,
                                    0 /* CC_id */,
                                    buffer,
                                    RRC_BUF_SIZE,
@@ -1198,13 +1192,13 @@ static void rrc_gNB_generate_RRCReestablishment(const protocol_ctxt_t *ctxt_pP,
   uint8_t security_mode =
       enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4);
 
-  nr_pdcp_config_set_security(ctxt_pP->rntiMaybeUEid,
+  nr_pdcp_config_set_security(ue_p->rrc_ue_id,
                               DCCH,
                               security_mode,
                               kRRCenc,
                               kRRCint,
                               kUPenc);
-  nr_pdcp_reestablishment(ctxt_pP->rntiMaybeUEid);
+  nr_pdcp_reestablishment(ue_p->rrc_ue_id);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   uint32_t old_gNB_DU_ue_id = old_rnti;
@@ -1482,23 +1476,24 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         const NR_ReestablishmentCause_t cause = rrcReestablishmentRequest.reestablishmentCause;
         const long physCellId = rrcReestablishmentRequest.ue_Identity.physCellId;
         LOG_I(NR_RRC,
-              "UE %04x NR_RRCReestablishmentRequest cause %s\n",
+              "UE %04x physCellId %ld NR_RRCReestablishmentRequest cause %s\n",
               rnti,
-              ((cause == NR_ReestablishmentCause_otherFailure)      ? "Other Failure"
-               : (cause == NR_ReestablishmentCause_handoverFailure) ? "Handover Failure"
-                                                                    : "reconfigurationFailure"));
-        uint8_t xid = -1;
+              physCellId,
+              cause == NR_ReestablishmentCause_otherFailure
+                  ? "Other Failure"
+                  : (cause == NR_ReestablishmentCause_handoverFailure ? "Handover Failure" : "reconfigurationFailure"));
         if (physCellId != gnb_rrc_inst->carrier.physCellId) {
           /* UE was moving from previous cell so quickly that RRCReestablishment for previous cell was received in this cell */
           LOG_E(NR_RRC,
                 " NR_RRCReestablishmentRequest ue_Identity.physCellId(%ld) is not equal to current physCellId(%ld), fallback to RRC establishment\n",
                 physCellId,
                 gnb_rrc_inst->carrier.physCellId);
-          xid = rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
+          /* 38.401 8.7: "If the UE accessed from a gNB-DU other than the
+           * original one, the gNB-CU should trigger the UE Context Setup
+           * procedure" we did not implement this yet; TBD for Multi-DU */
+          AssertFatal(false, "not implemented\n");
           break;
         }
-
-        LOG_I(NR_RRC, "physCellId: %ld\n", physCellId);
 
         for (int i = 0; i < rrcReestablishmentRequest.ue_Identity.shortMAC_I.size; i++) {
           LOG_D(NR_RRC, "rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[%d] = %x\n", i, rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[i]);
@@ -1508,7 +1503,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         if (rrcReestablishmentRequest.ue_Identity.c_RNTI < 0x1 || rrcReestablishmentRequest.ue_Identity.c_RNTI > 0xffef) {
           /* c_RNTI range error should not happen */
           LOG_E(NR_RRC, "NR_RRCReestablishmentRequest c_RNTI range error, fallback to RRC establishment\n");
-          xid = rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
+          rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
           break;
         }
 
@@ -1518,18 +1513,11 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
         if (ue_context_p == NULL) {
           LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC establishment\n");
-          xid = rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
-          break;
-        }
-        // c-plane not end
-        if ((UE->StatusRrc != NR_RRC_RECONFIGURED) && (UE->reestablishment_cause == NR_ReestablishmentCause_spare1)) {
-          AssertFatal(false, "not implemented: is this really a bug?\n");
-          /* TODO RRC Release ? */
+          rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
           break;
         }
 
         /* TODO: start timer in ITTI and drop UE if it does not come back */
-        (void) xid; /* xid currently not used */
 
         // update with new RNTI, and update secondary UE association
         UE->rnti = rnti;
@@ -1540,16 +1528,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         UE->reestablishment_cause = cause;
         LOG_D(NR_RRC, "Accept RRCReestablishmentRequest from UE physCellId %ld cause %ld\n", physCellId, cause);
 
-        UE->primaryCC_id = 0;
-        // SRB2: set  it to go through SRB1 with id 1 (DCCH)
-        //UE->Srb[2].Active = 1;
-        protocol_ctxt_t ctxt = {.rntiMaybeUEid = ue_context_p->ue_context.rrc_ue_id,
-                                .module_id = module_id,
-                                .instance = module_id,
-                                .enb_flag = 1,
-                                .eNB_index = module_id};
-        rrc_gNB_generate_RRCReestablishment(&ctxt,
-                                            ue_context_p,
+        rrc_gNB_generate_RRCReestablishment(ue_context_p,
                                             msg->du2cu_rrc_container,
                                             gnb_rrc_inst->carrier.servingcellconfigcommon,
                                             old_rnti);

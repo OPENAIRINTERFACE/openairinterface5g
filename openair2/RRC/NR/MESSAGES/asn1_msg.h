@@ -172,8 +172,7 @@ uint8_t do_NR_ULInformationTransfer(uint8_t **buffer,
 
 uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c_rnti);
 
-int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
-                          rrc_gNB_ue_context_t *const ue_context_pP,
+int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
                           int CC_id,
                           uint8_t *const buffer,
                           size_t buffer_size,
