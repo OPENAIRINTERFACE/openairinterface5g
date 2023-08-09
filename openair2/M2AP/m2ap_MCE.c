@@ -715,7 +715,7 @@ int is_m2ap_MCE_enabled(void)
   };
 
   /* TODO: do it per module - we check only first MCE */
-  config_get(p, sizeof(p)/sizeof(paramdef_t), "MCEs.[0]");
+  config_get(config_get_if(), p, sizeofArray(p), "MCEs.[0]");
   if (enable_m2 != NULL && strcmp(enable_m2, "yes") == 0)
     enabled = 1;
 

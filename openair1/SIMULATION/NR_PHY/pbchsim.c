@@ -184,6 +184,7 @@ void nr_phy_config_request_sim_pbchsim(PHY_VARS_gNB *gNB,
   gNB->configured    = 1;
   LOG_I(PHY,"gNB configured\n");
 }
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
 {
   char c;
@@ -249,7 +250,7 @@ int main(int argc, char **argv)
 
   cpuf = get_cpu_freq_GHz();
 
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_PBCHSIM] Error, configuration module init failed\n");
   }
 

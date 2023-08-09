@@ -2889,7 +2889,7 @@ RU_t **RCconfig_RU(int nb_RU,int nb_L1_inst,PHY_VARS_eNB ***eNB,uint64_t *ru_mas
   int i = 0;
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  config_getlist( &RUParamList,RUParams,sizeof(RUParams)/sizeof(paramdef_t), NULL);
+  config_getlist(config_get_if(), &RUParamList, RUParams, sizeofArray(RUParams), NULL);
   RU_t **ru=NULL;
   if ( RUParamList.numelt > 0) {
     ru = (RU_t **)malloc(nb_RU*sizeof(RU_t *));

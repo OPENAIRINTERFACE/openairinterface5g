@@ -706,7 +706,7 @@ int is_m2ap_eNB_enabled(void)
   };
 
   /* TODO: do it per module - we check only first eNB */
-  config_get(p, sizeof(p)/sizeof(paramdef_t), "eNBs.[0]");
+  config_get(config_get_if(), p, sizeofArray(p), "eNBs.[0]");
   if (enable_m2 != NULL && strcmp(enable_m2, "yes") == 0)
     enabled = 1;
 

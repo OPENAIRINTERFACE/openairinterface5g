@@ -111,11 +111,11 @@ f1ap_cudu_inst_t *getCxt(instance_t instanceP)
   fake.gtpInst = e1inst->gtpInstF1U;
   return &fake;
 }
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
 {
   /// static configuration for NR at the moment
-  if (load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY) == NULL) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == NULL) {
     exit_fun("[SOFTMODEM] Error, configuration module init failed\n");
   }
   logInit();

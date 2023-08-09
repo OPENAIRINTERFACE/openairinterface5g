@@ -73,8 +73,8 @@ uicc_t *init_uicc(char *sectionName) {
   // here we call usim simulation, but calling actual usim is quite simple
   // the code is in open-cells.com => program_uicc open source
   // we can read the IMSI from the USIM
-  // key, OPc, sqn, amf don't need to be read from the true USIM 
-  int ret = config_get( uicc_params,sizeof(uicc_params)/sizeof(paramdef_t),sectionName);
+  // key, OPc, sqn, amf don't need to be read from the true USIM
+  int ret = config_get(config_get_if(), uicc_params, sizeofArray(uicc_params), sectionName);
   AssertFatal(ret >= 0, "configuration couldn't be performed for uicc name: %s", sectionName);
   LOG_I(SIM,
         "UICC simulation: IMSI=%s, IMEISV=%s, Ki=%s, OPc=%s, DNN=%s, SST=0x%02x, SD=0x%06x\n",

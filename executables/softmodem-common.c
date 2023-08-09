@@ -91,7 +91,8 @@ char *get_softmodem_function(uint64_t *sofmodemfunc_mask_ptr) {
   return "???";
 }
 
-void get_common_options(uint32_t execmask) {
+void get_common_options(configmodule_interface_t *cfg, uint32_t execmask)
+{
   int32_t stats_disabled = 0;
   uint32_t online_log_messages=0;
   uint32_t glog_level=0 ;
@@ -107,16 +108,16 @@ void get_common_options(uint32_t execmask) {
   checkedparam_t cmdline_CheckParams[] = CMDLINE_PARAMS_CHECK_DESC;
   int numparams = sizeofArray(cmdline_params);
   config_set_checkfunctions(cmdline_params, cmdline_CheckParams, numparams);
-  config_get(cmdline_params, numparams, NULL);
+  config_get(cfg, cmdline_params, numparams, NULL);
   nfapi_index = config_paramidx_fromname(cmdline_params, numparams, "nfapi");
   AssertFatal(nfapi_index >= 0,"Index for nfapi config option not found!");
-  nfapi_mode = config_get_processedint(&cmdline_params[nfapi_index]);
+  nfapi_mode = config_get_processedint(cfg, &cmdline_params[nfapi_index]);
 
   paramdef_t cmdline_logparams[] =CMDLINE_LOGPARAMS_DESC ;
   checkedparam_t cmdline_log_CheckParams[] = CMDLINE_LOGPARAMS_CHECK_DESC;
-  int numlogparams = sizeof(cmdline_logparams) / sizeof(paramdef_t);
+  int numlogparams = sizeofArray(cmdline_logparams);
   config_set_checkfunctions(cmdline_logparams, cmdline_log_CheckParams, numlogparams);
-  config_get(cmdline_logparams, numlogparams, NULL);
+  config_get(cfg, cmdline_logparams, numlogparams, NULL);
 
   if(config_isparamset(cmdline_logparams,config_paramidx_fromname(cmdline_logparams,numparams, CONFIG_FLOG_OPT))) {
     set_glog_onlinelog(online_log_messages);

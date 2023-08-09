@@ -94,16 +94,13 @@ extern void  nr_phy_config_request(NR_PHY_Config_t *gNB);
 //extern PARALLEL_CONF_t get_thread_parallel_conf(void);
 //extern WORKER_CONF_t   get_thread_worker_conf(void);
 
-void init_NR_RU(char *);
-void start_NR_RU();
 void stop_RU(int nb_ru);
 
 void configure_ru(int idx, void *arg);
 void configure_rru(int idx, void *arg);
 int attach_rru(RU_t *ru);
 int connect_rau(RU_t *ru);
-static void NRRCconfig_RU(void);
-
+static void NRRCconfig_RU(configmodule_interface_t *cfg);
 
 extern int emulate_rf;
 extern int numerology;
@@ -1784,7 +1781,8 @@ void set_function_spec_param(RU_t *ru) {
   } // switch on interface type
 }
 
-void init_NR_RU(char *rf_config_file) {
+void init_NR_RU(configmodule_interface_t *cfg, char *rf_config_file)
+{
   int ru_id;
   RU_t *ru;
   PHY_VARS_gNB *gNB_RC;
@@ -1797,7 +1795,7 @@ void init_NR_RU(char *rf_config_file) {
   pthread_cond_init(&RC.ru_cond,NULL);
   // read in configuration file)
   printf("configuring RU from file\n");
-  NRRCconfig_RU();
+  NRRCconfig_RU(cfg);
   LOG_I(PHY,"number of L1 instances %d, number of RU %d, number of CPU cores %d\n",RC.nb_nr_L1_inst,RC.nb_RU,get_nprocs());
   LOG_D(PHY,"Process RUs RC.nb_RU:%d\n",RC.nb_RU);
 
@@ -1884,7 +1882,6 @@ void start_NR_RU()
   start_RU_proc(ru);
 }
 
-
 void stop_RU(int nb_ru) {
   for (int inst = 0; inst < nb_ru; inst++) {
     LOG_I(PHY, "Stopping RU %d processing threads\n", inst);
@@ -1895,19 +1892,19 @@ void stop_RU(int nb_ru) {
 
 /* --------------------------------------------------------*/
 /* from here function to use configuration module          */
-static void NRRCconfig_RU(void)
+static void NRRCconfig_RU(configmodule_interface_t *cfg)
 {
   paramdef_t RUParams[] = RUPARAMS_DESC;
   paramlist_def_t RUParamList = {CONFIG_STRING_RU_LIST,NULL,0};
-  config_getlist(&RUParamList, RUParams, sizeof(RUParams)/sizeof(paramdef_t), NULL);
+  config_getlist(cfg, &RUParamList, RUParams, sizeofArray(RUParams), NULL);
 
   paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
   paramdef_t GNBParams[] = GNBPARAMS_DESC;
   paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
-  config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
+  config_get(cfg, GNBSParams, sizeofArray(GNBSParams), NULL);
   int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
   AssertFatal(num_gnbs > 0, "Failed to parse config file no gnbs %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
-  config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
+  config_getlist(cfg, &GNBParamList, GNBParams, sizeofArray(GNBParams), NULL);
   int N1 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
   int N2 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
   int XP = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;

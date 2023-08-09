@@ -192,13 +192,9 @@ void T_Config_Init(void)
   int T_nowait = 0;
   paramdef_t ttraceparams[] = CMDLINE_TTRACEPARAMS_DESC;
 
-  config_get(ttraceparams,
-             sizeof(ttraceparams) / sizeof(paramdef_t),
-             TTRACER_CONFIG_PREFIX);
+  config_get(config_get_if(), ttraceparams, sizeofArray(ttraceparams), TTRACER_CONFIG_PREFIX);
   /* compatibility: look for TTracer command line options in root section */
-  config_process_cmdline(ttraceparams,
-                         sizeof(ttraceparams) / sizeof(paramdef_t),
-                         NULL);
+  config_process_cmdline(config_get_if(), ttraceparams, sizeofArray(ttraceparams), NULL);
 
   if (T_stdout < 0 || T_stdout > 2) {
     printf("fatal error: T_stdout = %d but only values 0, 1, or 2 are allowed\n", T_stdout);

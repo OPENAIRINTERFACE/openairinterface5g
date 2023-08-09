@@ -753,7 +753,7 @@ int websrv_callback_get_softmodemstatus(const struct _u_request *request, struct
   }
   websrv_add_modeminfo(modemvars, "command line", cmdline, "string");
   if ((config_get_if()->rtflags & CONFIG_SAVERUNCFG) && (config_get_if()->write_parsedcfg != NULL)) {
-    config_get_if()->write_parsedcfg();
+    config_get_if()->write_parsedcfg(config_get_if());
 
     websrv_add_modeminfo(modemvars, "Parsed config file", config_get_if()->status->debug_cfgname, "configfile");
   }
@@ -819,7 +819,7 @@ void *websrv_autoinit()
 {
   int ret;
   memset(&websrvparams, 0, sizeof(websrvparams));
-  config_get(websrvoptions, sizeof(websrvoptions) / sizeof(paramdef_t), "websrv");
+  config_get(websrvoptions, sizeofArray(websrvoptions), "websrv");
   /* check if telnet server is loaded or not */
   add_telnetcmd_func_t addcmd = (add_telnetcmd_func_t)get_shlibmodule_fptr("telnetsrv", TELNET_ADDCMD_FNAME);
   if (addcmd != NULL) {

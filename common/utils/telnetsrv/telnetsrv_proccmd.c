@@ -511,9 +511,9 @@ int proccmd_exit(char *buf, int debug, telnet_printfunc_t prnt)
 int proccmd_restart(char *buf, int debug, telnet_printfunc_t prnt)
 {
   if (debug > 0)
-    prnt("process module received %s\n", buf);
-  end_configmodule();
+       prnt("process module received %s\n", buf);
   configmodule_interface_t *cfg = config_get_if();
+  end_configmodule(cfg);
   execvpe(cfg->argv[0], cfg->argv, environ);
   return 0;
 }

@@ -265,7 +265,7 @@ void validate_input_pmi(nr_pdsch_AntennaPorts_t pdsch_AntennaPorts, int nrOfLaye
 
 
 int NB_UE_INST = 1;
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char **argv)
 {
   FILE *csv_file = NULL;
@@ -348,7 +348,7 @@ int main(int argc, char **argv)
   uint8_t  dlsch_threads = 0;
   int chest_type[2] = {0};
   uint8_t  max_ldpc_iterations = 5;
-  if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0) {
+  if ((uniqCfg = load_configmodule(argc, argv, CONFIG_ENABLECMDLINEONLY)) == 0) {
     exit_fun("[NR_DLSIM] Error, configuration module init failed\n");
   }
 

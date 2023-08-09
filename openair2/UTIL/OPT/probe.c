@@ -542,11 +542,10 @@ void trace_pdu_implementation(int nr, int direction, uint8_t *pdu_buffer, unsign
 int init_opt(void) { 
   paramdef_t opt_params[]          = OPT_PARAMS_DESC ;
   checkedparam_t opt_checkParams[] = OPTPARAMS_CHECK_DESC;
-  config_set_checkfunctions(opt_params, opt_checkParams,
-                            sizeof(opt_params)/sizeof(paramdef_t));
-  config_get( opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
+  config_set_checkfunctions(opt_params, opt_checkParams, sizeofArray(opt_params));
+  config_get(config_get_if(), opt_params, sizeofArray(opt_params), OPT_CONFIGPREFIX);
   subframesSinceCaptureStart = 0;
-  int tmptype = config_get_processedint( &(opt_params[OPTTYPE_IDX]));
+  int tmptype = config_get_processedint(config_get_if(), &(opt_params[OPTTYPE_IDX]));
 
   if (tmptype == OPT_NONE) {
     opt_enabled=0;
@@ -560,7 +559,7 @@ int init_opt(void) {
     opt_type = OPT_WIRESHARK;
   } else {
     LOG_E(OPT,"Invalid OPT configuration\n");
-    config_printhelp(opt_params,sizeof(opt_params)/sizeof(paramdef_t),OPT_CONFIGPREFIX);
+    config_printhelp(opt_params, sizeofArray(opt_params), OPT_CONFIGPREFIX);
   }
 
   // trace_mode

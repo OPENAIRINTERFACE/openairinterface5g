@@ -73,14 +73,14 @@ int RCconfig_MME(void ) {
   paramdef_t   MMEParams[] = MME_NETPARAMS_DESC;
 
   ///* get number of active eNodeBs */
-  //config_get( ENBSParams,sizeof(ENBSParams)/sizeof(paramdef_t),NULL);
-  //num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
-  //AssertFatal (num_enbs >0,
-  //             "Failed to parse config file no active eNodeBs in %s \n", ENB_CONFIG_STRING_ACTIVE_ENBS);
-  //sprintf(gtpupath,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,0,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
+  // config_get( config_get_if(),ENBSParams,sizeofArray(ENBSParams),NULL);
+  // num_enbs = ENBSParams[ENB_ACTIVE_ENBS_IDX].numelt;
+  // AssertFatal (num_enbs >0,
+  //              "Failed to parse config file no active eNodeBs in %s \n", ENB_CONFIG_STRING_ACTIVE_ENBS);
+  // sprintf(gtpupath,"%s.[%i].%s",ENB_CONFIG_STRING_ENB_LIST,0,ENB_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
   sprintf(mmepath,"%s.[%i].%s","MMEs",0,MME_CONFIG_STRING_NETWORK_INTERFACES_CONFIG);
-  //config_get( GTPUParams,sizeof(GTPUParams)/sizeof(paramdef_t),gtpupath);
-  config_get(MMEParams,sizeof(MMEParams)/sizeof(paramdef_t),mmepath);
+  // config_get(config_get_if(), GTPUParams,sizeofArray(GTPUParams),gtpupath);
+  config_get(config_get_if(), MMEParams, sizeofArray(MMEParams), mmepath);
   //cidr = enb_ipv4_address_for_S1U;
   cidr = mme_ipv4_address_for_m3c;
   address = strtok(cidr, "/");

@@ -70,7 +70,7 @@ void nas_getparams(void) {
     {"BroadcastAddr",    NASHLP_BROADCASTADDR,   0,              .strptr=&broadcastAddr,         .defstrval="10.0.255.255",    TYPE_STRING,  0 },
   };
   // clang-format on
-  config_get( nasoptions,sizeof(nasoptions)/sizeof(paramdef_t),"nas.noS1");
+  config_get(config_get_if(), nasoptions, sizeofArray(nasoptions), "nas.noS1");
 }
 
 void setBaseNetAddress (char *baseAddr) {

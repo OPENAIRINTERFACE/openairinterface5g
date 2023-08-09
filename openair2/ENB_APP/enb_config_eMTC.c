@@ -107,12 +107,12 @@ void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCc
   }
 
   char schedulingInfoBrPath[MAX_OPTNAME_SIZE * 2];
-  config_getlist(&schedulingInfoBrParamList, NULL, 0, brparamspath);
+  config_getlist(config_get_if(), &schedulingInfoBrParamList, NULL, 0, brparamspath);
   RRCcfg->scheduling_info_br_size[cc_idx] = schedulingInfoBrParamList.numelt;
   int siInfoindex;
   for (siInfoindex = 0; siInfoindex < schedulingInfoBrParamList.numelt; siInfoindex++) {
     sprintf(schedulingInfoBrPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_EMTC_PARAMETERS, siInfoindex);
-    config_get(schedulingInfoBrParams, sizeof(schedulingInfoBrParams) / sizeof(paramdef_t), schedulingInfoBrPath);
+    config_get(config_get_if(), schedulingInfoBrParams, sizeofArray(schedulingInfoBrParams), schedulingInfoBrPath);
     RRCcfg->si_Narrowband_r13[cc_idx][siInfoindex] = eMTCconfig->si_Narrowband_r13;
     RRCcfg->si_TBS_r13[cc_idx][siInfoindex] = eMTCconfig->si_TBS_r13;
   }
@@ -912,12 +912,12 @@ void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCc
   }
 
   char rachCELevelInfoListPath[MAX_OPTNAME_SIZE * 2];
-  config_getlist(&rachcelevellist, NULL, 0, brparamspath);
+  config_getlist(config_get_if(), &rachcelevellist, NULL, 0, brparamspath);
   RRCcfg->rach_CE_LevelInfoList_r13_size[cc_idx] = rachcelevellist.numelt;
   int rachCEInfoIndex;
   for (rachCEInfoIndex = 0; rachCEInfoIndex < rachcelevellist.numelt; rachCEInfoIndex++) {
     sprintf(rachCELevelInfoListPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_RACH_CE_LEVELINFOLIST_R13, rachCEInfoIndex);
-    config_get(rachcelevelParams, sizeof(rachcelevelParams) / sizeof(paramdef_t), rachCELevelInfoListPath);
+    config_get(config_get_if(), rachcelevelParams, sizeofArray(rachcelevelParams), rachCELevelInfoListPath);
 
     RRCcfg->firstPreamble_r13[cc_idx][rachCEInfoIndex] = eMTCconfig->firstPreamble_r13;
     RRCcfg->lastPreamble_r13[cc_idx][rachCEInfoIndex] = eMTCconfig->lastPreamble_r13;
@@ -990,25 +990,25 @@ void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCc
   } // end for loop (rach ce level info)
 
   char rsrpRangeListPath[MAX_OPTNAME_SIZE * 2];
-  config_getlist(&rsrprangelist, NULL, 0, brparamspath);
+  config_getlist(config_get_if(), &rsrprangelist, NULL, 0, brparamspath);
   RRCcfg->rsrp_range_list_size[cc_idx] = rsrprangelist.numelt;
 
   int rsrprangeindex;
   for (rsrprangeindex = 0; rsrprangeindex < rsrprangelist.numelt; rsrprangeindex++) {
     sprintf(rsrpRangeListPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_RSRP_RANGE_LIST, rsrprangeindex);
-    config_get(rsrprangeParams, sizeof(rsrprangeParams) / sizeof(paramdef_t), rsrpRangeListPath);
+    config_get(config_get_if(), rsrprangeParams, sizeofArray(rsrprangeParams), rsrpRangeListPath);
     RRCcfg->rsrp_range[cc_idx][rsrprangeindex] = eMTCconfig->rsrp_range_br;
   }
 
 
   char prachparameterscePath[MAX_OPTNAME_SIZE * 2];
-  config_getlist(&prachParamslist, NULL, 0, brparamspath);
+  config_getlist(config_get_if(), &prachParamslist, NULL, 0, brparamspath);
   RRCcfg->prach_parameters_list_size[cc_idx] = prachParamslist.numelt;
 
   int prachparamsindex;
   for (prachparamsindex = 0; prachparamsindex < prachParamslist.numelt; prachparamsindex++) {
     sprintf(prachparameterscePath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_PRACH_PARAMETERS_CE_R13, prachparamsindex);
-    config_get(prachParams, sizeof(prachParams) / sizeof(paramdef_t), prachparameterscePath);
+    config_get(config_get_if(), prachParams, sizeofArray(prachParams), prachparameterscePath);
 
     RRCcfg->prach_config_index[cc_idx][prachparamsindex] = eMTCconfig->prach_config_index_br;
     RRCcfg->prach_freq_offset[cc_idx][prachparamsindex] = eMTCconfig->prach_freq_offset_br;
@@ -1137,21 +1137,19 @@ void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCc
   }
 
   char n1PUCCHInfoParamsPath[MAX_OPTNAME_SIZE * 2];
-  config_getlist(&n1PUCCHInfoList, NULL, 0, brparamspath);
+  config_getlist(config_get_if(), &n1PUCCHInfoList, NULL, 0, brparamspath);
   RRCcfg->pucch_info_value_size[cc_idx] = n1PUCCHInfoList.numelt;
 
   int n1PUCCHinfolistindex;
   for (n1PUCCHinfolistindex = 0; n1PUCCHinfolistindex < n1PUCCHInfoList.numelt; n1PUCCHinfolistindex++) {
     sprintf(n1PUCCHInfoParamsPath, "%s.%s.[%i]", brparamspath, ENB_CONFIG_STRING_N1PUCCH_AN_INFOLIST_R13, n1PUCCHinfolistindex);
-    config_get(n1PUCCH_ANR13Params, sizeof(n1PUCCH_ANR13Params) / sizeof(paramdef_t), n1PUCCHInfoParamsPath);
+    config_get(config_get_if(), n1PUCCH_ANR13Params, sizeofArray(n1PUCCH_ANR13Params), n1PUCCHInfoParamsPath);
     RRCcfg->pucch_info_value[cc_idx][n1PUCCHinfolistindex] = eMTCconfig->pucch_info_value;
   }
 
   char PCCHConfigv1310Path[MAX_OPTNAME_SIZE*2 + 16];
   sprintf(PCCHConfigv1310Path, "%s.%s", brparamspath, ENB_CONFIG_STRING_PCCH_CONFIG_V1310);
-  config_get(pcchv1310Params, sizeof(pcchv1310Params)/sizeof(paramdef_t), PCCHConfigv1310Path);
-
-
+  config_get(config_get_if(), pcchv1310Params, sizeofArray(pcchv1310Params), PCCHConfigv1310Path);
 
   /** PCCH CONFIG V1310 */
   RRCcfg->pcch_config_v1310[cc_idx] = true;
@@ -1207,7 +1205,7 @@ void fill_eMTC_configuration(RrcConfigurationReq *RRCcfg, ccparams_eMTC_t *eMTCc
 
   char sib2FreqHoppingParametersR13Path[MAX_OPTNAME_SIZE*2 + 16];
   sprintf(sib2FreqHoppingParametersR13Path, "%s.%s", brparamspath, ENB_CONFIG_STRING_SIB2_FREQ_HOPPINGPARAMETERS_R13);
-  config_get(sib2freqhoppingParams, sizeof(sib2freqhoppingParams)/sizeof(paramdef_t), sib2FreqHoppingParametersR13Path);
+  config_get(config_get_if(), sib2freqhoppingParams, sizeofArray(sib2freqhoppingParams), sib2FreqHoppingParametersR13Path);
 
   RRCcfg->sib2_interval_ULHoppingConfigCommonModeA_r13[cc_idx] = CALLOC(1, sizeof(long));
   if (!strcmp(eMTCconfig->sib2_interval_ULHoppingConfigCommonModeA_r13, "FDD")) {

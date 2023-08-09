@@ -278,8 +278,8 @@ void run_cpumeasur(void) {
 void init_meas(void) {
   pthread_t thid;
   paramdef_t cpumeasur_params[] = CPUMEASUR_PARAMS_DESC;
-  int numparams=sizeof(cpumeasur_params)/sizeof(paramdef_t);
-  int rt = config_get( cpumeasur_params,numparams,CPUMEASUR_SECTION);
+  int numparams = sizeofArray(cpumeasur_params);
+  int rt = config_get(config_get_if(), cpumeasur_params, numparams, CPUMEASUR_SECTION);
   AssertFatal(rt >= 0, "cpumeasur configuration couldn't be performed");
   measur_table=calloc(max_cpumeasur,sizeof( time_stats_t *));
   AssertFatal(measur_table!=NULL, "couldn't allocate %u cpu measurements entries\n",max_cpumeasur);

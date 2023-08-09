@@ -53,7 +53,7 @@ int load_nrLDPClib(char *version) {
   char libname[64] = "ldpc";
 
   if (ptr == NULL) { // phy simulators, config module possibly not loaded
-    load_configmodule(1, arg, CONFIG_ENABLECMDLINEONLY);
+    uniqCfg = load_configmodule(1, arg, CONFIG_ENABLECMDLINEONLY);
     logInit();
   }
   shlib_fdesc[0].fname = "nrLDPC_decod";

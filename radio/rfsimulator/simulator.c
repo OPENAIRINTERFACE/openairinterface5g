@@ -330,13 +330,9 @@ static void rfsimulator_readconfig(rfsimulator_state_t *rfsimulator) {
   char *saveF=NULL;
   char *modelname=NULL;
   paramdef_t rfsimu_params[] = RFSIMULATOR_PARAMS_DESC;
-  int p = config_paramidx_fromname(rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t), RFSIMU_OPTIONS_PARAMNAME) ;
-  int ret = config_get( rfsimu_params,sizeof(rfsimu_params)/sizeof(paramdef_t),RFSIMU_SECTION);
-
-  if (ret < 0) {
-    LOG_E(HW, "Configuration couldn't be performed\n");
-    exit(-1);
-  }
+  int p = config_paramidx_fromname(rfsimu_params, sizeofArray(rfsimu_params), RFSIMU_OPTIONS_PARAMNAME);
+  int ret = config_get(config_get_if(), rfsimu_params, sizeofArray(rfsimu_params), RFSIMU_SECTION);
+  AssertFatal(ret >= 0, "configuration couldn't be performed\n");
 
   rfsimulator->saveIQfile = -1;
 

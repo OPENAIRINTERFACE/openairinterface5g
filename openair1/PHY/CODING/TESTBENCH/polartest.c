@@ -17,7 +17,7 @@
 //#define DEBUG_POLAR_TIMING
 //#define DEBUG_POLARTEST
 
-
+configmodule_interface_t *uniqCfg = NULL;
 int main(int argc, char *argv[])
 {
   //Default simulation values (Aim for iterations = 1000000.) 

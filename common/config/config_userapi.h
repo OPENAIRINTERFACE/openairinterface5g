@@ -33,60 +33,49 @@
 #ifndef INCLUDE_CONFIG_USERAPI_H
 #define INCLUDE_CONFIG_USERAPI_H
 #include "config_load_configmodule.h"
+#include "common/utils/utils.h"
 
 #ifdef __cplusplus
 extern "C"
 {
 #endif
-
+#ifndef NOT_uniqCfg
+extern configmodule_interface_t *uniqCfg;
+#define config_get_if() uniqCfg // Existing code implicit uniq configuration context
+#endif
 /* utility functions to ease usage of config module structures */
-#define CONFIG_GETSOURCE    ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgmode       )
-#define CONFIG_GETNUMP      ( (config_get_if()==NULL) ? 0    : config_get_if()->num_cfgP      )
-#define CONFIG_GETP(P)      ( (config_get_if()==NULL) ? NULL : config_get_if()->cfgP[P]       )
+#define CONFIG_GETSOURCE ((config_get_if() == NULL) ? NULL : config_get_if()->cfgmode)
 #define CONFIG_ISFLAGSET(P) ( (config_get_if()==NULL) ? 0    : !!(config_get_if()->rtflags & P))
 #define CONFIG_SETRTFLAG(P)   if (config_get_if()) { config_get_if()->rtflags |= P; }
 #define CONFIG_CLEARRTFLAG(P) if (config_get_if()) { config_get_if()->rtflags &= (~P); }
 #define CONFIG_ISPARAMFLAGSET(P,F) ( !!(P.paramflags & F))
-extern int config_paramidx_fromname(paramdef_t *params,int numparams, char *name);
+int config_paramidx_fromname(paramdef_t *params, int numparams, char *name);
 
 /* utility functions, to be used by configuration module and/or configuration libraries */
-extern configmodule_interface_t *config_get_if(void);
-  void config_check_valptr(paramdef_t *cfgoptions, int elt_sz, int nb_elt);
-extern void config_printhelp(paramdef_t *,int numparams, char *prefix);
-extern int config_process_cmdline(paramdef_t *params,int numparams, char *prefix);
-extern void config_assign_processedint(paramdef_t *cfgoption, int val);
-extern void config_assign_int(paramdef_t *cfgoptions, char *fullname, int val);
-extern int config_assign_ipv4addr(paramdef_t *cfgoptions, char *ipv4addr);
+void config_printhelp(paramdef_t *, int numparams, char *prefix);
+int config_process_cmdline(configmodule_interface_t *cfg, paramdef_t *params, int numparams, char *prefix);
+int config_assign_ipv4addr(configmodule_interface_t *cfg, paramdef_t *cfgoptions, char *ipv4addr);
 
 /* apis to get/check parameters, to be used by oai modules, at configuration time */
 #define CONFIG_CHECKALLSECTIONS "ALLSECTIONS"
-extern int config_check_unknown_cmdlineopt(char *prefix);
-extern int config_get(paramdef_t *params,int numparams, char *prefix);
-extern int config_getlist(paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix);
+int config_check_unknown_cmdlineopt(configmodule_interface_t *cfg, char *prefix);
+int config_get(configmodule_interface_t *cfg, paramdef_t *params, int numparams, char *prefix);
+int config_getlist(configmodule_interface_t *cfg, paramlist_def_t *ParamList, paramdef_t *params, int numparams, char *prefix);
 
 /* apis to set some of the paramdef_t fields before using the get/getlist api's */
-extern void config_set_checkfunctions(paramdef_t *params, checkedparam_t *checkfunctions, int numparams);
+void config_set_checkfunctions(paramdef_t *params, checkedparam_t *checkfunctions, int numparams);
 
 /* apis to retrieve parameters info after calling get or getlist functions */
-extern int config_isparamset(paramdef_t *params,int paramidx);
-extern int config_get_processedint(paramdef_t *cfgoption);
+int config_isparamset(paramdef_t *params, int paramidx);
+int config_get_processedint(configmodule_interface_t *cfg, paramdef_t *cfgoption);
 
 /* functions to be used in parameters definition, to check parameters values */
-extern int config_check_intval(paramdef_t *param);
-extern int config_check_modify_integer(paramdef_t *param);
-extern int config_check_intrange(paramdef_t *param);
-extern int config_check_strval(paramdef_t *param);
-extern int config_checkstr_assign_integer(paramdef_t *param);
+int config_check_intval(configmodule_interface_t *cfg, paramdef_t *param);
+int config_check_modify_integer(configmodule_interface_t *cfg, paramdef_t *param);
+int config_check_intrange(configmodule_interface_t *cfg, paramdef_t *param);
+int config_check_strval(configmodule_interface_t *cfg, paramdef_t *param);
+int config_checkstr_assign_integer(configmodule_interface_t *cfg, paramdef_t *param);
 
-/* functions to set a parameter to its default value */
-extern int config_setdefault_string(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_stringlist(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_int(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_int64(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_intlist(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_double(paramdef_t *cfgoptions, char *prefix);
-extern int config_setdefault_ipv4addr(paramdef_t *cfgoptions, char *prefix);
-  void *config_allocate_new(int sz, bool autoFree);
 #define CONFIG_GETCONFFILE (config_get_if()->cfgP[0])
 
 #ifdef __cplusplus
