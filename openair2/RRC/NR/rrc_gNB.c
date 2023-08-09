@@ -187,26 +187,6 @@ static void freeDRBlist(NR_DRB_ToAddModList_t *list)
   //ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList, list);
   return;
 }
-static void nr_rrc_addmod_srbs(int rnti,
-                               const NR_SRB_INFO_TABLE_ENTRY *srb_list,
-                               const int nb_srb,
-                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
-{
-  if (srb_list == NULL || bearer_list == NULL)
-    return;
-
-  for (int i = 0; i < nb_srb; i++) {
-    if (srb_list[i].Active)
-      for (int j = 0; j < bearer_list->list.count; j++) {
-        const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
-        if (bearer->servedRadioBearer != NULL
-            && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity
-            && i == bearer->servedRadioBearer->choice.srb_Identity) {
-          nr_rlc_add_srb(rnti, i, bearer);
-        }
-      }
-  }
-}
 
 static void nr_rrc_addmod_drbs(int rnti,
                                const NR_DRB_ToAddModList_t *drb_list,
@@ -447,17 +427,6 @@ static void freeSRBlist(NR_SRB_ToAddModList_t *l)
     LOG_E(NR_RRC, "Call free SRB list on NULL pointer\n");
 }
 
-static void apply_macrlc_config(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *const ue_context_pP, const protocol_ctxt_t *const ctxt_pP)
-{
-  NR_CellGroupConfig_t *cgc = get_softmodem_params()->sa ? ue_context_pP->ue_context.masterCellGroup : NULL;
-  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  nr_rrc_mac_update_cellgroup(ue_p->rnti, cgc);
-  nr_rrc_addmod_srbs(ctxt_pP->rntiMaybeUEid, ue_p->Srb, maxSRBs, cgc->rlc_BearerToAddModList);
-  NR_DRB_ToAddModList_t *DRBs = fill_DRB_configList(ue_p);
-  nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid, DRBs, cgc->rlc_BearerToAddModList);
-  freeDRBlist(DRBs);
-}
-
 //-----------------------------------------------------------------------------
 static void rrc_gNB_generate_RRCSetup(instance_t instance,
                                       rnti_t rnti,
@@ -495,68 +464,6 @@ static void rrc_gNB_generate_RRCSetup(instance_t instance,
     .srb_id = CCCH
   };
   rrc->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
-}
-
-//-----------------------------------------------------------------------------
-static int rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id_t module_id, rnti_t rnti, const int CC_id)
-//-----------------------------------------------------------------------------
-{
-  LOG_I(NR_RRC, "generate RRCSetup for RRCReestablishmentRequest \n");
-  rrc_gNB_ue_context_t         *ue_context_pP   = NULL;
-  gNB_RRC_INST *rrc_instance_p = RC.nrrrc[module_id];
-
-  AssertFatal(false, "this is not implemented\n");
-  /* for creating a UE context, we need the DU ID to be able to indicate the
-   * DU. This is not yet implemented for Reestablishment. We know that in
-   * monolithic, the DU UE ID is the RNTI, so use that for the moment */
-  ue_context_pP = rrc_gNB_create_ue_context(rnti, rrc_instance_p, 0, rnti);
-
-  gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-  unsigned char buf[1024];
-  uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
-  ue_p->xids[xid] = RRC_SETUP_FOR_REESTABLISHMENT;
-  NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
-
-  int size = do_RRCSetup(ue_context_pP, buf, xid, NULL, 0, &rrc_instance_p->configuration, SRBs);
-  AssertFatal(size > 0, "do_RRCSetup failed\n");
-  AssertFatal(size <= 1024, "memory corruption\n");
-
-  AssertFatal(size>0,"Error generating RRCSetup for RRCReestablishmentRequest\n");
-
-  LOG_DUMPMSG(NR_RRC, DEBUG_RRC,
-              (char *)buf,
-              size,
-              "[MSG] RRC Setup\n");
-
-  LOG_D(NR_RRC, "RRC_gNB --- MAC_CONFIG_REQ  (SRB1) ---> MAC_gNB for rnti %04x\n", rnti);
-  freeSRBlist(SRBs);
-
-  // update SCC and MIB/SIB (two calls)
-  nr_mac_config_scc(RC.nrmac[rrc_instance_p->module_id],
-                    rrc_instance_p->configuration.pdsch_AntennaPorts,
-                    rrc_instance_p->configuration.pusch_AntennaPorts,
-                    rrc_instance_p->configuration.sib1_tda,
-                    rrc_instance_p->configuration.minRXTXTIME,
-                    rrc_instance_p->carrier.servingcellconfigcommon);
-  nr_mac_config_mib(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.mib);
-  nr_mac_config_sib1(RC.nrmac[rrc_instance_p->module_id], rrc_instance_p->carrier.siblock1);
-
-  LOG_I(NR_RRC, " [RAPROC] rnti: %04x Logical Channel DL-CCCH, Generating RRCSetup (bytes %d)\n", rnti, size);
-  // configure MAC
-  protocol_ctxt_t ctxt = {0};
-  PROTOCOL_CTXT_SET_BY_INSTANCE(&ctxt, 0, GNB_FLAG_YES, ue_p->rrc_ue_id, 0, 0);
-  apply_macrlc_config(rrc_instance_p, ue_context_pP, &ctxt);
-
-  f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
-  f1ap_dl_rrc_message_t dl_rrc = {
-    .gNB_CU_ue_id = ue_p->rrc_ue_id,
-    .gNB_DU_ue_id = ue_data.secondary_ue,
-    .rrc_container = buf,
-    .rrc_container_length = size,
-    .srb_id = CCCH
-  };
-  rrc_instance_p->mac_rrc.dl_rrc_message_transfer(&dl_rrc);
-  return xid;
 }
 
 static void rrc_gNB_generate_RRCReject(module_id_t module_id, rrc_gNB_ue_context_t *const ue_context_pP)
@@ -1499,21 +1406,31 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
           LOG_D(NR_RRC, "rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[%d] = %x\n", i, rrcReestablishmentRequest.ue_Identity.shortMAC_I.buf[i]);
         }
 
-        // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
-        if (rrcReestablishmentRequest.ue_Identity.c_RNTI < 0x1 || rrcReestablishmentRequest.ue_Identity.c_RNTI > 0xffef) {
-          /* c_RNTI range error should not happen */
-          LOG_E(NR_RRC, "NR_RRCReestablishmentRequest c_RNTI range error, fallback to RRC establishment\n");
-          rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
-          break;
-        }
-
         rnti_t old_rnti = rrcReestablishmentRequest.ue_Identity.c_RNTI;
         // TODO: we need to check within a specific DU!
         rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(gnb_rrc_inst, old_rnti);
         gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
+        /* in case we need to do RRC Setup, give the UE a new random identity */
+        uint64_t random_value;
+        fill_random(&random_value, sizeof(random_value));
+        random_value = random_value & 0x7fffffffff; /* random value is 39 bits */
         if (ue_context_p == NULL) {
-          LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC establishment\n");
-          rrc_gNB_generate_RRCSetup_for_RRCReestablishmentRequest(module_id, rnti, 0);
+          LOG_E(NR_RRC, "NR_RRCReestablishmentRequest without UE context, fallback to RRC setup\n");
+          ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
+          ue_context_p->ue_context.Srb[1].Active = 1;
+          rrc_gNB_generate_RRCSetup(module_id, rnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
+          break;
+        }
+
+        // 3GPP TS 38.321 version 15.13.0 Section 7.1 Table 7.1-1: RNTI values
+        if (rrcReestablishmentRequest.ue_Identity.c_RNTI < 0x1 || rrcReestablishmentRequest.ue_Identity.c_RNTI > 0xffef) {
+          /* c_RNTI range error should not happen */
+          LOG_E(NR_RRC,
+                "NR_RRCReestablishmentRequest c_RNTI %04lx range error, fallback to RRC setup\n",
+                rrcReestablishmentRequest.ue_Identity.c_RNTI);
+          ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, random_value, msg->gNB_DU_ue_id);
+          ue_context_p->ue_context.Srb[1].Active = 1;
+          rrc_gNB_generate_RRCSetup(module_id, rnti, ue_context_p, msg->du2cu_rrc_container, msg->du2cu_rrc_container_length);
           break;
         }
 
