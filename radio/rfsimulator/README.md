@@ -119,7 +119,7 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78
 ### Launch UE in another window
 
 ```bash
-sudo ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path . --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>
+sudo ./nr-uesoftmodem --rfsim --phy-test --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>
 ```
 
 Notes:
