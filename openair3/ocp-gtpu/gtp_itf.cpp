@@ -825,11 +825,47 @@ int newGtpuDeleteAllTunnels(instance_t instance, ue_id_t ue_id) {
   return !GTPNOK;
 }
 
-// Legacy delete tunnel finish by deleting all the ue id
-// so the list of bearer provided is only a design bug
 int gtpv1u_delete_s1u_tunnel( const instance_t instance,
                               const gtpv1u_enb_delete_tunnel_req_t *const req_pP) {
-  return  newGtpuDeleteAllTunnels(instance, req_pP->rnti);
+  LOG_D(GTPU, "[%ld] Start delete tunnels for RNTI %x\n", instance, req_pP->rnti);
+  pthread_mutex_lock(&globGtp.gtp_lock);
+  auto inst = &globGtp.instances[compatInst(instance)];
+  auto ptrRNTI = inst->ue2te_mapping.find(req_pP->rnti);
+  if (ptrRNTI == inst->ue2te_mapping.end()) {
+    LOG_W(GTPU, "[%ld] Delete Released GTP tunnels for rnti: %x, but no tunnel exits\n", instance, req_pP->rnti);
+    pthread_mutex_unlock(&globGtp.gtp_lock);
+    return -1;
+  }
+
+  int nb = 0;
+
+  for (int i = 0; i < req_pP->num_erab; i++) {
+    auto ptr2 = ptrRNTI->second.bearers.find(req_pP->eps_bearer_id[i]);
+    if (ptr2 == ptrRNTI->second.bearers.end()) {
+      LOG_E(GTPU,
+            "[%ld] GTP-U instance: delete of not existing tunnel RNTI:RAB: %x/%x\n",
+            instance,
+            req_pP->rnti,
+            req_pP->eps_bearer_id[i]);
+    } else {
+      globGtp.te2ue_mapping.erase(ptr2->second.teid_incoming);
+      nb++;
+    }
+  }
+
+  if (ptrRNTI->second.bearers.size() == 0)
+    // no tunnels on this rnti, erase the ue entry
+    inst->ue2te_mapping.erase(ptrRNTI);
+
+  pthread_mutex_unlock(&globGtp.gtp_lock);
+  LOG_I(GTPU, "[%ld] Deleted released tunnels for RNTI %x (%d tunnels deleted)\n", instance, req_pP->rnti, nb);
+  return !GTPNOK;
+}
+
+// Legacy delete tunnel finish by deleting all the ue id
+int gtpv1u_delete_all_s1u_tunnel(const instance_t instance, const rnti_t rnti)
+{
+  return newGtpuDeleteAllTunnels(instance, rnti);
 }
 
 int newGtpuDeleteTunnels(instance_t instance, ue_id_t ue_id, int nbTunnels, pdusessionid_t *pdusession_id) {

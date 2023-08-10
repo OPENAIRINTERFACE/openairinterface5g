@@ -423,7 +423,7 @@ void rrc_remove_nsa_user(gNB_RRC_INST *rrc, int rnti) {
     memset(&ue_context->ue_context.nsa_gtp_addrs[e_rab], 0, sizeof(ue_context->ue_context.nsa_gtp_addrs[e_rab]));
     ue_context->ue_context.nsa_gtp_ebi[e_rab] = 0;
   }
-  gtpv1u_delete_s1u_tunnel(rrc->module_id,  &tmp);
+  gtpv1u_delete_all_s1u_tunnel(rrc->module_id, rnti);
   /* remove context */
   rrc_gNB_remove_ue_context(rrc, ue_context);
 }

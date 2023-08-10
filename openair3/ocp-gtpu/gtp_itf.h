@@ -61,6 +61,7 @@ extern "C" {
                                );
 
   int gtpv1u_delete_s1u_tunnel( const instance_t instance, const gtpv1u_enb_delete_tunnel_req_t *const req_pP);
+  int gtpv1u_delete_all_s1u_tunnel(const instance_t instance, const rnti_t rnti);
 
   int gtpv1u_create_x2u_tunnel(const instance_t instanceP,
                                const gtpv1u_enb_create_x2u_tunnel_req_t   *const create_tunnel_req_pP,
