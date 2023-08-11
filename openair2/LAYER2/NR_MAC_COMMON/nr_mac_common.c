@@ -2899,7 +2899,7 @@ uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servi
       }
       if (count>0) {
         nbits = ceil(log2(count));
-        if (val && srs_feedback && nbits > 0 && count > 2) {
+        if (val && srs_feedback && count > 1) {
           *val = table_7_3_1_1_2_32[count-2][srs_feedback->sri];
         }
       }
