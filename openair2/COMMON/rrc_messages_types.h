@@ -82,6 +82,7 @@
 #define NAS_PAGING_IND(mSGpTR)          (mSGpTR)->ittiMsg.nas_paging_ind
 #define NAS_CONN_ESTABLI_CNF(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_establi_cnf
 #define NAS_CONN_RELEASE_IND(mSGpTR)    (mSGpTR)->ittiMsg.nas_conn_release_ind
+#define NR_NAS_CONN_RELEASE_IND(mSGpTR) (mSGpTR)->ittiMsg.nr_nas_conn_release_ind
 #define NAS_UPLINK_DATA_CNF(mSGpTR)     (mSGpTR)->ittiMsg.nas_ul_data_cnf
 #define NAS_DOWNLINK_DATA_IND(mSGpTR)   (mSGpTR)->ittiMsg.nas_dl_data_ind
 
@@ -451,6 +452,16 @@ typedef struct nrrrc_frame_process_s {
   int frame;
   int gnb_id;
 } NRRrcFrameProcess;
+
+typedef enum NR_Release_Cause_e {
+  RRC_CONNECTION_FAILURE,
+  RRC_RESUME_FAILURE,
+  OTHER,
+} NR_Release_Cause_t;
+
+typedef struct nr_nas_conn_release_ind {
+  NR_Release_Cause_t cause;
+} NRNasConnReleaseInd;
 
 // eNB: RLC -> RRC messages
 typedef struct rlc_sdu_indication_s {

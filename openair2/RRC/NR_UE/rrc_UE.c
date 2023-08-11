@@ -1334,19 +1334,13 @@ static int nr_rrc_ue_decode_dcch(instance_t instance,
         case NR_DL_DCCH_MessageType__c1_PR_rrcResume:
           LOG_I(NR_RRC, "Received rrcResume on DL-DCCH-Message\n");
           break;
-        case NR_DL_DCCH_MessageType__c1_PR_rrcRelease: {
-          struct NR_RRCRelease__criticalExtensions *ext = &c1->choice.rrcRelease->criticalExtensions;
-          LOG_I(NR_RRC, "Received RRC Release (gNB %d)\n", gNB_indexP);
-          MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NAS_CONN_RELEASE_IND);
-          // FixMe: this code do nothing !!!!
-          if (ext->present == NR_RRCRelease__criticalExtensions_PR_rrcRelease) {
-            ext->choice.rrcRelease->deprioritisationReq->deprioritisationTimer =
-                NR_RRCRelease_IEs__deprioritisationReq__deprioritisationTimer_min5;
-            ext->choice.rrcRelease->deprioritisationReq->deprioritisationType =
-                NR_RRCRelease_IEs__deprioritisationReq__deprioritisationType_frequency;
-          }
-          itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
-        } break;
+        case NR_DL_DCCH_MessageType__c1_PR_rrcRelease:
+          LOG_I(NR_RRC, "[UE %ld] Received RRC Release (gNB %d)\n",
+                instance, gNB_indexP);
+          // TODO properly implement procedures in 5.3.8.3 of 38.331
+          NR_Release_Cause_t cause = OTHER;
+          nr_rrc_going_to_IDLE(instance, cause, dl_dcch_msg->message.choice.c1->choice.rrcRelease);
+          break;
 
         case NR_DL_DCCH_MessageType__c1_PR_ueCapabilityEnquiry:
           LOG_I(NR_RRC, "Received Capability Enquiry (gNB %d)\n", gNB_indexP);
@@ -1847,6 +1841,7 @@ static void process_lte_nsa_msg(NR_UE_RRC_INST_t *rrc, nsa_msg_t *msg, int msg_l
 }
 
 void nr_rrc_going_to_IDLE(instance_t instance,
+                          NR_Release_Cause_t release_cause,
                           NR_RRCRelease_t *RRCRelease)
 {
   NR_UE_RRC_INST_t *rrc = &NR_UE_rrc_inst[instance];
@@ -1867,9 +1862,8 @@ void nr_rrc_going_to_IDLE(instance_t instance,
         // start timer T302 with the value set to the waitTime
         tac->T302_active = true;
         tac->T302_k = *waitTime * 1000; // waitTime is in seconds
-        // inform upper layers that access barring is applicable
+        // TODO inform upper layers that access barring is applicable
         // for all access categories except categories '0' and '2'.
-        // TODO no idea what that means
         LOG_E(NR_RRC,"Go to IDLE. Handling RRCRelease message including a waitTime not implemented\n");
       }
     }
@@ -1995,12 +1989,14 @@ void nr_rrc_going_to_IDLE(instance_t instance,
 
   nr_rrc_mac_config_req_release(instance);
 
-  // TODO indicate the release of the RRC connection to upper layers
-  // together with the release cause
-
   // enter RRC_IDLE
   rrc->nrRrcState = RRC_STATE_IDLE_NR;
   rrc->rnti = 0;
+
+  // Indicate the release of the RRC connection to upper layers
+  MessageDef *msg_p = itti_alloc_new_message(TASK_RRC_NRUE, 0, NR_NAS_CONN_RELEASE_IND);
+  NR_NAS_CONN_RELEASE_IND(msg_p).cause = release_cause;
+  itti_send_msg_to_task(TASK_NAS_NRUE, instance, msg_p);
 }
 
 void nr_ue_rrc_timer_trigger(int instance, int frame, int gnb_id)

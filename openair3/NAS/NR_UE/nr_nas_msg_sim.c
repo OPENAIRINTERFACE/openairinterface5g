@@ -1137,14 +1137,19 @@ void *nas_nrue(void *args_p)
         break;
       }
 
-      case NAS_CONN_RELEASE_IND:
-        LOG_I(NAS, "[UE %ld] Received %s: cause %u\n", instance, ITTI_MSG_NAME(msg_p), NAS_CONN_RELEASE_IND(msg_p).cause);
-        /* the following is not clean, but probably necessary: we need to give
-         * time to RLC to Ack the SRB1 PDU which contained the RRC release
-         * message. Hence, we just below wait some time, before finally
-         * unblocking the nr-uesoftmodem, which will terminate the process. */
-        usleep(100000);
-        itti_wait_tasks_unblock(); /* will unblock ITTI to stop nr-uesoftmodem */
+      case NR_NAS_CONN_RELEASE_IND:
+        LOG_I(NAS, "[UE %ld] Received %s: cause %u\n",
+              instance, ITTI_MSG_NAME (msg_p), NR_NAS_CONN_RELEASE_IND (msg_p).cause);
+        nr_ue_nas_t *nas = get_ue_nas_info(0);
+        // TODO handle connection release
+        if (nas->termination_procedure) {
+          /* the following is not clean, but probably necessary: we need to give
+           * time to RLC to Ack the SRB1 PDU which contained the RRC release
+           * message. Hence, we just below wait some time, before finally
+           * unblocking the nr-uesoftmodem, which will terminate the process. */
+          usleep(100000);
+          itti_wait_tasks_unblock(); /* will unblock ITTI to stop nr-uesoftmodem */
+        }
         break;
 
       case NAS_UPLINK_DATA_CNF:
@@ -1162,6 +1167,8 @@ void *nas_nrue(void *args_p)
         nr_ue_nas_t *nas = get_ue_nas_info(0);
         if (nas->guti) {
           nas_deregistration_req_t *req = &NAS_DEREGISTRATION_REQ(msg_p);
+          if (req->cause == AS_DETACH)
+            nas->termination_procedure = true;
           as_nas_info_t initialNasMsg = {0};
           generateDeregistrationRequest(nas, &initialNasMsg, req);
           send_nas_uplink_data_req(instance, &initialNasMsg);
