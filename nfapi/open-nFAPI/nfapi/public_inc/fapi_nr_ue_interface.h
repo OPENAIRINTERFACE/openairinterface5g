@@ -636,13 +636,12 @@ typedef struct
 
 typedef struct 
 {
-  fapi_nr_max_num_of_symbol_per_slot_t* max_num_of_symbol_per_slot_list;
+  fapi_nr_max_num_of_symbol_per_slot_t *max_num_of_symbol_per_slot_list;
 
 } fapi_nr_max_tdd_periodicity_t;
 
 typedef struct 
 {
-  uint8_t tdd_period;//DL UL Transmission Periodicity. Value:0: ms0p5 1: ms0p625 2: ms1 3: ms1p25 4: ms2 5: ms2p5 6: ms5 7: ms10 8: ms3 9: ms4
   uint8_t tdd_period_in_slots;
   fapi_nr_max_tdd_periodicity_t* max_tdd_periodicity_list;
 
@@ -683,7 +682,8 @@ typedef struct {
   fapi_nr_cell_config_t cell_config;
   fapi_nr_ssb_config_t ssb_config;
   fapi_nr_ssb_table_t ssb_table;
-  fapi_nr_tdd_table_t tdd_table;
+  fapi_nr_tdd_table_t tdd_table_1;
+  fapi_nr_tdd_table_t *tdd_table_2;
   fapi_nr_prach_config_t prach_config;
 
 } fapi_nr_config_request_t;
