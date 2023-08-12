@@ -19,16 +19,24 @@
  *      contact@openairinterface.org
  */
 
-#ifndef MAC_RRC_DL_HANDLER_H
-#define MAC_RRC_DL_HANDLER_H
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
+#include "common/utils/assertions.h"
+#include "f1ap_ids.h"
 
-#include "platform_types.h"
-#include "f1ap_messages_types.h"
-
-void ue_context_setup_request(const f1ap_ue_context_setup_t *req);
-void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req);
-void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd);
-
-void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc);
-
-#endif /* MAC_RRC_DL_HANDLER_H */
+int main()
+{
+  du_init_f1_ue_data();
+  int rnti = 13;
+  f1_ue_data_t data = {.secondary_ue = 1};
+  bool ret = du_add_f1_ue_data(rnti, &data);
+  DevAssert(ret);
+  ret = du_add_f1_ue_data(rnti, &data);
+  DevAssert(!ret);
+  bool exists = du_exists_f1_ue_data(rnti);
+  DevAssert(exists);
+  f1_ue_data_t rdata = du_get_f1_ue_data(rnti);
+  DevAssert(rdata.secondary_ue == data.secondary_ue);
+  return 0;
+}

@@ -1675,7 +1675,6 @@ int32_t nr_rrc_ue_establish_drb(module_id_t ue_mod_idP,
      // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
-                      0,
                       radioBearerConfig->drb_ToAddModList,
                       ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kUPenc,

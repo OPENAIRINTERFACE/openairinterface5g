@@ -145,7 +145,7 @@ void *F1AP_DU_task(void *arg) {
       case F1AP_INITIAL_UL_RRC_MESSAGE: // from rrc
       {
         f1ap_initial_ul_rrc_message_t *msgRrc = &F1AP_INITIAL_UL_RRC_MESSAGE(msg);
-        DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(0, 0, 0, msgRrc->crnti, msgRrc->rrc_container, msgRrc->rrc_container_length, msgRrc->du2cu_rrc_container, msgRrc->du2cu_rrc_container_length);
+        DU_send_INITIAL_UL_RRC_MESSAGE_TRANSFER(myInstance, msgRrc);
       } break;
 
       case F1AP_UL_RRC_MESSAGE: // to rrc

@@ -1095,7 +1095,7 @@ static int fill_BEARER_CONTEXT_MODIFICATION_REQUEST(e1ap_setup_req_t *setupReq, 
   ieC2->id                         = E1AP_ProtocolIE_ID_id_gNB_CU_UP_UE_E1AP_ID;
   ieC2->criticality                = E1AP_Criticality_reject;
   ieC2->value.present              = E1AP_BearerContextModificationRequestIEs__value_PR_GNB_CU_UP_UE_E1AP_ID;
-  ieC2->value.choice.GNB_CU_UP_UE_E1AP_ID = bearerCxt->gNB_cu_cp_ue_id;
+  ieC2->value.choice.GNB_CU_UP_UE_E1AP_ID = bearerCxt->gNB_cu_up_ue_id;
   /* optional */
   /*  */
   asn1cSequenceAdd(out->protocolIEs.list, E1AP_BearerContextModificationRequestIEs_t, ieC3);

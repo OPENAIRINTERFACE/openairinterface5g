@@ -52,7 +52,8 @@ int rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ctxt_
   }
 
   LOG_D(RRC, PROTOCOL_RRC_CTXT_UE_FMT " RX CREATE_TUNNEL_RESP num tunnels %u \n", PROTOCOL_RRC_CTXT_UE_ARGS(ctxt_pP), create_tunnel_resp_pP->num_tunnels);
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rntiMaybeUEid);
+  /* we look up by CU UE ID! Do NOT change back to RNTI! */
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rntiMaybeUEid);
   if (!ue_context_p) {
     LOG_E(NR_RRC, "UE table error\n");
     return -1;
@@ -83,7 +84,8 @@ int nr_rrc_gNB_process_GTPV1U_CREATE_TUNNEL_RESP(const protocol_ctxt_t *const ct
   }
 
   LOG_D(NR_RRC, PROTOCOL_NR_RRC_CTXT_UE_FMT " RX CREATE_TUNNEL_RESP num tunnels %u \n", PROTOCOL_NR_RRC_CTXT_UE_ARGS(ctxt_pP), create_tunnel_resp_pP->num_tunnels);
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rntiMaybeUEid);
+  /* we look up by CU UE ID! Do NOT change back to RNTI! */
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[ctxt_pP->module_id], ctxt_pP->rntiMaybeUEid);
   if (!ue_context_p) {
     LOG_E(NR_RRC, "UE table error\n");
     return -1;

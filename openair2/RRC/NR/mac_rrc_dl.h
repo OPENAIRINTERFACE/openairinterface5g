@@ -29,7 +29,7 @@ typedef void (*ue_context_setup_request_func_t)(const f1ap_ue_context_setup_t *r
 typedef void (*ue_context_modification_request_func_t)(const f1ap_ue_context_modif_req_t *req);
 typedef void (*ue_context_release_command_func_t)(const f1ap_ue_context_release_cmd_t *cmd);
 
-typedef void (*dl_rrc_message_transfer_func_t)(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc);
+typedef void (*dl_rrc_message_transfer_func_t)(const f1ap_dl_rrc_message_t *dl_rrc);
 
 struct nr_mac_rrc_dl_if_s;
 void mac_rrc_dl_direct_init(struct nr_mac_rrc_dl_if_s *mac_rrc);

@@ -19,16 +19,30 @@
  *      contact@openairinterface.org
  */
 
-#ifndef MAC_RRC_DL_HANDLER_H
-#define MAC_RRC_DL_HANDLER_H
+/* "standalone" module to store a "secondary" UE ID for each UE in DU/CU.
+ * Separate from the rest of F1, as it is also relevant for monolithic. */
 
-#include "platform_types.h"
-#include "f1ap_messages_types.h"
+#ifndef F1AP_IDS_H_
+#define F1AP_IDS_H_
 
-void ue_context_setup_request(const f1ap_ue_context_setup_t *req);
-void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req);
-void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd);
+#include <stdbool.h>
+#include <stdint.h>
 
-void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc);
+typedef struct f1_ue_data_t {
+  uint32_t secondary_ue;
+  /* can be extended with F1-specific data also relevant for monolithic */
+} f1_ue_data_t;
 
-#endif /* MAC_RRC_DL_HANDLER_H */
+void cu_init_f1_ue_data(void);
+bool cu_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
+bool cu_exists_f1_ue_data(uint32_t ue_id);
+f1_ue_data_t cu_get_f1_ue_data(uint32_t ue_id);
+bool cu_remove_f1_ue_data(uint32_t ue_id);
+
+void du_init_f1_ue_data(void);
+bool du_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
+bool du_exists_f1_ue_data(uint32_t ue_id);
+f1_ue_data_t du_get_f1_ue_data(uint32_t ue_id);
+bool du_remove_f1_ue_data(uint32_t ue_id);
+
+#endif /* F1AP_IDS_H_ */

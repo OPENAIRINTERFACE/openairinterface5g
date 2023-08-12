@@ -2083,7 +2083,7 @@ static void nr_check_Msg4_Ack(module_id_t module_id, int CC_id, frame_t frame, s
 
         // Pause scheduling according to:
         // 3GPP TS 38.331 Section 12 Table 12.1-1: UE performance requirements for RRC procedures for UEs
-        const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
+        const NR_ServingCellConfig_t *servingCellConfig = UE->CellGroup && UE->CellGroup->spCellConfig ? UE->CellGroup->spCellConfig->spCellConfigDedicated : NULL;
         uint32_t delay_ms = servingCellConfig && servingCellConfig->downlinkBWP_ToAddModList ?
             NR_RRC_SETUP_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS : NR_RRC_SETUP_DELAY_MS;
 

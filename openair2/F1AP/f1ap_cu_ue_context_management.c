@@ -82,7 +82,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, f1ap_ue_context_setup_req->rnti); //f1ap_ue_context_setup_req->gNB_CU_ue_id;
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_CU_ue_id;
 
   /* optional */
   /* c2. GNB_DU_UE_F1AP_ID */
@@ -91,7 +91,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
     ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
     ie2->criticality                    = F1AP_Criticality_ignore;
     ie2->value.present                  = F1AP_UEContextSetupRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
-    ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, f1ap_ue_context_setup_req->rnti); //*f1ap_ue_context_setup_req->gNB_DU_ue_id;
+    ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_ue_context_setup_req->gNB_DU_ue_id;
   }
 
   /* mandatory */
@@ -510,7 +510,7 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
         /* Use a dummy address and teid for the outgoing GTP-U tunnel (DU) which will be updated once we get the UE context setup response from the DU */
         transport_layer_addr_t addr = { .length= 32, .buffer= { 0 } };
         f1ap_ue_context_setup_req->drbs_to_be_setup[i].up_ul_tnl[j].teid = newGtpuCreateTunnel(getCxt(CUtype, instance)->gtpInst,
-                                                                                               f1ap_ue_context_setup_req->rnti,
+                                                                                               f1ap_ue_context_setup_req->gNB_CU_ue_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
                                                                                                f1ap_ue_context_setup_req->drbs_to_be_setup[i].drb_id,
                                                                                                0xFFFF, // We will set the right value from DU answer
@@ -654,8 +654,6 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   f1ap_ue_context_setup_resp->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
   LOG_D(F1AP, "f1ap_ue_context_setup_resp->gNB_DU_ue_id is: %d \n", f1ap_ue_context_setup_resp->gNB_DU_ue_id);
-  f1ap_ue_context_setup_resp->rnti =
-    f1ap_get_rnti_by_du_id(CUtype, instance, f1ap_ue_context_setup_resp->gNB_DU_ue_id);
   // DUtoCURRCInformation
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextSetupResponseIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, true);
@@ -695,7 +693,7 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
       BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_tnl0->transportLayerAddress, drb_p->up_dl_tnl[0].tl_address);
       OCTET_STRING_TO_UINT32(&dl_up_tnl0->gTP_TEID, drb_p->up_dl_tnl[0].teid);
       GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(CUtype, instance)->gtpInst,
-                                             f1ap_ue_context_setup_resp->rnti,
+                                             f1ap_ue_context_setup_resp->gNB_DU_ue_id,
                                              (ebi_t)drbs_setup_item_p->dRBID,
                                              drb_p->up_dl_tnl[0].tl_address,
                                              drb_p->up_dl_tnl[0].teid);
@@ -786,17 +784,12 @@ int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, uint32_t assoc_id,
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(true, instance,
-                      ie->value.choice.GNB_CU_UE_F1AP_ID);
-  req->rnti = rnti;
+  req->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
 
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(CUtype, instance,
-                       ie->value.choice.GNB_DU_UE_F1AP_ID);
-  AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
-              rnti2, rnti);
+  req->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
 
   /* Cause */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseRequestIEs_t, ie, container,
@@ -857,14 +850,14 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, cmd->rnti);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = cmd->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextReleaseCommandIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, cmd->rnti);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = cmd->gNB_DU_ue_id;
   /* mandatory */
   /* c3. Cause */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextReleaseCommandIEs_t, ie3);
@@ -933,19 +926,18 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
   F1AP_UEContextReleaseComplete_t    *container;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
   DevAssert(pdu);
+  MessageDef *msg_p = itti_alloc_new_message(TASK_DU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_COMPLETE);
+  f1ap_ue_context_release_complete_t *complete = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg_p);
   container = &pdu->choice.successfulOutcome->value.choice.UEContextReleaseComplete;
   /* GNB_CU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
-  const rnti_t rnti = f1ap_get_rnti_by_cu_id(CUtype, instance,
-                      ie->value.choice.GNB_CU_UE_F1AP_ID);
+  complete->gNB_CU_ue_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
-  const rnti_t rnti2 = f1ap_get_rnti_by_du_id(CUtype, instance,
-                       ie->value.choice.GNB_DU_UE_F1AP_ID);
-  AssertFatal(rnti == rnti2, "RNTI obtained through DU ID (%x) is different from CU ID (%x)\n",
-              rnti2, rnti);
+  complete->gNB_DU_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+
   /* Optional*/
   /* CriticalityDiagnostics */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextReleaseCompleteIEs_t, ie, container,
@@ -959,24 +951,8 @@ int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
     // F1AP_CriticalityDiagnostics_IE_List
   }
 
-  protocol_ctxt_t ctxt;
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, instance, GNB_FLAG_YES, rnti, 0, 0, instance);
+  itti_send_msg_to_task(TASK_RRC_GNB, instance, msg_p);
 
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[instance], rnti);
-
-  if (ue_context_p) {
-    MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0, NGAP_UE_CONTEXT_RELEASE_COMPLETE);
-    NGAP_UE_CONTEXT_RELEASE_COMPLETE(msg).gNB_ue_ngap_id = ue_context_p->ue_context.gNB_ue_ngap_id;
-    itti_send_msg_to_task(TASK_NGAP, instance, msg);
-    rrc_gNB_remove_ue_context(RC.nrrrc[instance], ue_context_p);
-  } else {
-    LOG_E(F1AP, "could not find ue_context of UE RNTI %x\n", rnti);
-  }
-
-  nr_pdcp_remove_UE(ctxt.rntiMaybeUEid);
-
-  LOG_I(F1AP, "Received UE CONTEXT RELEASE COMPLETE: Removing CU UE entry for RNTI %x\n", rnti);
-  f1ap_remove_ue(CUtype, instance, rnti);
   return 0;
 }
 
@@ -1002,14 +978,14 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, f1ap_ue_context_modification_req->rnti);;
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_ue_context_modification_req->gNB_CU_ue_id;
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_UEContextModificationRequestIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_UEContextModificationRequestIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, f1ap_ue_context_modification_req->rnti);;
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_ue_context_modification_req->gNB_DU_ue_id;
 
   /* optional */
   /* c3. NRCGI */
@@ -1618,9 +1594,6 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
 
     LOG_D(F1AP, "f1ap_ue_context_modification_resp->gNB_DU_ue_id is: %d \n", f1ap_ue_context_modification_resp->gNB_DU_ue_id);
 
-    f1ap_ue_context_modification_resp->rnti =
-          f1ap_get_rnti_by_du_id(CUtype, instance, f1ap_ue_context_modification_resp->gNB_DU_ue_id);
-
     // DUtoCURRCInformation
     F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_UEContextModificationResponseIEs_t, ie, container,
                                F1AP_ProtocolIE_ID_id_DUtoCURRCInformation, false);
@@ -1656,7 +1629,7 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
         BIT_STRING_TO_TRANSPORT_LAYER_ADDRESS_IPv4(&dl_up_tnl0->transportLayerAddress, drb_p->up_dl_tnl[0].tl_address);
         OCTET_STRING_TO_UINT32(&dl_up_tnl0->gTP_TEID, drb_p->up_dl_tnl[0].teid);
         GtpuUpdateTunnelOutgoingAddressAndTeid(getCxt(CUtype, instance)->gtpInst,
-                     f1ap_ue_context_modification_resp->rnti,
+                     f1ap_ue_context_modification_resp->gNB_CU_ue_id,
                      (ebi_t)drbs_setupmod_item_p->dRBID,
                      drb_p->up_dl_tnl[0].tl_address,
                      drb_p->up_dl_tnl[0].teid);

@@ -413,6 +413,7 @@ target_link_libraries(x2ap PRIVATE asn1_lte_rrc_hdrs asn1_nr_rrc_hdrs)
 set(F1AP_DIR ${OPENAIR2_DIR}/F1AP)
 add_library(f1ap
             ${F1AP_DIR}/f1ap_common.c
+            ${F1AP_DIR}/f1ap_ids.c
             ${F1AP_DIR}/f1ap_cu_interface_management.c
             ${F1AP_DIR}/f1ap_cu_paging.c
             ${F1AP_DIR}/f1ap_cu_rrc_message_transfer.c
@@ -431,7 +432,7 @@ add_library(f1ap
             ${F1AP_DIR}/f1ap_itti_messaging.c)
 target_include_directories(f1ap PUBLIC F1AP_DIR)
 target_link_libraries(f1ap PUBLIC asn1_f1ap)
-target_link_libraries(f1ap PRIVATE ngap nr_rrc)
+target_link_libraries(f1ap PRIVATE ngap nr_rrc HASHTABLE)
 
 # LPP
 ##############

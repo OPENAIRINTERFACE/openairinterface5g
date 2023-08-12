@@ -61,7 +61,7 @@ void fill_e1ap_bearer_setup_resp(e1ap_bearer_setup_resp_t *resp,
       drbSetup->numUpParam = 1;
       drbSetup->UpParamList[0].tlAddress = my_addr;
       drbSetup->UpParamList[0].teId = newGtpuCreateTunnel(gtpInst,
-                                                          (ue_id & 0xFFFF),
+                                                          ue_id,
                                                           drb2Setup->id,
                                                           drb2Setup->id,
                                                           0xFFFF, // We will set the right value from DU answer
@@ -117,7 +117,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
     create_tunnel_req.outgoing_teid[i] = pdu->param.gtp_teid;
   }
   create_tunnel_req.num_tunnels = UE->nb_of_pdusessions;
-  create_tunnel_req.ue_id = UE->rnti;
+  create_tunnel_req.ue_id = UE->rrc_ue_id;
   int ret = gtpv1u_create_ngu_tunnel(getCxtE1(instance)->gtpInstN3,
                                      &create_tunnel_req,
                                      &create_tunnel_resp,
@@ -150,8 +150,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
 
   LOG_D(NR_RRC, "Configuring PDCP DRBs for UE %x\n", UE->rnti);
   nr_pdcp_add_drbs(ctxt_p->enb_flag,
-                   ctxt_p->rntiMaybeUEid,
-                   0,
+                   UE->rrc_ue_id,
                    DRB_configList,
                    (UE->integrity_algorithm << 4) | UE->ciphering_algorithm,
                    kUPenc,
@@ -163,10 +162,10 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
 
 static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const req, instance_t instance)
 {
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[instance], req->rnti);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(RC.nrrrc[instance], req->gNB_cu_cp_ue_id);
   gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
   protocol_ctxt_t ctxt = {0};
-  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, UE->rnti, 0, 0, 0);
+  PROTOCOL_CTXT_SET_BY_MODULE_ID(&ctxt, 0, GNB_FLAG_YES, UE->rrc_ue_id, 0, 0, 0);
 
   e1ap_bearer_setup_resp_t resp = {0};
   resp.numPDUSessions = req->numPDUSessions;
@@ -198,7 +197,7 @@ static void cucp_cuup_bearer_context_setup_direct(e1ap_bearer_setup_req_t *const
     in_addr_t my_addr = inet_addr(RC.nrrrc[ctxt.module_id]->eth_params_s.my_addr);
     instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
     // GTP tunnel for DL
-    fill_e1ap_bearer_setup_resp(&resp, req, gtpInst, UE->rnti, remote_port, my_addr);
+    fill_e1ap_bearer_setup_resp(&resp, req, gtpInst, UE->rrc_ue_id, remote_port, my_addr);
   }
   // actually, we should receive the corresponding context setup response
   // message at the RRC and always react to this one. So in the following, we
@@ -212,7 +211,7 @@ static void cucp_cuup_bearer_context_mod_direct(e1ap_bearer_setup_req_t *const r
   if (!NODE_IS_CU(RC.nrrrc[0]->node_type))
     return;
   instance_t gtpInst = getCxt(CUtype, instance)->gtpInst;
-  CU_update_UP_DL_tunnel(req, gtpInst, req->rnti);
+  CU_update_UP_DL_tunnel(req, gtpInst, req->gNB_cu_cp_ue_id);
 }
 
 void cucp_cuup_message_transfer_direct_init(gNB_RRC_INST *rrc) {
