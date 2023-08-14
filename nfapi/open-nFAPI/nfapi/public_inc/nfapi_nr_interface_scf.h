@@ -1580,7 +1580,7 @@ typedef struct
 {
   uint8_t num_harq;
   uint8_t harq_confidence_level;
-  nfapi_nr_harq_t* harq_list;
+  nfapi_nr_harq_t harq_list[2];
 
 } nfapi_nr_harq_pdu_0_1_t;
 
@@ -1628,8 +1628,8 @@ typedef struct
   uint8_t  ul_cqi;
   uint16_t timing_advance;
   uint16_t rssi;
-  nfapi_nr_sr_pdu_0_1_t *sr;//67
-  nfapi_nr_harq_pdu_0_1_t *harq;//68
+  nfapi_nr_sr_pdu_0_1_t  sr;//67
+  nfapi_nr_harq_pdu_0_1_t harq;//68
   
 
 }nfapi_nr_uci_pucch_pdu_format_0_1_t;

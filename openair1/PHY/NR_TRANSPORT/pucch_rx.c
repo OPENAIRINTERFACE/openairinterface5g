@@ -146,7 +146,7 @@ static const int16_t idft12_im[12][12] = {
   {0,-20066,-20066,0,20066,20066,0,-20066,-20066,0,20066,20066},
   {0,-11585,-20066,-23170,-20066,-11585,0,11585,20066,23170,20066,11585}
 };
-
+//************************************************************************//
 void nr_decode_pucch0(PHY_VARS_gNB *gNB,
                       int frame,
                       int slot,
@@ -406,31 +406,27 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
   uci_pdu->rssi = 1280 - (10*dB_fixed(32767*32767))-dB_fixed_times10(sigenergy);
 
   if (pucch_pdu->bit_len_harq==0) {
-    uci_pdu->harq = NULL;
-    uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-    uci_pdu->sr->sr_confidence_level = SNRtimes10 < uci_stats->pucch0_thres;
+    uci_pdu->sr.sr_confidence_level = SNRtimes10 < uci_stats->pucch0_thres;
     uci_stats->pucch0_sr_trials++;
     if (xrtmag_dBtimes10>(10*max_n0+100)) {
-      uci_pdu->sr->sr_indication = 1;
+      uci_pdu->sr.sr_indication = 1;
       uci_stats->pucch0_positive_SR++;
       LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
     } else {
-      uci_pdu->sr->sr_indication = 0;
+      uci_pdu->sr.sr_indication = 0;
     }
   }
   else if (pucch_pdu->bit_len_harq==1) {
-    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
-    uci_pdu->harq->num_harq = 1;
-    uci_pdu->harq->harq_confidence_level = no_conf;
-    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(sizeof *uci_pdu->harq->harq_list);
-    uci_pdu->harq->harq_list[0].harq_value = !(index&0x01);
+    uci_pdu->harq.num_harq = 1;
+    uci_pdu->harq.harq_confidence_level = no_conf;
+    uci_pdu->harq.harq_list[0].harq_value = !(index&0x01);
     LOG_D(PHY,
           "[DLSCH/PDSCH/PUCCH] %d.%d HARQ %s with confidence level %s xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) pucch0_thres %d, "
           "cqi %d, SNRtimes10 %d, energy %f\n",
           frame,
           slot,
-          uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
-          uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
+          uci_pdu->harq.harq_list[0].harq_value == 0 ? "ACK" : "NACK",
+          uci_pdu->harq.harq_confidence_level == 0 ? "good" : "bad",
           xrtmag_dBtimes10,
           xrtmag_next_dBtimes10,
           max_n0,
@@ -442,10 +438,9 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           10 * log10((double)sigenergy));
 
     if (pucch_pdu->sr_flag == 1) {
-      uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-      uci_pdu->sr->sr_indication = (index>1);
-      uci_pdu->sr->sr_confidence_level = no_conf;
-      if(uci_pdu->sr->sr_indication == 1 && uci_pdu->sr->sr_confidence_level == 0) {
+      uci_pdu->sr.sr_indication = (index>1);
+      uci_pdu->sr.sr_confidence_level = no_conf;
+      if(uci_pdu->sr.sr_indication == 1 && uci_pdu->sr.sr_confidence_level == 0) {
         uci_stats->pucch0_positive_SR++;
         LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
       }
@@ -453,21 +448,19 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
     uci_stats->pucch01_trials++;
   }
   else {
-    uci_pdu->harq = calloc(1,sizeof(*uci_pdu->harq));
-    uci_pdu->harq->num_harq = 2;
-    uci_pdu->harq->harq_confidence_level = no_conf;
-    uci_pdu->harq->harq_list = (nfapi_nr_harq_t*)malloc(2 * sizeof( *uci_pdu->harq->harq_list));
+    uci_pdu->harq.num_harq = 2;
+    uci_pdu->harq.harq_confidence_level = no_conf;
 
-    uci_pdu->harq->harq_list[1].harq_value = !(index&0x01);
-    uci_pdu->harq->harq_list[0].harq_value = !((index>>1)&0x01);
+    uci_pdu->harq.harq_list[1].harq_value = !(index&0x01);
+    uci_pdu->harq.harq_list[0].harq_value = !((index>>1)&0x01);
     LOG_D(PHY,
           "[DLSCH/PDSCH/PUCCH] %d.%d HARQ values (%s, %s) with confidence level %s, xrt_mag %d xrt_mag_next %d n0 %d (%d,%d) "
           "pucch0_thres %d, cqi %d, SNRtimes10 %d\n",
           frame,
           slot,
-          uci_pdu->harq->harq_list[1].harq_value == 0 ? "ACK" : "NACK",
-          uci_pdu->harq->harq_list[0].harq_value == 0 ? "ACK" : "NACK",
-          uci_pdu->harq->harq_confidence_level == 0 ? "good" : "bad",
+          uci_pdu->harq.harq_list[1].harq_value == 0 ? "ACK" : "NACK",
+          uci_pdu->harq.harq_list[0].harq_value == 0 ? "ACK" : "NACK",
+          uci_pdu->harq.harq_confidence_level == 0 ? "good" : "bad",
           xrtmag_dBtimes10,
           xrtmag_next_dBtimes10,
           max_n0,
@@ -477,17 +470,16 @@ void nr_decode_pucch0(PHY_VARS_gNB *gNB,
           cqi,
           SNRtimes10);
     if (pucch_pdu->sr_flag == 1) {
-      uci_pdu->sr = calloc(1,sizeof(*uci_pdu->sr));
-      uci_pdu->sr->sr_indication = (index>3) ? 1 : 0;
-      uci_pdu->sr->sr_confidence_level = no_conf;
-      if(uci_pdu->sr->sr_indication == 1 && uci_pdu->sr->sr_confidence_level == 0) {
+      uci_pdu->sr.sr_indication = (index>3) ? 1 : 0;
+      uci_pdu->sr.sr_confidence_level = no_conf;
+      if(uci_pdu->sr.sr_indication == 1 && uci_pdu->sr.sr_confidence_level == 0) {
         uci_stats->pucch0_positive_SR++;
         LOG_D(PHY,"PUCCH0 got positive SR. Cumulative number of positive SR %d\n", uci_stats->pucch0_positive_SR);
       }
     }
   }
 }
-
+//*****************************************************************//
 void nr_decode_pucch1(c16_t **rxdataF,
 		      pucch_GroupHopping_t pucch_GroupHopping,
                       uint32_t n_id,       // hoppingID higher layer parameter  
