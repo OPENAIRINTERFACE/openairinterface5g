@@ -204,8 +204,6 @@ typedef struct {
   NR_CellGroupConfig_t *CellGroup;
   /// Preambles for contention-free access
   NR_preamble_ue_t preambles;
-  /// NSA: the UEs C-RNTI to use
-  rnti_t crnti;
   /// CFRA flag
   bool cfra;
   // BWP for RA

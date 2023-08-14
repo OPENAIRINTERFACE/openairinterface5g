@@ -1630,7 +1630,7 @@ static void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP,
     return;
 
   // UE is known by the network, C-RNTI to be used instead of TC-RNTI
-  int rnti = ra->crnti;
+  int rnti = ra->rnti;
 
   NR_UE_info_t *UE = find_nr_UE(&nr_mac->UE_info, rnti);
   if (!UE) {
@@ -1730,10 +1730,6 @@ static void nr_generate_Msg3_dcch_dtch_response(module_id_t module_idP,
     LOG_E(NR_MAC, "%s(): cannot find free vrb_map for RNTI %04x!\n", __func__, rnti);
     return;
   }
-
-  // Remove UE associated to TC-RNTI
-  mac_remove_nr_ue(nr_mac, ra->rnti);
-
 
   // If the UE used MSG3 to transfer a DCCH or DTCH message, then contention resolution is successful if the UE receives a PDCCH transmission which has its CRC bits scrambled by the C-RNTI
   // Just send padding LCID
@@ -2113,7 +2109,6 @@ void nr_clear_ra_proc(module_id_t module_idP, int CC_id, frame_t frameP, NR_RA_t
   ra->timing_offset = 0;
   ra->RRC_timer = 20;
   ra->msg3_round = 0;
-  ra->crnti = 0;
   if(ra->cfra == false) {
     ra->rnti = 0;
   }

@@ -223,7 +223,13 @@ static int nr_process_mac_pdu(instance_t module_idP,
         for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
           NR_RA_t *ra = &RC.nrmac[module_idP]->common_channels[CC_id].ra[i];
           if (ra->state >= WAIT_Msg3 && ra->rnti == UE->rnti) {
-            ra->crnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
+            // remove UE context just created after Msg.3 in some milliseconds
+            // as the UE is one already known (not now, as the UE context is
+            // still needed for the moment)
+            nr_mac_trigger_release_timer(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
+            //mac_remove_nr_ue(RC.nrmac[module_idP], ra->rnti);
+            // this UE is the one identified by the RNTI in pduP
+            ra->rnti = ((pduP[1]&0xFF)<<8)|(pduP[2]&0xFF);
             ra->state = Msg3_dcch_dtch;
             break;
           }
@@ -779,13 +785,13 @@ static void _nr_rx_sdu(const module_id_t gnb_mod_idP,
             
             if (ra->state == Msg3_dcch_dtch) {
               // Check if the UE identified by C-RNTI still exists at the gNB
-              NR_UE_info_t * UE_C = find_nr_UE(&gNB_mac->UE_info, ra->crnti);
+              NR_UE_info_t * UE_C = find_nr_UE(&gNB_mac->UE_info, ra->rnti);
               if (!UE_C) {
                 // The UE identified by C-RNTI no longer exists at the gNB
                 // Let's abort the current RA, so the UE will trigger a new RA later but using RRCSetupRequest instead. A better solution may be implemented
                 mac_remove_nr_ue(gNB_mac, ra->rnti);
                 nr_clear_ra_proc(gnb_mod_idP, CC_idP, frameP, ra);
-		LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->crnti);
+                LOG_W(NR_MAC, "No UE found with C-RNTI %04x, ignoring Msg.3 to have UE come back with new RA attempt\n", ra->rnti);
                 return;
               } else {
                 // The UE identified by C-RNTI still exists at the gNB

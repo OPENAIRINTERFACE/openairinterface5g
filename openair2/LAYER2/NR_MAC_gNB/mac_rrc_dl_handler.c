@@ -287,7 +287,7 @@ void ue_context_modification_refuse(const f1ap_ue_context_modif_refuse_t *refuse
   NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
   for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
     NR_RA_t *ra = &cc->ra[i];
-    if (ra->crnti == UE->rnti)
+    if (ra->rnti == UE->rnti)
       nr_clear_ra_proc(0, CC_id, 0 /* frame */, ra);
   }
   NR_SCHED_UNLOCK(&mac->sched_lock);
