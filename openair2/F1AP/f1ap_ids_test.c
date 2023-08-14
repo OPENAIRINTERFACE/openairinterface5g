@@ -19,24 +19,24 @@
  *      contact@openairinterface.org
  */
 
-/* \file main_ue.c
- * \brief RRC layer top level initialization
- * \author R. Knopp, K.H. HSU
- * \date 2018
- * \version 0.1
- * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
- * \note
- * \warning
- */
+#include <stdio.h>
+#include <stdint.h>
+#include <stddef.h>
+#include "common/utils/assertions.h"
+#include "f1ap_ids.h"
 
-#include "defs.h"
-#include "rrc_proto.h"
-#include "common/utils/LOG/log.h"
-
-NR_UE_RRC_INST_t* nr_l3_init_ue(char* uecap, char* reconfig_file, char* rbconfig_file)
+int main()
 {
-  // LOG_I(RRC, "[MAIN] NR UE MAC initialization...\n");
-
-  return openair_rrc_top_init_ue_nr(uecap, reconfig_file, rbconfig_file);
+  du_init_f1_ue_data();
+  int rnti = 13;
+  f1_ue_data_t data = {.secondary_ue = 1};
+  bool ret = du_add_f1_ue_data(rnti, &data);
+  DevAssert(ret);
+  ret = du_add_f1_ue_data(rnti, &data);
+  DevAssert(!ret);
+  bool exists = du_exists_f1_ue_data(rnti);
+  DevAssert(exists);
+  f1_ue_data_t rdata = du_get_f1_ue_data(rnti);
+  DevAssert(rdata.secondary_ue == data.secondary_ue);
+  return 0;
 }

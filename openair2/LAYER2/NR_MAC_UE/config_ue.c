@@ -39,21 +39,19 @@
 #include "executables/softmodem-common.h"
 #include "SCHED_NR/phy_frame_config_nr.h"
 
-void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
+void set_tdd_config_nr_ue(fapi_nr_tdd_table_t *tdd_table,
                           int mu,
-                          NR_TDD_UL_DL_ConfigCommon_t *tdd_config) {
+                          NR_TDD_UL_DL_Pattern_t *pattern)
+{
+  const int nrofDownlinkSlots = pattern->nrofDownlinkSlots;
+  const int nrofDownlinkSymbols = pattern->nrofDownlinkSymbols;
+  const int nrofUplinkSlots = pattern->nrofUplinkSlots;
+  const int nrofUplinkSymbols = pattern->nrofUplinkSymbols;
+  const int nb_periods_per_frame = get_nb_periods_per_frame(pattern->dl_UL_TransmissionPeriodicity);
+  const int nb_slots_per_period = ((1 << mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME) / nb_periods_per_frame;
+  tdd_table->tdd_period_in_slots = nb_slots_per_period;
 
-  const int nrofDownlinkSlots   = tdd_config->pattern1.nrofDownlinkSlots;
-  const int nrofDownlinkSymbols = tdd_config->pattern1.nrofDownlinkSymbols;
-  const int nrofUplinkSlots     = tdd_config->pattern1.nrofUplinkSlots;
-  const int nrofUplinkSymbols   = tdd_config->pattern1.nrofUplinkSymbols;
-  int slot_number = 0;
-  const int nb_periods_per_frame = get_nb_periods_per_frame(tdd_config->pattern1.dl_UL_TransmissionPeriodicity);
-  const int nb_slots_to_set = TDD_CONFIG_NB_FRAMES*(1<<mu)*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
-  const int nb_slots_per_period = ((1<<mu) * NR_NUMBER_OF_SUBFRAMES_PER_FRAME)/nb_periods_per_frame;
-  cfg->tdd_table.tdd_period_in_slots = nb_slots_per_period;
-
-  if ( (nrofDownlinkSymbols + nrofUplinkSymbols) == 0 )
+  if ((nrofDownlinkSymbols + nrofUplinkSymbols) == 0)
     AssertFatal(nb_slots_per_period == (nrofDownlinkSlots + nrofUplinkSlots),
                 "set_tdd_configuration_nr: given period is inconsistent with current tdd configuration, nrofDownlinkSlots %d, nrofUplinkSlots %d, nb_slots_per_period %d \n",
                 nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
@@ -64,57 +62,43 @@ void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
                 nrofDownlinkSlots,nrofUplinkSlots,nb_slots_per_period);
   }
 
-  cfg->tdd_table.max_tdd_periodicity_list = (fapi_nr_max_tdd_periodicity_t *) malloc(nb_slots_to_set*sizeof(fapi_nr_max_tdd_periodicity_t));
+  tdd_table->max_tdd_periodicity_list = (fapi_nr_max_tdd_periodicity_t *) malloc(nb_slots_per_period * sizeof(fapi_nr_max_tdd_periodicity_t));
 
-  for(int memory_alloc =0 ; memory_alloc<nb_slots_to_set; memory_alloc++)
-    cfg->tdd_table.max_tdd_periodicity_list[memory_alloc].max_num_of_symbol_per_slot_list = (fapi_nr_max_num_of_symbol_per_slot_t *) malloc(NR_NUMBER_OF_SYMBOLS_PER_SLOT*sizeof(
-          fapi_nr_max_num_of_symbol_per_slot_t));
+  for(int memory_alloc = 0 ; memory_alloc < nb_slots_per_period; memory_alloc++)
+    tdd_table->max_tdd_periodicity_list[memory_alloc].max_num_of_symbol_per_slot_list =
+      (fapi_nr_max_num_of_symbol_per_slot_t *) malloc(NR_NUMBER_OF_SYMBOLS_PER_SLOT*sizeof(fapi_nr_max_num_of_symbol_per_slot_t));
 
-  while(slot_number != nb_slots_to_set) {
+  int slot_number = 0;
+  while(slot_number != nb_slots_per_period) {
     if(nrofDownlinkSlots != 0) {
-      for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config= 0;
-
-        if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
+      for (int number_of_symbol = 0; number_of_symbol < nrofDownlinkSlots * NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        tdd_table->max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol % NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config = 0;
+        if((number_of_symbol + 1) % NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
           slot_number++;
       }
     }
 
     if (nrofDownlinkSymbols != 0 || nrofUplinkSymbols != 0) {
-      for(int number_of_symbol =0; number_of_symbol < nrofDownlinkSymbols; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 0;
+      for(int number_of_symbol = 0; number_of_symbol < nrofDownlinkSymbols; number_of_symbol++) {
+        tdd_table->max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config = 0;
       }
-
-      for(int number_of_symbol = nrofDownlinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 2;
+      for(int number_of_symbol = nrofDownlinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT - nrofUplinkSymbols; number_of_symbol++) {
+        tdd_table->max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config = 2;
       }
-
-      for(int number_of_symbol = NR_NUMBER_OF_SYMBOLS_PER_SLOT-nrofUplinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config= 1;
+      for(int number_of_symbol = NR_NUMBER_OF_SYMBOLS_PER_SLOT - nrofUplinkSymbols; number_of_symbol < NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        tdd_table->max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol].slot_config = 1;
       }
-
       slot_number++;
     }
 
     if(nrofUplinkSlots != 0) {
-      for (int number_of_symbol = 0; number_of_symbol < nrofUplinkSlots*NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
-        cfg->tdd_table.max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config= 1;
-
-        if((number_of_symbol+1)%NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
+      for (int number_of_symbol = 0; number_of_symbol < nrofUplinkSlots * NR_NUMBER_OF_SYMBOLS_PER_SLOT; number_of_symbol++) {
+        tdd_table->max_tdd_periodicity_list[slot_number].max_num_of_symbol_per_slot_list[number_of_symbol%NR_NUMBER_OF_SYMBOLS_PER_SLOT].slot_config = 1;
+        if((number_of_symbol + 1) % NR_NUMBER_OF_SYMBOLS_PER_SLOT == 0)
           slot_number++;
       }
     }
   }
-
-  if (tdd_config->pattern1.ext1 == NULL) {
-    cfg->tdd_table.tdd_period = tdd_config->pattern1.dl_UL_TransmissionPeriodicity;
-  } else {
-    AssertFatal(tdd_config->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 != NULL, "scc->tdd_UL_DL_ConfigurationCommon->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530 is null\n");
-    cfg->tdd_table.tdd_period = *tdd_config->pattern1.ext1->dl_UL_TransmissionPeriodicity_v1530;
-  }
-
-  LOG_I(NR_MAC, "TDD has been properly configured\n");
-
 }
 
 void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
@@ -204,9 +188,15 @@ void config_common_ue_sa(NR_UE_MAC_INST_t *mac,
 
   // TDD Table Configuration
   if (cfg->cell_config.frame_duplex_type == TDD){
-    set_tdd_config_nr_ue(cfg,
+    set_tdd_config_nr_ue(&cfg->tdd_table_1,
                          frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                         mac->tdd_UL_DL_ConfigurationCommon);
+                         &mac->tdd_UL_DL_ConfigurationCommon->pattern1);
+    if (mac->tdd_UL_DL_ConfigurationCommon->pattern2) {
+      cfg->tdd_table_2 = (fapi_nr_tdd_table_t *) malloc(sizeof(fapi_nr_tdd_table_t));
+      set_tdd_config_nr_ue(cfg->tdd_table_2,
+                           frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                           mac->tdd_UL_DL_ConfigurationCommon->pattern2);
+    }
   }
 
   // PRACH configuration
@@ -375,9 +365,15 @@ void config_common_ue(NR_UE_MAC_INST_t *mac,
 
   // TDD Table Configuration
   if (cfg->cell_config.frame_duplex_type == TDD){
-    set_tdd_config_nr_ue(cfg,
+    set_tdd_config_nr_ue(&cfg->tdd_table_1,
                          frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
-                         mac->tdd_UL_DL_ConfigurationCommon);
+                         &mac->tdd_UL_DL_ConfigurationCommon->pattern1);
+    if (mac->tdd_UL_DL_ConfigurationCommon->pattern2) {
+      cfg->tdd_table_2 = (fapi_nr_tdd_table_t *) malloc(sizeof(fapi_nr_tdd_table_t));
+      set_tdd_config_nr_ue(cfg->tdd_table_2,
+                           frequencyInfoUL->scs_SpecificCarrierList.list.array[0]->subcarrierSpacing,
+                           mac->tdd_UL_DL_ConfigurationCommon->pattern2);
+    }
   }
 
   // PRACH configuration

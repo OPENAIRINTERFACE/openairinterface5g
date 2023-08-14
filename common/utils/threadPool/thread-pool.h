@@ -26,6 +26,8 @@
 #define THREAD_POOL_H
 #include <stdbool.h>
 #include <stdint.h>
+#include <malloc.h>
+#include <stdalign.h>
 #include <pthread.h>
 #include <unistd.h>
 #include <sys/syscall.h>
@@ -64,7 +66,10 @@ typedef struct notifiedFIFO_elt_s {
   oai_cputime_t startProcessingTime;
   oai_cputime_t endProcessingTime;
   oai_cputime_t returnTime;
-  void *msgData;
+  // use alignas(32) to align msgData to 32b
+  // user data behind it will be aligned to 32b as well
+  // important! this needs to be the last member in the struct
+  alignas(32) void *msgData;
 }  notifiedFIFO_elt_t;
 
 typedef struct notifiedFIFO_s {
@@ -80,14 +85,15 @@ static inline notifiedFIFO_elt_t *newNotifiedFIFO_elt(int size,
     uint64_t key,
     notifiedFIFO_t *reponseFifo,
     void (*processingFunc)(void *)) {
-  notifiedFIFO_elt_t *ret;
-  AssertFatal( NULL != (ret=(notifiedFIFO_elt_t *) calloc(1, sizeof(notifiedFIFO_elt_t)+size+32)), "");
+  notifiedFIFO_elt_t *ret = (notifiedFIFO_elt_t *)memalign(32, sizeof(notifiedFIFO_elt_t) + size);
+  AssertFatal(NULL != ret, "out of memory\n");
   ret->next=NULL;
   ret->key=key;
   ret->reponseFifo=reponseFifo;
   ret->processingFunc=processingFunc;
   // We set user data piece aligend 32 bytes to be able to process it with SIMD
-  ret->msgData=(void *)((uint8_t*)ret+(sizeof(notifiedFIFO_elt_t)/32+1)*32);
+  // msgData is aligned to 32bytes, so everything after will be as well
+  ret->msgData = ((uint8_t *)ret) + sizeof(notifiedFIFO_elt_t);
   ret->malloced=true;
   return ret;
 }

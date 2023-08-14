@@ -119,23 +119,15 @@ sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-LTE-EPC/CONF/gnb.band78
 ### Launch UE in another window
 
 ```bash
-sudo ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path . --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>
+sudo ./nr-uesoftmodem --rfsim --phy-test --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>
 ```
 
 Notes:
 
-1. This starts the gNB and UE in the `phy-test` UP-only mode where the gNB is started as if a UE had already connected, and a configurable scheduler is used instead of the default one. The options `-m`, `-l`, `-t`, `-M`, `-T`, `-D`, and `-U` can be used to configure this scheduler.
+1. This starts the gNB and UE in the `phy-test` UP-only mode where the gNB is started as if a UE had already connected. See [RUNMODEM.md](../../doc/RUNMODEM.md) for more details.
 2. <TARGET_GNB_INTERFACE_ADDRESS> can be 127.0.0.1 if both gNB and nrUE executables run on the same host, OR the IP interface address of the remote host running the gNB executable, if the gNB and nrUE run on separate hosts.
-3. The --rrc_config_path parameter SHALL specify where the 2 RAW files are located (`rbconfig.raw` and `reconfig.raw`).
-   - If you are running on the same machine and launched the 2 executables (`nr-softmodem` and `nr-uesoftmodem`) from the same directory, nothing has to be done.
-   - If you launched the 2 executables from 2 different folders, just point to the location where you launched the `nr-softmodem`:
-     * `sudo ./nr-uesoftmodem --rfsim --phy-test --rrc_config_path /the/path/where/you/launched/nr-softmodem --rfsimulator.serveraddr <TARGET_GNB_INTERFACE_ADDRESS>`
-   - If you are not running on the same machine or launched the 2 executables from 2 different folders, you need to **COPY** the 2 raw files
-     * `scp usera@machineA:/the/path/where/you/launched/nr-softmodem/r*config.raw userb@machineB:/the/path/where/you/will/launch/nr-uesoftmodem/`
-     * Obviously this operation SHALL be done before launching the `nr-uesoftmodem` executable.
-4. To enable the noS1 mode, `--noS1` option should be added to the command line.
-5. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/NR_SA_Tutorial_OAI_CN5G.md).
-
+3. To enable the noS1 mode, `--noS1` option should be added to the command line, see again [RUNMODEM.md](../../doc/RUNMODEM.md).
+4. To operate the gNB/UE with a 5GC, start them using the `--sa` option. More information can be found [here](../../../doc/NR_SA_Tutorial_OAI_CN5G.md).
 
 In the UE, you can add `-d` option to get the softscope.
 

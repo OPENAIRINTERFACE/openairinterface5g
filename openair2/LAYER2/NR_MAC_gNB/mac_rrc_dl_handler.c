@@ -22,6 +22,7 @@
 #include "mac_rrc_dl_handler.h"
 
 #include "mac_proto.h"
+#include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
 
@@ -100,7 +101,6 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   f1ap_ue_context_setup_t resp = {
     .gNB_CU_ue_id = req->gNB_CU_ue_id,
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
-    .rnti = req->rnti,
   };
 
   if (req->cu_to_du_rrc_information != NULL) {
@@ -111,11 +111,11 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 
   NR_SCHED_LOCK(&mac->sched_lock);
 
-  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->rnti);
-  AssertFatal(UE != NULL, "did not find UE with RNTI %04x, but UE Context Setup Failed not implemented\n", req->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
+  AssertFatal(UE != NULL, "did not find UE with RNTI %04x, but UE Context Setup Failed not implemented\n", req->gNB_DU_ue_id);
 
   if (req->srbs_to_be_setup_length > 0) {
-    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->rnti,
+    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
@@ -123,7 +123,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   }
 
   if (req->drbs_to_be_setup_length > 0) {
-    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->rnti,
+    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->gNB_DU_ue_id,
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
@@ -131,7 +131,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   }
 
   if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->rnti, DCCH, req->rrc_container, req->rrc_container_length);
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
 
   //nr_mac_update_cellgroup()
   resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
@@ -171,7 +171,6 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   f1ap_ue_context_modif_resp_t resp = {
     .gNB_CU_ue_id = req->gNB_CU_ue_id,
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
-    .rnti = req->rnti,
   };
 
   if (req->cu_to_du_rrc_information != NULL) {
@@ -181,10 +180,10 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   NR_SCHED_LOCK(&mac->sched_lock);
-  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
 
   if (req->srbs_to_be_setup_length > 0) {
-    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->rnti,
+    resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
@@ -192,7 +191,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->drbs_to_be_setup_length > 0) {
-    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->rnti,
+    resp.drbs_to_be_setup_length = handle_ue_context_drbs_setup(req->gNB_DU_ue_id,
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
@@ -200,7 +199,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->rrc_container != NULL)
-    nr_rlc_srb_recv_sdu(req->rnti, DCCH, req->rrc_container, req->rrc_container_length);
+    nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
 
   if (req->ReconfigComplOutcome != RRCreconf_info_not_present && req->ReconfigComplOutcome != RRCreconf_success) {
     LOG_E(NR_MAC,
@@ -224,7 +223,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
     /* works? */
-    nr_mac_update_cellgroup(RC.nrmac[0], req->rnti, UE->CellGroup);
+    nr_mac_update_cellgroup(RC.nrmac[0], req->gNB_DU_ue_id, UE->CellGroup);
   }
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
@@ -249,32 +248,100 @@ void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)
   /* mark UE as to be deleted after PUSCH failure */
   gNB_MAC_INST *mac = RC.nrmac[0];
   pthread_mutex_lock(&mac->sched_lock);
-  NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, cmd->rnti);
+  NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, cmd->gNB_DU_ue_id);
   if (UE->UE_sched_ctrl.ul_failure || cmd->rrc_container_length == 0) {
     /* The UE is already not connected anymore or we have nothing to forward*/
-    nr_rlc_remove_ue(cmd->rnti);
-    mac_remove_nr_ue(mac, cmd->rnti);
+    nr_rlc_remove_ue(cmd->gNB_DU_ue_id);
+    mac_remove_nr_ue(mac, cmd->gNB_DU_ue_id);
   } else {
     /* UE is in sync: forward release message and mark to be deleted
      * after UL failure */
-    nr_rlc_srb_recv_sdu(cmd->rnti, cmd->srb_id, cmd->rrc_container, cmd->rrc_container_length);
+    nr_rlc_srb_recv_sdu(cmd->gNB_DU_ue_id, cmd->srb_id, cmd->rrc_container, cmd->rrc_container_length);
     nr_mac_trigger_release_timer(&UE->UE_sched_ctrl, UE->current_UL_BWP.scs);
   }
   pthread_mutex_unlock(&mac->sched_lock);
 
   f1ap_ue_context_release_complete_t complete = {
-    .rnti = cmd->rnti,
+    .gNB_CU_ue_id = cmd->gNB_CU_ue_id,
+    .gNB_DU_ue_id = cmd->gNB_DU_ue_id,
   };
   mac->mac_rrc.ue_context_release_complete(&complete);
 
-  if (cmd->rrc_container)
-    free(cmd->rrc_container);
+  du_remove_f1_ue_data(cmd->gNB_DU_ue_id);
 }
 
-int dl_rrc_message(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
+void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
 {
-  LOG_D(NR_MAC, "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n", dl_rrc->rrc_container_length, dl_rrc->rnti, dl_rrc->srb_id);
+  LOG_D(NR_MAC,
+        "DL RRC Message Transfer with %d bytes for RNTI %04x SRB %d\n",
+        dl_rrc->rrc_container_length,
+        dl_rrc->gNB_DU_ue_id,
+        dl_rrc->srb_id);
 
-  nr_rlc_srb_recv_sdu(dl_rrc->rnti, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
-  return 0;
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  pthread_mutex_lock(&mac->sched_lock);
+  /* check first that the scheduler knows such UE */
+  NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, dl_rrc->gNB_DU_ue_id);
+  if (UE == NULL) {
+    LOG_E(MAC, "ERROR: unknown UE with RNTI %04x, ignoring DL RRC Message Transfer\n", dl_rrc->gNB_DU_ue_id);
+    pthread_mutex_unlock(&mac->sched_lock);
+    return;
+  }
+  pthread_mutex_unlock(&mac->sched_lock);
+
+  if (!du_exists_f1_ue_data(dl_rrc->gNB_DU_ue_id)) {
+    LOG_I(NR_MAC, "No CU UE ID stored for UE RNTI %04x, adding CU UE ID %d\n", dl_rrc->gNB_DU_ue_id, dl_rrc->gNB_CU_ue_id);
+    f1_ue_data_t new_ue_data = {.secondary_ue = dl_rrc->gNB_CU_ue_id};
+    du_add_f1_ue_data(dl_rrc->gNB_DU_ue_id, &new_ue_data);
+  }
+
+  if (UE->expect_reconfiguration && dl_rrc->srb_id == DCCH) {
+    /* we expected a reconfiguration, and this is on DCCH. We assume this is
+     * the reconfiguration; nr_mac_update_cellgroup() brings the config into
+     * the form expected by nr_mac_update_timers(), and we set the timer to
+     * apply the real configuration at expiration.
+     * Calling it nr_mac_update_cellgroup() is misleading, and using an
+     * intermediate buffer seems not necessary. This is for historical reasons,
+     * when we only had pointer to an RRC structure, and wanted to duplicate
+     * the contents to be applied later. The actually interesting function here
+     * is also configure_UE_BWP(), only called in nr_mac_update_timers().
+     * TODO: This should be cleaned up when the whole CellGroupConfig is
+     * handled entirely at the DU: no intermediate buffer, trigger the timer
+     * from a function (there is nr_mac_enable_ue_rrc_processing_timer(), which
+     * is called from the RRC, hence locks the scheduler, which we cannot use). */
+    LOG_I(NR_MAC, "triggering rrc_processing_timer time UE %04x\n", UE->rnti);
+    pthread_mutex_lock(&mac->sched_lock);
+    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->reconfigCellGroup);
+    pthread_mutex_unlock(&mac->sched_lock);
+    const uint16_t sl_ahead = mac->if_inst->sl_ahead;
+    NR_SubcarrierSpacing_t scs = 1;
+    int delay = 10;
+    UE->UE_sched_ctrl.rrc_processing_timer = (delay << scs) + sl_ahead;
+  }
+
+  if (dl_rrc->old_gNB_DU_ue_id != NULL) {
+    AssertFatal(*dl_rrc->old_gNB_DU_ue_id != dl_rrc->gNB_DU_ue_id,
+                "logic bug: current and old gNB DU UE ID cannot be the same\n");
+    /* 38.401 says: "Find UE context based on old gNB-DU UE F1AP ID, replace
+     * old C-RNTI/PCI with new C-RNTI/PCI". So we delete the new contexts
+     * below, then change the C-RNTI of the old one to the new one */
+    NR_UE_info_t *oldUE = find_nr_UE(&mac->UE_info, *dl_rrc->old_gNB_DU_ue_id);
+    DevAssert(oldUE);
+    pthread_mutex_lock(&mac->sched_lock);
+    /* 38.331 5.3.7.2 says that the UE releases the spCellConfig, so we drop it
+     * from the current configuration. Also, expect the reconfiguration from
+     * the CU, so save the old UE's CellGroup for the new UE */
+    UE->CellGroup->spCellConfig = NULL;
+    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->CellGroup);
+    UE->reconfigCellGroup = oldUE->CellGroup;
+    UE->expect_reconfiguration = true;
+    oldUE->CellGroup = NULL;
+    mac_remove_nr_ue(mac, *dl_rrc->old_gNB_DU_ue_id);
+    pthread_mutex_unlock(&mac->sched_lock);
+    nr_rlc_remove_ue(dl_rrc->gNB_DU_ue_id);
+    nr_rlc_update_rnti(*dl_rrc->old_gNB_DU_ue_id, dl_rrc->gNB_DU_ue_id);
+  }
+
+  /* the DU ue id is the RNTI */
+  nr_rlc_srb_recv_sdu(dl_rrc->gNB_DU_ue_id, dl_rrc->srb_id, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
 }

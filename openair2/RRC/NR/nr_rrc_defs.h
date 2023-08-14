@@ -235,7 +235,6 @@ typedef enum {
 } rrc_action_t;
 
 typedef struct gNB_RRC_UE_s {
-  uint8_t primaryCC_id;
   drb_t                              established_drbs[MAX_DRBS_PER_UE];
   uint8_t                            DRB_active[MAX_DRBS_PER_UE];
 
@@ -254,9 +253,6 @@ typedef struct gNB_RRC_UE_s {
   NR_CellGroupConfig_t               *masterCellGroup;
   NR_RRCReconfiguration_t            *reconfig;
   NR_RadioBearerConfig_t             *rb_config;
-
-  /* Pointer to save spCellConfig during RRC Reestablishment procedures */
-  NR_SpCellConfig_t                  *spCellConfigReestablishment;
 
   ImsiMobileIdentity_t               imsi;
 
@@ -283,12 +279,7 @@ typedef struct gNB_RRC_UE_s {
   /* Information from UE RRCReestablishmentRequest */
   NR_ReestablishmentCause_t          reestablishment_cause;
 
-  /* UE id for initial connection to S1AP */
-  uint16_t                           ue_initial_id;
-
-  /* Information from S1AP initial_context_setup_req */
-  uint32_t                           gNB_ue_s1ap_id :24;
-  uint32_t                           gNB_ue_ngap_id;
+  uint32_t                           rrc_ue_id;
   uint64_t amf_ue_ngap_id;
   nr_rrc_guami_t                     ue_guami;
 
@@ -383,11 +374,6 @@ typedef struct cucp_cuup_if_s {
   cucp_cuup_bearer_context_setup_func_t bearer_context_mod;
 } cucp_cuup_if_t;
 
-typedef struct nr_reestablish_rnti_map_s {
-  ue_id_t ue_id;
-  rnti_t c_rnti;
-} nr_reestablish_rnti_map_t;
-
 //---NR---(completely change)---------------------
 typedef struct gNB_RRC_INST_s {
 
@@ -434,8 +420,6 @@ typedef struct gNB_RRC_INST_s {
 
   // security configuration (preferred algorithms)
   nr_security_configuration_t security;
-
-  nr_reestablish_rnti_map_t nr_reestablish_rnti_map[MAX_MOBILES_PER_GNB];
 
   nr_mac_rrc_dl_if_t mac_rrc;
   cucp_cuup_if_t cucp_cuup;

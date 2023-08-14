@@ -35,17 +35,18 @@
 
 #include "common/utils/LOG/log.h"
 #include "rrc_gNB_UE_context.h"
+#include "openair2/F1AP/f1ap_ids.h"
 
 
 //------------------------------------------------------------------------------
 int rrc_gNB_compare_ue_rnti_id(rrc_gNB_ue_context_t *c1_pP, rrc_gNB_ue_context_t *c2_pP)
 //------------------------------------------------------------------------------
 {
-  if (c1_pP->ue_context.gNB_ue_ngap_id > c2_pP->ue_context.gNB_ue_ngap_id) {
+  if (c1_pP->ue_context.rrc_ue_id > c2_pP->ue_context.rrc_ue_id) {
     return 1;
   }
 
-  if (c1_pP->ue_context.gNB_ue_ngap_id < c2_pP->ue_context.gNB_ue_ngap_id) {
+  if (c1_pP->ue_context.rrc_ue_id < c2_pP->ue_context.rrc_ue_id) {
     return -1;
   }
 
@@ -66,12 +67,12 @@ rrc_gNB_ue_context_t *rrc_gNB_allocate_new_ue_context(gNB_RRC_INST *rrc_instance
     LOG_E(NR_RRC, "Cannot allocate new ue context\n");
     return NULL;
   }
-  new_p->ue_context.gNB_ue_ngap_id = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator);
+  new_p->ue_context.rrc_ue_id = uid_linear_allocator_new(&rrc_instance_pP->uid_allocator) + 1;
 
   for(int i = 0; i < NB_RB_MAX; i++)
     new_p->ue_context.pduSession[i].xid = -1;
 
-  LOG_I(NR_RRC, "Returning new RRC UE context RRC ue id: %d\n", new_p->ue_context.gNB_ue_ngap_id);
+  LOG_I(NR_RRC, "Returning new RRC UE context RRC ue id: %d\n", new_p->ue_context.rrc_ue_id);
   return(new_p);
 }
 
@@ -82,7 +83,7 @@ rrc_gNB_ue_context_t *rrc_gNB_get_ue_context(gNB_RRC_INST *rrc_instance_pP, ue_i
 {
   rrc_gNB_ue_context_t temp;
   /* gNB ue rrc id = 24 bits wide */
-  temp.ue_context.gNB_ue_ngap_id = ue;
+  temp.ue_context.rrc_ue_id = ue;
   return RB_FIND(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, &temp);
 }
 
@@ -120,7 +121,8 @@ void rrc_gNB_remove_ue_context(gNB_RRC_INST *rrc_instance_pP, rrc_gNB_ue_context
   }
 
   RB_REMOVE(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_pP);
-  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.gNB_ue_ngap_id);
+  uid_linear_allocator_free(&rrc_instance_pP->uid_allocator, ue_context_pP->ue_context.rrc_ue_id - 1);
+  cu_remove_f1_ue_data(ue_context_pP->ue_context.rrc_ue_id);
   rrc_gNB_free_mem_ue_context(ue_context_pP);
   LOG_I(NR_RRC, "Removed UE context\n");
 }
@@ -153,35 +155,33 @@ rrc_gNB_ue_context_t *rrc_gNB_ue_context_5g_s_tmsi_exist(gNB_RRC_INST *rrc_insta
     return NULL;
 }
 
-void rrc_gNB_update_ue_context_rnti(rnti_t rnti, gNB_RRC_INST *rrc_instance_pP, uint32_t gNB_ue_ngap_id)
-{
-  // rnti will need to be a fast access key, with indexing, today it is sequential search
-  // This function will update the index when it will be made
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context(rrc_instance_pP, gNB_ue_ngap_id);
-  if (ue_context_p)
-    ue_context_p->ue_context.rnti = rnti;
-  else
-    LOG_E(NR_RRC, "update rnti on a wrong UE id\n");
-}
 //-----------------------------------------------------------------------------
 // return a new ue context structure if ue_identityP, rnti not found in collection
-rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti, gNB_RRC_INST *rrc_instance_pP, const uint64_t ue_identityP)
+rrc_gNB_ue_context_t *rrc_gNB_create_ue_context(rnti_t rnti,
+                                                gNB_RRC_INST *rrc_instance_pP,
+                                                const uint64_t ue_identityP,
+                                                uint32_t du_ue_id)
 //-----------------------------------------------------------------------------
 {
-  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_get_ue_context_by_rnti(rrc_instance_pP, rnti);
-
-  if (ue_context_p) {
-    LOG_E(NR_RRC, "Cannot create new UE context, already exist rnti: %04x\n", rnti);
-    return ue_context_p;
-  }
-
-  ue_context_p = rrc_gNB_allocate_new_ue_context(rrc_instance_pP);
+  rrc_gNB_ue_context_t *ue_context_p = rrc_gNB_allocate_new_ue_context(rrc_instance_pP);
   if (ue_context_p == NULL)
     return NULL;
 
-  ue_context_p->ue_context.rnti = rnti;
-  ue_context_p->ue_context.random_ue_identity = ue_identityP;
+  gNB_RRC_UE_t *ue = &ue_context_p->ue_context;
+  ue->rnti = rnti;
+  ue->random_ue_identity = ue_identityP;
+  f1_ue_data_t ue_data = {.secondary_ue = du_ue_id};
+  AssertFatal(!cu_exists_f1_ue_data(ue->rrc_ue_id),
+              "UE F1 Context for ID %d already exists, logic bug\n",
+              ue->rrc_ue_id);
+  cu_add_f1_ue_data(ue->rrc_ue_id, &ue_data);
+
   RB_INSERT(rrc_nr_ue_tree_s, &rrc_instance_pP->rrc_ue_head, ue_context_p);
-  LOG_W(NR_RRC, " Created new UE context rnti: %04x, random ue id %lx, RRC ue id %u\n", rnti, ue_identityP, ue_context_p->ue_context.gNB_ue_ngap_id);
+  LOG_I(NR_RRC,
+        "Created new UE context: CU UE ID %u DU UE ID %u (rnti: %04x, random ue id %lx)\n",
+        ue->rrc_ue_id,
+        du_ue_id,
+        ue->rnti,
+        ue->random_ue_identity);
   return ue_context_p;
 }

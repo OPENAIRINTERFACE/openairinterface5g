@@ -783,7 +783,7 @@ int16_t do_RRCReconfiguration(
     }
 
     if(cellGroupConfig!=NULL){
-      update_cellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.gNB_ue_ngap_id, ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL, configuration);
+      update_cellGroupConfig(cellGroupConfig, ue_context_pP->ue_context.rrc_ue_id, ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL, configuration);
 
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                        NULL,
@@ -1100,8 +1100,7 @@ uint8_t do_RRCReestablishmentRequest(uint8_t Mod_id, uint8_t *buffer, uint16_t c
 }
 
 //------------------------------------------------------------------------------
-int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
-                          rrc_gNB_ue_context_t *const ue_context_pP,
+int do_RRCReestablishment(rrc_gNB_ue_context_t *const ue_context_pP,
                           int CC_id,
                           uint8_t *const buffer,
                           size_t buffer_size,
@@ -1126,7 +1125,8 @@ int do_RRCReestablishment(const protocol_ctxt_t *const ctxt_pP,
   rrcReestablishment->criticalExtensions.present = NR_RRCReestablishment__criticalExtensions_PR_rrcReestablishment;
   rrcReestablishment->criticalExtensions.choice.rrcReestablishment = CALLOC(1, sizeof(NR_RRCReestablishment_IEs_t));
 
-  uint16_t pci = RC.nrrrc[ctxt_pP->module_id]->carrier.physCellId;
+  int module_id = 0;
+  uint16_t pci = RC.nrrrc[module_id]->carrier.physCellId;
   uint32_t nr_arfcn_dl = (uint64_t)*scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB;
   LOG_I(NR_RRC, "Reestablishment update key pci=%d, earfcn_dl=%u\n", pci, nr_arfcn_dl);
 

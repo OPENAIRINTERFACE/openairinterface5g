@@ -344,8 +344,7 @@ void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, 
 
 }
 
-
-NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_path)
+NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* reconfig_file, char* rbconfig_file)
 {
   if(NB_NR_UE_INST > 0) {
     NR_UE_rrc_inst = (NR_UE_RRC_INST_t *)calloc(NB_NR_UE_INST , sizeof(NR_UE_RRC_INST_t));
@@ -368,30 +367,24 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
 
     if (get_softmodem_params()->phy_test==1 || get_softmodem_params()->do_ra==1) {
       // read in files for RRCReconfiguration and RBconfig
-      FILE *fd;
-      char filename[1024];
-      if (rrc_config_path)
-        sprintf(filename,"%s/reconfig.raw",rrc_config_path);
-      else
-        sprintf(filename,"reconfig.raw");
-      fd = fopen(filename,"r");
-      char buffer[1024];
+
+      LOG_I(NR_RRC, "using %s for rrc init[1/2]\n", reconfig_file);
+      FILE *fd = fopen(reconfig_file,"r");
       AssertFatal(fd,
                   "cannot read file %s: errno %d, %s\n",
-                  filename,
+                  reconfig_file,
                   errno,
                   strerror(errno));
+      char buffer[1024];
       int msg_len=fread(buffer,1,1024,fd);
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_SecondaryCellGroupConfig_r15, buffer,msg_len);
-      if (rrc_config_path)
-        sprintf(filename,"%s/rbconfig.raw",rrc_config_path);
-      else
-        sprintf(filename,"rbconfig.raw");
-      fd = fopen(filename,"r");
+
+      LOG_I(NR_RRC, "using %s for rrc init[2/2]\n", rbconfig_file);
+      fd = fopen(rbconfig_file,"r");
       AssertFatal(fd,
                   "cannot read file %s: errno %d, %s\n",
-                  filename,
+                  rbconfig_file,
                   errno,
                   strerror(errno));
       msg_len=fread(buffer,1,1024,fd);
@@ -413,7 +406,6 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* rrc_config_
 
   return NR_UE_rrc_inst;
 }
-
 
 int8_t nr_ue_process_rlc_bearer_list(NR_CellGroupConfig_t *cell_group_config){
 
@@ -1683,7 +1675,6 @@ int32_t nr_rrc_ue_establish_drb(module_id_t ue_mod_idP,
      // Refresh DRBs
      nr_pdcp_add_drbs(ctxt_pP->enb_flag,
                       ctxt_pP->rntiMaybeUEid,
-                      0,
                       radioBearerConfig->drb_ToAddModList,
                       ue_rrc->cipheringAlgorithm | (ue_rrc->integrityProtAlgorithm << 4),
                       kUPenc,

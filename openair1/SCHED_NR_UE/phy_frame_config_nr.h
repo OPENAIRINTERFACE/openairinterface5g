@@ -72,7 +72,7 @@ int slot_select_nr(NR_DL_FRAME_PARMS *frame_parms, int nr_frame, int nr_slot);
  *  @param nr_slot  : slot number
     @returns int : downlink, uplink or mixed slot type */
 
-int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_frame, int nr_slot);
+int nr_ue_slot_select(fapi_nr_config_request_t *cfg, int nr_slot);
 
 /** \brief This function frees tdd configuration for nr
  *  @param frame_parms NR DL Frame parameters

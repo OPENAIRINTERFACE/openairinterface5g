@@ -43,6 +43,10 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
 void nr_rlc_add_drb(int rnti, int drb_id, const NR_RLC_BearerConfig_t *rlc_BearerConfig);
 
 void nr_rlc_remove_ue(int rnti);
+bool nr_rlc_update_rnti(int from_rnti, int to_rnti);
+
+/* test function for CI to trigger reestablishments */
+void nr_rlc_test_trigger_reestablishment(int rnti);
 
 int nr_rlc_get_available_tx_space(
   const rnti_t            rntiP,

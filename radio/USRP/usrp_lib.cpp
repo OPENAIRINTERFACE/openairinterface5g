@@ -269,11 +269,6 @@ static void trx_usrp_start_interdigital_gpio(openair0_device *device, usrp_state
 {
   AssertFatal(device->type == USRP_X400_DEV,
               "interdigital frontend device for beam management can only be used together with an X400\n");
-
-  // s->gpio_bank="GPIO0";
-  std::vector<std::string> sxx{12, "DB0_RF0"};
-  // set every pin on GPIO0 to be ocntrolled by DB1_RF0
-  s->usrp->set_gpio_src(s->gpio_bank, sxx);
   // set data direction register (DDR) to output
   s->usrp->set_gpio_attr(s->gpio_bank, "DDR", 0xfff, 0xfff);
   // set lower GPIO#1 to be controlled automatically by ATR (the rest  bits are controlled manually)

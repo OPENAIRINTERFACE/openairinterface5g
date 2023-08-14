@@ -36,11 +36,13 @@
   {"single-thread-disable",    CONFIG_HLP_NOSNGLT,             PARAMFLAG_BOOL,  .iptr=&single_thread_flag,                .defintval=1,                    TYPE_INT,      0}, \
   {"dlsch-parallel",           CONFIG_HLP_DLSCH_PARA,          0,               .u8ptr=NULL,                              .defintval=0,                    TYPE_UINT8,    0}, \
   {"offset-divisor",           CONFIG_HLP_OFFSET_DIV,          0,               .uptr=&nrUE_params.ofdm_offset_divisor,   .defuintval=8,                   TYPE_UINT32,   0}, \
-  {"max-ldpc-iterations",      CONFIG_HLP_MAX_LDPC_ITERATIONS, 0,               .iptr=&nrUE_params.max_ldpc_iterations,  .defuintval=5,                   TYPE_UINT8,    0}, \
+  {"max-ldpc-iterations",      CONFIG_HLP_MAX_LDPC_ITERATIONS, 0,               .iptr=&nrUE_params.max_ldpc_iterations,   .defuintval=5,                   TYPE_UINT8,    0}, \
   {"nr-dlsch-demod-shift",     CONFIG_HLP_DLSHIFT,             0,               .iptr=(int32_t *)&nr_dlsch_demod_shift,   .defintval=0,                    TYPE_INT,      0}, \
   {"V" ,                       CONFIG_HLP_VCD,                 PARAMFLAG_BOOL,  .iptr=&vcdflag,                           .defintval=0,                    TYPE_INT,      0}, \
   {"uecap_file",               CONFIG_HLP_UECAP_FILE,          0,               .strptr=&uecap_file,                      .defstrval="./uecap_ports1.xml", TYPE_STRING,   0}, \
-  {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,        0,               .strptr=&rrc_config_path,                 .defstrval="./",                 TYPE_STRING,   0}, \
+  {"rrc_config_path",          CONFIG_HLP_RRC_CFG_PATH,        0,               .strptr=&rrc_config_path,                 .defstrval=NULL,                 TYPE_STRING,   0}, \
+  {"reconfig-file",            CONFIG_HLP_RE_CFG_FILE,         0,               .strptr=&reconfig_file,                   .defstrval="./reconfig.raw",     TYPE_STRING,   0}, \
+  {"rbconfig-file",            CONFIG_HLP_RB_CFG_FILE,         0,               .strptr=&rbconfig_file,                   .defstrval="./rbconfig.raw",     TYPE_STRING,   0}, \
   {"ue-idx-standalone",        NULL,                           0,               .u16ptr=&ue_idx_standalone,               .defuintval=0xFFFF,              TYPE_UINT16,   0}, \
   {"ue-rxgain",                    CONFIG_HLP_UERXG,           0,               .dblptr=&(rx_gain[0][0]),            .defdblval=110,    TYPE_DOUBLE,   0}, \
   {"ue-rxgain-off",                CONFIG_HLP_UERXGOFF,        0,               .dblptr=&rx_gain_off,                .defdblval=0,      TYPE_DOUBLE,   0}, \
@@ -91,7 +93,7 @@ extern nrUE_params_t *get_nrUE_params(void);
 // In nr-ue.c
 extern int setup_nr_ue_buffers(PHY_VARS_NR_UE **phy_vars_ue, openair0_config_t *openair0_cfg);
 extern void fill_ue_band_info(void);
-extern void init_NR_UE(int, char*, char*);
+extern void init_NR_UE(int, char *, char *, char *);
 extern void init_NR_UE_threads(int);
 extern void reset_opp_meas(void);
 extern void print_opp_meas(void);

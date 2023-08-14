@@ -19,24 +19,30 @@
  *      contact@openairinterface.org
  */
 
-/* \file main_ue.c
- * \brief RRC layer top level initialization
- * \author R. Knopp, K.H. HSU
- * \date 2018
- * \version 0.1
- * \company Eurecom / NTUST
- * \email: knopp@eurecom.fr, kai-hsiang.hsu@eurecom.fr
- * \note
- * \warning
- */
+/* "standalone" module to store a "secondary" UE ID for each UE in DU/CU.
+ * Separate from the rest of F1, as it is also relevant for monolithic. */
 
-#include "defs.h"
-#include "rrc_proto.h"
-#include "common/utils/LOG/log.h"
+#ifndef F1AP_IDS_H_
+#define F1AP_IDS_H_
 
-NR_UE_RRC_INST_t* nr_l3_init_ue(char* uecap, char* reconfig_file, char* rbconfig_file)
-{
-  // LOG_I(RRC, "[MAIN] NR UE MAC initialization...\n");
+#include <stdbool.h>
+#include <stdint.h>
 
-  return openair_rrc_top_init_ue_nr(uecap, reconfig_file, rbconfig_file);
-}
+typedef struct f1_ue_data_t {
+  uint32_t secondary_ue;
+  /* can be extended with F1-specific data also relevant for monolithic */
+} f1_ue_data_t;
+
+void cu_init_f1_ue_data(void);
+bool cu_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
+bool cu_exists_f1_ue_data(uint32_t ue_id);
+f1_ue_data_t cu_get_f1_ue_data(uint32_t ue_id);
+bool cu_remove_f1_ue_data(uint32_t ue_id);
+
+void du_init_f1_ue_data(void);
+bool du_add_f1_ue_data(uint32_t ue_id, const f1_ue_data_t *data);
+bool du_exists_f1_ue_data(uint32_t ue_id);
+f1_ue_data_t du_get_f1_ue_data(uint32_t ue_id);
+bool du_remove_f1_ue_data(uint32_t ue_id);
+
+#endif /* F1AP_IDS_H_ */

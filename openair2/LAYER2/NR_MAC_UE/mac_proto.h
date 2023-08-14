@@ -246,10 +246,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
                       uint8_t *ulsch_buffer,
                       uint16_t buflen);
 
-void set_tdd_config_nr_ue(fapi_nr_config_request_t *cfg,
-                          int mu,
-                          NR_TDD_UL_DL_ConfigCommon_t *tdd_config);
-
 void set_harq_status(NR_UE_MAC_INST_t *mac,
                      uint8_t pucch_id,
                      uint8_t harq_id,

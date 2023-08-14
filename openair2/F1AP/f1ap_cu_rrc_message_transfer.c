@@ -32,6 +32,7 @@
 
 #include "f1ap_common.h"
 #include "f1ap_encoder.h"
+#include "f1ap_ids.h"
 #include "f1ap_itti_messaging.h"
 #include "f1ap_cu_rrc_message_transfer.h"
 #include "common/ran_context.h"
@@ -53,9 +54,6 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   MessageDef                            *message_p;
   F1AP_InitialULRRCMessageTransfer_t    *container;
   F1AP_InitialULRRCMessageTransferIEs_t *ie;
-  rnti_t          rnti;
-  sdu_size_t      ccch_sdu_len;
-  int             CC_id =0;
   DevAssert(pdu != NULL);
 
   if (stream != 0) {
@@ -68,6 +66,8 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
+  uint32_t du_ue_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
+
   /* NRCGI
   * Fixme: process NRCGI
   */
@@ -78,7 +78,7 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   /* RNTI */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_C_RNTI, true);
-  rnti = ie->value.choice.C_RNTI;
+  rnti_t rnti = ie->value.choice.C_RNTI;
   F1AP_InitialULRRCMessageTransferIEs_t *rrccont;
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, rrccont, container,
                              F1AP_ProtocolIE_ID_id_RRCContainer, true);
@@ -88,51 +88,22 @@ int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_InitialULRRCMessageTransferIEs_t, du2cu, container,
                              F1AP_ProtocolIE_ID_id_DUtoCURRCContainer, false);
 
-  int f1ap_uid = f1ap_add_ue(CUtype, instance, rnti);
-
-  if (f1ap_uid  < 0 ) {
-    LOG_E(F1AP, "Failed to add UE \n");
-    return -1;
-  }
-
   // create an ITTI message and copy SDU
-  if (f1ap_req(true, instance)->cell_type==CELL_MACRO_GNB) {
-    message_p = itti_alloc_new_message (TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
-    f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
-    ul_rrc->nr_cellid = nr_cellid; // CU instance
-    ul_rrc->crnti      = rnti;
-    ul_rrc->rrc_container_length = rrccont->value.choice.RRCContainer.size;
-    ul_rrc->rrc_container = malloc(ul_rrc->rrc_container_length);
-    memcpy(ul_rrc->rrc_container, rrccont->value.choice.RRCContainer.buf, ul_rrc->rrc_container_length);
-    AssertFatal(du2cu != NULL, "no masterCellGroup in initial UL RRC message\n");
-    ul_rrc->du2cu_rrc_container_length = du2cu->value.choice.DUtoCURRCContainer.size;
-    ul_rrc->du2cu_rrc_container = malloc(ul_rrc->du2cu_rrc_container_length);
-    memcpy(ul_rrc->du2cu_rrc_container, du2cu->value.choice.DUtoCURRCContainer.buf, ul_rrc->du2cu_rrc_container_length);
-    itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
-  } else {
-    message_p = itti_alloc_new_message (TASK_CU_F1, 0, RRC_MAC_CCCH_DATA_IND);
-    memset (RRC_MAC_CCCH_DATA_IND (message_p).sdu, 0, CCCH_SDU_SIZE);
-    ccch_sdu_len = rrccont->value.choice.RRCContainer.size;
-    memcpy(RRC_MAC_CCCH_DATA_IND (message_p).sdu, rrccont->value.choice.RRCContainer.buf,
-           ccch_sdu_len);
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).frame = 0;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).slot = 0;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).sdu_size  = ccch_sdu_len;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).nr_cellid = nr_cellid; // CU instance
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).rnti = rnti;
-    NR_RRC_MAC_CCCH_DATA_IND (message_p).CC_id = CC_id;
-    if (du2cu) {
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container = malloc(sizeof(OCTET_STRING_t));
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->size = du2cu->value.choice.DUtoCURRCContainer.size;
-      NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf = malloc(du2cu->value.choice.DUtoCURRCContainer.size);
-      memcpy(NR_RRC_MAC_CCCH_DATA_IND (message_p).du_to_cu_rrc_container->buf,
-             du2cu->value.choice.DUtoCURRCContainer.buf,
-             du2cu->value.choice.DUtoCURRCContainer.size);
-    }
-    itti_send_msg_to_task (TASK_RRC_ENB, instance, message_p);
-  }
+  AssertFatal(f1ap_req(true, instance)->cell_type == CELL_MACRO_GNB, "illegal cell type %d\n", f1ap_req(true, instance)->cell_type);
+  message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_INITIAL_UL_RRC_MESSAGE);
+  f1ap_initial_ul_rrc_message_t *ul_rrc = &F1AP_INITIAL_UL_RRC_MESSAGE(message_p);
+  ul_rrc->gNB_DU_ue_id = du_ue_id;
+  ul_rrc->nr_cellid = nr_cellid; // CU instance
+  ul_rrc->crnti = rnti;
+  ul_rrc->rrc_container_length = rrccont->value.choice.RRCContainer.size;
+  ul_rrc->rrc_container = malloc(ul_rrc->rrc_container_length);
+  memcpy(ul_rrc->rrc_container, rrccont->value.choice.RRCContainer.buf, ul_rrc->rrc_container_length);
+  AssertFatal(du2cu != NULL, "no masterCellGroup in initial UL RRC message\n");
+  ul_rrc->du2cu_rrc_container_length = du2cu->value.choice.DUtoCURRCContainer.size;
+  ul_rrc->du2cu_rrc_container = malloc(ul_rrc->du2cu_rrc_container_length);
+  memcpy(ul_rrc->du2cu_rrc_container, du2cu->value.choice.DUtoCURRCContainer.buf, ul_rrc->du2cu_rrc_container_length);
+  itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
 
-  //getCxt(true,ITTI_MSG_DESTINATION_ID(message_p))->f1ap_ue[f1ap_uid].du_ue_f1ap_id = du_ue_f1ap_id;
   return 0;
 }
 
@@ -161,26 +132,28 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
   ie1->id                             = F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID;
   ie1->criticality                    = F1AP_Criticality_reject;
   ie1->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_CU_UE_F1AP_ID;
-  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_get_cu_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
-  LOG_D(F1AP, "Setting GNB_CU_UE_F1AP_ID %llu associated with UE RNTI %x (instance %ld)\n",
-        (unsigned long long int)ie1->value.choice.GNB_CU_UE_F1AP_ID, f1ap_dl_rrc->rnti, instance);
+  DevAssert(f1ap_dl_rrc->gNB_CU_ue_id != 0);
+  ie1->value.choice.GNB_CU_UE_F1AP_ID = f1ap_dl_rrc->gNB_CU_ue_id;
+
   /* mandatory */
   /* c2. GNB_DU_UE_F1AP_ID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie2);
   ie2->id                             = F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID;
   ie2->criticality                    = F1AP_Criticality_reject;
   ie2->value.present                  = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID;
-  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_get_du_ue_f1ap_id(CUtype, instance, f1ap_dl_rrc->rnti);
-  LOG_D(F1AP, "GNB_DU_UE_F1AP_ID %llu associated with UE RNTI %x \n", (unsigned long long int)ie2->value.choice.GNB_DU_UE_F1AP_ID, f1ap_dl_rrc->rnti);
+  DevAssert(f1ap_dl_rrc->gNB_DU_ue_id != 0);
+  ie2->value.choice.GNB_DU_UE_F1AP_ID = f1ap_dl_rrc->gNB_DU_ue_id;
+
   /* optional */
   /* c3. oldgNB_DU_UE_F1AP_ID */
-  /* if (f1ap_dl_rrc->old_gNB_DU_ue_id != 0xFFFFFFFF) {
-     asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie3);
-     ie3->id                                = F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID;
-     ie3->criticality                       = F1AP_Criticality_reject;
-     ie3->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_NOTHING;
-     ie3->value.choice.oldgNB_DU_UE_F1AP_ID = f1ap_dl_rrc->old_gNB_DU_ue_id;
-   }*/
+  if (f1ap_dl_rrc->old_gNB_DU_ue_id != NULL) {
+    asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie3);
+    ie3->id                                = F1AP_ProtocolIE_ID_id_oldgNB_DU_UE_F1AP_ID;
+    ie3->criticality                       = F1AP_Criticality_reject;
+    ie3->value.present                     = F1AP_DLRRCMessageTransferIEs__value_PR_GNB_DU_UE_F1AP_ID_1;
+    ie3->value.choice.GNB_DU_UE_F1AP_ID_1 = *f1ap_dl_rrc->old_gNB_DU_ue_id;
+  }
+
   /* mandatory */
   /* c4. SRBID */
   asn1cSequenceAdd(out->protocolIEs.list, F1AP_DLRRCMessageTransferIEs_t, ie4);
@@ -267,14 +240,19 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_CU_UE_F1AP_ID, true);
   cu_ue_f1ap_id = ie->value.choice.GNB_CU_UE_F1AP_ID;
-  LOG_D(F1AP, "cu_ue_f1ap_id %lu associated with RNTI %x\n",
-        cu_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id));
   /* GNB_DU_UE_F1AP_ID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
                              F1AP_ProtocolIE_ID_id_gNB_DU_UE_F1AP_ID, true);
   du_ue_f1ap_id = ie->value.choice.GNB_DU_UE_F1AP_ID;
-  LOG_D(F1AP, "du_ue_f1ap_id %lu associated with RNTI %x\n",
-        du_ue_f1ap_id, f1ap_get_rnti_by_cu_id(CUtype, instance, du_ue_f1ap_id));
+  /* the RLC-PDCP does not transport the DU UE ID (yet), so we drop it here.
+   * For the moment, let's hope this won't become relevant; to sleep in peace,
+   * let's put an assert to check that it is the expected DU UE ID. */
+  f1_ue_data_t ue_data = cu_get_f1_ue_data(cu_ue_f1ap_id);
+  AssertFatal(ue_data.secondary_ue == du_ue_f1ap_id,
+              "unexpected DU UE ID %d received, expected it to be %ld\n",
+              ue_data.secondary_ue,
+              du_ue_f1ap_id);
+
   /* mandatory */
   /* SRBID */
   F1AP_FIND_PROTOCOLIE_BY_ID(F1AP_ULRRCMessageTransferIEs_t, ie, container,
@@ -294,7 +272,7 @@ int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
   protocol_ctxt_t ctxt={0};
   ctxt.instance = instance;
   ctxt.module_id = instance;
-  ctxt.rntiMaybeUEid = f1ap_get_rnti_by_cu_id(CUtype, instance, cu_ue_f1ap_id);
+  ctxt.rntiMaybeUEid = cu_ue_f1ap_id;
   ctxt.enb_flag = 1;
   ctxt.eNB_index = 0;
   mem_block_t *mb = get_free_mem_block(ie->value.choice.RRCContainer.size,__func__);

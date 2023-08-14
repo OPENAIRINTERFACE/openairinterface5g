@@ -289,9 +289,11 @@ typedef struct {
     int32_t sfn;
     int8_t  slot;
     int8_t  rxAnt_idx;
-    int32_t dl_toa;
+    float dl_toa;
     int32_t dl_aoa;
-    int32_t snr;
+    float snr;
+    float rsrp;
+    float rsrp_dBm;
     int32_t reserved;
 } prs_meas_t;
 

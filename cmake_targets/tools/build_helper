@@ -32,7 +32,7 @@ OS_DISTRO=$(grep "^ID=" /etc/os-release | sed "s/ID=//" | sed "s/\"//g")
 OS_RELEASE=$(grep "^VERSION_ID=" /etc/os-release | sed "s/VERSION_ID=//" | sed "s/\"//g")
 case "$OS_DISTRO" in
   fedora) OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
-  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
+  rhel)   OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake3" ;;
   rocky)  OS_BASEDISTRO="fedora"; INSTALLER="dnf"; CMAKE="cmake" ;;
   centos) OS_BASEDISTRO="centos"; INSTALLER="yum"; CMAKE="cmake3" ;;
   debian) OS_BASEDISTRO="debian"; INSTALLER="apt-get"; CMAKE="cmake" ;;
@@ -226,11 +226,11 @@ compilations() {
   local verbose=$([ "$VERBOSE_COMPILE" == "1" ] && echo "-v" || echo "")
   echo cd $OPENAIR_DIR/cmake_targets/$dir/build
   cd $OPENAIR_DIR/cmake_targets/$dir/build
-  echo_info "Running \"cmake --build . $verbose --target $targets -- -j$(nproc)\"" $green
+  echo_info "Running \"$CMAKE --build . $verbose --target $targets -- -j$(nproc)\"" $green
   echo "Log file for compilation is being written to: $dlog/$logfile"
   set +e
   {
-    cmake --build . $verbose --target $targets -- -j$(nproc)
+    $CMAKE --build . $verbose --target $targets -- -j$(nproc)
     ret=$?
   } > $dlog/$logfile 2>&1
   if [ "$VERBOSE_CI" == "1" ]; then

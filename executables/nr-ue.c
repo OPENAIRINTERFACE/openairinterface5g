@@ -496,8 +496,9 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
   UE_nr_rxtx_proc_t *proc = &rxtxD->proc;
 
   void *txp[NB_ANTENNAS_TX];
-  for (int i=0; i<UE->frame_parms.nb_antennas_tx; i++)
-    txp[i] = (void *)&UE->common_vars.txData[i][UE->frame_parms.get_samples_slot_timestamp(proc->nr_slot_tx, &UE->frame_parms, 0)];
+  int slot = proc->nr_slot_tx;
+  for (int i = 0; i < UE->frame_parms.nb_antennas_tx; i++)
+    txp[i] = (void *)&UE->common_vars.txData[i][UE->frame_parms.get_samples_slot_timestamp(slot, &UE->frame_parms, 0)];
 
   radio_tx_burst_flag_t flags = TX_BURST_INVALID;
 
@@ -506,19 +507,18 @@ static void RU_write(nr_rxtx_thread_data_t *rxtxD) {
       openair0_cfg[0].duplex_mode == duplex_mode_TDD &&
       !get_softmodem_params()->continuous_tx) {
 
-    uint8_t tdd_period = mac->phy_config.config_req.tdd_table.tdd_period_in_slots;
-    int nrofUplinkSlots = mac->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSlots;
-    int nrofUplinkSymbols = mac->tdd_UL_DL_ConfigurationCommon->pattern1.nrofUplinkSymbols;
-    int slot_tx_usrp = proc->nr_slot_tx;
-    uint8_t  num_UL_slots = nrofUplinkSlots + (nrofUplinkSymbols != 0);
-    uint8_t first_tx_slot = tdd_period - num_UL_slots;
-
-    if (slot_tx_usrp % tdd_period == first_tx_slot)
-      flags = TX_BURST_START;
-    else if (slot_tx_usrp % tdd_period == first_tx_slot + num_UL_slots - 1)
-      flags = TX_BURST_END;
-    else if (slot_tx_usrp % tdd_period > first_tx_slot)
-      flags = TX_BURST_MIDDLE;
+    int slots_frame = UE->frame_parms.slots_per_frame;
+    int curr_slot = nr_ue_slot_select(&UE->nrUE_config, slot);
+    if (curr_slot != NR_DOWNLINK_SLOT) {
+      int next_slot = nr_ue_slot_select(&UE->nrUE_config, (slot + 1) % slots_frame);
+      int prev_slot = nr_ue_slot_select(&UE->nrUE_config, (slot + slots_frame - 1) % slots_frame);
+      if (prev_slot == NR_DOWNLINK_SLOT)
+        flags = TX_BURST_START;
+      else if (next_slot == NR_DOWNLINK_SLOT)
+        flags = TX_BURST_END;
+      else
+        flags = TX_BURST_MIDDLE;
+    }
   } else {
     flags = TX_BURST_MIDDLE;
   }
@@ -851,8 +851,8 @@ void *UE_thread(void *arg)
     curMsg.proc.frame_rx    = (absolute_slot / nb_slot_frame) % MAX_FRAME_NUMBER;
     curMsg.proc.frame_tx    = ((absolute_slot + DURATION_RX_TO_TX) / nb_slot_frame) % MAX_FRAME_NUMBER;
     if (mac->phy_config_request_sent) {
-      curMsg.proc.rx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.frame_rx, curMsg.proc.nr_slot_rx);
-      curMsg.proc.tx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.frame_tx, curMsg.proc.nr_slot_tx);
+      curMsg.proc.rx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.nr_slot_rx);
+      curMsg.proc.tx_slot_type = nr_ue_slot_select(cfg, curMsg.proc.nr_slot_tx);
     }
     else {
       curMsg.proc.rx_slot_type = NR_DOWNLINK_SLOT;
@@ -944,15 +944,14 @@ void *UE_thread(void *arg)
   return NULL;
 }
 
-void init_NR_UE(int nb_inst,
-                char* uecap_file,
-                char* rrc_config_path) {
+void init_NR_UE(int nb_inst, char *uecap_file, char *reconfig_file, char *rbconfig_file)
+{
   int inst;
   NR_UE_MAC_INST_t *mac_inst;
   NR_UE_RRC_INST_t* rrc_inst;
   
   for (inst=0; inst < nb_inst; inst++) {
-    AssertFatal((rrc_inst = nr_l3_init_ue(uecap_file,rrc_config_path)) != NULL, "can not initialize RRC module\n");
+    AssertFatal((rrc_inst = nr_l3_init_ue(uecap_file, reconfig_file, rbconfig_file)) != NULL, "can not initialize RRC module\n");
     AssertFatal((mac_inst = nr_l2_init_ue(rrc_inst)) != NULL, "can not initialize L2 module\n");
     AssertFatal((mac_inst->if_module = nr_ue_if_module_init(inst)) != NULL, "can not initialize IF module\n");
   }

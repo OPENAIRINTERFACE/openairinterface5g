@@ -47,6 +47,7 @@
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "intertask_interface.h"
+#include "openair2/F1AP/f1ap_ids.h"
 
 #include "T.h"
 
@@ -1992,22 +1993,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   destroy_nr_list(&sched_ctrl->retrans_ul_harq);
   uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
-  const rnti_t rnti = UE->rnti;
   free(UE);
-
-  /* clear RA process(es?) associated to the UE */
-  for (int cc_id = 0; cc_id < NFAPI_CC_MAX; cc_id++) {
-    for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
-      NR_COMMON_channels_t *cc = &ccPtr[cc_id];
-      if (cc->ra[i].rnti == rnti) {
-        LOG_D(NR_MAC, "free RA process %d for rnti %04x\n", i, rnti);
-        /* is it enough? */
-        cc->ra[i].cfra = false;
-        cc->ra[i].rnti = 0;
-        cc->ra[i].crnti = 0;
-      }
-    }
-  }
 }
 
 
@@ -2922,6 +2908,7 @@ void send_initial_ul_rrc_message(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu
 
   const f1ap_initial_ul_rrc_message_t ul_rrc_msg = {
     /* TODO: add mcc, mnc, cell_id, ..., is not available at MAC yet */
+    .gNB_DU_ue_id = rnti,
     .crnti = rnti,
     .rrc_container = (uint8_t *) sdu,
     .rrc_container_length = sdu_len,
@@ -2997,8 +2984,10 @@ void nr_mac_check_ul_failure(const gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ct
   /* to trigger only once: trigger when ul_failure_timer == 1, but timer will
    * stop at 0 and we wait for a UE release command from upper layers */
   if (sched_ctrl->ul_failure_timer == 1) {
+    f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
     f1ap_ue_context_release_complete_t complete = {
-      .rnti = rnti,
+      .gNB_CU_ue_id = ue_data.secondary_ue,
+      .gNB_DU_ue_id = rnti,
       .cause = F1AP_CAUSE_RADIO_NETWORK,
       .cause_value = 12, // F1AP_CauseRadioNetwork_rl_failure_others
     };

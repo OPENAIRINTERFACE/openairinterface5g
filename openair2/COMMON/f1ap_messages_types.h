@@ -286,8 +286,7 @@ typedef struct f1ap_dl_rrc_message_s {
 
   uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
-  uint32_t old_gNB_DU_ue_id;
-  uint16_t rnti; 
+  uint32_t *old_gNB_DU_ue_id;
   uint8_t  srb_id;
   uint8_t  execute_duplication;
   uint8_t *rrc_container;
@@ -318,7 +317,8 @@ typedef struct f1ap_initial_ul_rrc_message_s {
 } f1ap_initial_ul_rrc_message_t;
 
 typedef struct f1ap_ul_rrc_message_s {
-  uint16_t rnti;
+  uint32_t gNB_CU_ue_id;
+  uint32_t gNB_DU_ue_id;
   uint8_t  srb_id;
   uint8_t *rrc_container;
   int      rrc_container_length;
@@ -378,9 +378,8 @@ typedef enum ReconfigurationCompl_e {
 } ReconfigurationCompl_t;
 
 typedef struct f1ap_ue_context_setup_s {
-  uint32_t gNB_CU_ue_id;    // BK: need to replace by use from rnti
+  uint32_t gNB_CU_ue_id;
   uint32_t gNB_DU_ue_id;
-  uint16_t rnti; 
   // SpCell Info
   uint16_t mcc;
   uint16_t mnc;
@@ -419,7 +418,8 @@ typedef enum F1ap_Cause_e {
 } f1ap_Cause_t;
 
 typedef struct f1ap_ue_context_release_s {
-  uint16_t      rnti;
+  uint32_t gNB_CU_ue_id;
+  uint32_t gNB_DU_ue_id;
   f1ap_Cause_t  cause;
   long          cause_value;
   uint8_t      *rrc_container;

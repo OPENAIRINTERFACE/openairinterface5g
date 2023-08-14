@@ -21,8 +21,8 @@ After you have [built the softmodem executables](BUILD.md), go to the build dire
 
 | **Mode** 	                    | **gNB config**                                                                          	  | **nrUE config**           	|
 |-----------------------------	|-------------------------------------------------------------------------------------------  |---------------------------	|
-| **FR1 40MHz<br>30kHz SCS**  	| gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf<br>gnb1.sa.band78.fr1.106PRB.prs.usrpx310.conf 	| ue.nr.prs.fr1.106prb.conf 	|
-| **FR2 100MHz<br>120kHz SCS**  | gnb0.sa.band261.fr2.64PRB.prs.usrpx310.conf<br>gnb1.sa.band261.fr2.64PRB.prs.usrpx310.conf 	| ue.nr.prs.fr2.64prb.conf  	|
+| **FR1 40MHz<br>30kHz SCS**  	| gnb0.prs.band78.fr1.106PRB.usrpx310.conf<br>gnb1.prs.band78.fr1.106PRB.usrpx310.conf 	| ue.nr.prs.fr1.106prb.conf 	|
+| **FR2 100MHz<br>120kHz SCS**  | gnb0.prs.band261.fr2.64PRB.usrpx310.conf<br>gnb1.prs.band261.fr2.64PRB.usrpx310.conf 	| ue.nr.prs.fr2.64prb.conf  	|
 
 Under gNB and nrUE config files, parameters are configured under `prs_config` section. nrUE is capable to receive downlink PRS signal from multiple gNB simultaneously and therefore nrUE config file contains multiple `prs_config` sections, corresponding to each gNB. These parameters can be changed as per the test scenario.
 
@@ -64,26 +64,26 @@ In our case the output is 0 and hence we use `numactl --cpunodebind=0 --membind=
 ## FR1 test
 Open a terminal on the host machine, and execute below command to launch gNB with **X310 USRPs**
 
-```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --phy-test```
+```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.prs.band78.fr1.106PRB.usrpx310.conf --phy-test```
 
 If **N310 USRPs** are used, then run above command `without -E option` i.e without 3/4 sampling rate.<br><br>
 
 
 To run using **rfsimulator**, execute following command:  
 
-```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band78.fr1.106PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
+```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.prs.band78.fr1.106PRB.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
 
 ## FR2 test
 In FR2 mode, we need RF beamforming module to transmit signal in mmWave frequency range. **X310 USRPs** can be used with BasicTx daughtercard to transmit baseband signal at **Intermediate Frequncy(IF)** and then RF beamforming module would perform beamforming and the upconversion to FR2 frequencies. IF can be specified using `if_freq` in the RU section of gNB config.
 
 If RF beamforming module is NOT present, gNB can still be launched with USRP alone; to transmit at supported `if_freq`.
 
-```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band261.fr2.64PRB.prs.usrpx310.conf --phy-test```<br><br>
+```sudo numactl --cpunodebind=0 --membind=0 ./nr-softmodem -E -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.prs.band261.fr2.64PRB.usrpx310.conf --phy-test```<br><br>
 
 
 To run using **rfsimulator**, execute following command:  
 
-```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.sa.band261.fr2.64PRB.prs.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
+```sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb0.prs.band261.fr2.64PRB.usrpx310.conf --parallel-config PARALLEL_SINGLE_THREAD --noS1 --rfsim --phy-test```
 
 ## Multiple gNB scenario
 PRS is primarily used for positioning and localization of the UE with multiple gNBs transmitting simultaneously. OAI PRS implementation supports multiple gNB transmission provided all the gNBs are tightely synchronized using GPSDO clock. Therefore before running this scenario, make sure the USRPs has built-in GPSDO and the GPS antennas are connected with good satellite visibility. Also every time a gNB is launched, wait until `GPS LOCKED` is printed on the terminal during gNB startup. If USRP fails to lock with GPSDO, try again until its locked.

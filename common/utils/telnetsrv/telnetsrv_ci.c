@@ -28,15 +28,17 @@
 #include <stdarg.h>
 
 #include "openair2/RRC/NR/rrc_gNB_UE_context.h"
-#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_ue_manager.h"
+#include "openair2/LAYER2/nr_rlc/nr_rlc_entity_am.h"
 
 #define TELNETSERVERCODE
 #include "telnetsrv.h"
 
 #define ERROR_MSG_RET(mSG, aRGS...) do { prnt(mSG, ##aRGS); return 1; } while (0)
 
-static int get_single_ue_rnti(void)
+static int get_single_ue_rnti_mac(void)
 {
   NR_UE_info_t *ue = NULL;
   UE_iterator(RC.nrmac[0]->UE_info.list, it) {
@@ -48,11 +50,6 @@ static int get_single_ue_rnti(void)
   if (!ue)
     return -1;
 
-  // verify it exists in RRC as well
-  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], ue->rnti);
-  if (!rrcue)
-    return -1;
-
   return ue->rnti;
 }
 
@@ -61,7 +58,7 @@ int get_single_rnti(char *buf, int debug, telnet_printfunc_t prnt)
   if (buf)
     ERROR_MSG_RET("no parameter allowed\n");
 
-  int rnti = get_single_ue_rnti();
+  int rnti = get_single_ue_rnti_mac();
   if (rnti < 1)
     ERROR_MSG_RET("different number of UEs\n");
 
@@ -71,23 +68,32 @@ int get_single_rnti(char *buf, int debug, telnet_printfunc_t prnt)
 
 int get_reestab_count(char *buf, int debug, telnet_printfunc_t prnt)
 {
+  if (!RC.nrrrc)
+    ERROR_MSG_RET("no RRC present, cannot list counts\n");
+  rrc_gNB_ue_context_t *ue = NULL;
   int rnti = -1;
   if (!buf) {
-    rnti = get_single_ue_rnti();
-    if (rnti < 1)
-      ERROR_MSG_RET("no UE found\n");
+    rrc_gNB_ue_context_t *l = NULL;
+    int n = 0;
+    RB_FOREACH(l, rrc_nr_ue_tree_s, &RC.nrrrc[0]->rrc_ue_head) {
+      if (ue == NULL) ue = l;
+      n++;
+    }
+    if (!ue)
+      ERROR_MSG_RET("could not find any UE in RRC\n");
+    if (n > 1)
+      ERROR_MSG_RET("more than one UE in RRC present\n");
   } else {
     rnti = strtol(buf, NULL, 16);
     if (rnti < 1 || rnti >= 0xfffe)
       ERROR_MSG_RET("RNTI needs to be [1,0xfffe]\n");
+    ue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
+    if (!ue)
+      ERROR_MSG_RET("could not find UE with RNTI %04x in RRC\n");
   }
 
-  rrc_gNB_ue_context_t *ue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
-  if (!ue)
-    ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
-
   prnt("UE RNTI %04x reestab %d reconf_after_reestab %d\n",
-       rnti,
+       ue->ue_context.rnti,
        ue->ue_context.ue_reestablishment_counter,
        ue->ue_context.ue_reconfiguration_after_reestablishment_counter);
   return 0;
@@ -95,9 +101,11 @@ int get_reestab_count(char *buf, int debug, telnet_printfunc_t prnt)
 
 int trigger_reestab(char *buf, int debug, telnet_printfunc_t prnt)
 {
+  if (!RC.nrmac)
+    ERROR_MSG_RET("no MAC/RLC present, cannot trigger reestablishment\n");
   int rnti = -1;
   if (!buf) {
-    rnti = get_single_ue_rnti();
+    rnti = get_single_ue_rnti_mac();
     if (rnti < 1)
       ERROR_MSG_RET("no UE found\n");
   } else {
@@ -106,13 +114,9 @@ int trigger_reestab(char *buf, int debug, telnet_printfunc_t prnt)
       ERROR_MSG_RET("RNTI needs to be [1,0xfffe]\n");
   }
 
-  // verify it exists in RRC as well
-  rrc_gNB_ue_context_t *rrcue = rrc_gNB_get_ue_context_by_rnti(RC.nrrrc[0], rnti);
-  if (!rrcue)
-    ERROR_MSG_RET("could not find UE with RNTI %04x\n", rnti);
+  nr_rlc_test_trigger_reestablishment(rnti);
 
-  nr_rlc_remove_ue(rnti);
-  prnt("force-remove UE RNTI %04x from RLC to trigger reestablishment\n", rnti);
+  prnt("Reset RLC counters of UE RNTI %04x to trigger reestablishment\n", rnti);
   return 0;
 }
 

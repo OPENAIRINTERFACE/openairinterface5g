@@ -76,23 +76,34 @@ static void ue_context_release_command_f1ap(const f1ap_ue_context_release_cmd_t 
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_CMD);
   f1ap_ue_context_release_cmd_t *msg = &F1AP_UE_CONTEXT_RELEASE_CMD(message_p);
   *msg = *cmd;
+  if (cmd->rrc_container_length > 0) {
+    msg->rrc_container = calloc(cmd->rrc_container_length, sizeof(*msg->rrc_container));
+    AssertFatal(msg->rrc_container != NULL, "out of memory\n");
+    msg->rrc_container_length = cmd->rrc_container_length;
+    memcpy(msg->rrc_container, cmd->rrc_container, cmd->rrc_container_length);
+  }
   itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
 }
 
-static void dl_rrc_message_transfer_f1ap(module_id_t module_id, const f1ap_dl_rrc_message_t *dl_rrc)
+static void dl_rrc_message_transfer_f1ap(const f1ap_dl_rrc_message_t *dl_rrc)
 {
   /* TODO call F1AP function directly? no real-time constraint here */
 
   MessageDef *message_p = itti_alloc_new_message (TASK_RRC_GNB, 0, F1AP_DL_RRC_MESSAGE);
   f1ap_dl_rrc_message_t *msg = &F1AP_DL_RRC_MESSAGE(message_p);
   *msg = *dl_rrc;
+  if (dl_rrc->old_gNB_DU_ue_id) {
+    msg->old_gNB_DU_ue_id = malloc(sizeof(*msg->old_gNB_DU_ue_id));
+    AssertFatal(msg->old_gNB_DU_ue_id != NULL, "out of memory\n");
+    *msg->old_gNB_DU_ue_id = *dl_rrc->old_gNB_DU_ue_id;
+  }
   if (dl_rrc->rrc_container) {
     msg->rrc_container = malloc(dl_rrc->rrc_container_length);
     AssertFatal(msg->rrc_container != NULL, "out of memory\n");
     msg->rrc_container_length = dl_rrc->rrc_container_length;
     memcpy(msg->rrc_container, dl_rrc->rrc_container, dl_rrc->rrc_container_length);
   }
-  itti_send_msg_to_task (TASK_CU_F1, module_id, message_p);
+  itti_send_msg_to_task (TASK_CU_F1, 0, message_p);
 }
 
 void mac_rrc_dl_f1ap_init(nr_mac_rrc_dl_if_t *mac_rrc)

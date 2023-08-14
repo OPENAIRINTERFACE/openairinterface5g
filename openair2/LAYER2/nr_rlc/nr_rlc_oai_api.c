@@ -39,6 +39,7 @@
 #include "NR_UL-CCCH-Message.h"
 
 #include "openair2/F1AP/f1ap_du_rrc_message_transfer.h"
+#include "openair2/F1AP/f1ap_ids.h"
 
 extern RAN_CONTEXT_t RC;
 
@@ -425,11 +426,18 @@ rb_found:
   ctx.eNB_index = 0;
   ctx.brOption = 0;
 
+  is_enb = nr_rlc_manager_get_enb_flag(nr_rlc_ue_manager);
+
   /* used fields? */
   ctx.module_id = 0;
+  /* CU (PDCP, RRC, SDAP) use a different ID than RNTI, so below set the CU UE
+   * ID if in gNB, else use RNTI normally */
   ctx.rntiMaybeUEid = ue->rnti;
+  if (is_enb) {
+    f1_ue_data_t ue_data = du_get_f1_ue_data(ue->rnti);
+    ctx.rntiMaybeUEid = ue_data.secondary_ue;
+  }
 
-  is_enb = nr_rlc_manager_get_enb_flag(nr_rlc_ue_manager);
   ctx.enb_flag = is_enb;
 
   if (is_enb) {
@@ -453,7 +461,8 @@ rb_found:
 	msg = itti_alloc_new_message(TASK_RLC_ENB, 0, F1AP_UL_RRC_MESSAGE);
 	uint8_t *message_buffer = itti_malloc (TASK_RLC_ENB, TASK_DU_F1, size);
 	memcpy (message_buffer, buf, size);
-	F1AP_UL_RRC_MESSAGE(msg).rnti = ue->rnti;
+        F1AP_UL_RRC_MESSAGE(msg).gNB_CU_ue_id = ctx.rntiMaybeUEid;
+	F1AP_UL_RRC_MESSAGE(msg).gNB_DU_ue_id = ue->rnti;
 	F1AP_UL_RRC_MESSAGE(msg).srb_id = rb_id;
 	F1AP_UL_RRC_MESSAGE(msg).rrc_container = message_buffer;
 	F1AP_UL_RRC_MESSAGE(msg).rrc_container_length = size;
@@ -467,7 +476,7 @@ rb_found:
 	memcpy(req->buffer,buf,size);
 	req->length=size;
 	req->offset=0;
-	req->ue_id=ue->rnti;
+	req->ue_id=ue->rnti; // use RNTI here, which GTP will use to look up TEID
 	req->bearer_id=rb_id;
 	LOG_D(RLC, "Received uplink user-plane traffic at RLC-DU to be sent to the CU, size %d \n", size);
 	extern instance_t DUuniqInstance;
@@ -477,6 +486,7 @@ rb_found:
     }
   }
 
+  /* UE or monolithic gNB */
   memblock = get_free_mem_block(size, __func__);
   if (memblock == NULL) {
     LOG_E(RLC, "%s:%d:%s: ERROR: get_free_mem_block failed\n", __FILE__, __LINE__, __FUNCTION__);
@@ -998,6 +1008,45 @@ rlc_op_status_t rrc_rlc_remove_ue (const protocol_ctxt_t* const x)
 {
   nr_rlc_remove_ue(x->rntiMaybeUEid);
   return RLC_OP_STATUS_OK;
+}
+
+bool nr_rlc_update_rnti(int from_rnti, int to_rnti)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, from_rnti);
+  if (ue == NULL) {
+    nr_rlc_manager_unlock(nr_rlc_ue_manager);
+    LOG_E(RLC, "Cannot find RLC entity for UE %04x\n", from_rnti);
+    return false;
+  }
+  ue->rnti = to_rnti;
+  LOG_I(RLC, "Update old UE RNTI %04x context to RNTI %04x\n", from_rnti, to_rnti);
+  for (int i = 0; i < sizeof(ue->srb) / sizeof(ue->srb[0]); ++i)
+    if (ue->srb[i])
+      ue->srb[i]->reestablishment(ue->srb[i]);
+  for (int i = 0; i < sizeof(ue->drb) / sizeof(ue->drb[0]); ++i)
+    if (ue->drb[i])
+      ue->drb[i]->reestablishment(ue->drb[i]);
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+  return true;
+}
+
+/* This function is for testing purposes. At least on a COTS UE, it will
+ * trigger a reestablishment. */
+void nr_rlc_test_trigger_reestablishment(int rnti)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (ue == NULL) {
+    nr_rlc_manager_unlock(nr_rlc_ue_manager);
+    LOG_E(RLC, "Cannot find RLC entity for UE %04x\n", rnti);
+    return;
+  }
+  /* we simply assume the SRB exists, because the scheduler creates it as soon
+   * as the UE context is created. */
+  nr_rlc_entity_t *ent = ue->srb[0];
+  ent->reestablishment(ent);
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
 
 void nr_rlc_tick(int frame, int subframe)

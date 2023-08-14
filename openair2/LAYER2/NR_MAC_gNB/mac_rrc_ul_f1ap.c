@@ -106,7 +106,7 @@ static void ue_context_release_request_f1ap(const f1ap_ue_context_release_req_t*
 
 static void ue_context_release_complete_f1ap(const f1ap_ue_context_release_complete_t *complete)
 {
-  newGtpuDeleteAllTunnels(0, complete->rnti);
+  newGtpuDeleteAllTunnels(0, complete->gNB_DU_ue_id);
 
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_COMPLETE);
   f1ap_ue_context_release_complete_t *f1ap_msg = &F1AP_UE_CONTEXT_RELEASE_COMPLETE(msg);
