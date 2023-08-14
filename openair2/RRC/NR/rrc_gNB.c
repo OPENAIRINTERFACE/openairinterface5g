@@ -43,7 +43,6 @@
 #include "rrc_gNB_radio_bearers.h"
 
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
-#include "LAYER2/RLC/rlc.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
 #include "COMMON/mac_rrc_primitives.h"
@@ -68,7 +67,6 @@
 #include "uper_encoder.h"
 #include "uper_decoder.h"
 
-#include "rlc.h"
 #include "platform_types.h"
 #include "common/utils/LOG/vcd_signal_dumper.h"
 
@@ -186,26 +184,6 @@ static void freeDRBlist(NR_DRB_ToAddModList_t *list)
 {
   //ASN_STRUCT_FREE(asn_DEF_NR_DRB_ToAddModList, list);
   return;
-}
-
-static void nr_rrc_addmod_drbs(int rnti,
-                               const NR_DRB_ToAddModList_t *drb_list,
-                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
-{
-  if (drb_list == NULL || bearer_list == NULL)
-    return;
-
-  for (int i = 0; i < drb_list->list.count; i++) {
-    const NR_DRB_ToAddMod_t *drb = drb_list->list.array[i];
-    for (int j = 0; j < bearer_list->list.count; j++) {
-      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
-      if (bearer->servedRadioBearer != NULL
-          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity
-          && drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity) {
-        nr_rlc_add_drb(rnti, drb->drb_Identity, bearer);
-      }
-    }
-  }
 }
 
 typedef struct deliver_dl_rrc_message_data_s {
@@ -993,14 +971,6 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
                    kUPenc,
                    kUPint,
                    get_softmodem_params()->sa ? ue_p->masterCellGroup->rlc_BearerToAddModList : NULL);
-
-  /* Refresh DRBs */
-  if (!NODE_IS_CU(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    LOG_D(NR_RRC,"Configuring RLC DRBs/SRBs for UE %04x\n",ue_context_pP->ue_context.rnti);
-    const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list =
-        ue_context_pP->ue_context.masterCellGroup->rlc_BearerToAddModList;
-    nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid, DRB_configList, bearer_list);
-  }
 
   /* Loop through DRBs and establish if necessary */
   if (DRB_configList != NULL) {
