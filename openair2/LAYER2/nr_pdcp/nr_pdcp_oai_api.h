@@ -59,6 +59,18 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 bool nr_pdcp_remove_UE(ue_id_t ue_id);
 void nr_pdcp_reestablishment(ue_id_t ue_id);
 
+void nr_pdcp_reconfigure_srb(ue_id_t ue_id,
+                             int srb_id,
+                             long t_Reordering);
+
+void add_srb(int is_gnb,
+             ue_id_t rntiMaybeUEid,
+             struct NR_SRB_ToAddMod *s,
+             int ciphering_algorithm,
+             int integrity_algorithm,
+             unsigned char *ciphering_key,
+             unsigned char *integrity_key);
+
 void nr_pdcp_config_set_security(ue_id_t ue_id,
                                  const rb_id_t rb_id,
                                  const uint8_t security_modeP,

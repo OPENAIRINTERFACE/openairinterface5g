@@ -757,21 +757,27 @@ void deliver_pdu_srb_rlc(void *deliver_pdu_data, ue_id_t ue_id, int srb_id,
   enqueue_rlc_data_req(&ctxt, 1, MBMS_FLAG_NO, srb_id, sdu_id, 0, size, memblock);
 }
 
-static void add_srb(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_SRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)
+void add_srb(int is_gnb,
+             ue_id_t rntiMaybeUEid,
+             struct NR_SRB_ToAddMod *s,
+             int ciphering_algorithm,
+             int integrity_algorithm,
+             unsigned char *ciphering_key,
+             unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_srb;
   nr_pdcp_ue_t *ue;
-  int t_Reordering=3000;
 
   int srb_id = s->srb_Identity;
-  if (s->pdcp_Config == NULL ||
-      s->pdcp_Config->t_Reordering == NULL) t_Reordering = 3000;
-  else t_Reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
+  int t_Reordering = -1; // infinity as per default SRB configuration in 9.2.1 of 38.331
+  if (s->pdcp_Config != NULL &&
+      s->pdcp_Config->t_Reordering != NULL)
+    t_Reordering = decode_t_reordering(*s->pdcp_Config->t_Reordering);
 
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, rntiMaybeUEid);
   if (ue->srb[srb_id-1] != NULL) {
-    LOG_D(PDCP, "%s:%d:%s: warning SRB %d already exist for UE ID/RNTI %ld, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rntiMaybeUEid);
+    LOG_E(PDCP, "%s:%d:%s: warning SRB %d already exist for UE ID/RNTI %ld, do nothing\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rntiMaybeUEid);
   } else {
     pdcp_srb = new_nr_pdcp_entity(NR_PDCP_SRB, is_gnb, srb_id,
                                   0, false, false, // sdap parameters
@@ -1060,6 +1066,18 @@ bool nr_pdcp_data_req_srb(ue_id_t ue_id,
 
   return 1;
 }
+
+void nr_pdcp_reconfigure_srb(ue_id_t ue_id,
+                             int srb_id,
+                             long t_Reordering)
+{
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+  nr_pdcp_entity_t *srb = ue->srb[srb_id - 1];
+  int decoded_t_reordering = decode_t_reordering(t_Reordering);
+  srb->t_reordering = decoded_t_reordering;
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+  }
 
 void nr_pdcp_reestablishment(ue_id_t ue_id)
 {
