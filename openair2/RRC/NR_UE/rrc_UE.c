@@ -120,50 +120,10 @@ nr_rrc_ue_generate_rrcReestablishmentComplete(
 
 mui_t nr_rrc_mui=0;
 
-static void nr_rrc_addmod_drbs(int rnti,
-                               const NR_DRB_ToAddModList_t *drb_list,
-                               const struct NR_CellGroupConfig__rlc_BearerToAddModList *bearer_list)
-{
-  if (drb_list == NULL || bearer_list == NULL)
-    return;
-
-  for (int i = 0; i < drb_list->list.count; i++) {
-    const NR_DRB_ToAddMod_t *drb = drb_list->list.array[i];
-    for (int j = 0; j < bearer_list->list.count; j++) {
-      const NR_RLC_BearerConfig_t *bearer = bearer_list->list.array[j];
-      if (bearer->servedRadioBearer != NULL
-          && bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_drb_Identity
-          && drb->drb_Identity == bearer->servedRadioBearer->choice.drb_Identity) {
-        nr_rlc_add_drb(rnti, drb->drb_Identity, bearer);
-      }
-    }
-  }
-}
-
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (encoded)
 int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
-                                                   const uint8_t *buffer,
-                                                   const uint32_t size)
+                                                   NR_CellGroupConfig_t *cell_group_config)
 {
-  NR_CellGroupConfig_t *cell_group_config = NULL;
-  uint32_t i;
-
-  asn_dec_rval_t dec_rval = uper_decode(NULL,
-                                        &asn_DEF_NR_CellGroupConfig,
-                                        (void **)&cell_group_config,
-                                        (uint8_t *)buffer,
-                                        size, 0, 0);
-
-  if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
-    LOG_E(NR_RRC, "NR_CellGroupConfig decode error\n");
-    for (i=0; i<size; i++)
-      LOG_E(NR_RRC, "%02x ",buffer[i]);
-    LOG_E(NR_RRC, "\n");
-    // free the memory
-    SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cell_group_config, 1);
-    return -1;
-  }
-
   if(NR_UE_rrc_inst[module_id].scell_group_config == NULL)
     NR_UE_rrc_inst[module_id].scell_group_config = cell_group_config;
   else
@@ -177,8 +137,8 @@ int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id,
 
 // from LTE-RRC DL-DCCH RRCConnectionReconfiguration nr-secondary-cell-group-config (decoded)
 // RRCReconfiguration
-int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCReconfiguration_t *rrcReconfiguration){
-
+int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCReconfiguration_t *rrcReconfiguration)
+{
   switch(rrcReconfiguration->criticalExtensions.present){
     case NR_RRCReconfiguration__criticalExtensions_PR_rrcReconfiguration:
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->radioBearerConfig != NULL){
@@ -192,16 +152,27 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
         }
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup != NULL){
+        NR_CellGroupConfig_t *cellGroupConfig = NULL;
+        int size = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size;
+        uint8_t *buffer = rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf;
+        asn_dec_rval_t dec_rval = uper_decode(NULL,
+                                              &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
+                                              (void **)&cellGroupConfig,
+                                              (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
+                                              size, 0, 0);
+        if ((dec_rval.code != RC_OK) && (dec_rval.consumed == 0)) {
+          LOG_E(NR_RRC, "NR_CellGroupConfig decode error\n");
+          for (int i = 0; i < size; i++)
+            LOG_E(NR_RRC, "%02x ", buffer[i]);
+          LOG_E(NR_RRC, "\n");
+          // free the memory
+          SEQUENCE_free(&asn_DEF_NR_CellGroupConfig, (void *)cellGroupConfig, 1);
+          return -1;
+        }
+
+        nr_rrc_manage_rlc_bearers(cellGroupConfig, &NR_UE_rrc_inst[module_id], 0, NR_UE_rrc_inst[module_id].rnti);
 
         if(get_softmodem_params()->sa || get_softmodem_params()->nsa) {
-
-          NR_CellGroupConfig_t *cellGroupConfig = NULL;
-          uper_decode(NULL,
-                      &asn_DEF_NR_CellGroupConfig,   //might be added prefix later
-                      (void **)&cellGroupConfig,
-                      (uint8_t *)rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
-                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size, 0, 0);
-
           if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
             xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
           }
@@ -223,9 +194,7 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
           }
         }
         else
-          nr_rrc_ue_decode_secondary_cellgroup_config(module_id,
-                                                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->buf,
-                                                      rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->secondaryCellGroup->size);
+          nr_rrc_ue_decode_secondary_cellgroup_config(module_id, cellGroupConfig);
       }
       if(rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration->measConfig != NULL){
         if(NR_UE_rrc_inst[module_id].meas_config == NULL){
@@ -788,6 +757,45 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   return 0;
 }
 
+void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
+                               NR_UE_RRC_INST_t *rrc,
+                               int gNB_index,
+                               int rnti)
+{
+  if(cellGroupConfig->rlc_BearerToReleaseList != NULL) {
+    //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
+  }
+
+  if(cellGroupConfig->rlc_BearerToAddModList != NULL) {
+    //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
+    for (int i = 0; i < cellGroupConfig->rlc_BearerToAddModList->list.count; i++) {
+      NR_RLC_BearerConfig_t *rlc_bearer = cellGroupConfig->rlc_BearerToAddModList->list.array[i];
+      NR_LogicalChannelIdentity_t lcid = rlc_bearer->logicalChannelIdentity;
+      if (rrc->active_RLC_entity[gNB_index][lcid]) {
+        if (rlc_bearer->reestablishRLC)
+          nr_rlc_reestablish_entity(rnti, lcid);
+        nr_rlc_reconfigure_entity(rnti,
+                                  lcid,
+                                  rlc_bearer->rlc_Config,
+                                  rlc_bearer->mac_LogicalChannelConfig);
+      }
+      else {
+        rrc->active_RLC_entity[gNB_index][lcid] = true;
+        AssertFatal(rlc_bearer->servedRadioBearer, "servedRadioBearer mandatory in case of setup\n");
+        AssertFatal(rlc_bearer->servedRadioBearer->present != NR_RLC_BearerConfig__servedRadioBearer_PR_NOTHING,
+                    "Invalid RB for RLC configuration\n");
+        if (rlc_bearer->servedRadioBearer->present == NR_RLC_BearerConfig__servedRadioBearer_PR_srb_Identity) {
+          NR_SRB_Identity_t srb_id = rlc_bearer->servedRadioBearer->choice.srb_Identity;
+          nr_rlc_add_srb(rnti, srb_id, rlc_bearer);
+        }
+        else { // DRB
+          NR_DRB_Identity_t drb_id = rlc_bearer->servedRadioBearer->choice.drb_Identity;
+          nr_rlc_add_drb(rnti, drb_id, rlc_bearer);
+        }
+      }
+    }
+  }
+}
 
 void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
                                        uint8_t gNB_index,
@@ -811,20 +819,7 @@ void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
     rrc->cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
   }
 
-  if(cellGroupConfig->rlc_BearerToReleaseList != NULL){
-    //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
-  }
-
-  if(cellGroupConfig->rlc_BearerToAddModList != NULL){
-    //TODO (perform the RLC bearer addition/modification as specified in 5.3.5.5.4)
-    if(rrc->cell_group_config->rlc_BearerToAddModList != NULL){
-       // Laurent: there are cases where the not NULL value is also not coming from a previous malloc
-      // so it is better to let the potential memory leak than corrupting the heap     //free(rrc->cell_group_config->rlc_BearerToAddModList);
-    }
-    rrc->cell_group_config->rlc_BearerToAddModList = calloc(1, sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
-    memcpy(rrc->cell_group_config->rlc_BearerToAddModList,cellGroupConfig->rlc_BearerToAddModList,
-                 sizeof(struct NR_CellGroupConfig__rlc_BearerToAddModList));
-  }
+  nr_rrc_manage_rlc_bearers(cellGroupConfig, rrc, gNB_index, ctxt_pP->rntiMaybeUEid);
 
   if(cellGroupConfig->mac_CellGroupConfig != NULL){
     //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
@@ -1596,10 +1591,6 @@ void nr_rrc_ue_process_RadioBearerConfig(const protocol_ctxt_t *const ctxt_pP,
                      kUPenc,
                      kUPint,
                      ue_rrc->cell_group_config->rlc_BearerToAddModList);
-    // Refresh DRBs
-    nr_rrc_addmod_drbs(ctxt_pP->rntiMaybeUEid,
-                       radioBearerConfig->drb_ToAddModList,
-                       ue_rrc->cell_group_config->rlc_BearerToAddModList);
 
   } // drb_ToAddModList //
 

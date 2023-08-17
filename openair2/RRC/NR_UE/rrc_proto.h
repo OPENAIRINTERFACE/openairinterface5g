@@ -65,14 +65,6 @@ NR_UE_RRC_INST_t *nr_l3_init_ue(char *, char *, char *);
 /**\brief Initial the top level RRC structure instance*/
 NR_UE_RRC_INST_t *openair_rrc_top_init_ue_nr(char *, char *, char *);
 
-/**\brief Decode RRC Connection Reconfiguration, sent from E-UTRA RRC Connection Reconfiguration v1510 carring EN-DC config
-   \param buffer  encoded NR-RRC-Connection-Reconfiguration/Secondary-Cell-Group-Config message.
-   \param size    length of buffer*/
-//TODO check to use which one
-//int8_t nr_rrc_ue_decode_rrcReconfiguration(const uint8_t *buffer, const uint32_t size);
-int8_t nr_rrc_ue_decode_secondary_cellgroup_config(const module_id_t module_id, const uint8_t *buffer, const uint32_t size);
-   
-
 /**\brief Process NR RRC connection reconfiguration via SRB3
    \param rrcReconfiguration  decoded rrc connection reconfiguration*/
 int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCReconfiguration_t *rrcReconfiguration);
@@ -170,6 +162,11 @@ void handle_rlf_sync(NR_UE_Timers_Constants_t *tac,
                      nr_sync_msg_t sync_msg);
 void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
                                                        struct NR_SetupRelease_RLF_TimersAndConstants *rlf_TimersAndConstants);
+
+void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
+                               NR_UE_RRC_INST_t *rrc,
+                               int gNB_index,
+                               int rnti);
 
 int configure_NR_SL_Preconfig(int sync_source);
 /** @}*/

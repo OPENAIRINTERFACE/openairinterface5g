@@ -56,6 +56,7 @@
 
 #include "RRC/NR/nr_rrc_common.h"
 #include "as_message.h"
+#include "common/utils/nr/nr_common.h"
 
 #define NB_NR_UE_INST 1
 #define NB_CNX_UE 2//MAX_MANAGED_RG_PER_MOBILE
@@ -208,6 +209,7 @@ typedef struct NR_UE_RRC_INST_s {
   rnti_t                         rnti;
 
   NR_UE_RRC_SRB_INFO_t Srb[NB_CNX_UE][NR_NUM_SRB];
+  bool active_RLC_entity [NB_CNX_UE][NR_MAX_NUM_LCID];
 
   OAI_NR_UECapability_t          *UECap;
   uint8_t                        *UECapability;
