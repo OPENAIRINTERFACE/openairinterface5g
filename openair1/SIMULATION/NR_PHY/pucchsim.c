@@ -663,14 +663,13 @@ int main(int argc, char **argv)
 
         nr_decode_pucch0(gNB, nr_frame_tx, nr_slot_tx,&uci_pdu,&pucch_pdu);
         if(sr_flag==1){
-          if (uci_pdu.sr->sr_indication == 0 || uci_pdu.sr->sr_confidence_level == 1)
+          if (uci_pdu.sr.sr_indication == 0 || uci_pdu.sr.sr_confidence_level == 1)
             sr_errors+=1;
-          free(uci_pdu.sr);
         }
         // harq value 0 -> pass
-        nfapi_nr_harq_t *harq_list = uci_pdu.harq->harq_list;
+        nfapi_nr_harq_t *harq_list = uci_pdu.harq.harq_list;
         // confidence value 0 -> good confidence
-        const int confidence_lvl = uci_pdu.harq->harq_confidence_level;
+        const int confidence_lvl = uci_pdu.harq.harq_confidence_level;
         if(nr_bit>0){
           if (nr_bit==1 && do_DTX == 0)
             ack_nack_errors+=(actual_payload^(!harq_list[0].harq_value));
@@ -679,9 +678,7 @@ int main(int argc, char **argv)
           else if ((!confidence_lvl && !harq_list[0].harq_value) ||
                    (!confidence_lvl && nr_bit == 2 && !harq_list[1].harq_value))
             ack_nack_errors++;
-          free(uci_pdu.harq->harq_list);
         }
-        free(uci_pdu.harq);
       }
       else if (format==1) {
         nr_decode_pucch1((c16_t **)rxdataF,PUCCH_GroupHopping,hopping_id,
