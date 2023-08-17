@@ -794,7 +794,12 @@ void add_srb(int is_gnb,
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, int ciphering_algorithm, int integrity_algorithm, unsigned char *ciphering_key, unsigned char *integrity_key)
+void add_drb(int is_gnb, ue_id_t rntiMaybeUEid,
+             struct NR_DRB_ToAddMod *s,
+             int ciphering_algorithm,
+             int integrity_algorithm,
+             unsigned char *ciphering_key,
+             unsigned char *integrity_key)
 {
   nr_pdcp_entity_t *pdcp_drb;
   nr_pdcp_ue_t *ue;
@@ -888,32 +893,6 @@ void add_drb_am(int is_gnb, ue_id_t rntiMaybeUEid, struct NR_DRB_ToAddMod *s, in
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
 }
 
-static void add_drb(int is_gnb,
-                    ue_id_t rntiMaybeUEid,
-                    struct NR_DRB_ToAddMod *s,
-                    NR_RLC_Config_t *rlc_Config,
-                    int ciphering_algorithm,
-                    int integrity_algorithm,
-                    unsigned char *ciphering_key,
-                    unsigned char *integrity_key)
-{
-  switch (rlc_Config->present) {
-  case NR_RLC_Config_PR_am:
-    add_drb_am(is_gnb, rntiMaybeUEid, s, ciphering_algorithm, integrity_algorithm, ciphering_key, integrity_key);
-    break;
-  case NR_RLC_Config_PR_um_Bi_Directional:
-    // add_drb_um(rntiMaybeUEid, s);
-    /* hack */
-    add_drb_am(is_gnb, rntiMaybeUEid, s, ciphering_algorithm, integrity_algorithm, ciphering_key, integrity_key);
-    break;
-  default:
-    LOG_E(PDCP, "%s:%d:%s: fatal: unhandled DRB type\n",
-          __FILE__, __LINE__, __FUNCTION__);
-    exit(1);
-  }
-  LOG_I(PDCP, "%s:%s:%d: added DRB for UE ID/RNTI %ld\n", __FILE__, __FUNCTION__, __LINE__, rntiMaybeUEid);
-}
-
 void nr_pdcp_add_srbs(eNB_flag_t enb_flag, ue_id_t rntiMaybeUEid, NR_SRB_ToAddModList_t *const srb2add_list, const uint8_t security_modeP, uint8_t *const kRRCenc, uint8_t *const kRRCint)
 {
   if (srb2add_list != NULL) {
@@ -929,12 +908,11 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       NR_DRB_ToAddModList_t *const drb2add_list,
                       const uint8_t security_modeP,
                       uint8_t *const kUPenc,
-                      uint8_t *const kUPint,
-                      struct NR_CellGroupConfig__rlc_BearerToAddModList *rlc_bearer2add_list)
+                      uint8_t *const kUPint)
 {
   if (drb2add_list != NULL) {
     for (int i = 0; i < drb2add_list->list.count; i++) {
-      add_drb(enb_flag, rntiMaybeUEid, drb2add_list->list.array[i], rlc_bearer2add_list->list.array[i]->rlc_Config, security_modeP & 0x0f, (security_modeP >> 4) & 0x0f, kUPenc, kUPint);
+      add_drb(enb_flag, rntiMaybeUEid, drb2add_list->list.array[i], security_modeP & 0x0f, (security_modeP >> 4) & 0x0f, kUPenc, kUPint);
     }
   } else
     LOG_W(PDCP, "nr_pdcp_add_drbs() with void list\n");
@@ -1077,7 +1055,22 @@ void nr_pdcp_reconfigure_srb(ue_id_t ue_id,
   int decoded_t_reordering = decode_t_reordering(t_Reordering);
   srb->t_reordering = decoded_t_reordering;
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
-  }
+}
+
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id,
+                             int drb_id,
+                             long t_Reordering)
+{
+  // The enabling/disabling of ciphering or integrity protection
+  // can be changed only by releasing and adding the DRB
+  // (so not by reconfiguring).
+  nr_pdcp_manager_lock(nr_pdcp_ue_manager);
+  nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
+  nr_pdcp_entity_t *drb = ue->drb[drb_id - 1];
+  int decoded_t_reordering = decode_t_reordering(t_Reordering);
+  drb->t_reordering = decoded_t_reordering;
+  nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
+}
 
 void nr_pdcp_reestablishment(ue_id_t ue_id)
 {

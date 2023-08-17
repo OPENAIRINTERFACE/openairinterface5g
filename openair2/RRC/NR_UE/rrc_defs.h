@@ -39,6 +39,7 @@
 
 #include "platform_types.h"
 #include "commonDef.h"
+#include "common/platform_constants.h"
 
 #include "NR_asn_constant.h"
 #include "NR_MeasConfig.h"
@@ -202,13 +203,11 @@ typedef struct NR_UE_RRC_INST_s {
   NR_MeasGapConfig_t             *measGapConfig[NB_CNX_UE];
   NR_RSRP_Range_t                s_measure;
 
-  NR_DRB_ToAddMod_t              *DRB_config[NB_CNX_UE][8];
-  rb_id_t                        *defaultDRB; // remember the ID of the default DRB
-
   char                           *uecap_file;
   rnti_t                         rnti;
 
   NR_UE_RRC_SRB_INFO_t Srb[NB_CNX_UE][NR_NUM_SRB];
+  bool active_DRBs [NB_CNX_UE][MAX_DRBS_PER_UE];
   bool active_RLC_entity [NB_CNX_UE][NR_MAX_NUM_LCID];
 
   OAI_NR_UECapability_t          *UECap;

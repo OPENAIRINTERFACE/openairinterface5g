@@ -73,9 +73,9 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
    \param meas_config   measurement configuration*/
 int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config);
 
-/**\prief Process radio bearer config from NR RRC connection reconfiguration message
-   \param radio_bearer_config    radio bearer configuration*/
-int8_t nr_rrc_ue_process_radio_bearer_config(NR_RadioBearerConfig_t *radio_bearer_config);
+void nr_rrc_ue_process_RadioBearerConfig(const protocol_ctxt_t *const ctxt_pP,
+                                         const uint8_t gNB_index,
+                                         NR_RadioBearerConfig_t *const radioBearerConfig);
 
 /**\brief decode NR BCCH-BCH (MIB) message
    \param module_idP    module id

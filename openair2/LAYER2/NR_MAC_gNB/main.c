@@ -271,10 +271,6 @@ void mac_top_init_gNB(ngran_node_t node_type)
       NR_RadioBearerConfig_t *rbconfig = NULL;
       NR_RLC_BearerConfig_t *rlc_rbconfig = NULL;
       fill_nr_noS1_bearer_config(&rbconfig, &rlc_rbconfig);
-      NR_RLC_BearerConfig_t *rlc_rbconfig_list[1] = {rlc_rbconfig};
-      struct NR_CellGroupConfig__rlc_BearerToAddModList rlc_bearer_list = {
-        .list = { .array = rlc_rbconfig_list, .count = 1, .size = 1, }
-      };
 
       /* Note! previously, in nr_DRB_preconfiguration(), we passed ENB_FLAG_NO
        * if ENB_NAS_USE_TUN was *not* set. It seems to me that we could not set
@@ -284,7 +280,7 @@ void mac_top_init_gNB(ngran_node_t node_type)
        * will output the packets at a local interface, which is in line with
        * the noS1 mode.  Hence, below, we simply hardcode ENB_FLAG_NO */
       // setup PDCP, RLC
-      nr_pdcp_add_drbs(ENB_FLAG_NO, 0x1234, rbconfig->drb_ToAddModList, 0, NULL, NULL, &rlc_bearer_list);
+      nr_pdcp_add_drbs(ENB_FLAG_NO, 0x1234, rbconfig->drb_ToAddModList, 0, NULL, NULL);
       nr_rlc_add_drb(0x1234, rbconfig->drb_ToAddModList->list.array[0]->drb_Identity, rlc_rbconfig);
 
       // free memory

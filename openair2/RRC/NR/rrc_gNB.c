@@ -969,8 +969,7 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
                    DRB_configList,
                    (ue_p->integrity_algorithm << 4) | ue_p->ciphering_algorithm,
                    kUPenc,
-                   kUPint,
-                   get_softmodem_params()->sa ? ue_p->masterCellGroup->rlc_BearerToAddModList : NULL);
+                   kUPint);
 
   /* Loop through DRBs and establish if necessary */
   if (DRB_configList != NULL) {

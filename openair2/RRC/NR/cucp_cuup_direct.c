@@ -154,8 +154,7 @@ static int drb_config_gtpu_create(const protocol_ctxt_t *const ctxt_p,
                    DRB_configList,
                    (UE->integrity_algorithm << 4) | UE->ciphering_algorithm,
                    kUPenc,
-                   kUPint,
-                   get_softmodem_params()->sa ? UE->masterCellGroup->rlc_BearerToAddModList : NULL);
+                   kUPint);
 
   return ret;
 }
