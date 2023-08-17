@@ -298,6 +298,8 @@ static int create_gNB_tasks(ngran_node_t node_type)
   itti_wait_ready(1);
   LOG_I(PHY, "%s() Task ready initialize structures\n", __FUNCTION__);
 
+  RCconfig_verify(node_type);
+
   RCconfig_NR_L1();
   RCconfig_nr_prs();
 

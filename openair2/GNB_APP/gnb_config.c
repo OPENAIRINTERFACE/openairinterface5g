@@ -648,6 +648,64 @@ void fix_scd(NR_ServingCellConfig_t *scd) {
   }
 }
 
+static void verify_gnb_param_notset(paramdef_t *params, int paramidx, const char *paramname)
+{
+  char aprefix[MAX_OPTNAME_SIZE * 2 + 8];
+  sprintf(aprefix, "%s.[%i]", GNB_CONFIG_STRING_GNB_LIST, 0);
+  AssertFatal(!config_isparamset(params, paramidx),
+              "Option \"%s." GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON
+              ".%s\" is not allowed in this config, please remove it\n",
+              aprefix,
+              paramname);
+}
+static void verify_section_notset(char *aprefix, const char *secname)
+{
+  paramlist_def_t pl = {0};
+  strncpy(pl.listname, secname, sizeof(pl.listname) - 1);
+  config_getlist(&pl, NULL, 0, aprefix);
+  AssertFatal(pl.numelt == 0, "Section \"%s.%s\" not allowed in this config, please remove it\n", aprefix ? aprefix : "", secname);
+}
+void RCconfig_verify(ngran_node_t node_type)
+{
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal(num_gnbs == 1, "need to have a " GNB_CONFIG_STRING_GNB_LIST " section, but %d found\n", num_gnbs);
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
+  paramdef_t GNBParams[] = GNBPARAMS_DESC;
+  config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
+  paramdef_t *gnbp = GNBParamList.paramarray[0];
+
+  if (NODE_IS_CU(node_type)) {
+    // verify that there is no SCC and radio config in the case of CU
+    verify_section_notset(GNB_CONFIG_STRING_GNB_LIST ".[0]", GNB_CONFIG_STRING_SERVINGCELLCONFIGCOMMON);
+
+    verify_gnb_param_notset(gnbp, GNB_PDSCH_ANTENNAPORTS_N1_IDX, GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N1);
+    verify_gnb_param_notset(gnbp, GNB_PDSCH_ANTENNAPORTS_N2_IDX, GNB_CONFIG_STRING_PDSCHANTENNAPORTS_N2);
+    verify_gnb_param_notset(gnbp, GNB_PDSCH_ANTENNAPORTS_XP_IDX, GNB_CONFIG_STRING_PDSCHANTENNAPORTS_XP);
+    verify_gnb_param_notset(gnbp, GNB_PUSCH_ANTENNAPORTS_IDX, GNB_CONFIG_STRING_PUSCHANTENNAPORTS);
+    verify_gnb_param_notset(gnbp, GNB_MINRXTXTIME_IDX, GNB_CONFIG_STRING_MINRXTXTIME);
+    verify_gnb_param_notset(gnbp, GNB_SIB1_TDA_IDX, GNB_CONFIG_STRING_SIB1TDA);
+    verify_gnb_param_notset(gnbp, GNB_DO_CSIRS_IDX, GNB_CONFIG_STRING_DOCSIRS);
+    verify_gnb_param_notset(gnbp, GNB_DO_SRS_IDX, GNB_CONFIG_STRING_DOSRS);
+    verify_gnb_param_notset(gnbp, GNB_FORCE256QAMOFF_IDX, GNB_CONFIG_STRING_FORCE256QAMOFF);
+
+    // check for some general sections
+    verify_section_notset(NULL, CONFIG_STRING_L1_LIST);
+    verify_section_notset(NULL, CONFIG_STRING_RU_LIST);
+    verify_section_notset(NULL, CONFIG_STRING_MACRLC_LIST);
+  } else if (NODE_IS_DU(node_type)) {
+    // verify that there is no bearer config
+    verify_gnb_param_notset(gnbp, GNB_ENABLE_SDAP_IDX, GNB_CONFIG_STRING_ENABLE_SDAP);
+    verify_gnb_param_notset(gnbp, GNB_DRBS, GNB_CONFIG_STRING_DRBS);
+
+    verify_section_notset(GNB_CONFIG_STRING_GNB_LIST ".", GNB_CONFIG_STRING_AMF_IP_ADDRESS);
+    verify_section_notset(NULL, CONFIG_STRING_SECURITY);
+  } // else nothing to be checked
+
+  /* other possible verifications: PNF, VNF, CU-CP, CU-UP, ...? */
+}
+
 void RCconfig_nr_prs(void)
 {
   uint16_t  j = 0, k = 0;
