@@ -69,7 +69,6 @@ void fill_default_reconfig(NR_ServingCellConfigCommon_t *servingcellconfigcommon
                            NR_RRCReconfiguration_IEs_t *reconfig,
                            NR_CellGroupConfig_t *secondaryCellGroup,
                            NR_UE_NR_Capability_t *uecap,
-                           const gNB_RrcConfigurationReq *configuration,
                            int uid);
 
 int generate_CG_Config(gNB_RRC_INST *rrc, 

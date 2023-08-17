@@ -1209,7 +1209,7 @@ int nr_acknack_scheduling(gNB_MAC_INST *mac,
    * called often, don't try to lock every time */
 
   const int CC_id = 0;
-  const int minfbtime = mac->minRXTXTIMEpdsch;
+  const int minfbtime = mac->radio_config.minRXTXTIME;
   const NR_ServingCellConfigCommon_t *scc = mac->common_channels[CC_id].ServingCellConfigCommon;
   const NR_UE_UL_BWP_t *ul_bwp = &UE->current_UL_BWP;
   const int n_slots_frame = nr_slots_per_frame[ul_bwp->scs];

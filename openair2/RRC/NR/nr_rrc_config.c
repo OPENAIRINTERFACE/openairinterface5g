@@ -30,6 +30,7 @@
 
 #include "nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
+#include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
 #include "executables/softmodem-common.h"
 #include "oai_asn1.h"
 #include "SIMULATION/TOOLS/sim.h" // for taus();
@@ -1249,7 +1250,7 @@ static void config_uplinkBWP(NR_BWP_Uplink_t *ubwp,
                              long bwp_loop,
                              bool is_SA,
                              int uid,
-                             const gNB_RrcConfigurationReq *configuration,
+                             const nr_mac_config_t *configuration,
                              const NR_ServingCellConfig_t *servingcellconfigdedicated,
                              const NR_ServingCellConfigCommon_t *scc,
                              const NR_UE_NR_Capability_t *uecap)
@@ -1382,7 +1383,7 @@ static void set_csi_meas_periodicity(const NR_ServingCellConfigCommon_t *scc, NR
   }
 }
 
-static void config_csi_codebook(const rrc_pdsch_AntennaPorts_t *antennaports,
+static void config_csi_codebook(const nr_pdsch_AntennaPorts_t *antennaports,
                                 const int max_layers,
                                 struct NR_CodebookConfig *codebookConfig)
 {
@@ -1487,7 +1488,7 @@ static void config_csi_meas_report(NR_CSI_MeasConfig_t *csi_MeasConfig,
                                    const NR_ServingCellConfigCommon_t *servingcellconfigcommon,
                                    NR_PUCCH_CSI_Resource_t *pucchcsires,
                                    struct NR_SetupRelease_PDSCH_Config *pdsch_Config,
-                                   const rrc_pdsch_AntennaPorts_t *antennaports,
+                                   const nr_pdsch_AntennaPorts_t *antennaports,
                                    const int max_layers,
                                    int rep_id,
                                    int uid)
@@ -1712,7 +1713,7 @@ int encode_MIB_NR(NR_BCCH_BCH_Message_t *mib, int frame, uint8_t *buf, int buf_s
   return (enc_rval.encoded + 7) / 8;
 }
 
-NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configuration, const NR_ServingCellConfigCommon_t *scc)
+NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const nr_mac_config_t *configuration, const NR_ServingCellConfigCommon_t *scc)
 {
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   AssertFatal(sib1_message != NULL, "out of memory\n");
@@ -1740,17 +1741,17 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
   for (int i = 0; i < num_plmn; ++i) {
     asn1cSequenceAdd(nr_plmn_info->plmn_IdentityList.list, struct NR_PLMN_Identity, nr_plmn);
     asn1cCalloc(nr_plmn->mcc, mcc);
-    int confMcc = configuration->mcc[i];
+    int confMcc = 0;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc0);
     *mcc0 = (confMcc / 100) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc1);
     *mcc1 = (confMcc / 10) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc2);
     *mcc2 = confMcc % 10;
-    int mnc = configuration->mnc[i];
-    if (configuration->mnc_digit_length[i] == 3) {
+    int mnc = 0;
+    if (0 == 3) {
       asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc0);
-      *mnc0 = (configuration->mnc[i] / 100) % 10;
+      *mnc0 = (0 / 100) % 10;
     }
     asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc1);
     *mnc1 = (mnc / 10) % 10;
@@ -1762,13 +1763,13 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const gNB_RrcConfigurationReq *configurati
   AssertFatal(nr_plmn_info->cellIdentity.buf != NULL, "out of memory\n");
   nr_plmn_info->cellIdentity.size = 5;
   nr_plmn_info->cellIdentity.bits_unused = 4;
-  uint64_t tmp = htobe64(configuration->cell_identity) << 4;
+  uint64_t tmp = htobe64(0) << 4;
   memcpy(nr_plmn_info->cellIdentity.buf, ((char *)&tmp) + 3, 5);
   nr_plmn_info->cellReservedForOperatorUse = NR_PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
 
   nr_plmn_info->trackingAreaCode = CALLOC(1, sizeof(NR_TrackingAreaCode_t));
   AssertFatal(nr_plmn_info->trackingAreaCode != NULL, "out of memory\n");
-  uint32_t tmp2 = htobe32(configuration->tac);
+  uint32_t tmp2 = htobe32(0);
   nr_plmn_info->trackingAreaCode->buf = CALLOC(1, 3);
   AssertFatal(nr_plmn_info->trackingAreaCode->buf != NULL, "out of memory\n");
   memcpy(nr_plmn_info->trackingAreaCode->buf, ((char *)&tmp2) + 1, 3);
@@ -2067,7 +2068,7 @@ static NR_MAC_CellGroupConfig_t *configure_mac_cellgroup(void)
 static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
                                                    const NR_ServingCellConfigCommon_t *scc,
                                                    const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                                                   const gNB_RrcConfigurationReq *configuration)
+                                                   const nr_mac_config_t *configuration)
 {
   const int pdsch_AntennaPorts =
       configuration->pdsch_AntennaPorts.N1 * configuration->pdsch_AntennaPorts.N2 * configuration->pdsch_AntennaPorts.XP;
@@ -2314,7 +2315,7 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
 NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
                                                   const NR_ServingCellConfigCommon_t *scc,
                                                   const NR_ServingCellConfig_t *servingcellconfigdedicated,
-                                                  const gNB_RrcConfigurationReq *configuration)
+                                                  const nr_mac_config_t *configuration)
 {
   NR_CellGroupConfig_t *cellGroupConfig = calloc(1, sizeof(*cellGroupConfig));
   cellGroupConfig->cellGroupId = 0;
@@ -2345,7 +2346,7 @@ NR_CellGroupConfig_t *get_initial_cellGroupConfig(int uid,
 void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const int uid,
                             NR_UE_NR_Capability_t *uecap,
-                            const gNB_RrcConfigurationReq *configuration,
+                            const nr_mac_config_t *configuration,
                             const NR_ServingCellConfigCommon_t *scc)
 {
   DevAssert(cellGroupConfig != NULL);
@@ -2527,10 +2528,10 @@ NR_CellGroupConfig_t *get_default_secondaryCellGroup(const NR_ServingCellConfigC
                                                      const NR_UE_NR_Capability_t *uecap,
                                                      int scg_id,
                                                      int servCellIndex,
-                                                     const gNB_RrcConfigurationReq *configuration,
+                                                     const nr_mac_config_t *configuration,
                                                      int uid)
 {
-  const rrc_pdsch_AntennaPorts_t *pdschap = &configuration->pdsch_AntennaPorts;
+  const nr_pdsch_AntennaPorts_t *pdschap = &configuration->pdsch_AntennaPorts;
   const int dl_antenna_ports = pdschap->N1 * pdschap->N2 * pdschap->XP;
   const int do_csirs = configuration->do_CSIRS;
 

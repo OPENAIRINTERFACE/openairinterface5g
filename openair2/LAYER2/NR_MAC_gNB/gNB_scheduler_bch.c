@@ -540,7 +540,7 @@ void schedule_nr_sib1(module_id_t module_idP,
   gNB_MAC_INST *gNB_mac = RC.nrmac[module_idP];
   NR_ServingCellConfigCommon_t *scc = gNB_mac->common_channels[CC_id].ServingCellConfigCommon;
 
-  int time_domain_allocation = gNB_mac->sib1_tda;
+  int time_domain_allocation = gNB_mac->radio_config.sib1_tda;
 
   int L_max;
   switch (scc->ssb_PositionsInBurst->present) {

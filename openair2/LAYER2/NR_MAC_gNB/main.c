@@ -205,7 +205,10 @@ static void mac_rrc_init(gNB_MAC_INST *mac, ngran_node_t node_type)
   }
 }
 
-void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc, NR_ServingCellConfig_t *scd)
+void mac_top_init_gNB(ngran_node_t node_type,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_ServingCellConfig_t *scd,
+                      const nr_mac_config_t *config)
 {
   module_id_t     i;
   gNB_MAC_INST    *nrmac;
@@ -242,6 +245,8 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc,
       RC.nrmac[i]->ul_handle = 0;
 
       RC.nrmac[i]->common_channels[0].ServingCellConfigCommon = scc;
+      RC.nrmac[i]->radio_config = *config;
+
       RC.nrmac[i]->common_channels[0].pre_ServingCellConfig = scd;
 
       RC.nrmac[i]->first_MIB = true;
@@ -250,9 +255,7 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc,
       RC.nrmac[i]->cset0_bwp_start = 0;
       RC.nrmac[i]->cset0_bwp_size = 0;
 
-      /* Temporary: RRC configuration */
-      gNB_RrcConfigurationReq conf = { .mcc = {208}, .mnc = {95}, .mnc_digit_length = {2}, .tac = 1, .cell_identity = 3584};
-      NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(&conf, scc);
+      NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(config, scc);
       NR_COMMON_channels_t *cc = &RC.nrmac[i]->common_channels[0];
       cc->sib1 = sib1;
       cc->sib1_bcch_length = encode_SIB1_NR(sib1, cc->sib1_bcch_pdu, sizeof(cc->sib1_bcch_pdu));
@@ -319,6 +322,9 @@ void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc,
   du_init_f1_ue_data();
 
   srand48(0);
+
+  // triggers also PYH initialization in case we have L1 via FAPI
+  nr_mac_config_scc(RC.nrmac[0], scc, config);
 }
 
 void nr_mac_send_f1_setup_req(void)

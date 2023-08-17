@@ -608,6 +608,9 @@ int main(int argc, char *argv[])
   frame_parms->N_RB_UL = N_RB_UL;
   frame_parms->Ncp = extended_prefix_flag ? EXTENDED : NORMAL;
 
+  AssertFatal((gNB->if_inst = NR_IF_Module_init(0)) != NULL, "Cannot register interface");
+  gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
+
   s_re = malloc(n_tx*sizeof(double*));
   s_im = malloc(n_tx*sizeof(double*));
   r_re = malloc(n_rx*sizeof(double*));
@@ -619,11 +622,19 @@ int main(int argc, char *argv[])
   fill_scc_sim(scc, &ssb_bitmap, N_RB_DL, N_RB_DL, mu, mu);
   fix_scc(scc,ssb_bitmap);
 
+  // TODO do a UECAP for phy-sim
+  const nr_mac_config_t conf = {.pdsch_AntennaPorts = {.N1 = 1, .N2 = 1, .XP = 1},
+                                .pusch_AntennaPorts = n_rx,
+                                .minRXTXTIME = 0,
+                                .do_CSIRS = 0,
+                                .do_SRS = 0,
+                                .force_256qam_off = false};
+
   RC.nb_nr_macrlc_inst = 1;
   RC.nb_nr_mac_CC = (int*)malloc(RC.nb_nr_macrlc_inst*sizeof(int));
   for (i = 0; i < RC.nb_nr_macrlc_inst; i++)
     RC.nb_nr_mac_CC[i] = 1;
-  mac_top_init_gNB(ngran_gNB, scc, NULL /* scd will be updated further below */);
+  mac_top_init_gNB(ngran_gNB, scc, NULL /* scd will be updated further below */, &conf);
 
   NR_ServingCellConfig_t *scd = calloc(1,sizeof(NR_ServingCellConfig_t));
   prepare_scd(scd);
@@ -632,14 +643,6 @@ int main(int argc, char *argv[])
   prepare_sim_uecap(UE_Capability_nr,scc,mu,
                     N_RB_UL,0,mcs_table);
 
-  // TODO do a UECAP for phy-sim
-  const gNB_RrcConfigurationReq conf = {.pdsch_AntennaPorts = {.N1 = 1, .N2 = 1, .XP = 1},
-                                        .pusch_AntennaPorts = n_rx,
-                                        .minRXTXTIME = 0,
-                                        .do_CSIRS = 0,
-                                        .do_SRS = 0,
-                                        .force_256qam_off = false};
-
   NR_CellGroupConfig_t *secondaryCellGroup = get_default_secondaryCellGroup(scc, scd, UE_Capability_nr, 0, 1, &conf, 0);
 
   /* RRC parameter validation for secondaryCellGroup */
@@ -647,11 +650,6 @@ int main(int argc, char *argv[])
 
   NR_BCCH_BCH_Message_t *mib = get_new_MIB_NR(scc);
 
-  AssertFatal((gNB->if_inst = NR_IF_Module_init(0))!=NULL,"Cannot register interface");
-
-  gNB->if_inst->NR_PHY_config_req = nr_phy_config_request;
-  // common configuration
-  nr_mac_config_scc(RC.nrmac[0], conf.pdsch_AntennaPorts, n_tx, 0, 6);
   // UE dedicated configuration
   nr_mac_add_test_ue(RC.nrmac[0], secondaryCellGroup->spCellConfig->reconfigurationWithSync->newUE_Identity, secondaryCellGroup);
   frame_parms->nb_antennas_tx = 1;

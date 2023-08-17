@@ -159,7 +159,7 @@ static int16_t ssb_index_from_prach(module_id_t module_idP,
 void find_SSB_and_RO_available(gNB_MAC_INST *nrmac)
 {
   /* already mutex protected through nr_mac_config_scc() */
-  NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
+  //NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
   NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
   NR_ServingCellConfigCommon_t *scc = cc->ServingCellConfigCommon;

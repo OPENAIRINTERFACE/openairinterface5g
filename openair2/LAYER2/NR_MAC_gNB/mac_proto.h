@@ -38,7 +38,10 @@
 
 void set_cset_offset(uint16_t);
 
-void mac_top_init_gNB(ngran_node_t node_type, NR_ServingCellConfigCommon_t *scc, NR_ServingCellConfig_t *scd);
+void mac_top_init_gNB(ngran_node_t node_type,
+                      NR_ServingCellConfigCommon_t *scc,
+                      NR_ServingCellConfig_t *scd,
+                      const nr_mac_config_t *conf);
 void nr_mac_send_f1_setup_req(void);
 
 int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
@@ -46,11 +49,7 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP,
                                           NR_SubcarrierSpacing_t subcarrierSpacing,
                                           uint32_t rrc_reconfiguration_delay);
 
-void nr_mac_config_scc(gNB_MAC_INST *nrmac,
-                       rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
-                       int pusch_AntennaPorts,
-                       int sib1_tda,
-                       int minRXTXTIMEpdsch);
+void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *mac_config);
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);
 bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup);

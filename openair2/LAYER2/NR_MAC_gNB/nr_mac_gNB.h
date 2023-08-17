@@ -121,6 +121,24 @@ typedef enum {
   WAIT_Msg4_ACK = 6
 } RA_gNB_state_t;
 
+typedef struct nr_pdsch_AntennaPorts_t {
+  int N1;
+  int N2;
+  int XP;
+} nr_pdsch_AntennaPorts_t;
+
+typedef struct nr_mac_config_t {
+  int sib1_tda;
+  nr_pdsch_AntennaPorts_t pdsch_AntennaPorts;
+  int pusch_AntennaPorts;
+  int minRXTXTIME;
+  int do_CSIRS;
+  int do_SRS;
+  bool force_256qam_off;
+  //int pusch_TargetSNRx10;
+  //int pucch_TargetSNRx10;
+} nr_mac_config_t;
+
 typedef struct NR_preamble_ue {
   uint8_t num_preambles;
   uint8_t *preamble_list;
@@ -744,9 +762,7 @@ typedef struct gNB_MAC_INST_s {
   /// Subcarrier Offset
   int                             ssb_SubcarrierOffset;
   int                             ssb_OffsetPointA;
-  /// SIB1 Time domain allocation
-  int                             sib1_tda;
-  int                             minRXTXTIMEpdsch;
+
   /// Common cell resources
   NR_COMMON_channels_t common_channels[NFAPI_CC_MAX];
   /// current PDU index (BCH,DLSCH)
@@ -812,12 +828,12 @@ typedef struct gNB_MAC_INST_s {
   /// UL preprocessor for differentiated scheduling
   nr_pp_impl_ul pre_processor_ul;
 
+  nr_mac_config_t radio_config;
+
   NR_UE_sched_ctrl_t *sched_ctrlCommon;
   uint16_t cset0_bwp_start;
   uint16_t cset0_bwp_size;
   NR_Type0_PDCCH_CSS_config_t type0_PDCCH_CSS_config[64];
-
-  int xp_pdsch_antenna_ports;
 
   bool first_MIB;
   NR_bler_options_t dl_bler;

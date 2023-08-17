@@ -2884,14 +2884,10 @@ void prepare_initial_ul_rrc_message(gNB_MAC_INST *mac, NR_UE_info_t *UE)
 {
   NR_SCHED_ENSURE_LOCKED(&mac->sched_lock);
   /* create this UE's initial CellGroup */
-  /* Note: relying on the RRC is a hack, as we are in the DU; there should be
-   * no RRC, remove in the future */
-  module_id_t mod_id = 0;
   int CC_id = 0;
-  gNB_RRC_INST *rrc = RC.nrrrc[mod_id];
   const NR_ServingCellConfigCommon_t *scc = mac->common_channels[CC_id].ServingCellConfigCommon;
   const NR_ServingCellConfig_t *sccd = mac->common_channels[CC_id].pre_ServingCellConfig;
-  NR_CellGroupConfig_t *cellGroupConfig = get_initial_cellGroupConfig(UE->uid, scc, sccd, &rrc->configuration);
+  NR_CellGroupConfig_t *cellGroupConfig = get_initial_cellGroupConfig(UE->uid, scc, sccd, &mac->radio_config);
 
   UE->CellGroup = cellGroupConfig;
   nr_mac_update_cellgroup(mac, UE->rnti, cellGroupConfig);

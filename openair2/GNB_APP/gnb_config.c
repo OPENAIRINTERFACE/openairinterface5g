@@ -947,26 +947,27 @@ static NR_ServingCellConfig_t *get_scd_config(void)
   return scd;
 }
 
-// temporary minRXTXTIME, to be taken out once all radio config is read at DU
-static int minRXTXTIME = 6;
 static f1ap_setup_req_t *RC_read_F1Setup(const NR_ServingCellConfigCommon_t *scc, NR_BCCH_BCH_Message_t *mib, const NR_BCCH_DL_SCH_Message_t *sib1);
 
 void RCconfig_nr_macrlc() {
   int j = 0;
   uint16_t prbbl[275] = {0};
   int num_prbbl = 0;
+
+  paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
+  paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
+  config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
+  int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
+  AssertFatal(num_gnbs == 1,
+              "Failed to parse config file: number of gnbs for gNB %s is %d != 1\n",
+              GNB_CONFIG_STRING_ACTIVE_GNBS,
+              num_gnbs);
+  paramdef_t GNBParams[] = GNBPARAMS_DESC;
+  config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
+
   if (NFAPI_MODE != NFAPI_MODE_PNF) {
-    paramdef_t GNBSParams[] = GNBSPARAMS_DESC;
     ////////// Identification parameters
-    paramdef_t GNBParams[] = GNBPARAMS_DESC;
 
-    paramlist_def_t GNBParamList = {GNB_CONFIG_STRING_GNB_LIST, NULL, 0};
-
-    config_get(GNBSParams, sizeof(GNBSParams) / sizeof(paramdef_t), NULL);
-    int num_gnbs = GNBSParams[GNB_ACTIVE_GNBS_IDX].numelt;
-    AssertFatal(num_gnbs > 0, "Failed to parse config file no gnbs %s \n", GNB_CONFIG_STRING_ACTIVE_GNBS);
-
-    config_getlist(&GNBParamList, GNBParams, sizeof(GNBParams) / sizeof(paramdef_t), NULL);
     char *ulprbbl = *GNBParamList.paramarray[0][GNB_ULPRBBLACKLIST_IDX].strptr;
     char *save = NULL;
     char *pt = strtok_r(ulprbbl, ",", &save);
@@ -987,14 +988,41 @@ void RCconfig_nr_macrlc() {
     MacRLC_Params[i].chkPptr = &(config_check_MacRLCParams[i]);
   config_getlist(&MacRLC_ParamList, MacRLC_Params, sizeof(MacRLC_Params) / sizeof(paramdef_t), NULL);
 
-  NR_ServingCellConfigCommon_t *scc = get_scc_config(minRXTXTIME);
+  nr_mac_config_t config = {0};
+  config.pdsch_AntennaPorts.N1 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
+  config.pdsch_AntennaPorts.N2 = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
+  config.pdsch_AntennaPorts.XP = *GNBParamList.paramarray[0][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
+  config.pusch_AntennaPorts = *GNBParamList.paramarray[0][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
+  LOG_I(GNB_APP,
+        "pdsch_AntennaPorts N1 %d N2 %d XP %d pusch_AntennaPorts %d\n",
+        config.pdsch_AntennaPorts.N1,
+        config.pdsch_AntennaPorts.N2,
+        config.pdsch_AntennaPorts.XP,
+        config.pusch_AntennaPorts);
+
+  config.minRXTXTIME = *GNBParamList.paramarray[0][GNB_MINRXTXTIME_IDX].iptr;
+  LOG_I(GNB_APP, "minTXRXTIME %d\n", config.minRXTXTIME);
+  config.sib1_tda = *GNBParamList.paramarray[0][GNB_SIB1_TDA_IDX].iptr;
+  LOG_I(GNB_APP, "SIB1 TDA %d\n", config.sib1_tda);
+  config.do_CSIRS = *GNBParamList.paramarray[0][GNB_DO_CSIRS_IDX].iptr;
+  config.do_SRS = *GNBParamList.paramarray[0][GNB_DO_SRS_IDX].iptr;
+  config.force_256qam_off = *GNBParamList.paramarray[0][GNB_FORCE256QAMOFF_IDX].iptr;
+  LOG_I(GNB_APP,
+        "CSI-RS %d, SRS %d, 256 QAM %s\n",
+        config.do_CSIRS,
+        config.do_SRS,
+        config.force_256qam_off ? "force off" : "may be on");
+
+  // note: no need for PLMN info, it is read in RC_read_F1Setup()
+
+  NR_ServingCellConfigCommon_t *scc = get_scc_config(config.minRXTXTIME);
   //xer_fprint(stdout, &asn_DEF_NR_ServingCellConfigCommon, scc);
   NR_ServingCellConfig_t *scd = get_scd_config();
 
   if (MacRLC_ParamList.numelt > 0) {
     RC.nb_nr_macrlc_inst = MacRLC_ParamList.numelt;
     ngran_node_t node_type = get_node_type();
-    mac_top_init_gNB(node_type, scc, scd);
+    mac_top_init_gNB(node_type, scc, scd, &config);
     RC.nb_nr_mac_CC = (int *)malloc(RC.nb_nr_macrlc_inst * sizeof(int));
 
     for (j = 0; j < RC.nb_nr_macrlc_inst; j++) {
@@ -1388,26 +1416,7 @@ void RCconfig_NRRRC(gNB_RRC_INST *rrc)
 	  AssertFatal((nrrrc_config.mnc_digit_length[l] == 2) ||
 		      (nrrrc_config.mnc_digit_length[l] == 3),"BAD MNC DIGIT LENGTH %d",
 		      nrrrc_config.mnc_digit_length[l]);
-	}
-        LOG_I(GNB_APP,"pdsch_AntennaPorts N1 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr);
-        nrrrc_config.pdsch_AntennaPorts.N1 = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N1_IDX].iptr;
-        LOG_I(GNB_APP,"pdsch_AntennaPorts N2 %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr);
-        nrrrc_config.pdsch_AntennaPorts.N2 = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_N2_IDX].iptr;
-        LOG_I(GNB_APP,"pdsch_AntennaPorts XP %d\n",*GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr);
-        nrrrc_config.pdsch_AntennaPorts.XP = *GNBParamList.paramarray[i][GNB_PDSCH_ANTENNAPORTS_XP_IDX].iptr;
-        LOG_I(GNB_APP,"pusch_AntennaPorts %d\n",*GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr);
-        nrrrc_config.pusch_AntennaPorts = *GNBParamList.paramarray[i][GNB_PUSCH_ANTENNAPORTS_IDX].iptr;
-        LOG_I(GNB_APP,"minTXRXTIME %d\n",*GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr);
-        nrrrc_config.minRXTXTIME = *GNBParamList.paramarray[i][GNB_MINRXTXTIME_IDX].iptr;
-        DevAssert(nrrrc_config.minRXTXTIME == minRXTXTIME);
-        LOG_I(GNB_APP,"SIB1 TDA %d\n",*GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr);
-        nrrrc_config.sib1_tda = *GNBParamList.paramarray[i][GNB_SIB1_TDA_IDX].iptr;
-        LOG_I(GNB_APP,"Do CSI-RS %d\n",*GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr);
-        nrrrc_config.do_CSIRS = *GNBParamList.paramarray[i][GNB_DO_CSIRS_IDX].iptr;
-        LOG_I(GNB_APP, "Do SRS %d\n",*GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr);
-        nrrrc_config.do_SRS = *GNBParamList.paramarray[i][GNB_DO_SRS_IDX].iptr;
-        nrrrc_config.force_256qam_off = *GNBParamList.paramarray[i][GNB_FORCE256QAMOFF_IDX].iptr;
-        LOG_I(GNB_APP, "256 QAM: %s\n", nrrrc_config.force_256qam_off ? "force off" : "may be on");
+        }
         nrrrc_config.enable_sdap = *GNBParamList.paramarray[i][GNB_ENABLE_SDAP_IDX].iptr;
         LOG_I(GNB_APP, "SDAP layer is %s\n", nrrrc_config.enable_sdap ? "enabled" : "disabled");
         nrrrc_config.drbs = *GNBParamList.paramarray[i][GNB_DRBS].iptr;

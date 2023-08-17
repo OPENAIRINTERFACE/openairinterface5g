@@ -55,9 +55,7 @@
  */
 int xer_sprint_NR(char *string, size_t string_size, struct asn_TYPE_descriptor_s *td, void *sptr);
 
-uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier,
-                    gNB_RrcConfigurationReq *configuration);
-
+uint8_t do_SIB23_NR(rrc_gNB_carrier_data_t *carrier);
 
 int do_RRCReject(uint8_t Mod_id,
                  uint8_t *const buffer);
@@ -111,7 +109,6 @@ int16_t do_RRCReconfiguration(const protocol_ctxt_t *const ctxt_pP,
                               NR_MeasConfig_t *meas_config,
                               struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
                               rrc_gNB_ue_context_t *const ue_context_pP,
-                              const gNB_RrcConfigurationReq *configuration,
                               const NR_ServingCellConfigCommon_t *scc,
                               NR_CellGroupConfig_t *cellGroupConfig);
 

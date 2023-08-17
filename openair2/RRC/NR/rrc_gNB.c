@@ -278,26 +278,14 @@ static int get_ssb_arfcn(const f1ap_served_cell_info_t *cell_info, const NR_MIB_
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
-static void init_NR_SI(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *configuration)
+static void init_NR_SI(gNB_RRC_INST *rrc)
 {
   if (!NODE_IS_DU(rrc->node_type)) {
     rrc->carrier.SIB23 = (uint8_t *) malloc16(100);
     AssertFatal(rrc->carrier.SIB23 != NULL, "cannot allocate memory for SIB");
-    rrc->carrier.sizeof_SIB23 = do_SIB23_NR(&rrc->carrier, configuration);
+    rrc->carrier.sizeof_SIB23 = do_SIB23_NR(&rrc->carrier);
     LOG_I(NR_RRC,"do_SIB23_NR, size %d \n ", rrc->carrier.sizeof_SIB23);
     AssertFatal(rrc->carrier.sizeof_SIB23 != 255,"FATAL, RC.nrrrc[mod].carrier[CC_id].sizeof_SIB23 == 255");
-  }
-
-  LOG_I(NR_RRC,"Done init_NR_SI\n");
-
-  if (NODE_IS_MONOLITHIC(rrc->node_type) || NODE_IS_DU(rrc->node_type)){
-    // update SI info
-    /* 1. move this to MAC */
-    nr_mac_config_scc(RC.nrmac[rrc->module_id],
-                      rrc->configuration.pdsch_AntennaPorts,
-                      rrc->configuration.pusch_AntennaPorts,
-                      rrc->configuration.sib1_tda,
-                      rrc->configuration.minRXTXTIME);
   }
 
   if (get_softmodem_params()->phy_test > 0 || get_softmodem_params()->do_ra > 0) {
@@ -351,7 +339,7 @@ void openair_rrc_gNB_configuration(gNB_RRC_INST *rrc, gNB_RrcConfigurationReq *c
   RB_INIT(&rrc->rrc_ue_head);
   rrc->configuration = *configuration;
    /// System Information INIT
-  init_NR_SI(rrc, configuration);
+  init_NR_SI(rrc);
   return;
 } // END openair_rrc_gNB_configuration
 
@@ -587,7 +575,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
                                    measconfig,
                                    dedicatedNAS_MessageList,
                                    ue_context_pP,
-                                   &rrc->configuration,
                                    NULL,
                                    ue_p->masterCellGroup);
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
@@ -709,7 +696,6 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
                                    NULL,
                                    dedicatedNAS_MessageList,
                                    ue_context_pP,
-                                   &rrc->configuration,
                                    NULL,
                                    cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
@@ -856,7 +842,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                    dedicatedNAS_MessageList,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
@@ -940,7 +925,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                    NULL,
                                    NULL,
                                    dedicatedNAS_MessageList,
-                                   NULL,
                                    NULL,
                                    NULL,
                                    NULL);
@@ -1196,7 +1180,6 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
                                    NULL,
                                    ue_context_pP,
                                    NULL,
-                                   NULL,
                                    cellGroupConfig);
   freeSRBlist(SRBs);
   freeDRBlist(DRBs);
@@ -1256,7 +1239,6 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
                                        NULL,
                                        NULL,
                                        ue_context_pP,
-                                       NULL,
                                        NULL,
                                        masterCellGroup);
 

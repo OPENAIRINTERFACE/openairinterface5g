@@ -473,19 +473,13 @@ int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_S
   return 0;
 }
 
-void nr_mac_config_scc(gNB_MAC_INST *nrmac,
-                       rrc_pdsch_AntennaPorts_t pdsch_AntennaPorts,
-                       int pusch_AntennaPorts,
-                       int sib1_tda,
-                       int minRXTXTIMEpdsch)
+void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *config)
 {
-  int CC_id = 0;
   DevAssert(nrmac != NULL);
-  AssertFatal(nrmac->common_channels[0].ServingCellConfigCommon != NULL, "logic error: SCC not in MAC\n");
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-
-  NR_ServingCellConfigCommon_t *scc = nrmac->common_channels[CC_id].ServingCellConfigCommon;
   DevAssert(scc != NULL);
+  DevAssert(config != NULL);
+  //NR_SCHED_LOCK(&nrmac->sched_lock);
+
   AssertFatal(scc->ssb_PositionsInBurst->present > 0 && scc->ssb_PositionsInBurst->present < 4,
               "SSB Bitmap type %d is not valid\n",
               scc->ssb_PositionsInBurst->present);
@@ -500,9 +494,8 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
 
   LOG_I(NR_MAC, "Configuring common parameters from NR ServingCellConfig\n");
 
-  int num_pdsch_antenna_ports = pdsch_AntennaPorts.N1 * pdsch_AntennaPorts.N2 * pdsch_AntennaPorts.XP;
-  nrmac->xp_pdsch_antenna_ports = pdsch_AntennaPorts.XP;
-  config_common(nrmac, num_pdsch_antenna_ports, pusch_AntennaPorts, scc);
+  int num_pdsch_antenna_ports = config->pdsch_AntennaPorts.N1 * config->pdsch_AntennaPorts.N2 * config->pdsch_AntennaPorts.XP;
+  config_common(nrmac, num_pdsch_antenna_ports, config->pusch_AntennaPorts, scc);
 
   if (NFAPI_MODE == NFAPI_MODE_PNF || NFAPI_MODE == NFAPI_MODE_VNF) {
     // fake that the gNB is configured in nFAPI mode, which would normally be
@@ -514,7 +507,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
     nrmac->if_inst->NR_PHY_config_req(&phycfg);
   }
 
-  nrmac->minRXTXTIMEpdsch = minRXTXTIMEpdsch;
   find_SSB_and_RO_available(nrmac);
 
   const NR_TDD_UL_DL_Pattern_t *tdd = scc->tdd_UL_DL_ConfigurationCommon ? &scc->tdd_UL_DL_ConfigurationCommon->pattern1 : NULL;
@@ -535,7 +527,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
     nrmac->dlsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) < nr_dl_slots) << (slot % 64);
     nrmac->ulsch_slot_bitmap[slot / 64] |= (uint64_t)((slot % nr_slots_period) >= nr_ulstart_slot) << (slot % 64);
 
-    LOG_I(NR_MAC,
+    LOG_D(NR_MAC,
           "slot %d DL %d UL %d\n",
           slot,
           (nrmac->dlsch_slot_bitmap[slot / 64] & ((uint64_t)1 << (slot % 64))) != 0,
@@ -552,7 +544,6 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
 
   if (get_softmodem_params()->sa > 0) {
     NR_COMMON_channels_t *cc = &nrmac->common_channels[0];
-    nrmac->sib1_tda = sib1_tda;
     for (int n = 0; n < NR_NB_RA_PROC_MAX; n++) {
       NR_RA_t *ra = &cc->ra[n];
       ra->cfra = false;
@@ -563,7 +554,7 @@ void nr_mac_config_scc(gNB_MAC_INST *nrmac,
         ra->preambles.preamble_list[i] = i;
     }
   }
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
+  //NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
 
 bool nr_mac_add_test_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
