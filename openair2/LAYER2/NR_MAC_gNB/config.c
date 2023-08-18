@@ -443,36 +443,6 @@ static void config_common(gNB_MAC_INST *nrmac, int pdsch_AntennaPorts, int pusch
    }
 }
 
-int nr_mac_enable_ue_rrc_processing_timer(module_id_t Mod_idP, rnti_t rnti, NR_SubcarrierSpacing_t subcarrierSpacing, uint32_t rrc_reconfiguration_delay)
-{
-  if (rrc_reconfiguration_delay == 0) {
-    return -1;
-  }
-
-  gNB_MAC_INST *nrmac = RC.nrmac[Mod_idP];
-  NR_SCHED_LOCK(&nrmac->sched_lock);
-
-  NR_UE_info_t *UE_info = find_nr_UE(&nrmac->UE_info,rnti);
-  if (!UE_info) {
-    LOG_W(NR_MAC, "Could not find UE for RNTI 0x%04x\n", rnti);
-    NR_SCHED_UNLOCK(&nrmac->sched_lock);
-    return -1;
-  }
-  NR_UE_sched_ctrl_t *sched_ctrl = &UE_info->UE_sched_ctrl;
-  const uint16_t sl_ahead = nrmac->if_inst->sl_ahead;
-  sched_ctrl->rrc_processing_timer = (rrc_reconfiguration_delay<<subcarrierSpacing) + sl_ahead;
-  LOG_I(NR_MAC, "Activating RRC processing timer for UE %04x with %d ms\n", UE_info->rnti, rrc_reconfiguration_delay);
-
-  // it might happen that timing advance command should be sent during the RRC
-  // processing timer. To prevent this, set a variable as if we would have just
-  // sent it. This way, another TA command will for sure be sent in some
-  // frames, after RRC processing timer.
-  sched_ctrl->ta_frame = (nrmac->frame - 1 + 1024) % 1024;
-
-  NR_SCHED_UNLOCK(&nrmac->sched_lock);
-  return 0;
-}
-
 void nr_mac_config_scc(gNB_MAC_INST *nrmac, NR_ServingCellConfigCommon_t *scc, const nr_mac_config_t *config)
 {
   DevAssert(nrmac != NULL);
@@ -626,28 +596,24 @@ bool nr_mac_prepare_ra_ue(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig
   return true;
 }
 
-bool nr_mac_update_cellgroup(gNB_MAC_INST *nrmac, uint32_t rnti, NR_CellGroupConfig_t *CellGroup)
+/* Prepare a new CellGroupConfig to be applied for this UE. We cannot
+ * immediatly apply it, as we have to wait for the reconfiguration through RRC.
+ * This function sets up everything to apply the reconfiguration. Later, we
+ * will trigger the timer with nr_mac_enable_ue_rrc_processing_timer(); upon
+ * expiry nr_mac_apply_cellgroup() will apply the CellGroupConfig (radio config
+ * etc). */
+bool nr_mac_prepare_cellgroup_update(gNB_MAC_INST *nrmac, NR_UE_info_t *UE, NR_CellGroupConfig_t *CellGroup)
 {
   DevAssert(nrmac != NULL);
+  DevAssert(UE != NULL);
+  DevAssert(CellGroup != NULL);
+
   /* we assume that this function is mutex-protected from outside */
   NR_SCHED_ENSURE_LOCKED(&nrmac->sched_lock);
 
-  DevAssert(CellGroup != NULL);
-
-  NR_UE_info_t *UE = find_nr_UE(&nrmac->UE_info, rnti);
-  AssertFatal(UE != NULL, "Can't find UE %04x for CellGroup update\n", rnti);
-
-  /* copy CellGroup by calling asn1c encode this is a temporary hack to avoid the gNB having a pointer to RRC CellGroup structure
-   * (otherwise it would be applied to early)
-   * TODO remove once we have a proper implementation */
-  UE->enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, (void *)CellGroup, UE->cg_buf, 32768);
-
-  if (UE->enc_rval.encoded == -1) {
-    LOG_E(NR_MAC, "ASN1 message CellGroupConfig encoding failed (%s, %lu)!\n", UE->enc_rval.failed_type->name, UE->enc_rval.encoded);
-    exit(1);
-  }
-
   process_CellGroup(CellGroup, UE);
+  UE->reconfigCellGroup = CellGroup;
+  UE->expect_reconfiguration = true;
 
   return true;
 }

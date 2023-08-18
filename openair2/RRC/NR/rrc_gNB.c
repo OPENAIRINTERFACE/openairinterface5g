@@ -45,7 +45,6 @@
 #include "RRC/L2_INTERFACE/openair_rrc_L2_interface.h"
 #include "LAYER2/NR_MAC_gNB/mac_proto.h"
 #include "common/utils/LOG/log.h"
-#include "COMMON/mac_rrc_primitives.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "NR_BCCH-BCH-Message.h"
@@ -605,21 +604,6 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    gNB_RRC_UE_t *ue_p = &ue_context_pP->ue_context;
-    nr_rrc_mac_update_cellgroup(ue_p->rnti, ue_p->masterCellGroup);
-
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -713,20 +697,6 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
         DCCH);
 
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    nr_rrc_mac_update_cellgroup(ue_context_pP->ue_context.rnti, ue_context_pP->ue_context.masterCellGroup);
-
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -867,18 +837,6 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -949,18 +907,6 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 }
 
 //-----------------------------------------------------------------------------
@@ -1192,19 +1138,6 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
         ue_p->rnti,
         size);
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(RC.nrrrc[ctxt_pP->module_id]->node_type) || NODE_IS_MONOLITHIC(RC.nrrrc[ctxt_pP->module_id]->node_type)) {
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = RC.nrrrc[0]->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 }
 //-----------------------------------------------------------------------------
 
@@ -1244,21 +1177,6 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);
-
-  if (NODE_IS_DU(rrc->node_type) || NODE_IS_MONOLITHIC(rrc->node_type)) {
-    nr_rrc_mac_update_cellgroup(ue_context_pP->ue_context.rnti, masterCellGroup);
-
-    uint32_t delay_ms = ue_p->masterCellGroup && ue_p->masterCellGroup->spCellConfig
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated
-                                && ue_p->masterCellGroup->spCellConfig->spCellConfigDedicated->downlinkBWP_ToAddModList
-                            ? NR_RRC_RECONFIGURATION_DELAY_MS + NR_RRC_BWP_SWITCHING_DELAY_MS
-                            : NR_RRC_RECONFIGURATION_DELAY_MS;
-
-    const nr_rrc_du_container_t *du = rrc->du;
-    DevAssert(du != NULL);
-    int scs = get_ssb_scs(&du->setup_req->cell[0].info);
-    nr_mac_enable_ue_rrc_processing_timer(ctxt_pP->module_id, ue_p->rnti, scs, delay_ms);
-  }
 
   return 0;
 }

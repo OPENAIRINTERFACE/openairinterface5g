@@ -138,6 +138,18 @@ static int handle_ue_context_drbs_setup(int rnti,
   return drbs_len;
 }
 
+static NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
+{
+  uint8_t buf[16636];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, orig, buf, sizeof(buf));
+  AssertFatal(enc_rval.encoded > 0, "could not clone CellGroupConfig: problem while encoding\n");
+  NR_CellGroupConfig_t *cloned = NULL;
+  asn_dec_rval_t dec_rval = uper_decode(NULL, &asn_DEF_NR_CellGroupConfig, (void **)&cloned, buf, enc_rval.encoded, 0, 0);
+  AssertFatal(dec_rval.code == RC_OK && dec_rval.consumed == enc_rval.encoded,
+              "could not clone CellGroupConfig: problem while decodung\n");
+  return cloned;
+}
+
 void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
 {
   gNB_MAC_INST *mac = RC.nrmac[0];
@@ -158,12 +170,14 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
   AssertFatal(UE != NULL, "did not find UE with RNTI %04x, but UE Context Setup Failed not implemented\n", req->gNB_DU_ue_id);
 
+  NR_CellGroupConfig_t *new_CellGroup = clone_CellGroupConfig(UE->CellGroup);
+
   if (req->srbs_to_be_setup_length > 0) {
     resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
-                                                                UE->CellGroup);
+                                                                new_CellGroup);
   }
 
   if (req->drbs_to_be_setup_length > 0) {
@@ -171,7 +185,7 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
-                                                                UE->CellGroup);
+                                                                new_CellGroup);
   }
 
   if (req->rrc_container != NULL)
@@ -182,16 +196,13 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   AssertFatal(resp.du_to_cu_rrc_information != NULL, "out of memory\n");
   resp.du_to_cu_rrc_information->cellGroupConfig = calloc(1,1024);
   AssertFatal(resp.du_to_cu_rrc_information->cellGroupConfig != NULL, "out of memory\n");
-  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                                  NULL,
-                                                  UE->CellGroup,
-                                                  resp.du_to_cu_rrc_information->cellGroupConfig,
-                                                  1024);
+  asn_enc_rval_t enc_rval =
+      uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, new_CellGroup, resp.du_to_cu_rrc_information->cellGroupConfig, 1024);
   AssertFatal(enc_rval.encoded > 0, "Could not encode CellGroup, failed element %s\n", enc_rval.failed_type->name);
   resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
   /* TODO: need to apply after UE context reconfiguration confirmed? */
-  process_CellGroup(UE->CellGroup, UE);
+  nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
 
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
@@ -226,12 +237,14 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   NR_SCHED_LOCK(&mac->sched_lock);
   NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, req->gNB_DU_ue_id);
 
+  NR_CellGroupConfig_t *new_CellGroup = clone_CellGroupConfig(UE->CellGroup);
+
   if (req->srbs_to_be_setup_length > 0) {
     resp.srbs_to_be_setup_length = handle_ue_context_srbs_setup(req->gNB_DU_ue_id,
                                                                 req->srbs_to_be_setup_length,
                                                                 req->srbs_to_be_setup,
                                                                 &resp.srbs_to_be_setup,
-                                                                UE->CellGroup);
+                                                                new_CellGroup);
   }
 
   if (req->drbs_to_be_setup_length > 0) {
@@ -239,7 +252,7 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
                                                                 req->drbs_to_be_setup_length,
                                                                 req->drbs_to_be_setup,
                                                                 &resp.drbs_to_be_setup,
-                                                                UE->CellGroup);
+                                                                new_CellGroup);
   }
 
   if (req->rrc_container != NULL)
@@ -251,23 +264,21 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
   }
 
   if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0) {
-    /* TODO: if we change e.g. BWP or MCS table, need to automatically call
-     * configure_UE_BWP() (form nr_mac_update_timers()) after some time? */
-
     resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
     AssertFatal(resp.du_to_cu_rrc_information != NULL, "out of memory\n");
     resp.du_to_cu_rrc_information->cellGroupConfig = calloc(1, 1024);
     AssertFatal(resp.du_to_cu_rrc_information->cellGroupConfig != NULL, "out of memory\n");
     asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                                     NULL,
-                                                    UE->CellGroup,
+                                                    new_CellGroup,
                                                     resp.du_to_cu_rrc_information->cellGroupConfig,
                                                     1024);
     AssertFatal(enc_rval.encoded > 0, "Could not encode CellGroup, failed element %s\n", enc_rval.failed_type->name);
     resp.du_to_cu_rrc_information->cellGroupConfig_length = (enc_rval.encoded + 7) >> 3;
 
-    /* works? */
-    nr_mac_update_cellgroup(RC.nrmac[0], req->gNB_DU_ue_id, UE->CellGroup);
+    nr_mac_prepare_cellgroup_update(mac, UE, new_CellGroup);
+  } else {
+    ASN_STRUCT_FREE(asn_DEF_NR_CellGroupConfig, new_CellGroup); // we actually don't need it
   }
   NR_SCHED_UNLOCK(&mac->sched_lock);
 
@@ -398,26 +409,13 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
 
   if (UE->expect_reconfiguration && dl_rrc->srb_id == DCCH) {
     /* we expected a reconfiguration, and this is on DCCH. We assume this is
-     * the reconfiguration; nr_mac_update_cellgroup() brings the config into
-     * the form expected by nr_mac_update_timers(), and we set the timer to
-     * apply the real configuration at expiration.
-     * Calling it nr_mac_update_cellgroup() is misleading, and using an
-     * intermediate buffer seems not necessary. This is for historical reasons,
-     * when we only had pointer to an RRC structure, and wanted to duplicate
-     * the contents to be applied later. The actually interesting function here
-     * is also configure_UE_BWP(), only called in nr_mac_update_timers().
-     * TODO: This should be cleaned up when the whole CellGroupConfig is
-     * handled entirely at the DU: no intermediate buffer, trigger the timer
-     * from a function (there is nr_mac_enable_ue_rrc_processing_timer(), which
-     * is called from the RRC, hence locks the scheduler, which we cannot use). */
-    LOG_I(NR_MAC, "triggering rrc_processing_timer time UE %04x\n", UE->rnti);
-    pthread_mutex_lock(&mac->sched_lock);
-    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->reconfigCellGroup);
-    pthread_mutex_unlock(&mac->sched_lock);
-    const uint16_t sl_ahead = mac->if_inst->sl_ahead;
-    NR_SubcarrierSpacing_t scs = 1;
-    int delay = 10;
-    UE->UE_sched_ctrl.rrc_processing_timer = (delay << scs) + sl_ahead;
+     * the reconfiguration: nr_mac_prepare_cellgroup_update() already stored
+     * the CellGroupConfig. Below, we trigger a timer, and the CellGroupConfig
+     * will be applied after its expiry in nr_mac_apply_cellgroup().*/
+    NR_SCHED_LOCK(&mac->sched_lock);
+    nr_mac_enable_ue_rrc_processing_timer(mac, UE, /* apply_cellGroup = */ true);
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    UE->expect_reconfiguration = false;
   }
 
   if (dl_rrc->old_gNB_DU_ue_id != NULL) {
@@ -433,9 +431,11 @@ void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc)
      * from the current configuration. Also, expect the reconfiguration from
      * the CU, so save the old UE's CellGroup for the new UE */
     UE->CellGroup->spCellConfig = NULL;
-    nr_mac_update_cellgroup(mac, dl_rrc->gNB_DU_ue_id, UE->CellGroup);
-    UE->reconfigCellGroup = oldUE->CellGroup;
-    UE->expect_reconfiguration = true;
+    NR_UE_sched_ctrl_t *sched_ctrl = &UE->UE_sched_ctrl;
+    NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
+    configure_UE_BWP(mac, scc, sched_ctrl, NULL, UE, -1, -1);
+
+    nr_mac_prepare_cellgroup_update(mac, UE, oldUE->CellGroup);
     oldUE->CellGroup = NULL;
     mac_remove_nr_ue(mac, *dl_rrc->old_gNB_DU_ue_id);
     pthread_mutex_unlock(&mac->sched_lock);

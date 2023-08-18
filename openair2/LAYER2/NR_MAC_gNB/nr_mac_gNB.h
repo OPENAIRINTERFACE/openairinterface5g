@@ -700,10 +700,9 @@ typedef struct {
   /// currently active CellGroupConfig
   NR_CellGroupConfig_t *CellGroup;
   /// CellGroupConfig that is to be activated after the next reconfiguration
-  NR_CellGroupConfig_t *reconfigCellGroup;
   bool expect_reconfiguration;
-  char cg_buf[32768]; /* arbitrary size */
-  asn_enc_rval_t enc_rval;
+  NR_CellGroupConfig_t *reconfigCellGroup;
+  bool apply_cellgroup;
   // UE selected beam index
   uint8_t UE_beam_index;
   bool Msg4_ACKed;
