@@ -739,19 +739,7 @@ int16_t do_RRCReconfiguration(
         ie->nonCriticalExtension->dedicatedNAS_MessageList = dedicatedNAS_MessageList;
     }
 
-    if(cellGroupConfig!=NULL){
-      /* TODO UECAP: update_cellGroupConfig should not even be here, it is
-       * updated by DU */
-      if (scc != NULL) {
-        update_cellGroupConfig(cellGroupConfig,
-                               ue_context_pP->ue_context.rrc_ue_id,
-                               ue_context_pP ? ue_context_pP->ue_context.UE_Capability_nr : NULL,
-                               NULL,
-                               scc);
-      } else {
-        LOG_W(RRC, "no scc, cannot update cellGroup\n");
-      }
-
+    if (cellGroupConfig != NULL) {
       enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
                                        NULL,
                                        (void *)cellGroupConfig,

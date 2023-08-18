@@ -64,7 +64,21 @@ static void ue_context_modification_request_f1ap(const f1ap_ue_context_modif_req
   MessageDef *msg = itti_alloc_new_message(TASK_RRC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQ);
   f1ap_ue_context_modif_req_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REQ(msg);
   *f1ap_msg = *req;
-  AssertFatal(req->cu_to_du_rrc_information == NULL, "cu_to_du_rrc_information not supported yet\n");
+  if (req->cu_to_du_rrc_information != NULL) {
+    f1ap_msg->cu_to_du_rrc_information = calloc(1, sizeof(*f1ap_msg->cu_to_du_rrc_information));
+    AssertFatal(f1ap_msg->cu_to_du_rrc_information != NULL, "out of memory\n");
+    AssertFatal(req->cu_to_du_rrc_information->cG_ConfigInfo == NULL && req->cu_to_du_rrc_information->cG_ConfigInfo_length == 0, "cg_ConfigInfo not implemented\n");
+    AssertFatal(req->cu_to_du_rrc_information->measConfig == NULL && req->cu_to_du_rrc_information->measConfig_length == 0, "cg_ConfigInfo not implemented\n");
+    if (req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList != NULL) {
+      const cu_to_du_rrc_information_t *du2cu_req = req->cu_to_du_rrc_information;
+      cu_to_du_rrc_information_t* du2cu_new = f1ap_msg->cu_to_du_rrc_information;
+      DevAssert(du2cu_req->uE_CapabilityRAT_ContainerList_length > 0);
+      du2cu_new->uE_CapabilityRAT_ContainerList_length = du2cu_req->uE_CapabilityRAT_ContainerList_length;
+      du2cu_new->uE_CapabilityRAT_ContainerList = malloc(du2cu_new->uE_CapabilityRAT_ContainerList_length);
+      AssertFatal(du2cu_new->uE_CapabilityRAT_ContainerList != NULL, "out of memory\n");
+      memcpy(du2cu_new->uE_CapabilityRAT_ContainerList, du2cu_req->uE_CapabilityRAT_ContainerList, du2cu_new->uE_CapabilityRAT_ContainerList_length);
+    }
+  }
   AssertFatal(req->drbs_to_be_modified_length == 0, "drbs_to_be_modified not supported yet\n");
   if (req->drbs_to_be_setup_length > 0) {
     int n = req->drbs_to_be_setup_length;

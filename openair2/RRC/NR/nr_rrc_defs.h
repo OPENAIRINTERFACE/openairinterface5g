@@ -38,6 +38,7 @@
 #include "collection/tree.h"
 #include "collection/linear_alloc.h"
 #include "nr_rrc_common.h"
+#include "ds/byte_array.h"
 
 #include "common/ngran_types.h"
 #include "common/platform_constants.h"
@@ -243,7 +244,7 @@ typedef struct gNB_RRC_UE_s {
   NR_HANDOVER_INFO                  *handover_info;
   NR_MeasResults_t                  *measResults;
 
-
+  byte_array_t ue_cap_buffer;
   NR_UE_NR_Capability_t*             UE_Capability_nr;
   int                                UE_Capability_size;
   NR_UE_MRDC_Capability_t*           UE_Capability_MRDC;

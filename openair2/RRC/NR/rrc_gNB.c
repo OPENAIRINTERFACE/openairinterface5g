@@ -1460,6 +1460,18 @@ static int handle_ueCapabilityInformation(const protocol_ctxt_t *const ctxt_pP,
   if (ue_cap_info->criticalExtensions.present == NR_UECapabilityInformation__criticalExtensions_PR_ueCapabilityInformation) {
     const NR_UE_CapabilityRAT_ContainerList_t *ue_CapabilityRAT_ContainerList =
         ue_cap_info->criticalExtensions.choice.ueCapabilityInformation->ue_CapabilityRAT_ContainerList;
+
+    /* Encode UE-CapabilityRAT-ContainerList for sending to the DU */
+    free(UE->ue_cap_buffer.buf);
+    UE->ue_cap_buffer.len = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRAT_ContainerList,
+                                                      NULL,
+                                                      ue_CapabilityRAT_ContainerList,
+                                                      (void **)&UE->ue_cap_buffer.buf);
+    if (UE->ue_cap_buffer.len <= 0) {
+      LOG_E(RRC, "could not encode UE-CapabilityRAT-ContainerList, abort handling capabilities\n");
+      return -1;
+    }
+
     for (int i = 0; i < ue_CapabilityRAT_ContainerList->list.count; i++) {
       const NR_UE_CapabilityRAT_Container_t *ue_cap_container = ue_CapabilityRAT_ContainerList->list.array[i];
       if (ue_cap_container->rat_Type == NR_RAT_Type_nr) {
@@ -2370,19 +2382,28 @@ void prepare_and_send_ue_context_modification_f1(rrc_gNB_ue_context_t *ue_contex
     srbs[0].lcid = 2;
   }
 
+  cu_to_du_rrc_information_t cu2du = {0};
+  cu_to_du_rrc_information_t *cu2du_p = NULL;
+  if (UE->ue_cap_buffer.len > 0 && UE->ue_cap_buffer.buf != NULL) {
+    cu2du_p = &cu2du;
+    cu2du.uE_CapabilityRAT_ContainerList = UE->ue_cap_buffer.buf;
+    cu2du.uE_CapabilityRAT_ContainerList_length = UE->ue_cap_buffer.len;
+  }
+
   f1_ue_data_t ue_data = cu_get_f1_ue_data(UE->rrc_ue_id);
   f1ap_ue_context_modif_req_t ue_context_modif_req = {
-    .gNB_CU_ue_id = UE->rrc_ue_id,
-    .gNB_DU_ue_id = ue_data.secondary_ue,
-    .plmn.mcc = rrc->configuration.mcc[0],
-    .plmn.mnc = rrc->configuration.mnc[0],
-    .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
-    .nr_cellid = rrc->nr_cellid,
-    .servCellId = 0, /* TODO: correct value? */
-    .srbs_to_be_setup_length = nb_srb,
-    .srbs_to_be_setup = srbs,
-    .drbs_to_be_setup_length = nb_drb,
-    .drbs_to_be_setup = drbs,
+      .gNB_CU_ue_id = UE->rrc_ue_id,
+      .gNB_DU_ue_id = ue_data.secondary_ue,
+      .plmn.mcc = rrc->configuration.mcc[0],
+      .plmn.mnc = rrc->configuration.mnc[0],
+      .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+      .nr_cellid = rrc->nr_cellid,
+      .servCellId = 0, /* TODO: correct value? */
+      .srbs_to_be_setup_length = nb_srb,
+      .srbs_to_be_setup = srbs,
+      .drbs_to_be_setup_length = nb_drb,
+      .drbs_to_be_setup = drbs,
+      .cu_to_du_rrc_information = cu2du_p,
   };
   rrc->mac_rrc.ue_context_modification_request(&ue_context_modif_req);
 }
@@ -2727,18 +2748,30 @@ rrc_gNB_generate_SecurityModeCommand(
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   AssertFatal(!NODE_IS_DU(rrc->node_type), "illegal node type DU!\n");
 
+  cu_to_du_rrc_information_t cu2du = {0};
+  cu_to_du_rrc_information_t *cu2du_p = NULL;
+  if (ue_p->ue_cap_buffer.len > 0 && ue_p->ue_cap_buffer.buf != NULL) {
+    cu2du_p = &cu2du;
+    cu2du.uE_CapabilityRAT_ContainerList = ue_p->ue_cap_buffer.buf;
+    cu2du.uE_CapabilityRAT_ContainerList_length = ue_p->ue_cap_buffer.len;
+  }
+
+  const nr_rrc_du_container_t *du = rrc->du;
+  DevAssert(du != NULL);
+
   /* the callback will fill the UE context setup request and forward it */
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
   f1ap_ue_context_setup_t ue_context_setup_req = {
-    .gNB_CU_ue_id = ue_p->rrc_ue_id,
-    .gNB_DU_ue_id = ue_data.secondary_ue,
-    .plmn.mcc = rrc->configuration.mcc[0],
-    .plmn.mnc = rrc->configuration.mnc[0],
-    .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
-    .nr_cellid = rrc->nr_cellid,
-    .servCellId = 0, /* TODO: correct value? */
-    .srbs_to_be_setup = 0, /* no new SRBs */
-    .drbs_to_be_setup = 0, /* no new DRBs */
+      .gNB_CU_ue_id = ue_p->rrc_ue_id,
+      .gNB_DU_ue_id = ue_data.secondary_ue,
+      .plmn.mcc = rrc->configuration.mcc[0],
+      .plmn.mnc = rrc->configuration.mnc[0],
+      .plmn.mnc_digit_length = rrc->configuration.mnc_digit_length[0],
+      .nr_cellid = rrc->nr_cellid,
+      .servCellId = 0, /* TODO: correct value? */
+      .srbs_to_be_setup = 0, /* no new SRBs */
+      .drbs_to_be_setup = 0, /* no new DRBs */
+      .cu_to_du_rrc_information = cu2du_p,
   };
   deliver_ue_ctxt_setup_data_t data = {.rrc = rrc, .setup_req = &ue_context_setup_req};
   nr_pdcp_data_req_srb(ctxt_pP->rntiMaybeUEid, DCCH, rrc_gNB_mui++, size, buffer, rrc_deliver_ue_ctxt_setup_req, &data);

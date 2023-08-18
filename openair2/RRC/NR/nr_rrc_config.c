@@ -2348,22 +2348,9 @@ void update_cellGroupConfig(NR_CellGroupConfig_t *cellGroupConfig,
                             const NR_ServingCellConfigCommon_t *scc)
 {
   DevAssert(cellGroupConfig != NULL);
-  /* this is wrong: we should not call this function is spCellConfig is not
-   * allocated */
-  if (cellGroupConfig->spCellConfig == NULL)
-    return;
-  /* same as for spCellConfig */
-  if (configuration == NULL)
-    return;
-  /* if scc is not allocated, there is a serious problem */
+  DevAssert(cellGroupConfig->spCellConfig != NULL);
+  DevAssert(configuration != NULL);
   DevAssert(scc != NULL);
-
-  /* This is a hack and will be removed once the CellGroupConfig is fully
-   * handled at the DU */
-  if (NODE_IS_CU(RC.nrrrc[0]->node_type)) {
-    LOG_W(RRC, "update of CellGroupConfig not yet supported in F1\n");
-    return;
-  }
 
   NR_SpCellConfig_t *SpCellConfig = cellGroupConfig->spCellConfig;
 

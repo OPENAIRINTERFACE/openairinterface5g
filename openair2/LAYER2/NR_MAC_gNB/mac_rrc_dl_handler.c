@@ -138,6 +138,42 @@ static int handle_ue_context_drbs_setup(int rnti,
   return drbs_len;
 }
 
+static NR_UE_NR_Capability_t *get_ue_nr_cap(int rnti, uint8_t *buf, uint32_t len)
+{
+  if (buf == NULL || len == 0)
+    return NULL;
+
+  NR_UE_CapabilityRAT_ContainerList_t *clist = NULL;
+  asn_dec_rval_t dec_rval = uper_decode(NULL, &asn_DEF_NR_UE_CapabilityRAT_ContainerList, (void **)&clist, buf, len, 0, 0);
+  if (dec_rval.code != RC_OK) {
+    LOG_W(NR_MAC, "cannot decode UE capability container list of UE RNTI %04x, ignoring capabilities\n", rnti);
+    return NULL;
+  }
+
+  NR_UE_NR_Capability_t *cap = NULL;
+  for (int i = 0; i < clist->list.count; i++) {
+    const NR_UE_CapabilityRAT_Container_t *c = clist->list.array[i];
+    if (cap != NULL || c->rat_Type != NR_RAT_Type_nr) {
+      LOG_W(NR_MAC, "UE RNTI %04x: ignoring capability of type %ld\n", rnti, c->rat_Type);
+      continue;
+    }
+
+    asn_dec_rval_t dec_rval = uper_decode(NULL,
+                                          &asn_DEF_NR_UE_NR_Capability,
+                                          (void **)&cap,
+                                          c->ue_CapabilityRAT_Container.buf,
+                                          c->ue_CapabilityRAT_Container.size,
+                                          0,
+                                          0);
+    if (dec_rval.code != RC_OK) {
+      LOG_W(NR_MAC, "cannot decode NR UE capabilities of UE RNTI %04x, ignoring NR capability\n", rnti);
+      cap = NULL;
+      continue;
+    }
+  }
+  return cap;
+}
+
 static NR_CellGroupConfig_t *clone_CellGroupConfig(const NR_CellGroupConfig_t *orig)
 {
   uint8_t buf[16636];
@@ -159,9 +195,12 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
   };
 
+  NR_UE_NR_Capability_t *ue_cap = NULL;
   if (req->cu_to_du_rrc_information != NULL) {
     AssertFatal(req->cu_to_du_rrc_information->cG_ConfigInfo == NULL, "CG-ConfigInfo not handled\n");
-    AssertFatal(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList == NULL, "UE capabilities not handled yet\n");
+    ue_cap = get_ue_nr_cap(req->gNB_DU_ue_id,
+                           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
+                           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     AssertFatal(req->cu_to_du_rrc_information->measConfig == NULL, "MeasConfig not handled\n");
   }
 
@@ -191,7 +230,16 @@ void ue_context_setup_request(const f1ap_ue_context_setup_t *req)
   if (req->rrc_container != NULL)
     nr_rlc_srb_recv_sdu(req->gNB_DU_ue_id, DCCH, req->rrc_container, req->rrc_container_length);
 
-  //nr_mac_update_cellgroup()
+  UE->capability = ue_cap;
+  if (ue_cap != NULL) {
+    // store the new UE capabilities, and update the cellGroupConfig
+    ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
+    UE->capability = ue_cap;
+    LOG_I(NR_MAC, "UE %04x: received capabilities, updating CellGroupConfig\n", UE->rnti);
+    NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
+    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &mac->radio_config, scc);
+  }
+
   resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
   AssertFatal(resp.du_to_cu_rrc_information != NULL, "out of memory\n");
   resp.du_to_cu_rrc_information->cellGroupConfig = calloc(1,1024);
@@ -228,9 +276,12 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     .gNB_DU_ue_id = req->gNB_DU_ue_id,
   };
 
+  NR_UE_NR_Capability_t *ue_cap = NULL;
   if (req->cu_to_du_rrc_information != NULL) {
     AssertFatal(req->cu_to_du_rrc_information->cG_ConfigInfo == NULL, "CG-ConfigInfo not handled\n");
-    AssertFatal(req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList == NULL, "UE capabilities not handled yet\n");
+    ue_cap = get_ue_nr_cap(req->gNB_DU_ue_id,
+                           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList,
+                           req->cu_to_du_rrc_information->uE_CapabilityRAT_ContainerList_length);
     AssertFatal(req->cu_to_du_rrc_information->measConfig == NULL, "MeasConfig not handled\n");
   }
 
@@ -263,7 +314,16 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
           "RRC reconfiguration outcome unsuccessful, but no rollback mechanism implemented to come back to old configuration\n");
   }
 
-  if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0) {
+  if (ue_cap != NULL) {
+    // store the new UE capabilities, and update the cellGroupConfig
+    ASN_STRUCT_FREE(asn_DEF_NR_UE_NR_Capability, UE->capability);
+    UE->capability = ue_cap;
+    LOG_I(NR_MAC, "UE %04x: received capabilities, updating CellGroupConfig\n", UE->rnti);
+    NR_ServingCellConfigCommon_t *scc = mac->common_channels[0].ServingCellConfigCommon;
+    update_cellGroupConfig(new_CellGroup, UE->uid, UE->capability, &mac->radio_config, scc);
+  }
+
+  if (req->srbs_to_be_setup_length > 0 || req->drbs_to_be_setup_length > 0 || ue_cap != NULL) {
     resp.du_to_cu_rrc_information = calloc(1, sizeof(du_to_cu_rrc_information_t));
     AssertFatal(resp.du_to_cu_rrc_information != NULL, "out of memory\n");
     resp.du_to_cu_rrc_information->cellGroupConfig = calloc(1, 1024);
