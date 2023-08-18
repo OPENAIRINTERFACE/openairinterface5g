@@ -42,7 +42,7 @@ extern eNB_DLSCH_INFO eNB_dlsch_info[NUMBER_OF_eNB_MAX][MAX_NUM_CCs][MAX_MOBILES
 extern int NB_UE_INST;
 
 extern const int cqi_to_mcs[16];
-extern uint8_t rb_table[34];
+extern const uint8_t rb_table[34];
 extern rb_id_t mbms_rab_id;
 
 

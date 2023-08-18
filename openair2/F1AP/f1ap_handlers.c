@@ -71,11 +71,11 @@ static const f1ap_message_processing_t f1ap_messages_processing[][3] = {
 };
 
 const char *f1ap_direction2String(int f1ap_dir) {
-  static const char *f1ap_direction_String[] = {
-    "", /* Nothing */
-    "Initiating message", /* initiating message */
-    "Successfull outcome", /* successfull outcome */
-    "UnSuccessfull outcome", /* successfull outcome */
+  static const char *const f1ap_direction_String[] = {
+      "", /* Nothing */
+      "Initiating message", /* initiating message */
+      "Successfull outcome", /* successfull outcome */
+      "UnSuccessfull outcome", /* successfull outcome */
   };
   return(f1ap_direction_String[f1ap_dir]);
 }

@@ -655,17 +655,13 @@ typedef enum idft_size_idx {
 struct {
   adftfunc_t func;
   int size;
-} dft_ftab[]= {
-  FOREACH_DFTSZ(SZ_PTR)
-};
+} const dft_ftab[] = {FOREACH_DFTSZ(SZ_PTR)};
 
 #define SZ_iPTR(Sz)  {idft ## Sz,Sz},
 struct {
   adftfunc_t func;
   int size;
-} idft_ftab[]= {
-  FOREACH_IDFTSZ(SZ_iPTR)
-};
+} const idft_ftab[] = {FOREACH_IDFTSZ(SZ_iPTR)};
 
 #endif
 

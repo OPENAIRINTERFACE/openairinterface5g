@@ -138,15 +138,9 @@ static int tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
 int chain_offset=0;
 
-
 uint8_t dci_Format = 0;
-uint8_t agregation_Level =0xFF;
-
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;
-
-char ref[128] = "internal";
-char channels[128] = "0";
 
 int rx_input_level_dBm;
 

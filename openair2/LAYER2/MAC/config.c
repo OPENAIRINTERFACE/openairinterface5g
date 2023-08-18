@@ -225,7 +225,7 @@ int32_t get_uldl_offset(int eutra_bandP) {
   return (eutra_bandtable[i].dl_min - eutra_bandtable[i].ul_min);
 }
 
-uint32_t bw_table[6] = {6*180,15*180,25*180,50*180,75*180,100*180};
+const int32_t bw_table[6] = {6 * 180, 15 * 180, 25 * 180, 50 * 180, 75 * 180, 100 * 180};
 
 void config_mib(int                 Mod_idP,
                 int                 CC_idP,
@@ -333,7 +333,7 @@ void config_sib1(int Mod_idP, int CC_idP, LTE_TDD_Config_t *tdd_ConfigP) {
   }
 }
 
-int power_off_dB[6] = { 78, 118, 140, 170, 188, 200 };
+const int power_off_dB[6] = {78, 118, 140, 170, 188, 200};
 
 void
 config_sib2(int Mod_idP,

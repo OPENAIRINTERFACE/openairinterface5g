@@ -37,14 +37,6 @@
 #include <stdbool.h>
 #include "types.h"
 
-#ifdef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-#define EXTERN
-#define INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-#else
-#define EXTERN  extern
-#undef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-#endif
-
 #ifdef PHY_DBG_DEV_TST
   #define PHY_DBG_DEV_TST_PRINTF(...)      printf(__VA_ARGS__)
 #else
@@ -60,12 +52,7 @@
 
 /* TS 38.211 Table 4.3.2-1: Number of OFDM symbols per slot, slots per frame, and slots per subframe for normal cyclic prefix */
 #define MU_NUMBER                          (5)
-EXTERN const uint8_t N_slot_subframe[MU_NUMBER]
-#ifdef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-= { 1, 2, 4, 8, 16}
-#endif
-;
-
+static const uint8_t N_slot_subframe[MU_NUMBER] = {1, 2, 4, 8, 16};
 
 #define  NB_DL_DATA_TO_UL_ACK              (8) /* size of table TS 38.213 Table 9.2.3-1 */
 
@@ -173,11 +160,7 @@ typedef struct TDD_UL_DL_SlotConfig_s {
 *
 ************************************************************************/
 
-EXTERN const int16_t SRS_antenna_port[MAX_NROFSRS_PORTS]
-#ifdef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-= { 1000, 1001, 1002, 1003 }
-#endif
-;
+static const int16_t SRS_antenna_port[MAX_NROFSRS_PORTS] = {1000, 1001, 1002, 1003};
 
 typedef enum {
   port1           = 1,
@@ -582,7 +565,4 @@ typedef struct {
   SchedulingRequestResourceConfig_t  *sr_ResourceConfig[MAX_NR_OF_SR_CONFIG_PER_CELL_GROUP];
 } scheduling_request_config_t;
 
-
-#undef EXTERN
-#undef INIT_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
 #endif /* PHY_IMPL_DEFS_NR_H */

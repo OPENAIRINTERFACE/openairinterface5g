@@ -35,9 +35,7 @@
 #include <math.h>
 #include "defs.h"
 
-#define DEFINE_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
-#undef DEFINE_VARIABLES_LOWPAPR_SEQUENCES_NR_H
 
 /*******************************************************************
 *
@@ -54,9 +52,7 @@
 *
 *********************************************************************/
 
-int16_t *base_sequence_less_than_36(unsigned int M_ZC,
-                                    unsigned int u,
-                                    unsigned int scaling)
+static int16_t *base_sequence_less_than_36(unsigned int M_ZC, unsigned int u, unsigned int scaling)
 {
   char *phi_table;
   int16_t *rv_overbar;
@@ -153,10 +149,11 @@ int16_t get_index_for_dmrs_lowpapr_seq(int16_t num_dmrs_res) {
 *
 *********************************************************************/
 
-int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
-                                    unsigned int u,
-                                    unsigned int v,
-                                    unsigned int scaling, unsigned int if_dmrs_seq)
+static int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
+                                           unsigned int u,
+                                           unsigned int v,
+                                           unsigned int scaling,
+                                           unsigned int if_dmrs_seq)
 {
   int16_t *rv_overbar;
   unsigned int N_ZC, M_ZC;
@@ -199,6 +196,8 @@ int16_t *base_sequence_36_or_larger(unsigned int Msc_RS,
   return rv_overbar;
 }
 
+int16_t *rv_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][SRS_SB_CONF];
+int16_t *gNB_dmrs_lowpaprtype1_sequence[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
 void generate_lowpapr_typ1_refsig_sequences(unsigned int scaling)
 {
   /* prevent multiple calls, relevant when both UE & gNB initialize this */
@@ -222,7 +221,7 @@ void generate_lowpapr_typ1_refsig_sequences(unsigned int scaling)
   } 
 }
 
-
+int16_t *dmrs_lowpaprtype1_ul_ref_sig[U_GROUP_NUMBER][V_BASE_SEQUENCE_NUMBER][MAX_INDEX_DMRS_UL_ALLOCATED_REs];
 void generate_ul_reference_signal_sequences(unsigned int scaling)
 {
   /* prevent multiple calls, relevant when both UE & gNB initialize this */

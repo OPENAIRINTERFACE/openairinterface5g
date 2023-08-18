@@ -32,8 +32,9 @@
 
 #include <stdint.h>
 
-const char *rnti_types[]={"RNTI_new", "RNTI_C", "RNTI_RA", "NR_RNTI_P", "NR_RNTI_CS", "NR_RNTI_TC", "NR_RNTI_SP_CSI", "NR_RNTI_SI"};
-const char *dci_formats[]={"1_0", "1_1", "2_0", "2_1", "2_2", "2_3", "0_0", "0_1"};
+const char* const rnti_types[] =
+    {"RNTI_new", "RNTI_C", "RNTI_RA", "NR_RNTI_P", "NR_RNTI_CS", "NR_RNTI_TC", "NR_RNTI_SP_CSI", "NR_RNTI_SI"};
+const char* const dci_formats[] = {"1_0", "1_1", "2_0", "2_1", "2_2", "2_3", "0_0", "0_1"};
 
 // table_7_3_1_1_2_2_3_4_5 contains values for number of layers and precoding information for tables 7.3.1.1.2-2/3/4/5 from TS 38.212 subclause 7.3.1.1.2
 // the first 6 columns contain table 7.3.1.1.2-2: Precoding information and number of layers, for 4 antenna ports, if transformPrecoder=disabled and maxRank = 2 or 3 or 4

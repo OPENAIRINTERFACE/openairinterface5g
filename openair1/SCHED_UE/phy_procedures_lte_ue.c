@@ -2586,13 +2586,9 @@ int ue_pdcch_procedures(uint8_t eNB_id,
                                              ue->transmission_mode[eNB_id]<7?0:ue->transmission_mode[eNB_id],
                                              ue->pdcch_vars[0%RX_NB_TH][eNB_id]->crnti_is_temporary? ue->pdcch_vars[ue->current_thread_id[subframe_rx]][eNB_id]->crnti: 0)==0)) {
         // update TPC for PUCCH
-        if((dci_alloc_rx[i].format == format1)   ||
-            (dci_alloc_rx[i].format == format1A) ||
-            (dci_alloc_rx[i].format == format1B) ||
-            (dci_alloc_rx[i].format == format2)  ||
-            (dci_alloc_rx[i].format == format2A) ||
-            (dci_alloc_rx[i].format == format2B)) {
-          //ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->g_pucch += ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid]->delta_PUCCH;
+        if ((dci_alloc_rx[i].format == format1) || (dci_alloc_rx[i].format == format1A) || (dci_alloc_rx[i].format == format1B)
+            || (dci_alloc_rx[i].format == format2) || (dci_alloc_rx[i].format == format2A)
+            || (dci_alloc_rx[i].format == format2B)) {
           int32_t delta_pucch = ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->harq_processes[ue->dlsch[ue->current_thread_id[subframe_rx]][eNB_id][0]->current_harq_pid]->delta_PUCCH;
 
           for(int th_id=0; th_id<RX_NB_TH; th_id++) {

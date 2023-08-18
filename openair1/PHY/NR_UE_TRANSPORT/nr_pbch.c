@@ -380,7 +380,8 @@ unsigned char sign(int8_t x) {
 }
 */
 
-uint8_t pbch_deinterleaving_pattern[32] = {28,0,31,30,7,29,25,27,5,8,24,9,10,11,12,13,1,4,3,14,15,16,17,2,26,18,19,20,21,22,6,23};
+const uint8_t pbch_deinterleaving_pattern[32] = {28, 0, 31, 30, 7,  29, 25, 27, 5,  8,  24, 9,  10, 11, 12, 13,
+                                                 1,  4, 3,  14, 15, 16, 17, 2,  26, 18, 19, 20, 21, 22, 6,  23};
 
 int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                UE_nr_rxtx_proc_t *proc,

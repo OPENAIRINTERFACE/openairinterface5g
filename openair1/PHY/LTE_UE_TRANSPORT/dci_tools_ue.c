@@ -1521,7 +1521,7 @@ void prepare_dl_decoding_format1_1A(DCI_format_t dci_format,
     pdlsch0_harq->Nl           = 1;
     pdlsch0_harq->mimo_mode    = frame_parms->nb_antenna_ports_eNB == 1 ?SISO : ALAMOUTI;
     pdlsch0_harq->dl_power_off = 1; //no power offset
-    pdlsch0_harq->delta_PUCCH  = delta_PUCCH_lut[TPC &3];
+    pdlsch0_harq->delta_PUCCH = delta_PUSCH_acc[TPC & 3];
 
     // compute resource allocation
     if(dci_format == format1A)
@@ -1979,8 +1979,8 @@ void prepare_dl_decoding_format2_2A(DCI_format_t dci_format,
         dlsch1_harq->codeword = 1;
         dlsch0_harq->Nl       = 1;
         dlsch1_harq->Nl       = 1;
-        dlsch0_harq->delta_PUCCH  = delta_PUCCH_lut[TPC&3];
-        dlsch1_harq->delta_PUCCH  = delta_PUCCH_lut[TPC&3];
+        dlsch0_harq->delta_PUCCH = delta_PUSCH_acc[TPC & 3];
+        dlsch1_harq->delta_PUCCH = delta_PUSCH_acc[TPC & 3];
         dlsch0_harq->dl_power_off = 1;
         dlsch1_harq->dl_power_off = 1;
 
@@ -2598,9 +2598,7 @@ int generate_ue_dlsch_params_from_dci(int frame,
       //dlsch1_harq->nb_rb                               = dlsch0_harq->nb_rb;
 
       dlsch0_harq->mcs             = ((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->mcs;
-      dlsch0_harq->delta_PUCCH     = delta_PUCCH_lut[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC&3];
-
-
+      dlsch0_harq->delta_PUCCH = delta_PUSCH_acc[((DCI1E_5MHz_2A_M10PRB_TDD_t *)dci_pdu)->TPC & 3];
 
       /*
         if (dlsch0_harq->mcs>20) {

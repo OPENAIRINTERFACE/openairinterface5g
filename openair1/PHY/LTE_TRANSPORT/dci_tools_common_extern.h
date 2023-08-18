@@ -83,7 +83,3 @@ extern uint32_t distRIV2alloc_gap1_odd_LUT100_3[6000];
 extern uint16_t RIV2nb_rb_LUT100[6000];
 extern uint16_t RIV2first_rb_LUT100[6000];
 extern uint16_t RIV_max100;
-
-extern const int8_t *delta_PUCCH_lut;
-extern const int8_t delta_PUSCH_acc[4];
-extern const int8_t delta_PUSCH_abs[4];

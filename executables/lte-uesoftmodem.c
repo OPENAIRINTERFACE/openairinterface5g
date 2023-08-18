@@ -132,9 +132,7 @@ double bw = 10.0e6;
 
 static int                      tx_max_power[MAX_NUM_CCs]; /* =  {0,0}*/;
 
-
 uint8_t dci_Format = 0;
-uint8_t agregation_Level =0xFF;
 
 uint8_t nb_antenna_tx = 1;
 uint8_t nb_antenna_rx = 1;

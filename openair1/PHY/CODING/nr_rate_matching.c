@@ -31,7 +31,7 @@
 
 //#define RM_DEBUG 1
 
-uint8_t index_k0[2][4] = {{0,17,33,56},{0,13,25,43}};
+static const uint8_t index_k0[2][4] = {{0, 17, 33, 56}, {0, 13, 25, 43}};
 
 void nr_interleaving_ldpc(uint32_t E, uint8_t Qm, uint8_t *e,uint8_t *f)
 {
