@@ -166,6 +166,7 @@ void nr_rrc_handle_SetupRelease_RLF_TimersAndConstants(NR_UE_RRC_INST_t *rrc,
 void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
                                NR_UE_RRC_INST_t *rrc,
                                int gNB_index,
+                               module_id_t module_id,
                                int rnti);
 
 int configure_NR_SL_Preconfig(int sync_source);

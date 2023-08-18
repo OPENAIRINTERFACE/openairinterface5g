@@ -163,7 +163,8 @@ int8_t nr_rrc_ue_process_rrcReconfiguration(const module_id_t module_id, NR_RRCR
           return -1;
         }
 
-        nr_rrc_manage_rlc_bearers(cellGroupConfig, &NR_UE_rrc_inst[module_id], 0, NR_UE_rrc_inst[module_id].rnti);
+        if(get_softmodem_params()->sa || get_softmodem_params()->nsa)
+          nr_rrc_manage_rlc_bearers(cellGroupConfig, &NR_UE_rrc_inst[module_id], 0, module_id, NR_UE_rrc_inst[module_id].rnti);
 
         if(get_softmodem_params()->sa || get_softmodem_params()->nsa) {
           if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
@@ -222,7 +223,8 @@ int8_t nr_rrc_ue_process_meas_config(NR_MeasConfig_t *meas_config){
 }
 
 
-void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message,int msg_len) {
+void process_nsa_message(NR_UE_RRC_INST_t *rrc, nsa_message_t nsa_message_type, void *message,int msg_len)
+{
   module_id_t module_id=0; // TODO
   switch (nsa_message_type) {
     case nr_SecondaryCellGroupConfig_r15:
@@ -338,8 +340,7 @@ NR_UE_RRC_INST_t* openair_rrc_top_init_ue_nr(char* uecap_file, char* reconfig_fi
       fclose(fd);
       process_nsa_message(NR_UE_rrc_inst, nr_RadioBearerConfigX_r15, buffer,msg_len); 
     }
-    else if (get_softmodem_params()->nsa)
-    {
+    else if (get_softmodem_params()->nsa) {
       LOG_D(NR_RRC, "In NSA mode \n");
     }
 
@@ -755,6 +756,7 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
 void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
                                NR_UE_RRC_INST_t *rrc,
                                int gNB_index,
+                               module_id_t module_id,
                                int rnti)
 {
   if(cellGroupConfig->rlc_BearerToReleaseList != NULL) {
@@ -790,6 +792,9 @@ void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
       }
     }
   }
+  nr_rrc_mac_config_req_ue_logicalChannelBearer(module_id,
+                                                cellGroupConfig->rlc_BearerToAddModList,
+                                                cellGroupConfig->rlc_BearerToReleaseList);
 }
 
 void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
@@ -814,7 +819,7 @@ void nr_rrc_ue_process_masterCellGroup(const protocol_ctxt_t *const ctxt_pP,
     rrc->cell_group_config = calloc(1,sizeof(NR_CellGroupConfig_t));
   }
 
-  nr_rrc_manage_rlc_bearers(cellGroupConfig, rrc, gNB_index, ctxt_pP->rntiMaybeUEid);
+  nr_rrc_manage_rlc_bearers(cellGroupConfig, rrc, gNB_index, ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid);
 
   if(cellGroupConfig->mac_CellGroupConfig != NULL){
     //TODO (configure the MAC entity of this cell group as specified in 5.3.5.5.5)
