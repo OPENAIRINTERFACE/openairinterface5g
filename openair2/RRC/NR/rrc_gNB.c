@@ -562,7 +562,7 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
   NR_MeasConfig_t *measconfig = get_defaultMeasConfig(arfcn, band, scs);
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
-  int size = do_RRCReconfiguration(ctxt_pP,
+  int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
@@ -570,11 +570,8 @@ static void rrc_gNB_generate_defaultRRCReconfiguration(const protocol_ctxt_t *co
                                    NULL, //*DRB_configList,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    measconfig,
                                    dedicatedNAS_MessageList,
-                                   ue_context_pP,
-                                   NULL,
                                    ue_p->masterCellGroup);
   AssertFatal(size > 0, "cannot encode RRCReconfiguration in %s()\n", __func__);
   LOG_W(NR_RRC, "do_RRCReconfiguration(): size %d\n", size);
@@ -668,7 +665,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, false);
   NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, false);
 
-  int size = do_RRCReconfiguration(ctxt_pP,
+  int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
@@ -677,10 +674,7 @@ void rrc_gNB_generate_dedicatedRRCReconfiguration(const protocol_ctxt_t *const c
                                    NULL,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    dedicatedNAS_MessageList,
-                                   ue_context_pP,
-                                   NULL,
                                    cellGroupConfig);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size,"[MSG] RRC Reconfiguration\n");
   freeSRBlist(SRBs);
@@ -799,7 +793,7 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
   }
 
   uint8_t buffer[RRC_BUF_SIZE];
-  int size = do_RRCReconfiguration(ctxt_pP,
+  int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
@@ -808,10 +802,7 @@ rrc_gNB_modify_dedicatedRRCReconfiguration(
                                    NULL,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    dedicatedNAS_MessageList,
-                                   NULL,
-                                   NULL,
                                    NULL);
   LOG_DUMPMSG(NR_RRC, DEBUG_RRC, (char *)buffer, size, "[MSG] RRC Reconfiguration\n");
 
@@ -872,7 +863,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
   }
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
-  int size = do_RRCReconfiguration(ctxt_pP,
+  int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    xid,
@@ -881,10 +872,7 @@ rrc_gNB_generate_dedicatedRRCReconfiguration_release(
                                    DRB_Release_configList2,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    dedicatedNAS_MessageList,
-                                   NULL,
-                                   NULL,
                                    NULL);
   LOG_DUMPMSG(NR_RRC,DEBUG_RRC,(char *)buffer,size, "[MSG] RRC Reconfiguration\n");
 
@@ -1113,7 +1101,7 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
   NR_DRB_ToAddModList_t *DRBs = createDRBlist(ue_p, true);
 
   uint8_t buffer[RRC_BUF_SIZE] = {0};
-  int size = do_RRCReconfiguration(ctxt_pP,
+  int size = do_RRCReconfiguration(ue_p,
                                    buffer,
                                    RRC_BUF_SIZE,
                                    new_xid,
@@ -1121,10 +1109,7 @@ static void rrc_gNB_process_RRCReestablishmentComplete(const protocol_ctxt_t *co
                                    DRBs,
                                    NULL,
                                    NULL,
-                                   NULL,
                                    NULL, // MeasObj_list,
-                                   NULL,
-                                   ue_context_pP,
                                    NULL,
                                    cellGroupConfig);
   freeSRBlist(SRBs);
@@ -1160,20 +1145,7 @@ int nr_rrc_reconfiguration_req(rrc_gNB_ue_context_t         *const ue_context_pP
   }
 
   uint8_t buffer[RRC_BUF_SIZE];
-  int size = do_RRCReconfiguration(ctxt_pP,
-                                       buffer,
-                                       RRC_BUF_SIZE,
-                                       xid,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       NULL,
-                                       ue_context_pP,
-                                       NULL,
-                                       masterCellGroup);
+  int size = do_RRCReconfiguration(ue_p, buffer, RRC_BUF_SIZE, xid, NULL, NULL, NULL, NULL, NULL, NULL, masterCellGroup);
 
   gNB_RRC_INST *rrc = RC.nrrrc[ctxt_pP->module_id];
   nr_rrc_transfer_protected_rrc_message(rrc, ue_p, DCCH, buffer, size);

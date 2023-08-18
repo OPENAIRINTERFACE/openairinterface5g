@@ -676,21 +676,17 @@ int do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size, uint8_t Transaction_id
 }
 
 //------------------------------------------------------------------------------
-int16_t do_RRCReconfiguration(
-    const protocol_ctxt_t        *const ctxt_pP,
-    uint8_t                      *buffer,
-    size_t                        buffer_size,
-    uint8_t                       Transaction_id,
-    NR_SRB_ToAddModList_t        *SRB_configList,
-    NR_DRB_ToAddModList_t        *DRB_configList,
-    NR_DRB_ToReleaseList_t       *DRB_releaseList,
-    NR_SecurityConfig_t          *security_config,
-    NR_SDAP_Config_t             *sdap_config,
-    NR_MeasConfig_t              *meas_config,
-    struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
-    rrc_gNB_ue_context_t         *const ue_context_pP,
-    const NR_ServingCellConfigCommon_t *scc,
-    NR_CellGroupConfig_t         *cellGroupConfig)
+int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
+                              uint8_t *buffer,
+                              size_t buffer_size,
+                              uint8_t Transaction_id,
+                              NR_SRB_ToAddModList_t *SRB_configList,
+                              NR_DRB_ToAddModList_t *DRB_configList,
+                              NR_DRB_ToReleaseList_t *DRB_releaseList,
+                              NR_SecurityConfig_t *security_config,
+                              NR_MeasConfig_t *meas_config,
+                              struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
+                              NR_CellGroupConfig_t *cellGroupConfig)
 //------------------------------------------------------------------------------
 {
   NR_DL_DCCH_Message_t                             dl_dcch_msg={0};
@@ -771,11 +767,11 @@ int16_t do_RRCReconfiguration(
     AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
                 enc_rval.failed_type->name, enc_rval.encoded);
 
-    LOG_D(NR_RRC,"[gNB %d] RRCReconfiguration for UE %lx Encoded %zd bits (%zd bytes)\n",
-          ctxt_pP->module_id,
-          ctxt_pP->rntiMaybeUEid,
+    LOG_D(NR_RRC,
+          "RRCReconfiguration for UE %d: Encoded %zd bits (%zd bytes)\n",
+          UE->rrc_ue_id,
           enc_rval.encoded,
-          (enc_rval.encoded+7)/8);
+          (enc_rval.encoded + 7) / 8);
 
     return((enc_rval.encoded+7)/8);
 }

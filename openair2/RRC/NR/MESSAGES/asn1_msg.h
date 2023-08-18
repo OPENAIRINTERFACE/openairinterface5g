@@ -97,7 +97,7 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
 
 int do_NR_RRCRelease(uint8_t *buffer, size_t buffer_size, uint8_t Transaction_id);
 
-int16_t do_RRCReconfiguration(const protocol_ctxt_t *const ctxt_pP,
+int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
                               uint8_t *buffer,
                               size_t buffer_size,
                               uint8_t Transaction_id,
@@ -105,11 +105,8 @@ int16_t do_RRCReconfiguration(const protocol_ctxt_t *const ctxt_pP,
                               NR_DRB_ToAddModList_t *DRB_configList,
                               NR_DRB_ToReleaseList_t *DRB_releaseList,
                               NR_SecurityConfig_t *security_config,
-                              NR_SDAP_Config_t *sdap_config,
                               NR_MeasConfig_t *meas_config,
                               struct NR_RRCReconfiguration_v1530_IEs__dedicatedNAS_MessageList *dedicatedNAS_MessageList,
-                              rrc_gNB_ue_context_t *const ue_context_pP,
-                              const NR_ServingCellConfigCommon_t *scc,
                               NR_CellGroupConfig_t *cellGroupConfig);
 
 uint8_t do_RRCSetupComplete(uint8_t Mod_id,
