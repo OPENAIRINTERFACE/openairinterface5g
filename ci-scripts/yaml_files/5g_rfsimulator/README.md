@@ -234,11 +234,13 @@ oaitun_ue1: flags=4305<UP,POINTOPOINT,RUNNING,NOARP,MULTICAST>  mtu 1500
 
 ## 2.4. Deploy Second OAI NR-UE in RF simulator mode and in Standalone Mode ##
 
-```bash
-Create a entry for new IMSI (208990100001101) in oai_db.sql file
-Refer Section - [Making the NR-UE connect to the core network](#51-making-the-nr-ue-connect-to-the-core-network)
+Create a entry for new IMSI (208990100001101) in oai_db.sql file.
+For this, refer to section [Making the NR-UE connect to the core
+network](#51-making-the-nr-ue-connect-to-the-core-network)
 
-Create entry for Second UE in docker-compose.yaml file as follows:
+Create the entry for the second UE in `docker-compose.yaml` file as follows:
+
+```yaml
     oai-nr-ue2:
         image: oai-nr-ue:develop
         privileged: true
@@ -493,7 +495,7 @@ INSERT INTO `users` VALUES ('208990100001101','1','55000000000000',NULL,'PURGED'
 
 As you can see, 2 other values shall match in the NR-UE section of `docker-compose.yaml`:
 
-All the values such as IMSI and KEY are taken from the configuration file mounted into the container.
+All the values such as IMSI and KEY are taken from the configuration file mounted into the container. For the first UE, provision as usual through the config file
 
 ```yaml
  oai-nr-ue:
@@ -512,6 +514,12 @@ uicc0 = {
   nssai_sst=1;
 }
 ```
+
+The second UE's IMSI might be changed by either having the second UEs
+docker-compose entry mount another config, or add `--uicc0.imsi
+208990100001101` in `USE_ADDITIONAL_OPTIONS` entry. Note that the latter is a
+feature of the configuration module to overwrite any configuration option in
+the config file on the command line.
 
 We are also using a dedicated `oai-smf.conf` for the `SMF` container: the `oai` DNN shall match the one in  the NR-UE section of `docker-compose.yaml` (`DNN: oai`).
 
