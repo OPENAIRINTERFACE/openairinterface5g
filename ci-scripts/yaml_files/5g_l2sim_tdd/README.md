@@ -321,19 +321,52 @@ In the `SMF` section, provide your own DNS IP address:
             DEFAULT_DNS_IPV4_ADDRESS=172.21.3.100
 ```
 
-In the `gNB` section, provide your docker-host primary IP address and interface name: in our case `172.21.16.128` and `eno1`.
+gNB section:
+
+All the parameter values will be taken from the mounted config file
 
 ```yaml
-            GNB_NGA_IF_NAME: eno1
-            GNB_NGA_IP_ADDRESS: 172.21.16.128
-            GNB_NGU_IF_NAME: eno1
-            GNB_NGU_IP_ADDRESS: 172.21.16.128
+oai-gnb:
+        [...]
+        volumes:
+            - ../../conf_files/gnb.sa.band78.106prb.l2sim.conf:/opt/oai-gnb/etc/gnb.conf
 ```
 
-Same thing in the `nr-ue` section:
+with the configuration file having something like:
+
+```libconfig
+    NETWORK_INTERFACES :
+    {
+        GNB_INTERFACE_NAME_FOR_NG_AMF            = "eno1";
+        GNB_IPV4_ADDRESS_FOR_NG_AMF              = "172.21.16.128";
+        GNB_INTERFACE_NAME_FOR_NGU               = "eno1";
+        GNB_IPV4_ADDRESS_FOR_NGU                 = "172.21.16.128";
+        GNB_PORT_FOR_NGU                         = 2152; # Spec 2152
+    };
+```
+
+For the UE, all the parameter values will be taken from the mounted config
+file. Example:
 
 ```yaml
-            NR_UE_NFAPI_IF_NAME: eno1
+  oai-nr-ue0:
+        [...]
+        volumes:
+            - ../../conf_files/nrue.band78.106prb.l2sim.conf:/opt/oai-nr-ue/etc/nr-ue.conf
+            - ../../../openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results:/opt/oai-nr-ue/openair1/SIMULATION/LTE_PHY/BLER_SIMULATIONS/AWGN/AWGN_results
+```
+
+where the UE configuration (mounted to `/opt/oai-nr-ue/etc/nr-ue.conf`) reads
+
+```libconfig
+MACRLCs = (
+        {
+        num_cc = 1;
+        tr_n_preference = "nfapi";
+        local_n_if_name  = "eno1";
+        remote_n_address = "127.0.0.1"; //Proxy IP
+        local_n_address  = "127.0.0.1";
+        ...
 ```
 
 This tutorial is a first draft. This nFAPI feature and the proxy are still under development.
