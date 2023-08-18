@@ -1,9 +1,16 @@
+[[_TOC_]]
 
-   -O  is the only mandatory command line option to start the eNodeb softmodem (lte-softmodem executable), it is used to specify the configuration source with the associated parameters:
+# General usage
+
+`-O` is the only mandatory command line option to start the softmodems (4G/5G xNB, UEs). It is used to specify the configuration source with the associated parameters:
 ```bash
 $ ./lte-softmodem -O <configsource>:<parameter1>:<parameter2>:...
 ```
-  The configuration module can also be used without a configuration source, ie to only parse the command line. In this case the -O switch is optional. This mode is used in the ue-softmodem executable and by the phy_simulators executables (ulsim, dlsim)
+The same applies for `nr-softmodem`, `lte-uesoftmodem`, `nr-uesoftmodem`.
+
+The configuration module can also be used without a configuration source, ie to only parse the command line. In this case the -O switch is optional. This mode is typically used in the `lte-uesoftmodem` executable and by the physical simulator executables (`ulsim`, `dlsim`).
+
+# Configuration sources
 
 Currently the available config sources are:
 
@@ -12,6 +19,8 @@ Currently the available config sources are:
 $ ./lte-softmodem -O libconfig:<config>:dbgl<debuglevel>
 ```
 - **cmdlineonly**: command line only, the default mode for lte-uesoftmodem and the phy simiulators. In this case -O may be used to specify the config module debug level.
+
+# Detailed configuration information and debugging
 
 The debug level is a mask:
 *  bit 1: print parameters values
@@ -32,8 +41,8 @@ bit 5 (dbgl32) can be useful to detect unused parameters from a config file or t
 
 To get help on supported parameters you can use specific options:
 
-*  ---help: print help for command line only parameters and for parameters not defined in a specific section
-	*  ---help_< prefix > : print help for parameters defined under the section < prefix >
+*  `--help`: print help for command line only parameters and for parameters not defined in a specific section
+	*  `--help_<prefix>` : print help for parameters defined under the section `<prefix>`
 
 ```
 ./lte-softmodem -O libconfig:/usr/local/oai/conf/enb.nbiot.band7.tm1.50PRB.usrpb210.conf   --help
@@ -84,14 +93,15 @@ Getting ENBSParams
 --------------------------------------------------------------------
 
 /usr/local/oai/issue390_configmodule_cmdlinebug/openairinterface5g/common/config/config_cmdline.c:224 config_process_cmdline() Exiting OAI softmodem: [CONFIG] Exiting after displaying help
-
 ```
 
-For the lte-softmodem (the eNodeB) The config source parameter defaults to libconfig, preserving the initial -O option format. In this case you cannot specify the debug level.
+For the lte-softmodem (the eNodeB), the config source parameter defaults to libconfig, preserving the initial -O option format. In this case you cannot specify the debug level.
 
 ```bash
 $ ./lte-softmodem -O <config>
 ```
+
+# Configuration of the configuration module
 
 Configuration file parameters, except for the configuration file path,  can be specified in a **config** section in the configuration file:
 
@@ -101,7 +111,12 @@ config:
     debugflags = 1;
 }
 ```
-Configuration files examples can be found in the targets/PROJECTS/GENERIC-LTE-EPC/CONF sub-directory of the oai source tree. To minimize the number of configuration file to maintain, any parameter can also be specified on the command line. For example to modify the lte bandwidth to 20 MHz where the configuration file specifies 10MHz you can enter:
+
+Configuration files examples can be found in the `targets/PROJECTS/GENERIC-LTE-EPC/CONF` sub-directory of the oai source tree. 
+
+# Overwriting config options from the command line
+
+To minimize the number of configuration file to maintain, any parameter can also be specified on the command line. For example to modify the lte bandwidth to 20 MHz where the configuration file specifies 10MHz you can enter:
 
 ```bash
 $ ./lte-softmodem -O <config> --eNBs.[0].component_carriers.[0].N_RB_DL 100

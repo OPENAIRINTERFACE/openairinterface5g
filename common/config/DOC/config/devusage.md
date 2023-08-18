@@ -1,7 +1,7 @@
 The configuration module objectives are
 1. Allow easy parameters management in oai, helping the development of a flexible, modularized and fully configurable softmodem.
-1. Use a common configuration API in all oai modules
-1. Allow development of alternative configuration sources without modifying the oai code. Today the only delivered configuration source is the libconfig format configuration file.
+2. Use a common configuration API in all oai modules
+3. Allow development of alternative configuration sources without modifying the oai code. Today the only delivered configuration source is the libconfig format configuration file.
 
 As a developer you may need to look at these sections:
 
