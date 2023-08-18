@@ -1768,8 +1768,6 @@ static void nr_generate_Msg4(module_id_t module_idP,
       return;
     }
 
-    LOG_I(NR_MAC,"Generate msg4, rnti: %04x\n", ra->rnti);
-
     // HARQ management
     if (current_harq_pid < 0) {
       AssertFatal(sched_ctrl->available_dl_harq.head >= 0,
@@ -1824,7 +1822,6 @@ static void nr_generate_Msg4(module_id_t module_idP,
         ((NR_MAC_SUBHEADER_LONG *)&buf[mac_pdu_length])->L = htons(mac_sdu_length);
         ra->mac_pdu_length = mac_pdu_length + mac_sdu_length + sizeof(NR_MAC_SUBHEADER_LONG);
       }
-      LOG_I(NR_MAC,"Encoded RRCSetup Piggyback (%d + %d bytes), mac_pdu_length %d\n", mac_sdu_length, mac_subheader_len, ra->mac_pdu_length);
       memcpy(&buf[mac_pdu_length + mac_subheader_len], buffer, mac_sdu_length);
     }
 
@@ -1867,7 +1864,7 @@ static void nr_generate_Msg4(module_id_t module_idP,
     }
 
     ra->state = WAIT_Msg4_ACK;
-    LOG_D(NR_MAC,"[gNB %d][RAPROC] Frame %d, Subframe %d: RA state %d\n", module_idP, frameP, slotP, ra->state);
+    LOG_I(NR_MAC,"UE %04x Generate msg4: feedback at %4d.%2d, payload %d bytes, next state WAIT_Msg4_ACK\n", ra->rnti, pucch->frame, pucch->ul_slot, harq->tb_size);
   }
 }
 

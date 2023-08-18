@@ -894,7 +894,8 @@ static NR_UE_harq_t *find_harq(frame_t frame, sub_frame_t slot, NR_UE_info_t * U
   while (harq->feedback_frame != frame
          || (harq->feedback_frame == frame && harq->feedback_slot < slot)) {
     LOG_W(NR_MAC,
-          "expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the past)\n",
+          "UE %04x expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the past)\n",
+          UE->rnti,
           pid,
           harq->feedback_frame,
           harq->feedback_slot,
@@ -910,7 +911,8 @@ static NR_UE_harq_t *find_harq(frame_t frame, sub_frame_t slot, NR_UE_info_t * U
   /* feedbacks that we wait for in the future: don't do anything */
   if (harq->feedback_slot > slot) {
     LOG_W(NR_MAC,
-          "expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the future)\n",
+          "UE %04x expected HARQ pid %d feedback at %4d.%2d, but is at %4d.%2d instead (HARQ feedback is in the future)\n",
+          UE->rnti,
           pid,
           harq->feedback_frame,
           harq->feedback_slot,
@@ -943,7 +945,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
       NR_UE_harq_t *harq = find_harq(frame, slot, UE, nrmac->dl_bler.harq_round_max);
       if (!harq) {
-        LOG_E(NR_MAC, "Oh no! Could not find a harq in %s!\n", __FUNCTION__);
+        LOG_E(NR_MAC, "UE %04x: Could not find a HARQ process at %4d.%2d!\n", UE->rnti, frame, slot);
         break;
       }
       DevAssert(harq->is_waiting);
