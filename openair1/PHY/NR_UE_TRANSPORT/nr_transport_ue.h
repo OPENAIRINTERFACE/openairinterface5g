@@ -93,6 +93,8 @@ typedef struct {
   uint8_t BG;
   // LDPC lifting size
   uint32_t Z;
+  // TB size
+  uint32_t tb_size;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
