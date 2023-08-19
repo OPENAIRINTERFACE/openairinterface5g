@@ -688,19 +688,20 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_0->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
     int R = nr_get_code_rate_dl(dlsch_config_pdu_1_0->mcs, dlsch_config_pdu_1_0->mcs_table);
     dlsch_config_pdu_1_0->targetCodeRate = R;
-    if (dlsch_config_pdu_1_0->targetCodeRate == 0 || dlsch_config_pdu_1_0->qamModOrder == 0) {
+    if (dlsch_config_pdu_1_0->qamModOrder == 0) {
       LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
       return -1;
     }
 
     int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
     int nb_re_dmrs = ((dlsch_config_pdu_1_0->dmrsConfigType == NFAPI_NR_DMRS_TYPE1) ? 6:4)*dlsch_config_pdu_1_0->n_dmrs_cdm_groups;
-    dlsch_config_pdu_1_0->TBS = nr_compute_tbs(dlsch_config_pdu_1_0->qamModOrder,
-                                               R,
-                                               dlsch_config_pdu_1_0->number_rbs,
-                                               dlsch_config_pdu_1_0->number_symbols,
-                                               nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_0->dlDmrsSymbPos),
-                                               nb_rb_oh, 0, 1);
+    if (R > 0)
+      dlsch_config_pdu_1_0->TBS = nr_compute_tbs(dlsch_config_pdu_1_0->qamModOrder,
+                                                 R,
+                                                 dlsch_config_pdu_1_0->number_rbs,
+                                                 dlsch_config_pdu_1_0->number_symbols,
+                                                 nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_0->dlDmrsSymbPos),
+                                                 nb_rb_oh, 0, 1);
 
     int bw_tbslbrm;
     if (current_DL_BWP->initial_BWPSize > 0)
@@ -1104,7 +1105,7 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     dlsch_config_pdu_1_1->qamModOrder = nr_get_Qm_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
     int R = nr_get_code_rate_dl(dlsch_config_pdu_1_1->mcs, dlsch_config_pdu_1_1->mcs_table);
     dlsch_config_pdu_1_1->targetCodeRate = R;
-    if (dlsch_config_pdu_1_1->targetCodeRate == 0 || dlsch_config_pdu_1_1->qamModOrder == 0) {
+    if (dlsch_config_pdu_1_1->qamModOrder == 0) {
       LOG_W(MAC, "Invalid code rate or Mod order, likely due to unexpected DL DCI.\n");
       return -1;
     }
@@ -1114,12 +1115,13 @@ int8_t nr_ue_process_dci(module_id_t module_id, int cc_id, uint8_t gNB_index, fr
     }
     int nb_rb_oh = 0; // it was not computed at UE side even before and set to 0 in nr_compute_tbs
     int nb_re_dmrs = ((dmrs_type == NULL) ? 6:4)*dlsch_config_pdu_1_1->n_dmrs_cdm_groups;
-    dlsch_config_pdu_1_1->TBS = nr_compute_tbs(dlsch_config_pdu_1_1->qamModOrder,
-                                               R,
-                                               dlsch_config_pdu_1_1->number_rbs,
-                                               dlsch_config_pdu_1_1->number_symbols,
-                                               nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_1->dlDmrsSymbPos),
-                                               nb_rb_oh, 0, Nl);
+    if (R > 0)
+      dlsch_config_pdu_1_1->TBS = nr_compute_tbs(dlsch_config_pdu_1_1->qamModOrder,
+                                                 R,
+                                                 dlsch_config_pdu_1_1->number_rbs,
+                                                 dlsch_config_pdu_1_1->number_symbols,
+                                                 nb_re_dmrs*get_num_dmrs(dlsch_config_pdu_1_1->dlDmrsSymbPos),
+                                                 nb_rb_oh, 0, Nl);
 
     // TBS_LBRM according to section 5.4.2.1 of 38.212
     long *maxMIMO_Layers = current_DL_BWP->pdsch_servingcellconfig->ext1->maxMIMO_Layers;
