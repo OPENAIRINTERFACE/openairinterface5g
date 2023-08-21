@@ -63,3 +63,13 @@ void createF1inst(instance_t instanceP, f1ap_setup_req_t *req, f1ap_net_config_t
     f1_inst[0]->net_config = *nc;
   pthread_mutex_unlock(&f1_inst_mtx);
 }
+
+void destroyF1inst(instance_t instance)
+{
+  DevAssert(instance == 0);
+  pthread_mutex_lock(&f1_inst_mtx);
+  AssertFatal(f1_inst[0] != NULL, "Attempted to free uninitialized F1 instances\n");
+  free(f1_inst[instance]);
+  f1_inst[instance] = NULL;
+  pthread_mutex_unlock(&f1_inst_mtx);
+}

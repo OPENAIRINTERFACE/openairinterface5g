@@ -71,6 +71,18 @@ static void cu_task_handle_sctp_association_ind(instance_t instance,
 static void cu_task_handle_sctp_association_resp(instance_t instance, sctp_new_association_resp_t *sctp_new_association_resp) {
   DevAssert(sctp_new_association_resp != NULL);
 
+  if (sctp_new_association_resp->sctp_state == SCTP_STATE_SHUTDOWN) {
+    f1ap_cudu_inst_t *f1ap_cu_data = getCxt(instance);
+    AssertFatal(f1ap_cu_data != NULL, "illegal state: SCTP shutdown for non-existing F1AP endpoint\n");
+    LOG_I(F1AP, "Received SCTP shutdown for assoc_id %d, removing endpoint\n", sctp_new_association_resp->assoc_id);
+    destroyF1inst(instance);
+    /* inform RRC that the DU is gone */
+    MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_LOST_CONNECTION);
+    message_p->ittiMsgHeader.originInstance = sctp_new_association_resp->assoc_id;
+    itti_send_msg_to_task(TASK_RRC_GNB, instance, message_p);
+    return;
+  }
+
   if (sctp_new_association_resp->sctp_state != SCTP_STATE_ESTABLISHED) {
     LOG_W(F1AP, "Received unsuccessful result for SCTP association (%u), instance %ld, cnx_id %u\n",
           sctp_new_association_resp->sctp_state,

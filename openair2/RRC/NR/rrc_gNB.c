@@ -1801,12 +1801,12 @@ static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell
     && rrc->nr_cellid == info->nr_cellid;
 }
 
-static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
+static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, int assoc_id)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   DevAssert(rrc);
 
-  LOG_I(NR_RRC, "Received F1 Setup Request from gNB_DU %lu (%s)\n", req->gNB_DU_id, req->gNB_DU_name);
+  LOG_I(NR_RRC, "Received F1 Setup Request from gNB_DU %lu (%s) on assoc_id %d\n", req->gNB_DU_id, req->gNB_DU_name, assoc_id);
 
   // check:
   // - it is the first DU
@@ -1876,6 +1876,7 @@ static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req)
   // we accept the DU
   rrc->du = calloc(1, sizeof(*rrc->du));
   AssertFatal(rrc->du != NULL, "out of memory\n");
+  rrc->du->assoc_id = assoc_id;
 
   /* ITTI will free the setup request message via free(). So the memory
    * "inside" of the message will remain, but the "outside" container no, so
@@ -2423,6 +2424,21 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   prepare_and_send_ue_context_modification_f1(ue_context_p, resp);
 }
 
+static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, int assoc_id)
+{
+  AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
+  AssertFatal(rrc->du->assoc_id == assoc_id,
+              "previously connected DU (%d) does not match DU for which connection has been lost (%d)\n",
+              rrc->du->assoc_id,
+              assoc_id);
+  (void) lc; // unused for the moment
+  ASN_STRUCT_FREE(asn_DEF_NR_MIB, rrc->du->mib);
+  ASN_STRUCT_FREE(asn_DEF_NR_SIB1, rrc->du->sib1);
+  free(rrc->du);
+  rrc->du = NULL;
+  LOG_I(RRC, "dropping DU with assoc_id %d (UE connections remain, if any)\n", assoc_id);
+}
+
 static void print_rrc_meas(FILE *f, const NR_MeasResults_t *measresults)
 {
   DevAssert(measresults->measResultServingMOList.list.count >= 1);
@@ -2621,7 +2637,7 @@ void *rrc_gnb_task(void *args_p) {
       /* Messages from F1AP task */
       case F1AP_SETUP_REQ:
         AssertFatal(!NODE_IS_DU(RC.nrrrc[instance]->node_type), "should not receive F1AP_SETUP_REQUEST in DU!\n");
-        rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p));
+        rrc_gNB_process_f1_setup_req(&F1AP_SETUP_REQ(msg_p), msg_p->ittiMsgHeader.originInstance);
         break;
 
       case F1AP_UE_CONTEXT_SETUP_RESP:
@@ -2642,6 +2658,10 @@ void *rrc_gnb_task(void *args_p) {
 
       case F1AP_UE_CONTEXT_RELEASE_COMPLETE:
         rrc_CU_process_ue_context_release_complete(msg_p);
+        break;
+
+      case F1AP_LOST_CONNECTION:
+        rrc_CU_process_f1_lost_connection(RC.nrrrc[0], &F1AP_LOST_CONNECTION(msg_p), msg_p->ittiMsgHeader.originInstance);
         break;
 
       /* Messages from X2AP */

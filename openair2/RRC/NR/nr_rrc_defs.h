@@ -369,6 +369,7 @@ typedef struct cucp_cuup_if_s {
 } cucp_cuup_if_t;
 
 typedef struct nr_rrc_du_container_t {
+  int assoc_id;
   f1ap_setup_req_t *setup_req;
   NR_MIB_t *mib;
   NR_SIB1_t *sib1;

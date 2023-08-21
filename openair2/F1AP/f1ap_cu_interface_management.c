@@ -94,6 +94,7 @@ int CU_handle_F1_SETUP_REQUEST(instance_t instance,
   }
 
   MessageDef *message_p = itti_alloc_new_message(TASK_CU_F1, 0, F1AP_SETUP_REQ);
+  message_p->ittiMsgHeader.originInstance = assoc_id;
   f1ap_setup_req_t *req = &F1AP_SETUP_REQ(message_p);
   /* gNB_DU_id */
   // this function exits if the ie is mandatory
