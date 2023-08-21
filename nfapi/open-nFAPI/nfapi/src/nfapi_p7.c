@@ -6076,20 +6076,20 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 		  return 0;
 	if (value->pduBitmap & 0x01) { //SR
 		if(!(pull8(ppReadPackedMsg, &value->sr.sr_indication, end) &&
-	 	 pull8(ppReadPackedMsg, &value->sr.sr_confidence_level, end) 
+	 pull8(ppReadPackedMsg, &value->sr.sr_confidence_level, end)
 		 ))
 		  return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
 
-                
+
                 if (!(pull8(ppReadPackedMsg, &value->harq.num_harq, end) &&
                         pull8(ppReadPackedMsg, &value->harq.harq_confidence_level, end)
                         ))
                         return 0;
                 if (value->harq.num_harq > 0) {
-                        
+
                         for (int i = 0; i < value->harq.num_harq; i++) {
                                 if (!pull8(ppReadPackedMsg, &value->harq.harq_list[i].harq_value, end)) {
                                         return 0;

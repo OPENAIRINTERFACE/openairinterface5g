@@ -820,7 +820,6 @@ int phy_nr_uci_indication(nfapi_nr_uci_indication_t *ind)
       {
           if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_0_1_PDU_TYPE)
           {
-            
           }
           if (uci_ind->uci_list[i].pdu_type == NFAPI_NR_UCI_FORMAT_2_3_4_PDU_TYPE)
           {

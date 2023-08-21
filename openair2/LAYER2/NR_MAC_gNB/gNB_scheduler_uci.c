@@ -960,9 +960,6 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     else
       sched_ctrl->tpc1 = 3;
     sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
-
-    
-    
   }
 
   // check scheduling request result, confidence_level == 0 is good
@@ -972,7 +969,7 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
       sched_ctrl->SR |= true;
       LOG_D(NR_MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
     }
-    
+
   }
   NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
