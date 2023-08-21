@@ -501,9 +501,6 @@ int do_RRCSetup(rrc_gNB_ue_context_t *const ue_context_pP,
   memcpy(ie->masterCellGroup.buf, masterCellGroup, masterCellGroup_len);
   ie->masterCellGroup.size = masterCellGroup_len;
 
-  // decode masterCellGroup OCTET_STRING received from DU and place in ue context
-  ue_p->masterCellGroup = decode_cellGroupConfig(masterCellGroup, masterCellGroup_len);
-
   if (LOG_DEBUGFLAG(DEBUG_ASN1)) {
     xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, ue_p->masterCellGroup);
     xer_fprint(stdout, &asn_DEF_NR_DL_CCCH_Message, (void *)&dl_ccch_msg);
@@ -512,6 +509,9 @@ int do_RRCSetup(rrc_gNB_ue_context_t *const ue_context_pP,
   asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_CCCH_Message, NULL, (void *)&dl_ccch_msg, buffer, 1000);
 
   AssertFatal(enc_rval.encoded > 0, "ASN1 message encoding failed (%s, %lu)!\n", enc_rval.failed_type->name, enc_rval.encoded);
+  // free what we did not allocate ourselves
+  ie->radioBearerConfig.srb_ToAddModList = NULL;
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_CCCH_Message, &dl_ccch_msg);
 
   LOG_D(NR_RRC, "RRCSetup Encoded %zd bits (%zd bytes)\n", enc_rval.encoded, (enc_rval.encoded + 7) / 8);
   return ((enc_rval.encoded + 7) / 8);
