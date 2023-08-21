@@ -576,7 +576,6 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   NR_DL_DCCH_Message_t dl_dcch_msg;
   NR_UE_CapabilityRAT_Request_t *ue_capabilityrat_request;
 
-  asn_enc_rval_t enc_rval;
   memset(&dl_dcch_msg,0,sizeof(NR_DL_DCCH_Message_t));
   dl_dcch_msg.message.present           = NR_DL_DCCH_MessageType_PR_c1;
   dl_dcch_msg.message.choice.c1 = CALLOC(1,sizeof(struct NR_DL_DCCH_MessageType__c1));
@@ -601,25 +600,16 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
   sa_band_filter = (NR_UE_CapabilityRequestFilterNR_t*)calloc(1,sizeof(NR_UE_CapabilityRequestFilterNR_t));
   sa_band_filter->frequencyBandListFilter = sa_band_list;
 
-  OCTET_STRING_t req_freq;
-  unsigned char req_freq_buf[1024];
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR,
-				   NULL,
-				   (void *)sa_band_filter,
-				   req_freq_buf,
-				   1024);
-  AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
-              enc_rval.failed_type->name, enc_rval.encoded);
-
+  OCTET_STRING_t *req_freq = calloc(1, sizeof(*req_freq));
+  AssertFatal(req_freq != NULL, "out of memory\n");
+  req_freq->size = uper_encode_to_new_buffer(&asn_DEF_NR_UE_CapabilityRequestFilterNR, NULL, sa_band_filter, (void **)&req_freq->buf);
+  AssertFatal(req_freq->size > 0, "ASN1 message encoding failed (encoded %lu bytes)!\n", req_freq->size);
 
   if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
     xer_fprint(stdout, &asn_DEF_NR_UE_CapabilityRequestFilterNR, (void *)sa_band_filter);
   }
 
-  req_freq.buf = req_freq_buf;
-  req_freq.size = (enc_rval.encoded+7)/8;
-
-  ue_capabilityrat_request->capabilityRequestFilter = &req_freq;
+  ue_capabilityrat_request->capabilityRequestFilter = req_freq;
 
   asn1cSeqAdd(&dl_dcch_msg.message.choice.c1->choice.ueCapabilityEnquiry->criticalExtensions.choice.ueCapabilityEnquiry->ue_CapabilityRAT_RequestList.list,
                    ue_capabilityrat_request);
@@ -629,14 +619,11 @@ uint8_t do_NR_SA_UECapabilityEnquiry( const protocol_ctxt_t *const ctxt_pP,
     xer_fprint(stdout, &asn_DEF_NR_DL_DCCH_Message, (void *)&dl_dcch_msg);
   }
 
-  enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message,
-                                   NULL,
-                                   (void *)&dl_dcch_msg,
-                                   buffer,
-                                   100);
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message, NULL, (void *)&dl_dcch_msg, buffer, 100);
 
   AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
               enc_rval.failed_type->name, enc_rval.encoded);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message, &dl_dcch_msg);
 
   LOG_D(NR_RRC, "[gNB %d] NR UECapabilityRequest for UE %lx Encoded %zd bits (%zd bytes)\n", ctxt_pP->module_id, ctxt_pP->rntiMaybeUEid, enc_rval.encoded, (enc_rval.encoded + 7) / 8);
 
