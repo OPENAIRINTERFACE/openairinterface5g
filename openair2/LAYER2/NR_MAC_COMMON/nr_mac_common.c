@@ -4642,17 +4642,8 @@ int compute_pucch_crc_size(int O_uci)
   }
 }
 
-uint16_t compute_pucch_prb_size(uint8_t format,
-                                uint8_t nr_prbs,
-                                uint16_t O_uci,
-                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
-                                uint8_t Qm,
-                                uint8_t n_symb,
-                                uint8_t n_re_ctrl)
+float get_max_code_rate(NR_PUCCH_MaxCodeRate_t *maxCodeRate)
 {
-  int O_crc = compute_pucch_crc_size(O_uci);
-  int O_tot = O_uci + O_crc;
-
   int rtimes100;
   switch(*maxCodeRate){
     case NR_PUCCH_MaxCodeRate_zeroDot08 :
@@ -4680,12 +4671,46 @@ uint16_t compute_pucch_prb_size(uint8_t format,
     AssertFatal(1==0,"Invalid MaxCodeRate");
   }
 
-  float r = (float)rtimes100/100;
+  float r = (float)rtimes100 / 100;
+  return r;
+}
+
+int get_f3_dmrs_symbols(NR_PUCCH_Resource_t *pucchres, NR_PUCCH_Config_t *pucch_Config)
+{
+  int f3_dmrs_symbols;
+  int add_dmrs_flag;
+  if (pucch_Config->format3 == NULL)
+    add_dmrs_flag = 0;
+  else
+    add_dmrs_flag = pucch_Config->format3->choice.setup->additionalDMRS ? 1 : 0;
+  if (pucchres->format.choice.format3->nrofSymbols == 4)
+    f3_dmrs_symbols = 1 << (pucchres->intraSlotFrequencyHopping ? 1 : 0);
+  else {
+    if (pucchres->format.choice.format3->nrofSymbols < 10)
+      f3_dmrs_symbols = 2;
+    else
+      f3_dmrs_symbols = 2 << add_dmrs_flag;
+  }
+  return f3_dmrs_symbols;
+}
+
+uint16_t compute_pucch_prb_size(uint8_t format,
+                                uint8_t nr_prbs,
+                                uint16_t O_uci,
+                                NR_PUCCH_MaxCodeRate_t *maxCodeRate,
+                                uint8_t Qm,
+                                uint8_t n_symb,
+                                uint8_t n_re_ctrl)
+{
+  int O_crc = compute_pucch_crc_size(O_uci);
+  int O_tot = O_uci + O_crc;
+
+  float r = get_max_code_rate(maxCodeRate);
 
   AssertFatal(O_tot <= (nr_prbs * n_re_ctrl * n_symb * Qm * r),
               "MaxCodeRate %.2f can't support %d UCI bits and %d CRC bits with %d PRBs",
               r,
-              O_tot,
+              O_uci,
               O_crc,
               nr_prbs);
 
