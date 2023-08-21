@@ -495,19 +495,7 @@ static void config_srs(const NR_ServingCellConfigCommon_t *scc,
   NR_SRS_Config_t *srs_Config;
   if (setup_release_srs_Config->choice.setup) {
     srs_Config = setup_release_srs_Config->choice.setup;
-    if (srs_Config->srs_ResourceSetToReleaseList) {
-      free(srs_Config->srs_ResourceSetToReleaseList);
-    }
-    if (srs_Config->srs_ResourceSetToAddModList) {
-      free(srs_Config->srs_ResourceSetToAddModList);
-    }
-    if (srs_Config->srs_ResourceToReleaseList) {
-      free(srs_Config->srs_ResourceToReleaseList);
-    }
-    if (srs_Config->srs_ResourceToAddModList) {
-      free(srs_Config->srs_ResourceToAddModList);
-    }
-    free(srs_Config);
+    ASN_STRUCT_FREE(asn_DEF_NR_SRS_Config, srs_Config);
   }
 
   setup_release_srs_Config->choice.setup = calloc(1,sizeof(*setup_release_srs_Config->choice.setup));
