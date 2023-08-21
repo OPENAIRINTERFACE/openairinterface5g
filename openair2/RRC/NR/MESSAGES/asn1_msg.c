@@ -1206,6 +1206,11 @@ NR_MeasConfig_t *get_defaultMeasConfig(int arfcn, int band, int scs)
   return mc;
 }
 
+void free_defaultMeasConfig(NR_MeasConfig_t *mc)
+{
+  ASN_STRUCT_FREE(asn_DEF_NR_MeasConfig, mc);
+}
+
 uint8_t do_NR_Paging(uint8_t Mod_id, uint8_t *buffer, uint32_t tmsi) {
   LOG_D(NR_RRC, "[gNB %d] do_NR_Paging start\n", Mod_id);
   NR_PCCH_Message_t pcch_msg;
