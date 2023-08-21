@@ -679,7 +679,6 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
   NR_DL_DCCH_Message_t                             dl_dcch_msg={0};
     asn_enc_rval_t                                   enc_rval;
     NR_RRCReconfiguration_IEs_t                      *ie;
-    unsigned char masterCellGroup_buf[1000];
 
     dl_dcch_msg.message.present            = NR_DL_DCCH_MessageType_PR_c1;
     asn1cCalloc(dl_dcch_msg.message.choice.c1, c1);//          = CALLOC(1, sizeof(struct NR_DL_DCCH_MessageType__c1));
@@ -723,20 +722,15 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
     }
 
     if (cellGroupConfig != NULL) {
-      enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig,
-                                       NULL,
-                                       (void *)cellGroupConfig,
-                                       masterCellGroup_buf,
-                                       1000);
-      AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
-                  enc_rval.failed_type->name, enc_rval.encoded);
+      uint8_t *buf = NULL;
+      ssize_t len = uper_encode_to_new_buffer(&asn_DEF_NR_CellGroupConfig, NULL, cellGroupConfig, (void **)&buf);
+      AssertFatal(len > 0, "ASN1 message encoding failed (%lu)!\n", len);
       if ( LOG_DEBUGFLAG(DEBUG_ASN1) ) {
         xer_fprint(stdout, &asn_DEF_NR_CellGroupConfig, (const void *) cellGroupConfig);
       }
       ie->nonCriticalExtension->masterCellGroup = calloc(1,sizeof(OCTET_STRING_t));
-
-      ie->nonCriticalExtension->masterCellGroup->buf = masterCellGroup_buf;
-      ie->nonCriticalExtension->masterCellGroup->size = (enc_rval.encoded+7)/8;
+      ie->nonCriticalExtension->masterCellGroup->buf = buf;
+      ie->nonCriticalExtension->masterCellGroup->size = len;
     }
 
     dl_dcch_msg.message.choice.c1->choice.rrcReconfiguration->criticalExtensions.choice.rrcReconfiguration = ie;
@@ -754,6 +748,19 @@ int16_t do_RRCReconfiguration(const gNB_RRC_UE_t *UE,
     AssertFatal(enc_rval.encoded >0, "ASN1 message encoding failed (%s, %lu)!\n",
                 enc_rval.failed_type->name, enc_rval.encoded);
 
+    // don't free what we did not allocate, so set fields with pointers to NULL
+    // if memory comes from outside
+    ie->measConfig = NULL;
+    if (ie->radioBearerConfig) {
+      ie->radioBearerConfig->srb_ToAddModList = NULL;
+      ie->radioBearerConfig->drb_ToAddModList = NULL;
+      ie->radioBearerConfig->securityConfig = NULL;
+      ie->radioBearerConfig->srb3_ToRelease = NULL;
+      ie->radioBearerConfig->drb_ToReleaseList = NULL;
+    }
+    if (ie->nonCriticalExtension)
+      ie->nonCriticalExtension->dedicatedNAS_MessageList = NULL;
+    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message, &dl_dcch_msg);
     LOG_D(NR_RRC,
           "RRCReconfiguration for UE %d: Encoded %zd bits (%zd bytes)\n",
           UE->rrc_ue_id,
