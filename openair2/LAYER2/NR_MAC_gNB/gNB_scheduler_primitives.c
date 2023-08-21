@@ -1956,6 +1956,7 @@ void delete_nr_ue_data(NR_UE_info_t *UE, NR_COMMON_channels_t *ccPtr, uid_alloca
   destroy_nr_list(&sched_ctrl->available_ul_harq);
   destroy_nr_list(&sched_ctrl->feedback_ul_harq);
   destroy_nr_list(&sched_ctrl->retrans_ul_harq);
+  free_sched_pucch_list(sched_ctrl);
   uid_linear_allocator_free(uia, UE->uid);
   LOG_I(NR_MAC, "Remove NR rnti 0x%04x\n", UE->rnti);
   free(UE);
@@ -2362,6 +2363,11 @@ void set_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl,
     }
     sched_ctrl->sched_pucch_size = list_size;
   }
+}
+
+void free_sched_pucch_list(NR_UE_sched_ctrl_t *sched_ctrl)
+{
+  free(sched_ctrl->sched_pucch);
 }
 
 void create_dl_harq_list(NR_UE_sched_ctrl_t *sched_ctrl,
