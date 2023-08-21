@@ -2260,9 +2260,7 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
     csires1->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
     asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list, csires1);
 
-    NR_PUCCH_CSI_Resource_t *pucchcsires1 = calloc(1, sizeof(*pucchcsires1));
-    pucchcsires1->uplinkBandwidthPartId = bwp_id;
-    pucchcsires1->pucch_Resource = 2;
+    int pucch_Resource = 2;
 
     if (configuration->do_CSIRS) {
       NR_CSI_ResourceConfig_t *csires0 = calloc(1, sizeof(*csires0));
@@ -2293,16 +2291,22 @@ static NR_SpCellConfig_t *get_initial_SpCellConfig(int uid,
       csires2->resourceType = NR_CSI_ResourceConfig__resourceType_periodic;
       asn1cSeqAdd(&csi_MeasConfig->csi_ResourceConfigToAddModList->list, csires2);
 
+      NR_PUCCH_CSI_Resource_t *pucchcsi = calloc(1, sizeof(*pucchcsi));
+      pucchcsi->uplinkBandwidthPartId = bwp_id;
+      pucchcsi->pucch_Resource = pucch_Resource;
       config_csi_meas_report(csi_MeasConfig,
                              scc,
-                             pucchcsires1,
+                             pucchcsi,
                              pdsch_Config,
                              &configuration->pdsch_AntennaPorts,
                              NR_MAX_SUPPORTED_DL_LAYERS,
                              bwp_id,
                              uid);
     }
-    config_rsrp_meas_report(csi_MeasConfig, scc, pucchcsires1, configuration->do_CSIRS, bwp_id + 10, uid);
+    NR_PUCCH_CSI_Resource_t *pucchrsrp = calloc(1, sizeof(*pucchrsrp));
+    pucchrsrp->uplinkBandwidthPartId = bwp_id;
+    pucchrsrp->pucch_Resource = pucch_Resource;
+    config_rsrp_meas_report(csi_MeasConfig, scc, pucchrsrp, configuration->do_CSIRS, bwp_id + 10, uid);
   }
   pdsch_servingcellconfig->codeBlockGroupTransmission = NULL;
   pdsch_servingcellconfig->xOverhead = NULL;
