@@ -1192,6 +1192,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
             /* randomValue                         BIT STRING (SIZE (39)) */
             if (rrcSetupRequest->ue_Identity.choice.randomValue.size != 5) { // 39-bit random value
               LOG_E(NR_RRC, "wrong InitialUE-Identity randomValue size, expected 5, provided %lu", (long unsigned int)rrcSetupRequest->ue_Identity.choice.randomValue.size);
+              ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
               return -1;
             }
             uint64_t random_value = 0;
@@ -1212,6 +1213,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
             /* ng-5G-S-TMSI-Part1                  BIT STRING (SIZE (39)) */
             if (rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size != 5) {
               LOG_E(NR_RRC, "wrong ng_5G_S_TMSI_Part1 size, expected 5, provided %lu \n", (long unsigned int)rrcSetupRequest->ue_Identity.choice.ng_5G_S_TMSI_Part1.size);
+              ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
               return -1;
             }
 
@@ -1232,10 +1234,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
               LOG_I(NR_RRC, "UE %04x 5G-S-TMSI-Part1 doesn't exist, setting ng_5G_S_TMSI_Part1 => %ld\n", rnti, s_tmsi_part1);
 
               ue_context_p = rrc_gNB_create_ue_context(rnti, gnb_rrc_inst, s_tmsi_part1, msg->gNB_DU_ue_id);
-              if (ue_context_p == NULL) {
-                LOG_E(NR_RRC, "rrc_gNB_get_next_free_ue_context returned NULL\n");
-                return -1;
-              }
+              AssertFatal(ue_context_p != NULL, "out of memory\n");
               gNB_RRC_UE_t *UE = &ue_context_p->ue_context;
               UE->Initialue_identity_5g_s_TMSI.presence = true;
               UE->ng_5G_S_TMSI_Part1 = s_tmsi_part1;
@@ -1357,6 +1356,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         break;
     }
   }
+  ASN_STRUCT_FREE(asn_DEF_NR_UL_CCCH_Message, ul_ccch_msg);
   return 0;
 }
 
