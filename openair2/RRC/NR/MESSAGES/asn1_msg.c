@@ -948,41 +948,36 @@ uint8_t do_RRCSetupComplete(uint8_t Mod_id, uint8_t *buffer, size_t buffer_size,
 }
 
 //------------------------------------------------------------------------------
-uint8_t 
-do_NR_DLInformationTransfer(
-    uint8_t Mod_id,
-    uint8_t **buffer,
-    uint8_t transaction_id,
-    uint32_t pdu_length,
-    uint8_t *pdu_buffer
-)
+uint8_t do_NR_DLInformationTransfer(uint8_t Mod_id,
+                                    uint8_t *buffer,
+                                    size_t buffer_len,
+                                    uint8_t transaction_id,
+                                    uint32_t pdu_length,
+                                    uint8_t *pdu_buffer)
 //------------------------------------------------------------------------------
 {
-    ssize_t encoded;
-    NR_DL_DCCH_Message_t   dl_dcch_msg={0};
-    dl_dcch_msg.message.present            = NR_DL_DCCH_MessageType_PR_c1;
-    asn1cCalloc(dl_dcch_msg.message.choice.c1, c1);
-    c1->present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
+  NR_DL_DCCH_Message_t dl_dcch_msg = {0};
+  dl_dcch_msg.message.present = NR_DL_DCCH_MessageType_PR_c1;
+  asn1cCalloc(dl_dcch_msg.message.choice.c1, c1);
+  c1->present = NR_DL_DCCH_MessageType__c1_PR_dlInformationTransfer;
 
-    asn1cCalloc(c1->choice.dlInformationTransfer, infoTransfer);
-    infoTransfer->rrc_TransactionIdentifier = transaction_id;
-    infoTransfer->criticalExtensions.present =
-        NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer;
+  asn1cCalloc(c1->choice.dlInformationTransfer, infoTransfer);
+  infoTransfer->rrc_TransactionIdentifier = transaction_id;
+  infoTransfer->criticalExtensions.present = NR_DLInformationTransfer__criticalExtensions_PR_dlInformationTransfer;
 
-    asn1cCalloc(infoTransfer->criticalExtensions.choice.dlInformationTransfer, dlInfoTransfer);
-    asn1cCalloc(dlInfoTransfer->dedicatedNAS_Message,msg);
-    // we will free the caller buffer, that is ok in the present code logic (else it will leak memory) but not natural,
-    // comprehensive code design
-    msg->buf = pdu_buffer;
-    msg->size = pdu_length;
+  asn1cCalloc(infoTransfer->criticalExtensions.choice.dlInformationTransfer, dlInfoTransfer);
+  asn1cCalloc(dlInfoTransfer->dedicatedNAS_Message, msg);
+  // we will free the caller buffer, that is ok in the present code logic (else it will leak memory) but not natural,
+  // comprehensive code design
+  msg->buf = pdu_buffer;
+  msg->size = pdu_length;
 
-    encoded = uper_encode_to_new_buffer (&asn_DEF_NR_DL_DCCH_Message, NULL, (void *) &dl_dcch_msg, (void **)buffer);
-    AssertFatal(encoded > 0,"ASN1 message encoding failed (%s, %ld)!\n",
-                "DLInformationTransfer", encoded);
-    ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message,&dl_dcch_msg );
-    LOG_D(NR_RRC,"DLInformationTransfer Encoded %zd bytes\n", encoded);
-    //for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
-    return encoded;
+  asn_enc_rval_t r = uper_encode_to_buffer(&asn_DEF_NR_DL_DCCH_Message, NULL, (void *)&dl_dcch_msg, buffer, buffer_len);
+  AssertFatal(r.encoded > 0, "ASN1 message encoding failed (%s, %ld)!\n", "DLInformationTransfer", r.encoded);
+  ASN_STRUCT_FREE_CONTENTS_ONLY(asn_DEF_NR_DL_DCCH_Message, &dl_dcch_msg);
+  LOG_D(NR_RRC, "DLInformationTransfer Encoded %zd bytes\n", r.encoded);
+  // for (int i=0;i<encoded;i++) printf("%02x ",(*buffer)[i]);
+  return r.encoded;
 }
 
 uint8_t do_NR_ULInformationTransfer(uint8_t **buffer, uint32_t pdu_length, uint8_t *pdu_buffer) {
