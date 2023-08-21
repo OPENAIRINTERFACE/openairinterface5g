@@ -13,7 +13,7 @@
 </table>
 
 This page is only valid for an `Ubuntu18` host.
-I has been tested also for `Ubuntu20`.
+It has also been tested also on `Ubuntu 20.04.1 LTS`.
 
 This tutorial is only valid once this file is merged into the `develop` branch.
 # 1. Adapt the `docker-compose` to your environment #
@@ -219,7 +219,7 @@ docker logs l2sim-oai-amf
 ## 3.3. Deploy OAI NR-UE and proxy
 
 ```bash
-docker-compose up -d proxy oai-nr-ue0
+docker-compose up -d proxy oai-nr-ue
 ```
 ```bash
 l2sim-mysql is up-to-date
