@@ -190,8 +190,10 @@ rrc_gNB_send_NGAP_NAS_FIRST_REQ(
   req->establishment_cause = UE->establishment_cause;
 
   /* Forward NAS message */
-  req->nas_pdu.buffer = rrcSetupComplete->dedicatedNAS_Message.buf;
   req->nas_pdu.length = rrcSetupComplete->dedicatedNAS_Message.size;
+  req->nas_pdu.buffer = malloc(req->nas_pdu.length);
+  AssertFatal(req->nas_pdu.buffer != NULL, "out of memory\n");
+  memcpy(req->nas_pdu.buffer, rrcSetupComplete->dedicatedNAS_Message.buf, req->nas_pdu.length);
   // extract_imsi(NGAP_NAS_FIRST_REQ (message_p).nas_pdu.buffer,
   //              NGAP_NAS_FIRST_REQ (message_p).nas_pdu.length,
   //              ue_context_pP);
@@ -637,19 +639,19 @@ rrc_gNB_send_NGAP_UPLINK_NAS(
 )
 //------------------------------------------------------------------------------
 {
-    uint32_t pdu_length;
-    uint8_t *pdu_buffer;
     MessageDef *msg_p;
     NR_ULInformationTransfer_t *ulInformationTransfer = ul_dcch_msg->message.choice.c1->choice.ulInformationTransfer;
     gNB_RRC_UE_t *UE = &ue_context_pP->ue_context;
 
     if (ulInformationTransfer->criticalExtensions.present == NR_ULInformationTransfer__criticalExtensions_PR_ulInformationTransfer) {
-        pdu_length = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->size;
-        pdu_buffer = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message->buf;
+      NR_DedicatedNAS_Message_t *nas = ulInformationTransfer->criticalExtensions.choice.ulInformationTransfer->dedicatedNAS_Message;
+        uint8_t *buf = malloc(nas->size);
+        AssertFatal(buf != NULL, "out of memory\n");
+        memcpy(buf, nas->buf, nas->size);
         msg_p = itti_alloc_new_message (TASK_RRC_GNB, 0, NGAP_UPLINK_NAS);
         NGAP_UPLINK_NAS(msg_p).gNB_ue_ngap_id = UE->rrc_ue_id;
-        NGAP_UPLINK_NAS (msg_p).nas_pdu.length = pdu_length;
-        NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = pdu_buffer;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.length = nas->size;
+        NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer = buf;
         // extract_imsi(NGAP_UPLINK_NAS (msg_p).nas_pdu.buffer,
         //               NGAP_UPLINK_NAS (msg_p).nas_pdu.length,
         //               ue_context_pP);
