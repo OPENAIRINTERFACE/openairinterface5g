@@ -53,7 +53,8 @@ void nr_pdcp_add_drbs(eNB_flag_t enb_flag,
                       uint8_t *const kUPenc,
                       uint8_t *const kUPint);
 
-void add_drb(int is_gnb, ue_id_t rntiMaybeUEid,
+void add_drb(int is_gnb,
+             ue_id_t rntiMaybeUEid,
              struct NR_DRB_ToAddMod *s,
              int ciphering_algorithm,
              int integrity_algorithm,
@@ -65,12 +66,8 @@ void nr_DRB_preconfiguration(ue_id_t crntiMaybeUEid);
 bool nr_pdcp_remove_UE(ue_id_t ue_id);
 void nr_pdcp_reestablishment(ue_id_t ue_id);
 
-void nr_pdcp_reconfigure_srb(ue_id_t ue_id,
-                             int srb_id,
-                             long t_Reordering);
-void nr_pdcp_reconfigure_drb(ue_id_t ue_id,
-                             int drb_id,
-                             long t_Reordering);
+void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering);
+void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering);
 
 void add_srb(int is_gnb,
              ue_id_t rntiMaybeUEid,

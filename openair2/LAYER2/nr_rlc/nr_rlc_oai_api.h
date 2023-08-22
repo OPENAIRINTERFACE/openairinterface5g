@@ -51,13 +51,9 @@ bool nr_rlc_update_rnti(int from_rnti, int to_rnti);
 /* test function for CI to trigger reestablishments */
 void nr_rlc_test_trigger_reestablishment(int rnti);
 
-void nr_release_rlc_entity(int rnti,
-                           logical_chan_id_t channel_id);
+void nr_release_rlc_entity(int rnti, logical_chan_id_t channel_id);
 
-void nr_rlc_reconfigure_entity(int rnti,
-                               int lc_id,
-                               struct NR_RLC_Config *rlc_Config,
-                               struct NR_LogicalChannelConfig *lc_Config);
+void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Config, struct NR_LogicalChannelConfig *lc_Config);
 
 int nr_rlc_get_available_tx_space(
   const rnti_t            rntiP,

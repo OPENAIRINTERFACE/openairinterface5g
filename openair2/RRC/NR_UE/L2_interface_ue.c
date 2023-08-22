@@ -133,11 +133,12 @@ int8_t nr_mac_rrc_data_req_ue(const module_id_t Mod_idP,
   switch(Srb_id) {
 
     case CCCH:
-      LOG_D(NR_RRC, "nr_mac_rrc_data_req_ue: Payload size = %i\n",
+      LOG_D(NR_RRC,
+            "nr_mac_rrc_data_req_ue: Payload size = %i\n",
             NR_UE_rrc_inst[Mod_idP].Srb[gNB_id][0].srb_buffers.Tx_buffer.payload_size);
       NR_UE_RRC_SRB_INFO_t *Srb0 = &NR_UE_rrc_inst[Mod_idP].Srb[gNB_id][0];
-      memcpy(buffer_pP, (uint8_t*)Srb0->srb_buffers.Tx_buffer.Payload, Srb0->srb_buffers.Tx_buffer.payload_size);
-      for(int i = 0; i < Srb0->srb_buffers.Tx_buffer.payload_size; i++) {
+      memcpy(buffer_pP, (uint8_t *)Srb0->srb_buffers.Tx_buffer.Payload, Srb0->srb_buffers.Tx_buffer.payload_size);
+      for (int i = 0; i < Srb0->srb_buffers.Tx_buffer.payload_size; i++) {
         LOG_D(NR_RRC,"(%i): %i\n", i, buffer_pP[i]);
       }
 

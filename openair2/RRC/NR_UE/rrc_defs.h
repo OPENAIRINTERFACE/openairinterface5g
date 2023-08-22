@@ -178,11 +178,7 @@ typedef enum {
   IN_SYNC = 1
 } nr_sync_msg_t;
 
-typedef enum {
-  RB_NOT_PRESENT = 0,
-  RB_ESTABLISHED,
-  RB_SUSPENDED
-} NR_RB_status_t;
+typedef enum { RB_NOT_PRESENT = 0, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
 
 typedef struct NR_UE_RRC_SRB_INFO_s {
   NR_RB_status_t status;
@@ -207,8 +203,8 @@ typedef struct NR_UE_RRC_INST_s {
   rnti_t                         rnti;
 
   NR_UE_RRC_SRB_INFO_t Srb[NB_CNX_UE][NR_NUM_SRB];
-  bool active_DRBs [NB_CNX_UE][MAX_DRBS_PER_UE];
-  bool active_RLC_entity [NB_CNX_UE][NR_MAX_NUM_LCID];
+  bool active_DRBs[NB_CNX_UE][MAX_DRBS_PER_UE];
+  bool active_RLC_entity[NB_CNX_UE][NR_MAX_NUM_LCID];
 
   OAI_NR_UECapability_t          *UECap;
   uint8_t                        *UECapability;
@@ -220,7 +216,7 @@ typedef struct NR_UE_RRC_INST_s {
 
   plmn_t                         plmnID;
 
-  NR_UE_RRC_SI_INFO              SInfo[NB_CNX_UE];
+  NR_UE_RRC_SI_INFO SInfo[NB_CNX_UE];
 
   NR_MIB_t *mib;
 

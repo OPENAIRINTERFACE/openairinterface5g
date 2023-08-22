@@ -1211,10 +1211,13 @@ bool nr_update_bsr(module_id_t module_idP, frame_t frameP, slot_t slotP, uint8_t
        */
       {
         bsr_regular_triggered = true;
-        LOG_D(NR_MAC, "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
-              module_idP, lcid,
+        LOG_D(NR_MAC,
+              "[UE %d] PDCCH Tick : MAC BSR Triggered LCID%d LCGID%d data become available at frame %d slot %d\n",
+              module_idP,
+              lcid,
               mac->scheduling_info.LCGID[lcid - 1],
-              frameP, slotP);
+              frameP,
+              slotP);
         break;
       }
     }
@@ -2687,13 +2690,13 @@ Update the following in mac_ce_p:
 	bsr_t
 */
 void nr_ue_get_sdu_mac_ce_post(module_id_t module_idP,
-                      int CC_id,
-                      frame_t frameP,
-                      sub_frame_t subframe,
-                      uint8_t gNB_index,
-                      uint8_t *ulsch_buffer,
-                      uint16_t buflen,
-                      NR_UE_MAC_CE_INFO *mac_ce_p)
+                               int CC_id,
+                               frame_t frameP,
+                               sub_frame_t subframe,
+                               uint8_t gNB_index,
+                               uint8_t *ulsch_buffer,
+                               uint16_t buflen,
+                               NR_UE_MAC_CE_INFO *mac_ce_p)
 {
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_idP);
 
@@ -2896,7 +2899,9 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
       continue;
     buflen_remain = buflen - (mac_ce_p->total_mac_pdu_header_len + mac_ce_p->sdu_length_total + sh_size);
 
-    LOG_D(NR_MAC, "[UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d bytes, buflen_remain %d bytes)\n",
+    LOG_D(NR_MAC,
+          "[UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d "
+          "bytes, buflen_remain %d bytes)\n",
           module_idP,
           frameP,
           subframe,
@@ -2907,7 +2912,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
           buflen_remain);
 
     while (buflen_remain > 0) {
-
       // Pointer used to build the MAC sub-PDU headers in the ULSCH buffer for each SDU
       NR_MAC_SUBHEADER_LONG *header = (NR_MAC_SUBHEADER_LONG *) pdu;
 
@@ -2925,21 +2929,23 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
                                     0,
                                     0);
 
-      AssertFatal(buflen_remain >= sdu_length, "LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
+      AssertFatal(buflen_remain >= sdu_length,
+                  "LCID = 0x%02x RLC has segmented %d bytes but MAC has max %d remaining bytes\n",
                   lcid,
                   sdu_length,
                   buflen_remain);
 
       if (sdu_length > 0) {
-
-        LOG_D(NR_MAC, "[UE %d] [%d.%d] UL-DXCH -> ULSCH, Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x (buflen (TBS) %d bytes)\n",
-          module_idP,
-          frameP,
-          subframe,
-          num_sdus + 1,
-          sdu_length,
-          lcid,
-          buflen);
+        LOG_D(NR_MAC,
+              "[UE %d] [%d.%d] UL-DXCH -> ULSCH, Generating UL MAC sub-PDU for SDU %d, length %d bytes, RB with LCID 0x%02x "
+              "(buflen (TBS) %d bytes)\n",
+              module_idP,
+              frameP,
+              subframe,
+              num_sdus + 1,
+              sdu_length,
+              lcid,
+              buflen);
 
         header->R = 0;
         header->F = 1;
@@ -2969,9 +2975,13 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
       //Update Buffer remain and BSR bytes after transmission
       mac->scheduling_info.LCID_buffer_remain[lcid - 1] -= sdu_length;
-      mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid- 1]] -= sdu_length;
-      LOG_D(NR_MAC, "[UE %d] Update BSR [%d.%d] BSR_bytes for LCG%d=%d\n",
-            module_idP, frameP, subframe, mac->scheduling_info.LCGID[lcid - 1],
+      mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid - 1]] -= sdu_length;
+      LOG_D(NR_MAC,
+            "[UE %d] Update BSR [%d.%d] BSR_bytes for LCG%d=%d\n",
+            module_idP,
+            frameP,
+            subframe,
+            mac->scheduling_info.LCGID[lcid - 1],
             mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid - 1]]);
       if (mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid - 1]] < 0)
         mac->scheduling_info.BSR_bytes[mac->scheduling_info.LCGID[lcid - 1]] = 0;

@@ -244,9 +244,7 @@ nr_rlc_entity_t *new_nr_rlc_entity_tm(
   return (nr_rlc_entity_t *)ret;
 }
 
-void nr_rlc_entity_um_reconfigure(nr_rlc_entity_t *_entity,
-                                  int t_reassembly,
-                                  int *sn_field_length)
+void nr_rlc_entity_um_reconfigure(nr_rlc_entity_t *_entity, int t_reassembly, int *sn_field_length)
 {
   nr_rlc_entity_um_t *entity = (nr_rlc_entity_um_t *)_entity;
   entity->t_reassembly = t_reassembly;
