@@ -55,6 +55,7 @@
 #define RRC_MAC_PCCH_DATA_REQ(mSGpTR)           (mSGpTR)->ittiMsg.rrc_mac_pcch_data_req
 
 #define NR_RRC_MAC_RA_IND(mSGpTR)               (mSGpTR)->ittiMsg.nr_rrc_mac_ra_ind
+#define NR_RRC_MAC_MSG3_IND(mSGpTR)             (mSGpTR)->ittiMsg.nr_rrc_mac_msg3_ind
 
 #define RRC_MAC_DRX_CONFIG_REQ(mSGpTR)          (mSGpTR)->ittiMsg.rrc_mac_drx_config_req
 
@@ -72,6 +73,10 @@ typedef struct NRRrcMacRaInd_s {
   uint32_t frame;
   bool RA_succeeded;
 } NRRrcMacRaInd;
+
+typedef struct NRRrcMacMsg3Ind_s {
+  uint16_t  rnti;
+} NRRrcMacMsg3Ind;
 
 typedef struct RrcMacInSyncInd_s {
   uint32_t  frame;

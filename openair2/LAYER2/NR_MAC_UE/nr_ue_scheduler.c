@@ -1031,13 +1031,13 @@ void nr_ue_ul_scheduler(nr_uplink_indication_t *ul_info)
                 mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id],
                 ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator,
                 TBS_bytes,ra->ra_state);
-          if (ra->ra_state == WAIT_RAR && !ra->cfra){
-            memcpy(ulsch_input_buffer, mac->ulsch_pdu.payload, TBS_bytes);
-            LOG_D(NR_MAC,"[RAPROC] Msg3 to be transmitted:\n");
+          if (ra->ra_state == WAIT_RAR && !ra->cfra) {
+            nr_get_msg3_payload(mod_id);
+            memcpy(ulsch_input_buffer, mac->CCCH_pdu.payload, TBS_bytes);
             for (int k = 0; k < TBS_bytes; k++) {
-              LOG_D(NR_MAC,"(%i): 0x%x\n",k,mac->ulsch_pdu.payload[k]);
+              LOG_D(NR_MAC,"(%i): 0x%x\n", k, ulsch_input_buffer[k]);
             }
-            LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n",ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
+            LOG_D(NR_MAC,"Flipping NDI for harq_id %d (Msg3)\n", ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator);
             mac->UL_ndi[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = ulcfg_pdu->pusch_config_pdu.pusch_data.new_data_indicator;
             mac->first_ul_tx[ulcfg_pdu->pusch_config_pdu.pusch_data.harq_process_id] = 0;
             mac_pdu_exist = 1;

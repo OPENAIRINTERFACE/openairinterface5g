@@ -151,8 +151,8 @@ void mac_rlc_data_ind(const module_id_t  module_idP,
     rb->set_time(rb, nr_rlc_current_time);
     rb->recv_pdu(rb, buffer_pP, tb_sizeP);
   } else {
-    LOG_E(RLC, "%s:%d:%s: fatal: no RB found (channel ID %d)\n",
-          __FILE__, __LINE__, __FUNCTION__, channel_idP);
+    LOG_E(RLC, "Fatal: no RB found (channel ID %d RNTI %d)\n",
+          channel_idP, rntiP);
     // exit(1);
   }
 
@@ -729,7 +729,7 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
   int t_reassembly;
   int sn_field_length;
 
-  LOG_D(RLC,"Trying to add SRB %d\n",srb_id);
+  LOG_D(RLC, "Trying to add SRB %d\n", srb_id);
   AssertFatal(srb_id > 0 && srb_id < 4,
               "Invalid srb id %d\n", srb_id);
 
@@ -792,7 +792,7 @@ void nr_rlc_add_srb(int rnti, int srb_id, const NR_RLC_BearerConfig_t *rlc_Beare
                                                       sn_field_length);
     nr_rlc_ue_add_srb_rlc_entity(ue, srb_id, nr_rlc_am);
 
-    LOG_I(RLC, "%s:%d:%s: added srb %d to UE with RNTI 0x%x\n", __FILE__, __LINE__, __FUNCTION__, srb_id, rnti);
+    LOG_I(RLC, "Added srb %d to UE with RNTI 0x%x\n", srb_id, rnti);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }

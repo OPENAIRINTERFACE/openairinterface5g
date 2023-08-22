@@ -40,9 +40,37 @@
 #include "openair2/LAYER2/nr_pdcp/nr_pdcp_oai_api.h"
 #include "nr_rlc/nr_rlc_oai_api.h"
 #include "RRC/NR/MESSAGES/asn1_msg.h"
+#include "RRC/NR_UE/rrc_proto.h"
 #include <pthread.h>
 
 static NR_UE_MAC_INST_t *nr_ue_mac_inst; 
+
+// TODO:  refactor
+struct gNB_MAC_INST_s;
+typedef struct gNB_MAC_INST_s gNB_MAC_INST;
+static void send_srb0_rrc(gNB_MAC_INST *mac, int rnti, const uint8_t *sdu, sdu_size_t sdu_len, void *rawUE)
+{
+  AssertFatal(sdu_len > 0 && sdu_len < CCCH_SDU_SIZE, "invalid CCCH SDU size %d\n", sdu_len);
+
+  MessageDef *message_p = itti_alloc_new_message(TASK_MAC_UE, 0, NR_RRC_MAC_CCCH_DATA_IND);
+  memset(NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu, 0, sdu_len);
+  memcpy(NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu, sdu, sdu_len);
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).sdu_size = sdu_len;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).rnti = rnti;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).gnb_index = 0;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).frame = 0;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).slot = 0;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).du_to_cu_rrc_container = NULL;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).CC_id = 0;
+  NR_RRC_MAC_CCCH_DATA_IND(message_p).nr_cellid = 0;
+  itti_send_msg_to_task(TASK_RRC_NRUE, 0, message_p);
+}
+
+void send_msg3_rrc_request(module_id_t mod_id, int rnti)
+{
+  nr_rlc_activate_srb0(rnti, NULL, NULL, send_srb0_rrc);
+  nr_mac_rrc_msg3_ind(mod_id, rnti);
+}
 
 NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
 
@@ -67,7 +95,10 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     if (rrc_inst && rrc_inst->scell_group_config) {
 
       nr_rrc_mac_config_req_scg(0, 0, rrc_inst->scell_group_config);
-      AssertFatal(rlc_module_init(0) == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
+      int rc = rlc_module_init(0);
+      AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
+      /* convention: RNTI for SRB0 is 0, as it changes all the time */
+      nr_rlc_activate_srb0(0, NULL, NULL, send_srb0_rrc);
       if (IS_SOFTMODEM_NOS1){
         // get default noS1 configuration
         NR_RadioBearerConfig_t *rbconfig = NULL;
@@ -91,7 +122,8 @@ NR_UE_MAC_INST_t * nr_l2_init_ue(NR_UE_RRC_INST_t* rrc_inst) {
     else {
       LOG_I(MAC,"Running without CellGroupConfig\n");
       if(get_softmodem_params()->sa == 1) {
-        AssertFatal(rlc_module_init(0) == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
+        int rc = rlc_module_init(0);
+        AssertFatal(rc == 0, "%s: Could not initialize RLC layer\n", __FUNCTION__);
       }
     }
 

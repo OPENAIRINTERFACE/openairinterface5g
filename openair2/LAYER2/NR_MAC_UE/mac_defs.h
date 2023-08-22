@@ -469,7 +469,6 @@ typedef struct {
   /* PDUs */
   /// Outgoing CCCH pdu for PHY
   CCCH_PDU CCCH_pdu;
-  ULSCH_PDU ulsch_pdu;
 
   /* Random Access */
   /// CRNTI
