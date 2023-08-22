@@ -81,6 +81,7 @@ Legacy unmaintained files:
 - The [logging module](../common/utils/LOG/DOC/log.md)
 - The [shared object loader](../common/utils/DOC/loader.md)
 - The [threadpool](../common/utils/threadPool/thread-pool.md) used in L1
+- The [LDPC implementation](../openair1/PHY/CODING/DOC/LDPCImplementation.md) is a shared library
 
 ## SDRs
 

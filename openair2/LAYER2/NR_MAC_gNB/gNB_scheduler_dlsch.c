@@ -614,7 +614,7 @@ static void pf_dl(module_id_t module_id,
     /* get the PID of a HARQ process awaiting retrnasmission, or -1 otherwise */
     sched_pdsch->dl_harq_pid = sched_ctrl->retrans_dl_harq.head;
     /* Calculate Throughput */
-    const float a = 0.0005f; // corresponds to 200ms window
+    const float a = 0.01f;
     const uint32_t b = UE->mac_stats.dl.current_bytes;
     UE->dl_thr_ue = (1 - a) * UE->dl_thr_ue + a * b;
 

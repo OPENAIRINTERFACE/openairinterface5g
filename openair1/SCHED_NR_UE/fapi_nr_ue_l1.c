@@ -44,8 +44,8 @@
 
 extern PHY_VARS_NR_UE ***PHY_vars_UE_g;
 
-const char *dl_pdu_type[]={"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH", "CSI_RS", "CSI_IM", "TA"};
-const char *ul_pdu_type[]={"PRACH", "PUCCH", "PUSCH", "SRS"};
+const char *const dl_pdu_type[] = {"DCI", "DLSCH", "RA_DLSCH", "SI_DLSCH", "P_DLSCH", "CSI_RS", "CSI_IM", "TA"};
+const char *const ul_pdu_type[] = {"PRACH", "PUCCH", "PUSCH", "SRS"};
 queue_t nr_rx_ind_queue;
 queue_t nr_crc_ind_queue;
 queue_t nr_uci_ind_queue;

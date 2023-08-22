@@ -1039,8 +1039,6 @@ static uint32_t get_packed_msg_len(uintptr_t msgHead, uintptr_t msgEnd) {
 int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pMessageBuf;
   uint8_t *pWritePackedMessage = pPackedBuf;
-  uint8_t *pPackMessageEnd = pPackedBuf + packedBufLen;
-  uint8_t *pPackedLengthField = &pWritePackedMessage[4];
   uint32_t packedMsgLen;
   uint16_t packedMsgLen16;
 
@@ -1048,6 +1046,9 @@ int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pP
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 Pack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *pPackMessageEnd = pPackedBuf + packedBufLen;
+  uint8_t *pPackedLengthField = &pWritePackedMessage[4];
 
   // pack the message
   if(push16(pMessageHeader->phy_id, &pWritePackedMessage, pPackMessageEnd) &&
@@ -1081,7 +1082,6 @@ int nfapi_nr_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pP
 int nfapi_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPackedBuf, uint32_t packedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pMessageBuf;
   uint8_t *pWritePackedMessage = pPackedBuf;
-  uint8_t *pPackMessageEnd = pPackedBuf + packedBufLen;
   uint8_t *pPackedLengthField = &pWritePackedMessage[4];
   uint32_t packedMsgLen;
   uint16_t packedMsgLen16;
@@ -1090,6 +1090,8 @@ int nfapi_p5_message_pack(void *pMessageBuf, uint32_t messageBufLen, void *pPack
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 Pack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *pPackMessageEnd = pPackedBuf + packedBufLen;
 
   // pack the message
   if(push16(pMessageHeader->phy_id, &pWritePackedMessage, pPackMessageEnd) &&
@@ -2105,12 +2107,13 @@ static int check_unpack_length(nfapi_message_id_e msgId, uint32_t unpackedBufLen
 int nfapi_p5_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pUnpackedBuf;
   uint8_t *pReadPackedMessage = pMessageBuf;
-  uint8_t *end = pMessageBuf + messageBufLen;
 
   if (pMessageBuf == NULL || pUnpackedBuf == NULL) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 header unpack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *end = pMessageBuf + messageBufLen;
 
   if (messageBufLen < NFAPI_HEADER_LENGTH || unpackedBufLen < sizeof(nfapi_p4_p5_message_header_t)) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 header unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);
@@ -2127,12 +2130,13 @@ int nfapi_p5_message_header_unpack(void *pMessageBuf, uint32_t messageBufLen, vo
 int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pUnpackedBuf;
   uint8_t *pReadPackedMessage = pMessageBuf;
-  uint8_t *end = pMessageBuf + messageBufLen;
 
   if (pMessageBuf == NULL || pUnpackedBuf == NULL) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 unpack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *end = (uint8_t *)pMessageBuf + messageBufLen;
 
   if (messageBufLen < NFAPI_HEADER_LENGTH || unpackedBufLen < sizeof(nfapi_p4_p5_message_header_t)) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);
@@ -2262,12 +2266,13 @@ int nfapi_nr_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *
 int nfapi_p5_message_unpack(void *pMessageBuf, uint32_t messageBufLen, void *pUnpackedBuf, uint32_t unpackedBufLen, nfapi_p4_p5_codec_config_t *config) {
   nfapi_p4_p5_message_header_t *pMessageHeader = pUnpackedBuf;
   uint8_t *pReadPackedMessage = pMessageBuf;
-  uint8_t *end = pMessageBuf + messageBufLen;
 
   if (pMessageBuf == NULL || pUnpackedBuf == NULL) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 unpack supplied pointers are null\n");
     return -1;
   }
+
+  uint8_t *end = (uint8_t *)pMessageBuf + messageBufLen;
 
   if (messageBufLen < NFAPI_HEADER_LENGTH || unpackedBufLen < sizeof(nfapi_p4_p5_message_header_t)) {
     NFAPI_TRACE(NFAPI_TRACE_ERROR, "P5 unpack supplied message buffer is too small %d, %d\n", messageBufLen, unpackedBufLen);

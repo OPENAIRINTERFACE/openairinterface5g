@@ -1,7 +1,7 @@
 The configuration module maps a configuration file section to a `paramdef_t` structure array. One `config_get` call can be used to return the values of all the parameters described in the `paramdef_t` array.
 Retrieving a single occurence of a parameter set ( a group in the libconfig terminology) is just a two steps task:
 1.  describe the parameters in a `paramdef_t` array
-1.  call the `config_get` function
+2.  call the `config_get` function
 
 
 [config_get example](../../config/devusage/addaparam.md)

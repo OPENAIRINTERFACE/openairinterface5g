@@ -89,8 +89,7 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
   // stores result in y
   // N is the number of complex numbers
   // output_shift reduces the result of the multiplication by this number of bits
-  //AssertFatal(N%8==0, "To be developped");
-  if ( (intptr_t)x%32 == 0  && !(intptr_t)y%32 == 0 && __builtin_cpu_supports("avx2")) {
+  if ( __builtin_cpu_supports("avx2")) {
     // output is 32 bytes aligned, but not the input
     
     const c16_t for_re={alpha->r, -alpha->i};
@@ -132,13 +131,14 @@ void rotate_cpx_vector(const c16_t *const x, const c16_t *const alpha, c16_t *y,
     __m256i* xd= (__m256i*)x;
     const __m256i *end=xd+N/8;
     for( __m256i* yd = (__m256i *)y; xd<end ; yd++, xd++) {
-      const __m256i xre = simde_mm256_srai_epi32(simde_mm256_madd_epi16(*xd,alpha_for_real),
+      const __m256i y256= _mm256_lddqu_si256(xd);
+      const __m256i xre = simde_mm256_srai_epi32(simde_mm256_madd_epi16(y256,alpha_for_real),
 						 output_shift);
-      const __m256i xim = simde_mm256_srai_epi32(simde_mm256_madd_epi16(*xd,alpha_for_im),
+      const __m256i xim = simde_mm256_srai_epi32(simde_mm256_madd_epi16(y256,alpha_for_im),
 						 output_shift);
       // a bit faster than unpacklo+unpackhi+packs
       const __m256i tmp=simde_mm256_packs_epi32(xre,xim);
-      *yd=simde_mm256_shuffle_epi8(tmp,perm_mask);
+      _mm256_storeu_si256(yd,simde_mm256_shuffle_epi8(tmp,perm_mask));
     }
     c16_t* alpha16=(c16_t*) alpha, *yLast;
     yLast=((c16_t*)y)+(N/8)*8;

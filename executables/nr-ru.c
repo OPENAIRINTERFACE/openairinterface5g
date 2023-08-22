@@ -338,7 +338,9 @@ void fh_if5_south_in(RU_t *ru,
 
     if (proc->frame_rx != *frame) {
       LOG_E(PHY,"Received Timestamp doesn't correspond to the time we think it is (proc->frame_rx %d frame %d proc->tti_rx %d tti %d)\n",proc->frame_rx,*frame,proc->tti_rx,*tti);
-      exit_fun("Exiting");
+      if (!oai_exit)
+        exit_fun("Exiting");
+      return;
     }
   } else {
     proc->first_rx = 0;
@@ -1504,11 +1506,10 @@ int check_capabilities(RU_t *ru,RRU_capabilities_t *cap) {
   return(-1);
 }
 
+const char rru_format_options[4][20] = {"OAI_IF5_only", "OAI_IF4p5_only", "OAI_IF5_and_IF4p5", "MBP_IF5"};
 
-char rru_format_options[4][20] = {"OAI_IF5_only","OAI_IF4p5_only","OAI_IF5_and_IF4p5","MBP_IF5"};
-
-char rru_formats[3][20] = {"OAI_IF5","MBP_IF5","OAI_IF4p5"};
-char ru_if_formats[4][20] = {"LOCAL_RF","REMOTE_OAI_IF5","REMOTE_MBP_IF5","REMOTE_OAI_IF4p5"};
+const char rru_formats[3][20] = {"OAI_IF5", "MBP_IF5", "OAI_IF4p5"};
+const char ru_if_formats[4][20] = {"LOCAL_RF", "REMOTE_OAI_IF5", "REMOTE_MBP_IF5", "REMOTE_OAI_IF4p5"};
 
 void configure_ru(int idx,
                   void *arg) {

@@ -71,11 +71,8 @@ LTE_LogicalChannelConfig_t  SRB1_logicalChannelConfig_defaultValue = {.ul_Specif
                                                                       &logicalChannelSR_Mask_r9_ext1
                                                                      };
 
-LTE_LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {.ul_SpecificParameters=
-                                                                     &LCSRB2,
-                                                                     .ext1=
-                                                                     &logicalChannelSR_Mask_r9_ext1
-                                                                    };
+const LTE_LogicalChannelConfig_t SRB2_logicalChannelConfig_defaultValue = {.ul_SpecificParameters = &LCSRB2,
+                                                                           .ext1 = &logicalChannelSR_Mask_r9_ext1};
 
 //CONSTANTS
 uint16_t RACH_FREQ_ALLOC;

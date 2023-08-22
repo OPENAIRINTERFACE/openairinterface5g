@@ -89,28 +89,28 @@ typedef int (*_at_response_encode_function_t) (char* buffer, const at_response_t
 
 static _at_response_encode_function_t _at_response_encode_function[AT_RESPONSE_ID_MAX] = {
     NULL,
-    _at_response_encode_cgsn,   /* CGSN    */
-    _at_response_encode_cgmi,   /* CGMI    */
-    _at_response_encode_cgmm,   /* CGMM    */
-    _at_response_encode_cgmr,   /* CGMR    */
-    _at_response_encode_cimi,   /* CIMI    */
-    _at_response_encode_cfun,   /* CFUN    */
-    _at_response_encode_cpin,   /* CPIN    */
-    _at_response_encode_csq,    /* CSQ     */
-    _at_response_encode_cesq,   /* CESQ    */
-    _at_response_encode_clac,   /* CLAC    */
-    _at_response_encode_cmee,   /* CMEE    */
-    _at_response_encode_cnum,   /* CNUM    */
-    _at_response_encode_clck,   /* CLCK    */
-    _at_response_encode_cops,   /* COPS    */
-    _at_response_encode_creg,   /* CREG    */
-    _at_response_encode_cgatt,    /* CGATT   */
-    _at_response_encode_cgreg,    /* CGREG   */
-    _at_response_encode_cereg,    /* CEREG   */
-    _at_response_encode_cgdcont,  /* CGDCONT */
-    _at_response_encode_cgact,    /* CGACT   */
-    _at_response_encode_cgpaddr,  /* CGPADDR */
-    _at_response_encode_cgev,   /* CGEV: unsolicited result */
+    _at_response_encode_cgsn, /* CGSN    */
+    _at_response_encode_cgmi, /* CGMI    */
+    _at_response_encode_cgmm, /* CGMM    */
+    _at_response_encode_cgmr, /* CGMR    */
+    _at_response_encode_cimi, /* CIMI    */
+    _at_response_encode_cfun, /* CFUN    */
+    _at_response_encode_cpin, /* CPIN    */
+    _at_response_encode_csq, /* CSQ     */
+    _at_response_encode_cesq, /* CESQ    */
+    _at_response_encode_clac, /* CLAC    */
+    _at_response_encode_cmee, /* CMEE    */
+    _at_response_encode_cnum, /* CNUM    */
+    _at_response_encode_clck, /* CLCK    */
+    _at_response_encode_cops, /* COPS    */
+    _at_response_encode_creg, /* CREG    */
+    _at_response_encode_cgatt, /* CGATT   */
+    _at_response_encode_cgreg, /* CGREG   */
+    _at_response_encode_cereg, /* CEREG   */
+    _at_response_encode_cgdcont, /* CGDCONT */
+    _at_response_encode_cgact, /* CGACT   */
+    _at_response_encode_cgpaddr, /* CGPADDR */
+    _at_response_encode_cgev, /* CGEV: unsolicited result */
 };
 
 /* String representation of Packet Domain events (cf. network_pdn_state_t) */

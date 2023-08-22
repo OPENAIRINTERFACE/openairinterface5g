@@ -36,25 +36,28 @@
 
 #define E1AP_NUM_MSG_HANDLERS 14
 typedef int (*e1ap_message_processing_t)(e1ap_upcp_inst_t *inst, const E1AP_E1AP_PDU_t *message_p);
-e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3] = {
+const e1ap_message_processing_t e1ap_message_processing[E1AP_NUM_MSG_HANDLERS][3] = {
 
-  { 0, 0, 0 }, /* Reset */
-  { 0, 0, 0 }, /* ErrorIndication */
-  { 0, 0, 0 }, /* privateMessage */
-  { e1apCUCP_handle_SETUP_REQUEST, e1apCUUP_handle_SETUP_RESPONSE, e1apCUUP_handle_SETUP_FAILURE }, /* gNBCUUPE1Setup */
-  { 0, 0, 0 }, /* gNBCUCPE1Setup */
-  { 0, 0, 0 }, /* gNBCUUPConfigurationUpdate */
-  { 0, 0, 0 }, /* gNBCUCPConfigurationUpdate */
-  { 0, 0, 0 }, /* E1Release */
-  { e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST, e1apCUCP_handle_BEARER_CONTEXT_SETUP_RESPONSE, e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE }, /* bearerContextSetup */
-  { e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST, 0, 0 }, /* bearerContextModification */
-  { 0, 0, 0 }, /* bearerContextModificationRequired */
-  { e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND, e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE, 0 }, /* bearerContextRelease */
-  { 0, 0, 0 }, /* bearerContextReleaseRequired */
-  { 0, 0, 0 } /* bearerContextInactivityNotification */
+    {0, 0, 0}, /* Reset */
+    {0, 0, 0}, /* ErrorIndication */
+    {0, 0, 0}, /* privateMessage */
+    {e1apCUCP_handle_SETUP_REQUEST, e1apCUUP_handle_SETUP_RESPONSE, e1apCUUP_handle_SETUP_FAILURE}, /* gNBCUUPE1Setup */
+    {0, 0, 0}, /* gNBCUCPE1Setup */
+    {0, 0, 0}, /* gNBCUUPConfigurationUpdate */
+    {0, 0, 0}, /* gNBCUCPConfigurationUpdate */
+    {0, 0, 0}, /* E1Release */
+    {e1apCUUP_handle_BEARER_CONTEXT_SETUP_REQUEST,
+     e1apCUCP_handle_BEARER_CONTEXT_SETUP_RESPONSE,
+     e1apCUCP_handle_BEARER_CONTEXT_SETUP_FAILURE}, /* bearerContextSetup */
+    {e1apCUUP_handle_BEARER_CONTEXT_MODIFICATION_REQUEST, 0, 0}, /* bearerContextModification */
+    {0, 0, 0}, /* bearerContextModificationRequired */
+    {e1apCUUP_handle_BEARER_CONTEXT_RELEASE_COMMAND, e1apCUCP_handle_BEARER_CONTEXT_RELEASE_COMPLETE, 0}, /* bearerContextRelease */
+    {0, 0, 0}, /* bearerContextReleaseRequired */
+    {0, 0, 0} /* bearerContextInactivityNotification */
 };
 
-const char *e1ap_direction2String(int e1ap_dir) {
+const char *const e1ap_direction2String(int e1ap_dir)
+{
   static const char *e1ap_direction_String[] = {
     "", /* Nothing */
     "Initiating message", /* initiating message */

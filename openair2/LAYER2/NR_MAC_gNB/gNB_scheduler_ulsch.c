@@ -1646,7 +1646,7 @@ static void pf_ul(module_id_t module_id,
     const NR_mac_dir_stats_t *stats = &UE->mac_stats.ul;
 
     /* Calculate throughput */
-    const float a = 0.0005f; // corresponds to 200ms window
+    const float a = 0.01f;
     const uint32_t b = stats->current_bytes;
     UE->ul_thr_ue = (1 - a) * UE->ul_thr_ue + a * b;
 

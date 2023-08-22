@@ -2899,7 +2899,7 @@ uint8_t compute_srs_resource_indicator(NR_PUSCH_ServingCellConfig_t *pusch_servi
       }
       if (count>0) {
         nbits = ceil(log2(count));
-        if (val && srs_feedback && nbits > 0) {
+        if (val && srs_feedback && count > 1) {
           *val = table_7_3_1_1_2_32[count-2][srs_feedback->sri];
         }
       }
@@ -3633,7 +3633,7 @@ int ul_ant_bits(NR_DMRS_UplinkConfig_t *NR_DMRS_UplinkConfig, long transformPrec
   }
 }
 
-int tdd_period_to_num[8] = {500,625,1000,1250,2000,2500,5000,10000};
+static const int tdd_period_to_num[8] = {500, 625, 1000, 1250, 2000, 2500, 5000, 10000};
 
 bool is_nr_DL_slot(NR_TDD_UL_DL_ConfigCommon_t *tdd_UL_DL_ConfigurationCommon, slot_t slot)
 {

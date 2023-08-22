@@ -32,6 +32,7 @@
 
 #include "PHY/defs_UE.h"
 #include "PHY/phy_extern_ue.h"
+#include "PHY/phy_extern.h"
 #include "SCHED_UE/sched_UE.h"
 #include "transport_ue.h"
 #include "transport_proto_ue.h"
@@ -85,8 +86,6 @@ void rx_phich(PHY_VARS_UE *ue,
   uint8_t Ngroup_PHICH,ngroup_PHICH,nseq_PHICH;
   uint8_t NSF_PHICH = 4;
   uint8_t pusch_subframe;
-
-  int8_t delta_PUSCH_acc[4] = {-1,0,1,3};
 
   // check if we're expecting a PHICH in this subframe
   LOG_D(PHY,"[UE  %d][PUSCH %d] Frame %d subframe %d PHICH RX\n",ue->Mod_id,harq_pid,proc->frame_rx,subframe);

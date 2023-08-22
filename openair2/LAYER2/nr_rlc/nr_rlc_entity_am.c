@@ -1759,7 +1759,7 @@ static void check_t_poll_retransmit(nr_rlc_entity_am_t *entity)
   if (!check_poll_after_pdu_assembly(entity))
     return;
 
-  /* retransmit the head of wait list, this is the case
+  /* retransmit the SDU at the head of wait list, this is the case
    * "consider any RLC SDU which has not been positively acknowledged for
    * retransmission" of 36.322 5.3.3.4.
    * We don't search for the highest SN, it's simpler to just take the head
@@ -1771,39 +1771,45 @@ static void check_t_poll_retransmit(nr_rlc_entity_am_t *entity)
    * It seems that no, the wait list should not be empty here, but not sure.
    */
 
-  entity->wait_list = cur->next;
-  if (entity->wait_list == NULL)
-     entity->wait_end = NULL;
-
-  /* 38.322 says "SDU", not "SDU segment", but let's retransmit only
-   * the 'cur' SDU segment. To be changed if needed. (Maybe we have
-   * to retransmit all SDU segments with the same SN that are in the
-   * wait list.)
-   */
-
   /* increase retx count. Don't care about segmentation, so maybe we
    * increase too much.
    */
   cur->sdu->retx_count++;
+
+  int sdu_retx_count = cur->sdu->retx_count;
+  int retransmit_sn = cur->sdu->sn;
+
+  /* 38.322 says "SDU", not "SDU segment", so let's retransmit all
+   * SDU segments with the retransmit SN in the wait list.
+   */
+  do {
+    entity->wait_list = cur->next;
+    if (entity->wait_list == NULL)
+       entity->wait_end = NULL;
+
+    /* update buffer status */
+    entity->common.bstatus.retx_size += compute_pdu_header_size(entity, cur)
+                                        + cur->size;
+
+    LOG_D(RLC, "put sn %d so %d size %d in retx list (retx_count %d)\n",
+          cur->sdu->sn, cur->so, cur->size, cur->sdu->retx_count);
+
+    /* put in retransmit list */
+    entity->retransmit_list = nr_rlc_sdu_segment_list_add(sn_compare_tx, entity,
+                                  entity->retransmit_list, cur);
+
+    cur = entity->wait_list;
+  } while (cur != NULL && cur->sdu->sn == retransmit_sn);
+
   /* report max RETX reached for all retx_count >= max_retx_threshold
    * (specs say to report if retx_count == max_retx_threshold).
    * Upper layers should react (radio link failure), so no big deal.
-   * We deal with segmentation by requiring
-   * retx_count >= max_retx_threshold * number of segments.
-   * We may report max RETX reached too late/early. To be refined if
-   * this is a problem.
+   * Because of segmentation, we may report too early/too late, not
+   * very clear. To refine if needed.
    */
-  if (cur->sdu->retx_count
-        >= entity->max_retx_threshold * cur->sdu->ref_count)
+  if (sdu_retx_count >= entity->max_retx_threshold)
     entity->common.max_retx_reached(entity->common.max_retx_reached_data,
                                     (nr_rlc_entity_t *)entity);
-  /* update buffer status */
-  entity->common.bstatus.retx_size += compute_pdu_header_size(entity, cur)
-                                      + cur->size;
-
-  /* put in retransmit list */
-  entity->retransmit_list = nr_rlc_sdu_segment_list_add(sn_compare_tx, entity,
-                                entity->retransmit_list, cur);
 }
 
 static void check_t_reassembly(nr_rlc_entity_am_t *entity)

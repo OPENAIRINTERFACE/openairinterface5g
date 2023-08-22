@@ -33,19 +33,13 @@
 #include <stdio.h>
 #include <math.h>
 
-#define DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
 #include "PHY/impl_defs_nr.h"
-#undef DEFINE_VARIABLES_PHY_IMPLEMENTATION_DEFS_NR_H
-
 #include "PHY/defs_nr_UE.h"
 #include "PHY/NR_REFSIG/ss_pbch_nr.h"
 #include "PHY/NR_REFSIG/dmrs_nr.h"
 #include "PHY/NR_REFSIG/ul_ref_seq_nr.h"
 
-#define DEFINE_VARIABLES_SRS_MODULATION_NR_H
 #include "PHY/NR_UE_TRANSPORT/srs_modulation_nr.h"
-#undef DEFINE_VARIABLES_SRS_MODULATION_NR_H
-
 //#define SRS_DEBUG
 
 

@@ -177,7 +177,7 @@ static const uint16_t beta_ack[16] = {16, // 2.000
                                       400, // 50.000
                                       640, // 80.000
                                       808}; // 126.00
-
+// TS 36.211 5.3 scrambling
 static const int8_t delta_PUSCH_abs[4] = {-4, -1, 1, 4};
 static const int8_t delta_PUSCH_acc[4] = {-1, 0, 1, 3};
 

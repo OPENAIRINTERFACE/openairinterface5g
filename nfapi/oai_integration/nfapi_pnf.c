@@ -83,7 +83,6 @@ nfapi_nr_pdu_t *tx_data_request[1023][20][10]; //[frame][slot][max_num_pdus]
 uint8_t tx_pdus[32][8][4096];
 
 nfapi_ue_release_request_body_t release_rntis;
-uint16_t phy_antenna_capability_values[] = { 1, 2, 4, 8, 16 };
 
 nfapi_nr_pnf_param_response_t g_pnf_param_resp;
 

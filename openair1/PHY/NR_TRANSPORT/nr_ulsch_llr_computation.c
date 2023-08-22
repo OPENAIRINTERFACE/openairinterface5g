@@ -678,7 +678,7 @@ void nr_ulsch_qpsk_qpsk(c16_t *stream0_in, c16_t *stream1_in, c16_t *stream0_out
   _m_empty();
 }
 
-int16_t ones[8] __attribute__((aligned(16))) = {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
+static const int16_t ones[8] __attribute__((aligned(16))) = {0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff, 0xffff};
 
 // Calculates psi_a = psi_r * a_r + psi_i * a_i
 #define prodsum_psi_a_epi16(psi_r, a_r, psi_i, a_i, psi_a) \
