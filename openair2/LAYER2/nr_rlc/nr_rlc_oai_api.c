@@ -71,6 +71,42 @@ static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_i
   }
 }
 
+void nr_release_rlc_entity(int rnti,
+                           logical_chan_id_t channel_id)
+{
+  nr_rlc_manager_lock(nr_rlc_ue_manager);
+  nr_rlc_ue_t *ue = nr_rlc_manager_get_ue(nr_rlc_ue_manager, rnti);
+  if (channel_id == 0) {
+    if (ue->srb0 != NULL) {
+      free(ue->srb0->deliver_sdu_data);
+      ue->srb0->delete(ue->srb0);
+    }
+    else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n",
+            channel_id);
+  }
+  else {
+    nr_rlc_rb_t *rb = &ue->lcid2rb[channel_id - 1];
+    if (rb->type == NR_RLC_SRB) {
+      if (ue->srb[rb->choice.srb_id - 1] != NULL)
+        ue->srb[rb->choice.srb_id - 1]->delete(ue->srb[rb->choice.srb_id - 1]);
+      else
+        LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n",
+              channel_id);
+    }
+    else {
+      AssertFatal(rb->type == NR_RLC_DRB,
+                  "Invalid RB type\n");
+      if (ue->drb[rb->choice.drb_id - 1] != NULL)
+        ue->drb[rb->choice.drb_id - 1]->delete(ue->drb[rb->choice.drb_id - 1]);
+      else
+        LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n",
+              channel_id);
+    }
+  }
+  nr_rlc_manager_unlock(nr_rlc_ue_manager);
+}
+
 void mac_rlc_data_ind(const module_id_t  module_idP,
                       const rnti_t rntiP,
                       const eNB_index_t eNB_index,

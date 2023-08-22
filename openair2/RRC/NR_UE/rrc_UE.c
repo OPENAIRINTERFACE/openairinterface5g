@@ -760,7 +760,11 @@ void nr_rrc_manage_rlc_bearers(const NR_CellGroupConfig_t *cellGroupConfig,
                                int rnti)
 {
   if(cellGroupConfig->rlc_BearerToReleaseList != NULL) {
-    //TODO (perform RLC bearer release as specified in 5.3.5.5.3)
+    for (int i = 0; i < cellGroupConfig->rlc_BearerToReleaseList->list.count; i++) {
+      NR_LogicalChannelIdentity_t *lcid = cellGroupConfig->rlc_BearerToReleaseList->list.array[i];
+      AssertFatal(lcid, "LogicalChannelIdentity shouldn't be null here\n");
+      nr_release_rlc_entity(rnti, *lcid);
+    }
   }
 
   if(cellGroupConfig->rlc_BearerToAddModList != NULL) {
