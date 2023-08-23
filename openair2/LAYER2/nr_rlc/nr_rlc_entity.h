@@ -119,7 +119,7 @@ typedef struct nr_rlc_entity_t {
 
   void (*reestablishment)(struct nr_rlc_entity_t *entity);
 
-  void (*delete)(struct nr_rlc_entity_t *entity);
+  void (*delete_entity)(struct nr_rlc_entity_t *entity);
 
   int (*available_tx_space)(struct nr_rlc_entity_t *entity);
 
