@@ -36,10 +36,36 @@ static void nr_rlc_entity_get_stats(
     nr_rlc_statistics_t *out)
 {
 // printf("Stats from the RLC entity asked\n");
+  uint64_t time_now = time_average_now();
   *out = entity->stats;
+
+  // Get the correct HOL RLC-SDU
+  nr_rlc_sdu_segment_t* sdu;
+  if (entity->stats.mode == NR_RLC_AM) {
+    nr_rlc_entity_am_t* am_entity = (nr_rlc_entity_am_t *) entity;
+    if (am_entity->retransmit_list != NULL) {
+      sdu = am_entity->retransmit_list;
+    } else {
+      sdu = am_entity->tx_list;
+    }
+  } else if (entity->stats.mode == NR_RLC_UM) {
+    nr_rlc_entity_um_t* um_entity = (nr_rlc_entity_um_t *) entity;
+    sdu = um_entity->tx_list;
+  } else {
+    nr_rlc_entity_tm_t* tm_entity = (nr_rlc_entity_tm_t *) entity;
+    sdu = tm_entity->tx_list;
+  }
+
+  // Compute HOL waittime, make sure that segmented packets don't have 'zero' time-of-arrival
+  if (sdu != NULL) {
+    out->txsdu_wt_us = time_now - sdu->sdu->time_of_arrival;
+  } else {
+    // No HOL packets --> wait-time == 0
+    out->txsdu_wt_us = 0;
+  }
+
   if (entity->avg_time_is_on)
-    out->txsdu_avg_time_to_tx = time_average_get_average(entity->txsdu_avg_time_to_tx,
-                                    time_average_now());
+    out->txsdu_avg_time_to_tx = time_average_get_average(entity->txsdu_avg_time_to_tx, time_now);
   else
     out->txsdu_avg_time_to_tx = 0;
 }
@@ -112,8 +138,11 @@ nr_rlc_entity_t *new_nr_rlc_entity_am(
 
   ret->common.stats.mode = NR_RLC_AM;
 
+  ret->common.stats.rxsdu_bytes = 0;  // init default arrivals (SDU) counter
+  ret->common.stats.txsdu_bytes = 0;  // init default transmits (SDU) counter
+
   /* let's take average over the last 100 milliseconds
-   * initial_size of 1024 is arbitrary
+   * initial_size of 1024 (packets) is arbitrary
    */
   ret->common.txsdu_avg_time_to_tx = time_average_new(100 * 1000, 1024);
 

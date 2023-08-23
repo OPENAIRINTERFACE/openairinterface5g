@@ -1070,6 +1070,12 @@ const bool nr_rlc_get_statistics(
   if (rb != NULL) {
     rb->get_stats(rb, out);
     ret = true;
+
+    // Patch buffer status using OAI results (no need to change anything in the RB)
+    // rb->set_time(rb, nr_rlc_current_time);
+    nr_rlc_entity_buffer_status_t oai_stat = rb->buffer_status(rb, 1000*1000);
+    out->rxbuf_occ_bytes = oai_stat.status_size;
+    out->txbuf_occ_bytes = oai_stat.tx_size + oai_stat.retx_size;
   } else {
     ret = false;
   }
