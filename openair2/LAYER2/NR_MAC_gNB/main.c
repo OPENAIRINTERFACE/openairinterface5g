@@ -255,12 +255,6 @@ void mac_top_init_gNB(ngran_node_t node_type,
       RC.nrmac[i]->cset0_bwp_start = 0;
       RC.nrmac[i]->cset0_bwp_size = 0;
 
-      NR_BCCH_DL_SCH_Message_t *sib1 = get_SIB1_NR(config, scc);
-      NR_COMMON_channels_t *cc = &RC.nrmac[i]->common_channels[0];
-      cc->sib1 = sib1;
-      cc->sib1_bcch_length = encode_SIB1_NR(sib1, cc->sib1_bcch_pdu, sizeof(cc->sib1_bcch_pdu));
-      AssertFatal(cc->sib1_bcch_length > 0, "could not encode SIB1\n");
-
       pthread_mutex_init(&RC.nrmac[i]->sched_lock, NULL);
 
       pthread_mutex_init(&RC.nrmac[i]->UE_info.mutex, NULL);

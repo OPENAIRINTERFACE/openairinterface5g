@@ -28,6 +28,7 @@
  * \email: raymond.knopp@eurecom.fr, kroempa@gmail.com
  */
 
+#include "openair3/UTILS/conversions.h"
 #include "nr_rrc_config.h"
 #include "common/utils/nr/nr_common.h"
 #include "openair2/LAYER2/NR_MAC_gNB/nr_mac_gNB.h"
@@ -1713,8 +1714,10 @@ int encode_MIB_NR(NR_BCCH_BCH_Message_t *mib, int frame, uint8_t *buf, int buf_s
   return (enc_rval.encoded + 7) / 8;
 }
 
-NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const nr_mac_config_t *configuration, const NR_ServingCellConfigCommon_t *scc)
+NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const NR_ServingCellConfigCommon_t *scc, const f1ap_plmn_t *plmn, uint64_t cellID, int tac)
 {
+  AssertFatal(cellID < (1l << 36), "cellID must fit within 36 bits, but is %ld\n", cellID);
+
   NR_BCCH_DL_SCH_Message_t *sib1_message = CALLOC(1,sizeof(NR_BCCH_DL_SCH_Message_t));
   AssertFatal(sib1_message != NULL, "out of memory\n");
   sib1_message->message.present = NR_BCCH_DL_SCH_MessageType_PR_c1;
@@ -1741,15 +1744,15 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const nr_mac_config_t *configuration, cons
   for (int i = 0; i < num_plmn; ++i) {
     asn1cSequenceAdd(nr_plmn_info->plmn_IdentityList.list, struct NR_PLMN_Identity, nr_plmn);
     asn1cCalloc(nr_plmn->mcc, mcc);
-    int confMcc = 0;
+    int confMcc = plmn->mcc;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc0);
     *mcc0 = (confMcc / 100) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc1);
     *mcc1 = (confMcc / 10) % 10;
     asn1cSequenceAdd(mcc->list, NR_MCC_MNC_Digit_t, mcc2);
     *mcc2 = confMcc % 10;
-    int mnc = 0;
-    if (0 == 3) {
+    int mnc = plmn->mnc;
+    if (plmn->mnc_digit_length == 3) {
       asn1cSequenceAdd(nr_plmn->mnc.list, NR_MCC_MNC_Digit_t, mnc0);
       *mnc0 = (0 / 100) % 10;
     }
@@ -1759,17 +1762,12 @@ NR_BCCH_DL_SCH_Message_t *get_SIB1_NR(const nr_mac_config_t *configuration, cons
     *mnc2 = (mnc) % 10;
   }
 
-  nr_plmn_info->cellIdentity.buf = CALLOC(1, 5);
-  AssertFatal(nr_plmn_info->cellIdentity.buf != NULL, "out of memory\n");
-  nr_plmn_info->cellIdentity.size = 5;
-  nr_plmn_info->cellIdentity.bits_unused = 4;
-  uint64_t tmp = htobe64(0) << 4;
-  memcpy(nr_plmn_info->cellIdentity.buf, ((char *)&tmp) + 3, 5);
+  NR_CELL_ID_TO_BIT_STRING(cellID, &nr_plmn_info->cellIdentity);
   nr_plmn_info->cellReservedForOperatorUse = NR_PLMN_IdentityInfo__cellReservedForOperatorUse_notReserved;
 
   nr_plmn_info->trackingAreaCode = CALLOC(1, sizeof(NR_TrackingAreaCode_t));
   AssertFatal(nr_plmn_info->trackingAreaCode != NULL, "out of memory\n");
-  uint32_t tmp2 = htobe32(0);
+  uint32_t tmp2 = htobe32(tac);
   nr_plmn_info->trackingAreaCode->buf = CALLOC(1, 3);
   AssertFatal(nr_plmn_info->trackingAreaCode->buf != NULL, "out of memory\n");
   memcpy(nr_plmn_info->trackingAreaCode->buf, ((char *)&tmp2) + 1, 3);
