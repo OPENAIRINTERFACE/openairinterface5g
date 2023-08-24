@@ -25,117 +25,76 @@ void nr_rrc_SI_timers(NR_UE_RRC_SI_INFO *SInfo)
 {
   // delete any stored version of a SIB after 3 hours
   // from the moment it was successfully confirmed as valid
-  if (SInfo->sib1) {
+  if (SInfo->sib1 && SInfo->sib1_timer >= 0) {
     SInfo->sib1_timer += 10;
-    if (SInfo->sib1_timer > 10800000) {
-      SInfo->sib1_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB1, SInfo->sib1, 1);
-      SInfo->sib1 = NULL;
-    }
+    if (SInfo->sib1_timer > 10800000)
+      SInfo->sib1_timer = -1;
   }
-  if (SInfo->sib2) {
+  if (SInfo->sib2 && SInfo->sib2_timer >= 0) {
     SInfo->sib2_timer += 10;
-    if (SInfo->sib2_timer > 10800000) {
-      SInfo->sib2_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB2, SInfo->sib2, 1);
-      SInfo->sib2 = NULL;
-    }
+    if (SInfo->sib2_timer > 10800000)
+      SInfo->sib2_timer = -1;
   }
-  if (SInfo->sib3) {
+  if (SInfo->sib3 && SInfo->sib3_timer >= 0) {
     SInfo->sib3_timer += 10;
-    if (SInfo->sib3_timer > 10800000) {
-      SInfo->sib3_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB3, SInfo->sib3, 1);
-      SInfo->sib3 = NULL;
-    }
+    if (SInfo->sib3_timer > 10800000)
+      SInfo->sib3_timer = -1;
   }
-  if (SInfo->sib4) {
+  if (SInfo->sib4 && SInfo->sib4_timer >= 0) {
     SInfo->sib4_timer += 10;
-    if (SInfo->sib4_timer > 10800000) {
-      SInfo->sib4_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB4, SInfo->sib4, 1);
-      SInfo->sib4 = NULL;
-    }
+    if (SInfo->sib4_timer > 10800000)
+      SInfo->sib4_timer = -1;
   }
-  if (SInfo->sib5) {
+  if (SInfo->sib5 && SInfo->sib5_timer >= 0) {
     SInfo->sib5_timer += 10;
-    if (SInfo->sib5_timer > 10800000) {
-      SInfo->sib5_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB5, SInfo->sib5, 1);
-      SInfo->sib5 = NULL;
-    }
+    if (SInfo->sib5_timer > 10800000)
+      SInfo->sib5_timer = -1;
   }
-  if (SInfo->sib6) {
+  if (SInfo->sib6 && SInfo->sib6_timer >= 0) {
     SInfo->sib6_timer += 10;
-    if (SInfo->sib6_timer > 10800000) {
-      SInfo->sib6_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB6, SInfo->sib6, 1);
-      SInfo->sib6 = NULL;
-    }
+    if (SInfo->sib6_timer > 10800000)
+      SInfo->sib6_timer = -1;
   }
-  if (SInfo->sib7) {
+  if (SInfo->sib7 && SInfo->sib7_timer >= 0) {
     SInfo->sib7_timer += 10;
-    if (SInfo->sib7_timer > 10800000) {
-      SInfo->sib7_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB7, SInfo->sib7, 1);
-      SInfo->sib7 = NULL;
-    }
+    if (SInfo->sib7_timer > 10800000)
+      SInfo->sib7_timer = -1;
   }
-  if (SInfo->sib8) {
+  if (SInfo->sib8 && SInfo->sib8_timer >= 0) {
     SInfo->sib8_timer += 10;
-    if (SInfo->sib8_timer > 10800000) {
-      SInfo->sib8_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB8, SInfo->sib8, 1);
-      SInfo->sib8 = NULL;
-    }
+    if (SInfo->sib8_timer > 10800000)
+      SInfo->sib8_timer = -1;
   }
-  if (SInfo->sib9) {
+  if (SInfo->sib9 && SInfo->sib9_timer >= 0) {
     SInfo->sib9_timer += 10;
-    if (SInfo->sib9_timer > 10800000) {
-      SInfo->sib9_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB9, SInfo->sib9, 1);
-      SInfo->sib9 = NULL;
-    }
+    if (SInfo->sib9_timer > 10800000)
+      SInfo->sib9_timer = -1;
+
   }
-  if (SInfo->sib10) {
+  if (SInfo->sib10 && SInfo->sib10_timer >= 0) {
     SInfo->sib10_timer += 10;
-    if (SInfo->sib10_timer > 10800000) {
-      SInfo->sib10_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB10_r16, SInfo->sib10, 1);
-      SInfo->sib10 = NULL;
-    }
+    if (SInfo->sib10_timer > 10800000)
+      SInfo->sib10_timer = -1;
   }
-  if (SInfo->sib11) {
+  if (SInfo->sib11 && SInfo->sib11_timer >= 0) {
     SInfo->sib11_timer += 10;
-    if (SInfo->sib11_timer > 10800000) {
-      SInfo->sib11_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB11_r16, SInfo->sib11, 1);
-      SInfo->sib11 = NULL;
-    }
+    if (SInfo->sib11_timer > 10800000)
+      SInfo->sib11_timer = -1;
   }
-  if (SInfo->sib12) {
+  if (SInfo->sib12 && SInfo->sib12_timer >= 0) {
     SInfo->sib12_timer += 10;
-    if (SInfo->sib12_timer > 10800000) {
-      SInfo->sib12_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB12_r16, SInfo->sib12, 1);
-      SInfo->sib12 = NULL;
-    }
+    if (SInfo->sib12_timer > 10800000)
+      SInfo->sib12_timer = -1;
   }
-  if (SInfo->sib13) {
+  if (SInfo->sib13 && SInfo->sib13_timer >= 0) {
     SInfo->sib13_timer += 10;
-    if (SInfo->sib13_timer > 10800000) {
-      SInfo->sib13_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB13_r16, SInfo->sib13, 1);
-      SInfo->sib13 = NULL;
-    }
+    if (SInfo->sib13_timer > 10800000)
+      SInfo->sib13_timer = -1;
   }
-  if (SInfo->sib14) {
+  if (SInfo->sib14 && SInfo->sib14_timer >= 0) {
     SInfo->sib14_timer += 10;
-    if (SInfo->sib14_timer > 10800000) {
-      SInfo->sib14_timer = 0;
-      SEQUENCE_free(&asn_DEF_NR_SIB14_r16, SInfo->sib14, 1);
-      SInfo->sib14 = NULL;
-    }
+    if (SInfo->sib14_timer > 10800000)
+      SInfo->sib14_timer = -1;
   }
 }
 
