@@ -232,13 +232,19 @@ int get_rnti_type(NR_UE_MAC_INST_t *mac, uint16_t rnti)
     return rnti_type;
 }
 
-
-int8_t nr_ue_decode_mib(module_id_t module_id,
-                        int cc_id)
+void nr_ue_decode_mib(module_id_t module_id, int cc_id)
 {
   LOG_D(MAC,"[L2][MAC] decode mib\n");
-
   NR_UE_MAC_INST_t *mac = get_mac_inst(module_id);
+
+  if (mac->mib->cellBarred == NR_MIB__cellBarred_barred) {
+    LOG_W(MAC, "Cell is barred. Going back to sync mode.\n");
+    mac->synch_request.Mod_id = module_id;
+    mac->synch_request.CC_id = cc_id;
+    mac->synch_request.synch_req.target_Nid_cell = -1;
+    mac->if_module->synch_request(&mac->synch_request);
+    return;
+  }
 
   uint16_t frame = (mac->mib->systemFrameNumber.buf[0] >> mac->mib->systemFrameNumber.bits_unused);
   uint16_t frame_number_4lsb = 0;
@@ -285,8 +291,6 @@ int8_t nr_ue_decode_mib(module_id_t module_id,
     mac->state = UE_CONNECTED;
   else if(mac->state == UE_NOT_SYNC)
     mac->state = UE_SYNC;
-
-  return 0;
 }
 
 int8_t nr_ue_decode_BCCH_DL_SCH(module_id_t module_id,
