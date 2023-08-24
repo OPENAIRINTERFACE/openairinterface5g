@@ -27,10 +27,7 @@
 
 typedef void nr_rlc_ue_manager_t;
 
-typedef enum nr_rlc_rb_type {
-  NR_RLC_SRB = 0,
-  NR_RLC_DRB = 1
-} nr_rlc_rb_type;
+typedef enum nr_rlc_rb_type { NR_RLC_NONE = 0, NR_RLC_SRB = 1, NR_RLC_DRB = 2 } nr_rlc_rb_type;
 
 typedef struct nr_rlc_rb_t {
   nr_rlc_rb_type type;

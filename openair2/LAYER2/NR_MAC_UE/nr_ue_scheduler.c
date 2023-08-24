@@ -2586,7 +2586,6 @@ static void nr_ue_prach_scheduler(module_id_t module_idP, frame_t frameP, sub_fr
   } // if is_nr_UL_slot
 }
 
-#define MAX_LCID 8 // NR_MAX_NUM_LCID shall be used but the mac_rlc_data_req function can fetch data for max 8 LCID
 typedef struct {
   uint8_t bsr_len;
   uint8_t bsr_ce_len;
@@ -2872,7 +2871,6 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
   //mac_ce_p->phr_ce_len = 0;
   //mac_ce_p->phr_header_len = 0;
 
-  uint8_t lcid = 0;
   uint16_t sdu_length = 0;
   uint16_t num_sdus = 0;
   mac_ce_p->sdu_length_total = 0;
@@ -2898,8 +2896,7 @@ uint8_t nr_ue_get_sdu(module_id_t module_idP,
 
   // Check for DCCH first
   // TO DO: Multiplex in the order defined by the logical channel prioritization
-  for (lcid = UL_SCH_LCID_SRB1; lcid < MAX_LCID; lcid++) {
-
+  for (int lcid = UL_SCH_LCID_SRB1; lcid < NR_MAX_NUM_LCID; lcid++) {
     buflen_remain = buflen - (mac_ce_p->total_mac_pdu_header_len + mac_ce_p->sdu_length_total + sh_size);
 
     LOG_D(NR_MAC, "In %s: [UE %d] [%d.%d] UL-DXCH -> ULSCH, RLC with LCID 0x%02x (TBS %d bytes, sdu_length_total %d bytes, MAC header len %d bytes, buflen_remain %d bytes)\n",
