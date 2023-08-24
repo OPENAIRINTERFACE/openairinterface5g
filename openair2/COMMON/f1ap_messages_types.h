@@ -22,6 +22,8 @@
 #ifndef F1AP_MESSAGES_TYPES_H_
 #define F1AP_MESSAGES_TYPES_H_
 
+#include <netinet/in.h>
+#include <netinet/sctp.h>
 #include "rlc.h"
 #include "s1ap_messages_types.h"
 
@@ -194,7 +196,7 @@ typedef struct f1ap_gnb_cu_configuration_update_s {
   uint16_t cnx_id;
 
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Number of SCTP streams used for a mme association */
   uint16_t sctp_in_streams;

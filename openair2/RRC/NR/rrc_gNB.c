@@ -1801,7 +1801,7 @@ static bool rrc_gNB_plmn_matches(const gNB_RRC_INST *rrc, const f1ap_served_cell
     && rrc->nr_cellid == info->nr_cellid;
 }
 
-static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, int assoc_id)
+static void rrc_gNB_process_f1_setup_req(f1ap_setup_req_t *req, sctp_assoc_t assoc_id)
 {
   gNB_RRC_INST *rrc = RC.nrrrc[0];
   DevAssert(rrc);
@@ -2424,7 +2424,7 @@ void rrc_gNB_process_e1_bearer_context_setup_resp(e1ap_bearer_setup_resp_t *resp
   prepare_and_send_ue_context_modification_f1(ue_context_p, resp);
 }
 
-static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, int assoc_id)
+static void rrc_CU_process_f1_lost_connection(gNB_RRC_INST *rrc, f1ap_lost_connection_t *lc, sctp_assoc_t assoc_id)
 {
   AssertFatal(rrc->du != NULL, "no DU connected, cannot received F1 lost connection\n");
   AssertFatal(rrc->du->assoc_id == assoc_id,

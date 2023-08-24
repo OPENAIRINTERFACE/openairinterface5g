@@ -60,10 +60,8 @@ extern m2ap_setup_req_t *m2ap_enb_data_g;
 
 
 //extern m2ap_setup_req_t *m2ap_mce_data_from_enb;
-int eNB_handle_MBMS_SCHEDULING_INFORMATION(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M2AP_M2AP_PDU_t *pdu){
+int eNB_handle_MBMS_SCHEDULING_INFORMATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   LOG_D(M2AP, "eNB_handle_MBMS_SCHEDULING_INFORMATION assoc_id %d\n",assoc_id);
 
   MessageDef                         *message_p/*,*message_p2*/;
@@ -258,13 +256,8 @@ int eNB_send_MBMS_SCHEDULING_INFORMATION_RESPONSE(instance_t instance, m2ap_mbms
   return 0;
 }
 
-
-
-
-int eNB_handle_MBMS_SESSION_START_REQUEST(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M2AP_M2AP_PDU_t *pdu){
+int eNB_handle_MBMS_SESSION_START_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   LOG_D(M2AP, "eNB_handle_MBMS_SESSION_START_REQUEST assoc_id %d\n",assoc_id);
 
   MessageDef                         *message_p;
@@ -424,10 +417,8 @@ int eNB_send_MBMS_SESSION_START_FAILURE(instance_t instance, m2ap_session_start_
   return 0;
 }
 
-int eNB_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        M2AP_M2AP_PDU_t *pdu){
+int eNB_handle_MBMS_SESSION_STOP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   LOG_D(M2AP, "eNB_handle_MBMS_SESSION_STOP_REQUEST assoc_id %d\n",assoc_id);
 
   MessageDef                         *message_p;
@@ -688,10 +679,7 @@ int eNB_send_M2_SETUP_REQUEST(m2ap_eNB_instance_t *instance_p, m2ap_eNB_data_t* 
 }
 
 
-int eNB_handle_M2_SETUP_RESPONSE(instance_t instance,
-				uint32_t               assoc_id,
-				uint32_t               stream,
-				M2AP_M2AP_PDU_t       *pdu)
+int eNB_handle_M2_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
 
    LOG_D(M2AP, "eNB_handle_M2_SETUP_RESPONSE\n");
@@ -800,10 +788,8 @@ int eNB_handle_M2_SETUP_RESPONSE(instance_t instance,
 }
 
 // SETUP FAILURE
-int eNB_handle_M2_SETUP_FAILURE(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M2AP_M2AP_PDU_t *pdu) {
+int eNB_handle_M2_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
+{
   LOG_D(M2AP, "eNB_handle_M2_SETUP_FAILURE\n");
 
   M2AP_M2SetupFailure_t    *in = &pdu->choice.unsuccessfulOutcome.value.choice.M2SetupFailure;
@@ -985,10 +971,7 @@ int eNB_send_eNB_CONFIGURATION_UPDATE(instance_t instance, m2ap_enb_configuratio
    return 0;
 }
 
-int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                                         uint32_t assoc_id,
-                                         uint32_t stream,
-                                         M2AP_M2AP_PDU_t *pdu)
+int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
 
   AssertFatal(1==0,"Not implemented yet\n");
@@ -1032,12 +1015,10 @@ int eNB_handle_eNB_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
    return 0;
 }
 
-
-
 int eNB_handle_eNB_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                                         uint32_t assoc_id,
-                                         uint32_t stream,
-                                         M2AP_M2AP_PDU_t *pdu)
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M2AP_M2AP_PDU_t *pdu)
 {
   LOG_D(M2AP, "eNB_handle_eNB_CONFIGURATION_UPDATE_ACKNOWLEDGE assoc_id %d\n",assoc_id);
 
@@ -1069,10 +1050,7 @@ int eNB_handle_eNB_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
 /*
  * MCE Configuration Update
  */
-int eNB_handle_MCE_CONFIGURATION_UPDATE(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          M2AP_M2AP_PDU_t *pdu)
+int eNB_handle_MCE_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
  LOG_D(M2AP, "eNB_handle_MCE_CONFIGURATION_UPDATE assoc_id %d\n",assoc_id);
 
@@ -1126,10 +1104,7 @@ int eNB_send_ERROR_INDICATION(instance_t instance, m2ap_error_indication_t * m2a
    return 0;
 }
 
-int eNB_handle_ERROR_INDICATION(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M2AP_M2AP_PDU_t *pdu)
+int eNB_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
   AssertFatal(1==0,"Not implemented yet\n");
    return 0;
@@ -1140,10 +1115,7 @@ int eNB_handle_ERROR_INDICATION(instance_t instance,
 /*
  * Session Update Request
  */
-int eNB_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu)
+int eNB_handle_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
   LOG_D(M2AP, "eNB_handle_MBMS_SESSION_STOP_REQUEST assoc_id %d\n",assoc_id);
 
@@ -1190,10 +1162,7 @@ int eNB_send_MBMS_SESSION_UPDATE_FAILURE(instance_t instance, m2ap_mbms_session_
  * Service Counting
  */
 
-int eNB_handle_MBMS_SERVICE_COUNTING_REQ(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M2AP_M2AP_PDU_t *pdu)
+int eNB_handle_MBMS_SERVICE_COUNTING_REQ(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M2AP_M2AP_PDU_t *pdu)
 {
 
    LOG_D(M2AP, "eNB_handle_MBMS_SERVICE_COUNTING_REQUEST assoc_id %d\n",assoc_id);

@@ -47,8 +47,6 @@ m2ap_MCE_data_t* m2ap_is_MCE_assoc_id_in_list(uint32_t sctp_assoc_id);
 
 m2ap_MCE_data_t* m2ap_is_MCE_pci_in_list (const uint32_t pci);
 
-struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p,
-                                     int32_t assoc_id,
-                                     uint16_t cnx_id);
+struct m2ap_MCE_data_s *m2ap_get_MCE(m2ap_MCE_instance_t *instance_p, sctp_assoc_t assoc_id, uint16_t cnx_id);
 
 #endif /* __M2AP_MCE_MANAGEMENT_PROCEDURES__H__ */

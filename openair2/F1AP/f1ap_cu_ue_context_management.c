@@ -632,10 +632,8 @@ int CU_send_UE_CONTEXT_SETUP_REQUEST(instance_t instance,
   return 0;
 }
 
-int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
-                                        uint32_t         assoc_id,
-                                        uint32_t         stream,
-                                        F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   MessageDef                       *msg_p;
   F1AP_UEContextSetupResponse_t    *container;
   F1AP_UEContextSetupResponseIEs_t *ie;
@@ -766,14 +764,12 @@ int CU_handle_UE_CONTEXT_SETUP_RESPONSE(instance_t       instance,
   return 0;
 }
 
-int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t       instance,
-                                       uint32_t         assoc_id,
-                                       uint32_t         stream,
-                                       F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_UE_CONTEXT_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int CU_handle_UE_CONTEXT_RELEASE_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_CU_F1, 0,  F1AP_UE_CONTEXT_RELEASE_REQ);
   f1ap_ue_context_release_req_t *req = &F1AP_UE_CONTEXT_RELEASE_REQ(msg);
@@ -919,10 +915,9 @@ int CU_send_UE_CONTEXT_RELEASE_COMMAND(instance_t instance,
   f1ap_itti_send_sctp_data_req(instance, buffer, len);
   return 0;
 }
-int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
+
+int CU_handle_UE_CONTEXT_RELEASE_COMPLETE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_UEContextReleaseComplete_t    *container;
   F1AP_UEContextReleaseCompleteIEs_t *ie;
   DevAssert(pdu);
@@ -1567,11 +1562,8 @@ int CU_send_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, f1ap_ue_context
   return 0;
 }
 
-int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
-
+int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   MessageDef                       *msg_p;
   F1AP_UEContextModificationResponse_t    *container;
   F1AP_UEContextModificationResponseIEs_t *ie;
@@ -1695,14 +1687,12 @@ int CU_handle_UE_CONTEXT_MODIFICATION_RESPONSE(instance_t       instance,
     return 0;
 }
 
-int CU_handle_UE_CONTEXT_MODIFICATION_FAILURE(instance_t       instance,
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    F1AP_F1AP_PDU_t *pdu) {
-  AssertFatal(1==0,"Not implemented yet\n");
+int CU_handle_UE_CONTEXT_MODIFICATION_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
+    AssertFatal(1 == 0, "Not implemented yet\n");
 }
 
-int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int CU_handle_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   DevAssert(pdu != NULL);
 

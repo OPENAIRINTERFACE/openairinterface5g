@@ -43,127 +43,70 @@
 #include "conversions.h"
 #include "X2AP_FreqBandNrItem.h"
 
-static
-int x2ap_eNB_handle_x2_setup_request (instance_t instance,
-                                      uint32_t assoc_id,
-                                      uint32_t stream,
-                                      X2AP_X2AP_PDU_t *pdu);
-static
-int x2ap_eNB_handle_x2_setup_response (instance_t instance,
-                                       uint32_t assoc_id,
-                                       uint32_t stream,
-                                       X2AP_X2AP_PDU_t *pdu);
-static
-int x2ap_eNB_handle_x2_reset_request (instance_t instance,
-                                      uint32_t assoc_id,
-                                      uint32_t stream,
-                                      X2AP_X2AP_PDU_t *pdu);
-static
-int x2ap_eNB_handle_x2_reset_response (instance_t instance,
-                                       uint32_t assoc_id,
-                                       uint32_t stream,
-                                       X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_x2_setup_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_x2_setup_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_x2_reset_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_x2_reset_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_x2_setup_failure (instance_t instance,
-                                      uint32_t assoc_id,
-                                      uint32_t stream,
-                                      X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_x2_setup_failure(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_handover_preparation (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-static
-int x2ap_eNB_handle_handover_response (instance_t instance,
-                                      uint32_t assoc_id,
-                                      uint32_t stream,
-                                      X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_handover_preparation(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_handover_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_ue_context_release (instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_ue_context_release(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_handover_cancel (instance_t instance,
-                                     uint32_t assoc_id,
-                                     uint32_t stream,
-                                     X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_handover_cancel(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_senb_addition_request (instance_t instance,
-                                           uint32_t assoc_id,
-                                           uint32_t stream,
-                                           X2AP_X2AP_PDU_t *pdu);
+static int x2ap_eNB_handle_senb_addition_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
 
+static int x2ap_eNB_handle_senb_addition_request_ack(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_senb_addition_request_ack (instance_t instance,
-                                                       uint32_t assoc_id,
+static int x2ap_eNB_handle_senb_addition_request_reject(instance_t instance,
+                                                        sctp_assoc_t assoc_id,
+                                                        uint32_t stream,
+                                                        X2AP_X2AP_PDU_t *pdu);
+
+int x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+
+int x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu);
+
+static int x2ap_gNB_handle_ENDC_sGNB_addition_request(instance_t instance,
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      X2AP_X2AP_PDU_t *pdu);
+
+static int x2ap_eNB_handle_ENDC_sGNB_addition_response(instance_t instance,
+                                                       sctp_assoc_t assoc_id,
                                                        uint32_t stream,
                                                        X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  X2AP_X2AP_PDU_t *pdu);
+static int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete(instance_t instance,
+                                                              sctp_assoc_t assoc_id,
+                                                              uint32_t stream,
+                                                              X2AP_X2AP_PDU_t *pdu);
 
-int x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu);
+static int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu);
 
-int
-x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu);
+static int x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge(instance_t instance,
+                                                                 sctp_assoc_t assoc_id,
+                                                                 uint32_t stream,
+                                                                 X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
+static int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      X2AP_X2AP_PDU_t *pdu);
 
-static
-int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-
-static
-int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
-
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_confirm(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu);
+static int x2ap_gNB_handle_ENDC_sGNB_release_confirm(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu);
 
 /* Handlers matrix. Only eNB related procedure present here. Placement of callback functions according to X2AP_ProcedureCode.h */
 static const x2ap_message_decoded_callback x2ap_messages_callback[][3] = {
@@ -272,9 +215,11 @@ void x2ap_handle_x2_setup_message(x2ap_eNB_instance_t *instance_p, x2ap_eNB_data
   }
 }
 
-
-int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                                const uint8_t *const data, const uint32_t data_length)
+int x2ap_eNB_handle_message(instance_t instance,
+                            sctp_assoc_t assoc_id,
+                            int32_t stream,
+                            const uint8_t *const data,
+                            const uint32_t data_length)
 {
   X2AP_X2AP_PDU_t pdu;
   int ret = 0;
@@ -380,11 +325,7 @@ int x2ap_eNB_handle_message(instance_t instance, uint32_t assoc_id, int32_t stre
   return ret;
 }
 
-int
-x2ap_eNB_handle_x2_setup_request(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu)
+int x2ap_eNB_handle_x2_setup_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_X2SetupRequest_t              *x2SetupRequest;
@@ -516,22 +457,13 @@ x2ap_eNB_handle_x2_setup_request(instance_t instance,
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
-int
-x2ap_eNB_handle_x2_reset_response(instance_t instance,
-                                  uint32_t assoc_id,
-                                  uint32_t stream,
-                                  X2AP_X2AP_PDU_t *pdu)
+int x2ap_eNB_handle_x2_reset_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
    return (0);
 }
 
-
-int
-x2ap_eNB_handle_x2_reset_request(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu)
+int x2ap_eNB_handle_x2_reset_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
   const char *const X2AP_ResetRequest_str[2] = {"X2AP_ResetRequest_IEs__value_PR_Cause",
                                                 "X2AP_ResetRequest_IEs__value_PR_InterfaceInstanceIndication"};
@@ -608,12 +540,7 @@ x2ap_eNB_handle_x2_reset_request(instance_t instance,
   return x2ap_eNB_generate_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
-
-static
-int x2ap_eNB_handle_x2_setup_response(instance_t instance,
-                                      uint32_t assoc_id,
-                                      uint32_t stream,
-                                      X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_x2_setup_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_X2SetupResponse_t              *x2SetupResponse;
@@ -744,11 +671,7 @@ int x2ap_eNB_handle_x2_setup_response(instance_t instance,
   return 0;
 }
 
-static
-int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
-                                     uint32_t assoc_id,
-                                     uint32_t stream,
-                                     X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_x2_setup_failure(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_X2SetupFailure_t              *x2SetupFailure;
@@ -814,11 +737,7 @@ int x2ap_eNB_handle_x2_setup_failure(instance_t instance,
   return 0;
 }
 
-static
-int x2ap_eNB_handle_handover_preparation (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_handover_preparation(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_HandoverRequest_t             *x2HandoverRequest;
@@ -960,11 +879,7 @@ int x2ap_eNB_handle_handover_preparation (instance_t instance,
   return 0;
 }
 
-static
-int x2ap_eNB_handle_handover_response (instance_t instance,
-                                       uint32_t assoc_id,
-                                       uint32_t stream,
-                                       X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_handover_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
   X2AP_HandoverRequestAcknowledge_t             *x2HandoverRequestAck;
   X2AP_HandoverRequestAcknowledge_IEs_t         *ie;
@@ -1111,12 +1026,7 @@ int x2ap_eNB_handle_handover_response (instance_t instance,
   return 0;
 }
 
-
-static
-int x2ap_eNB_handle_ue_context_release (instance_t instance,
-                                        uint32_t assoc_id,
-                                        uint32_t stream,
-                                        X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_ue_context_release(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
   X2AP_UEContextRelease_t             *x2UEContextRelease;
   X2AP_UEContextRelease_IEs_t         *ie;
@@ -1196,11 +1106,7 @@ int x2ap_eNB_handle_ue_context_release (instance_t instance,
   return 0;
 }
 
-static
-int x2ap_eNB_handle_handover_cancel (instance_t instance,
-                                     uint32_t assoc_id,
-                                     uint32_t stream,
-                                     X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_handover_cancel(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
   X2AP_HandoverCancel_t             *x2HandoverCancel;
   X2AP_HandoverCancel_IEs_t         *ie;
@@ -1304,12 +1210,7 @@ int x2ap_eNB_handle_handover_cancel (instance_t instance,
   return 0;
 }
 
-
-static
-int x2ap_eNB_handle_senb_addition_request (instance_t instance,
-                                           uint32_t assoc_id,
-                                           uint32_t stream,
-                                           X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_senb_addition_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_SeNBAdditionRequest_t             *x2SeNBAdditionRequest;
@@ -1487,32 +1388,25 @@ int x2ap_eNB_handle_senb_addition_request (instance_t instance,
   return 0;
 }
 
-static
-int x2ap_eNB_handle_senb_addition_request_ack (instance_t instance,
-                                                       uint32_t assoc_id,
-                                                       uint32_t stream,
-                                                       X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_senb_addition_request_ack(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu)
 {
   printf("%s:%d:%s:TODO\n", __FILE__, __LINE__, __FUNCTION__);
   return 0;
 }
 
-
-static
-int x2ap_eNB_handle_senb_addition_request_reject (instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_senb_addition_request_reject(instance_t instance,
+                                                        sctp_assoc_t assoc_id,
+                                                        uint32_t stream,
+                                                        X2AP_X2AP_PDU_t *pdu)
 {
   printf("%s:%d:%s:TODO\n", __FILE__, __LINE__, __FUNCTION__);
   return 0;
 }
 
-int
-x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu)
+int x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_ENDCX2SetupRequest_t              *x2_ENDC_SetupRequest;
@@ -1659,11 +1553,7 @@ x2ap_eNB_handle_ENDC_x2_setup_request(instance_t instance,
   return x2ap_eNB_generate_ENDC_x2_setup_response(instance_p, x2ap_eNB_data);
 }
 
-int
-x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
-                                 uint32_t assoc_id,
-                                 uint32_t stream,
-                                 X2AP_X2AP_PDU_t *pdu)
+int x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, X2AP_X2AP_PDU_t *pdu)
 {
 
   X2AP_ENDCX2SetupResponse_t              *x2_ENDC_SetupResponse;
@@ -1809,11 +1699,10 @@ x2ap_gNB_handle_ENDC_x2_setup_response(instance_t instance,
     return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_addition_request (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_addition_request(instance_t instance,
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      X2AP_X2AP_PDU_t *pdu)
 {
   X2AP_SgNBAdditionRequest_t             *x2SgNBAdditionRequest;
   X2AP_SgNBAdditionRequest_IEs_t         *ie;
@@ -1951,12 +1840,10 @@ LOG_I(RRC,"x2u tunnel: index %d target sgw ip %d.%d.%d.%d length %d gtp teid %u\
   return 0;
 }
 
-
-static
-int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_eNB_handle_ENDC_sGNB_addition_response(instance_t instance,
+                                                       sctp_assoc_t assoc_id,
+                                                       uint32_t stream,
+                                                       X2AP_X2AP_PDU_t *pdu)
 {
 
 	  X2AP_SgNBAdditionRequestAcknowledge_t             *x2SgNBAdditionRequest_ack;
@@ -2103,11 +1990,10 @@ int x2ap_eNB_handle_ENDC_sGNB_addition_response (instance_t instance,
 	  return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete(instance_t instance,
+                                                              sctp_assoc_t assoc_id,
+                                                              uint32_t stream,
+                                                              X2AP_X2AP_PDU_t *pdu)
 {
   X2AP_SgNBReconfigurationComplete_t     *x2SgNBReconfigurationComplete;
   X2AP_SgNBReconfigurationComplete_IEs_t *ie;
@@ -2190,11 +2076,10 @@ int x2ap_gNB_handle_ENDC_sGNB_reconfiguration_complete (instance_t instance,
   return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu)
 {
   /* the logic in this function is the following: when receiving a release
    * request, the UE may exist in X2. Or not. If it's not in X2, it can
@@ -2294,22 +2179,20 @@ int x2ap_gNB_handle_ENDC_sGNB_release_request(instance_t instance,
   return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_release_request_acknowledge(instance_t instance,
+                                                                 sctp_assoc_t assoc_id,
+                                                                 uint32_t stream,
+                                                                 X2AP_X2AP_PDU_t *pdu)
 {
   /* nothing to do - may change at some point */
   X2AP_INFO("received release request acknowledge\n");
   return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      X2AP_X2AP_PDU_t *pdu)
 {
   /* the logic in this function is the following: when receiving a release
    * required we don't care about the UE in X2. We simply send a message
@@ -2383,11 +2266,10 @@ int x2ap_gNB_handle_ENDC_sGNB_release_required(instance_t instance,
   return 0;
 }
 
-static
-int x2ap_gNB_handle_ENDC_sGNB_release_confirm(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          X2AP_X2AP_PDU_t *pdu)
+static int x2ap_gNB_handle_ENDC_sGNB_release_confirm(instance_t instance,
+                                                     sctp_assoc_t assoc_id,
+                                                     uint32_t stream,
+                                                     X2AP_X2AP_PDU_t *pdu)
 {
   /* nothing to do - may change at some point */
   X2AP_INFO("received release confirm\n");

@@ -36,9 +36,7 @@
 // int ngap_gNB_handle_overload_start(gNB_amf_desc_t *gNB_desc_p,
 //                                    sctp_queue_item_t *packet_p,
 //                                    struct ngap_message_s *message_p);
-int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
-                                   uint32_t         stream,
-                                   NGAP_NGAP_PDU_t *pdu);
+int ngap_gNB_handle_overload_start(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu);
 
 /**
  * \brief Handle an overload stop message
@@ -46,8 +44,6 @@ int ngap_gNB_handle_overload_start(uint32_t         assoc_id,
 // int ngap_gNB_handle_overload_stop(gNB_amf_desc_t *gNB_desc_p,
 //                                   sctp_queue_item_t *packet_p,
 //                                   struct ngap_message_s *message_p);
-int ngap_gNB_handle_overload_stop(uint32_t         assoc_id,
-                                  uint32_t         stream,
-                                  NGAP_NGAP_PDU_t *pdu);
+int ngap_gNB_handle_overload_stop(sctp_assoc_t assoc_id, uint32_t stream, NGAP_NGAP_PDU_t *pdu);
 
 #endif /* NGAP_GNB_OVERLOAD_H_ */

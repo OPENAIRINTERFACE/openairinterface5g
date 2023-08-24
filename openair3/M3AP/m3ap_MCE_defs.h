@@ -115,7 +115,7 @@ typedef struct m3ap_MCE_data_s {
   uint16_t cnx_id;
 
   /* SCTP association id */
-  int32_t  assoc_id;
+  sctp_assoc_t assoc_id;
 
   /* Nid cells */
   uint32_t                Nid_cell[MAX_NUM_CCs];

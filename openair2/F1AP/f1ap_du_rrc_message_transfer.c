@@ -55,10 +55,8 @@
 #include "openair2/LAYER2/NR_MAC_gNB/mac_rrc_dl_handler.h"
 
 /*  DL RRC Message Transfer */
-int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t       instance,
-                                      uint32_t         assoc_id,
-                                      uint32_t         stream,
-                                      F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_DL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   F1AP_DLRRCMessageTransfer_t    *container;
   F1AP_DLRRCMessageTransferIEs_t *ie;
   int             executeDuplication;

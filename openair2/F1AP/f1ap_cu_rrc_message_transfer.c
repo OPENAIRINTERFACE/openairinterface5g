@@ -43,10 +43,8 @@
     Initial UL RRC Message Transfer
 */
 
-int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t             instance,
-    uint32_t               assoc_id,
-    uint32_t               stream,
-    F1AP_F1AP_PDU_t       *pdu) {
+int CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "CU_handle_INITIAL_UL_RRC_MESSAGE_TRANSFER\n");
   // decode the F1 message
   // get the rrc message from the contauiner
@@ -216,10 +214,8 @@ int CU_send_DL_RRC_MESSAGE_TRANSFER(instance_t                instance,
 /*
     UL RRC Message Transfer
 */
-int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t       instance,
-                                      uint32_t         assoc_id,
-                                      uint32_t         stream,
-                                      F1AP_F1AP_PDU_t *pdu) {
+int CU_handle_UL_RRC_MESSAGE_TRANSFER(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "CU_handle_UL_RRC_MESSAGE_TRANSFER \n");
   F1AP_ULRRCMessageTransfer_t    *container;
   F1AP_ULRRCMessageTransferIEs_t *ie;

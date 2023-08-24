@@ -74,30 +74,15 @@ extern int asn1_xer_print;
 
 /** \brief Function callback prototype.
  **/
-typedef int (*m3ap_message_decoded_callback)(
-  instance_t instance,
-  uint32_t assocId,
-  uint32_t stream,
-  M3AP_M3AP_PDU_t *pdu);
-
+typedef int (*m3ap_message_decoded_callback)(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu);
 
 /** \brief Function callback prototype.
  **/
-typedef int (*m3ap_MCE_message_decoded_callback)(
-  instance_t instance,
-  uint32_t assocId,
-  uint32_t stream,
-  M3AP_M3AP_PDU_t *pdu);
+typedef int (*m3ap_MCE_message_decoded_callback)(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu);
 
 /** \brief Function callback prototype.
  **/
-typedef int (*m3ap_MME_message_decoded_callback)(
-  instance_t instance,
-  uint32_t assocId,
-  uint32_t stream,
-  M3AP_M3AP_PDU_t *pdu);
-
-
+typedef int (*m3ap_MME_message_decoded_callback)(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu);
 
 /** \brief Encode a successfull outcome message
  \param buffer pointer to buffer in which data will be encoded

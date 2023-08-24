@@ -387,14 +387,12 @@
 
 /** \brief Function array prototype.
  **/
-typedef int (*f1ap_message_processing_t)(
-  instance_t             instance,
-  uint32_t               assoc_id,
-  uint32_t               stream,
-  F1AP_F1AP_PDU_t       *message_p
-);
-int f1ap_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                        const uint8_t *const data, const uint32_t data_length);
+typedef int (*f1ap_message_processing_t)(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *message_p);
+int f1ap_handle_message(instance_t instance,
+                        sctp_assoc_t assoc_id,
+                        int32_t stream,
+                        const uint8_t *const data,
+                        const uint32_t data_length);
 
 typedef struct f1ap_cudu_inst_s {
   f1ap_setup_req_t setupReq;
@@ -403,7 +401,7 @@ typedef struct f1ap_cudu_inst_s {
   f1ap_net_config_t net_config;
 
   /* SCTP information */
-  int32_t assoc_id;
+  sctp_assoc_t assoc_id;
   uint16_t sctp_in_streams;
   uint16_t sctp_out_streams;
 

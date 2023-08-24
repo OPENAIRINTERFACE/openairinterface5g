@@ -57,10 +57,7 @@ bool DURecvCb(protocol_ctxt_t *ctxt_pP,
   return true;
 }
 
-int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t       instance,
-                                       uint32_t         assoc_id,
-                                       uint32_t         stream,
-                                       F1AP_F1AP_PDU_t *pdu)
+int DU_handle_UE_CONTEXT_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextSetupRequest_t    *container;
   int i;
@@ -624,7 +621,7 @@ int DU_send_UE_CONTEXT_RELEASE_REQUEST(instance_t instance,
   return 0;
 }
 
-int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_UE_CONTEXT_RELEASE_COMMAND(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextReleaseCommand_t *container;
   F1AP_UEContextReleaseCommandIEs_t *ie;
@@ -781,7 +778,7 @@ static instance_t du_create_gtpu_instance_to_cu(char *CUaddr, uint16_t CUport, c
   return gtpv1Init(tmp);
 }
 
-int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_UE_CONTEXT_MODIFICATION_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextModificationRequest_t    *container;
   int i;
@@ -1395,7 +1392,7 @@ int DU_send_UE_CONTEXT_MODIFICATION_REQUIRED(instance_t instance, f1ap_ue_contex
   return 0;
 }
 
-int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextModificationConfirm_t *container = &pdu->choice.successfulOutcome->value.choice.UEContextModificationConfirm;
   f1ap_ue_context_modif_confirm_t confirm = {0};
@@ -1471,7 +1468,7 @@ int DU_handle_UE_CONTEXT_MODIFICATION_CONFIRM(instance_t instance, uint32_t asso
   return 0;
 }
 
-int DU_handle_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_UE_CONTEXT_MODIFICATION_REFUSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_UEContextModificationRefuse_t *container = &pdu->choice.unsuccessfulOutcome->value.choice.UEContextModificationRefuse;
   f1ap_ue_context_modif_refuse_t refuse = {0};

@@ -50,10 +50,8 @@ int to_NRNRB(int nrb) {
   AssertFatal(1==0,"nrb %d is not in the list of possible NRNRB\n",nrb);
 }
 
-int DU_handle_RESET(instance_t instance,
-                    uint32_t assoc_id,
-                    uint32_t stream,
-                    F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -65,13 +63,10 @@ int DU_send_RESET(instance_t instance, F1AP_Reset_t *Reset) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int DU_handle_RESET_ACKNOWLEDGE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_RESET_ACKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
-
 
 /*
     Error Indication
@@ -81,13 +76,10 @@ int DU_send_ERROR_INDICATION(instance_t instance, F1AP_F1AP_PDU_t *pdu_p) {
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-int DU_handle_ERROR_INDICATION(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
-
 
 /*
     F1 Setup
@@ -310,7 +302,7 @@ int DU_send_F1_SETUP_REQUEST(instance_t instance, f1ap_setup_req_t *setup_req)
   return 0;
 }
 
-int DU_handle_F1_SETUP_RESPONSE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_F1_SETUP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   LOG_D(F1AP, "DU_handle_F1_SETUP_RESPONSE\n");
   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_successfulOutcome,
@@ -474,7 +466,7 @@ int DU_handle_F1_SETUP_RESPONSE(instance_t instance, uint32_t assoc_id, uint32_t
 }
 
 // SETUP FAILURE
-int DU_handle_F1_SETUP_FAILURE(instance_t instance, uint32_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+int DU_handle_F1_SETUP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
 {
   F1AP_F1SetupFailure_t    *out;
   F1AP_F1SetupFailureIEs_t *ie;
@@ -738,25 +730,21 @@ int DU_send_gNB_DU_CONFIGURATION_UPDATE(instance_t instance,
   return 0;
 }
 
-int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_gNB_DU_CONFIGURATION_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
 int DU_handle_gNB_DU_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+                                                      sctp_assoc_t assoc_id,
+                                                      uint32_t stream,
+                                                      F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-
-int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+int DU_handle_gNB_CU_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, F1AP_F1AP_PDU_t *pdu)
+{
   LOG_D(F1AP, "DU_handle_gNB_CU_CONFIGURATION_UPDATE\n");
   AssertFatal(pdu->present == F1AP_F1AP_PDU_PR_initiatingMessage,
               "pdu->present != F1AP_F1AP_PDU_PR_initiatingMessage\n");
@@ -960,8 +948,9 @@ int DU_send_gNB_DU_RESOURCE_COORDINATION_REQUEST(instance_t instance,
 }
 
 int DU_handle_gNB_DU_RESOURCE_COORDINATION_RESPONSE(instance_t instance,
-    uint32_t assoc_id,
-    uint32_t stream,
-    F1AP_F1AP_PDU_t *pdu) {
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    F1AP_F1AP_PDU_t *pdu)
+{
   AssertFatal(0, "Not implemented yet\n");
 }

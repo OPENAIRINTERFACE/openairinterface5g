@@ -61,8 +61,9 @@ uint8_t m3ap_start_message[] = {
 /*
  * MBMS Session start
  */
-int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id*/,m3ap_session_start_req_t* m3ap_session_start_req){
-
+int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance /*, sctp_assoc_t assoc_id*/,
+                                        m3ap_session_start_req_t *m3ap_session_start_req)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
     
   //module_id_t enb_mod_idP=0;
@@ -239,13 +240,10 @@ int MME_send_MBMS_SESSION_START_REQUEST(instance_t instance/*, uint32_t assoc_id
   m3ap_MME_itti_send_sctp_data_req(instance, m3ap_mme_data_from_mce->assoc_id, buffer, len, 0);
   
   return 0;
-
 }
 
-int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
 //  AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M3AP, "MME_handle_MBMS_SESSION_START_RESPONSE\n");
 
@@ -300,12 +298,9 @@ int MME_handle_MBMS_SESSION_START_RESPONSE(instance_t instance,
   //       assoc_id,ENB_MODULE_ID_TO_INSTANCE(assoc_id));
   itti_send_msg_to_task(TASK_MME_APP, ENB_MODULE_ID_TO_INSTANCE(assoc_id), msg_g);
   return 0;
-
 }
-int MME_handle_MBMS_SESSION_START_FAILURE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_START_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -370,10 +365,8 @@ int MME_send_MBMS_SESSION_STOP_REQUEST(instance_t instance, m3ap_session_stop_re
                         
 }
 
-int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M3AP, "eNB_handle_MBMS_SESSION_STOP_RESPONSE\n");
 
@@ -432,12 +425,8 @@ int MME_handle_MBMS_SESSION_STOP_RESPONSE(instance_t instance,
 	return 0;
 }
 
-
-
-int MME_handle_MBMS_SESSION_STOP_FAILURE(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_STOP_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
                       
 }
@@ -456,19 +445,14 @@ int MME_send_RESET(instance_t instance, m3ap_reset_t * m3ap_reset) {
                         
 }
 
-
-int MME_handle_RESET_ACKKNOWLEDGE(instance_t instance,
-                                  uint32_t assoc_id,
-                                  uint32_t stream,
-                                  M3AP_M3AP_PDU_t *pdu) {
+int MME_handle_RESET_ACKKNOWLEDGE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
 }
 
-int MME_handle_RESET(instance_t instance,
-                     uint32_t assoc_id,
-                     uint32_t stream,
-                     M3AP_M3AP_PDU_t *pdu) {
+int MME_handle_RESET(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -479,10 +463,7 @@ int MME_send_RESET_ACKNOWLEDGE(instance_t instance, M3AP_ResetAcknowledge_t *Res
 /*
  *    M3 Setup
  */
-int MME_handle_M3_SETUP_REQUEST(instance_t instance,
-                               uint32_t assoc_id,
-                               uint32_t stream,
-                               M3AP_M3AP_PDU_t *pdu)
+int MME_handle_M3_SETUP_REQUEST(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
 {
   LOG_D(M2AP, "MCE_handle_M3_SETUP_REQUEST assoc_id %d\n",assoc_id);
 
@@ -632,8 +613,9 @@ int MME_handle_M3_SETUP_REQUEST(instance_t instance,
     return 0;
 }
 
-int MME_send_M3_SETUP_RESPONSE(instance_t instance, /*uint32_t assoc_id,*/
-                               m3ap_setup_resp_t *m3ap_setup_resp) {
+int MME_send_M3_SETUP_RESPONSE(instance_t instance, /*sctp_assoc_t assoc_id,*/
+                               m3ap_setup_resp_t *m3ap_setup_resp)
+{
  M3AP_M3AP_PDU_t           pdu;
  M3AP_M3SetupResponse_t    *out;
  M3AP_M3SetupResponseIEs_t *ie;
@@ -774,19 +756,16 @@ int MME_send_M3_SETUP_FAILURE(instance_t instance,m3ap_setup_failure_t* m3ap_set
  * MME Configuration Update
  */
 
-
-int MME_handle_MME_CONFIGURATION_UPDATE_FAILURE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MME_CONFIGURATION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-
 int MME_handle_MME_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M3AP_M3AP_PDU_t *pdu){
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -795,11 +774,8 @@ int MME_handle_MME_CONFIGURATION_UPDATE_ACKNOWLEDGE(instance_t instance,
  * MCE Configuration Update
  */
 
-
-int MME_handle_MCE_CONFIGURATION_UPDATE(instance_t instance,
-                                          uint32_t assoc_id,
-                                          uint32_t stream,
-                                          M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MCE_CONFIGURATION_UPDATE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
@@ -812,10 +788,8 @@ int MME_handle_MCE_CONFIGURATION_UPDATE(instance_t instance,
  * Error Indication
  */
 
-int MME_handle_ERROR_INDICATION(instance_t instance,
-                                uint32_t assoc_id,
-                                uint32_t stream,
-                                M3AP_M3AP_PDU_t *pdu) {
+int MME_handle_ERROR_INDICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
 
@@ -1003,12 +977,8 @@ int MME_send_MBMS_SESSION_UPDATE_REQUEST(instance_t instance, m3ap_mbms_session_
 
 }
 
-
-
-int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   //AssertFatal(1==0,"Not implemented yet\n");
   LOG_D(M3AP, "MME_handle_MBMS_SESSION_UPDATE_RESPONSE\n");
 
@@ -1067,30 +1037,18 @@ int MME_handle_MBMS_SESSION_UPDATE_RESPONSE(instance_t instance,
 
 }
 
-
-
-int MME_handle_MBMS_SESSION_UPDATE_FAILURE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_UPDATE_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-
-
-int MME_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance,
-                                                  uint32_t assoc_id,
-                                                  uint32_t stream,
-                                                  M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SERVICE_COUNTING_RESPONSE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 }
 
-
-
-int MME_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
 }
@@ -1101,9 +1059,10 @@ int MME_handle_MBMS_SESSION_COUNTING_FAILURE(instance_t instance,
  */
 
 int MME_handle_MBMS_SESSION_COUNTING_RESULTS_REPORT(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M3AP_M3AP_PDU_t *pdu){
+                                                    sctp_assoc_t assoc_id,
+                                                    uint32_t stream,
+                                                    M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
 
 }
@@ -1112,10 +1071,8 @@ int MME_handle_MBMS_SESSION_COUNTING_RESULTS_REPORT(instance_t instance,
 /*
  * Overload Notification
  */
-int MME_handle_MBMS_OVERLOAD_NOTIFICATION(instance_t instance,
-                                                      uint32_t assoc_id,
-                                                      uint32_t stream,
-                                                      M3AP_M3AP_PDU_t *pdu){
+int MME_handle_MBMS_OVERLOAD_NOTIFICATION(instance_t instance, sctp_assoc_t assoc_id, uint32_t stream, M3AP_M3AP_PDU_t *pdu)
+{
   AssertFatal(1==0,"Not implemented yet\n");
  
 }

@@ -30,13 +30,14 @@
 #ifndef NGAP_GNB_ITTI_MESSAGING_H_
 #define NGAP_GNB_ITTI_MESSAGING_H_
 
-void ngap_gNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,
-                                      uint32_t buffer_length, uint16_t stream);
+void ngap_gNB_itti_send_sctp_data_req(instance_t instance,
+                                      sctp_assoc_t assoc_id,
+                                      uint8_t *buffer,
+                                      uint32_t buffer_length,
+                                      uint16_t stream);
 
 void ngap_gNB_itti_send_nas_downlink_ind(instance_t instance, uint32_t gNB_ue_ngap_id, uint8_t *nas_pdu, uint32_t nas_pdu_length);
 
-void ngap_gNB_itti_send_sctp_close_association(instance_t instance,
-    int32_t assoc_id);
-
+void ngap_gNB_itti_send_sctp_close_association(instance_t instance, sctp_assoc_t assoc_id);
 
 #endif /* NGAP_GNB_ITTI_MESSAGING_H_ */

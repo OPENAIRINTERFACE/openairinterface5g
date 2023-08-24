@@ -28,6 +28,8 @@
 
 #include "common/utils/LOG/log.h"
 #include "oai_asn1.h"
+#include "netinet/in.h"
+#include "netinet/sctp.h"
 
 #include "S1AP_ProtocolIE-Field.h"
 #include "S1AP_S1AP-PDU.h"
@@ -85,11 +87,7 @@ extern int asn1_xer_print;
   } while(0)
 /** \brief Function callback prototype.
  **/
-typedef int (*s1ap_message_decoded_callback)(
-    uint32_t         assoc_id,
-    uint32_t         stream,
-    S1AP_S1AP_PDU_t *pdu
-);
+typedef int (*s1ap_message_decoded_callback)(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu);
 
 /** \brief Handle criticality
  \param criticality Criticality of the IE

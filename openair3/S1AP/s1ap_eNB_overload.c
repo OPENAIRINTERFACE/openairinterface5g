@@ -43,9 +43,7 @@
 
 #include "assertions.h"
 
-int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
-                                   uint32_t         stream,
-                                   S1AP_S1AP_PDU_t *pdu)
+int s1ap_eNB_handle_overload_start(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
 {
     s1ap_eNB_mme_data_t     *mme_desc_p;
     S1AP_OverloadStart_t    *container;
@@ -88,9 +86,7 @@ int s1ap_eNB_handle_overload_start(uint32_t         assoc_id,
     return 0;
 }
 
-int s1ap_eNB_handle_overload_stop(uint32_t         assoc_id,
-                                  uint32_t         stream,
-                                  S1AP_S1AP_PDU_t *pdu)
+int s1ap_eNB_handle_overload_stop(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
 {
     /* We received Overload stop message, meaning that the MME is no more
      * overloaded. This is an empty message, with only message header and no

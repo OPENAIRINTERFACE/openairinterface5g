@@ -74,9 +74,11 @@ static char *m2ap_direction_String[] = {
 return(m2ap_direction_String[m2ap_dir]);
 }
 
-
-int m2ap_MCE_handle_message(instance_t instance, uint32_t assoc_id, int32_t stream,
-                            const uint8_t * const data, const uint32_t data_length)
+int m2ap_MCE_handle_message(instance_t instance,
+                            sctp_assoc_t assoc_id,
+                            int32_t stream,
+                            const uint8_t *const data,
+                            const uint32_t data_length)
 {
   M2AP_M2AP_PDU_t pdu;
   int ret;

@@ -23,8 +23,11 @@
 
 #include "s1ap_eNB_itti_messaging.h"
 
-void s1ap_eNB_itti_send_sctp_data_req(instance_t instance, int32_t assoc_id, uint8_t *buffer,
-                                      uint32_t buffer_length, uint16_t stream)
+void s1ap_eNB_itti_send_sctp_data_req(instance_t instance,
+                                      sctp_assoc_t assoc_id,
+                                      uint8_t *buffer,
+                                      uint32_t buffer_length,
+                                      uint16_t stream)
 {
   MessageDef      *message_p;
   sctp_data_req_t *sctp_data_req;
@@ -63,7 +66,7 @@ void s1ap_eNB_itti_send_nas_downlink_ind(instance_t instance,
   itti_send_msg_to_task(TASK_RRC_ENB, instance, message_p);
 }
 
-void s1ap_eNB_itti_send_sctp_close_association(instance_t instance, int32_t assoc_id)
+void s1ap_eNB_itti_send_sctp_close_association(instance_t instance, sctp_assoc_t assoc_id)
 {
   MessageDef               *message_p = NULL;
   sctp_close_association_t *sctp_close_association_p = NULL;

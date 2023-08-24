@@ -316,9 +316,7 @@ int s1ap_eNB_handle_nas_first_req(
 }
 
 //------------------------------------------------------------------------------
-int s1ap_eNB_handle_nas_downlink(uint32_t         assoc_id,
-                                 uint32_t         stream,
-                                 S1AP_S1AP_PDU_t *pdu)
+int s1ap_eNB_handle_nas_downlink(sctp_assoc_t assoc_id, uint32_t stream, S1AP_S1AP_PDU_t *pdu)
 //------------------------------------------------------------------------------
 {
     s1ap_eNB_mme_data_t             *mme_desc_p        = NULL;
