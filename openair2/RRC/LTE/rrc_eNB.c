@@ -6835,10 +6835,6 @@ rrc_eNB_decode_dcch(
           /* do NR only if at least one gNB connected */
           if (RC.rrc[ctxt_pP->module_id]->num_gnb_cells != 0)
           {
-            allocate_en_DC_r15(ue_context_p->ue_context.UE_Capability);
-            if (!is_en_dc_supported(ue_context_p->ue_context.UE_Capability)){
-                    LOG_E(RRC, "We did not properly allocate en_DC_r15 for UE_EUTRA_Capability\n");
-            }
             ue_context_p->ue_context.does_nr = is_en_dc_supported(ue_context_p->ue_context.UE_Capability);
           }
           else
