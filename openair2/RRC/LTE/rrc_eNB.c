@@ -3842,7 +3842,7 @@ void rrc_eNB_handover_ue_context_release(
     ue_context_p->ue_context.enb_gtp_ebi[e_rab] = 0;
   }
 
-  gtpv1u_delete_s1u_tunnel(ctxt_pP->module_id, &delete_tunnels);
+  gtpv1u_delete_all_s1u_tunnel(ctxt_pP->module_id, delete_tunnels.rnti);
   struct rrc_ue_s1ap_ids_s *rrc_ue_s1ap_ids = NULL;
   rrc_ue_s1ap_ids = rrc_eNB_S1AP_get_ue_ids(RC.rrc[ctxt_pP->module_id], 0, eNB_ue_s1ap_id);
 
