@@ -244,6 +244,9 @@ uint16_t compute_pucch_prb_size(uint8_t format,
                                 uint8_t n_symb,
                                 uint8_t n_re_ctrl);
 
+float get_max_code_rate(NR_PUCCH_MaxCodeRate_t *maxCodeRate);
+int get_f3_dmrs_symbols(NR_PUCCH_Resource_t *pucchres, NR_PUCCH_Config_t *pucch_Config);
+
 int16_t get_N_RA_RB (int delta_f_RA_PRACH,int delta_f_PUSCH);
 
 void find_period_offset_SR(const NR_SchedulingRequestResourceConfig_t *SchedulingReqRec, int *period, int *offset);
