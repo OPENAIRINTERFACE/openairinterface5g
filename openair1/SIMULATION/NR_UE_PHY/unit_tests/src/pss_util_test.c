@@ -233,8 +233,7 @@ int init_test(unsigned char N_tx, unsigned char N_rx, unsigned char transmission
   frame_parms->N_RB_DL              = N_RB_DL;   //50 for 10MHz and 25 for 5 MHz
   frame_parms->N_RB_UL              = N_RB_DL;
   frame_parms->Ncp                  = extended_prefix_flag;
-  frame_parms->Nid_cell             = Nid_cell;
-  frame_parms->nushift              = Nid_cell%6;
+  frame_parms->Nid_cell = Nid_cell;
   frame_parms->nb_antennas_tx       = N_tx;
   frame_parms->nb_antennas_rx       = N_rx;
   frame_parms->frame_type           = frame_type;

@@ -57,10 +57,11 @@ static uint16_t nr_pbch_extract(uint32_t rxdataF_sz,
                                 struct complex16 dl_ch_estimates_ext[][PBCH_MAX_RE_PER_SYMBOL],
                                 uint32_t symbol,
                                 uint32_t s_offset,
-                                NR_DL_FRAME_PARMS *frame_parms) {
+                                NR_DL_FRAME_PARMS *frame_parms,
+                                int nushiftmod4)
+{
   uint16_t rb;
-  uint8_t i,j,aarx;
-  int nushiftmod4 = frame_parms->nushift;
+  uint8_t i, j, aarx;
   AssertFatal(symbol>=1 && symbol<5,
               "symbol %d illegal for PBCH extraction\n",
               symbol);
@@ -395,12 +396,12 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
 {
   int max_h=0;
   int symbol;
-  //uint8_t pbch_a[64];
-  //FT ?? cppcheck doesn't like pbch_a allocation because of line 525..and i don't get what this variable is for..
-  //uint8_t *pbch_a = malloc(sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
-  uint8_t nushift;
-  uint16_t M;
+  // uint8_t pbch_a[64];
+  // FT ?? cppcheck doesn't like pbch_a allocation because of line 525..and i don't get what this variable is for..
+  // uint8_t *pbch_a = malloc(sizeof(uint8_t) * NR_POLAR_PBCH_PAYLOAD_BITS);
   uint8_t Lmax=frame_parms->Lmax;
+  int M = NR_POLAR_PBCH_E;
+  int nushift = (Lmax == 4) ? i_ssb & 3 : i_ssb & 7;
   //uint16_t crc;
   //unsigned short idx_demod =0;
   uint32_t decoderState=0;
@@ -440,7 +441,8 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
                     dl_ch_estimates_ext,
                     symbol,
                     symbol_offset,
-                    frame_parms);
+                    frame_parms,
+                    nushift);
 #ifdef DEBUG_PBCH
     LOG_I(PHY,"[PHY] PBCH Symbol %d ofdm size %d\n",symbol, frame_parms->ofdm_symbol_size );
     LOG_I(PHY,"[PHY] PBCH starting channel_level\n");
@@ -496,9 +498,7 @@ int nr_rx_pbch(PHY_VARS_NR_UE *ue,
     printf("pbch rx llr %d\n",*(pbch_e_rx+cnt));
   
 #endif
-  //un-scrambling
-  M =  NR_POLAR_PBCH_E;
-  nushift = (Lmax==4)? i_ssb&3 : i_ssb&7;
+  // un-scrambling
   uint32_t unscrambling_mask = (Lmax==64)?0x100006D:0x1000041;
   uint32_t pbch_a_interleaved=0;
   uint32_t pbch_a_prime=0;

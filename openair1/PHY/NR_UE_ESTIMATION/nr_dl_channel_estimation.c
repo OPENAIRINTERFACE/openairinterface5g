@@ -635,18 +635,13 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
                              c16_t rxdataF[][ue->frame_parms.samples_per_slot_wCP])
 {
   int pilot[200] __attribute__((aligned(16)));
-  unsigned short k;
   unsigned int pilot_cnt;
   int16_t ch[2],*pil,*rxF;
   int symbol_offset;
 
-
-  uint8_t nushift;
   uint8_t ssb_index=current_ssb->i_ssb;
   uint8_t n_hf=current_ssb->n_hf;
 
-  nushift =  ue->frame_parms.Nid_cell%4;
-  ue->frame_parms.nushift = nushift;
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
@@ -656,8 +651,7 @@ int nr_pbch_dmrs_correlation(PHY_VARS_NR_UE *ue,
 
   symbol_offset = ue->frame_parms.ofdm_symbol_size*symbol;
 
-
-  k = nushift;
+  unsigned int k = ue->frame_parms.Nid_cell % 4;
 
 #ifdef DEBUG_PBCH
   printf("PBCH DMRS Correlation : gNB_id %d , OFDM size %d, Ncp=%d, Ns=%d, k=%d symbol %d\n", proc->gNB_id, ue->frame_parms.ofdm_symbol_size, ue->frame_parms.Ncp, Ns, k, symbol);
@@ -805,8 +799,7 @@ int nr_pbch_channel_estimation(PHY_VARS_NR_UE *ue,
   //int slot_pbch;
 
   uint8_t nushift;
-  nushift =  ue->frame_parms.Nid_cell%4;
-  ue->frame_parms.nushift = nushift;
+  nushift = ue->frame_parms.Nid_cell % 4;
   unsigned int  ssb_offset = ue->frame_parms.first_carrier_offset + ue->frame_parms.ssb_start_subcarrier;
   if (ssb_offset>= ue->frame_parms.ofdm_symbol_size) ssb_offset-=ue->frame_parms.ofdm_symbol_size;
 
@@ -1707,12 +1700,8 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   uint8_t nushift = 0;
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
     nushift = (p >> 1) & 1;
-    if (p < 4)
-      ue->frame_parms.nushift = nushift;
   } else { // NFAPI_NR_DMRS_TYPE2
     nushift = delta;
-    if (p < 6)
-      ue->frame_parms.nushift = nushift;
   }
 
   for (int aarx = 0; aarx < ue->frame_parms.nb_antennas_rx; aarx++) {
