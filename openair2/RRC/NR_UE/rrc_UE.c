@@ -1459,7 +1459,8 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
      xer_fprint(stdout, &asn_DEF_NR_RadioBearerConfig, (const void *)radioBearerConfig);
 
    NR_UE_RRC_INST_t *ue_rrc = &NR_UE_rrc_inst[ctxt_pP->module_id];
-   AssertFatal(radioBearerConfig->srb3_ToRelease == NULL, "Release of SRB3 not yet implemented\n");
+   if (radioBearerConfig->srb3_ToRelease)
+     nr_release_srb(ctxt_pP->rntiMaybeUEid, 3);
 
    uint8_t kRRCenc[16] = {0};
    uint8_t kRRCint[16] = {0};
@@ -1509,7 +1510,13 @@ void nr_rrc_ue_generate_RRCSetupRequest(module_id_t module_id, const uint8_t gNB
      }
    }
 
-   AssertFatal(radioBearerConfig->drb_ToReleaseList == NULL, "RB entity release not implemented yet\n");
+   if (radioBearerConfig->drb_ToReleaseList) {
+     for (int cnt = 0; cnt < radioBearerConfig->drb_ToReleaseList->list.count; cnt++) {
+       NR_DRB_Identity_t *DRB_id = radioBearerConfig->drb_ToReleaseList->list.array[cnt];
+       if (DRB_id)
+         nr_release_drb(ctxt_pP->rntiMaybeUEid, *DRB_id);
+     }
+   }
 
    // Establish DRBs if present
    if (radioBearerConfig->drb_ToAddModList != NULL) {
