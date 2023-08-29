@@ -111,6 +111,31 @@ static void ue_context_modification_response_direct(const f1ap_ue_context_modif_
   itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
 }
 
+static void ue_context_modification_required_direct(const f1ap_ue_context_modif_required_t *required)
+{
+  MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_MODIFICATION_REQUIRED);
+  f1ap_ue_context_modif_required_t *f1ap_msg = &F1AP_UE_CONTEXT_MODIFICATION_REQUIRED(msg);
+  f1ap_msg->gNB_CU_ue_id = required->gNB_CU_ue_id;
+  f1ap_msg->gNB_DU_ue_id = required->gNB_DU_ue_id;
+  f1ap_msg->du_to_cu_rrc_information = NULL;
+  if (required->du_to_cu_rrc_information != NULL) {
+    f1ap_msg->du_to_cu_rrc_information = calloc(1, sizeof(*f1ap_msg->du_to_cu_rrc_information));
+    AssertFatal(f1ap_msg->du_to_cu_rrc_information != NULL, "out of memory\n");
+    du_to_cu_rrc_information_t *du2cu = f1ap_msg->du_to_cu_rrc_information;
+    AssertFatal(required->du_to_cu_rrc_information->cellGroupConfig != NULL && required->du_to_cu_rrc_information->cellGroupConfig_length > 0,
+                "cellGroupConfig is mandatory\n");
+    du2cu->cellGroupConfig_length = required->du_to_cu_rrc_information->cellGroupConfig_length;
+    du2cu->cellGroupConfig = malloc(du2cu->cellGroupConfig_length * sizeof(*du2cu->cellGroupConfig));
+    AssertFatal(du2cu->cellGroupConfig != NULL, "out of memory\n");
+    memcpy(du2cu->cellGroupConfig, required->du_to_cu_rrc_information->cellGroupConfig, du2cu->cellGroupConfig_length);
+    AssertFatal(required->du_to_cu_rrc_information->measGapConfig == NULL && required->du_to_cu_rrc_information->measGapConfig_length == 0, "not handled yet\n");
+    AssertFatal(required->du_to_cu_rrc_information->requestedP_MaxFR1 == NULL && required->du_to_cu_rrc_information->requestedP_MaxFR1_length == 0, "not handled yet\n");
+  }
+  f1ap_msg->cause = required->cause;
+  f1ap_msg->cause_value = required->cause_value;
+  itti_send_msg_to_task(TASK_RRC_GNB, 0, msg);
+}
+
 static void ue_context_release_request_direct(const f1ap_ue_context_release_req_t* req)
 {
   MessageDef *msg = itti_alloc_new_message(TASK_MAC_GNB, 0, F1AP_UE_CONTEXT_RELEASE_REQ);
@@ -151,6 +176,7 @@ void mac_rrc_ul_direct_init(struct nr_mac_rrc_ul_if_s *mac_rrc)
 {
   mac_rrc->ue_context_setup_response = ue_context_setup_response_direct;
   mac_rrc->ue_context_modification_response = ue_context_modification_response_direct;
+  mac_rrc->ue_context_modification_required = ue_context_modification_required_direct;
   mac_rrc->ue_context_release_request = ue_context_release_request_direct;
   mac_rrc->ue_context_release_complete = ue_context_release_complete_direct;
   mac_rrc->initial_ul_rrc_message_transfer = initial_ul_rrc_message_transfer_direct;

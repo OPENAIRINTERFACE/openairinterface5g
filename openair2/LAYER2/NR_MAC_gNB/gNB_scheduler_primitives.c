@@ -43,11 +43,13 @@
 #include "UTIL/OPT/opt.h"
 
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
+#include "F1AP_CauseRadioNetwork.h"
 
 #include "RRC/NR/MESSAGES/asn1_msg.h"
 
 #include "intertask_interface.h"
 #include "openair2/F1AP/f1ap_ids.h"
+#include "F1AP_CauseRadioNetwork.h"
 
 #include "T.h"
 
@@ -2945,12 +2947,33 @@ void nr_mac_check_ul_failure(const gNB_MAC_INST *nrmac, int rnti, NR_UE_sched_ct
    * stop at 0 and we wait for a UE release command from upper layers */
   if (sched_ctrl->ul_failure_timer == 1) {
     f1_ue_data_t ue_data = du_get_f1_ue_data(rnti);
-    f1ap_ue_context_release_complete_t complete = {
+    f1ap_ue_context_release_req_t request = {
       .gNB_CU_ue_id = ue_data.secondary_ue,
       .gNB_DU_ue_id = rnti,
       .cause = F1AP_CAUSE_RADIO_NETWORK,
-      .cause_value = 12, // F1AP_CauseRadioNetwork_rl_failure_others
+      .cause_value = F1AP_CauseRadioNetwork_rl_failure_others,
     };
-    nrmac->mac_rrc.ue_context_release_request(&complete);
+    nrmac->mac_rrc.ue_context_release_request(&request);
   }
+}
+
+void nr_mac_trigger_reconfiguration(const gNB_MAC_INST *nrmac, const NR_UE_info_t *UE)
+{
+  DevAssert(UE->CellGroup != NULL);
+  uint8_t buf[2048];
+  asn_enc_rval_t enc_rval = uper_encode_to_buffer(&asn_DEF_NR_CellGroupConfig, NULL, UE->CellGroup, buf, sizeof(buf));
+  AssertFatal(enc_rval.encoded > 0, "ASN1 encoding of CellGroupConfig failed, failed type %s\n", enc_rval.failed_type->name);
+  du_to_cu_rrc_information_t du2cu = {
+    .cellGroupConfig = buf,
+    .cellGroupConfig_length = (enc_rval.encoded + 7) >> 3,
+  };
+  f1_ue_data_t ue_data = du_get_f1_ue_data(UE->rnti);
+  f1ap_ue_context_modif_required_t required = {
+    .gNB_CU_ue_id = ue_data.secondary_ue,
+    .gNB_DU_ue_id = UE->rnti,
+    .du_to_cu_rrc_information = &du2cu,
+    .cause = F1AP_CAUSE_RADIO_NETWORK,
+    .cause_value = F1AP_CauseRadioNetwork_action_desirable_for_radio_reasons,
+  };
+  nrmac->mac_rrc.ue_context_modification_required(&required);
 }
