@@ -431,55 +431,55 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 {
   switch (si_type) {
     case NR_SIB_TypeInfo__type_sibType2:
-      if (!SI_info->sib2)
+      if (!SI_info->sib2 || SI_info->sib2_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType3:
-      if (!SI_info->sib3)
+      if (!SI_info->sib3 || SI_info->sib3_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType4:
-      if (!SI_info->sib4)
+      if (!SI_info->sib4 || SI_info->sib4_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType5:
-      if (!SI_info->sib5)
+      if (!SI_info->sib5 || SI_info->sib5_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType6:
-      if (!SI_info->sib6)
+      if (!SI_info->sib6 || SI_info->sib6_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType7:
-      if (!SI_info->sib7)
+      if (!SI_info->sib7 || SI_info->sib7_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType8:
-      if (!SI_info->sib8)
+      if (!SI_info->sib8 || SI_info->sib8_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType9:
-      if (!SI_info->sib9)
+      if (!SI_info->sib9 || SI_info->sib9_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType10_v1610:
-      if (!SI_info->sib10)
+      if (!SI_info->sib10 || SI_info->sib10_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType11_v1610:
-      if (!SI_info->sib11)
+      if (!SI_info->sib11 || SI_info->sib11_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType12_v1610:
-      if (!SI_info->sib12)
+      if (!SI_info->sib12 || SI_info->sib12_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType13_v1610:
-      if (!SI_info->sib13)
+      if (!SI_info->sib13 || SI_info->sib13_timer == -1)
         return false;
       break;
     case NR_SIB_TypeInfo__type_sibType14_v1610:
-      if (!SI_info->sib14)
+      if (!SI_info->sib14 || SI_info->sib14_timer == -1)
         return false;
       break;
     default :
@@ -490,10 +490,9 @@ bool check_si_validity(NR_UE_RRC_SI_INFO *SI_info, int si_type)
 
 int check_si_status(NR_UE_RRC_SI_INFO *SI_info)
 {
-  if (!get_softmodem_params()->sa)
-    return 0;
   // schedule reception of SIB1 if RRC doesn't have it
-  if (!SI_info->sib1)
+  // or if the timer expired
+  if (!SI_info->sib1 || SI_info->sib1_timer == -1)
     return 1;
   else {
     if (SI_info->sib1->si_SchedulingInfo) {
@@ -534,9 +533,12 @@ int8_t nr_rrc_ue_decode_NR_BCCH_BCH_Message(const module_id_t module_id, const u
     NR_UE_rrc_inst[module_id].mib = bcch_message->message.choice.mib;
     bcch_message->message.choice.mib = NULL;
 
-    NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
-    // to schedule MAC to get SI if required
-    int get_sib = check_si_status(SI_info);
+    int get_sib = 0;
+    if (get_softmodem_params()->sa && NR_UE_rrc_inst[module_id].mib->cellBarred == NR_MIB__cellBarred_notBarred) {
+      NR_UE_RRC_SI_INFO *SI_info = &NR_UE_rrc_inst[module_id].SInfo[gNB_index];
+      // to schedule MAC to get SI if required
+      get_sib = check_si_status(SI_info);
+    }
     nr_rrc_mac_config_req_mib(module_id, 0, NR_UE_rrc_inst[module_id].mib, get_sib);
     ret = 0;
   }
@@ -770,8 +772,9 @@ static int8_t nr_rrc_ue_decode_NR_BCCH_DL_SCH_Message(module_id_t module_id,
   if (bcch_message->message.present == NR_BCCH_DL_SCH_MessageType_PR_c1) {
     switch (bcch_message->message.choice.c1->present) {
       case NR_BCCH_DL_SCH_MessageType__c1_PR_systemInformationBlockType1:
-        if(SI_info->sib1 != NULL)
-          SEQUENCE_free(&asn_DEF_NR_SIB1, (void *)SI_info->sib1, 1);
+        LOG_D(NR_RRC, "[UE %"PRIu8"] Decoding SIB1\n", module_id);
+        if(SI_info->sib1)
+          ASN_STRUCT_FREE(asn_DEF_NR_SIB1, SI_info->sib1);
         NR_SIB1_t *sib1 = bcch_message->message.choice.c1->choice.systemInformationBlockType1;
         SI_info->sib1 = sib1;
         if(g_log->log_component[NR_RRC].level >= OAILOG_DEBUG)

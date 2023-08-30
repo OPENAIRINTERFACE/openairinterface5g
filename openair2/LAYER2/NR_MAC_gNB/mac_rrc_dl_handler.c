@@ -25,6 +25,7 @@
 #include "openair2/F1AP/f1ap_ids.h"
 #include "openair2/LAYER2/nr_rlc/nr_rlc_oai_api.h"
 #include "openair2/RRC/NR/MESSAGES/asn1_msg.h"
+#include "F1AP_CauseRadioNetwork.h"
 
 #include "uper_decoder.h"
 #include "uper_encoder.h"
@@ -241,6 +242,63 @@ void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req)
     free(resp.du_to_cu_rrc_information->cellGroupConfig);
     free(resp.du_to_cu_rrc_information);
   }
+}
+
+void ue_context_modification_confirm(const f1ap_ue_context_modif_confirm_t *confirm)
+{
+  LOG_I(MAC, "Received UE Context Modification Confirm for UE %04x\n", confirm->gNB_DU_ue_id);
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+  /* check first that the scheduler knows such UE */
+  NR_UE_info_t *UE = find_nr_UE(&mac->UE_info, confirm->gNB_DU_ue_id);
+  if (UE == NULL) {
+    LOG_E(MAC, "ERROR: unknown UE with RNTI %04x, ignoring UE Context Modification Confirm\n", confirm->gNB_DU_ue_id);
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    return;
+  }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+
+  if (confirm->rrc_container_length > 0)
+    nr_rlc_srb_recv_sdu(confirm->gNB_DU_ue_id, DCCH, confirm->rrc_container, confirm->rrc_container_length);
+
+  /* nothing else to be done? */
+}
+
+void ue_context_modification_refuse(const f1ap_ue_context_modif_refuse_t *refuse)
+{
+  /* Currently, we only use the UE Context Modification Required procedure to
+   * trigger a RRC reconfigurtion after Msg.3 with C-RNTI MAC CE. If the CU
+   * refuses, it cannot do this reconfiguration, leaving the UE in an
+   * unconfigured state. Therefore, we just free all RA-related info, and
+   * request the release of the UE.  */
+  LOG_W(MAC, "Received UE Context Modification Refuse for %04x, requesting release\n", refuse->gNB_DU_ue_id);
+
+  gNB_MAC_INST *mac = RC.nrmac[0];
+  NR_SCHED_LOCK(&mac->sched_lock);
+  NR_UE_info_t *UE = find_nr_UE(&RC.nrmac[0]->UE_info, refuse->gNB_DU_ue_id);
+  if (UE == NULL) {
+    LOG_E(MAC, "ERROR: unknown UE with RNTI %04x, ignoring UE Context Modification Refuse\n", refuse->gNB_DU_ue_id);
+    NR_SCHED_UNLOCK(&mac->sched_lock);
+    return;
+  }
+
+  const int CC_id = 0;
+  NR_COMMON_channels_t *cc = &mac->common_channels[CC_id];
+  for (int i = 0; i < NR_NB_RA_PROC_MAX; i++) {
+    NR_RA_t *ra = &cc->ra[i];
+    if (ra->rnti == UE->rnti)
+      nr_clear_ra_proc(0, CC_id, 0 /* frame */, ra);
+  }
+  NR_SCHED_UNLOCK(&mac->sched_lock);
+
+  f1ap_ue_context_release_req_t request = {
+    .gNB_CU_ue_id = refuse->gNB_CU_ue_id,
+    .gNB_DU_ue_id = refuse->gNB_DU_ue_id,
+    .cause = F1AP_CAUSE_RADIO_NETWORK,
+    .cause_value = F1AP_CauseRadioNetwork_procedure_cancelled,
+  };
+  mac->mac_rrc.ue_context_release_request(&request);
 }
 
 void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd)

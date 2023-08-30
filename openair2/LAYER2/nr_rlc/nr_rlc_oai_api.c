@@ -54,15 +54,17 @@ static uint64_t nr_rlc_current_time;
 static int      nr_rlc_current_time_last_frame;
 static int      nr_rlc_current_time_last_subframe;
 
-nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue,
-                                          logical_chan_id_t channel_id)
+static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
 {
   if (channel_id == 0)
     return ue->srb0;
   nr_rlc_rb_t *rb = &ue->lcid2rb[channel_id - 1];
-  if (rb->type == NR_RLC_SRB)
+  if (rb->type == NR_RLC_NONE)
+    return NULL;
+  if (rb->type == NR_RLC_SRB) {
+    AssertFatal(rb->choice.srb_id > 0, "logic bug: impossible to have srb0 here\n");
     return ue->srb[rb->choice.srb_id - 1];
-  else {
+  } else {
     AssertFatal(rb->type == NR_RLC_DRB,
                 "Invalid RB type\n");
     return ue->drb[rb->choice.drb_id - 1];

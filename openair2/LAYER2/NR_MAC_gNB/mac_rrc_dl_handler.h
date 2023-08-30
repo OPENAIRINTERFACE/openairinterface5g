@@ -27,6 +27,8 @@
 
 void ue_context_setup_request(const f1ap_ue_context_setup_t *req);
 void ue_context_modification_request(const f1ap_ue_context_modif_req_t *req);
+void ue_context_modification_confirm(const f1ap_ue_context_modif_confirm_t *confirm);
+void ue_context_modification_refuse(const f1ap_ue_context_modif_refuse_t *refuse);
 void ue_context_release_command(const f1ap_ue_context_release_cmd_t *cmd);
 
 void dl_rrc_message_transfer(const f1ap_dl_rrc_message_t *dl_rrc);

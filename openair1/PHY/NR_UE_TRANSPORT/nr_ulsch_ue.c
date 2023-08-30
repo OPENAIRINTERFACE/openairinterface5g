@@ -184,8 +184,9 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   ///////////
 
   uint32_t available_bits = G;
-  uint32_t scrambled_output[(available_bits>>5)+1];
-  memset(scrambled_output, 0, ((available_bits>>5)+1)*sizeof(uint32_t));
+  // +1 because size can be not modulo 4
+  uint32_t scrambled_output[available_bits / (8 * sizeof(uint32_t)) + 1];
+  memset(scrambled_output, 0, sizeof(scrambled_output));
 
   nr_pusch_codeword_scrambling(harq_process_ul_ue->f,
                                available_bits,
