@@ -953,7 +953,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_NR_ULSCH_PROCEDURES_RX, 0);
     }
   }
-  if (totalDecode > 0 && gNB->ldpc_offload_flag == 0) {
     while (totalDecode > 0) {
       notifiedFIFO_elt_t *req = pullTpool(&gNB->respDecode, &gNB->threadPool);
       if (req == NULL)
@@ -962,7 +961,6 @@ int phy_procedures_gNB_uespec_RX(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx)
       delNotifiedFIFO_elt(req);
       totalDecode--;
     }
-  }
   for (int i = 0; i < gNB->max_nb_srs; i++) {
     NR_gNB_SRS_t *srs = &gNB->srs[i];
     if (srs) {
