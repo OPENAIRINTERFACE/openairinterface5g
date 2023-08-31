@@ -283,7 +283,7 @@ class StaticCodeAnalysis():
 						if re.search('=== Files with incorrect define protection ===', str(line)) is not None:
 							circularHeaderDependency = True
 						if circularHeaderDependency:
-							if re.search('Removing intermediate container', str(line)) is not None:
+							if re.search('DONE', str(line)) is not None:
 								circularHeaderDependency = False
 							elif re.search('Running in|Files with incorrect define protection', str(line)) is not None:
 								pass
@@ -293,7 +293,7 @@ class StaticCodeAnalysis():
 						if re.search('=== Files with a GNU GPL licence Banner ===', str(line)) is not None:
 							gnuGplLicence = True
 						if gnuGplLicence:
-							if re.search('Removing intermediate container', str(line)) is not None:
+							if re.search('DONE', str(line)) is not None:
 								gnuGplLicence = False
 							elif re.search('Running in|Files with a GNU GPL licence Banner', str(line)) is not None:
 								pass
@@ -303,7 +303,7 @@ class StaticCodeAnalysis():
 						if re.search('=== Files with a suspect Banner ===', str(line)) is not None:
 							suspectLicence = True
 						if suspectLicence:
-							if re.search('Removing intermediate container', str(line)) is not None:
+							if re.search('DONE', str(line)) is not None:
 								suspectLicence = False
 							elif re.search('Running in|Files with a suspect Banner', str(line)) is not None:
 								pass
@@ -340,7 +340,7 @@ class StaticCodeAnalysis():
 					html_cell = f'Number of files not respecting: {len(gnuGplLicenceFiles)}\n'
 					for nFile in gnuGplLicenceFiles:
 						html_cell += str(nFile).strip() + '\n'
-					HTML.CreateHtmlTestRowQueue('Files w/ GNU GPL License', 'KO', html_queue)
+					HTML.CreateHtmlTestRowQueue('Files w/ GNU GPL License', 'KO', [html_cell])
 					del(html_cell)
 					finalStatus = -1
 
