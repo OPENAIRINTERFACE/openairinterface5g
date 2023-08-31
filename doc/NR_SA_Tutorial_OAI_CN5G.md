@@ -66,8 +66,8 @@ docker pull oaisoftwarealliance/oai-udr:develop
 docker pull oaisoftwarealliance/oai-udm:develop
 docker pull oaisoftwarealliance/oai-ausf:develop
 docker pull oaisoftwarealliance/oai-spgwu-tiny:develop
-docker pull oaisoftwarealliance/trf-gen-cn5g:latest
-docker build --target ims --tag asterisk-ims:latest --file ~/oai-cn5g/Dockerfile .
+docker pull oaisoftwarealliance/trf-gen-cn5g:jammy
+docker pull oaisoftwarealliance/ims:latest
 ```
 
 # 3. Run OAI CN5G

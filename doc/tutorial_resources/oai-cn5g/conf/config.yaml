@@ -1,0 +1,184 @@
+################################################################################
+# Licensed to the OpenAirInterface (OAI) Software Alliance under one or more
+# contributor license agreements.  See the NOTICE file distributed with
+# this work for additional information regarding copyright ownership.
+# The OpenAirInterface Software Alliance licenses this file to You under
+# the OAI Public License, Version 1.1  (the "License"); you may not use this file
+# except in compliance with the License.
+# You may obtain a copy of the License at
+#
+#      http://www.openairinterface.org/?page_id=698
+#
+# Unless required by applicable law or agreed to in writing, software
+# distributed under the License is distributed on an "AS IS" BASIS,
+# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+# See the License for the specific language governing permissions and
+# limitations under the License.
+#-------------------------------------------------------------------------------
+# For more information about the OpenAirInterface (OAI) Software Alliance:
+#      contact@openairinterface.org
+################################################################################
+
+# OAI CN Configuration File
+### This file can be used by all OAI NFs
+### Some fields are specific to an NF and will be ignored by other NFs
+### The {{ env['ENV_NAME'] }} syntax lets you define these values in a docker-compose file
+### If you intend to mount this file or use a bare-metal deployment, please refer to README.md
+### The README.md also defines default values and allowed values for each configuration parameter
+
+############# Common configuration
+
+# Log level for all the NFs
+log_level:
+  general: debug
+
+# If you enable registration, the other NFs will use the NRF discovery mechanism
+register_nf:
+  general: yes
+  
+http_version: 2
+
+############## SBI Interfaces
+### Each NF takes its local SBI interfaces and remote interfaces from here, unless it gets them using NRF discovery mechanisms
+nfs:
+  amf:
+    host: oai-amf
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+    n2:
+      interface_name: eth0
+      port: 38412
+  smf:
+    host: oai-smf
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+    n4:
+      interface_name: eth0
+      port: 8805
+  udm:
+    host: oai-udm
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+  udr:
+    host: oai-udr
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+  ausf:
+    host: oai-ausf
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+  nrf:
+    host: oai-nrf
+    sbi:
+      port: 8080
+      api_version: v1
+      interface_name: eth0
+
+#### Common for UDR and AMF
+database:
+  host: mysql
+  user: test
+  type: mysql
+  password: test
+  database_name: oai_db
+  generate_random: true
+  connection_timeout: 300 # seconds
+
+############## NF-specific configuration
+amf:
+  pid_directory: "/var/run"
+  amf_name: "OAI-AMF"
+  # This really depends on if we want to keep the "mini" version or not
+  support_features_options:
+    enable_simple_scenario: no
+    enable_nssf: no
+    enable_smf_selection: yes
+    use_external_udm: no
+  relative_capacity: 30
+  statistics_timer_interval: 20  #in seconds
+  emergency_support: false
+  served_guami_list:
+    - mcc: 001
+      mnc: 01
+      amf_region_id: 80
+      amf_set_id: 001
+      amf_pointer: 01
+  plmn_support_list:
+    - mcc: 001
+      mnc: 01
+      tac: 0x0001
+      nssai:
+        - sst: 1
+  supported_integrity_algorithms:
+    - "NIA1"
+    - "NIA2"
+  supported_encryption_algorithms:
+    - "NEA0"
+    - "NEA1"
+    - "NEA2"
+
+smf:
+  ue_mtu: 1500
+  support_features:
+    use_local_subscription_info: yes # Use infos from local_subscription_info or from UDM
+    use_local_pcc_rules: yes # Use infos from local_pcc_rules or from PCF
+  # we resolve from NRF, this is just to configure usage_reporting
+  upfs:
+    - host: oai-spgwu
+      config:
+        enable_usage_reporting: no
+  ue_dns:
+    primary_ipv4: "1.1.1.1"
+    primary_ipv6: "2001:4860:4860::8888"
+    secondary_ipv4: "8.8.8.8"
+    secondary_ipv6: "2001:4860:4860::8888"
+  ims:
+    pcscf_ipv4: "192.168.70.139"
+    pcscf_ipv6: "fe80::7915:f408:1787:db8b"
+ # the DNN you configure here should be configured in "dnns"
+  local_subscription_infos:
+    - single_nssai:
+        sst: 1
+      dnn: "oai"
+      qos_profile:
+        5qi: 9
+        session_ambr_ul: "10Gbps"
+        session_ambr_dl: "10Gbps"
+    - single_nssai:
+        sst: 1
+      dnn: "openairinterface"
+      qos_profile:
+        5qi: 9
+        session_ambr_ul: "10Gbps"
+        session_ambr_dl: "10Gbps"
+    - single_nssai:
+        sst: 1
+      dnn: "ims"
+      qos_profile:
+        5qi: 9
+        session_ambr_ul: "10Gbps"
+        session_ambr_dl: "10Gbps"
+
+## DNN configuration
+dnns:
+  - dnn: "oai"
+    pdu_session_type: "IPV4"
+    ipv4_subnet: "12.1.1.2/24"
+  - dnn: "openairinterface"
+    pdu_session_type: "IPV4V6"
+    ipv4_subnet: "12.1.2.2/24"
+    ipv6_prefix: "2001:1:2::/64"
+  - dnn: "ims"
+    pdu_session_type: "IPV4V6"
+    ipv4_subnet: "12.1.9.2/24"
+    ipv6_prefix: "2001:1:2::/64"
