@@ -12,12 +12,13 @@
   </tr>
 </table>
 
-This page is only valid for an `Ubuntu18` host.
-It has also been tested also on `Ubuntu 20.04.1 LTS`.
+This page is valid for an `Ubuntu18` host.
+It is also valid for `Ubuntu 20.04`.
 
 This tutorial is only valid once this file is merged into the `develop` branch.
 # 1. Adapt the `docker-compose` to your environment #
-The yaml file is in the following directory:  `ci-scripts/yaml_files/5g_l2sim_tdd`</br>
+The yaml file is in the following directory:  `ci-scripts/yaml_files/5g_l2sim_tdd`
+
 In the `SMF` section, provide your own DNS IP address:
 
 ```yaml
@@ -43,11 +44,7 @@ This tutorial is a first draft. This nFAPI feature and the proxy are still under
 
 At time of writing, we were able to run in `host-mode`, 1 `NR-UE` and just ping traffic.
 
-Later development will include:
 
-  -  deploying `gNB-VNF`, `proxy` and `UE` in isolated containers (with their own IP address)
-  -  more UEs
-  -  more traffic (`UDP` and `TCP`)
 
 
 # 2. Retrieving the images on Docker-Hub #
