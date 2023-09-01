@@ -261,8 +261,20 @@ static void nr_postDecode(PHY_VARS_gNB *gNB, notifiedFIFO_elt_t *req)
 
   //int dumpsig=0;
   // if all segments are done
-  if (rdata->nbSegments == ulsch_harq->processedSegments) {
-    if (!check_abort(&ulsch_harq->abort_decode) && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
+  if (ulsch_harq->processedSegments == ulsch_harq->C) {
+    // When the number of code blocks is 1 (C = 1) and ulsch_harq->processedSegments = 1, we can assume a good TB because of the
+    // CRC check made by the LDPC for early termination, so, no need to perform CRC check twice for a single code block
+    bool crc_valid = true;
+    if (ulsch_harq->C > 1) {
+      // Check ULSCH transport block CRC
+      int crc_type = CRC16;
+      if (rdata->A > 3824) {
+        crc_type = CRC24_A;
+      }
+      crc_valid = check_crc(ulsch_harq->b, ulsch_harq->B, crc_type);
+    }
+
+    if (crc_valid && !check_abort(&ulsch_harq->abort_decode) && !gNB->pusch_vars[rdata->ulsch_id].DTX) {
       LOG_D(PHY,
             "[gNB %d] ULSCH: Setting ACK for SFN/SF %d.%d (rnti %x, pid %d, ndi %d, status %d, round %d, TBS %d, Max interation "
             "(all seg) %d)\n",
