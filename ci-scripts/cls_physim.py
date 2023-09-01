@@ -98,6 +98,15 @@ class PhySim:
 			for line in g:
 				if 'decoding time' in line:
 					runResultsT1.append(line)
+
+		# In case the T1 board does work properly, there is no statistics
+		if len(runResultsT1) == 0:
+			logging.error('no statistics')
+			HTML.CreateHtmlTestRowQueue(self.runargs, 'KO', ['no statistics'])
+			self.exitStatus = 1
+			os.system('mv '+self.__runLogFile+' '+ self.__runLogPath+'/.')
+			return HTML
+
 		info = runResultsT1[0][15:-13]
 		result = int(''.join(filter(str.isdigit, info)))/100
 		#once parsed move the local logfile to its folder for tidiness
