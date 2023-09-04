@@ -327,6 +327,7 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
   nr_rlc_sdu_segment_t *cur_retransmit_list;
   nr_rlc_sdu_segment_t *new_retransmit_list;
   nr_rlc_sdu_segment_t head_retransmit_list;
+  int cmp;
 
   head_wait_list.next = entity->wait_list;
   cur_wait_list       = entity->wait_list;
@@ -409,7 +410,7 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
        * do not touch t_poll_retransmit
        */
       if (prev_nack_sn != -1) {
-        int cmp = sn_compare_tx(entity, cur_nack_sn, prev_nack_sn);
+        cmp = sn_compare_tx(entity, cur_nack_sn, prev_nack_sn);
         if (cmp < 0
             || (cmp == 0
                 && (prev_so_end == -1
