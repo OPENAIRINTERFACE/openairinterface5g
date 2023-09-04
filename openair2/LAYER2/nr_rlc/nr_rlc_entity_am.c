@@ -437,9 +437,10 @@ process_next_pdu:
         goto process_retransmit_list_head;
       if (cur_retransmit_list == NULL)
         goto process_wait_list_head;
-      if (cur_wait_list->sdu->sn < cur_retransmit_list->sdu->sn
-          || (cur_wait_list->sdu->sn == cur_retransmit_list->sdu->sn &&
-              cur_wait_list->so < cur_retransmit_list->so))
+      cmp = sn_compare_tx(entity, cur_wait_list->sdu->sn, cur_retransmit_list->sdu->sn);
+      if (cmp < 0
+          || (cmp == 0
+              && cur_wait_list->so < cur_retransmit_list->so))
         goto process_wait_list_head;
       goto process_retransmit_list_head;
 
