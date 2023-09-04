@@ -354,6 +354,17 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
     nr_rlc_pdu_decoder_get_bits(&decoder, 7); R(decoder);
   }
 
+  /* discard the whole control PDU if ack_sn is invalid, that is
+   * if it does not satisfy tx_next_ack <= ack_sn <= tx_next
+   * (no need to test tx_next_ack <= ack_sn, this is always true since
+   * tx_next_ack is the modulus base)
+   */
+  if (sn_compare_tx(entity, ack_sn, entity->tx_next) > 0) {
+    LOG_W(RLC, "ack_sn (%d) not valid (tx_next_ack %d tx_next %d), discard control PDU\n",
+          ack_sn, entity->tx_next_ack, entity->tx_next);
+    return;
+  }
+
   /* 38.322 5.3.3.3 says to stop t_poll_retransmit if a ACK or NACK is
    * received for the SN 'poll_sn' - check ACK case (NACK done below)
    */
