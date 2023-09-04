@@ -389,6 +389,7 @@ void add_noise(c16_t **rxdata,
                const double ts,
                const int delay,
                const uint16_t pdu_bit_map,
+               const uint16_t ptrs_bit_map,
                const uint8_t nb_antennas_rx);
 
 /**\fn void multipath_channel(channel_desc_t *desc,
