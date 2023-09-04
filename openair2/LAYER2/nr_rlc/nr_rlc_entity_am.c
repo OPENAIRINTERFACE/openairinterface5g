@@ -481,8 +481,9 @@ process_wait_list_head:
       }
 
       /* if current segment SN > current NACK, we can't classify it yet */
-      if (sn_compare_tx(entity, cur_wait_list->sdu->sn, cur_nack_sn) > 0
-          || (cur_wait_list->sdu->sn == cur_nack_sn
+      cmp = sn_compare_tx(entity, cur_wait_list->sdu->sn, cur_nack_sn);
+      if (cmp > 0
+          || (cmp == 0
               && cur_wait_list->so > cur_so_start))
         goto done_nack;
 
@@ -541,8 +542,9 @@ process_retransmit_list_head:
       }
 
       /* if current segment SN > current NACK, we can't classify it yet */
-      if (sn_compare_tx(entity, cur_retransmit_list->sdu->sn, cur_nack_sn) > 0
-          || (cur_retransmit_list->sdu->sn == cur_nack_sn
+      cmp = sn_compare_tx(entity, cur_retransmit_list->sdu->sn, cur_nack_sn);
+      if (cmp > 0
+          || (cmp == 0
               && cur_retransmit_list->so > cur_so_start))
         goto done_nack;
 
