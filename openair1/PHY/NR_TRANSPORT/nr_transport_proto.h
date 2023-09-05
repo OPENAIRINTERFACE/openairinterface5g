@@ -179,35 +179,6 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             uint8_t  nrOfLayers,
                             unsigned short nb_rb);
 
-/** \brief This function performs channel compensation (matched filtering) on the received RBs for this allocation.  In addition, it computes the squared-magnitude of the channel with weightings for 16QAM/64QAM detection as well as dual-stream detection (cross-correlation)
-    @param rxdataF_ext Frequency-domain received signal in RBs to be demodulated
-    @param ul_ch_estimates_ext Frequency-domain channel estimates in RBs to be demodulated
-    @param ul_ch_mag First Channel magnitudes (16QAM/64QAM/256QAM)
-    @param ul_ch_magb Second weighted Channel magnitudes (64QAM/256QAM)
-    @param ul_ch_magc Third weighted Channel magnitudes (256QAM)
-    @param rxdataF_comp Compensated received waveform
-    @param frame_parms Pointer to frame descriptor
-    @param symbol Symbol on which to operate
-    @param Qm Modulation order of allocation
-    @param nb_rb Number of RBs in allocation
-    @param output_shift Rescaling for compensated output (should be energy-normalizing)
-*/
-void nr_ulsch_channel_compensation(int **rxdataF_ext,
-                                int **ul_ch_estimates_ext,
-                                int **ul_ch_mag,
-                                int **ul_ch_magb,
-                                int **ul_ch_magc,
-                                int **rxdataF_comp,
-                                int ***rho,
-                                NR_DL_FRAME_PARMS *frame_parms,
-                                unsigned char symbol,
-                                int length,
-                                uint8_t is_dmrs_symbol,
-                                unsigned char mod_order,
-                                uint8_t  nrOfLayers,
-                                unsigned short nb_rb,
-                                unsigned char output_shift);
-
 /*!
 \brief This function implements the idft transform precoding in PUSCH
 \param z Pointer to input in frequnecy domain, and it is also the output in time domain
@@ -316,15 +287,17 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
 void reset_active_stats(PHY_VARS_gNB *gNB, int frame);
 void reset_active_ulsch(PHY_VARS_gNB *gNB, int frame);
 
-void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
-                             int32_t **ul_ch_mag,
-                             int32_t ***rho,
-                             int16_t **llr_layers,
-                             uint8_t nb_antennas_rx,
-                             uint32_t rb_size,
+void nr_ulsch_compute_ML_llr(NR_gNB_PUSCH *pusch_vars,
+                             uint32_t symbol,
+                             c16_t* rxdataF_comp0,
+                             c16_t* rxdataF_comp1,
+                             c16_t* ul_ch_mag0,
+                             c16_t* ul_ch_mag1,
+                             c16_t* llr_layers0,
+                             c16_t* llr_layers1,
+                             c16_t* rho0,
+                             c16_t* rho1,
                              uint32_t nb_re,
-                             uint8_t symbol,
-                             uint32_t rxdataF_ext_offset,
                              uint8_t mod_order);
 
 void nr_ulsch_shift_llr(int16_t **llr_layers, uint32_t nb_re, uint32_t rxdataF_ext_offset, uint8_t mod_order, int shift);

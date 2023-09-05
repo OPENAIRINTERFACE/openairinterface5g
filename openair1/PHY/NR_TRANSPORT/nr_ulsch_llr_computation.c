@@ -30,6 +30,7 @@
  * \warning
  */
 
+#include "PHY/defs_gNB.h"
 #include "PHY/defs_nr_common.h"
 #include "PHY/sse_intrin.h"
 #include "PHY/impl_defs_top.h"
@@ -46,16 +47,9 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
 {
   c16_t *rxF   = (c16_t *)rxdataF_comp;
   c16_t *llr32 = (c16_t *)ulsch_llr;
-
-  if (!llr32) {
-    LOG_E(PHY,"nr_ulsch_qpsk_llr: llr is null, symbol %d, llr32 = %p\n",symbol, llr32);
-  }
   for (int i = 0; i < nb_re; i++) {
-    //*llr32 = *rxF;
-    llr32->r = rxF->r >> 3;
-    llr32->i = rxF->i >> 3;
-    rxF++;
-    llr32++;
+    llr32[i].r = rxF[i].r >> 3;
+    llr32[i].i = rxF[i].i >> 3;
   }
 }
 
@@ -3624,46 +3618,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
   simde_m_empty();
 }
 
-void nr_ulsch_compute_ML_llr(int32_t **rxdataF_comp,
-                             int32_t **ul_ch_mag,
-                             int32_t ***rho,
-                             int16_t **llr_layers,
-                             uint8_t nb_antennas_rx,
-                             uint32_t rb_size,
-                             uint32_t nb_re,
-                             uint8_t symbol,
-                             uint32_t rxdataF_ext_offset,
-                             uint8_t mod_order)
-{
-  int off = ((rb_size & 1) == 1) ? 4 : 0;
-  c16_t *rxdataF_comp0 = (c16_t *)&rxdataF_comp[0][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-  c16_t *rxdataF_comp1 = (c16_t *)&rxdataF_comp[nb_antennas_rx][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-  c16_t *ul_ch_mag0 = (c16_t *)&ul_ch_mag[0][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-  c16_t *ul_ch_mag1 = (c16_t *)&ul_ch_mag[nb_antennas_rx][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-  c16_t *llr_layers0 = (c16_t *)&llr_layers[0][rxdataF_ext_offset * mod_order];
-  c16_t *llr_layers1 = (c16_t *)&llr_layers[1][rxdataF_ext_offset * mod_order];
-  c16_t *rho0 = (c16_t *)&rho[0][1][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-  c16_t *rho1 = (c16_t *)&rho[0][2][symbol * (off + (rb_size * NR_NB_SC_PER_RB))];
-
-  switch (mod_order) {
-    case 2:
-      nr_ulsch_qpsk_qpsk(rxdataF_comp0, rxdataF_comp1, llr_layers0, rho0, nb_re);
-      nr_ulsch_qpsk_qpsk(rxdataF_comp1, rxdataF_comp0, llr_layers1, rho1, nb_re);
-      break;
-    case 4:
-      nr_ulsch_qam16_qam16(rxdataF_comp0, rxdataF_comp1, ul_ch_mag0, ul_ch_mag1, llr_layers0, rho0, nb_re);
-      nr_ulsch_qam16_qam16(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
-      break;
-    case 6:
-      nr_ulsch_qam64_qam64(rxdataF_comp0, rxdataF_comp1, ul_ch_mag0, ul_ch_mag1, llr_layers0, rho0, nb_re);
-      nr_ulsch_qam64_qam64(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
-      break;
-    default:
-      AssertFatal(1 == 0, "nr_ulsch_compute_llr: invalid Qm value, symbol = %d, Qm = %d\n", symbol, mod_order);
-  }
-}
-
-void nr_ulsch_shift_llr(int16_t **llr_layers, uint32_t nb_re, uint32_t rxdataF_ext_offset, uint8_t mod_order, int shift)
+static void nr_ulsch_shift_llr(int16_t **llr_layers, uint32_t nb_re, uint32_t rxdataF_ext_offset, uint8_t mod_order, int shift)
 {
   simde__m128i *llr_layers0 = (simde__m128i *)&llr_layers[0][rxdataF_ext_offset * mod_order];
   simde__m128i *llr_layers1 = (simde__m128i *)&llr_layers[1][rxdataF_ext_offset * mod_order];
@@ -3684,5 +3639,37 @@ void nr_ulsch_shift_llr(int16_t **llr_layers, uint32_t nb_re, uint32_t rxdataF_e
   for (int i = 0; i < nb_re >> 2; i++) {
     llr_layers0[i] = simde_mm_srai_epi16(llr_layers0[i], shift);
     llr_layers1[i] = simde_mm_srai_epi16(llr_layers1[i], shift);
+  }
+}
+
+void nr_ulsch_compute_ML_llr(NR_gNB_PUSCH *pusch_vars,
+                             uint32_t symbol,
+                             c16_t* rxdataF_comp0,
+                             c16_t* rxdataF_comp1,
+                             c16_t* ul_ch_mag0,
+                             c16_t* ul_ch_mag1,
+                             c16_t* llr_layers0,
+                             c16_t* llr_layers1,
+                             c16_t* rho0,
+                             c16_t* rho1,
+                             uint32_t nb_re,
+                             uint8_t mod_order)
+{
+  switch (mod_order) {
+    case 2:
+      nr_ulsch_qpsk_qpsk(rxdataF_comp0, rxdataF_comp1, llr_layers0, rho0, nb_re);
+      nr_ulsch_qpsk_qpsk(rxdataF_comp1, rxdataF_comp0, llr_layers1, rho1, nb_re);
+      nr_ulsch_shift_llr(pusch_vars->llr_layers, nb_re, pusch_vars->llr_offset[symbol] >> 1, 2, 4);
+      break;
+    case 4:
+      nr_ulsch_qam16_qam16(rxdataF_comp0, rxdataF_comp1, ul_ch_mag0, ul_ch_mag1, llr_layers0, rho0, nb_re);
+      nr_ulsch_qam16_qam16(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
+      break;
+    case 6:
+      nr_ulsch_qam64_qam64(rxdataF_comp0, rxdataF_comp1, ul_ch_mag0, ul_ch_mag1, llr_layers0, rho0, nb_re);
+      nr_ulsch_qam64_qam64(rxdataF_comp1, rxdataF_comp0, ul_ch_mag1, ul_ch_mag0, llr_layers1, rho1, nb_re);
+      break;
+    default:
+      AssertFatal(1 == 0, "nr_ulsch_compute_llr: invalid Qm value, Qm = %d\n", mod_order);
   }
 }
