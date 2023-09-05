@@ -222,7 +222,6 @@ int main(int argc, char *argv[])
   int ibwp_rboffset=41;
   int params_from_file = 0;
   int threadCnt=0;
-  int use_tpool = 0;
   int max_ldpc_iterations = 5;
   if ( load_configmodule(argc,argv,CONFIG_ENABLECMDLINEONLY) == 0 ) {
     exit_fun("[NR_ULSIM] Error, configuration module init failed\n");
@@ -364,7 +363,6 @@ int main(int argc, char *argv[])
 
     case 'C':
       threadCnt = atoi(optarg);
-      use_tpool = 1;
       break;
 
     case 'u':
@@ -563,14 +561,12 @@ int main(int argc, char *argv[])
   RC.gNB[0] = calloc(1,sizeof(PHY_VARS_gNB));
   gNB = RC.gNB[0];
   gNB->ofdm_offset_divisor = UINT_MAX;
-  initNotifiedFIFO(&gNB->respDecode);
-  gNB->use_pusch_tp = use_tpool;
   gNB->num_pusch_symbols_per_thread = 1;
 
   initFloatingCoresTpool(threadCnt, &gNB->threadPool, false, "gNB-tpool");
   initNotifiedFIFO(&gNB->respDecode);
-  gNB->respPuschSymb = (notifiedFIFO_t*) malloc(sizeof(notifiedFIFO_t));
-  initNotifiedFIFO(gNB->respPuschSymb);
+
+  initNotifiedFIFO(&gNB->respPuschSymb);
   initNotifiedFIFO(&gNB->L1_tx_free);
   initNotifiedFIFO(&gNB->L1_tx_filled);
   initNotifiedFIFO(&gNB->L1_tx_out);
@@ -1602,20 +1598,16 @@ int main(int argc, char *argv[])
       printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
       printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");
       printStatIndent2(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
-      if (use_tpool == 1)
-      {
-        printStatIndent2(&gNB->rx_pusch_init_stats,"RX PUSCH Initialization time");
-        printStatIndent2(&gNB->rx_pusch_symbol_processing_stats,"RX PUSCH Symbol Processing time");
-      }
-      else
-      {
-        printStatIndent2(&gNB->ulsch_ptrs_processing_stats,"ULSCH PTRS Processing time");
-        printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
-        printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
-        printStatIndent2(&gNB->ulsch_mrc_stats,"ULSCH mrc computation");
-        printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
-        printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
-      }
+      printStatIndent2(&gNB->rx_pusch_init_stats,"RX PUSCH Initialization time");
+      printStatIndent2(&gNB->rx_pusch_symbol_processing_stats,"RX PUSCH Symbol Processing time");
+
+      // printStatIndent2(&gNB->ulsch_ptrs_processing_stats,"ULSCH PTRS Processing time");
+      // printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
+      // printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
+      // printStatIndent2(&gNB->ulsch_mrc_stats,"ULSCH mrc computation");
+      // printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
+      // printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
+
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
       // printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
       // printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");

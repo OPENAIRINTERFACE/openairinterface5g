@@ -760,7 +760,7 @@ typedef struct PHY_VARS_gNB_s {
   time_stats_t rx_dft_stats;
   time_stats_t ulsch_freq_offset_estimation_stats;
   */
-  notifiedFIFO_t *respPuschSymb;
+  notifiedFIFO_t respPuschSymb;
   notifiedFIFO_t respDecode;
   notifiedFIFO_t resp_L1;
   notifiedFIFO_t L1_tx_free;
@@ -769,7 +769,6 @@ typedef struct PHY_VARS_gNB_s {
   notifiedFIFO_t resp_RU_tx;
   tpool_t threadPool;
   int nbSymb;
-  int use_pusch_tp;
   int num_pusch_symbols_per_thread;
   pthread_t L1_rx_thread;
   int L1_rx_thread_core;
@@ -792,6 +791,7 @@ typedef struct puschSymbolProc_s {
   int16_t *llr;
   int16_t **llr_layers;
   int16_t *s;
+  uint32_t nvar;
 } puschSymbolProc_t;
 
 struct puschSymbolReqId {

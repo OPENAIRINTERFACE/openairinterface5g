@@ -28,6 +28,7 @@
 #include "PHY/CODING/nrPolar_tools/nr_polar_pbch_defs.h"
 #include "PHY/NR_TRANSPORT/nr_transport_proto.h"
 #include "PHY/NR_TRANSPORT/nr_transport_common_proto.h"
+#include "PHY/NR_ESTIMATION/nr_ul_estimation.h"
 #include "openair1/PHY/MODULATION/nr_modulation.h"
 #include "openair1/PHY/defs_RU.h"
 #include "openair1/PHY/CODING/nrLDPC_extern.h"
@@ -524,6 +525,8 @@ int phy_init_nr_gNB(PHY_VARS_gNB *gNB)
   crcTableInit();
   init_scrambling_luts();
   init_pucch2_luts();
+
+  nr_init_fde(); // Init array for frequency equalization of transform precoding of PUSCH
 
   load_nrLDPClib(NULL);
 
