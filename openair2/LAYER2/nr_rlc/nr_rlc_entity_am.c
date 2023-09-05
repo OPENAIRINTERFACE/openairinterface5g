@@ -329,21 +329,14 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
   nr_rlc_sdu_segment_t head_retransmit_list;
   int cmp;
 
-  head_wait_list.next = entity->wait_list;
-  cur_wait_list       = entity->wait_list;
-  prev_wait_list      = &head_wait_list;
-
-  head_retransmit_list.next = NULL;
-  cur_retransmit_list = entity->retransmit_list;
-  new_retransmit_list = &head_retransmit_list;
+  /* validate the control PDU: read it, check the values of ACK and NACKs */
 
   nr_rlc_pdu_decoder_init(&decoder, buffer, size);
   nr_rlc_pdu_decoder_get_bits(&decoder, 1); R(decoder); /* dc */
 
   cpt = nr_rlc_pdu_decoder_get_bits(&decoder, 3); R(decoder);
   if (cpt != 0) {
-    LOG_E(RLC, "%s:%d:%s: warning: discard PDU, CPT not 0 (%d)\n",
-          __FILE__, __LINE__, __FUNCTION__, cpt);
+    LOG_E(RLC, "discard PDU, CPT not 0 (%d)\n", cpt);
     goto err;
   }
   ack_sn = nr_rlc_pdu_decoder_get_bits(&decoder, entity->sn_field_length); R(decoder);
@@ -366,12 +359,9 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
     return;
   }
 
-  /* 38.322 5.3.3.3 says to stop t_poll_retransmit if a ACK or NACK is
-   * received for the SN 'poll_sn' - check ACK case (NACK done below)
+  /* discard the whole control PDU if NACKs are bad (not <= ack_sn, not in
+   * increasing order)
    */
-  if (sn_compare_tx(entity, entity->poll_sn, ack_sn) < 0)
-    entity->t_poll_retransmit_start = 0;
-
   while (e1) {
     nack_sn = nr_rlc_pdu_decoder_get_bits(&decoder, entity->sn_field_length); R(decoder);
     e1 = nr_rlc_pdu_decoder_get_bits(&decoder, 1); R(decoder);
@@ -399,15 +389,13 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
     if (so_end == 0xffff)
       so_end = -1;
 
-    /* process nacks */
     for (i = 0; i < range; i++) {
       int cur_nack_sn  = (nack_sn + i) % entity->sn_modulus;
       int cur_so_start = i == 0 ?         so_start : 0;
       int cur_so_end   = i == range - 1 ? so_end : -1;
 
       /* check that current nack is > previous nack and <= ack
-       * if not then skip it and all following nacks, and
-       * do not touch t_poll_retransmit
+       * if not then reject the control PDU
        */
       if (prev_nack_sn != -1) {
         cmp = sn_compare_tx(entity, cur_nack_sn, prev_nack_sn);
@@ -415,19 +403,84 @@ static void process_control_pdu(nr_rlc_entity_am_t *entity,
             || (cmp == 0
                 && (prev_so_end == -1
                     || cur_so_start <= prev_so_end))) {
-          LOG_E(RLC, "%s:%d:%s: bad NACK (nack sn %d so start/end %d/%d, previous nack sn %d so start/end %d/%d), skip it and all following NACKs\n",
-                __FILE__, __LINE__, __FUNCTION__,
+          LOG_E(RLC, "bad NACK, not bigger than previous NACK (nack sn %d so start/end %d/%d, previous nack sn %d so start/end %d/%d)\n",
                 cur_nack_sn, cur_so_start, cur_so_end,
                 prev_nack_sn, prev_so_start, prev_so_end);
-          goto nacks_done;
+          goto err;
         }
       }
       if (sn_compare_tx(entity, cur_nack_sn, ack_sn) > 0) {
-        LOG_E(RLC, "%s:%d:%s: bad NACK (nack %d ack %d), skip it and all following NACKs\n",
-              __FILE__, __LINE__, __FUNCTION__,
-              cur_nack_sn, ack_sn);
-        goto nacks_done;
+        LOG_E(RLC, "bad NACK, bigger than ACK (nack %d ack %d) (tx_next_ack %d tx_next %d)\n",
+              cur_nack_sn, ack_sn, entity->tx_next_ack, entity->tx_next);
+        goto err;
       }
+    }
+  }
+
+  /* process the control PDU for real (checks not needed now, previous steps
+   * validated everything)
+   */
+
+  head_wait_list.next = entity->wait_list;
+  cur_wait_list       = entity->wait_list;
+  prev_wait_list      = &head_wait_list;
+
+  head_retransmit_list.next = NULL;
+  cur_retransmit_list = entity->retransmit_list;
+  new_retransmit_list = &head_retransmit_list;
+
+  nr_rlc_pdu_decoder_init(&decoder, buffer, size);
+  nr_rlc_pdu_decoder_get_bits(&decoder, 1);             /* dc */
+
+  cpt = nr_rlc_pdu_decoder_get_bits(&decoder, 3);
+  ack_sn = nr_rlc_pdu_decoder_get_bits(&decoder, entity->sn_field_length);
+  e1 = nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+  /* r bits */
+  if (entity->sn_field_length == 18) {
+    nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+  } else {
+    nr_rlc_pdu_decoder_get_bits(&decoder, 7);
+  }
+
+  /* 38.322 5.3.3.3 says to stop t_poll_retransmit if a ACK or NACK is
+   * received for the SN 'poll_sn' - check ACK case (NACK done below)
+   */
+  if (sn_compare_tx(entity, entity->poll_sn, ack_sn) < 0)
+    entity->t_poll_retransmit_start = 0;
+
+  while (e1) {
+    nack_sn = nr_rlc_pdu_decoder_get_bits(&decoder, entity->sn_field_length);
+    e1 = nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+    e2 = nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+    e3 = nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+    /* r bits */
+    if (entity->sn_field_length == 18) {
+      nr_rlc_pdu_decoder_get_bits(&decoder, 3);
+    } else {
+      nr_rlc_pdu_decoder_get_bits(&decoder, 1);
+    }
+    if (e2) {
+      so_start = nr_rlc_pdu_decoder_get_bits(&decoder, 16);
+      so_end = nr_rlc_pdu_decoder_get_bits(&decoder, 16);
+    } else {
+      so_start = 0;
+      so_end = 0xffff;
+    }
+    if (e3) {
+      range = nr_rlc_pdu_decoder_get_bits(&decoder, 8);
+    } else {
+      range = 1;
+    }
+    /* special value 0xffff indicates 'all bytes to the end' */
+    if (so_end == 0xffff)
+      so_end = -1;
+
+    /* process nacks */
+    for (i = 0; i < range; i++) {
+      int cur_nack_sn  = (nack_sn + i) % entity->sn_modulus;
+      int cur_so_start = i == 0 ?         so_start : 0;
+      int cur_so_end   = i == range - 1 ? so_end : -1;
+
 
 process_next_pdu:
       /* process smallest SN either from wait_list or retransmit list */
@@ -599,7 +652,6 @@ lists_over:
       entity->t_poll_retransmit_start = 0;
   } /* while (e1) */
 
-nacks_done:
   /* nacks done, finish with ack */
   /* we may report successful delivery out of order, if it's a problem
    * then we can have a single loop and deal with the smallest sn of
@@ -679,8 +731,7 @@ nacks_done:
   return;
 
 err:
-  LOG_E(RLC, "%s:%d:%s: error decoding PDU, NR RLC entity in inconsistent state\n",
-        __FILE__, __LINE__, __FUNCTION__);
+  LOG_E(RLC, "error decoding control PDU, discarding\n");
 
 #undef R
 }
