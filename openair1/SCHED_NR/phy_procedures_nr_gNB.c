@@ -397,21 +397,6 @@ static int nr_ulsch_procedures(PHY_VARS_gNB *gNB, int frame_rx, int slot_rx, int
 	number_dmrs_symbols, // number of dmrs symbols irrespective of single or double symbol dmrs
 	pusch_pdu->qam_mod_order,
 	pusch_pdu->nrOfLayers);
-
-
-
-    // nr_ulsch_layer_demapping(gNB->pusch_vars[ULSCH_id].llr,
-    //                          pusch_pdu->nrOfLayers,
-    //                          pusch_pdu->qam_mod_order,
-    //                          G,
-    //                          gNB->pusch_vars[ULSCH_id].llr_layers);
-    // //----------------------------------------------------------
-    // //------------------- ULSCH unscrambling -------------------
-    // //----------------------------------------------------------
-    // start_meas(&gNB->ulsch_unscrambling_stats);
-    // nr_ulsch_unscrambling(gNB->pusch_vars[ULSCH_id].llr, G, pusch_pdu->data_scrambling_id, pusch_pdu->rnti);
-    // stop_meas(&gNB->ulsch_unscrambling_stats);
-
   
   //----------------------------------------------------------
   //--------------------- ULSCH decoding ---------------------

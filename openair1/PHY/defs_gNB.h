@@ -411,10 +411,6 @@ typedef struct {
   int16_t *ul_valid_re_per_slot;
   /// \brief offset for llr corresponding to each symbol
   int llr_offset[14];
-  /// flag to verify if channel level computation is done
-  uint8_t cl_done;
-  /// flag to indicate if channel extraction is done
-  int extraction_done[14]; 
   /// flag to indicate DTX on reception
   int DTX;
 } NR_gNB_PUSCH;
