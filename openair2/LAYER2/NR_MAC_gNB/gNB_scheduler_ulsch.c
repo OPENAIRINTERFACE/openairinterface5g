@@ -342,6 +342,7 @@ static int nr_process_mac_pdu(instance_t module_idP,
         } else {
           AssertFatal(1==0,"[UE %04x] Frame/Slot %d.%d : Received LCID %d which is not configured, dropping packet\n",UE->rnti,frameP,slot,rx_lcid);
         }
+        UE->mac_stats.ul.lc_bytes[rx_lcid] += mac_len;
         break;
 
       case UL_SCH_LCID_CCCH:
