@@ -615,7 +615,9 @@ void nr_ulsch_channel_compensation(c16_t *rxFext,
                                    uint32_t nb_rb,
                                    uint32_t output_shift) 
 {
-  simde__m256i QAM_ampa_256, QAM_ampb_256, QAM_ampc_256;
+  simde__m256i QAM_ampa_256 = simde_mm256_setzero_si256();
+  simde__m256i QAM_ampb_256 = simde_mm256_setzero_si256();
+  simde__m256i QAM_ampc_256 = simde_mm256_setzero_si256();
 
   if (mod_order == 4) {
     QAM_ampa_256 = simde_mm256_set1_epi16(QAM16_n1);
@@ -1874,10 +1876,14 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
     for (int aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++)
        avgs = cmax(avgs, avg[aatx*frame_parms->nb_antennas_rx+aarx]);
   
-  if (rel15_ul->nrOfLayers == 1)
-    pusch_vars->log2_maxh = (log2_approx(avgs) >> 1) + 2;
-  else 
-    pusch_vars->log2_maxh = (log2_approx(avgs) >> 1);
+
+  if (rel15_ul->nrOfLayers == 2 && rel15_ul->qam_mod_order < 6)
+    pusch_vars->log2_maxh = (log2_approx(avgs) >> 1) - 3; // for MMSE
+  else
+    pusch_vars->log2_maxh = (log2_approx(avgs) >> 1) + 1 + log2_approx(frame_parms->nb_antennas_rx >> 2);
+  
+  if (pusch_vars->log2_maxh < 0)
+    pusch_vars->log2_maxh = 0;
 
   stop_meas(&gNB->rx_pusch_init_stats);
 
