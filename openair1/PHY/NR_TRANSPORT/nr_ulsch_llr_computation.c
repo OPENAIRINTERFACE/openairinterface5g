@@ -961,125 +961,14 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
 
   simde__m128i rho_rpi __attribute__((aligned(16)));
   simde__m128i rho_rmi __attribute__((aligned(16)));
-  simde__m128i rho_rpi_1_1 __attribute__((aligned(16)));
-  simde__m128i rho_rpi_1_3 __attribute__((aligned(16)));
-  simde__m128i rho_rpi_3_1 __attribute__((aligned(16)));
-  simde__m128i rho_rpi_3_3 __attribute__((aligned(16)));
-  simde__m128i rho_rmi_1_1 __attribute__((aligned(16)));
-  simde__m128i rho_rmi_1_3 __attribute__((aligned(16)));
-  simde__m128i rho_rmi_3_1 __attribute__((aligned(16)));
-  simde__m128i rho_rmi_3_3 __attribute__((aligned(16)));
-
-  simde__m128i psi_r_m3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_r_m3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_r_m3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_r_m3_p3 __attribute__((aligned(16)));
-  simde__m128i psi_r_m1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_r_m1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_r_m1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_r_m1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_r_p1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_r_p1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_r_p1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_r_p1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_r_p3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_r_p3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_r_p3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_r_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i psi_i_m3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_i_m3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_i_m3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_i_m3_p3 __attribute__((aligned(16)));
-  simde__m128i psi_i_m1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_i_m1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_i_m1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_i_m1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_i_p1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_i_p1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_i_p1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_i_p1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_i_p3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_i_p3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_i_p3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_i_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i a_r_m3_m3 __attribute__((aligned(16)));
-  simde__m128i a_r_m3_m1 __attribute__((aligned(16)));
-  simde__m128i a_r_m3_p1 __attribute__((aligned(16)));
-  simde__m128i a_r_m3_p3 __attribute__((aligned(16)));
-  simde__m128i a_r_m1_m3 __attribute__((aligned(16)));
-  simde__m128i a_r_m1_m1 __attribute__((aligned(16)));
-  simde__m128i a_r_m1_p1 __attribute__((aligned(16)));
-  simde__m128i a_r_m1_p3 __attribute__((aligned(16)));
-  simde__m128i a_r_p1_m3 __attribute__((aligned(16)));
-  simde__m128i a_r_p1_m1 __attribute__((aligned(16)));
-  simde__m128i a_r_p1_p1 __attribute__((aligned(16)));
-  simde__m128i a_r_p1_p3 __attribute__((aligned(16)));
-  simde__m128i a_r_p3_m3 __attribute__((aligned(16)));
-  simde__m128i a_r_p3_m1 __attribute__((aligned(16)));
-  simde__m128i a_r_p3_p1 __attribute__((aligned(16)));
-  simde__m128i a_r_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i a_i_m3_m3 __attribute__((aligned(16)));
-  simde__m128i a_i_m3_m1 __attribute__((aligned(16)));
-  simde__m128i a_i_m3_p1 __attribute__((aligned(16)));
-  simde__m128i a_i_m3_p3 __attribute__((aligned(16)));
-  simde__m128i a_i_m1_m3 __attribute__((aligned(16)));
-  simde__m128i a_i_m1_m1 __attribute__((aligned(16)));
-  simde__m128i a_i_m1_p1 __attribute__((aligned(16)));
-  simde__m128i a_i_m1_p3 __attribute__((aligned(16)));
-  simde__m128i a_i_p1_m3 __attribute__((aligned(16)));
-  simde__m128i a_i_p1_m1 __attribute__((aligned(16)));
-  simde__m128i a_i_p1_p1 __attribute__((aligned(16)));
-  simde__m128i a_i_p1_p3 __attribute__((aligned(16)));
-  simde__m128i a_i_p3_m3 __attribute__((aligned(16)));
-  simde__m128i a_i_p3_m1 __attribute__((aligned(16)));
-  simde__m128i a_i_p3_p1 __attribute__((aligned(16)));
-  simde__m128i a_i_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i psi_a_m3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_a_m3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_a_m3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_a_m3_p3 __attribute__((aligned(16)));
-  simde__m128i psi_a_m1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_a_m1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_a_m1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_a_m1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_a_p1_m3 __attribute__((aligned(16)));
-  simde__m128i psi_a_p1_m1 __attribute__((aligned(16)));
-  simde__m128i psi_a_p1_p1 __attribute__((aligned(16)));
-  simde__m128i psi_a_p1_p3 __attribute__((aligned(16)));
-  simde__m128i psi_a_p3_m3 __attribute__((aligned(16)));
-  simde__m128i psi_a_p3_m1 __attribute__((aligned(16)));
-  simde__m128i psi_a_p3_p1 __attribute__((aligned(16)));
-  simde__m128i psi_a_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i a_sq_m3_m3 __attribute__((aligned(16)));
-  simde__m128i a_sq_m3_m1 __attribute__((aligned(16)));
-  simde__m128i a_sq_m3_p1 __attribute__((aligned(16)));
-  simde__m128i a_sq_m3_p3 __attribute__((aligned(16)));
-  simde__m128i a_sq_m1_m3 __attribute__((aligned(16)));
-  simde__m128i a_sq_m1_m1 __attribute__((aligned(16)));
-  simde__m128i a_sq_m1_p1 __attribute__((aligned(16)));
-  simde__m128i a_sq_m1_p3 __attribute__((aligned(16)));
-  simde__m128i a_sq_p1_m3 __attribute__((aligned(16)));
-  simde__m128i a_sq_p1_m1 __attribute__((aligned(16)));
-  simde__m128i a_sq_p1_p1 __attribute__((aligned(16)));
-  simde__m128i a_sq_p1_p3 __attribute__((aligned(16)));
-  simde__m128i a_sq_p3_m3 __attribute__((aligned(16)));
-  simde__m128i a_sq_p3_m1 __attribute__((aligned(16)));
-  simde__m128i a_sq_p3_p1 __attribute__((aligned(16)));
-  simde__m128i a_sq_p3_p3 __attribute__((aligned(16)));
-
-  simde__m128i y0_p_1_1 __attribute__((aligned(16)));
-  simde__m128i y0_p_1_3 __attribute__((aligned(16)));
-  simde__m128i y0_p_3_1 __attribute__((aligned(16)));
-  simde__m128i y0_p_3_3 __attribute__((aligned(16)));
-  simde__m128i y0_m_1_1 __attribute__((aligned(16)));
-  simde__m128i y0_m_1_3 __attribute__((aligned(16)));
-  simde__m128i y0_m_3_1 __attribute__((aligned(16)));
-  simde__m128i y0_m_3_3 __attribute__((aligned(16)));
+  simde__m128i rho_rs[8] __attribute__((aligned(16)));
+  simde__m128i psi_rs[16] __attribute__((aligned(16)));
+  simde__m128i psi_is[16] __attribute__((aligned(16)));
+  simde__m128i a_rs[16] __attribute__((aligned(16)));
+  simde__m128i a_is[16] __attribute__((aligned(16)));
+  simde__m128i psi_as[16] __attribute__((aligned(16)));
+  simde__m128i a_sqs[16] __attribute__((aligned(16)));
+  simde__m128i y0_s[8] __attribute__((aligned(16)));
 
   simde__m128i y0r __attribute__((aligned(16)));
   simde__m128i y0i __attribute__((aligned(16)));
@@ -1095,96 +984,42 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     rho_rmi = simde_mm_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
 
     // Compute the different rhos
-    rho_rpi_1_1 = simde_mm_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_10);
-    rho_rmi_1_1 = simde_mm_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_10);
-    rho_rpi_3_3 = simde_mm_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_10);
-    rho_rmi_3_3 = simde_mm_mulhi_epi16(rho_rmi, THREE_OVER_SQRT_10);
-    rho_rpi_3_3 = simde_mm_slli_epi16(rho_rpi_3_3, 1);
-    rho_rmi_3_3 = simde_mm_slli_epi16(rho_rmi_3_3, 1);
+    rho_rs[0] = simde_mm_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_10);
+    rho_rs[4] = simde_mm_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_10);
+    rho_rs[3] = simde_mm_slli_epi16(simde_mm_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_10), 1);
+    rho_rs[7] = simde_mm_slli_epi16(simde_mm_mulhi_epi16(rho_rmi, THREE_OVER_SQRT_10), 1);
 
     xmm4 = simde_mm_mulhi_epi16(xmm2, ONE_OVER_SQRT_10); // Re(rho)
     xmm5 = simde_mm_mulhi_epi16(xmm3, THREE_OVER_SQRT_10); // Im(rho)
     xmm5 = simde_mm_slli_epi16(xmm5, 1);
 
-    rho_rpi_1_3 = simde_mm_adds_epi16(xmm4, xmm5);
-    rho_rmi_1_3 = simde_mm_subs_epi16(xmm4, xmm5);
+    rho_rs[1] = simde_mm_adds_epi16(xmm4, xmm5);
+    rho_rs[5] = simde_mm_subs_epi16(xmm4, xmm5);
 
     xmm6 = simde_mm_mulhi_epi16(xmm2, THREE_OVER_SQRT_10); // Re(rho)
     xmm7 = simde_mm_mulhi_epi16(xmm3, ONE_OVER_SQRT_10); // Im(rho)
     xmm6 = simde_mm_slli_epi16(xmm6, 1);
 
-    rho_rpi_3_1 = simde_mm_adds_epi16(xmm6, xmm7);
-    rho_rmi_3_1 = simde_mm_subs_epi16(xmm6, xmm7);
+    rho_rs[2] = simde_mm_adds_epi16(xmm6, xmm7);
+    rho_rs[6] = simde_mm_subs_epi16(xmm6, xmm7);
 
     // Rearrange interfering MF output
     simde_mm128_separate_real_imag_parts(&y1r, &y1i, stream1_128i_in[i], stream1_128i_in[i + 1]);
 
-    xmm0 = simde_mm_setzero_si128(); // ZERO
-    xmm2 = simde_mm_subs_epi16(rho_rpi_1_1, y1r); // = [Re(rho)+ Im(rho)]/sqrt(10) - y1r
-    psi_r_p1_p1 = simde_mm_abs_epi16(xmm2); // = |[Re(rho)+ Im(rho)]/sqrt(10) - y1r|
-
-    xmm2 = simde_mm_subs_epi16(rho_rmi_1_1, y1r);
-    psi_r_p1_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_1_1, y1i);
-    psi_i_p1_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_1_3, y1r);
-    psi_r_p1_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_1_3, y1r);
-    psi_r_p1_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_3_1, y1i);
-    psi_i_p1_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_3_1, y1r);
-    psi_r_p3_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_3_1, y1r);
-    psi_r_p3_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_1_3, y1i);
-    psi_i_p3_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_3_3, y1r);
-    psi_r_p3_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_3_3, y1r);
-    psi_r_p3_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rmi_3_3, y1i);
-    psi_i_p3_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_1_1, y1i);
-    psi_i_m1_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_3_1, y1i);
-    psi_i_m1_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_1_3, y1i);
-    psi_i_m3_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_subs_epi16(rho_rpi_3_3, y1i);
-    psi_i_m3_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_1_1, y1i);
-    psi_i_p1_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_3_1, y1i);
-    psi_i_p1_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_1_3, y1i);
-    psi_i_p3_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_3_3, y1i);
-    psi_i_p3_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_1_1, y1r);
-    psi_r_m1_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_1_3, y1r);
-    psi_r_m1_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_3_1, y1r);
-    psi_r_m3_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(rho_rpi_3_3, y1r);
-    psi_r_m3_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1r, rho_rmi_1_1);
-    psi_r_m1_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1r, rho_rmi_1_3);
-    psi_r_m1_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1i, rho_rmi_1_1);
-    psi_i_m1_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1i, rho_rmi_3_1);
-    psi_i_m1_m3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1r, rho_rmi_3_1);
-    psi_r_m3_p1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1r, rho_rmi_3_3);
-    psi_r_m3_p3 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1i, rho_rmi_1_3);
-    psi_i_m3_m1 = simde_mm_abs_epi16(xmm2);
-    xmm2 = simde_mm_adds_epi16(y1i, rho_rmi_3_3);
-    psi_i_m3_m3 = simde_mm_abs_epi16(xmm2);
+    // |  [Re(rho)+ Im(rho)]/sqrt(10) - y1r  |
+    for(int j=0; j<8; j++){ // psi_rs[0~7], rho_rs[0~7]
+      psi_rs[j]  = simde_mm_abs_epi16(  simde_mm_subs_epi16(rho_rs[j], y1r)  );
+    }
+    for(int j=8; j<16; j++){ // psi_rs[8~16], rho_rs[4,5,6,7,0,1,2,3]
+      psi_rs[j]  = simde_mm_abs_epi16(  simde_mm_adds_epi16(rho_rs[(j-4) & 7], y1r)  );
+    }
+    const uint8_t rho_rs_indexes[16] = {4,6,5,7,0,2,1,3,0,2,1,3,4,6,5,7};
+    for(int k=0; k<16; k+=8){ // psi_is[0~15], sub(rho_rs[4,6,5,7]), add(rho_rs[0,2,1,3]), sub(rho_rs[0,2,1,3]), add(rho_rs[4,6,5,7])
+      for(int j=k; j<k+4; j++){
+        psi_is[j]    = simde_mm_abs_epi16(  simde_mm_subs_epi16(rho_rs[rho_rs_indexes[j]], y1i)  );
+        psi_is[j+4]  = simde_mm_abs_epi16(  simde_mm_adds_epi16(rho_rs[rho_rs_indexes[j+4]], y1i)  );
+      }
+    }
 
     // Rearrange desired MF output
     simde_mm128_separate_real_imag_parts(&y0r, &y0i, stream0_128i_in[i], stream0_128i_in[i + 1]);
@@ -1199,93 +1034,33 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     // Scale MF output of desired signal
     y0r_over_sqrt10 = simde_mm_mulhi_epi16(y0r, ONE_OVER_SQRT_10);
     y0i_over_sqrt10 = simde_mm_mulhi_epi16(y0i, ONE_OVER_SQRT_10);
-    y0r_three_over_sqrt10 = simde_mm_mulhi_epi16(y0r, THREE_OVER_SQRT_10);
-    y0i_three_over_sqrt10 = simde_mm_mulhi_epi16(y0i, THREE_OVER_SQRT_10);
-    y0r_three_over_sqrt10 = simde_mm_slli_epi16(y0r_three_over_sqrt10, 1);
-    y0i_three_over_sqrt10 = simde_mm_slli_epi16(y0i_three_over_sqrt10, 1);
+    y0r_three_over_sqrt10 = simde_mm_slli_epi16(simde_mm_mulhi_epi16(y0r, THREE_OVER_SQRT_10), 1);
+    y0i_three_over_sqrt10 = simde_mm_slli_epi16(simde_mm_mulhi_epi16(y0i, THREE_OVER_SQRT_10), 1);
 
     // Compute necessary combination of required terms
-    y0_p_1_1 = simde_mm_adds_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
-    y0_m_1_1 = simde_mm_subs_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
+    y0_s[0] = simde_mm_adds_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
+    y0_s[4] = simde_mm_subs_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
 
-    y0_p_1_3 = simde_mm_adds_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
-    y0_m_1_3 = simde_mm_subs_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[1] = simde_mm_adds_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[5] = simde_mm_subs_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
 
-    y0_p_3_1 = simde_mm_adds_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
-    y0_m_3_1 = simde_mm_subs_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
+    y0_s[2] = simde_mm_adds_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
+    y0_s[6] = simde_mm_subs_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
 
-    y0_p_3_3 = simde_mm_adds_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
-    y0_m_3_3 = simde_mm_subs_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[3] = simde_mm_adds_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[7] = simde_mm_subs_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
 
-    // Compute optimal interfering symbol magnitude
-    a_r_p1_p1 = interference_abs_epi16(psi_r_p1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_p1 = interference_abs_epi16(psi_i_p1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_p3 = interference_abs_epi16(psi_r_p1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_p3 = interference_abs_epi16(psi_i_p1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_m1 = interference_abs_epi16(psi_r_p1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_m1 = interference_abs_epi16(psi_i_p1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_m3 = interference_abs_epi16(psi_r_p1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_m3 = interference_abs_epi16(psi_i_p1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_p1 = interference_abs_epi16(psi_r_p3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_p1 = interference_abs_epi16(psi_i_p3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_p3 = interference_abs_epi16(psi_r_p3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_p3 = interference_abs_epi16(psi_i_p3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_m1 = interference_abs_epi16(psi_r_p3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_m1 = interference_abs_epi16(psi_i_p3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_m3 = interference_abs_epi16(psi_r_p3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_m3 = interference_abs_epi16(psi_i_p3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_p1 = interference_abs_epi16(psi_r_m1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_p1 = interference_abs_epi16(psi_i_m1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_p3 = interference_abs_epi16(psi_r_m1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_p3 = interference_abs_epi16(psi_i_m1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_m1 = interference_abs_epi16(psi_r_m1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_m1 = interference_abs_epi16(psi_i_m1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_m3 = interference_abs_epi16(psi_r_m1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_m3 = interference_abs_epi16(psi_i_m1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_p1 = interference_abs_epi16(psi_r_m3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_p1 = interference_abs_epi16(psi_i_m3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_p3 = interference_abs_epi16(psi_r_m3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_p3 = interference_abs_epi16(psi_i_m3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_m1 = interference_abs_epi16(psi_r_m3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_m1 = interference_abs_epi16(psi_i_m3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_m3 = interference_abs_epi16(psi_r_m3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_m3 = interference_abs_epi16(psi_i_m3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
+    for(int j=0; j<16; j++){
+      // Compute optimal interfering symbol magnitude
+      a_rs[j] = interference_abs_epi16(psi_rs[j], ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
+      a_is[j] = interference_abs_epi16(psi_is[j], ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
 
-    // Calculation of groups of two terms in the bit metric involving product of psi and interference magnitude
-    psi_a_p1_p1 = prodsum_psi_a_epi16(psi_r_p1_p1, a_r_p1_p1, psi_i_p1_p1, a_i_p1_p1);
-    psi_a_p1_p3 = prodsum_psi_a_epi16(psi_r_p1_p3, a_r_p1_p3, psi_i_p1_p3, a_i_p1_p3);
-    psi_a_p3_p1 = prodsum_psi_a_epi16(psi_r_p3_p1, a_r_p3_p1, psi_i_p3_p1, a_i_p3_p1);
-    psi_a_p3_p3 = prodsum_psi_a_epi16(psi_r_p3_p3, a_r_p3_p3, psi_i_p3_p3, a_i_p3_p3);
-    psi_a_p1_m1 = prodsum_psi_a_epi16(psi_r_p1_m1, a_r_p1_m1, psi_i_p1_m1, a_i_p1_m1);
-    psi_a_p1_m3 = prodsum_psi_a_epi16(psi_r_p1_m3, a_r_p1_m3, psi_i_p1_m3, a_i_p1_m3);
-    psi_a_p3_m1 = prodsum_psi_a_epi16(psi_r_p3_m1, a_r_p3_m1, psi_i_p3_m1, a_i_p3_m1);
-    psi_a_p3_m3 = prodsum_psi_a_epi16(psi_r_p3_m3, a_r_p3_m3, psi_i_p3_m3, a_i_p3_m3);
-    psi_a_m1_p1 = prodsum_psi_a_epi16(psi_r_m1_p1, a_r_m1_p1, psi_i_m1_p1, a_i_m1_p1);
-    psi_a_m1_p3 = prodsum_psi_a_epi16(psi_r_m1_p3, a_r_m1_p3, psi_i_m1_p3, a_i_m1_p3);
-    psi_a_m3_p1 = prodsum_psi_a_epi16(psi_r_m3_p1, a_r_m3_p1, psi_i_m3_p1, a_i_m3_p1);
-    psi_a_m3_p3 = prodsum_psi_a_epi16(psi_r_m3_p3, a_r_m3_p3, psi_i_m3_p3, a_i_m3_p3);
-    psi_a_m1_m1 = prodsum_psi_a_epi16(psi_r_m1_m1, a_r_m1_m1, psi_i_m1_m1, a_i_m1_m1);
-    psi_a_m1_m3 = prodsum_psi_a_epi16(psi_r_m1_m3, a_r_m1_m3, psi_i_m1_m3, a_i_m1_m3);
-    psi_a_m3_m1 = prodsum_psi_a_epi16(psi_r_m3_m1, a_r_m3_m1, psi_i_m3_m1, a_i_m3_m1);
-    psi_a_m3_m3 = prodsum_psi_a_epi16(psi_r_m3_m3, a_r_m3_m3, psi_i_m3_m3, a_i_m3_m3);
+      // Calculation of groups of two terms in the bit metric involving product of psi and interference magnitude
+      psi_as[j] = prodsum_psi_a_epi16(psi_rs[j], a_rs[j], psi_is[j], a_is[j]);
 
-    // squared interference magnitude times int. ch. power
-    a_sq_p1_p1 = square_a_epi16(a_r_p1_p1, a_i_p1_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_p3 = square_a_epi16(a_r_p1_p3, a_i_p1_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_p1 = square_a_epi16(a_r_p3_p1, a_i_p3_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_p3 = square_a_epi16(a_r_p3_p3, a_i_p3_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_m1 = square_a_epi16(a_r_p1_m1, a_i_p1_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_m3 = square_a_epi16(a_r_p1_m3, a_i_p1_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_m1 = square_a_epi16(a_r_p3_m1, a_i_p3_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_m3 = square_a_epi16(a_r_p3_m3, a_i_p3_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_p1 = square_a_epi16(a_r_m1_p1, a_i_m1_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_p3 = square_a_epi16(a_r_m1_p3, a_i_m1_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_p1 = square_a_epi16(a_r_m3_p1, a_i_m3_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_p3 = square_a_epi16(a_r_m3_p3, a_i_m3_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_m1 = square_a_epi16(a_r_m1_m1, a_i_m1_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_m3 = square_a_epi16(a_r_m1_m3, a_i_m1_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_m1 = square_a_epi16(a_r_m3_m1, a_i_m3_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_m3 = square_a_epi16(a_r_m3_m3, a_i_m3_m3, ch_mag_int, SQRT_10_OVER_FOUR);
+      // squared interference magnitude times int. ch. power
+      a_sqs[j] = square_a_epi16(a_rs[j], a_is[j], ch_mag_int, SQRT_10_OVER_FOUR);
+    }
 
     // Computing different multiples of channel norms
     ch_mag_over_10 = simde_mm_mulhi_epi16(ch_mag_des, ONE_OVER_TWO_SQRT_10);
@@ -1295,154 +1070,60 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     ch_mag_9_over_10 = simde_mm_slli_epi16(ch_mag_9_over_10, 2);
 
     /// Compute bit metrics (lambda)
+    simde__m128i bit_mets[16] __attribute__((aligned(16)));
+    for(int j=0; j<8; j+=4){
+      bit_mets[j+0] = simde_mm_subs_epi16(psi_as[j+0], a_sqs[j+0]);
+      bit_mets[j+0] = simde_mm_adds_epi16(bit_mets[j+0], y0_s[j+0]);
+      bit_mets[j+0] = simde_mm_subs_epi16(bit_mets[j+0], ch_mag_over_10);
 
-    simde__m128i bit_met_p1_p1 = simde_mm_subs_epi16(psi_a_p1_p1, a_sq_p1_p1);
-    bit_met_p1_p1 = simde_mm_adds_epi16(bit_met_p1_p1, y0_p_1_1);
-    bit_met_p1_p1 = simde_mm_subs_epi16(bit_met_p1_p1, ch_mag_over_10);
+      bit_mets[j+1] = simde_mm_subs_epi16(psi_as[j+1], a_sqs[j+1]);
+      bit_mets[j+1] = simde_mm_adds_epi16(bit_mets[j+1], y0_s[j+1]);
+      bit_mets[j+1] = simde_mm_subs_epi16(bit_mets[j+1], ch_mag_over_2);
+      bit_mets[j+2] = simde_mm_subs_epi16(psi_as[j+2], a_sqs[j+2]);
+      bit_mets[j+2] = simde_mm_adds_epi16(bit_mets[j+2], y0_s[j+2]);
+      bit_mets[j+2] = simde_mm_subs_epi16(bit_mets[j+2], ch_mag_over_2);
 
-    simde__m128i bit_met_p1_p3 = simde_mm_subs_epi16(psi_a_p1_p3, a_sq_p1_p3);
-    bit_met_p1_p3 = simde_mm_adds_epi16(bit_met_p1_p3, y0_p_1_3);
-    bit_met_p1_p3 = simde_mm_subs_epi16(bit_met_p1_p3, ch_mag_over_2);
+      bit_mets[j+3] = simde_mm_subs_epi16(psi_as[j+3], a_sqs[j+3]);
+      bit_mets[j+3] = simde_mm_adds_epi16(bit_mets[j+3], y0_s[j+3]);
+      bit_mets[j+3] = simde_mm_subs_epi16(bit_mets[j+3], ch_mag_9_over_10);
+    }
+    for(int j=8; j<16; j+=4){
+      bit_mets[j+0] = simde_mm_subs_epi16(psi_as[j+0], a_sqs[j+0]);
+      bit_mets[j+0] = simde_mm_subs_epi16(bit_mets[j+0], y0_s[(j - 4) & 0x07]);
+      bit_mets[j+0] = simde_mm_subs_epi16(bit_mets[j+0], ch_mag_over_10);
 
-    simde__m128i bit_met_p1_m1 = simde_mm_subs_epi16(psi_a_p1_m1, a_sq_p1_m1);
-    bit_met_p1_m1 = simde_mm_adds_epi16(bit_met_p1_m1, y0_m_1_1);
-    bit_met_p1_m1 = simde_mm_subs_epi16(bit_met_p1_m1, ch_mag_over_10);
+      bit_mets[j+1] = simde_mm_subs_epi16(psi_as[j+1], a_sqs[j+1]);
+      bit_mets[j+1] = simde_mm_subs_epi16(bit_mets[j+1], y0_s[(j - 3) & 0x07]);
+      bit_mets[j+1] = simde_mm_subs_epi16(bit_mets[j+1], ch_mag_over_2);
+      bit_mets[j+2] = simde_mm_subs_epi16(psi_as[j+2], a_sqs[j+2]);
+      bit_mets[j+2] = simde_mm_subs_epi16(bit_mets[j+2], y0_s[(j - 2) & 0x07]);
+      bit_mets[j+2] = simde_mm_subs_epi16(bit_mets[j+2], ch_mag_over_2);
 
-    simde__m128i bit_met_p1_m3 = simde_mm_subs_epi16(psi_a_p1_m3, a_sq_p1_m3);
-    bit_met_p1_m3 = simde_mm_adds_epi16(bit_met_p1_m3, y0_m_1_3);
-    bit_met_p1_m3 = simde_mm_subs_epi16(bit_met_p1_m3, ch_mag_over_2);
-
-    simde__m128i bit_met_p3_p1 = simde_mm_subs_epi16(psi_a_p3_p1, a_sq_p3_p1);
-    bit_met_p3_p1 = simde_mm_adds_epi16(bit_met_p3_p1, y0_p_3_1);
-    bit_met_p3_p1 = simde_mm_subs_epi16(bit_met_p3_p1, ch_mag_over_2);
-
-    simde__m128i bit_met_p3_p3 = simde_mm_subs_epi16(psi_a_p3_p3, a_sq_p3_p3);
-    bit_met_p3_p3 = simde_mm_adds_epi16(bit_met_p3_p3, y0_p_3_3);
-    bit_met_p3_p3 = simde_mm_subs_epi16(bit_met_p3_p3, ch_mag_9_over_10);
-
-    simde__m128i bit_met_p3_m1 = simde_mm_subs_epi16(psi_a_p3_m1, a_sq_p3_m1);
-    bit_met_p3_m1 = simde_mm_adds_epi16(bit_met_p3_m1, y0_m_3_1);
-    bit_met_p3_m1 = simde_mm_subs_epi16(bit_met_p3_m1, ch_mag_over_2);
-
-    simde__m128i bit_met_p3_m3 = simde_mm_subs_epi16(psi_a_p3_m3, a_sq_p3_m3);
-    bit_met_p3_m3 = simde_mm_adds_epi16(bit_met_p3_m3, y0_m_3_3);
-    bit_met_p3_m3 = simde_mm_subs_epi16(bit_met_p3_m3, ch_mag_9_over_10);
-
-    simde__m128i bit_met_m1_p1 = simde_mm_subs_epi16(psi_a_m1_p1, a_sq_m1_p1);
-    bit_met_m1_p1 = simde_mm_subs_epi16(bit_met_m1_p1, y0_m_1_1);
-    bit_met_m1_p1 = simde_mm_subs_epi16(bit_met_m1_p1, ch_mag_over_10);
-
-    simde__m128i bit_met_m1_p3 = simde_mm_subs_epi16(psi_a_m1_p3, a_sq_m1_p3);
-    bit_met_m1_p3 = simde_mm_subs_epi16(bit_met_m1_p3, y0_m_1_3);
-    bit_met_m1_p3 = simde_mm_subs_epi16(bit_met_m1_p3, ch_mag_over_2);
-
-    simde__m128i bit_met_m1_m1 = simde_mm_subs_epi16(psi_a_m1_m1, a_sq_m1_m1);
-    bit_met_m1_m1 = simde_mm_subs_epi16(bit_met_m1_m1, y0_p_1_1);
-    bit_met_m1_m1 = simde_mm_subs_epi16(bit_met_m1_m1, ch_mag_over_10);
-
-    simde__m128i bit_met_m1_m3 = simde_mm_subs_epi16(psi_a_m1_m3, a_sq_m1_m3);
-    bit_met_m1_m3 = simde_mm_subs_epi16(bit_met_m1_m3, y0_p_1_3);
-    bit_met_m1_m3 = simde_mm_subs_epi16(bit_met_m1_m3, ch_mag_over_2);
-
-    simde__m128i bit_met_m3_p1 = simde_mm_subs_epi16(psi_a_m3_p1, a_sq_m3_p1);
-    bit_met_m3_p1 = simde_mm_subs_epi16(bit_met_m3_p1, y0_m_3_1);
-    bit_met_m3_p1 = simde_mm_subs_epi16(bit_met_m3_p1, ch_mag_over_2);
-
-    simde__m128i bit_met_m3_p3 = simde_mm_subs_epi16(psi_a_m3_p3, a_sq_m3_p3);
-    bit_met_m3_p3 = simde_mm_subs_epi16(bit_met_m3_p3, y0_m_3_3);
-    bit_met_m3_p3 = simde_mm_subs_epi16(bit_met_m3_p3, ch_mag_9_over_10);
-
-    simde__m128i bit_met_m3_m1 = simde_mm_subs_epi16(psi_a_m3_m1, a_sq_m3_m1);
-    bit_met_m3_m1 = simde_mm_subs_epi16(bit_met_m3_m1, y0_p_3_1);
-    bit_met_m3_m1 = simde_mm_subs_epi16(bit_met_m3_m1, ch_mag_over_2);
-
-    simde__m128i bit_met_m3_m3 = simde_mm_subs_epi16(psi_a_m3_m3, a_sq_m3_m3);
-    bit_met_m3_m3 = simde_mm_subs_epi16(bit_met_m3_m3, y0_p_3_3);
-    bit_met_m3_m3 = simde_mm_subs_epi16(bit_met_m3_m3, ch_mag_9_over_10);
-
+      bit_mets[j+3] = simde_mm_subs_epi16(psi_as[j+3], a_sqs[j+3]);
+      bit_mets[j+3] = simde_mm_subs_epi16(bit_mets[j+3], y0_s[(j - 1) & 0x07]);
+      bit_mets[j+3] = simde_mm_subs_epi16(bit_mets[j+3], ch_mag_9_over_10);
+    }
     /// Compute the LLRs
 
     // LLR = lambda(c==1) - lambda(c==0)
 
     // LLR of the first bit: Bit = 1
-    simde__m128i logmax_num_re0 = max_epi16(bit_met_m1_p1,
-                                       bit_met_m1_p3,
-                                       bit_met_m1_m1,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_p1,
-                                       bit_met_m3_p3,
-                                       bit_met_m3_m1,
-                                       bit_met_m3_m3);
-
+    simde__m128i logmax_num_re0 = max_epi16(bit_mets[8],  bit_mets[9],  bit_mets[10], bit_mets[11], bit_mets[12], bit_mets[13], bit_mets[14], bit_mets[15]);
     // LLR of the first bit: Bit = 0
-    simde__m128i logmax_den_re0 = max_epi16(bit_met_p1_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p1_m1,
-                                       bit_met_p1_m3,
-                                       bit_met_p3_p1,
-                                       bit_met_p3_p3,
-                                       bit_met_p3_m1,
-                                       bit_met_p3_m3);
-
+    simde__m128i logmax_den_re0 = max_epi16(bit_mets[0],  bit_mets[1],  bit_mets[2],  bit_mets[3],  bit_mets[4],  bit_mets[5],  bit_mets[6],  bit_mets[7]);
     // LLR of the second bit: Bit = 1
-    simde__m128i logmax_num_re1 = max_epi16(bit_met_p1_m1,
-                                       bit_met_p3_m1,
-                                       bit_met_m1_m1,
-                                       bit_met_m3_m1,
-                                       bit_met_p1_m3,
-                                       bit_met_p3_m3,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_m3);
-
+    simde__m128i logmax_num_re1 = max_epi16(bit_mets[4],  bit_mets[5],  bit_mets[6],  bit_mets[7],  bit_mets[12], bit_mets[13], bit_mets[14], bit_mets[15]);
     // LLR of the second bit: Bit = 0
-    simde__m128i logmax_den_re1 = max_epi16(bit_met_p1_p1,
-                                       bit_met_p3_p1,
-                                       bit_met_m1_p1,
-                                       bit_met_m3_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p3_p3,
-                                       bit_met_m1_p3,
-                                       bit_met_m3_p3);
-
+    simde__m128i logmax_den_re1 = max_epi16(bit_mets[0],  bit_mets[1],  bit_mets[3],  bit_mets[2],  bit_mets[8],  bit_mets[9],  bit_mets[10], bit_mets[11]);
     // LLR of the third bit: Bit = 1
-    simde__m128i logmax_num_im0 = max_epi16(bit_met_m3_p1,
-                                       bit_met_m3_p3,
-                                       bit_met_m3_m1,
-                                       bit_met_m3_m3,
-                                       bit_met_p3_p1,
-                                       bit_met_p3_p3,
-                                       bit_met_p3_m1,
-                                       bit_met_p3_m3);
-
+    simde__m128i logmax_num_im0 = max_epi16(bit_mets[2],  bit_mets[3],  bit_mets[6],  bit_mets[7],  bit_mets[10], bit_mets[11], bit_mets[14], bit_mets[15]);
     // LLR of the third bit: Bit = 0
-    simde__m128i logmax_den_im0 = max_epi16(bit_met_m1_p1,
-                                       bit_met_m1_p3,
-                                       bit_met_m1_m1,
-                                       bit_met_m1_m3,
-                                       bit_met_p1_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p1_m1,
-                                       bit_met_p1_m3);
-
+    simde__m128i logmax_den_im0 = max_epi16(bit_mets[0],  bit_mets[1],  bit_mets[4],  bit_mets[5],  bit_mets[8],  bit_mets[9],  bit_mets[12], bit_mets[13]);
     // LLR of the fourth bit: Bit = 1
-    simde__m128i logmax_num_im1 = max_epi16(bit_met_p1_m3,
-                                       bit_met_p3_m3,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_m3,
-                                       bit_met_p1_p3,
-                                       bit_met_p3_p3,
-                                       bit_met_m1_p3,
-                                       bit_met_m3_p3);
-
+    simde__m128i logmax_num_im1 = max_epi16(bit_mets[1],  bit_mets[3],  bit_mets[5],  bit_mets[7],  bit_mets[9],  bit_mets[11], bit_mets[13], bit_mets[15]);
     // LLR of the fourth bit: Bit = 0
-    simde__m128i logmax_den_im1 = max_epi16(bit_met_p1_m1,
-                                       bit_met_p3_m1,
-                                       bit_met_m1_m1,
-                                       bit_met_m3_m1,
-                                       bit_met_p1_p1,
-                                       bit_met_p3_p1,
-                                       bit_met_m1_p1,
-                                       bit_met_m3_p1);
+    simde__m128i logmax_den_im1 = max_epi16(bit_mets[0],  bit_mets[2],  bit_mets[4],  bit_mets[6],  bit_mets[8],  bit_mets[10], bit_mets[12], bit_mets[14]);
+
 
     y0r = simde_mm_subs_epi16(logmax_den_re0, logmax_num_re0); // LLR of first bit  [L1(1), L1(2), L1(3), L1(4), L1(5), L1(6), L1(7), L1(8)]
     y1r = simde_mm_subs_epi16(logmax_den_re1, logmax_num_re1); // LLR of second bit [L2(1), L2(2), L2(3), L2(4), L2(5), L2(6), L2(7), L2(8)]
@@ -1491,125 +1172,14 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
 
   simde__m256i rho_rpi __attribute__((aligned(16)));
   simde__m256i rho_rmi __attribute__((aligned(16)));
-  simde__m256i rho_rpi_1_1 __attribute__((aligned(16)));
-  simde__m256i rho_rpi_1_3 __attribute__((aligned(16)));
-  simde__m256i rho_rpi_3_1 __attribute__((aligned(16)));
-  simde__m256i rho_rpi_3_3 __attribute__((aligned(16)));
-  simde__m256i rho_rmi_1_1 __attribute__((aligned(16)));
-  simde__m256i rho_rmi_1_3 __attribute__((aligned(16)));
-  simde__m256i rho_rmi_3_1 __attribute__((aligned(16)));
-  simde__m256i rho_rmi_3_3 __attribute__((aligned(16)));
-
-  simde__m256i psi_r_m3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_r_m3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_r_m3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_r_m3_p3 __attribute__((aligned(16)));
-  simde__m256i psi_r_m1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_r_m1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_r_m1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_r_m1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_r_p1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_r_p1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_r_p1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_r_p1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_r_p3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_r_p3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_r_p3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_r_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i psi_i_m3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_i_m3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_i_m3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_i_m3_p3 __attribute__((aligned(16)));
-  simde__m256i psi_i_m1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_i_m1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_i_m1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_i_m1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_i_p1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_i_p1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_i_p1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_i_p1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_i_p3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_i_p3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_i_p3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_i_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i a_r_m3_m3 __attribute__((aligned(16)));
-  simde__m256i a_r_m3_m1 __attribute__((aligned(16)));
-  simde__m256i a_r_m3_p1 __attribute__((aligned(16)));
-  simde__m256i a_r_m3_p3 __attribute__((aligned(16)));
-  simde__m256i a_r_m1_m3 __attribute__((aligned(16)));
-  simde__m256i a_r_m1_m1 __attribute__((aligned(16)));
-  simde__m256i a_r_m1_p1 __attribute__((aligned(16)));
-  simde__m256i a_r_m1_p3 __attribute__((aligned(16)));
-  simde__m256i a_r_p1_m3 __attribute__((aligned(16)));
-  simde__m256i a_r_p1_m1 __attribute__((aligned(16)));
-  simde__m256i a_r_p1_p1 __attribute__((aligned(16)));
-  simde__m256i a_r_p1_p3 __attribute__((aligned(16)));
-  simde__m256i a_r_p3_m3 __attribute__((aligned(16)));
-  simde__m256i a_r_p3_m1 __attribute__((aligned(16)));
-  simde__m256i a_r_p3_p1 __attribute__((aligned(16)));
-  simde__m256i a_r_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i a_i_m3_m3 __attribute__((aligned(16)));
-  simde__m256i a_i_m3_m1 __attribute__((aligned(16)));
-  simde__m256i a_i_m3_p1 __attribute__((aligned(16)));
-  simde__m256i a_i_m3_p3 __attribute__((aligned(16)));
-  simde__m256i a_i_m1_m3 __attribute__((aligned(16)));
-  simde__m256i a_i_m1_m1 __attribute__((aligned(16)));
-  simde__m256i a_i_m1_p1 __attribute__((aligned(16)));
-  simde__m256i a_i_m1_p3 __attribute__((aligned(16)));
-  simde__m256i a_i_p1_m3 __attribute__((aligned(16)));
-  simde__m256i a_i_p1_m1 __attribute__((aligned(16)));
-  simde__m256i a_i_p1_p1 __attribute__((aligned(16)));
-  simde__m256i a_i_p1_p3 __attribute__((aligned(16)));
-  simde__m256i a_i_p3_m3 __attribute__((aligned(16)));
-  simde__m256i a_i_p3_m1 __attribute__((aligned(16)));
-  simde__m256i a_i_p3_p1 __attribute__((aligned(16)));
-  simde__m256i a_i_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i psi_a_m3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_a_m3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_a_m3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_a_m3_p3 __attribute__((aligned(16)));
-  simde__m256i psi_a_m1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_a_m1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_a_m1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_a_m1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_a_p1_m3 __attribute__((aligned(16)));
-  simde__m256i psi_a_p1_m1 __attribute__((aligned(16)));
-  simde__m256i psi_a_p1_p1 __attribute__((aligned(16)));
-  simde__m256i psi_a_p1_p3 __attribute__((aligned(16)));
-  simde__m256i psi_a_p3_m3 __attribute__((aligned(16)));
-  simde__m256i psi_a_p3_m1 __attribute__((aligned(16)));
-  simde__m256i psi_a_p3_p1 __attribute__((aligned(16)));
-  simde__m256i psi_a_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i a_sq_m3_m3 __attribute__((aligned(16)));
-  simde__m256i a_sq_m3_m1 __attribute__((aligned(16)));
-  simde__m256i a_sq_m3_p1 __attribute__((aligned(16)));
-  simde__m256i a_sq_m3_p3 __attribute__((aligned(16)));
-  simde__m256i a_sq_m1_m3 __attribute__((aligned(16)));
-  simde__m256i a_sq_m1_m1 __attribute__((aligned(16)));
-  simde__m256i a_sq_m1_p1 __attribute__((aligned(16)));
-  simde__m256i a_sq_m1_p3 __attribute__((aligned(16)));
-  simde__m256i a_sq_p1_m3 __attribute__((aligned(16)));
-  simde__m256i a_sq_p1_m1 __attribute__((aligned(16)));
-  simde__m256i a_sq_p1_p1 __attribute__((aligned(16)));
-  simde__m256i a_sq_p1_p3 __attribute__((aligned(16)));
-  simde__m256i a_sq_p3_m3 __attribute__((aligned(16)));
-  simde__m256i a_sq_p3_m1 __attribute__((aligned(16)));
-  simde__m256i a_sq_p3_p1 __attribute__((aligned(16)));
-  simde__m256i a_sq_p3_p3 __attribute__((aligned(16)));
-
-  simde__m256i y0_p_1_1 __attribute__((aligned(16)));
-  simde__m256i y0_p_1_3 __attribute__((aligned(16)));
-  simde__m256i y0_p_3_1 __attribute__((aligned(16)));
-  simde__m256i y0_p_3_3 __attribute__((aligned(16)));
-  simde__m256i y0_m_1_1 __attribute__((aligned(16)));
-  simde__m256i y0_m_1_3 __attribute__((aligned(16)));
-  simde__m256i y0_m_3_1 __attribute__((aligned(16)));
-  simde__m256i y0_m_3_3 __attribute__((aligned(16)));
+  simde__m256i rho_rs[8] __attribute__((aligned(16)));
+  simde__m256i psi_rs[16] __attribute__((aligned(16)));
+  simde__m256i psi_is[16] __attribute__((aligned(16)));
+  simde__m256i a_rs[16] __attribute__((aligned(16)));
+  simde__m256i a_is[16] __attribute__((aligned(16)));
+  simde__m256i psi_as[16] __attribute__((aligned(16)));
+  simde__m256i a_sqs[16] __attribute__((aligned(16)));
+  simde__m256i y0_s[8] __attribute__((aligned(16)));
 
   simde__m256i y0r __attribute__((aligned(16)));
   simde__m256i y0i __attribute__((aligned(16)));
@@ -1625,95 +1195,42 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     rho_rmi = simde_mm256_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
 
     // Compute the different rhos
-    rho_rpi_1_1 = simde_mm256_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_10);
-    rho_rmi_1_1 = simde_mm256_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_10);
-    rho_rpi_3_3 = simde_mm256_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_10);
-    rho_rmi_3_3 = simde_mm256_mulhi_epi16(rho_rmi, THREE_OVER_SQRT_10);
-    rho_rpi_3_3 = simde_mm256_slli_epi16(rho_rpi_3_3, 1);
-    rho_rmi_3_3 = simde_mm256_slli_epi16(rho_rmi_3_3, 1);
+    rho_rs[0] = simde_mm256_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_10);
+    rho_rs[4] = simde_mm256_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_10);
+    rho_rs[3] = simde_mm256_slli_epi16(simde_mm256_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_10), 1);
+    rho_rs[7] = simde_mm256_slli_epi16(simde_mm256_mulhi_epi16(rho_rmi, THREE_OVER_SQRT_10), 1);
 
     xmm4 = simde_mm256_mulhi_epi16(xmm2, ONE_OVER_SQRT_10); // Re(rho)
     xmm5 = simde_mm256_mulhi_epi16(xmm3, THREE_OVER_SQRT_10); // Im(rho)
     xmm5 = simde_mm256_slli_epi16(xmm5, 1);
 
-    rho_rpi_1_3 = simde_mm256_adds_epi16(xmm4, xmm5);
-    rho_rmi_1_3 = simde_mm256_subs_epi16(xmm4, xmm5);
+    rho_rs[1] = simde_mm256_adds_epi16(xmm4, xmm5);
+    rho_rs[5] = simde_mm256_subs_epi16(xmm4, xmm5);
 
     xmm6 = simde_mm256_mulhi_epi16(xmm2, THREE_OVER_SQRT_10); // Re(rho)
     xmm7 = simde_mm256_mulhi_epi16(xmm3, ONE_OVER_SQRT_10); // Im(rho)
     xmm6 = simde_mm256_slli_epi16(xmm6, 1);
 
-    rho_rpi_3_1 = simde_mm256_adds_epi16(xmm6, xmm7);
-    rho_rmi_3_1 = simde_mm256_subs_epi16(xmm6, xmm7);
+    rho_rs[2] = simde_mm256_adds_epi16(xmm6, xmm7);
+    rho_rs[6] = simde_mm256_subs_epi16(xmm6, xmm7);
 
     // Rearrange interfering MF output
     simde_mm256_separate_real_imag_parts(&y1r, &y1i, stream1_256i_in[i], stream1_256i_in[i + 1]);
 
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_1, y1r); // = [Re(rho)+ Im(rho)]/sqrt(10) - y1r
-    psi_r_p1_p1 = simde_mm256_abs_epi16(xmm2); // = |[Re(rho)+ Im(rho)]/sqrt(10) - y1r|
-
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_1, y1r);
-    psi_r_p1_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_1, y1i);
-    psi_i_p1_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_3, y1r);
-    psi_r_p1_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_3, y1r);
-    psi_r_p1_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_1, y1i);
-    psi_i_p1_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_1, y1r);
-    psi_r_p3_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_1, y1r);
-    psi_r_p3_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_1_3, y1i);
-    psi_i_p3_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_3, y1r);
-    psi_r_p3_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_3, y1r);
-    psi_r_p3_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rmi_3_3, y1i);
-    psi_i_p3_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_1, y1i);
-    psi_i_m1_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_1, y1i);
-    psi_i_m1_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_1_3, y1i);
-    psi_i_m3_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_subs_epi16(rho_rpi_3_3, y1i);
-    psi_i_m3_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_1, y1i);
-    psi_i_p1_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_1, y1i);
-    psi_i_p1_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_3, y1i);
-    psi_i_p3_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_3, y1i);
-    psi_i_p3_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_1, y1r);
-    psi_r_m1_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_1_3, y1r);
-    psi_r_m1_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_1, y1r);
-    psi_r_m3_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(rho_rpi_3_3, y1r);
-    psi_r_m3_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1r, rho_rmi_1_1);
-    psi_r_m1_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1r, rho_rmi_1_3);
-    psi_r_m1_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1i, rho_rmi_1_1);
-    psi_i_m1_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1i, rho_rmi_3_1);
-    psi_i_m1_m3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1r, rho_rmi_3_1);
-    psi_r_m3_p1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1r, rho_rmi_3_3);
-    psi_r_m3_p3 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1i, rho_rmi_1_3);
-    psi_i_m3_m1 = simde_mm256_abs_epi16(xmm2);
-    xmm2 = simde_mm256_adds_epi16(y1i, rho_rmi_3_3);
-    psi_i_m3_m3 = simde_mm256_abs_epi16(xmm2);
+    // |  [Re(rho)+ Im(rho)]/sqrt(10) - y1r  |
+    for(int j=0; j<8; j++){ // psi_rs[0~7], rho_rs[0~7]
+      psi_rs[j]  = simde_mm256_abs_epi16(  simde_mm256_subs_epi16(rho_rs[j], y1r)  );
+    }
+    for(int j=8; j<16; j++){ // psi_rs[8~16], rho_rs[4,5,6,7,0,1,2,3]
+      psi_rs[j]  = simde_mm256_abs_epi16(  simde_mm256_adds_epi16(rho_rs[(j-4) & 7], y1r)  );
+    }
+    const uint8_t rho_rs_indexes[16] = {4,6,5,7,0,2,1,3,0,2,1,3,4,6,5,7};
+    for(int k=0; k<16; k+=8){ // psi_is[0~15], sub(rho_rs[4,6,5,7]), add(rho_rs[0,2,1,3]), sub(rho_rs[0,2,1,3]), add(rho_rs[4,6,5,7])
+      for(int j=k; j<k+4; j++){
+        psi_is[j]    = simde_mm256_abs_epi16(  simde_mm256_subs_epi16(rho_rs[rho_rs_indexes[j]], y1i)  );
+        psi_is[j+4]  = simde_mm256_abs_epi16(  simde_mm256_adds_epi16(rho_rs[rho_rs_indexes[j+4]], y1i)  );
+      }
+    }
 
     // Rearrange desired MF output
     simde_mm256_separate_real_imag_parts(&y0r, &y0i, stream0_256i_in[i], stream0_256i_in[i + 1]);
@@ -1728,93 +1245,33 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     // Scale MF output of desired signal
     y0r_over_sqrt10 = simde_mm256_mulhi_epi16(y0r, ONE_OVER_SQRT_10);
     y0i_over_sqrt10 = simde_mm256_mulhi_epi16(y0i, ONE_OVER_SQRT_10);
-    y0r_three_over_sqrt10 = simde_mm256_mulhi_epi16(y0r, THREE_OVER_SQRT_10);
-    y0i_three_over_sqrt10 = simde_mm256_mulhi_epi16(y0i, THREE_OVER_SQRT_10);
-    y0r_three_over_sqrt10 = simde_mm256_slli_epi16(y0r_three_over_sqrt10, 1);
-    y0i_three_over_sqrt10 = simde_mm256_slli_epi16(y0i_three_over_sqrt10, 1);
+    y0r_three_over_sqrt10 = simde_mm256_slli_epi16(simde_mm256_mulhi_epi16(y0r, THREE_OVER_SQRT_10), 1);
+    y0i_three_over_sqrt10 = simde_mm256_slli_epi16(simde_mm256_mulhi_epi16(y0i, THREE_OVER_SQRT_10), 1);
 
     // Compute necessary combination of required terms
-    y0_p_1_1 = simde_mm256_adds_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
-    y0_m_1_1 = simde_mm256_subs_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
+    y0_s[0] = simde_mm256_adds_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
+    y0_s[4] = simde_mm256_subs_epi16(y0r_over_sqrt10, y0i_over_sqrt10);
 
-    y0_p_1_3 = simde_mm256_adds_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
-    y0_m_1_3 = simde_mm256_subs_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[1] = simde_mm256_adds_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[5] = simde_mm256_subs_epi16(y0r_over_sqrt10, y0i_three_over_sqrt10);
 
-    y0_p_3_1 = simde_mm256_adds_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
-    y0_m_3_1 = simde_mm256_subs_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
+    y0_s[2] = simde_mm256_adds_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
+    y0_s[6] = simde_mm256_subs_epi16(y0r_three_over_sqrt10, y0i_over_sqrt10);
 
-    y0_p_3_3 = simde_mm256_adds_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
-    y0_m_3_3 = simde_mm256_subs_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[3] = simde_mm256_adds_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
+    y0_s[7] = simde_mm256_subs_epi16(y0r_three_over_sqrt10, y0i_three_over_sqrt10);
 
-    // Compute optimal interfering symbol magnitude
-    a_r_p1_p1 = interference_abs_epi16_256(psi_r_p1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_p1 = interference_abs_epi16_256(psi_i_p1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_p3 = interference_abs_epi16_256(psi_r_p1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_p3 = interference_abs_epi16_256(psi_i_p1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_m1 = interference_abs_epi16_256(psi_r_p1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_m1 = interference_abs_epi16_256(psi_i_p1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p1_m3 = interference_abs_epi16_256(psi_r_p1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p1_m3 = interference_abs_epi16_256(psi_i_p1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_p1 = interference_abs_epi16_256(psi_r_p3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_p1 = interference_abs_epi16_256(psi_i_p3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_p3 = interference_abs_epi16_256(psi_r_p3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_p3 = interference_abs_epi16_256(psi_i_p3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_m1 = interference_abs_epi16_256(psi_r_p3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_m1 = interference_abs_epi16_256(psi_i_p3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_p3_m3 = interference_abs_epi16_256(psi_r_p3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_p3_m3 = interference_abs_epi16_256(psi_i_p3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_p1 = interference_abs_epi16_256(psi_r_m1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_p1 = interference_abs_epi16_256(psi_i_m1_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_p3 = interference_abs_epi16_256(psi_r_m1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_p3 = interference_abs_epi16_256(psi_i_m1_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_m1 = interference_abs_epi16_256(psi_r_m1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_m1 = interference_abs_epi16_256(psi_i_m1_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m1_m3 = interference_abs_epi16_256(psi_r_m1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m1_m3 = interference_abs_epi16_256(psi_i_m1_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_p1 = interference_abs_epi16_256(psi_r_m3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_p1 = interference_abs_epi16_256(psi_i_m3_p1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_p3 = interference_abs_epi16_256(psi_r_m3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_p3 = interference_abs_epi16_256(psi_i_m3_p3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_m1 = interference_abs_epi16_256(psi_r_m3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_m1 = interference_abs_epi16_256(psi_i_m3_m1, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_r_m3_m3 = interference_abs_epi16_256(psi_r_m3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
-    a_i_m3_m3 = interference_abs_epi16_256(psi_i_m3_m3, ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
+    for(int j=0; j<16; j++){
+      // Compute optimal interfering symbol magnitude
+      a_rs[j] = interference_abs_epi16_256(psi_rs[j], ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
+      a_is[j] = interference_abs_epi16_256(psi_is[j], ch_mag_int, ONE_OVER_SQRT_10_Q15, THREE_OVER_SQRT_10);
 
-    // Calculation of groups of two terms in the bit metric involving product of psi and interference magnitude
-    psi_a_p1_p1 = prodsum_psi_a_epi16_256(psi_r_p1_p1, a_r_p1_p1, psi_i_p1_p1, a_i_p1_p1);
-    psi_a_p1_p3 = prodsum_psi_a_epi16_256(psi_r_p1_p3, a_r_p1_p3, psi_i_p1_p3, a_i_p1_p3);
-    psi_a_p3_p1 = prodsum_psi_a_epi16_256(psi_r_p3_p1, a_r_p3_p1, psi_i_p3_p1, a_i_p3_p1);
-    psi_a_p3_p3 = prodsum_psi_a_epi16_256(psi_r_p3_p3, a_r_p3_p3, psi_i_p3_p3, a_i_p3_p3);
-    psi_a_p1_m1 = prodsum_psi_a_epi16_256(psi_r_p1_m1, a_r_p1_m1, psi_i_p1_m1, a_i_p1_m1);
-    psi_a_p1_m3 = prodsum_psi_a_epi16_256(psi_r_p1_m3, a_r_p1_m3, psi_i_p1_m3, a_i_p1_m3);
-    psi_a_p3_m1 = prodsum_psi_a_epi16_256(psi_r_p3_m1, a_r_p3_m1, psi_i_p3_m1, a_i_p3_m1);
-    psi_a_p3_m3 = prodsum_psi_a_epi16_256(psi_r_p3_m3, a_r_p3_m3, psi_i_p3_m3, a_i_p3_m3);
-    psi_a_m1_p1 = prodsum_psi_a_epi16_256(psi_r_m1_p1, a_r_m1_p1, psi_i_m1_p1, a_i_m1_p1);
-    psi_a_m1_p3 = prodsum_psi_a_epi16_256(psi_r_m1_p3, a_r_m1_p3, psi_i_m1_p3, a_i_m1_p3);
-    psi_a_m3_p1 = prodsum_psi_a_epi16_256(psi_r_m3_p1, a_r_m3_p1, psi_i_m3_p1, a_i_m3_p1);
-    psi_a_m3_p3 = prodsum_psi_a_epi16_256(psi_r_m3_p3, a_r_m3_p3, psi_i_m3_p3, a_i_m3_p3);
-    psi_a_m1_m1 = prodsum_psi_a_epi16_256(psi_r_m1_m1, a_r_m1_m1, psi_i_m1_m1, a_i_m1_m1);
-    psi_a_m1_m3 = prodsum_psi_a_epi16_256(psi_r_m1_m3, a_r_m1_m3, psi_i_m1_m3, a_i_m1_m3);
-    psi_a_m3_m1 = prodsum_psi_a_epi16_256(psi_r_m3_m1, a_r_m3_m1, psi_i_m3_m1, a_i_m3_m1);
-    psi_a_m3_m3 = prodsum_psi_a_epi16_256(psi_r_m3_m3, a_r_m3_m3, psi_i_m3_m3, a_i_m3_m3);
+      // Calculation of groups of two terms in the bit metric involving product of psi and interference magnitude
+      psi_as[j] = prodsum_psi_a_epi16_256(psi_rs[j], a_rs[j], psi_is[j], a_is[j]);
 
-    // squared interference magnitude times int. ch. power
-    a_sq_p1_p1 = square_a_epi16_256(a_r_p1_p1, a_i_p1_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_p3 = square_a_epi16_256(a_r_p1_p3, a_i_p1_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_p1 = square_a_epi16_256(a_r_p3_p1, a_i_p3_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_p3 = square_a_epi16_256(a_r_p3_p3, a_i_p3_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_m1 = square_a_epi16_256(a_r_p1_m1, a_i_p1_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p1_m3 = square_a_epi16_256(a_r_p1_m3, a_i_p1_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_m1 = square_a_epi16_256(a_r_p3_m1, a_i_p3_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_p3_m3 = square_a_epi16_256(a_r_p3_m3, a_i_p3_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_p1 = square_a_epi16_256(a_r_m1_p1, a_i_m1_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_p3 = square_a_epi16_256(a_r_m1_p3, a_i_m1_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_p1 = square_a_epi16_256(a_r_m3_p1, a_i_m3_p1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_p3 = square_a_epi16_256(a_r_m3_p3, a_i_m3_p3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_m1 = square_a_epi16_256(a_r_m1_m1, a_i_m1_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m1_m3 = square_a_epi16_256(a_r_m1_m3, a_i_m1_m3, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_m1 = square_a_epi16_256(a_r_m3_m1, a_i_m3_m1, ch_mag_int, SQRT_10_OVER_FOUR);
-    a_sq_m3_m3 = square_a_epi16_256(a_r_m3_m3, a_i_m3_m3, ch_mag_int, SQRT_10_OVER_FOUR);
+      // squared interference magnitude times int. ch. power
+      a_sqs[j] = square_a_epi16_256(a_rs[j], a_is[j], ch_mag_int, SQRT_10_OVER_FOUR);
+    }
 
     // Computing different multiples of channel norms
     ch_mag_over_10 = simde_mm256_mulhi_epi16(ch_mag_des, ONE_OVER_TWO_SQRT_10);
@@ -1825,153 +1282,60 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
 
     /// Compute bit metrics (lambda)
 
-    simde__m256i bit_met_p1_p1 = simde_mm256_subs_epi16(psi_a_p1_p1, a_sq_p1_p1);
-    bit_met_p1_p1 = simde_mm256_adds_epi16(bit_met_p1_p1, y0_p_1_1);
-    bit_met_p1_p1 = simde_mm256_subs_epi16(bit_met_p1_p1, ch_mag_over_10);
+    simde__m256i bit_mets[16] __attribute__((aligned(16)));
+    for(int j=0; j<8; j+=4){
+      bit_mets[j+0] = simde_mm256_subs_epi16(psi_as[j+0], a_sqs[j+0]);
+      bit_mets[j+0] = simde_mm256_adds_epi16(bit_mets[j+0], y0_s[j+0]);
+      bit_mets[j+0] = simde_mm256_subs_epi16(bit_mets[j+0], ch_mag_over_10);
 
-    simde__m256i bit_met_p1_p3 = simde_mm256_subs_epi16(psi_a_p1_p3, a_sq_p1_p3);
-    bit_met_p1_p3 = simde_mm256_adds_epi16(bit_met_p1_p3, y0_p_1_3);
-    bit_met_p1_p3 = simde_mm256_subs_epi16(bit_met_p1_p3, ch_mag_over_2);
+      bit_mets[j+1] = simde_mm256_subs_epi16(psi_as[j+1], a_sqs[j+1]);
+      bit_mets[j+1] = simde_mm256_adds_epi16(bit_mets[j+1], y0_s[j+1]);
+      bit_mets[j+1] = simde_mm256_subs_epi16(bit_mets[j+1], ch_mag_over_2);
+      bit_mets[j+2] = simde_mm256_subs_epi16(psi_as[j+2], a_sqs[j+2]);
+      bit_mets[j+2] = simde_mm256_adds_epi16(bit_mets[j+2], y0_s[j+2]);
+      bit_mets[j+2] = simde_mm256_subs_epi16(bit_mets[j+2], ch_mag_over_2);
 
-    simde__m256i bit_met_p1_m1 = simde_mm256_subs_epi16(psi_a_p1_m1, a_sq_p1_m1);
-    bit_met_p1_m1 = simde_mm256_adds_epi16(bit_met_p1_m1, y0_m_1_1);
-    bit_met_p1_m1 = simde_mm256_subs_epi16(bit_met_p1_m1, ch_mag_over_10);
+      bit_mets[j+3] = simde_mm256_subs_epi16(psi_as[j+3], a_sqs[j+3]);
+      bit_mets[j+3] = simde_mm256_adds_epi16(bit_mets[j+3], y0_s[j+3]);
+      bit_mets[j+3] = simde_mm256_subs_epi16(bit_mets[j+3], ch_mag_9_over_10);
+    }
+    for(int j=8; j<16; j+=4){
+      bit_mets[j+0] = simde_mm256_subs_epi16(psi_as[j+0], a_sqs[j+0]);
+      bit_mets[j+0] = simde_mm256_subs_epi16(bit_mets[j+0], y0_s[(j - 4) & 0x07]);
+      bit_mets[j+0] = simde_mm256_subs_epi16(bit_mets[j+0], ch_mag_over_10);
 
-    simde__m256i bit_met_p1_m3 = simde_mm256_subs_epi16(psi_a_p1_m3, a_sq_p1_m3);
-    bit_met_p1_m3 = simde_mm256_adds_epi16(bit_met_p1_m3, y0_m_1_3);
-    bit_met_p1_m3 = simde_mm256_subs_epi16(bit_met_p1_m3, ch_mag_over_2);
+      bit_mets[j+1] = simde_mm256_subs_epi16(psi_as[j+1], a_sqs[j+1]);
+      bit_mets[j+1] = simde_mm256_subs_epi16(bit_mets[j+1], y0_s[(j - 3) & 0x07]);
+      bit_mets[j+1] = simde_mm256_subs_epi16(bit_mets[j+1], ch_mag_over_2);
+      bit_mets[j+2] = simde_mm256_subs_epi16(psi_as[j+2], a_sqs[j+2]);
+      bit_mets[j+2] = simde_mm256_subs_epi16(bit_mets[j+2], y0_s[(j - 2) & 0x07]);
+      bit_mets[j+2] = simde_mm256_subs_epi16(bit_mets[j+2], ch_mag_over_2);
 
-    simde__m256i bit_met_p3_p1 = simde_mm256_subs_epi16(psi_a_p3_p1, a_sq_p3_p1);
-    bit_met_p3_p1 = simde_mm256_adds_epi16(bit_met_p3_p1, y0_p_3_1);
-    bit_met_p3_p1 = simde_mm256_subs_epi16(bit_met_p3_p1, ch_mag_over_2);
-
-    simde__m256i bit_met_p3_p3 = simde_mm256_subs_epi16(psi_a_p3_p3, a_sq_p3_p3);
-    bit_met_p3_p3 = simde_mm256_adds_epi16(bit_met_p3_p3, y0_p_3_3);
-    bit_met_p3_p3 = simde_mm256_subs_epi16(bit_met_p3_p3, ch_mag_9_over_10);
-
-    simde__m256i bit_met_p3_m1 = simde_mm256_subs_epi16(psi_a_p3_m1, a_sq_p3_m1);
-    bit_met_p3_m1 = simde_mm256_adds_epi16(bit_met_p3_m1, y0_m_3_1);
-    bit_met_p3_m1 = simde_mm256_subs_epi16(bit_met_p3_m1, ch_mag_over_2);
-
-    simde__m256i bit_met_p3_m3 = simde_mm256_subs_epi16(psi_a_p3_m3, a_sq_p3_m3);
-    bit_met_p3_m3 = simde_mm256_adds_epi16(bit_met_p3_m3, y0_m_3_3);
-    bit_met_p3_m3 = simde_mm256_subs_epi16(bit_met_p3_m3, ch_mag_9_over_10);
-
-    simde__m256i bit_met_m1_p1 = simde_mm256_subs_epi16(psi_a_m1_p1, a_sq_m1_p1);
-    bit_met_m1_p1 = simde_mm256_subs_epi16(bit_met_m1_p1, y0_m_1_1);
-    bit_met_m1_p1 = simde_mm256_subs_epi16(bit_met_m1_p1, ch_mag_over_10);
-
-    simde__m256i bit_met_m1_p3 = simde_mm256_subs_epi16(psi_a_m1_p3, a_sq_m1_p3);
-    bit_met_m1_p3 = simde_mm256_subs_epi16(bit_met_m1_p3, y0_m_1_3);
-    bit_met_m1_p3 = simde_mm256_subs_epi16(bit_met_m1_p3, ch_mag_over_2);
-
-    simde__m256i bit_met_m1_m1 = simde_mm256_subs_epi16(psi_a_m1_m1, a_sq_m1_m1);
-    bit_met_m1_m1 = simde_mm256_subs_epi16(bit_met_m1_m1, y0_p_1_1);
-    bit_met_m1_m1 = simde_mm256_subs_epi16(bit_met_m1_m1, ch_mag_over_10);
-
-    simde__m256i bit_met_m1_m3 = simde_mm256_subs_epi16(psi_a_m1_m3, a_sq_m1_m3);
-    bit_met_m1_m3 = simde_mm256_subs_epi16(bit_met_m1_m3, y0_p_1_3);
-    bit_met_m1_m3 = simde_mm256_subs_epi16(bit_met_m1_m3, ch_mag_over_2);
-
-    simde__m256i bit_met_m3_p1 = simde_mm256_subs_epi16(psi_a_m3_p1, a_sq_m3_p1);
-    bit_met_m3_p1 = simde_mm256_subs_epi16(bit_met_m3_p1, y0_m_3_1);
-    bit_met_m3_p1 = simde_mm256_subs_epi16(bit_met_m3_p1, ch_mag_over_2);
-
-    simde__m256i bit_met_m3_p3 = simde_mm256_subs_epi16(psi_a_m3_p3, a_sq_m3_p3);
-    bit_met_m3_p3 = simde_mm256_subs_epi16(bit_met_m3_p3, y0_m_3_3);
-    bit_met_m3_p3 = simde_mm256_subs_epi16(bit_met_m3_p3, ch_mag_9_over_10);
-
-    simde__m256i bit_met_m3_m1 = simde_mm256_subs_epi16(psi_a_m3_m1, a_sq_m3_m1);
-    bit_met_m3_m1 = simde_mm256_subs_epi16(bit_met_m3_m1, y0_p_3_1);
-    bit_met_m3_m1 = simde_mm256_subs_epi16(bit_met_m3_m1, ch_mag_over_2);
-
-    simde__m256i bit_met_m3_m3 = simde_mm256_subs_epi16(psi_a_m3_m3, a_sq_m3_m3);
-    bit_met_m3_m3 = simde_mm256_subs_epi16(bit_met_m3_m3, y0_p_3_3);
-    bit_met_m3_m3 = simde_mm256_subs_epi16(bit_met_m3_m3, ch_mag_9_over_10);
+      bit_mets[j+3] = simde_mm256_subs_epi16(psi_as[j+3], a_sqs[j+3]);
+      bit_mets[j+3] = simde_mm256_subs_epi16(bit_mets[j+3], y0_s[(j - 1) & 0x07]);
+      bit_mets[j+3] = simde_mm256_subs_epi16(bit_mets[j+3], ch_mag_9_over_10);
+    }
 
     /// Compute the LLRs
 
     // LLR = lambda(c==1) - lambda(c==0)
 
     // LLR of the first bit: Bit = 1
-    simde__m256i logmax_num_re0 = max_epi16_256(bit_met_m1_p1,
-                                       bit_met_m1_p3,
-                                       bit_met_m1_m1,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_p1,
-                                       bit_met_m3_p3,
-                                       bit_met_m3_m1,
-                                       bit_met_m3_m3);
-
+    simde__m256i logmax_num_re0 = max_epi16_256(bit_mets[8],  bit_mets[9],  bit_mets[10], bit_mets[11], bit_mets[12], bit_mets[13], bit_mets[14], bit_mets[15]);
     // LLR of the first bit: Bit = 0
-    simde__m256i logmax_den_re0 = max_epi16_256(bit_met_p1_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p1_m1,
-                                       bit_met_p1_m3,
-                                       bit_met_p3_p1,
-                                       bit_met_p3_p3,
-                                       bit_met_p3_m1,
-                                       bit_met_p3_m3);
-
+    simde__m256i logmax_den_re0 = max_epi16_256(bit_mets[0],  bit_mets[1],  bit_mets[2],  bit_mets[3],  bit_mets[4],  bit_mets[5],  bit_mets[6],  bit_mets[7]);
     // LLR of the second bit: Bit = 1
-    simde__m256i logmax_num_re1 = max_epi16_256(bit_met_p1_m1,
-                                       bit_met_p3_m1,
-                                       bit_met_m1_m1,
-                                       bit_met_m3_m1,
-                                       bit_met_p1_m3,
-                                       bit_met_p3_m3,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_m3);
-
+    simde__m256i logmax_num_re1 = max_epi16_256(bit_mets[4],  bit_mets[5],  bit_mets[6],  bit_mets[7],  bit_mets[12], bit_mets[13], bit_mets[14], bit_mets[15]);
     // LLR of the second bit: Bit = 0
-    simde__m256i logmax_den_re1 = max_epi16_256(bit_met_p1_p1,
-                                       bit_met_p3_p1,
-                                       bit_met_m1_p1,
-                                       bit_met_m3_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p3_p3,
-                                       bit_met_m1_p3,
-                                       bit_met_m3_p3);
-
+    simde__m256i logmax_den_re1 = max_epi16_256(bit_mets[0],  bit_mets[1],  bit_mets[3],  bit_mets[2],  bit_mets[8],  bit_mets[9],  bit_mets[10], bit_mets[11]);
     // LLR of the third bit: Bit = 1
-    simde__m256i logmax_num_im0 = max_epi16_256(bit_met_m3_p1,
-                                       bit_met_m3_p3,
-                                       bit_met_m3_m1,
-                                       bit_met_m3_m3,
-                                       bit_met_p3_p1,
-                                       bit_met_p3_p3,
-                                       bit_met_p3_m1,
-                                       bit_met_p3_m3);
-
+    simde__m256i logmax_num_im0 = max_epi16_256(bit_mets[2],  bit_mets[3],  bit_mets[6],  bit_mets[7],  bit_mets[10], bit_mets[11], bit_mets[14], bit_mets[15]);
     // LLR of the third bit: Bit = 0
-    simde__m256i logmax_den_im0 = max_epi16_256(bit_met_m1_p1,
-                                       bit_met_m1_p3,
-                                       bit_met_m1_m1,
-                                       bit_met_m1_m3,
-                                       bit_met_p1_p1,
-                                       bit_met_p1_p3,
-                                       bit_met_p1_m1,
-                                       bit_met_p1_m3);
-
+    simde__m256i logmax_den_im0 = max_epi16_256(bit_mets[0],  bit_mets[1],  bit_mets[4],  bit_mets[5],  bit_mets[8],  bit_mets[9],  bit_mets[12], bit_mets[13]);
     // LLR of the fourth bit: Bit = 1
-    simde__m256i logmax_num_im1 = max_epi16_256(bit_met_p1_m3,
-                                       bit_met_p3_m3,
-                                       bit_met_m1_m3,
-                                       bit_met_m3_m3,
-                                       bit_met_p1_p3,
-                                       bit_met_p3_p3,
-                                       bit_met_m1_p3,
-                                       bit_met_m3_p3);
-
+    simde__m256i logmax_num_im1 = max_epi16_256(bit_mets[1],  bit_mets[3],  bit_mets[5],  bit_mets[7],  bit_mets[9],  bit_mets[11], bit_mets[13], bit_mets[15]);
     // LLR of the fourth bit: Bit = 0
-    simde__m256i logmax_den_im1 = max_epi16_256(bit_met_p1_m1,
-                                       bit_met_p3_m1,
-                                       bit_met_m1_m1,
-                                       bit_met_m3_m1,
-                                       bit_met_p1_p1,
-                                       bit_met_p3_p1,
-                                       bit_met_m1_p1,
-                                       bit_met_m3_p1);
+    simde__m256i logmax_den_im1 = max_epi16_256(bit_mets[0],  bit_mets[2],  bit_mets[4],  bit_mets[6],  bit_mets[8],  bit_mets[10], bit_mets[12], bit_mets[14]);
 
     y0r = simde_mm256_subs_epi16(logmax_den_re0, logmax_num_re0); // LLR of first bit  [L1(1), L1(2), L1(3), L1(4), L1(5), L1(6), L1(7), L1(8)...]
     y1r = simde_mm256_subs_epi16(logmax_den_re1, logmax_num_re1); // LLR of second bit [L2(1), L2(2), L2(3), L2(4), L2(5), L2(6), L2(7), L2(8)...]
