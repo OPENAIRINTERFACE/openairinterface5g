@@ -332,23 +332,21 @@ typedef struct {
   bool active;
   bool ack_received;
   uint8_t  pucch_resource_indicator;
-  uint16_t feedback_to_ul;
-  frame_t dl_frame;
-  int dl_slot;
+  frame_t ul_frame;
+  int ul_slot;
   uint8_t ack;
   uint8_t dai;
   int n_CCE;
   int N_CCE;
+  int j_dai;
   int8_t delta_pucch;
 } NR_UE_HARQ_STATUS_t;
 
 typedef struct {
-
   uint8_t freq_hopping;
   uint8_t mcs;
   uint8_t Msg3_t_alloc;
   uint16_t Msg3_f_alloc;
-
 } RAR_grant_t;
 
 typedef struct {
