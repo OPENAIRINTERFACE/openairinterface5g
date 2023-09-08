@@ -3292,20 +3292,20 @@ static uint8_t pack_nr_uci_pucch_0_1(void* tlv, uint8_t **ppWritePackedMsg, uint
 	if (!push16(value->rssi, ppWritePackedMsg, end))
 		return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		if (!push8(value->sr->sr_indication, ppWritePackedMsg, end))
+		if (!push8(value->sr.sr_indication, ppWritePackedMsg, end))
 			return 0;
-		if (!push8(value->sr->sr_confidence_level, ppWritePackedMsg, end))
+		if (!push8(value->sr.sr_confidence_level, ppWritePackedMsg, end))
 			return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
-		if (!push8(value->harq->num_harq, ppWritePackedMsg, end))
+		if (!push8(value->harq.num_harq, ppWritePackedMsg, end))
 			return 0;
-		if (!push8(value->harq->harq_confidence_level, ppWritePackedMsg, end))
+		if (!push8(value->harq.harq_confidence_level, ppWritePackedMsg, end))
 			return 0;
-		for (int i = 0; i < value->harq->num_harq; i++)
+		for (int i = 0; i < value->harq.num_harq; i++)
 		{
-			if (!push8(value->harq->harq_list[i].harq_value, ppWritePackedMsg, end))
+			if (!push8(value->harq.harq_list[i].harq_value, ppWritePackedMsg, end))
 				return 0;
 		}
 	}
@@ -6075,41 +6075,23 @@ static uint8_t unpack_nr_uci_pucch_0_1(nfapi_nr_uci_pucch_pdu_format_0_1_t *valu
 		 ))
 		  return 0;
 	if (value->pduBitmap & 0x01) { //SR
-		value->sr = nfapi_p7_allocate(sizeof(*value->sr), config);
-		if (value->sr == NULL)
-		{
-			NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate sr pdu\n", __FUNCTION__);
-			return 0;
-		}
-		if(!(pull8(ppReadPackedMsg, &value->sr->sr_indication, end) &&
-	 	 pull8(ppReadPackedMsg, &value->sr->sr_confidence_level, end) 
+		if(!(pull8(ppReadPackedMsg, &value->sr.sr_indication, end) &&
+	 pull8(ppReadPackedMsg, &value->sr.sr_confidence_level, end)
 		 ))
 		  return 0;
 	}
 
 	if (((value->pduBitmap >> 1) & 0x01)) { //HARQ
 
-                value->harq = nfapi_p7_allocate(sizeof(*value->harq), config);
-                if (value->harq == NULL)
-                {
-                        NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate nr_harq pdu\n", __FUNCTION__);
-                        return 0;
-                }
-                if (!(pull8(ppReadPackedMsg, &value->harq->num_harq, end) &&
-                        pull8(ppReadPackedMsg, &value->harq->harq_confidence_level, end)
+
+                if (!(pull8(ppReadPackedMsg, &value->harq.num_harq, end) &&
+                        pull8(ppReadPackedMsg, &value->harq.harq_confidence_level, end)
                         ))
                         return 0;
-                value->harq->harq_list = NULL;
-                if (value->harq->num_harq > 0) {
-                        value->harq->harq_list = nfapi_p7_allocate(sizeof(*value->harq->harq_list) * value->harq->num_harq, config);
-                        if (value->harq->harq_list == NULL)
-                        {
-                                NFAPI_TRACE(NFAPI_TRACE_ERROR, "%s failed to allocate harq ind pdu list (count:%d)\n",
-                                                __FUNCTION__, value->harq->num_harq);
-                                return 0;
-                        }
-                        for (int i = 0; i < value->harq->num_harq; i++) {
-                                if (!pull8(ppReadPackedMsg, &value->harq->harq_list[i].harq_value, end)) {
+                if (value->harq.num_harq > 0) {
+
+                        for (int i = 0; i < value->harq.num_harq; i++) {
+                                if (!pull8(ppReadPackedMsg, &value->harq.harq_list[i].harq_value, end)) {
                                         return 0;
                                 }
                         }

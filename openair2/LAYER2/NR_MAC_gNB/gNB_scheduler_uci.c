@@ -998,9 +998,9 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
 
   if (((uci_01->pduBitmap >> 1) & 0x01)) {
     // iterate over received harq bits
-    for (int harq_bit = 0; harq_bit < uci_01->harq->num_harq; harq_bit++) {
-      const uint8_t harq_value = uci_01->harq->harq_list[harq_bit].harq_value;
-      const uint8_t harq_confidence = uci_01->harq->harq_confidence_level;
+    for (int harq_bit = 0; harq_bit < uci_01->harq.num_harq; harq_bit++) {
+      const uint8_t harq_value = uci_01->harq.harq_list[harq_bit].harq_value;
+      const uint8_t harq_confidence = uci_01->harq.harq_confidence_level;
       NR_UE_harq_t *harq = find_harq(frame, slot, UE, nrmac->dl_bler.harq_round_max);
       if (!harq) {
         LOG_E(NR_MAC, "UE %04x: Could not find a HARQ process at %4d.%2d!\n", UE->rnti, frame, slot);
@@ -1015,24 +1015,21 @@ void handle_nr_uci_pucch_0_1(module_id_t mod_id,
     }
 
     // tpc (power control) only if we received AckNack
-    if (uci_01->harq->harq_confidence_level==0)
+    if (uci_01->harq.harq_confidence_level==0)
       sched_ctrl->tpc1 = nr_get_tpc(nrmac->pucch_target_snrx10, uci_01->ul_cqi, 30);
     else
       sched_ctrl->tpc1 = 3;
     sched_ctrl->pucch_snrx10 = uci_01->ul_cqi * 5 - 640;
-
-    free(uci_01->harq->harq_list);
-    free(uci_01->harq);
   }
 
   // check scheduling request result, confidence_level == 0 is good
   if (uci_01->pduBitmap & 0x1) {
-    if (uci_01->sr->sr_indication && uci_01->sr->sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
+    if (uci_01->sr.sr_indication && uci_01->sr.sr_confidence_level == 0 && uci_01->ul_cqi >= 148) {
       // SR detected with SNR >= 10dB
       sched_ctrl->SR |= true;
       LOG_D(NR_MAC, "SR UE %04x ul_cqi %d\n", uci_01->rnti, uci_01->ul_cqi);
     }
-    free(uci_01->sr);
+
   }
   NR_SCHED_UNLOCK(&nrmac->sched_lock);
 }
