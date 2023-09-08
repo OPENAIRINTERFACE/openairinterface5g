@@ -131,6 +131,16 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
   NR_UL_UE_HARQ_t *harq_process_ul_ue = &UE->ul_harq_processes[harq_pid];
   const nfapi_nr_ue_pusch_pdu_t *pusch_pdu = &ulsch_ue->pusch_pdu;
 
+  uint32_t tb_size;
+  // MCS > limit -> retransmission
+  // Take TB size from previois transmission
+  if (pusch_pdu->target_code_rate == 0)
+    tb_size = harq_process_ul_ue->tb_size;
+  else {
+    tb_size = pusch_pdu->pusch_data.tb_size;
+    harq_process_ul_ue->tb_size = tb_size;
+  }
+
   int start_symbol          = pusch_pdu->start_symbol_index;
   uint16_t ul_dmrs_symb_pos = pusch_pdu->ul_dmrs_symb_pos;
   uint8_t number_of_symbols = pusch_pdu->nr_of_symbols;
@@ -170,10 +180,10 @@ void nr_ue_ulsch_procedures(PHY_VARS_NR_UE *UE,
 
   trace_NRpdu(DIRECTION_UPLINK,
               harq_process_ul_ue->a,
-              pusch_pdu->pusch_data.tb_size,
+              tb_size,
               WS_C_RNTI, rnti, frame, slot, 0, 0);
 
-  if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, G) == -1)
+  if (nr_ulsch_encoding(UE, ulsch_ue, frame_parms, harq_pid, tb_size, G) == -1)
     return;
 
 

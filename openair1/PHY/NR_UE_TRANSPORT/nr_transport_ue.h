@@ -93,6 +93,8 @@ typedef struct {
   uint8_t BG;
   // LDPC lifting size
   uint32_t Z;
+  // TB size
+  uint32_t tb_size;
 } NR_UL_UE_HARQ_t;
 
 typedef struct {
@@ -115,8 +117,6 @@ typedef struct {
   uint8_t Ndi;
   /// DLSCH status flag indicating
   SCH_status_t status;
-  /// Transport block size
-  uint32_t TBS;
   /// The payload + CRC size in bits
   uint32_t B;
   /// Pointers to transport block segments
@@ -144,6 +144,8 @@ typedef struct {
   /// Used for computing LDPC decoder R
   int llrLen;
   decode_abort_t abort_decode;
+  // TB size
+  uint32_t tb_size;
 } NR_DL_UE_HARQ_t;
 
 typedef struct {
