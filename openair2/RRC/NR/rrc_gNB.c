@@ -1069,12 +1069,12 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   uint8_t security_mode =
       enable_ciphering ? ue_p->ciphering_algorithm | (ue_p->integrity_algorithm << 4) : 0 | (ue_p->integrity_algorithm << 4);
 
-  nr_pdcp_config_set_security(ue_p->rrc_ue_id,
-                              DCCH,
-                              security_mode,
-                              kRRCenc,
-                              kRRCint,
-                              kUPenc);
+  for (int srb_id = 1; srb_id < maxSRBs; srb_id++) {
+    if (ue_p->Srb[srb_id].Active) {
+      nr_pdcp_config_set_security(ue_p->rrc_ue_id, srb_id, security_mode, kRRCenc, kRRCint, kUPenc);
+    }
+  }
+
   nr_pdcp_reestablishment(ue_p->rrc_ue_id);
 
   f1_ue_data_t ue_data = cu_get_f1_ue_data(ue_p->rrc_ue_id);
