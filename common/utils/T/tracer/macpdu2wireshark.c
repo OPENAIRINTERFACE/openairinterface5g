@@ -274,6 +274,7 @@ void sr(void *_d, event e)
 #define NR_NO_RNTI 0
 #define NR_RA_RNTI 2
 #define NR_C_RNTI  3
+#define NR_SI_RNTI 4
 
 void trace_nr(ev_data *d, int direction, int rnti_type, int rnti,
         int frame, int slot, int harq_pid, void *buf, int bufsize,
@@ -346,8 +347,17 @@ void nr_dl(void *_d, event e)
 {
   ev_data *d = _d;
 
-  trace_nr(d, NR_DIRECTION_DOWNLINK, NR_C_RNTI, e.e[d->nr_dl_rnti].i,
-           e.e[d->nr_dl_frame].i, e.e[d->nr_dl_slot].i,
+  if (e.e[d->dl_rnti].i == 0xffff) {
+    if (d->no_sib) return;
+
+    if (d->max_sib && d->cur_sib == d->max_sib) return;
+
+    d->cur_sib++;
+  }
+
+  trace_nr(d, NR_DIRECTION_DOWNLINK,
+           e.e[d->dl_rnti].i != 0xffff ? NR_C_RNTI : NR_SI_RNTI,
+           e.e[d->nr_dl_rnti].i, e.e[d->nr_dl_frame].i, e.e[d->nr_dl_slot].i,
            e.e[d->nr_dl_harq_pid].i, e.e[d->nr_dl_data].b,
            e.e[d->nr_dl_data].bsize, NO_PREAMBLE);
 }
