@@ -56,7 +56,6 @@ void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
                                 maxL);
     if (number_of_candidates > 0) {
       LOG_D(NR_MAC,"L %d, number of candidates %d, aggregation %d\n", maxL, number_of_candidates, aggregation);
-      rel15->number_of_candidates += number_of_candidates;
       int N_cce_sym = 0; // nb of rbs of coreset per symbol
       for (int f = 0; f < 6; f++) {
         for (int t = 0; t < 8; t++) {
@@ -64,9 +63,12 @@ void fill_dci_search_candidates(const NR_SearchSpace_t *ss,
         }
       }
       int N_cces = N_cce_sym * rel15->coreset.duration;
-      for (int j = 0; j < number_of_candidates; i++, j++) {
+      // limit the number of candidates to the ones fitting current configuration
+      int max_candidates = min(N_cces / aggregation, number_of_candidates);
+      rel15->number_of_candidates += max_candidates;
+      for (int j = 0; j < max_candidates; i++, j++) {
         int first_cce = aggregation * ((Y + ((j * N_cces) / (aggregation * number_of_candidates)) + 0) % (N_cces / aggregation));
-        LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", j, number_of_candidates, first_cce, aggregation, N_cces, Y);
+        LOG_D(NR_MAC,"Candidate %d of %d first_cce %d (L %d N_cces %d Y %d)\n", j, max_candidates, first_cce, aggregation, N_cces, Y);
         rel15->CCE[i] = first_cce;
         rel15->L[i] = aggregation;
       }
