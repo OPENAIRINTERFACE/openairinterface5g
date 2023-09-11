@@ -1019,7 +1019,8 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
   int gNB_id = proc->gNB_id;
 
   NR_UE_DLSCH_t *dlsch = &phy_data->dlsch[0];
-  start_meas(&ue->generic_stat);
+  time_stats_t meas = {0};
+  start_meas(&meas);
   // do procedures for C-RNTI
   int ret_pdsch = 0;
 
@@ -1131,7 +1132,7 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
     ue->csirs_vars[gNB_id]->active = 0;
   }
 
-  start_meas(&ue->generic_stat);
+  start_meas(&meas);
 
   if (nr_slot_rx==9) {
     if (frame_rx % 10 == 0) {
@@ -1157,9 +1158,9 @@ void pdsch_processing(PHY_VARS_NR_UE *ue,
 
   }
 
-  stop_meas(&ue->generic_stat);
+  stop_meas(&meas);
   if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "after ldpc decode until end of Rx %5.2f \n", ue->generic_stat.p_time / (cpuf * 1000.0));
+    LOG_D(PHY, "after ldpc decode until end of Rx %5.2f \n", meas.p_time / (cpuf * 1000.0));
 
 #ifdef EMOS
   phy_procedures_emos_UE_RX(ue,slot,gNB_id);

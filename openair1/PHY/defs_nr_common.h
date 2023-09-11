@@ -229,8 +229,6 @@ struct NR_DL_FRAME_PARMS {
   c16_t timeshift_symbol_rotation[4096*2] __attribute__ ((aligned (16)));
   /// Table used to apply the delay compensation in DL/UL
   c16_t delay_table[2 * MAX_DELAY_COMP + 1][NR_MAX_OFDM_SYMBOL_SIZE];
-  /// shift of pilot position in one RB
-  uint8_t nushift;
   /// SRS configuration from TS 38.331 RRC
   SRS_NR srs_nr;
   /// Power used by SSB in order to estimate signal strength and path loss

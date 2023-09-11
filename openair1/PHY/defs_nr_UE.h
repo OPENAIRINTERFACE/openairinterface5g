@@ -592,8 +592,6 @@ typedef struct {
   time_stats_t ulsch_interleaving_stats;
   time_stats_t ulsch_multiplexing_stats;
 
-  time_stats_t generic_stat;
-  time_stats_t generic_stat_bis[LTE_SLOTS_PER_SUBFRAME];
   time_stats_t ue_front_end_stat;
   time_stats_t ue_front_end_per_slot_stat[LTE_SLOTS_PER_SUBFRAME];
   time_stats_t pdcch_procedures_stat;

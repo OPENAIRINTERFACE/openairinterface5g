@@ -86,8 +86,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
   c16_t **ul_ch_estimates = (c16_t **)pusch_vars->ul_ch_estimates;
   const int symbolSize = gNB->frame_parms.ofdm_symbol_size;
   const int soffset = (Ns&3)*gNB->frame_parms.symbols_per_slot*symbolSize;
-  const int nushift = (p>>1)&1;
-  gNB->frame_parms.nushift = nushift;
+  const int nushift = (p >> 1) & 1;
   int ch_offset     = symbolSize*symbol;
   const int symbol_offset = symbolSize*symbol;
 

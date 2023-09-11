@@ -495,7 +495,6 @@ int main(int argc, char **argv)
   frame_parms->nb_antenna_ports_gNB = n_tx;
   frame_parms->N_RB_DL = N_RB_DL;
   frame_parms->Nid_cell = Nid_cell;
-  frame_parms->nushift = Nid_cell%4;
   frame_parms->ssb_type = nr_ssb_type_C;
   frame_parms->freq_range = mu<2 ? nr_FR1 : nr_FR2;
 

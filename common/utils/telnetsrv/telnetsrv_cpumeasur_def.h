@@ -110,8 +110,6 @@
     {"ulsch_ldpc_encoding_stats",       &(UE->ulsch_ldpc_encoding_stats),0,1},\
     {"ulsch_interleaving_stats",       &(UE->ulsch_interleaving_stats),0,1},\
     {"ulsch_multiplexing_stats",       &(UE->ulsch_multiplexing_stats),0,1},\
-    {"generic_stat",       &(UE->generic_stat),0,1},\
-    {"generic_stat_bis",       &(UE->generic_stat_bis[0]),0,LTE_SLOTS_PER_SUBFRAME},\
     {"ofdm_demod_stats",       &(UE->ofdm_demod_stats),0,1},\
     {"dlsch_rx_pdcch_stats",       &(UE->dlsch_rx_pdcch_stats),0,1},\
     {"rx_dft_stats",       &(UE->rx_dft_stats),0,1},\
