@@ -230,6 +230,51 @@ static int get_dl_arfcn(const f1ap_served_cell_info_t *cell_info)
   return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.freqinfo.arfcn : cell_info->fdd.dl_freqinfo.arfcn;
 }
 
+static int get_dl_bw(const f1ap_served_cell_info_t *cell_info)
+{
+  return cell_info->mode == F1AP_MODE_TDD ? cell_info->tdd.tbw.nrb : cell_info->fdd.dl_tbw.nrb;
+}
+
+static int get_ssb_arfcn(const f1ap_served_cell_info_t *cell_info, const NR_MIB_t *mib, const NR_SIB1_t *sib1)
+{
+  DevAssert(cell_info != NULL && sib1 != NULL && mib != NULL);
+  const NR_FrequencyInfoDL_SIB_t* freq_info = &sib1->servingCellConfigCommon->downlinkConfigCommon.frequencyInfoDL;
+  AssertFatal(freq_info->scs_SpecificCarrierList.list.count == 1, "cannot handle more than one carrier, but has %d\n", freq_info->scs_SpecificCarrierList.list.count);
+  AssertFatal(freq_info->scs_SpecificCarrierList.list.array[0]->offsetToCarrier == 0, "cannot handle offsetToCarrier != 0, but is %ld\n", freq_info->scs_SpecificCarrierList.list.array[0]->offsetToCarrier);
+
+  long offsetToPointA = freq_info->offsetToPointA;
+  long kssb = mib->ssb_SubcarrierOffset;
+  uint32_t dl_arfcn = get_dl_arfcn(cell_info);
+  int scs = get_ssb_scs(cell_info);
+  int band = get_dl_band(cell_info);
+  uint64_t scaling = band < 100 ? 1 : 3;
+
+  uint64_t freqpointa = from_nrarfcn(band, scs, dl_arfcn);
+  // offsetToPointA and kSSB are both on 15kHz SCS (see 38.211 sections 7.4.3.1
+  // and 4.4.4.2)
+  // SSB uses the SCS of the cell and is 20 RBs wide, so use 10
+  uint64_t freqssb = freqpointa + scaling * 15000 * (offsetToPointA * 12 + kssb)  + 10ll * 12 * (1 << scs) * 15000;
+  int bw_index = get_supported_band_index(scs, band, get_dl_bw(cell_info));
+  int band_size_hz = get_supported_bw_mhz(band > 256 ? FR2 : FR1, bw_index) * 1000 * 1000;
+  uint32_t ssb_arfcn = to_nrarfcn(band, freqssb, scs, band_size_hz);
+
+  LOG_W(RRC, "freqpointa %ld Hz/%d offsetToPointA %ld kssb %ld scs %d band %d band_size_hz %d freqssb %ld Hz/%d\n", freqpointa, dl_arfcn, offsetToPointA, kssb, scs, band, band_size_hz, freqssb, ssb_arfcn);
+
+  if (RC.nrmac) {
+    // debugging: let's test this is the correct ARFCN
+    // in the CU, we have no access to the SSB ARFCN and therefore need to
+    // compute it ourselves. If we are running in monolithic, though, we have
+    // access to the MAC structures and hence can read and compare to the
+    // original SSB ARFCN. If the below creates problems, it can safely be
+    // taken out (but the reestablishment will likely not work).
+    const NR_ServingCellConfigCommon_t *scc = RC.nrmac[0]->common_channels[0].ServingCellConfigCommon;
+    uint32_t scc_ssb_arfcn = *scc->downlinkConfigCommon->frequencyInfoDL->absoluteFrequencySSB;
+    AssertFatal(ssb_arfcn == scc_ssb_arfcn, "fuck: SCC SSB ARFCN original %d vs. computed %d\n", scc_ssb_arfcn, ssb_arfcn);
+  }
+
+  return ssb_arfcn;
+}
+
 ///---------------------------------------------------------------------------------------------------------------///
 ///---------------------------------------------------------------------------------------------------------------///
 
@@ -1036,7 +1081,7 @@ static void rrc_gNB_process_RRCReconfigurationComplete(const protocol_ctxt_t *co
 static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context_pP,
                                                 const uint8_t *masterCellGroup_from_DU,
                                                 const rnti_t old_rnti,
-                                                const f1ap_served_cell_info_t *cell_info)
+                                                const nr_rrc_du_container_t *du)
 //-----------------------------------------------------------------------------
 {
   module_id_t module_id = 0;
@@ -1048,8 +1093,9 @@ static void rrc_gNB_generate_RRCReestablishment(rrc_gNB_ue_context_t *ue_context
   uint8_t xid = rrc_gNB_get_next_transaction_identifier(module_id);
   ue_p->xids[xid] = RRC_REESTABLISH;
   NR_SRB_ToAddModList_t *SRBs = createSRBlist(ue_p, true);
-  uint32_t arfcn = get_dl_arfcn(cell_info);
-  int size = do_RRCReestablishment(ue_context_pP, buffer, RRC_BUF_SIZE, xid, cell_info->nr_pci, arfcn);
+  const f1ap_served_cell_info_t *cell_info = &du->setup_req->cell[0].info;
+  uint32_t ssb_arfcn = get_ssb_arfcn(cell_info, du->mib, du->sib1);
+  int size = do_RRCReestablishment(ue_context_pP, buffer, RRC_BUF_SIZE, xid, cell_info->nr_pci, ssb_arfcn);
 
   LOG_I(NR_RRC, "[RAPROC] UE %04x Logical Channel DL-DCCH, Generating NR_RRCReestablishment (bytes %d)\n", ue_p->rnti, size);
 
@@ -1426,7 +1472,7 @@ static int nr_rrc_gNB_decode_ccch(module_id_t module_id, const f1ap_initial_ul_r
         rrc_gNB_generate_RRCReestablishment(ue_context_p,
                                             msg->du2cu_rrc_container,
                                             old_rnti,
-                                            cell_info);
+                                            du);
       } break;
 
       case NR_UL_CCCH_MessageType__c1_PR_rrcSystemInfoRequest:
