@@ -106,10 +106,24 @@ If you are interested in TC and SLICE SMs, please follow the instructions at htt
 
 # 3. Start the process
 
+In order to configure E2 agent, please, add the following block in the configuration file:
+```bash
+e2_agent = {
+  near_ric_ip_addr = "127.0.0.1";
+  sm_dir = "/usr/local/lib/flexric/"
+}
+```
+
 * start the gNB
 ```bash
 cd oai/cmake_targets/ran_build/build
-sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --gNBs.[0].min_rxtxtime 6 --rfsim --sa --rfsimulator.serveraddr server
+sudo ./nr-softmodem -O ../../../targets/PROJECTS/GENERIC-NR-5GC/CONF/gnb.sa.band78.fr1.106PRB.usrpb210.conf --rfsim --sa -E
+```
+
+* if CU-DU split is used, start the gNB as follows
+```bash
+sudo ./nr-softmodem -O <path_to_du_conf_file> --rfsim --sa -E
+sudo ./nr-softmodem -O <path_to_cu_conf_file> --rfsim --sa -E
 ```
 
 * start the nrUE
