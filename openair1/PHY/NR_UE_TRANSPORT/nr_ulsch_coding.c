@@ -45,8 +45,9 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
                       NR_UE_ULSCH_t *ulsch,
                       NR_DL_FRAME_PARMS* frame_parms,
                       uint8_t harq_pid,
-                      unsigned int G) {
-
+                      uint32_t tb_size,
+                      unsigned int G)
+{
   start_meas(&ue->ulsch_encoding_stats);
 
 /////////////////////////parameters and variables initialization/////////////////////////
@@ -55,7 +56,7 @@ int nr_ulsch_encoding(PHY_VARS_NR_UE *ue,
   unsigned int crc = 1;
   NR_UL_UE_HARQ_t *harq_process = &ue->ul_harq_processes[harq_pid];
   uint16_t nb_rb = ulsch->pusch_pdu.rb_size;
-  uint32_t A = ulsch->pusch_pdu.pusch_data.tb_size<<3;
+  uint32_t A = tb_size << 3;
   uint32_t *pz = &harq_process->Z;
   uint8_t mod_order = ulsch->pusch_pdu.qam_mod_order;
   uint16_t Kr=0;

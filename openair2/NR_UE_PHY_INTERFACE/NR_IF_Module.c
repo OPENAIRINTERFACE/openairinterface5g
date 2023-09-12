@@ -1165,8 +1165,8 @@ int nr_ue_dl_indication(nr_downlink_indication_t *dl_info)
           continue;
         fapi_nr_dci_indication_pdu_t *dci_index = dl_info->dci_ind->dci_list+i;
 
-        /* The check below filters out UL_DCIs (format 7) which are being processed as DL_DCIs. */
-        if (dci_index->dci_format == 7 && mac->ra.ra_state == RA_SUCCEEDED) {
+        /* The check below filters out UL_DCIs which are being processed as DL_DCIs. */
+        if (dci_index->dci_format != NR_DL_DCI_FORMAT_1_0 && dci_index->dci_format != NR_DL_DCI_FORMAT_1_1) {
           LOG_D(NR_MAC, "We are filtering a UL_DCI to prevent it from being treated like a DL_DCI\n");
           continue;
         }

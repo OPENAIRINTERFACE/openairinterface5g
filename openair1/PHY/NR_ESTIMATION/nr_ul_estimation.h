@@ -60,10 +60,6 @@ void nr_gnb_measurements(PHY_VARS_gNB *gNB,
                          unsigned char symbol,
                          uint8_t nrOfLayers);
 
-void nr_est_timing_advance_pusch(const NR_DL_FRAME_PARMS *frame_parms,
-                                 const int32_t *ul_ch_estimates_time,
-                                 NR_ULSCH_delay_t *delay);
-
 int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms,
                               const int32_t srs_estimated_channel_time[][frame_parms->ofdm_symbol_size]);
 

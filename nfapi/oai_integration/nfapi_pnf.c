@@ -879,7 +879,6 @@ int config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, nfap
 
   if (req->sch_config.physical_cell_id.tl.tag == NFAPI_SCH_CONFIG_PHYSICAL_CELL_ID_TAG) {
     fp->Nid_cell = req->sch_config.physical_cell_id.value;
-    fp->nushift = fp->Nid_cell%6;
     num_tlv++;
   }
 
@@ -1049,8 +1048,7 @@ int nr_config_request(nfapi_pnf_config_t *config, nfapi_pnf_phy_config_t *phy, n
   }
 
   if (req->cell_config.phy_cell_id.tl.tag == NFAPI_NR_CONFIG_PHY_CELL_ID_TAG) {
-    fp->Nid_cell = req->cell_config.phy_cell_id.value; //sch_config.physical_cell_id.value;
-    fp->nushift = fp->Nid_cell%6;
+    fp->Nid_cell = req->cell_config.phy_cell_id.value; // sch_config.physical_cell_id.value;
     num_tlv++;
   }
 

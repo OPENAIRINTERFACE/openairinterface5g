@@ -33,6 +33,7 @@
 #include <stdint.h>
 #include "assertions.h"
 #include "nr_common.h"
+#include <complex.h>
 
 const char *duplex_mode[]={"FDD","TDD"};
 
@@ -737,4 +738,90 @@ uint32_t get_ssb_offset_to_pointA(uint32_t absoluteFrequencySSB,
   AssertFatal(ssb_offset_point_a % scs_scaling == 0, "PRB offset %d can create frequency offset\n", ssb_offset_point_a);
   AssertFatal(sco % scs_scaling == 0, "ssb offset %d can create frequency offset\n", sco);
   return ssb_offset_point_a;
+}
+
+int get_delay_idx(int delay, int max_delay_comp)
+{
+  int delay_idx = max_delay_comp + delay;
+  // If the measured delay is less than -MAX_DELAY_COMP, a -MAX_DELAY_COMP delay is compensated.
+  delay_idx = max(delay_idx, 0);
+  // If the measured delay is greater than +MAX_DELAY_COMP, a +MAX_DELAY_COMP delay is compensated.
+  delay_idx = min(delay_idx, max_delay_comp << 1);
+  return delay_idx;
+}
+
+void init_delay_table(uint16_t ofdm_symbol_size,
+                      int max_delay_comp,
+                      int max_ofdm_symbol_size,
+                      c16_t delay_table[][max_ofdm_symbol_size])
+{
+  for (int delay = -max_delay_comp; delay <= max_delay_comp; delay++) {
+    for (int k = 0; k < ofdm_symbol_size; k++) {
+      double complex delay_cexp = cexp(I * (2.0 * M_PI * k * delay / ofdm_symbol_size));
+      delay_table[max_delay_comp + delay][k].r = (int16_t)round(256 * creal(delay_cexp));
+      delay_table[max_delay_comp + delay][k].i = (int16_t)round(256 * cimag(delay_cexp));
+    }
+  }
+}
+
+void freq2time(uint16_t ofdm_symbol_size,
+               int16_t *freq_signal,
+               int16_t *time_signal)
+{
+  switch (ofdm_symbol_size) {
+    case 128:
+      idft(IDFT_128, freq_signal, time_signal, 1);
+      break;
+    case 256:
+      idft(IDFT_256, freq_signal, time_signal, 1);
+      break;
+    case 512:
+      idft(IDFT_512, freq_signal, time_signal, 1);
+      break;
+    case 1024:
+      idft(IDFT_1024, freq_signal, time_signal, 1);
+      break;
+    case 1536:
+      idft(IDFT_1536, freq_signal, time_signal, 1);
+      break;
+    case 2048:
+      idft(IDFT_2048, freq_signal, time_signal, 1);
+      break;
+    case 4096:
+      idft(IDFT_4096, freq_signal, time_signal, 1);
+      break;
+    case 6144:
+      idft(IDFT_6144, freq_signal, time_signal, 1);
+      break;
+    case 8192:
+      idft(IDFT_8192, freq_signal, time_signal, 1);
+      break;
+    default:
+      AssertFatal (1 == 0, "Invalid ofdm_symbol_size %i\n", ofdm_symbol_size);
+      break;
+  }
+}
+
+void nr_est_delay(int ofdm_symbol_size, const c16_t *ls_est, c16_t *ch_estimates_time, delay_t *delay)
+{
+  freq2time(ofdm_symbol_size, (int16_t *)ls_est, (int16_t *)ch_estimates_time);
+
+  int max_pos = delay->delay_max_pos;
+  int max_val = delay->delay_max_val;
+  const int sync_pos = 0;
+
+  for (int i = 0; i < ofdm_symbol_size; i++) {
+    int temp = c16amp2(ch_estimates_time[i]) >> 1;
+    if (temp > max_val) {
+      max_pos = i;
+      max_val = temp;
+    }
+  }
+
+  if (max_pos > ofdm_symbol_size / 2)
+    max_pos = max_pos - ofdm_symbol_size;
+
+  delay->delay_max_pos = max_pos;
+  delay->delay_max_val = max_val;
+  delay->est_delay = max_pos - sync_pos;
 }

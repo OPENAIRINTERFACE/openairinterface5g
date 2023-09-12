@@ -359,6 +359,11 @@ void rrc_add_nsa_user(gNB_RRC_INST *rrc, rrc_gNB_ue_context_t *ue_context_p, x2a
     // phytest mode: we don't set up RA, etc
     ret = nr_mac_add_test_ue(RC.nrmac[rrc->module_id], du_ue_id, ue_context_p->ue_context.secondaryCellGroup);
   } else {
+    NR_CellGroupConfig_t *secondaryCellGroup = ue_context_p->ue_context.secondaryCellGroup;
+    DevAssert(secondaryCellGroup->spCellConfig
+              && secondaryCellGroup->spCellConfig->reconfigurationWithSync
+              && secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated
+              && secondaryCellGroup->spCellConfig->reconfigurationWithSync->rach_ConfigDedicated->choice.uplink->cfra);
     NR_SCHED_LOCK(&RC.nrmac[rrc->module_id]->sched_lock);
     ret = nr_mac_prepare_ra_ue(RC.nrmac[rrc->module_id], du_ue_id, ue_context_p->ue_context.secondaryCellGroup);
     NR_SCHED_UNLOCK(&RC.nrmac[rrc->module_id]->sched_lock);

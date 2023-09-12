@@ -38,29 +38,6 @@
 
 extern openair0_config_t openair0_cfg[MAX_CARDS];
 
-void nr_est_timing_advance_pusch(const NR_DL_FRAME_PARMS *frame_parms, const int32_t *ul_ch_estimates_time, NR_ULSCH_delay_t *delay)
-{
-  int max_pos = delay->pusch_delay_max_pos;
-  int max_val = delay->pusch_delay_max_val;
-  const int sync_pos = 0;
-
-  for (int i = 0; i < frame_parms->ofdm_symbol_size; i++) {
-    c16_t *sample = (c16_t *)&ul_ch_estimates_time[i];
-    int temp = (sample->r * sample->r / 2) + (sample->i * sample->i / 2);
-    if (temp > max_val) {
-      max_pos = i;
-      max_val = temp;
-    }
-  }
-
-  if (max_pos > frame_parms->ofdm_symbol_size / 2)
-    max_pos = max_pos - frame_parms->ofdm_symbol_size;
-
-  delay->pusch_delay_max_pos = max_pos;
-  delay->pusch_delay_max_val = max_val;
-  delay->pusch_est_delay = max_pos - sync_pos;
-}
-
 int nr_est_timing_advance_srs(const NR_DL_FRAME_PARMS *frame_parms, 
                               const int32_t srs_estimated_channel_time[][frame_parms->ofdm_symbol_size]) {
   int timing_advance = 0;

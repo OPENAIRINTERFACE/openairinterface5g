@@ -608,6 +608,10 @@ void schedule_nr_sib1(module_id_t module_idP,
       TX_req->Slot = slotP;
 
       type0_PDCCH_CSS_config->active = false;
+
+      T(T_GNB_MAC_DL_PDU_WITH_DATA, T_INT(module_idP), T_INT(CC_id),
+        T_INT(0xffff), T_INT(frameP), T_INT(slotP), T_INT(0 /* harq_pid */),
+        T_BUFFER(sib1_payload, TBS));
     }
   }
 }

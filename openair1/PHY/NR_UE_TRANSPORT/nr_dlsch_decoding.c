@@ -100,17 +100,23 @@ static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
     LOG_D(PHY, "DLSCH %d in error\n", rdata->dlsch_id);
   }
 
+  uint32_t tbs;
+  if (dlsch->dlsch_config.targetCodeRate > 0)
+    tbs = dlsch->dlsch_config.TBS;
+  else
+    tbs = harq_process->tb_size;
+
   // if all segments are done
   if (last) {
     kpiStructure.nb_total++;
-    kpiStructure.blockSize = dlsch->dlsch_config.TBS;
+    kpiStructure.blockSize = tbs;
     kpiStructure.dl_mcs = dlsch->dlsch_config.mcs;
     kpiStructure.nofRBs = dlsch->dlsch_config.number_rbs;
 
     if (*num_seg_ok == harq_process->C) {
       if (harq_process->C > 1) {
         /* check global CRC */
-        int A = dlsch->dlsch_config.TBS;
+        int A = tbs;
         int crc_length = A > 3824 ? 3 : 2;
         int crc_type   = A > 3824 ? CRC24_A : CRC16;
         if (!check_crc(b, A + crc_length * 8, crc_type)) {
@@ -149,9 +155,8 @@ static bool nr_ue_postDecode(PHY_VARS_NR_UE *phy_vars_ue,
     }
     return true; //stop
   }
-  else
-  {
-	return false; //not last one
+  else {
+    return false; //not last one
   }
 }
 
@@ -292,7 +297,7 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
                            uint8_t harq_pid,
                            int b_size,
                            uint8_t b[b_size]) {
-  uint32_t A,E;
+  uint32_t E;
   uint32_t G;
   uint32_t ret,offset;
   uint32_t r,r_offset=0,Kr=8424,Kr_bytes;
@@ -355,7 +360,13 @@ uint32_t nr_dlsch_decoding(PHY_VARS_NR_UE *phy_vars_ue,
   }
   */
   nb_rb = dlsch->dlsch_config.number_rbs;
-  A = dlsch->dlsch_config.TBS;
+  uint32_t A;
+  if (dlsch->dlsch_config.targetCodeRate > 0) {
+    A = dlsch->dlsch_config.TBS;
+    harq_process->tb_size = A;
+  }
+  else
+    A = harq_process->tb_size;
   ret = dlsch->max_ldpc_iterations + 1;
   dlsch->last_iteration_cnt = ret;
   harq_process->G = nr_get_G(nb_rb, nb_symb_sch, nb_re_dmrs, dmrs_length, dlsch->dlsch_config.qamModOrder,dlsch->Nl);

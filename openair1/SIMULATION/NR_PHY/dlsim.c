@@ -314,6 +314,7 @@ int main(int argc, char **argv)
   //uint8_t frame_mod4,num_pdcch_symbols = 0;
 
   SCM_t channel_model = AWGN; // AWGN Rayleigh1 Rayleigh1_anticorr;
+  int delay = 0;
 
   //double pbch_sinr;
   //int pbch_tx_ant;
@@ -361,7 +362,7 @@ int main(int argc, char **argv)
 
   FILE *scg_fd=NULL;
 
-  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
+  while ((c = getopt(argc, argv, "f:hA:p:f:g:i:n:s:S:t:v:x:y:z:o:M:N:F:GR:d:PI:L:a:b:e:m:w:T:U:q:X:Y")) != -1) {
     switch (c) {
     case 'f':
       scg_fd = fopen(optarg,"r");
@@ -561,6 +562,10 @@ int main(int argc, char **argv)
       slot = 0;
       break;
 
+    case 'o':
+      delay = atoi(optarg);
+      break;
+
     default:
     case 'h':
       printf("%s -h(elp) -p(extended_prefix) -N cell_id -f output_filename -F input_filename -g channel_model -n n_frames -s snr0 -S snr1 -x transmission_mode -y TXant -z RXant -i Intefrence0 -j Interference1 -A interpolation_file -C(alibration offset dB) -N CellId\n",
@@ -574,6 +579,7 @@ int main(int argc, char **argv)
       printf("-S Ending SNR, runs from SNR0 to SNR1\n");
       //printf("-t Delay spread for multipath channel\n");
       printf("-g [A,B,C,D,E,F,G,R] Use 3GPP SCM (A,B,C,D) or 36-101 (E-EPA,F-EVA,G-ETU) models or R for MIMO model (ignores delay spread and Ricean factor)\n");
+      printf("-o Introduce delay in terms of number of samples\n");
       printf("-y Number of TX antennas used in gNB\n");
       printf("-z Number of RX antennas used in UE\n");
       printf("-x Num of layer for PDSCH\n");
@@ -777,7 +783,7 @@ int main(int argc, char **argv)
                                 0.0,
                                 CORR_LEVEL_LOW,
                                 0,
-                                0,
+                                delay,
                                 0,
                                 0);
 
@@ -788,6 +794,8 @@ int main(int argc, char **argv)
 
   frame_length_complex_samples = frame_parms->samples_per_subframe*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
   //frame_length_complex_samples_no_prefix = frame_parms->samples_per_subframe_wCP*NR_NUMBER_OF_SUBFRAMES_PER_FRAME;
+  int slot_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
+  int slot_length = slot_offset - frame_parms->get_samples_slot_timestamp(slot-1,frame_parms,0);
 
   s_re = malloc(n_tx*sizeof(double*));
   s_im = malloc(n_tx*sizeof(double*));
@@ -795,22 +803,17 @@ int main(int argc, char **argv)
   r_im = malloc(n_rx*sizeof(double*));
   txdata = malloc(n_tx*sizeof(int*));
 
-  for (i=0; i<n_tx; i++) {
-    s_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_re[i],frame_length_complex_samples*sizeof(double));
-    s_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(s_im[i],frame_length_complex_samples*sizeof(double));
+  for (i = 0; i < n_tx; i++) {
+    s_re[i] = calloc(1, slot_length * sizeof(double));
+    s_im[i] = calloc(1, slot_length * sizeof(double));
 
-    printf("Allocating %d samples for txdata\n",frame_length_complex_samples);
-    txdata[i] = malloc(frame_length_complex_samples*sizeof(int));
-    bzero(txdata[i],frame_length_complex_samples*sizeof(int));
+    printf("Allocating %d samples for txdata\n", frame_length_complex_samples);
+    txdata[i] = calloc(1, frame_length_complex_samples * sizeof(int));
   }
 
-  for (i=0; i<n_rx; i++) {
-    r_re[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_re[i],frame_length_complex_samples*sizeof(double));
-    r_im[i] = malloc(frame_length_complex_samples*sizeof(double));
-    bzero(r_im[i],frame_length_complex_samples*sizeof(double));
+  for (i = 0; i < n_rx; i++) {
+    r_re[i] = calloc(1, slot_length * sizeof(double));
+    r_im[i] = calloc(1, slot_length * sizeof(double));
   }
 
   if (pbch_file_fd!=NULL) {
@@ -1050,22 +1053,21 @@ int main(int argc, char **argv)
           if (gNB->frame_parms.nb_antennas_tx>1)
             LOG_M("txsigF1.m","txsF1=", &gNB->common_vars.txdataF[1][txdataF_offset+2*frame_parms->ofdm_symbol_size],frame_parms->ofdm_symbol_size,1,1);
         }
-        int tx_offset = frame_parms->get_samples_slot_timestamp(slot,frame_parms,0);
-        if (n_trials==1) printf("tx_offset %d, txdataF_offset %d \n", tx_offset,txdataF_offset);
+        if (n_trials == 1) printf("slot_offset %d, txdataF_offset %d \n", slot_offset, txdataF_offset);
 
         //TODO: loop over slots
         for (aa=0; aa<gNB->frame_parms.nb_antennas_tx; aa++) {
-    
+
           if (cyclic_prefix_type == 1) {
             PHY_ofdm_mod((int *)&gNB->common_vars.txdataF[aa][txdataF_offset],
-                         (int *)&txdata[aa][tx_offset],
+                         (int *)&txdata[aa][slot_offset],
                          frame_parms->ofdm_symbol_size,
                          12,
                          frame_parms->nb_prefix_samples,
                          CYCLIC_PREFIX);
           } else {
             nr_normal_prefix_mod(&gNB->common_vars.txdataF[aa][txdataF_offset],
-                                 &txdata[aa][tx_offset],
+                                 &txdata[aa][slot_offset],
                                  14,
                                  frame_parms,
                                  slot);
@@ -1076,7 +1078,7 @@ int main(int argc, char **argv)
           char filename[100];//LOG_M
           for (aa=0;aa<n_tx;aa++) {
             sprintf(filename,"txsig%d.m", aa);//LOG_M
-            LOG_M(filename,"txs", &txdata[aa][tx_offset+frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],6*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples),1,1);
+            LOG_M(filename,"txs", &txdata[aa][slot_offset +frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples0],6*(frame_parms->ofdm_symbol_size+frame_parms->nb_prefix_samples),1,1);
           }
         }
         if (output_fd) {
@@ -1088,19 +1090,16 @@ int main(int argc, char **argv)
         int txlev_sum = 0;
         int l_ofdm = 6;
         for (aa=0; aa<n_tx; aa++) {
-          txlev[aa] = signal_energy((int32_t *)&txdata[aa][tx_offset+l_ofdm*frame_parms->ofdm_symbol_size + (l_ofdm-1)*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
+          txlev[aa] = signal_energy((int32_t *)&txdata[aa][slot_offset +l_ofdm*frame_parms->ofdm_symbol_size + (l_ofdm-1)*frame_parms->nb_prefix_samples + frame_parms->nb_prefix_samples0],
           frame_parms->ofdm_symbol_size + frame_parms->nb_prefix_samples);
           txlev_sum += txlev[aa];
           if (n_trials==1) printf("txlev[%d] = %d (%f dB) txlev_sum %d\n",aa,txlev[aa],10*log10((double)txlev[aa]),txlev_sum);
         }
-        
-        for (i=(frame_parms->get_samples_slot_timestamp(slot,frame_parms,0)); 
-             i<(frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0)); 
-             i++) {
-    
+
+        for (i = 0; i < slot_length; i++) {
           for (aa=0; aa<frame_parms->nb_antennas_tx; aa++) {
-            s_re[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)]);
-            s_im[aa][i] = ((double)(((short *)txdata[aa]))[(i<<1)+1]);
+            s_re[aa][i] = ((double)(((short *)&txdata[aa][slot_offset]))[(i << 1)]);
+            s_im[aa][i] = ((double)(((short *)&txdata[aa][slot_offset]))[(i << 1) + 1]);
           }
         }
 
@@ -1110,50 +1109,18 @@ int main(int argc, char **argv)
         sigma2    = pow(10, sigma2_dB/10);
         if (n_trials==1) printf("sigma2 %f (%f dB), txlev_sum %f (factor %f)\n",sigma2,sigma2_dB,10*log10((double)txlev_sum),(double)(double)UE->frame_parms.ofdm_symbol_size/(12*rel15->rbSize));
 
-        for (aa=0; aa<n_rx; aa++) {
-          bzero(r_re[aa],frame_length_complex_samples*sizeof(double));
-          bzero(r_im[aa],frame_length_complex_samples*sizeof(double));
+        for (aa = 0; aa < n_rx; aa++) {
+          bzero(r_re[aa], slot_length * sizeof(double));
+          bzero(r_im[aa], slot_length * sizeof(double));
         }
-        
+
         // Apply MIMO Channel
-        if (channel_model != AWGN) multipath_tv_channel(gNB2UE,
-                             s_re,
-                             s_im,
-                             r_re,
-                             r_im,
-                             frame_length_complex_samples,
-                             0);
-
-        double H_awgn_mimo[4][4] ={{1.0, 0.2, 0.1, 0.05}, //rx 0
-                                   {0.2, 1.0, 0.2, 0.1}, //rx 1
-                                   {0.1, 0.2, 1.0, 0.2}, //rx 2
-                                   {0.05, 0.1, 0.2, 1.0}};//rx 3
-
-        for (i=frame_parms->get_samples_slot_timestamp(slot,frame_parms,0); 
-             i<frame_parms->get_samples_slot_timestamp(slot+1,frame_parms,0);
-             i++) {
-
-          for (int aa_rx=0; aa_rx<n_rx; aa_rx++) {
-
-            if (channel_model == AWGN) {
-              // sum up signals from different Tx antennas
-              r_re[aa_rx][i] = 0;
-              r_im[aa_rx][i] = 0;
-             for (aa=0; aa<n_tx; aa++) {
-                r_re[aa_rx][i] += s_re[aa][i]*H_awgn_mimo[aa_rx][aa];
-                r_im[aa_rx][i] += s_im[aa][i]*H_awgn_mimo[aa_rx][aa];
-              }
-            }
-            // Add Gaussian noise
-            ((short*) UE->common_vars.rxdata[aa_rx])[2*i]   = (short) ((r_re[aa_rx][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            ((short*) UE->common_vars.rxdata[aa_rx])[2*i+1] = (short) ((r_im[aa_rx][i] + sqrt(sigma2/2)*gaussdouble(0.0,1.0)));
-            /* Add phase noise if enabled */
-            if (pdu_bit_map & 0x1) {
-              phase_noise(ts, &((short*) UE->common_vars.rxdata[aa_rx])[2*i],
-                          &((short*) UE->common_vars.rxdata[aa_rx])[2*i+1]);
-            }
-          }
+        if (channel_model == AWGN) {
+          multipath_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0, (n_trials == 1) ? 1 : 0);
+        } else {
+          multipath_tv_channel(gNB2UE, s_re, s_im, r_re, r_im, slot_length, 0);
         }
+        add_noise(UE->common_vars.rxdata, (const double **) r_re, (const double **) r_im, sigma2, slot_length, slot_offset, ts, delay, pdu_bit_map, 0x1, frame_parms->nb_antennas_rx);
 
         nr_ue_dcireq(&dcireq); //to be replaced with function pointer later
         nr_ue_scheduled_response(&scheduled_response);

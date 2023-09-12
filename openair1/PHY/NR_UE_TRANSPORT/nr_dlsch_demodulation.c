@@ -406,8 +406,11 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //--------------------- RBs extraction ---------------------
   //----------------------------------------------------------
   const int n_rx = frame_parms->nb_antennas_rx;
+  time_stats_t meas = {0};
+  const bool meas_enabled = cpumeas(CPUMEAS_GETSTATE);
 
-  start_meas(&ue->generic_stat_bis[slot]);
+  if (meas_enabled)
+    start_meas(&meas);
   {
     __attribute__((aligned(32))) c16_t rxdataF_ext[nbRx][rx_size_symbol];
     memset(rxdataF_ext, 0, sizeof(rxdataF_ext));
@@ -429,14 +432,21 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
                          frame_parms,
                          dlsch[0].dlsch_config.dlDmrsSymbPos,
                          ue->chest_time);
-    stop_meas(&ue->generic_stat_bis[slot]);
+    if (meas_enabled) {
+      stop_meas(&meas);
+      LOG_D(PHY,
+            "[AbsSFN %u.%d] Slot%d Symbol %d: Pilot/Data extraction %5.2f \n",
+            frame,
+            nr_slot_rx,
+            slot,
+            symbol,
+            meas.p_time / (cpuf * 1000.0));
+    }
     if (ue->phy_sim_pdsch_rxdataF_ext)
       for (unsigned char aarx = 0; aarx < frame_parms->nb_antennas_rx; aarx++) {
         int offset = ((void *)rxdataF_ext[aarx] - (void *)rxdataF_ext) + symbol * rx_size_symbol;
         memcpy(ue->phy_sim_pdsch_rxdataF_ext + offset, rxdataF_ext, rx_size_symbol * sizeof(c16_t));
       }
-  if (cpumeas(CPUMEAS_GETSTATE))
-      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Pilot/Data extraction %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
 
     nb_re_pdsch = (pilots == 1)
                       ? ((config_type == NFAPI_NR_DMRS_TYPE1) ? nb_rb_pdsch * (12 - 6 * dlsch[0].dlsch_config.n_dmrs_cdm_groups) : nb_rb_pdsch * (12 - 4 * dlsch[0].dlsch_config.n_dmrs_cdm_groups))
@@ -444,18 +454,26 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
   //----------------------------------------------------------
   //--------------------- Channel Scaling --------------------
   //----------------------------------------------------------
-  start_meas(&ue->generic_stat_bis[slot]);
+    if (meas_enabled)
+      start_meas(&meas);
     nr_dlsch_scale_channel(rx_size_symbol, dl_ch_estimates_ext, frame_parms, nl, n_rx, symbol, pilots, nb_re_pdsch, nb_rb_pdsch);
-  stop_meas(&ue->generic_stat_bis[slot]);
+    if (meas_enabled) {
+      stop_meas(&meas);
+      LOG_D(PHY,
+            "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n",
+            frame,
+            nr_slot_rx,
+            slot,
+            symbol,
+            meas.p_time / (cpuf * 1000.0));
+    }
 
-  if (cpumeas(CPUMEAS_GETSTATE))
-      LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Scale  %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
-
-  //----------------------------------------------------------
-  //--------------------- Channel Level Calc. ----------------
-  //----------------------------------------------------------
-  start_meas(&ue->generic_stat_bis[slot]);
-  if (first_symbol_flag==1) {
+    //----------------------------------------------------------
+    //--------------------- Channel Level Calc. ----------------
+    //----------------------------------------------------------
+    if (meas_enabled)
+      start_meas(&meas);
+    if (first_symbol_flag == 1) {
       nr_dlsch_channel_level(rx_size_symbol, dl_ch_estimates_ext, frame_parms, nl, avg, symbol, nb_re_pdsch, nb_rb_pdsch);
     avgs = 0;
     for (aatx=0;aatx<nl;aatx++)
@@ -476,45 +494,56 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
     *log2_maxh = (log2_approx(avgs)/2) + 1;
     //LOG_I(PHY, "avgs Power per SC is %d lg2_maxh %d\n", avgs,  log2_maxh);
       LOG_D(PHY, "[DLSCH] AbsSubframe %d.%d log2_maxh = %d (%d,%d)\n", frame % 1024, nr_slot_rx, *log2_maxh, avg[0], avgs);
-  }
-  stop_meas(&ue->generic_stat_bis[slot]);
-
+    }
+    if (meas_enabled) {
+      stop_meas(&meas);
+      LOG_D(PHY,
+            "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",
+            frame,
+            nr_slot_rx,
+            slot,
+            symbol,
+            first_symbol_flag,
+            meas.p_time / (cpuf * 1000.0));
+    }
 #if T_TRACER
-  T(T_UE_PHY_PDSCH_ENERGY, T_INT(gNB_id),  T_INT(0), T_INT(frame%1024), T_INT(nr_slot_rx),
-                           T_INT(avg[0]), T_INT(avg[1]),    T_INT(avg[2]),             T_INT(avg[3]));
+    T(T_UE_PHY_PDSCH_ENERGY,
+      T_INT(gNB_id),
+      T_INT(0),
+      T_INT(frame % 1024),
+      T_INT(nr_slot_rx),
+      T_INT(avg[0]),
+      T_INT(avg[1]),
+      T_INT(avg[2]),
+      T_INT(avg[3]));
 #endif
 
-  if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY,
-          "[AbsSFN %u.%d] Slot%d Symbol %d first_symbol_flag %d: Channel Level  %5.2f \n",
-          frame, nr_slot_rx, slot, symbol, first_symbol_flag, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
-
-  //----------------------------------------------------------
-  //--------------------- channel compensation ---------------
-  //----------------------------------------------------------
-  // Disable correlation measurement for optimizing UE
-  start_meas(&ue->generic_stat_bis[slot]);
-  nr_dlsch_channel_compensation(rx_size_symbol,
-                                nbRx,
-                                rxdataF_ext,
-                                dl_ch_estimates_ext,
-                                dl_ch_mag,
-                                dl_ch_magb,
-                                dl_ch_magr,
-                                rxdataF_comp,
-                                NULL,
-                                frame_parms,
-                                nl,
-                                symbol,
-                                nb_re_pdsch,
-                                first_symbol_flag,
-                                dlsch[0].dlsch_config.qamModOrder,
-                                nb_rb_pdsch,
-                                *log2_maxh,
-                                measurements); // log2_maxh+I0_shift
-  stop_meas(&ue->generic_stat_bis[slot]);
-  }
-    if (cpumeas(CPUMEAS_GETSTATE))
+    //----------------------------------------------------------
+    //--------------------- channel compensation ---------------
+    //----------------------------------------------------------
+    // Disable correlation measurement for optimizing UE
+    if (meas_enabled)
+      start_meas(&meas);
+    nr_dlsch_channel_compensation(rx_size_symbol,
+                                  nbRx,
+                                  rxdataF_ext,
+                                  dl_ch_estimates_ext,
+                                  dl_ch_mag,
+                                  dl_ch_magb,
+                                  dl_ch_magr,
+                                  rxdataF_comp,
+                                  NULL,
+                                  frame_parms,
+                                  nl,
+                                  symbol,
+                                  nb_re_pdsch,
+                                  first_symbol_flag,
+                                  dlsch[0].dlsch_config.qamModOrder,
+                                  nb_rb_pdsch,
+                                  *log2_maxh,
+                                  measurements); // log2_maxh+I0_shift
+    if (meas_enabled) {
+      stop_meas(&meas);
       LOG_D(PHY,
             "[AbsSFN %u.%d] Slot%d Symbol %d log2_maxh %d Channel Comp  %5.2f \n",
             frame,
@@ -522,22 +551,54 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
             slot,
             symbol,
             *log2_maxh,
-            ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+            meas.p_time / (cpuf * 1000.0));
+    }
+  }
 
-    start_meas(&ue->generic_stat_bis[slot]);
+  if (meas_enabled)
+    start_meas(&meas);
 
   if (n_rx > 1) {
-    nr_dlsch_detection_mrc(rx_size_symbol, nl, n_rx, rxdataF_comp, NULL, dl_ch_mag, dl_ch_magb, dl_ch_magr, symbol, nb_rb_pdsch, nb_re_pdsch);
-    if (nl >= 2)//Apply zero forcing for 2, 3, and 4 Tx layers
-      nr_zero_forcing_rx(
-          rx_size_symbol, n_rx, nl, rxdataF_comp, dl_ch_mag, dl_ch_magb, dl_ch_magr, dl_ch_estimates_ext, nb_rb_pdsch, dlsch[0].dlsch_config.qamModOrder, *log2_maxh, symbol, nb_re_pdsch);
+    nr_dlsch_detection_mrc(rx_size_symbol,
+                           nl,
+                           n_rx,
+                           rxdataF_comp,
+                           NULL,
+                           dl_ch_mag,
+                           dl_ch_magb,
+                           dl_ch_magr,
+                           symbol,
+                           nb_rb_pdsch,
+                           nb_re_pdsch);
+    if (nl >= 2) // Apply zero forcing for 2, 3, and 4 Tx layers
+      nr_zero_forcing_rx(rx_size_symbol,
+                         n_rx,
+                         nl,
+                         rxdataF_comp,
+                         dl_ch_mag,
+                         dl_ch_magb,
+                         dl_ch_magr,
+                         dl_ch_estimates_ext,
+                         nb_rb_pdsch,
+                         dlsch[0].dlsch_config.qamModOrder,
+                         *log2_maxh,
+                         symbol,
+                         nb_re_pdsch);
   }
-  stop_meas(&ue->generic_stat_bis[slot]);
 
-  if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+  if (meas_enabled) {
+    stop_meas(&meas);
+    LOG_D(PHY,
+          "[AbsSFN %u.%d] Slot%d Symbol %d: Channel Combine and zero forcing %5.2f \n",
+          frame,
+          nr_slot_rx,
+          slot,
+          symbol,
+          meas.p_time / (cpuf * 1000.0));
+  }
 
-  start_meas(&ue->generic_stat_bis[slot]);
+  if (meas_enabled)
+    start_meas(&meas);
   /* Store the valid DL RE's */
   dl_valid_re[symbol-1] = nb_re_pdsch;
 
@@ -652,9 +713,16 @@ int nr_rx_pdsch(PHY_VARS_NR_UE *ue,
 #endif
   }
 
-  stop_meas(&ue->generic_stat_bis[slot]);
-  if (cpumeas(CPUMEAS_GETSTATE))
-    LOG_D(PHY, "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n", frame, nr_slot_rx, slot, symbol, ue->generic_stat_bis[slot].p_time / (cpuf * 1000.0));
+  if (meas_enabled) {
+    stop_meas(&meas);
+    LOG_D(PHY,
+          "[AbsSFN %u.%d] Slot%d Symbol %d: LLR Computation  %5.2f \n",
+          frame,
+          nr_slot_rx,
+          slot,
+          symbol,
+          meas.p_time / (cpuf * 1000.0));
+  }
 
 #if T_TRACER
   T(T_UE_PHY_PDSCH_IQ,

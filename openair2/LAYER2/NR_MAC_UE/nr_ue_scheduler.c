@@ -533,12 +533,6 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
     pusch_config_pdu->bwp_start = current_UL_BWP->BWPStart;
     pusch_config_pdu->bwp_size = current_UL_BWP->BWPSize;
 
-    // Basic sanity check for MCS value to check for a false or erroneous DCI
-    if (dci->mcs > 28) {
-      LOG_W(NR_MAC, "MCS value %d out of bounds! Possibly due to false DCI. Ignoring DCI!\n", dci->mcs);
-      return -1;
-    }
-
     /* Transform precoding */
     pusch_config_pdu->transform_precoding = get_transformPrecoding(current_UL_BWP, *dci_format, 0);
 
@@ -715,8 +709,8 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   pusch_config_pdu->target_code_rate = R;
   pusch_config_pdu->qam_mod_order = nr_get_Qm_ul(pusch_config_pdu->mcs_index, pusch_config_pdu->mcs_table);
 
-  if (pusch_config_pdu->target_code_rate == 0 || pusch_config_pdu->qam_mod_order == 0) {
-    LOG_W(NR_MAC, "In %s: Invalid code rate or Mod order, likely due to unexpected UL DCI. Ignoring DCI! \n", __FUNCTION__);
+  if (pusch_config_pdu->qam_mod_order == 0) {
+    LOG_W(NR_MAC, "Invalid Mod order, likely due to unexpected UL DCI. Ignoring DCI! \n");
     return -1;
   }
 
@@ -730,14 +724,15 @@ int nr_config_pusch_pdu(NR_UE_MAC_INST_t *mac,
   nb_dmrs_re_per_rb = ((pusch_config_pdu->dmrs_config_type == pusch_dmrs_type1) ? 6:4)*pusch_config_pdu->num_dmrs_cdm_grps_no_data;
 
   // Compute TBS
-  pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
-                                                        R,
-                                                        pusch_config_pdu->rb_size,
-                                                        pusch_config_pdu->nr_of_symbols,
-                                                        nb_dmrs_re_per_rb*number_dmrs_symbols,
-                                                        N_PRB_oh,
-                                                        0, // TBR to verify tb scaling
-                                                        pusch_config_pdu->nrOfLayers)>>3;
+  if (R > 0)
+    pusch_config_pdu->pusch_data.tb_size = nr_compute_tbs(pusch_config_pdu->qam_mod_order,
+                                                          R,
+                                                          pusch_config_pdu->rb_size,
+                                                          pusch_config_pdu->nr_of_symbols,
+                                                          nb_dmrs_re_per_rb*number_dmrs_symbols,
+                                                          N_PRB_oh,
+                                                          0, // TBR to verify tb scaling
+                                                          pusch_config_pdu->nrOfLayers)>>3;
   return 0;
 
 }

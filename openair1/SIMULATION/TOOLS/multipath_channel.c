@@ -156,6 +156,7 @@ void add_noise(c16_t **rxdata,
                const double ts,
                const int delay,
                const uint16_t pdu_bit_map,
+               const uint16_t ptrs_bit_map,
                const uint8_t nb_antennas_rx)
 {
   for (int i = 0; i < length; i++) {
@@ -164,7 +165,7 @@ void add_noise(c16_t **rxdata,
       rxd->r = r_re[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0); // convert to fixed point
       rxd->i = r_im[ap][i] + sqrt(sigma / 2) * gaussZiggurat(0.0, 1.0);
       /* Add phase noise if enabled */
-      if (pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+      if (pdu_bit_map & ptrs_bit_map) {
         phase_noise(ts, &rxdata[ap][slot_offset + i + delay].r, &rxdata[ap][slot_offset + i + delay].i);
       }
     }
