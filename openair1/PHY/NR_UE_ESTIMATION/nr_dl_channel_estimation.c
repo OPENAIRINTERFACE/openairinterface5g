@@ -1648,7 +1648,7 @@ int nr_pdsch_channel_estimation(PHY_VARS_NR_UE *ue,
   }
 
   c16_t pilot[3280] __attribute__((aligned(16)));
-  nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][0], (int32_t *)pilot, 1000 + p, 0, nb_rb_pdsch + rb_offset, config_type);
+  nr_pdsch_dmrs_rx(ue, Ns, ue->nr_gold_pdsch[gNB_id][Ns][symbol][nscid], (int32_t *)pilot, 1000 + p, 0, nb_rb_pdsch + rb_offset, config_type);
 
   uint8_t nushift = 0;
   if (config_type == NFAPI_NR_DMRS_TYPE1) {
@@ -1779,6 +1779,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
   uint8_t  *ptrsReOffset    = NULL;
   uint8_t  *dmrsConfigType  = NULL;
   uint16_t *nb_rb           = NULL;
+  int nscid = 0;
 
   if(dlsch0_harq->status == ACTIVE) {
     symbInSlot      = dlsch[0].dlsch_config.start_symbol + dlsch[0].dlsch_config.number_symbols;
@@ -1792,6 +1793,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     nb_rb           = &dlsch[0].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[0].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[0].ptrs_symbol_index;
+    nscid = dlsch[0].dlsch_config.nscid;
   }
   if(dlsch1_harq) {
     symbInSlot      = dlsch[1].dlsch_config.start_symbol + dlsch[1].dlsch_config.number_symbols;
@@ -1805,6 +1807,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
     nb_rb           = &dlsch[1].dlsch_config.number_rbs;
     ptrsSymbPos     = &dlsch[1].ptrs_symbols;
     ptrsSymbIdx     = &dlsch[1].ptrs_symbol_index;
+    nscid = dlsch[1].dlsch_config.nscid;
   }
   /* loop over antennas */
   for (int aarx=0; aarx<frame_parms->nb_antennas_rx; aarx++) {
@@ -1847,7 +1850,7 @@ void nr_pdsch_ptrs_processing(PHY_VARS_NR_UE *ue,
                                symbol,
                                frame_parms->ofdm_symbol_size,
                                (int16_t *)(rxdataF_comp[0][aarx] + symbol * nb_re_pdsch),
-                               ue->nr_gold_pdsch[gNB_id][nr_slot_rx][symbol][0],
+                               ue->nr_gold_pdsch[gNB_id][nr_slot_rx][symbol][nscid],
                                (int16_t*)&phase_per_symbol[symbol],
                                &ptrs_re_symbol[symbol]);
       }
