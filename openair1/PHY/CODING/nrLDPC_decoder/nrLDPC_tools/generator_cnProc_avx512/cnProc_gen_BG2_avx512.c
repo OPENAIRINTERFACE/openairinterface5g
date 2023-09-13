@@ -43,7 +43,7 @@ void nrLDPC_cnProc_BG2_generator_AVX512(const char *dir, int R)
     abort();
   }
 
-  fprintf(fd, "#define conditional_negate(a,b,z) simde_mm512_mask_sub_epi8(a,_mm512_movepi8_mask(b),z,a)\n");
+  //fprintf(fd, "#define conditional_negate(a,b,z) simde_mm512_mask_sub_epi8(a,_mm512_movepi8_mask(b),z,a)\n");
 
   fprintf(fd, "static inline void nrLDPC_cnProc_BG2_R%s_AVX512(int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z) {\n", ratestr[R]);
   const uint8_t *lut_numCnInCnGroups;

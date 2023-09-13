@@ -1322,16 +1322,13 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
 {
     simde__m256i* p_llrOut = (simde__m256i*) llrOut;
     simde__m256i* p_out    = (simde__m256i*) out;
-    int8_t* p_llrOut8;
-    int8_t* p_out8;
-    uint32_t i;
-    uint32_t M  = numLLR>>5;
-    uint32_t Mr = numLLR&31;
+    const uint32_t M  = numLLR>>5;
+    const uint32_t Mr = numLLR&31;
 
     const simde__m256i* p_zeros = (simde__m256i*) zeros256_epi8;
     const simde__m256i* p_ones  = (simde__m256i*) ones256_epi8;
 
-  for (int i = 0; i < M; i++) {
+  for (uint32_t i = 0; i < M; i++) {
     *p_out++ = simde_mm256_and_si256(*p_ones, simde_mm256_cmpgt_epi8(*p_zeros, *p_llrOut));
     p_llrOut++;
   }
@@ -1340,7 +1337,7 @@ static inline void nrLDPC_llr2bit(int8_t* out, int8_t* llrOut, uint16_t numLLR)
   int8_t* p_llrOut8 = (int8_t*)p_llrOut;
   int8_t* p_out8 = (int8_t*)p_out;
 
-  for (int i = 0; i < Mr; i++)
+  for (uint32_t i = 0; i < Mr; i++)
     p_out8[i] = p_llrOut8[i] < 0;
 }
 
@@ -1357,7 +1354,7 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
 {
     /** Vector of indices for shuffling input */
     const uint8_t constShuffle_256_epi8[32] __attribute__ ((aligned(32))) = {7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8,7,6,5,4,3,2,1,0,15,14,13,12,11,10,9,8};
-    const __m256i* p_shuffle = (__m256i*)constShuffle_256_epi8;
+    const simde__m256i* p_shuffle = (simde__m256i*) constShuffle_256_epi8;
 
     simde__m256i*  p_llrOut = (simde__m256i*)  llrOut;
     uint32_t* p_bits   = (uint32_t*) out;
@@ -1366,7 +1363,7 @@ static inline void nrLDPC_llr2bitPacked(int8_t* out, int8_t* llrOut, uint16_t nu
 
     for (uint32_t i = 0; i < M; i++) {
       // Move LSB to MSB on 8 bits
-      const __m256i inPerm = simde_mm256_shuffle_epi8(*p_llrOut, *p_shuffle);
+      const simde__m256i inPerm = simde_mm256_shuffle_epi8(*p_llrOut, *p_shuffle);
       // Hard decision
       *p_bits++ = simde_mm256_movemask_epi8(inPerm);
       p_llrOut++;

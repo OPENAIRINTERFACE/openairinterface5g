@@ -33,6 +33,12 @@
 #include "PHY/CODING/nrSmallBlock/nr_small_block_defs.h"
 #include "assertions.h"
 #include "PHY/sse_intrin.h"
+#if defined(__AVX512F__)
+#include <simde/x86/avx512.h>
+// simde current version missed this instruction
+#define simde_mm512_reduce_add_epi32 _mm512_reduce_add_epi32
+#define simde_mm512_cvtepi8_epi32 _mm512_cvtepi8_epi32
+#endif
 
 //#define DEBUG_DECODESMALLBLOCK
 

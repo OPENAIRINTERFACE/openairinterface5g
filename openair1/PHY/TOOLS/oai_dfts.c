@@ -64,7 +64,7 @@ const static int16_t conjugatedft[32] __attribute__((aligned(32))) = {-1,1,-1,1,
 
 const static int16_t reflip[32]  __attribute__((aligned(32))) = {1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1};
 
-static inline void cmac(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmac(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32)
 {
   simde__m128i cmac_tmp, cmac_tmp_re32, cmac_tmp_im32;
 
@@ -80,7 +80,7 @@ static inline void cmac(simde__m128i a, simde__m128i b, simde__m128i *re32, simd
   *im32 = simde_mm_add_epi32(*im32, cmac_tmp_im32);
 }
 
-static inline void cmacc(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmacc(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32)
 {
   simde__m128i cmac_tmp, cmac_tmp_re32, cmac_tmp_im32;
 
@@ -96,7 +96,7 @@ static inline void cmacc(simde__m128i a, simde__m128i b, simde__m128i *re32, sim
   *im32 = simde_mm_add_epi32(*im32, cmac_tmp_im32);
 }
 
-static inline void cmac_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmac_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32)
 {
   simde__m256i cmac_tmp, cmac_tmp_re32, cmac_tmp_im32;
   simde__m256i imshuffle = simde_mm256_set_epi8(29,
@@ -142,53 +142,7 @@ static inline void cmac_256(simde__m256i a, simde__m256i b, simde__m256i *re32, 
   *im32 = simde_mm256_add_epi32(*im32,cmac_tmp_im32);
 }
 
-static inline void cmacc_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32) __attribute__((always_inline))
-{
-  simde__m256i cmac_tmp, cmac_tmp_re32, cmac_tmp_im32;
-  simde__m256i imshuffle = simde_mm256_set_epi8(29,
-                                                28,
-                                                31,
-                                                30,
-                                                25,
-                                                24,
-                                                27,
-                                                26,
-                                                21,
-                                                20,
-                                                23,
-                                                22,
-                                                17,
-                                                16,
-                                                19,
-                                                18,
-                                                13,
-                                                12,
-                                                15,
-                                                14,
-                                                9,
-                                                8,
-                                                11,
-                                                10,
-                                                5,
-                                                4,
-                                                7,
-                                                6,
-                                                1,
-                                                0,
-                                                3,
-                                                2);
-
-  cmac_tmp_re32   = simde_mm256_madd_epi16(a,b);
-
-  cmac_tmp = simde_mm256_sign_epi16(b, *(simde__m256i *)reflip);
-  cmac_tmp        = simde_mm256_shuffle_epi8(b,imshuffle);
-  cmac_tmp_im32   = simde_mm256_madd_epi16(cmac_tmp,a);
-
-  *re32 = simde_mm256_add_epi32(*re32,cmac_tmp_re32);
-  *im32 = simde_mm256_add_epi32(*im32,cmac_tmp_im32);
-}
-
-static inline void cmult(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmult(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32)
 {
   register simde__m128i mmtmpb;
 
@@ -200,8 +154,7 @@ static inline void cmult(simde__m128i a, simde__m128i b, simde__m128i *re32, sim
   *im32 = simde_mm_madd_epi16(a, mmtmpb);
 }
 
-
-static inline void cmult_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmult_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32)
 {
   register simde__m256i mmtmpb;
   simde__m256i const perm_mask = simde_mm256_set_epi8(29,
@@ -243,7 +196,7 @@ static inline void cmult_256(simde__m256i a, simde__m256i b, simde__m256i *re32,
   *im32 = simde_mm256_madd_epi16(a, mmtmpb);
 }
 
-static inline void cmultc(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmultc(simde__m128i a, simde__m128i b, simde__m128i *re32, simde__m128i *im32)
 {
   register simde__m128i mmtmpb;
 
@@ -253,7 +206,7 @@ static inline void cmultc(simde__m128i a, simde__m128i b, simde__m128i *re32, si
   *im32 = simde_mm_madd_epi16(a, mmtmpb);
 }
 
-static inline void cmultc_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32)    __attribute__((always_inline))
+__attribute__((always_inline)) static inline void cmultc_256(simde__m256i a, simde__m256i b, simde__m256i *re32, simde__m256i *im32)
 {
   register simde__m256i mmtmpb;
   simde__m256i const perm_mask = simde_mm256_set_epi8(29,
@@ -295,8 +248,7 @@ static inline void cmultc_256(simde__m256i a, simde__m256i b, simde__m256i *re32
   *im32 = simde_mm256_madd_epi16(a, mmtmpb);
 }
 
-
-static inline simde__m128i cpack(simde__m128i xre, simde__m128i xim) __attribute__((always_inline))
+__attribute__((always_inline)) static inline simde__m128i cpack(simde__m128i xre, simde__m128i xim)
 {
   register simde__m128i cpack_tmp1, cpack_tmp2;
 
@@ -305,8 +257,7 @@ static inline simde__m128i cpack(simde__m128i xre, simde__m128i xim) __attribute
   return (simde_mm_packs_epi32(simde_mm_srai_epi32(cpack_tmp1, 15), simde_mm_srai_epi32(cpack_tmp2, 15)));
 }
 
-
-static inline simde__m256i cpack_256(simde__m256i xre, simde__m256i xim) __attribute__((always_inline))
+__attribute__((always_inline)) static inline simde__m256i cpack_256(simde__m256i xre, simde__m256i xim)
 {
   register simde__m256i cpack_tmp1, cpack_tmp2;
 
@@ -316,7 +267,7 @@ static inline simde__m256i cpack_256(simde__m256i xre, simde__m256i xim) __attri
 
 }
 
-static inline void packed_cmult(simde__m128i a, simde__m128i b, simde__m128i *c) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void packed_cmult(simde__m128i a, simde__m128i b, simde__m128i *c)
 {
   simde__m128i cre, cim;
   cmult(a,b,&cre,&cim);
@@ -324,7 +275,7 @@ static inline void packed_cmult(simde__m128i a, simde__m128i b, simde__m128i *c)
 
 }
 
-static inline void packed_cmult_256(simde__m256i a, simde__m256i b, simde__m256i *c) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void packed_cmult_256(simde__m256i a, simde__m256i b, simde__m256i *c)
 {
   simde__m256i cre, cim;
   cmult_256(a,b,&cre,&cim);
@@ -332,7 +283,7 @@ static inline void packed_cmult_256(simde__m256i a, simde__m256i b, simde__m256i
 
 }
 
-static inline void packed_cmultc(simde__m128i a, simde__m128i b, simde__m128i *c) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void packed_cmultc(simde__m128i a, simde__m128i b, simde__m128i *c)
 {
   simde__m128i cre, cim;
 
@@ -341,16 +292,7 @@ static inline void packed_cmultc(simde__m128i a, simde__m128i b, simde__m128i *c
 
 }
 
-static inline void packed_cmultc_256(simde__m256i a, simde__m256i b, simde__m256i *c) __attribute__((always_inline))
-{
-  simde__m256i cre, cim;
-
-  cmultc_256(a,b,&cre,&cim);
-  *c = cpack_256(cre,cim);
-
-}
-
-static inline simde__m128i packed_cmult2(simde__m128i a, simde__m128i b, simde__m128i b2) __attribute__((always_inline));
+__attribute__((always_inline)) static inline simde__m128i packed_cmult2(simde__m128i a, simde__m128i b, simde__m128i b2);
 
 static inline simde__m128i packed_cmult2(simde__m128i a, simde__m128i b, simde__m128i b2)
 {
@@ -363,7 +305,7 @@ static inline simde__m128i packed_cmult2(simde__m128i a, simde__m128i b, simde__
 
 }
 
-static inline simde__m256i packed_cmult2_256(simde__m256i a, simde__m256i b, simde__m256i b2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline simde__m256i packed_cmult2_256(simde__m256i a, simde__m256i b, simde__m256i b2)
 {
   register simde__m256i cre, cim;
 
@@ -418,7 +360,11 @@ const static int16_t dft_norm_table[16] = {9459,  //12
 					   14654
 }; //sqrt(5) //300
 
-static inline void bfly2(simde__m128i *x0, simde__m128i *x1, simde__m128i *y0, simde__m128i *y1, simde__m128i *tw)  __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly2(simde__m128i *x0,
+                                                        simde__m128i *x1,
+                                                        simde__m128i *y0,
+                                                        simde__m128i *y1,
+                                                        simde__m128i *tw)
 {
   simde__m128i x0r_2, x0i_2, x1r_2, x1i_2, dy0r, dy1r, dy0i, dy1i;
   simde__m128i bfly2_tmp1, bfly2_tmp2;
@@ -441,7 +387,11 @@ static inline void bfly2(simde__m128i *x0, simde__m128i *x1, simde__m128i *y0, s
   *y1 = simde_mm_packs_epi32(bfly2_tmp1, bfly2_tmp2);
 }
 
-static inline void bfly2_256(simde__m256i *x0, simde__m256i *x1, simde__m256i *y0, simde__m256i *y1, simde__m256i *tw)   __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly2_256(simde__m256i *x0,
+                                                            simde__m256i *x1,
+                                                            simde__m256i *y0,
+                                                            simde__m256i *y1,
+                                                            simde__m256i *tw)
 {
   simde__m256i x0r_2, x0i_2, x1r_2, x1i_2, dy0r, dy1r, dy0i, dy1i;
   simde__m256i bfly2_tmp1, bfly2_tmp2;
@@ -464,41 +414,18 @@ static inline void bfly2_256(simde__m256i *x0, simde__m256i *x1, simde__m256i *y
   *y1 = simde_mm256_packs_epi32(bfly2_tmp1,bfly2_tmp2);
 }
 
-static inline void bfly2_tw1(simde__m128i *x0, simde__m128i *x1, simde__m128i *y0, simde__m128i *y1) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly2_tw1(simde__m128i *x0, simde__m128i *x1, simde__m128i *y0, simde__m128i *y1)
 {
   *y0 = simde_mm_adds_epi16(*x0, *x1);
   *y1 = simde_mm_subs_epi16(*x0, *x1);
 }
 
-static inline void bfly2_16(simde__m128i *x0,
-                            simde__m128i *x1,
-                            simde__m128i *y0,
-                            simde__m128i *y1,
-                            simde__m128i *tw,
-                            simde__m128i *twb) __attribute__((always_inline))
-{
-  //  register simde__m128i x1t;
-  simde__m128i x1t;
-
-  x1t = packed_cmult2(*(x1),*(tw),*(twb));
-  /*
-  print_shorts("x0",(int16_t*)x0);
-  print_shorts("x1",(int16_t*)x1);
-  print_shorts("tw",(int16_t*)tw);
-  print_shorts("twb",(int16_t*)twb);
-  print_shorts("x1t",(int16_t*)&x1t);*/
-  *y0 = simde_mm_adds_epi16(*x0, x1t);
-  *y1 = simde_mm_subs_epi16(*x0, x1t);
-  /*  print_shorts("y0",(int16_t*)y0);
-      print_shorts("y1",(int16_t*)y1);*/
-}
-
-static inline void bfly2_16_256(simde__m256i *x0,
-                                simde__m256i *x1,
-                                simde__m256i *y0,
-                                simde__m256i *y1,
-                                simde__m256i *tw,
-                                simde__m256i *twb) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly2_16_256(simde__m256i *x0,
+                                                               simde__m256i *x1,
+                                                               simde__m256i *y0,
+                                                               simde__m256i *y1,
+                                                               simde__m256i *tw,
+                                                               simde__m256i *twb)
 {
   //  register simde__m256i x1t;
   simde__m256i x1t;
@@ -517,30 +444,11 @@ static inline void bfly2_16_256(simde__m256i *x0,
     print_shorts256("y1",(int16_t*)y1);*/
 }
 
-static inline void ibfly2(simde__m128i *x0, simde__m128i *x1, simde__m128i *y0, simde__m128i *y1, simde__m128i *tw)   __attribute__((always_inline))
-{
-  simde__m128i x0r_2, x0i_2, x1r_2, x1i_2, dy0r, dy1r, dy0i, dy1i;
-  simde__m128i bfly2_tmp1, bfly2_tmp2;
-
-  cmultc(*(x0),*(W0),&x0r_2,&x0i_2);
-  cmultc(*(x1),*(tw),&x1r_2,&x1i_2);
-
-  dy0r = simde_mm_srai_epi32(simde_mm_add_epi32(x0r_2, x1r_2), 15);
-  dy1r = simde_mm_srai_epi32(simde_mm_sub_epi32(x0r_2, x1r_2), 15);
-  dy0i = simde_mm_srai_epi32(simde_mm_add_epi32(x0i_2, x1i_2), 15);
-  //  printf("y0i %d\n",((int16_t *)y0i)[0]);
-  dy1i = simde_mm_srai_epi32(simde_mm_sub_epi32(x0i_2, x1i_2), 15);
-
-  bfly2_tmp1 = simde_mm_unpacklo_epi32(dy0r, dy0i);
-  bfly2_tmp2 = simde_mm_unpackhi_epi32(dy0r, dy0i);
-  *y0 = simde_mm_packs_epi32(bfly2_tmp1, bfly2_tmp2);
-
-  bfly2_tmp1 = simde_mm_unpacklo_epi32(dy1r, dy1i);
-  bfly2_tmp2 = simde_mm_unpackhi_epi32(dy1r, dy1i);
-  *y1 = simde_mm_packs_epi32(bfly2_tmp1, bfly2_tmp2);
-}
-
-static inline void ibfly2_256(simde__m256i *x0, simde__m256i *x1, simde__m256i *y0, simde__m256i *y1, simde__m256i *tw)  __attribute__((always_inline))
+__attribute__((always_inline)) static inline void ibfly2_256(simde__m256i *x0,
+                                                             simde__m256i *x1,
+                                                             simde__m256i *y0,
+                                                             simde__m256i *y1,
+                                                             simde__m256i *tw)
 {
   simde__m256i x0r_2, x0i_2, x1r_2, x1i_2, dy0r, dy1r, dy0i, dy1i;
   simde__m256i bfly2_tmp1, bfly2_tmp2;
@@ -566,14 +474,14 @@ static inline void ibfly2_256(simde__m256i *x0, simde__m256i *x1, simde__m256i *
 
 // This is the radix-3 butterfly (fft)
 
-static inline void bfly3(simde__m128i *x0,
-                         simde__m128i *x1,
-                         simde__m128i *x2,
-                         simde__m128i *y0,
-                         simde__m128i *y1,
-                         simde__m128i *y2,
-                         simde__m128i *tw1,
-                         simde__m128i *tw2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly3(simde__m128i *x0,
+                                                        simde__m128i *x1,
+                                                        simde__m128i *x2,
+                                                        simde__m128i *y0,
+                                                        simde__m128i *y1,
+                                                        simde__m128i *y2,
+                                                        simde__m128i *tw1,
+                                                        simde__m128i *tw2)
 {
   simde__m128i tmpre, tmpim, x1_2, x2_2;
 
@@ -590,14 +498,14 @@ static inline void bfly3(simde__m128i *x0,
   *(y2) = simde_mm_adds_epi16(*(x0), *(y2));
 }
 
-static inline void bfly3_256(simde__m256i *x0,
-                             simde__m256i *x1,
-                             simde__m256i *x2,
-                             simde__m256i *y0,
-                             simde__m256i *y1,
-                             simde__m256i *y2,
-                             simde__m256i *tw1,
-                             simde__m256i *tw2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly3_256(simde__m256i *x0,
+                                                            simde__m256i *x1,
+                                                            simde__m256i *x2,
+                                                            simde__m256i *y0,
+                                                            simde__m256i *y1,
+                                                            simde__m256i *y2,
+                                                            simde__m256i *tw1,
+                                                            simde__m256i *tw2)
 {
   simde__m256i tmpre, tmpim, x1_2, x2_2;
 
@@ -614,14 +522,14 @@ static inline void bfly3_256(simde__m256i *x0,
   *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
 }
 
-static inline void ibfly3(simde__m128i *x0,
-                          simde__m128i *x1,
-                          simde__m128i *x2,
-                          simde__m128i *y0,
-                          simde__m128i *y1,
-                          simde__m128i *y2,
-                          simde__m128i *tw1,
-                          simde__m128i *tw2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void ibfly3(simde__m128i *x0,
+                                                         simde__m128i *x1,
+                                                         simde__m128i *x2,
+                                                         simde__m128i *y0,
+                                                         simde__m128i *y1,
+                                                         simde__m128i *y2,
+                                                         simde__m128i *tw1,
+                                                         simde__m128i *tw2)
 {
   simde__m128i tmpre, tmpim, x1_2, x2_2;
 
@@ -638,36 +546,12 @@ static inline void ibfly3(simde__m128i *x0,
   *(y2) = simde_mm_adds_epi16(*(x0), *(y2));
 }
 
-static inline void ibfly3_256(simde__m256i *x0,
-                              simde__m256i *x1,
-                              simde__m256i *x2,
-                              simde__m256i *y0,
-                              simde__m256i *y1,
-                              simde__m256i *y2,
-                              simde__m256i *tw1,
-                              simde__m256i *tw2) __attribute__((always_inline));
-{
-  simde__m256i tmpre, tmpim, x1_2, x2_2;
-
-  packed_cmultc_256(*(x1),*(tw1),&x1_2);
-  packed_cmultc_256(*(x2),*(tw2),&x2_2);
-  *(y0)  = simde_mm256_adds_epi16(*(x0),simde_mm256_adds_epi16(x1_2,x2_2));
-  cmultc_256(x1_2,*(W13_256),&tmpre,&tmpim);
-  cmacc_256(x2_2,*(W23_256),&tmpre,&tmpim);
-  *(y1) = cpack_256(tmpre,tmpim);
-  *(y1) = simde_mm256_adds_epi16(*(x0),*(y1));
-  cmultc_256(x1_2,*(W23_256),&tmpre,&tmpim);
-  cmacc_256(x2_2,*(W13_256),&tmpre,&tmpim);
-  *(y2) = cpack_256(tmpre,tmpim);
-  *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
-}
-
-static inline void bfly3_tw1(simde__m128i *x0,
-                             simde__m128i *x1,
-                             simde__m128i *x2,
-                             simde__m128i *y0,
-                             simde__m128i *y1,
-                             simde__m128i *y2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly3_tw1(simde__m128i *x0,
+                                                            simde__m128i *x1,
+                                                            simde__m128i *x2,
+                                                            simde__m128i *y0,
+                                                            simde__m128i *y1,
+                                                            simde__m128i *y2)
 {
   simde__m128i tmpre, tmpim;
 
@@ -682,12 +566,12 @@ static inline void bfly3_tw1(simde__m128i *x0,
   *(y2) = simde_mm_adds_epi16(*(x0), *(y2));
 }
 
-static inline void bfly3_tw1_256(simde__m256i *x0,
-                                 simde__m256i *x1,
-                                 simde__m256i *x2,
-                                 simde__m256i *y0,
-                                 simde__m256i *y1,
-                                 simde__m256i *y2) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly3_tw1_256(simde__m256i *x0,
+                                                                simde__m256i *x1,
+                                                                simde__m256i *x2,
+                                                                simde__m256i *y0,
+                                                                simde__m256i *y1,
+                                                                simde__m256i *y2)
 {
   simde__m256i tmpre, tmpim;
 
@@ -702,17 +586,17 @@ static inline void bfly3_tw1_256(simde__m256i *x0,
   *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
 }
 
-static inline void bfly4(simde__m128i *x0,
-                         simde__m128i *x1,
-                         simde__m128i *x2,
-                         simde__m128i *x3,
-                         simde__m128i *y0,
-                         simde__m128i *y1,
-                         simde__m128i *y2,
-                         simde__m128i *y3,
-                         simde__m128i *tw1,
-                         simde__m128i *tw2,
-                         simde__m128i *tw3) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly4(simde__m128i *x0,
+                                                        simde__m128i *x1,
+                                                        simde__m128i *x2,
+                                                        simde__m128i *x3,
+                                                        simde__m128i *y0,
+                                                        simde__m128i *y1,
+                                                        simde__m128i *y2,
+                                                        simde__m128i *y3,
+                                                        simde__m128i *tw1,
+                                                        simde__m128i *tw2,
+                                                        simde__m128i *tw3)
 {
   simde__m128i x1r_2, x1i_2, x2r_2, x2i_2, x3r_2, x3i_2, dy0r, dy0i, dy1r, dy1i, dy2r, dy2i, dy3r, dy3i;
 
@@ -746,17 +630,17 @@ static inline void bfly4(simde__m128i *x0,
   *(y3) = simde_mm_add_epi16(*(x0), cpack(dy3r, dy3i));
 }
 
-static inline void bfly4_256(simde__m256i *x0,
-                             simde__m256i *x1,
-                             simde__m256i *x2,
-                             simde__m256i *x3,
-                             simde__m256i *y0,
-                             simde__m256i *y1,
-                             simde__m256i *y2,
-                             simde__m256i *y3,
-                             simde__m256i *tw1,
-                             simde__m256i *tw2,
-                             simde__m256i *tw3) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly4_256(simde__m256i *x0,
+                                                            simde__m256i *x1,
+                                                            simde__m256i *x2,
+                                                            simde__m256i *x3,
+                                                            simde__m256i *y0,
+                                                            simde__m256i *y1,
+                                                            simde__m256i *y2,
+                                                            simde__m256i *y3,
+                                                            simde__m256i *tw1,
+                                                            simde__m256i *tw2,
+                                                            simde__m256i *tw3)
 {
   simde__m256i x1r_2, x1i_2, x2r_2, x2i_2, x3r_2, x3i_2, dy0r, dy0i, dy1r, dy1i, dy2r, dy2i, dy3r, dy3i;
 
@@ -790,49 +674,17 @@ static inline void bfly4_256(simde__m256i *x0,
   *(y3) = simde_mm256_add_epi16(*(x0),cpack_256(dy3r,dy3i));
 }
 
-static inline void ibfly4(simde__m128i *x0,
-                          simde__m128i *x1,
-                          simde__m128i *x2,
-                          simde__m128i *x3,
-                          simde__m128i *y0,
-                          simde__m128i *y1,
-                          simde__m128i *y2,
-                          simde__m128i *y3,
-                          simde__m128i *tw1,
-                          simde__m128i *tw2,
-                          simde__m128i *tw3) __attribute__((always_inline))
-{
-  simde__m128i x1r_2, x1i_2, x2r_2, x2i_2, x3r_2, x3i_2, dy0r, dy0i, dy1r, dy1i, dy2r, dy2i, dy3r, dy3i;
-
-  cmultc(*(x1),*(tw1),&x1r_2,&x1i_2);
-  cmultc(*(x2),*(tw2),&x2r_2,&x2i_2);
-  cmultc(*(x3),*(tw3),&x3r_2,&x3i_2);
-
-  dy0r = simde_mm_add_epi32(x1r_2, simde_mm_add_epi32(x2r_2, x3r_2));
-  dy0i = simde_mm_add_epi32(x1i_2, simde_mm_add_epi32(x2i_2, x3i_2));
-  *(y0) = simde_mm_add_epi16(*(x0), cpack(dy0r, dy0i));
-  dy3r = simde_mm_sub_epi32(x1i_2, simde_mm_add_epi32(x2r_2, x3i_2));
-  dy3i = simde_mm_sub_epi32(simde_mm_sub_epi32(x3r_2, x2i_2), x1r_2);
-  *(y3) = simde_mm_add_epi16(*(x0), cpack(dy3r, dy3i));
-  dy2r = simde_mm_sub_epi32(simde_mm_sub_epi32(x2r_2, x3r_2), x1r_2);
-  dy2i = simde_mm_sub_epi32(simde_mm_sub_epi32(x2i_2, x3i_2), x1i_2);
-  *(y2) = simde_mm_add_epi16(*(x0), cpack(dy2r, dy2i));
-  dy1r = simde_mm_sub_epi32(simde_mm_sub_epi32(x3i_2, x2r_2), x1i_2);
-  dy1i = simde_mm_sub_epi32(x1r_2, simde_mm_add_epi32(x2i_2, x3r_2));
-  *(y1) = simde_mm_add_epi16(*(x0), cpack(dy1r, dy1i));
-}
-
-static inline void ibfly4_256(simde__m256i *x0,
-                              simde__m256i *x1,
-                              simde__m256i *x2,
-                              simde__m256i *x3,
-                              simde__m256i *y0,
-                              simde__m256i *y1,
-                              simde__m256i *y2,
-                              simde__m256i *y3,
-                              simde__m256i *tw1,
-                              simde__m256i *tw2,
-                              simde__m256i *tw3) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void ibfly4_256(simde__m256i *x0,
+                                                             simde__m256i *x1,
+                                                             simde__m256i *x2,
+                                                             simde__m256i *x3,
+                                                             simde__m256i *y0,
+                                                             simde__m256i *y1,
+                                                             simde__m256i *y2,
+                                                             simde__m256i *y3,
+                                                             simde__m256i *tw1,
+                                                             simde__m256i *tw2,
+                                                             simde__m256i *tw3)
 {
   simde__m256i x1r_2, x1i_2, x2r_2, x2i_2, x3r_2, x3i_2, dy0r, dy0i, dy1r, dy1i, dy2r, dy2i, dy3r, dy3i;
 
@@ -854,14 +706,14 @@ static inline void ibfly4_256(simde__m256i *x0,
   *(y1) = simde_mm256_add_epi16(*(x0),cpack_256(dy1r,dy1i));
 }
 
-static inline void bfly4_tw1(simde__m128i *x0,
-                             simde__m128i *x1,
-                             simde__m128i *x2,
-                             simde__m128i *x3,
-                             simde__m128i *y0,
-                             simde__m128i *y1,
-                             simde__m128i *y2,
-                             simde__m128i *y3) __attribute__((always_inline));
+__attribute__((always_inline)) static inline void bfly4_tw1(simde__m128i *x0,
+                                                            simde__m128i *x1,
+                                                            simde__m128i *x2,
+                                                            simde__m128i *x3,
+                                                            simde__m128i *y0,
+                                                            simde__m128i *y1,
+                                                            simde__m128i *y2,
+                                                            simde__m128i *y3)
 {
   register simde__m128i x1_flip, x3_flip, x02t, x13t;
   register simde__m128i complex_shuffle = simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2);
@@ -891,14 +743,14 @@ static inline void bfly4_tw1(simde__m128i *x0,
   */
 }
 
-static inline void bfly4_tw1_256(simde__m256i *x0,
-                                 simde__m256i *x1,
-                                 simde__m256i *x2,
-                                 simde__m256i *x3,
-                                 simde__m256i *y0,
-                                 simde__m256i *y1,
-                                 simde__m256i *y2,
-                                 simde__m256i *y3) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly4_tw1_256(simde__m256i *x0,
+                                                                simde__m256i *x1,
+                                                                simde__m256i *x2,
+                                                                simde__m256i *x3,
+                                                                simde__m256i *y0,
+                                                                simde__m256i *y1,
+                                                                simde__m256i *y2,
+                                                                simde__m256i *y3)
 {
   register simde__m256i x1_flip, x3_flip, x02t, x13t;
   register simde__m256i complex_shuffle = simde_mm256_set_epi8(29,
@@ -948,97 +800,20 @@ static inline void bfly4_tw1_256(simde__m256i *x0,
   *(y3)   = simde_mm256_subs_epi16(x02t,x13t);  // x0 - x1f - x2 + x3f
 }
 
-static inline void ibfly4_tw1(simde__m128i *x0,
-                              simde__m128i *x1,
-                              simde__m128i *x2,
-                              simde__m128i *x3,
-                              simde__m128i *y0,
-                              simde__m128i *y1,
-                              simde__m128i *y2,
-                              simde__m128i *y3) __attribute__((always_inline))
-{
-  register simde__m128i x1_flip, x3_flip;
-
-  *(y0) = simde_mm_adds_epi16(*(x0), simde_mm_adds_epi16(*(x1), simde_mm_adds_epi16(*(x2), *(x3))));
-
-  x1_flip = simde_mm_sign_epi16(*(x1), *(simde__m128i *)conjugatedft);
-  //  x1_flip = simde_mm_shufflelo_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x1_flip = simde_mm_shufflehi_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x1_flip = simde_mm_shuffle_epi8(x1_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  x3_flip = simde_mm_sign_epi16(*(x3), *(simde__m128i *)conjugatedft);
-  //  x3_flip = simde_mm_shufflelo_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x3_flip = simde_mm_shufflehi_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x3_flip = simde_mm_shuffle_epi8(x3_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  *(y1) = simde_mm_subs_epi16(*(x0), simde_mm_adds_epi16(x1_flip, simde_mm_subs_epi16(*(x2), x3_flip)));
-  *(y2) = simde_mm_subs_epi16(*(x0), simde_mm_subs_epi16(*(x1), simde_mm_subs_epi16(*(x2), *(x3))));
-  *(y3) = simde_mm_adds_epi16(*(x0), simde_mm_subs_epi16(x1_flip, simde_mm_adds_epi16(*(x2), x3_flip)));
-}
-
-static inline void bfly4_16(simde__m128i *x0,
-                            simde__m128i *x1,
-                            simde__m128i *x2,
-                            simde__m128i *x3,
-                            simde__m128i *y0,
-                            simde__m128i *y1,
-                            simde__m128i *y2,
-                            simde__m128i *y3,
-                            simde__m128i *tw1,
-                            simde__m128i *tw2,
-                            simde__m128i *tw3,
-                            simde__m128i *tw1b,
-                            simde__m128i *tw2b,
-                            simde__m128i *tw3b) __attribute__((always_inline))
-{
-  register simde__m128i x1t, x2t, x3t, x02t, x13t;
-  register simde__m128i x1_flip, x3_flip;
-
-  x1t = packed_cmult2(*(x1),*(tw1),*(tw1b));
-  x2t = packed_cmult2(*(x2),*(tw2),*(tw2b));
-  x3t = packed_cmult2(*(x3),*(tw3),*(tw3b));
-
-
-  //  bfly4_tw1(x0,&x1t,&x2t,&x3t,y0,y1,y2,y3);
-  x02t = simde_mm_adds_epi16(*(x0), x2t);
-  x13t = simde_mm_adds_epi16(x1t, x3t);
-  /*
-   *(y0) = simde_mm_adds_epi16(*(x0),simde_mm_adds_epi16(x1t,simde_mm_adds_epi16(x2t,x3t)));
-   *(y2)   = simde_mm_subs_epi16(*(x0),simde_mm_subs_epi16(x1t,simde_mm_subs_epi16(x2t,x3t)));
-   */
-  *(y0) = simde_mm_adds_epi16(x02t, x13t);
-  *(y2) = simde_mm_subs_epi16(x02t, x13t);
-
-  x1_flip = simde_mm_sign_epi16(x1t, *(simde__m128i *)conjugatedft);
-  //  x1_flip = simde_mm_shufflelo_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x1_flip = simde_mm_shufflehi_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x1_flip = simde_mm_shuffle_epi8(x1_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  x3_flip = simde_mm_sign_epi16(x3t, *(simde__m128i *)conjugatedft);
-  //  x3_flip = simde_mm_shufflelo_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x3_flip = simde_mm_shufflehi_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x3_flip = simde_mm_shuffle_epi8(x3_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  x02t = simde_mm_subs_epi16(*(x0), x2t);
-  x13t = simde_mm_subs_epi16(x1_flip, x3_flip);
-  /*
-   *(y1)   = simde_mm_adds_epi16(*(x0),simde_mm_subs_epi16(x1_flip,simde_mm_adds_epi16(x2t,x3_flip)));  // x0 + x1f - x2 - x3f
-   *(y3)   = simde_mm_subs_epi16(*(x0),simde_mm_adds_epi16(x1_flip,simde_mm_subs_epi16(x2t,x3_flip)));  // x0 - x1f - x2 + x3f
-   */
-  *(y1) = simde_mm_adds_epi16(x02t, x13t); // x0 + x1f - x2 - x3f
-  *(y3) = simde_mm_subs_epi16(x02t, x13t); // x0 - x1f - x2 + x3f
-}
-
-static inline void bfly4_16_256(simde__m256i *x0,
-                                simde__m256i *x1,
-                                simde__m256i *x2,
-                                simde__m256i *x3,
-                                simde__m256i *y0,
-                                simde__m256i *y1,
-                                simde__m256i *y2,
-                                simde__m256i *y3,
-                                simde__m256i *tw1,
-                                simde__m256i *tw2,
-                                simde__m256i *tw3,
-                                simde__m256i *tw1b,
-                                simde__m256i *tw2b,
-                                simde__m256i *tw3b) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly4_16_256(simde__m256i *x0,
+                                                               simde__m256i *x1,
+                                                               simde__m256i *x2,
+                                                               simde__m256i *x3,
+                                                               simde__m256i *y0,
+                                                               simde__m256i *y1,
+                                                               simde__m256i *y2,
+                                                               simde__m256i *y3,
+                                                               simde__m256i *tw1,
+                                                               simde__m256i *tw2,
+                                                               simde__m256i *tw3,
+                                                               simde__m256i *tw1b,
+                                                               simde__m256i *tw2b,
+                                                               simde__m256i *tw3b)
 {
   register simde__m256i x1t, x2t, x3t, x02t, x13t;
   register simde__m256i x1_flip, x3_flip;
@@ -1098,71 +873,20 @@ static inline void bfly4_16_256(simde__m256i *x0,
   *(y3) = simde_mm256_subs_epi16(x02t, x13t); // x0 - x1f - x2 + x3f
 }
 
-static inline void ibfly4_16(simde__m128i *x0,
-                             simde__m128i *x1,
-                             simde__m128i *x2,
-                             simde__m128i *x3,
-                             simde__m128i *y0,
-                             simde__m128i *y1,
-                             simde__m128i *y2,
-                             simde__m128i *y3,
-                             simde__m128i *tw1,
-                             simde__m128i *tw2,
-                             simde__m128i *tw3,
-                             simde__m128i *tw1b,
-                             simde__m128i *tw2b,
-                             simde__m128i *tw3b) __attribute__((always_inline))
-{
-  register simde__m128i x1t, x2t, x3t, x02t, x13t;
-  register simde__m128i x1_flip, x3_flip;
-
-  x1t = packed_cmult2(*(x1),*(tw1),*(tw1b));
-  x2t = packed_cmult2(*(x2),*(tw2),*(tw2b));
-  x3t = packed_cmult2(*(x3),*(tw3),*(tw3b));
-
-
-  //  bfly4_tw1(x0,&x1t,&x2t,&x3t,y0,y1,y2,y3);
-  x02t = simde_mm_adds_epi16(*(x0), x2t);
-  x13t = simde_mm_adds_epi16(x1t, x3t);
-  /*
-   *(y0) = simde_mm_adds_epi16(*(x0),simde_mm_adds_epi16(x1t,simde_mm_adds_epi16(x2t,x3t)));
-   *(y2)   = simde_mm_subs_epi16(*(x0),simde_mm_subs_epi16(x1t,simde_mm_subs_epi16(x2t,x3t)));
-   */
-  *(y0) = simde_mm_adds_epi16(x02t, x13t);
-  *(y2) = simde_mm_subs_epi16(x02t, x13t);
-
-  x1_flip = simde_mm_sign_epi16(x1t, *(simde__m128i *)conjugatedft);
-  //  x1_flip = simde_mm_shufflelo_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x1_flip = simde_mm_shufflehi_epi16(x1_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x1_flip = simde_mm_shuffle_epi8(x1_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  x3_flip = simde_mm_sign_epi16(x3t, *(simde__m128i *)conjugatedft);
-  //  x3_flip = simde_mm_shufflelo_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  //  x3_flip = simde_mm_shufflehi_epi16(x3_flip, SIMDE_MM_SHUFFLE(2,3,0,1));
-  x3_flip = simde_mm_shuffle_epi8(x3_flip, simde_mm_set_epi8(13, 12, 15, 14, 9, 8, 11, 10, 5, 4, 7, 6, 1, 0, 3, 2));
-  x02t = simde_mm_subs_epi16(*(x0), x2t);
-  x13t = simde_mm_subs_epi16(x1_flip, x3_flip);
-  /*
-   *(y1)   = simde_mm_adds_epi16(*(x0),simde_mm_subs_epi16(x1_flip,simde_mm_adds_epi16(x2t,x3_flip)));  // x0 + x1f - x2 - x3f
-   *(y3)   = simde_mm_subs_epi16(*(x0),simde_mm_adds_epi16(x1_flip,simde_mm_subs_epi16(x2t,x3_flip)));  // x0 - x1f - x2 + x3f
-   */
-  *(y3) = simde_mm_adds_epi16(x02t, x13t); // x0 + x1f - x2 - x3f
-  *(y1) = simde_mm_subs_epi16(x02t, x13t); // x0 - x1f - x2 + x3f
-}
-
-static inline void ibfly4_16_256(simde__m256i *x0,
-                                 simde__m256i *x1,
-                                 simde__m256i *x2,
-                                 simde__m256i *x3,
-                                 simde__m256i *y0,
-                                 simde__m256i *y1,
-                                 simde__m256i *y2,
-                                 simde__m256i *y3,
-                                 simde__m256i *tw1,
-                                 simde__m256i *tw2,
-                                 simde__m256i *tw3,
-                                 simde__m256i *tw1b,
-                                 simde__m256i *tw2b,
-                                 simde__m256i *tw3b) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void ibfly4_16_256(simde__m256i *x0,
+                                                                simde__m256i *x1,
+                                                                simde__m256i *x2,
+                                                                simde__m256i *x3,
+                                                                simde__m256i *y0,
+                                                                simde__m256i *y1,
+                                                                simde__m256i *y2,
+                                                                simde__m256i *y3,
+                                                                simde__m256i *tw1,
+                                                                simde__m256i *tw2,
+                                                                simde__m256i *tw3,
+                                                                simde__m256i *tw1b,
+                                                                simde__m256i *tw2b,
+                                                                simde__m256i *tw3b)
 {
   register simde__m256i x1t, x2t, x3t, x02t, x13t;
   register simde__m256i x1_flip, x3_flip;
@@ -1222,20 +946,20 @@ static inline void ibfly4_16_256(simde__m256i *x0,
   *(y1) = simde_mm256_subs_epi16(x02t, x13t); // x0 - x1f - x2 + x3f
 }
 
-static inline void bfly5(simde__m128i *x0,
-                         simde__m128i *x1,
-                         simde__m128i *x2,
-                         simde__m128i *x3,
-                         simde__m128i *x4,
-                         simde__m128i *y0,
-                         simde__m128i *y1,
-                         simde__m128i *y2,
-                         simde__m128i *y3,
-                         simde__m128i *y4,
-                         simde__m128i *tw1,
-                         simde__m128i *tw2,
-                         simde__m128i *tw3,
-                         simde__m128i *tw4) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly5(simde__m128i *x0,
+                                                        simde__m128i *x1,
+                                                        simde__m128i *x2,
+                                                        simde__m128i *x3,
+                                                        simde__m128i *x4,
+                                                        simde__m128i *y0,
+                                                        simde__m128i *y1,
+                                                        simde__m128i *y2,
+                                                        simde__m128i *y3,
+                                                        simde__m128i *y4,
+                                                        simde__m128i *tw1,
+                                                        simde__m128i *tw2,
+                                                        simde__m128i *tw3,
+                                                        simde__m128i *tw4)
 {
   simde__m128i x1_2, x2_2, x3_2, x4_2, tmpre, tmpim;
 
@@ -1273,68 +997,17 @@ static inline void bfly5(simde__m128i *x0,
   *(y4) = cpack(tmpre,tmpim);
   *(y4) = simde_mm_adds_epi16(*(x0), *(y4));
 }
-static inline void bfly5_256(simde__m256i *x0,
-                             simde__m256i *x1,
-                             simde__m256i *x2,
-                             simde__m256i *x3,
-                             simde__m256i *x4,
-                             simde__m256i *y0,
-                             simde__m256i *y1,
-                             simde__m256i *y2,
-                             simde__m256i *y3,
-                             simde__m256i *y4,
-                             simde__m256i *tw1,
-                             simde__m256i *tw2,
-                             simde__m256i *tw3,
-                             simde__m256i *tw4) __attribute__((always_inline))
-{
-  simde__m256i x1_2, x2_2, x3_2, x4_2, tmpre, tmpim;
 
-  packed_cmult_256(*(x1),*(tw1),&x1_2);
-  packed_cmult_256(*(x2),*(tw2),&x2_2);
-  packed_cmult_256(*(x3),*(tw3),&x3_2);
-  packed_cmult_256(*(x4),*(tw4),&x4_2);
-
-  *(y0)  = simde_mm256_adds_epi16(*(x0),simde_mm256_adds_epi16(x1_2,simde_mm256_adds_epi16(x2_2,simde_mm256_adds_epi16(x3_2,x4_2))));
-  cmult_256(x1_2,*(W15_256),&tmpre,&tmpim);
-  cmac_256(x2_2,*(W25_256),&tmpre,&tmpim);
-  cmac_256(x3_2,*(W35_256),&tmpre,&tmpim);
-  cmac_256(x4_2,*(W45_256),&tmpre,&tmpim);
-  *(y1) = cpack_256(tmpre,tmpim);
-  *(y1) = simde_mm256_adds_epi16(*(x0),*(y1));
-
-  cmult_256(x1_2,*(W25_256),&tmpre,&tmpim);
-  cmac_256(x2_2,*(W45_256),&tmpre,&tmpim);
-  cmac_256(x3_2,*(W15_256),&tmpre,&tmpim);
-  cmac_256(x4_2,*(W35_256),&tmpre,&tmpim);
-  *(y2) = cpack_256(tmpre,tmpim);
-  *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
-
-  cmult_256(x1_2,*(W35_256),&tmpre,&tmpim);
-  cmac_256(x2_2,*(W15_256),&tmpre,&tmpim);
-  cmac_256(x3_2,*(W45_256),&tmpre,&tmpim);
-  cmac_256(x4_2,*(W25_256),&tmpre,&tmpim);
-  *(y3) = cpack_256(tmpre,tmpim);
-  *(y3) = simde_mm256_adds_epi16(*(x0),*(y3));
-
-  cmult_256(x1_2,*(W45_256),&tmpre,&tmpim);
-  cmac_256(x2_2,*(W35_256),&tmpre,&tmpim);
-  cmac_256(x3_2,*(W25_256),&tmpre,&tmpim);
-  cmac_256(x4_2,*(W15_256),&tmpre,&tmpim);
-  *(y4) = cpack_256(tmpre,tmpim);
-  *(y4) = simde_mm256_adds_epi16(*(x0), *(y4));
-}
-
-static inline void bfly5_tw1(simde__m128i *x0,
-                             simde__m128i *x1,
-                             simde__m128i *x2,
-                             simde__m128i *x3,
-                             simde__m128i *x4,
-                             simde__m128i *y0,
-                             simde__m128i *y1,
-                             simde__m128i *y2,
-                             simde__m128i *y3,
-                             simde__m128i *y4) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void bfly5_tw1(simde__m128i *x0,
+                                                            simde__m128i *x1,
+                                                            simde__m128i *x2,
+                                                            simde__m128i *x3,
+                                                            simde__m128i *x4,
+                                                            simde__m128i *y0,
+                                                            simde__m128i *y1,
+                                                            simde__m128i *y2,
+                                                            simde__m128i *y3,
+                                                            simde__m128i *y4)
 {
   simde__m128i tmpre, tmpim;
 
@@ -1365,82 +1038,9 @@ static inline void bfly5_tw1(simde__m128i *x0,
   *(y4) = simde_mm_adds_epi16(*(x0), *(y4));
 }
 
-static inline void bfly5_tw1_256(simde__m256i *x0,
-                                 simde__m256i *x1,
-                                 simde__m256i *x2,
-                                 simde__m256i *x3,
-                                 simde__m256i *x4,
-                                 simde__m256i *y0,
-                                 simde__m256i *y1,
-                                 simde__m256i *y2,
-                                 simde__m256i *y3,
-                                 simde__m256i *y4) __attribute__((always_inline))
-{
-  simde__m256i tmpre, tmpim;
-
-  *(y0) = simde_mm256_adds_epi16(*(x0),simde_mm256_adds_epi16(*(x1),simde_mm256_adds_epi16(*(x2),simde_mm256_adds_epi16(*(x3),*(x4)))));
-  cmult_256(*(x1),*(W15_256),&tmpre,&tmpim);
-  cmac_256(*(x2),*(W25_256),&tmpre,&tmpim);
-  cmac_256(*(x3),*(W35_256),&tmpre,&tmpim);
-  cmac_256(*(x4),*(W45_256),&tmpre,&tmpim);
-  *(y1) = cpack_256(tmpre,tmpim);
-  *(y1) = simde_mm256_adds_epi16(*(x0),*(y1));
-  cmult_256(*(x1),*(W25_256),&tmpre,&tmpim);
-  cmac_256(*(x2),*(W45_256),&tmpre,&tmpim);
-  cmac_256(*(x3),*(W15_256),&tmpre,&tmpim);
-  cmac_256(*(x4),*(W35_256),&tmpre,&tmpim);
-  *(y2) = cpack_256(tmpre,tmpim);
-  *(y2) = simde_mm256_adds_epi16(*(x0),*(y2));
-  cmult_256(*(x1),*(W35_256),&tmpre,&tmpim);
-  cmac_256(*(x2),*(W15_256),&tmpre,&tmpim);
-  cmac_256(*(x3),*(W45_256),&tmpre,&tmpim);
-  cmac_256(*(x4),*(W25_256),&tmpre,&tmpim);
-  *(y3) = cpack_256(tmpre,tmpim);
-  *(y3) = simde_mm256_adds_epi16(*(x0),*(y3));
-  cmult_256(*(x1),*(W45_256),&tmpre,&tmpim);
-  cmac_256(*(x2),*(W35_256),&tmpre,&tmpim);
-  cmac_256(*(x3),*(W25_256),&tmpre,&tmpim);
-  cmac_256(*(x4),*(W15_256),&tmpre,&tmpim);
-  *(y4) = cpack_256(tmpre,tmpim);
-  *(y4) = simde_mm256_adds_epi16(*(x0),*(y4));
-}
-
 // performs 4x4 transpose of input x (complex interleaved) using 128bit SIMD intrinsics
 // i.e. x = [x0r x0i x1r x1i ... x15r x15i], y = [x0r x0i x4r x4i x8r x8i x12r x12i x1r x1i x5r x5i x9r x9i x13r x13i x2r x2i ... x15r x15i]
-static inline void transpose16(simde__m128i *x, simde__m128i *y) __attribute__((always_inline))
-{
-  register simde__m128i ytmp0, ytmp1, ytmp2, ytmp3;
-
-  ytmp0 = simde_mm_unpacklo_epi32(x[0], x[1]);
-  ytmp1 = simde_mm_unpackhi_epi32(x[0], x[1]);
-  ytmp2 = simde_mm_unpacklo_epi32(x[2], x[3]);
-  ytmp3 = simde_mm_unpackhi_epi32(x[2], x[3]);
-  y[0] = simde_mm_unpacklo_epi64(ytmp0, ytmp2);
-  y[1] = simde_mm_unpackhi_epi64(ytmp0, ytmp2);
-  y[2] = simde_mm_unpacklo_epi64(ytmp1, ytmp3);
-  y[3] = simde_mm_unpackhi_epi64(ytmp1, ytmp3);
-}
-
-// same as above but output is offset by off
-static inline void transpose16_ooff(simde__m128i *x, simde__m128i *y, int off) __attribute__((always_inline))
-{
-  register simde__m128i ytmp0, ytmp1, ytmp2, ytmp3;
-  simde__m128i *y2 = y;
-
-  ytmp0 = simde_mm_unpacklo_epi32(x[0], x[1]); // x00 x10 x01 x11
-  ytmp1 = simde_mm_unpackhi_epi32(x[0], x[1]); // x02 x12 x03 x13
-  ytmp2 = simde_mm_unpacklo_epi32(x[2], x[3]); // x20 x30 x21 x31
-  ytmp3 = simde_mm_unpackhi_epi32(x[2], x[3]); // x22 x32 x23 x33
-  *y2 = simde_mm_unpacklo_epi64(ytmp0, ytmp2); // x00 x10 x20 x30
-  y2+=off;
-  *y2 = simde_mm_unpackhi_epi64(ytmp0, ytmp2); // x01 x11 x21 x31
-  y2+=off;
-  *y2 = simde_mm_unpacklo_epi64(ytmp1, ytmp3); // x02 x12 x22 x32
-  y2+=off;
-  *y2 = simde_mm_unpackhi_epi64(ytmp1, ytmp3); // x03 x13 x23 x33
-}
-
-static inline void transpose16_ooff_simd256(simde__m256i *x, simde__m256i *y, int off) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void transpose16_ooff_simd256(simde__m256i *x, simde__m256i *y, int off)
 {
   register simde__m256i ytmp0, ytmp1, ytmp2, ytmp3, ytmp4, ytmp5, ytmp6, ytmp7;
   simde__m256i *y2 = y;
@@ -1464,18 +1064,7 @@ static inline void transpose16_ooff_simd256(simde__m256i *x, simde__m256i *y, in
   *y2    = simde_mm256_insertf128_si256(ytmp7,simde_mm256_extracti128_si256(ytmp5,1),0);  //x01 x11 x21 x31 x41 x51 x61 x71
 }
 
-static inline void transpose4_ooff(simde__m64 *x, simde__m64 *y, int off) __attribute__((always_inline))
-{
-  y[0] = simde_mm_unpacklo_pi32(x[0], x[1]);
-  y[off] = simde_mm_unpackhi_pi32(x[0], x[1]);
-
-  // x[0] = [x0 x1]
-  // x[1] = [x2 x3]
-  // y[0] = [x0 x2]
-  // y[off] = [x1 x3]
-}
-
-static inline void transpose4_ooff_simd256(simde__m256i *x, simde__m256i *y, int off) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void transpose4_ooff_simd256(simde__m256i *x, simde__m256i *y, int off)
 {
   simde__m256i const perm_mask = simde_mm256_set_epi32(7, 5, 3, 1, 6, 4, 2, 0);
   simde__m256i perm_tmp0, perm_tmp1;
@@ -1597,46 +1186,46 @@ static inline void dft16(int16_t *x,int16_t *y) __attribute__((always_inline)
 }
 #endif
 
-// Does two 16-point DFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs) 
-static inline void dft16_simd256(int16_t *x,int16_t *y) __attribute__((always_inline))
+// Does two 16-point DFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs)
+__attribute__((always_inline)) static inline void dft16_simd256(int16_t *x, int16_t *y)
 {
   simde__m256i *tw16a_256 = (simde__m256i *)tw16arep, *tw16b_256 = (simde__m256i *)tw16brep, *x256 = (simde__m256i *)x,
                *y256 = (simde__m256i *)y;
 
   simde__m256i x1_flip, x3_flip, x02t, x13t;
   simde__m256i ytmp0, ytmp1, ytmp2, ytmp3, xtmp0, xtmp1, xtmp2, xtmp3;
-  register simde__m256i complex_shuffle = simde_mm256_set_epi8(29,
-                                                               28,
-                                                               31,
-                                                               30,
-                                                               25,
-                                                               24,
-                                                               27,
-                                                               26,
-                                                               21,
-                                                               20,
-                                                               23,
-                                                               22,
-                                                               17,
-                                                               16,
-                                                               19,
-                                                               18,
-                                                               13,
-                                                               12,
-                                                               15,
-                                                               14,
-                                                               9,
-                                                               8,
-                                                               11,
-                                                               10,
-                                                               5,
-                                                               4,
-                                                               7,
-                                                               6,
-                                                               1,
-                                                               0,
-                                                               3,
-                                                               2);
+  const simde__m256i complex_shuffle = simde_mm256_set_epi8(29,
+                                                            28,
+                                                            31,
+                                                            30,
+                                                            25,
+                                                            24,
+                                                            27,
+                                                            26,
+                                                            21,
+                                                            20,
+                                                            23,
+                                                            22,
+                                                            17,
+                                                            16,
+                                                            19,
+                                                            18,
+                                                            13,
+                                                            12,
+                                                            15,
+                                                            14,
+                                                            9,
+                                                            8,
+                                                            11,
+                                                            10,
+                                                            5,
+                                                            4,
+                                                            7,
+                                                            6,
+                                                            1,
+                                                            0,
+                                                            3,
+                                                            2);
 
   // First stage : 4 Radix-4 butterflies without input twiddles
 
@@ -1707,7 +1296,7 @@ static inline void dft16_simd256(int16_t *x,int16_t *y) __attribute__((always_in
   // [y24 y25 y26 y27 y28 y29 y30 y31]
 }
 
-static inline void idft16(int16_t *x,int16_t *y) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void idft16(int16_t *x, int16_t *y)
 {
   simde__m128i *tw16a_128 = (simde__m128i *)tw16, *tw16b_128 = (simde__m128i *)tw16c, *x128 = (simde__m128i *)x,
                *y128 = (simde__m128i *)y;
@@ -1773,45 +1362,45 @@ void idft16f(int16_t *x,int16_t *y) {
   idft16(x,y);
 }
 
-// Does two 16-point IDFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs) 
-static inline void idft16_simd256(int16_t *x,int16_t *y) __attribute__((always_inline))
+// Does two 16-point IDFTS (x[0 .. 15] is 128 LSBs of input vector, x[16..31] is in 128 MSBs)
+__attribute__((always_inline)) static inline void idft16_simd256(int16_t *x, int16_t *y)
 {
   simde__m256i *tw16a_256 = (simde__m256i *)tw16rep, *tw16b_256 = (simde__m256i *)tw16crep, *x256 = (simde__m256i *)x,
                *y256 = (simde__m256i *)y;
   register simde__m256i x1_flip, x3_flip, x02t, x13t;
   register simde__m256i ytmp0, ytmp1, ytmp2, ytmp3, xtmp0, xtmp1, xtmp2, xtmp3;
-  register simde__m256i complex_shuffle = simde_mm256_set_epi8(29,
-                                                               28,
-                                                               31,
-                                                               30,
-                                                               25,
-                                                               24,
-                                                               27,
-                                                               26,
-                                                               21,
-                                                               20,
-                                                               23,
-                                                               22,
-                                                               17,
-                                                               16,
-                                                               19,
-                                                               18,
-                                                               13,
-                                                               12,
-                                                               15,
-                                                               14,
-                                                               9,
-                                                               8,
-                                                               11,
-                                                               10,
-                                                               5,
-                                                               4,
-                                                               7,
-                                                               6,
-                                                               1,
-                                                               0,
-                                                               3,
-                                                               2);
+  const simde__m256i complex_shuffle = simde_mm256_set_epi8(29,
+                                                            28,
+                                                            31,
+                                                            30,
+                                                            25,
+                                                            24,
+                                                            27,
+                                                            26,
+                                                            21,
+                                                            20,
+                                                            23,
+                                                            22,
+                                                            17,
+                                                            16,
+                                                            19,
+                                                            18,
+                                                            13,
+                                                            12,
+                                                            15,
+                                                            14,
+                                                            9,
+                                                            8,
+                                                            11,
+                                                            10,
+                                                            5,
+                                                            4,
+                                                            7,
+                                                            6,
+                                                            1,
+                                                            0,
+                                                            3,
+                                                            2);
 
   // First stage : 4 Radix-4 butterflies without input twiddles
 
@@ -2182,8 +1771,6 @@ static const int16_t tw128a[128] __attribute__((aligned(32))) = { 32767,0,32727,
 
 static const int16_t tw128b[128] __attribute__((aligned(32))) = {0,32767,-1608,32727,-3212,32609,-4808,32412,-6393,32137,-7962,31785,-9512,31356,-11039,30851,-12540,30272,-14010,29621,-15447,28897,-16846,28105,-18205,27244,-19520,26318,-20788,25329,-22005,24278,-23170,23169,-24279,22004,-25330,20787,-26319,19519,-27245,18204,-28106,16845,-28898,15446,-29622,14009,-30273,12539,-30852,11038,-31357,9511,-31786,7961,-32138,6392,-32413,4807,-32610,3211,-32728,1607,-32767,0,-32728,-1608,-32610,-3212,-32413,-4808,-32138,-6393,-31786,-7962,-31357,-9512,-30852,-11039,-30273,-12540,-29622,-14010,-28898,-15447,-28106,-16846,-27245,-18205,-26319,-19520,-25330,-20788,-24279,-22005,-23170,-23170,-22005,-24279,-20788,-25330,-19520,-26319,-18205,-27245,-16846,-28106,-15447,-28898,-14010,-29622,-12540,-30273,-11039,-30852,-9512,-31357,-7962,-31786,-6393,-32138,-4808,-32413,-3212,-32610,-1608,-32728};
 
-static const int16_t tw128c[128] __attribute__((aligned(32))) = {0,32767,1608,32727,3212,32609,4808,32412,6393,32137,7962,31785,9512,31356,11039,30851,12540,30272,14010,29621,15447,28897,16846,28105,18205,27244,19520,26318,20788,25329,22005,24278,23170,23169,24279,22004,25330,20787,26319,19519,27245,18204,28106,16845,28898,15446,29622,14009,30273,12539,30852,11038,31357,9511,31786,7961,32138,6392,32413,4807,32610,3211,32728,1607,32767,0,32728,-1608,32610,-3212,32413,-4808,32138,-6393,31786,-7962,31357,-9512,30852,-11039,30273,-12540,29622,-14010,28898,-15447,28106,-16846,27245,-18205,26319,-19520,25330,-20788,24279,-22005,23170,-23170,22005,-24279,20788,-25330,19520,-26319,18205,-27245,16846,-28106,15447,-28898,14010,-29622,12540,-30273,11039,-30852,9512,-31357,7962,-31786,6393,-32138,4808,-32413,3212,-32610,1608,-32728};
-
 void dft128(int16_t *x,int16_t *y,unsigned char scale)
 {
 
@@ -2502,20 +2089,6 @@ void idft256(int16_t *x,int16_t *y,unsigned char scale)
 
 static const int16_t tw512[512] __attribute__((aligned(32))) = {
   32767,0,32764,-403,32757,-805,32744,-1207,32727,-1608,32705,-2010,32678,-2411,32646,-2812,32609,-3212,32567,-3612,32520,-4012,32468,-4410,32412,-4808,32350,-5206,32284,-5602,32213,-5998,32137,-6393,32056,-6787,31970,-7180,31880,-7572,31785,-7962,31684,-8352,31580,-8740,31470,-9127,31356,-9512,31236,-9896,31113,-10279,30984,-10660,30851,-11039,30713,-11417,30571,-11793,30424,-12167,30272,-12540,30116,-12910,29955,-13279,29790,-13646,29621,-14010,29446,-14373,29268,-14733,29085,-15091,28897,-15447,28706,-15800,28510,-16151,28309,-16500,28105,-16846,27896,-17190,27683,-17531,27466,-17869,27244,-18205,27019,-18538,26789,-18868,26556,-19195,26318,-19520,26077,-19841,25831,-20160,25582,-20475,25329,-20788,25072,-21097,24811,-21403,24546,-21706,24278,-22005,24006,-22302,23731,-22595,23452,-22884,23169,-23170,22883,-23453,22594,-23732,22301,-24007,22004,-24279,21705,-24547,21402,-24812,21096,-25073,20787,-25330,20474,-25583,20159,-25832,19840,-26078,19519,-26319,19194,-26557,18867,-26790,18537,-27020,18204,-27245,17868,-27467,17530,-27684,17189,-27897,16845,-28106,16499,-28310,16150,-28511,15799,-28707,15446,-28898,15090,-29086,14732,-29269,14372,-29447,14009,-29622,13645,-29791,13278,-29956,12909,-30117,12539,-30273,12166,-30425,11792,-30572,11416,-30714,11038,-30852,10659,-30985,10278,-31114,9895,-31237,9511,-31357,9126,-31471,8739,-31581,8351,-31685,7961,-31786,7571,-31881,7179,-31971,6786,-32057,6392,-32138,5997,-32214,5601,-32285,5205,-32351,4807,-32413,4409,-32469,4011,-32521,3611,-32568,3211,-32610,2811,-32647,2410,-32679,2009,-32706,1607,-32728,1206,-32745,804,-32758,402,-32765,0,-32767,-403,-32765,-805,-32758,-1207,-32745,-1608,-32728,-2010,-32706,-2411,-32679,-2812,-32647,-3212,-32610,-3612,-32568,-4012,-32521,-4410,-32469,-4808,-32413,-5206,-32351,-5602,-32285,-5998,-32214,-6393,-32138,-6787,-32057,-7180,-31971,-7572,-31881,-7962,-31786,-8352,-31685,-8740,-31581,-9127,-31471,-9512,-31357,-9896,-31237,-10279,-31114,-10660,-30985,-11039,-30852,-11417,-30714,-11793,-30572,-12167,-30425,-12540,-30273,-12910,-30117,-13279,-29956,-13646,-29791,-14010,-29622,-14373,-29447,-14733,-29269,-15091,-29086,-15447,-28898,-15800,-28707,-16151,-28511,-16500,-28310,-16846,-28106,-17190,-27897,-17531,-27684,-17869,-27467,-18205,-27245,-18538,-27020,-18868,-26790,-19195,-26557,-19520,-26319,-19841,-26078,-20160,-25832,-20475,-25583,-20788,-25330,-21097,-25073,-21403,-24812,-21706,-24547,-22005,-24279,-22302,-24007,-22595,-23732,-22884,-23453,-23170,-23170,-23453,-22884,-23732,-22595,-24007,-22302,-24279,-22005,-24547,-21706,-24812,-21403,-25073,-21097,-25330,-20788,-25583,-20475,-25832,-20160,-26078,-19841,-26319,-19520,-26557,-19195,-26790,-18868,-27020,-18538,-27245,-18205,-27467,-17869,-27684,-17531,-27897,-17190,-28106,-16846,-28310,-16500,-28511,-16151,-28707,-15800,-28898,-15447,-29086,-15091,-29269,-14733,-29447,-14373,-29622,-14010,-29791,-13646,-29956,-13279,-30117,-12910,-30273,-12540,-30425,-12167,-30572,-11793,-30714,-11417,-30852,-11039,-30985,-10660,-31114,-10279,-31237,-9896,-31357,-9512,-31471,-9127,-31581,-8740,-31685,-8352,-31786,-7962,-31881,-7572,-31971,-7180,-32057,-6787,-32138,-6393,-32214,-5998,-32285,-5602,-32351,-5206,-32413,-4808,-32469,-4410,-32521,-4012,-32568,-3612,-32610,-3212,-32647,-2812,-32679,-2411,-32706,-2010,-32728,-1608,-32745,-1207,-32758,-805,-32765,-403
-};
-
-static const int16_t tw512a[512] __attribute__((aligned(32))) = {
-  32767,0,32764,403,32757,805,32744,1207,32727,1608,32705,2010,32678,2411,32646,2812,32609,3212,32567,3612,32520,4012,32468,4410,32412,4808,32350,5206,32284,5602,32213,5998,32137,6393,32056,6787,31970,7180,31880,7572,31785,7962,31684,8352,31580,8740,31470,9127,31356,9512,31236,9896,31113,10279,30984,10660,30851,11039,30713,11417,30571,11793,30424,12167,30272,12540,30116,12910,29955,13279,29790,13646,29621,14010,29446,14373,29268,14733,29085,15091,28897,15447,28706,15800,28510,16151,28309,16500,28105,16846,27896,17190,27683,17531,27466,17869,27244,18205,27019,18538,26789,18868,26556,19195,26318,19520,26077,19841,25831,20160,25582,20475,25329,20788,25072,21097,24811,21403,24546,21706,24278,22005,24006,22302,23731,22595,23452,22884,23169,23170,22883,23453,22594,23732,22301,24007,22004,24279,21705,24547,21402,24812,21096,25073,20787,25330,20474,25583,20159,25832,19840,26078,19519,26319,19194,26557,18867,26790,18537,27020,18204,27245,17868,27467,17530,27684,17189,27897,16845,28106,16499,28310,16150,28511,15799,28707,15446,28898,15090,29086,14732,29269,14372,29447,14009,29622,13645,29791,13278,29956,12909,30117,12539,30273,12166,30425,11792,30572,11416,30714,11038,30852,10659,30985,10278,31114,9895,31237,9511,31357,9126,31471,8739,31581,8351,31685,7961,31786,7571,31881,7179,31971,6786,32057,6392,32138,5997,32214,5601,32285,5205,32351,4807,32413,4409,32469,4011,32521,3611,32568,3211,32610,2811,32647,2410,32679,2009,32706,1607,32728,1206,32745,804,32758,402,32765,0,32767,-403,32765,-805,32758,-1207,32745,-1608,32728,-2010,32706,-2411,32679,-2812,32647,-3212,32610,-3612,32568,-4012,32521,-4410,32469,-4808,32413,-5206,32351,-5602,32285,-5998,32214,-6393,32138,-6787,32057,-7180,31971,-7572,31881,-7962,31786,-8352,31685,-8740,31581,-9127,31471,-9512,31357,-9896,31237,-10279,31114,-10660,30985,-11039,30852,-11417,30714,-11793,30572,-12167,30425,-12540,30273,-12910,30117,-13279,29956,-13646,29791,-14010,29622,-14373,29447,-14733,29269,-15091,29086,-15447,28898,-15800,28707,-16151,28511,-16500,28310,-16846,28106,-17190,27897,-17531,27684,-17869,27467,-18205,27245,-18538,27020,-18868,26790,-19195,26557,-19520,26319,-19841,26078,-20160,25832,-20475,25583,-20788,25330,-21097,25073,-21403,24812,-21706,24547,-22005,24279,-22302,24007,-22595,23732,-22884,23453,-23170,23170,-23453,22884,-23732,22595,-24007,22302,-24279,22005,-24547,21706,-24812,21403,-25073,21097,-25330,20788,-25583,20475,-25832,20160,-26078,19841,-26319,19520,-26557,19195,-26790,18868,-27020,18538,-27245,18205,-27467,17869,-27684,17531,-27897,17190,-28106,16846,-28310,16500,-28511,16151,-28707,15800,-28898,15447,-29086,15091,-29269,14733,-29447,14373,-29622,14010,-29791,13646,-29956,13279,-30117,12910,-30273,12540,-30425,12167,-30572,11793,-30714,11417,-30852,11039,-30985,10660,-31114,10279,-31237,9896,-31357,9512,-31471,9127,-31581,8740,-31685,8352,-31786,7962,-31881,7572,-31971,7180,-32057,6787,-32138,6393,-32214,5998,-32285,5602,-32351,5206,-32413,4808,-32469,4410,-32521,4012,-32568,3612,-32610,3212,-32647,2812,-32679,2411,-32706,2010,-32728,1608,-32745,1207,-32758,805,-32765,403
-};
-
-
-
-static const int16_t tw512b[512] __attribute__((aligned(32))) = {
-  0,32767,-403,32764,-805,32757,-1207,32744,-1608,32727,-2010,32705,-2411,32678,-2812,32646,-3212,32609,-3612,32567,-4012,32520,-4410,32468,-4808,32412,-5206,32350,-5602,32284,-5998,32213,-6393,32137,-6787,32056,-7180,31970,-7572,31880,-7962,31785,-8352,31684,-8740,31580,-9127,31470,-9512,31356,-9896,31236,-10279,31113,-10660,30984,-11039,30851,-11417,30713,-11793,30571,-12167,30424,-12540,30272,-12910,30116,-13279,29955,-13646,29790,-14010,29621,-14373,29446,-14733,29268,-15091,29085,-15447,28897,-15800,28706,-16151,28510,-16500,28309,-16846,28105,-17190,27896,-17531,27683,-17869,27466,-18205,27244,-18538,27019,-18868,26789,-19195,26556,-19520,26318,-19841,26077,-20160,25831,-20475,25582,-20788,25329,-21097,25072,-21403,24811,-21706,24546,-22005,24278,-22302,24006,-22595,23731,-22884,23452,-23170,23169,-23453,22883,-23732,22594,-24007,22301,-24279,22004,-24547,21705,-24812,21402,-25073,21096,-25330,20787,-25583,20474,-25832,20159,-26078,19840,-26319,19519,-26557,19194,-26790,18867,-27020,18537,-27245,18204,-27467,17868,-27684,17530,-27897,17189,-28106,16845,-28310,16499,-28511,16150,-28707,15799,-28898,15446,-29086,15090,-29269,14732,-29447,14372,-29622,14009,-29791,13645,-29956,13278,-30117,12909,-30273,12539,-30425,12166,-30572,11792,-30714,11416,-30852,11038,-30985,10659,-31114,10278,-31237,9895,-31357,9511,-31471,9126,-31581,8739,-31685,8351,-31786,7961,-31881,7571,-31971,7179,-32057,6786,-32138,6392,-32214,5997,-32285,5601,-32351,5205,-32413,4807,-32469,4409,-32521,4011,-32568,3611,-32610,3211,-32647,2811,-32679,2410,-32706,2009,-32728,1607,-32745,1206,-32758,804,-32765,402,-32767,0,-32765,-403,-32758,-805,-32745,-1207,-32728,-1608,-32706,-2010,-32679,-2411,-32647,-2812,-32610,-3212,-32568,-3612,-32521,-4012,-32469,-4410,-32413,-4808,-32351,-5206,-32285,-5602,-32214,-5998,-32138,-6393,-32057,-6787,-31971,-7180,-31881,-7572,-31786,-7962,-31685,-8352,-31581,-8740,-31471,-9127,-31357,-9512,-31237,-9896,-31114,-10279,-30985,-10660,-30852,-11039,-30714,-11417,-30572,-11793,-30425,-12167,-30273,-12540,-30117,-12910,-29956,-13279,-29791,-13646,-29622,-14010,-29447,-14373,-29269,-14733,-29086,-15091,-28898,-15447,-28707,-15800,-28511,-16151,-28310,-16500,-28106,-16846,-27897,-17190,-27684,-17531,-27467,-17869,-27245,-18205,-27020,-18538,-26790,-18868,-26557,-19195,-26319,-19520,-26078,-19841,-25832,-20160,-25583,-20475,-25330,-20788,-25073,-21097,-24812,-21403,-24547,-21706,-24279,-22005,-24007,-22302,-23732,-22595,-23453,-22884,-23170,-23170,-22884,-23453,-22595,-23732,-22302,-24007,-22005,-24279,-21706,-24547,-21403,-24812,-21097,-25073,-20788,-25330,-20475,-25583,-20160,-25832,-19841,-26078,-19520,-26319,-19195,-26557,-18868,-26790,-18538,-27020,-18205,-27245,-17869,-27467,-17531,-27684,-17190,-27897,-16846,-28106,-16500,-28310,-16151,-28511,-15800,-28707,-15447,-28898,-15091,-29086,-14733,-29269,-14373,-29447,-14010,-29622,-13646,-29791,-13279,-29956,-12910,-30117,-12540,-30273,-12167,-30425,-11793,-30572,-11417,-30714,-11039,-30852,-10660,-30985,-10279,-31114,-9896,-31237,-9512,-31357,-9127,-31471,-8740,-31581,-8352,-31685,-7962,-31786,-7572,-31881,-7180,-31971,-6787,-32057,-6393,-32138,-5998,-32214,-5602,-32285,-5206,-32351,-4808,-32413,-4410,-32469,-4012,-32521,-3612,-32568,-3212,-32610,-2812,-32647,-2411,-32679,-2010,-32706,-1608,-32728,-1207,-32745,-805,-32758,-403,-32765
-};
-
-static const int16_t tw512c[512] __attribute__((aligned(32))) = {
-  0,32767,403,32764,805,32757,1207,32744,1608,32727,2010,32705,2411,32678,2812,32646,3212,32609,3612,32567,4012,32520,4410,32468,4808,32412,5206,32350,5602,32284,5998,32213,6393,32137,6787,32056,7180,31970,7572,31880,7962,31785,8352,31684,8740,31580,9127,31470,9512,31356,9896,31236,10279,31113,10660,30984,11039,30851,11417,30713,11793,30571,12167,30424,12540,30272,12910,30116,13279,29955,13646,29790,14010,29621,14373,29446,14733,29268,15091,29085,15447,28897,15800,28706,16151,28510,16500,28309,16846,28105,17190,27896,17531,27683,17869,27466,18205,27244,18538,27019,18868,26789,19195,26556,19520,26318,19841,26077,20160,25831,20475,25582,20788,25329,21097,25072,21403,24811,21706,24546,22005,24278,22302,24006,22595,23731,22884,23452,23170,23169,23453,22883,23732,22594,24007,22301,24279,22004,24547,21705,24812,21402,25073,21096,25330,20787,25583,20474,25832,20159,26078,19840,26319,19519,26557,19194,26790,18867,27020,18537,27245,18204,27467,17868,27684,17530,27897,17189,28106,16845,28310,16499,28511,16150,28707,15799,28898,15446,29086,15090,29269,14732,29447,14372,29622,14009,29791,13645,29956,13278,30117,12909,30273,12539,30425,12166,30572,11792,30714,11416,30852,11038,30985,10659,31114,10278,31237,9895,31357,9511,31471,9126,31581,8739,31685,8351,31786,7961,31881,7571,31971,7179,32057,6786,32138,6392,32214,5997,32285,5601,32351,5205,32413,4807,32469,4409,32521,4011,32568,3611,32610,3211,32647,2811,32679,2410,32706,2009,32728,1607,32745,1206,32758,804,32765,402,32767,0,32765,-403,32758,-805,32745,-1207,32728,-1608,32706,-2010,32679,-2411,32647,-2812,32610,-3212,32568,-3612,32521,-4012,32469,-4410,32413,-4808,32351,-5206,32285,-5602,32214,-5998,32138,-6393,32057,-6787,31971,-7180,31881,-7572,31786,-7962,31685,-8352,31581,-8740,31471,-9127,31357,-9512,31237,-9896,31114,-10279,30985,-10660,30852,-11039,30714,-11417,30572,-11793,30425,-12167,30273,-12540,30117,-12910,29956,-13279,29791,-13646,29622,-14010,29447,-14373,29269,-14733,29086,-15091,28898,-15447,28707,-15800,28511,-16151,28310,-16500,28106,-16846,27897,-17190,27684,-17531,27467,-17869,27245,-18205,27020,-18538,26790,-18868,26557,-19195,26319,-19520,26078,-19841,25832,-20160,25583,-20475,25330,-20788,25073,-21097,24812,-21403,24547,-21706,24279,-22005,24007,-22302,23732,-22595,23453,-22884,23170,-23170,22884,-23453,22595,-23732,22302,-24007,22005,-24279,21706,-24547,21403,-24812,21097,-25073,20788,-25330,20475,-25583,20160,-25832,19841,-26078,19520,-26319,19195,-26557,18868,-26790,18538,-27020,18205,-27245,17869,-27467,17531,-27684,17190,-27897,16846,-28106,16500,-28310,16151,-28511,15800,-28707,15447,-28898,15091,-29086,14733,-29269,14373,-29447,14010,-29622,13646,-29791,13279,-29956,12910,-30117,12540,-30273,12167,-30425,11793,-30572,11417,-30714,11039,-30852,10660,-30985,10279,-31114,9896,-31237,9512,-31357,9127,-31471,8740,-31581,8352,-31685,7962,-31786,7572,-31881,7180,-31971,6787,-32057,6393,-32138,5998,-32214,5602,-32285,5206,-32351,4808,-32413,4410,-32469,4012,-32521,3612,-32568,3212,-32610,2812,-32647,2411,-32679,2010,-32706,1608,-32728,1207,-32745,805,-32758,403,-32765
 };
 
 void dft512(int16_t *x,int16_t *y,unsigned char scale)
@@ -4790,30 +4363,30 @@ simd_q15_t *const W3_12=(simd_q15_t *)W3_12s;
 simd_q15_t *const W4_12=(simd_q15_t *)W4_12s;
 simd_q15_t *const W6_12=(simd_q15_t *)W6_12s;
 
-static inline void dft12f(simd_q15_t *x0,
-                          simd_q15_t *x1,
-                          simd_q15_t *x2,
-                          simd_q15_t *x3,
-                          simd_q15_t *x4,
-                          simd_q15_t *x5,
-                          simd_q15_t *x6,
-                          simd_q15_t *x7,
-                          simd_q15_t *x8,
-                          simd_q15_t *x9,
-                          simd_q15_t *x10,
-                          simd_q15_t *x11,
-                          simd_q15_t *y0,
-                          simd_q15_t *y1,
-                          simd_q15_t *y2,
-                          simd_q15_t *y3,
-                          simd_q15_t *y4,
-                          simd_q15_t *y5,
-                          simd_q15_t *y6,
-                          simd_q15_t *y7,
-                          simd_q15_t *y8,
-                          simd_q15_t *y9,
-                          simd_q15_t *y10,
-                          simd_q15_t *y11) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void dft12f(simd_q15_t *x0,
+                                                         simd_q15_t *x1,
+                                                         simd_q15_t *x2,
+                                                         simd_q15_t *x3,
+                                                         simd_q15_t *x4,
+                                                         simd_q15_t *x5,
+                                                         simd_q15_t *x6,
+                                                         simd_q15_t *x7,
+                                                         simd_q15_t *x8,
+                                                         simd_q15_t *x9,
+                                                         simd_q15_t *x10,
+                                                         simd_q15_t *x11,
+                                                         simd_q15_t *y0,
+                                                         simd_q15_t *y1,
+                                                         simd_q15_t *y2,
+                                                         simd_q15_t *y3,
+                                                         simd_q15_t *y4,
+                                                         simd_q15_t *y5,
+                                                         simd_q15_t *y6,
+                                                         simd_q15_t *y7,
+                                                         simd_q15_t *y8,
+                                                         simd_q15_t *y9,
+                                                         simd_q15_t *y10,
+                                                         simd_q15_t *y11)
 {
 
 
@@ -4960,30 +4533,30 @@ simd256_q15_t * const W3_12_256=(simd256_q15_t *)W3_12s_256;
 simd256_q15_t * const W4_12_256=(simd256_q15_t *)W4_12s_256;
 simd256_q15_t * const W6_12_256=(simd256_q15_t *)W6_12s_256;
 
-static inline void dft12f_simd256(simd256_q15_t *x0,
-				  simd256_q15_t *x1,
-				  simd256_q15_t *x2,
-				  simd256_q15_t *x3,
-				  simd256_q15_t *x4,
-				  simd256_q15_t *x5,
-				  simd256_q15_t *x6,
-				  simd256_q15_t *x7,
-				  simd256_q15_t *x8,
-				  simd256_q15_t *x9,
-				  simd256_q15_t *x10,
-				  simd256_q15_t *x11,
-				  simd256_q15_t *y0,
-				  simd256_q15_t *y1,
-				  simd256_q15_t *y2,
-				  simd256_q15_t *y3,
-				  simd256_q15_t *y4,
-				  simd256_q15_t *y5,
-				  simd256_q15_t *y6,
-				  simd256_q15_t *y7,
-				  simd256_q15_t *y8,
-				  simd256_q15_t *y9,
-				  simd256_q15_t *y10,
-				  simd256_q15_t *y11) __attribute__((always_inline))
+__attribute__((always_inline)) static inline void dft12f_simd256(simd256_q15_t *x0,
+                                                                 simd256_q15_t *x1,
+                                                                 simd256_q15_t *x2,
+                                                                 simd256_q15_t *x3,
+                                                                 simd256_q15_t *x4,
+                                                                 simd256_q15_t *x5,
+                                                                 simd256_q15_t *x6,
+                                                                 simd256_q15_t *x7,
+                                                                 simd256_q15_t *x8,
+                                                                 simd256_q15_t *x9,
+                                                                 simd256_q15_t *x10,
+                                                                 simd256_q15_t *x11,
+                                                                 simd256_q15_t *y0,
+                                                                 simd256_q15_t *y1,
+                                                                 simd256_q15_t *y2,
+                                                                 simd256_q15_t *y3,
+                                                                 simd256_q15_t *y4,
+                                                                 simd256_q15_t *y5,
+                                                                 simd256_q15_t *y6,
+                                                                 simd256_q15_t *y7,
+                                                                 simd256_q15_t *y8,
+                                                                 simd256_q15_t *y9,
+                                                                 simd256_q15_t *y10,
+                                                                 simd256_q15_t *y11)
 {
 
 
@@ -5185,7 +4758,7 @@ void dft24(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[1]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[1]);
 
     for (i=0; i<24; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5307,7 +4880,7 @@ void dft36(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[2]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[2]);
 
     for (i=0; i<36; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5467,7 +5040,7 @@ void dft48(int16_t *x, int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag == 1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[3]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[3]);
 
     for (i=0; i<48; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5650,7 +5223,7 @@ void dft60(int16_t *x,int16_t *y,unsigned char scale)
   }
 
   if (scale == 1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[4]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[4]);
 
     for (i=0; i<60; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5694,7 +5267,7 @@ void dft72(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[5]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[5]);
 
     for (i=0; i<72; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5739,7 +5312,7 @@ void dft96(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[6]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[6]);
 
     for (i=0; i<96; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5789,7 +5362,7 @@ void dft108(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[7]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[7]);
 
     for (i=0; i<108; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5830,7 +5403,7 @@ void dft120(int16_t *x,int16_t *y, unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[8]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[8]);
 
     for (i=0; i<120; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5880,7 +5453,7 @@ void dft144(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[9]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[9]);
 
     for (i=0; i<144; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5931,7 +5504,7 @@ void dft180(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[10]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[10]);
 
     for (i=0; i<180; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -5989,7 +5562,7 @@ void dft192(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[11]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[11]);
 
     for (i=0; i<192; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6040,7 +5613,7 @@ void dft216(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[12]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[12]);
 
     for (i=0; i<216; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6098,7 +5671,7 @@ void dft240(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
 
     for (i=0; i<240; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6149,7 +5722,7 @@ void dft288(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<288; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6214,7 +5787,7 @@ void dft300(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
 
     for (i=0; i<300; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6264,7 +5837,7 @@ void dft324(int16_t *x,int16_t *y,unsigned char scale_flag)  // 108 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<324; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6314,7 +5887,7 @@ void dft360(int16_t *x,int16_t *y,unsigned char scale_flag)  // 120 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<360; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6371,7 +5944,7 @@ void dft384(int16_t *x,int16_t *y,unsigned char scale_flag)  // 96 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<384; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6427,7 +6000,7 @@ void dft432(int16_t *x,int16_t *y,unsigned char scale_flag)  // 108 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<432; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6483,7 +6056,7 @@ void dft480(int16_t *x,int16_t *y,unsigned char scale_flag)  // 120 x 4
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<480; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6534,7 +6107,7 @@ void dft540(int16_t *x,int16_t *y,unsigned char scale_flag)  // 180 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<540; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6585,7 +6158,7 @@ void dft576(int16_t *x,int16_t *y,unsigned char scale_flag)  // 192 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<576; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6629,7 +6202,7 @@ void dft600(int16_t *x,int16_t *y,unsigned char scale_flag)  // 300 x 2
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(ONE_OVER_SQRT2_Q15);
+    const simd_q15_t norm128 = set1_int16(ONE_OVER_SQRT2_Q15);
 
     for (i=0; i<600; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6680,7 +6253,7 @@ void dft648(int16_t *x,int16_t *y,unsigned char scale_flag)  // 216 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<648; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6739,7 +6312,7 @@ void dft720(int16_t *x,int16_t *y,unsigned char scale_flag)  // 180 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<720; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6796,7 +6369,7 @@ void dft768p(int16_t *x,int16_t *y,unsigned char scale_flag) { // 192x 4;
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<768; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6901,7 +6474,7 @@ void dft864(int16_t *x,int16_t *y,unsigned char scale_flag)  // 288 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<864; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -6951,7 +6524,7 @@ void dft900(int16_t *x,int16_t *y,unsigned char scale_flag)  // 300 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<900; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7010,7 +6583,7 @@ void dft960(int16_t *x,int16_t *y,unsigned char scale_flag)  // 240 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<960; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7061,7 +6634,7 @@ void dft972(int16_t *x,int16_t *y,unsigned char scale_flag)  // 324 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<972; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7111,7 +6684,7 @@ void dft1080(int16_t *x,int16_t *y,unsigned char scale_flag)  // 360 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1080; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7169,7 +6742,7 @@ void dft1152(int16_t *x,int16_t *y,unsigned char scale_flag)  // 288 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
 
     for (i=0; i<1152; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7227,7 +6800,7 @@ void dft1200(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(16384);//dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(16384); // dft_norm_table[13]);
     for (i=0; i<1200; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
     }
@@ -7278,7 +6851,7 @@ void dft1296(int16_t *x,int16_t *y,unsigned char scale_flag) //432 * 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1296; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7329,7 +6902,7 @@ void dft1440(int16_t *x,int16_t *y,unsigned char scale_flag)  // 480 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1440; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7394,7 +6967,7 @@ void dft1500(int16_t *x,int16_t *y,unsigned char scale_flag)
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
 
     for (i=0; i<1500; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7444,7 +7017,7 @@ void dft1620(int16_t *x,int16_t *y,unsigned char scale_flag)  // 540 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1620; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7494,7 +7067,7 @@ void dft1728(int16_t *x,int16_t *y,unsigned char scale_flag)  // 576 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1728; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7544,7 +7117,7 @@ void dft1800(int16_t *x,int16_t *y,unsigned char scale_flag)  // 600 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1800; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7601,7 +7174,7 @@ void dft1920(int16_t *x,int16_t *y,unsigned char scale_flag)  // 480 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
     for (i=0; i<1920; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
     }
@@ -7650,7 +7223,7 @@ void dft1944(int16_t *x,int16_t *y,unsigned char scale_flag)  // 648 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<1944; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7700,7 +7273,7 @@ void dft2160(int16_t *x,int16_t *y,unsigned char scale_flag)  // 720 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2160; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7750,7 +7323,7 @@ void dft2304(int16_t *x,int16_t *y,unsigned char scale_flag)  // 768 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2304; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7808,7 +7381,7 @@ void dft2400(int16_t *x,int16_t *y,unsigned char scale_flag)  // 600 x 4
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[13]);
     for (i=0; i<2400; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
     }
@@ -7857,7 +7430,7 @@ void dft2592(int16_t *x,int16_t *y,unsigned char scale_flag)  // 864 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2592; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7907,7 +7480,7 @@ void dft2700(int16_t *x,int16_t *y,unsigned char scale_flag)  // 900 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2700; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -7957,7 +7530,7 @@ void dft2880(int16_t *x,int16_t *y,unsigned char scale_flag)  // 960 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t  norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2880; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -8007,7 +7580,7 @@ void dft2916(int16_t *x,int16_t *y,unsigned char scale_flag)  // 972 x 3
   }
 
   if (scale_flag==1) {
-    simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<2916; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -8072,7 +7645,7 @@ void dft3000(int16_t *x,int16_t *y,unsigned char scale_flag) // 600 * 5
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[15]);
 
     for (i=0; i<3000; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);
@@ -8122,7 +7695,7 @@ void dft3240(int16_t *x,int16_t *y,unsigned char scale_flag)  // 1080 x 3
   }
 
   if (scale_flag==1) {
-   simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
+    const simd_q15_t norm128 = set1_int16(dft_norm_table[14]);
 
     for (i=0; i<3240; i++) {
       y128[i] = mulhi_int16(y128[i],norm128);

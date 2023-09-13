@@ -31,7 +31,7 @@
 
 #ifndef __NR_LDPC_CNPROC__H__
 #define __NR_LDPC_CNPROC__H__
-
+#include <simde/x86/avx512.h>
 #define conditional_negate(a, b, z) simde_mm512_mask_sub_epi8(a, simde_mm512_movepi8_mask(b), z, a)
 static inline void nrLDPC_cnProc_BG2_AVX512(t_nrLDPC_lut* p_lut, int8_t* cnProcBuf, int8_t* cnProcBufRes, uint16_t Z)
 {

@@ -24,8 +24,8 @@
 #include <stdint.h>
 #include "../../nrLDPCdecoder_defs.h"
 
-#define AVOID_MM256_SIGN 1
-#define DROP_MAXLLR 1
+//#define AVOID_MM256_SIGN 1
+//#define DROP_MAXLLR 1
 void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 {
   const char *ratestr[3]={"13","23","89"};
@@ -214,7 +214,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -289,7 +289,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -364,7 +364,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -442,7 +442,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -521,7 +521,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -600,7 +600,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -680,7 +680,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif
@@ -714,7 +714,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 					     {0,48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,816,864}, {0,48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,864},
 					     {0,48,96,144,192,240,288,336,384,432,480,528,576,624,672,720,768,816}};
 
- 
+
   if (lut_numCnInCnGroups[8] > 0)
     {
       // Number of groups of 32 CNs for parallel processing
@@ -763,7 +763,7 @@ void nrLDPC_cnProc_BG1_generator_AVX2(const char* dir, int R)
 	      
 	      //                sgn  = simde_mm256_sign_epi8(sgn, ymm0);
 #ifndef AVOID_MM256_SIGN
-  	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
+	      fprintf(fd,"                sgn  = simde_mm256_sign_epi8(sgn, ymm0);\n");
 #else
 	      fprintf(fd,"                sgn  = simde_mm256_xor_si256(sgn, ymm0);\n");
 #endif

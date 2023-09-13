@@ -267,7 +267,7 @@ static void nr_processDLSegment(void *arg)
     //Saturate coded bits before decoding into 8 bits values
     simde__m128i *pv = (simde__m128i*)&z;
     simde__m128i *pl = (simde__m128i*)&l;
-    for (i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
+    for (int i=0, j=0; j < ((kc*harq_process->Z)>>4)+1;  i+=2, j++) {
       pl[j] = simde_mm_packs_epi16(pv[i],pv[i+1]);
     }
 
