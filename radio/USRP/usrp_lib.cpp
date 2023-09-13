@@ -754,7 +754,7 @@ static int trx_usrp_read(openair0_device *device, openair0_timestamp *ptimestamp
       std::vector<void *> buff_ptrs;
 
       for (int i=0; i<cc; i++) buff_ptrs.push_back(buff_tmp[i]+samples_received);
-      samples_received += s->rx_stream->recv(buff_ptrs, nsamps, s->rx_md);
+      samples_received += s->rx_stream->recv(buff_ptrs, nsamps-samples_received, s->rx_md);
     } else {
       // receive a single channel (e.g. from connector RF A)
 
