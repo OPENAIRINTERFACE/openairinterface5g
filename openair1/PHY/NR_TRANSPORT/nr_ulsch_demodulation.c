@@ -1931,7 +1931,7 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
 
   while (gNB->nbSymb > 0) 
   {
-    notifiedFIFO_elt_t *req=pullTpool(&gNB->respPuschSymb, &gNB->threadPool);
+    notifiedFIFO_elt_t *req = pullTpool(&gNB->respPuschSymb, &gNB->threadPool);
     gNB->nbSymb--;
     delNotifiedFIFO_elt(req);
   }
