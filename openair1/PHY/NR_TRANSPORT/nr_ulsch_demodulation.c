@@ -604,7 +604,7 @@ void nr_ulsch_channel_compensation(c16_t *rxFext,
                                    c16_t *ul_ch_maga,
                                    c16_t *ul_ch_magb,
                                    c16_t *ul_ch_magc,
-                                   c16_t *rxComp,
+                                   int32_t **rxComp,
                                    c16_t *rho,
                                    NR_DL_FRAME_PARMS *frame_parms,
                                    uint32_t symbol,
@@ -640,9 +640,9 @@ void nr_ulsch_channel_compensation(c16_t *rxFext,
   simde__m256i conj256 = simde_mm256_set_epi16(1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1,1,-1);
 
   int length_aligned = (length % 8) ? (8 - length % 8) : 0;
-  
+  int rxComp_aligned = ((nb_rb * 12) % 8) ? (8 - (nb_rb * 12) % 8) : 0;
   for (int aatx = 0; aatx < nrOfLayers; aatx++) {
-    simde__m256i *rxComp_256 =     (simde__m256i*)     &rxComp[aatx * (length + length_aligned)];
+    simde__m256i *rxComp_256 =     (simde__m256i*)     &rxComp[aatx * nb_rx_ant][symbol * (nb_rb * 12 + rxComp_aligned)];
     simde__m256i *rxF_ch_maga_256 = (simde__m256i*)&ul_ch_maga[aatx * (length + length_aligned)];
     simde__m256i *rxF_ch_magb_256 = (simde__m256i*)&ul_ch_magb[aatx * (length + length_aligned)];
     simde__m256i *rxF_ch_magc_256 = (simde__m256i*)&ul_ch_magc[aatx * (length + length_aligned)];
@@ -1382,13 +1382,14 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
 
   simde__m128i *determ_fin_128 = (simde__m128i *)&determ_fin[0];
 
-  simde__m128i *rxdataF_comp128_0 = (simde__m128i *)&((int *)rxdataF_comp)[0 * (length + length_aligned)];
-  simde__m128i *rxdataF_comp128_1 = (simde__m128i *)&((int *)rxdataF_comp)[1 * (length + length_aligned)];
   simde__m128i *after_mf_a_128 = (simde__m128i *)af_mf_00;
   simde__m128i *after_mf_b_128 = (simde__m128i *)af_mf_01;
   simde__m128i *after_mf_c_128 = (simde__m128i *)af_mf_10;
   simde__m128i *after_mf_d_128 = (simde__m128i *)af_mf_11;
-
+  
+  int rxComp_aligned = ((nb_rb * 12) % 8) ? (8 - (nb_rb * 12) % 8) : 0;
+  simde__m128i *rxdataF_comp128_0 = (simde__m128i *)&rxdataF_comp[0][symbol * (nb_rb * 12 + rxComp_aligned)];
+  simde__m128i *rxdataF_comp128_1 = (simde__m128i *)&rxdataF_comp[n_rx][symbol * (nb_rb * 12 + rxComp_aligned)];
 
   if (mod_order > 2) {
     if (mod_order == 4) {
@@ -1496,24 +1497,24 @@ uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
    return(0);
 }
 
-void inner_rx (PHY_VARS_gNB *gNB,
-               int ulsch_id,
-               int slot,
-               NR_DL_FRAME_PARMS *frame_parms,
-               NR_gNB_PUSCH *pusch_vars, 
-               nfapi_nr_pusch_pdu_t *rel15_ul,
-               c16_t **rxF, 
-               c16_t **ul_ch, 
-               int16_t **llr,
-               int nb_layer,
-               int nb_rx_ant, 
-               int soffset,
-               int length, 
-               int symbol,
-               int short nb_rb,
-               int dmrs_symbol_flag,
-               int output_shift,
-               uint32_t nvar)
+static void inner_rx (PHY_VARS_gNB *gNB,
+                      int ulsch_id,
+                      int slot,
+                      NR_DL_FRAME_PARMS *frame_parms,
+                      NR_gNB_PUSCH *pusch_vars, 
+                      nfapi_nr_pusch_pdu_t *rel15_ul,
+                      c16_t **rxF, 
+                      c16_t **ul_ch, 
+                      int16_t **llr,
+                      int nb_layer,
+                      int nb_rx_ant, 
+                      int soffset,
+                      int length, 
+                      int symbol,
+                      int short nb_rb,
+                      int dmrs_symbol_flag,
+                      int output_shift,
+                      uint32_t nvar)
 {
   int length_aligned = (length % 8) ? (8 - length % 8) : 0;
   
@@ -1539,18 +1540,21 @@ void inner_rx (PHY_VARS_gNB *gNB,
   c16_t rxF_ch_magb[nb_layer][length + length_aligned] __attribute__((aligned(32)));
   c16_t rxF_ch_magc[nb_layer][length + length_aligned] __attribute__((aligned(32)));
 
+  int rxComp_aligned = ((nb_rb * 12) % 8) ? (8 - (nb_rb * 12) % 8) : 0;
   memset(rho, 0, sizeof(c16_t) * nb_layer * nb_layer* (length + length_aligned));
   memset(rxComp, 0, sizeof(c16_t) * nb_layer * (length + length_aligned));
   memset(rxF_ch_maga, 0, sizeof(c16_t) * nb_layer * (length + length_aligned));
   memset(rxF_ch_magb, 0, sizeof(c16_t) * nb_layer * (length + length_aligned));
   memset(rxF_ch_magc, 0, sizeof(c16_t) * nb_layer * (length + length_aligned));
+  for (int i = 0; i < nb_layer; i++)
+    memset(&pusch_vars->rxdataF_comp[i*nb_rx_ant][symbol * (nb_rb * 12 + rxComp_aligned)], 0, sizeof(int32_t) * (nb_rb * 12 + rxComp_aligned));
 
   nr_ulsch_channel_compensation((c16_t*)rxFext,
                                 (c16_t*)chFext,
                                 (c16_t*)rxF_ch_maga,
                                 (c16_t*)rxF_ch_magb,
                                 (c16_t*)rxF_ch_magc,
-                                (c16_t*)rxComp,
+                                pusch_vars->rxdataF_comp, // (c16_t*)rxComp,
                                 (nb_layer == 1) ? NULL : (c16_t*)rho,
                                 frame_parms,
                                 symbol,
@@ -1563,25 +1567,26 @@ void inner_rx (PHY_VARS_gNB *gNB,
 
   if (nb_layer == 1 && rel15_ul->transform_precoding == transformPrecoder_enabled && rel15_ul->qam_mod_order <= 6) {
     nr_freq_equalization(frame_parms,
-                        (int *)rxComp,
+                        (int *)&pusch_vars->rxdataF_comp[0][symbol * (nb_rb * 12 + rxComp_aligned)],
                         (int *)rxF_ch_maga,
                         (int *)rxF_ch_magb,
                         symbol,
                         length,
                         rel15_ul->qam_mod_order);
-    nr_idft((int32_t*)rxComp, length);
+    nr_idft((int32_t*)&pusch_vars->rxdataF_comp[0][symbol * (nb_rb * 12 + rxComp_aligned)], length);
   }
-  // if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
-  //   nr_pusch_ptrs_processing(gNB,
-  //                            frame_parms,
-  //                            rel15_ul,
-  //                            ulsch_id,
-  //                            slot,
-  //                            symbol,
-  //                            length);
-  //   // Subtract total PTRS RE's in the symbol from PUSCH RE's
-  //   length -= pusch_vars->ptrs_re_per_slot;
-  // }
+  if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
+    nr_pusch_ptrs_processing(gNB,
+                             frame_parms,
+                             rel15_ul,
+                             ulsch_id,
+                             slot,
+                             symbol,
+                             nb_rb * 12 + rxComp_aligned);
+    // Subtract total PTRS RE's in the symbol from PUSCH RE's
+    length -= pusch_vars->ptrs_re_per_slot;
+    pusch_vars->ul_valid_re_per_slot[symbol] -= pusch_vars->ptrs_re_per_slot;
+  }
 
   if (nb_layer == 2)
   {
@@ -1594,8 +1599,8 @@ void inner_rx (PHY_VARS_gNB *gNB,
       c16_t *ul_ch_mag1 = rxF_ch_maga[1];
       nr_ulsch_compute_ML_llr(pusch_vars,
                               symbol,
-                              rxComp[0],
-                              rxComp[1],
+                              (c16_t*)&pusch_vars->rxdataF_comp[0][symbol * (nb_rb * 12 + rxComp_aligned)],
+                              (c16_t*)&pusch_vars->rxdataF_comp[nb_rx_ant][symbol * (nb_rb * 12 + rxComp_aligned)],
                               ul_ch_mag0,
                               ul_ch_mag1,
                               llr_0,
@@ -1608,7 +1613,7 @@ void inner_rx (PHY_VARS_gNB *gNB,
     else 
     {
       nr_ulsch_mmse_2layers(frame_parms,
-                            (int **)rxComp,
+                            (int32_t **)pusch_vars->rxdataF_comp,
                             (int **)rxF_ch_maga, 
                             (int **)rxF_ch_magb, 
                             (int **)rxF_ch_magc, 
@@ -1624,7 +1629,7 @@ void inner_rx (PHY_VARS_gNB *gNB,
   }
   if (nb_layer != 2 || rel15_ul->qam_mod_order >= 6)
     for (int aatx = 0; aatx < nb_layer; aatx++) 
-      nr_ulsch_compute_llr((int32_t*)rxComp[aatx],
+      nr_ulsch_compute_llr((int32_t*)&pusch_vars->rxdataF_comp[aatx * nb_rx_ant][symbol * (nb_rb * 12 + rxComp_aligned)],
                           (int32_t*)rxF_ch_maga[aatx],
                           (int32_t*)rxF_ch_magb[aatx],
                           (int32_t*)rxF_ch_magc[aatx],
@@ -1646,7 +1651,6 @@ void nr_pusch_symbol_processing_noprecoding(void *arg)
   int ulsch_id = rdata->ulsch_id;
   int slot = rdata->slot;
   NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ulsch_id];
-  simde__m64 *s = (simde__m64 *)rdata->s;
   for (int symbol = rdata->startSymbol; symbol < rdata->startSymbol+rdata->numSymbols; symbol++) 
   {
     int dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
@@ -1684,21 +1688,22 @@ void nr_pusch_symbol_processing_noprecoding(void *arg)
              gNB->pusch_vars[ulsch_id].log2_maxh,
              rdata->nvar);
 
-    simde__m64 *llr_ptr_64;
+    simde__m64 *s = (simde__m64*)rdata->s;
+    int16_t *llr_ptr;
     if (rel15_ul->nrOfLayers == 1)
-      llr_ptr_64 = (simde__m64 *)&rdata->llr_layers[0][pusch_vars->llr_offset[symbol]];
+      llr_ptr = &rdata->llr_layers[0][pusch_vars->llr_offset[symbol]];
     else
     {
       // layer de-mapping
-      int16_t* llr_cw = &rdata->llr[pusch_vars->llr_offset[symbol] * rel15_ul->nrOfLayers];
+      llr_ptr = &rdata->llr[pusch_vars->llr_offset[symbol] * rel15_ul->nrOfLayers];
       for (int i = 0; i < (nb_re_pusch); i++) 
         for (int l = 0; l < rel15_ul->nrOfLayers; l++) 
           for (int m = 0; m < rel15_ul->qam_mod_order; m++) 
-            llr_cw[i*rel15_ul->nrOfLayers*rel15_ul->qam_mod_order+l*rel15_ul->qam_mod_order+m] = rdata->llr_layers[l][pusch_vars->llr_offset[symbol] + i*rel15_ul->qam_mod_order+m];
-      llr_ptr_64 = (simde__m64 *)llr_cw;
+            llr_ptr[i*rel15_ul->nrOfLayers*rel15_ul->qam_mod_order+l*rel15_ul->qam_mod_order+m] = rdata->llr_layers[l][pusch_vars->llr_offset[symbol] + i*rel15_ul->qam_mod_order+m];
     }
     // unscrambling
-    simde__m64 *llr64 = (simde__m64 *) &rdata->llr[pusch_vars->llr_offset[symbol] * rel15_ul->nrOfLayers];
+    simde__m64* llr_ptr_64 = (simde__m64*)llr_ptr;
+    simde__m64 *llr64 = (simde__m64*)&rdata->llr[pusch_vars->llr_offset[symbol] * rel15_ul->nrOfLayers];
     for (int i = 0; i < (nb_re_pusch * rel15_ul->qam_mod_order * rel15_ul->nrOfLayers) >> 2; i++) 
       llr64[i] = simde_mm_mullo_pi16(llr_ptr_64[i], s[i]);
   }

@@ -486,6 +486,7 @@ int nr_pusch_channel_estimation(PHY_VARS_gNB *gNB,
  *  2) Interpolate PTRS estimated value in TD after all PTRS symbols
  *  3) Compensated DMRS based estimated signal with PTRS estimation for slot
  *********************************************************************/
+// #define DEBUG_UL_PTRS
 void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               NR_DL_FRAME_PARMS *frame_parms,
                               nfapi_nr_pusch_pdu_t *rel15_ul,
@@ -495,7 +496,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
                               uint32_t nb_re_pusch)
 {
   NR_gNB_PUSCH *pusch_vars = &gNB->pusch_vars[ulsch_id];
-  //#define DEBUG_UL_PTRS 1
   int32_t *ptrs_re_symbol   = NULL;
   int8_t   ret = 0;
   uint8_t  symbInSlot       = rel15_ul->start_symbol_index + rel15_ul->nr_of_symbols;
@@ -573,13 +573,6 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
         }
       }
 
-#ifdef DEBUG_UL_PTRS
-      LOG_M("ptrsEstUl.m", "est", pusch_vars->ptrs_phase_per_slot[aarx], frame_parms->symbols_per_slot, 1, 1);
-      LOG_M("rxdataF_bf_ptrs_comp_ul.m","bf_ptrs_cmp",
-            &gNB->pusch_vars[0]->rxdataF_comp[aarx][rel15_ul->start_symbol_index * NR_NB_SC_PER_RB * rel15_ul->rb_size],
-            rel15_ul->nr_of_symbols * NR_NB_SC_PER_RB * rel15_ul->rb_size,1,1);
-#endif
-
       /*------------------------------------------------------------------------------------------------------- */
       /* 3) Compensated DMRS based estimated signal with PTRS estimation                                        */
       /*--------------------------------------------------------------------------------------------------------*/
@@ -590,15 +583,15 @@ void nr_pusch_ptrs_processing(PHY_VARS_gNB *gNB,
 #ifdef DEBUG_UL_PTRS
           printf("[PHY][UL][PTRS]: Rotate Symbol %2d with  %d + j* %d\n", i, phase_per_symbol[i].r,phase_per_symbol[i].i);
 #endif
-          rotate_cpx_vector((c16_t *)&pusch_vars->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+          rotate_cpx_vector((c16_t *)&pusch_vars->rxdataF_comp[aarx][i * nb_re_pusch],
                             &phase_per_symbol[i],
-                            (c16_t *)&pusch_vars->rxdataF_comp[aarx][(i * rel15_ul->rb_size * NR_NB_SC_PER_RB)],
+                            (c16_t *)&pusch_vars->rxdataF_comp[aarx][i * nb_re_pusch],
                             ((*nb_rb) * NR_NB_SC_PER_RB),
                             15);
-        }// if not DMRS Symbol
-      }// symbol loop
-    }// last symbol check
-  }//Antenna loop
+        } // if not DMRS Symbol
+      } // symbol loop
+    } // last symbol check
+  } // Antenna loop
 }
 
 uint32_t calc_power(const int16_t *x, const uint32_t size) {
