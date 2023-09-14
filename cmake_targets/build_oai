@@ -38,7 +38,6 @@ gen_nvram_path=$OPENAIR_DIR/cmake_targets/ran_build/build
 conf_nvram_path=$OPENAIR_DIR/openair3/NAS/TOOLS/ue_eurecom_test_sfr.conf
 
 HW=""
-VERBOSE_CI=0
 VERBOSE_COMPILE=0
 RUN_GROUP=0
 TEST_CASE_GROUP=""
@@ -110,8 +109,6 @@ Options:
    Adds a debgging facility to the binary files: GUI with major internal synchronization events
 -x | --xforms
    Will compile with software oscilloscope features
---verbose-ci
-   Compile with verbose instructions in CI Docker env
 --verbose-compile
    Shows detailed compilation instructions in makefile
 --build-doxygen
@@ -335,10 +332,6 @@ function main() {
             shift;;
        -x | --xforms)
             echo_info "Will generate the software oscilloscope features"
-            shift;;
-       --verbose-ci)
-            VERBOSE_CI=1
-            echo_info "Will compile with verbose instructions in CI Docker env"
             shift;;
        --verbose-compile)
             VERBOSE_COMPILE=1
