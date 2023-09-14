@@ -38,7 +38,7 @@ RUN dnf install -y libasan libubsan
 RUN /bin/sh oaienv && \ 
     cd cmake_targets && \
     mkdir -p log && \
-    ./build_oai --phy_simulators --ninja --verbose-ci --sanitize --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
+    ./build_oai --phy_simulators --ninja --sanitize --noavx512 -c --cmake-opt -DCMAKE_C_FLAGS=-Werror --cmake-opt -DCMAKE_CXX_FLAGS=-Werror
 
 #start from scratch for target executable
 FROM registry.access.redhat.com/ubi9/ubi:latest as oai-physim
