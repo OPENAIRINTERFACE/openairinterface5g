@@ -128,16 +128,16 @@ void nr_rlc_manager_remove_ue(nr_rlc_ue_manager_t *_m, int rnti)
   if (ue->srb0 != NULL) {
     /* deliver_sdu_data for srb0 is allocated, needs a free() */
     free(ue->srb0->deliver_sdu_data);
-    ue->srb0->delete(ue->srb0);
+    ue->srb0->delete_entity(ue->srb0);
   }
 
   for (j = 0; j < 3; j++)
     if (ue->srb[j] != NULL)
-      ue->srb[j]->delete(ue->srb[j]);
+      ue->srb[j]->delete_entity(ue->srb[j]);
 
   for (j = 0; j < MAX_DRBS_PER_UE; j++)
     if (ue->drb[j] != NULL)
-      ue->drb[j]->delete(ue->drb[j]);
+      ue->drb[j]->delete_entity(ue->drb[j]);
 
   free(ue);
 

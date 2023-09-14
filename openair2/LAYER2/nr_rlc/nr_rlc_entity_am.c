@@ -224,7 +224,8 @@ static void reassemble_and_deliver(nr_rlc_entity_am_t *entity, int sn)
                              sdu, so);
 
   entity->common.stats.txsdu_pkts++;
-  entity->common.stats.txsdu_bytes += so;
+  /* AM 'txsdu_bytes' now only count successfully transmitted bytes */
+  // entity->common.stats.txsdu_bytes += so;
 }
 
 static void reception_actions(nr_rlc_entity_am_t *entity, nr_rlc_pdu_t *pdu)
@@ -551,6 +552,8 @@ process_wait_list_head:
           end_wait_list = prev_wait_list;
         if (nr_rlc_free_sdu_segment(cur_wait_list)) {
           entity->tx_size -= sdu_size;
+          // Wait-ACK: count as successfully transmitted bytes
+          entity->common.stats.txsdu_bytes += sdu_size;
           entity->common.sdu_successful_delivery(
               entity->common.sdu_successful_delivery_data,
               (nr_rlc_entity_t *)entity, upper_layer_id);
@@ -614,6 +617,8 @@ process_retransmit_list_head:
                                             + cur->size;
         if (nr_rlc_free_sdu_segment(cur)) {
           entity->tx_size -= sdu_size;
+          // Retransmit-ACK: count as successfully transmitted bytes
+          entity->common.stats.txsdu_bytes += sdu_size;
           entity->common.sdu_successful_delivery(
               entity->common.sdu_successful_delivery_data,
               (nr_rlc_entity_t *)entity, upper_layer_id);
@@ -671,6 +676,8 @@ lists_over:
       end_wait_list = prev_wait_list;
     if (nr_rlc_free_sdu_segment(cur_wait_list)) {
       entity->tx_size -= sdu_size;
+      // Wait-NACK done: count as successfully transmitted bytes
+      entity->common.stats.txsdu_bytes += sdu_size;
       entity->common.sdu_successful_delivery(
           entity->common.sdu_successful_delivery_data,
           (nr_rlc_entity_t *)entity, upper_layer_id);
@@ -692,6 +699,8 @@ lists_over:
                                         + cur->size;
     if (nr_rlc_free_sdu_segment(cur)) {
       entity->tx_size -= sdu_size;
+      // Retransmit-NACK done: count as successfully transmitted bytes
+      entity->common.stats.txsdu_bytes += sdu_size;
       entity->common.sdu_successful_delivery(
           entity->common.sdu_successful_delivery_data,
           (nr_rlc_entity_t *)entity, upper_layer_id);
@@ -1685,11 +1694,11 @@ static int generate_tx_pdu(nr_rlc_entity_am_t *entity, char *buffer, int size)
   entity->common.stats.txpdu_pkts++;
   entity->common.stats.txpdu_bytes += ret_size;
 
-  if (sdu->sdu->time_of_arrival) {
+  /* No need to 'zero' time-of-arrival; 
+  Segmented packets do need to be duplicated in time-sensitive use cases */
+  if (entity->common.avg_time_is_on) {
     uint64_t time_now = time_average_now();
     uint64_t waited_time = time_now - sdu->sdu->time_of_arrival;
-    /* set time_of_arrival to 0 so as to update stats only once */
-    sdu->sdu->time_of_arrival = 0;
     time_average_add(entity->common.txsdu_avg_time_to_tx, time_now, waited_time);
   }
 
@@ -1747,7 +1756,6 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   nr_rlc_sdu_segment_t *sdu;
 
   entity->common.stats.rxsdu_pkts++;
-  entity->common.stats.rxsdu_bytes += size;
 
   if (size > NR_SDU_MAX) {
     LOG_E(RLC, "%s:%d:%s: fatal: SDU size too big (%d bytes)\n",
@@ -1771,6 +1779,8 @@ void nr_rlc_entity_am_recv_sdu(nr_rlc_entity_t *_entity,
   }
 
   entity->tx_size += size;
+  // SDU received: Count as arrival bytes
+  entity->common.stats.rxsdu_bytes += size;
 
   sdu = nr_rlc_new_sdu(buffer, size, sdu_id);
 
@@ -1965,6 +1975,10 @@ void nr_rlc_entity_am_discard_sdu(nr_rlc_entity_t *_entity, int sdu_id)
                                     + cur->size;
 
   entity->tx_size -= cur->sdu->size;
+
+  /* Uncomment to assert if SDU are ever discarded */
+  // assert(0 != 0 && "[RLC-TRAP] SDU discard should never be reached!");
+
   nr_rlc_free_sdu_segment(cur);
 }
 

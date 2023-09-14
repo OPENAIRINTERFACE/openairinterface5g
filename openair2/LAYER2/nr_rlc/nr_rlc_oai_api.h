@@ -35,6 +35,8 @@
 #include "NR_RadioBearerConfig.h"
 #include "NR_CellGroupConfig.h"
 #include "openair2/RRC/NR/nr_rrc_proto.h"
+#include "nr_rlc_ue_manager.h"
+
 
 struct NR_RLC_Config;
 struct NR_LogicalChannelConfig;
@@ -67,3 +69,5 @@ void nr_rlc_activate_srb0(int rnti, struct gNB_MAC_INST_s *mac, void *rawUE,
                                      const uint8_t         *sdu,
                                      sdu_size_t             sdu_len,
                                      void                  *rawUE));
+
+const bool nr_rlc_get_statistics(int rnti, int srb_flag, int rb_id, nr_rlc_statistics_t *out);

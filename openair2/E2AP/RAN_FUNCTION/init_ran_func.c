@@ -1,5 +1,4 @@
 #include "init_ran_func.h"
-#include "../flexric/src/agent/e2_agent_api.h"
 #include "CUSTOMIZED/ran_func_mac.h"
 #include "CUSTOMIZED/ran_func_rlc.h"
 #include "CUSTOMIZED/ran_func_pdcp.h"
