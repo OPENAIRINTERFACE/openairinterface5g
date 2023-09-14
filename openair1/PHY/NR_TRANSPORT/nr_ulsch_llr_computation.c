@@ -950,30 +950,30 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
   simde__m128i ch_mag_over_2;
   simde__m128i ch_mag_9_over_10;
 
-  simde__m128i xmm0 __attribute__((aligned(16)));
-  simde__m128i xmm1 __attribute__((aligned(16)));
-  simde__m128i xmm2 __attribute__((aligned(16)));
-  simde__m128i xmm3 __attribute__((aligned(16)));
-  simde__m128i xmm4 __attribute__((aligned(16)));
-  simde__m128i xmm5 __attribute__((aligned(16)));
-  simde__m128i xmm6 __attribute__((aligned(16)));
-  simde__m128i xmm7 __attribute__((aligned(16)));
+  simde__m128i xmm0;
+  simde__m128i xmm1;
+  simde__m128i xmm2;
+  simde__m128i xmm3;
+  simde__m128i xmm4;
+  simde__m128i xmm5;
+  simde__m128i xmm6;
+  simde__m128i xmm7;
 
-  simde__m128i rho_rpi __attribute__((aligned(16)));
-  simde__m128i rho_rmi __attribute__((aligned(16)));
-  simde__m128i rho_rs[8] __attribute__((aligned(16)));
-  simde__m128i psi_rs[16] __attribute__((aligned(16)));
-  simde__m128i psi_is[16] __attribute__((aligned(16)));
-  simde__m128i a_rs[16] __attribute__((aligned(16)));
-  simde__m128i a_is[16] __attribute__((aligned(16)));
-  simde__m128i psi_as[16] __attribute__((aligned(16)));
-  simde__m128i a_sqs[16] __attribute__((aligned(16)));
-  simde__m128i y0_s[8] __attribute__((aligned(16)));
+  simde__m128i rho_rpi;
+  simde__m128i rho_rmi;
+  simde__m128i rho_rs[8];
+  simde__m128i psi_rs[16];
+  simde__m128i psi_is[16];
+  simde__m128i a_rs[16];
+  simde__m128i a_is[16];
+  simde__m128i psi_as[16];
+  simde__m128i a_sqs[16];
+  simde__m128i y0_s[8];
 
-  simde__m128i y0r __attribute__((aligned(16)));
-  simde__m128i y0i __attribute__((aligned(16)));
-  simde__m128i y1r __attribute__((aligned(16)));
-  simde__m128i y1i __attribute__((aligned(16)));
+  simde__m128i y0r;
+  simde__m128i y0i;
+  simde__m128i y1r;
+  simde__m128i y1i;
 
   // In one iteration, we deal with 8 REs
   for (int i = 0; i < length >> 2; i += 2) {
@@ -1070,7 +1070,7 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
     ch_mag_9_over_10 = simde_mm_slli_epi16(ch_mag_9_over_10, 2);
 
     /// Compute bit metrics (lambda)
-    simde__m128i bit_mets[16] __attribute__((aligned(16)));
+    simde__m128i bit_mets[16];
     for(int j=0; j<8; j+=4){
       bit_mets[j+0] = simde_mm_subs_epi16(psi_as[j+0], a_sqs[j+0]);
       bit_mets[j+0] = simde_mm_adds_epi16(bit_mets[j+0], y0_s[j+0]);
@@ -1163,28 +1163,28 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
   simde__m256i ch_mag_over_2;
   simde__m256i ch_mag_9_over_10;
 
-  simde__m256i xmm2 __attribute__((aligned(16)));
-  simde__m256i xmm3 __attribute__((aligned(16)));
-  simde__m256i xmm4 __attribute__((aligned(16)));
-  simde__m256i xmm5 __attribute__((aligned(16)));
-  simde__m256i xmm6 __attribute__((aligned(16)));
-  simde__m256i xmm7 __attribute__((aligned(16)));
+  simde__m256i xmm2;
+  simde__m256i xmm3;
+  simde__m256i xmm4;
+  simde__m256i xmm5;
+  simde__m256i xmm6;
+  simde__m256i xmm7;
 
-  simde__m256i rho_rpi __attribute__((aligned(16)));
-  simde__m256i rho_rmi __attribute__((aligned(16)));
-  simde__m256i rho_rs[8] __attribute__((aligned(16)));
-  simde__m256i psi_rs[16] __attribute__((aligned(16)));
-  simde__m256i psi_is[16] __attribute__((aligned(16)));
-  simde__m256i a_rs[16] __attribute__((aligned(16)));
-  simde__m256i a_is[16] __attribute__((aligned(16)));
-  simde__m256i psi_as[16] __attribute__((aligned(16)));
-  simde__m256i a_sqs[16] __attribute__((aligned(16)));
-  simde__m256i y0_s[8] __attribute__((aligned(16)));
+  simde__m256i rho_rpi;
+  simde__m256i rho_rmi;
+  simde__m256i rho_rs[8];
+  simde__m256i psi_rs[16];
+  simde__m256i psi_is[16];
+  simde__m256i a_rs[16];
+  simde__m256i a_is[16];
+  simde__m256i psi_as[16];
+  simde__m256i a_sqs[16];
+  simde__m256i y0_s[8];
 
-  simde__m256i y0r __attribute__((aligned(16)));
-  simde__m256i y0i __attribute__((aligned(16)));
-  simde__m256i y1r __attribute__((aligned(16)));
-  simde__m256i y1i __attribute__((aligned(16)));
+  simde__m256i y0r;
+  simde__m256i y0i;
+  simde__m256i y1r;
+  simde__m256i y1i;
 
   // In one iteration, we deal with 8 REs
   for (int i = 0; i < length >> 3; i += 2) {
@@ -1282,7 +1282,7 @@ void nr_ulsch_qam16_qam16(c16_t *stream0_in,
 
     /// Compute bit metrics (lambda)
 
-    simde__m256i bit_mets[16] __attribute__((aligned(16)));
+    simde__m256i bit_mets[16];
     for(int j=0; j<8; j+=4){
       bit_mets[j+0] = simde_mm256_subs_epi16(psi_as[j+0], a_sqs[j+0]);
       bit_mets[j+0] = simde_mm256_adds_epi16(bit_mets[j+0], y0_s[j+0]);
@@ -1454,7 +1454,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     simde__m128i rho_rmi = simde_mm_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
 
     // Compute the different rhos
-    simde__m128i rho_rs[32] __attribute__((aligned(16)));
+    simde__m128i rho_rs[32];
     rho_rs[27] = simde_mm_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_42);
     rho_rs[28] = simde_mm_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_42);
     rho_rs[18] = simde_mm_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_42);
@@ -1518,14 +1518,14 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     xmm0 = simde_mm_set1_epi16(0); // ZERO for abs_pi16
     xmm2 = simde_mm_subs_epi16(rho_rs[0], y1r);
 
-    simde__m128i psi_r_s[64] __attribute__((aligned(16)));
+    simde__m128i psi_r_s[64];
     for(int j=0; j<32; j++)  // psi_r_s[0~31], rho_rs[0~31]
       psi_r_s[j] = simde_mm_abs_epi16(simde_mm_subs_epi16(rho_rs[j], y1r));
     for(int j=32; j<64; j++) // psi_r_s[32~64], rho_rs[31~0]
       psi_r_s[j] = simde_mm_abs_epi16(simde_mm_adds_epi16(rho_rs[63 - j], y1r));
 
     // simde__m128i psi_i calculation from rho_rpi or rho_rmi
-    simde__m128i psi_i_s[64] __attribute__((aligned(16)));
+    simde__m128i psi_i_s[64];
     const uint8_t rho_rs_index[32] = {7,15,23,31,24,16,8,0,6,14,22,30,25,17,9,1,5,13,21,29,26,18,10,2,4,12,20,28,27,19,11,3};
     for(int k=0; k<32; k+=8){  // psi_i_s[0~31]
       for(int j=k; j<k+4; j++)
@@ -1566,7 +1566,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     y0i_seven_over_sqrt_21 = simde_mm_mulhi_epi16(y0i, SEVEN_OVER_SQRT_42);
     y0i_seven_over_sqrt_21 = simde_mm_slli_epi16(y0i_seven_over_sqrt_21, 2); // Q2.14
 
-    simde__m128i y0_s[64] __attribute__((aligned(16)));
+    simde__m128i y0_s[64];
     const simde__m128i y0r_over_s[8] = {y0r_seven_over_sqrt_21,y0r_five_over_sqrt_21,y0r_three_over_sqrt_21,y0r_one_over_sqrt_21};
     for(int j=0; j<32; j+=8){
       y0_s[j+0] = simde_mm_adds_epi16(y0r_over_s[j>>3], y0i_seven_over_sqrt_21);
@@ -1582,10 +1582,10 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     ch_mag_int_with_sigma2 = simde_mm_srai_epi16(ch_mag_int, 1); // *2
     two_ch_mag_int_with_sigma2 = ch_mag_int; // *4
     three_ch_mag_int_with_sigma2 = simde_mm_adds_epi16(ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2); // *6
-    simde__m128i a_r_s[64] __attribute__((aligned(16)));
-    simde__m128i a_i_s[64] __attribute__((aligned(16)));
-    simde__m128i psi_a_s[64] __attribute__((aligned(16)));
-    simde__m128i a_sq_s[64] __attribute__((aligned(16)));
+    simde__m128i a_r_s[64];
+    simde__m128i a_i_s[64];
+    simde__m128i psi_a_s[64];
+    simde__m128i a_sq_s[64];
     for(int j=0; j<64; j++){
       // Detection of interference term
       a_r_s[j] = interference_abs_64qam_epi16(psi_r_s[j], ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2, three_ch_mag_int_with_sigma2, ONE_OVER_SQRT_2_42, THREE_OVER_SQRT_2_42, FIVE_OVER_SQRT_2_42, SEVEN_OVER_SQRT_2_42);
@@ -1634,7 +1634,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     ch_mag_98_over_42_with_sigma2 = simde_mm_slli_epi16(ch_mag_98_over_42_with_sigma2, 2);
 
     // Computing Metrics
-    simde__m128i bit_met_s[64] __attribute__((aligned(16)));
+    simde__m128i bit_met_s[64];
     xmm1 = simde_mm_adds_epi16(simde_mm_subs_epi16(psi_a_s[0], a_sq_s[0]), y0_s[0]);
     bit_met_s[0] = simde_mm_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
 
@@ -1997,7 +1997,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     simde__m256i rho_rmi = simde_mm256_subs_epi16(xmm2, xmm3); // rho* = Re(rho) - Im(rho)
 
     // Compute the different rhos
-    simde__m256i rho_rs[32] __attribute__((aligned(16)));
+    simde__m256i rho_rs[32];
     rho_rs[27] = simde_mm256_mulhi_epi16(rho_rpi, ONE_OVER_SQRT_42);
     rho_rs[28] = simde_mm256_mulhi_epi16(rho_rmi, ONE_OVER_SQRT_42);
     rho_rs[18] = simde_mm256_mulhi_epi16(rho_rpi, THREE_OVER_SQRT_42);
@@ -2061,14 +2061,14 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     xmm0 = simde_mm256_broadcastw_epi16(simde_mm_set1_epi16(0)); // ZERO for abs_pi16
     xmm2 = simde_mm256_subs_epi16(rho_rs[0], y1r);
 
-    simde__m256i psi_r_s[64] __attribute__((aligned(16)));
+    simde__m256i psi_r_s[64];
     for(int j=0; j<32; j++)  // psi_r_s[0~31], rho_rs[0~31]
       psi_r_s[j] = simde_mm256_abs_epi16(simde_mm256_subs_epi16(rho_rs[j], y1r));
     for(int j=32; j<64; j++) // psi_r_s[32~64], rho_rs[31~0]
       psi_r_s[j] = simde_mm256_abs_epi16(simde_mm256_adds_epi16(rho_rs[63 - j], y1r));
 
     // simde__m256i psi_i calculation from rho_rpi or rho_rmi
-    simde__m256i psi_i_s[64] __attribute__((aligned(16)));
+    simde__m256i psi_i_s[64];
     const uint8_t rho_rs_index[32] = {7,15,23,31,24,16,8,0,6,14,22,30,25,17,9,1,5,13,21,29,26,18,10,2,4,12,20,28,27,19,11,3};
     for(int k=0; k<32; k+=8){  // psi_i_s[0~31]
       for(int j=k; j<k+4; j++)
@@ -2109,7 +2109,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     y0i_seven_over_sqrt_21 = simde_mm256_mulhi_epi16(y0i, SEVEN_OVER_SQRT_42);
     y0i_seven_over_sqrt_21 = simde_mm256_slli_epi16(y0i_seven_over_sqrt_21, 2); // Q2.14
 
-    simde__m256i y0_s[64] __attribute__((aligned(16)));
+    simde__m256i y0_s[64];
     const simde__m256i y0r_over_s[8] = {y0r_seven_over_sqrt_21,y0r_five_over_sqrt_21,y0r_three_over_sqrt_21,y0r_one_over_sqrt_21};
     for(int j=0; j<32; j+=8){
       y0_s[j+0] = simde_mm256_adds_epi16(y0r_over_s[j>>3], y0i_seven_over_sqrt_21);
@@ -2125,10 +2125,10 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     ch_mag_int_with_sigma2 = simde_mm256_srai_epi16(ch_mag_int, 1); // *2
     two_ch_mag_int_with_sigma2 = ch_mag_int; // *4
     three_ch_mag_int_with_sigma2 = simde_mm256_adds_epi16(ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2); // *6
-    simde__m256i a_r_s[64] __attribute__((aligned(16)));
-    simde__m256i a_i_s[64] __attribute__((aligned(16)));
-    simde__m256i psi_a_s[64] __attribute__((aligned(16)));
-    simde__m256i a_sq_s[64] __attribute__((aligned(16)));
+    simde__m256i a_r_s[64];
+    simde__m256i a_i_s[64];
+    simde__m256i psi_a_s[64];
+    simde__m256i a_sq_s[64];
     for(int j=0; j<64; j++){
       // Detection of interference term
       a_r_s[j] = interference_abs_64qam_epi16_256(psi_r_s[j], ch_mag_int_with_sigma2, two_ch_mag_int_with_sigma2, three_ch_mag_int_with_sigma2, ONE_OVER_SQRT_2_42, THREE_OVER_SQRT_2_42, FIVE_OVER_SQRT_2_42, SEVEN_OVER_SQRT_2_42);
@@ -2177,7 +2177,7 @@ void nr_ulsch_qam64_qam64(c16_t *stream0_in,
     ch_mag_98_over_42_with_sigma2 = simde_mm256_slli_epi16(ch_mag_98_over_42_with_sigma2, 2);
 
     // Computing Metrics
-    simde__m256i bit_met_s[64] __attribute__((aligned(16)));
+    simde__m256i bit_met_s[64];
 
     xmm1 = simde_mm256_adds_epi16(simde_mm256_subs_epi16(psi_a_s[0], a_sq_s[0]), y0_s[0]);
     bit_met_s[0] = simde_mm256_subs_epi16(xmm1, ch_mag_98_over_42_with_sigma2);
