@@ -266,7 +266,8 @@ class Cluster:
 		baseTag = 'develop'
 		forceBaseImageBuild = False
 		if self.ranAllowMerge: # merging MR branch into develop -> temporary image
-			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
+			branchName = self.ranBranch.replace('/','-')
+			imageTag = f'{branchName}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == 'develop':
 				ret = self.cmd.run(f'git diff HEAD..origin/develop -- cmake_targets/build_oai cmake_targets/tools/build_helper docker/Dockerfile.base.rhel9 | grep --colour=never -i INDEX')
 				result = re.search('index', ret.stdout)

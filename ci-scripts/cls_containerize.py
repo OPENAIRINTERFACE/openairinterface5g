@@ -97,7 +97,9 @@ def CreateWorkspace(sshSession, sourcePath, ranRepository, ranCommitID, ranTarge
 def ImageTagToUse(imageName, ranCommitID, ranBranch, ranAllowMerge):
 	shortCommit = ranCommitID[0:8]
 	if ranAllowMerge:
-		tagToUse = f'{ranBranch}-{shortCommit}'
+		# Allowing contributor to have a name/branchName format
+		branchName = ranBranch.replace('/','-')
+		tagToUse = f'{branchName}-{shortCommit}'
 	else:
 		tagToUse = f'develop-{shortCommit}'
 	fullTag = f'{imageName}:{tagToUse}'

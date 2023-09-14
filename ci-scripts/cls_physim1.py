@@ -106,7 +106,8 @@ class PhySim:
 		if self.ranCommitID != '':
 			mySSH.command('git checkout -f ' + self.ranCommitID, '\$', 30)
 		if self.ranAllowMerge:
-			imageTag = f'{self.ranBranch}-{self.ranCommitID[0:8]}'
+			branchName = self.ranBranch.replace('/','-')
+			imageTag = f'{branchName}-{self.ranCommitID[0:8]}'
 			if self.ranTargetBranch == '':
 				if (self.ranBranch != 'develop') and (self.ranBranch != 'origin/develop'):
 					mySSH.command('git merge --ff origin/develop -m "Temporary merge for CI"', '\$', 30)
