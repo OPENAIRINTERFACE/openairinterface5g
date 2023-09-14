@@ -412,7 +412,6 @@ class Cluster:
 		imageSize = {}
 		for image in attemptedImages:
 			self.cmd.run(f'mkdir -p cmake_targets/log/{image}')
-			self.cmd.run(f'python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/{image}.log')
 			tag = imageTag if image != 'ran-base' else baseTag
 			size = self._get_image_size(image, tag)
 			if size <= 0:

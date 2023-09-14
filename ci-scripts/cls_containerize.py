@@ -153,17 +153,13 @@ def AnalyzeBuildLogs(buildRoot, images, globalStatus):
 			committed = False
 			tagged = False
 			with open(f'{buildRoot}/{image}.log', mode='r') as inputfile:
-				startOfTargetImageCreation = False # check for tagged/committed only after image created
 				for line in inputfile:
-					result = re.search(f'FROM .* [aA][sS] {image}$', str(line))
-					if result is not None:
-						startOfTargetImageCreation = True
-					if startOfTargetImageCreation:
-						lineHasTag = re.search(f'Successfully tagged {image}:', str(line)) is not None
-						tagged = tagged or lineHasTag
-						# the OpenShift Cluster builder prepends image registry URL
-						lineHasCommit = re.search(f'COMMIT [a-zA-Z0-9\.:/\-]*{image}', str(line)) is not None
-						committed = committed or lineHasCommit
+					lineHasTag = re.search(f'Successfully tagged {image}:', str(line)) is not None
+					lineHasTag2 = re.search(f'naming to docker.io/library/{image}:', str(line)) is not None
+					tagged = tagged or lineHasTag or lineHasTag2
+					# the OpenShift Cluster builder prepends image registry URL
+					lineHasCommit = re.search(f'COMMIT [a-zA-Z0-9\.:/\-]*{image}', str(line)) is not None
+					committed = committed or lineHasCommit
 			errorandwarnings['errors'] = 0 if committed or tagged else 1
 			errorandwarnings['warnings'] = 0
 			errorandwarnings['status'] = committed or tagged
@@ -468,9 +464,12 @@ class Containerize():
 			if image != 'ran-build':
 				cmd.run(f'sed -i -e "s#ran-build:latest#ran-build:{imageTag}#" docker/Dockerfile.{pattern}{self.dockerfileprefix}')
 			cmd.run(f'{self.cli} build {self.cliBuildOptions} --target {image} --tag {image}:{imageTag} --file docker/Dockerfile.{pattern}{self.dockerfileprefix} . > cmake_targets/log/{image}.log 2>&1', timeout=1200)
-			# split the log
-			cmd.run(f"mkdir -p cmake_targets/log/{image}")
-			cmd.run(f"python3 ci-scripts/docker_log_split.py --logfilename=cmake_targets/log/{image}.log")
+			if image == 'ran-build':
+				cmd.run(f"docker run --name test-log -d {image}:{imageTag} /bin/true")
+				cmd.run(f"docker cp test-log:/oai-ran/cmake_targets/log/ cmake_targets/log/{image}/")
+				cmd.run(f"docker rm -f test-log")
+			else:
+				cmd.run(f"mkdir -p cmake_targets/log/{image}")
 			# check the status of the build
 			ret = cmd.run(f"{self.cli} image inspect --format=\'Size = {{{{.Size}}}} bytes\' {image}:{imageTag}")
 			if ret.returncode != 0:
