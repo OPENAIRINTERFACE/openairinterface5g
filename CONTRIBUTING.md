@@ -16,8 +16,6 @@ Please refer to the steps described on our website: [How to contribute to OAI](h
       * This decision was made for the license reasons.
       * The Continuous Integration will reject your merge request.
    - All merge requests SHALL have `develop` branch as target branch.
-   - All merge requests SHALL have source branch names that SHALL not contain the `/` character.
-      * We are using a `docker` registry scheme and the image names are based on the source branch name.
 
 ## Coding Styles ##
 
