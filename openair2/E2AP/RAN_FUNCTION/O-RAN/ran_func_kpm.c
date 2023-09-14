@@ -158,6 +158,21 @@ gnb_e2sm_t fill_gnb_data(rrc_gNB_ue_context_t * ue_context_p)
   gnb.guami.amf_set_id = ue_context_p->ue_context.ue_guami.amf_set_id;
   gnb.guami.amf_ptr = ue_context_p->ue_context.ue_guami.amf_pointer;
 
+  // gNB-CU UE F1AP ID List
+  // C-ifCUDUseparated 
+  if (NODE_IS_CU(RC.nrrrc[0]->node_type))
+  {
+    gnb.gnb_cu_ue_f1ap_lst_len = 1;
+    gnb.gnb_cu_ue_f1ap_lst = calloc(gnb.gnb_cu_ue_f1ap_lst_len, sizeof(uint32_t));
+    assert(gnb.gnb_cu_ue_f1ap_lst != NULL);
+
+    for (size_t i = 0; i < gnb.gnb_cu_ue_f1ap_lst_len; i++)
+    {
+      gnb.gnb_cu_ue_f1ap_lst[i] = ue_context_p->ue_context.rrc_ue_id;
+    }
+  }
+
+
   return gnb;
 }
 
@@ -178,25 +193,6 @@ gnb_du_e2sm_t fill_gnb_du_data(const f1_ue_data_t * rrc_ue_id)
   gnb_du.ran_ue_id = NULL;
 
   return gnb_du;
-}
-
-static
-gnb_cu_up_e2sm_t fill_gnb_cu_up_data(const uint32_t rrc_ue_id)
-{
-  gnb_cu_up_e2sm_t gnb_cu_up = {0};
-
-  // 6.2.3.20
-  // gNB CU CP UE E1AP
-  // Mandatory
-  gnb_cu_up.gnb_cu_cp_ue_e1ap = rrc_ue_id;
-
-  // 6.2.3.25
-  // RAN UE ID
-  // Optional
-  gnb_cu_up.ran_ue_id = NULL;
-
-
-  return gnb_cu_up;
 }
 
 
@@ -501,8 +497,9 @@ kpm_ind_msg_format_3_t fill_kpm_ind_msg_frm_3_in_cu(const matched_ues_rrc_t matc
   for (size_t i = 0; i<msg_frm_3.ue_meas_report_lst_len; i++)
   {
     // Fill UE ID data
-    msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_CU_UP_UE_ID_E2SM;
-    msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb_cu_up = fill_gnb_cu_up_data(matched_ues.rrc_ue_id_list[i].secondary_ue);
+    rrc_gNB_ue_context_t *rrc_ue_context_list = rrc_gNB_get_ue_context(RC.nrrrc[0], matched_ues.rrc_ue_id_list[i].secondary_ue);
+    msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.type = GNB_UE_ID_E2SM;
+    msg_frm_3.meas_report_per_ue[i].ue_meas_report_lst.gnb = fill_gnb_data(rrc_ue_context_list);
 
     // Fill UE related info
     msg_frm_3.meas_report_per_ue[i].ind_msg_format_1 = fill_kpm_ind_msg_frm_1_in_cu(matched_ues.rrc_ue_id_list[i].secondary_ue, i, act_def_fr_1);
