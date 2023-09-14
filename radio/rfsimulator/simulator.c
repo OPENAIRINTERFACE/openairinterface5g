@@ -611,24 +611,28 @@ static void customNetForPerf()
   char sysctlmem[256];
   memset(sysctlmem, 0, 256);
   sprintf(sysctlmem, "/sbin/sysctl -n -e -q -w net.core.rmem_default=%d", SYSCTL_MEM_VALUE);
+  LOG_W(HW, "running command \"%s\" to increase RFsim performance\n", sysctlmem);
   res = system(sysctlmem);
   if (res != 0) {
     LOG_W(HW, "Cannot set net.core.rmem_default to %d\n", SYSCTL_MEM_VALUE);
   }
   memset(sysctlmem, 0, 256);
   sprintf(sysctlmem, "/sbin/sysctl -n -e -q -w net.core.rmem_max=%d", SYSCTL_MEM_VALUE);
+  LOG_W(HW, "running command \"%s\" to increase RFsim performance\n", sysctlmem);
   res = system(sysctlmem);
   if (res != 0) {
     LOG_W(HW, "Cannot set net.core.rmem_max to %d\n", SYSCTL_MEM_VALUE);
   }
   memset(sysctlmem, 0, 256);
   sprintf(sysctlmem, "/sbin/sysctl -n -e -q -w net.core.wmem_default=%d", SYSCTL_MEM_VALUE);
+  LOG_W(HW, "running command \"%s\" to increase RFsim performance\n", sysctlmem);
   res = system(sysctlmem);
   if (res != 0) {
     LOG_W(HW, "Cannot set net.core.wmem_default to %d\n", SYSCTL_MEM_VALUE);
   }
   memset(sysctlmem, 0, 256);
   sprintf(sysctlmem, "/sbin/sysctl -n -e -q -w net.core.wmem_max=%d", SYSCTL_MEM_VALUE);
+  LOG_W(HW, "running command \"%s\" to increase RFsim performance\n", sysctlmem);
   res = system(sysctlmem);
   if (res != 0) {
     LOG_W(HW, "Cannot set net.core.wmem_max to %d\n", SYSCTL_MEM_VALUE);
