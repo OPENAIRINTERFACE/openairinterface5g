@@ -463,7 +463,22 @@ int nr_ulsch_decoding(PHY_VARS_gNB *phy_vars_gNB,
 
     VCD_SIGNAL_DUMPER_DUMP_FUNCTION_BY_NAME(VCD_SIGNAL_DUMPER_FUNCTIONS_PHY_gNB_ULSCH_DECODING, 0);
 
+    bool crc_valid = false;
     if (harq_process->processedSegments == harq_process->C) {
+      // When the number of code blocks is 1 (C = 1) and ulsch_harq->processedSegments = 1, we can assume a good TB because of the
+      // CRC check made by the LDPC for early termination, so, no need to perform CRC check twice for a single code block
+      crc_valid = true;
+      if (harq_process->C > 1) {
+        // Check ULSCH transport block CRC
+        crc_type = CRC16;
+        if (A > 3824) {
+          crc_type = CRC24_A;
+        }
+        crc_valid = check_crc(harq_process->b, harq_process->B, crc_type);
+      }
+    }
+
+    if (crc_valid) {
       LOG_D(PHY, "[gNB %d] ULSCH: Setting ACK for slot %d TBS %d\n", phy_vars_gNB->Mod_id, ulsch->slot, harq_process->TBS);
       ulsch->active = false;
       harq_process->round = 0;
