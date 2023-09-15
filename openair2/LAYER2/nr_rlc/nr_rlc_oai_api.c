@@ -54,6 +54,35 @@ static uint64_t nr_rlc_current_time;
 static int      nr_rlc_current_time_last_frame;
 static int      nr_rlc_current_time_last_subframe;
 
+static void release_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
+{
+  AssertFatal(channel_id != 0, "LCID = 0 shouldn't be handled here\n");
+  nr_rlc_rb_t *rb = &ue->lcid2rb[channel_id - 1];
+  if (rb->type == NR_RLC_NONE)
+    return;
+  if (rb->type == NR_RLC_SRB) {
+    int id = rb->choice.srb_id - 1;
+    AssertFatal(id > 0, "logic bug: impossible to have srb0 here\n");
+    if (ue->srb[id]) {
+      ue->srb[id]->delete_entity(ue->srb[id]);
+      ue->srb[id] = NULL;
+    }
+    else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+  }
+  else {
+    AssertFatal(rb->type == NR_RLC_DRB,
+                "Invalid RB type\n");
+    int id = rb->choice.drb_id - 1;
+    if (ue->drb[id]) {
+      ue->drb[id]->delete_entity(ue->drb[id]);
+      ue->drb[id] = NULL;
+    }
+    else
+      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+  }
+}
+
 static nr_rlc_entity_t *get_rlc_entity_from_lcid(nr_rlc_ue_t *ue, logical_chan_id_t channel_id)
 {
   if (channel_id == 0)
@@ -78,15 +107,12 @@ void nr_release_rlc_entity(int rnti, logical_chan_id_t channel_id)
   if (channel_id == 0) {
     if (ue->srb0 != NULL) {
       free(ue->srb0->deliver_sdu_data);
-      ue->srb0->delete (ue->srb0);
+      ue->srb0->delete_entity(ue->srb0);
+      ue->srb0 = NULL;
     } else
       LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
   } else {
-    nr_rlc_entity_t *rb = get_rlc_entity_from_lcid(ue, channel_id);
-    if (rb)
-      rb->delete(rb);
-    else
-      LOG_E(RLC, "Trying to release a non-established enity with LCID %d\n", channel_id);
+    release_rlc_entity_from_lcid(ue, channel_id);
   }
   nr_rlc_manager_unlock(nr_rlc_ue_manager);
 }
@@ -637,6 +663,7 @@ void nr_rlc_reconfigure_entity(int rnti, int lc_id, struct NR_RLC_Config *rlc_Co
                   *lc_Config->ul_SpecificParameters->logicalChannelGroup);
   }
   if (rlc_Config) {
+    AssertFatal(rb->stats.mode != NR_RLC_TM, "Cannot reconfigure TM mode\n");
     if (rb->stats.mode == NR_RLC_AM) {
       AssertFatal(rlc_Config->present == NR_RLC_Config_PR_am, "Invalid RLC Config type\n");
       struct NR_RLC_Config__am *am = rlc_Config->choice.am;

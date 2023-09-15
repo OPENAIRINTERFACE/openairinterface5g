@@ -1069,9 +1069,10 @@ void nr_pdcp_reconfigure_srb(ue_id_t ue_id, int srb_id, long t_Reordering)
 
 void nr_pdcp_reconfigure_drb(ue_id_t ue_id, int drb_id, long t_Reordering)
 {
-  // The enabling/disabling of ciphering or integrity protection
-  // can be changed only by releasing and adding the DRB
-  // (so not by reconfiguring).
+  /* The enabling/disabling of ciphering or integrity protection
+   * can be changed only by releasing and adding the DRB
+   * (so not by reconfiguring).
+   */
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
   nr_pdcp_entity_t *drb = ue->drb[drb_id - 1];
@@ -1084,8 +1085,10 @@ void nr_release_srb(ue_id_t ue_id, int srb_id)
 {
   nr_pdcp_manager_lock(nr_pdcp_ue_manager);
   nr_pdcp_ue_t *ue = nr_pdcp_manager_get_ue(nr_pdcp_ue_manager, ue_id);
-  if (ue->srb[srb_id - 1] != NULL)
+  if (ue->srb[srb_id - 1] != NULL) {
     ue->srb[srb_id - 1]->delete_entity(ue->srb[srb_id - 1]);
+    ue->srb[srb_id - 1] = NULL;
+  }
   else
     LOG_E(PDCP, "Attempting to release SRB%d but it is not configured\n", srb_id);
   nr_pdcp_manager_unlock(nr_pdcp_ue_manager);
@@ -1099,6 +1102,7 @@ void nr_release_drb(ue_id_t ue_id, int drb_id)
   if (drb) {
     drb->release_entity(drb);
     drb->delete_entity(drb);
+    ue->drb[drb_id - 1] = NULL;
   }
   else
     LOG_E(PDCP, "Attempting to release DRB%d but it is not configured\n", drb_id);

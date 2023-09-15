@@ -178,7 +178,7 @@ typedef enum {
   IN_SYNC = 1
 } nr_sync_msg_t;
 
-typedef enum { RB_NOT_PRESENT = 0, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
+typedef enum { RB_NOT_PRESENT, RB_ESTABLISHED, RB_SUSPENDED } NR_RB_status_t;
 
 typedef struct NR_UE_RRC_SRB_INFO_s {
   NR_RB_status_t status;
