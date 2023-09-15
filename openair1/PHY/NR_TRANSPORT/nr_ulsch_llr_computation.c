@@ -60,7 +60,6 @@ void nr_ulsch_qpsk_llr(int32_t *rxdataF_comp,
 void nr_ulsch_16qam_llr(int32_t *rxdataF_comp,
                         int32_t *ul_ch_mag,
                         int16_t  *ulsch_llr,
-                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol)
 {
@@ -96,7 +95,6 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
                         int32_t *ul_ch_mag,
                         int32_t *ul_ch_magb,
                         int16_t  *ulsch_llr,
-                        uint32_t nb_rb,
                         uint32_t nb_re,
                         uint8_t  symbol)
 {
@@ -152,11 +150,10 @@ void nr_ulsch_64qam_llr(int32_t *rxdataF_comp,
 void nr_ulsch_256qam_llr(int32_t *rxdataF_comp,
                          int32_t *ul_ch_mag,
                          int32_t *ul_ch_magb,
-	                 int32_t *ul_ch_magc,
-	                 int16_t  *ulsch_llr,
-	                 uint32_t nb_rb,
-	                 uint32_t nb_re,
-	                 uint8_t  symbol)
+                         int32_t *ul_ch_magc,
+                         int16_t  *ulsch_llr,
+                         uint32_t nb_re,
+                         uint8_t  symbol)
 {
   simde__m256i *rxF = (simde__m256i*)rxdataF_comp;
   simde__m256i xmm0,xmm1,xmm2,xmm3,xmm4,xmm5,xmm6;
@@ -199,7 +196,6 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                           int32_t *ul_ch_magb,
                           int32_t *ul_ch_magc,
                           int16_t *ulsch_llr,
-                          uint32_t nb_rb,
                           uint32_t nb_re,
                           uint8_t  symbol,
                           uint8_t  mod_order)
@@ -215,7 +211,6 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
       nr_ulsch_16qam_llr(rxdataF_comp,
                          ul_ch_mag,
                          ulsch_llr,
-                         nb_rb,
                          nb_re,
                          symbol);
       break;
@@ -224,7 +219,6 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                        ul_ch_mag,
                        ul_ch_magb,
                        ulsch_llr,
-                       nb_rb,
                        nb_re,
                        symbol);
       break;
@@ -234,7 +228,6 @@ void nr_ulsch_compute_llr(int32_t *rxdataF_comp,
                         ul_ch_magb,
                         ul_ch_magc,
                         ulsch_llr,
-                        nb_rb,
                         nb_re,
                         symbol);
       break;
