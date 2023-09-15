@@ -324,9 +324,7 @@ check_install_usrp_uhd_driver(){
         $SUDO apt-get remove libuhd3.15.0 -y || true
         local distribution=$(get_distribution_release)
         if [[ "$distribution" == "ubuntu18.04" || "$distribution" == "ubuntu20.04" || "$distribution" == "ubuntu22.04" ]]; then
-            $SUDO apt-get remove libuhd4.0.0 -y || true
-            $SUDO apt-get remove libuhd4.1.0 -y || true
-            $SUDO apt-get remove libuhd4.4.0 -y || true
+            $SUDO apt-get remove libuhd4.?.? -y || true
         fi
         v=$(lsb_release -cs)
         $SUDO apt-add-repository --remove "deb http://files.ettus.com/binaries/uhd/repo/uhd/ubuntu/$v $v main"
