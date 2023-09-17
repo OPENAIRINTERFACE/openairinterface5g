@@ -110,11 +110,11 @@
     </testCase>
 
      <testCase id="nr_pbchsim.106rb">
-      <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 106 PRB),
+      <desc>nr_pbchsim Test cases. (Test1: PBCH-only, 106 PRB, NID 2),
                                    (Test2: PBCH and synchronization, 106PBR),
                                    (Test3: PBCH and synchronization, 106PBR, SSB SC OFFSET 6)</desc>
       <main_exec>nr_pbchsim</main_exec>
-      <main_exec_args>-s-11 -S-8 -n10 -R106
+      <main_exec_args>-s-11 -S-8 -n10 -R106 -N2
                       -s-11 -S-8 -n10 -o8000 -I -R106
                       -s-11 -S-8 -n10 -R106 -O6</main_exec_args>
       <tags>test1 test2 test3</tags>
