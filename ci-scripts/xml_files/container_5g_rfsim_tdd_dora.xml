@@ -28,6 +28,7 @@
         <TestCaseRequestedList>
  111111
  100001
+ 004000
  000000
  000001
  020001
@@ -41,6 +42,13 @@
                 <desc>Pull Images from Local Registry</desc>
                 <test_svr_id>0</test_svr_id>
                 <images_to_pull>oai-gnb oai-nr-ue</images_to_pull>
+        </testCase>
+
+        <testCase id="004000">
+            <class>Custom_Command</class>
+            <desc>Clean-Up any residual volume</desc>
+            <node>localhost</node>
+            <command>docker volume rm 5g_rfsimulator_tdd_dora_rrc.config</command>
         </testCase>
 
         <testCase id="000000">

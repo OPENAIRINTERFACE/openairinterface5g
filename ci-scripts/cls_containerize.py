@@ -988,14 +988,11 @@ class Containerize():
 		for svcName in services:
 			# head -n -1 suppresses the final "X exited with status code Y"
 			filename = f'{svcName}-{HTML.testCase_id}.log'
-			#mySSH.command(f'docker-compose -f ci-docker-compose.yml logs --no-log-prefix -- {svcName} | head -n -1 &> {lSourcePath}/cmake_targets/log/{filename}', '\$', 30)
 			mySSH.command(f'docker-compose -f ci-docker-compose.yml logs --no-log-prefix -- {svcName} &> {lSourcePath}/cmake_targets/log/{filename}', '\$', 120)
 
-		mySSH.command('docker-compose -f ci-docker-compose.yml down', '\$', 5)
-		# Cleaning any created tmp volume
-		mySSH.command('docker volume prune --force', '\$', 20)
-
+		mySSH.command('docker-compose -f ci-docker-compose.yml down -v', '\$', 5)
 		mySSH.close()
+
 		# Analyzing log file!
 		files = ','.join([f'{s}-{HTML.testCase_id}' for s in services])
 		if len(services) > 1:
@@ -1298,7 +1295,7 @@ class Containerize():
 
 		logging.debug('\u001B[1m Undeploying \u001B[0m')
 		logging.debug(f'Working dir is back {self.yamlPath[0]}')
-		cmd = 'docker-compose -f docker-compose-ci.yml down'
+		cmd = 'docker-compose -f docker-compose-ci.yml down -v'
 		deployStatus = myCmd.run(cmd, timeout=100)
 		if deployStatus.returncode != 0:
 			myCmd.close()
@@ -1309,9 +1306,6 @@ class Containerize():
 			return
 
 		self.deployedContainers = []
-		# Cleaning any created tmp volume
-		cmd = 'docker volume prune --force'
-		deployStatus = myCmd.run(cmd, timeout=100, reportNonZero=False)
 		myCmd.close()
 
 		if fullStatus:
