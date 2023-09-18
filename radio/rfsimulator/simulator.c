@@ -137,6 +137,7 @@ static telnetshell_cmddef_t *setmodel_cmddef = &(rfsimu_cmdarray[1]);
 
 static telnetshell_vardef_t rfsimu_vardef[] = {{"", 0, 0, NULL}};
 pthread_mutex_t Sockmutex;
+unsigned int nb_ue = 0;
 
 typedef c16_t sample_t; // 2*16 bits complex number
 
@@ -256,6 +257,7 @@ static void removeCirBuf(rfsimulator_state_t *bridge, int sock) {
   //free(bridge->buf[sock].channel_model);
   memset(&bridge->buf[sock], 0, sizeof(buffer_t));
   bridge->buf[sock].conn_sock=-1;
+  nb_ue--;
 }
 
 static void socketError(rfsimulator_state_t *bridge, int sock) {
@@ -795,6 +797,7 @@ static bool flushInput(rfsimulator_state_t *t, int timeout, int nsamps_for_initi
       }
       LOG_I(HW, "A client connects, sending the current time\n");
       c16_t v= {0};
+      nb_ue++;
       void *samplesVoid[t->tx_num_channels];
 
       for ( int i=0; i < t->tx_num_channels; i++)
@@ -995,7 +998,7 @@ static int rfsimulator_read(openair0_device *device, openair0_timestamp *ptimest
         }
         else { // no channel modeling
           int nbAnt_tx = ptr->th.nbAnt; // number of Tx antennas
-          if (nbAnt_tx == 1) { // optimized for 1 Tx
+          if ((nbAnt_tx == 1) && ((nb_ue == 1) || (t->role == SIMU_ROLE_CLIENT))) { // optimized for 1 Tx and 1 UE
             sample_t *out = (sample_t *)samplesVoid[a];
             int firstIndex = t->nextRxTstamp % CirSize;
             sample_t *firstSample = (sample_t *)&(ptr->circularBuf[firstIndex]);
