@@ -131,30 +131,18 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
                    uint8_t slot,
                    unsigned char harq_pid);
 
-void nr_ulsch_scale_channel(int32_t **ul_ch_estimates_ext,
-                            NR_DL_FRAME_PARMS *frame_parms,
-                            NR_gNB_ULSCH_t *ulsch_gNB,
-                            uint8_t symbol, 
-                            uint8_t is_dmrs_symbol,
-                            uint32_t len,
-                            uint8_t nrOfLayers,
-                            uint16_t nb_rb,
-                            int shift_ch_ext);
-
 /** \brief This function computes the average channel level over all allocated RBs and antennas (TX/RX) in order to compute output shift for compensated signal
     @param ul_ch_estimates_ext Channel estimates in allocated RBs
     @param frame_parms Pointer to frame descriptor
     @param avg Pointer to average signal strength
     @param pilots_flag Flag to indicate pilots in symbol
-    @param nb_rb Number of allocated RBs
 */
 void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
                             NR_DL_FRAME_PARMS *frame_parms,
                             int32_t *avg,
                             uint8_t symbol,
                             uint32_t len,
-                            uint8_t  nrOfLayers,
-                            unsigned short nb_rb);
+                            uint8_t  nrOfLayers);
 
 /*!
 \brief This function implements the idft transform precoding in PUSCH
