@@ -1367,13 +1367,14 @@ static void inner_rx (PHY_VARS_gNB *gNB,
                                 output_shift);
 
   if (nb_layer == 1 && rel15_ul->transform_precoding == transformPrecoder_enabled && rel15_ul->qam_mod_order <= 6) {
-    nr_freq_equalization(frame_parms,
-                         &pusch_vars->rxdataF_comp[0][symbol * buffer_length],
-                         (int *)rxF_ch_maga,
-                         (int *)rxF_ch_magb,
-                         symbol,
-                         pusch_vars->ul_valid_re_per_slot[symbol],
-                         rel15_ul->qam_mod_order);
+    if (rel15_ul->qam_mod_order > 2)
+      nr_freq_equalization(frame_parms,
+                          &pusch_vars->rxdataF_comp[0][symbol * buffer_length],
+                          (int *)rxF_ch_maga,
+                          (int *)rxF_ch_magb,
+                          symbol,
+                          pusch_vars->ul_valid_re_per_slot[symbol],
+                          rel15_ul->qam_mod_order);
     nr_idft(&pusch_vars->rxdataF_comp[0][symbol * buffer_length], pusch_vars->ul_valid_re_per_slot[symbol]);
   }
   if (rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS) {
