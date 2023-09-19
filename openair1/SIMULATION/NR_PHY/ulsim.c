@@ -721,7 +721,6 @@ int main(int argc, char *argv[])
 
   NR_gNB_ULSCH_t *ulsch_gNB = &gNB->ulsch[UE_id];
 
-  // nfapi_nr_ul_config_ulsch_pdu *rel15_ul = &ulsch_gNB->harq_process->ulsch_pdu;
   NR_Sched_Rsp_t *Sched_INFO = malloc(sizeof(*Sched_INFO));
   memset((void*)Sched_INFO,0,sizeof(*Sched_INFO));
   nfapi_nr_ul_tti_request_t *UL_tti_req = &Sched_INFO->UL_tti_req;
@@ -932,14 +931,7 @@ int main(int argc, char *argv[])
     reset_meas(&gNB->rx_pusch_init_stats);
     reset_meas(&gNB->rx_pusch_symbol_processing_stats);
     reset_meas(&gNB->ulsch_decoding_stats);
-    reset_meas(&gNB->ulsch_deinterleaving_stats);
-    reset_meas(&gNB->ulsch_rate_unmatching_stats);
-    reset_meas(&gNB->ulsch_ldpc_decoding_stats);
-    reset_meas(&gNB->ulsch_unscrambling_stats);
     reset_meas(&gNB->ulsch_channel_estimation_stats);
-    reset_meas(&gNB->ulsch_llr_stats);
-    reset_meas(&gNB->ulsch_channel_compensation_stats);
-    reset_meas(&gNB->ulsch_rbs_extraction_stats);
     reset_meas(&UE->ulsch_ldpc_encoding_stats);
     reset_meas(&UE->ulsch_rate_matching_stats);
     reset_meas(&UE->ulsch_interleaving_stats);
@@ -1595,23 +1587,13 @@ int main(int argc, char *argv[])
     if (print_perf==1) 
     {
       printf("gNB RX\n");
-      printDistribution(&gNB->phy_proc_rx,table_rx,"Total PHY proc rx");
-      printStatIndent(&gNB->rx_pusch_stats,"RX PUSCH time");
-      printStatIndent2(&gNB->ulsch_channel_estimation_stats,"ULSCH channel estimation time");
-      printStatIndent2(&gNB->rx_pusch_init_stats,"RX PUSCH Initialization time");
-      printStatIndent2(&gNB->rx_pusch_symbol_processing_stats,"RX PUSCH Symbol Processing time");
-
-      // printStatIndent2(&gNB->ulsch_ptrs_processing_stats,"ULSCH PTRS Processing time");
-      // printStatIndent2(&gNB->ulsch_rbs_extraction_stats,"ULSCH rbs extraction time");
-      // printStatIndent2(&gNB->ulsch_channel_compensation_stats,"ULSCH channel compensation time");
-      // printStatIndent2(&gNB->ulsch_mrc_stats,"ULSCH mrc computation");
-      // printStatIndent2(&gNB->ulsch_llr_stats,"ULSCH llr computation");
-      // printStatIndent(&gNB->ulsch_unscrambling_stats,"ULSCH unscrambling");
-
+      printDistribution(&gNB->phy_proc_rx,table_rx, "Total PHY proc rx");
+      printStatIndent(&gNB->rx_pusch_stats, "RX PUSCH time");
+      printStatIndent2(&gNB->ulsch_channel_estimation_stats, "ULSCH channel estimation time");
+      printStatIndent2(&gNB->rx_pusch_init_stats, "RX PUSCH Initialization time");
+      printStatIndent2(&gNB->rx_pusch_symbol_processing_stats, "RX PUSCH Symbol Processing time");
       printStatIndent(&gNB->ulsch_decoding_stats,"ULSCH total decoding time");
-      // printStatIndent2(&gNB->ulsch_deinterleaving_stats,"ULSCH deinterleaving");
-      // printStatIndent2(&gNB->ulsch_rate_unmatching_stats,"ULSCH rate matching rx");
-      // printStatIndent2(&gNB->ulsch_ldpc_decoding_stats,"ULSCH ldpc decoding");
+
       printf("\nUE TX\n");
       printStatIndent(&UE->ulsch_encoding_stats,"ULSCH total encoding time");
       printStatIndent2(&UE->ulsch_segmentation_stats,"ULSCH segmentation time");

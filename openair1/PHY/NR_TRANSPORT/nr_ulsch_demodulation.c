@@ -287,7 +287,6 @@ static void nr_ulsch_extract_rbs (c16_t* const rxdataF,
                                    nfapi_nr_pusch_pdu_t *pusch_pdu,
                                    NR_DL_FRAME_PARMS *frame_parms)
 {
-
   uint8_t delta = 0;
 
   int start_re = (frame_parms->first_carrier_offset + (pusch_pdu->rb_start + pusch_pdu->bwp_start) * NR_NB_SC_PER_RB)%frame_parms->ofdm_symbol_size;
@@ -380,14 +379,14 @@ static void nr_ulsch_extract_rbs (c16_t* const rxdataF,
   }
 }
 
-void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
-                            NR_DL_FRAME_PARMS *frame_parms,
-                            uint8_t symbol,
-                            uint8_t is_dmrs_symbol,
-                            uint32_t len,
-                            uint8_t nrOfLayers,
-                            unsigned short nb_rb,
-                            int shift_ch_ext)
+static void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
+                                   NR_DL_FRAME_PARMS *frame_parms,
+                                   uint8_t symbol,
+                                   uint8_t is_dmrs_symbol,
+                                   uint32_t len,
+                                   uint8_t nrOfLayers,
+                                   unsigned short nb_rb,
+                                   int shift_ch_ext)
 {
   // Determine scaling amplitude based the symbol
   int b = 3;
@@ -415,7 +414,7 @@ void nr_ulsch_scale_channel(int **ul_ch_estimates_ext,
   }
 }
 
-int get_nb_re_pusch (NR_DL_FRAME_PARMS *frame_parms, nfapi_nr_pusch_pdu_t *rel15_ul,int symbol) 
+static int get_nb_re_pusch (NR_DL_FRAME_PARMS *frame_parms, nfapi_nr_pusch_pdu_t *rel15_ul,int symbol) 
 {
   uint8_t dmrs_symbol_flag = (rel15_ul->ul_dmrs_symb_pos >> symbol) & 0x01;
   if (dmrs_symbol_flag == 1) {
@@ -431,13 +430,13 @@ int get_nb_re_pusch (NR_DL_FRAME_PARMS *frame_parms, nfapi_nr_pusch_pdu_t *rel15
   } else return(rel15_ul->rb_size * NR_NB_SC_PER_RB);
 }
 
-//compute average channel_level on each (TX,RX) antenna pair
-void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
-                            NR_DL_FRAME_PARMS *frame_parms,
-                            int32_t *avg,
-                            uint8_t symbol,
-                            uint32_t len,
-                            uint8_t nrOfLayers)
+// compute average channel_level on each (TX,RX) antenna pair
+static void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
+                                   NR_DL_FRAME_PARMS *frame_parms,
+                                   int32_t *avg,
+                                   uint8_t symbol,
+                                   uint32_t len,
+                                   uint8_t nrOfLayers)
 {
   simde__m128i *ul_ch128, avg128U;
 
@@ -466,18 +465,18 @@ void nr_ulsch_channel_level(int **ul_ch_estimates_ext,
   simde_m_empty();
 }
 
-void nr_ulsch_channel_compensation(c16_t *rxFext,
-                                   c16_t *chFext,
-                                   c16_t *ul_ch_maga,
-                                   c16_t *ul_ch_magb,
-                                   c16_t *ul_ch_magc,
-                                   int32_t **rxComp,
-                                   c16_t *rho,
-                                   NR_DL_FRAME_PARMS *frame_parms,
-                                   nfapi_nr_pusch_pdu_t* rel15_ul,
-                                   uint32_t symbol,
-                                   uint32_t buffer_length,
-                                   uint32_t output_shift)
+static void nr_ulsch_channel_compensation(c16_t *rxFext,
+                                          c16_t *chFext,
+                                          c16_t *ul_ch_maga,
+                                          c16_t *ul_ch_magb,
+                                          c16_t *ul_ch_magc,
+                                          int32_t **rxComp,
+                                          c16_t *rho,
+                                          NR_DL_FRAME_PARMS *frame_parms,
+                                          nfapi_nr_pusch_pdu_t* rel15_ul,
+                                          uint32_t symbol,
+                                          uint32_t buffer_length,
+                                          uint32_t output_shift)
 {
   int mod_order = rel15_ul->qam_mod_order;
   int nrOfLayers = rel15_ul->nrOfLayers;
@@ -578,14 +577,14 @@ void nr_ulsch_channel_compensation(c16_t *rxFext,
 }
 
 // Zero Forcing Rx function: nr_det_HhH()
-void nr_ulsch_det_HhH (int32_t *after_mf_00,//a
-                       int32_t *after_mf_01,//b
-                       int32_t *after_mf_10,//c
-                       int32_t *after_mf_11,//d
-                       int32_t *det_fin,//1/ad-bc
-                       unsigned short nb_rb,
-                       unsigned char symbol,
-                       int32_t shift)
+static void nr_ulsch_det_HhH (int32_t *after_mf_00,//a
+                              int32_t *after_mf_01,//b
+                              int32_t *after_mf_10,//c
+                              int32_t *after_mf_11,//d
+                              int32_t *det_fin,//1/ad-bc
+                              unsigned short nb_rb,
+                              unsigned char symbol,
+                              int32_t shift)
 {
   int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
   unsigned short rb;
@@ -640,53 +639,15 @@ void nr_ulsch_det_HhH (int32_t *after_mf_00,//a
   simde_m_empty();
 }
 
-/* Zero Forcing Rx function: nr_inv_comp_muli
- * Complex number multi: z = x*y
- *                         = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
- * */
-simde__m128i nr_ulsch_inv_comp_muli(simde__m128i input_x,
-                         simde__m128i input_y)
-{
-  int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
-
-  simde__m128i xy_re_128, xy_im_128;
-  simde__m128i output_z, tmp_z0, tmp_z1;
-
-  // complex multiplication (x_re + jx_im)*(y_re + jy_im) = (x_re*y_re - x_im*y_im) + j(x_im*y_re + x_re*y_im)
-
-  // the real part
-  xy_re_128 = simde_mm_sign_epi16(input_x,*(simde__m128i*)&nr_conjug2[0]);
-  xy_re_128 = simde_mm_madd_epi16(xy_re_128,input_y); //Re: (x_re*y_re - x_im*y_im)
-
-  // the imag part
-  xy_im_128 = simde_mm_shufflelo_epi16(input_x, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the low 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = simde_mm_shufflehi_epi16(xy_im_128, SIMDE_MM_SHUFFLE(2,3,0,1));//permutes IQs for the high 64 bits as [I_a0 Q_a1 I_a2 Q_a3]_64bits to [Q_a1 I_a0 Q_a3 I_a2]_64bits
-  xy_im_128 = simde_mm_madd_epi16(xy_im_128,input_y);//Im: (x_im*y_re + x_re*y_im)
-
-  //convert back to Q15 before packing
-  xy_re_128 = simde_mm_srai_epi32(xy_re_128,4);//(2^15/64*2*16)
-  xy_im_128 = simde_mm_srai_epi32(xy_im_128,4);
-
-  tmp_z0  = simde_mm_unpacklo_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack lo:",&tmp_z0[0]);
-  tmp_z1  = simde_mm_unpackhi_epi32(xy_re_128,xy_im_128);
-  //print_ints("unpack hi:",&tmp_z1[0]);
-  output_z = simde_mm_packs_epi32(tmp_z0,tmp_z1);
-
-  simde_mm_empty();
-  simde_m_empty();
-  return(output_z);
-}
-
 /* Zero Forcing Rx function: nr_conjch0_mult_ch1()
  *
  *
  * */
-void nr_ulsch_conjch0_mult_ch1(int *ch0,
-                         int *ch1,
-                         int32_t *ch0conj_ch1,
-                         unsigned short nb_rb,
-                         unsigned char output_shift0)
+static void nr_ulsch_conjch0_mult_ch1(int *ch0,
+                                      int *ch1,
+                                      int32_t *ch0conj_ch1,
+                                      unsigned short nb_rb,
+                                      unsigned char output_shift0)
 {
   //This function is used to compute multiplications in H_hermitian * H matrix
   short nr_conjugate[8]__attribute__((aligned(16))) = {-1,1,-1,1,-1,1,-1,1};
@@ -724,11 +685,12 @@ void nr_ulsch_conjch0_mult_ch1(int *ch0,
   simde_mm_empty();
   simde_m_empty();
 }
-simde__m128i nr_ulsch_comp_muli_sum(simde__m128i input_x,
-                         simde__m128i input_y,
-                         simde__m128i input_w,
-                         simde__m128i input_z,
-                         simde__m128i det)
+
+static simde__m128i nr_ulsch_comp_muli_sum(simde__m128i input_x,
+                                           simde__m128i input_y,
+                                           simde__m128i input_w,
+                                           simde__m128i input_z,
+                                           simde__m128i det)
 {
   int16_t nr_conjug2[8]__attribute__((aligned(16))) = {1,-1,1,-1,1,-1,1,-1} ;
 
@@ -786,32 +748,33 @@ simde__m128i nr_ulsch_comp_muli_sum(simde__m128i input_x,
   simde_m_empty();
   return(output);
 }
+
 /* Zero Forcing Rx function: nr_construct_HhH_elements()
  *
  *
  * */
-void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
-                               int *conjch01_ch01,
-                               int *conjch11_ch11,
-                               int *conjch10_ch10,//
-                               int *conjch20_ch20,
-                               int *conjch21_ch21,
-                               int *conjch30_ch30,
-                               int *conjch31_ch31,
-                               int *conjch00_ch01,//00_01
-                               int *conjch01_ch00,//01_00
-                               int *conjch10_ch11,//10_11
-                               int *conjch11_ch10,//11_10
-                               int *conjch20_ch21,
-                               int *conjch21_ch20,
-                               int *conjch30_ch31,
-                               int *conjch31_ch30,
-                               int32_t *after_mf_00,
-                               int32_t *after_mf_01,
-                               int32_t *after_mf_10,
-                               int32_t *after_mf_11,
-                               unsigned short nb_rb,
-                               unsigned char symbol)
+static void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
+                                            int *conjch01_ch01,
+                                            int *conjch11_ch11,
+                                            int *conjch10_ch10,//
+                                            int *conjch20_ch20,
+                                            int *conjch21_ch21,
+                                            int *conjch30_ch30,
+                                            int *conjch31_ch31,
+                                            int *conjch00_ch01,//00_01
+                                            int *conjch01_ch00,//01_00
+                                            int *conjch10_ch11,//10_11
+                                            int *conjch11_ch10,//11_10
+                                            int *conjch20_ch21,
+                                            int *conjch21_ch20,
+                                            int *conjch30_ch31,
+                                            int *conjch31_ch30,
+                                            int32_t *after_mf_00,
+                                            int32_t *after_mf_01,
+                                            int32_t *after_mf_10,
+                                            int32_t *after_mf_11,
+                                            unsigned short nb_rb,
+                                            unsigned char symbol)
 {
   //This function is used to construct the (H_hermitian * H matrix) matrix elements
   unsigned short rb;
@@ -903,23 +866,21 @@ void nr_ulsch_construct_HhH_elements(int *conjch00_ch00,
   simde_m_empty();
 }
 
-/*
- * MMSE Rx function: nr_ulsch_mmse_2layers()
- */
-uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
-                              int **rxdataF_comp,
-                              int **ul_ch_mag,
-                              int **ul_ch_magb,
-                              int **ul_ch_magc,
-                              int **ul_ch_estimates_ext,
-                              unsigned short nb_rb,
-                              unsigned char n_rx,
-                              unsigned char mod_order,
-                              int shift,
-                              unsigned char symbol,
-                              int length,
-                              uint32_t noise_var,
-                              uint32_t buffer_length)
+// MMSE Rx function: nr_ulsch_mmse_2layers()
+static uint8_t nr_ulsch_mmse_2layers(NR_DL_FRAME_PARMS *frame_parms,
+                                     int **rxdataF_comp,
+                                     int **ul_ch_mag,
+                                     int **ul_ch_magb,
+                                     int **ul_ch_magc,
+                                     int **ul_ch_estimates_ext,
+                                     unsigned short nb_rb,
+                                     unsigned char n_rx,
+                                     unsigned char mod_order,
+                                     int shift,
+                                     unsigned char symbol,
+                                     int length,
+                                     uint32_t noise_var,
+                                     uint32_t buffer_length)
 {
   int *ch00, *ch01, *ch10, *ch11;
   int *ch20, *ch30, *ch21, *ch31;
@@ -1432,7 +1393,7 @@ static void inner_rx (PHY_VARS_gNB *gNB,
                           rel15_ul->qam_mod_order);
 }
 
-void nr_pusch_symbol_processing(void *arg)
+static void nr_pusch_symbol_processing(void *arg)
 {
   puschSymbolProc_t *rdata=(puschSymbolProc_t*)arg;
 
@@ -1617,7 +1578,6 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
 
   AssertFatal(nb_re_pusch>0 && meas_symbol>=0,"nb_re_pusch %d cannot be 0 or meas_symbol %d cannot be negative here\n",nb_re_pusch,meas_symbol);
 
-  start_meas(&gNB->ulsch_rbs_extraction_stats);
   // extract the first dmrs for the channel level computation
   // extract the data in the OFDM frame, to the start of the array
   int soffset = (slot&3)*frame_parms->symbols_per_slot*frame_parms->ofdm_symbol_size;
@@ -1637,8 +1597,6 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
                             (rel15_ul->ul_dmrs_symb_pos >> meas_symbol) & 0x01, 
                             rel15_ul,
                             frame_parms);
-
-  stop_meas(&gNB->ulsch_rbs_extraction_stats);
 
   int avgs = 0;
   int avg[frame_parms->nb_antennas_rx*rel15_ul->nrOfLayers];
@@ -1723,7 +1681,7 @@ int nr_rx_pusch_tp(PHY_VARS_gNB *gNB,
     }
   } // symbol loop
 
-  while (gNB->nbSymb > 0 && !(rel15_ul->pdu_bit_map & PUSCH_PDU_BITMAP_PUSCH_PTRS)) {
+  while (gNB->nbSymb > 0) {
     notifiedFIFO_elt_t *req = pullTpool(&gNB->respPuschSymb, &gNB->threadPool);
     gNB->nbSymb--;
     delNotifiedFIFO_elt(req);
