@@ -27,46 +27,49 @@
 
 extern char *baseNetAddress;
 
+static uint16_t getShort(uint8_t *input)
+{
+  uint16_t tmp16;
+  memcpy(&tmp16, input, sizeof(tmp16));
+  return htons(tmp16);
+}
+
 void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_length)
 {
-  uint8_t offset = 0;
   security_protected_nas_5gs_msg_t       sec_nas_hdr;
   security_protected_plain_nas_5gs_msg_t sec_nas_msg;
   pdu_session_establishment_accept_msg_t psea_msg;
-  sec_nas_hdr.epd = *(buffer + (offset++));
-  sec_nas_hdr.sht = *(buffer + (offset++));
+  uint8_t *curPtr = buffer;
+  sec_nas_hdr.epd = *curPtr++;
+  sec_nas_hdr.sht = *curPtr++;
   uint32_t tmp;
-  memcpy(&tmp, buffer + offset, sizeof(tmp));
+  memcpy(&tmp, buffer, sizeof(tmp));
   sec_nas_hdr.mac = htonl(tmp);
-  offset+=sizeof(sec_nas_hdr.mac);
-  sec_nas_hdr.sqn = *(buffer + (offset++));
-  sec_nas_msg.epd          = *(buffer + (offset++));
-  sec_nas_msg.sht          = *(buffer + (offset++));
-  sec_nas_msg.msg_type     = *(buffer + (offset++));
-  sec_nas_msg.payload_type = *(buffer + (offset++));
-  uint16_t tmp16;
-  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
-  sec_nas_msg.payload_len = htons(tmp16);
-  offset+=sizeof(sec_nas_msg.payload_len);
+  curPtr += sizeof(sec_nas_hdr.mac);
+  sec_nas_hdr.sqn = *curPtr++;
+  sec_nas_msg.epd = *curPtr++;
+  sec_nas_msg.sht = *curPtr++;
+  sec_nas_msg.msg_type = *curPtr++;
+  sec_nas_msg.payload_type = *curPtr++;
+  sec_nas_msg.payload_len = getShort(curPtr);
+  curPtr += sizeof(sec_nas_msg.payload_len);
   /* Mandatory Presence IEs */
-  psea_msg.epd      = *(buffer + (offset++));
-  psea_msg.pdu_id   = *(buffer + (offset++));
-  psea_msg.pti      = *(buffer + (offset++));
-  psea_msg.msg_type = *(buffer + (offset++));
-  psea_msg.pdu_type = *(buffer + offset) & 0x0f;
-  psea_msg.ssc_mode = (*(buffer + (offset++)) & 0xf0) >> 4;
-  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
-  psea_msg.qos_rules.length = htons(tmp16);
-  offset+=sizeof(psea_msg.qos_rules.length);
+  psea_msg.epd = *curPtr++;
+  psea_msg.pdu_id = *curPtr++;
+  psea_msg.pti = *curPtr++;
+  psea_msg.msg_type = *curPtr++;
+  psea_msg.pdu_type = *curPtr & 0x0f;
+  psea_msg.ssc_mode = (*curPtr++ & 0xf0) >> 4;
+  psea_msg.qos_rules.length = getShort(curPtr);
+  curPtr += sizeof(psea_msg.qos_rules.length);
   /* Supports the capture of only one QoS Rule, it should be changed for multiple QoS Rules */
   qos_rule_t qos_rule;
-  qos_rule.id     =  *(buffer + (offset++));
-  memcpy(&tmp16, buffer + offset, sizeof(tmp16));
-  qos_rule.length = htons(tmp16);
-  offset+=sizeof(qos_rule.length);
-  qos_rule.oc     = (*(buffer + offset) & 0xE0) >> 5;
-  qos_rule.dqr    = (*(buffer + offset) & 0x10) >> 4;
-  qos_rule.nb_pf  =  *(buffer + (offset++)) & 0x0F;
+  qos_rule.id = *curPtr++;
+  qos_rule.length = getShort(curPtr);
+  curPtr += sizeof(qos_rule.length);
+  qos_rule.oc = (*(curPtr)&0xE0) >> 5;
+  qos_rule.dqr = (*(curPtr)&0x10) >> 4;
+  qos_rule.nb_pf = *curPtr++ & 0x0F;
 
   if(qos_rule.nb_pf) {
     packet_filter_t pf;
@@ -74,40 +77,39 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
     if(qos_rule.oc == ROC_CREATE_NEW_QOS_RULE ||
        qos_rule.oc == ROC_MODIFY_QOS_RULE_ADD_PF ||
        qos_rule.oc == ROC_MODIFY_QOS_RULE_REPLACE_PF) {
-      pf.pf_type.type_1.pf_dir = (*(buffer + offset) & 0x30) >> 4;
-      pf.pf_type.type_1.pf_id  =  *(buffer + offset++) & 0x0F;
-      pf.pf_type.type_1.length =  *(buffer + offset++);
-      offset += (qos_rule.nb_pf * pf.pf_type.type_1.length); /* Ommit the Packet filter List */
+      pf.pf_type.type_1.pf_dir = (*curPtr & 0x30) >> 4;
+      pf.pf_type.type_1.pf_id = *curPtr++ & 0x0F;
+      pf.pf_type.type_1.length = *curPtr++;
+      curPtr += (qos_rule.nb_pf * pf.pf_type.type_1.length); /* Ommit the Packet filter List */
     } else if (qos_rule.oc == ROC_MODIFY_QOS_RULE_DELETE_PF) {
-      offset += qos_rule.nb_pf;
+      curPtr += qos_rule.nb_pf;
     }
   }
 
-  qos_rule.prcd = *(buffer + offset++);
-  qos_rule.qfi  = *(buffer + offset++);
-  psea_msg.sess_ambr.length = *(buffer + offset++);
-  offset += psea_msg.sess_ambr.length; /* Ommit the Seassion-AMBR */
+  qos_rule.prcd = *curPtr++;
+  qos_rule.qfi = *curPtr++;
+  psea_msg.sess_ambr.length = *curPtr++;
+  curPtr += psea_msg.sess_ambr.length; /* Ommit the Seassion-AMBR */
 
   /* Optional Presence IEs */
-  uint8_t psea_iei = *(buffer + offset++);
-
-  while(offset < msg_length) {
+  while (curPtr < buffer + msg_length) {
+    uint8_t psea_iei = *curPtr++;
     switch (psea_iei) {
       case IEI_5GSM_CAUSE: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received 5GSM Cause IEI\n");
-        offset++;
+        curPtr++;
         break;
 
       case IEI_PDU_ADDRESS:
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received PDU Address IE\n");
-        psea_msg.pdu_addr_ie.pdu_length  = *(buffer + offset++);
-        psea_msg.pdu_addr_ie.pdu_type    = *(buffer + offset++);
+        psea_msg.pdu_addr_ie.pdu_length = *curPtr++;
+        psea_msg.pdu_addr_ie.pdu_type = *curPtr++;
 
         if (psea_msg.pdu_addr_ie.pdu_type == PDU_SESSION_TYPE_IPV4) {
-          psea_msg.pdu_addr_ie.pdu_addr_oct1 = *(buffer + offset++);
-          psea_msg.pdu_addr_ie.pdu_addr_oct2 = *(buffer + offset++);
-          psea_msg.pdu_addr_ie.pdu_addr_oct3 = *(buffer + offset++);
-          psea_msg.pdu_addr_ie.pdu_addr_oct4 = *(buffer + offset++);
+          psea_msg.pdu_addr_ie.pdu_addr_oct1 = *curPtr++;
+          psea_msg.pdu_addr_ie.pdu_addr_oct2 = *curPtr++;
+          psea_msg.pdu_addr_ie.pdu_addr_oct3 = *curPtr++;
+          psea_msg.pdu_addr_ie.pdu_addr_oct4 = *curPtr++;
           nas_getparams();
           sprintf(baseNetAddress, "%d.%d", psea_msg.pdu_addr_ie.pdu_addr_oct1, psea_msg.pdu_addr_ie.pdu_addr_oct2);
           nas_config(1, psea_msg.pdu_addr_ie.pdu_addr_oct3, psea_msg.pdu_addr_ie.pdu_addr_oct4, "oaitun_ue");
@@ -117,78 +119,68 @@ void capture_pdu_session_establishment_accept_msg(uint8_t *buffer, uint32_t msg_
                 psea_msg.pdu_addr_ie.pdu_addr_oct3,
                 psea_msg.pdu_addr_ie.pdu_addr_oct4);
         } else {
-          offset += psea_msg.pdu_addr_ie.pdu_length;
+          curPtr += psea_msg.pdu_addr_ie.pdu_length;
         }
-
-        psea_iei = *(buffer + offset++);
         break;
 
       case IEI_RQ_TIMER_VALUE: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received RQ timer value IE\n");
-        offset++; /* TS 24.008 10.5.7.3 */
-        psea_iei = *(buffer + offset++);
+        curPtr++; /* TS 24.008 10.5.7.3 */
         break;
 
       case IEI_SNSSAI: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received S-NSSAI IE\n");
-        uint8_t snssai_length = *(buffer + offset);
-        offset += (snssai_length + sizeof(snssai_length));
-        psea_iei = *(buffer + offset++);
+        uint8_t snssai_length = *curPtr;
+        curPtr += (snssai_length + sizeof(snssai_length));
         break;
 
       case IEI_ALWAYSON_PDU: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Always-on PDU Session indication IE\n");
-        offset++;
-        psea_iei = *(buffer + offset++);
+        curPtr++;
         break;
 
       case IEI_MAPPED_EPS: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Mapped EPS bearer context IE\n");
-        uint16_t mapped_eps_length = htons(*(uint16_t *)(buffer + offset));
-        offset += mapped_eps_length;
-        psea_iei = *(buffer + offset++);
+        uint16_t mapped_eps_length = getShort(curPtr);
+        curPtr += mapped_eps_length;
         break;
 
       case IEI_EAP_MSG: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received EAP message IE\n");
-        uint16_t eap_length = htons(*(uint16_t *)(buffer + offset));
-        offset += (eap_length + sizeof(eap_length));
-        psea_iei = *(buffer + offset++);
+        uint16_t eap_length = getShort(curPtr);
+        curPtr += (eap_length + sizeof(eap_length));
         break;
 
       case IEI_AUTH_QOS_DESC: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Authorized QoS flow descriptions IE\n");
-        psea_msg.qos_fd_ie.length = htons(*(uint16_t *)(buffer + offset));
-        offset += (psea_msg.qos_fd_ie.length + sizeof(psea_msg.qos_fd_ie.length));
-        psea_iei = *(buffer + offset++);
+        psea_msg.qos_fd_ie.length = getShort(curPtr);
+        curPtr += (psea_msg.qos_fd_ie.length + sizeof(psea_msg.qos_fd_ie.length));
         break;
 
       case IEI_EXT_CONF_OPT: /* Ommited */
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received Extended protocol configuration options IE\n");
-        psea_msg.ext_pp_ie.length = htons(*(uint16_t *)(buffer + offset));
-        offset += (psea_msg.ext_pp_ie.length + sizeof(psea_msg.ext_pp_ie.length ));
-        psea_iei = *(buffer + offset++);
+        psea_msg.ext_pp_ie.length = getShort(curPtr);
+        curPtr += (psea_msg.ext_pp_ie.length + sizeof(psea_msg.ext_pp_ie.length));
         break;
 
       case IEI_DNN:
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Received DNN IE\n");
-        psea_msg.dnn_ie.dnn_length = *(buffer + offset++);
+        psea_msg.dnn_ie.dnn_length = *curPtr++;
         char apn[APN_MAX_LEN];
 
         if(psea_msg.dnn_ie.dnn_length <= APN_MAX_LEN &&
            psea_msg.dnn_ie.dnn_length >= APN_MIN_LEN) {
-          for (int i = 0 ; i < psea_msg.dnn_ie.dnn_length ; ++i)
-            apn[i] = *(buffer + offset + i);
+          memcpy(apn, curPtr, psea_msg.dnn_ie.dnn_length);
           LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - APN: %s\n", apn);
         } else
           LOG_E(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - DNN IE has invalid length\n");
 
-        offset = msg_length;
+        curPtr = buffer + msg_length; // we force stop processing
         break;
 
       default:
         LOG_T(NAS, "PDU SESSION ESTABLISHMENT ACCEPT - Not known IE\n");
-        offset = msg_length;
+        curPtr = buffer + msg_length; // we force stop processing
         break;
     }
   }

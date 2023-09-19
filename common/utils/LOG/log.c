@@ -855,15 +855,6 @@ void flush_mem_to_file(void)
   }
 }
 
-const char logmem_log_level[NUM_LOG_LEVEL] = {
-  [OAILOG_ERR] = 'E',
-  [OAILOG_WARNING] = 'W',
-  [OAILOG_ANALYSIS] = 'A',
-  [OAILOG_INFO] = 'I',
-  [OAILOG_DEBUG] = 'D',
-  [OAILOG_TRACE] = 'T',
-};
-
 static void log_output_memory(log_component_t *c, const char *file, const char *func, int line, int comp, int level, const char* format,va_list args)
 {
   //logRecord_mt(file,func,line, pthread_self(), comp, level, format, ##args)
